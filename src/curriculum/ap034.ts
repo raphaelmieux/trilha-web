@@ -30,8 +30,8 @@ const content_L1 = `
 <p class="mb-3">Muitas pessoas confundem Internet com WWW, mas são coisas diferentes:</p>
 <table class="w-full border-collapse mb-3 text-sm">
   <tr style="border-bottom: 1px solid var(--color-border)">
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Internet</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">WWW</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Internet</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">WWW</th>
   </tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)">
     <td class="py-2">Infraestrutura física e lógica de rede</td>
@@ -178,8 +178,8 @@ const content_L2 = `
 
 <table class="w-full border-collapse mb-3 text-sm">
   <tr style="border-bottom: 1px solid var(--color-border)">
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Download</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Upload</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Download</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Upload</th>
   </tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)">
     <td class="py-2">Servidor → Seu dispositivo</td>
@@ -287,8 +287,8 @@ const content_L3 = `
 
 <table class="w-full border-collapse mb-3 text-sm">
   <tr style="border-bottom: 1px solid var(--color-border)">
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Tipo</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Descrição</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Tipo</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Descrição</th>
   </tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2"><strong>Vírus</strong></td><td class="py-2">Se replica anexando-se a arquivos executáveis</td></tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2"><strong>Worm</strong></td><td class="py-2">Se espalha pela rede sem precisar de arquivo hospedeiro</td></tr>
@@ -413,10 +413,10 @@ const content_2L1 = `
 
 <table class="w-full border-collapse mb-3 text-sm">
   <tr style="border-bottom: 1px solid var(--color-border)">
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Recurso</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Webmail</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">POP3</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">IMAP</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Recurso</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Webmail</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">POP3</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">IMAP</th>
   </tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2">Mensagens no servidor</td><td class="py-2">Sim</td><td class="py-2">Não (remove)</td><td class="py-2">Sim</td></tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2">Sincroniza dispositivos</td><td class="py-2">Sim</td><td class="py-2">Não</td><td class="py-2">Sim</td></tr>
@@ -998,9 +998,9 @@ const content_7L1 = `
 
 const content_8L1 = `
 <h2 class="text-xl font-bold mb-3">Filipenses 4:8</h2>
-<blockquote class="border-l-4 pl-4 mb-4 italic" style="border-color: var(--color-primary); color: 'var(--color-text-soft)'">
+<blockquote class="border-l-4 pl-4 mb-4 italic" style="border-color: var(--color-primary); color: var(--color-text-soft)">
   "Finalmente, irmãos, tudo o que é verdadeiro, tudo o que é honesto, tudo o que é justo, tudo o que é puro, tudo o que é amável, tudo o que é de boa fama, se alguma virtude há, se algum louvor existe, nisso pensai."
-  <br /><span class="text-sm mt-1 block" style="color: 'var(--color-text-dim)'">— Filipenses 4:8</span>
+  <br /><span class="text-sm mt-1 block" style="color: var(--color-text-dim)">— Filipenses 4:8</span>
 </blockquote>
 
 <h3 class="font-bold mt-4 mb-2">Aplicação à Internet</h3>

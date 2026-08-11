@@ -5,13 +5,14 @@ import { getSpecialty } from '../curriculum';
 import { shuffleQuestionOptions } from '../curriculum/ap034';
 
 import {
-  fetchRequirementProgress, upsertRequirementProgress, logActivity, calculateMastery,
+  upsertRequirementProgress, logActivity, calculateMastery,
   ensureEnrollment, updateEnrollmentActivity, getRequirementId, getLessonId, getSpecialtyId,
-  type ProgressMap
 } from '../lib/progress';
-import type { Question } from '../types';
+import { useRequirementProgress } from '../hooks/useRequirementProgress';
+import { checkAnswer } from '../lib/checkAnswer';
 import { supabase } from '../lib/supabase';
 import FinalExam from '../components/FinalExam';
+import QuestionRenderer from '../components/questions/QuestionRenderer';
 import TextEditorLab from '../labs/TextEditorLab';
 import PactBuilderLab from '../labs/PactBuilderLab';
 import WebLab from '../labs/WebLab';
@@ -23,45 +24,11 @@ import SiteLab from '../labs/SiteLab';
 import AILab from '../labs/AILab';
 import { CheckCircle2, XCircle, ArrowRight, BookOpen } from 'lucide-react';
 
-export function checkAnswer(question: Question, answer: any): boolean {
-  if (!answer) return false;
-  switch (question.type) {
-    case 'multiple_choice':
-    case 'true_false': {
-      const correctOption = question.data.options?.find(o => o.correct);
-      return answer === correctOption?.id;
-    }
-    case 'scenario': {
-      const correctScenario = question.data.scenarios?.find(s => s.correct);
-      return answer === correctScenario?.id;
-    }
-    case 'matching': {
-      const pairs = question.data.pairs || [];
-      if (!Array.isArray(answer) || answer.length !== pairs.length) return false;
-      return answer.every((a: any, i: number) => a.left === pairs[i].left && a.right === pairs[i].right);
-    }
-    case 'ordering': {
-      const items = question.data.items || [];
-      if (!Array.isArray(answer) || answer.length !== items.length) return false;
-      return answer.every((id: string, i: number) => items[i].id === id);
-    }
-    case 'fill_blank': {
-      const blanks = question.data.blanks || [];
-      if (!Array.isArray(answer) || answer.length !== blanks.length) return false;
-      return answer.every((a: string, i: number) =>
-        (a || '').trim().toLowerCase() === blanks[i].answer.trim().toLowerCase()
-      );
-    }
-    default:
-      return false;
-  }
-}
-
 export default function LessonPage() {
   const { specialtyCode, moduleCode, lessonCode } = useParams();
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const [progress, setProgress] = useState<ProgressMap>({});
+  const { progress, refresh: refreshProgress } = useRequirementProgress(profile?.id);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [showFeedback, setShowFeedback] = useState<Record<string, boolean>>({});
   const [completed, setCompleted] = useState(false);
@@ -72,13 +39,11 @@ export default function LessonPage() {
   const lesson = moduleData?.lessons.find(l => l.code === lessonCode);
 
   useEffect(() => {
-    if (!profile) return;
-    fetchRequirementProgress(profile.id).then(setProgress);
     setAnswers({});
     setShowFeedback({});
     setCompleted(false);
     setScore(null);
-  }, [profile, lessonCode]);
+  }, [lessonCode]);
 
   if (!specialty || !moduleData || !lesson || !profile) {
     return <div style={{ color: 'var(--color-text-muted)' }}>Lição não encontrada. <Link to="/" style={{ color: 'var(--color-primary)' }}>Voltar</Link></div>;
@@ -181,8 +146,7 @@ export default function LessonPage() {
       }, undefined, 'lesson', lessonId || undefined, specialty.code);
     }
 
-    const newProg = await fetchRequirementProgress(profile.id);
-    setProgress(newProg);
+    await refreshProgress();
   };
 
   const allAnswered = questions.length > 0 && questions.every(q => answers[q.id] !== undefined);
@@ -251,226 +215,6 @@ export default function LessonPage() {
           </button>
         </div>
       )}
-    </div>
-  );
-}
-
-function QuestionRenderer({ question, answer, showFeedback, onAnswer }: {
-  question: Question;
-  answer: any;
-  showFeedback: boolean;
-  onAnswer: (answer: any) => void;
-}) {
-  switch (question.type) {
-    case 'multiple_choice':
-    case 'true_false':
-    case 'scenario':
-      return <OptionsQuestion question={question} answer={answer} showFeedback={showFeedback} onAnswer={onAnswer} />;
-    case 'ordering':
-      return <OrderingQuestion question={question} answer={answer} showFeedback={showFeedback} onAnswer={onAnswer} />;
-    case 'fill_blank':
-      return <FillBlankQuestion question={question} answer={answer} showFeedback={showFeedback} onAnswer={onAnswer} />;
-    case 'matching':
-      return <MatchingQuestion question={question} answer={answer} showFeedback={showFeedback} onAnswer={onAnswer} />;
-    default:
-      return null;
-  }
-}
-
-function OptionsQuestion({ question, answer, showFeedback, onAnswer }: {
-  question: Question; answer: any; showFeedback: boolean; onAnswer: (a: any) => void;
-}) {
-  const opts = question.data.options || question.data.scenarios || [];
-  return (
-    <div>
-      {opts.map((opt: { id: string; text: string; correct?: boolean }) => {
-        const selected = answer === opt.id;
-        const isCorrect = opt.correct;
-        const showCorrect = showFeedback && isCorrect;
-        const showWrong = showFeedback && selected && !isCorrect;
-        return (
-          <button
-            key={opt.id}
-            onClick={() => !showFeedback && onAnswer(opt.id)}
-            disabled={showFeedback}
-            className={`w-full text-left p-3 rounded-lg border-2 transition mb-2 ${
-              showCorrect ? 'border-[var(--color-success)] bg-[var(--color-success-a10)]' :
-              showWrong ? 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]' :
-              selected ? 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]' :
-              'border-[var(--color-border)] hover:border-[var(--color-primary-a40)]'
-            } ${showFeedback ? 'cursor-default' : 'cursor-pointer'}`}
-          >
-            {opt.text}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function ConfirmButton({ onConfirm, disabled, showFeedback }: { onConfirm: () => void; disabled: boolean; showFeedback: boolean }) {
-  if (showFeedback) return null;
-  return (
-    <button onClick={onConfirm} disabled={disabled} className="btn-primary mt-4 text-sm">
-      {disabled ? 'Preencha todos os campos' : 'Confirmar Resposta'}
-    </button>
-  );
-}
-
-function OrderingQuestion({ question, answer, showFeedback, onAnswer }: {
-  question: Question; answer: any; showFeedback: boolean; onAnswer: (a: any) => void;
-}) {
-  const items = question.data.items || [];
-  const [ordered, setOrdered] = useState<string[]>(() => Array.isArray(answer) && answer.length === items.length ? answer : items.map(i => i.id));
-  const [confirmed, setConfirmed] = useState(false);
-
-  const move = (id: string, dir: 'up' | 'down') => {
-    if (showFeedback) return;
-    const arr = [...ordered];
-    const idx = arr.indexOf(id);
-    if (dir === 'up' && idx > 0) { [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]; }
-    if (dir === 'down' && idx < arr.length - 1) { [arr[idx + 1], arr[idx]] = [arr[idx], arr[idx + 1]]; }
-    setOrdered(arr);
-    setConfirmed(false);
-  };
-
-  const confirm = () => {
-    onAnswer(ordered);
-    setConfirmed(true);
-  };
-
-  const isLocked = showFeedback || confirmed;
-
-  return (
-    <div>
-      <div className="space-y-2">
-        {ordered.map((id, idx) => {
-          const item = items.find(i => i.id === id)!;
-          const correctIdx = items.findIndex(i => i.id === id) === idx;
-          return (
-            <div key={id} className={`flex items-center gap-2 p-3 border-2 rounded-lg transition ${
-              showFeedback ? (correctIdx ? 'border-[var(--color-success)] bg-[var(--color-success-a10)]' : 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]') : 'border-[var(--color-border)]'
-            }`}>
-              <span className="font-bold" style={{ color: 'var(--color-text-muted)' }}>{idx + 1}.</span>
-              <span className="flex-1">{item.text}</span>
-              <button onClick={() => move(id, 'up')} disabled={idx === 0 || isLocked} className="btn-secondary px-2 py-1 text-sm">↑</button>
-              <button onClick={() => move(id, 'down')} disabled={idx === ordered.length - 1 || isLocked} className="btn-secondary px-2 py-1 text-sm">↓</button>
-            </div>
-          );
-        })}
-      </div>
-      <ConfirmButton onConfirm={confirm} disabled={false} showFeedback={isLocked} />
-    </div>
-  );
-}
-
-function FillBlankQuestion({ question, answer, showFeedback, onAnswer }: {
-  question: Question; answer: any; showFeedback: boolean; onAnswer: (a: any) => void;
-}) {
-  const blanks = question.data.blanks || [];
-  const [values, setValues] = useState<string[]>(answer || blanks.map(() => ''));
-  const [confirmed, setConfirmed] = useState(false);
-
-  const handleChange = (idx: number, val: string) => {
-    const newVals = [...values];
-    newVals[idx] = val;
-    setValues(newVals);
-    setConfirmed(false);
-  };
-
-  const confirm = () => {
-    onAnswer(values);
-    setConfirmed(true);
-  };
-
-  const isLocked = showFeedback || confirmed;
-  const allFilled = values.every(v => v.trim() !== '');
-
-  return (
-    <div>
-      <div className="space-y-3">
-        {blanks.map((blank: any, idx: number) => {
-          const isCorrect = showFeedback && (values[idx] || '').trim().toLowerCase() === blank.answer.trim().toLowerCase();
-          const isWrong = showFeedback && !isCorrect;
-          return (
-            <div key={blank.id}>
-              <label className="text-sm mb-1 block" style={{ color: 'var(--color-text-muted)' }}>
-                Lacuna {idx + 1}: <span className="italic" style={{ color: 'var(--color-text-dim)' }}>{blank.hint}</span>
-              </label>
-              <input
-                type="text"
-                value={values[idx] || ''}
-                onChange={e => handleChange(idx, e.target.value)}
-                disabled={isLocked}
-                className={`input-field ${isCorrect ? 'border-[var(--color-success)] bg-[var(--color-success-a10)]' : isWrong ? 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]' : ''}`}
-              />
-              {showFeedback && isWrong && (
-                <p className="text-xs mt-1" style={{ color: 'var(--color-success)' }}>Resposta correta: {blank.answer}</p>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <ConfirmButton onConfirm={confirm} disabled={!allFilled} showFeedback={isLocked} />
-    </div>
-  );
-}
-
-function MatchingQuestion({ question, answer, showFeedback, onAnswer }: {
-  question: Question; answer: any; showFeedback: boolean; onAnswer: (a: any) => void;
-}) {
-  const pairs = question.data.pairs || [];
-  const [shuffledRights] = useState(() => [...pairs.map(p => p.right)].sort(() => Math.random() - 0.5));
-  const [matches, setMatches] = useState<Record<string, string>>(() => {
-    const init: Record<string, string> = {};
-    if (Array.isArray(answer)) answer.forEach((a: any) => { if (a.right) init[a.left] = a.right; });
-    return init;
-  });
-  const [confirmed, setConfirmed] = useState(false);
-
-  const handleChange = (left: string, right: string) => {
-    const newMatches = { ...matches, [left]: right };
-    setMatches(newMatches);
-    setConfirmed(false);
-  };
-
-  const confirm = () => {
-    onAnswer(pairs.map(p => ({ left: p.left, right: matches[p.left] || '' })));
-    setConfirmed(true);
-  };
-
-  const isLocked = showFeedback || confirmed;
-  const allSelected = pairs.every(p => matches[p.left]);
-
-  return (
-    <div>
-      <div className="space-y-3">
-        {pairs.map((pair: any) => {
-          const correctRight = pair.right;
-          const selectedRight = matches[pair.left];
-          const isCorrect = showFeedback && selectedRight === correctRight;
-          const isWrong = showFeedback && selectedRight !== correctRight;
-          return (
-            <div key={pair.left} className="flex items-center gap-2">
-              <span className="flex-1 p-2 rounded-lg text-sm" style={{ backgroundColor: 'var(--color-bg-hover)', color: 'var(--color-text)' }}>{pair.left}</span>
-              <span style={{ color: 'var(--color-text-dim)' }}>→</span>
-              <select
-                value={selectedRight || ''}
-                onChange={e => handleChange(pair.left, e.target.value)}
-                disabled={isLocked}
-                className={`input-field flex-1 ${isCorrect ? 'border-[var(--color-success)] bg-[var(--color-success-a10)]' : isWrong ? 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]' : ''}`}
-              >
-                <option value="">Selecione...</option>
-                {shuffledRights.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-              {showFeedback && isWrong && (
-                <span className="text-xs whitespace-nowrap" style={{ color: 'var(--color-success)' }}>→ {correctRight}</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <ConfirmButton onConfirm={confirm} disabled={!allSelected} showFeedback={isLocked} />
     </div>
   );
 }

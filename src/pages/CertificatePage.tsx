@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { getSpecialty } from '../curriculum';
 import { getPublicName, type Certification, type PublicProfile } from '../types';
 import { Printer, ArrowLeft } from 'lucide-react';
+import StatusBadge from '../components/ui/StatusBadge';
+import { LoadingState, ErrorState } from '../components/ui/PageState';
 
 export default function CertificatePage() {
   const { code } = useParams();
@@ -40,11 +42,11 @@ export default function CertificatePage() {
     })();
   }, [code]);
 
-  if (loading) return <div className="text-center py-8" style={{ color: 'var(--color-text-dim)' }}>Carregando certificado...</div>;
+  if (loading) return <LoadingState label="Carregando certificado..." />;
   if (error) return (
     <div className="text-center py-8">
-      <p className="mb-4" style={{ color: 'var(--color-primary)' }}>{error}</p>
-      <Link to="/" className="btn-primary">Voltar ao Início</Link>
+      <ErrorState message={error} />
+      <Link to="/" className="btn-primary mt-4 inline-flex">Voltar ao Início</Link>
     </div>
   );
   if (!cert || !profile) return null;
@@ -216,15 +218,9 @@ export default function CertificatePage() {
               <span style={{ color: 'var(--color-primary)' }}>/verificar</span>
             </p>
           </div>
-          <span
-            className="px-3 py-1 rounded-full text-xs font-bold"
-            style={{
-              backgroundColor: cert.status === 'active' ? 'var(--color-success-a10)' : 'var(--color-error-a10)',
-              color: cert.status === 'active' ? 'var(--color-success)' : 'var(--color-error)',
-            }}
-          >
+          <StatusBadge tone={cert.status === 'active' ? 'success' : 'error'}>
             {cert.status === 'active' ? 'Ativo' : 'Revogado'}
-          </span>
+          </StatusBadge>
         </div>
       </div>
     </div>

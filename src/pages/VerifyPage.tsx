@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { getPublicName, type Certification, type PublicProfile } from '../types';
-import { Trophy, Search, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Trophy, Search, CheckCircle2 } from 'lucide-react';
+import { ErrorState } from '../components/ui/PageState';
 
 export default function VerifyPage() {
   const [code, setCode] = useState('');
@@ -63,12 +64,7 @@ export default function VerifyPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="card p-6 text-center">
-          <AlertCircle className="w-12 h-12 mx-auto mb-2" style={{ color: 'var(--color-primary)' }} />
-          <p style={{ color: 'var(--color-primary)' }}>{error}</p>
-        </div>
-      )}
+      {error && <ErrorState message={error} />}
 
       {result && (
         <div className="card p-8" style={{ borderColor: 'var(--color-secondary-a30)', backgroundColor: 'var(--color-secondary-a03)' }}>

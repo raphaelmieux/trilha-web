@@ -1,33 +1,19 @@
-import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSpecialty } from '../curriculum';
-import { fetchRequirementProgress, getProgressPercent, getModuleStatus, getLessonStatus, type ProgressMap } from '../lib/progress';
-import { supabase } from '../lib/supabase';
+import { getProgressPercent, getModuleStatus, getLessonStatus } from '../lib/progress';
+import { useRequirementProgress } from '../hooks/useRequirementProgress';
+import { useCertifications } from '../hooks/useCertifications';
+import ProgressBar from '../components/ui/ProgressBar';
 import { Lock, CheckCircle2, Play, Star, Trophy } from 'lucide-react';
 
 export default function SpecialtyPage() {
   const { code } = useParams<{ code: string }>();
   const { profile } = useAuth();
-  const [progress, setProgress] = useState<ProgressMap>({});
-  const [certified, setCertified] = useState(false);
-  const [certCode, setCertCode] = useState('');
   const specialty = code ? getSpecialty(code) : undefined;
-
-  useEffect(() => {
-    if (!profile || !specialty) return;
-    (async () => {
-      const prog = await fetchRequirementProgress(profile.id);
-      setProgress(prog);
-      const { data: cert } = await supabase
-        .from('certifications').select('*')
-        .eq('user_id', profile.id).eq('level', specialty.level).eq('status', 'active').maybeSingle();
-      if (cert) {
-        setCertified(true);
-        setCertCode(cert.code);
-      }
-    })();
-  }, [profile, specialty]);
+  const { progress } = useRequirementProgress(profile?.id);
+  const { getByLevel } = useCertifications(profile?.id);
+  const cert = specialty ? getByLevel(specialty.level) : undefined;
 
   if (!specialty) return <div style={{ color: 'var(--color-text-muted)' }}>Especialidade não encontrada</div>;
   if (!profile) return null;
@@ -62,8 +48,8 @@ export default function SpecialtyPage() {
             <p style={{ color: 'var(--color-text-dim)' }}>{specialty.description}</p>
           </div>
         </div>
-        {certified && (
-          <Link to={`/certificado/${certCode}`}
+        {cert && (
+          <Link to={`/certificado/${cert.code}`}
             className="flex items-center gap-2 px-4 py-2 rounded-lg transition group"
             style={{ backgroundColor: 'var(--color-secondary-a08)', border: '1px solid var(--color-secondary-a20)' }}
             onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-secondary-a40)')}
@@ -79,9 +65,7 @@ export default function SpecialtyPage() {
           <span style={{ color: 'var(--color-text-muted)' }}>Progresso geral</span>
           <span className="font-semibold" style={{ color: overallPercent === 100 ? 'var(--color-success)' : accentColor }}>{overallPercent}%</span>
         </div>
-        <div className="w-full rounded-full h-4" style={{ backgroundColor: 'var(--color-bg-hover)' }}>
-          <div className="h-4 rounded-full transition-all" style={{ width: `${overallPercent}%`, background: overallPercent === 100 ? 'var(--color-success)' : accentGrad }} />
-        </div>
+        <ProgressBar percent={overallPercent} color={accentGrad} height="lg" />
       </div>
 
       <div className="space-y-3">
@@ -128,8 +112,8 @@ export default function SpecialtyPage() {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm" style={{ color: 'var(--color-text)' }}>{lesson.title}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <div className="flex-1 rounded-full h-1.5 max-w-32" style={{ backgroundColor: 'var(--color-bg-hover)' }}>
-                            <div className="h-1.5 rounded-full" style={{ width: `${lessonPercent}%`, background: lessonPercent === 100 ? 'var(--color-success)' : accentGrad }} />
+                          <div className="flex-1 max-w-32">
+                            <ProgressBar percent={lessonPercent} color={accentGrad} height="sm" />
                           </div>
                           <span className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
                             {lesson.type === 'theory' ? 'Teoria' : lesson.type === 'lab' ? 'Laboratório' : lesson.type === 'final' ? 'Avaliação Final' : 'Quiz'}

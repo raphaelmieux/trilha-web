@@ -1,0 +1,35 @@
+import type { Question } from '../types';
+
+export function checkAnswer(question: Question, answer: any): boolean {
+  if (!answer) return false;
+  switch (question.type) {
+    case 'multiple_choice':
+    case 'true_false': {
+      const correctOption = question.data.options?.find(o => o.correct);
+      return answer === correctOption?.id;
+    }
+    case 'scenario': {
+      const correctScenario = question.data.scenarios?.find(s => s.correct);
+      return answer === correctScenario?.id;
+    }
+    case 'matching': {
+      const pairs = question.data.pairs || [];
+      if (!Array.isArray(answer) || answer.length !== pairs.length) return false;
+      return answer.every((a: any, i: number) => a.left === pairs[i].left && a.right === pairs[i].right);
+    }
+    case 'ordering': {
+      const items = question.data.items || [];
+      if (!Array.isArray(answer) || answer.length !== items.length) return false;
+      return answer.every((id: string, i: number) => items[i].id === id);
+    }
+    case 'fill_blank': {
+      const blanks = question.data.blanks || [];
+      if (!Array.isArray(answer) || answer.length !== blanks.length) return false;
+      return answer.every((a: string, i: number) =>
+        (a || '').trim().toLowerCase() === blanks[i].answer.trim().toLowerCase()
+      );
+    }
+    default:
+      return false;
+  }
+}

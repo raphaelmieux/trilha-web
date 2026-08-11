@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Shield, Users, Award, Settings, AlertCircle, KeyRound, Copy, X } from 'lucide-react';
+import StatusBadge from '../components/ui/StatusBadge';
 
 export default function AdminPage() {
   const { profile } = useAuth();
@@ -158,13 +159,7 @@ export default function AdminPage() {
                   <td className="py-2" style={{ color: 'var(--color-text-muted)' }}>{c.level}</td>
                   <td className="py-2 font-mono text-xs" style={{ color: 'var(--color-secondary)' }}>{c.code.substring(0, 16)}...</td>
                   <td className="py-2">
-                    <span className="px-2 py-0.5 rounded text-xs"
-                      style={{
-                        backgroundColor: c.status === 'active' ? 'var(--color-success-a20)' : 'var(--color-error-a20)',
-                        color: c.status === 'active' ? 'var(--color-success)' : 'var(--color-error)',
-                      }}>
-                      {c.status}
-                    </span>
+                    <StatusBadge tone={c.status === 'active' ? 'success' : 'error'}>{c.status}</StatusBadge>
                   </td>
                   <td className="py-2 text-xs" style={{ color: 'var(--color-text-faint)' }}>{new Date(c.issued_at).toLocaleDateString('pt-BR')}</td>
                   <td className="py-2">

@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getSpecialty } from '../curriculum';
-import { fetchRequirementProgress, getProgressPercent, type ProgressMap } from '../lib/progress';
-import { getPublicName, type Certification } from '../types';
+import { getProgressPercent } from '../lib/progress';
+import { useRequirementProgress } from '../hooks/useRequirementProgress';
+import { useCertifications } from '../hooks/useCertifications';
+import { getPublicName } from '../types';
 import { franchiseConfig } from '../config/franchise';
 import { Printer, ArrowLeft, Compass, CheckCircle2, Circle, Star } from 'lucide-react';
 
@@ -34,26 +36,23 @@ interface SpecialtySummary {
 export default function ReportPage() {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [progress, setProgress] = useState<ProgressMap>({});
+  const { progress, loading: progressLoading } = useRequirementProgress(profile?.id);
+  const { certifications, loading: certsLoading } = useCertifications(profile?.id);
   const [lessonAttempts, setLessonAttempts] = useState<any[]>([]);
-  const [certifications, setCertifications] = useState<Certification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [attemptsLoading, setAttemptsLoading] = useState(true);
+  const loading = progressLoading || certsLoading || attemptsLoading;
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!profile) return;
     (async () => {
-      const prog = await fetchRequirementProgress(profile.id);
-      setProgress(prog);
       const { data: attempts } = await supabase
         .from('lesson_attempts')
         .select('*, lessons(code, title)')
         .eq('user_id', profile.id)
         .order('completed_at', { ascending: true });
       setLessonAttempts(attempts || []);
-      const { data: certs } = await supabase.from('certifications').select('*').eq('user_id', profile.id);
-      setCertifications((certs as Certification[]) || []);
-      setLoading(false);
+      setAttemptsLoading(false);
     })();
   }, [profile]);
 

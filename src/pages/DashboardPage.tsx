@@ -3,28 +3,28 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getSpecialty } from '../curriculum';
-import { fetchRequirementProgress, getProgressPercent, type ProgressMap } from '../lib/progress';
-import { getPublicName, type Certification } from '../types';
+import { getProgressPercent } from '../lib/progress';
+import { useRequirementProgress } from '../hooks/useRequirementProgress';
+import { useCertifications } from '../hooks/useCertifications';
+import { getPublicName } from '../types';
 import { franchiseConfig } from '../config/franchise';
+import ProgressBar from '../components/ui/ProgressBar';
+import { LoadingState, EmptyState } from '../components/ui/PageState';
 import { Lock, Trophy, Flame, Star, CheckCircle2, Circle, Clock, Award, FileText, ArrowRight } from 'lucide-react';
 
 export default function DashboardPage() {
   const { profile } = useAuth();
-  const [progress, setProgress] = useState<ProgressMap>({});
+  const { progress } = useRequirementProgress(profile?.id);
+  const { certifications } = useCertifications(profile?.id);
   const [enrollments, setEnrollments] = useState<any[]>([]);
-  const [certifications, setCertifications] = useState<Certification[]>([]);
   const [recentEvents, setRecentEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!profile) return;
     (async () => {
-      const prog = await fetchRequirementProgress(profile.id);
-      setProgress(prog);
       const { data: enrolls } = await supabase.from('enrollments').select('*, specialties(*)').eq('user_id', profile.id);
       setEnrollments(enrolls || []);
-      const { data: certs } = await supabase.from('certifications').select('*').eq('user_id', profile.id);
-      setCertifications((certs as Certification[]) || []);
       const { data: events } = await supabase.from('activity_events').select('*').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(10);
       setRecentEvents(events || []);
       setLoading(false);
@@ -47,12 +47,6 @@ export default function DashboardPage() {
 
   const xp = enrollments.reduce((sum, e) => sum + (e.xp || 0), 0);
   const streak = enrollments.reduce((max, e) => Math.max(max, e.streak_days || 0), 0);
-
-  const ProgressBar = ({ percent, color }: { percent: number; color: string }) => (
-    <div className="w-full rounded-full h-3 overflow-hidden" style={{ backgroundColor: 'var(--color-bg-hover)' }}>
-      <div className="h-3 rounded-full transition-all duration-500" style={{ width: `${percent}%`, background: color }} />
-    </div>
-  );
 
   return (
     <div className="space-y-6">
@@ -96,7 +90,7 @@ export default function DashboardPage() {
               <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
               <span className="font-semibold" style={{ color: ap034Completed ? 'var(--color-success)' : 'var(--color-primary)' }}>{ap034Percent}%</span>
             </div>
-            <ProgressBar percent={ap034Percent} color={ap034Completed ? 'var(--color-success)' : 'linear-gradient(90deg, var(--color-primary), var(--color-primary-hover))'} />
+            <ProgressBar percent={ap034Percent} color="linear-gradient(90deg, var(--color-primary), var(--color-primary-hover))" />
           </div>
           <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
             {ap034.requirements.filter(r => progress[r.code]?.status === 'completed').length} de {ap034.requirements.length} requisitos concluídos
@@ -132,7 +126,7 @@ export default function DashboardPage() {
                 <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
                 <span className="font-semibold" style={{ color: ap035Percent === 100 ? 'var(--color-success)' : 'var(--color-tertiary-light)' }}>{ap035Percent}%</span>
               </div>
-              <ProgressBar percent={ap035Percent} color={ap035Percent === 100 ? 'var(--color-success)' : 'linear-gradient(90deg, var(--color-tertiary), var(--color-tertiary-light))'} />
+              <ProgressBar percent={ap035Percent} color="linear-gradient(90deg, var(--color-tertiary), var(--color-tertiary-light))" />
             </div>
             <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
               {ap035.requirements.filter(r => progress[r.code]?.status === 'completed').length} de {ap035.requirements.length} requisitos concluídos
@@ -187,9 +181,9 @@ export default function DashboardPage() {
           <Clock className="w-5 h-5" style={{ color: 'var(--color-success)' }} /> Atividade Recente
         </h2>
         {loading ? (
-          <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>Carregando...</p>
+          <LoadingState />
         ) : recentEvents.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>Nenhuma atividade ainda. Comece a estudar para ver seu progresso aqui!</p>
+          <EmptyState title="Nenhuma atividade ainda" description="Comece a estudar para ver seu progresso aqui!" />
         ) : (
           <ul className="space-y-2">
             {recentEvents.map(event => (

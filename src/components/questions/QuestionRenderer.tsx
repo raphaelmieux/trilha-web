@@ -1,0 +1,216 @@
+import { useState } from 'react';
+import type { Question } from '../../types';
+
+interface QuestionProps {
+  question: Question;
+  answer: any;
+  showFeedback: boolean;
+  onAnswer: (answer: any) => void;
+}
+
+export default function QuestionRenderer({ question, answer, showFeedback, onAnswer }: QuestionProps) {
+  switch (question.type) {
+    case 'multiple_choice':
+    case 'true_false':
+    case 'scenario':
+      return <OptionsQuestion question={question} answer={answer} showFeedback={showFeedback} onAnswer={onAnswer} />;
+    case 'ordering':
+      return <OrderingQuestion question={question} answer={answer} showFeedback={showFeedback} onAnswer={onAnswer} />;
+    case 'fill_blank':
+      return <FillBlankQuestion question={question} answer={answer} showFeedback={showFeedback} onAnswer={onAnswer} />;
+    case 'matching':
+      return <MatchingQuestion question={question} answer={answer} showFeedback={showFeedback} onAnswer={onAnswer} />;
+    default:
+      return null;
+  }
+}
+
+function ConfirmButton({ onConfirm, disabled, showFeedback }: { onConfirm: () => void; disabled: boolean; showFeedback: boolean }) {
+  if (showFeedback) return null;
+  return (
+    <button onClick={onConfirm} disabled={disabled} className="btn-primary mt-4 text-sm">
+      {disabled ? 'Preencha todos os campos' : 'Confirmar Resposta'}
+    </button>
+  );
+}
+
+function OptionsQuestion({ question, answer, showFeedback, onAnswer }: QuestionProps) {
+  const opts = question.data.options || question.data.scenarios || [];
+  return (
+    <div>
+      {opts.map((opt: { id: string; text: string; correct?: boolean }) => {
+        const selected = answer === opt.id;
+        const isCorrect = opt.correct;
+        const showCorrect = showFeedback && isCorrect;
+        const showWrong = showFeedback && selected && !isCorrect;
+        return (
+          <button
+            key={opt.id}
+            onClick={() => !showFeedback && onAnswer(opt.id)}
+            disabled={showFeedback}
+            className={`w-full text-left p-3 rounded-lg border-2 transition mb-2 ${
+              showCorrect ? 'border-[var(--color-success)] bg-[var(--color-success-a10)]' :
+              showWrong ? 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]' :
+              selected ? 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]' :
+              'border-[var(--color-border)] hover:border-[var(--color-primary-a40)]'
+            } ${showFeedback ? 'cursor-default' : 'cursor-pointer'}`}
+          >
+            {opt.text}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function OrderingQuestion({ question, answer, showFeedback, onAnswer }: QuestionProps) {
+  const items = question.data.items || [];
+  const [ordered, setOrdered] = useState<string[]>(() => Array.isArray(answer) && answer.length === items.length ? answer : items.map(i => i.id));
+  const [confirmed, setConfirmed] = useState(false);
+
+  const move = (id: string, dir: 'up' | 'down') => {
+    if (showFeedback) return;
+    const arr = [...ordered];
+    const idx = arr.indexOf(id);
+    if (dir === 'up' && idx > 0) { [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]; }
+    if (dir === 'down' && idx < arr.length - 1) { [arr[idx + 1], arr[idx]] = [arr[idx], arr[idx + 1]]; }
+    setOrdered(arr);
+    setConfirmed(false);
+  };
+
+  const confirm = () => {
+    onAnswer(ordered);
+    setConfirmed(true);
+  };
+
+  const isLocked = showFeedback || confirmed;
+
+  return (
+    <div>
+      <div className="space-y-2">
+        {ordered.map((id, idx) => {
+          const item = items.find(i => i.id === id)!;
+          const correctIdx = items.findIndex(i => i.id === id) === idx;
+          return (
+            <div key={id} className={`flex items-center gap-2 p-3 border-2 rounded-lg transition ${
+              showFeedback ? (correctIdx ? 'border-[var(--color-success)] bg-[var(--color-success-a10)]' : 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]') : 'border-[var(--color-border)]'
+            }`}>
+              <span className="font-bold" style={{ color: 'var(--color-text-muted)' }}>{idx + 1}.</span>
+              <span className="flex-1">{item.text}</span>
+              <button onClick={() => move(id, 'up')} disabled={idx === 0 || isLocked} className="btn-secondary px-2 py-1 text-sm">↑</button>
+              <button onClick={() => move(id, 'down')} disabled={idx === ordered.length - 1 || isLocked} className="btn-secondary px-2 py-1 text-sm">↓</button>
+            </div>
+          );
+        })}
+      </div>
+      <ConfirmButton onConfirm={confirm} disabled={false} showFeedback={isLocked} />
+    </div>
+  );
+}
+
+function FillBlankQuestion({ question, answer, showFeedback, onAnswer }: QuestionProps) {
+  const blanks = question.data.blanks || [];
+  const [values, setValues] = useState<string[]>(answer || blanks.map(() => ''));
+  const [confirmed, setConfirmed] = useState(false);
+
+  const handleChange = (idx: number, val: string) => {
+    const newVals = [...values];
+    newVals[idx] = val;
+    setValues(newVals);
+    setConfirmed(false);
+  };
+
+  const confirm = () => {
+    onAnswer(values);
+    setConfirmed(true);
+  };
+
+  const isLocked = showFeedback || confirmed;
+  const allFilled = values.every(v => v.trim() !== '');
+
+  return (
+    <div>
+      <div className="space-y-3">
+        {blanks.map((blank: any, idx: number) => {
+          const isCorrect = showFeedback && (values[idx] || '').trim().toLowerCase() === blank.answer.trim().toLowerCase();
+          const isWrong = showFeedback && !isCorrect;
+          return (
+            <div key={blank.id}>
+              <label className="text-sm mb-1 block" style={{ color: 'var(--color-text-muted)' }}>
+                Lacuna {idx + 1}: <span className="italic" style={{ color: 'var(--color-text-dim)' }}>{blank.hint}</span>
+              </label>
+              <input
+                type="text"
+                value={values[idx] || ''}
+                onChange={e => handleChange(idx, e.target.value)}
+                disabled={isLocked}
+                className={`input-field ${isCorrect ? 'border-[var(--color-success)] bg-[var(--color-success-a10)]' : isWrong ? 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]' : ''}`}
+              />
+              {showFeedback && isWrong && (
+                <p className="text-xs mt-1" style={{ color: 'var(--color-success)' }}>Resposta correta: {blank.answer}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <ConfirmButton onConfirm={confirm} disabled={!allFilled} showFeedback={isLocked} />
+    </div>
+  );
+}
+
+function MatchingQuestion({ question, answer, showFeedback, onAnswer }: QuestionProps) {
+  const pairs = question.data.pairs || [];
+  const [shuffledRights] = useState(() => [...pairs.map(p => p.right)].sort(() => Math.random() - 0.5));
+  const [matches, setMatches] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    if (Array.isArray(answer)) answer.forEach((a: any) => { if (a.right) init[a.left] = a.right; });
+    return init;
+  });
+  const [confirmed, setConfirmed] = useState(false);
+
+  const handleChange = (left: string, right: string) => {
+    const newMatches = { ...matches, [left]: right };
+    setMatches(newMatches);
+    setConfirmed(false);
+  };
+
+  const confirm = () => {
+    onAnswer(pairs.map(p => ({ left: p.left, right: matches[p.left] || '' })));
+    setConfirmed(true);
+  };
+
+  const isLocked = showFeedback || confirmed;
+  const allSelected = pairs.every(p => matches[p.left]);
+
+  return (
+    <div>
+      <div className="space-y-3">
+        {pairs.map((pair: any) => {
+          const correctRight = pair.right;
+          const selectedRight = matches[pair.left];
+          const isCorrect = showFeedback && selectedRight === correctRight;
+          const isWrong = showFeedback && selectedRight !== correctRight;
+          return (
+            <div key={pair.left} className="flex items-center gap-2">
+              <span className="flex-1 p-2 rounded-lg text-sm" style={{ backgroundColor: 'var(--color-bg-hover)', color: 'var(--color-text)' }}>{pair.left}</span>
+              <span style={{ color: 'var(--color-text-dim)' }}>→</span>
+              <select
+                value={selectedRight || ''}
+                onChange={e => handleChange(pair.left, e.target.value)}
+                disabled={isLocked}
+                className={`input-field flex-1 ${isCorrect ? 'border-[var(--color-success)] bg-[var(--color-success-a10)]' : isWrong ? 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]' : ''}`}
+              >
+                <option value="">Selecione...</option>
+                {shuffledRights.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+              {showFeedback && isWrong && (
+                <span className="text-xs whitespace-nowrap" style={{ color: 'var(--color-success)' }}>→ {correctRight}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <ConfirmButton onConfirm={confirm} disabled={!allSelected} showFeedback={isLocked} />
+    </div>
+  );
+}

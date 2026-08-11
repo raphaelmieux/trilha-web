@@ -145,8 +145,8 @@ const content_1L2 = `
 <h3 class="font-bold mt-4 mb-2">Cliente vs. Servidor</h3>
 <table class="w-full border-collapse mb-3 text-sm">
   <tr style="border-bottom: 1px solid var(--color-border)">
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Cliente (Navegador)</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Servidor</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Cliente (Navegador)</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Servidor</th>
   </tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2">Executa HTML, CSS, JavaScript</td><td class="py-2">Executa PHP, Python, Node.js</td></tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2">Estático após o carregamento</td><td class="py-2">Gera conteúdo dinâmico</td></tr>
@@ -245,9 +245,9 @@ const content_1L3 = `
 </ul>
 <table class="w-full border-collapse mb-3 text-sm">
   <tr style="border-bottom: 1px solid var(--color-border)">
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Cor</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Hexadecimal</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Significado</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Cor</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Hexadecimal</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Significado</th>
   </tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2" style="color: var(--color-text)">Branco</td><td class="py-2">var(--color-text)</td><td class="py-2">Máximo de R, G e B</td></tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2" style="color: var(--color-bg)">Preto</td><td class="py-2">var(--color-bg)</td><td class="py-2">Ausência de cor</td></tr>
@@ -341,9 +341,9 @@ const content_1L4 = `
 
 <table class="w-full border-collapse mb-3 text-sm">
   <tr style="border-bottom: 1px solid var(--color-border)">
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Parte</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Exemplo</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Função</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Parte</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Exemplo</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Função</th>
   </tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2"><strong>Protocolo</strong></td><td class="py-2">https://</td><td class="py-2">Como os dados são transferidos</td></tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2"><strong>Subdomínio</strong></td><td class="py-2">www.</td><td class="py-2">Subdivisão do domínio (opcional)</td></tr>
@@ -446,10 +446,10 @@ const content_1L5 = `
 
 <table class="w-full border-collapse mb-3 text-sm">
   <tr style="border-bottom: 1px solid var(--color-border)">
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">Recurso</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">JPEG</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">PNG</th>
-    <th class="text-left py-2" style="color: 'var(--color-text-dim)'">GIF</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">Recurso</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">JPEG</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">PNG</th>
+    <th class="text-left py-2" style="color: var(--color-text-dim)">GIF</th>
   </tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2">Compressão</td><td class="py-2">Com perda</td><td class="py-2">Sem perda</td><td class="py-2">Sem perda</td></tr>
   <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2">Cores</td><td class="py-2">Milhões</td><td class="py-2">Milhões</td><td class="py-2">256</td></tr>
