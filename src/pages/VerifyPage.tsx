@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { getPublicName, type Certification, type UserProfile } from '../types';
+import { getPublicName, type Certification, type PublicProfile } from '../types';
 import { Trophy, Search, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function VerifyPage() {
   const [code, setCode] = useState('');
-  const [result, setResult] = useState<{ cert: Certification; profile: UserProfile } | null>(null);
+  const [result, setResult] = useState<{ cert: Certification; profile: PublicProfile } | null>(null);
   const [error, setError] = useState('');
   const [searched, setSearched] = useState(false);
 
@@ -29,13 +29,13 @@ export default function VerifyPage() {
     }
 
     const { data: profile } = await supabase
-      .from('user_profiles')
+      .from('public_profiles')
       .select('*')
       .eq('id', cert.user_id)
       .maybeSingle();
 
     if (profile) {
-      setResult({ cert: cert as Certification, profile: profile as UserProfile });
+      setResult({ cert: cert as Certification, profile: profile as PublicProfile });
     } else {
       setError('Perfil não encontrado.');
     }

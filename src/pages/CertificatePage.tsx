@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getSpecialty } from '../curriculum';
-import { getPublicName, type Certification, type UserProfile } from '../types';
+import { getPublicName, type Certification, type PublicProfile } from '../types';
 import { Printer, ArrowLeft } from 'lucide-react';
 
 export default function CertificatePage() {
   const { code } = useParams();
   const [cert, setCert] = useState<Certification | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -30,12 +30,12 @@ export default function CertificatePage() {
       setCert(certData as Certification);
 
       const { data: profileData } = await supabase
-        .from('user_profiles')
+        .from('public_profiles')
         .select('*')
         .eq('id', certData.user_id)
         .maybeSingle();
 
-      setProfile(profileData as UserProfile);
+      setProfile(profileData as PublicProfile);
       setLoading(false);
     })();
   }, [code]);

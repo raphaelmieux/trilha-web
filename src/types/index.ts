@@ -82,6 +82,18 @@ export interface UserProfile {
   avatar_url?: string | null;
 }
 
+// Non-sensitive projection of UserProfile, backed by the `public_profiles` view.
+// Never carries email/is_admin — those are only ever readable by the row's owner.
+export interface PublicProfile {
+  id: string;
+  display_name: string;
+  username?: string;
+  club?: string;
+  unit?: string;
+  public_name_form: 'full' | 'first' | 'initials' | 'anonymous';
+  avatar_url?: string | null;
+}
+
 export interface Certification {
   id: string;
   code: string;
@@ -94,7 +106,26 @@ export interface Certification {
   user_id: string;
 }
 
-export function getPublicName(profile: UserProfile): string {
+export interface Badge {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  icon: string;
+  tier: 'bronze' | 'silver' | 'gold';
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  display_name: string;
+  public_name_form: 'full' | 'first' | 'initials' | 'anonymous';
+  avatar_url: string | null;
+  total_xp: number;
+  best_streak: number;
+  badge_count: number;
+}
+
+export function getPublicName(profile: Pick<UserProfile | PublicProfile, 'display_name' | 'public_name_form'>): string {
   switch (profile.public_name_form) {
     case 'full': return profile.display_name;
     case 'first': return profile.display_name.split(' ')[0];

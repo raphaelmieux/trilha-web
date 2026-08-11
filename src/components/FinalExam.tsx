@@ -23,7 +23,8 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
   const [showFeedback, setShowFeedback] = useState<Record<string, boolean>>({});
   const [phase, setPhase] = useState<'intro' | 'exam' | 'result'>('intro');
   const [score, setScore] = useState<{ correct: number; total: number } | null>(null);
-  const [certified, setCertified] = useState(false);
+  const [certified, setCertified] = useState<string | null>(null);
+  const [certifyError, setCertifyError] = useState('');
 
   useEffect(() => {
     if (!profile) return;
@@ -31,9 +32,9 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
       const prog = await fetchRequirementProgress(profile.id);
       setProgress(prog);
       const { data: cert } = await supabase
-        .from('certifications').select('*')
+        .from('certifications').select('code')
         .eq('user_id', profile.id).eq('level', specialtyCode === 'AP034' ? 'fundamental' : 'advanced').eq('status', 'active').maybeSingle();
-      setCertified(!!cert);
+      setCertified(cert?.code || null);
     })();
   }, [profile, specialtyCode]);
 
@@ -66,7 +67,10 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
     await logActivity(profile.id, 'final_exam_completed', { specialty: specialtyCode, score: correct, total }, undefined, 'exam');
 
     if (correct / total >= 0.8) {
-      await issueCertification(profile.id, specialtyCode, profile.display_name);
+      setCertifyError('');
+      const result = await requestCertification(profile.id, specialtyCode);
+      if (result.code) setCertified(result.code);
+      else setCertifyError(result.error || 'Não foi possível emitir o certificado agora. Tente novamente na página da especialidade.');
     }
   };
 
@@ -121,7 +125,10 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
           {passed ? <CheckCircle2 className="w-20 h-20 mx-auto mb-4" style={{ color: 'var(--color-success)' }} /> : <XCircle className="w-20 h-20 mx-auto mb-4" style={{ color: 'var(--color-primary)' }} />}
           <h1 className="text-2xl font-bold mb-2">{passed ? 'Parabéns! Você foi aprovado!' : 'Não foi dessa vez'}</h1>
           <p className="mb-2" style={{ color: 'var(--color-text-muted)' }}>Você acertou {score.correct} de {score.total} questões ({Math.round((score.correct / score.total) * 100)}%)</p>
-          {passed && <p className="font-medium mb-4" style={{ color: 'var(--color-secondary)' }}>Seu Token.Web() foi emitido!</p>}
+          {passed && certified && <p className="font-medium mb-4" style={{ color: 'var(--color-secondary)' }}>Seu Token.Web() foi emitido!</p>}
+          {passed && !certified && certifyError && (
+            <p className="mb-4 text-sm" style={{ color: 'var(--color-error)' }}>{certifyError}</p>
+          )}
           {!passed && <p className="mb-4" style={{ color: 'var(--color-text-dim)' }}>Revise o conteúdo e tente novamente.</p>}
           <div className="flex gap-3 justify-center">
             {!passed && <button onClick={() => { setPhase('intro'); setScore(null); }} className="btn-primary">Tentar Novamente</button>}
@@ -409,47 +416,30 @@ function MatchingQuestion({ question, answer, showFeedback, onAnswer }: {
   );
 }
 
-async function issueCertification(userId: string, specialtyCode: string, displayName: string): Promise<void> {
-  const { data: existing } = await supabase
-    .from('certifications')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('level', specialtyCode === 'AP034' ? 'fundamental' : 'advanced')
-    .eq('status', 'active')
-    .maybeSingle();
-  if (existing) return;
+async function requestCertification(userId: string, specialtyCode: string): Promise<{ code?: string; error?: string }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { error: 'Sessão expirada.' };
 
-  const { data: specialty } = await supabase
-    .from('specialties')
-    .select('id, curriculum_version_id, curriculum_versions!inner(code, version)')
-    .eq('code', specialtyCode)
-    .maybeSingle();
-  if (!specialty) {
-    console.error('issueCertification: specialty not found for code', specialtyCode);
-    return;
+  try {
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/issue-certification`;
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        specialtyCode,
+        level: specialtyCode === 'AP034' ? 'fundamental' : 'advanced',
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) return { error: data.error };
+
+    await logActivity(userId, 'certification_issued', { certCode: data.code, specialtyCode }, undefined, 'certification');
+    return { code: data.code };
+  } catch {
+    return { error: 'Erro de conexão ao emitir certificado.' };
   }
-
-  const certCode = `TW-${specialtyCode}-${Date.now().toString(36).toUpperCase()}`;
-  const hash = btoa(`${userId}:${specialtyCode}:${Date.now()}`).replace(/=/g, '');
-  const signature = btoa(`${displayName}:${specialtyCode}`).replace(/=/g, '');
-
-  const cv = (specialty as any).curriculum_versions;
-  const { error } = await supabase.from('certifications').insert({
-    user_id: userId,
-    specialty_id: specialty.id,
-    code: certCode,
-    hash,
-    signature,
-    level: specialtyCode === 'AP034' ? 'fundamental' : 'advanced',
-    curriculum_code: cv?.code || 'web-foundation',
-    curriculum_version: cv?.version || '1.0',
-    status: 'active',
-  });
-
-  if (error) {
-    console.error('issueCertification: insert failed:', error);
-    return;
-  }
-
-  await logActivity(userId, 'certification_issued', { certCode, specialtyCode }, undefined, 'certification');
 }

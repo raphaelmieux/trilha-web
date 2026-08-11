@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Shield, Users, Award, Settings, AlertCircle } from 'lucide-react';
+import { Shield, Users, Award, Settings, AlertCircle, KeyRound, Copy, X } from 'lucide-react';
 
 export default function AdminPage() {
   const { profile } = useAuth();
   const [stats, setStats] = useState({ users: 0, certifications: 0, events: 0 });
   const [users, setUsers] = useState<any[]>([]);
   const [certs, setCerts] = useState<any[]>([]);
+  const [resetTarget, setResetTarget] = useState<{ email: string; password?: string; error?: string; loading?: boolean } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!profile?.is_admin) return;
@@ -39,6 +41,38 @@ export default function AdminPage() {
       </div>
     );
   }
+
+  const handleResetPassword = async (email: string) => {
+    setResetTarget({ email, loading: true });
+    setCopied(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-reset-password`;
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setResetTarget({ email, error: data.error || 'Erro ao redefinir senha.' });
+        return;
+      }
+      setResetTarget({ email, password: data.password });
+    } catch {
+      setResetTarget({ email, error: 'Erro de conexão. Tente novamente.' });
+    }
+  };
+
+  const copyPassword = () => {
+    if (!resetTarget?.password) return;
+    navigator.clipboard.writeText(resetTarget.password);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleRevoke = async (certId: string) => {
     const reason = prompt('Motivo da revogação (apenas por fraude técnica comprovada ou erro sistêmico):');
@@ -88,7 +122,7 @@ export default function AdminPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <Th>Nome</Th><Th>E-mail</Th><Th>Clube</Th><Th>Admin</Th><Th>Criado em</Th>
+              <Th>Nome</Th><Th>E-mail</Th><Th>Clube</Th><Th>Admin</Th><Th>Criado em</Th><Th>Ação</Th>
             </tr></thead>
             <tbody>
               {users.map((u) => (
@@ -98,6 +132,11 @@ export default function AdminPage() {
                   <td className="py-2" style={{ color: 'var(--color-text-muted)' }}>{u.club || '-'}</td>
                   <td className="py-2" style={{ color: 'var(--color-text-muted)' }}>{u.is_admin ? 'Sim' : 'Não'}</td>
                   <td className="py-2 text-xs" style={{ color: 'var(--color-text-faint)' }}>{new Date(u.created_at).toLocaleDateString('pt-BR')}</td>
+                  <td className="py-2">
+                    <button onClick={() => handleResetPassword(u.email)} className="text-xs hover:underline flex items-center gap-1" style={{ color: 'var(--color-tertiary-light)' }}>
+                      <KeyRound className="w-3 h-3" /> Redefinir senha
+                    </button>
+                  </td>
                 </Tr>
               ))}
             </tbody>
@@ -139,6 +178,38 @@ export default function AdminPage() {
           </table>
         </div>
       </div>
+
+      {resetTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          <div className="card p-6 max-w-sm w-full relative">
+            <button onClick={() => setResetTarget(null)} className="absolute top-3 right-3" style={{ color: 'var(--color-text-faint)' }}>
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="font-bold mb-1">Redefinir senha</h3>
+            <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>{resetTarget.email}</p>
+            {resetTarget.loading && <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>Gerando nova senha...</p>}
+            {resetTarget.error && (
+              <p className="text-sm flex items-center gap-1" style={{ color: 'var(--color-error)' }}>
+                <AlertCircle className="w-4 h-4" /> {resetTarget.error}
+              </p>
+            )}
+            {resetTarget.password && (
+              <>
+                <div className="flex items-center gap-2 p-3 rounded-lg mb-3" style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
+                  <KeyRound className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-secondary)' }} />
+                  <code className="text-base font-mono font-bold flex-1" style={{ color: 'var(--color-text)' }}>{resetTarget.password}</code>
+                  <button onClick={copyPassword} className="btn-secondary text-xs px-2 py-1">
+                    <Copy className="w-3 h-3" /> {copied ? 'Copiado!' : 'Copiar'}
+                  </button>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
+                  Repasse esta senha ao usuário por um canal confiável (pessoalmente, por exemplo).
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -32,6 +32,27 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Autenticação necessária." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user: caller }, error: callerError } = await supabaseAuth.auth.getUser();
+    if (callerError || !caller) {
+      return new Response(JSON.stringify({ error: "Sessão inválida." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { userId, specialtyCode, level } = await req.json();
 
     if (!userId || !specialtyCode || !level) {
@@ -41,10 +62,21 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    if (caller.id !== userId) {
+      const { data: callerProfile } = await supabase
+        .from("user_profiles")
+        .select("is_admin")
+        .eq("id", caller.id)
+        .maybeSingle();
+      if (!callerProfile?.is_admin) {
+        return new Response(JSON.stringify({ error: "Não autorizado a emitir certificação para este usuário." }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     // Check if certification already exists
     const { data: existing } = await supabase
@@ -61,7 +93,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // For advanced level, check fundamental certification exists
+    // For advanced level, check fundamental certification exists first
     if (level === "advanced") {
       const { data: fundamental } = await supabase
         .from("certifications")
@@ -77,38 +109,6 @@ Deno.serve(async (req: Request) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-
-      // Verify all requirements are completed
-      const { data: specialty } = await supabase
-        .from("specialties")
-        .select("id, code")
-        .eq("code", specialtyCode)
-        .maybeSingle();
-
-      if (specialty) {
-        const { data: requirements } = await supabase
-          .from("requirements")
-          .select("id, code")
-          .eq("specialty_id", specialty.id);
-
-        if (requirements) {
-          for (const req of requirements) {
-            const { data: prog } = await supabase
-              .from("requirement_progress")
-              .select("status")
-              .eq("user_id", userId)
-              .eq("requirement_id", req.id)
-              .maybeSingle();
-
-            if (!prog || prog.status !== "completed") {
-              return new Response(JSON.stringify({ error: `Requirement ${req.code} not completed` }), {
-                status: 400,
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-              });
-            }
-          }
-        }
-      }
     }
 
     // Get specialty
@@ -123,6 +123,30 @@ Deno.serve(async (req: Request) => {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Verify all requirements are completed — applies to every level, not just advanced.
+    const { data: requirements } = await supabase
+      .from("requirements")
+      .select("id, code")
+      .eq("specialty_id", specialty.id);
+
+    if (requirements) {
+      for (const req of requirements) {
+        const { data: prog } = await supabase
+          .from("requirement_progress")
+          .select("status")
+          .eq("user_id", userId)
+          .eq("requirement_id", req.id)
+          .maybeSingle();
+
+        if (!prog || prog.status !== "completed") {
+          return new Response(JSON.stringify({ error: `Requirement ${req.code} not completed` }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
     }
 
     // Generate code and hash
@@ -177,11 +201,6 @@ Deno.serve(async (req: Request) => {
     }
 
     // Create snapshot
-    const { data: requirements } = await supabase
-      .from("requirements")
-      .select("code, title, description")
-      .eq("specialty_id", specialty.id);
-
     const { data: progressData } = await supabase
       .from("requirement_progress")
       .select("*, requirements(code)")
