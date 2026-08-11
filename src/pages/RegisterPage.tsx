@@ -1,0 +1,93 @@
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { Compass } from 'lucide-react';
+
+export default function RegisterPage() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [club, setClub] = useState('');
+  const [unit, setUnit] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+    if (signUpError || !data.user) {
+      setError(signUpError?.message || 'Erro ao cadastrar');
+      setLoading(false);
+      return;
+    }
+
+    const { error: profileError } = await supabase.from('user_profiles').insert({
+      id: data.user.id,
+      email,
+      display_name: displayName,
+      club: club || null,
+      unit: unit || null,
+      public_name_form: 'full',
+      terms_version: '1.0',
+      terms_accepted_at: new Date().toISOString(),
+    });
+
+    if (profileError) {
+      setError('Conta criada, mas erro ao salvar perfil: ' + profileError.message);
+      setLoading(false);
+      return;
+    }
+
+    navigate('/');
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 py-8">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 mb-2">
+            <Compass className="w-8 h-8" style={{ color: 'var(--color-primary)' }} />
+            <h1 className="text-3xl font-bold" style={{ color: 'var(--color-primary)' }}>Trilha.Web()</h1>
+          </div>
+          <p style={{ color: 'var(--color-text-dim)' }}>Crie sua conta</p>
+        </div>
+        <div className="card">
+          <h2 className="text-xl font-bold mb-4">Cadastro</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Nome completo</label>
+              <input value={displayName} onChange={e => setDisplayName(e.target.value)} required className="input-field" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>E-mail</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="input-field" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Senha</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="input-field" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Clube (opcional)</label>
+              <input value={club} onChange={e => setClub(e.target.value)} className="input-field" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Unidade (opcional)</label>
+              <input value={unit} onChange={e => setUnit(e.target.value)} className="input-field" />
+            </div>
+            {error && <p className="text-sm" style={{ color: 'var(--color-primary)' }}>{error}</p>}
+            <button type="submit" disabled={loading} className="btn-primary w-full">
+              {loading ? 'Cadastrando...' : 'Cadastrar'}
+            </button>
+          </form>
+          <p className="text-sm mt-4 text-center" style={{ color: 'var(--color-text-dim)' }}>
+            Já tem conta? <Link to="/login" className="font-medium" style={{ color: 'var(--color-primary)' }}>Entrar</Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

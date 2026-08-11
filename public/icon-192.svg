@@ -1,0 +1,7 @@
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" rx="32" fill="#0B6E4F"/>
+  <circle cx="96" cy="96" r="50" fill="none" stroke="#F2B705" stroke-width="4"/>
+  <path d="M96 46 L96 96 L136 96" fill="none" stroke="#F2B705" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="96" cy="96" r="6" fill="#F2B705"/>
+  <text x="96" y="160" text-anchor="middle" fill="white" font-size="14" font-weight="bold" font-family="sans-serif">Trilha.Web()</text>
+</svg>
