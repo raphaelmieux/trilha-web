@@ -1,5 +1,11 @@
 const CACHE_NAME = 'trilha-web-v1';
-const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.svg', '/icon-512.svg'];
+// Resolved relative to this script's own URL so the cache list is correct whether
+// the app is served from the domain root or a GitHub Pages subpath (/trilha-web/).
+const SCOPE = new URL('.', self.location).href;
+const STATIC_ASSETS = ['', 'index.html', 'manifest.json', 'icon-192.svg', 'icon-512.svg'].map(
+  (path) => new URL(path, SCOPE).href
+);
+const INDEX_URL = new URL('index.html', SCOPE).href;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -33,7 +39,7 @@ self.addEventListener('fetch', (event) => {
         return response;
       }).catch(() => {
         if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match(INDEX_URL);
         }
       });
     })

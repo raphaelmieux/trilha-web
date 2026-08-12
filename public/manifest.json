@@ -2,20 +2,21 @@
   "name": "Trilha.Web()",
   "short_name": "Trilha.Web",
   "description": "Plataforma de aprendizagem autônoma para as especialidades AP034 e AP035",
-  "start_url": "/",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
-  "background_color": "#F8FAFC",
-  "theme_color": "#0B6E4F",
+  "background_color": "#000000",
+  "theme_color": "#C13516",
   "orientation": "any",
   "icons": [
     {
-      "src": "/icon-192.svg",
+      "src": "./icon-192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.svg",
+      "src": "./icon-512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"

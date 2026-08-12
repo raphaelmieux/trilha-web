@@ -45,11 +45,13 @@ export default function LessonPage() {
     setScore(null);
   }, [lessonCode]);
 
+  // Hooks must run unconditionally on every render, so this stays above the
+  // "not found" early return below (it previously ran after it).
+  const questions = useMemo(() => (lesson?.questions || []).map(shuffleQuestionOptions), [lesson]);
+
   if (!specialty || !moduleData || !lesson || !profile) {
     return <div style={{ color: 'var(--color-text-muted)' }}>Lição não encontrada. <Link to="/" style={{ color: 'var(--color-primary)' }}>Voltar</Link></div>;
   }
-
-  const questions = useMemo(() => (lesson.questions || []).map(shuffleQuestionOptions), [lesson]);
 
   if (lesson.labType === 'final_exam') {
     return <FinalExam specialtyCode={specialty.code} specialtyName={specialty.name} userId={profile.id} />;
