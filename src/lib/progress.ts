@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { evaluateBadges } from './gamification';
 import type { RequirementStatus } from '../types';
 
 export interface RequirementProgress {
@@ -116,6 +117,7 @@ export async function upsertRequirementProgress(
     }, { onConflict: 'user_id,requirement_id' });
 
   if (error) console.error('upsertRequirementProgress error:', error);
+  else evaluateBadges(userId).catch(() => {});
 }
 
 export async function logActivity(
@@ -175,6 +177,7 @@ export async function updateEnrollmentActivity(userId: string, specialtyId: stri
       .from('enrollments')
       .update({ xp: (existing.xp || 0) + 10, streak_days: streak, last_activity_date: today })
       .eq('id', existing.id);
+    evaluateBadges(userId).catch(() => {});
   }
 }
 

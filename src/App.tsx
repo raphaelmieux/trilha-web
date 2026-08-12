@@ -11,7 +11,8 @@ import VerifyPage from './pages/VerifyPage';
 import CertificatePage from './pages/CertificatePage';
 import AdminPage from './pages/AdminPage';
 import ProfilePage from './pages/ProfilePage';
-import { LogOut, Home, BookOpen, FileText, Trophy, ShieldCheck, User } from 'lucide-react';
+import LeaderboardPage from './pages/LeaderboardPage';
+import { LogOut, Home, BookOpen, FileText, Trophy, ShieldCheck, User, Medal } from 'lucide-react';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -44,6 +45,7 @@ function NavBar() {
             { to: '/', label: 'Início', icon: Home, exact: true },
             { to: '/especialidade/AP034', label: 'Trilhas', icon: BookOpen, exact: false },
             { to: '/relatorio', label: 'Relatório', icon: FileText, exact: false },
+            { to: '/ranking', label: 'Ranking', icon: Medal, exact: false },
             { to: '/verificar', label: 'Verificar', icon: Trophy, exact: false },
             { to: '/perfil', label: 'Perfil', icon: User, exact: false },
           ].map(({ to, label, icon: Icon, exact }) => {
@@ -99,6 +101,7 @@ function AppRoutes() {
         <Route path="/especialidade/:code" element={<ProtectedRoute><SpecialtyPage /></ProtectedRoute>} />
         <Route path="/licao/:specialtyCode/:moduleCode/:lessonCode" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
         <Route path="/relatorio" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
+        <Route path="/ranking" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/verificar" element={<VerifyPage />} />

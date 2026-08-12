@@ -6,16 +6,18 @@ import { getSpecialty } from '../curriculum';
 import { getProgressPercent } from '../lib/progress';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
+import { useBadges } from '../hooks/useBadges';
 import { getPublicName } from '../types';
 import { franchiseConfig } from '../config/franchise';
 import ProgressBar from '../components/ui/ProgressBar';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
-import { Lock, Trophy, Flame, Star, CheckCircle2, Circle, Clock, Award, FileText, ArrowRight } from 'lucide-react';
+import { Lock, Trophy, Flame, Star, CheckCircle2, Circle, Clock, Award, FileText, ArrowRight, Medal } from 'lucide-react';
 
 export default function DashboardPage() {
   const { profile } = useAuth();
   const { progress } = useRequirementProgress(profile?.id);
   const { certifications } = useCertifications(profile?.id);
+  const { badges } = useBadges(profile?.id);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [recentEvents, setRecentEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,6 +66,10 @@ export default function DashboardPage() {
             <Flame className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
             <div><span className="font-bold">{streak}</span> <span className="text-sm" style={{ color: 'var(--color-text-dim)' }}>dias</span></div>
           </div>
+          <Link to="/perfil" className="card px-4 py-2 flex items-center gap-2 transition hover:opacity-80">
+            <Medal className="w-5 h-5" style={{ color: 'var(--color-tertiary-light)' }} />
+            <div><span className="font-bold">{badges.length}</span> <span className="text-sm" style={{ color: 'var(--color-text-dim)' }}>badges</span></div>
+          </Link>
         </div>
       </div>
 

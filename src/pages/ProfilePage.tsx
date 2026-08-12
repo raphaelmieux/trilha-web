@@ -2,7 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { User, Lock, Eye, EyeOff, Camera, Shield, Save, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useBadges } from '../hooks/useBadges';
+import BadgeIcon from '../components/ui/BadgeIcon';
+import { LoadingState, EmptyState } from '../components/ui/PageState';
+import { User, Lock, Eye, EyeOff, Camera, Shield, Save, CheckCircle2, AlertCircle, Medal, Trophy } from 'lucide-react';
 
 type PrivacyForm = 'full' | 'first' | 'initials' | 'anonymous';
 
@@ -10,6 +13,7 @@ export default function ProfilePage() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { badges, loading: badgesLoading } = useBadges(profile?.id);
 
   const [displayName, setDisplayName] = useState('');
   const [club, setClub] = useState('');
@@ -17,6 +21,8 @@ export default function ProfilePage() {
   const [privacy, setPrivacy] = useState<PrivacyForm>('full');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [showOnLeaderboard, setShowOnLeaderboard] = useState(false);
+  const [savingLeaderboard, setSavingLeaderboard] = useState(false);
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -38,7 +44,28 @@ export default function ProfilePage() {
     }
   }, [profile]);
 
+  useEffect(() => {
+    if (!profile) return;
+    (async () => {
+      const { data } = await supabase
+        .from('privacy_preferences')
+        .select('show_on_leaderboard')
+        .eq('user_id', profile.id)
+        .maybeSingle();
+      setShowOnLeaderboard(data?.show_on_leaderboard || false);
+    })();
+  }, [profile]);
+
   if (!profile) return null;
+
+  const handleToggleLeaderboard = async (value: boolean) => {
+    setSavingLeaderboard(true);
+    setShowOnLeaderboard(value);
+    await supabase
+      .from('privacy_preferences')
+      .upsert({ user_id: profile.id, show_on_leaderboard: value }, { onConflict: 'user_id' });
+    setSavingLeaderboard(false);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -257,6 +284,53 @@ export default function ProfilePage() {
         <button onClick={handleSaveProfile} disabled={savingProfile} className="btn-primary mt-4">
           <Save className="w-4 h-4 mr-1" /> Salvar Preferências
         </button>
+
+        <div className="mt-6 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <label className="flex items-center justify-between gap-4 cursor-pointer">
+            <div>
+              <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>Aparecer no ranking</p>
+              <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
+                Mostra seu nome (respeitando a opção acima), XP e conquistas na página de Ranking. Desativado por padrão.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={showOnLeaderboard}
+              disabled={savingLeaderboard}
+              onChange={e => handleToggleLeaderboard(e.target.checked)}
+              className="w-5 h-5 flex-shrink-0"
+              style={{ accentColor: 'var(--color-primary)' }}
+            />
+          </label>
+        </div>
+      </div>
+
+      {/* Badges */}
+      <div className="card p-6">
+        <h2 className="font-bold mb-4 flex items-center gap-2">
+          <Medal className="w-5 h-5" style={{ color: 'var(--color-secondary)' }} /> Minhas Conquistas
+        </h2>
+        {badgesLoading ? (
+          <LoadingState />
+        ) : badges.length === 0 ? (
+          <EmptyState
+            icon={<Trophy className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-border-hover)' }} />}
+            title="Nenhuma conquista ainda"
+            description="Complete lições, laboratórios e mantenha sua sequência para ganhar badges."
+          />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {badges.map(badge => (
+              <div key={badge.id} className="flex flex-col items-center text-center gap-2">
+                <BadgeIcon badge={badge} size="lg" />
+                <div>
+                  <p className="text-xs font-semibold" style={{ color: 'var(--color-text)' }}>{badge.name}</p>
+                  <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>{badge.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Session info */}
