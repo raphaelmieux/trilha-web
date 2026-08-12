@@ -12,7 +12,8 @@ import CertificatePage from './pages/CertificatePage';
 import AdminPage from './pages/AdminPage';
 import ProfilePage from './pages/ProfilePage';
 import LeaderboardPage from './pages/LeaderboardPage';
-import { LogOut, Home, BookOpen, FileText, Trophy, ShieldCheck, User, Medal } from 'lucide-react';
+import { useState } from 'react';
+import { LogOut, Home, BookOpen, FileText, Trophy, ShieldCheck, User, Medal, Menu, X } from 'lucide-react';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -25,13 +26,25 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+const NAV_ITEMS = [
+  { to: '/', label: 'Início', icon: Home, exact: true },
+  { to: '/especialidade/AP034', label: 'Trilhas', icon: BookOpen, exact: false },
+  { to: '/relatorio', label: 'Relatório', icon: FileText, exact: false },
+  { to: '/ranking', label: 'Ranking', icon: Medal, exact: false },
+  { to: '/verificar', label: 'Verificar', icon: Trophy, exact: false },
+  { to: '/perfil', label: 'Perfil', icon: User, exact: false },
+];
+
 function NavBar() {
   const { session, profile, signOut } = useAuth();
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
   if (!session) return null;
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + '/');
+
+  const linkColor = (active: boolean) => ({ color: active ? 'var(--color-primary)' : 'var(--color-text-muted)' });
 
   return (
     <nav className="no-print sticky top-0 z-50" style={{ backgroundColor: 'var(--color-bg-input)', borderBottom: '1px solid var(--color-border)' }}>
@@ -40,23 +53,11 @@ function NavBar() {
           <span className="text-lg tracking-tight">Trilha.Web()</span>
         </Link>
 
-        <div className="flex items-center gap-5">
-          {[
-            { to: '/', label: 'Início', icon: Home, exact: true },
-            { to: '/especialidade/AP034', label: 'Trilhas', icon: BookOpen, exact: false },
-            { to: '/relatorio', label: 'Relatório', icon: FileText, exact: false },
-            { to: '/ranking', label: 'Ranking', icon: Medal, exact: false },
-            { to: '/verificar', label: 'Verificar', icon: Trophy, exact: false },
-            { to: '/perfil', label: 'Perfil', icon: User, exact: false },
-          ].map(({ to, label, icon: Icon, exact }) => {
+        <div className="hidden md:flex items-center gap-5">
+          {NAV_ITEMS.map(({ to, label, icon: Icon, exact }) => {
             const active = exact ? location.pathname === to : isActive(to);
             return (
-              <Link
-                key={to}
-                to={to}
-                className="text-sm flex items-center gap-1.5 transition-colors"
-                style={{ color: active ? 'var(--color-primary)' : 'var(--color-text-muted)' }}
-              >
+              <Link key={to} to={to} className="text-sm flex items-center gap-1.5 transition-colors" style={linkColor(active)}>
                 <Icon className="w-4 h-4" />
                 <span>{label}</span>
               </Link>
@@ -64,8 +65,7 @@ function NavBar() {
           })}
 
           {profile?.is_admin && (
-            <Link to="/admin" className="text-sm flex items-center gap-1.5 transition-colors"
-              style={{ color: isActive('/admin') ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+            <Link to="/admin" className="text-sm flex items-center gap-1.5 transition-colors" style={linkColor(isActive('/admin'))}>
               <ShieldCheck className="w-4 h-4" /> Admin
             </Link>
           )}
@@ -85,7 +85,48 @@ function NavBar() {
             </div>
           )}
         </div>
+
+        <button
+          className="md:hidden p-2 rounded-lg"
+          style={{ color: 'var(--color-text-muted)' }}
+          onClick={() => setMenuOpen(open => !open)}
+          aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+          aria-expanded={menuOpen}
+        >
+          {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
       </div>
+
+      {menuOpen && (
+        <div className="md:hidden px-4 pb-3 flex flex-col gap-1" style={{ borderTop: '1px solid var(--color-border)' }}>
+          {NAV_ITEMS.map(({ to, label, icon: Icon, exact }) => {
+            const active = exact ? location.pathname === to : isActive(to);
+            return (
+              <Link key={to} to={to} onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-2 py-2.5 rounded-lg text-sm font-medium"
+                style={{ ...linkColor(active), backgroundColor: active ? 'var(--color-primary-a10)' : 'transparent' }}>
+                <Icon className="w-4 h-4" /> {label}
+              </Link>
+            );
+          })}
+          {profile?.is_admin && (
+            <Link to="/admin" onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2 px-2 py-2.5 rounded-lg text-sm font-medium"
+              style={{ ...linkColor(isActive('/admin')), backgroundColor: isActive('/admin') ? 'var(--color-primary-a10)' : 'transparent' }}>
+              <ShieldCheck className="w-4 h-4" /> Admin
+            </Link>
+          )}
+          {profile && (
+            <button
+              onClick={() => { setMenuOpen(false); signOut(); }}
+              className="flex items-center gap-2 px-2 py-2.5 rounded-lg text-sm font-medium text-left"
+              style={{ color: 'var(--color-text-dim)', borderTop: '1px solid var(--color-border)', marginTop: '0.25rem', paddingTop: '0.75rem' }}
+            >
+              <LogOut className="w-4 h-4" /> Sair ({profile.display_name?.split(' ')[0]})
+            </button>
+          )}
+        </div>
+      )}
     </nav>
   );
 }
