@@ -101,7 +101,7 @@ export default function ReportPage() {
         code: specialty.code,
         name: specialty.name,
         level: specialty.level === 'fundamental' ? 'Fundamental' : 'Avançado',
-        emblem: `/assets/specialties/${specialty.code}.svg`,
+        emblem: `${import.meta.env.BASE_URL}assets/specialties/${specialty.code}.svg`,
         overallPercent,
         totalReqs,
         completedReqs,

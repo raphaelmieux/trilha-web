@@ -42,7 +42,7 @@ export default function SpecialtyPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
-          <img src={`/assets/specialties/${specialty.code}.svg`} alt={specialty.code} className="w-14 h-14" />
+          <img src={`${import.meta.env.BASE_URL}assets/specialties/${specialty.code}.svg`} alt={specialty.code} className="w-14 h-14" />
           <div>
             <h1 className="text-2xl font-bold">{specialty.name}</h1>
             <p style={{ color: 'var(--color-text-dim)' }}>{specialty.description}</p>

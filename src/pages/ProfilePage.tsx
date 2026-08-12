@@ -5,7 +5,8 @@ import { supabase } from '../lib/supabase';
 import { useBadges } from '../hooks/useBadges';
 import BadgeIcon from '../components/ui/BadgeIcon';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
-import { User, Lock, Eye, EyeOff, Camera, Shield, Save, CheckCircle2, AlertCircle, Medal, Trophy } from 'lucide-react';
+import { SECURITY_QUESTIONS, hashSecurityAnswer } from '../lib/securityQuestions';
+import { User, Lock, Eye, EyeOff, Camera, Shield, Save, CheckCircle2, AlertCircle, Medal, Trophy, KeyRound } from 'lucide-react';
 
 type PrivacyForm = 'full' | 'first' | 'initials' | 'anonymous';
 
@@ -27,6 +28,11 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const [securityQuestion, setSecurityQuestion] = useState(SECURITY_QUESTIONS[0].code);
+  const [securityAnswer, setSecurityAnswer] = useState('');
+  const [savingSecurity, setSavingSecurity] = useState(false);
+  const [securitySaved, setSecuritySaved] = useState(false);
 
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
@@ -135,6 +141,36 @@ export default function ProfilePage() {
       setError(err.message || 'Erro ao alterar senha.');
     } finally {
       setSavingPassword(false);
+    }
+  };
+
+  const handleSaveSecurityQuestion = async () => {
+    setSavingSecurity(true);
+    setError('');
+    setSecuritySaved(false);
+
+    if (securityAnswer.trim().length < 2) {
+      setError('Digite uma resposta para a pergunta de segurança.');
+      setSavingSecurity(false);
+      return;
+    }
+
+    try {
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({
+          security_question_code: securityQuestion,
+          security_answer_hash: await hashSecurityAnswer(securityAnswer),
+        })
+        .eq('id', profile.id);
+      if (updateError) throw updateError;
+      setSecurityAnswer('');
+      setSecuritySaved(true);
+      setTimeout(() => setSecuritySaved(false), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao salvar pergunta de segurança.');
+    } finally {
+      setSavingSecurity(false);
     }
   };
 
@@ -253,6 +289,37 @@ export default function ProfilePage() {
         {passwordSaved && (
           <span className="ml-3 text-sm inline-flex items-center gap-1" style={{ color: 'var(--color-success)' }}>
             <CheckCircle2 className="w-4 h-4" /> Senha alterada com sucesso!
+          </span>
+        )}
+      </div>
+
+      {/* Security question */}
+      <div className="card p-6">
+        <h2 className="font-bold mb-2 flex items-center gap-2">
+          <KeyRound className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> Pergunta de Segurança
+        </h2>
+        <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
+          Usada para redefinir sua senha sozinho(a) em <strong style={{ color: 'var(--color-text)' }}>Esqueci minha senha</strong>,
+          sem depender de um administrador. Preencher de novo substitui a pergunta/resposta atual.
+        </p>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Pergunta</label>
+            <select value={securityQuestion} onChange={e => setSecurityQuestion(e.target.value)} className="input-field">
+              {SECURITY_QUESTIONS.map(q => <option key={q.code} value={q.code}>{q.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Resposta</label>
+            <input value={securityAnswer} onChange={e => setSecurityAnswer(e.target.value)} className="input-field" placeholder="Digite para definir ou atualizar" />
+          </div>
+        </div>
+        <button onClick={handleSaveSecurityQuestion} disabled={savingSecurity} className="btn-primary mt-4">
+          <Save className="w-4 h-4 mr-1" /> {savingSecurity ? 'Salvando...' : 'Salvar Pergunta de Segurança'}
+        </button>
+        {securitySaved && (
+          <span className="ml-3 text-sm inline-flex items-center gap-1" style={{ color: 'var(--color-success)' }}>
+            <CheckCircle2 className="w-4 h-4" /> Pergunta de segurança salva!
           </span>
         )}
       </div>

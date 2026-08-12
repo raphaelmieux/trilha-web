@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getSpecialty } from '../curriculum';
 import { getPublicName, type Certification, type PublicProfile } from '../types';
-import { Printer, ArrowLeft } from 'lucide-react';
+import { Printer, ArrowLeft, Compass, Award } from 'lucide-react';
 import StatusBadge from '../components/ui/StatusBadge';
 import { LoadingState, ErrorState } from '../components/ui/PageState';
 
@@ -54,12 +54,8 @@ export default function CertificatePage() {
   const specialty = getSpecialty(cert.curriculum_code);
   const specialtyCode = cert.curriculum_code;
   const specialtyTitle = specialty?.name || cert.curriculum_code;
-  const isAP035 = specialtyCode === 'AP035';
-
-  // Background files maintain native 1263 × 893 ratio
-  const bgImage = isAP035
-    ? '/assets/certificates/Token.Web(AP035).png'
-    : '/assets/certificates/Token.Web(AP034).png';
+  const emblemSrc = `${import.meta.env.BASE_URL}assets/specialties/${specialtyCode}.svg`;
+  const levelLabel = cert.level === 'advanced' ? 'Nível Avançado' : 'Nível Fundamental';
 
   const issuedDate = new Date(cert.issued_at).toLocaleDateString('pt-BR', {
     day: '2-digit', month: 'long', year: 'numeric',
@@ -80,129 +76,84 @@ export default function CertificatePage() {
         </button>
       </div>
 
-      {/* Certificate canvas */}
+      {/* Certificate canvas — drawn entirely in HTML/CSS with the brand palette,
+          so it never depends on an external background image. */}
       <div className="cert-container">
-        {/*
-          Aspect ratio locked to background image native resolution: 1263 × 893.
-          All text positions use percentage units so they scale with the container.
-          Background is set to 100%×100% cover to maintain pixel-perfect fidelity.
-        */}
         <div
           className="cert-wrapper relative w-full select-none"
           style={{
-            maxWidth: '1263px',
+            maxWidth: '1000px',
             margin: '0 auto',
-            aspectRatio: '1263 / 893',
-            backgroundImage: `url("${bgImage}")`,
-            backgroundSize: '100% 100%',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center center',
+            aspectRatio: '1.42 / 1',
+            background: '#fbf9f5',
+            border: '10px solid #C13516',
+            boxShadow: 'inset 0 0 0 3px #F5A623, inset 0 0 0 6px #C13516',
+            padding: '3.5% 6%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
           }}
         >
-          {/* ── "Este documento certifica que" ── */}
-          <div
-            className="absolute left-0 right-0 text-center"
-            style={{ top: '24.5%' }}
-          >
-            <p style={{
-              fontFamily: "'Arial', 'Helvetica', sans-serif",
-              fontSize: 'clamp(11px, 1.65vw, 21px)',
-              fontWeight: 400,
-              color: '#111111',
-              letterSpacing: '0.03em',
-            }}>
-              Este documento certifica que
-            </p>
+          <div className="flex items-center gap-2" style={{ color: '#C13516' }}>
+            <Compass className="w-5 h-5" />
+            <span style={{ fontFamily: "'Arial', 'Helvetica', sans-serif", fontWeight: 700, fontSize: 'clamp(11px, 1.4vw, 15px)', letterSpacing: '0.08em' }}>
+              TRILHA.WEB() — TOKEN.WEB()
+            </span>
           </div>
 
-          {/* ── Student name ── */}
-          <div
-            className="absolute left-0 right-0 text-center"
-            style={{ top: '30%', padding: '0 7%' }}
-          >
-            <p style={{
-              fontFamily: "'Georgia', 'Times New Roman', serif",
-              fontSize: 'clamp(22px, 5.2vw, 66px)',
-              fontWeight: 700,
-              color: '#0a0a0a',
-              lineHeight: 1.05,
-              letterSpacing: '-0.015em',
-            }}>
-              {studentName}
-            </p>
+          <img src={emblemSrc} alt={specialtyCode} style={{ width: 'clamp(48px, 9vw, 90px)', height: 'auto', margin: 'clamp(10px, 2vw, 20px) 0' }} />
+
+          <p style={{ fontFamily: "'Arial', 'Helvetica', sans-serif", fontSize: 'clamp(11px, 1.5vw, 18px)', color: '#3a3a3a', letterSpacing: '0.03em' }}>
+            Este documento certifica que
+          </p>
+
+          <p style={{
+            fontFamily: "'Georgia', 'Times New Roman', serif",
+            fontSize: 'clamp(24px, 4.6vw, 52px)',
+            fontWeight: 700,
+            color: '#1a1006',
+            lineHeight: 1.1,
+            margin: 'clamp(6px, 1vw, 12px) 0',
+          }}>
+            {studentName}
+          </p>
+
+          <p style={{ fontFamily: "'Arial', 'Helvetica', sans-serif", fontSize: 'clamp(11px, 1.5vw, 18px)', color: '#3a3a3a', letterSpacing: '0.02em', maxWidth: '80%' }}>
+            concluiu com sucesso a trilha de aprendizagem da especialidade
+          </p>
+
+          <p style={{
+            fontFamily: "'Arial', 'Helvetica', sans-serif",
+            fontSize: 'clamp(17px, 3vw, 34px)',
+            fontWeight: 800,
+            color: '#C13516',
+            margin: 'clamp(8px, 1.2vw, 14px) 0 2px',
+          }}>
+            {specialtyCode} — {specialtyTitle}
+          </p>
+          <p style={{ fontFamily: "'Arial', 'Helvetica', sans-serif", fontSize: 'clamp(10px, 1.2vw, 14px)', color: '#8a6a2a', fontWeight: 600, letterSpacing: '0.05em' }}>
+            {levelLabel}
+          </p>
+
+          <div className="flex items-center gap-3" style={{ margin: 'clamp(14px, 2vw, 22px) 0', width: '55%', maxWidth: '340px' }}>
+            <span style={{ flex: 1, height: 1, background: '#C13516AA' }} />
+            <Award className="w-5 h-5" style={{ color: '#F5A623' }} />
+            <span style={{ flex: 1, height: 1, background: '#C13516AA' }} />
           </div>
 
-          {/* ── "terminou com sucesso a Trilha.Web() da especialidade" ── */}
-          <div
-            className="absolute left-0 right-0 text-center"
-            style={{ top: '49%' }}
-          >
-            <p style={{
-              fontFamily: "'Arial', 'Helvetica', sans-serif",
-              fontSize: 'clamp(10px, 1.65vw, 21px)',
-              fontWeight: 400,
-              color: '#111111',
-              letterSpacing: '0.02em',
-            }}>
-              terminou com sucesso a Trilha.Web() da especialidade
-            </p>
-          </div>
-
-          {/* ── Specialty code (bold) + name (regular) ── */}
-          <div
-            className="absolute left-0 right-0 text-center"
-            style={{ top: '55.5%', padding: '0 5%' }}
-          >
-            <p style={{
-              fontFamily: "'Arial Black', 'Arial', 'Helvetica', sans-serif",
-              fontSize: 'clamp(20px, 5.0vw, 63px)',
-              lineHeight: 1.0,
-              color: '#0a0a0a',
-              letterSpacing: '-0.01em',
-              whiteSpace: 'nowrap',
-            }}>
-              <strong style={{ fontWeight: 900 }}>{specialtyCode}</strong>
-              {' '}
-              <span style={{ fontWeight: 400, fontFamily: "'Arial', 'Helvetica', sans-serif" }}>{specialtyTitle}</span>
-            </p>
-          </div>
-
-          {/* ── Bottom-left: cert code + verify URL ── */}
-          <div
-            className="absolute text-left"
-            style={{ bottom: '3.5%', left: '2.5%', maxWidth: '50%' }}
-          >
-            <p style={{
-              fontFamily: "'Courier New', 'Courier', monospace",
-              fontSize: 'clamp(5.5px, 0.75vw, 9.5px)',
-              color: '#1a1a1a',
-              lineHeight: 1.6,
-              wordBreak: 'break-all',
-            }}>
-              {cert.code}
-            </p>
-            <p style={{
-              fontFamily: "'Courier New', 'Courier', monospace",
-              fontSize: 'clamp(5.5px, 0.75vw, 9.5px)',
-              color: '#1a1a1a',
-              lineHeight: 1.5,
-            }}>
-              verifique a validade em {verifyUrl}
-            </p>
-          </div>
-
-          {/* ── Bottom-right: issue date ── */}
-          <div
-            className="absolute text-right"
-            style={{ bottom: '3.5%', right: '2.5%' }}
-          >
-            <p style={{
-              fontFamily: "'Arial', 'Helvetica', sans-serif",
-              fontSize: 'clamp(6px, 0.85vw, 11px)',
-              color: '#1a1a1a',
-              fontWeight: 500,
-            }}>
-              {issuedDate}
+          <div className="flex items-end justify-between w-full" style={{ marginTop: 'auto' }}>
+            <div className="text-left">
+              <p style={{ fontFamily: "'Courier New', 'Courier', monospace", fontSize: 'clamp(7px, 0.9vw, 10px)', color: '#555', lineHeight: 1.6, wordBreak: 'break-all' }}>
+                {cert.code}
+              </p>
+              <p style={{ fontFamily: "'Courier New', 'Courier', monospace", fontSize: 'clamp(7px, 0.9vw, 10px)', color: '#555', lineHeight: 1.5 }}>
+                verifique a validade em {verifyUrl}
+              </p>
+            </div>
+            <p style={{ fontFamily: "'Arial', 'Helvetica', sans-serif", fontSize: 'clamp(9px, 1vw, 12px)', color: '#3a3a3a', fontWeight: 600 }}>
+              Emitido em {issuedDate}
             </p>
           </div>
         </div>

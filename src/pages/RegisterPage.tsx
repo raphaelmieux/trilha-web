@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { SECURITY_QUESTIONS, hashSecurityAnswer } from '../lib/securityQuestions';
 import { Compass } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -10,6 +11,8 @@ export default function RegisterPage() {
   const [displayName, setDisplayName] = useState('');
   const [club, setClub] = useState('');
   const [unit, setUnit] = useState('');
+  const [securityQuestion, setSecurityQuestion] = useState(SECURITY_QUESTIONS[0].code);
+  const [securityAnswer, setSecurityAnswer] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -34,6 +37,8 @@ export default function RegisterPage() {
       public_name_form: 'full',
       terms_version: '1.0',
       terms_accepted_at: new Date().toISOString(),
+      security_question_code: securityQuestion,
+      security_answer_hash: await hashSecurityAnswer(securityAnswer),
     });
 
     if (profileError) {
@@ -77,6 +82,17 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Unidade (opcional)</label>
               <input value={unit} onChange={e => setUnit(e.target.value)} className="input-field" />
+            </div>
+            <div className="pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+              <p className="text-xs mb-3" style={{ color: 'var(--color-text-dim)' }}>
+                Usado para redefinir sua senha sozinho(a), caso esqueça — guarde a resposta em local seguro.
+              </p>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Pergunta de segurança</label>
+              <select value={securityQuestion} onChange={e => setSecurityQuestion(e.target.value)} className="input-field mb-3">
+                {SECURITY_QUESTIONS.map(q => <option key={q.code} value={q.code}>{q.label}</option>)}
+              </select>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Sua resposta</label>
+              <input value={securityAnswer} onChange={e => setSecurityAnswer(e.target.value)} required minLength={2} className="input-field" />
             </div>
             {error && <p className="text-sm" style={{ color: 'var(--color-primary)' }}>{error}</p>}
             <button type="submit" disabled={loading} className="btn-primary w-full">

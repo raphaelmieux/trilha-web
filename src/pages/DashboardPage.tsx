@@ -82,7 +82,7 @@ export default function DashboardPage() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <h2 className="text-xl font-bold flex items-center gap-2">
-                <img src="/assets/specialties/AP034.svg" alt="AP034" className="w-8 h-8" />
+                <img src={`${import.meta.env.BASE_URL}assets/specialties/AP034.svg`} alt="AP034" className="w-8 h-8" />
                 AP034 — Internet
               </h2>
               <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>Nível Fundamental</p>
@@ -118,7 +118,7 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h2 className="text-xl font-bold flex items-center gap-2">
-                  <img src="/assets/specialties/AP035.svg" alt="AP035" className="w-8 h-8" />
+                  <img src={`${import.meta.env.BASE_URL}assets/specialties/AP035.svg`} alt="AP035" className="w-8 h-8" />
                   AP035 — Internet, Avançado
                 </h2>
                 <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>Nível Avançado</p>
