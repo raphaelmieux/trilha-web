@@ -192,25 +192,210 @@
   .print-border-dark { border-color: #888 !important; }
   .print-border-light { border-color: #ddd !important; }
 
-  .cert-container {
-    box-shadow: none !important;
-    border: none !important;
-    border-radius: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
+  /* The certificate is a single full-bleed A4 landscape sheet. Every ancestor has
+     to lose its own padding/max-width, otherwise the browser shrinks the sheet to
+     fit inside the app's normal centered column and leaves white margins. */
+  body.printing-certificate,
+  body.printing-certificate #root,
+  body.printing-certificate #root > div,
+  body.printing-certificate #root > div > div,
+  body.printing-report #root > div > div {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+    width: auto !important;
+    min-height: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .cert-page {
+    width: 297mm;
+    height: 210mm;
+    margin: 0;
+    padding: 0;
+    page-break-inside: avoid;
+  }
+
+  /* Standalone certificate view: one sheet, nothing else on the page. */
+  body.printing-certificate .cert-page {
+    position: absolute;
+    top: 0;
+    left: 0;
     page-break-after: avoid;
   }
 
-  .cert-wrapper {
-    box-shadow: none !important;
-    border: none !important;
-    max-width: 100% !important;
-    width: 100% !important;
-    aspect-ratio: 1263 / 893 !important;
+  .cert-page .cert-svg {
+    display: block;
+    width: 297mm;
+    height: 210mm;
+    max-width: none;
+    box-shadow: none;
   }
 
+  /* The report is a portrait document; the certificates attached to the end of it
+     are landscape. Named pages let a single print job mix both orientations. */
   @page {
-    size: landscape;
+    size: A4 portrait;
+    margin: 18mm 16mm;
+  }
+
+  @page cert-sheet {
+    size: A4 landscape;
     margin: 0;
   }
+
+  .cert-attachment {
+    page: cert-sheet;
+    page-break-before: always;
+  }
+
+  body.printing-certificate {
+    /* No portrait content at all in this view. */
+  }
+
+  body.printing-certificate .cert-page {
+    page: cert-sheet;
+  }
+
+  /* ── Report document in print ── */
+  .report-doc {
+    max-width: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+    font-size: 11.5pt;
+    line-height: 1.65;
+  }
+
+  .report-doc h1,
+  .report-doc h2,
+  .report-doc strong { color: #000000 !important; }
+
+  .report-doc p { color: #1a1a1a !important; }
+
+  .report-head { border-bottom-color: #C13516 !important; }
+  .report-section h2 { border-bottom-color: #bbbbbb !important; }
+  .report-id { border-bottom-color: #bbbbbb !important; }
+  .report-sign { border-top-color: #bbbbbb !important; }
+  .report-sign-rule { border-top-color: #555555 !important; }
+
+  .report-section { page-break-inside: avoid; }
+  .report-sign { page-break-inside: avoid; }
+}
+
+/* Certificate — screen presentation. The SVG carries its own aspect ratio via the
+   viewBox, so it only needs a max width and centering here. */
+.cert-page .cert-svg {
+  display: block;
+  width: 100%;
+  max-width: 1100px;
+  height: auto;
+  margin: 0 auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* ───── Competency report — reads as a document, not a dashboard ───── */
+.report-doc {
+  max-width: 820px;
+  margin: 0 auto;
+  line-height: 1.75;
+}
+
+.report-head {
+  text-align: center;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.report-head h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+}
+
+.report-sub {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-top: 0.25rem;
+}
+
+.report-id {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem 1.5rem;
+  font-size: 0.92rem;
+  color: var(--color-text-soft);
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.report-id strong {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.report-body p {
+  color: var(--color-text-soft);
+  margin-bottom: 1rem;
+  text-align: justify;
+  hyphens: auto;
+}
+
+.report-section {
+  margin-top: 1.75rem;
+}
+
+.report-section h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.report-sign {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.report-sign-note {
+  font-size: 0.85rem;
+  color: var(--color-text-dim);
+  margin-bottom: 2.5rem;
+}
+
+.report-sign-lines {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+.report-sign-rule {
+  display: block;
+  border-top: 1px solid var(--color-text-faint);
+  margin-bottom: 0.4rem;
+}
+
+.report-sign-lines p {
+  font-size: 0.8rem;
+  color: var(--color-text-dim);
+}
+
+.report-annex-note {
+  margin-top: 2rem;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--color-text-dim);
+}
+
+@media (max-width: 640px) {
+  .report-id { grid-template-columns: minmax(0, 1fr); }
+  .report-sign-lines { grid-template-columns: minmax(0, 1fr); }
 }
