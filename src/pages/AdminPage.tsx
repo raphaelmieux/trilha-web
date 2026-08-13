@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Shield, Users, Award, Settings, AlertCircle, KeyRound, Copy, X } from 'lucide-react';
@@ -96,9 +97,14 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold flex items-center gap-2">
-        <Shield className="w-6 h-6" style={{ color: 'var(--color-primary)' }} /> Painel Administrativo
-      </h1>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Shield className="w-6 h-6" style={{ color: 'var(--color-primary)' }} /> Painel Administrativo
+        </h1>
+        <Link to="/admin/certificados" className="btn-primary">
+          <Award className="w-4 h-4 mr-1" /> Certificados emitidos
+        </Link>
+      </div>
 
       <div className="grid md:grid-cols-3 gap-4">
         <div className="card p-4">

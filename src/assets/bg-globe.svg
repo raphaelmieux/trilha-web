@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" width="1200" height="1200">
+  <g fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round">
+    <circle cx="600" cy="600" r="430" />
+    <ellipse cx="600" cy="600" rx="397.3" ry="430" />
+    <ellipse cx="600" cy="600" rx="304.1" ry="430" />
+    <ellipse cx="600" cy="600" rx="164.6" ry="430" />
+    <line x1="600" y1="170" x2="600" y2="1030" />
+    <ellipse cx="600" cy="997.3" rx="164.6" ry="19.7" />
+    <ellipse cx="600" cy="904.1" rx="304.1" ry="36.5" />
+    <ellipse cx="600" cy="764.6" rx="397.3" ry="47.7" />
+    <line x1="170" y1="600" x2="1030" y2="600" />
+    <ellipse cx="600" cy="435.4" rx="397.3" ry="47.7" />
+    <ellipse cx="600" cy="295.9" rx="304.1" ry="36.5" />
+    <ellipse cx="600" cy="202.7" rx="164.6" ry="19.7" />
+    <path d="M 269.5 418.3 Q 357.9 244.9 547.8 220.3" />
+    <path d="M 547.8 220.3 Q 675.0 292.8 759.5 540.2" />
+    <path d="M 759.5 540.2 Q 919.1 714.4 909.2 827.9" />
+    <path d="M 909.2 827.9 Q 1005.5 568.8 922.2 323.6" />
+    <path d="M 415.1 919.6 Q 367.6 904.9 429.2 747.1" />
+    <path d="M 429.2 747.1 Q 582.9 732.9 759.5 540.2" />
+    <path d="M 612.8 1004.1 Q 726.5 852.6 759.5 540.2" />
+    <path d="M 178.1 637.5 Q 135.4 510.9 269.5 418.3" />
+    <path d="M 758.5 247.8 Q 895.0 214.2 922.2 323.6" />
+    <path d="M 547.8 220.3 Q 666.1 145.0 758.5 247.8" />
+    <path d="M 415.1 919.6 Q 219.0 824.2 178.1 637.5" />
+    <path d="M 612.8 1004.1 Q 801.9 996.2 909.2 827.9" />
+  </g>
+  <g>
+    <circle cx="269.5" cy="418.3" r="7" fill="#ffffff" stroke="none" />
+    <circle cx="547.8" cy="220.3" r="7" fill="#ffffff" stroke="none" />
+    <circle cx="759.5" cy="540.2" r="7" fill="#ffffff" stroke="none" />
+    <circle cx="909.2" cy="827.9" r="7" fill="#ffffff" stroke="none" />
+    <circle cx="415.1" cy="919.6" r="7" fill="#ffffff" stroke="none" />
+    <circle cx="922.2" cy="323.6" r="7" fill="#ffffff" stroke="none" />
+    <circle cx="612.8" cy="1004.1" r="7" fill="#ffffff" stroke="none" />
+    <circle cx="178.1" cy="637.5" r="7" fill="#ffffff" stroke="none" />
+    <circle cx="758.5" cy="247.8" r="7" fill="#ffffff" stroke="none" />
+    <circle cx="429.2" cy="747.1" r="7" fill="#ffffff" stroke="none" />
+  </g>
+</svg>

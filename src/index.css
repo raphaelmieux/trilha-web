@@ -90,6 +90,49 @@
     color: var(--color-text);
   }
 
+  /* Ambient globe/network texture behind the whole app. It is a fixed layer so it
+     stays put while content scrolls, and it sits at z-index 0 with the app shell
+     lifted to 1 — putting it at -1 instead would hide it behind the body's own
+     background colour. Kept at very low opacity: it should read as texture, never
+     compete with text. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: url('./assets/bg-globe.svg');
+    background-repeat: no-repeat;
+    background-position: center 45%;
+    background-size: min(115vh, 115vw) auto;
+    /* Measured, not guessed: against the pure-black page background this puts the
+       strokes at roughly RGB 16 — visible as texture, still well below the card
+       surface (#111) and border (#2a2a2a) so it never competes with content. */
+    opacity: 0.18;
+  }
+
+  /* Soft radial vignette so the texture fades toward the edges instead of ending
+     on a hard circle. */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse at center 45%,
+      transparent 0%,
+      transparent 45%,
+      var(--color-bg) 85%
+    );
+    opacity: 0.75;
+  }
+
+  #root {
+    position: relative;
+    z-index: 1;
+  }
+
   h1, h2, h3, h4 {
     @apply text-neutral-100;
   }
@@ -171,6 +214,13 @@
     background: #ffffff !important;
     background-image: none !important;
     color: #111111 !important;
+  }
+
+  /* The ambient globe texture is screen-only: on paper it would print as grey
+     smudges over the document and waste toner. */
+  body::before,
+  body::after {
+    display: none !important;
   }
 
   .card {

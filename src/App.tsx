@@ -10,6 +10,7 @@ import ReportPage from './pages/ReportPage';
 import VerifyPage from './pages/VerifyPage';
 import CertificatePage from './pages/CertificatePage';
 import AdminPage from './pages/AdminPage';
+import AdminCertificatesPage from './pages/AdminCertificatesPage';
 import ProfilePage from './pages/ProfilePage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import { useState } from 'react';
@@ -144,6 +145,7 @@ function AppRoutes() {
         <Route path="/relatorio" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
         <Route path="/ranking" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+        <Route path="/admin/certificados" element={<ProtectedRoute><AdminCertificatesPage /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/verificar" element={<VerifyPage />} />
         <Route path="/certificado/:code" element={<CertificatePage />} />
@@ -157,7 +159,9 @@ export default function App() {
   return (
     <AuthProvider>
       <HashRouter>
-        <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
+        {/* No background colour here: body already paints it, and an opaque layer
+            at this level would hide the ambient globe texture behind the app. */}
+        <div className="min-h-screen">
           <NavBar />
           <AppRoutes />
         </div>
