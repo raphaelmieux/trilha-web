@@ -933,29 +933,39 @@ const content_5L1 = `
 
 const content_6L1 = `
 <h2 class="text-xl font-bold mb-3">Navegação e Pesquisa na Internet</h2>
-<p class="mb-3">Navegar na Internet significa usar um <strong>navegador web</strong> para acessar páginas, sites e serviços online. A pesquisa é a habilidade de usar <strong>motores de busca</strong> para encontrar informações relevantes.</p>
+<p class="mb-3">Navegar é usar um <strong>navegador</strong> para chegar a uma página. Antes de clicar em qualquer coisa, vale aprender a ler o endereço — é ele que diz para onde você está indo de verdade.</p>
 
-<h3 class="font-bold mt-4 mb-2">Como navegar com segurança</h3>
+<h3 class="font-bold mt-4 mb-2">As quatro partes de um endereço</h3>
+<p class="mb-2">Em <code>https://www.bibliaonline.com.br/acf/fp/4?versiculo=8</code>:</p>
 <ul class="list-disc list-inside space-y-1 mb-3">
-  <li>Verifique se o site usa HTTPS (cadeado na barra de endereço)</li>
-  <li>Desconfie de sites com erros de português ou aparência suspeita</li>
-  <li>Não baixe arquivos de sites não confiáveis</li>
-  <li>Use favoritos para sites que você visita frequentemente</li>
+  <li><strong>https://</strong> — o protocolo. O "s" é de seguro: a conversa vai criptografada. Sem ele, qualquer pessoa na mesma rede lê o que você digitar.</li>
+  <li><strong>www.bibliaonline.com.br</strong> — o nome do site. O que importa é a última parte antes do domínio de topo: <em>bibliaonline</em>.</li>
+  <li><strong>/acf/fp/4</strong> — o caminho, isto é, qual página dentro do site.</li>
+  <li><strong>?versiculo=8</strong> — a consulta, os dados que a página recebe.</li>
 </ul>
 
-<h3 class="font-bold mt-4 mb-2">Como pesquisar eficientemente</h3>
+<h3 class="font-bold mt-4 mb-2">Como reconhecer um impostor</h3>
+<p class="mb-2">Golpes por e-mail funcionam porque o endereço parece certo de relance. Três sinais denunciam:</p>
 <ul class="list-disc list-inside space-y-1 mb-3">
-  <li>Use palavras-chave específicas (ex: "Filipenses 4:8 significado" em vez de só "Bíblia")</li>
-  <li>Use aspas para frases exatas: "tudo o que é verdadeiro"</li>
-  <li>Filtre por tipo de conteúdo (imagens, vídeos, notícias)</li>
-  <li>Verifique a fonte: prefira sites confiáveis e institucionais</li>
+  <li><strong>A marca no lugar errado.</strong> Em <code>bancodobrasil.acesso-cliente.net</code> o site de verdade é <em>acesso-cliente.net</em>. O nome que vale é o que vem logo antes do domínio de topo, nunca o que vem antes dele.</li>
+  <li><strong>Um número no lugar do nome.</strong> Nenhum serviço sério pede login em <code>https://192.168.0.15</code>.</li>
+  <li><strong>Letras de outro alfabeto.</strong> Um "а" cirílico é idêntico ao nosso "a" na tela, e transforma um endereço conhecido em outro completamente diferente.</li>
 </ul>
 
-<h3 class="font-bold mt-4 mb-2">Downloads seguros</h3>
+<h3 class="font-bold mt-4 mb-2">Pesquisar com precisão</h3>
+<p class="mb-2">Palavras soltas devolvem milhares de páginas. Três operadores reduzem isso a poucas:</p>
 <ul class="list-disc list-inside space-y-1 mb-3">
-  <li>Baixe apenas de sites oficiais ou lojas confiáveis</li>
-  <li>Verifique a extensão do arquivo (.pdf, .jpg são seguros; .exe requer cuidado)</li>
-  <li>Escanee arquivos baixados com o antivírus antes de abrir</li>
+  <li><code>"tudo o que é verdadeiro"</code> — as aspas prendem a expressão exata, nessa ordem.</li>
+  <li><code>site:bibliaonline.com.br</code> — procura só dentro daquele site.</li>
+  <li><code>-venda</code> — o sinal de menos descarta as páginas que trazem aquela palavra.</li>
+</ul>
+
+<h3 class="font-bold mt-4 mb-2">Downloads: olhe a última extensão</h3>
+<ul class="list-disc list-inside space-y-1 mb-3">
+  <li><strong>Conteúdo</strong> (.pdf, .jpg, .mp3): abre num leitor e não roda sozinho.</li>
+  <li><strong>Programa</strong> (.exe, .msi, .apk): roda no seu computador e pode fazer o que quiser lá dentro. Só do site oficial de quem o fez.</li>
+  <li><strong>Pacote</strong> (.zip, .rar): só dá para saber o que tem dentro depois de abrir.</li>
+  <li><strong>O disfarce mais comum:</strong> <code>biblia-completa.pdf.exe</code>. Como o Windows esconde a última extensão, na tela aparece só "biblia-completa.pdf" — mas é um programa.</li>
 </ul>
 `;
 

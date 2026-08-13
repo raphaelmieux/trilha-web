@@ -1,109 +1,271 @@
-import { useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { getPublicName } from '../types';
 import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId } from '../lib/progress';
-import { Globe, RotateCw, Search, Download, CheckCircle2, AlertCircle, Home, Lock, ShieldCheck, FileText } from 'lucide-react';
+import {
+  parseAddress, assessAddress, analyzeQuery, buildSearchUrl, assessDownload,
+  type RiskLevel,
+} from '../lib/webSkills';
+import { exportStudySheetPdf } from '../lib/pdf';
+import {
+  Globe, Link2, ShieldCheck, Search, FileDown, CheckCircle2, AlertCircle,
+  ExternalLink, Lock, Unlock, Download, RotateCcw,
+} from 'lucide-react';
 
 interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
 
-interface SimSite {
-  url: string;
-  title: string;
-  secure: boolean;
-  content: string;
-}
+/**
+ * WebLab — requirement AP034-6.1: navigate, search a biblical subject, download
+ * a file.
+ *
+ * The old lab simulated all three. Five buttons set a string; the search
+ * returned a hard-coded list keyed on the word "bíblia"; the download appended a
+ * filename to an array. A student could finish it without reading an address.
+ *
+ * Here the address bar runs the browser's own URL parser, the phishing verdicts
+ * come from stated rules in src/lib/webSkills.ts, the query is tokenised the way
+ * a search engine tokenises it and then opened for real, and the download is a
+ * PDF of the student's own findings — generated, not pretended.
+ */
 
-const sites: SimSite[] = [
-  { url: 'https://www.google.com', title: 'Google', secure: true, content: 'Motor de busca — digite sua consulta na barra de pesquisa abaixo.' },
-  { url: 'https://www.youtube.com', title: 'YouTube', secure: true, content: 'Plataforma de vídeos — streaming de mídia.' },
-  { url: 'https://www.bibliaonline.com.br', title: 'Bíblia Online', secure: true, content: 'Bíblia completa online — pesquise versículos.' },
-  { url: 'https://pt.wikipedia.org', title: 'Wikipédia', secure: true, content: 'Enciclopédia livre — pesquise qualquer tema.' },
-  { url: 'http://site-inseguro.exemplo.com', title: 'Site Inseguro (HTTP)', secure: false, content: 'Este site usa HTTP sem criptografia. Os dados não estão protegidos!' },
+interface Check { id: string; label: string; passed: boolean; hint: string }
+
+const SUBJECT = 'Filipenses 4:8 — "tudo o que é verdadeiro"';
+
+/** Addresses to judge. The verdicts are computed, never stored alongside them. */
+const SUSPECTS = [
+  'https://www.bibliaonline.com.br/acf/fp/4',
+  'http://login.meuclube-desbravadores.com/entrar',
+  'https://bancodobrasil.acesso-cliente.net/login',
+  'https://pt.wikipedia.org/wiki/Bíblia',
+  'https://192.168.0.15/webmail',
+  'https://nubank-atualizacao.com/seguranca',
 ];
 
-const searchResults: Record<string, { title: string; url: string; snippet: string }[]> = {
-  'bíblia': [
-    { title: 'Bíblia Online — Versículos e Pesquisa', url: 'https://www.bibliaonline.com.br', snippet: 'A Bíblia completa online com pesquisa por versículos...' },
-    { title: 'Filipenses 4:8 — Bíblia', url: 'https://www.bibliaonline.com.br/filipenses/4/8', snippet: 'Tudo o que é verdadeiro, tudo o que é honesto, tudo o que é justo...' },
-    { title: 'Estudos Bíblicos', url: 'https://pt.wikipedia.org/wiki/Bíblia', snippet: 'A Bíblia é uma coleção de textos sagrados do cristianismo...' },
-  ],
-  'internet': [
-    { title: 'Internet — Wikipédia', url: 'https://pt.wikipedia.org/wiki/Internet', snippet: 'A Internet é uma rede global de computadores interconectados...' },
-    { title: 'História da Internet', url: 'https://pt.wikipedia.org/wiki/História_da_Internet', snippet: 'A ARPANET foi a precursora da Internet moderna...' },
-  ],
-};
+const FILES = [
+  'estudo-filipenses-4.pdf',
+  'foto-do-acampamento.jpg',
+  'biblia-completa.pdf.exe',
+  'hinario-adventista.zip',
+  'leitor-de-biblia-gratis.exe',
+];
+
+const RISK_ANSWERS: { level: RiskLevel; label: string }[] = [
+  { level: 'seguro', label: 'Baixo tranquilo' },
+  { level: 'atencao', label: 'Baixo com cuidado' },
+  { level: 'perigoso', label: 'Não baixo' },
+];
 
 export default function WebLab({ specialtyCode, requirementCodes, userId }: Props) {
-  const [currentUrl, setCurrentUrl] = useState('');
-  const [currentSite, setCurrentSite] = useState<SimSite | null>(null);
-  const [visitedSites, setVisitedSites] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchRes, setSearchSearchRes] = useState<typeof searchResults[string] | null>(null);
-  const [downloadedFiles, setDownloadedFiles] = useState<string[]>([]);
-  const [securityAnswer, setSecurityAnswer] = useState<boolean | null>(null);
-  const [securityQuestion, setSecurityQuestion] = useState<string | null>(null);
+  const { profile } = useAuth();
+  const studentName = profile ? getPublicName(profile) : 'Desbravador(a)';
+
   const [completed, setCompleted] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const visit = (site: SimSite) => {
-    setCurrentUrl(site.url);
-    setCurrentSite(site);
-    setVisitedSites(prev => new Set([...prev, site.url]));
-    if (!site.secure) {
-      setSecurityQuestion(site.url);
-      setSecurityAnswer(null);
-    } else {
-      setSecurityQuestion(null);
-    }
-  };
+  /* ── 1. Anatomia do endereço ────────────────────────────────────────────── */
+  const [typed, setTyped] = useState('');
+  const address = useMemo(() => parseAddress(typed), [typed]);
 
-  const search = () => {
-    if (!searchQuery.trim()) return;
-    const key = searchQuery.toLowerCase().trim();
-    const results = searchResults[key] || [
-      { title: `${searchQuery} — Resultado`, url: `https://exemplo.com/${key}`, snippet: `Informações sobre ${searchQuery}...` },
-      { title: `${searchQuery} — Guia`, url: `https://guia.com/${key}`, snippet: `Guia completo sobre ${searchQuery}...` },
-    ];
-    setSearchSearchRes(results);
-  };
+  // What the student typed as the host, before the parser touched it. A mismatch
+  // means the name was rewritten — the tell for a lookalike written in another
+  // alphabet, which the browser silently converts to punycode.
+  const typedHost = useMemo(() => {
+    const match = /^[a-z][a-z0-9+.-]*:\/\/([^/?#]*)/i.exec(typed.trim());
+    if (!match) return '';
+    return (match[1].split('@').pop() ?? '').replace(/:\d+$/, '').replace(/\.$/, '').toLowerCase();
+  }, [typed]);
 
-  const download = (filename: string) => {
-    if (!downloadedFiles.includes(filename)) {
-      setDownloadedFiles(prev => [...prev, filename]);
-    }
-  };
-
-  const tasks = [
-    { id: 'visit', label: 'Visitar pelo menos 3 sites', done: visitedSites.size >= 3 },
-    { id: 'search', label: 'Fazer uma busca (ex: "Bíblia")', done: searchRes !== null },
-    { id: 'download', label: 'Fazer um download', done: downloadedFiles.length > 0 },
-    { id: 'security', label: 'Identificar site inseguro corretamente', done: securityAnswer === false },
+  const addressChecks: Check[] = [
+    {
+      id: 'end-valido', label: 'O endereço é válido e começa pelo protocolo',
+      passed: address.valid,
+      hint: address.error ?? 'Um endereço completo começa por https:// — sem isso o navegador não sabe como falar com o site.',
+    },
+    {
+      id: 'end-https', label: 'Usa https, a versão com cadeado',
+      passed: address.valid && address.secure,
+      hint: 'Troque http:// por https://. O "s" é de seguro: sem ele tudo trafega em texto aberto.',
+    },
+    {
+      id: 'end-caminho', label: 'Aponta para uma página, não só para a porta de entrada',
+      passed: address.valid && address.path.replace(/\/+$/, '').length > 0,
+      hint: 'Acrescente um caminho depois do nome do site, por exemplo /acf/fp/4 — é ele que diz qual página abrir.',
+    },
+    {
+      id: 'end-consulta', label: 'Leva uma consulta depois do ponto de interrogação',
+      passed: address.valid && address.query.length > 0,
+      hint: 'Acrescente algo como ?versiculo=8. Depois do "?" vêm os dados que a página recebe.',
+    },
   ];
-  const allDone = tasks.every(t => t.done);
+
+  /* ── 2. Cadeado e impostores ────────────────────────────────────────────── */
+  /**
+   * Two records on purpose. `judged` is what the student currently thinks, and
+   * they may change it as often as they like — the explanation appears on every
+   * answer, so changing it is how the learning happens. `firstJudged` keeps the
+   * answer they gave *before* reading that explanation, and that is what counts.
+   * Without it the check would only measure whether the student can read the
+   * answer off the screen and click again.
+   */
+  const [judged, setJudged] = useState<Record<string, boolean>>({});
+  const [firstJudged, setFirstJudged] = useState<Record<string, boolean>>({});
+
+  const judge = (url: string, answer: boolean) => {
+    setJudged(p => ({ ...p, [url]: answer }));
+    setFirstJudged(p => (url in p ? p : { ...p, [url]: answer }));
+  };
+
+  const suspectVerdicts = useMemo(
+    () => Object.fromEntries(SUSPECTS.map(u => [u, assessAddress(u)])),
+    [],
+  );
+  const suspectFirstCorrect = SUSPECTS.filter(
+    u => firstJudged[u] !== undefined && firstJudged[u] === (suspectVerdicts[u].level === 'seguro'),
+  ).length;
+  const SUSPECT_PASS_MARK = 4;
+
+  const safetyChecks: Check[] = [
+    {
+      id: 'seg-todos', label: `Os ${SUSPECTS.length} endereços foram classificados`,
+      passed: SUSPECTS.every(u => judged[u] !== undefined),
+      hint: 'Decida, para cada endereço, se você digitaria uma senha nele.',
+    },
+    {
+      id: 'seg-acertos', label: `Acertou ao menos ${SUSPECT_PASS_MARK} de ${SUSPECTS.length} de primeira`,
+      passed: suspectFirstCorrect >= SUSPECT_PASS_MARK,
+      hint: `${suspectFirstCorrect} de ${SUSPECTS.length} na primeira resposta. Vale a primeira, não a corrigida — leia as explicações e use "Recomeçar esta etapa" para tentar de novo.`,
+    },
+  ];
+
+  /* ── 3. Pesquisa ────────────────────────────────────────────────────────── */
+  const [query, setQuery] = useState('');
+  const parsedQuery = useMemo(() => analyzeQuery(query), [query]);
+  const [searchOpened, setSearchOpened] = useState(false);
+  const searchUrl = buildSearchUrl(query);
+
+  const queryChecks: Check[] = [
+    {
+      id: 'q-frase', label: 'Tem uma expressão exata entre aspas',
+      passed: parsedQuery.phrases.length > 0,
+      hint: 'Ponha entre aspas as palavras que devem aparecer juntas e nessa ordem, por exemplo "tudo o que é verdadeiro".',
+    },
+    {
+      id: 'q-site', label: 'Restringe a busca a um site com site:',
+      passed: parsedQuery.sites.length > 0,
+      hint: 'Acrescente site:bibliaonline.com.br para procurar só dentro daquele site.',
+    },
+    {
+      id: 'q-excluir', label: 'Descarta um termo indesejado com o sinal de menos',
+      passed: parsedQuery.exclusions.length > 0,
+      hint: 'Acrescente -venda para tirar dos resultados as páginas que tentam vender alguma coisa.',
+    },
+    {
+      id: 'q-abriu', label: 'A pesquisa foi aberta de verdade',
+      passed: searchOpened,
+      hint: 'Clique em "Pesquisar agora". A busca abre numa aba nova, com o filtro de conteúdo do buscador ligado.',
+    },
+  ];
+
+  /* ── 4. Downloads ───────────────────────────────────────────────────────── */
+  /**
+   * Three answers, not two. A .zip of hymns from the club's own site is neither
+   * safe nor an attack — it is a package whose contents are unknown until it is
+   * opened. Forcing that into "would download / would not" would teach a rule
+   * that is wrong half the time.
+   */
+  const [fileJudged, setFileJudged] = useState<Record<string, RiskLevel>>({});
+  const [fileFirstJudged, setFileFirstJudged] = useState<Record<string, RiskLevel>>({});
+
+  const judgeFile = (name: string, answer: RiskLevel) => {
+    setFileJudged(p => ({ ...p, [name]: answer }));
+    setFileFirstJudged(p => (name in p ? p : { ...p, [name]: answer }));
+  };
+
+  const fileVerdicts = useMemo(
+    () => Object.fromEntries(FILES.map(f => [f, assessDownload(f)])),
+    [],
+  );
+  const filesFirstCorrect = FILES.filter(
+    f => fileFirstJudged[f] !== undefined && fileFirstJudged[f] === fileVerdicts[f].level,
+  ).length;
+  const FILE_PASS_MARK = 4;
+  const [sheetSaved, setSheetSaved] = useState(false);
+
+  const downloadChecks: Check[] = [
+    {
+      id: 'dl-todos', label: `Os ${FILES.length} arquivos foram avaliados`,
+      passed: FILES.every(f => fileJudged[f] !== undefined),
+      hint: 'Decida, para cada arquivo, se você o baixaria.',
+    },
+    {
+      id: 'dl-acertos', label: `Acertou ao menos ${FILE_PASS_MARK} de ${FILES.length} de primeira`,
+      passed: filesFirstCorrect >= FILE_PASS_MARK,
+      hint: `${filesFirstCorrect} de ${FILES.length} na primeira resposta. Olhe sempre a última extensão do nome — é ela que manda.`,
+    },
+    {
+      id: 'dl-ficha', label: 'Baixou a ficha de pesquisa em PDF',
+      passed: sheetSaved,
+      hint: 'A ficha reúne a consulta que você montou e a sua análise dos endereços e dos arquivos.',
+    },
+  ];
+
+  const allChecks = [...addressChecks, ...safetyChecks, ...queryChecks, ...downloadChecks];
+  const passedCount = allChecks.filter(c => c.passed).length;
+  const allPassed = passedCount === allChecks.length;
+
+  const openSearch = () => {
+    window.open(searchUrl, '_blank', 'noopener,noreferrer');
+    setSearchOpened(true);
+  };
+
+  const downloadSheet = () => {
+    exportStudySheetPdf({
+      studentName,
+      subject: SUBJECT,
+      query,
+      searchUrl,
+      addresses: SUSPECTS.map(u => ({
+        url: u,
+        verdict: suspectVerdicts[u].findings.map(f => f.message).join(' '),
+      })),
+      downloads: FILES.map(f => ({ name: f, verdict: fileVerdicts[f].message })),
+    });
+    setSheetSaved(true);
+  };
 
   const handleComplete = async () => {
+    setSaving(true);
     const specId = await getSpecialtyId(specialtyCode);
     if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
     for (const reqCode of requirementCodes) {
       const reqId = await getRequirementId(reqCode);
       if (reqId) await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
-        attempts: 1, correct_count: tasks.filter(t => t.done).length, total_questions: tasks.length,
+        attempts: 1,
+        correct_count: suspectFirstCorrect + filesFirstCorrect,
+        total_questions: SUSPECTS.length + FILES.length,
       });
     }
-    await logActivity(userId, 'web_lab_completed', { sitesVisited: visitedSites.size });
+    await logActivity(userId, 'web_lab_completed', {
+      checksPassed: passedCount, total: allChecks.length,
+      enderecosDePrimeira: suspectFirstCorrect, arquivosDePrimeira: filesFirstCorrect,
+    });
     setCompleted(true);
   };
 
   if (completed) {
     return (
-      <div className="space-y-4">
-        <div className="card p-8 text-center">
-          <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
-          <h1 className="text-2xl font-bold mb-2">WebLab Concluído!</h1>
-          <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
-            Você visitou {visitedSites.size} sites, fez uma busca, realizou um download e identificou um site inseguro.
-          </p>
-          <Link to={`/especialidade/${specialtyCode}`} className="btn-primary">Voltar para a Trilha</Link>
-        </div>
+      <div className="card p-8 text-center">
+        <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
+        <h1 className="text-2xl font-bold mb-2">WebLab concluído!</h1>
+        <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
+          Você leu um endereço peça por peça, separou sites legítimos de imitações,
+          montou uma consulta com operadores e a executou de verdade, e levou embora
+          uma ficha em PDF com a sua própria análise.
+        </p>
+        <Link to={`/especialidade/${specialtyCode}`} className="btn-primary">Voltar para a Trilha</Link>
       </div>
     );
   }
@@ -115,128 +277,338 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
           <Globe className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> WebLab — Navegação e Pesquisa
         </h1>
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-          Simule a navegação web: visite sites, faça buscas, realize downloads e identifique conexões seguras.
+          Quatro habilidades de quem usa a internet com autonomia: ler um endereço,
+          reconhecer uma imitação, pesquisar com precisão e decidir o que vale a pena
+          baixar. Os endereços são analisados pelo mesmo interpretador que o navegador
+          usa — o que aparece aqui é o que acontece de verdade.
         </p>
       </div>
 
-      {/* Browser chrome */}
       <div className="card p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Home className="w-4 h-4" style={{ color: 'var(--color-text-dim)' }} />
-          <div className="flex-1 px-3 py-2 rounded-lg text-sm font-mono flex items-center gap-2" style={{ backgroundColor: 'var(--color-bg-input)', color: 'var(--color-text)' }}>
-            {currentUrl ? (
-              <>
-                {currentSite?.secure ? <Lock className="w-3 h-3" style={{ color: 'var(--color-success)' }} /> : <AlertCircle className="w-3 h-3" style={{ color: 'var(--color-error)' }} />}
-                {currentUrl}
-              </>
-            ) : (
-              <span style={{ color: 'var(--color-text-dim)' }}>Início — clique em um site abaixo para visitar</span>
-            )}
-          </div>
-          <RotateCw className="w-4 h-4" style={{ color: 'var(--color-text-dim)' }} />
-        </div>
-
-        {/* Security question for insecure sites */}
-        {securityQuestion && securityAnswer === null && (
-          <div className="rounded-lg p-4 mb-3" style={{ backgroundColor: 'var(--color-error-a10)', border: '1px solid var(--color-error-a20)' }}>
-            <p className="text-sm font-medium mb-2 flex items-center gap-2" style={{ color: 'var(--color-error)' }}>
-              <AlertCircle className="w-4 h-4" /> Este site é seguro para digitar senhas?
-            </p>
-            <div className="flex gap-2">
-              <button onClick={() => setSecurityAnswer(true)} className="btn-secondary text-xs">Sim, é seguro</button>
-              <button onClick={() => setSecurityAnswer(false)} className="btn-primary text-xs">Não, não é seguro</button>
-            </div>
-          </div>
-        )}
-        {securityAnswer === true && (
-          <div className="rounded-lg p-3 mb-3 text-sm" style={{ backgroundColor: 'var(--color-error-a10)', color: 'var(--color-error)' }}>
-            Incorreto! Este site usa HTTP (não HTTPS) — não tem cadeado nem criptografia. Nunca digite senhas em sites sem HTTPS.
-          </div>
-        )}
-        {securityAnswer === false && (
-          <div className="rounded-lg p-3 mb-3 text-sm" style={{ backgroundColor: 'var(--color-success-a10)', color: 'var(--color-success)' }}>
-            Correto! Este site usa HTTP sem criptografia — não é seguro para dados pessoais. Sempre verifique o cadeado e o https://.
-          </div>
-        )}
-
-        {/* Site content or search */}
-        {currentSite && !securityQuestion && (
-          <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--color-bg-input)' }}>
-            <h2 className="font-bold mb-2">{currentSite.title}</h2>
-            <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>{currentSite.content}</p>
-            {currentSite.secure && (
-              <button onClick={() => download(`arquivo_${currentSite.title.toLowerCase().replace(/\s/g, '_')}.pdf`)} className="btn-secondary text-xs">
-                <Download className="w-3 h-3" /> Baixar arquivo desta página
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Site buttons */}
-        <div className="flex gap-2 flex-wrap mt-3">
-          {sites.map(s => (
-            <button key={s.url} onClick={() => visit(s)} className="btn-secondary text-xs flex items-center gap-1">
-              {s.secure ? <ShieldCheck className="w-3 h-3" style={{ color: 'var(--color-success)' }} /> : <AlertCircle className="w-3 h-3" style={{ color: 'var(--color-error)' }} />}
-              {s.title}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="card p-4">
-        <h2 className="font-bold mb-2 flex items-center gap-2">
-          <Search className="w-4 h-4" style={{ color: 'var(--color-primary)' }} /> Busca
-        </h2>
-        <div className="flex gap-2">
-          <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && search()} className="input-field" placeholder="Digite sua busca (ex: Bíblia, Internet)" />
-          <button onClick={search} className="btn-primary">Buscar</button>
-        </div>
-        {searchRes && (
-          <ul className="mt-3 space-y-2">
-            {searchRes.map((r, i) => (
-              <li key={i} className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-bg-input)' }}>
-                <p className="font-medium text-sm" style={{ color: 'var(--color-primary)' }}>{r.title}</p>
-                <p className="text-xs font-mono" style={{ color: 'var(--color-text-dim)' }}>{r.url}</p>
-                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>{r.snippet}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* Downloads */}
-      {downloadedFiles.length > 0 && (
-        <div className="card p-4">
-          <h2 className="font-bold mb-2 flex items-center gap-2">
-            <FileText className="w-4 h-4" style={{ color: 'var(--color-primary)' }} /> Downloads
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h2 className="font-bold flex items-center gap-2">
+            <span style={{ color: allPassed ? 'var(--color-success)' : 'var(--color-text)' }}>
+              {passedCount} de {allChecks.length}
+            </span>
+            <span className="text-sm font-normal" style={{ color: 'var(--color-text-muted)' }}>verificações atendidas</span>
           </h2>
-          <ul className="space-y-1">
-            {downloadedFiles.map(f => (
-              <li key={f} className="text-sm flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
-                <Download className="w-3 h-3" style={{ color: 'var(--color-success)' }} /> {f}
-              </li>
-            ))}
-          </ul>
+          {allPassed && (
+            <button onClick={handleComplete} disabled={saving} className="btn-primary">
+              {saving ? 'Salvando...' : 'Concluir WebLab'}
+            </button>
+          )}
         </div>
-      )}
-
-      {/* Tasks */}
-      <div className="card p-4">
-        <h2 className="font-bold mb-3">Tarefas ({tasks.filter(t => t.done).length}/{tasks.length})</h2>
-        <ul className="space-y-2">
-          {tasks.map(t => (
-            <li key={t.id} className="flex items-center gap-2 text-sm">
-              {t.done ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--color-success)' }} /> : <AlertCircle className="w-4 h-4" style={{ color: 'var(--color-text-faint)' }} />}
-              <span style={{ color: t.done ? 'var(--color-text)' : 'var(--color-text-dim)' }}>{t.label}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="w-full rounded-full h-2 overflow-hidden" style={{ backgroundColor: 'var(--color-bg-hover)' }}>
+          <div
+            className="h-2 rounded-full transition-all duration-300"
+            style={{
+              width: `${(passedCount / allChecks.length) * 100}%`,
+              background: allPassed ? 'var(--color-success)' : 'linear-gradient(90deg, var(--color-primary), var(--color-secondary))',
+            }}
+          />
+        </div>
       </div>
 
-      <button onClick={handleComplete} disabled={!allDone} className="btn-primary w-full">
-        {allDone ? 'Concluir WebLab' : 'Complete todas as tarefas'}
-      </button>
+      {/* ── Etapa 1 ── */}
+      <StageCard title="1. Anatomia de um endereço" icon={Link2} checks={addressChecks}>
+        <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
+          Um endereço não é um nome só: tem protocolo, nome do site, caminho e consulta.
+          Monte um endereço que use as quatro partes — por exemplo, a página do capítulo 4
+          de Filipenses num site de Bíblia — e veja como o navegador o separa.
+        </p>
+
+        <div className="rounded-lg p-2 flex items-center gap-2 mb-3" style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
+          {address.valid && address.secure
+            ? <Lock className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-success)' }} />
+            : <Unlock className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-text-faint)' }} />}
+          <input
+            value={typed}
+            onChange={e => setTyped(e.target.value)}
+            placeholder="https://site.com.br/caminho?chave=valor"
+            className="flex-1 bg-transparent text-sm font-mono outline-none"
+            style={{ color: 'var(--color-text)' }}
+            aria-label="Barra de endereço"
+            spellCheck={false}
+          />
+        </div>
+
+        {address.valid ? (
+          <>
+            <dl className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              <Part label="Protocolo" value={`${address.scheme}://`} note={address.secure ? 'criptografado' : 'sem criptografia'} />
+              <Part label="Subdomínio" value={address.subdomain || '—'} note="a parte antes do nome do site" />
+              <Part label="Nome do site" value={address.domain} note="é este que identifica quem é o dono" />
+              <Part label="Domínio de topo" value={address.tld || '—'} note=".com.br, .org, .gov.br…" />
+              <Part label="Caminho" value={address.path} note="qual página, dentro do site" />
+              <Part
+                label="Consulta"
+                value={address.query.length ? address.query.map(([k, v]) => `${k} = ${v}`).join(' · ') : '—'}
+                note="dados enviados para a página"
+              />
+            </dl>
+            {typedHost !== '' && typedHost !== address.hostname && (
+              <p className="text-xs mt-3 p-2 rounded" style={{ backgroundColor: 'var(--color-warning-a10)', color: 'var(--color-warning)' }}>
+                Atenção: o navegador entendeu o nome como <strong>{address.hostname}</strong>,
+                diferente do que você digitou. É assim que endereços escritos com letras de
+                outro alfabeto se disfarçam.
+              </p>
+            )}
+          </>
+        ) : (
+          typed.trim() && (
+            <p className="text-sm" style={{ color: 'var(--color-error)' }}>{address.error}</p>
+          )
+        )}
+      </StageCard>
+
+      {/* ── Etapa 2 ── */}
+      <StageCard title="2. Onde você digitaria uma senha?" icon={ShieldCheck} checks={safetyChecks}>
+        <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
+          Todos os endereços abaixo chegariam por e-mail sem levantar suspeita, e nem todos
+          são o que parecem. Para cada um, decida: você digitaria a sua senha aí? A
+          explicação aparece depois de responder — e o que conta para a verificação é a
+          sua primeira resposta, antes de ler a explicação.
+        </p>
+
+        {Object.keys(firstJudged).length > 0 && suspectFirstCorrect < SUSPECT_PASS_MARK && (
+          <button
+            onClick={() => { setJudged({}); setFirstJudged({}); }}
+            className="btn-secondary text-xs mb-3"
+          >
+            <RotateCcw className="w-3 h-3 mr-1" /> Recomeçar esta etapa
+          </button>
+        )}
+
+        <ul className="space-y-2">
+          {SUSPECTS.map(url => {
+            const verdict = suspectVerdicts[url];
+            const answer = judged[url];
+            const truth = verdict.level === 'seguro';
+            const answered = answer !== undefined;
+            const right = answered && answer === truth;
+            return (
+              <li
+                key={url}
+                className="p-3 rounded-lg"
+                style={{
+                  backgroundColor: !answered ? 'var(--color-bg-input)'
+                    : right ? 'var(--color-success-a10)' : 'var(--color-error-a10)',
+                  border: `1px solid ${!answered ? 'var(--color-border)' : right ? 'var(--color-success-a20)' : 'var(--color-error-a20)'}`,
+                }}
+              >
+                <p className="font-mono text-xs break-all mb-2" style={{ color: 'var(--color-text)' }}>{url}</p>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => judge(url, true)}
+                    className={answer === true ? 'btn-primary text-xs' : 'btn-secondary text-xs'}
+                  >
+                    Digitaria a senha
+                  </button>
+                  <button
+                    onClick={() => judge(url, false)}
+                    className={answer === false ? 'btn-primary text-xs' : 'btn-secondary text-xs'}
+                  >
+                    Não digitaria
+                  </button>
+                </div>
+                {answered && (
+                  <div className="mt-2 text-xs space-y-1">
+                    <p className="font-bold" style={{ color: right ? 'var(--color-success)' : 'var(--color-error)' }}>
+                      {right ? 'Correto.' : 'Não é isso.'}
+                    </p>
+                    {verdict.findings.map(f => (
+                      <p key={f.code} style={{ color: 'var(--color-text-soft)' }}>{f.message}</p>
+                    ))}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </StageCard>
+
+      {/* ── Etapa 3 ── */}
+      <StageCard title="3. Pesquisar com precisão" icon={Search} checks={queryChecks}>
+        <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
+          Tema da pesquisa: <strong style={{ color: 'var(--color-text)' }}>{SUBJECT}</strong>.
+          Digitar as palavras soltas devolve milhares de páginas. Três operadores mudam isso:
+          aspas prendem uma expressão, <code>site:</code> limita a um site e o sinal de menos
+          descarta o que atrapalha.
+        </p>
+
+        <input
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder='"expressão exata" palavra site:dominio.com.br -indesejado'
+          className="input-field font-mono text-sm mb-3"
+          aria-label="Consulta de pesquisa"
+          spellCheck={false}
+        />
+
+        <div className="grid sm:grid-cols-2 gap-2 text-xs mb-3">
+          <Token label="Expressão exata" items={parsedQuery.phrases} />
+          <Token label="Restrito ao site" items={parsedQuery.sites} />
+          <Token label="Descartado" items={parsedQuery.exclusions} />
+          <Token label="Palavras soltas" items={parsedQuery.terms} />
+        </div>
+
+        <button onClick={openSearch} disabled={!query.trim()} className="btn-primary w-full">
+          <ExternalLink className="w-4 h-4 mr-1" /> Pesquisar agora
+        </button>
+        <p className="text-xs mt-2" style={{ color: 'var(--color-text-dim)' }}>
+          Abre em uma aba nova, num buscador que não guarda histórico e com o filtro de
+          conteúdo adulto ligado.
+        </p>
+      </StageCard>
+
+      {/* ── Etapa 4 ── */}
+      <StageCard title="4. O que vale a pena baixar" icon={FileDown} checks={downloadChecks}>
+        <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
+          A pesquisa levou a uma página com estes arquivos. Um arquivo de conteúdo abre num
+          leitor; um programa roda no seu computador e pode fazer o que quiser lá dentro; e
+          um pacote só revela o que tem depois de aberto. Classifique cada um nos três níveis.
+        </p>
+
+        {Object.keys(fileFirstJudged).length > 0 && filesFirstCorrect < FILE_PASS_MARK && (
+          <button
+            onClick={() => { setFileJudged({}); setFileFirstJudged({}); }}
+            className="btn-secondary text-xs mb-3"
+          >
+            <RotateCcw className="w-3 h-3 mr-1" /> Recomeçar esta etapa
+          </button>
+        )}
+
+        <ul className="space-y-2 mb-4">
+          {FILES.map(name => {
+            const verdict = fileVerdicts[name];
+            const answer = fileJudged[name];
+            const answered = answer !== undefined;
+            const right = answered && answer === verdict.level;
+            return (
+              <li
+                key={name}
+                className="p-3 rounded-lg"
+                style={{
+                  backgroundColor: !answered ? 'var(--color-bg-input)'
+                    : right ? 'var(--color-success-a10)' : 'var(--color-error-a10)',
+                  border: `1px solid ${!answered ? 'var(--color-border)' : right ? 'var(--color-success-a20)' : 'var(--color-error-a20)'}`,
+                }}
+              >
+                <p className="font-mono text-sm break-all mb-2" style={{ color: 'var(--color-text)' }}>{name}</p>
+                <div className="flex gap-2 flex-wrap">
+                  {RISK_ANSWERS.map(option => (
+                    <button
+                      key={option.level}
+                      onClick={() => judgeFile(name, option.level)}
+                      className={answer === option.level ? 'btn-primary text-xs' : 'btn-secondary text-xs'}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                {answered && (
+                  <div className="mt-2 text-xs">
+                    <p className="font-bold" style={{ color: right ? 'var(--color-success)' : 'var(--color-error)' }}>
+                      {right ? 'Correto.' : 'Não é isso.'}
+                    </p>
+                    <p style={{ color: 'var(--color-text-soft)' }}>{verdict.message}</p>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+
+        <button onClick={downloadSheet} className="btn-primary w-full">
+          <Download className="w-4 h-4 mr-1" /> Baixar a ficha de pesquisa (PDF)
+        </button>
+        <p className="text-xs mt-2" style={{ color: 'var(--color-text-dim)' }}>
+          Este é um download de verdade, gerado agora com a consulta que você montou e a sua
+          análise dos endereços e dos arquivos. É o arquivo que o requisito 6.1 pede.
+        </p>
+      </StageCard>
+    </div>
+  );
+}
+
+/* ── Peças de interface ───────────────────────────────────────────────────── */
+
+function StageCard({ title, icon: Icon, checks, children }: {
+  title: string; icon: typeof Globe; checks: Check[]; children: ReactNode;
+}) {
+  const done = checks.filter(c => c.passed).length;
+  const complete = done === checks.length;
+  return (
+    <div className="card p-6">
+      <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
+        <h2 className="font-bold flex items-center gap-2">
+          <span
+            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: complete ? 'var(--color-success-a10)' : 'var(--color-primary-a10)' }}
+          >
+            <Icon className="w-5 h-5" style={{ color: complete ? 'var(--color-success)' : 'var(--color-primary)' }} />
+          </span>
+          {title}
+        </h2>
+        <span
+          className="text-xs px-2 py-1 rounded-full"
+          style={{
+            backgroundColor: complete ? 'var(--color-success-a10)' : 'var(--color-bg-hover)',
+            color: complete ? 'var(--color-success)' : 'var(--color-text-muted)',
+          }}
+        >
+          {done}/{checks.length}
+        </span>
+      </div>
+
+      {children}
+
+      <ul className="mt-4 space-y-2">
+        {checks.map(c => (
+          <li
+            key={c.id}
+            className="flex items-start gap-2 text-sm p-2 rounded-lg"
+            style={{ backgroundColor: c.passed ? 'var(--color-success-a10)' : 'var(--color-bg-input)' }}
+          >
+            {c.passed
+              ? <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-success)' }} />
+              : <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-text-faint)' }} />}
+            <div className="min-w-0">
+              <span className="font-medium" style={{ color: c.passed ? 'var(--color-success)' : 'var(--color-text-soft)' }}>
+                {c.label}
+              </span>
+              {!c.passed && <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>{c.hint}</p>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Part({ label, value, note }: { label: string; value: string; note: string }) {
+  return (
+    <div className="flex flex-col py-1" style={{ borderBottom: '1px solid var(--color-border)' }}>
+      <div className="flex items-baseline justify-between gap-2">
+        <dt className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{label}</dt>
+        <dd className="font-mono text-sm text-right break-all" style={{ color: 'var(--color-text)' }}>{value}</dd>
+      </div>
+      <span className="text-xs" style={{ color: 'var(--color-text-dim)' }}>{note}</span>
+    </div>
+  );
+}
+
+function Token({ label, items }: { label: string; items: string[] }) {
+  const empty = items.length === 0;
+  return (
+    <div
+      className="p-2 rounded-lg"
+      style={{ backgroundColor: empty ? 'var(--color-bg-input)' : 'var(--color-success-a10)' }}
+    >
+      <p className="mb-0.5" style={{ color: empty ? 'var(--color-text-dim)' : 'var(--color-success)' }}>{label}</p>
+      <p className="font-mono break-all" style={{ color: empty ? 'var(--color-text-faint)' : 'var(--color-text)' }}>
+        {empty ? '—' : items.join(' · ')}
+      </p>
     </div>
   );
 }

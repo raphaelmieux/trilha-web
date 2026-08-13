@@ -92,6 +92,79 @@ export async function exportCertificatePdf(cert: Certification, studentName: str
   doc.save(`Token.Web ${cert.curriculum_code} - ${studentName}.pdf`);
 }
 
+/**
+ * The WebLab's research sheet.
+ *
+ * Requirement AP034-6.1 ends with "fazer o download de um arquivo". The old lab
+ * satisfied that by pushing a filename into an array — no file existed. This
+ * produces a real PDF of the student's own work, which is also the thing a
+ * club leader can look at afterwards.
+ */
+export function exportStudySheetPdf(input: {
+  studentName: string;
+  subject: string;
+  query: string;
+  searchUrl: string;
+  addresses: { url: string; verdict: string }[];
+  downloads: { name: string; verdict: string }[];
+}): void {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  const width = A4_PORTRAIT.width;
+  const left = 18;
+  const textWidth = width - left * 2;
+  let y = 22;
+
+  const line = (text: string, opts: { size?: number; style?: 'normal' | 'bold'; gap?: number; colour?: [number, number, number] } = {}) => {
+    const { size = 10.5, style = 'normal', gap = 2.4, colour = [26, 26, 26] } = opts;
+    doc.setFont('helvetica', style);
+    doc.setFontSize(size);
+    doc.setTextColor(...colour);
+    for (const l of doc.splitTextToSize(text, textWidth) as string[]) {
+      if (y > A4_PORTRAIT.height - 20) { doc.addPage('a4', 'portrait'); y = 22; }
+      doc.text(l, left, y);
+      y += 5;
+    }
+    y += gap;
+  };
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Ficha de Pesquisa na Internet', width / 2, y, { align: 'center' });
+  y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.setTextColor(70, 70, 70);
+  doc.text('Trilha.Web() — WebLab · AP034, requisito 6.1', width / 2, y, { align: 'center' });
+  y += 5;
+  doc.setDrawColor(193, 53, 22);
+  doc.setLineWidth(0.6);
+  doc.line(left, y, width - left, y);
+  y += 8;
+
+  line(`Desbravador(a): ${input.studentName}`, { style: 'bold', gap: 0.5 });
+  line(`Tema pesquisado: ${input.subject}`, { gap: 0.5 });
+  line(`Emitido em: ${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}`, { gap: 5 });
+
+  line('Consulta construída', { size: 12, style: 'bold', colour: [193, 53, 22], gap: 1 });
+  line(input.query || '—', { style: 'bold' });
+  line(input.searchUrl, { size: 8.5, colour: [90, 90, 90] });
+
+  line('Endereços analisados', { size: 12, style: 'bold', colour: [193, 53, 22], gap: 1 });
+  for (const a of input.addresses) {
+    line(`• ${a.url}`, { gap: 0 });
+    line(`   ${a.verdict}`, { size: 9, colour: [90, 90, 90], gap: 1.4 });
+  }
+
+  line('Arquivos analisados', { size: 12, style: 'bold', colour: [193, 53, 22], gap: 1 });
+  for (const d of input.downloads) {
+    line(`• ${d.name}`, { gap: 0 });
+    line(`   ${d.verdict}`, { size: 9, colour: [90, 90, 90], gap: 1.4 });
+  }
+
+  doc.save(`Ficha de Pesquisa - ${input.studentName}.pdf`);
+}
+
 export interface ReportSection {
   heading: string;
   paragraphs: string[];
