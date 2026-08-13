@@ -1,99 +1,209 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId } from '../lib/progress';
-import { Sparkles, FileText, Image as ImageIcon, Palette, CheckCircle2, AlertCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, Palette, CheckCircle2, AlertCircle, ThumbsUp, ThumbsDown, FileText, Loader2 } from 'lucide-react';
 
 interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
 
-const sampleTexts: Record<string, string> = {
-  default: `A inteligência artificial é um campo da computação que busca criar sistemas capazes de aprender, raciocinar e executar tarefas que normalmente requerem inteligência humana. Existem diferentes tipos de IA: a IA estreita, especializada em uma tarefa específica, e a IA generativa, que cria novo conteúdo a partir de instruções.`,
-  education: `A IA na educação pode personalizar o aprendizado, adaptando o conteúdo ao ritmo de cada aluno. No entanto, é importante lembrar que a IA é uma ferramenta, não um substituto para o pensamento crítico humano.`,
-  internet: `A Internet conectou bilhões de dispositivos globalmente, transformando a comunicação, o aprendizado e o trabalho. A IA agora está moldando a próxima fase dessa evolução, com assistentes que podem gerar texto, imagens e código.`,
+type Stage = 'text' | 'image' | 'logo' | 'review';
+
+/**
+ * Prompts are assembled from fixed options plus one short free field rather than
+ * typed freely. Two reasons, in order of importance: the students are minors, and
+ * a closed vocabulary means there is no open channel to a generative model; and
+ * building a prompt from named parts (subject, audience, tone, length) is what
+ * actually teaches prompt writing — a blank box teaches nothing.
+ */
+const TEXT_OPTIONS = {
+  subject: [
+    { id: 'historia', label: 'A história do nosso clube' },
+    { id: 'acampamento', label: 'Um acampamento de fim de semana' },
+    { id: 'especialidade', label: 'Por que estudar a especialidade de Internet' },
+    { id: 'servico', label: 'Um projeto de serviço à comunidade' },
+  ],
+  audience: [
+    { id: 'pais', label: 'para os pais dos desbravadores' },
+    { id: 'novos', label: 'para quem quer entrar no clube' },
+    { id: 'igreja', label: 'para ser lido na igreja' },
+  ],
+  tone: [
+    { id: 'convite', label: 'em tom de convite' },
+    { id: 'informativo', label: 'em tom informativo' },
+    { id: 'entusiasmado', label: 'em tom entusiasmado' },
+  ],
+  length: [
+    { id: 'curto', label: 'em 1 parágrafo curto' },
+    { id: 'medio', label: 'em 2 parágrafos' },
+  ],
 };
 
-const sampleImages: Record<string, { description: string; color: string }[]> = {
-  default: [
-    { description: 'Montanha ao pôr do sol com tons de laranja e roxo', color: '#F5A623' },
-    { description: 'Floresta tropical com cachoeira', color: '#22c55e' },
+const IMAGE_OPTIONS = {
+  scene: [
+    { id: 'barraca', label: 'barracas montadas em um acampamento' },
+    { id: 'fogueira', label: 'uma roda de conversa ao redor da fogueira' },
+    { id: 'trilha', label: 'um grupo caminhando por uma trilha na mata' },
+    { id: 'bandeira', label: 'o mastro com a bandeira do clube' },
   ],
-  logo: [
-    { description: 'Logo circular com bandeira e estrelas', color: '#1B2E8C' },
-    { description: 'Logo triangular com fogo e bússola', color: '#C13516' },
+  time: [
+    { id: 'manha', label: 'de manhã cedo' },
+    { id: 'tarde', label: 'ao fim da tarde' },
+    { id: 'noite', label: 'à noite' },
+  ],
+  style: [
+    { id: 'ilustracao', label: 'em estilo de ilustração colorida' },
+    { id: 'aquarela', label: 'em estilo aquarela' },
+    { id: 'cartoon', label: 'em estilo cartoon' },
   ],
 };
+
+const LOGO_OPTIONS = {
+  shape: [
+    { id: 'escudo', label: 'em formato de escudo' },
+    { id: 'circulo', label: 'em formato circular' },
+    { id: 'triangulo', label: 'em formato triangular' },
+  ],
+  symbol: [
+    { id: 'arvore', label: 'com uma árvore' },
+    { id: 'montanha', label: 'com uma montanha' },
+    { id: 'bussola', label: 'com uma bússola' },
+    { id: 'chama', label: 'com uma chama' },
+  ],
+  colors: [
+    { id: 'verde', label: 'nas cores verde e dourado' },
+    { id: 'azul', label: 'nas cores azul e branco' },
+    { id: 'vermelho', label: 'nas cores vermelho e preto' },
+  ],
+};
+
+const MAX_FREE_TEXT = 60;
+
+function Picker({ label, options, value, onChange }: {
+  label: string;
+  options: { id: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>{label}</label>
+      <select value={value} onChange={e => onChange(e.target.value)} className="input-field text-sm">
+        {options.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+      </select>
+    </div>
+  );
+}
 
 export default function AILab({ specialtyCode, requirementCodes, userId }: Props) {
-  const [textPrompt, setTextPrompt] = useState('');
-  const [textResult, setTextResult] = useState('');
-  const [textTopic, setTextTopic] = useState('');
-  const [imagePrompt, setImagePrompt] = useState('');
-  const [imageResult, setImageResult] = useState<{ description: string; color: string } | null>(null);
-  const [logoClubName, setLogoClubName] = useState('');
-  const [logoResult, setLogoResult] = useState<{ description: string; color: string } | null>(null);
-  const [evaluation, setEvaluation] = useState<{ positives: string; improvements: string; rating: 'good' | 'bad' | null }>({ positives: '', improvements: '', rating: null });
+  const [stage, setStage] = useState<Stage>('text');
   const [completed, setCompleted] = useState(false);
 
-  const tasks = [
-    { id: 'text', label: 'Gerar texto com IA e avaliar qualidade', done: !!textResult && !!textTopic },
-    { id: 'image', label: 'Gerar imagem com IA', done: !!imageResult },
-    { id: 'logo', label: 'Gerar logo para o clube', done: !!logoResult },
-    { id: 'evaluate', label: 'Avaliar criticamente os resultados', done: !!evaluation.positives.trim() && !!evaluation.improvements.trim() && evaluation.rating !== null },
-  ];
-  const allDone = tasks.every(t => t.done);
+  const [textSel, setTextSel] = useState({ subject: 'historia', audience: 'pais', tone: 'convite', length: 'curto' });
+  const [imageSel, setImageSel] = useState({ scene: 'barraca', time: 'tarde', style: 'ilustracao' });
+  const [logoSel, setLogoSel] = useState({ shape: 'escudo', symbol: 'arvore', colors: 'verde' });
+  const [clubName, setClubName] = useState('');
+  const [extra, setExtra] = useState('');
 
-  const generateText = () => {
-    const topic = textPrompt.toLowerCase();
-    let result = sampleTexts.default;
-    if (topic.includes('educa')) result = sampleTexts.education;
-    else if (topic.includes('internet')) result = sampleTexts.internet;
-    setTextResult(result);
-    setTextTopic(textPrompt);
-    logActivity(userId, 'ai_text_generated', { prompt: textPrompt });
+  const [textOut, setTextOut] = useState('');
+  const [imageOut, setImageOut] = useState('');
+  const [logoOut, setLogoOut] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [notConfigured, setNotConfigured] = useState(false);
+
+  const [critique, setCritique] = useState({ good: '', improve: '' });
+
+  const pick = (opts: { id: string; label: string }[], id: string) =>
+    opts.find(o => o.id === id)?.label ?? '';
+
+  const textPrompt = useMemo(() => {
+    const base = `Escreva um texto ${pick(TEXT_OPTIONS.tone, textSel.tone)} sobre ${pick(TEXT_OPTIONS.subject, textSel.subject).toLowerCase()}, ${pick(TEXT_OPTIONS.audience, textSel.audience)}, ${pick(TEXT_OPTIONS.length, textSel.length)}. Escreva em português do Brasil, com linguagem adequada a adolescentes.`;
+    return extra.trim() ? `${base} Inclua também: ${extra.trim()}.` : base;
+  }, [textSel, extra]);
+
+  const imagePrompt = useMemo(
+    () => `Uma imagem mostrando ${pick(IMAGE_OPTIONS.scene, imageSel.scene)}, ${pick(IMAGE_OPTIONS.time, imageSel.time)}, ${pick(IMAGE_OPTIONS.style, imageSel.style)}. Ambiente de acampamento juvenil, seguro e alegre, sem rostos reconhecíveis.`,
+    [imageSel]
+  );
+
+  const logoPrompt = useMemo(
+    () => `Um logotipo simples e limpo para um clube de desbravadores${clubName.trim() ? ` chamado "${clubName.trim()}"` : ''}, ${pick(LOGO_OPTIONS.shape, logoSel.shape)}, ${pick(LOGO_OPTIONS.symbol, logoSel.symbol)}, ${pick(LOGO_OPTIONS.colors, logoSel.colors)}. Design vetorial, fundo liso, sem texto.`,
+    [logoSel, clubName]
+  );
+
+  const callAI = async (type: 'text' | 'image', prompt: string): Promise<{ result?: string; error?: string }> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { error: 'Sessão expirada. Entre novamente.' };
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-gateway`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ type, prompt, userId }),
+    });
+    const data = await res.json();
+    if (data.notConfigured) { setNotConfigured(true); return { error: data.error }; }
+    if (!res.ok || data.error) return { error: data.error || 'Erro ao gerar.' };
+    return { result: data.result };
   };
 
-  const generateImage = () => {
-    const key = imagePrompt.toLowerCase().includes('logo') ? 'logo' : 'default';
-    const options = sampleImages[key];
-    setImageResult(options[Math.floor(Math.random() * options.length)]);
-    logActivity(userId, 'ai_image_generated', { prompt: imagePrompt });
+  const generate = async (kind: Stage) => {
+    setBusy(true); setError('');
+    const spec = kind === 'text'
+      ? { type: 'text' as const, prompt: textPrompt, set: setTextOut }
+      : kind === 'image'
+        ? { type: 'image' as const, prompt: imagePrompt, set: setImageOut }
+        : { type: 'image' as const, prompt: logoPrompt, set: setLogoOut };
+
+    const { result, error: err } = await callAI(spec.type, spec.prompt);
+    if (err) setError(err); else if (result) spec.set(result);
+    setBusy(false);
   };
 
-  const generateLogo = () => {
-    const options = sampleImages.logo;
-    setLogoResult(options[Math.floor(Math.random() * options.length)]);
-    logActivity(userId, 'ai_logo_generated', { clubName: logoClubName });
-  };
+  const canFinish = !!textOut && !!imageOut && !!logoOut
+    && critique.good.trim().length >= 15 && critique.improve.trim().length >= 15;
 
   const handleComplete = async () => {
+    setBusy(true);
     const specId = await getSpecialtyId(specialtyCode);
     if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
     for (const reqCode of requirementCodes) {
       const reqId = await getRequirementId(reqCode);
       if (reqId) await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
-        attempts: 1, correct_count: tasks.filter(t => t.done).length, total_questions: tasks.length,
+        attempts: 1, correct_count: 3, total_questions: 3,
       });
     }
-    await logActivity(userId, 'ai_lab_completed', {});
+    await logActivity(userId, 'ai_lab_completed', {
+      critiquePositive: critique.good.slice(0, 200),
+      critiqueImprovement: critique.improve.slice(0, 200),
+    });
     setCompleted(true);
   };
 
   if (completed) {
     return (
-      <div className="space-y-4">
-        <div className="card p-8 text-center">
-          <Sparkles className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-secondary)' }} />
-          <h1 className="text-2xl font-bold mb-2">AI Lab Concluído!</h1>
-          <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
-            Você usou IA para gerar texto, imagem e logo, e avaliou criticamente os resultados.
-          </p>
-          <Link to={`/especialidade/${specialtyCode}`} className="btn-primary">Voltar para a Trilha</Link>
-        </div>
+      <div className="card p-8 text-center">
+        <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
+        <h1 className="text-2xl font-bold mb-2">AI Lab concluído!</h1>
+        <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
+          Você produziu texto, imagem e logotipo com inteligência artificial — e, mais
+          importante, avaliou criticamente o que a ferramenta entregou.
+        </p>
+        <Link to={`/especialidade/${specialtyCode}`} className="btn-primary">Voltar para a Trilha</Link>
       </div>
     );
   }
 
-  const resultBox = { backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)', color: 'var(--color-text)' };
+  const stages: { id: Stage; label: string; icon: typeof Sparkles; done: boolean }[] = [
+    { id: 'text', label: 'Texto', icon: FileText, done: !!textOut },
+    { id: 'image', label: 'Imagem', icon: ImageIcon, done: !!imageOut },
+    { id: 'logo', label: 'Logotipo', icon: Palette, done: !!logoOut },
+    { id: 'review', label: 'Avaliação', icon: ThumbsUp, done: canFinish },
+  ];
 
   return (
     <div className="space-y-4">
@@ -102,133 +212,160 @@ export default function AILab({ specialtyCode, requirementCodes, userId }: Props
           <Sparkles className="w-5 h-5" style={{ color: 'var(--color-secondary)' }} /> AI Lab — Produção com IA
         </h1>
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-          Use IA para gerar texto, imagem e logo para o seu clube. Depois, avalie criticamente os resultados —
-          lembre-se: a IA é uma ferramenta, não um substituto para o pensamento crítico.
+          Você vai montar pedidos (<em>prompts</em>) escolhendo cada parte: o assunto, para
+          quem é, o tom e o tamanho. Depois compara o que pediu com o que a IA
+          devolveu. Um bom pedido gera um bom resultado — é isso que este laboratório ensina.
         </p>
       </div>
 
-      {/* Text generation */}
-      <div className="card p-6">
-        <h2 className="font-bold mb-2 flex items-center gap-2">
-          <FileText className="w-4 h-4" style={{ color: 'var(--color-primary)' }} /> 1. Gerar Texto
-        </h2>
-        <p className="text-sm mb-3" style={{ color: 'var(--color-text-dim)' }}>
-          Digite um prompt (ex: "O que é IA?", "IA na educação", "IA e Internet") e veja o texto gerado.
-        </p>
-        <div className="flex gap-2">
-          <input value={textPrompt} onChange={e => setTextPrompt(e.target.value)} className="input-field" placeholder="Digite seu prompt..." />
-          <button onClick={generateText} disabled={!textPrompt.trim()} className="btn-primary">Gerar</button>
-        </div>
-        {textResult && (
-          <div className="mt-3 p-4 rounded-lg" style={resultBox}>
-            <p className="text-xs mb-2 font-medium" style={{ color: 'var(--color-secondary)' }}>Texto gerado para: "{textTopic}"</p>
-            <p className="text-sm">{textResult}</p>
-            <div className="mt-3 p-2 rounded text-xs" style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-dim)' }}>
-              <strong>Avalie:</strong> O texto é factualmente correto? Há informações que precisariam de verificação?
-              A IA pode ter "alucinado" (criado informações incorretas)?
-            </div>
+      {notConfigured && (
+        <div className="card p-4 flex items-start gap-2" style={{ borderColor: 'var(--color-warning-a10)' }}>
+          <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-warning)' }} />
+          <div className="text-sm">
+            <p style={{ color: 'var(--color-text)' }}>A integração com IA ainda não foi ativada.</p>
+            <p style={{ color: 'var(--color-text-dim)' }}>
+              O administrador precisa cadastrar a chave do Gemini no servidor. Enquanto isso,
+              você pode montar os pedidos e ver como um prompt é construído.
+            </p>
           </div>
-        )}
+        </div>
+      )}
+
+      <div className="flex gap-2 flex-wrap">
+        {stages.map(s => {
+          const Icon = s.icon;
+          const active = stage === s.id;
+          return (
+            <button key={s.id} onClick={() => setStage(s.id)}
+              className="px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition"
+              style={{
+                backgroundColor: active ? 'var(--color-primary-a15)' : 'var(--color-bg-input)',
+                border: `1px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                color: active ? 'var(--color-primary)' : 'var(--color-text-muted)',
+              }}>
+              {s.done ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--color-success)' }} /> : <Icon className="w-4 h-4" />}
+              {s.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Image generation */}
-      <div className="card p-6">
-        <h2 className="font-bold mb-2 flex items-center gap-2">
-          <ImageIcon className="w-4 h-4" style={{ color: 'var(--color-primary)' }} /> 2. Gerar Imagem
-        </h2>
-        <p className="text-sm mb-3" style={{ color: 'var(--color-text-dim)' }}>
-          Descreva uma imagem (ex: "montanha ao pôr do sol", "logo do clube").
-        </p>
-        <div className="flex gap-2">
-          <input value={imagePrompt} onChange={e => setImagePrompt(e.target.value)} className="input-field" placeholder="Descreva a imagem..." />
-          <button onClick={generateImage} disabled={!imagePrompt.trim()} className="btn-primary">Gerar</button>
+      {error && (
+        <div className="card p-3 flex items-center gap-2 text-sm" style={{ borderColor: 'var(--color-error-a20)' }}>
+          <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-error)' }} />
+          <span style={{ color: 'var(--color-error)' }}>{error}</span>
         </div>
-        {imageResult && (
-          <div className="mt-3 p-4 rounded-lg" style={resultBox}>
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: imageResult.color }}>
-                <ImageIcon className="w-8 h-8 text-white opacity-50" />
+      )}
+
+      {stage === 'text' && (
+        <div className="card p-4 space-y-3">
+          <h2 className="font-bold text-sm">1. Texto para divulgar o clube</h2>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Picker label="Assunto" options={TEXT_OPTIONS.subject} value={textSel.subject} onChange={v => setTextSel({ ...textSel, subject: v })} />
+            <Picker label="Para quem" options={TEXT_OPTIONS.audience} value={textSel.audience} onChange={v => setTextSel({ ...textSel, audience: v })} />
+            <Picker label="Tom" options={TEXT_OPTIONS.tone} value={textSel.tone} onChange={v => setTextSel({ ...textSel, tone: v })} />
+            <Picker label="Tamanho" options={TEXT_OPTIONS.length} value={textSel.length} onChange={v => setTextSel({ ...textSel, length: v })} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>
+              Detalhe extra (opcional, até {MAX_FREE_TEXT} caracteres)
+            </label>
+            <input value={extra} maxLength={MAX_FREE_TEXT} onChange={e => setExtra(e.target.value)}
+              className="input-field text-sm" placeholder="ex.: citar a data do próximo encontro" />
+          </div>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
+            <p className="text-xs font-bold mb-1" style={{ color: 'var(--color-secondary)' }}>Seu pedido ficou assim:</p>
+            <p className="text-xs font-mono" style={{ color: 'var(--color-text-soft)' }}>{textPrompt}</p>
+          </div>
+          <button onClick={() => generate('text')} disabled={busy} className="btn-primary w-full">
+            {busy ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Sparkles className="w-4 h-4 mr-1" /> Gerar texto</>}
+          </button>
+          {textOut && (
+            <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-success-a10)', border: '1px solid var(--color-success-a20)' }}>
+              <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--color-text)' }}>{textOut}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {stage === 'image' && (
+        <div className="card p-4 space-y-3">
+          <h2 className="font-bold text-sm">2. Imagem de uma cena do clube</h2>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <Picker label="Cena" options={IMAGE_OPTIONS.scene} value={imageSel.scene} onChange={v => setImageSel({ ...imageSel, scene: v })} />
+            <Picker label="Momento" options={IMAGE_OPTIONS.time} value={imageSel.time} onChange={v => setImageSel({ ...imageSel, time: v })} />
+            <Picker label="Estilo" options={IMAGE_OPTIONS.style} value={imageSel.style} onChange={v => setImageSel({ ...imageSel, style: v })} />
+          </div>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
+            <p className="text-xs font-bold mb-1" style={{ color: 'var(--color-secondary)' }}>Seu pedido ficou assim:</p>
+            <p className="text-xs font-mono" style={{ color: 'var(--color-text-soft)' }}>{imagePrompt}</p>
+          </div>
+          <button onClick={() => generate('image')} disabled={busy} className="btn-primary w-full">
+            {busy ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><ImageIcon className="w-4 h-4 mr-1" /> Gerar imagem</>}
+          </button>
+          {imageOut && <img src={imageOut} alt="Imagem gerada pela IA" className="w-full rounded-lg" style={{ border: '1px solid var(--color-border)' }} />}
+        </div>
+      )}
+
+      {stage === 'logo' && (
+        <div className="card p-4 space-y-3">
+          <h2 className="font-bold text-sm">3. Logotipo do clube</h2>
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Nome do clube (opcional)</label>
+            <input value={clubName} maxLength={40} onChange={e => setClubName(e.target.value)} className="input-field text-sm" placeholder="ex.: Clube Pioneiros" />
+          </div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <Picker label="Formato" options={LOGO_OPTIONS.shape} value={logoSel.shape} onChange={v => setLogoSel({ ...logoSel, shape: v })} />
+            <Picker label="Símbolo" options={LOGO_OPTIONS.symbol} value={logoSel.symbol} onChange={v => setLogoSel({ ...logoSel, symbol: v })} />
+            <Picker label="Cores" options={LOGO_OPTIONS.colors} value={logoSel.colors} onChange={v => setLogoSel({ ...logoSel, colors: v })} />
+          </div>
+          <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
+            <p className="text-xs font-bold mb-1" style={{ color: 'var(--color-secondary)' }}>Seu pedido ficou assim:</p>
+            <p className="text-xs font-mono" style={{ color: 'var(--color-text-soft)' }}>{logoPrompt}</p>
+          </div>
+          <button onClick={() => generate('logo')} disabled={busy} className="btn-primary w-full">
+            {busy ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Palette className="w-4 h-4 mr-1" /> Gerar logotipo</>}
+          </button>
+          {logoOut && <img src={logoOut} alt="Logotipo gerado pela IA" className="w-full max-w-xs mx-auto rounded-lg" style={{ border: '1px solid var(--color-border)' }} />}
+        </div>
+      )}
+
+      {stage === 'review' && (
+        <div className="card p-4 space-y-3">
+          <h2 className="font-bold text-sm">4. Avaliação crítica</h2>
+          <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+            A IA erra, inventa fatos e às vezes ignora parte do pedido. Saber revisar é
+            tão importante quanto saber pedir. Olhe os três resultados e responda:
+          </p>
+
+          {!textOut || !imageOut || !logoOut ? (
+            <div className="flex items-center gap-2 text-sm p-3 rounded-lg" style={{ backgroundColor: 'var(--color-bg-input)' }}>
+              <AlertCircle className="w-4 h-4" style={{ color: 'var(--color-warning)' }} />
+              <span style={{ color: 'var(--color-text-dim)' }}>Gere o texto, a imagem e o logotipo antes de avaliar.</span>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-xs font-medium mb-1 flex items-center gap-1" style={{ color: 'var(--color-success)' }}>
+                  <ThumbsUp className="w-3 h-3" /> O que a IA fez bem? (mínimo 15 caracteres)
+                </label>
+                <textarea value={critique.good} onChange={e => setCritique({ ...critique, good: e.target.value })}
+                  rows={3} className="input-field text-sm" placeholder="ex.: o texto usou o tom de convite que eu pedi..." />
               </div>
               <div>
-                <p className="text-xs mb-1 font-medium" style={{ color: 'var(--color-secondary)' }}>Imagem gerada (demonstração)</p>
-                <p className="text-sm">{imageResult.description}</p>
+                <label className="block text-xs font-medium mb-1 flex items-center gap-1" style={{ color: 'var(--color-warning)' }}>
+                  <ThumbsDown className="w-3 h-3" /> O que precisaria ser corrigido por uma pessoa? (mínimo 15 caracteres)
+                </label>
+                <textarea value={critique.improve} onChange={e => setCritique({ ...critique, improve: e.target.value })}
+                  rows={3} className="input-field text-sm" placeholder="ex.: inventou uma data que não existe..." />
               </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Logo generation */}
-      <div className="card p-6">
-        <h2 className="font-bold mb-2 flex items-center gap-2">
-          <Palette className="w-4 h-4" style={{ color: 'var(--color-primary)' }} /> 3. Gerar Logo do Clube
-        </h2>
-        <input value={logoClubName} onChange={e => setLogoClubName(e.target.value)} className="input-field mb-2" placeholder="Nome do clube (ex: Clube de Desbravadores)" />
-        <button onClick={generateLogo} disabled={!logoClubName.trim()} className="btn-primary">Gerar Logo</button>
-        {logoResult && (
-          <div className="mt-3 p-4 rounded-lg" style={resultBox}>
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: logoResult.color }}>
-                <Palette className="w-8 h-8 text-white opacity-50" />
-              </div>
-              <div>
-                <p className="text-xs mb-1 font-medium" style={{ color: 'var(--color-secondary)' }}>Logo para: {logoClubName}</p>
-                <p className="text-sm">{logoResult.description}</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Critical evaluation */}
-      <div className="card p-6">
-        <h2 className="font-bold mb-2">4. Avaliação Crítica dos Resultados</h2>
-        <p className="text-sm mb-4" style={{ color: 'var(--color-text-dim)' }}>
-          Avalie os resultados gerados pela IA. Seja honesto — a IA nem sempre produz resultados perfeitos.
-        </p>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Pontos positivos — o que a IA fez bem?</label>
-            <textarea value={evaluation.positives} onChange={e => setEvaluation(prev => ({ ...prev, positives: e.target.value }))} rows={2} className="input-field" placeholder="Ex: O texto foi gerado rapidamente e tem boa estrutura..." />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Melhorias necessárias — o que poderia ser melhor?</label>
-            <textarea value={evaluation.improvements} onChange={e => setEvaluation(prev => ({ ...prev, improvements: e.target.value }))} rows={2} className="input-field" placeholder="Ex: O texto precisa de verificação factual, a imagem poderia ter mais detalhes..." />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-soft)' }}>Avaliação geral: os resultados da IA são confiáveis sem revisão humana?</label>
-            <div className="flex gap-2">
-              <button onClick={() => setEvaluation(prev => ({ ...prev, rating: 'good' }))}
-                className="btn-secondary text-sm flex items-center gap-1"
-                style={evaluation.rating === 'good' ? { backgroundColor: 'var(--color-success-a10)', color: 'var(--color-success)', borderColor: 'var(--color-success)' } : {}}>
-                <ThumbsUp className="w-4 h-4" /> Sim, com revisão
+              <button onClick={handleComplete} disabled={!canFinish || busy} className="btn-primary w-full">
+                {canFinish ? 'Concluir AI Lab' : 'Responda as duas perguntas para concluir'}
               </button>
-              <button onClick={() => setEvaluation(prev => ({ ...prev, rating: 'bad' }))}
-                className="btn-secondary text-sm flex items-center gap-1"
-                style={evaluation.rating === 'bad' ? { backgroundColor: 'var(--color-error-a10)', color: 'var(--color-error)', borderColor: 'var(--color-error)' } : {}}>
-                <ThumbsDown className="w-4 h-4" /> Não, precisa revisão
-              </button>
-            </div>
-          </div>
+            </>
+          )}
         </div>
-      </div>
-
-      {/* Tasks */}
-      <div className="card p-4">
-        <h2 className="font-bold mb-3">Tarefas ({tasks.filter(t => t.done).length}/{tasks.length})</h2>
-        <ul className="space-y-2">
-          {tasks.map(t => (
-            <li key={t.id} className="flex items-center gap-2 text-sm">
-              {t.done ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--color-success)' }} /> : <AlertCircle className="w-4 h-4" style={{ color: 'var(--color-text-faint)' }} />}
-              <span style={{ color: t.done ? 'var(--color-text)' : 'var(--color-text-dim)' }}>{t.label}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <button onClick={handleComplete} disabled={!allDone} className="btn-primary w-full">
-        {allDone ? 'Concluir AI Lab' : 'Complete todas as tarefas'}
-      </button>
+      )}
     </div>
   );
 }

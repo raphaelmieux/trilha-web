@@ -31,7 +31,7 @@
   --color-text: #E8E8E8;       /* primary body text     — 15.0:1 */
   --color-text-soft: #b0b0b4;  /* secondary text        —  8.7:1 */
   --color-text-muted: #888890; /* labels, descriptions  —  5.2:1 */
-  --color-text-dim: #7e7e8c;   /* captions, meta        —  4.6:1 */
+  --color-text-dim: #86868f;   /* captions, meta        —  4.9:1 */
   --color-text-faint: #55555f; /* disabled, blocked */
 
   /* ── Backgrounds ── */
@@ -110,10 +110,11 @@
     background-repeat: no-repeat;
     background-position: center 45%;
     background-size: min(115vh, 115vw) auto;
-    /* Measured, not guessed: against the pure-black page background this puts the
-       strokes at roughly RGB 16 — visible as texture, still well below the card
-       surface (#111) and border (#2a2a2a) so it never competes with content. */
-    opacity: 0.18;
+    /* Measured, not guessed: this puts the strokes near RGB 22 against the black
+       page. Raised from 0.18 so the texture survives the frosted panels — at the
+       old value it was effectively gone once a panel sat over it. Still far below
+       the panel border (#2a2a2a), so it never competes with content. */
+    opacity: 0.26;
   }
 
   /* Soft radial vignette so the texture fades toward the edges instead of ending
@@ -149,17 +150,25 @@
 }
 
 @layer components {
-  /* Frosted glass: translucent surface + blur, so the globe texture stays visible
-     through the panels instead of being hidden behind opaque boxes.
-     The colour is deliberately still fairly dark (0.62 alpha) — text sits on top
-     of these surfaces, and a lighter panel would drop contrast below comfortable
-     reading levels once a bright part of the texture passes underneath. */
+  /* Frosted glass.
+     At 0.62 alpha the panel let only ~6 grey levels of the texture through, which
+     is technically translucent but invisible in practice. Dropping to 0.52 over a
+     darker base roughly doubles that to ~11 levels — the globe is now legible
+     through the panel — while keeping every text tier above WCAG AA (verified by
+     measuring the composited surface, not by eye).
+     The two inset lines are what actually sells the material: a bright top edge
+     reading as light catching the bevel, and a dark bottom edge as its thickness.
+     Blur alone looks like plain transparency. */
   .card {
-    background-color: rgba(20, 20, 22, 0.62);
-    backdrop-filter: blur(16px) saturate(150%);
-    -webkit-backdrop-filter: blur(16px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    @apply rounded-xl shadow-lg p-6;
+    background-color: rgba(16, 16, 19, 0.52);
+    backdrop-filter: blur(22px) saturate(165%);
+    -webkit-backdrop-filter: blur(22px) saturate(165%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+      0 8px 28px rgba(0, 0, 0, 0.40);
+    @apply rounded-xl p-6;
   }
 
   /* Browsers without backdrop-filter (older Firefox with the flag off) would show
@@ -305,6 +314,7 @@
     height: 210mm;
     margin: 0;
     padding: 0;
+    overflow: hidden;
     page-break-inside: avoid;
   }
 
@@ -316,12 +326,20 @@
     page-break-after: avoid;
   }
 
+  /* !important is load-bearing here, not decoration: the screen rule that gives
+     the certificate its drop shadow is declared *after* this block and carries
+     the same specificity, so without it the shadow wins and prints as a grey
+     smear along two edges of the sheet. */
   .cert-page .cert-svg {
-    display: block;
-    width: 297mm;
-    height: 210mm;
-    max-width: none;
-    box-shadow: none;
+    display: block !important;
+    width: 297mm !important;
+    height: 210mm !important;
+    max-width: none !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    border: none !important;
+    border-radius: 0 !important;
   }
 
   /* The report is a portrait document; the certificates attached to the end of it
@@ -336,13 +354,11 @@
     margin: 0;
   }
 
+  /* No page-break-before here. Switching to a different named page already forces
+     a break; adding an explicit one produced a second break, which is where the
+     blank sheet before every certificate came from. */
   .cert-attachment {
     page: cert-sheet;
-    page-break-before: always;
-  }
-
-  body.printing-certificate {
-    /* No portrait content at all in this view. */
   }
 
   body.printing-certificate .cert-page {
@@ -406,14 +422,17 @@
 }
 
 /* Certificate — screen presentation. The SVG carries its own aspect ratio via the
-   viewBox, so it only needs a max width and centering here. */
+   viewBox, so it only needs a max width and centering here.
+   The lift is a soft ring rather than a drop shadow: a directional shadow read as
+   a dirty edge on the printed sheet, and the artwork is meant to run to the paper
+   edge with nothing around it. */
 .cert-page .cert-svg {
   display: block;
   width: 100%;
   max-width: 1100px;
   height: auto;
   margin: 0 auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 /* ───── Competency report — reads as a document, not a dashboard ───── */
