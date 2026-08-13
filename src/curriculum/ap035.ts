@@ -710,7 +710,7 @@ export const ap035: Specialty = {
     {
       code: 'AP035.4', title: 'Imagens para Web', description: 'ImageLab: otimização de imagens.',
       lessons: [
-        { code: 'AP035.4-L1', title: 'ImageLab — Otimização de Imagens', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">ImageLab — Otimização de Imagens</h2><p class="mb-3">Neste laboratório você vai criar diferentes tipos de imagens para web: uma imagem JPEG (para fotos), uma imagem PNG (para logos com transparência), um botão web e um header para site.</p><p class="mb-3">Cada tipo de imagem tem um propósito específico. Escolher o formato certo reduz o tamanho do arquivo e mantém a qualidade visual.</p>', requirementCodes: ['AP035-4.1'], labType: 'image_lab' },
+        { code: 'AP035.4-L1', title: 'ImageLab — Otimização de Imagens', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">ImageLab — Otimização de Imagens</h2><p class="mb-3">Neste laboratório você vai produzir quatro imagens de verdade: uma fotografia otimizada em JPEG, um logo em PNG com fundo transparente, um botão e um header. Ao final, os quatro arquivos ficam salvos no seu dispositivo.</p><p class="mb-3">Escolher o formato certo é o que decide se a página abre rápido ou trava no 3G do acampamento. O JPEG descarta detalhe que o olho não percebe e vence em fotografias; o PNG guarda cada pixel e é o único que guarda transparência — sem ele, o logo do clube viaja dentro de uma caixa branca.</p><p class="mb-3">Cada etapa já vem preenchida com um defeito de propósito. Descubra qual é e corrija: as verificações medem os pixels e os bytes que você gerou, não a resposta que você escolheu.</p>', requirementCodes: ['AP035-4.1'], labType: 'image_lab' },
       ],
     },
     {
