@@ -48,7 +48,7 @@ function NavBar() {
   const linkColor = (active: boolean) => ({ color: active ? 'var(--color-primary)' : 'var(--color-text-muted)' });
 
   return (
-    <nav className="no-print sticky top-0 z-50" style={{ backgroundColor: 'var(--color-bg-input)', borderBottom: '1px solid var(--color-border)' }}>
+    <nav className="no-print sticky top-0 z-50 app-nav">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 font-bold" style={{ color: 'var(--color-primary)' }}>
           <span className="text-lg tracking-tight">Trilha.Web()</span>

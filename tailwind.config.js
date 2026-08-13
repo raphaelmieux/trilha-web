@@ -76,7 +76,12 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        // Helvetica where it exists (macOS/iOS), Arial elsewhere — Arial is
+        // metrically identical to Helvetica, so line breaks and measured text
+        // widths are the same on every platform. Liberation Sans and Nimbus Sans
+        // are the equivalent metric clones shipped on Linux. No web font is
+        // loaded: this keeps the app free of a render-blocking external request.
+        sans: ['Helvetica Neue', 'Helvetica', 'Arial', 'Liberation Sans', 'Nimbus Sans', 'sans-serif'],
         serif: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
       },
     },

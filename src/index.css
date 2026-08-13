@@ -22,12 +22,17 @@
   --color-tertiary-light: #4b69db;
   --color-tertiary-dim: rgba(75, 105, 219, 0.1);
 
-  /* ── Text hierarchy ── */
-  --color-text: #E8E8E8;       /* primary body text */
-  --color-text-soft: #b0b0b4;  /* secondary text */
-  --color-text-muted: #888890; /* labels, descriptions */
-  --color-text-dim: #636370;   /* placeholders, meta */
-  --color-text-faint: #484852; /* disabled, blocked */
+  /* ── Text hierarchy ──
+     Measured against the frosted panel surface (~rgb(19,20,26) once the card's
+     alpha is composited over the page). `dim` carries real information —
+     captions, dates, helper text — so it is set to clear WCAG AA (4.5:1); at the
+     previous #636370 it measured 3.10:1. `faint` is only used for disabled and
+     decorative elements, where AA does not apply. */
+  --color-text: #E8E8E8;       /* primary body text     — 15.0:1 */
+  --color-text-soft: #b0b0b4;  /* secondary text        —  8.7:1 */
+  --color-text-muted: #888890; /* labels, descriptions  —  5.2:1 */
+  --color-text-dim: #7e7e8c;   /* captions, meta        —  4.6:1 */
+  --color-text-faint: #55555f; /* disabled, blocked */
 
   /* ── Backgrounds ── */
   --color-bg: #000000;         /* page */
@@ -144,10 +149,25 @@
 }
 
 @layer components {
+  /* Frosted glass: translucent surface + blur, so the globe texture stays visible
+     through the panels instead of being hidden behind opaque boxes.
+     The colour is deliberately still fairly dark (0.62 alpha) — text sits on top
+     of these surfaces, and a lighter panel would drop contrast below comfortable
+     reading levels once a bright part of the texture passes underneath. */
   .card {
-    background-color: var(--color-bg-card);
-    border: 1px solid var(--color-border);
+    background-color: rgba(20, 20, 22, 0.62);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
     @apply rounded-xl shadow-lg p-6;
+  }
+
+  /* Browsers without backdrop-filter (older Firefox with the flag off) would show
+     a washed-out, low-contrast panel. Give them a solid surface instead. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .card {
+      background-color: var(--color-bg-card);
+    }
   }
 
   .btn-primary {
@@ -193,7 +213,9 @@
 
   .input-field {
     @apply w-full px-4 py-2.5 rounded-lg outline-none transition;
-    background-color: var(--color-bg-input);
+    background-color: rgba(10, 10, 12, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     border: 1px solid var(--color-border);
     color: var(--color-text);
   }
@@ -203,6 +225,20 @@
   .input-field:focus {
     border-color: var(--color-primary);
     box-shadow: 0 0 0 2px var(--color-primary-glow);
+  }
+
+  /* The sticky top bar sits over scrolling content, so it needs a heavier blur
+     than the cards to keep the text underneath from showing through as noise. */
+  .app-nav {
+    background-color: rgba(12, 12, 14, 0.72);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .app-nav { background-color: var(--color-bg-input); }
+    .input-field { background-color: var(--color-bg-input); }
   }
 }
 
@@ -223,10 +259,16 @@
     display: none !important;
   }
 
-  .card {
+  /* Frosted glass must not survive into print: backdrop-filter renders as a grey
+     wash on paper, and translucency over a white sheet just lowers contrast. */
+  .card,
+  .app-nav,
+  .input-field {
     box-shadow: none !important;
     border: 1px solid #ccc !important;
     background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   .print-card {
@@ -328,11 +370,39 @@
   .report-head { border-bottom-color: #C13516 !important; }
   .report-section h2 { border-bottom-color: #bbbbbb !important; }
   .report-id { border-bottom-color: #bbbbbb !important; }
-  .report-sign { border-top-color: #bbbbbb !important; }
-  .report-sign-rule { border-top-color: #555555 !important; }
 
-  .report-section { page-break-inside: avoid; }
-  .report-sign { page-break-inside: avoid; }
+  /* Continuous flow.
+     A previous version put `page-break-inside: avoid` on .report-section. A
+     section here routinely runs longer than one page (AP034 alone is nine
+     paragraphs), and when the browser cannot honour "avoid" it pushes the whole
+     block to the next sheet instead — leaving most of the previous page blank.
+     That is the fragmented printing being fixed: text now flows page to page,
+     with orphan/widow control so no single line is left stranded. */
+  .report-section,
+  .report-body,
+  .report-doc {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
+  .report-body p {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* A heading alone at the foot of a page reads as a mistake; keep it with the
+     paragraph that follows. */
+  .report-section h2 {
+    page-break-after: avoid;
+    break-after: avoid;
+    page-break-inside: avoid;
+  }
+
+  .report-head,
+  .report-id {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
 }
 
 /* Certificate — screen presentation. The SVG carries its own aspect ratio via the
@@ -409,37 +479,10 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-.report-sign {
-  margin-top: 2.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--color-border);
-}
-
-.report-sign-note {
-  font-size: 0.85rem;
-  color: var(--color-text-dim);
-  margin-bottom: 2.5rem;
-}
-
-.report-sign-lines {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 2rem;
-}
-
-.report-sign-rule {
-  display: block;
-  border-top: 1px solid var(--color-text-faint);
-  margin-bottom: 0.4rem;
-}
-
-.report-sign-lines p {
-  font-size: 0.8rem;
-  color: var(--color-text-dim);
-}
-
 .report-annex-note {
   margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
   font-size: 0.85rem;
   font-style: italic;
   color: var(--color-text-dim);
@@ -447,5 +490,4 @@
 
 @media (max-width: 640px) {
   .report-id { grid-template-columns: minmax(0, 1fr); }
-  .report-sign-lines { grid-template-columns: minmax(0, 1fr); }
 }

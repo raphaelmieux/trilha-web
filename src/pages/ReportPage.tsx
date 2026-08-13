@@ -8,7 +8,7 @@ import { useCertifications } from '../hooks/useCertifications';
 import { buildSpecialtyNarrative, buildClosingParagraph } from '../lib/reportNarrative';
 import { getPublicName } from '../types';
 import { LoadingState } from '../components/ui/PageState';
-import CertificateCanvas, { buildVerifyUrl } from '../components/CertificateCanvas';
+import CertificateCanvas from '../components/CertificateCanvas';
 import { Printer, ArrowLeft } from 'lucide-react';
 
 export default function ReportPage() {
@@ -125,22 +125,6 @@ export default function ReportPage() {
           </div>
         </section>
 
-        <section className="report-sign">
-          <p className="report-sign-note">
-            Declaro haver conferido as informações acima para fins de registro no Clube.
-          </p>
-          <div className="report-sign-lines">
-            <div>
-              <span className="report-sign-rule" />
-              <p>Assinatura da liderança do Clube</p>
-            </div>
-            <div>
-              <span className="report-sign-rule" />
-              <p>Data</p>
-            </div>
-          </div>
-        </section>
-
         {attachedCerts.length > 0 && (
           <p className="report-annex-note">
             {attachedCerts.length === 1
@@ -152,11 +136,7 @@ export default function ReportPage() {
 
       {attachedCerts.map(cert => (
         <div key={cert!.id} className="cert-page cert-attachment">
-          <CertificateCanvas
-            cert={cert!}
-            studentName={studentName}
-            verifyUrl={buildVerifyUrl()}
-          />
+          <CertificateCanvas cert={cert!} studentName={studentName} />
         </div>
       ))}
     </div>

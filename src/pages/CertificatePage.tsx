@@ -5,7 +5,7 @@ import { getPublicName, type Certification, type PublicProfile } from '../types'
 import { Printer, ArrowLeft } from 'lucide-react';
 import StatusBadge from '../components/ui/StatusBadge';
 import { LoadingState, ErrorState } from '../components/ui/PageState';
-import CertificateCanvas, { buildVerifyUrl } from '../components/CertificateCanvas';
+import CertificateCanvas from '../components/CertificateCanvas';
 
 export default function CertificatePage() {
   const { code } = useParams();
@@ -76,11 +76,7 @@ export default function CertificatePage() {
       </div>
 
       <div className="cert-page">
-        <CertificateCanvas
-          cert={cert}
-          studentName={getPublicName(profile)}
-          verifyUrl={buildVerifyUrl()}
-        />
+        <CertificateCanvas cert={cert} studentName={getPublicName(profile)} />
       </div>
 
       <div className="card p-4 no-print">
