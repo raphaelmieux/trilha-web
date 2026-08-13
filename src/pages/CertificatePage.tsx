@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getPublicName, type Certification, type PublicProfile } from '../types';
-import { Printer, ArrowLeft } from 'lucide-react';
+import { Download, ArrowLeft, Loader2 } from 'lucide-react';
 import StatusBadge from '../components/ui/StatusBadge';
 import { LoadingState, ErrorState } from '../components/ui/PageState';
 import CertificateCanvas from '../components/CertificateCanvas';
+import { exportCertificatePdf } from '../lib/pdf';
 
 export default function CertificatePage() {
   const { code } = useParams();
@@ -13,15 +14,8 @@ export default function CertificatePage() {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  // Lets the print stylesheet strip the app shell's padding/max-width for this
-  // route only, so the certificate prints as a single full-bleed sheet instead of
-  // being boxed inside the normal centered column (which adds white margins and
-  // can spill onto a second blank page).
-  useEffect(() => {
-    document.body.classList.add('printing-certificate');
-    return () => document.body.classList.remove('printing-certificate');
-  }, []);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
 
   useEffect(() => {
     if (!code) return;
@@ -64,22 +58,38 @@ export default function CertificatePage() {
     day: '2-digit', month: 'long', year: 'numeric',
   });
 
+  const studentName = getPublicName(profile);
+
+  const handleDownload = async () => {
+    setExporting(true);
+    setExportError('');
+    try {
+      await exportCertificatePdf(cert, studentName);
+    } catch (err) {
+      setExportError((err as Error).message || 'Não foi possível gerar o PDF.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between no-print">
+      <div className="flex items-center justify-between">
         <button onClick={() => history.back()} className="btn-secondary">
           <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
         </button>
-        <button onClick={() => window.print()} className="btn-primary">
-          <Printer className="w-4 h-4 mr-1" /> Imprimir / Salvar PDF
+        <button onClick={handleDownload} disabled={exporting} className="btn-primary">
+          {exporting
+            ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando PDF...</>
+            : <><Download className="w-4 h-4 mr-1" /> Baixar PDF</>}
         </button>
       </div>
 
       <div className="cert-page">
-        <CertificateCanvas cert={cert} studentName={getPublicName(profile)} />
+        <CertificateCanvas cert={cert} studentName={studentName} />
       </div>
 
-      <div className="card p-4 no-print">
+      <div className="card p-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>{cert.code}</p>
@@ -92,11 +102,12 @@ export default function CertificatePage() {
             {cert.status === 'active' ? 'Ativo' : 'Revogado'}
           </StatusBadge>
         </div>
+        {exportError && (
+          <p className="text-xs mt-3" style={{ color: 'var(--color-error)' }}>{exportError}</p>
+        )}
         <p className="text-xs mt-3 pt-3" style={{ color: 'var(--color-text-dim)', borderTop: '1px solid var(--color-border)' }}>
-          Ao imprimir, escolha <strong style={{ color: 'var(--color-text-soft)' }}>A4 paisagem</strong>,
-          margens <strong style={{ color: 'var(--color-text-soft)' }}>nenhuma</strong> e marque
-          <strong style={{ color: 'var(--color-text-soft)' }}> gráficos de fundo</strong> para o certificado
-          sair sem bordas brancas.
+          O PDF é gerado pelo próprio sistema em A4 paisagem, sem bordas — não depende
+          das configurações de impressão do navegador.
         </p>
       </div>
     </div>

@@ -293,76 +293,21 @@
   .print-border-dark { border-color: #888 !important; }
   .print-border-light { border-color: #ddd !important; }
 
-  /* The certificate is a single full-bleed A4 landscape sheet. Every ancestor has
-     to lose its own padding/max-width, otherwise the browser shrinks the sheet to
-     fit inside the app's normal centered column and leaves white margins. */
-  body.printing-certificate,
-  body.printing-certificate #root,
-  body.printing-certificate #root > div,
-  body.printing-certificate #root > div > div,
-  body.printing-report #root > div > div {
-    margin: 0 !important;
-    padding: 0 !important;
-    max-width: none !important;
-    width: auto !important;
-    min-height: 0 !important;
-    background: #ffffff !important;
-  }
-
-  .cert-page {
-    width: 297mm;
-    height: 210mm;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    page-break-inside: avoid;
-  }
-
-  /* Standalone certificate view: one sheet, nothing else on the page. */
-  body.printing-certificate .cert-page {
-    position: absolute;
-    top: 0;
-    left: 0;
-    page-break-after: avoid;
-  }
-
-  /* !important is load-bearing here, not decoration: the screen rule that gives
-     the certificate its drop shadow is declared *after* this block and carries
-     the same specificity, so without it the shadow wins and prints as a grey
-     smear along two edges of the sheet. */
-  .cert-page .cert-svg {
-    display: block !important;
-    width: 297mm !important;
-    height: 210mm !important;
-    max-width: none !important;
-    margin: 0 !important;
-    box-shadow: none !important;
-    filter: none !important;
-    border: none !important;
-    border-radius: 0 !important;
-  }
-
-  /* The report is a portrait document; the certificates attached to the end of it
-     are landscape. Named pages let a single print job mix both orientations. */
+  /* Certificates and the report are exported as real PDFs (src/lib/pdf.ts), not
+     printed through the browser. Mixed page orientations in one document need
+     named pages (@page cert-sheet { size: A4 landscape }) — valid CSS Paged Media
+     that no browser implements: a test export produced six portrait pages with
+     the 297mm certificate crushed onto a 210mm sheet. Everything that tried to
+     work around that has been removed rather than left to rot.
+     What remains below only serves someone pressing Ctrl+P on the page itself. */
   @page {
     size: A4 portrait;
     margin: 18mm 16mm;
   }
 
-  @page cert-sheet {
-    size: A4 landscape;
-    margin: 0;
-  }
-
-  /* No page-break-before here. Switching to a different named page already forces
-     a break; adding an explicit one produced a second break, which is where the
-     blank sheet before every certificate came from. */
-  .cert-attachment {
-    page: cert-sheet;
-  }
-
-  body.printing-certificate .cert-page {
-    page: cert-sheet;
+  /* The on-screen certificate preview is not worth a printed page of its own. */
+  .cert-page {
+    display: none !important;
   }
 
   /* ── Report document in print ── */
@@ -421,11 +366,11 @@
   }
 }
 
-/* Certificate — screen presentation. The SVG carries its own aspect ratio via the
-   viewBox, so it only needs a max width and centering here.
-   The lift is a soft ring rather than a drop shadow: a directional shadow read as
-   a dirty edge on the printed sheet, and the artwork is meant to run to the paper
-   edge with nothing around it. */
+/* Certificate — screen preview only; the downloadable file is drawn by
+   src/lib/pdf.ts, so nothing here affects it. The SVG carries its own aspect
+   ratio via the viewBox, so it only needs a max width and centering. The lift is
+   a hairline ring rather than a drop shadow, since the artwork is meant to run
+   edge to edge with nothing floating around it. */
 .cert-page .cert-svg {
   display: block;
   width: 100%;

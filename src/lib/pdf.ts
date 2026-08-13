@@ -1,0 +1,227 @@
+import { jsPDF } from 'jspdf';
+import type { Certification } from '../types';
+import { CERT_WIDTH } from '../components/CertificateCanvas';
+
+/**
+ * Native PDF export.
+ *
+ * Printing through the browser dialog could not produce a correct file. The
+ * certificate is A4 landscape while the report is A4 portrait, and mixed
+ * orientations in one document require named pages (`@page cert-sheet { size: A4
+ * landscape }`) — which is valid CSS Paged Media that no browser implements. A
+ * test export came back with all six pages in portrait and the 297mm-wide
+ * certificate squeezed onto a 210mm sheet. The browser also imposes its own
+ * margins, headers and footers, which the page cannot override.
+ *
+ * Generating the PDF directly removes every one of those variables: exact page
+ * size and orientation per page, full-bleed artwork, no browser furniture, and
+ * an identical file on any machine.
+ *
+ * Helvetica is one of the 14 standard PDF fonts, so the type used here is the
+ * real thing rather than a substitute — and it matches the app's identity.
+ */
+
+const A4_LANDSCAPE = { width: 297, height: 210 };
+const A4_PORTRAIT = { width: 210, height: 297 };
+const MM_PER_PT = 25.4 / 72;
+
+/** Certificate artwork units (2340 x 1655 px) → millimetres on the sheet. */
+const PX_TO_MM = A4_LANDSCAPE.width / CERT_WIDTH;
+const pxToMm = (px: number) => px * PX_TO_MM;
+/** jsPDF sets type size in points regardless of the document unit. */
+const pxToPt = (px: number) => pxToMm(px) / MM_PER_PT;
+
+async function loadImageAsDataUrl(url: string): Promise<string> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Não foi possível carregar a arte do certificado (${response.status}).`);
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Falha ao ler a arte do certificado.'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function formatIssuedDate(cert: Certification): string {
+  return new Date(cert.issued_at).toLocaleDateString('pt-BR', {
+    day: '2-digit', month: 'long', year: 'numeric',
+  });
+}
+
+/**
+ * Draws one full-bleed certificate onto the current page.
+ * Mirrors CertificateCanvas exactly: the same measured coordinates, the same
+ * shrink-to-fit rule for long names.
+ */
+async function drawCertificate(doc: jsPDF, cert: Certification, studentName: string): Promise<void> {
+  const specialtyCode = cert.curriculum_code === 'AP035' ? 'AP035' : 'AP034';
+  const artwork = await loadImageAsDataUrl(
+    `${import.meta.env.BASE_URL}assets/certificates/${specialtyCode}.png`
+  );
+
+  // Edge to edge — no margin, so the artwork bleeds off all four sides.
+  doc.addImage(artwork, 'PNG', 0, 0, A4_LANDSCAPE.width, A4_LANDSCAPE.height, undefined, 'FAST');
+
+  // Student name, centred on the artwork's clear band (baseline y=598px).
+  doc.setTextColor(10, 10, 10);
+  doc.setFont('helvetica', 'normal');
+  let nameSize = pxToPt(150);
+  doc.setFontSize(nameSize);
+  const maxNameWidth = pxToMm(1800);
+  if (doc.getTextWidth(studentName) > maxNameWidth) {
+    nameSize = nameSize * (maxNameWidth / doc.getTextWidth(studentName));
+    doc.setFontSize(nameSize);
+  }
+  doc.text(studentName, A4_LANDSCAPE.width / 2, pxToMm(598), { align: 'center', baseline: 'alphabetic' });
+
+  // Footer: token code left, issue date right, sharing one baseline (y=1520px).
+  doc.setTextColor(26, 26, 26);
+  doc.setFontSize(pxToPt(32));
+  const footerY = pxToMm(1520);
+  doc.text(cert.code, pxToMm(120), footerY, { baseline: 'alphabetic' });
+  doc.text(formatIssuedDate(cert), A4_LANDSCAPE.width - pxToMm(120), footerY, {
+    align: 'right', baseline: 'alphabetic',
+  });
+}
+
+/** A single certificate: one A4 landscape page, artwork only. */
+export async function exportCertificatePdf(cert: Certification, studentName: string): Promise<void> {
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+  await drawCertificate(doc, cert, studentName);
+  doc.save(`Token.Web ${cert.curriculum_code} - ${studentName}.pdf`);
+}
+
+export interface ReportSection {
+  heading: string;
+  paragraphs: string[];
+}
+
+export interface ReportPdfInput {
+  studentName: string;
+  club: string;
+  unit: string;
+  issuedOn: string;
+  intro: string;
+  sections: ReportSection[];
+  annexNote?: string;
+  certificates: Certification[];
+}
+
+const MARGIN = { top: 20, right: 18, bottom: 20, left: 18 };
+const BODY_SIZE = 10.5;
+const LINE_HEIGHT = 5.1;
+
+/**
+ * The competency report: flowing portrait pages, then one landscape sheet per
+ * earned certificate. Mixing orientations is the part CSS could not do.
+ */
+export async function exportReportPdf(input: ReportPdfInput): Promise<void> {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  const textWidth = A4_PORTRAIT.width - MARGIN.left - MARGIN.right;
+  let y = MARGIN.top;
+
+  /** Starts a new page when the next block would cross the bottom margin. */
+  const ensureSpace = (needed: number) => {
+    if (y + needed > A4_PORTRAIT.height - MARGIN.bottom) {
+      doc.addPage('a4', 'portrait');
+      y = MARGIN.top;
+    }
+  };
+
+  const writeParagraph = (text: string, opts: { size?: number; style?: 'normal' | 'bold'; gap?: number } = {}) => {
+    const { size = BODY_SIZE, style = 'normal', gap = 3.4 } = opts;
+    doc.setFont('helvetica', style);
+    doc.setFontSize(size);
+    const lines = doc.splitTextToSize(text, textWidth) as string[];
+    for (const line of lines) {
+      // Paginate line by line: a paragraph longer than a page must continue on the
+      // next one rather than be pushed whole, which is what left the old printed
+      // version with half-empty pages.
+      ensureSpace(LINE_HEIGHT);
+      doc.text(line, MARGIN.left, y, { baseline: 'alphabetic' });
+      y += LINE_HEIGHT;
+    }
+    y += gap;
+  };
+
+  // ── Title block ──
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(17);
+  doc.text('Relatório de Competências', A4_PORTRAIT.width / 2, y, { align: 'center' });
+  y += 7;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.setTextColor(70, 70, 70);
+  doc.text(
+    'Trilha.Web() — Especialidades AP034 (Internet) e AP035 (Internet, Avançado)',
+    A4_PORTRAIT.width / 2, y, { align: 'center' }
+  );
+  y += 5;
+
+  doc.setDrawColor(193, 53, 22);
+  doc.setLineWidth(0.6);
+  doc.line(MARGIN.left, y, A4_PORTRAIT.width - MARGIN.right, y);
+  y += 7;
+
+  // ── Identification ──
+  doc.setTextColor(20, 20, 20);
+  doc.setFontSize(10);
+  const idRows: [string, string][] = [
+    ['Desbravador(a):', input.studentName],
+    ['Clube:', input.club || '—'],
+    ['Unidade:', input.unit || '—'],
+    ['Emitido em:', input.issuedOn],
+  ];
+  for (const [label, value] of idRows) {
+    ensureSpace(LINE_HEIGHT);
+    doc.setFont('helvetica', 'bold');
+    doc.text(label, MARGIN.left, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(value, MARGIN.left + 32, y);
+    y += LINE_HEIGHT;
+  }
+  y += 2;
+
+  doc.setDrawColor(180, 180, 180);
+  doc.setLineWidth(0.2);
+  doc.line(MARGIN.left, y, A4_PORTRAIT.width - MARGIN.right, y);
+  y += 7;
+
+  // ── Body ──
+  doc.setTextColor(26, 26, 26);
+  writeParagraph(input.intro);
+
+  for (const section of input.sections) {
+    // Keep a heading with at least the first two lines of its section.
+    ensureSpace(LINE_HEIGHT * 3 + 6);
+    y += 2;
+    doc.setTextColor(193, 53, 22);
+    writeParagraph(section.heading, { size: 12, style: 'bold', gap: 1.5 });
+    doc.setDrawColor(200, 200, 200);
+    doc.line(MARGIN.left, y - 2.5, A4_PORTRAIT.width - MARGIN.right, y - 2.5);
+    y += 1.5;
+    doc.setTextColor(26, 26, 26);
+    for (const p of section.paragraphs) writeParagraph(p);
+  }
+
+  if (input.annexNote) {
+    ensureSpace(LINE_HEIGHT * 2 + 6);
+    y += 3;
+    doc.setDrawColor(180, 180, 180);
+    doc.line(MARGIN.left, y, A4_PORTRAIT.width - MARGIN.right, y);
+    y += 5;
+    doc.setTextColor(90, 90, 90);
+    writeParagraph(input.annexNote, { size: 9 });
+  }
+
+  // ── Attached certificates, landscape ──
+  for (const cert of input.certificates) {
+    doc.addPage('a4', 'landscape');
+    await drawCertificate(doc, cert, input.studentName);
+  }
+
+  doc.save(`Relatorio de Competencias - ${input.studentName}.pdf`);
+}
