@@ -27,8 +27,8 @@ web_lab_events, mail_lab_messages, mail_lab_events, code_projects, code_files,
 code_versions, code_test_results, image_assets, image_test_results, site_projects,
 site_files, site_test_results, ai_generations, ai_prompts, ai_reviews,
 guardian_consents, audit_permissions, auditor_opinions, app_settings.
-Curriculum content lives in src/curriculum/*.ts, not in the `lessons.content` jsonb
-column, so these reference/lab-detail tables were dead weight.
+Curriculum content lives in the TypeScript files under src/curriculum, not in the
+`lessons.content` jsonb column, so these reference/lab-detail tables were dead weight.
 
 ## New: gamification foundation
 `badges` (catalog) + `user_badges` (earned badges), plus `show_on_leaderboard` on
