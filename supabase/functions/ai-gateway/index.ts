@@ -26,10 +26,95 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-// Overridable without a redeploy, since model ids get retired.
-const TEXT_MODEL = Deno.env.get("GEMINI_TEXT_MODEL") ?? "gemini-2.0-flash";
-const IMAGE_MODEL = Deno.env.get("GEMINI_IMAGE_MODEL") ?? "gemini-2.0-flash-preview-image-generation";
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+
+/**
+ * Which Gemini model to call.
+ *
+ * These were pinned to specific ids, and the pin broke: Google retired
+ * `gemini-2.0-flash` and every generation started failing with "this model is no
+ * longer available". A club leader cannot be expected to track Google's model
+ * lifecycle, so the gateway asks the API which models exist and picks one.
+ *
+ * The secrets still win when they are set — that is the escape hatch for pinning
+ * a specific model deliberately.
+ */
+const TEXT_MODEL_OVERRIDE = Deno.env.get("GEMINI_TEXT_MODEL");
+const IMAGE_MODEL_OVERRIDE = Deno.env.get("GEMINI_IMAGE_MODEL");
+
+interface ListedModel {
+  name: string;
+  supportedGenerationMethods?: string[];
+  description?: string;
+}
+
+/** Resolved lists live as long as the instance stays warm, then are re-checked. */
+const modelCache = new Map<"text" | "image", { names: string[]; at: number }>();
+const MODEL_CACHE_MS = 60 * 60 * 1000;
+
+/**
+ * Ranks candidates so the choice survives names nobody has seen yet: newest
+ * version first, "flash" ahead of "pro" because this is a children's lab where
+ * cost and latency matter more than depth, and stable ahead of preview.
+ */
+function scoreModel(id: string): number {
+  const version = /gemini-(\d+)(?:\.(\d+))?/.exec(id);
+  const major = version ? Number(version[1]) : 0;
+  const minor = version ? Number(version[2] ?? 0) : 0;
+  let score = major * 1000 + minor * 100;
+  if (/flash/i.test(id)) score += 50;
+  if (/lite/i.test(id)) score += 10;
+  if (/preview|exp|latest/i.test(id)) score -= 30;
+  return score;
+}
+
+/**
+ * Returns every usable model, best first.
+ *
+ * A list rather than a single name because the two ways this breaks are
+ * different: a retired model needs a *different* model, and an overloaded one —
+ * "this model is currently experiencing high demand", which is what the newest
+ * and most popular model returns at busy hours — needs a *less busy* one. Both
+ * are answered by walking down the list.
+ */
+async function resolveModels(apiKey: string, kind: "text" | "image"): Promise<string[]> {
+  const override = kind === "image" ? IMAGE_MODEL_OVERRIDE : TEXT_MODEL_OVERRIDE;
+  if (override) return [override];
+
+  const cached = modelCache.get(kind);
+  if (cached && Date.now() - cached.at < MODEL_CACHE_MS) return cached.names;
+
+  const response = await fetch(`${API_BASE}?key=${apiKey}&pageSize=200`);
+  if (!response.ok) {
+    throw new Error(`Não foi possível listar os modelos do Gemini (${response.status}).`);
+  }
+  const listed: ListedModel[] = (await response.json()).models ?? [];
+
+  const usable = listed
+    .filter(m => (m.supportedGenerationMethods ?? []).includes("generateContent"))
+    .map(m => m.name.replace(/^models\//, ""))
+    // Embedding and other non-conversational models never belong here.
+    .filter(id => !/embedding|aqa|tts|imagen/i.test(id));
+
+  const candidates = kind === "image"
+    ? usable.filter(id => /image/i.test(id))
+    : usable.filter(id => !/image/i.test(id));
+
+  // An image-capable model is not guaranteed to exist; falling back to text
+  // means the lab reports a clean "image unavailable" instead of a 502.
+  const pool = candidates.length > 0 ? candidates : (kind === "image" ? [] : usable);
+  if (pool.length === 0) {
+    throw new Error(
+      kind === "image"
+        ? "Nenhum modelo de geração de imagem disponível para esta chave."
+        : "Nenhum modelo de texto disponível para esta chave.",
+    );
+  }
+
+  const ranked = [...pool].sort((a, b) => scoreModel(b) - scoreModel(a));
+  modelCache.set(kind, { names: ranked, at: Date.now() });
+  return ranked;
+}
 
 const DAILY_LIMIT = Number(Deno.env.get("AI_DAILY_LIMIT") ?? "12");
 
@@ -102,7 +187,14 @@ Deno.serve(async (req: Request) => {
       }, 429);
     }
 
-    const model = type === "image" ? IMAGE_MODEL : TEXT_MODEL;
+    const kind = type === "image" ? "image" : "text";
+    let candidates: string[];
+    try {
+      candidates = await resolveModels(apiKey, kind);
+    } catch (err) {
+      return json({ error: (err as Error).message, provider: "gemini" }, 502);
+    }
+
     const body: Record<string, unknown> = {
       contents: [{ parts: [{ text: prompt }] }],
       safetySettings: SAFETY_SETTINGS,
@@ -110,20 +202,96 @@ Deno.serve(async (req: Request) => {
     if (type === "image") {
       body.generationConfig = { responseModalities: ["TEXT", "IMAGE"] };
     } else {
-      body.generationConfig = { temperature: 0.8, maxOutputTokens: 800 };
+      /**
+       * Reasoning models spend the output budget thinking before they answer,
+       * and an 800-token cap produced a truncated scratchpad instead of text.
+       * The budget is raised, and `thinkingBudget: 0` asks the model not to think
+       * at all — but only some models accept that field. The ones that do not
+       * reject the whole request with "invalid argument" rather than ignoring it,
+       * so the call below retries without it.
+       */
+      body.generationConfig = {
+        temperature: 0.8,
+        maxOutputTokens: 2000,
+        thinkingConfig: { thinkingBudget: 0 },
+      };
     }
 
-    const response = await fetch(`${API_BASE}/${model}:generateContent?key=${apiKey}`, {
+    const generate = (id: string) => fetch(`${API_BASE}/${id}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
-    const data = await response.json();
+    /**
+     * Worth another model, as opposed to worth giving up on. Retirement and
+     * overload both mean "not this one"; a quota error or a rejected prompt would
+     * fail identically everywhere, so those stop here.
+     */
+    const worthAnotherModel = (message: string, status: number) => {
+      // "limit: 0" means this *model* is not included in the caller's tier at
+      // all — image models are the usual case on the free tier. Another model
+      // may well be included, so it is worth walking on. A quota message
+      // without a zero limit means the allowance was spent, which every model
+      // shares, so that one stops here.
+      if (/limit:\s*0/i.test(message)) return true;
+      if (/quota|rate limit/i.test(message)) return false;
+      return status === 503 || status === 404
+        || /no longer available|not found|is not supported|high demand|overloaded|try again later/i.test(message);
+    };
+
+    // Walk down the ranked list. Three attempts is enough to clear a retired
+    // model and a busy one without leaving a student watching a spinner.
+    let response!: Response;
+    // Shape varies by model and by error; the accesses below are all guarded.
+    // deno-lint-ignore no-explicit-any
+    let data: any = {};
+    let model = candidates[0];
+    let staleCache = false;
+
+    for (const candidate of candidates.slice(0, 6)) {
+      model = candidate;
+      response = await generate(candidate);
+      data = await response.json();
+
+      // Same model, minus the field it refused. Only worth one attempt.
+      if (!response.ok && /invalid argument/i.test(data?.error?.message ?? "")
+          && (body.generationConfig as Record<string, unknown>)?.thinkingConfig) {
+        delete (body.generationConfig as Record<string, unknown>).thinkingConfig;
+        response = await generate(candidate);
+        data = await response.json();
+      }
+
+      if (response.ok) break;
+      const message = data?.error?.message ?? "";
+      if (!worthAnotherModel(message, response.status)) break;
+      if (/no longer available|not found/i.test(message)) staleCache = true;
+    }
+
+    // A retirement invalidates the whole cached list, not just the entry used.
+    if (staleCache) modelCache.delete(kind);
 
     if (!response.ok) {
-      const message = data?.error?.message ?? "Erro ao contatar a IA.";
-      return json({ error: message, provider: "gemini", model }, 502);
+      const raw = data?.error?.message ?? "";
+
+      /**
+       * Google's errors are long, English, and full of metric names. A twelve
+       * year old reading "generate_content_free_tier_input_token_count" learns
+       * nothing, so the three cases that actually happen get plain Portuguese.
+       * The original is kept in `detail` for whoever maintains the club's key.
+       */
+      let message = "Não foi possível falar com a IA agora. Tente de novo em alguns minutos.";
+      if (/limit:\s*0/i.test(raw)) {
+        message = type === "image"
+          ? "A geração de imagens não está incluída no plano gratuito do Gemini. O texto continua funcionando normalmente."
+          : "Este recurso não está incluído no plano gratuito do Gemini.";
+      } else if (/quota|rate limit/i.test(raw)) {
+        message = "A cota gratuita do Gemini de hoje acabou. Tente novamente mais tarde.";
+      } else if (/high demand|overloaded/i.test(raw)) {
+        message = "A IA está sobrecarregada neste momento. Tente de novo em alguns minutos.";
+      }
+
+      return json({ error: message, detail: raw, provider: "gemini", model }, 502);
     }
 
     const candidate = data?.candidates?.[0];
@@ -135,8 +303,24 @@ Deno.serve(async (req: Request) => {
     }
 
     const parts = candidate?.content?.parts ?? [];
-    const textOut = parts.filter((p: { text?: string }) => p.text).map((p: { text: string }) => p.text).join("\n").trim();
+
+    /**
+     * Reasoning models return their scratchpad as parts flagged `thought`, and
+     * those must not reach a student. Concatenating every text part put the
+     * model's own deliberation on screen — the lab showed «"trocar essa ideia"?
+     * Let's stick closer to Attempt 2…» instead of the invitation it asked for.
+     */
+    const answerParts = parts.filter((p: { text?: string; thought?: boolean }) => p.text && !p.thought);
+    const textOut = answerParts.map((p: { text: string }) => p.text).join("\n").trim();
     const inline = parts.find((p: { inlineData?: unknown }) => p.inlineData)?.inlineData;
+
+    // A truncated answer is worse than none: the student would grade the model on
+    // a sentence that stops mid-word.
+    if (type === "text" && candidate?.finishReason === "MAX_TOKENS" && textOut.length < 40) {
+      return json({
+        error: "A resposta veio incompleta. Tente novamente — se repetir, escolha um tamanho menor.",
+      }, 200);
+    }
 
     if (type === "image") {
       if (!inline?.data) {
