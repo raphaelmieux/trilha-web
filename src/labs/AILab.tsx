@@ -126,9 +126,23 @@ export default function AILab({ specialtyCode, requirementCodes, userId }: Props
     [imageSel]
   );
 
+  /**
+   * The one free field that reaches an image model.
+   *
+   * Text goes to Gemini, whose safety filters are set to their strictest usable
+   * level. Images go to Cloudflare's FLUX, which has no equivalent — so the
+   * safety has to come from the input instead. Reducing the name to letters,
+   * digits and spaces makes the set of prompts this lab can produce finite and
+   * inspectable, rather than trusting a model to refuse something.
+   */
+  const safeClubName = useMemo(
+    () => clubName.normalize('NFC').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 40),
+    [clubName]
+  );
+
   const logoPrompt = useMemo(
-    () => `Um logotipo simples e limpo para um clube de desbravadores${clubName.trim() ? ` chamado "${clubName.trim()}"` : ''}, ${pick(LOGO_OPTIONS.shape, logoSel.shape)}, ${pick(LOGO_OPTIONS.symbol, logoSel.symbol)}, ${pick(LOGO_OPTIONS.colors, logoSel.colors)}. Design vetorial, fundo liso, sem texto.`,
-    [logoSel, clubName]
+    () => `Um logotipo simples e limpo para um clube de desbravadores${safeClubName ? ` chamado "${safeClubName}"` : ''}, ${pick(LOGO_OPTIONS.shape, logoSel.shape)}, ${pick(LOGO_OPTIONS.symbol, logoSel.symbol)}, ${pick(LOGO_OPTIONS.colors, logoSel.colors)}. Design vetorial, fundo liso, sem texto.`,
+    [logoSel, safeClubName]
   );
 
   const callAI = async (type: 'text' | 'image', prompt: string): Promise<{ result?: string; error?: string }> => {

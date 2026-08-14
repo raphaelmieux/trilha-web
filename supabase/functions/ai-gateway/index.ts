@@ -116,6 +116,65 @@ async function resolveModels(apiKey: string, kind: "text" | "image"): Promise<st
   return ranked;
 }
 
+/* ── Cloudflare Workers AI, for images ────────────────────────────────────
+ *
+ * Gemini answers `limit: 0` for its image models on the free tier — image
+ * generation simply is not included — which left two of the AI Lab's four stages
+ * impossible to complete. Cloudflare's free allowance is 10,000 neurons a day
+ * and FLUX-1-schnell costs about 4.8 per 512×512 image, so a club has roughly
+ * two thousand images a day at no cost.
+ *
+ * The trade-off is moderation: Gemini's safety filters have no equivalent here.
+ * That is answered upstream instead of downstream — the image prompts are
+ * assembled from fixed option lists, and the one free field (the club's name) is
+ * reduced to letters, digits and spaces before it is used. The set of prompts
+ * this endpoint can produce is therefore finite and inspectable, rather than
+ * depending on a model's judgement.
+ */
+const CF_ACCOUNT_ID = Deno.env.get("CLOUDFLARE_ACCOUNT_ID");
+const CF_API_TOKEN = Deno.env.get("CLOUDFLARE_API_TOKEN");
+const CF_IMAGE_MODEL = Deno.env.get("CLOUDFLARE_IMAGE_MODEL") ?? "@cf/black-forest-labs/flux-1-schnell";
+
+const cloudflareConfigured = () => !!(CF_ACCOUNT_ID && CF_API_TOKEN);
+
+interface ImageResult { dataUrl: string; model: string; provider: string }
+
+async function generateImageWithCloudflare(prompt: string): Promise<ImageResult> {
+  const url = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/ai/run/${CF_IMAGE_MODEL}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${CF_API_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    // steps 4 is what schnell ("quick" in German) is tuned for; more costs
+    // neurons without visibly improving a 512px illustration.
+    body: JSON.stringify({ prompt, steps: 4 }),
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+
+  // Two shapes in the wild: JSON with base64, or the raw image bytes.
+  if (contentType.includes("application/json")) {
+    const payload = await response.json();
+    if (!response.ok || payload?.success === false) {
+      const detail = payload?.errors?.[0]?.message ?? payload?.error ?? `HTTP ${response.status}`;
+      throw new Error(String(detail));
+    }
+    const base64 = payload?.result?.image;
+    if (!base64) throw new Error("A resposta não trouxe imagem.");
+    return { dataUrl: `data:image/jpeg;base64,${base64}`, model: CF_IMAGE_MODEL, provider: "cloudflare" };
+  }
+
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  const mime = contentType.split(";")[0] || "image/png";
+  return { dataUrl: `data:${mime};base64,${btoa(binary)}`, model: CF_IMAGE_MODEL, provider: "cloudflare" };
+}
+
 const DAILY_LIMIT = Number(Deno.env.get("AI_DAILY_LIMIT") ?? "12");
 
 // Strictest setting the API accepts for every category it exposes.
@@ -185,6 +244,25 @@ Deno.serve(async (req: Request) => {
         error: `Limite de ${DAILY_LIMIT} gerações por dia atingido. Tente novamente amanhã.`,
         limitReached: true,
       }, 429);
+    }
+
+    // Images go to Cloudflare when it is configured; Gemini keeps the text.
+    if (type === "image" && cloudflareConfigured()) {
+      try {
+        const image = await generateImageWithCloudflare(prompt);
+        await admin.from("activity_events").insert({
+          user_id: userId,
+          event_type: "ai_generation",
+          metadata: { type, model: image.model, provider: image.provider, prompt: prompt.slice(0, 500) },
+        });
+        return json({ result: image.dataUrl, model: image.model, provider: image.provider });
+      } catch (err) {
+        const detail = (err as Error).message;
+        const message = /neuron|limit|quota|429/i.test(detail)
+          ? "A cota diária de imagens do clube acabou. Ela é renovada todo dia."
+          : "Não foi possível gerar a imagem agora. Tente de novo em alguns minutos.";
+        return json({ error: message, detail, provider: "cloudflare" }, 502);
+      }
     }
 
     const kind = type === "image" ? "image" : "text";
