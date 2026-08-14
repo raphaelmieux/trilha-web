@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
-import type { Certification } from '../types';
+import type { Badge, Certification } from '../types';
 import { CERT_WIDTH } from '../components/CertificateCanvas';
+import { renderBadgeIconPng, TIER_LABELS } from './badgeIcons';
 
 /**
  * Native PDF export.
@@ -165,6 +166,78 @@ export function exportStudySheetPdf(input: {
   doc.save(`Ficha de Pesquisa - ${input.studentName}.pdf`);
 }
 
+/**
+ * The personal internet commitment, as a sheet that can be printed and signed.
+ *
+ * A commitment that exists only as a green tick on a screen is not a commitment.
+ * This is the artefact the requirement is really about: something the student
+ * and a guardian can put on the wall next to the computer.
+ */
+export function exportPactPdf(input: {
+  studentName: string;
+  club: string;
+  clauses: { title: string; text: string }[];
+}): void {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  const width = A4_PORTRAIT.width;
+  const left = 20;
+  const textWidth = width - left * 2;
+  let y = 24;
+
+  const write = (text: string, opts: { size?: number; style?: 'normal' | 'bold'; gap?: number; colour?: [number, number, number] } = {}) => {
+    const { size = 10.5, style = 'normal', gap = 2, colour = [26, 26, 26] } = opts;
+    doc.setFont('helvetica', style);
+    doc.setFontSize(size);
+    doc.setTextColor(...colour);
+    for (const l of doc.splitTextToSize(text, textWidth) as string[]) {
+      if (y > A4_PORTRAIT.height - 24) { doc.addPage('a4', 'portrait'); y = 24; }
+      doc.text(l, left, y);
+      y += 5;
+    }
+    y += gap;
+  };
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Meu Compromisso Digital', width / 2, y, { align: 'center' });
+  y += 7;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.setTextColor(70, 70, 70);
+  doc.text('Trilha.Web() — AP034, requisitos 5.1 a 5.9', width / 2, y, { align: 'center' });
+  y += 5;
+  doc.setDrawColor(193, 53, 22);
+  doc.setLineWidth(0.6);
+  doc.line(left, y, width - left, y);
+  y += 9;
+
+  write(`Eu, ${input.studentName}${input.club ? `, do Clube ${input.club}` : ''}, assumo os compromissos abaixo sobre o meu uso da internet.`, { gap: 5 });
+
+  input.clauses.forEach((clause, i) => {
+    write(`${i + 1}. ${clause.title}`, { style: 'bold', size: 10, colour: [193, 53, 22], gap: 0.5 });
+    write(clause.text, { gap: 3.5 });
+  });
+
+  y += 6;
+  if (y > A4_PORTRAIT.height - 60) { doc.addPage('a4', 'portrait'); y = 30; }
+  doc.setDrawColor(150, 150, 150);
+  doc.setLineWidth(0.3);
+  const half = (textWidth - 12) / 2;
+  doc.line(left, y + 14, left + half, y + 14);
+  doc.line(left + half + 12, y + 14, width - left, y + 14);
+  doc.setFontSize(9);
+  doc.setTextColor(90, 90, 90);
+  doc.text(input.studentName, left, y + 19);
+  doc.text('Responsável', left + half + 12, y + 19);
+  doc.text(
+    `Assinado em ${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}`,
+    left, y + 27,
+  );
+
+  doc.save(`Meu Compromisso Digital - ${input.studentName}.pdf`);
+}
+
 export interface ReportSection {
   heading: string;
   paragraphs: string[];
@@ -177,6 +250,9 @@ export interface ReportPdfInput {
   issuedOn: string;
   intro: string;
   sections: ReportSection[];
+  /** Introductory sentence for the achievements section; omitted when there are none. */
+  badgeIntro?: string;
+  badges: Badge[];
   annexNote?: string;
   certificates: Certification[];
 }
@@ -278,6 +354,57 @@ export async function exportReportPdf(input: ReportPdfInput): Promise<void> {
     y += 1.5;
     doc.setTextColor(26, 26, 26);
     for (const p of section.paragraphs) writeParagraph(p);
+  }
+
+  // ── Conquistas ──
+  if (input.badges.length > 0) {
+    ensureSpace(LINE_HEIGHT * 4 + 8);
+    y += 2;
+    doc.setTextColor(193, 53, 22);
+    writeParagraph('Conquistas', { size: 12, style: 'bold', gap: 1.5 });
+    doc.setDrawColor(200, 200, 200);
+    doc.line(MARGIN.left, y - 2.5, A4_PORTRAIT.width - MARGIN.right, y - 2.5);
+    y += 1.5;
+    doc.setTextColor(26, 26, 26);
+    if (input.badgeIntro) writeParagraph(input.badgeIntro);
+
+    // The icons are rasterised once each: a student who earned the same tier
+    // twice should not pay for two identical images inside the file.
+    const iconCache = new Map<string, string>();
+    const ICON_MM = 9;
+
+    for (const badge of input.badges) {
+      const rowHeight = Math.max(ICON_MM, LINE_HEIGHT * 2) + 2.5;
+      ensureSpace(rowHeight);
+      const rowTop = y - 3.6;
+
+      const cacheKey = `${badge.icon}|${badge.tier}`;
+      let png = iconCache.get(cacheKey);
+      if (!png) {
+        png = await renderBadgeIconPng(badge.icon, badge.tier);
+        iconCache.set(cacheKey, png);
+      }
+      doc.addImage(png, 'PNG', MARGIN.left, rowTop, ICON_MM, ICON_MM);
+
+      const textLeft = MARGIN.left + ICON_MM + 4;
+      const textRight = A4_PORTRAIT.width - MARGIN.right;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(26, 26, 26);
+      doc.text(`${badge.name} (${TIER_LABELS[badge.tier]})`, textLeft, y);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(90, 90, 90);
+      const lines = doc.splitTextToSize(badge.description, textRight - textLeft) as string[];
+      let descY = y + 4.4;
+      for (const line of lines) {
+        doc.text(line, textLeft, descY);
+        descY += 4.2;
+      }
+      y = Math.max(rowTop + ICON_MM, descY - 4.2) + 4.5;
+    }
+    y += 1;
   }
 
   if (input.annexNote) {

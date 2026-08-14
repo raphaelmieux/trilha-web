@@ -195,3 +195,99 @@ describe('validateSiteLinks', () => {
     expect(validateSiteLinks(pages).find(x => x.id === 'noBrokenLinks')!.passed).toBe(true);
   });
 });
+
+describe('table challenge (AP035-3.14)', () => {
+  const IDS = ['pageComplete', 'tableStructure', 'tableHeader', 'tableSize',
+    'tableFilled', 'tableCaption', 'tableOwnContent'];
+
+  const page = (body: string) => `<!DOCTYPE html>
+<html><head><title>Escala</title></head><body>${body}</body></html>`;
+
+  const good = page(`
+    <h2>Escala da Unidade Falcão</h2>
+    <table>
+      <caption>Quem abre o programa em cada sábado</caption>
+      <tr><th>Sábado</th><th>Responsável</th><th>Tarefa</th></tr>
+      <tr><td>03/05</td><td>Ana</td><td>Oração</td></tr>
+      <tr><td>10/05</td><td>Bruno</td><td>Louvor</td></tr>
+      <tr><td>17/05</td><td>Carla</td><td>Bandeirim</td></tr>
+    </table>`);
+
+  const run = (html: string) => validateHtml(html, IDS);
+  const failing = (html: string) => run(html).filter(r => !r.passed).map(r => r.id);
+
+  it('accepts a finished table page', () => {
+    expect(failing(good)).toEqual([]);
+  });
+
+  it('rejects the starter with the example cells left in place', () => {
+    // The one way to satisfy every structural check without deciding anything.
+    const starter = page(`
+      <h2>Escala</h2>
+      <table>
+        <caption>Trocar por uma descrição da sua tabela</caption>
+        <tr><th>Coluna 1</th><th>Coluna 2</th><th>Coluna 3</th></tr>
+        <tr><td>Dado 1</td><td>Dado 2</td><td>Dado 3</td></tr>
+      </table>`);
+    expect(failing(starter)).toContain('tableOwnContent');
+  });
+
+  it('does not accept the sixteen-element checklist as a table page', () => {
+    // A page with one <td> passes the other lab and must not pass this one.
+    const minimal = page('<table><tr><td>x</td></tr></table>');
+    const failed = failing(minimal);
+    expect(failed).toContain('tableHeader');
+    expect(failed).toContain('tableSize');
+  });
+
+  it('requires three named columns, not one', () => {
+    const oneHeader = page(`<h2>t</h2><table>
+      <tr><th>Nome</th></tr><tr><td>Ana</td></tr>
+      <tr><td>Bruno</td></tr><tr><td>Carla</td></tr></table>`);
+    expect(failing(oneHeader)).toContain('tableHeader');
+  });
+
+  it('counts data rows, ignoring the header row', () => {
+    const twoRows = page(`<h2>t</h2><table>
+      <tr><th>A</th><th>B</th><th>C</th></tr>
+      <tr><td>1</td><td>2</td><td>3</td></tr>
+      <tr><td>4</td><td>5</td><td>6</td></tr></table>`);
+    const size = run(twoRows).find(r => r.id === 'tableSize')!;
+    expect(size.passed).toBe(false);
+    expect(size.detail).toContain('2 linhas');
+  });
+
+  it('rejects an empty cell and says how many', () => {
+    const withGap = good.replace('<td>Oração</td>', '<td>  </td>');
+    const filled = run(withGap).find(r => r.id === 'tableFilled')!;
+    expect(filled.passed).toBe(false);
+    expect(filled.detail).toContain('1 célula');
+  });
+
+  it('accepts a heading instead of a caption', () => {
+    const noCaption = good.replace(/<caption>.*<\/caption>/, '');
+    expect(run(noCaption).find(r => r.id === 'tableCaption')!.passed).toBe(true);
+  });
+
+  it('rejects a table with neither caption nor heading', () => {
+    const bare = good.replace(/<caption>.*<\/caption>/, '').replace(/<h2>.*<\/h2>/, '');
+    expect(run(bare).find(r => r.id === 'tableCaption')!.passed).toBe(false);
+  });
+
+  it('requires the page scaffolding around the table', () => {
+    const fragment = '<table><tr><th>A</th><th>B</th><th>C</th></tr></table>';
+    expect(failing(fragment)).toContain('pageComplete');
+  });
+
+  it('requires a filled <title>', () => {
+    const noTitle = good.replace('<title>Escala</title>', '<title></title>');
+    const complete = run(noTitle).find(r => r.id === 'pageComplete')!;
+    expect(complete.passed).toBe(false);
+    expect(complete.detail).toMatch(/title/);
+  });
+
+  it('is not fooled by a table that exists only inside a comment', () => {
+    const commented = page('<h2>t</h2><!-- <table><tr><th>A</th></tr></table> -->');
+    expect(failing(commented)).toContain('tableStructure');
+  });
+});

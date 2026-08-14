@@ -4,9 +4,28 @@ import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollm
 import { validateHtml, type CheckResult } from '../lib/htmlValidator';
 import { Code2, RotateCcw, CheckCircle2, AlertCircle, FileCode, Eye, PanelsTopLeft } from 'lucide-react';
 
-interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
+/**
+ * Two variants, one editor.
+ *
+ * `elementos` is the guided run through requirements AP035-3.1 … 3.13: sixteen
+ * checks, one per element. `tabela` is requirement AP035-3.14, "criar página
+ * completa" — and it exists as a separate variant because the curriculum used to
+ * point that lesson at this very component with the very same sixteen checks, so
+ * the student met the identical screen twice and the second visit proved
+ * nothing. The table challenge judges a finished artefact instead: a header row,
+ * a shape worth tabulating, no empty cells, and data that is the student's own.
+ */
+export type CodeLabVariant = 'elementos' | 'tabela';
 
-const STARTER = `<!DOCTYPE html>
+interface Props {
+  specialtyCode: string;
+  requirementCodes: string[];
+  userId: string;
+  variant?: CodeLabVariant;
+}
+
+const STARTERS: Record<CodeLabVariant, string> = {
+  elementos: `<!DOCTYPE html>
 <html>
 <head>
   <title>Meu Clube de Desbravadores</title>
@@ -16,17 +35,61 @@ const STARTER = `<!DOCTYPE html>
   <!-- Escreva seu HTML aqui. A prévia ao lado atualiza sozinha. -->
 
 </body>
-</html>`;
+</html>`,
+  tabela: `<!DOCTYPE html>
+<html>
+<head>
+  <title>Escala da Unidade</title>
+</head>
+<body>
 
-// Mirrors requirements AP035-3.1 … 3.13.
-const CHECK_IDS = [
-  'html', 'head', 'body', 'title', 'heading', 'paragraph', 'bold', 'italic',
-  'listItem', 'link', 'lineBreak', 'image', 'horizontalRule',
-  'table', 'tableRow', 'tableCell',
-];
+  <h2>Escala da Unidade Falcão</h2>
 
-export default function CodeLab({ specialtyCode, requirementCodes, userId }: Props) {
-  const [code, setCode] = useState(STARTER);
+  <table>
+    <caption>Trocar por uma descrição da sua tabela</caption>
+    <tr>
+      <th>Coluna 1</th>
+      <th>Coluna 2</th>
+      <th>Coluna 3</th>
+    </tr>
+    <tr>
+      <td>Dado 1</td>
+      <td>Dado 2</td>
+      <td>Dado 3</td>
+    </tr>
+  </table>
+
+</body>
+</html>`,
+};
+
+const CHECK_IDS: Record<CodeLabVariant, string[]> = {
+  // Mirrors requirements AP035-3.1 … 3.13.
+  elementos: [
+    'html', 'head', 'body', 'title', 'heading', 'paragraph', 'bold', 'italic',
+    'listItem', 'link', 'lineBreak', 'image', 'horizontalRule',
+    'table', 'tableRow', 'tableCell',
+  ],
+  // Requirement AP035-3.14.
+  tabela: [
+    'pageComplete', 'tableStructure', 'tableHeader', 'tableSize',
+    'tableFilled', 'tableCaption', 'tableOwnContent',
+  ],
+};
+
+const TITLES: Record<CodeLabVariant, string> = {
+  elementos: 'CodeLab — Editor HTML',
+  tabela: 'Desafio: Página com Tabela',
+};
+
+const INTROS: Record<CodeLabVariant, string> = {
+  elementos: 'Escreva uma página HTML completa. A prévia ao lado mostra o resultado real, e a lista de requisitos é conferida enquanto você digita — cada item só é marcado quando o elemento existe de verdade na página, com o conteúdo e os atributos que o requisito pede.',
+  tabela: 'Agora a página inteira, com uma tabela que valha a pena existir: escolha algo do seu clube para tabelar — a escala da unidade, os hinos do trimestre, as pontuações da gincana — e monte com cabeçalho, ao menos três colunas e três linhas de dados de verdade. O exemplo que já está no editor não conta: troque-o.',
+};
+
+export default function CodeLab({ specialtyCode, requirementCodes, userId, variant = 'elementos' }: Props) {
+  const starter = STARTERS[variant];
+  const [code, setCode] = useState(starter);
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [mobileView, setMobileView] = useState<'code' | 'preview'>('code');
@@ -35,7 +98,7 @@ export default function CodeLab({ specialtyCode, requirementCodes, userId }: Pro
   // Live validation: the student sees a requirement tick the moment the markup
   // becomes correct, which is the feedback loop that teaches the element. The
   // previous version only told them anything after pressing "Executar Testes".
-  const results: CheckResult[] = useMemo(() => validateHtml(code, CHECK_IDS), [code]);
+  const results: CheckResult[] = useMemo(() => validateHtml(code, CHECK_IDS[variant]), [code, variant]);
   const passedCount = results.filter(r => r.passed).length;
   const allPassed = passedCount === results.length;
 
@@ -59,7 +122,7 @@ export default function CodeLab({ specialtyCode, requirementCodes, userId }: Pro
         attempts: 1, correct_count: passedCount, total_questions: results.length,
       });
     }
-    await logActivity(userId, 'code_lab_completed', { checksPassed: passedCount, total: results.length });
+    await logActivity(userId, 'code_lab_completed', { variant, checksPassed: passedCount, total: results.length });
     setCompleted(true);
   };
 
@@ -81,9 +144,9 @@ export default function CodeLab({ specialtyCode, requirementCodes, userId }: Pro
     return (
       <div className="card p-8 text-center">
         <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
-        <h1 className="text-2xl font-bold mb-2">CodeLab concluído!</h1>
+        <h1 className="text-2xl font-bold mb-2">{TITLES[variant]} — concluído!</h1>
         <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
-          Sua página passou nas {results.length} verificações de estrutura HTML.
+          Sua página passou nas {results.length} verificações.
         </p>
         <Link to={`/especialidade/${specialtyCode}`} className="btn-primary">Voltar para a Trilha</Link>
       </div>
@@ -94,13 +157,10 @@ export default function CodeLab({ specialtyCode, requirementCodes, userId }: Pro
     <div className="space-y-4">
       <div className="card p-6">
         <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <Code2 className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> CodeLab — Editor HTML
+          <Code2 className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {TITLES[variant]}
         </h1>
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-          Escreva uma página HTML completa. A prévia ao lado mostra o resultado real,
-          e a lista de requisitos é conferida enquanto você digita — cada item só é
-          marcado quando o elemento existe de verdade na página, com o conteúdo e os
-          atributos que o requisito pede.
+          {INTROS[variant]}
         </p>
       </div>
 
@@ -114,7 +174,7 @@ export default function CodeLab({ specialtyCode, requirementCodes, userId }: Pro
           </h2>
           {allPassed && (
             <button onClick={handleComplete} disabled={saving} className="btn-primary">
-              {saving ? 'Salvando...' : 'Concluir CodeLab'}
+              {saving ? 'Salvando...' : 'Concluir'}
             </button>
           )}
         </div>
@@ -152,7 +212,7 @@ export default function CodeLab({ specialtyCode, requirementCodes, userId }: Pro
               <FileCode className="w-4 h-4" style={{ color: 'var(--color-primary)' }} /> index.html
               <span className="text-xs font-normal" style={{ color: 'var(--color-text-dim)' }}>{lineCount} linhas</span>
             </h2>
-            <button onClick={() => setCode(STARTER)} className="btn-secondary text-xs">
+            <button onClick={() => setCode(starter)} className="btn-secondary text-xs">
               <RotateCcw className="w-3 h-3 mr-1" /> Recomeçar
             </button>
           </div>

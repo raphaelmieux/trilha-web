@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildSpecialtyNarrative, buildClosingParagraph } from './reportNarrative';
-import type { Specialty, Certification } from '../types';
+import { buildSpecialtyNarrative, buildClosingParagraph, buildBadgeParagraph } from './reportNarrative';
+import type { Specialty, Certification, Badge } from '../types';
 import type { ProgressMap } from './progress';
 
 const specialty: Specialty = {
@@ -140,5 +140,54 @@ describe('buildClosingParagraph', () => {
     const n = buildSpecialtyNarrative(specialty, progressFor(['R1']), [], 'Ana');
     const text = buildClosingParagraph([n], 'Ana', 1, 80);
     expect(text).toContain('1 atividade avaliada');
+  });
+});
+
+describe('buildBadgeParagraph', () => {
+  const badge = (over: Partial<Badge> = {}): Badge => ({
+    id: 'b', code: 'c', name: 'Primeira Pegada',
+    description: 'Concluiu o primeiro requisito.', icon: 'footprints', tier: 'bronze',
+    ...over,
+  });
+
+  it('says nothing at all when no badge was earned', () => {
+    // An empty "Conquistas" heading in a document handed to a club leader reads
+    // worse than no section, so the caller uses this to skip it entirely.
+    expect(buildBadgeParagraph([], 'Ana')).toBe('');
+  });
+
+  it('uses the singular for a single badge and does not tally tiers', () => {
+    const text = buildBadgeParagraph([badge()], 'Ana');
+    expect(text).toContain('Ana conquistou uma insígnia');
+    expect(text).not.toContain('1 de bronze');
+  });
+
+  it('counts the badges and breaks them down by tier', () => {
+    const text = buildBadgeParagraph(
+      [badge(), badge({ id: 'b2' }), badge({ id: 'b3', tier: 'gold' })],
+      'Ana',
+    );
+    expect(text).toContain('Ana conquistou 3 insígnias');
+    expect(text).toContain('1 de ouro');
+    expect(text).toContain('2 de bronze');
+  });
+
+  it('lists the tiers from gold down, so the strongest is read first', () => {
+    const text = buildBadgeParagraph(
+      [badge({ tier: 'bronze' }), badge({ id: 'b2', tier: 'gold' }), badge({ id: 'b3', tier: 'silver' })],
+      'Ana',
+    );
+    expect(text.indexOf('de ouro')).toBeLessThan(text.indexOf('de prata'));
+    expect(text.indexOf('de prata')).toBeLessThan(text.indexOf('de bronze'));
+  });
+
+  it('joins two tiers with "e" rather than a comma', () => {
+    const text = buildBadgeParagraph([badge(), badge({ id: 'b2', tier: 'gold' })], 'Ana');
+    expect(text).toContain('1 de ouro e 1 de bronze');
+  });
+
+  it('explains that badges are not handed out for finishing', () => {
+    // Without this the list reads as decoration to someone outside the platform.
+    expect(buildBadgeParagraph([badge()], 'Ana')).toMatch(/não são concedidas pela simples conclusão/);
   });
 });

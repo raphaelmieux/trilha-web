@@ -12,10 +12,12 @@ export type LessonType = 'theory' | 'quiz' | 'lab' | 'checkpoint' | 'final';
 export type LabType =
   | 'text_editor'
   | 'pact_builder'
+  | 'threat_lab'
   | 'web_lab'
   | 'mail_lab'
   | 'filipenses'
   | 'code_lab'
+  | 'table_challenge'
   | 'image_lab'
   | 'site_lab'
   | 'ai_lab'

@@ -99,3 +99,63 @@ describe('Final exam questions', () => {
     }
   });
 });
+
+/**
+ * Structural invariants, checked for both specialties.
+ *
+ * These exist because two separate lessons were found pointing at the same lab
+ * component: AP034's "Laboratório de Cenários de Segurança" rendered the pact
+ * builder, and AP035's table challenge rendered the element-by-element CodeLab.
+ * In both cases a student met an identical screen twice and the second visit
+ * assessed nothing, while a requirement went uncovered in practice. Nothing in
+ * the type system prevents that — it is a data mistake — so it is checked here.
+ */
+describe.each([
+  ['AP034', ap034],
+  ['AP035', ap035],
+])('%s structure', (code, specialty) => {
+  const lessons = specialty.modules.flatMap(m => m.lessons);
+
+  it('gives every lesson a unique code', () => {
+    const codes = lessons.map(l => l.code);
+    expect(new Set(codes).size).toBe(codes.length);
+  });
+
+  it('gives every module a unique code', () => {
+    const codes = specialty.modules.map(m => m.code);
+    expect(new Set(codes).size).toBe(codes.length);
+  });
+
+  it('never cites a requirement that does not exist', () => {
+    const known = new Set(specialty.requirements.map(r => r.code));
+    const unknown = lessons.flatMap(l => l.requirementCodes ?? []).filter(rc => !known.has(rc));
+    expect(unknown).toEqual([]);
+  });
+
+  it('covers every requirement with at least one lesson', () => {
+    const covered = new Set(lessons.flatMap(l => l.requirementCodes ?? []));
+    const orphans = specialty.requirements.map(r => r.code).filter(rc => !covered.has(rc));
+    expect(orphans).toEqual([]);
+  });
+
+  it('gives every lab lesson a labType', () => {
+    const missing = lessons.filter(l => l.type === 'lab' && !l.labType).map(l => l.code);
+    expect(missing).toEqual([]);
+  });
+
+  it('never points two lessons at the same lab', () => {
+    const byLab = new Map<string, string[]>();
+    for (const l of lessons) {
+      if (!l.labType) continue;
+      byLab.set(l.labType, [...(byLab.get(l.labType) ?? []), l.code]);
+    }
+    const shared = [...byLab.entries()]
+      .filter(([, ls]) => ls.length > 1)
+      .map(([lab, ls]) => `${lab}: ${ls.join(', ')}`);
+    expect(shared).toEqual([]);
+  });
+
+  it(`names the specialty ${code}`, () => {
+    expect(specialty.code).toBe(code);
+  });
+});

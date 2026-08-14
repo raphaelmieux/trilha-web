@@ -5,10 +5,12 @@ import { supabase } from '../lib/supabase';
 import { getSpecialty } from '../curriculum';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
-import { buildSpecialtyNarrative, buildClosingParagraph } from '../lib/reportNarrative';
+import { useBadges } from '../hooks/useBadges';
+import { buildSpecialtyNarrative, buildClosingParagraph, buildBadgeParagraph } from '../lib/reportNarrative';
 import { getPublicName } from '../types';
 import { LoadingState } from '../components/ui/PageState';
 import CertificateCanvas from '../components/CertificateCanvas';
+import BadgeIcon from '../components/ui/BadgeIcon';
 import { exportReportPdf, type ReportSection } from '../lib/pdf';
 import { Download, ArrowLeft, Loader2 } from 'lucide-react';
 
@@ -17,11 +19,12 @@ export default function ReportPage() {
   const navigate = useNavigate();
   const { progress, loading: progressLoading } = useRequirementProgress(profile?.id);
   const { certifications, loading: certsLoading } = useCertifications(profile?.id);
+  const { badges, loading: badgesLoading } = useBadges(profile?.id);
   const [lessonAttempts, setLessonAttempts] = useState<any[]>([]);
   const [attemptsLoading, setAttemptsLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
-  const loading = progressLoading || certsLoading || attemptsLoading;
+  const loading = progressLoading || certsLoading || attemptsLoading || badgesLoading;
 
   useEffect(() => {
     if (!profile) return;
@@ -69,6 +72,8 @@ export default function ReportPage() {
 
   const intro = `Este documento descreve, em linguagem corrente, as competências efetivamente demonstradas por ${studentName} ao longo da Trilha.Web(), plataforma de estudo autônomo das especialidades AP034 — Internet e AP035 — Internet, Avançado. Destina-se à apresentação à liderança do Clube de Desbravadores, para subsidiar o reconhecimento e o registro das especialidades pelos canais oficiais do clube.`;
 
+  const badgeIntro = buildBadgeParagraph(badges, studentName);
+
   const annexNote = attachedCerts.length === 0 ? undefined
     : attachedCerts.length === 1
       ? 'Segue anexo o certificado Token.Web() referente à trilha concluída.'
@@ -98,6 +103,8 @@ export default function ReportPage() {
         issuedOn: today,
         intro,
         sections,
+        badgeIntro,
+        badges,
         annexNote,
         certificates: attachedCerts as NonNullable<typeof attachedCerts[number]>[],
       });
@@ -161,6 +168,24 @@ export default function ReportPage() {
               {n.certification && <p>{n.certification}</p>}
             </div>
           ))}
+
+          {badges.length > 0 && (
+            <div className="report-section">
+              <h2>Conquistas</h2>
+              <p>{badgeIntro}</p>
+              <ul className="report-badges">
+                {badges.map(b => (
+                  <li key={b.id}>
+                    <BadgeIcon badge={b} size="sm" />
+                    <div>
+                      <strong>{b.name}</strong>
+                      <span> — {b.description}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="report-section">
             <h2>Considerações finais</h2>

@@ -1,5 +1,8 @@
 import { Footprints, Layers, Flame, Trophy, Star, Award, type LucideIcon } from 'lucide-react';
 import type { Badge } from '../../types';
+/* Shared with the PDF renderer so the printed report and the screen cannot show
+   the same badge in two different colours. See src/lib/badgeIcons.ts. */
+import { TIER_COLORS } from '../../lib/badgeIcons';
 
 const ICONS: Record<string, LucideIcon> = {
   footprints: Footprints,
@@ -8,12 +11,6 @@ const ICONS: Record<string, LucideIcon> = {
   trophy: Trophy,
   star: Star,
   award: Award,
-};
-
-const TIER_COLORS: Record<Badge['tier'], string> = {
-  bronze: '#c17f45',
-  silver: '#b0b0b4',
-  gold: 'var(--color-secondary)',
 };
 
 export default function BadgeIcon({ badge, size = 'md' }: { badge: Badge; size?: 'sm' | 'md' | 'lg' }) {

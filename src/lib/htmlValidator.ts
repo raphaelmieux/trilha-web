@@ -242,11 +242,126 @@ export const CHECKS: Record<string, CheckSpec> = {
   },
 };
 
+/**
+ * Requirement AP035-3.14 — "criar página completa" with a table.
+ *
+ * These live apart from CHECKS because they judge a finished artefact rather
+ * than the presence of an element. The element-by-element lab (AP035.2-L1)
+ * already proves the student can write a `<td>`; repeating those same sixteen
+ * checks here — which is what the curriculum did, pointing both lessons at the
+ * identical CodeLab — proves nothing new. What is new is whether they can build
+ * a table that holds real information: a header row, a shape worth tabulating,
+ * no empty cells, and content that is theirs.
+ */
+export const TABLE_CHALLENGE_CHECKS: Record<string, CheckSpec> = {
+  tableStructure: {
+    id: 'tableStructure', label: 'Uma tabela completa', hint: 'A página tem uma <table> com linhas e células',
+    run: (doc) => {
+      const table = doc.querySelector('table');
+      if (!table) return { passed: false, detail: 'Ainda não há nenhuma <table> na página.' };
+      if (table.querySelectorAll('tr').length === 0) {
+        return { passed: false, detail: 'A tabela existe mas não tem nenhuma linha <tr>.' };
+      }
+      return { passed: true };
+    },
+  },
+
+  tableHeader: {
+    id: 'tableHeader', label: 'Linha de cabeçalho com <th>', hint: 'A primeira linha nomeia as colunas',
+    run: (doc) => {
+      const headers = doc.querySelectorAll('table th');
+      if (headers.length === 0) {
+        return { passed: false, detail: 'Use <th> na primeira linha. É o que diz ao leitor — e ao leitor de tela — o que cada coluna significa.' };
+      }
+      if (headers.length < 3) {
+        return { passed: false, detail: `Há ${headers.length} ${headers.length === 1 ? 'cabeçalho' : 'cabeçalhos'}. A tabela precisa de pelo menos 3 colunas nomeadas.` };
+      }
+      return { passed: true };
+    },
+  },
+
+  tableSize: {
+    id: 'tableSize', label: 'Ao menos 3 colunas e 3 linhas de dados', hint: 'Uma tabela de verdade, não um exemplo mínimo',
+    run: (doc) => {
+      const table = doc.querySelector('table');
+      if (!table) return { passed: false, detail: 'Ainda não há tabela.' };
+      const rows = [...table.querySelectorAll('tr')];
+      const dataRows = rows.filter(r => r.querySelectorAll('td').length > 0);
+      const widest = Math.max(0, ...rows.map(r => r.querySelectorAll('td, th').length));
+      if (dataRows.length < 3 || widest < 3) {
+        return {
+          passed: false,
+          detail: `Agora são ${dataRows.length} ${dataRows.length === 1 ? 'linha' : 'linhas'} de dados e ${widest} ${widest === 1 ? 'coluna' : 'colunas'}. Faltam ${Math.max(0, 3 - dataRows.length)} linhas e ${Math.max(0, 3 - widest)} colunas.`,
+        };
+      }
+      return { passed: true };
+    },
+  },
+
+  tableFilled: {
+    id: 'tableFilled', label: 'Nenhuma célula vazia', hint: 'Toda célula carrega informação',
+    run: (doc) => {
+      const cells = [...doc.querySelectorAll('table td, table th')];
+      if (cells.length === 0) return { passed: false, detail: 'Ainda não há células.' };
+      const empty = cells.filter(c => c.textContent!.trim().length === 0).length;
+      if (empty > 0) {
+        return { passed: false, detail: `${empty} ${empty === 1 ? 'célula está vazia' : 'células estão vazias'}. Preencha ou remova.` };
+      }
+      return { passed: true };
+    },
+  },
+
+  tableCaption: {
+    id: 'tableCaption', label: 'A tabela diz do que trata', hint: 'Um <caption> ou um título antes dela',
+    run: (doc) => {
+      const caption = doc.querySelector('table caption');
+      if (hasText(caption)) return { passed: true };
+      const heading = [...doc.querySelectorAll('h1, h2, h3')].some(h => hasText(h));
+      if (heading) return { passed: true };
+      return { passed: false, detail: 'Acrescente <caption>Do que é esta tabela</caption> logo depois de <table>, ou um título <h2> antes dela.' };
+    },
+  },
+
+  tableOwnContent: {
+    id: 'tableOwnContent', label: 'Os dados são seus', hint: 'A tabela não é a do exemplo',
+    run: (doc) => {
+      const text = [...doc.querySelectorAll('table td')]
+        .map(c => c.textContent!.trim().toLowerCase())
+        .join('|');
+      if (!text) return { passed: false, detail: 'Ainda não há dados nas células.' };
+      // The starter ships one filled row so the student can see the shape; leaving
+      // it untouched is the one way to pass every other check without deciding
+      // anything, so it is checked for by name.
+      const starter = ['coluna 1', 'coluna 2', 'coluna 3', 'dado 1', 'dado 2', 'dado 3'];
+      const untouched = starter.filter(s => text.includes(s)).length;
+      if (untouched >= 3) {
+        return { passed: false, detail: 'Essas são as células de exemplo. Troque por dados de verdade — a escala da unidade, os hinos do trimestre, o que você quiser tabelar.' };
+      }
+      return { passed: true };
+    },
+  },
+
+  pageComplete: {
+    id: 'pageComplete', label: 'Página completa em volta da tabela', hint: '<html>, <head> com <title> e <body>',
+    run: (doc, source) => {
+      const missing = ['html', 'head', 'body'].filter(tag => !writtenInSource(source, tag));
+      if (missing.length > 0) {
+        return { passed: false, detail: `Faltam os elementos: ${missing.map(t => `<${t}>`).join(', ')}.` };
+      }
+      if (!hasText(doc.querySelector('title'))) {
+        return { passed: false, detail: 'A página precisa de um <title> preenchido dentro de <head>.' };
+      }
+      return { passed: true };
+    },
+  },
+};
+
 /** Parses once and runs every requested check against the same document. */
 export function validateHtml(source: string, checkIds: string[]): CheckResult[] {
   const doc = new DOMParser().parseFromString(source, 'text/html');
+  const registry = { ...CHECKS, ...TABLE_CHALLENGE_CHECKS };
   return checkIds.map(id => {
-    const spec = CHECKS[id];
+    const spec = registry[id];
     if (!spec) throw new Error(`Unknown HTML check: ${id}`);
     const { passed, detail } = spec.run(doc, source);
     return { id: spec.id, label: spec.label, hint: spec.hint, passed, detail: passed ? undefined : detail };

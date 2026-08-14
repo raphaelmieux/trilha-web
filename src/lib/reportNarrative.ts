@@ -1,5 +1,6 @@
-import type { Specialty, Certification } from '../types';
+import type { Specialty, Certification, Badge } from '../types';
 import type { ProgressMap } from './progress';
+import { TIER_LABELS } from './badgeIcons';
 
 // Turns curriculum data + a user's progress into plain Portuguese prose. This lives
 // apart from the page component so the wording can be unit-tested and adjusted
@@ -171,6 +172,34 @@ export function buildSpecialtyNarrative(
 }
 
 /** Closing paragraph that ties both specialties together for the club authority. */
+/**
+ * Introduces the achievements section in prose.
+ *
+ * A badge list on its own reads as decoration to someone outside the platform.
+ * The sentence says what the badges are — earned by conduct over time, not
+ * awarded for finishing — and counts them by tier, which is the part a club
+ * leader can weigh.
+ */
+export function buildBadgeParagraph(badges: Badge[], studentName: string): string {
+  if (badges.length === 0) return '';
+
+  const byTier = (tier: Badge['tier']) => badges.filter(b => b.tier === tier).length;
+  const counts = (['gold', 'silver', 'bronze'] as const)
+    .map(tier => ({ tier, n: byTier(tier) }))
+    .filter(({ n }) => n > 0)
+    .map(({ tier, n }) => `${n} de ${TIER_LABELS[tier]}`);
+
+  const tally = counts.length === 1
+    ? counts[0]
+    : `${counts.slice(0, -1).join(', ')} e ${counts[counts.length - 1]}`;
+
+  const opening = badges.length === 1
+    ? `${studentName} conquistou uma insígnia ao longo da trilha`
+    : `${studentName} conquistou ${badges.length} insígnias ao longo da trilha — ${tally}`;
+
+  return `${opening}. As insígnias não são concedidas pela simples conclusão de atividades: cada uma reconhece um comportamento sustentado ao longo do tempo, como a constância de estudo em dias seguidos ou o desempenho máximo em uma avaliação. Seguem descritas abaixo.`;
+}
+
 export function buildClosingParagraph(
   narratives: SpecialtyNarrative[],
   studentName: string,

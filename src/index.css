@@ -23,23 +23,31 @@
   --color-tertiary-dim: rgba(75, 105, 219, 0.1);
 
   /* ── Text hierarchy ──
-     Measured against the frosted panel surface (~rgb(19,20,26) once the card's
-     alpha is composited over the page). `dim` carries real information —
-     captions, dates, helper text — so it is set to clear WCAG AA (4.5:1); at the
-     previous #636370 it measured 3.10:1. `faint` is only used for disabled and
+     Measured against the *worst* surface a panel produces, not the average. The
+     card is now a light grey at 50% alpha, so where a globe stroke passes behind
+     it the surface rises to rgb(57,57,61) — that is the pixel the text has to
+     survive, and it is seven times lighter than the old panel. Every level below
+     was raised to clear WCAG AA (4.5:1) against it; at the previous values
+     `muted` and `dim` measured 3.5:1 there, which would have been the price of
+     letting the background show through. `faint` is only used for disabled and
      decorative elements, where AA does not apply. */
-  --color-text: #E8E8E8;       /* primary body text     — 15.0:1 */
-  --color-text-soft: #b0b0b4;  /* secondary text        —  8.7:1 */
-  --color-text-muted: #888890; /* labels, descriptions  —  5.2:1 */
-  --color-text-dim: #86868f;   /* captions, meta        —  4.9:1 */
-  --color-text-faint: #55555f; /* disabled, blocked */
+  --color-text: #E8E8E8;       /* primary body text     — 12.9:1 */
+  --color-text-soft: #C6C6CC;  /* secondary text        —  8.9:1 */
+  --color-text-muted: #B0B0B8; /* labels, descriptions  —  5.2:1 */
+  --color-text-dim: #A8A8B2;   /* captions, meta        —  4.8:1 */
+  --color-text-faint: #6E6E78; /* disabled, blocked */
 
-  /* ── Backgrounds ── */
-  --color-bg: #000000;         /* page */
-  --color-bg-card: #111111;    /* cards */
-  --color-bg-input: #0f0f0f;   /* inputs, nav */
-  --color-bg-elevated: #141414;/* elevated cards */
-  --color-bg-hover: #1a1a1a;  /* hover states */
+  /* ── Backgrounds ──
+     The inner surfaces are translucent black rather than a solid near-black.
+     Painted solid, every check row and input inside a card would punch an opaque
+     hole through the frosted panel and blank out the texture the panel exists to
+     reveal; as an alpha they darken what is behind them and keep it visible. */
+  --color-bg: #000000;                    /* page */
+  --color-bg-card: #24242a;               /* cards, where translucency is off */
+  --color-bg-solid: #16161a;              /* opaque fallback for nav and inputs */
+  --color-bg-input: rgba(0, 0, 0, 0.30);  /* inputs, inner panels */
+  --color-bg-elevated: rgba(255, 255, 255, 0.05);
+  --color-bg-hover: rgba(255, 255, 255, 0.09);
 
   /* ── Semantic colors ── */
   --color-success: #22c55e;
@@ -110,11 +118,13 @@
     background-repeat: no-repeat;
     background-position: center 45%;
     background-size: min(115vh, 115vw) auto;
-    /* Measured, not guessed: this puts the strokes near RGB 22 against the black
-       page. Raised from 0.18 so the texture survives the frosted panels — at the
-       old value it was effectively gone once a panel sat over it. Still far below
-       the panel border (#2a2a2a), so it never competes with content. */
-    opacity: 0.26;
+    /* The strokes are white, so this value is the grey they land on: 0.18 puts
+       them near RGB 46 on the bare page, and behind a panel at 50% alpha the
+       surface rises from RGB 34 to RGB 57 — a visible watermark, and the ceiling
+       that keeps `--color-text-dim` above 4.5:1 on the worst pixel of the panel.
+       Brighter artwork would cost readability, which is not a trade worth making
+       for a texture. */
+    opacity: 0.18;
   }
 
   /* Soft radial vignette so the texture fades toward the edges instead of ending
@@ -150,24 +160,27 @@
 }
 
 @layer components {
-  /* Frosted glass.
-     At 0.62 alpha the panel let only ~6 grey levels of the texture through, which
-     is technically translucent but invisible in practice. Dropping to 0.52 over a
-     darker base roughly doubles that to ~11 levels — the globe is now legible
-     through the panel — while keeping every text tier above WCAG AA (verified by
-     measuring the composited surface, not by eye).
-     The two inset lines are what actually sells the material: a bright top edge
-     reading as light catching the bevel, and a dark bottom edge as its thickness.
-     Blur alone looks like plain transparency. */
+  /* Frosted glass, second attempt.
+     The first version was a dark panel — rgba(16,16,19,0.52) — over a black page,
+     and it never read as glass. Translucency only shows when the two sides
+     differ, and dark over black is the one case where it cannot: the panel
+     composited to rgb(8,8,9), indistinguishable from an opaque card. The blur
+     had nothing to blur.
+     A light grey at 50% inverts that. The panel lands on rgb(34,34,38) where the
+     page is bare and rgb(57,57,61) where a globe stroke passes behind it, so the
+     artwork reads straight through the glass.
+     The two inset lines are what sells the material: a bright top edge reading as
+     light catching the bevel, and a dark bottom edge as its thickness. Blur alone
+     looks like plain transparency. */
   .card {
-    background-color: rgba(16, 16, 19, 0.52);
-    backdrop-filter: blur(22px) saturate(165%);
-    -webkit-backdrop-filter: blur(22px) saturate(165%);
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    background-color: rgba(68, 68, 76, 0.50);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.10),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.35),
-      0 8px 28px rgba(0, 0, 0, 0.40);
+      inset 0 1px 0 rgba(255, 255, 255, 0.13),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.30),
+      0 8px 28px rgba(0, 0, 0, 0.45);
     @apply rounded-xl p-6;
   }
 
@@ -245,9 +258,11 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 
+  /* --color-bg-input is an alpha now, so it cannot serve as the opaque fallback
+     it used to be; these surfaces need a real colour when there is no blur. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .app-nav { background-color: var(--color-bg-input); }
-    .input-field { background-color: var(--color-bg-input); }
+    .app-nav { background-color: var(--color-bg-solid); }
+    .input-field { background-color: var(--color-bg-solid); }
   }
 }
 
@@ -442,6 +457,26 @@
   padding-bottom: 0.35rem;
   border-bottom: 1px solid var(--color-border);
 }
+
+/* Achievements. The icons carry the tier colour, so the rows need no bullets —
+   the badge itself is the marker. */
+.report-badges {
+  list-style: none;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.report-badges li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.report-badges strong { color: var(--color-text); }
+.report-badges span { color: var(--color-text-muted); }
 
 .report-annex-note {
   margin-top: 2rem;

@@ -15,6 +15,7 @@ import FinalExam from '../components/FinalExam';
 import QuestionRenderer from '../components/questions/QuestionRenderer';
 import TextEditorLab from '../labs/TextEditorLab';
 import PactBuilderLab from '../labs/PactBuilderLab';
+import ThreatLab from '../labs/ThreatLab';
 import WebLab from '../labs/WebLab';
 import MailLab from '../labs/MailLab';
 import FilipensesLab from '../labs/FilipensesLab';
@@ -72,10 +73,12 @@ export default function LessonPage() {
         </div>
         {lesson.labType === 'text_editor' && <TextEditorLab {...labProps} />}
         {lesson.labType === 'pact_builder' && <PactBuilderLab {...labProps} />}
+        {lesson.labType === 'threat_lab' && <ThreatLab {...labProps} />}
         {lesson.labType === 'web_lab' && <WebLab {...labProps} />}
         {lesson.labType === 'mail_lab' && <MailLab {...labProps} />}
         {lesson.labType === 'filipenses' && <FilipensesLab {...labProps} />}
-        {lesson.labType === 'code_lab' && <CodeLab {...labProps} />}
+        {lesson.labType === 'code_lab' && <CodeLab {...labProps} variant="elementos" />}
+        {lesson.labType === 'table_challenge' && <CodeLab {...labProps} variant="tabela" />}
         {lesson.labType === 'image_lab' && <ImageLab {...labProps} />}
         {lesson.labType === 'site_lab' && <SiteLab {...labProps} />}
         {lesson.labType === 'ai_lab' && <AILab {...labProps} />}

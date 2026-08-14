@@ -704,7 +704,7 @@ export const ap035: Specialty = {
     {
       code: 'AP035.3', title: 'Tabela e Página Visual', description: 'Página com tabela e elementos.',
       lessons: [
-        { code: 'AP035.3-L1', title: 'Desafio: Página com Tabela', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">Desafio: Página com Tabela</h2><p class="mb-3">Agora que você praticou com os elementos individuais no CodeLab, crie uma página HTML completa que inclua uma tabela com dados reais. Use sua criatividade — pode ser uma tabela de horários, de produtos, de notas, etc.</p><p class="mb-3">Lembre-se de incluir: <code style="color: var(--color-secondary)">&lt;table&gt;</code>, <code style="color: var(--color-secondary)">&lt;tr&gt;</code> (linhas) e <code style="color: var(--color-secondary)">&lt;td&gt;</code> (células).</p>', requirementCodes: ['AP035-3.14'], labType: 'code_lab' },
+        { code: 'AP035.3-L1', title: 'Desafio: Página com Tabela', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">Desafio: Página com Tabela</h2><p class="mb-3">Agora que você praticou com os elementos individuais no CodeLab, crie uma página HTML completa que inclua uma tabela com dados reais. Use sua criatividade — pode ser uma tabela de horários, de produtos, de notas, etc.</p><p class="mb-3">Lembre-se de incluir: <code style="color: var(--color-secondary)">&lt;table&gt;</code>, <code style="color: var(--color-secondary)">&lt;tr&gt;</code> (linhas) e <code style="color: var(--color-secondary)">&lt;td&gt;</code> (células).</p>', requirementCodes: ['AP035-3.14'], labType: 'table_challenge' },
       ],
     },
     {

@@ -1097,14 +1097,14 @@ export const ap034: Specialty = {
       description: 'Formas de ameaças, atualização, propagação e prejuízos.',
       lessons: [
         { code: 'AP034.4-L1', title: 'Ameaças e Proteção', type: 'theory', content: content_4L1, requirementCodes: ['AP034-4.1', 'AP034-4.2', 'AP034-4.3', 'AP034-4.4'], questions: rawQuestions_4L1 },
-        { code: 'AP034.4-L2', title: 'Laboratório de Cenários de Segurança', type: 'lab', content: '', requirementCodes: ['AP034-4.1'], labType: 'pact_builder' },
+        { code: 'AP034.4-L2', title: 'Laboratório de Ameaças e Antivírus', type: 'lab', content: '', requirementCodes: ['AP034-4.1', 'AP034-4.2', 'AP034-4.3', 'AP034-4.4'], labType: 'threat_lab' },
       ],
     },
     {
-      code: 'AP034.5', title: 'Filtros e Pacto de Uso',
-      description: 'Pacto de Uso Consciente da Internet.',
+      code: 'AP034.5', title: 'Meu Compromisso Digital',
+      description: 'O acordo pessoal de uso da internet, cláusula por cláusula.',
       lessons: [
-        { code: 'AP034.5-L1', title: 'Construtor do Pacto', type: 'lab', content: content_5L1, requirementCodes: ['AP034-5.1', 'AP034-5.2', 'AP034-5.3', 'AP034-5.4', 'AP034-5.5', 'AP034-5.6', 'AP034-5.7', 'AP034-5.8', 'AP034-5.9'], labType: 'pact_builder' },
+        { code: 'AP034.5-L1', title: 'Meu Compromisso Digital', type: 'lab', content: content_5L1, requirementCodes: ['AP034-5.1', 'AP034-5.2', 'AP034-5.3', 'AP034-5.4', 'AP034-5.5', 'AP034-5.6', 'AP034-5.7', 'AP034-5.8', 'AP034-5.9'], labType: 'pact_builder' },
       ],
     },
     {
