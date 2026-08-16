@@ -63,10 +63,14 @@ export default function SiteLab({ specialtyCode, requirementCodes, userId }: Pro
   const siteChecks = useMemo(() => {
     const list = PAGES.map(p => ({ filename: p.file, content: pages[p.file] }));
     const linkChecks = validateSiteLinks(list);
+    // AP035-6.1 describes the welcome page in more detail than any other, and it
+    // was the one page nothing looked at.
+    const welcome = validateHtml(pages['index.html'], ['welcomeReason', 'welcomeImage']);
     const gallery = validateHtml(pages['galeria.html'], ['image'])[0];
     const contact = validateHtml(pages['contato.html'], ['form'])[0];
     return [
       ...linkChecks,
+      ...welcome,
       { ...gallery, label: 'Imagem na Galeria', hint: 'A galeria precisa de ao menos uma imagem com src e alt' },
       { ...contact, label: 'Formulário no Contato', hint: 'A página de contato precisa de um formulário com campo e botão' },
     ];

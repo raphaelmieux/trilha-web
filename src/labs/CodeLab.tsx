@@ -43,7 +43,11 @@ const STARTERS: Record<CodeLabVariant, string> = {
 </head>
 <body>
 
-  <h2>Escala da Unidade Falcão</h2>
+  <h1>Escala da Unidade Falcão</h1>
+
+  <p>Escreva aqui o texto do documento, explicando do que trata esta tabela.</p>
+
+  <hr>
 
   <table>
     <caption>Trocar por uma descrição da sua tabela</caption>
@@ -59,6 +63,8 @@ const STARTERS: Record<CodeLabVariant, string> = {
     </tr>
   </table>
 
+  <p><a href="https://adventistas.org">Site oficial</a></p>
+
 </body>
 </html>`,
 };
@@ -70,10 +76,11 @@ const CHECK_IDS: Record<CodeLabVariant, string[]> = {
     'listItem', 'link', 'lineBreak', 'image', 'horizontalRule',
     'table', 'tableRow', 'tableCell',
   ],
-  // Requirement AP035-3.14.
+  // Requirement AP035-4.1, which names every one of these.
   tabela: [
-    'pageComplete', 'tableStructure', 'tableHeader', 'tableSize',
-    'tableFilled', 'tableCaption', 'tableOwnContent',
+    'pageComplete', 'tableHeadingSize', 'tableStructure', 'tableHeader', 'tableSize',
+    'tableFilled', 'tableGraphic', 'tableRule', 'tableLink', 'tableHexColour',
+    'tableCaption', 'tableOwnContent',
   ],
 };
 
@@ -84,7 +91,7 @@ const TITLES: Record<CodeLabVariant, string> = {
 
 const INTROS: Record<CodeLabVariant, string> = {
   elementos: 'Escreva uma página HTML completa. A prévia ao lado mostra o resultado real, e a lista de requisitos é conferida enquanto você digita — cada item só é marcado quando o elemento existe de verdade na página, com o conteúdo e os atributos que o requisito pede.',
-  tabela: 'Agora a página inteira, com uma tabela que valha a pena existir: escolha algo do seu clube para tabelar — a escala da unidade, os hinos do trimestre, as pontuações da gincana — e monte com cabeçalho, ao menos três colunas e três linhas de dados de verdade. O exemplo que já está no editor não conta: troque-o.',
+  tabela: 'O requisito 4 pede uma página inteira: uma tabela com texto, um gráfico, uma regra horizontal e um link, com algum texto colorido por código hexadecimal e um título maior que o corpo. Escolha algo do seu clube para tabelar — a escala da unidade, os hinos do trimestre — e troque o exemplo que já está no editor, que não conta.',
 };
 
 export default function CodeLab({ specialtyCode, requirementCodes, userId, variant = 'elementos' }: Props) {

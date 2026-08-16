@@ -303,7 +303,13 @@ export const TABLE_CHALLENGE_CHECKS: Record<string, CheckSpec> = {
     run: (doc) => {
       const cells = [...doc.querySelectorAll('table td, table th')];
       if (cells.length === 0) return { passed: false, detail: 'Ainda não há células.' };
-      const empty = cells.filter(c => c.textContent!.trim().length === 0).length;
+      // A cell holding the graphic has no text and is not empty — and the same
+      // requirement that asks for no empty cells is the one that asks for a
+      // graphic inside the table, so counting it as empty would make the two
+      // checks contradict each other.
+      const empty = cells.filter(
+        c => c.textContent!.trim().length === 0 && !c.querySelector('img, svg, picture, video'),
+      ).length;
       if (empty > 0) {
         return { passed: false, detail: `${empty} ${empty === 1 ? 'célula está vazia' : 'células estão vazias'}. Preencha ou remova.` };
       }
@@ -341,6 +347,85 @@ export const TABLE_CHALLENGE_CHECKS: Record<string, CheckSpec> = {
     },
   },
 
+  /* The sheet's item 4 lists four things the table must contain and two about
+     how the document is typed. They were the whole requirement and none of them
+     was checked: "Fazer uma tabela simples - incluir texto, um gráfico, uma
+     regra horizontal e um link. Usar códigos hexadecimais para colorir o texto.
+     Fazer o seu título maior e, depois, o texto do documento principal." */
+  tableGraphic: {
+    id: 'tableGraphic', label: 'Um gráfico dentro da tabela', hint: 'Uma <img> em alguma célula',
+    run: (doc) => {
+      const inside = doc.querySelector('table img');
+      if (!inside) {
+        return { passed: false, detail: 'Ponha uma <img src="..." alt="..."> dentro de uma célula da tabela.' };
+      }
+      if (!(inside.getAttribute('src') || '').trim()) {
+        return { passed: false, detail: 'A imagem da tabela está sem o atributo src.' };
+      }
+      return { passed: true };
+    },
+  },
+
+  tableRule: {
+    id: 'tableRule', label: 'Uma regra horizontal na página', hint: 'O elemento <hr>',
+    run: (doc, source) => {
+      if (!writtenInSource(source, 'hr')) {
+        return { passed: false, detail: 'Acrescente um <hr> para separar as partes do documento.' };
+      }
+      void doc;
+      return { passed: true };
+    },
+  },
+
+  tableLink: {
+    id: 'tableLink', label: 'Um link na página', hint: 'Um <a href="..."> com destino e texto',
+    run: (doc) => {
+      const link = [...doc.querySelectorAll('a[href]')].find(
+        a => (a.getAttribute('href') || '').trim() && a.textContent!.trim().length > 0,
+      );
+      if (!link) {
+        return { passed: false, detail: 'Acrescente um <a href="https://...">texto do link</a> com destino e texto visível.' };
+      }
+      return { passed: true };
+    },
+  },
+
+  tableHexColour: {
+    id: 'tableHexColour', label: 'Texto colorido com código hexadecimal',
+    hint: 'style="color: #RRGGBB" em algum texto',
+    run: (doc, source) => {
+      // Read from the source rather than computed style: the preview iframe is
+      // sandboxed and this document is parsed, never rendered, so there is no
+      // cascade to interrogate. A hex in a color declaration is unambiguous.
+      const clean = stripComments(source);
+      const hex = /color\s*:\s*#[0-9a-f]{3}(?:[0-9a-f]{3})?\b/i.test(clean);
+      if (!hex) {
+        return {
+          passed: false,
+          detail: 'Use um código hexadecimal para colorir algum texto, por exemplo style="color: #C13516".',
+        };
+      }
+      void doc;
+      return { passed: true };
+    },
+  },
+
+  tableHeadingSize: {
+    id: 'tableHeadingSize', label: 'Título maior que o texto do documento',
+    hint: 'Um <h1> ou <h2> acima dos parágrafos',
+    run: (doc) => {
+      const heading = [...doc.querySelectorAll('h1, h2')].find(h => hasText(h));
+      if (!heading) {
+        return { passed: false, detail: 'O requisito pede um título maior que o corpo. Acrescente um <h1> com o nome do documento.' };
+      }
+      const body = [...doc.querySelectorAll('p')].some(p => p.textContent!.trim().length >= 20);
+      if (!body) {
+        return { passed: false, detail: 'Há título, mas falta o texto do documento principal — escreva ao menos um parágrafo.' };
+      }
+      return { passed: true };
+    },
+  },
+
   pageComplete: {
     id: 'pageComplete', label: 'Página completa em volta da tabela', hint: '<html>, <head> com <title> e <body>',
     run: (doc, source) => {
@@ -356,10 +441,51 @@ export const TABLE_CHALLENGE_CHECKS: Record<string, CheckSpec> = {
   },
 };
 
+/**
+ * Site checks that judge a page's purpose rather than its markup.
+ *
+ * AP035-6.1 asks for "página de boas-vindas, que indica a razão para a qual o
+ * site foi criado e incluir, pelo menos, uma imagem". The lab checked the
+ * gallery for an image and the contact page for a form, and never looked at the
+ * welcome page at all — the one page the requirement describes in detail.
+ */
+export const SITE_CHECKS: Record<string, CheckSpec> = {
+  welcomeReason: {
+    id: 'welcomeReason', label: 'A página inicial diz para que o site existe',
+    hint: 'Um parágrafo explicando a razão do site',
+    run: (doc) => {
+      const paragraphs = [...doc.querySelectorAll('p')]
+        .map(p => p.textContent!.trim())
+        .filter(text => text.length >= 60);
+      if (paragraphs.length === 0) {
+        return {
+          passed: false,
+          detail: 'Escreva na página inicial um parágrafo de ao menos 60 caracteres explicando por que este site existe — para quem é e o que a pessoa encontra nele.',
+        };
+      }
+      return { passed: true };
+    },
+  },
+
+  welcomeImage: {
+    id: 'welcomeImage', label: 'A página inicial traz ao menos uma imagem',
+    hint: 'Uma <img> com src e alt na home',
+    run: (doc) => {
+      const images = [...doc.querySelectorAll('img')].filter(
+        img => (img.getAttribute('src') || '').trim() && (img.getAttribute('alt') || '').trim(),
+      );
+      if (images.length === 0) {
+        return { passed: false, detail: 'A home precisa de uma <img> com src e alt preenchidos.' };
+      }
+      return { passed: true };
+    },
+  },
+};
+
 /** Parses once and runs every requested check against the same document. */
 export function validateHtml(source: string, checkIds: string[]): CheckResult[] {
   const doc = new DOMParser().parseFromString(source, 'text/html');
-  const registry = { ...CHECKS, ...TABLE_CHALLENGE_CHECKS };
+  const registry = { ...CHECKS, ...TABLE_CHALLENGE_CHECKS, ...SITE_CHECKS };
   return checkIds.map(id => {
     const spec = registry[id];
     if (!spec) throw new Error(`Unknown HTML check: ${id}`);

@@ -17,6 +17,9 @@ type Stage = 'text' | 'image' | 'logo' | 'review';
  */
 const TEXT_OPTIONS = {
   subject: [
+    // First on the list because AP035-8.1 asks for this one by name; the others
+    // are there so the student still chooses rather than obeys.
+    { id: 'importancia', label: 'A importância do Clube de Desbravadores' },
     { id: 'historia', label: 'A história do nosso clube' },
     { id: 'acampamento', label: 'Um acampamento de fim de semana' },
     { id: 'especialidade', label: 'Por que estudar a especialidade de Internet' },
@@ -98,7 +101,7 @@ export default function AILab({ specialtyCode, requirementCodes, userId }: Props
   const [stage, setStage] = useState<Stage>('text');
   const [completed, setCompleted] = useState(false);
 
-  const [textSel, setTextSel] = useState({ subject: 'historia', audience: 'pais', tone: 'convite', length: 'curto' });
+  const [textSel, setTextSel] = useState({ subject: 'importancia', audience: 'pais', tone: 'convite', length: 'curto' });
   const [imageSel, setImageSel] = useState({ scene: 'barraca', time: 'tarde', style: 'ilustracao' });
   const [logoSel, setLogoSel] = useState({ shape: 'escudo', symbol: 'arvore', colors: 'verde' });
   const [clubName, setClubName] = useState('');

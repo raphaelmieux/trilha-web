@@ -2,6 +2,9 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId } from '../lib/progress';
 import { assessDownload } from '../lib/webSkills';
+import { exportAttachmentPdf } from '../lib/pdf';
+import { useAuth } from '../context/AuthContext';
+import { getPublicName } from '../types';
 import {
   Mail, Send, Inbox, AlertCircle, CheckCircle2, ShieldAlert, Paperclip,
   Trash2, Reply, RotateCcw,
@@ -90,6 +93,8 @@ const PHISHING_COUNT = INBOX.filter(m => m.phishing).length;
 interface Check { id: string; label: string; passed: boolean; hint: string }
 
 export default function MailLab({ specialtyCode, requirementCodes, userId }: Props) {
+  const { profile } = useAuth();
+  const studentName = profile ? getPublicName(profile) : 'Desbravador(a)';
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -328,6 +333,7 @@ export default function MailLab({ specialtyCode, requirementCodes, userId }: Pro
               message={selected}
               verdict={verdicts[selected.id]}
               attachmentAction={attachmentActions[selected.id]}
+              studentName={studentName}
               onJudge={v => judge(selected.id, v)}
               onAttachment={action => setAttachmentActions(p => ({ ...p, [selected.id]: action }))}
               onResetAttachment={() => setAttachmentActions(p => {
@@ -405,10 +411,11 @@ export default function MailLab({ specialtyCode, requirementCodes, userId }: Pro
 
 /* ── Peças de interface ───────────────────────────────────────────────────── */
 
-function MessageView({ message, verdict, attachmentAction, onJudge, onAttachment, onResetAttachment }: {
+function MessageView({ message, verdict, attachmentAction, studentName, onJudge, onAttachment, onResetAttachment }: {
   message: Message;
   verdict: boolean | undefined;
   attachmentAction: 'abriu' | 'recusou' | undefined;
+  studentName: string;
   onJudge: (isPhishing: boolean) => void;
   onAttachment: (action: 'abriu' | 'recusou') => void;
   onResetAttachment: () => void;
@@ -441,8 +448,19 @@ function MessageView({ message, verdict, attachmentAction, onJudge, onAttachment
           </p>
           {attachmentAction === undefined ? (
             <div className="flex gap-2 flex-wrap">
-              <button onClick={() => onAttachment('abriu')} className="btn-secondary text-xs">
-                <Paperclip className="w-3 h-3 mr-1" /> Abrir anexo
+              {/* The PDF is generated for real, so requirement 7.3 — "fazer o
+                  download de um anexo e abri-lo" — is met by an actual file in
+                  the student's downloads rather than by a flag. The .exe is
+                  obviously not produced, and the .jpg would need a photo. */}
+              <button
+                onClick={() => {
+                  if (message.attachment?.name.endsWith('.pdf')) exportAttachmentPdf(studentName);
+                  onAttachment('abriu');
+                }}
+                className="btn-secondary text-xs"
+              >
+                <Paperclip className="w-3 h-3 mr-1" />
+                {message.attachment?.name.endsWith('.pdf') ? 'Baixar e abrir' : 'Abrir anexo'}
               </button>
               <button onClick={() => onAttachment('recusou')} className="btn-secondary text-xs">
                 <Trash2 className="w-3 h-3 mr-1" /> Não abrir

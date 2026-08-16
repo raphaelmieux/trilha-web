@@ -196,22 +196,26 @@ describe('validateSiteLinks', () => {
   });
 });
 
-describe('table challenge (AP035-3.14)', () => {
-  const IDS = ['pageComplete', 'tableStructure', 'tableHeader', 'tableSize',
-    'tableFilled', 'tableCaption', 'tableOwnContent'];
+describe('table challenge (AP035-4.1)', () => {
+  const IDS = ['pageComplete', 'tableHeadingSize', 'tableStructure', 'tableHeader', 'tableSize',
+    'tableFilled', 'tableGraphic', 'tableRule', 'tableLink', 'tableHexColour',
+    'tableCaption', 'tableOwnContent'];
 
   const page = (body: string) => `<!DOCTYPE html>
 <html><head><title>Escala</title></head><body>${body}</body></html>`;
 
   const good = page(`
-    <h2>Escala da Unidade Falcão</h2>
+    <h1 style="color: #C13516">Escala da Unidade Falcão</h1>
+    <p>Esta tabela mostra quem abre o programa em cada sábado do trimestre.</p>
+    <hr>
     <table>
       <caption>Quem abre o programa em cada sábado</caption>
       <tr><th>Sábado</th><th>Responsável</th><th>Tarefa</th></tr>
-      <tr><td>03/05</td><td>Ana</td><td>Oração</td></tr>
+      <tr><td>03/05</td><td>Ana</td><td><img src="oracao.png" alt="Oração"></td></tr>
       <tr><td>10/05</td><td>Bruno</td><td>Louvor</td></tr>
       <tr><td>17/05</td><td>Carla</td><td>Bandeirim</td></tr>
-    </table>`);
+    </table>
+    <p><a href="https://adventistas.org">Site oficial</a></p>`);
 
   const run = (html: string) => validateHtml(html, IDS);
   const failing = (html: string) => run(html).filter(r => !r.passed).map(r => r.id);
@@ -258,7 +262,7 @@ describe('table challenge (AP035-3.14)', () => {
   });
 
   it('rejects an empty cell and says how many', () => {
-    const withGap = good.replace('<td>Oração</td>', '<td>  </td>');
+    const withGap = good.replace('<td>Louvor</td>', '<td>  </td>');
     const filled = run(withGap).find(r => r.id === 'tableFilled')!;
     expect(filled.passed).toBe(false);
     expect(filled.detail).toContain('1 célula');
@@ -270,7 +274,7 @@ describe('table challenge (AP035-3.14)', () => {
   });
 
   it('rejects a table with neither caption nor heading', () => {
-    const bare = good.replace(/<caption>.*<\/caption>/, '').replace(/<h2>.*<\/h2>/, '');
+    const bare = good.replace(/<caption>.*<\/caption>/, '').replace(/<h1[^>]*>.*<\/h1>/, '');
     expect(run(bare).find(r => r.id === 'tableCaption')!.passed).toBe(false);
   });
 
@@ -289,5 +293,102 @@ describe('table challenge (AP035-3.14)', () => {
   it('is not fooled by a table that exists only inside a comment', () => {
     const commented = page('<h2>t</h2><!-- <table><tr><th>A</th></tr></table> -->');
     expect(failing(commented)).toContain('tableStructure');
+  });
+});
+
+describe('table challenge — the four contents item 4 names', () => {
+  const IDS = ['tableGraphic', 'tableRule', 'tableLink', 'tableHexColour', 'tableHeadingSize'];
+  const wrap = (body: string) => `<!DOCTYPE html><html><head><title>t</title></head><body>${body}</body></html>`;
+
+  const complete = wrap(`
+    <h1 style="color:#C13516">Escala</h1>
+    <p>Um parágrafo com o texto do documento principal.</p>
+    <hr>
+    <table><tr><th>A</th></tr><tr><td><img src="x.png" alt="x"></td></tr></table>
+    <a href="https://exemplo.com">Link</a>`);
+
+  const failing = (html: string) => validateHtml(html, IDS).filter(r => !r.passed).map(r => r.id);
+
+  it('accepts a page carrying all four', () => {
+    expect(failing(complete)).toEqual([]);
+  });
+
+  it('requires the graphic to be inside the table, not merely on the page', () => {
+    // The sheet says "incluir texto, um gráfico..." about the table itself.
+    const outside = complete.replace('<img src="x.png" alt="x">', 'x')
+      .replace('<hr>', '<hr><img src="fora.png" alt="fora">');
+    expect(failing(outside)).toContain('tableGraphic');
+  });
+
+  it('rejects a link with no destination', () => {
+    expect(failing(complete.replace('href="https://exemplo.com"', 'href=""'))).toContain('tableLink');
+  });
+
+  it('rejects a link with no visible text', () => {
+    expect(failing(complete.replace('>Link</a>', '></a>'))).toContain('tableLink');
+  });
+
+  it('accepts three-digit hex as well as six', () => {
+    const short = complete.replace('#C13516', '#c31');
+    expect(validateHtml(short, ['tableHexColour'])[0].passed).toBe(true);
+  });
+
+  it('rejects a colour named rather than given in hex', () => {
+    const named = complete.replace('color:#C13516', 'color: red');
+    expect(failing(named)).toContain('tableHexColour');
+  });
+
+  it('is not satisfied by a hex sitting inside a comment', () => {
+    const commented = complete.replace('style="color:#C13516"', '')
+      .replace('<hr>', '<hr><!-- style="color: #123456" -->');
+    expect(failing(commented)).toContain('tableHexColour');
+  });
+
+  it('wants a body of text under the heading, not a heading alone', () => {
+    const headingOnly = complete.replace('<p>Um parágrafo com o texto do documento principal.</p>', '');
+    const verdict = validateHtml(headingOnly, ['tableHeadingSize'])[0];
+    expect(verdict.passed).toBe(false);
+    expect(verdict.detail).toMatch(/texto do documento/);
+  });
+
+  it('is not satisfied by an <hr> that only appears in a comment', () => {
+    const commented = complete.replace('<hr>', '<!-- <hr> -->');
+    expect(failing(commented)).toContain('tableRule');
+  });
+});
+
+describe('site checks — the welcome page (AP035-6.1)', () => {
+  const wrap = (body: string) => `<!DOCTYPE html><html><head><title>t</title></head><body>${body}</body></html>`;
+
+  it('accepts a home that explains itself and shows an image', () => {
+    const home = wrap(`
+      <p>Este site existe para mostrar as atividades do Clube Olho de Tigre às famílias
+         que querem conhecer o nosso trabalho antes de inscrever os filhos.</p>
+      <img src="clube.jpg" alt="Clube reunido">`);
+    expect(validateHtml(home, ['welcomeReason', 'welcomeImage']).every(r => r.passed)).toBe(true);
+  });
+
+  it('rejects a home whose only text is a greeting', () => {
+    const thin = wrap('<p>Bem-vindo!</p><img src="a.jpg" alt="a">');
+    const verdict = validateHtml(thin, ['welcomeReason'])[0];
+    expect(verdict.passed).toBe(false);
+    expect(verdict.detail).toMatch(/por que este site existe/);
+  });
+
+  it('rejects an image with no alt, which is unusable to a screen reader', () => {
+    const noAlt = wrap('<p>' + 'x'.repeat(80) + '</p><img src="a.jpg">');
+    expect(validateHtml(noAlt, ['welcomeImage'])[0].passed).toBe(false);
+  });
+});
+
+describe('an image counts as content in a cell', () => {
+  it('does not call a cell holding only a graphic empty', () => {
+    // Requirement 4 asks for a graphic inside the table and for no empty cells;
+    // treating an image cell as empty would make the two contradict.
+    const html = `<!DOCTYPE html><html><head><title>t</title></head><body><table>
+      <tr><th>A</th><th>B</th></tr>
+      <tr><td>texto</td><td><img src="x.png" alt="x"></td></tr>
+    </table></body></html>`;
+    expect(validateHtml(html, ['tableFilled'])[0].passed).toBe(true);
   });
 });

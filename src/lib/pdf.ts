@@ -238,6 +238,71 @@ export function exportPactPdf(input: {
   doc.save(`Meu Compromisso Digital - ${input.studentName}.pdf`);
 }
 
+/**
+ * The MailLab's attachment, as a file that really exists.
+ *
+ * AP034-7.3 is "fazer o download de um anexo no e-mail e abri-lo". The lab used
+ * to satisfy it with a button that set a flag — nothing was downloaded and there
+ * was nothing to open. This generates the schedule the message says it carries,
+ * so the student downloads a real PDF and opens it in a real reader, which is
+ * what the requirement describes.
+ */
+export function exportAttachmentPdf(studentName: string): void {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  const width = A4_PORTRAIT.width;
+  const left = 20;
+  let y = 26;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(17);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Escala das Unidades', width / 2, y, { align: 'center' });
+  y += 7;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.setTextColor(70, 70, 70);
+  doc.text('Anexo recebido no MailLab — Trilha.Web()', width / 2, y, { align: 'center' });
+  y += 5;
+  doc.setDrawColor(193, 53, 22);
+  doc.setLineWidth(0.6);
+  doc.line(left, y, width - left, y);
+  y += 10;
+
+  const rows: [string, string, string][] = [
+    ['Sábado', 'Unidade', 'Tarefa'],
+    ['03/05', 'Falcão', 'Recepção e bandeirim'],
+    ['10/05', 'Águia', 'Oração inicial'],
+    ['17/05', 'Pantera', 'Louvor'],
+    ['24/05', 'Tigre', 'Mensagem'],
+  ];
+  const columns = [left, left + 40, left + 90];
+
+  rows.forEach(([a, b, c], index) => {
+    doc.setFont('helvetica', index === 0 ? 'bold' : 'normal');
+    doc.setFontSize(index === 0 ? 10.5 : 10);
+    doc.setTextColor(index === 0 ? 26 : 60, index === 0 ? 26 : 60, index === 0 ? 26 : 60);
+    doc.text(a, columns[0], y);
+    doc.text(b, columns[1], y);
+    doc.text(c, columns[2], y);
+    y += 6;
+    if (index === 0) {
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.2);
+      doc.line(left, y - 4, width - left, y - 4);
+      y += 1;
+    }
+  });
+
+  y += 8;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(90, 90, 90);
+  doc.text(`Baixado por ${studentName}.`, left, y);
+  doc.text('Este é um anexo real: o requisito 7.3 pede baixar e abrir, não simular.', left, y + 5);
+
+  doc.save('escala-das-unidades.pdf');
+}
+
 export interface ReportSection {
   heading: string;
   paragraphs: string[];
