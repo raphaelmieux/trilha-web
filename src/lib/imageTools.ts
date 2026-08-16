@@ -111,6 +111,41 @@ export function contrastRatio(hexA: string, hexB: string): number {
   return (light + 0.05) / (dark + 0.05);
 }
 
+/* ── Web-safe colours (AP035-5.2) ─────────────────────────────────────────
+ *
+ * The requirement asks the student to know web-safe colours "and when to use
+ * them", which deserves an honest answer rather than a rule to obey. The 216
+ * colours were a workaround for displays that could only show 256 at once: a
+ * colour outside the set was dithered into a speckled approximation, and the
+ * set was the intersection of the Windows and Mac system palettes. No screen
+ * sold today has that limit.
+ *
+ * What survives is the reason behind it. GIF and indexed PNG still store a
+ * palette, and a smaller palette means a smaller file — which is exactly the
+ * budget the same requirement imposes. Snapping to six values per channel is
+ * the crudest version of that idea, and it is why the lab uses it here.
+ */
+const WEB_SAFE_STEPS = [0x00, 0x33, 0x66, 0x99, 0xcc, 0xff];
+
+export function isWebSafe(hex: string): boolean {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return false;
+  return [rgb.r, rgb.g, rgb.b].every(channel => WEB_SAFE_STEPS.includes(channel));
+}
+
+/** Snaps each channel to the nearest of the six web-safe values. */
+export function nearestWebSafe(hex: string): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return '#000000';
+  const snap = (channel: number) => WEB_SAFE_STEPS.reduce(
+    (best, step) => Math.abs(step - channel) < Math.abs(best - channel) ? step : best,
+  );
+  return '#' + [rgb.r, rgb.g, rgb.b]
+    .map(channel => snap(channel).toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
+}
+
 /** Loads a user-selected file into an <img>, via an object URL that is revoked after. */
 export function loadImageFile(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {

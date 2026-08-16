@@ -6,6 +6,8 @@ import {
   hexToRgb,
   relativeLuminance,
   contrastRatio,
+  isWebSafe,
+  nearestWebSafe,
 } from './imageTools';
 
 describe('calculateResize', () => {
@@ -141,5 +143,47 @@ describe('contrastRatio', () => {
 
   it('returns 1 for an unparseable colour, so a typo can never score as passing', () => {
     expect(contrastRatio('nope', '#ffffff')).toBe(1);
+  });
+});
+
+describe('web-safe colours', () => {
+  it('accepts a colour built only from the six steps', () => {
+    expect(isWebSafe('#33CC99')).toBe(true);
+    expect(isWebSafe('#000000')).toBe(true);
+    expect(isWebSafe('#FFFFFF')).toBe(true);
+  });
+
+  it('rejects a colour with any channel off the steps', () => {
+    // The brand red: 193 is not one of 0, 51, 102, 153, 204, 255.
+    expect(isWebSafe('#C13516')).toBe(false);
+  });
+
+  it('rejects an unparseable value rather than treating it as safe', () => {
+    expect(isWebSafe('verde')).toBe(false);
+  });
+
+  it('snaps each channel to its nearest step', () => {
+    // 193 -> 204, 53 -> 51, 22 -> 0.
+    expect(nearestWebSafe('#C13516')).toBe('#CC3300');
+  });
+
+  it('leaves an already-safe colour untouched', () => {
+    expect(nearestWebSafe('#33CC99')).toBe('#33CC99');
+  });
+
+  it('always produces a colour that passes the check', () => {
+    for (const hex of ['#123456', '#abcdef', '#7f7f7f', '#010101', '#fefefe']) {
+      expect(isWebSafe(nearestWebSafe(hex))).toBe(true);
+    }
+  });
+
+  it('rounds the midpoint upward consistently rather than at random', () => {
+    // 25 sits between 0 and 51; the reducer keeps the first strictly-closer
+    // step, so ties resolve to the lower one. Pinned so it cannot drift.
+    expect(nearestWebSafe('#191919')).toBe('#000000');
+  });
+
+  it('falls back to black for a value it cannot read', () => {
+    expect(nearestWebSafe('nada')).toBe('#000000');
   });
 });
