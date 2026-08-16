@@ -3,8 +3,8 @@ import { ap034, ap035 } from './index';
 import { getFinalExamQuestions } from './finalExams';
 
 describe('AP034 curriculum', () => {
-  it('has 29 requirements', () => {
-    expect(ap034.requirements).toHaveLength(29);
+  it('has the 35 requirements of the official AP034 sheet', () => {
+    expect(ap034.requirements).toHaveLength(35);
   });
 
   it('has 9 modules', () => {
@@ -45,12 +45,12 @@ describe('AP034 curriculum', () => {
 });
 
 describe('AP035 curriculum', () => {
-  it('has 25 requirements', () => {
-    expect(ap035.requirements).toHaveLength(25);
+  it('has the 31 requirements of the official AP035 sheet', () => {
+    expect(ap035.requirements).toHaveLength(31);
   });
 
-  it('has 8 modules', () => {
-    expect(ap035.modules).toHaveLength(8);
+  it('has 9 modules, counting the prerequisite gate', () => {
+    expect(ap035.modules).toHaveLength(9);
   });
 });
 

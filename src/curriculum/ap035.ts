@@ -652,12 +652,79 @@ const rawQ_6L1: Question[] = [
 // SPECIALTY DEFINITION
 // ═══════════════════════════════════════════════════════════
 
+/* AP035-5.1 — "Gráficos para a web e ser capaz de explicar o processo utilizado
+   para baixá-los rapidamente." O requisito pede a *explicação do processo*, não
+   só o resultado, então a lição percorre as três decisões que compõem esse
+   processo e o quiz cobra cada uma. */
+const content_graficos = `
+<h2 class="text-xl font-bold mb-3">Gráficos que carregam rápido</h2>
+<p class="mb-3">Uma imagem bonita que demora dez segundos para aparecer é uma imagem ruim. Quem abre o site do clube pelo celular, no plano de dados, desiste antes. Deixar um gráfico leve não é sorte: é um processo com três decisões.</p>
+
+<h3 class="font-bold mt-4 mb-2">1. Escolher o formato pelo conteúdo</h3>
+<ul class="list-disc list-inside space-y-1 mb-3">
+  <li><strong>Fotografia</strong> — milhões de cores, nenhuma área chapada: <strong>JPEG</strong>. Ele descarta detalhe que o olho não percebe e ganha muito espaço com isso.</li>
+  <li><strong>Logo, ícone, desenho com poucas cores</strong> — <strong>PNG</strong> ou <strong>GIF</strong>. Guardam áreas de cor sólida quase de graça e preservam bordas nítidas.</li>
+  <li><strong>Precisa de transparência</strong> — só <strong>PNG</strong> ou <strong>GIF</strong>. O JPEG não tem canal alfa; a área transparente vira fundo sólido.</li>
+</ul>
+
+<h3 class="font-bold mt-4 mb-2">2. Reduzir para o tamanho em que a imagem aparece</h3>
+<p class="mb-3">Uma foto de celular chega com 3000 px de largura. Se ela aparece num espaço de 600 px, os outros 2400 px foram baixados para nada. <strong>Redimensionar antes de publicar</strong> é o passo que mais economiza — costuma cortar mais de 90% do arquivo sozinho.</p>
+
+<h3 class="font-bold mt-4 mb-2">3. Comprimir até o limite do aceitável</h3>
+<p class="mb-3">No JPEG dá para escolher a qualidade. Entre 70% e 85% quase ninguém vê diferença, e o arquivo cai à metade. No PNG, reduzir a paleta de cores tem efeito parecido. Vale sempre conferir o resultado: compressão demais aparece como manchas ao redor de texto e bordas.</p>
+
+<h3 class="font-bold mt-4 mb-2">O que o navegador faz com isso</h3>
+<p class="mb-3">O navegador baixa várias imagens ao mesmo tempo, mas cada uma ocupa parte da banda disponível. Quanto menor cada arquivo, mais cedo a página inteira fica pronta. Por isso a soma importa: dez imagens de 15 KB pesam menos que uma de 200 KB, e a página com dez aparece antes.</p>
+
+<div class="rounded-lg p-4 mb-3" style="background-color: var(--color-secondary-a08); border: 1px solid var(--color-secondary-a20)">
+  <p class="font-bold mb-1" style="color: var(--color-secondary)">A regra prática</p>
+  <p>Escolha o formato pelo conteúdo, reduza para o tamanho de exibição e comprima até pouco antes de estragar. Nessa ordem — comprimir uma imagem grande demais é otimizar o desperdício.</p>
+</div>
+`;
+
+const rawQ_graficos: Question[] = [
+  {
+    id: 'AP035.4-L0-Q1', type: 'multiple_choice',
+    prompt: 'Dos três passos do processo, qual costuma reduzir mais o tamanho do arquivo?',
+    data: { options: [
+      { id: 'a', text: 'Redimensionar a imagem para o tamanho em que ela aparece na página.', correct: true },
+      { id: 'b', text: 'Trocar o nome do arquivo para algo mais curto.' },
+      { id: 'c', text: 'Aumentar a qualidade do JPEG para 100%.' },
+      { id: 'd', text: 'Publicar a imagem em uma pasta diferente.' },
+    ]},
+    explanation: 'Uma foto de 3000 px exibida em 600 px desperdiça quase todos os pixels baixados. Redimensionar corta mais de 90% antes de qualquer compressão.',
+  },
+  {
+    id: 'AP035.4-L0-Q2', type: 'multiple_choice',
+    prompt: 'Você tem um logo com fundo transparente. Qual formato serve?',
+    data: { options: [
+      { id: 'a', text: 'PNG, porque o JPEG não guarda transparência.', correct: true },
+      { id: 'b', text: 'JPEG, porque é sempre o menor.' },
+      { id: 'c', text: 'Tanto faz: os três guardam transparência.' },
+      { id: 'd', text: 'JPEG com qualidade 100%.' },
+    ]},
+    explanation: 'O JPEG não tem canal alfa. Salvo nele, o fundo transparente vira uma cor sólida — normalmente preto ou branco.',
+  },
+  {
+    id: 'AP035.4-L0-Q3', type: 'multiple_choice',
+    prompt: 'Por que dez imagens de 15 KB carregam antes de uma única de 200 KB?',
+    data: { options: [
+      { id: 'a', text: 'Porque a soma dos bytes é menor e a banda é dividida entre downloads paralelos.', correct: true },
+      { id: 'b', text: 'Porque o navegador ignora imagens pequenas.' },
+      { id: 'c', text: 'Porque imagens pequenas não passam pela internet.' },
+      { id: 'd', text: 'Porque o servidor envia primeiro os arquivos de nome menor.' },
+    ]},
+    explanation: '150 KB no total contra 200 KB, e o navegador baixa várias em paralelo. O que decide o tempo é a soma dos bytes.',
+  },
+];
+
 export const ap035: Specialty = {
   code: 'AP035',
   name: 'Internet, Avançado',
   level: 'advanced',
   description: 'Especialidade avançada sobre internet: HTTP, HTML, imagens, sites e inteligência artificial.',
   requirements: [
+    { code: 'AP035-1.1', title: 'Especialidade de Internet', description: 'Ter concluído a especialidade AP034 — Internet.', type: 'practice' },
     { code: 'AP035-2.1', title: 'HTTP', description: 'Explicar HTTP e HTTPS.', type: 'theory' },
     { code: 'AP035-2.2', title: 'Hyperlink', description: 'Explicar hyperlink.', type: 'theory' },
     { code: 'AP035-2.3', title: 'HTML e PHP', description: 'Diferenciar HTML e PHP.', type: 'theory' },
@@ -678,13 +745,24 @@ export const ap035: Specialty = {
     { code: 'AP035-3.11', title: '<table>', description: 'Elemento table.', type: 'practice' },
     { code: 'AP035-3.12', title: '<tr>', description: 'Elemento tr.', type: 'practice' },
     { code: 'AP035-3.13', title: '<td>', description: 'Elemento td.', type: 'practice' },
-    { code: 'AP035-3.14', title: 'Página com tabela', description: 'Criar página completa.', type: 'practice' },
-    { code: 'AP035-4.1', title: 'Imagens para Web', description: 'JPEG, PNG, botões e header.', type: 'practice' },
-    { code: 'AP035-5.1', title: 'Site com quatro páginas', description: 'Site interligado e formulário.', type: 'practice' },
-    { code: 'AP035-6.1', title: 'Inteligência Artificial', description: 'Conceitos de IA.', type: 'theory' },
-    { code: 'AP035-7.1', title: 'Produção com IA', description: 'Texto, imagem e logo.', type: 'practice' },
+    { code: 'AP035-4.1', title: 'Tabela simples completa', description: 'Tabela com texto, gráfico, regra horizontal e link, texto colorido em hexadecimal e título maior.', type: 'practice' },
+    { code: 'AP035-5.1', title: 'Gráficos para a web', description: 'Explicar o processo que faz os gráficos de um site serem baixados rapidamente.', type: 'theory' },
+    { code: 'AP035-5.2', title: 'Imagens leves, botões e header', description: 'Um JPG e um GIF/PNG abaixo de 15 KB, cinco botões de navegação e um header.', type: 'practice' },
+    { code: 'AP035-6.1', title: 'Site interligado de quatro páginas', description: 'Site de quatro páginas interligadas, com boas-vindas que indique a razão do site e traga uma imagem.', type: 'practice' },
+    { code: 'AP035-6.2', title: 'Página de fotos', description: 'Página mostrando atividades e eventos vividos pelo desbravador ou seu grupo.', type: 'practice' },
+    { code: 'AP035-6.3', title: 'Livro de visitas ou contato', description: 'Página onde visitantes deixam registro ou endereço de e-mail.', type: 'practice' },
+    { code: 'AP035-7.1', title: 'Inteligência artificial', description: 'Explicar o que é IA e quais são os benefícios e os problemas do seu uso.', type: 'theory' },
+    { code: 'AP035-8.1', title: 'Texto produzido com IA', description: 'Produzir com IA um texto sobre a importância do Clube de Desbravadores.', type: 'practice' },
+    { code: 'AP035-8.2', title: 'Imagem produzida com IA', description: 'Produzir com IA uma imagem do Clube de Desbravadores acampando.', type: 'practice' },
+    { code: 'AP035-8.3', title: 'Logo produzido com IA', description: 'Produzir com IA um logo usando o nome do Clube.', type: 'practice' },
   ],
   modules: [
+    {
+      code: 'AP035.0', title: 'Pré-requisito', description: 'A especialidade de Internet concluída.',
+      lessons: [
+        { code: 'AP035.0-L1', title: 'Pré-requisito: especialidade de Internet', type: 'lab', content: '', requirementCodes: ['AP035-1.1'], labType: 'prerequisite' },
+      ],
+    },
     {
       code: 'AP035.1', title: 'Conceitos Avançados', description: 'HTTP, hyperlinks, HTML, PHP, URLs, imagens e cores.',
       lessons: [
@@ -704,31 +782,32 @@ export const ap035: Specialty = {
     {
       code: 'AP035.3', title: 'Tabela e Página Visual', description: 'Página com tabela e elementos.',
       lessons: [
-        { code: 'AP035.3-L1', title: 'Desafio: Página com Tabela', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">Desafio: Página com Tabela</h2><p class="mb-3">Agora que você praticou com os elementos individuais no CodeLab, crie uma página HTML completa que inclua uma tabela com dados reais. Use sua criatividade — pode ser uma tabela de horários, de produtos, de notas, etc.</p><p class="mb-3">Lembre-se de incluir: <code style="color: var(--color-secondary)">&lt;table&gt;</code>, <code style="color: var(--color-secondary)">&lt;tr&gt;</code> (linhas) e <code style="color: var(--color-secondary)">&lt;td&gt;</code> (células).</p>', requirementCodes: ['AP035-3.14'], labType: 'table_challenge' },
+        { code: 'AP035.3-L1', title: 'Desafio: Página com Tabela', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">Desafio: Página com Tabela</h2><p class="mb-3">Agora que você praticou com os elementos individuais no CodeLab, crie uma página HTML completa que inclua uma tabela com dados reais. Use sua criatividade — pode ser uma tabela de horários, de produtos, de notas, etc.</p><p class="mb-3">Lembre-se de incluir: <code style="color: var(--color-secondary)">&lt;table&gt;</code>, <code style="color: var(--color-secondary)">&lt;tr&gt;</code> (linhas) e <code style="color: var(--color-secondary)">&lt;td&gt;</code> (células).</p>', requirementCodes: ['AP035-4.1'], labType: 'table_challenge' },
       ],
     },
     {
       code: 'AP035.4', title: 'Imagens para Web', description: 'ImageLab: otimização de imagens.',
       lessons: [
-        { code: 'AP035.4-L1', title: 'ImageLab — Otimização de Imagens', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">ImageLab — Otimização de Imagens</h2><p class="mb-3">Neste laboratório você vai produzir quatro imagens de verdade: uma fotografia otimizada em JPEG, um logo em PNG com fundo transparente, um botão e um header. Ao final, os quatro arquivos ficam salvos no seu dispositivo.</p><p class="mb-3">Escolher o formato certo é o que decide se a página abre rápido ou trava no 3G do acampamento. O JPEG descarta detalhe que o olho não percebe e vence em fotografias; o PNG guarda cada pixel e é o único que guarda transparência — sem ele, o logo do clube viaja dentro de uma caixa branca.</p><p class="mb-3">Cada etapa já vem preenchida com um defeito de propósito. Descubra qual é e corrija: as verificações medem os pixels e os bytes que você gerou, não a resposta que você escolheu.</p>', requirementCodes: ['AP035-4.1'], labType: 'image_lab' },
+        { code: 'AP035.4-L0', title: 'Gráficos que carregam rápido', type: 'theory', content: content_graficos, requirementCodes: ['AP035-5.1'], questions: rawQ_graficos },
+        { code: 'AP035.4-L1', title: 'ImageLab — Otimização de Imagens', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">ImageLab — Otimização de Imagens</h2><p class="mb-3">Neste laboratório você vai produzir quatro imagens de verdade: uma fotografia otimizada em JPEG, um logo em PNG com fundo transparente, um botão e um header. Ao final, os quatro arquivos ficam salvos no seu dispositivo.</p><p class="mb-3">Escolher o formato certo é o que decide se a página abre rápido ou trava no 3G do acampamento. O JPEG descarta detalhe que o olho não percebe e vence em fotografias; o PNG guarda cada pixel e é o único que guarda transparência — sem ele, o logo do clube viaja dentro de uma caixa branca.</p><p class="mb-3">Cada etapa já vem preenchida com um defeito de propósito. Descubra qual é e corrija: as verificações medem os pixels e os bytes que você gerou, não a resposta que você escolheu.</p>', requirementCodes: ['AP035-5.2'], labType: 'image_lab' },
       ],
     },
     {
       code: 'AP035.5', title: 'Site com Quatro Páginas', description: 'SiteLab: projeto de site.',
       lessons: [
-        { code: 'AP035.5-L1', title: 'SiteLab — Projeto de Site', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">SiteLab — Projeto de Site</h2><p class="mb-3">Crie um site completo com quatro páginas interligadas: <strong>Início</strong>, <strong>Sobre</strong>, <strong>Contato</strong> e <strong>Galeria</strong>. Cada página deve ter navegação consistente (menu com links) e a página de contato deve incluir um formulário.</p><p class="mb-3">Use a tag <code style="color: var(--color-secondary)">&lt;a href="pagina.html"&gt;</code> para criar os links entre as páginas. O formulário deve usar <code style="color: var(--color-secondary)">&lt;form&gt;</code>, <code style="color: var(--color-secondary)">&lt;input&gt;</code> e <code style="color: var(--color-secondary)">&lt;button&gt;</code>.</p>', requirementCodes: ['AP035-5.1'], labType: 'site_lab' },
+        { code: 'AP035.5-L1', title: 'SiteLab — Projeto de Site', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">SiteLab — Projeto de Site</h2><p class="mb-3">Crie um site completo com quatro páginas interligadas: <strong>Início</strong>, <strong>Sobre</strong>, <strong>Contato</strong> e <strong>Galeria</strong>. Cada página deve ter navegação consistente (menu com links) e a página de contato deve incluir um formulário.</p><p class="mb-3">Use a tag <code style="color: var(--color-secondary)">&lt;a href="pagina.html"&gt;</code> para criar os links entre as páginas. O formulário deve usar <code style="color: var(--color-secondary)">&lt;form&gt;</code>, <code style="color: var(--color-secondary)">&lt;input&gt;</code> e <code style="color: var(--color-secondary)">&lt;button&gt;</code>.</p>', requirementCodes: ['AP035-6.1', 'AP035-6.2', 'AP035-6.3'], labType: 'site_lab' },
       ],
     },
     {
       code: 'AP035.6', title: 'Inteligência Artificial', description: 'Conceitos de IA.',
       lessons: [
-        { code: 'AP035.6-L1', title: 'Inteligência Artificial — Conceitos', type: 'theory', content: content_6L1, requirementCodes: ['AP035-6.1'], questions: rawQ_6L1 },
+        { code: 'AP035.6-L1', title: 'Inteligência Artificial — Conceitos', type: 'theory', content: content_6L1, requirementCodes: ['AP035-7.1'], questions: rawQ_6L1 },
       ],
     },
     {
       code: 'AP035.7', title: 'Produção com IA', description: 'AI Lab: texto, imagem e logo.',
       lessons: [
-        { code: 'AP035.7-L1', title: 'AI Lab — Produção com IA', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">AI Lab — Produção com IA</h2><p class="mb-3">Neste laboratório você vai usar IA generativa para criar conteúdo: gerar texto, gerar uma imagem e criar um logo para um clube. Depois, você vai avaliar criticamente os resultados.</p><p class="mb-3">Lembre-se: a IA é uma ferramenta. O conteúdo gerado deve ser revisado e melhorado por você. A IA pode cometer erros ou produzir conteúdo inadequado.</p>', requirementCodes: ['AP035-7.1'], labType: 'ai_lab' },
+        { code: 'AP035.7-L1', title: 'AI Lab — Produção com IA', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">AI Lab — Produção com IA</h2><p class="mb-3">Neste laboratório você vai usar IA generativa para criar conteúdo: gerar texto, gerar uma imagem e criar um logo para um clube. Depois, você vai avaliar criticamente os resultados.</p><p class="mb-3">Lembre-se: a IA é uma ferramenta. O conteúdo gerado deve ser revisado e melhorado por você. A IA pode cometer erros ou produzir conteúdo inadequado.</p>', requirementCodes: ['AP035-8.1', 'AP035-8.2', 'AP035-8.3'], labType: 'ai_lab' },
       ],
     },
     {

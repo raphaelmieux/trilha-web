@@ -1053,6 +1053,7 @@ export const ap034: Specialty = {
     { code: 'AP034-4.2', title: 'Atualização do antivírus', description: 'Explicar a importância de atualizar o antivírus.', type: 'theory' },
     { code: 'AP034-4.3', title: 'Compartilhamento por computador desprotegido', description: 'Explicar propagação.', type: 'theory' },
     { code: 'AP034-4.4', title: 'Prejuízos', description: 'Listar prejuízos causados por vírus.', type: 'theory' },
+    { code: 'AP034-5.0', title: 'Filtros de conteúdo', description: 'Explicar de que forma os filtros de conteúdo podem proteger a família.', type: 'theory' },
     { code: 'AP034-5.1', title: 'Pacto - Não revelar informações', description: 'Nunca revelar informações pessoais desnecessárias.', type: 'practice' },
     { code: 'AP034-5.2', title: 'Pacto - Pessoas online', description: 'Pessoas online podem não ser quem afirmam ser.', type: 'practice' },
     { code: 'AP034-5.3', title: 'Pacto - Encontro presencial', description: 'Nunca encontrar amigo virtual sem responsável.', type: 'practice' },
@@ -1062,8 +1063,13 @@ export const ap034: Specialty = {
     { code: 'AP034-5.7', title: 'Pacto - Sites aceitáveis', description: 'Definir sites aceitáveis e inaceitáveis.', type: 'practice' },
     { code: 'AP034-5.8', title: 'Pacto - Redes sociais', description: 'Selecionar no máximo duas redes sociais.', type: 'practice' },
     { code: 'AP034-5.9', title: 'Pacto - Limite diário', description: 'Definir limite diário para redes sociais.', type: 'practice' },
-    { code: 'AP034-6.1', title: 'Navegação e pesquisa', description: 'Visitar sites, buscar Bíblia, download.', type: 'practice' },
-    { code: 'AP034-7.1', title: 'E-mail', description: 'Enviar, receber, anexo, segurança.', type: 'practice' },
+    { code: 'AP034-6.1', title: 'Visitar três sites', description: 'Visitar três sites diferentes e registrar a primeira página de cada um.', type: 'practice' },
+    { code: 'AP034-6.2', title: 'Pesquisa bíblica', description: 'Encontrar uma Bíblia on-line por busca e localizar três textos em três versões diferentes.', type: 'practice' },
+    { code: 'AP034-6.3', title: 'Download de arquivo', description: 'Fazer o download de um arquivo.', type: 'practice' },
+    { code: 'AP034-7.1', title: 'Escrever e enviar um e-mail', description: 'Redigir e enviar uma mensagem completa, com destinatário, assunto e corpo.', type: 'practice' },
+    { code: 'AP034-7.2', title: 'Receber e abrir um e-mail', description: 'Receber mensagens e abri-las para leitura.', type: 'practice' },
+    { code: 'AP034-7.3', title: 'Baixar e abrir um anexo', description: 'Fazer o download de um anexo recebido e abri-lo.', type: 'practice' },
+    { code: 'AP034-7.4', title: 'Segurança no e-mail', description: 'Aplicar princípios de segurança ao enviar, receber e abrir e-mails.', type: 'practice' },
     { code: 'AP034-8.1', title: 'Filipenses 4:8', description: 'Aprender e aplicar Filipenses 4:8.', type: 'mixed' },
   ],
   modules: [
@@ -1104,21 +1110,21 @@ export const ap034: Specialty = {
       code: 'AP034.5', title: 'Meu Compromisso Digital',
       description: 'O acordo pessoal de uso da internet, cláusula por cláusula.',
       lessons: [
-        { code: 'AP034.5-L1', title: 'Meu Compromisso Digital', type: 'lab', content: content_5L1, requirementCodes: ['AP034-5.1', 'AP034-5.2', 'AP034-5.3', 'AP034-5.4', 'AP034-5.5', 'AP034-5.6', 'AP034-5.7', 'AP034-5.8', 'AP034-5.9'], labType: 'pact_builder' },
+        { code: 'AP034.5-L1', title: 'Meu Compromisso Digital', type: 'lab', content: content_5L1, requirementCodes: ['AP034-5.0', 'AP034-5.1', 'AP034-5.2', 'AP034-5.3', 'AP034-5.4', 'AP034-5.5', 'AP034-5.6', 'AP034-5.7', 'AP034-5.8', 'AP034-5.9'], labType: 'pact_builder' },
       ],
     },
     {
       code: 'AP034.6', title: 'Navegação e Pesquisa',
       description: 'WebLab: simulação de navegador.',
       lessons: [
-        { code: 'AP034.6-L1', title: 'WebLab - Navegação e Pesquisa', type: 'lab', content: content_6L1, requirementCodes: ['AP034-6.1'], labType: 'web_lab' },
+        { code: 'AP034.6-L1', title: 'WebLab - Navegação e Pesquisa', type: 'lab', content: content_6L1, requirementCodes: ['AP034-6.1', 'AP034-6.2', 'AP034-6.3'], labType: 'web_lab' },
       ],
     },
     {
       code: 'AP034.7', title: 'E-mail',
       description: 'MailLab: simulação de e-mail.',
       lessons: [
-        { code: 'AP034.7-L1', title: 'MailLab - E-mail e Segurança', type: 'lab', content: content_7L1, requirementCodes: ['AP034-7.1'], labType: 'mail_lab' },
+        { code: 'AP034.7-L1', title: 'MailLab - E-mail e Segurança', type: 'lab', content: content_7L1, requirementCodes: ['AP034-7.1', 'AP034-7.2', 'AP034-7.3', 'AP034-7.4'], labType: 'mail_lab' },
       ],
     },
     {
