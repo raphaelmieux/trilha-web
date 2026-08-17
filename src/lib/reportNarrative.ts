@@ -10,6 +10,31 @@ import { TIER_LABELS } from './badgeIcons';
 export interface ModuleNarrative {
   title: string;
   paragraph: string;
+  /**
+   * One sentence per requirement, each naming its official code.
+   *
+   * The module paragraph alone was not enough for the document's purpose. A club
+   * leader confers with the specialty sheet in hand and needs to walk it item by
+   * item; "no módulo Navegação e Pesquisa demonstrou domínio de seu único
+   * requisito" gave them nothing to tick off. These sentences cite 6.1, 6.2 and
+   * 6.3 by number, so the report can be read against the printed sheet line for
+   * line — still as prose, which is what was asked for, not a table.
+   */
+  requirements: string[];
+}
+
+/**
+ * Evidence a lab recorded while the student worked.
+ *
+ * Some requirements are demonstrations rather than knowledge — visiting three
+ * sites, finding three passages in three versions — and the sheet asks the
+ * instructor to *see* the result. What the student registered is carried here so
+ * the sentence can state it, which is how this club chose to run those checks.
+ */
+export interface LabEvidence {
+  visits?: { url: string; note: string }[];
+  passages?: { reference: string; version: string; text: string }[];
+  bibleSite?: string;
 }
 
 export interface SpecialtyNarrative {
@@ -63,11 +88,48 @@ function plural(n: number, one: string, many: string): string {
   return n === 1 ? one : many;
 }
 
+
+/**
+ * One sentence stating how a single requirement was met, opening with its
+ * official number so the report can be read against the printed sheet.
+ *
+ * Where a lab recorded what the student produced, the sentence says it. Where it
+ * did not, the requirement's own wording is the statement — which is honest:
+ * claiming evidence that was never captured would be worse than citing the
+ * curriculum.
+ */
+function describeRequirement(code: string, description: string, evidence: LabEvidence): string {
+  const item = code.split('-')[1] ?? code;
+  const lead = `Requisito ${item} — ${toClause(description)}`;
+
+  if (item === '6.1' && evidence.visits?.length) {
+    const listed = evidence.visits
+      .filter(v => v.url.trim())
+      .map(v => `${v.url} (${v.note})`);
+    if (listed.length > 0) {
+      return `${lead}: foram visitados e descritos ${joinClauses(listed)}.`;
+    }
+  }
+
+  if (item === '6.2' && evidence.passages?.length) {
+    const listed = evidence.passages
+      .filter(p => p.reference.trim() && p.version.trim())
+      .map(p => `${p.reference} na versão ${p.version}`);
+    if (listed.length > 0) {
+      const site = evidence.bibleSite ? `, em ${evidence.bibleSite}` : '';
+      return `${lead}: foram localizados ${joinClauses(listed)}${site}.`;
+    }
+  }
+
+  return `${lead}: concluído e registrado pela plataforma.`;
+}
+
 export function buildSpecialtyNarrative(
   specialty: Specialty,
   progress: ProgressMap,
   certifications: Certification[],
   studentName: string,
+  evidence: LabEvidence = {},
 ): SpecialtyNarrative {
   const levelLabel = specialty.level === 'fundamental' ? 'Fundamental' : 'Avançado';
   const requirements = specialty.requirements;
@@ -138,6 +200,7 @@ export function buildSpecialtyNarrative(
     modules.push({
       title: module.title,
       paragraph: `No módulo ${module.title}${scope} ${coverage}, ${detail}.`,
+      requirements: doneReqs.map(r => describeRequirement(r.code, r.description, evidence)),
     });
   }
 

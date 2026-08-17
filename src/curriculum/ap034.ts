@@ -1030,6 +1030,74 @@ const content_8L1 = `
 // SPECIALTY DEFINITION
 // ═══════════════════════════════════════════════════════════
 
+/* AP034-5.0 — o requisito 5 abre perguntando "de que forma os filtros de
+   conteúdo podem proteger a sua família?" antes das nove cláusulas do pacto.
+   Nunca tinha código nem lição: era a única parte do documento que a plataforma
+   simplesmente não ensinava. */
+const content_5L0 = `
+<h2 class="text-xl font-bold mb-3">Filtros de conteúdo: o que fazem e o que não fazem</h2>
+<p class="mb-3">Um filtro de conteúdo é um programa que fica entre a família e a internet, decidindo o que passa. Ele pode viver no roteador de casa, no celular, no navegador ou na conta da criança — e cada lugar protege de um jeito diferente.</p>
+
+<h3 class="font-bold mt-4 mb-2">Os quatro tipos que uma família encontra</h3>
+<ul class="list-disc list-inside space-y-1 mb-3">
+  <li><strong>No roteador</strong> — vale para todos os aparelhos da casa de uma vez, inclusive os das visitas. Não acompanha o celular quando ele sai com o plano de dados.</li>
+  <li><strong>No aparelho</strong> — segue o celular para onde ele for, mas precisa ser configurado em cada um.</li>
+  <li><strong>Na conta</strong> — o modo restrito do YouTube, a busca segura do buscador, o controle da loja de aplicativos. Vale onde aquela conta estiver.</li>
+  <li><strong>No horário</strong> — não filtra o conteúdo, filtra o tempo: desliga a internet às 22h, por exemplo. É o mais simples e um dos mais eficazes.</li>
+</ul>
+
+<h3 class="font-bold mt-4 mb-2">O que eles protegem de verdade</h3>
+<p class="mb-3">Filtros são bons em três coisas: barrar páginas de conteúdo adulto e violento; impedir instalação de programas sem autorização; e limitar o tempo de uso. Nas três, funcionam porque a decisão é tomada <strong>antes</strong> de a criança precisar decidir sozinha, num momento de curiosidade ou de pressão.</p>
+
+<h3 class="font-bold mt-4 mb-2">O que eles não conseguem fazer</h3>
+<ul class="list-disc list-inside space-y-1 mb-3">
+  <li><strong>Não leem intenção.</strong> Um filtro não distingue um trabalho escolar sobre drogas de uma busca por drogas. Ele erra nos dois sentidos: barra o que era legítimo e deixa passar o que não era.</li>
+  <li><strong>Não protegem de gente.</strong> A maior parte dos riscos para um adolescente vem de conversas — alguém pedindo foto, marcando encontro, oferecendo dinheiro. Nenhum filtro bloqueia isso.</li>
+  <li><strong>Não sobrevivem à casa do amigo.</strong> Nem ao wi-fi da escola, nem ao celular emprestado.</li>
+</ul>
+
+<div class="rounded-lg p-4 mb-3" style="background-color: var(--color-secondary-a08); border: 1px solid var(--color-secondary-a20)">
+  <p class="font-bold mb-1" style="color: var(--color-secondary)">Por isso vem o pacto</p>
+  <p>O filtro cuida do que dá para automatizar; o combinado cuida do resto. Um sem o outro deixa buraco: filtro sozinho vira gato e rato, e regra sozinha depende de a criança lembrar dela justamente quando não quer lembrar. É por isso que o requisito pede as duas coisas na mesma frase.</p>
+</div>
+`;
+
+const rawQuestions_5L0: Question[] = [
+  {
+    id: 'AP034.5-L0-Q1', type: 'multiple_choice',
+    prompt: 'Qual proteção um filtro de conteúdo NÃO consegue oferecer?',
+    data: { options: [
+      { id: 'a', text: 'Impedir que um desconhecido peça fotos ao seu filho pelo chat.', correct: true },
+      { id: 'b', text: 'Bloquear páginas de conteúdo adulto.' },
+      { id: 'c', text: 'Desligar a internet depois de um horário combinado.' },
+      { id: 'd', text: 'Impedir a instalação de programas sem autorização.' },
+    ]},
+    explanation: 'Filtros barram conteúdo, não conversas. O risco que vem de pessoas é justamente o que o pacto de uso trata.',
+  },
+  {
+    id: 'AP034.5-L0-Q2', type: 'multiple_choice',
+    prompt: 'Por que um filtro instalado no roteador não basta?',
+    data: { options: [
+      { id: 'a', text: 'Porque ele não acompanha o celular quando sai de casa com o plano de dados.', correct: true },
+      { id: 'b', text: 'Porque roteadores não têm essa função.' },
+      { id: 'c', text: 'Porque ele deixa a internet mais lenta.' },
+      { id: 'd', text: 'Porque só funciona em computadores antigos.' },
+    ]},
+    explanation: 'O filtro do roteador vale para tudo o que passa por ele — e só. Fora de casa, é preciso o filtro do próprio aparelho ou da conta.',
+  },
+  {
+    id: 'AP034.5-L0-Q3', type: 'multiple_choice',
+    prompt: 'Qual é a relação entre o filtro e o pacto de uso da internet?',
+    data: { options: [
+      { id: 'a', text: 'Um cuida do que dá para automatizar; o outro cuida do que depende de decisão.', correct: true },
+      { id: 'b', text: 'O pacto substitui o filtro quando a criança cresce.' },
+      { id: 'c', text: 'São a mesma coisa, com nomes diferentes.' },
+      { id: 'd', text: 'O filtro só funciona se o pacto for assinado em cartório.' },
+    ]},
+    explanation: 'Filtro sozinho vira gato e rato; regra sozinha depende de lembrar dela na hora errada. O requisito pede os dois na mesma frase.',
+  },
+];
+
 export const ap034: Specialty = {
   code: 'AP034',
   name: 'Internet',
@@ -1110,7 +1178,8 @@ export const ap034: Specialty = {
       code: 'AP034.5', title: 'Meu Compromisso Digital',
       description: 'O acordo pessoal de uso da internet, cláusula por cláusula.',
       lessons: [
-        { code: 'AP034.5-L1', title: 'Meu Compromisso Digital', type: 'lab', content: content_5L1, requirementCodes: ['AP034-5.0', 'AP034-5.1', 'AP034-5.2', 'AP034-5.3', 'AP034-5.4', 'AP034-5.5', 'AP034-5.6', 'AP034-5.7', 'AP034-5.8', 'AP034-5.9'], labType: 'pact_builder' },
+        { code: 'AP034.5-L0', title: 'Filtros de Conteúdo', type: 'theory', content: content_5L0, requirementCodes: ['AP034-5.0'], questions: rawQuestions_5L0 },
+        { code: 'AP034.5-L1', title: 'Meu Compromisso Digital', type: 'lab', content: content_5L1, requirementCodes: ['AP034-5.1', 'AP034-5.2', 'AP034-5.3', 'AP034-5.4', 'AP034-5.5', 'AP034-5.6', 'AP034-5.7', 'AP034-5.8', 'AP034-5.9'], labType: 'pact_builder' },
       ],
     },
     {

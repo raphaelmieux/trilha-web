@@ -22,9 +22,10 @@ interface Props { specialtyCode: string; requirementCodes: string[]; userId: str
  * WebLab — requirements AP034-6.1, 6.2 and 6.3: visit three sites, find three
  * Bible passages in three versions, download a file.
  *
- * Those were one collapsed requirement and the lab simulated all of it. Five buttons set a string; the search
- * returned a hard-coded list keyed on the word "bíblia"; the download appended a
- * filename to an array. A student could finish it without reading an address.
+ * Those were one collapsed requirement and the lab simulated all of it: five
+ * buttons set a string, the search returned a hard-coded list keyed on the word
+ * "bíblia", and the download appended a filename to an array. A student could
+ * finish it without reading an address.
  *
  * Here the address bar runs the browser's own URL parser, the phishing verdicts
  * come from stated rules in src/lib/webSkills.ts, the query is tokenised the way
@@ -348,9 +349,18 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
         total_questions: SUSPECTS.length + FILES.length,
       });
     }
+    /* The evidence goes into the event, not just the tick.
+       Requirements 6.1 and 6.2 are demonstrations the sheet asks the instructor
+       to see; this club runs them by recorded evidence, so the report has to be
+       able to state what was visited and what was found. */
     await logActivity(userId, 'web_lab_completed', {
       checksPassed: passedCount, total: allChecks.length,
       enderecosDePrimeira: suspectFirstCorrect, arquivosDePrimeira: filesFirstCorrect,
+      visits: visits.map(v => ({ url: v.url.trim(), note: v.note.trim() })),
+      bibleSite: bibleSite.trim(),
+      passages: passages.map(p => ({
+        reference: p.reference.trim(), version: p.version, text: p.text.trim(),
+      })),
     });
     setCompleted(true);
   };

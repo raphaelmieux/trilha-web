@@ -6,7 +6,7 @@ import { getSpecialty } from '../curriculum';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
-import { buildSpecialtyNarrative, buildClosingParagraph, buildBadgeParagraph } from '../lib/reportNarrative';
+import { buildSpecialtyNarrative, buildClosingParagraph, buildBadgeParagraph, type LabEvidence } from '../lib/reportNarrative';
 import { getPublicName } from '../types';
 import { LoadingState } from '../components/ui/PageState';
 import CertificateCanvas from '../components/CertificateCanvas';
@@ -21,6 +21,7 @@ export default function ReportPage() {
   const { certifications, loading: certsLoading } = useCertifications(profile?.id);
   const { badges, loading: badgesLoading } = useBadges(profile?.id);
   const [lessonAttempts, setLessonAttempts] = useState<any[]>([]);
+  const [evidence, setEvidence] = useState<LabEvidence>({});
   const [attemptsLoading, setAttemptsLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
@@ -34,6 +35,20 @@ export default function ReportPage() {
         .select('score, total')
         .eq('user_id', profile.id);
       setLessonAttempts(attempts || []);
+
+      /* The most recent WebLab completion carries what the student registered
+         for requirements 6.1 and 6.2. Read here rather than stored on the
+         requirement row because activity_events is already the audit trail. */
+      const { data: events } = await supabase
+        .from('activity_events')
+        .select('metadata')
+        .eq('user_id', profile.id)
+        .eq('event_type', 'web_lab_completed')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      const latest = events?.[0]?.metadata as LabEvidence | undefined;
+      if (latest) setEvidence(latest);
+
       setAttemptsLoading(false);
     })();
   }, [profile]);
@@ -45,7 +60,7 @@ export default function ReportPage() {
 
     const specialties = [getSpecialty('AP034'), getSpecialty('AP035')].filter(s => !!s);
     const list = specialties.map(s =>
-      buildSpecialtyNarrative(s!, progress, certifications, studentName)
+      buildSpecialtyNarrative(s!, progress, certifications, studentName, evidence)
     );
 
     const attemptsCount = lessonAttempts.length;
@@ -60,7 +75,7 @@ export default function ReportPage() {
       narratives: list,
       closing: buildClosingParagraph(list, studentName, attemptsCount, averageScore),
     };
-  }, [profile, progress, certifications, lessonAttempts, loading, studentName]);
+  }, [profile, progress, certifications, lessonAttempts, loading, studentName, evidence]);
 
   if (!profile) return null;
   if (loading) return <LoadingState label="Montando relatório..." />;
@@ -88,7 +103,7 @@ export default function ReportPage() {
           heading: `${n.code} — ${n.name}`,
           paragraphs: [
             n.opening,
-            ...n.modules.map(m => m.paragraph),
+            ...n.modules.flatMap(m => [m.paragraph, ...m.requirements]),
             ...(n.pending ? [n.pending] : []),
             ...(n.certification ? [n.certification] : []),
           ],
@@ -162,7 +177,12 @@ export default function ReportPage() {
               <h2>{n.code} — {n.name}</h2>
               <p>{n.opening}</p>
               {n.modules.map(m => (
-                <p key={m.title}>{m.paragraph}</p>
+                <div key={m.title}>
+                  <p>{m.paragraph}</p>
+                  {m.requirements.map((sentence, i) => (
+                    <p key={i} className="report-req">{sentence}</p>
+                  ))}
+                </div>
               ))}
               {n.pending && <p>{n.pending}</p>}
               {n.certification && <p>{n.certification}</p>}

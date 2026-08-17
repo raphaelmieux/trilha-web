@@ -478,6 +478,16 @@
 .report-badges strong { color: var(--color-text); }
 .report-badges span { color: var(--color-text-muted); }
 
+/* One sentence per requirement, indented under its module paragraph so a leader
+   reading with the specialty sheet in hand can follow the numbering down the
+   page. Still prose — a table was explicitly not wanted here. */
+.report-req {
+  margin-left: 1.1rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--color-border);
+  font-size: 0.94em;
+}
+
 .report-annex-note {
   margin-top: 2rem;
   padding-top: 1.25rem;

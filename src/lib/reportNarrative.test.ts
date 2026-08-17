@@ -191,3 +191,84 @@ describe('buildBadgeParagraph', () => {
     expect(buildBadgeParagraph([badge()], 'Ana')).toMatch(/não são concedidas pela simples conclusão/);
   });
 });
+
+describe('per-requirement sentences', () => {
+  /* A leader confers with the specialty sheet in hand and walks it item by item,
+     so every requirement has to appear by its official number. Uses AP034 codes
+     rather than the R1..R4 fixture because the numbering is the point. */
+  const navSpecialty: Specialty = {
+    code: 'AP034', name: 'Internet', level: 'fundamental', description: '',
+    requirements: [
+      { code: 'AP034-6.1', title: 'Visitar três sites', description: 'Visitar três sites diferentes e registrar a primeira página de cada um.', type: 'practice' },
+      { code: 'AP034-6.2', title: 'Pesquisa bíblica', description: 'Encontrar uma Bíblia on-line e localizar três textos em três versões.', type: 'practice' },
+      { code: 'AP034-6.3', title: 'Download', description: 'Fazer o download de um arquivo.', type: 'practice' },
+    ],
+    modules: [{
+      code: 'AP034.6', title: 'Navegação e Pesquisa', description: '',
+      lessons: [{
+        code: 'L', title: 'WebLab', type: 'lab', content: '',
+        requirementCodes: ['AP034-6.1', 'AP034-6.2', 'AP034-6.3'],
+      }],
+    }],
+  };
+
+  const done = progressFor(['AP034-6.1', 'AP034-6.2', 'AP034-6.3']);
+
+  it('names every completed requirement by its official number', () => {
+    const n = buildSpecialtyNarrative(navSpecialty, done, [], 'Ana');
+    const sentences = n.modules[0].requirements;
+    expect(sentences).toHaveLength(3);
+    expect(sentences[0]).toMatch(/^Requisito 6\.1 —/);
+    expect(sentences[1]).toMatch(/^Requisito 6\.2 —/);
+    expect(sentences[2]).toMatch(/^Requisito 6\.3 —/);
+  });
+
+  it('states the three sites visited when the lab recorded them', () => {
+    const n = buildSpecialtyNarrative(navSpecialty, done, [], 'Ana', {
+      visits: [
+        { url: 'https://a.org', note: 'notícias' },
+        { url: 'https://b.com.br', note: 'versículos' },
+        { url: 'https://c.org', note: 'enciclopédia' },
+      ],
+    });
+    const sentence = n.modules[0].requirements[0];
+    expect(sentence).toContain('https://a.org (notícias)');
+    expect(sentence).toContain('https://c.org (enciclopédia)');
+  });
+
+  it('states each passage with its translation', () => {
+    const n = buildSpecialtyNarrative(navSpecialty, done, [], 'Ana', {
+      bibleSite: 'https://www.bibliaonline.com.br',
+      passages: [
+        { reference: 'Filipenses 4:8', version: 'NVI', text: '...' },
+        { reference: 'João 3:16', version: 'NTLH', text: '...' },
+        { reference: 'Salmos 23:1', version: 'ACF', text: '...' },
+      ],
+    });
+    const sentence = n.modules[0].requirements[1];
+    expect(sentence).toContain('Filipenses 4:8 na versão NVI');
+    expect(sentence).toContain('Salmos 23:1 na versão ACF');
+    expect(sentence).toContain('bibliaonline.com.br');
+  });
+
+  it('falls back to the curriculum wording when nothing was recorded', () => {
+    // Claiming evidence that was never captured would be worse than citing the
+    // requirement, so the sentence says only what is true.
+    const n = buildSpecialtyNarrative(navSpecialty, done, [], 'Ana');
+    expect(n.modules[0].requirements[0]).toMatch(/concluído e registrado pela plataforma/);
+  });
+
+  it('ignores blank rows rather than printing empty parentheses', () => {
+    const n = buildSpecialtyNarrative(navSpecialty, done, [], 'Ana', {
+      visits: [{ url: '', note: '' }, { url: '', note: '' }, { url: '', note: '' }],
+    });
+    expect(n.modules[0].requirements[0]).toMatch(/concluído e registrado/);
+  });
+
+  it('lists nothing for a requirement that is not done', () => {
+    const partial = progressFor(['AP034-6.1']);
+    const n = buildSpecialtyNarrative(navSpecialty, partial, [], 'Ana');
+    expect(n.modules[0].requirements).toHaveLength(1);
+    expect(n.modules[0].requirements[0]).toMatch(/^Requisito 6\.1/);
+  });
+});
