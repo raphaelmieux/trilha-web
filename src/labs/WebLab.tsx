@@ -7,19 +7,22 @@ import {
   parseAddress, assessAddress, analyzeQuery, buildSearchUrl, assessDownload,
   type RiskLevel,
 } from '../lib/webSkills';
+import {
+  parseReference, countDistinctReferences, countDistinctVersions, BIBLE_VERSIONS,
+} from '../lib/bibleStudy';
 import { exportStudySheetPdf } from '../lib/pdf';
 import {
   Globe, Link2, ShieldCheck, Search, FileDown, CheckCircle2, AlertCircle,
-  ExternalLink, Lock, Unlock, Download, RotateCcw,
+  ExternalLink, Lock, Unlock, Download, RotateCcw, Compass, BookOpen,
 } from 'lucide-react';
 
 interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
 
 /**
- * WebLab — requirement AP034-6.1: navigate, search a biblical subject, download
- * a file.
+ * WebLab — requirements AP034-6.1, 6.2 and 6.3: visit three sites, find three
+ * Bible passages in three versions, download a file.
  *
- * The old lab simulated all three. Five buttons set a string; the search
+ * Those were one collapsed requirement and the lab simulated all of it. Five buttons set a string; the search
  * returned a hard-coded list keyed on the word "bíblia"; the download appended a
  * filename to an array. A student could finish it without reading an address.
  *
@@ -139,6 +142,51 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
     },
   ];
 
+  /* ── 3. Três sites visitados (AP034-6.1) ────────────────────────────────
+     "Visitar três sites diferentes e mostrar a primeira página de cada site
+     para o seu instrutor." A conferência é presencial no documento; aqui o
+     desbravador registra a evidência e ela sai no relatório impresso, que é
+     o que o instrutor lê. */
+  const [visits, setVisits] = useState([
+    { url: '', note: '' }, { url: '', note: '' }, { url: '', note: '' },
+  ]);
+  const [opened, setOpened] = useState<Record<number, boolean>>({});
+
+  const setVisit = (index: number, patch: Partial<{ url: string; note: string }>) =>
+    setVisits(prev => prev.map((v, i) => i === index ? { ...v, ...patch } : v));
+
+  const visitAddresses = visits.map(v => parseAddress(v.url));
+  const validVisits = visitAddresses.filter(a => a.valid).length;
+  // Three pages of one site are not three sites: compare the registrable domain.
+  const distinctSites = new Set(
+    visitAddresses.filter(a => a.valid).map(a => `${a.domain}.${a.tld}`),
+  ).size;
+  const describedVisits = visits.filter(v => v.note.trim().length >= 30).length;
+  const openedCount = Object.values(opened).filter(Boolean).length;
+
+  const visitChecks: Check[] = [
+    {
+      id: 'sites-validos', label: 'Três endereços completos e válidos',
+      passed: validVisits >= 3,
+      hint: `${validVisits} de 3 válidos. Cole o endereço inteiro, começando por https://.`,
+    },
+    {
+      id: 'sites-distintos', label: 'Três sites diferentes, não três páginas do mesmo',
+      passed: distinctSites >= 3,
+      hint: `${distinctSites} ${distinctSites === 1 ? 'site distinto' : 'sites distintos'}. O que conta é o nome antes do domínio de topo.`,
+    },
+    {
+      id: 'sites-abertos', label: 'Os três foram abertos de verdade',
+      passed: openedCount >= 3,
+      hint: `${openedCount} de 3 abertos. Use o botão de cada linha.`,
+    },
+    {
+      id: 'sites-descritos', label: 'A primeira página de cada um foi descrita',
+      passed: describedVisits >= 3,
+      hint: `${describedVisits} de 3 descritos. Escreva o que aparece na primeira página — é isso que o instrutor vai conferir.`,
+    },
+  ];
+
   /* ── 3. Pesquisa ────────────────────────────────────────────────────────── */
   const [query, setQuery] = useState('');
   const parsedQuery = useMemo(() => analyzeQuery(query), [query]);
@@ -165,6 +213,50 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
       id: 'q-abriu', label: 'A pesquisa foi aberta de verdade',
       passed: searchOpened,
       hint: 'Clique em "Pesquisar agora". A busca abre numa aba nova, com o filtro de conteúdo do buscador ligado.',
+    },
+  ];
+
+  /* ── Pesquisa bíblica (AP034-6.2) ───────────────────────────────────────
+     "Ir ao site, procurar pelo menos três diferentes textos da Bíblia em três
+     versões diferentes." Três *diferentes* nos dois eixos, e nenhum dos dois
+     pode ser conferido contando caixas: "Fp 4:8" e "Filipenses 4:8" são o mesmo
+     versículo, e "NVI" e "nvi" são a mesma versão. Ambos são comparados depois
+     de interpretados, em src/lib/bibleStudy.ts. */
+  const [bibleSite, setBibleSite] = useState('');
+  const [passages, setPassages] = useState([
+    { reference: '', version: '', text: '' },
+    { reference: '', version: '', text: '' },
+    { reference: '', version: '', text: '' },
+  ]);
+
+  const setPassage = (index: number, patch: Partial<{ reference: string; version: string; text: string }>) =>
+    setPassages(prev => prev.map((p, i) => i === index ? { ...p, ...patch } : p));
+
+  const bibleSiteAddress = parseAddress(bibleSite);
+  const distinctPassages = countDistinctReferences(passages.map(p => p.reference));
+  const distinctVersions = countDistinctVersions(passages.map(p => p.version));
+  const transcribed = passages.filter(p => p.text.trim().length >= 20).length;
+
+  const bibleChecks: Check[] = [
+    {
+      id: 'biblia-site', label: 'O site de Bíblia encontrado foi registrado',
+      passed: bibleSiteAddress.valid,
+      hint: bibleSiteAddress.error ?? 'Cole o endereço do site de Bíblia que a busca encontrou.',
+    },
+    {
+      id: 'biblia-tres', label: 'Três textos bíblicos diferentes',
+      passed: distinctPassages >= 3,
+      hint: `${distinctPassages} de 3 reconhecidos. Escreva a referência no formato Livro capítulo:versículo — e repare que "Fp 4:8" e "Filipenses 4:8" são o mesmo texto.`,
+    },
+    {
+      id: 'biblia-versoes', label: 'Três versões diferentes',
+      passed: distinctVersions >= 3,
+      hint: `${distinctVersions} de 3 escolhidas. O requisito pede o mesmo trabalho em três traduções distintas.`,
+    },
+    {
+      id: 'biblia-texto', label: 'O texto encontrado foi transcrito nos três',
+      passed: transcribed >= 3,
+      hint: `${transcribed} de 3 transcritos. Copie o versículo como ele aparece no site — é o que o instrutor confere.`,
     },
   ];
 
@@ -211,7 +303,10 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
     },
   ];
 
-  const allChecks = [...addressChecks, ...safetyChecks, ...queryChecks, ...downloadChecks];
+  const allChecks = [
+    ...addressChecks, ...safetyChecks, ...visitChecks,
+    ...queryChecks, ...bibleChecks, ...downloadChecks,
+  ];
   const passedCount = allChecks.filter(c => c.passed).length;
   const allPassed = passedCount === allChecks.length;
 
@@ -226,6 +321,11 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
       subject: SUBJECT,
       query,
       searchUrl,
+      visits: visits.map(v => ({ url: v.url.trim(), note: v.note.trim() })),
+      bibleSite: bibleSite.trim(),
+      passages: passages.map(p => ({
+        reference: p.reference.trim(), version: p.version, text: p.text.trim(),
+      })),
       addresses: SUSPECTS.map(u => ({
         url: u,
         verdict: suspectVerdicts[u].findings.map(f => f.message).join(' '),
@@ -428,7 +528,65 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
       </StageCard>
 
       {/* ── Etapa 3 ── */}
-      <StageCard title="3. Pesquisar com precisão" icon={Search} checks={queryChecks}>
+      <StageCard title="3. Visitar três sites" icon={Compass} checks={visitChecks}>
+        <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
+          O requisito pede três sites diferentes e a primeira página de cada um mostrada ao
+          instrutor. Abra cada um, olhe o que aparece e escreva aqui — o que você registrar
+          entra no relatório impresso, e é por ele que a conferência acontece.
+        </p>
+
+        <ul className="space-y-3">
+          {visits.map((visit, i) => {
+            const parsed = visitAddresses[i];
+            return (
+              <li key={i} className="p-3 rounded-lg"
+                style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
+                <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>Site {i + 1}</p>
+                <div className="flex gap-2 mb-2 flex-wrap">
+                  <input
+                    value={visit.url}
+                    onChange={e => setVisit(i, { url: e.target.value })}
+                    placeholder="https://www.exemplo.com.br"
+                    className="input-field font-mono text-sm flex-1"
+                    aria-label={`Endereço do site ${i + 1}`}
+                    spellCheck={false}
+                  />
+                  <button
+                    onClick={() => {
+                      window.open(visit.url, '_blank', 'noopener,noreferrer');
+                      setOpened(p => ({ ...p, [i]: true }));
+                    }}
+                    disabled={!parsed.valid}
+                    className="btn-secondary"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-1" />
+                    {opened[i] ? 'Abrir de novo' : 'Abrir'}
+                  </button>
+                </div>
+                {parsed.valid ? (
+                  <p className="text-xs mb-2" style={{ color: 'var(--color-text-dim)' }}>
+                    Site: <strong style={{ color: 'var(--color-text-soft)' }}>{parsed.domain}.{parsed.tld}</strong>
+                    {' · '}{parsed.secure ? 'https' : 'sem https'}
+                  </p>
+                ) : visit.url.trim() && (
+                  <p className="text-xs mb-2" style={{ color: 'var(--color-error)' }}>{parsed.error}</p>
+                )}
+                <textarea
+                  value={visit.note}
+                  onChange={e => setVisit(i, { note: e.target.value })}
+                  rows={2}
+                  className="input-field text-sm"
+                  placeholder="O que aparece na primeira página deste site?"
+                  aria-label={`Primeira página do site ${i + 1}`}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      </StageCard>
+
+      {/* ── Etapa 4 ── */}
+      <StageCard title="4. Pesquisar com precisão" icon={Search} checks={queryChecks}>
         <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
           Tema da pesquisa: <strong style={{ color: 'var(--color-text)' }}>{SUBJECT}</strong>.
           Digitar as palavras soltas devolve milhares de páginas. Três operadores mudam isso:
@@ -461,8 +619,79 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
         </p>
       </StageCard>
 
-      {/* ── Etapa 4 ── */}
-      <StageCard title="4. O que vale a pena baixar" icon={FileDown} checks={downloadChecks}>
+      {/* ── Etapa 5 ── */}
+      <StageCard title="5. Três textos em três versões" icon={BookOpen} checks={bibleChecks}>
+        <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
+          Use a busca da etapa anterior para chegar a uma Bíblia on-line. Lá, procure três
+          textos <strong style={{ color: 'var(--color-text)' }}>diferentes</strong>, cada um
+          em uma <strong style={{ color: 'var(--color-text)' }}>versão diferente</strong>, e
+          transcreva o que encontrou.
+        </p>
+
+        <label className="block mb-4">
+          <span className="text-xs block mb-1" style={{ color: 'var(--color-text-muted)' }}>
+            Endereço do site de Bíblia que você encontrou
+          </span>
+          <input
+            value={bibleSite}
+            onChange={e => setBibleSite(e.target.value)}
+            placeholder="https://www.bibliaonline.com.br"
+            className="input-field font-mono text-sm"
+            aria-label="Site de Bíblia"
+            spellCheck={false}
+          />
+        </label>
+
+        <ul className="space-y-3">
+          {passages.map((passage, i) => {
+            const reference = parseReference(passage.reference);
+            return (
+              <li key={i} className="p-3 rounded-lg"
+                style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
+                <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>Texto {i + 1}</p>
+                <div className="grid sm:grid-cols-2 gap-2 mb-2">
+                  <input
+                    value={passage.reference}
+                    onChange={e => setPassage(i, { reference: e.target.value })}
+                    placeholder="Ex.: Filipenses 4:8"
+                    className="input-field text-sm"
+                    aria-label={`Referência do texto ${i + 1}`}
+                  />
+                  <select
+                    value={passage.version}
+                    onChange={e => setPassage(i, { version: e.target.value })}
+                    className="input-field text-sm"
+                    aria-label={`Versão do texto ${i + 1}`}
+                  >
+                    <option value="">Escolha a versão…</option>
+                    {BIBLE_VERSIONS.map(v => (
+                      <option key={v.id} value={v.id}>{v.label}</option>
+                    ))}
+                  </select>
+                </div>
+                {passage.reference.trim() && (
+                  <p className="text-xs mb-2" style={{ color: reference ? 'var(--color-success)' : 'var(--color-error)' }}>
+                    {reference
+                      ? `Reconhecido: ${reference.canonical} ${reference.chapter}:${reference.verse}`
+                      : 'Não reconheci esta referência. Use o formato Livro capítulo:versículo.'}
+                  </p>
+                )}
+                <textarea
+                  value={passage.text}
+                  onChange={e => setPassage(i, { text: e.target.value })}
+                  rows={2}
+                  className="input-field text-sm"
+                  placeholder="Transcreva o texto como aparece no site."
+                  aria-label={`Texto encontrado ${i + 1}`}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      </StageCard>
+
+      {/* ── Etapa 6 ── */}
+      <StageCard title="6. O que vale a pena baixar" icon={FileDown} checks={downloadChecks}>
         <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
           A pesquisa levou a uma página com estes arquivos. Um arquivo de conteúdo abre num
           leitor; um programa roda no seu computador e pode fazer o que quiser lá dentro; e

@@ -96,16 +96,24 @@ export async function exportCertificatePdf(cert: Certification, studentName: str
 /**
  * The WebLab's research sheet.
  *
- * Requirement AP034-6.1 ends with "fazer o download de um arquivo". The old lab
- * satisfied that by pushing a filename into an array — no file existed. This
- * produces a real PDF of the student's own work, which is also the thing a
- * club leader can look at afterwards.
+ * Requirement AP034-6.3 is "fazer o download de um arquivo", and the old lab
+ * satisfied it by pushing a filename into an array — no file existed.
+ *
+ * The sheet also asks the student to *show* the instructor the first page of
+ * three sites (6.1) and the three passages found in three versions (6.2). Those
+ * are in-person checks; carrying the evidence here is what lets a leader confirm
+ * them by reading, which is how this club chose to run it.
  */
 export function exportStudySheetPdf(input: {
   studentName: string;
   subject: string;
   query: string;
   searchUrl: string;
+  /** AP034-6.1: the three sites and what their first page showed. */
+  visits: { url: string; note: string }[];
+  /** AP034-6.2: three passages, each in a different translation. */
+  bibleSite: string;
+  passages: { reference: string; version: string; text: string }[];
   addresses: { url: string; verdict: string }[];
   downloads: { name: string; verdict: string }[];
 }): void {
@@ -136,7 +144,7 @@ export function exportStudySheetPdf(input: {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
   doc.setTextColor(70, 70, 70);
-  doc.text('Trilha.Web() — WebLab · AP034, requisito 6.1', width / 2, y, { align: 'center' });
+  doc.text('Trilha.Web() — WebLab · AP034, requisitos 6.1 a 6.3', width / 2, y, { align: 'center' });
   y += 5;
   doc.setDrawColor(193, 53, 22);
   doc.setLineWidth(0.6);
@@ -150,6 +158,19 @@ export function exportStudySheetPdf(input: {
   line('Consulta construída', { size: 12, style: 'bold', colour: [193, 53, 22], gap: 1 });
   line(input.query || '—', { style: 'bold' });
   line(input.searchUrl, { size: 8.5, colour: [90, 90, 90] });
+
+  line('Sites visitados (requisito 6.1)', { size: 12, style: 'bold', colour: [193, 53, 22], gap: 1 });
+  for (const v of input.visits) {
+    line(`• ${v.url}`, { gap: 0 });
+    line(`   Primeira página: ${v.note}`, { size: 9, colour: [90, 90, 90], gap: 1.4 });
+  }
+
+  line('Textos bíblicos encontrados (requisito 6.2)', { size: 12, style: 'bold', colour: [193, 53, 22], gap: 1 });
+  line(`Site utilizado: ${input.bibleSite}`, { size: 9, colour: [90, 90, 90], gap: 2 });
+  for (const passage of input.passages) {
+    line(`• ${passage.reference} — versão ${passage.version}`, { gap: 0 });
+    line(`   "${passage.text}"`, { size: 9, colour: [90, 90, 90], gap: 1.4 });
+  }
 
   line('Endereços analisados', { size: 12, style: 'bold', colour: [193, 53, 22], gap: 1 });
   for (const a of input.addresses) {
