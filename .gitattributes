@@ -1,12 +1,12 @@
-# Normalise line endings so a Windows checkout does not report every file as
-# modified. Text files are stored with LF in the repository and checked out with
-# the platform's native ending.
+# Normalise line endings on the way into git.
+#
+# The working copy lives on a Windows machine and files land with CRLF; every
+# commit was reporting "CRLF will be replaced by LF" for a dozen files, which
+# buried real warnings in noise and made `git status` after a fresh clone show
+# the whole tree as modified.
 * text=auto eol=lf
 
-# Binary assets must never be line-ending converted, which would corrupt them.
+# Binary, never touched.
 *.png binary
 *.jpg binary
-*.jpeg binary
-*.ico binary
-*.woff binary
-*.woff2 binary
+*.pdf binary
