@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Trilha.Web()</title>
+    <script>
+      /*
+        GitHub Pages serves this file for any path it does not have on disk.
+
+        The app routes with a hash (#/relatorio), so a normal visit never needs
+        this. It exists for the person who types or is sent a path without the
+        hash — /trilha-web/relatorio — who would otherwise land on GitHub's own
+        404 page and conclude the site is broken. The path is carried across as
+        the hash so they arrive where they meant to go.
+      */
+      (function () {
+        var base = '/trilha-web/';
+        var path = window.location.pathname;
+        var rest = path.indexOf(base) === 0 ? path.slice(base.length) : '';
+        var target = base + '#/' + rest.replace(/^\/+/, '') + window.location.search;
+        window.location.replace(target);
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
