@@ -312,7 +312,7 @@ Deno.serve(async (req: Request) => {
       // may well be included, so it is worth walking on. A quota message
       // without a zero limit means the allowance was spent, which every model
       // shares, so that one stops here.
-      if (/limit:\s*0/i.test(message)) return true;
+      if (/limit:\s*0\b/i.test(message)) return true;
       if (/quota|rate limit/i.test(message)) return false;
       return status === 503 || status === 404
         || /no longer available|not found|is not supported|high demand|overloaded|try again later/i.test(message);
@@ -359,7 +359,7 @@ Deno.serve(async (req: Request) => {
        * The original is kept in `detail` for whoever maintains the club's key.
        */
       let message = "Não foi possível falar com a IA agora. Tente de novo em alguns minutos.";
-      if (/limit:\s*0/i.test(raw)) {
+      if (/limit:\s*0\b/i.test(raw)) {
         message = type === "image"
           ? "A geração de imagens não está incluída no plano gratuito do Gemini. O texto continua funcionando normalmente."
           : "Este recurso não está incluído no plano gratuito do Gemini.";
