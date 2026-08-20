@@ -206,9 +206,12 @@ lista: eles são artes completas, coloridas, e continuam sendo usados como estã
 `public/assets/specialties/`. O mesmo vale para as artes de fundo dos certificados
 em `public/assets/certificates/`.
 
-O ícone do aplicativo (favicon e atalho no celular), em
-`public/icon-192.svg` e `public/icon-512.svg`, é um item à parte e também pode ser
-substituído por arte sua — nesse caso, quadrado, colorido e com fundo.
+O ícone do aplicativo (favicon e atalho no celular), em `public/icon.svg`, é um
+item à parte. Desde 20/08/2026 são os parênteses da marca em vermelho sobre fundo
+transparente — a mesma forma que fecha "Trilha.Web()". O `purpose` no manifest é
+`any`, e não `maskable`: um ícone maskable é recortado pelo formato do lançador e
+só garante os 80% centrais, o que cortaria as pontas dos parênteses, além de
+pressupor fundo opaco.
 
 ---
 

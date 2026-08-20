@@ -1,11 +1,11 @@
 // Bumping this name is what evicts the previous deploy's cache on activate.
-const CACHE_NAME = 'trilha-web-v2';
+const CACHE_NAME = 'trilha-web-v3';
 
 // Resolved relative to this script's own URL so the cache list is correct whether
 // the app is served from the domain root or a GitHub Pages subpath (/trilha-web/).
 const SCOPE = new URL('.', self.location).href;
 const INDEX_URL = new URL('index.html', SCOPE).href;
-const OFFLINE_ASSETS = ['manifest.json', 'icon-192.svg', 'icon-512.svg'].map(
+const OFFLINE_ASSETS = ['manifest.json', 'icon.svg'].map(
   (path) => new URL(path, SCOPE).href
 );
 
