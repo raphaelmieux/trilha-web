@@ -77,10 +77,10 @@ O menu principal e a marca. Máxima visibilidade.
 |---|---|---|
 | `Compass` | Login, Cadastro, Recuperar senha, Landing | **Símbolo da marca Trilha.Web()** |
 | `Home` | Menu "Início" | Painel inicial |
-| `BookOpen` | Menu "Trilhas" | Trilhas de especialidade |
+| `Map` | Menu "Trilhas" | Trilhas de especialidade |
 | `FileText` | Menu "Relatório" | Relatório de competências |
-| `Medal` | Menu "Ranking" | Classificação |
-| `Trophy` | Menu "Verificar" | Verificação de certificado |
+| `Podium` | Menu "Ranking" e título da página | Classificação |
+| `Award` | Menu "Verificar" e título da página | Verificação de certificado |
 | `User` | Menu "Perfil" | Conta do usuário |
 | `ShieldCheck` | Menu "Admin" | Área administrativa |
 | `LogOut` | Menu | Sair da conta |
@@ -92,8 +92,8 @@ O menu principal e a marca. Máxima visibilidade.
 | Ícone | Onde aparece | Significado |
 |---|---|---|
 | `Award` | Painel, Admin, Ranking, Landing | Certificação Token.Web() |
-| `Trophy` | Painel, Especialidade, Prova final | Trilha concluída |
-| `Printer` | Certificado, Relatório | Imprimir / salvar PDF |
+| `Award` | Painel, Especialidade, Prova final | Trilha concluída |
+| `Download` | Certificado, Relatório | Salvar PDF |
 | `Lock` | Painel, Especialidade | Trilha bloqueada |
 | `Star` | Painel, Especialidade, Landing | Laboratório / destaque |
 | `Play` | Especialidade | Iniciar lição |
@@ -186,7 +186,7 @@ Cada laboratório simula uma ferramenta real; os ícones reforçam essa simulaç
 | Ícone | Uso |
 |---|---|
 | `Users` | Lista de usuários |
-| `Settings` | Configurações / eventos |
+| `CalendarDays` | Eventos registrados |
 | `KeyRound` | Senha / redefinição |
 | `Copy` | Copiar valor |
 | `Download` | Exportar CSV |
@@ -209,3 +209,34 @@ em `public/assets/certificates/`.
 O ícone do aplicativo (favicon e atalho no celular), em
 `public/icon-192.svg` e `public/icon-512.svg`, é um item à parte e também pode ser
 substituído por arte sua — nesse caso, quadrado, colorido e com fundo.
+
+---
+
+## Alterações de 19/08/2026
+
+O `Trophy` deixou de significar "certificado" e passou a significar **apenas
+insígnia de conquista** (Grupo 3). Onde antes marcava trilha concluída ou
+verificação, agora está o `Award`.
+
+| Antes | Agora | Onde |
+|---|---|---|
+| `BookOpen` | `Map` | Menu "Trilhas" |
+| `Medal` | `Podium` | Menu e página "Ranking" |
+| `Trophy` | `Award` | Menu e página "Verificar" |
+| `Trophy` | `Award` | Painel, Especialidade, Prova final |
+| `Printer` | `Download` | Certificado e Relatório |
+| `Settings` | `CalendarDays` | Card "Eventos" no admin |
+
+O `Printer` já não existia no código: a impressão pelo navegador foi substituída
+por geração nativa de PDF, e o botão passou a ser "Baixar PDF". A entrada no
+catálogo é que estava velha.
+
+O `Settings` saiu do app inteiro — ele só era usado no card de Eventos. Não há
+tela de Configurações, então não há mais engrenagem em lugar nenhum.
+
+As medalhas de 1º, 2º e 3º lugar no ranking continuam sendo `Medal`: ali a
+medalha é o significado certo.
+
+A biblioteca subiu de `lucide-react` 0.400 para 1.33, porque o `Podium` só existe
+a partir de uma versão posterior. Dos 74 ícones em uso, só o `XCircle` mudou de
+nome — virou `CircleX`.
