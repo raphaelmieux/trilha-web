@@ -294,6 +294,8 @@
 @media print {
   .no-print { display: none !important; }
 
+  .marca-nav, .marca-hero, .marca-entrada { color: #111111 !important; }
+
   body {
     background: #ffffff !important;
     background-image: none !important;
@@ -444,7 +446,11 @@
   white-space: nowrap;
 }
 
-.marca-nav  { font-size: 1.05rem; }
+/* Branca e não vermelha: a barra fixa acompanha a tela de entrada, que usa este
+   mesmo token, então a marca é literalmente a mesma nos dois lugares. A cor fica
+   aqui e não no link em volta porque `currentColor` também desenha o cursor —
+   uma declaração acerta o texto e o traço piscando de uma vez. */
+.marca-nav  { font-size: 1.25rem; color: var(--color-text); }
 .marca-hero { font-size: 1.9rem; }
 /* A tela de entrada não tem mais bússola nem subtítulo: a marca carrega a tela
    sozinha, então cresce e passa a ocupar a largura disponível no celular. */
