@@ -4,7 +4,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import ClubPicker, { type ClubeEscolhido } from '../components/ui/ClubPicker';
 import { supabase } from '../lib/supabase';
 import { SECURITY_QUESTIONS, hashSecurityAnswer } from '../lib/securityQuestions';
-import { Compass } from 'lucide-react';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -58,12 +57,10 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full">
+        {/* Mesma abertura da tela de entrada: só a marca. O que a tela faz
+            está dito no cartão logo abaixo, então repeti-lo aqui era eco. */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <Compass className="w-8 h-8" style={{ color: 'var(--color-primary)' }} />
-            <h1 style={{ color: 'var(--color-primary)' }}><BrandMark tamanho="hero" /></h1>
-          </div>
-          <p style={{ color: 'var(--color-text-dim)' }}>Crie sua conta</p>
+          <h1 style={{ color: 'var(--color-text)' }}><BrandMark tamanho="entrada" /></h1>
         </div>
         <div className="card">
           <h2 className="text-xl font-bold mb-4">Cadastro</h2>

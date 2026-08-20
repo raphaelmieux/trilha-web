@@ -2,7 +2,7 @@ import { useState } from 'react';
 import BrandMark from '../components/ui/BrandMark';
 import { Link, useNavigate } from 'react-router-dom';
 import { SECURITY_QUESTIONS, hashSecurityAnswer } from '../lib/securityQuestions';
-import { Compass, ArrowLeft, ShieldCheck, CheckCircle2, AlertCircle, MessageCircleQuestion } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, CheckCircle2, AlertCircle, MessageCircleQuestion } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -51,12 +51,10 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full">
+        {/* Mesma abertura da tela de entrada: só a marca. O que a tela faz
+            está dito no cartão logo abaixo, então repeti-lo aqui era eco. */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <Compass className="w-8 h-8" style={{ color: 'var(--color-primary)' }} />
-            <h1 style={{ color: 'var(--color-primary)' }}><BrandMark tamanho="hero" /></h1>
-          </div>
-          <p style={{ color: 'var(--color-text-dim)' }}>Recuperação de senha</p>
+          <h1 style={{ color: 'var(--color-text)' }}><BrandMark tamanho="entrada" /></h1>
         </div>
 
         <div className="card">
