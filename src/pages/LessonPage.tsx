@@ -24,7 +24,7 @@ import CodeLab from '../labs/CodeLab';
 import ImageLab from '../labs/ImageLab';
 import SiteLab from '../labs/SiteLab';
 import AILab from '../labs/AILab';
-import { CheckCircle2, XCircle, ArrowRight, BookOpen } from 'lucide-react';
+import { CheckCircle2, CircleX, ArrowRight, BookOpen } from 'lucide-react';
 
 export default function LessonPage() {
   const { specialtyCode, moduleCode, lessonCode } = useParams();
@@ -198,7 +198,7 @@ export default function LessonPage() {
           {showFeedback[q.id] && q.explanation && (
             <div className="mt-4 p-3 rounded-lg text-sm" style={{ backgroundColor: checkAnswer(q, answers[q.id]) ? 'var(--color-success-a10)' : 'var(--color-error-a10)', color: checkAnswer(q, answers[q.id]) ? 'var(--color-success)' : 'var(--color-error)' }}>
               <div className="flex items-start gap-2">
-                {checkAnswer(q, answers[q.id]) ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <XCircle className="w-5 h-5 flex-shrink-0" />}
+                {checkAnswer(q, answers[q.id]) ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <CircleX className="w-5 h-5 flex-shrink-0" />}
                 <p>{q.explanation}</p>
               </div>
             </div>

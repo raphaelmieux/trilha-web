@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import ClubPicker, { type ClubeEscolhido } from '../components/ui/ClubPicker';
 import { supabase } from '../lib/supabase';
 import { SECURITY_QUESTIONS, hashSecurityAnswer } from '../lib/securityQuestions';
 import { Compass } from 'lucide-react';
@@ -9,7 +10,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [club, setClub] = useState('');
+  const [clube, setClube] = useState<ClubeEscolhido>({ nome: '', codigo: null, cidade: null, associacao: null });
   const [unit, setUnit] = useState('');
   const [securityQuestion, setSecurityQuestion] = useState(SECURITY_QUESTIONS[0].code);
   const [securityAnswer, setSecurityAnswer] = useState('');
@@ -32,7 +33,10 @@ export default function RegisterPage() {
       id: data.user.id,
       email,
       display_name: displayName,
-      club: club || null,
+      club: clube.nome || null,
+      club_code: clube.codigo,
+      club_city: clube.cidade,
+      club_association: clube.associacao,
       unit: unit || null,
       public_name_form: 'full',
       terms_version: '1.0',
@@ -77,7 +81,7 @@ export default function RegisterPage() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Clube (opcional)</label>
-              <input value={club} onChange={e => setClub(e.target.value)} className="input-field" />
+              <ClubPicker valor={clube} onChange={setClube} />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Unidade (opcional)</label>

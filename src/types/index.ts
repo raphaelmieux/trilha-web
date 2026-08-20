@@ -79,6 +79,11 @@ export interface UserProfile {
   display_name: string;
   username?: string;
   club?: string;
+  /* From clubes.adventistas.org. Null when the club was typed by hand — the
+     admin screen uses that to tell a validated club from an unverified one. */
+  club_code?: string | null;
+  club_city?: string | null;
+  club_association?: string | null;
   unit?: string;
   public_name_form: 'full' | 'first' | 'initials' | 'anonymous';
   is_admin: boolean;
@@ -92,6 +97,11 @@ export interface PublicProfile {
   display_name: string;
   username?: string;
   club?: string;
+  /* From clubes.adventistas.org. Null when the club was typed by hand — the
+     admin screen uses that to tell a validated club from an unverified one. */
+  club_code?: string | null;
+  club_city?: string | null;
+  club_association?: string | null;
   unit?: string;
   public_name_form: 'full' | 'first' | 'initials' | 'anonymous';
   avatar_url?: string | null;

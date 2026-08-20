@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ClubPicker, { type ClubeEscolhido } from '../components/ui/ClubPicker';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useBadges } from '../hooks/useBadges';
@@ -17,7 +18,7 @@ export default function ProfilePage() {
   const { badges, loading: badgesLoading } = useBadges(profile?.id);
 
   const [displayName, setDisplayName] = useState('');
-  const [club, setClub] = useState('');
+  const [clube, setClube] = useState<ClubeEscolhido>({ nome: '', codigo: null, cidade: null, associacao: null });
   const [unit, setUnit] = useState('');
   const [privacy, setPrivacy] = useState<PrivacyForm>('full');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -43,7 +44,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name || '');
-      setClub(profile.club || '');
+      setClube({ nome: profile.club || '', codigo: profile.club_code ?? null, cidade: profile.club_city ?? null, associacao: profile.club_association ?? null });
       setUnit(profile.unit || '');
       setPrivacy(profile.public_name_form || 'full');
       setAvatarUrl(profile.avatar_url || null);
@@ -105,7 +106,10 @@ export default function ProfilePage() {
         .from('user_profiles')
         .update({
           display_name: displayName,
-          club: club || null,
+          club: clube.nome || null,
+          club_code: clube.codigo,
+          club_city: clube.cidade,
+          club_association: clube.associacao,
           unit: unit || null,
           public_name_form: privacy,
           avatar_url: finalAvatarUrl,
@@ -239,7 +243,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Clube (opcional)</label>
-            <input value={club} onChange={e => setClub(e.target.value)} className="input-field" placeholder="Nome do clube" />
+            <ClubPicker valor={clube} onChange={setClube} />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Unidade (opcional)</label>

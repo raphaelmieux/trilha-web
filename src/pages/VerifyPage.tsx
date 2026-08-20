@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { getPublicName, type Certification, type PublicProfile } from '../types';
-import { Trophy, Search, CheckCircle2 } from 'lucide-react';
+import { Award, Search, CheckCircle2 } from 'lucide-react';
 import { ErrorState } from '../components/ui/PageState';
 
 export default function VerifyPage() {
@@ -47,7 +47,7 @@ export default function VerifyPage() {
     <div className="space-y-6">
       <div className="card p-6">
         <h1 className="text-2xl font-bold mb-2 flex items-center gap-2">
-          <Trophy className="w-6 h-6" style={{ color: 'var(--color-secondary)' }} /> Verificar Token.Web()
+          <Award className="w-6 h-6" style={{ color: 'var(--color-secondary)' }} /> Verificar Token.Web()
         </h1>
         <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>Digite o código do Token.Web() para verificar sua autenticidade.</p>
         <div className="flex gap-2">
@@ -69,7 +69,7 @@ export default function VerifyPage() {
       {result && (
         <div className="card p-8" style={{ borderColor: 'var(--color-secondary-a30)', backgroundColor: 'var(--color-secondary-a03)' }}>
           <div className="text-center mb-6">
-            <Trophy className="w-16 h-16 mx-auto mb-3" style={{ color: 'var(--color-secondary)' }} />
+            <Award className="w-16 h-16 mx-auto mb-3" style={{ color: 'var(--color-secondary)' }} />
             <h2 className="text-2xl font-bold">Token.Web() Válido</h2>
           </div>
           <div className="space-y-3 text-sm">

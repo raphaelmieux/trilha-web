@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getPublicName, type LeaderboardEntry } from '../types';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
-import { Trophy, Flame, Award, Medal } from 'lucide-react';
+import { Podium, Flame, Award, Medal } from 'lucide-react';
 
 const RANK_COLORS = ['var(--color-secondary)', '#b0b0b4', '#c17f45'];
 
@@ -28,7 +28,7 @@ export default function LeaderboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Trophy className="w-6 h-6" style={{ color: 'var(--color-secondary)' }} /> Ranking
+          <Podium className="w-6 h-6" style={{ color: 'var(--color-secondary)' }} /> Ranking
         </h1>
         <p style={{ color: 'var(--color-text-dim)' }}>
           Desbravadores que optaram por aparecer publicamente, ordenados por XP.
@@ -49,7 +49,7 @@ export default function LeaderboardPage() {
           <LoadingState />
         ) : entries.length === 0 ? (
           <EmptyState
-            icon={<Trophy className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-border-hover)' }} />}
+            icon={<Podium className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-border-hover)' }} />}
             title="Ninguém no ranking ainda"
             description="Seja o primeiro a ativar o ranking no seu perfil!"
           />

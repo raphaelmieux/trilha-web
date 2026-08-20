@@ -10,8 +10,9 @@ import { useBadges } from '../hooks/useBadges';
 import { getPublicName } from '../types';
 import { franchiseConfig } from '../config/franchise';
 import ProgressBar from '../components/ui/ProgressBar';
+import SpecialtyEmblem from '../components/ui/SpecialtyEmblem';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
-import { Lock, Trophy, Flame, Star, CheckCircle2, Circle, Clock, Award, FileText, ArrowRight, Medal } from 'lucide-react';
+import { Lock, Award, Flame, Star, Clock, FileText, ArrowRight, Medal } from 'lucide-react';
 
 export default function DashboardPage() {
   const { profile } = useAuth();
@@ -79,17 +80,18 @@ export default function DashboardPage() {
           style={{ borderColor: ap034Completed ? 'var(--color-primary-a40)' : 'var(--color-border)', transition: 'border-color 0.2s' }}
           onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-primary-a50)')}
           onMouseLeave={e => (e.currentTarget.style.borderColor = ap034Completed ? 'var(--color-primary-a40)' : 'var(--color-border)')}>
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <img src={`${import.meta.env.BASE_URL}assets/specialties/AP034.svg`} alt="AP034" className="w-8 h-8" />
-                AP034 — Internet
-              </h2>
+          <div className="flex items-center gap-4 mb-4">
+            <SpecialtyEmblem
+              code="AP034"
+              status={ap034Cert ? 'certificado' : ap034Completed ? 'concluido' : 'em-andamento'}
+            />
+            <div className="min-w-0">
+              <h2 className="text-xl font-bold">AP034 — Internet</h2>
               <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>Nível Fundamental</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                Insígnia para a faixa do desbravador
+              </p>
             </div>
-            {ap034Cert ? <Trophy className="w-8 h-8" style={{ color: 'var(--color-secondary)' }} /> :
-              ap034Completed ? <CheckCircle2 className="w-8 h-8" style={{ color: 'var(--color-success)' }} /> :
-              <Circle className="w-8 h-8" style={{ color: 'var(--color-border-hover)' }} />}
           </div>
           <div className="mb-3">
             <div className="flex justify-between text-sm mb-1">
@@ -115,17 +117,18 @@ export default function DashboardPage() {
             style={{ borderColor: ap035Percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)', transition: 'border-color 0.2s' }}
             onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-tertiary-a50)')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = ap035Percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)')}>
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <img src={`${import.meta.env.BASE_URL}assets/specialties/AP035.svg`} alt="AP035" className="w-8 h-8" />
-                  AP035 — Internet, Avançado
-                </h2>
+            <div className="flex items-center gap-4 mb-4">
+              <SpecialtyEmblem
+                code="AP035"
+                status={ap035Cert ? 'certificado' : ap035Percent === 100 ? 'concluido' : 'em-andamento'}
+              />
+              <div className="min-w-0">
+                <h2 className="text-xl font-bold">AP035 — Internet, Avançado</h2>
                 <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>Nível Avançado</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                  Insígnia para a faixa do desbravador
+                </p>
               </div>
-              {ap035Cert ? <Trophy className="w-8 h-8" style={{ color: 'var(--color-secondary)' }} /> :
-                ap035Percent === 100 ? <CheckCircle2 className="w-8 h-8" style={{ color: 'var(--color-success)' }} /> :
-                <Circle className="w-8 h-8" style={{ color: 'var(--color-border-hover)' }} />}
             </div>
             <div className="mb-3">
               <div className="flex justify-between text-sm mb-1">
@@ -169,7 +172,7 @@ export default function DashboardPage() {
                 onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-secondary-a40)')}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}>
                 <div className="flex items-center gap-3">
-                  <Trophy className="w-8 h-8 group-hover:scale-110 transition" style={{ color: 'var(--color-secondary)' }} />
+                  <Award className="w-8 h-8 group-hover:scale-110 transition" style={{ color: 'var(--color-secondary)' }} />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold">{cert.level === 'fundamental' ? 'AP034 — Internet' : 'AP035 — Internet, Avançado'}</p>
                     <p className="text-xs font-mono" style={{ color: 'var(--color-text-dim)' }}>{cert.code}</p>
@@ -205,7 +208,7 @@ export default function DashboardPage() {
 
       <div className="flex gap-3 flex-wrap">
         <Link to="/relatorio" className="btn-secondary"><FileText className="w-4 h-4 mr-1" /> Ver Relatório de Aprendizagem</Link>
-        <Link to="/verificar" className="btn-secondary"><Trophy className="w-4 h-4 mr-1" /> Verificar Token.Web()</Link>
+        <Link to="/verificar" className="btn-secondary"><Award className="w-4 h-4 mr-1" /> Verificar Token.Web()</Link>
       </div>
 
       <div className="card p-4" style={{ backgroundColor: 'var(--color-bg-input)', borderColor: 'var(--color-tertiary-a20)' }}>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Shield, Users, Award, Settings, AlertCircle, KeyRound, Copy, X } from 'lucide-react';
+import { Shield, Users, Award, CalendarDays, AlertCircle, KeyRound, Copy, X } from 'lucide-react';
 import StatusBadge from '../components/ui/StatusBadge';
 
 export default function AdminPage() {
@@ -118,7 +118,7 @@ export default function AdminPage() {
           <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>Certificações</p>
         </div>
         <div className="card p-4">
-          <Settings className="w-6 h-6 mb-2" style={{ color: 'var(--color-success)' }} />
+          <CalendarDays className="w-6 h-6 mb-2" style={{ color: 'var(--color-success)' }} />
           <p className="text-2xl font-bold">{stats.events}</p>
           <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>Eventos</p>
         </div>

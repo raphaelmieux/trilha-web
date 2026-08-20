@@ -14,7 +14,7 @@ import AdminCertificatesPage from './pages/AdminCertificatesPage';
 import ProfilePage from './pages/ProfilePage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import { useState } from 'react';
-import { LogOut, Home, BookOpen, FileText, Trophy, ShieldCheck, User, Medal, Menu, X } from 'lucide-react';
+import { LogOut, Home, Map, FileText, Award, ShieldCheck, User, Podium, Menu, X } from 'lucide-react';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -29,10 +29,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 const NAV_ITEMS = [
   { to: '/', label: 'Início', icon: Home, exact: true },
-  { to: '/especialidade/AP034', label: 'Trilhas', icon: BookOpen, exact: false },
+  { to: '/especialidade/AP034', label: 'Trilhas', icon: Map, exact: false },
   { to: '/relatorio', label: 'Relatório', icon: FileText, exact: false },
-  { to: '/ranking', label: 'Ranking', icon: Medal, exact: false },
-  { to: '/verificar', label: 'Verificar', icon: Trophy, exact: false },
+  { to: '/ranking', label: 'Ranking', icon: Podium, exact: false },
+  { to: '/verificar', label: 'Verificar', icon: Award, exact: false },
   { to: '/perfil', label: 'Perfil', icon: User, exact: false },
 ];
 

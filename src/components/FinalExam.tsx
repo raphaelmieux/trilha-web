@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase';
 import { useCertifications } from '../hooks/useCertifications';
 import type { Question } from '../types';
 import QuestionRenderer from './questions/QuestionRenderer';
-import { CheckCircle2, XCircle, Trophy, AlertCircle } from 'lucide-react';
+import { CheckCircle2, CircleX, Award, AlertCircle } from 'lucide-react';
 
 interface Props {
   specialtyCode: string;
@@ -73,7 +73,7 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
           <Link to={`/especialidade/${specialtyCode}`} style={{ color: 'var(--color-text-dim)' }} className="hover:underline">{specialtyName}</Link>
         </div>
         <div className="card p-8 text-center">
-          <Trophy className="w-20 h-20 mx-auto mb-4" style={{ color: 'var(--color-secondary)' }} />
+          <Award className="w-20 h-20 mx-auto mb-4" style={{ color: 'var(--color-secondary)' }} />
           <h1 className="text-2xl font-bold mb-2">Token.Web() Emitido!</h1>
           <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>Você já concluiu esta avaliação e recebeu seu Token.Web().</p>
           <Link to={`/especialidade/${specialtyCode}`} className="btn-primary">Voltar para a Trilha</Link>
@@ -90,7 +90,7 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
           <Link to={`/especialidade/${specialtyCode}`} style={{ color: 'var(--color-text-dim)' }} className="hover:underline">{specialtyName}</Link>
         </div>
         <div className="card p-8 text-center">
-          <Trophy className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-secondary)' }} />
+          <Award className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-secondary)' }} />
           <h1 className="text-2xl font-bold mb-2">Avaliação Final — {specialtyName}</h1>
           <p className="mb-6" style={{ color: 'var(--color-text-muted)' }}>
             Esta avaliação contém {specialtyCode === 'AP034' ? 22 : 22} questões de diversos tipos:
@@ -114,7 +114,7 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
     return (
       <div className="space-y-4">
         <div className="card p-8 text-center">
-          {passed ? <CheckCircle2 className="w-20 h-20 mx-auto mb-4" style={{ color: 'var(--color-success)' }} /> : <XCircle className="w-20 h-20 mx-auto mb-4" style={{ color: 'var(--color-primary)' }} />}
+          {passed ? <CheckCircle2 className="w-20 h-20 mx-auto mb-4" style={{ color: 'var(--color-success)' }} /> : <CircleX className="w-20 h-20 mx-auto mb-4" style={{ color: 'var(--color-primary)' }} />}
           <h1 className="text-2xl font-bold mb-2">{passed ? 'Parabéns! Você foi aprovado!' : 'Não foi dessa vez'}</h1>
           <p className="mb-2" style={{ color: 'var(--color-text-muted)' }}>Você acertou {score.correct} de {score.total} questões ({Math.round((score.correct / score.total) * 100)}%)</p>
           {passed && certified && <p className="font-medium mb-4" style={{ color: 'var(--color-secondary)' }}>Seu Token.Web() foi emitido!</p>}
@@ -142,7 +142,7 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
 
       <div className="card p-6" style={{ backgroundColor: 'var(--color-primary-a05)', borderColor: 'var(--color-primary-a20)' }}>
         <h1 className="text-xl font-bold flex items-center gap-2">
-          <Trophy className="w-5 h-5" style={{ color: 'var(--color-secondary)' }} />
+          <Award className="w-5 h-5" style={{ color: 'var(--color-secondary)' }} />
           Avaliação Final — {specialtyName}
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>Responda todas as questões e clique em "Finalizar" para concluir.</p>
@@ -173,7 +173,7 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
           {showFeedback[q.id] && q.explanation && (
             <div className="mt-4 p-3 rounded-lg text-sm" style={{ backgroundColor: checkAnswer(q, answers[q.id]) ? 'var(--color-success-a10)' : 'var(--color-error-a10)', color: checkAnswer(q, answers[q.id]) ? 'var(--color-success)' : 'var(--color-error)' }}>
               <div className="flex items-start gap-2">
-                {checkAnswer(q, answers[q.id]) ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <XCircle className="w-5 h-5 flex-shrink-0" />}
+                {checkAnswer(q, answers[q.id]) ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <CircleX className="w-5 h-5 flex-shrink-0" />}
                 <p>{q.explanation}</p>
               </div>
             </div>

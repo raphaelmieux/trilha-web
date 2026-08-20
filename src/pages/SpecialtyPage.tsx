@@ -5,7 +5,7 @@ import { getProgressPercent, getModuleStatus, getLessonStatus } from '../lib/pro
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import ProgressBar from '../components/ui/ProgressBar';
-import { Lock, CheckCircle2, Play, Star, Trophy } from 'lucide-react';
+import { Lock, CheckCircle2, Play, Star, Award } from 'lucide-react';
 
 export default function SpecialtyPage() {
   const { code } = useParams<{ code: string }>();
@@ -54,7 +54,7 @@ export default function SpecialtyPage() {
             style={{ backgroundColor: 'var(--color-secondary-a08)', border: '1px solid var(--color-secondary-a20)' }}
             onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-secondary-a40)')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-secondary-a20)')}>
-            <Trophy className="w-5 h-5 group-hover:scale-110 transition" style={{ color: 'var(--color-secondary)' }} />
+            <Award className="w-5 h-5 group-hover:scale-110 transition" style={{ color: 'var(--color-secondary)' }} />
             <span className="font-semibold" style={{ color: 'var(--color-secondary)' }}>Token.Web() emitido — Ver Certificado</span>
           </Link>
         )}
@@ -106,7 +106,7 @@ export default function SpecialtyPage() {
                       onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-primary-a40)')}
                       onMouseLeave={e => (e.currentTarget.style.borderColor = lessonStatus === 'completed' ? 'var(--color-success-a20)' : 'var(--color-border)')}>
                       {lessonStatus === 'completed' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-success)' }} /> :
-                       lesson.type === 'final' ? <Trophy className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-secondary)' }} /> :
+                       lesson.type === 'final' ? <Award className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-secondary)' }} /> :
                        lesson.type === 'lab' ? <Star className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-success)' }} /> :
                        <Play className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-text-faint)' }} />}
                       <div className="flex-1 min-w-0">
