@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import ClubPicker, { type ClubeEscolhido } from '../components/ui/ClubPicker';
 import { supabase } from '../lib/supabase';
 import { SECURITY_QUESTIONS, hashSecurityAnswer } from '../lib/securityQuestions';
+import { traduzirErroDeAuth } from '../lib/authErrors';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -15,38 +16,61 @@ export default function RegisterPage() {
   const [securityQuestion, setSecurityQuestion] = useState(SECURITY_QUESTIONS[0].code);
   const [securityAnswer, setSecurityAnswer] = useState('');
   const [error, setError] = useState('');
+  const [aviso, setAviso] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setAviso('');
     setLoading(true);
 
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+    /*
+      Os dados do perfil viajam junto com o cadastro, e quem os grava é o
+      gatilho on_auth_user_created, no banco.
+
+      Antes havia um INSERT em user_profiles logo abaixo desta chamada, feito
+      pelo navegador. Só funcionava quando o signUp já devolvia sessão; com a
+      confirmação de e-mail ligada ele não devolve, o cliente seguia como
+      anônimo, e a policy insert_own_profile barrava a gravação — nascia uma
+      conta sem perfil. Gravando no gatilho, o perfil nasce na mesma transação
+      da conta, com ou sem confirmação de e-mail.
+    */
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: displayName,
+          club: clube.nome || null,
+          club_code: clube.codigo,
+          club_city: clube.cidade,
+          club_association: clube.associacao,
+          unit: unit || null,
+          terms_version: '1.0',
+          security_question_code: securityQuestion,
+          security_answer_hash: await hashSecurityAnswer(securityAnswer),
+        },
+      },
+    });
+
     if (signUpError || !data.user) {
-      setError(signUpError?.message || 'Erro ao cadastrar');
+      setError(traduzirErroDeAuth(signUpError?.message));
       setLoading(false);
       return;
     }
 
-    const { error: profileError } = await supabase.from('user_profiles').insert({
-      id: data.user.id,
-      email,
-      display_name: displayName,
-      club: clube.nome || null,
-      club_code: clube.codigo,
-      club_city: clube.cidade,
-      club_association: clube.associacao,
-      unit: unit || null,
-      public_name_form: 'full',
-      terms_version: '1.0',
-      terms_accepted_at: new Date().toISOString(),
-      security_question_code: securityQuestion,
-      security_answer_hash: await hashSecurityAnswer(securityAnswer),
-    });
-
-    if (profileError) {
-      setError('Conta criada, mas erro ao salvar perfil: ' + profileError.message);
+    /*
+      Sem sessão o cadastro exige confirmação por e-mail. A conta e o perfil já
+      existem; o que falta é a pessoa clicar no link. Dizer isso é melhor do que
+      mandá-la para uma tela protegida que vai devolvê-la para o login.
+    */
+    if (!data.session) {
+      setAviso(
+        'Conta criada. Falta confirmar o e-mail: procure a mensagem que '
+        + 'enviamos para ' + email + ', inclusive na caixa de spam, e clique no '
+        + 'link. Depois é só entrar.'
+      );
       setLoading(false);
       return;
     }
@@ -97,6 +121,10 @@ export default function RegisterPage() {
               <input value={securityAnswer} onChange={e => setSecurityAnswer(e.target.value)} required minLength={2} className="input-field" />
             </div>
             {error && <p className="text-sm" style={{ color: 'var(--color-primary)' }}>{error}</p>}
+            {aviso && (
+              /* Verde, não vermelho: a conta foi criada. Só falta um passo. */
+              <p className="text-sm" style={{ color: 'var(--color-success)' }} role="status">{aviso}</p>
+            )}
             <button type="submit" disabled={loading} className="btn-primary w-full">
               {loading ? 'Cadastrando...' : 'Cadastrar'}
             </button>

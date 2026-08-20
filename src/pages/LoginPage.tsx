@@ -2,6 +2,7 @@ import { useState } from 'react';
 import BrandMark from '../components/ui/BrandMark';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { traduzirErroDeAuth } from '../lib/authErrors';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ export default function LoginPage() {
     setLoading(true);
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     if (signInError) {
-      setError(signInError.message);
+      setError(traduzirErroDeAuth(signInError.message));
       setLoading(false);
     } else {
       navigate('/');
