@@ -1,4 +1,5 @@
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import BrandMark from './components/ui/BrandMark';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -51,7 +52,7 @@ function NavBar() {
     <nav className="no-print sticky top-0 z-50 app-nav">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 font-bold" style={{ color: 'var(--color-primary)' }}>
-          <span className="text-lg tracking-tight">Trilha.Web()</span>
+          <BrandMark tamanho="nav" />
         </Link>
 
         <div className="hidden md:flex items-center gap-5">

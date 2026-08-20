@@ -1,7 +1,7 @@
 import { useState } from 'react';
+import BrandMark from '../components/ui/BrandMark';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Compass } from 'lucide-react';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -26,12 +26,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full">
+        {/*
+          Só a marca. O subtítulo dizia "Plataforma de aprendizado de Internet",
+          o que deixa de ser verdade assim que outras especialidades entrarem na
+          plataforma — e a bússola competia com um logotipo que já se explica.
+        */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <Compass className="w-8 h-8" style={{ color: 'var(--color-primary)' }} />
-            <h1 className="text-3xl font-bold" style={{ color: 'var(--color-primary)' }}>Trilha.Web()</h1>
-          </div>
-          <p style={{ color: 'var(--color-text-dim)' }}>Plataforma de aprendizado de Internet</p>
+          <h1 style={{ color: 'var(--color-text)' }}><BrandMark tamanho="entrada" /></h1>
         </div>
         <div className="card">
           <h2 className="text-xl font-bold mb-4">Entrar</h2>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import BrandMark from '../components/ui/BrandMark';
 import { useNavigate, Link } from 'react-router-dom';
 import ClubPicker, { type ClubeEscolhido } from '../components/ui/ClubPicker';
 import { supabase } from '../lib/supabase';
@@ -60,7 +61,7 @@ export default function RegisterPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-2">
             <Compass className="w-8 h-8" style={{ color: 'var(--color-primary)' }} />
-            <h1 className="text-3xl font-bold" style={{ color: 'var(--color-primary)' }}>Trilha.Web()</h1>
+            <h1 style={{ color: 'var(--color-primary)' }}><BrandMark tamanho="hero" /></h1>
           </div>
           <p style={{ color: 'var(--color-text-dim)' }}>Crie sua conta</p>
         </div>

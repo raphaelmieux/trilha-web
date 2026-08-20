@@ -3,6 +3,30 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════
+   SPACE MONO — só para o logotipo
+   ═══════════════════════════════════════════════════════════
+   Self-hosted rather than linked from Google Fonts, which keeps the promise the
+   font stack in tailwind.config.js makes: no render-blocking third-party
+   request. It also means the logo still draws when the app runs offline from
+   its service worker.
+
+   Only the latin subset, and only the 700 weight the mark actually uses — 16 KB.
+   `font-display: block` on purpose: `swap` would paint the name in Helvetica
+   first and then reflow it into monospace, and a logo that changes shape while
+   you look at it is worse than one that arrives a moment later. The block
+   period is capped by the browser at ~3s, after which the fallback shows.
+
+   SIL Open Font License 1.1 — see public/assets/fonts/OFL.txt.
+   ═══════════════════════════════════════════════════════════ */
+@font-face {
+  font-family: 'Space Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url('/assets/fonts/space-mono-700.woff2') format('woff2');
+}
+
+/* ═══════════════════════════════════════════════════════════
    COLOR SYSTEM — Single source of truth
    All colors are defined here as CSS custom properties.
    Use var(--color-*) everywhere — never hardcode hex values.
@@ -393,6 +417,87 @@
   height: auto;
   margin: 0 auto;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+
+/* ───── Marca animada — o nome sendo digitado ─────
+   "Trilha.Web()" tem 12 caracteres. Numa fonte monoespaçada cada um mede
+   exatamente 1ch, então a largura final é 12ch e os passos da animação caem
+   sempre no limite de um caractere. */
+.marca {
+  --marca-chars: 12;
+  --marca-ciclo: 3.2s;
+  /* Três passadas e para. Um logotipo que digita para sempre numa barra fixa
+     compete com o conteúdo da página; três vezes chamam a atenção e sossegam. */
+  --marca-repeticoes: 3;
+  /* O cursor pisca a cada 0.8s e precisa durar o mesmo tempo que a digitação:
+     3.2s de ciclo / 0.8s por piscada = 4 piscadas por ciclo, vezes 3 ciclos.
+     É um número, não um tempo — animation-iteration-count recusa calc() com
+     unidade, que foi como escrevi da primeira vez. */
+  --marca-piscadas: 12;
+
+  position: relative;
+  display: inline-block;
+  font-family: 'Space Mono', ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+  font-weight: 700;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.marca-nav  { font-size: 1.05rem; }
+.marca-hero { font-size: 1.9rem; }
+/* A tela de entrada não tem mais bússola nem subtítulo: a marca carrega a tela
+   sozinha, então cresce e passa a ocupar a largura disponível no celular. */
+.marca-entrada { font-size: clamp(2rem, 9vw, 3rem); }
+
+/* A cópia invisível segura o espaço; a visível é a que cresce por cima dela. */
+.marca-espaco {
+  visibility: hidden;
+  /* O cursor ocupa lugar: sem esta folga a última letra encosta no que vier
+     depois quando a animação termina. */
+  padding-right: 0.14em;
+}
+
+.marca-texto {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-right: 0.09em solid currentColor;
+  width: calc(var(--marca-chars) * 1ch);
+  animation:
+    marca-digitando var(--marca-ciclo) steps(var(--marca-chars)) var(--marca-repeticoes) both,
+    marca-cursor 0.8s step-end var(--marca-piscadas) forwards;
+}
+
+@keyframes marca-digitando {
+  0%   { width: 0; }
+  /* Digita em 62% do ciclo e descansa no resto — sem a pausa, a repetição
+     recomeça no mesmo instante em que termina e o efeito vira tremulação. */
+  62%  { width: calc(var(--marca-chars) * 1ch); }
+  100% { width: calc(var(--marca-chars) * 1ch); }
+}
+
+@keyframes marca-cursor {
+  0%, 100% { border-right-color: currentColor; }
+  50%      { border-right-color: transparent; }
+}
+
+/*
+  Movimento reduzido: o nome aparece inteiro, sem digitação e sem cursor.
+  Não é um detalhe de conformidade — há quem sinta enjoo com texto que se move,
+  e esta é uma plataforma para crianças.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .marca-texto {
+    animation: none;
+    width: calc(var(--marca-chars) * 1ch);
+    border-right-color: transparent;
+  }
+}
+
+/* Na impressão o logotipo é só o nome. */
+@media print {
+  .marca-texto { animation: none; width: auto; border-right: none; }
 }
 
 /* ───── Competency report — reads as a document, not a dashboard ───── */

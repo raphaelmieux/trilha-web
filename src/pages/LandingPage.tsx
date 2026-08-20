@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import BrandMark from '../components/ui/BrandMark';
 import { useAuth } from '../context/AuthContext';
 import { Compass, Map, Award, ShieldCheck, BookOpen, Code2, Mail, Globe, ArrowRight, Star, AlertTriangle } from 'lucide-react';
 
@@ -11,7 +12,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xl font-bold" style={{ color: 'var(--color-primary)' }}>
             <Compass className="w-7 h-7" />
-            <span>Trilha.Web()</span>
+            <BrandMark tamanho="nav" />
           </div>
           <div className="flex gap-3">
             {session ? (
