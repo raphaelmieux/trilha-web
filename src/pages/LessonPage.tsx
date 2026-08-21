@@ -25,8 +25,9 @@ import FilipensesLab from '../labs/FilipensesLab';
 import CodeLab from '../labs/CodeLab';
 import ImageLab from '../labs/ImageLab';
 import SiteLab from '../labs/SiteLab';
+import FileManagerLab from '../labs/FileManagerLab';
 import AILab from '../labs/AILab';
-import { CheckCircle2, CircleX, ArrowRight, BookOpen, RefreshCw, Loader2 } from 'lucide-react';
+import { CheckCircle2, CircleX, ArrowRight, BookOpen, RefreshCw, Loader2, HardHat } from 'lucide-react';
 
 export default function LessonPage() {
   const { specialtyCode, moduleCode, lessonCode } = useParams();
@@ -66,6 +67,17 @@ export default function LessonPage() {
   // "not found" early return below (it previously ran after it).
   const questions = useMemo(() => (lesson?.questions || []).map(shuffleQuestionOptions), [lesson]);
 
+  if (specialty?.emConstrucao) return (
+    <div className="max-w-lg mx-auto text-center py-12">
+      <HardHat className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--color-secondary)' }} />
+      <h1 className="text-xl font-bold mb-2">Esta trilha ainda está em construção</h1>
+      <p style={{ color: 'var(--color-text-dim)' }}>
+        Estamos preparando as lições. Ela aparece no painel assim que abrir.
+      </p>
+      <Link to="/" className="btn-primary mt-6 inline-flex">Voltar ao Início</Link>
+    </div>
+  );
+
   if (!specialty || !moduleData || !lesson || !profile) {
     return <div style={{ color: 'var(--color-text-muted)' }}>Lição não encontrada. <Link to="/" style={{ color: 'var(--color-primary)' }}>Voltar</Link></div>;
   }
@@ -98,6 +110,7 @@ export default function LessonPage() {
         {lesson.labType === 'table_challenge' && <CodeLab {...labProps} variant="tabela" />}
         {lesson.labType === 'image_lab' && <ImageLab {...labProps} />}
         {lesson.labType === 'site_lab' && <SiteLab {...labProps} />}
+        {lesson.labType === 'file_manager' && <FileManagerLab {...labProps} />}
         {lesson.labType === 'ai_lab' && <AILab {...labProps} />}
       </div>
     );

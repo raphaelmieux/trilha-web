@@ -95,7 +95,19 @@ export const ap041: Specialty = {
       code: 'AP041.5',
       title: 'Achar as coisas depois',
       description: 'Criar, copiar, mover e organizar pastas e arquivos sem se perder.',
-      lessons: [],
+      lessons: [
+        {
+          code: 'AP041.5-L1',
+          title: 'Mexendo em pastas e arquivos',
+          type: 'lab',
+          content: '',
+          requirementCodes: [
+            'AP041-5.1', 'AP041-5.2', 'AP041-5.3',
+            'AP041-5.4', 'AP041-5.5', 'AP041-5.6',
+          ],
+          labType: 'file_manager',
+        },
+      ],
     },
   ],
 };

@@ -21,6 +21,7 @@ export type LabType =
   | 'table_challenge'
   | 'image_lab'
   | 'site_lab'
+  | 'file_manager'
   | 'ai_lab'
   | 'final_exam';
 

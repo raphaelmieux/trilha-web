@@ -5,7 +5,7 @@ import { getProgressPercent, getProgressDetail, getModuleStatus, getLessonStatus
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import ProgressBar from '../components/ui/ProgressBar';
-import { Lock, CheckCircle2, Play, Star, Award } from 'lucide-react';
+import { Lock, CheckCircle2, Play, Star, Award, HardHat } from 'lucide-react';
 
 export default function SpecialtyPage() {
   const { code } = useParams<{ code: string }>();
@@ -16,6 +16,18 @@ export default function SpecialtyPage() {
   const cert = specialty ? getByCurriculum(specialty.code) : undefined;
 
   if (!specialty) return <div style={{ color: 'var(--color-text-muted)' }}>Especialidade não encontrada</div>;
+  /* O card do painel não leva aqui, mas o endereço é adivinhável — sem esta
+     guarda, bastaria digitá-lo para entrar numa trilha inacabada. */
+  if (specialty.emConstrucao) return (
+    <div className="max-w-lg mx-auto text-center py-12">
+      <HardHat className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--color-secondary)' }} />
+      <h1 className="text-xl font-bold mb-2">Esta trilha ainda está em construção</h1>
+      <p style={{ color: 'var(--color-text-dim)' }}>
+        Estamos preparando as lições. Ela aparece no painel assim que abrir.
+      </p>
+      <Link to="/" className="btn-primary mt-6 inline-flex">Voltar ao Início</Link>
+    </div>
+  );
   if (!profile) return null;
 
   if (specialty.code === 'AP035') {
