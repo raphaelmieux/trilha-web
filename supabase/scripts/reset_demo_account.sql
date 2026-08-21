@@ -30,6 +30,21 @@ BEGIN
     RAISE EXCEPTION 'Conta de demonstração não encontrada.';
   END IF;
 
+  /*
+    Nome e privacidade fixados aqui.
+
+    A conta chegou a se chamar "Raphael de Castro Miranda" e a liderar o ranking
+    público com 2060 XP. Com o clube inteiro cadastrado, um clube vendo uma conta
+    de teste em primeiro lugar com o nome do administrador é confuso, e foi
+    confuso também para quem depurava. Uma conta de demonstração não disputa
+    ranking com gente de verdade.
+  */
+  UPDATE user_profiles SET display_name = 'Conta de demonstração' WHERE id = v_user;
+
+  INSERT INTO privacy_preferences (user_id, show_on_leaderboard, show_club_publicly)
+  VALUES (v_user, false, false)
+  ON CONFLICT (user_id) DO UPDATE SET show_on_leaderboard = false, show_club_publicly = false;
+
   -- ── Every requirement of both specialties, completed ────────────────────
   INSERT INTO requirement_progress (
     user_id, requirement_id, status, mastery_score, attempts,

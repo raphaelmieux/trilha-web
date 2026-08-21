@@ -54,7 +54,6 @@
       "pages/AdminCertificatesPage.tsx",
       "pages/AdminPage.tsx",
       "pages/DashboardPage.tsx",
-      "pages/LandingPage.tsx",
       "pages/LeaderboardPage.tsx"
     ]
   },
@@ -74,8 +73,7 @@
       "App.tsx",
       "labs/WebLab.tsx",
       "pages/AdminCertificatesPage.tsx",
-      "pages/ForgotPasswordPage.tsx",
-      "pages/LandingPage.tsx"
+      "pages/ForgotPasswordPage.tsx"
     ]
   },
   {
@@ -92,7 +90,6 @@
     "places": [
       "App.tsx",
       "labs/FilipensesLab.tsx",
-      "pages/LandingPage.tsx",
       "pages/LessonPage.tsx"
     ]
   },
@@ -100,7 +97,6 @@
     "icon": "Compass",
     "places": [
       "pages/ForgotPasswordPage.tsx",
-      "pages/LandingPage.tsx",
       "pages/LoginPage.tsx",
       "pages/RegisterPage.tsx"
     ]
@@ -128,7 +124,6 @@
     "places": [
       "components/ui/BadgeIcon.tsx",
       "pages/DashboardPage.tsx",
-      "pages/LandingPage.tsx",
       "pages/SpecialtyPage.tsx"
     ]
   },
@@ -136,7 +131,6 @@
     "icon": "ArrowRight",
     "places": [
       "pages/DashboardPage.tsx",
-      "pages/LandingPage.tsx",
       "pages/LessonPage.tsx"
     ]
   },
@@ -160,8 +154,7 @@
     "icon": "Globe",
     "places": [
       "labs/SiteLab.tsx",
-      "labs/WebLab.tsx",
-      "pages/LandingPage.tsx"
+      "labs/WebLab.tsx"
     ]
   },
   {
@@ -183,8 +176,7 @@
   {
     "icon": "Code2",
     "places": [
-      "labs/CodeLab.tsx",
-      "pages/LandingPage.tsx"
+      "labs/CodeLab.tsx"
     ]
   },
   {
@@ -232,8 +224,7 @@
   {
     "icon": "Mail",
     "places": [
-      "labs/MailLab.tsx",
-      "pages/LandingPage.tsx"
+      "labs/MailLab.tsx"
     ]
   },
   {
@@ -280,9 +271,7 @@
   },
   {
     "icon": "AlertTriangle",
-    "places": [
-      "pages/LandingPage.tsx"
-    ]
+    "places": []
   },
   {
     "icon": "Camera",
@@ -346,9 +335,7 @@
   },
   {
     "icon": "Map",
-    "places": [
-      "pages/LandingPage.tsx"
-    ]
+    "places": []
   },
   {
     "icon": "Menu",

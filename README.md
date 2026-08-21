@@ -92,9 +92,11 @@ só para resolver IDs usados nas tabelas de progresso.
 
 ## Segurança
 
-- RLS habilitado em todas as tabelas; `user_profiles` só é legível pelo dono (+ admin);
-  páginas públicas (verificação de certificado, ranking) usam as views
-  `public_profiles`/`public_leaderboard`, que expõem só campos não sensíveis.
+- RLS habilitado em todas as tabelas; `user_profiles` só é legível pelo dono (+ admin).
+  As páginas públicas não leem tabela nenhuma diretamente: a verificação de
+  certificado chama `verify_certificate(codigo)`, que devolve um único registro e
+  não permite listar, e o ranking chama `leaderboard(periodo)`, que só inclui quem
+  optou por aparecer. `certifications` não é mais legível por `anon`.
 - Emissão de certificado (`issue-certification`) exige o JWT do usuário autenticado e
   valida que todos os requisitos da especialidade foram concluídos — nunca é inserida
   diretamente pelo cliente.
