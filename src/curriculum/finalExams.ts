@@ -14,7 +14,7 @@ const rawAp034Final: Question[] = [
     prompt: 'A Internet é melhor definida como:',
     data: { options: [
       { id: 'a', text: 'Uma rede global de computadores interconectados que trocam dados por protocolos padronizados.', correct: true },
-      { id: 'b', text: 'Um programa de navegação instalado no computador, usado para abrir sites e vídeos.' },
+      { id: 'b', text: 'Um programa de navegação instalado no computador, usado para abrir sites, vídeos e mensagens de correio.' },
       { id: 'c', text: 'Um site de busca que reúne e organiza todo o conteúdo publicado no mundo.' },
       { id: 'd', text: 'Um único cabo submarino que liga os continentes e por onde passam todos os dados.' },
     ]},
@@ -27,7 +27,7 @@ const rawAp034Final: Question[] = [
       { id: 'a', text: 'Um serviço que funciona sobre a Internet, permitindo acessar páginas por navegadores.', correct: true },
       { id: 'b', text: 'O mesmo que a Internet, apenas com outro nome, já que as duas nasceram juntas.' },
       { id: 'c', text: 'Um protocolo de e-mail que entrega mensagens entre os servidores de correio.' },
-      { id: 'd', text: 'Um antivírus que protege o navegador enquanto se visitam páginas desconhecidas.' },
+      { id: 'd', text: 'Um antivírus que acompanha o navegador e examina cada página desconhecida antes de exibi-la.' },
     ]},
     explanation: 'A WWW é um dos serviços da Internet, como e-mail e FTP. Não é sinônimo de Internet.',
   },
@@ -36,7 +36,7 @@ const rawAp034Final: Question[] = [
     prompt: 'Fazer um "download" significa:',
     data: { options: [
       { id: 'a', text: 'Transferir um arquivo de um servidor remoto para o seu computador.', correct: true },
-      { id: 'b', text: 'Enviar um arquivo do seu computador para um servidor na Internet.' },
+      { id: 'b', text: 'Enviar um arquivo guardado no seu computador para um servidor na Internet.' },
       { id: 'c', text: 'Apagar um arquivo do computador em definitivo, sem passar pela lixeira.' },
       { id: 'd', text: 'Comprimir um arquivo para que ele ocupe menos espaço no disco do computador.' },
     ]},
@@ -58,7 +58,7 @@ const rawAp034Final: Question[] = [
       { id: 'a', text: 'Vírus é um tipo de malware; malware é o termo genérico para qualquer software malicioso.', correct: true },
       { id: 'b', text: 'Termos sinônimos, sem qualquer distinção técnica ou prática entre um e outro.' },
       { id: 'c', text: 'Malware é o programa que protege a máquina, e vírus é o que tenta invadi-la.' },
-      { id: 'd', text: 'Vírus atinge apenas mensagens de e-mail, e malware atinge apenas sites visitados.' },
+      { id: 'd', text: 'Vírus atinge apenas mensagens de e-mail, enquanto malware atinge apenas os sites que a pessoa visita.' },
     ]},
     explanation: 'Malware é o guarda-chuva: vírus, worms, trojans, spyware e ransomware são todos malware.',
   },
@@ -77,8 +77,8 @@ const rawAp034Final: Question[] = [
     id: 'AP034-F-Q7', type: 'multiple_choice',
     prompt: 'Qual é a principal vantagem do IMAP sobre o POP3?',
     data: { options: [
-      { id: 'a', text: 'Permite acessar as mesmas mensagens de múltiplos dispositivos, sincronizando pastas.', correct: true },
-      { id: 'b', text: 'É mais rápido para enviar mensagens, por abrir conexão direta com quem recebe.' },
+      { id: 'a', text: 'Mantém as mesmas mensagens e pastas sincronizadas em todos os dispositivos usados.', correct: true },
+      { id: 'b', text: 'É mais rápido para enviar mensagens, porque abre uma conexão direta com o aparelho de quem recebe.' },
       { id: 'c', text: 'Dispensa a senha, porque a autenticação fica guardada no próprio servidor.' },
       { id: 'd', text: 'Compacta os anexos automaticamente, reduzindo o espaço da caixa de entrada.' },
     ]},
@@ -90,7 +90,7 @@ const rawAp034Final: Question[] = [
     data: { options: [
       { id: 'a', text: 'Transmissão contínua de áudio/vídeo pela Internet, permitindo assistir enquanto carrega.', correct: true },
       { id: 'b', text: 'Baixar o arquivo inteiro no aparelho antes de começar a assistir ou ouvir.' },
-      { id: 'c', text: 'Um tipo de vírus que se instala junto com arquivos de música e vídeo baixados.' },
+      { id: 'c', text: 'Um tipo de vírus que se instala junto com os arquivos de música e de vídeo baixados da rede.' },
       { id: 'd', text: 'Um formato de compactação de vídeo que encolhe o arquivo antes do envio.' },
     ]},
     explanation: 'Streaming entrega conteúdo em tempo real, sem precisar baixar o arquivo inteiro.',
@@ -181,7 +181,7 @@ const rawAp034Final: Question[] = [
     data: {
       scenarios: [
         { id: 'a', text: 'Não revelar informações pessoais e conversar com um responsável sobre o pedido.', correct: true },
-        { id: 'b', text: 'Enviar o endereço completo, já que a pessoa foi gentil e ofereceu um presente.' },
+        { id: 'b', text: 'Enviar o endereço completo, já que a pessoa foi gentil e se ofereceu para mandar um presente.' },
         { id: 'c', text: 'Enviar apenas o telefone, que revela menos sobre você do que o endereço.' },
         { id: 'd', text: 'Marcar um encontro em lugar movimentado para receber o presente em mãos.' },
       ],
@@ -196,7 +196,7 @@ const rawAp034Final: Question[] = [
         { id: 'a', text: 'Fechar o pop-up, não baixar nada e verificar com o antivírus já instalado no computador.', correct: true },
         { id: 'b', text: 'Baixar na hora o antivírus indicado no aviso, para proteger o computador.' },
         { id: 'c', text: 'Clicar no aviso para ver mais informações sobre a infecção detectada.' },
-        { id: 'd', text: 'Compartilhar o link do aviso com amigos, para que eles também se protejam.' },
+        { id: 'd', text: 'Compartilhar o link do aviso com os amigos, para que todos possam se proteger da mesma ameaça.' },
       ],
     },
     explanation: 'Pop-ups de "antivírus" são frequentemente malware disfarçado. Use apenas antivírus confiável e instalado pelo responsável.',
@@ -218,7 +218,7 @@ const rawAp034Final: Question[] = [
     data: { options: [
       { id: 'a', text: 'Novos vírus surgem diariamente; sem atualização, o antivírus não os reconhece.', correct: true },
       { id: 'b', text: 'Para acelerar a conexão de Internet, que fica mais lenta com o tempo.' },
-      { id: 'c', text: 'Para liberar espaço no disco, já que a base antiga ocupa muita memória.' },
+      { id: 'c', text: 'Para liberar espaço no disco, já que a base antiga de ameaças ocupa bastante memória.' },
       { id: 'd', text: 'Para traduzir automaticamente as páginas escritas em outros idiomas.' },
     ]},
     explanation: 'A base de assinaturas de ameaças precisa estar atualizada para detectar vírus novos.',
@@ -248,7 +248,7 @@ const rawAp034Final: Question[] = [
     prompt: 'Você está navegando e um pop-up aparece dizendo: "Seu computador está infectado! Baixe este antivírus agora!" O que você faz?',
     data: { scenarios: [
       { id: 'a', text: 'Fechar o pop-up, não baixar nada e verificar com o antivírus já instalado.', correct: true },
-      { id: 'b', text: 'Baixar o antivírus indicado no aviso imediatamente, antes que piore.' },
+      { id: 'b', text: 'Baixar imediatamente o antivírus indicado no aviso, antes que a infecção se espalhe.' },
       { id: 'c', text: 'Clicar no pop-up para ver mais informações.' },
       { id: 'd', text: 'Compartilhar o link com os amigos para que eles verifiquem também.' },
     ]},
@@ -328,7 +328,7 @@ const rawAp035Final: Question[] = [
     prompt: 'Qual é a diferença entre HTML e PHP?',
     data: { options: [
       { id: 'a', text: 'HTML é marcação executada no cliente; PHP é programação executada no servidor.', correct: true },
-      { id: 'b', text: 'HTML é mais moderno e veio para substituir o PHP nos sites atuais.' },
+      { id: 'b', text: 'HTML é mais moderno e veio para substituir o PHP nos sites atuais, por rodar no navegador.' },
       { id: 'c', text: 'PHP cuida do design da página e HTML cuida da lógica do programa.' },
       { id: 'd', text: 'São a mesma linguagem, com dois nomes por razões históricas.' },
     ]},
@@ -351,7 +351,7 @@ const rawAp035Final: Question[] = [
     data: { options: [
       { id: 'a', text: 'GIF suporta animação e 256 cores; PNG suporta transparência e mais cores, sem animação.', correct: true },
       { id: 'b', text: 'PNG aceita animação e GIF não, por isso PNG substituiu o GIF.' },
-      { id: 'c', text: 'GIF é o formato indicado para fotografias e PNG para textos e desenhos.' },
+      { id: 'c', text: 'GIF é o formato indicado para fotografias, e PNG serve melhor para textos e desenhos simples.' },
       { id: 'd', text: 'Não há diferença prática: os dois guardam a imagem do mesmo jeito.' },
     ]},
     explanation: 'GIF: 256 cores + animação. PNG: milhões de cores + transparência, sem animação.',
@@ -413,7 +413,7 @@ const rawAp035Final: Question[] = [
     prompt: 'O que é Inteligência Artificial generativa?',
     data: { options: [
       { id: 'a', text: 'Sistemas que criam novo conteúdo (texto, imagem, código) a partir de instruções.', correct: true },
-      { id: 'b', text: 'Um antivírus que encontra e remove ameaças sem intervenção.' },
+      { id: 'b', text: 'Um antivírus que encontra e remove ameaças sozinho, sem que ninguém precise autorizar.' },
       { id: 'c', text: 'Um cabo de rede de alta velocidade usado entre servidores.' },
       { id: 'd', text: 'Um formato de imagem que guarda mais cores que o JPEG.' },
     ]},
@@ -425,7 +425,7 @@ const rawAp035Final: Question[] = [
     data: {
       scenarios: [
         { id: 'a', text: 'Criar 4 arquivos HTML separados, cada um com links <a href> apontando para as outras páginas.', correct: true },
-        { id: 'b', text: 'Reunir todo o conteúdo numa única página longa, sem links internos.' },
+        { id: 'b', text: 'Reunir todo o conteúdo numa única página bem longa, sem nenhum link interno entre as partes.' },
         { id: 'c', text: 'Criar quatro páginas separadas e informar os endereços de cada uma.' },
         { id: 'd', text: 'Montar tudo com imagens, sem escrever HTML, e publicar as imagens.' },
       ],
@@ -437,7 +437,7 @@ const rawAp035Final: Question[] = [
     prompt: 'Como você exibe uma imagem em HTML?',
     data: { options: [
       { id: 'a', text: '<img src="foto.jpg" alt="descrição">', correct: true },
-      { id: 'b', text: '<image src="foto.jpg">' },
+      { id: 'b', text: '<image src="foto.jpg" descricao="foto">' },
       { id: 'c', text: '<img href="foto.jpg">' },
       { id: 'd', text: '<picture="foto.jpg">' },
     ]},
@@ -449,7 +449,7 @@ const rawAp035Final: Question[] = [
     data: { options: [
       { id: 'a', text: 'Cliente é o navegador do usuário; servidor é o computador que hospeda e processa o site.', correct: true },
       { id: 'b', text: 'Cliente e servidor são a mesma coisa, com nomes trocados conforme a empresa.' },
-      { id: 'c', text: 'Cliente é a parte física da máquina e servidor é o programa que roda dentro dela.' },
+      { id: 'c', text: 'Cliente é a parte física da máquina, e servidor é o nome do programa que roda dentro dela.' },
       { id: 'd', text: 'Servidor é a pessoa que acessa a página e cliente é a empresa que a publicou.' },
     ]},
     explanation: 'Cliente (navegador) faz requisições; servidor processa e responde com HTML.',
@@ -469,7 +469,7 @@ const rawAp035Final: Question[] = [
     data: { scenarios: [
       { id: 'a', text: 'PNG — suporta transparência e mantém qualidade sem perda.', correct: true },
       { id: 'b', text: 'JPEG — não suporta transparência.' },
-      { id: 'c', text: 'GIF — suporta transparência, mas apenas 256 cores.' },
+      { id: 'c', text: 'GIF, porque guarda transparência, ainda que limitado a 256 cores.' },
       { id: 'd', text: 'BMP — formato não web.' },
     ]},
     explanation: 'PNG é ideal para logos: transparência + milhões de cores + sem perda.',
@@ -503,7 +503,7 @@ const rawAp035Final: Question[] = [
     prompt: 'O que é IA generativa?',
     data: { options: [
       { id: 'a', text: 'Sistemas que criam novo conteúdo (texto, imagem, código) a partir de instruções.', correct: true },
-      { id: 'b', text: 'Um antivírus que encontra e remove ameaças sozinho, sem pedir confirmação.' },
+      { id: 'b', text: 'Um antivírus que encontra e remove as ameaças sozinho, sem nunca pedir confirmação.' },
       { id: 'c', text: 'Um cabo de rede de alta velocidade usado para ligar servidores entre si.' },
       { id: 'd', text: 'Um formato de imagem capaz de guardar mais cores e transparência.' },
     ]},
@@ -536,7 +536,7 @@ const rawAp035Final: Question[] = [
     data: { scenarios: [
       { id: 'a', text: 'Revisar todo o conteúdo, verificar as informações e adicionar sua própria análise.', correct: true },
       { id: 'b', text: 'Entregar exatamente como a ferramenta gerou, sem ler nem revisar antes.' },
-      { id: 'c', text: 'Não usar inteligência artificial em etapa alguma do trabalho, por precaução.' },
+      { id: 'c', text: 'Não usar inteligência artificial em etapa alguma do trabalho, por simples precaução.' },
       { id: 'd', text: 'Esconder que usou a ferramenta, mesmo se alguém perguntar diretamente.' },
     ]},
     explanation: 'A IA é uma ferramenta. O conteúdo deve ser revisado com pensamento crítico.',

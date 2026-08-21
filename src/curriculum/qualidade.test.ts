@@ -88,8 +88,28 @@ describe('as alternativas não entregam a resposta pelo tamanho', () => {
 
   it('a correta não é sistematicamente mais comprida', () => {
     /* Poucos caracteres de diferença é ruído de redação; dezenas são um sinal. */
-    expect(Math.abs(vantagemMedia(licoes))).toBeLessThanOrEqual(12);
-    expect(Math.abs(vantagemMedia(provas))).toBeLessThanOrEqual(12);
+    expect(Math.abs(vantagemMedia(licoes))).toBeLessThanOrEqual(10);
+    expect(Math.abs(vantagemMedia(provas))).toBeLessThanOrEqual(10);
+  });
+
+  /*
+    A medida solta, para além da vantagem visível: com que frequência a correta
+    é simplesmente a linha mais comprida da questão? Hoje está em 17% nas lições
+    e 7% nas provas — abaixo dos 25% do acaso, ou seja, olhar o tamanho rende
+    menos que chutar. O teto deixa margem para redação futura sem permitir que o
+    padrão volte.
+  */
+  it('marcar a mais comprida não rende mais que o acaso', () => {
+    const ehAMaior = (qs: Question[]) => {
+      const alvo = comAlternativas(qs);
+      const n = alvo.filter(q => {
+        const o = alternativas(q) as any[];
+        return o.reduce((a, b) => (b.text.length > a.text.length ? b : a)) === o.find(x => x.correct);
+      }).length;
+      return n / alvo.length;
+    };
+    expect(ehAMaior(licoes), 'lições').toBeLessThanOrEqual(0.35);
+    expect(ehAMaior(provas), 'provas').toBeLessThanOrEqual(0.35);
   });
 });
 

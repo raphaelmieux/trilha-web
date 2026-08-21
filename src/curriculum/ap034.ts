@@ -198,7 +198,7 @@ const rawQuestions_L2: Question[] = [
     prompt: 'O que significa fazer um "download"?',
     data: { options: [
       { id: 'a', text: 'Transferir um arquivo de um servidor remoto para o seu computador.', correct: true },
-      { id: 'b', text: 'Enviar um arquivo do seu computador para um servidor na Internet.' },
+      { id: 'b', text: 'Enviar um arquivo guardado no seu computador para um servidor na Internet.' },
       { id: 'c', text: 'Apagar um arquivo do computador para liberar espaço em disco.' },
       { id: 'd', text: 'Compartilhar um arquivo anexando-o a uma mensagem de e-mail.' },
     ]},
@@ -231,7 +231,7 @@ const rawQuestions_L2: Question[] = [
       { id: 'a', text: 'Upload — você está enviando a foto do seu dispositivo para o servidor do Instagram.', correct: true },
       { id: 'b', text: 'Download, porque a foto sai do aplicativo e chega ao seu aparelho.' },
       { id: 'c', text: 'Nenhum dos dois, porque a foto continua guardada só no seu telefone.' },
-      { id: 'd', text: 'Os dois ao mesmo tempo, embora só o download seja contado pela operadora.' },
+      { id: 'd', text: 'Os dois ao mesmo tempo, embora só o download entre na conta de dados que a operadora cobra ao fim do mês.' },
     ]},
     explanation: 'Publicar conteúdo = enviar dados do seu dispositivo para um servidor = upload.',
   },
@@ -374,7 +374,7 @@ const rawQuestions_L3: Question[] = [
     data: { scenarios: [
       { id: 'a', text: 'Ransomware — criptografa arquivos e exige resgate.', correct: true },
       { id: 'b', text: 'Spyware — apenas espia sua atividade.' },
-      { id: 'c', text: 'Vírus — se replica em arquivos executáveis.' },
+      { id: 'c', text: 'Vírus, porque se replica dentro de arquivos executáveis já existentes.' },
       { id: 'd', text: 'Não é malware, é um antivírus legítimo.' },
     ]},
     explanation: 'Ransomware sequestra dados por criptografia e exige pagamento para liberá-los.',
@@ -441,8 +441,8 @@ const rawQuestions_2L1: Question[] = [
     id: 'AP034.2-L1-Q2', type: 'multiple_choice',
     prompt: 'Qual é a principal vantagem do IMAP sobre o POP3?',
     data: { options: [
-      { id: 'a', text: 'Permite acessar e sincronizar as mesmas mensagens de múltiplos dispositivos.', correct: true },
-      { id: 'b', text: 'É mais rápido para enviar mensagens, por manter conexão sempre aberta.' },
+      { id: 'a', text: 'Mantém as mesmas mensagens sincronizadas entre todos os dispositivos usados.', correct: true },
+      { id: 'b', text: 'É mais rápido para enviar mensagens, porque mantém a conexão aberta o tempo todo com o servidor.' },
       { id: 'c', text: 'Dispensa senha, porque a autenticação fica salva no próprio servidor.' },
       { id: 'd', text: 'Compacta os anexos sozinho, poupando espaço na caixa de entrada.' },
     ]},
@@ -547,7 +547,7 @@ const rawQuestions_2L2: Question[] = [
     id: 'AP034.2-L2-Q1', type: 'multiple_choice',
     prompt: 'O que é um navegador web (browser)?',
     data: { options: [
-      { id: 'a', text: 'Um programa que permite acessar, renderizar e interagir com páginas da World Wide Web.', correct: true },
+      { id: 'a', text: 'Um programa que busca, desenha e torna utilizáveis as páginas da World Wide Web.', correct: true },
       { id: 'b', text: 'Um dispositivo físico que liga o computador à rede da operadora.' },
       { id: 'c', text: 'Um protocolo de transferência de arquivos entre servidores distantes, usado quando o arquivo é grande demais para o e-mail.' },
       { id: 'd', text: 'Um sistema que procura vírus automaticamente nos arquivos recebidos.' },
@@ -569,7 +569,7 @@ const rawQuestions_2L2: Question[] = [
     id: 'AP034.2-L2-Q3', type: 'multiple_choice',
     prompt: 'O que é um site de busca (motor de busca)?',
     data: { options: [
-      { id: 'a', text: 'Um sistema que indexa páginas da web e permite encontrar informações por palavras-chave.', correct: true },
+      { id: 'a', text: 'Um sistema que indexa páginas da web e devolve resultados a partir de palavras-chave.', correct: true },
       { id: 'b', text: 'Um site de vendas que reúne produtos de várias lojas diferentes.' },
       { id: 'c', text: 'Um programa de e-mail que organiza as mensagens recebidas em pastas e avisa quando chega algo de um remetente conhecido.' },
       { id: 'd', text: 'Um antivírus que verifica cada página antes de ela ser exibida.' },
@@ -863,7 +863,7 @@ const rawQuestions_4L1: Question[] = [
     data: { scenarios: [
       { id: 'a', text: 'Não clicar. É phishing — bancos nunca pedem senhas por e-mail. Excluir e avisar um responsável.', correct: true },
       { id: 'b', text: 'Clicar e digitar a senha, já que a mensagem tem a aparência de oficial.' },
-      { id: 'c', text: 'Responder ao remetente informando a senha para resolver logo o problema.' },
+      { id: 'c', text: 'Responder ao remetente informando a senha, para que o problema seja resolvido antes que a conta seja mesmo bloqueada.' },
       { id: 'd', text: 'Encaminhar aos amigos para que eles confiram se receberam o mesmo aviso.' },
     ]},
     explanation: 'Phishing usa urgência e aparência oficial para enganar. Bancos nunca pedem senhas por e-mail.',
@@ -1071,7 +1071,7 @@ const rawQuestions_5L0: Question[] = [
     data: { options: [
       { id: 'a', text: 'Impedir que um desconhecido peça fotos ao seu filho pelo chat.', correct: true },
       { id: 'b', text: 'Bloquear páginas de conteúdo adulto.' },
-      { id: 'c', text: 'Desligar a internet depois de um horário combinado.' },
+      { id: 'c', text: 'Desligar a internet da casa inteira depois de um horário combinado entre todos.' },
       { id: 'd', text: 'Impedir a instalação de programas sem autorização.' },
     ]},
     explanation: 'Filtros barram conteúdo, não conversas. O risco que vem de pessoas é justamente o que o pacto de uso trata.',
@@ -1081,7 +1081,7 @@ const rawQuestions_5L0: Question[] = [
     prompt: 'Por que um filtro instalado no roteador não basta?',
     data: { options: [
       { id: 'a', text: 'Porque ele não acompanha o celular quando sai de casa com o plano de dados.', correct: true },
-      { id: 'b', text: 'Porque os roteadores domésticos não oferecem esse tipo de recurso.' },
+      { id: 'b', text: 'Porque os roteadores domésticos não costumam oferecer esse tipo de recurso de fábrica.' },
       { id: 'c', text: 'Porque o filtro torna a conexão mais lenta para toda a casa.' },
       { id: 'd', text: 'Porque o recurso só funciona em computadores de modelos antigos.' },
     ]},
@@ -1094,7 +1094,7 @@ const rawQuestions_5L0: Question[] = [
       { id: 'a', text: 'Um cuida do que dá para automatizar; o outro cuida do que depende de decisão.', correct: true },
       { id: 'b', text: 'O pacto passa a substituir o filtro assim que a criança cresce.' },
       { id: 'c', text: 'São a mesma coisa, apenas com nomes diferentes conforme o aparelho.' },
-      { id: 'd', text: 'O filtro só entra em vigor se o pacto tiver sido assinado em cartório.' },
+      { id: 'd', text: 'O filtro só entra em vigor depois que o pacto tiver sido assinado e registrado em cartório.' },
     ]},
     explanation: 'Filtro sozinho vira gato e rato; regra sozinha depende de lembrar dela na hora errada. O requisito pede os dois na mesma frase.',
   },

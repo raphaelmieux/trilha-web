@@ -104,7 +104,7 @@ const rawQ_1L1: Question[] = [
       { id: 'a', text: 'Verificar se há um cadeado na barra de endereço e se a URL começa com https://', correct: true },
       { id: 'b', text: 'Verificar se o site carrega com rapidez ao ser aberto.' },
       { id: 'c', text: 'Verificar se a página tem visual bem-acabado e cores firmes.' },
-      { id: 'd', text: 'Não há como verificar pelo navegador; resta confiar no endereço.' },
+      { id: 'd', text: 'Não há como verificar isso pelo navegador, de modo que resta confiar no endereço digitado.' },
     ]},
     explanation: 'O cadeado e https:// indicam criptografia TLS ativa, protegendo seus dados.',
   },
@@ -172,7 +172,7 @@ const rawQ_1L2: Question[] = [
     data: { options: [
       { id: 'a', text: 'No servidor, antes de enviar a página ao cliente.', correct: true },
       { id: 'b', text: 'No navegador de quem acessa a página.' },
-      { id: 'c', text: 'No roteador que leva a página até a casa.' },
+      { id: 'c', text: 'No roteador que leva a página da operadora até dentro da casa.' },
       { id: 'd', text: 'No provedor que entrega as mensagens.' },
     ]},
     explanation: 'PHP roda no servidor. O usuário recebe apenas o HTML resultante, nunca o código PHP.',
@@ -264,7 +264,7 @@ const rawQ_1L3: Question[] = [
     prompt: 'Como identificar se um navegador está em conexão segura?',
     data: { options: [
       { id: 'a', text: 'Pelo cadeado na barra de endereço e pelo prefixo https:// na URL.', correct: true },
-      { id: 'b', text: 'Pela velocidade com que a página termina de carregar.' },
+      { id: 'b', text: 'Pela velocidade com que a página termina de carregar por completo no navegador.' },
       { id: 'c', text: 'Pelo tamanho da janela em que o navegador foi aberto.' },
       { id: 'd', text: 'Pela cor que o botão de atualizar assume na barra.' },
     ]},
@@ -688,7 +688,7 @@ const rawQ_graficos: Question[] = [
     prompt: 'Dos três passos do processo, qual costuma reduzir mais o tamanho do arquivo?',
     data: { options: [
       { id: 'a', text: 'Redimensionar a imagem para o tamanho em que ela aparece na página.', correct: true },
-      { id: 'b', text: 'Trocar o nome do arquivo por um mais curto antes de publicar.' },
+      { id: 'b', text: 'Trocar o nome do arquivo por um mais curto antes de publicá-lo no servidor.' },
       { id: 'c', text: 'Aumentar a qualidade do JPEG para 100% antes de enviar.' },
       { id: 'd', text: 'Publicar a imagem numa pasta separada do restante do site.' },
     ]},
