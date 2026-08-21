@@ -135,3 +135,31 @@ describe('verdadeiro/falso não tem resposta previsível', () => {
     expect(taxa).toBeLessThanOrEqual(0.7);
   });
 });
+
+describe('toda alternativa errada diz o que foi confundido', () => {
+  /*
+    A explicação da questão conta por que a resposta certa é certa — que não é o
+    que precisa quem marcou outra coisa. Essa pessoa precisa saber o que
+    confundiu. Uma questão nova sem esses motivos deixa quem erra sem retorno,
+    então a build não deixa passar.
+  */
+  it('nenhuma alternativa incorreta fica sem motivo', () => {
+    const semMotivo: string[] = [];
+    for (const q of [...licoes, ...provas]) {
+      const o = alternativas(q) as any[];
+      if (!o.length || !o.some(x => x.correct)) continue;
+      for (const x of o) {
+        if (!x.correct && !x.porque) semMotivo.push(`${q.id}: "${x.text.slice(0, 40)}"`);
+      }
+    }
+    expect(semMotivo, semMotivo.slice(0, 6).join(' | ')).toEqual([]);
+  });
+
+  it('a alternativa certa não carrega motivo de erro', () => {
+    const indevidos = [...licoes, ...provas]
+      .flatMap(q => (alternativas(q) as any[]).map(x => ({ q, x })))
+      .filter(({ x }) => x.correct && x.porque)
+      .map(({ q }) => q.id);
+    expect(indevidos, 'motivo em alternativa correta confunde quem acertou').toEqual([]);
+  });
+});
