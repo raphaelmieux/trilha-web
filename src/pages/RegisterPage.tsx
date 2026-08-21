@@ -5,6 +5,7 @@ import ClubPicker, { type ClubeEscolhido } from '../components/ui/ClubPicker';
 import { supabase } from '../lib/supabase';
 import { SECURITY_QUESTIONS, hashSecurityAnswer } from '../lib/securityQuestions';
 import { traduzirErroDeAuth } from '../lib/authErrors';
+import CompletarPerfil from '../components/CompletarPerfil';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -21,6 +22,12 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
   const [loading, setLoading] = useState(false);
+  /*
+    A conta recém-criada, quando a primeira etapa termina. Enquanto for nula a
+    tela mostra o formulário; preenchida, mostra a etapa do perfil. Guardar o
+    id aqui evita depender do contexto de autenticação ter se atualizado.
+  */
+  const [contaCriada, setContaCriada] = useState<{ id: string; display_name: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +91,12 @@ export default function RegisterPage() {
       return;
     }
 
-    navigate('/');
+    /*
+      Segunda etapa, em vez de ir direto ao painel. Foto e forma de exibição do
+      nome pedem uma sessão ativa — que só existe a partir daqui — e um
+      formulário único com tudo faria muita gente desistir no meio.
+    */
+    setContaCriada({ id: data.user.id, display_name: displayName });
   };
 
   return (
@@ -96,6 +108,10 @@ export default function RegisterPage() {
           <h1 style={{ color: 'var(--color-text)' }}><BrandMark tamanho="entrada" /></h1>
         </div>
         <div className="card">
+          {contaCriada ? (
+            <CompletarPerfil perfil={contaCriada} aoConcluir={() => navigate('/')} />
+          ) : (
+          <>
           <h2 className="text-xl font-bold mb-4">Cadastro</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -161,6 +177,8 @@ export default function RegisterPage() {
           <p className="text-sm mt-4 text-center" style={{ color: 'var(--color-text-dim)' }}>
             Já tem conta? <Link to="/login" className="font-medium" style={{ color: 'var(--color-primary)' }}>Entrar</Link>
           </p>
+          </>
+          )}
         </div>
       </div>
     </div>
