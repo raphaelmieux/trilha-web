@@ -128,11 +128,25 @@ export interface Badge {
   tier: 'bronze' | 'silver' | 'gold';
 }
 
+/* As janelas do ranking. Os valores são os que a função leaderboard() espera. */
+export const LEADERBOARD_PERIODS = [
+  { value: 'dia',    label: 'Diário'      },
+  { value: 'semana', label: 'Semanal'     },
+  { value: 'mes',    label: 'Mensal'      },
+  { value: 'tudo',   label: 'Geral' },
+] as const;
+
+export type LeaderboardPeriod = (typeof LEADERBOARD_PERIODS)[number]['value'];
+
 export interface LeaderboardEntry {
   id: string;
   display_name: string;
   public_name_form: 'full' | 'first' | 'initials' | 'anonymous';
   avatar_url: string | null;
+  /* Nulos quando a pessoa não marcou "mostrar meu clube": a linha continua,
+     só o clube some. */
+  club: string | null;
+  club_city: string | null;
   total_xp: number;
   best_streak: number;
   badge_count: number;

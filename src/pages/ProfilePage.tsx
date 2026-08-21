@@ -24,6 +24,7 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [showOnLeaderboard, setShowOnLeaderboard] = useState(false);
+  const [showClub, setShowClub] = useState(false);
   const [savingLeaderboard, setSavingLeaderboard] = useState(false);
 
   const [newPassword, setNewPassword] = useState('');
@@ -56,14 +57,24 @@ export default function ProfilePage() {
     (async () => {
       const { data } = await supabase
         .from('privacy_preferences')
-        .select('show_on_leaderboard')
+        .select('show_on_leaderboard, show_club_publicly')
         .eq('user_id', profile.id)
         .maybeSingle();
       setShowOnLeaderboard(data?.show_on_leaderboard || false);
+      setShowClub(data?.show_club_publicly || false);
     })();
   }, [profile]);
 
   if (!profile) return null;
+
+  const handleToggleClub = async (value: boolean) => {
+    setSavingLeaderboard(true);
+    setShowClub(value);
+    await supabase
+      .from('privacy_preferences')
+      .upsert({ user_id: profile.id, show_club_publicly: value }, { onConflict: 'user_id' });
+    setSavingLeaderboard(false);
+  };
 
   const handleToggleLeaderboard = async (value: boolean) => {
     setSavingLeaderboard(true);
@@ -369,6 +380,28 @@ export default function ProfilePage() {
               checked={showOnLeaderboard}
               disabled={savingLeaderboard}
               onChange={e => handleToggleLeaderboard(e.target.checked)}
+              className="w-5 h-5 flex-shrink-0"
+              style={{ accentColor: 'var(--color-primary)' }}
+            />
+          </label>
+
+          {/* Recuado e só habilitado com o ranking ligado: fora dele a opção não
+              tem efeito nenhum, e um controle que não faz nada confunde. */}
+          <label
+            className="flex items-center justify-between gap-4 mt-4 pl-4 cursor-pointer"
+            style={{ borderLeft: '2px solid var(--color-border)', opacity: showOnLeaderboard ? 1 : 0.5 }}
+          >
+            <div>
+              <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>Mostrar meu clube no ranking</p>
+              <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
+                Exibe o nome do clube e a cidade ao lado do seu nome na lista.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={showClub}
+              disabled={savingLeaderboard || !showOnLeaderboard}
+              onChange={e => handleToggleClub(e.target.checked)}
               className="w-5 h-5 flex-shrink-0"
               style={{ accentColor: 'var(--color-primary)' }}
             />

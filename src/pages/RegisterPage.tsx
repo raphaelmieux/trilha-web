@@ -15,6 +15,9 @@ export default function RegisterPage() {
   const [unit, setUnit] = useState('');
   const [securityQuestion, setSecurityQuestion] = useState(SECURITY_QUESTIONS[0].code);
   const [securityAnswer, setSecurityAnswer] = useState('');
+  /* Desmarcado por padrão: aparecer publicamente é escolha ativa, não algo
+     que se ganha por não ter reparado num campo. */
+  const [noRanking, setNoRanking] = useState(false);
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,6 +53,12 @@ export default function RegisterPage() {
           terms_version: '1.0',
           security_question_code: securityQuestion,
           security_answer_hash: await hashSecurityAnswer(securityAnswer),
+          /* Lidos pelo gatilho on_auth_user_created, que cria a linha de
+             privacidade junto com a conta. O clube acompanha a escolha do
+             ranking: aparecer sem dizer de onde se é não ajuda ninguém a
+             encontrar o próprio clube na lista. */
+          show_on_leaderboard: noRanking,
+          show_club_publicly: noRanking,
         },
       },
     });
@@ -119,6 +128,26 @@ export default function RegisterPage() {
               </select>
               <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Sua resposta</label>
               <input value={securityAnswer} onChange={e => setSecurityAnswer(e.target.value)} required minLength={2} className="input-field" />
+            </div>
+            <div className="pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+              <label className="flex items-start justify-between gap-3 cursor-pointer">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--color-text-soft)' }}>
+                    Aparecer no ranking
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-dim)' }}>
+                    Mostra seu nome, clube, XP e conquistas na página de Ranking.
+                    Pode mudar quando quiser em Perfil → Privacidade.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={noRanking}
+                  onChange={e => setNoRanking(e.target.checked)}
+                  className="w-5 h-5 flex-shrink-0 mt-0.5"
+                  style={{ accentColor: 'var(--color-primary)' }}
+                />
+              </label>
             </div>
             {error && <p className="text-sm" style={{ color: 'var(--color-primary)' }}>{error}</p>}
             {aviso && (

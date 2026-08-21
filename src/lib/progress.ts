@@ -157,6 +157,9 @@ export async function ensureEnrollment(userId: string, specialtyId: string): Pro
   }
 }
 
+/* Uma atividade concluída vale isto, no total corrente e no evento datado. */
+const XP_POR_ATIVIDADE = 10;
+
 export async function updateEnrollmentActivity(userId: string, specialtyId: string): Promise<void> {
   const today = new Date().toISOString().split('T')[0];
   const { data: existing } = await supabase
@@ -175,8 +178,21 @@ export async function updateEnrollmentActivity(userId: string, specialtyId: stri
     }
     await supabase
       .from('enrollments')
-      .update({ xp: (existing.xp || 0) + 10, streak_days: streak, last_activity_date: today })
+      .update({ xp: (existing.xp || 0) + XP_POR_ATIVIDADE, streak_days: streak, last_activity_date: today })
       .eq('id', existing.id);
+
+    /*
+      O mesmo XP, agora também como fato datado.
+      enrollments.xp é um total corrente e não sabe dizer quando cada ponto foi
+      ganho, então o ranking não conseguia responder "quanto esta semana?".
+      Falhar aqui não pode desfazer a atividade da pessoa: o total acima já foi
+      gravado, e o evento é material do ranking, não do progresso.
+    */
+    supabase
+      .from('xp_events')
+      .insert({ user_id: userId, specialty_id: specialtyId, amount: XP_POR_ATIVIDADE })
+      .then(undefined, () => {});
+
     evaluateBadges(userId).catch(() => {});
   }
 }

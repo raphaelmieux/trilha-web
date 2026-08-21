@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { getPublicName, type LeaderboardEntry } from '../types';
+import { getPublicName, LEADERBOARD_PERIODS, type LeaderboardEntry, type LeaderboardPeriod } from '../types';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
-import { Podium, Flame, Award, Medal } from 'lucide-react';
+import { Podium, Flame, Award, Medal, MapPin } from 'lucide-react';
 
 const RANK_COLORS = ['var(--color-secondary)', '#b0b0b4', '#c17f45'];
 
@@ -11,18 +11,24 @@ export default function LeaderboardPage() {
   const { profile } = useAuth();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [periodo, setPeriodo] = useState<LeaderboardPeriod>('tudo');
 
   useEffect(() => {
+    let cancelado = false;
+    setLoading(true);
     (async () => {
-      const { data } = await supabase
-        .from('public_leaderboard')
-        .select('*')
-        .order('total_xp', { ascending: false })
-        .limit(50);
-      setEntries((data as LeaderboardEntry[]) || []);
+      /*
+        Uma função, e não a view de antes: a janela de tempo precisa ser somada
+        no banco. Trazer os eventos de todo mundo para o navegador filtrar seria
+        mandar o histórico inteiro para desenhar dez linhas.
+      */
+      const { data } = await supabase.rpc('leaderboard', { p_periodo: periodo });
+      if (cancelado) return;          // troca rápida de aba não pode embaralhar
+      setEntries(((data as LeaderboardEntry[]) || []).slice(0, 50));
       setLoading(false);
     })();
-  }, []);
+    return () => { cancelado = true; };
+  }, [periodo]);
 
   return (
     <div className="space-y-6">
@@ -31,7 +37,8 @@ export default function LeaderboardPage() {
           <Podium className="w-6 h-6" style={{ color: 'var(--color-secondary)' }} /> Ranking
         </h1>
         <p style={{ color: 'var(--color-text-dim)' }}>
-          Desbravadores que optaram por aparecer publicamente, ordenados por XP.
+          Desbravadores que optaram por aparecer publicamente, ordenados por XP
+          {periodo === 'tudo' ? ' acumulado.' : ' ganho no período.'}
         </p>
       </div>
 
@@ -44,14 +51,41 @@ export default function LeaderboardPage() {
         </p>
       </div>
 
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Período do ranking">
+        {LEADERBOARD_PERIODS.map(({ value, label }) => {
+          const ativo = periodo === value;
+          return (
+            <button
+              key={value}
+              role="tab"
+              aria-selected={ativo}
+              onClick={() => setPeriodo(value)}
+              className="px-3 py-1.5 rounded-lg text-sm transition-colors"
+              style={{
+                backgroundColor: ativo ? 'var(--color-primary)' : 'var(--color-bg-input)',
+                color: ativo ? '#fff' : 'var(--color-text-muted)',
+                border: `1px solid ${ativo ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                fontWeight: ativo ? 600 : 400,
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="card p-6">
         {loading ? (
           <LoadingState />
         ) : entries.length === 0 ? (
           <EmptyState
             icon={<Podium className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-border-hover)' }} />}
-            title="Ninguém no ranking ainda"
-            description="Seja o primeiro a ativar o ranking no seu perfil!"
+            title={periodo === 'tudo' ? 'Ninguém no ranking ainda' : 'Ninguém pontuou neste período'}
+            description={
+              periodo === 'tudo'
+                ? 'Seja o primeiro a ativar o ranking no seu perfil!'
+                : 'Conclua uma atividade para aparecer aqui — ou veja "Geral".'
+            }
           />
         ) : (
           <ol className="space-y-2">
@@ -78,6 +112,16 @@ export default function LeaderboardPage() {
                     <p className="font-medium text-sm truncate" style={{ color: 'var(--color-text)' }}>
                       {getPublicName(entry)}{isMe && ' (você)'}
                     </p>
+                    {/* Só aparece para quem marcou "mostrar meu clube"; para os
+                        demais a linha simplesmente não traz clube. */}
+                    {entry.club && (
+                      <p className="text-xs truncate flex items-center gap-1 mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">
+                          {entry.club}{entry.club_city && ` · ${entry.club_city}`}
+                        </span>
+                      </p>
+                    )}
                     <div className="flex items-center gap-3 text-xs mt-0.5" style={{ color: 'var(--color-text-dim)' }}>
                       <span className="flex items-center gap-1"><Flame className="w-3 h-3" /> {entry.best_streak}d</span>
                       <span className="flex items-center gap-1"><Award className="w-3 h-3" /> {entry.badge_count} conquistas</span>
