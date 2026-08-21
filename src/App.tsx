@@ -11,7 +11,6 @@ import ReportPage from './pages/ReportPage';
 import VerifyPage from './pages/VerifyPage';
 import CertificatePage from './pages/CertificatePage';
 import AdminPage from './pages/AdminPage';
-import AdminCertificatesPage from './pages/AdminCertificatesPage';
 import ProfilePage from './pages/ProfilePage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import { useState } from 'react';
@@ -72,9 +71,14 @@ function NavBar() {
             </Link>
           )}
 
-          {profile && (
+          {/* Ligado à sessão, e não ao perfil: se o perfil não carregar, sair é
+              justamente o que a pessoa precisa poder fazer. Só o nome depende
+              do perfil ter vindo. */}
+          {session && (
             <div className="flex items-center gap-3 pl-4" style={{ borderLeft: '1px solid var(--color-border)' }}>
-              <span className="text-sm" style={{ color: 'var(--color-text-dim)' }}>{profile.display_name?.split(' ')[0]}</span>
+              {profile && (
+                <span className="text-sm" style={{ color: 'var(--color-text-dim)' }}>{profile.display_name?.split(' ')[0]}</span>
+              )}
               <button
                 onClick={signOut}
                 className="text-sm flex items-center gap-1 transition-colors"
@@ -118,13 +122,13 @@ function NavBar() {
               <ShieldCheck className="w-4 h-4" /> Admin
             </Link>
           )}
-          {profile && (
+          {session && (
             <button
               onClick={() => { setMenuOpen(false); signOut(); }}
               className="flex items-center gap-2 px-2 py-2.5 rounded-lg text-sm font-medium text-left"
               style={{ color: 'var(--color-text-dim)', borderTop: '1px solid var(--color-border)', marginTop: '0.25rem', paddingTop: '0.75rem' }}
             >
-              <LogOut className="w-4 h-4" /> Sair ({profile.display_name?.split(' ')[0]})
+              <LogOut className="w-4 h-4" /> Sair{profile ? ` (${profile.display_name?.split(' ')[0]})` : ''}
             </button>
           )}
         </div>
@@ -146,7 +150,6 @@ function AppRoutes() {
         <Route path="/relatorio" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
         <Route path="/ranking" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-        <Route path="/admin/certificados" element={<ProtectedRoute><AdminCertificatesPage /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/verificar" element={<VerifyPage />} />
         <Route path="/certificado/:code" element={<CertificatePage />} />

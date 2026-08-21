@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { getPublicName, type Certification, type PublicProfile } from '../types';
+import { type CertificadoVerificado } from '../types';
 import { Download, ArrowLeft, Loader2 } from 'lucide-react';
 import StatusBadge from '../components/ui/StatusBadge';
 import { LoadingState, ErrorState } from '../components/ui/PageState';
@@ -10,8 +10,7 @@ import { exportCertificatePdf } from '../lib/pdf';
 
 export default function CertificatePage() {
   const { code } = useParams();
-  const [cert, setCert] = useState<Certification | null>(null);
-  const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [cert, setCert] = useState<CertificadoVerificado | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
@@ -20,27 +19,23 @@ export default function CertificatePage() {
   useEffect(() => {
     if (!code) return;
     (async () => {
-      const { data: certData, error: certError } = await supabase
-        .from('certifications')
-        .select('*')
-        .eq('code', code)
-        .maybeSingle();
+      /* Uma consulta só, por código, contra a função de verificação — a tabela
+         de certificações não é mais legível publicamente. */
+      const { data, error: rpcError } = await supabase.rpc('verify_certificate', { p_code: code });
+      const encontrado = (data as CertificadoVerificado[] | null)?.[0];
 
-      if (certError || !certData) {
+      if (rpcError || !encontrado) {
         setError('Certificado não encontrado.');
         setLoading(false);
         return;
       }
+      if (encontrado.status !== 'active') {
+        setError('Este Token.Web() foi revogado e não é mais válido.');
+        setLoading(false);
+        return;
+      }
 
-      setCert(certData as Certification);
-
-      const { data: profileData } = await supabase
-        .from('public_profiles')
-        .select('*')
-        .eq('id', certData.user_id)
-        .maybeSingle();
-
-      setProfile(profileData as PublicProfile);
+      setCert(encontrado);
       setLoading(false);
     })();
   }, [code]);
@@ -52,13 +47,15 @@ export default function CertificatePage() {
       <Link to="/" className="btn-primary mt-4 inline-flex">Voltar ao Início</Link>
     </div>
   );
-  if (!cert || !profile) return null;
+  if (!cert) return null;
 
   const issuedDate = new Date(cert.issued_at).toLocaleDateString('pt-BR', {
     day: '2-digit', month: 'long', year: 'numeric',
   });
 
-  const studentName = getPublicName(profile);
+  /* Nome completo: um certificado que dissesse "Anônimo" não teria serventia
+     nenhuma fora do aplicativo. */
+  const studentName = cert.full_name;
 
   const handleDownload = async () => {
     setExporting(true);

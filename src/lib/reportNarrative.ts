@@ -256,11 +256,15 @@ export function buildBadgeParagraph(badges: Badge[], studentName: string): strin
     ? counts[0]
     : `${counts.slice(0, -1).join(', ')} e ${counts[counts.length - 1]}`;
 
+  /* "em toda a plataforma", e não "nesta trilha": as insígnias premiam
+     constância e desempenho que atravessam especialidades, então continuam as
+     mesmas quando o relatório cobre só uma. Dizer isso evita que a liderança
+     leia uma insígnia de sequência de estudo como prova da trilha em questão. */
   const opening = badges.length === 1
-    ? `${studentName} conquistou uma insígnia ao longo da trilha`
-    : `${studentName} conquistou ${badges.length} insígnias ao longo da trilha — ${tally}`;
+    ? `${studentName} conquistou uma insígnia em toda a sua trajetória na plataforma`
+    : `${studentName} conquistou ${badges.length} insígnias em toda a sua trajetória na plataforma — ${tally}`;
 
-  return `${opening}. As insígnias não são concedidas pela simples conclusão de atividades: cada uma reconhece um comportamento sustentado ao longo do tempo, como a constância de estudo em dias seguidos ou o desempenho máximo em uma avaliação. Seguem descritas abaixo.`;
+  return `${opening}. As insígnias não são concedidas pela simples conclusão de atividades: cada uma reconhece um comportamento sustentado ao longo do tempo, como a constância de estudo em dias seguidos ou o desempenho máximo em uma avaliação. Por abrangerem o percurso inteiro, não se restringem às especialidades listadas acima. Seguem descritas abaixo.`;
 }
 
 export function buildClosingParagraph(
@@ -275,7 +279,13 @@ export function buildClosingParagraph(
   let text = '';
 
   if (certified.length === narratives.length && narratives.length > 0) {
-    text += `${studentName} concluiu integralmente as duas especialidades que compõem a Trilha.Web(), obtendo certificação em ambas. `;
+    /* O relatório passou a cobrir um conjunto escolhido, que pode ser de uma
+       só especialidade — "as duas" estava fixo aqui e mentiria nesse caso. */
+    const quantas = narratives.length === 1
+      ? `a especialidade ${narratives[0].code}`
+      : `as ${narratives.length === 2 ? 'duas' : narratives.length} especialidades deste relatório`;
+    const ambas = narratives.length === 1 ? 'obtendo a respectiva certificação' : 'obtendo certificação em todas';
+    text += `${studentName} concluiu integralmente ${quantas}, ${ambas}. `;
   } else if (certified.length > 0) {
     text += `${studentName} obteve certificação em ${certified.length} ${plural(certified.length, 'especialidade', 'especialidades')} (${certified.map(n => n.code).join(' e ')}). `;
   } else if (fullyDone.length > 0) {

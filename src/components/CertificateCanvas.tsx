@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import type { Certification } from '../types';
+import type { CertificadoImprimivel } from '../types';
 
 // The certificate is drawn as an SVG with a fixed viewBox matching the background
 // artwork's native resolution (2340 x 1655 px, which is A4 landscape to within a
@@ -61,7 +61,7 @@ function useFittedFontSize(text: string, baseSize: number, maxWidth: number) {
 }
 
 interface Props {
-  cert: Certification;
+  cert: CertificadoImprimivel;
   studentName: string;
 }
 

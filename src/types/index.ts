@@ -119,6 +119,36 @@ export interface Certification {
   user_id: string;
 }
 
+/*
+  O que a verificação por código devolve.
+
+  Não é uma Certification: `id` e `user_id` ficam de fora de propósito — quem
+  confere um certificado não precisa saber a quem a conta pertence no banco, e
+  o que não é devolvido não pode ser correlacionado. O nome vem completo,
+  ignorando a forma de exibição pública, porque é isso que dá ao Token.Web()
+  validade fora do aplicativo.
+*/
+/*
+  O que basta para desenhar um certificado — código, trilha e data.
+
+  Nem o canvas nem o PDF precisam de `id` ou `user_id`; exigir a Certification
+  inteira obrigava a página pública a carregar dados que ela deliberadamente
+  não recebe mais.
+*/
+export type CertificadoImprimivel = Pick<Certification, 'code' | 'curriculum_code' | 'issued_at'>;
+
+export interface CertificadoVerificado {
+  code: string;
+  hash: string;
+  level: 'fundamental' | 'advanced';
+  curriculum_code: string;
+  curriculum_version: string;
+  status: 'active' | 'revoked';
+  issued_at: string;
+  full_name: string;
+  club: string | null;
+}
+
 export interface Badge {
   id: string;
   code: string;

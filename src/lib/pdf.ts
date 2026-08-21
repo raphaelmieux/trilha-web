@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import type { Badge, Certification } from '../types';
+import type { Badge, Certification, CertificadoImprimivel } from '../types';
 import { CERT_WIDTH } from '../components/CertificateCanvas';
 import { renderBadgeIconPng, TIER_LABELS } from './badgeIcons';
 
@@ -44,7 +44,7 @@ async function loadImageAsDataUrl(url: string): Promise<string> {
   });
 }
 
-function formatIssuedDate(cert: Certification): string {
+function formatIssuedDate(cert: CertificadoImprimivel): string {
   return new Date(cert.issued_at).toLocaleDateString('pt-BR', {
     day: '2-digit', month: 'long', year: 'numeric',
   });
@@ -55,7 +55,7 @@ function formatIssuedDate(cert: Certification): string {
  * Mirrors CertificateCanvas exactly: the same measured coordinates, the same
  * shrink-to-fit rule for long names.
  */
-async function drawCertificate(doc: jsPDF, cert: Certification, studentName: string): Promise<void> {
+async function drawCertificate(doc: jsPDF, cert: CertificadoImprimivel, studentName: string): Promise<void> {
   const specialtyCode = cert.curriculum_code === 'AP035' ? 'AP035' : 'AP034';
   const artwork = await loadImageAsDataUrl(
     `${import.meta.env.BASE_URL}assets/certificates/${specialtyCode}.png`
@@ -87,7 +87,7 @@ async function drawCertificate(doc: jsPDF, cert: Certification, studentName: str
 }
 
 /** A single certificate: one A4 landscape page, artwork only. */
-export async function exportCertificatePdf(cert: Certification, studentName: string): Promise<void> {
+export async function exportCertificatePdf(cert: CertificadoImprimivel, studentName: string): Promise<void> {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
   await drawCertificate(doc, cert, studentName);
   doc.save(`Token.Web ${cert.curriculum_code} - ${studentName}.pdf`);
@@ -334,6 +334,8 @@ export interface ReportPdfInput {
   club: string;
   unit: string;
   issuedOn: string;
+  /** Quais especialidades este relatório cobre — o conjunto é escolhido na tela, então o subtítulo não pode ser fixo. */
+  subtitle: string;
   intro: string;
   sections: ReportSection[];
   /** Introductory sentence for the achievements section; omitted when there are none. */
@@ -391,7 +393,7 @@ export async function exportReportPdf(input: ReportPdfInput): Promise<void> {
   doc.setFontSize(9.5);
   doc.setTextColor(70, 70, 70);
   doc.text(
-    'Trilha.Web() — Especialidades AP034 (Internet) e AP035 (Internet, Avançado)',
+    input.subtitle,
     A4_PORTRAIT.width / 2, y, { align: 'center' }
   );
   y += 5;

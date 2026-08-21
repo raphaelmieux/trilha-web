@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Shield, Users, Award, CalendarDays, AlertCircle, KeyRound, Copy, X } from 'lucide-react';
-import StatusBadge from '../components/ui/StatusBadge';
 
 export default function AdminPage() {
   const { profile } = useAuth();
-  const [stats, setStats] = useState({ users: 0, certifications: 0, events: 0 });
+  const [stats, setStats] = useState({ users: 0, events: 0 });
   const [users, setUsers] = useState<any[]>([]);
-  const [certs, setCerts] = useState<any[]>([]);
+  const [revokeCode, setRevokeCode] = useState('');
+  const [revokeMsg, setRevokeMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   const [resetTarget, setResetTarget] = useState<{ email: string; password?: string; error?: string; loading?: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -17,15 +16,12 @@ export default function AdminPage() {
     if (!profile?.is_admin) return;
     (async () => {
       const { count: userCount } = await supabase.from('user_profiles').select('*', { count: 'exact', head: true });
-      const { count: certCount } = await supabase.from('certifications').select('*', { count: 'exact', head: true });
       const { count: eventCount } = await supabase.from('activity_events').select('*', { count: 'exact', head: true });
-      setStats({ users: userCount || 0, certifications: certCount || 0, events: eventCount || 0 });
+      setStats({ users: userCount || 0, events: eventCount || 0 });
 
       const { data: usersData } = await supabase.from('user_profiles').select('*').order('created_at', { ascending: false }).limit(50);
       setUsers(usersData || []);
 
-      const { data: certsData } = await supabase.from('certifications').select('*, user_profiles(display_name, email)').order('issued_at', { ascending: false }).limit(20);
-      setCerts(certsData || []);
     })();
   }, [profile]);
 
@@ -76,16 +72,32 @@ export default function AdminPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleRevoke = async (certId: string) => {
+  /*
+    Revogar exige saber qual código. A administração não lista mais os
+    certificados emitidos: um Token.Web() é documento pessoal, e poder consertar
+    um erro não exige poder folhear os documentos de todo o clube.
+  */
+  const handleRevoke = async () => {
+    setRevokeMsg(null);
+    const code = revokeCode.trim();
+    if (!code) return;
     const reason = prompt('Motivo da revogação (apenas por fraude técnica comprovada ou erro sistêmico):');
-    if (!reason) return;
-    await supabase.from('certifications').update({
-      status: 'revoked',
-      revoked_at: new Date().toISOString(),
-      revocation_reason: reason,
-    }).eq('id', certId);
-    const { data } = await supabase.from('certifications').select('*, user_profiles(display_name, email)').order('issued_at', { ascending: false }).limit(20);
-    setCerts(data || []);
+    if (!reason?.trim()) return;
+
+    const { data, error } = await supabase.rpc('admin_revoke_certificate', {
+      p_code: code, p_reason: reason.trim(),
+    });
+    if (error) {
+      setRevokeMsg({ ok: false, texto: error.message });
+      return;
+    }
+    const linha = (data as { code: string }[] | null)?.[0];
+    setRevokeMsg(linha
+      ? { ok: true, texto: `Token ${linha.code} revogado.` }
+      /* Não diz se o código existe: um código inexistente e um já revogado
+         devolvem a mesma frase, para a tela não virar um detector de códigos. */
+      : { ok: false, texto: 'Nenhum Token.Web() ativo com esse código.' });
+    if (linha) setRevokeCode('');
   };
 
   const Th = ({ children }: { children: React.ReactNode }) => (
@@ -101,21 +113,13 @@ export default function AdminPage() {
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Shield className="w-6 h-6" style={{ color: 'var(--color-primary)' }} /> Painel Administrativo
         </h1>
-        <Link to="/admin/certificados" className="btn-primary">
-          <Award className="w-4 h-4 mr-1" /> Certificados emitidos
-        </Link>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-2 gap-4">
         <div className="card p-4">
           <Users className="w-6 h-6 mb-2" style={{ color: 'var(--color-primary)' }} />
           <p className="text-2xl font-bold">{stats.users}</p>
           <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>Usuários</p>
-        </div>
-        <div className="card p-4">
-          <Award className="w-6 h-6 mb-2" style={{ color: 'var(--color-secondary)' }} />
-          <p className="text-2xl font-bold">{stats.certifications}</p>
-          <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>Certificações</p>
         </div>
         <div className="card p-4">
           <CalendarDays className="w-6 h-6 mb-2" style={{ color: 'var(--color-success)' }} />
@@ -152,32 +156,31 @@ export default function AdminPage() {
       </div>
 
       <div className="card p-6">
-        <h2 className="font-bold mb-3">Certificações</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead><tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <Th>Titular</Th><Th>Nível</Th><Th>Código</Th><Th>Status</Th><Th>Data</Th><Th>Ação</Th>
-            </tr></thead>
-            <tbody>
-              {certs.map((c) => (
-                <Tr key={c.id}>
-                  <td className="py-2" style={{ color: 'var(--color-text)' }}>{c.user_profiles?.display_name || '-'}</td>
-                  <td className="py-2" style={{ color: 'var(--color-text-muted)' }}>{c.level}</td>
-                  <td className="py-2 font-mono text-xs" style={{ color: 'var(--color-secondary)' }}>{c.code.substring(0, 16)}...</td>
-                  <td className="py-2">
-                    <StatusBadge tone={c.status === 'active' ? 'success' : 'error'}>{c.status}</StatusBadge>
-                  </td>
-                  <td className="py-2 text-xs" style={{ color: 'var(--color-text-faint)' }}>{new Date(c.issued_at).toLocaleDateString('pt-BR')}</td>
-                  <td className="py-2">
-                    {c.status === 'active' && (
-                      <button onClick={() => handleRevoke(c.id)} className="text-xs hover:underline" style={{ color: 'var(--color-primary)' }}>Revogar</button>
-                    )}
-                  </td>
-                </Tr>
-              ))}
-            </tbody>
-          </table>
+        <h2 className="font-bold mb-1">Revogar um Token.Web()</h2>
+        <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
+          Os certificados emitidos não são listados aqui: cada Token.Web() é documento
+          pessoal de quem o conquistou. Para invalidar um, informe o código —
+          apenas em caso de fraude técnica comprovada ou erro sistêmico.
+        </p>
+        <div className="flex gap-2 flex-wrap">
+          <input
+            value={revokeCode}
+            onChange={e => setRevokeCode(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleRevoke()}
+            className="input-field flex-1"
+            style={{ minWidth: '16rem' }}
+            placeholder="TW-XXXX-XXXX-XXXX-XXXX"
+          />
+          <button onClick={handleRevoke} disabled={!revokeCode.trim()} className="btn-primary">
+            <Award className="w-4 h-4 mr-1" /> Revogar
+          </button>
         </div>
+        {revokeMsg && (
+          <p className="text-sm mt-3" role="status"
+             style={{ color: revokeMsg.ok ? 'var(--color-success)' : 'var(--color-primary)' }}>
+            {revokeMsg.texto}
+          </p>
+        )}
       </div>
 
       {resetTarget && (

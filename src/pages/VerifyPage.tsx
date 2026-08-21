@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { getPublicName, type Certification, type PublicProfile } from '../types';
+import { type CertificadoVerificado } from '../types';
 import { Award, Search, CheckCircle2 } from 'lucide-react';
 import { ErrorState } from '../components/ui/PageState';
 
 export default function VerifyPage() {
   const [code, setCode] = useState('');
-  const [result, setResult] = useState<{ cert: Certification; profile: PublicProfile } | null>(null);
+  const [result, setResult] = useState<CertificadoVerificado | null>(null);
   const [error, setError] = useState('');
   const [searched, setSearched] = useState(false);
 
@@ -16,30 +16,30 @@ export default function VerifyPage() {
     setSearched(false);
     if (!code.trim()) return;
 
-    const { data: cert, error: certError } = await supabase
-      .from('certifications')
-      .select('*')
-      .eq('code', code.trim())
-      .eq('status', 'active')
-      .maybeSingle();
+    /*
+      Uma função, e não a tabela. A tabela deixou de ser legível publicamente:
+      antes qualquer visitante podia listar todas as certificações emitidas.
+      Aqui se informa um código e se recebe um certificado — não há como varrer.
+    */
+    const { data, error: rpcError } = await supabase.rpc('verify_certificate', { p_code: code.trim() });
+    const cert = (data as CertificadoVerificado[] | null)?.[0];
 
-    if (certError || !cert) {
+    if (rpcError || !cert) {
       setError('Token não encontrado ou inválido.');
       setSearched(true);
       return;
     }
 
-    const { data: profile } = await supabase
-      .from('public_profiles')
-      .select('*')
-      .eq('id', cert.user_id)
-      .maybeSingle();
-
-    if (profile) {
-      setResult({ cert: cert as Certification, profile: profile as PublicProfile });
-    } else {
-      setError('Perfil não encontrado.');
+    /* Revogado não é o mesmo que inexistente, e dizer isso importa: um
+       certificado revogado existiu e foi invalidado, e quem confere precisa
+       saber a diferença. */
+    if (cert.status !== 'active') {
+      setError('Este Token.Web() foi revogado e não é mais válido.');
+      setSearched(true);
+      return;
     }
+
+    setResult(cert);
     setSearched(true);
   };
 
@@ -74,11 +74,14 @@ export default function VerifyPage() {
           </div>
           <div className="space-y-3 text-sm">
             {[
-              ['Titular:', getPublicName(result.profile)],
-              ['Especialidade:', result.cert.level === 'fundamental' ? 'AP034 — Internet' : 'AP035 — Internet, Avançado'],
-              ['Nível:', result.cert.level === 'fundamental' ? 'Fundamental' : 'Avançado'],
-              ['Currículo:', `${result.cert.curriculum_code} v${result.cert.curriculum_version}`],
-              ['Emitido em:', new Date(result.cert.issued_at).toLocaleDateString('pt-BR')],
+              /* Nome completo, sempre: é o que permite conferir que o documento
+                 em mãos é daquela pessoa. */
+              ['Titular:', result.full_name],
+              ...(result.club ? [['Clube:', result.club]] : []),
+              ['Especialidade:', result.level === 'fundamental' ? 'AP034 — Internet' : 'AP035 — Internet, Avançado'],
+              ['Nível:', result.level === 'fundamental' ? 'Fundamental' : 'Avançado'],
+              ['Currículo:', `${result.curriculum_code} v${result.curriculum_version}`],
+              ['Emitido em:', new Date(result.issued_at).toLocaleDateString('pt-BR')],
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between pb-2" style={{ borderBottom: '1px solid var(--color-bg-hover)' }}>
                 <span style={{ color: 'var(--color-text-dim)' }}>{label}</span>

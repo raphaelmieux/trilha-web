@@ -141,6 +141,24 @@ describe('buildClosingParagraph', () => {
     const text = buildClosingParagraph([n], 'Ana', 1, 80);
     expect(text).toContain('1 atividade avaliada');
   });
+
+  /*
+    O relatório passou a cobrir um conjunto escolhido na tela. O texto dizia
+    "as duas especialidades" mesmo quando havia uma só, o que era falso num
+    documento entregue à liderança do clube.
+  */
+  it('names the single specialty instead of claiming there were two', () => {
+    const n = buildSpecialtyNarrative(specialty, progressFor(['R1', 'R2', 'R3', 'R4']), [cert], 'Ana');
+    const text = buildClosingParagraph([n], 'Ana', 4, 92);
+    expect(text).not.toContain('as duas especialidades');
+    expect(text).toContain(`a especialidade ${n.code}`);
+  });
+
+  it('says "as duas" only when the report really covers two', () => {
+    const n = buildSpecialtyNarrative(specialty, progressFor(['R1', 'R2', 'R3', 'R4']), [cert], 'Ana');
+    const text = buildClosingParagraph([n, { ...n, code: 'AP999' }], 'Ana', 4, 92);
+    expect(text).toContain('as duas especialidades');
+  });
 });
 
 describe('buildBadgeParagraph', () => {
