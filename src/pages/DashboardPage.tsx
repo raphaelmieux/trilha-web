@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { getSpecialty } from '../curriculum';
 import { getProgressPercent, getProgressDetail } from '../lib/progress';
+import { getSpecialty, getAllSpecialties } from '../curriculum';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
@@ -12,7 +12,7 @@ import { franchiseConfig } from '../config/franchise';
 import ProgressBar from '../components/ui/ProgressBar';
 import SpecialtyEmblem from '../components/ui/SpecialtyEmblem';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
-import { Lock, Award, Flame, Star, Clock, FileText, ArrowRight, Medal } from 'lucide-react';
+import { Lock, Award, Flame, Star, Clock, FileText, ArrowRight, Medal, HardHat } from 'lucide-react';
 
 export default function DashboardPage() {
   const { profile } = useAuth();
@@ -44,6 +44,10 @@ export default function DashboardPage() {
   const ap034Percent = getProgressPercent(ap034ReqCodes, progress);
   const ap035Percent = getProgressPercent(ap035ReqCodes, progress);
   const ap034Detail = getProgressDetail(ap034ReqCodes, progress);
+
+  /* Vem do currículo: uma trilha nova aparece aqui sozinha, sem esta tela
+     precisar saber dela. */
+  const emConstrucao = getAllSpecialties().filter(e => e.emConstrucao);
   const ap035Detail = getProgressDetail(ap035ReqCodes, progress);
 
   const ap034Cert = certifications.find(c => c.level === 'fundamental');
@@ -159,6 +163,32 @@ export default function DashboardPage() {
             <p className="text-xs" style={{ color: 'var(--color-text-faint)' }}>Conclua a AP034 — Internet para desbloquear automaticamente a trilha avançada.</p>
           </div>
         )}
+
+        {/*
+          As trilhas anunciadas e ainda não abertas. Ficam ao lado das outras
+          para o clube saber o que vem — apareceriam do nada, prontas, se só
+          entrassem no dia em que ficassem prontas.
+        */}
+        {emConstrucao.map(e => (
+          <div key={e.code} className="card p-6 opacity-60" style={{ border: '2px dashed var(--color-border)' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <HardHat className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-secondary)' }} />
+              <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-dim)' }}>
+                {e.code} — {e.name}
+              </h2>
+            </div>
+            <span
+              className="inline-block text-xs px-2 py-0.5 rounded-full mb-3"
+              style={{ backgroundColor: 'var(--color-secondary-a08)', color: 'var(--color-secondary)', border: '1px solid var(--color-secondary-a20)' }}
+            >
+              Em construção
+            </span>
+            <p className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{e.description}</p>
+            <p className="text-xs mt-3" style={{ color: 'var(--color-text-faint)' }}>
+              {e.requirements.length} requisitos, em {e.modules.length} módulos. Avisaremos quando abrir.
+            </p>
+          </div>
+        ))}
       </div>
 
       {certifications.length > 0 && (
@@ -176,7 +206,15 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-3">
                   <Award className="w-8 h-8 group-hover:scale-110 transition" style={{ color: 'var(--color-secondary)' }} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold">{cert.level === 'fundamental' ? 'AP034 — Internet' : 'AP035 — Internet, Avançado'}</p>
+                    {/* Pelo código da trilha: com três especialidades, "fundamental"
+                        deixou de identificar uma delas, e um certificado da AP041
+                        apareceria escrito "AP034 — Internet". */}
+                    <p className="font-semibold">
+                      {(() => {
+                        const e = getSpecialty(cert.curriculum_code);
+                        return e ? `${e.code} — ${e.name}` : cert.curriculum_code;
+                      })()}
+                    </p>
                     <p className="text-xs font-mono" style={{ color: 'var(--color-text-dim)' }}>{cert.code}</p>
                   </div>
                   <ArrowRight className="w-4 h-4 group-hover:transition" style={{ color: 'var(--color-text-faint)' }} />

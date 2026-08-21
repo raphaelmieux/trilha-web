@@ -98,8 +98,23 @@ export interface Module {
 export interface Specialty {
   code: string;
   name: string;
+  /**
+   * O grau da especialidade dentro da própria família — "Internet" e "Internet,
+   * Avançado" são o mesmo assunto em dois níveis.
+   *
+   * Não serve para identificar a trilha: duas especialidades diferentes podem
+   * ser ambas fundamentais. Quem identifica é `code`.
+   */
   level: 'fundamental' | 'advanced';
   description: string;
+  /**
+   * Anunciada, mas ainda não aberta.
+   *
+   * O painel mostra o card acinzentado, sem link, para que o clube saiba o que
+   * vem — em vez de a trilha aparecer só no dia em que ficar pronta, ou pior,
+   * aparecer aberta e vazia.
+   */
+  emConstrucao?: boolean;
   requirements: Requirement[];
   modules: Module[];
 }

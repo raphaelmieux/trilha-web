@@ -22,10 +22,23 @@ export function useCertifications(userId: string | undefined) {
     refresh().finally(() => setLoading(false));
   }, [userId, refresh]);
 
-  const getByLevel = useCallback(
-    (level: 'fundamental' | 'advanced') => certifications.find(c => c.level === level && c.status === 'active'),
+  /*
+    Pelo código da especialidade, e não pelo grau.
+
+    Enquanto havia duas trilhas, "fundamental" e "advanced" funcionavam como
+    identificadores por acidente: uma de cada. Com uma terceira, dois
+    certificados passariam a dividir o mesmo grau, e quem tivesse os dois veria
+    o primeiro que a busca encontrasse — o certificado de uma trilha exibido
+    como se fosse de outra, sem erro visível em lugar nenhum.
+
+    curriculum_code já existe na tabela e é único por trilha. `level` volta a
+    ser o que o nome diz: a descrição do grau, não a chave.
+  */
+  const getByCurriculum = useCallback(
+    (curriculumCode: string) =>
+      certifications.find(c => c.curriculum_code === curriculumCode && c.status === 'active'),
     [certifications]
   );
 
-  return { certifications, loading, refresh, getByLevel };
+  return { certifications, loading, refresh, getByCurriculum };
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getFinalExamQuestions } from '../curriculum/finalExams';
+import { getSpecialty } from '../curriculum';
 import { logActivity, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, LIMIAR_DOMINIO } from '../lib/progress';
 import { checkAnswer } from '../lib/checkAnswer';
 import { porqueDaEscolha } from '../lib/porque';
@@ -20,8 +21,7 @@ interface Props {
 export default function FinalExam({ specialtyCode, specialtyName, userId: _userId }: Props) {
   void _userId;
   const { profile } = useAuth();
-  const level = specialtyCode === 'AP034' ? 'fundamental' : 'advanced';
-  const { getByLevel, refresh: refreshCertifications } = useCertifications(profile?.id);
+  const { getByCurriculum, refresh: refreshCertifications } = useCertifications(profile?.id);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [showFeedback, setShowFeedback] = useState<Record<string, boolean>>({});
@@ -29,7 +29,7 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
   const [score, setScore] = useState<{ correct: number; total: number } | null>(null);
   const [certifyError, setCertifyError] = useState('');
 
-  const certified = getByLevel(level)?.code || null;
+  const certified = getByCurriculum(specialtyCode)?.code || null;
 
   const startExam = () => {
     setQuestions(getFinalExamQuestions(specialtyCode));
@@ -212,7 +212,10 @@ async function requestCertification(userId: string, specialtyCode: string): Prom
       body: JSON.stringify({
         userId,
         specialtyCode,
-        level: specialtyCode === 'AP034' ? 'fundamental' : 'advanced',
+        /* O grau vem do currículo, e não de um ternário que só conhecia duas
+           trilhas — com a terceira, "tudo que não for AP034 é avançado" passa a
+           mentir sobre a especialidade. */
+        level: getSpecialty(specialtyCode)?.level ?? 'fundamental',
       }),
     });
     const data = await response.json();

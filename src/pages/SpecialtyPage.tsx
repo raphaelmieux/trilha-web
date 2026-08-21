@@ -12,8 +12,8 @@ export default function SpecialtyPage() {
   const { profile } = useAuth();
   const specialty = code ? getSpecialty(code) : undefined;
   const { progress } = useRequirementProgress(profile?.id);
-  const { getByLevel } = useCertifications(profile?.id);
-  const cert = specialty ? getByLevel(specialty.level) : undefined;
+  const { getByCurriculum } = useCertifications(profile?.id);
+  const cert = specialty ? getByCurriculum(specialty.code) : undefined;
 
   if (!specialty) return <div style={{ color: 'var(--color-text-muted)' }}>Especialidade não encontrada</div>;
   if (!profile) return null;

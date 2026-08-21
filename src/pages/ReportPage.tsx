@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { getAllSpecialties } from '../curriculum';
+import { getOpenSpecialties } from '../curriculum';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
@@ -69,7 +69,10 @@ export default function ReportPage() {
   */
   const todas = useMemo(() => {
     if (!profile || loading) return [];
-    return getAllSpecialties().map(s =>
+    /* Só as trilhas abertas: uma especialidade anunciada e ainda não
+       iniciável não tem o que relatar, e apareceria como caixa cinza
+       inexplicável no seletor. */
+    return getOpenSpecialties().map(s =>
       buildSpecialtyNarrative(s, progress, certifications, studentName, evidence)
     );
   }, [profile, progress, certifications, loading, studentName, evidence]);
