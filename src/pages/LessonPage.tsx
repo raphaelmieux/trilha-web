@@ -1,11 +1,12 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSpecialty } from '../curriculum';
 import { shuffleQuestionOptions } from '../curriculum/ap034';
 
+import type { RequirementStatus } from '../types';
 import {
-  upsertRequirementProgress, logActivity, calculateMastery,
+  upsertRequirementProgress, logActivity, calculateMastery, melhorResultado,
   ensureEnrollment, updateEnrollmentActivity, getRequirementId, getLessonId, getSpecialtyId,
 } from '../lib/progress';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
@@ -24,7 +25,7 @@ import CodeLab from '../labs/CodeLab';
 import ImageLab from '../labs/ImageLab';
 import SiteLab from '../labs/SiteLab';
 import AILab from '../labs/AILab';
-import { CheckCircle2, CircleX, ArrowRight, BookOpen } from 'lucide-react';
+import { CheckCircle2, CircleX, ArrowRight, BookOpen, RefreshCw, Loader2 } from 'lucide-react';
 
 export default function LessonPage() {
   const { specialtyCode, moduleCode, lessonCode } = useParams();
@@ -35,17 +36,30 @@ export default function LessonPage() {
   const [showFeedback, setShowFeedback] = useState<Record<string, boolean>>({});
   const [completed, setCompleted] = useState(false);
   const [score, setScore] = useState<{ correct: number; total: number } | null>(null);
+  /* Quantos requisitos da lição ficaram marcados como concluídos. `null`
+     enquanto a gravação não terminou — a tela não pode afirmar nada antes. */
+  const [resultado, setResultado] = useState<{ concluidos: number; total: number } | null>(null);
 
   const specialty = specialtyCode ? getSpecialty(specialtyCode) : undefined;
   const moduleData = specialty?.modules.find(m => m.code === moduleCode);
   const lesson = moduleData?.lessons.find(l => l.code === lessonCode);
 
-  useEffect(() => {
+  /* Uma função só para limpar, usada ao trocar de lição e ao refazer — dois
+     lugares que precisam zerar exatamente o mesmo conjunto de estados. */
+  const limpar = useCallback(() => {
     setAnswers({});
     setShowFeedback({});
     setCompleted(false);
     setScore(null);
-  }, [lessonCode]);
+    setResultado(null);
+  }, []);
+
+  useEffect(() => { limpar(); }, [lessonCode, limpar]);
+
+  const refazer = () => {
+    limpar();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Hooks must run unconditionally on every render, so this stays above the
   // "not found" early return below (it previously ran after it).
@@ -99,6 +113,7 @@ export default function LessonPage() {
     const correct = questions.filter(q => checkAnswer(q, answers[q.id])).length;
 
     setScore({ correct, total });
+    setResultado(null);
     setCompleted(true);
 
     const [lessonId, specId] = await Promise.all([
@@ -123,23 +138,39 @@ export default function LessonPage() {
       });
     }
 
+    const statusPorRequisito: RequirementStatus[] = [];
+
     for (const reqCode of lesson.requirementCodes) {
       const reqProgress = progress[reqCode];
       const existingCorrect = reqProgress?.correct_count || 0;
       const existingTotal = reqProgress?.total_questions || 0;
-      const newCorrect = total > 0 ? correct : existingCorrect;
-      const newTotal = total > 0 ? total : existingTotal;
+
+      /*
+        Fica o melhor resultado, nunca o mais recente.
+
+        O upsert sobrescrevia sem comparar: quem já tinha concluído um requisito
+        e revisitava a lição por curiosidade, indo pior na segunda vez, era
+        rebaixado para "a revisar" — progresso conquistado desaparecia. Refazer
+        uma lição só pode ajudar.
+      */
+      const melhor = melhorResultado(
+        { correct: existingCorrect, total: existingTotal },
+        { correct, total },
+      );
+
       const { score: masteryScore, status } = calculateMastery(
-        newCorrect, newTotal,
+        melhor.correct, melhor.total,
         reqProgress?.retention_passed || false,
         reqProgress?.checkpoint_passed || false,
       );
+      statusPorRequisito.push(status);
+
       const reqId = await getRequirementId(reqCode);
       if (reqId) {
         await upsertRequirementProgress(profile.id, reqId, {
           status, mastery_score: masteryScore,
           attempts: (reqProgress?.attempts || 0) + 1,
-          correct_count: newCorrect, total_questions: newTotal,
+          correct_count: melhor.correct, total_questions: melhor.total,
         });
       }
       await logActivity(profile.id, 'lesson_completed', {
@@ -152,6 +183,11 @@ export default function LessonPage() {
         lessonCode: lesson.code, score: correct, total,
       }, undefined, 'lesson', lessonId || undefined, specialty.code);
     }
+
+    setResultado({
+      concluidos: statusPorRequisito.filter(st => st === 'completed').length,
+      total: statusPorRequisito.length,
+    });
 
     await refreshProgress();
   };
@@ -212,16 +248,59 @@ export default function LessonPage() {
         </button>
       )}
 
-      {completed && score && (
-        <div className="card p-6 text-center">
-          <CheckCircle2 className="w-16 h-16 mx-auto mb-3" style={{ color: 'var(--color-success)' }} />
-          <h2 className="text-xl font-bold mb-2">Lição Concluída!</h2>
-          <p style={{ color: 'var(--color-text-muted)' }}>Você acertou {score.correct} de {score.total} questões ({Math.round((score.correct / score.total) * 100)}%)</p>
-          <button onClick={() => navigate(`/especialidade/${specialty.code}`)} className="btn-primary mt-4">
-            Voltar para a Trilha <ArrowRight className="w-4 h-4 ml-1" />
-          </button>
-        </div>
-      )}
+      {completed && score && (() => {
+        /*
+          A tela dizia "Lição Concluída!" com um visto verde qualquer que fosse a
+          nota. Quem acertava 6 de 8 lia que tinha concluído, voltava para a
+          trilha e não via nada mudar — e concluía, com razão, que o progresso
+          não fora registrado. O que ela mostra agora é o que de fato ficou
+          gravado nos requisitos.
+        */
+        const tudo = resultado !== null && resultado.concluidos === resultado.total;
+        const nada = resultado !== null && resultado.concluidos === 0 && resultado.total > 0;
+        const percentual = score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0;
+        return (
+          <div className="card p-6 text-center">
+            {resultado === null ? (
+              <Loader2 className="w-16 h-16 mx-auto mb-3 animate-spin" style={{ color: 'var(--color-text-dim)' }} />
+            ) : tudo ? (
+              <CheckCircle2 className="w-16 h-16 mx-auto mb-3" style={{ color: 'var(--color-success)' }} />
+            ) : (
+              <RefreshCw className="w-16 h-16 mx-auto mb-3" style={{ color: 'var(--color-secondary)' }} />
+            )}
+
+            <h2 className="text-xl font-bold mb-2">
+              {resultado === null ? 'Registrando...'
+                : tudo ? 'Requisitos concluídos!'
+                : nada ? 'Ainda falta pouco'
+                : 'Parcialmente concluída'}
+            </h2>
+
+            <p style={{ color: 'var(--color-text-muted)' }}>
+              Você acertou {score.correct} de {score.total} {score.total === 1 ? 'questão' : 'questões'} ({percentual}%).
+            </p>
+
+            {resultado !== null && resultado.total > 0 && (
+              <p className="mt-2 text-sm" style={{ color: tudo ? 'var(--color-success)' : 'var(--color-secondary)' }}>
+                {tudo
+                  ? `${resultado.total === 1 ? 'O requisito desta lição foi marcado' : `Os ${resultado.total} requisitos desta lição foram marcados`} como concluído${resultado.total === 1 ? '' : 's'}.`
+                  : `${resultado.concluidos} de ${resultado.total} ${resultado.total === 1 ? 'requisito' : 'requisitos'} ${resultado.total === 1 ? 'ficou marcado' : 'ficaram marcados'} como concluído${resultado.concluidos === 1 ? '' : 's'}. São necessários 80% de acerto — refaça a lição para completar o restante. Seu melhor resultado é o que vale.`}
+              </p>
+            )}
+
+            <div className="flex gap-2 justify-center mt-4 flex-wrap">
+              {resultado !== null && !tudo && (
+                <button onClick={refazer} className="btn-primary">
+                  <RefreshCw className="w-4 h-4 mr-1" /> Refazer a lição
+                </button>
+              )}
+              <button onClick={() => navigate(`/especialidade/${specialty.code}`)} className={resultado !== null && !tudo ? 'btn-secondary' : 'btn-primary'}>
+                Voltar para a Trilha <ArrowRight className="w-4 h-4 ml-1" />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSpecialty } from '../curriculum';
-import { getProgressPercent, getModuleStatus, getLessonStatus } from '../lib/progress';
+import { getProgressPercent, getProgressDetail, getModuleStatus, getLessonStatus } from '../lib/progress';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -34,6 +34,7 @@ export default function SpecialtyPage() {
   }
 
   const overallPercent = getProgressPercent(specialty.requirements.map(r => r.code), progress);
+  const overallDetail = getProgressDetail(specialty.requirements.map(r => r.code), progress);
   const isAP034 = specialty.code === 'AP034';
   const accentColor = isAP034 ? 'var(--color-primary)' : 'var(--color-tertiary-light)';
   const accentGrad = isAP034 ? 'linear-gradient(90deg, var(--color-primary), var(--color-primary-hover))' : 'linear-gradient(90deg, var(--color-tertiary), var(--color-tertiary-light))';
@@ -65,7 +66,7 @@ export default function SpecialtyPage() {
           <span style={{ color: 'var(--color-text-muted)' }}>Progresso geral</span>
           <span className="font-semibold" style={{ color: overallPercent === 100 ? 'var(--color-success)' : accentColor }}>{overallPercent}%</span>
         </div>
-        <ProgressBar percent={overallPercent} color={accentGrad} height="lg" />
+        <ProgressBar percent={overallPercent} partial={overallDetail.parcial} color={accentGrad} height="lg" />
       </div>
 
       <div className="space-y-3">
@@ -73,6 +74,7 @@ export default function SpecialtyPage() {
           const moduleReqCodes = module.lessons.flatMap(l => l.requirementCodes);
           const moduleStatus = getModuleStatus(moduleReqCodes, progress);
           const modulePercent = getProgressPercent(moduleReqCodes, progress);
+          const moduleDetail = getProgressDetail(moduleReqCodes, progress);
           return (
             <div key={module.code} className="card p-5">
               <div className="flex items-center gap-3 mb-3">
@@ -87,12 +89,34 @@ export default function SpecialtyPage() {
                   <h2 className="font-bold text-lg">{module.title}</h2>
                   <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>{module.description}</p>
                 </div>
-                <span className="text-sm font-semibold" style={{ color: 'var(--color-text-muted)' }}>{modulePercent}%</span>
+                <div className="text-right flex-shrink-0">
+                  <span className="text-sm font-semibold" style={{ color: 'var(--color-text-muted)' }}>{modulePercent}%</span>
+                  {moduleDetail.parcial > 0 && (
+                    /* O módulo não tem barra, só o número — então o trecho a
+                       recuperar precisa vir escrito, ou some da leitura. */
+                    <span className="block text-xs" style={{ color: 'var(--color-secondary)' }}>
+                      +{moduleDetail.parcial}% a recuperar
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="ml-13 space-y-2">
                 {module.lessons.map(lesson => {
                   const lessonStatus = getLessonStatus(lesson, progress);
                   const lessonPercent = getProgressPercent(lesson.requirementCodes, progress);
+                  const lessonDetail = getProgressDetail(lesson.requirementCodes, progress);
+                  /*
+                    O rótulo mostra a NOTA, não o quanto a lição contribui para a
+                    barra. São números diferentes quando parte dos requisitos já
+                    passou: a barra fala do avanço da lição, e quem errou uma
+                    questão quer saber que tirou 75%, não que somou 38%.
+                  */
+                  const pendentes = lesson.requirementCodes
+                    .map(c => progress[c])
+                    .filter(r => r && r.status !== 'completed' && r.mastery_score > 0);
+                  const melhorNota = pendentes.length
+                    ? Math.max(...pendentes.map(r => r!.mastery_score))
+                    : 0;
                   return (
                     <Link
                       key={lesson.code}
@@ -113,11 +137,16 @@ export default function SpecialtyPage() {
                         <p className="font-medium text-sm" style={{ color: 'var(--color-text)' }}>{lesson.title}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="flex-1 max-w-32">
-                            <ProgressBar percent={lessonPercent} color={accentGrad} height="sm" />
+                            <ProgressBar percent={lessonPercent} partial={lessonDetail.parcial} color={accentGrad} height="sm" />
                           </div>
                           <span className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
                             {lesson.type === 'theory' ? 'Teoria' : lesson.type === 'lab' ? 'Laboratório' : lesson.type === 'final' ? 'Avaliação Final' : 'Quiz'}
                           </span>
+                          {melhorNota > 0 && (
+                            <span className="text-xs whitespace-nowrap" style={{ color: 'var(--color-secondary)' }}>
+                              · a recuperar ({melhorNota}%)
+                            </span>
+                          )}
                         </div>
                       </div>
                     </Link>

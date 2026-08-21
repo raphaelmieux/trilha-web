@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getSpecialty } from '../curriculum';
-import { getProgressPercent } from '../lib/progress';
+import { getProgressPercent, getProgressDetail } from '../lib/progress';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
@@ -43,6 +43,8 @@ export default function DashboardPage() {
   const ap035ReqCodes = ap035.requirements.map(r => r.code);
   const ap034Percent = getProgressPercent(ap034ReqCodes, progress);
   const ap035Percent = getProgressPercent(ap035ReqCodes, progress);
+  const ap034Detail = getProgressDetail(ap034ReqCodes, progress);
+  const ap035Detail = getProgressDetail(ap035ReqCodes, progress);
 
   const ap034Cert = certifications.find(c => c.level === 'fundamental');
   const ap035Cert = certifications.find(c => c.level === 'advanced');
@@ -98,7 +100,7 @@ export default function DashboardPage() {
               <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
               <span className="font-semibold" style={{ color: ap034Completed ? 'var(--color-success)' : 'var(--color-primary)' }}>{ap034Percent}%</span>
             </div>
-            <ProgressBar percent={ap034Percent} color="linear-gradient(90deg, var(--color-primary), var(--color-primary-hover))" />
+            <ProgressBar percent={ap034Percent} partial={ap034Detail.parcial} color="linear-gradient(90deg, var(--color-primary), var(--color-primary-hover))" />
           </div>
           <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
             {ap034.requirements.filter(r => progress[r.code]?.status === 'completed').length} de {ap034.requirements.length} requisitos concluídos
@@ -135,7 +137,7 @@ export default function DashboardPage() {
                 <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
                 <span className="font-semibold" style={{ color: ap035Percent === 100 ? 'var(--color-success)' : 'var(--color-tertiary-light)' }}>{ap035Percent}%</span>
               </div>
-              <ProgressBar percent={ap035Percent} color="linear-gradient(90deg, var(--color-tertiary), var(--color-tertiary-light))" />
+              <ProgressBar percent={ap035Percent} partial={ap035Detail.parcial} color="linear-gradient(90deg, var(--color-tertiary), var(--color-tertiary-light))" />
             </div>
             <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
               {ap035.requirements.filter(r => progress[r.code]?.status === 'completed').length} de {ap035.requirements.length} requisitos concluídos

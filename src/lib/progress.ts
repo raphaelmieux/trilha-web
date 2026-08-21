@@ -35,6 +35,26 @@ export function calculateMastery(
   return { score, status: 'learning' };
 }
 
+/**
+ * Entre o que já estava gravado e o que a pessoa acabou de fazer, fica o melhor.
+ *
+ * O registro era substituído pelo resultado mais recente. Quem já tinha
+ * concluído um requisito e revisitava a lição, indo pior na segunda vez, era
+ * rebaixado — progresso conquistado sumia. Refazer uma lição só pode ajudar.
+ *
+ * Uma lição sem questões (`total` zero) não diz nada sobre domínio e por isso
+ * não desloca o que já havia.
+ */
+export function melhorResultado(
+  anterior: { correct: number; total: number },
+  novo: { correct: number; total: number },
+): { correct: number; total: number } {
+  const taxa = (r: { correct: number; total: number }) => (r.total > 0 ? r.correct / r.total : -1);
+  if (novo.total === 0) return anterior;
+  if (anterior.total === 0) return novo;
+  return taxa(novo) >= taxa(anterior) ? novo : anterior;
+}
+
 export function getModuleStatus(reqCodes: string[], progress: ProgressMap): RequirementStatus {
   if (reqCodes.length === 0) return 'not_started';
   const statuses = reqCodes.map(c => progress[c]?.status || 'not_started');
@@ -57,6 +77,50 @@ export function getProgressPercent(reqCodes: string[], progress: ProgressMap): n
   if (reqCodes.length === 0) return 0;
   const completed = reqCodes.filter(c => progress[c]?.status === 'completed').length;
   return Math.round((completed / reqCodes.length) * 100);
+}
+
+/** O que a barra mostra: a parte cumprida e a parte em recuperação. */
+export interface ProgressoDetalhado {
+  /** % de requisitos concluídos — é este número que o relatório atesta. */
+  concluido: number;
+  /** % adicional de quem ficou abaixo dos 80%, proporcional ao acerto. */
+  parcial: number;
+}
+
+/**
+ * Progresso em duas partes, para uma barra que não seja só 0% ou 100%.
+ *
+ * getProgressPercent conta apenas requisitos concluídos, e continua sendo o
+ * número oficial. Só que uma lição inteira responde pelo mesmo questionário:
+ * ou todos os seus requisitos passam dos 80%, ou nenhum passa. A barra ficava
+ * binária e não distinguia quem errou uma questão de quem não começou.
+ *
+ * Quem ficou abaixo do corte entra proporcionalmente ao que acertou na melhor
+ * tentativa — 6 de 8 vale 0,75 de um requisito. Fica separado do cumprido, e
+ * não somado a ele, porque são coisas diferentes: uma está certificada, a outra
+ * é caminho andado.
+ */
+export function getProgressDetail(reqCodes: string[], progress: ProgressMap): ProgressoDetalhado {
+  if (reqCodes.length === 0) return { concluido: 0, parcial: 0 };
+
+  let cumpridos = 0;
+  let emRecuperacao = 0;
+
+  for (const code of reqCodes) {
+    const r = progress[code];
+    if (r?.status === 'completed') {
+      cumpridos += 1;
+    } else if (r && r.mastery_score > 0) {
+      emRecuperacao += Math.min(100, r.mastery_score) / 100;
+    }
+  }
+
+  const concluido = (cumpridos / reqCodes.length) * 100;
+  /* Os dois trechos são desenhados um ao lado do outro, então a soma não pode
+     ultrapassar a largura da barra. */
+  const parcial = Math.min(100 - concluido, (emRecuperacao / reqCodes.length) * 100);
+
+  return { concluido: Math.round(concluido), parcial: Math.round(parcial) };
 }
 
 export async function fetchRequirementProgress(userId: string): Promise<ProgressMap> {
