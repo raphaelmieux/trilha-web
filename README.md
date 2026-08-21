@@ -38,7 +38,10 @@ npm run build        # build de produção em dist/
    se estiver usando a [Supabase CLI](https://supabase.com/docs/guides/cli).
 4. Faça deploy das três Edge Functions em `supabase/functions/` (`issue-certification`,
    `admin-reset-password`, `ai-gateway`) — pelo painel ou `supabase functions deploy <nome>`.
-5. Crie sua conta pelo app e promova-a a administrador rodando no SQL Editor:
+5. Em **Authentication**, na página de configurações gerais, **desligue `Confirm email`**
+   (o campo `MAILER_AUTOCONFIRM` da API). Ver *Confirmação de e-mail*, abaixo — sem isso
+   o cadastro trava depois de poucas contas.
+6. Crie sua conta pelo app e promova-a a administrador rodando no SQL Editor:
    ```sql
    select promote_first_admin('seu@email.com');
    ```
@@ -46,6 +49,23 @@ npm run build        # build de produção em dist/
 
 Sem SMTP configurado no projeto, a recuperação de senha é feita pelo administrador
 do clube (aba **Admin**), não por e-mail — ver `supabase/functions/admin-reset-password`.
+
+### Confirmação de e-mail
+
+`Confirm email` fica **desligado** de propósito, e religar quebra o cadastro.
+
+O Supabase hospedado liga essa opção por padrão. Com ela ligada e sem SMTP próprio,
+todo cadastro dispara um e-mail de confirmação pelo servidor compartilhado do
+Supabase, que aceita poucas mensagens por hora. Esgotada a cota, todo cadastro
+seguinte falha com `email rate limit exceeded` — foi o que aconteceu em 20/08/2026,
+e a mensagem não tem relação aparente com a causa, o que torna o diagnóstico lento.
+
+Ligar de volta exige um SMTP próprio (Resend, SendGrid) e, com ele, **um domínio
+verificado** — o provedor não entrega para terceiros a partir de domínio não
+verificado, e `raphaelmieux.github.io` não serve, porque o DNS é do GitHub.
+
+Nada no app depende de e-mail: ele é só identificador de login, e a recuperação de
+senha é por pergunta de segurança.
 
 ## Arquitetura
 
