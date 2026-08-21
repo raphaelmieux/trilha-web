@@ -101,11 +101,11 @@ export const ap041: Specialty = {
       lessons: [
         {
           code: 'AP041.4-L2',
-          title: 'Preparando a sua apresentação',
+          title: 'Cuidando do computador',
           type: 'lab',
           content: '',
           requirementCodes: ['AP041-3.1', 'AP041-3.2', 'AP041-3.3'],
-          labType: 'presentation',
+          labType: 'computer_care',
         },
       ],
     },

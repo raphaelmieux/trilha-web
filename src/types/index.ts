@@ -22,7 +22,7 @@ export type LabType =
   | 'image_lab'
   | 'site_lab'
   | 'file_manager'
-  | 'presentation'
+  | 'computer_care'
   | 'ai_lab'
   | 'final_exam';
 

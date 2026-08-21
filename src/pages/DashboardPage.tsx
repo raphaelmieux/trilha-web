@@ -171,11 +171,22 @@ export default function DashboardPage() {
         */}
         {emConstrucao.map(e => (
           <div key={e.code} className="card p-6 opacity-60" style={{ border: '2px dashed var(--color-border)' }}>
-            <div className="flex items-center gap-2 mb-2">
-              <HardHat className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-secondary)' }} />
-              <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-dim)' }}>
-                {e.code} — {e.name}
-              </h2>
+            <div className="flex items-center gap-3 mb-2">
+              {/* O emblema real, dessaturado: mostra o que vem sem prometer que
+                  já dá para começar. */}
+              <img
+                src={`${import.meta.env.BASE_URL}assets/specialties/${e.code}.svg`}
+                alt=""
+                className="w-14 h-14 flex-shrink-0 object-contain"
+                style={{ filter: 'grayscale(1)', opacity: 0.7 }}
+                onError={ev => { (ev.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+              <div className="min-w-0">
+                <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--color-text-dim)' }}>
+                  <HardHat className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-secondary)' }} />
+                  {e.code} — {e.name}
+                </h2>
+              </div>
             </div>
             <span
               className="inline-block text-xs px-2 py-0.5 rounded-full mb-3"

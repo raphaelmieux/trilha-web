@@ -26,7 +26,7 @@ import CodeLab from '../labs/CodeLab';
 import ImageLab from '../labs/ImageLab';
 import SiteLab from '../labs/SiteLab';
 import FileManagerLab from '../labs/FileManagerLab';
-import PresentationLab from '../labs/PresentationLab';
+import ComputerCareLab from '../labs/ComputerCareLab';
 import AILab from '../labs/AILab';
 import { CheckCircle2, CircleX, ArrowRight, BookOpen, RefreshCw, Loader2, HardHat } from 'lucide-react';
 
@@ -112,7 +112,7 @@ export default function LessonPage() {
         {lesson.labType === 'image_lab' && <ImageLab {...labProps} />}
         {lesson.labType === 'site_lab' && <SiteLab {...labProps} />}
         {lesson.labType === 'file_manager' && <FileManagerLab {...labProps} />}
-        {lesson.labType === 'presentation' && <PresentationLab {...labProps} />}
+        {lesson.labType === 'computer_care' && <ComputerCareLab {...labProps} />}
         {lesson.labType === 'ai_lab' && <AILab {...labProps} />}
       </div>
     );
