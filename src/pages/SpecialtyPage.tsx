@@ -35,6 +35,17 @@ export default function SpecialtyPage() {
 
   const overallPercent = getProgressPercent(specialty.requirements.map(r => r.code), progress);
   const overallDetail = getProgressDetail(specialty.requirements.map(r => r.code), progress);
+
+  /*
+    Uma segunda medida, em lições, ao lado do percentual.
+
+    Numa trilha de 35 requisitos, terminar uma lição move o percentual uns
+    poucos pontos — a barra mal se mexe e a impressão é de que nada aconteceu.
+    A contagem de lições anda de um em um, que é o tamanho do passo que a pessoa
+    acabou de dar. A prova final fica de fora: ela não é uma lição do percurso.
+  */
+  const licoes = specialty.modules.flatMap(m => m.lessons).filter(l => l.type !== 'final');
+  const licoesFeitas = licoes.filter(l => getLessonStatus(l, progress) === 'completed').length;
   const isAP034 = specialty.code === 'AP034';
   const accentColor = isAP034 ? 'var(--color-primary)' : 'var(--color-tertiary-light)';
   const accentGrad = isAP034 ? 'linear-gradient(90deg, var(--color-primary), var(--color-primary-hover))' : 'linear-gradient(90deg, var(--color-tertiary), var(--color-tertiary-light))';
@@ -63,8 +74,24 @@ export default function SpecialtyPage() {
 
       <div className="mb-4">
         <div className="flex justify-between text-sm mb-1">
-          <span style={{ color: 'var(--color-text-muted)' }}>Progresso geral</span>
-          <span className="font-semibold" style={{ color: overallPercent === 100 ? 'var(--color-success)' : accentColor }}>{overallPercent}%</span>
+          <span style={{ color: 'var(--color-text-muted)' }}>
+            Progresso geral
+            <span className="ml-2" style={{ color: 'var(--color-text-dim)' }}>
+              · {licoesFeitas} de {licoes.length} {licoes.length === 1 ? 'lição' : 'lições'}
+            </span>
+          </span>
+          <span className="font-semibold" style={{ color: overallPercent === 100 ? 'var(--color-success)' : accentColor }}>
+            {overallPercent}%
+            {/* Sem isto o cabeçalho dizia 0% enquanto a barra trazia um fiapo
+                âmbar de poucos por cento — e a conclusão natural de quem acabou
+                de terminar uma lição é que nada foi registrado. O módulo já
+                trazia este aviso; o topo da trilha tinha ficado sem. */}
+            {overallDetail.parcial > 0 && (
+              <span className="font-normal ml-2" style={{ color: 'var(--color-secondary)' }}>
+                +{overallDetail.parcial}% a recuperar
+              </span>
+            )}
+          </span>
         </div>
         <ProgressBar percent={overallPercent} partial={overallDetail.parcial} color={accentGrad} height="lg" />
       </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateMastery, getModuleStatus, getProgressPercent, shuffleArray, type ProgressMap, melhorResultado, getProgressDetail } from './progress';
+import { calculateMastery, getModuleStatus, getProgressPercent, shuffleArray, type ProgressMap, melhorResultado, getProgressDetail, LIMIAR_DOMINIO } from './progress';
 
 describe('calculateMastery', () => {
   it('returns not_started when total is 0', () => {
@@ -156,10 +156,31 @@ describe('melhorResultado', () => {
   });
 
   it('refazer e acertar tudo leva o requisito a concluído', () => {
-    const antes = melhorResultado({ correct: 0, total: 0 }, { correct: 6, total: 8 });
+    const antes = melhorResultado({ correct: 0, total: 0 }, { correct: 4, total: 8 });
     expect(calculateMastery(antes.correct, antes.total, false, false).status).toBe('needs_review');
     const depois = melhorResultado(antes, { correct: 8, total: 8 });
     expect(calculateMastery(depois.correct, depois.total, false, false).status).toBe('completed');
+  });
+
+  /*
+    O corte caiu de 80% para 75% porque 6 acertos em 8 — o resultado mais comum
+    entre quem ficava pendente — reprovava por uma questão. Estes testes fixam a
+    fronteira nova, para ela não voltar sem querer.
+  */
+  it('6 de 8 conclui o requisito, e era o caso que mais reprovava', () => {
+    expect(calculateMastery(6, 8, false, false).status).toBe('completed');
+    expect(calculateMastery(6, 8, false, false).score).toBe(75);
+  });
+
+  it('logo abaixo do corte continua a recuperar', () => {
+    expect(calculateMastery(5, 8, false, false).status).toBe('needs_review');   // 63%
+    expect(calculateMastery(4, 7, false, false).status).toBe('needs_review');   // 57%
+  });
+
+  it('o corte está exatamente em 75', () => {
+    expect(LIMIAR_DOMINIO).toBe(75);
+    expect(calculateMastery(3, 4, false, false).status).toBe('completed');      // 75%
+    expect(calculateMastery(74, 100, false, false).status).toBe('needs_review');
   });
 });
 

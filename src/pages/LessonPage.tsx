@@ -6,7 +6,7 @@ import { shuffleQuestionOptions } from '../curriculum/ap034';
 
 import type { RequirementStatus } from '../types';
 import {
-  upsertRequirementProgress, logActivity, calculateMastery, melhorResultado,
+  upsertRequirementProgress, logActivity, calculateMastery, melhorResultado, LIMIAR_DOMINIO,
   ensureEnrollment, updateEnrollmentActivity, getRequirementId, getLessonId, getSpecialtyId,
 } from '../lib/progress';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
@@ -132,7 +132,7 @@ export default function LessonPage() {
         lesson_id: lessonId,
         score: correct,
         total,
-        passed: total > 0 && correct / total >= 0.8,
+        passed: total > 0 && (correct / total) * 100 >= LIMIAR_DOMINIO,
         answers,
         completed_at: new Date().toISOString(),
       });
@@ -284,7 +284,7 @@ export default function LessonPage() {
               <p className="mt-2 text-sm" style={{ color: tudo ? 'var(--color-success)' : 'var(--color-secondary)' }}>
                 {tudo
                   ? `${resultado.total === 1 ? 'O requisito desta lição foi marcado' : `Os ${resultado.total} requisitos desta lição foram marcados`} como concluído${resultado.total === 1 ? '' : 's'}.`
-                  : `${resultado.concluidos} de ${resultado.total} ${resultado.total === 1 ? 'requisito' : 'requisitos'} ${resultado.total === 1 ? 'ficou marcado' : 'ficaram marcados'} como concluído${resultado.concluidos === 1 ? '' : 's'}. São necessários 80% de acerto — refaça a lição para completar o restante. Seu melhor resultado é o que vale.`}
+                  : `${resultado.concluidos} de ${resultado.total} ${resultado.total === 1 ? 'requisito' : 'requisitos'} ${resultado.total === 1 ? 'ficou marcado' : 'ficaram marcados'} como concluído${resultado.concluidos === 1 ? '' : 's'}. São necessários ${LIMIAR_DOMINIO}% de acerto — refaça a lição para completar o restante. Seu melhor resultado é o que vale.`}
               </p>
             )}
 

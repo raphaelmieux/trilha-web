@@ -15,6 +15,19 @@ export interface RequirementProgress {
 
 export type ProgressMap = Record<string, RequirementProgress>;
 
+/**
+ * Acerto mínimo para um requisito contar como cumprido.
+ *
+ * Era 80%, e uma lição de 8 questões exigia 7 acertos — 6 de 8 reprovava por
+ * uma questão. Nas primeiras 42 conclusões registradas, 17 caíram em "a
+ * recuperar", a maioria exatamente nessa borda. A 75%, 6 de 8 passa e 5 de 8
+ * continua pendente.
+ *
+ * A prova final segue exigindo 80% (ver FinalExam): ela é o portão da
+ * certificação, não a medida de um requisito isolado.
+ */
+export const LIMIAR_DOMINIO = 75;
+
 export function calculateMastery(
   correct: number,
   total: number,
@@ -23,7 +36,7 @@ export function calculateMastery(
 ): { score: number; status: RequirementStatus } {
   if (total === 0) return { score: 0, status: 'not_started' };
   const score = Math.round((correct / total) * 100);
-  if (score >= 80) {
+  if (score >= LIMIAR_DOMINIO) {
     if (retentionPassed && checkpointPassed) {
       return { score, status: 'completed' };
     }
@@ -83,7 +96,7 @@ export function getProgressPercent(reqCodes: string[], progress: ProgressMap): n
 export interface ProgressoDetalhado {
   /** % de requisitos concluídos — é este número que o relatório atesta. */
   concluido: number;
-  /** % adicional de quem ficou abaixo dos 80%, proporcional ao acerto. */
+  /** % adicional de quem ficou abaixo do limiar, proporcional ao acerto. */
   parcial: number;
 }
 
@@ -92,7 +105,7 @@ export interface ProgressoDetalhado {
  *
  * getProgressPercent conta apenas requisitos concluídos, e continua sendo o
  * número oficial. Só que uma lição inteira responde pelo mesmo questionário:
- * ou todos os seus requisitos passam dos 80%, ou nenhum passa. A barra ficava
+ * ou todos os seus requisitos passam do limiar, ou nenhum passa. A barra ficava
  * binária e não distinguia quem errou uma questão de quem não começou.
  *
  * Quem ficou abaixo do corte entra proporcionalmente ao que acertou na melhor

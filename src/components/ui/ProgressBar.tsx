@@ -2,7 +2,7 @@ interface ProgressBarProps {
   percent: number;
   /**
    * Trecho "a recuperar", desenhado em âmbar logo após o trecho cumprido.
-   * Vem de requisitos cuja melhor tentativa ficou abaixo dos 80% exigidos.
+   * Vem de requisitos cuja melhor tentativa ficou abaixo do acerto mínimo exigido.
    */
   partial?: number;
   color?: string;
