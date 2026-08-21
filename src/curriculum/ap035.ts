@@ -360,7 +360,7 @@ const rawQ_1L4: Question[] = [
     data: { options: [
       { id: 'a', text: 'Um endereço que identifica um recurso na Internet, composto por protocolo, domínio e caminho.', correct: true },
       { id: 'b', text: 'Um tipo de vírus que se espalha ao abrir uma página.' },
-      { id: 'c', text: 'Um programa de e-mail que organiza as mensagens recebidas em pastas e avisa quando chega algo de um remetente conhecido.' },
+      { id: 'c', text: 'A lista de endereços que a pessoa guarda no navegador para voltar a eles depois.', porque: 'Isso são os favoritos. Eles guardam o que você já conhece; o buscador acha o que você ainda não conhece.' },
       { id: 'd', text: 'Um formato de imagem que guarda mais cores que os demais.' },
     ]},
     explanation: 'URL = Uniform Resource Locator. Ex: https://exemplo.com/pagina',
@@ -574,7 +574,7 @@ const rawQ_6L1: Question[] = [
     prompt: 'O que é Inteligência Artificial (IA)?',
     data: { options: [
       { id: 'a', text: 'Sistemas que simulam inteligência humana, aprendendo com dados para realizar tarefas.', correct: true },
-      { id: 'b', text: 'Um tipo de vírus de computador que se espalha por mensagens.' },
+      { id: 'b', text: 'O endereço que se digita na barra do navegador para chegar a um conteúdo.', porque: 'Isso é a URL, o endereço. O site é o que se encontra ao seguir esse endereço.' },
       { id: 'c', text: 'Um navegador web criado para abrir páginas com mais rapidez.' },
       { id: 'd', text: 'Um formato de imagem usado em páginas da web, capaz de guardar mais cores que os demais.' },
     ]},
@@ -586,7 +586,7 @@ const rawQ_6L1: Question[] = [
     data: { options: [
       { id: 'a', text: 'ChatGPT, que gera texto a partir de prompts.', correct: true },
       { id: 'b', text: 'Um antivírus que encontra e remove ameaças sozinho.' },
-      { id: 'c', text: 'Um cabo de rede que liga o computador ao equipamento do provedor.' },
+      { id: 'c', text: 'O computador ligado o tempo todo que guarda as páginas e as entrega a quem pede.', porque: 'Isso é o servidor. Ele hospeda o site, mas não é o site.' },
       { id: 'd', text: 'Um monitor de alta definição usado para edição.' },
     ]},
     explanation: 'IA generativa cria novo conteúdo (texto, imagem, código) a partir de instruções.',

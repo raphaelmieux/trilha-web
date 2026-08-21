@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getFinalExamQuestions } from '../curriculum/finalExams';
 import { logActivity, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, LIMIAR_DOMINIO } from '../lib/progress';
 import { checkAnswer } from '../lib/checkAnswer';
+import { porqueDaEscolha } from '../lib/porque';
 import { supabase } from '../lib/supabase';
 import { useCertifications } from '../hooks/useCertifications';
 import type { Question } from '../types';
@@ -174,7 +175,15 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
             <div className="mt-4 p-3 rounded-lg text-sm" style={{ backgroundColor: checkAnswer(q, answers[q.id]) ? 'var(--color-success-a10)' : 'var(--color-error-a10)', color: checkAnswer(q, answers[q.id]) ? 'var(--color-success)' : 'var(--color-error)' }}>
               <div className="flex items-start gap-2">
                 {checkAnswer(q, answers[q.id]) ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <CircleX className="w-5 h-5 flex-shrink-0" />}
-                <p>{q.explanation}</p>
+                <div>
+                  {/* Primeiro o que houve com a escolha de quem responde, depois
+                      a explicação da questão: quem errou precisa saber o que
+                      confundiu antes de ler a definição correta. */}
+                  {porqueDaEscolha(q, answers[q.id]) && (
+                    <p className="mb-1.5 font-medium">{porqueDaEscolha(q, answers[q.id])}</p>
+                  )}
+                  <p>{q.explanation}</p>
+                </div>
               </div>
             </div>
           )}

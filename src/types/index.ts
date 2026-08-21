@@ -39,9 +39,26 @@ export interface Question {
   explanation?: string;
 }
 
+/*
+  Uma alternativa e, opcionalmente, o motivo de ela estar errada.
+
+  A explicação da questão diz por que a resposta certa é certa. Quem marcou
+  outra coisa precisa de algo diferente: saber o que confundiu. Quem responde
+  "navegador" onde se pedia "buscador" não aprende lendo a definição de
+  buscador — aprende lendo que navegador é o programa que abre as páginas e
+  buscador é o serviço que as encontra.
+*/
+export interface QuestionOption {
+  id: string;
+  text: string;
+  correct?: boolean;
+  /** Por que esta alternativa está errada. Só faz sentido nas incorretas. */
+  porque?: string;
+}
+
 export interface QuestionData {
-  options?: { id: string; text: string; correct?: boolean }[];
-  scenarios?: { id: string; text: string; correct?: boolean }[];
+  options?: QuestionOption[];
+  scenarios?: QuestionOption[];
   pairs?: { left: string; right: string }[];
   items?: { id: string; text: string; order: number }[];
   blanks?: {
