@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getFinalExamQuestions } from '../curriculum/finalExams';
-import { logActivity, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId } from '../lib/progress';
+import { logActivity, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, LIMIAR_DOMINIO } from '../lib/progress';
 import { checkAnswer } from '../lib/checkAnswer';
 import { supabase } from '../lib/supabase';
 import { useCertifications } from '../hooks/useCertifications';
@@ -58,7 +58,7 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
     }
     await logActivity(profile.id, 'final_exam_completed', { specialty: specialtyCode, score: correct, total }, undefined, 'exam');
 
-    if (correct / total >= 0.8) {
+    if ((correct / total) * 100 >= LIMIAR_DOMINIO) {
       setCertifyError('');
       const result = await requestCertification(profile.id, specialtyCode);
       if (result.code) await refreshCertifications();
@@ -95,7 +95,7 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
           <p className="mb-6" style={{ color: 'var(--color-text-muted)' }}>
             Esta avaliação contém {specialtyCode === 'AP034' ? 22 : 22} questões de diversos tipos:
             múltipla escolha, verdadeiro/falso, ordenação, associação, lacunas e cenários.
-            Você precisa acertar pelo menos 80% para ser aprovado e receber seu Token.Web().
+            Você precisa acertar pelo menos {LIMIAR_DOMINIO}% para ser aprovado e receber seu Token.Web().
           </p>
           <div className="rounded-lg p-4 mb-6 text-sm text-left" style={{ backgroundColor: 'var(--color-primary-a08)', border: '1px solid var(--color-primary-a20)' }}>
             <p className="flex items-start gap-2">
@@ -110,7 +110,7 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
   }
 
   if (phase === 'result' && score) {
-    const passed = score.correct / score.total >= 0.8;
+    const passed = (score.correct / score.total) * 100 >= LIMIAR_DOMINIO;
     return (
       <div className="space-y-4">
         <div className="card p-8 text-center">

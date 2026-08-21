@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { limparCacheDeProgresso } from '../lib/progress';
 import { supabase } from '../lib/supabase';
 import type { UserProfile } from '../types';
 
@@ -78,6 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setSession(null);
     setProfile(null);
+    /* O progresso fica em memória para a barra não piscar entre telas. Sem
+       limpar aqui, quem entrasse depois na mesma aba veria, por um instante,
+       as barras de quem saiu. */
+    limparCacheDeProgresso();
   };
 
   return <AuthContext.Provider value={{ session, profile, loading, signOut }}>{children}</AuthContext.Provider>;

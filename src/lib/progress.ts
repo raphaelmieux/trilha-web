@@ -23,8 +23,9 @@ export type ProgressMap = Record<string, RequirementProgress>;
  * recuperar", a maioria exatamente nessa borda. A 75%, 6 de 8 passa e 5 de 8
  * continua pendente.
  *
- * A prova final segue exigindo 80% (ver FinalExam): ela é o portão da
- * certificação, não a medida de um requisito isolado.
+ * A prova final usa o mesmo número (ver FinalExam), para não haver duas réguas
+ * no mesmo percurso: seria estranho concluir todos os requisitos a 75% e depois
+ * esbarrar num corte mais alto na última etapa.
  */
 export const LIMIAR_DOMINIO = 75;
 
@@ -136,6 +137,37 @@ export function getProgressDetail(reqCodes: string[], progress: ProgressMap): Pr
   return { concluido: Math.round(concluido), parcial: Math.round(parcial) };
 }
 
+/*
+  Último progresso conhecido de cada pessoa, guardado em memória.
+
+  As quatro telas que mostram progresso buscavam cada uma por conta própria,
+  partindo de um mapa vazio. Ao voltar de uma lição para a trilha, a barra
+  nascia em 0% e só pulava para o valor real depois da ida e volta ao servidor —
+  e logo depois de concluir uma lição é justamente isso que parece "não gravou".
+
+  Com o cache, a tela seguinte desenha na hora o que a anterior já sabia, e a
+  busca continua acontecendo por baixo para corrigir qualquer diferença.
+
+  Vive só na memória da aba: recarregar a página busca de novo, e é o que se
+  quer — o cache serve para a navegação, não para substituir o banco.
+*/
+const cacheProgresso = new Map<string, ProgressMap>();
+
+/** O que já se sabe sobre esta pessoa, sem esperar rede. */
+export function progressoEmCache(userId: string | undefined): ProgressMap | undefined {
+  return userId ? cacheProgresso.get(userId) : undefined;
+}
+
+/**
+ * Esquece tudo que está em memória.
+ *
+ * Chamado ao sair: sem isto, a próxima pessoa a entrar no mesmo navegador veria,
+ * por um instante, as barras de progresso de quem saiu.
+ */
+export function limparCacheDeProgresso(): void {
+  cacheProgresso.clear();
+}
+
 export async function fetchRequirementProgress(userId: string): Promise<ProgressMap> {
   const { data, error } = await supabase
     .from('requirement_progress')
@@ -152,7 +184,9 @@ export async function fetchRequirementProgress(userId: string): Promise<Progress
     `)
     .eq('user_id', userId);
 
-  if (error || !data) return {};
+  /* Falha de rede devolve o que já havia, e não um mapa vazio: zerar a barra
+     por causa de uma requisição perdida é pior do que mostrar o valor anterior. */
+  if (error || !data) return cacheProgresso.get(userId) ?? {};
 
   const map: ProgressMap = {};
   for (const row of data as any[]) {
@@ -170,6 +204,7 @@ export async function fetchRequirementProgress(userId: string): Promise<Progress
       };
     }
   }
+  cacheProgresso.set(userId, map);
   return map;
 }
 
