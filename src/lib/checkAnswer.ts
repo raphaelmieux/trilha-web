@@ -1,4 +1,5 @@
 import type { Question } from '../types';
+import { respostaConfere } from './respostaTexto';
 
 export function checkAnswer(question: Question, answer: any): boolean {
   if (!answer) return false;
@@ -25,8 +26,10 @@ export function checkAnswer(question: Question, answer: any): boolean {
     case 'fill_blank': {
       const blanks = question.data.blanks || [];
       if (!Array.isArray(answer) || answer.length !== blanks.length) return false;
+      /* Igualdade exata reprovava quem sabia a matéria e escrevia "roteadores"
+         em vez de "roteador". Ver respostaTexto.ts para as três camadas. */
       return answer.every((a: string, i: number) =>
-        (a || '').trim().toLowerCase() === blanks[i].answer.trim().toLowerCase()
+        respostaConfere(a, blanks[i].answer, blanks[i].aceitas)
       );
     }
     default:

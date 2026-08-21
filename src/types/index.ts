@@ -44,7 +44,21 @@ export interface QuestionData {
   scenarios?: { id: string; text: string; correct?: boolean }[];
   pairs?: { left: string; right: string }[];
   items?: { id: string; text: string; order: number }[];
-  blanks?: { id: string; answer: string; hint?: string }[];
+  blanks?: {
+    id: string;
+    /** A resposta canônica — a que aparece no gabarito e na explicação. */
+    answer: string;
+    hint?: string;
+    /**
+     * Outras formas de dizer a mesma coisa, aceitas como certas.
+     *
+     * "ISP" e "provedor" nomeiam o mesmo conceito; exigir uma delas mede
+     * memória da palavra escolhida pelo autor, não entendimento. A comparação
+     * ainda ignora acento, caixa e pontuação, e tolera erro de digitação — isto
+     * aqui é para sinônimo, não para grafia.
+     */
+    aceitas?: string[];
+  }[];
 }
 
 export interface Lesson {
