@@ -71,7 +71,16 @@ export const ap041: Specialty = {
       code: 'AP041.1',
       title: 'De onde vêm os computadores',
       description: 'A história das máquinas que calculam, do ábaco ao celular no seu bolso.',
-      lessons: [],
+      lessons: [
+        {
+          code: 'AP041.1-L2',
+          title: 'Escrevendo sobre a história dos computadores',
+          type: 'lab',
+          content: '',
+          requirementCodes: ['AP041-1.1'],
+          labType: 'text_editor',
+        },
+      ],
     },
     {
       code: 'AP041.2',
@@ -89,7 +98,16 @@ export const ap041: Specialty = {
       code: 'AP041.4',
       title: 'Cuidar da máquina',
       description: 'Sujeira, manutenção preventiva e o jeito certo de ligar e desligar.',
-      lessons: [],
+      lessons: [
+        {
+          code: 'AP041.4-L2',
+          title: 'Preparando a sua apresentação',
+          type: 'lab',
+          content: '',
+          requirementCodes: ['AP041-3.1', 'AP041-3.2', 'AP041-3.3'],
+          labType: 'presentation',
+        },
+      ],
     },
     {
       code: 'AP041.5',
