@@ -1,5 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  ROTEIROS, MAX_RESPOSTAS, limparEntrada, promptDeValidacao, promptDeUniao, lerVeredito,
+  type EtapaServidor,
+} from "./redacao.ts";
 
 /**
  * Gemini gateway for the AI Lab.
@@ -177,6 +181,15 @@ async function generateImageWithCloudflare(prompt: string): Promise<ImageResult>
 
 const DAILY_LIMIT = Number(Deno.env.get("AI_DAILY_LIMIT") ?? "12");
 
+/**
+ * The guided essay's own allowance.
+ *
+ * Eight steps plus the join is nine calls for a first pass, and a Pathfinder who
+ * revises three answers spends a dozen. Sixty leaves room to write the report
+ * across an afternoon, including mistakes, without ever reaching the ceiling.
+ */
+const REDACAO_DAILY_LIMIT = Number(Deno.env.get("AI_REDACAO_DAILY_LIMIT") ?? "60");
+
 // Strictest setting the API accepts for every category it exposes.
 const SAFETY_SETTINGS = [
   "HARM_CATEGORY_HARASSMENT",
@@ -217,17 +230,75 @@ Deno.serve(async (req: Request) => {
     const { data: { user: caller }, error: callerError } = await supabaseAuth.auth.getUser();
     if (callerError || !caller) return json({ error: "Sessão inválida." }, 401);
 
-    const { type, prompt, userId } = await req.json();
-    if (!type || !prompt || !userId) return json({ error: "Missing required fields" }, 400);
+    const corpo = await req.json();
+    const acao: string = corpo?.type;
+    const userId: string = corpo?.userId;
+    if (!acao || !userId) return json({ error: "Missing required fields" }, 400);
     if (caller.id !== userId) return json({ error: "Não autorizado." }, 403);
-    if (typeof prompt !== "string" || prompt.length > 1200) {
-      return json({ error: "Pedido muito longo." }, 400);
-    }
-    if (type !== "text" && type !== "image") {
+
+    const ehRedacao = acao === "redacao_validar" || acao === "redacao_unir";
+    if (!ehRedacao && acao !== "text" && acao !== "image") {
       return json({ error: "Tipo de geração inválido." }, 400);
     }
 
+    /*
+      `acao` é o que o cliente pediu; `type` é o que o Gemini precisa saber.
+      Separar os dois deixa a redação guiada entrar por uma porta própria — com
+      prompt montado aqui — e seguir dali para diante pelo mesmo caminho de
+      sempre: escolha de modelo, retentativa, filtro de segurança e auditoria.
+    */
+    const type: "text" | "image" = acao === "image" ? "image" : "text";
+
+    let prompt: string;
+    let etapaEmConferencia: EtapaServidor | undefined;
+
+    if (ehRedacao) {
+      const roteiro = ROTEIROS[String(corpo.especialidade ?? "")];
+      if (!roteiro) return json({ error: "Trilha sem roteiro de redação." }, 400);
+
+      if (acao === "redacao_validar") {
+        etapaEmConferencia = roteiro.etapas[String(corpo.etapaId ?? "")];
+        // Etapa que este arquivo não conhece não é conferida: aprovar às cegas
+        // seria dar passe livre a quem inventar um id.
+        if (!etapaEmConferencia) return json({ error: "Etapa desconhecida." }, 400);
+
+        const resposta = limparEntrada(String(corpo.resposta ?? ""));
+        if (!resposta) return json({ error: "Resposta vazia." }, 400);
+        prompt = promptDeValidacao(roteiro, etapaEmConferencia, resposta);
+      } else {
+        const lista = Array.isArray(corpo.respostas) ? corpo.respostas : [];
+        if (lista.length === 0) return json({ error: "Nada para unir." }, 400);
+        if (lista.length > MAX_RESPOSTAS) return json({ error: "Respostas demais." }, 400);
+
+        const respostas = lista
+          .map((r: { etapaId?: unknown; texto?: unknown }) => ({
+            etapaId: String(r?.etapaId ?? ""),
+            texto: limparEntrada(String(r?.texto ?? "")),
+          }))
+          .filter((r: { etapaId: string; texto: string }) => roteiro.etapas[r.etapaId] && r.texto);
+        if (respostas.length === 0) return json({ error: "Nada para unir." }, 400);
+        prompt = promptDeUniao(roteiro, respostas);
+      }
+    } else {
+      prompt = corpo?.prompt;
+      if (typeof prompt !== "string" || !prompt || prompt.length > 1200) {
+        return json({ error: "Pedido muito longo." }, 400);
+      }
+    }
+
     const admin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    /*
+      Duas contas separadas, porque são dois orçamentos.
+
+      Uma redação inteira custa nove chamadas — oito conferências e a união — e
+      revisar uma resposta custa mais. Com um teto só, escrever o relatório
+      esgotaria o laboratório de IA do dia, e a criança descobriria isso no meio
+      do trabalho. Os eventos entram com `event_type` distinto, o que mantém as
+      contagens independentes sem tirar nada da auditoria do clube.
+    */
+    const eventoDoLog = ehRedacao ? "ai_redacao" : "ai_generation";
+    const tetoDoDia = ehRedacao ? REDACAO_DAILY_LIMIT : DAILY_LIMIT;
 
     // Daily cap, counted from the audit log so it cannot be bypassed client-side.
     const since = new Date();
@@ -236,12 +307,14 @@ Deno.serve(async (req: Request) => {
       .from("activity_events")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .eq("event_type", "ai_generation")
+      .eq("event_type", eventoDoLog)
       .gte("created_at", since.toISOString());
 
-    if ((count ?? 0) >= DAILY_LIMIT) {
+    if ((count ?? 0) >= tetoDoDia) {
       return json({
-        error: `Limite de ${DAILY_LIMIT} gerações por dia atingido. Tente novamente amanhã.`,
+        error: ehRedacao
+          ? `Você usou as ${tetoDoDia} conferências de hoje. Seu texto está salvo — volte amanhã para continuar.`
+          : `Limite de ${tetoDoDia} gerações por dia atingido. Tente novamente amanhã.`,
         limitReached: true,
       }, 429);
     }
@@ -289,10 +362,23 @@ Deno.serve(async (req: Request) => {
        * so the call below retries without it.
        */
       body.generationConfig = {
-        temperature: 0.8,
+        /*
+          O laboratório de IA quer variedade — pedir duas vezes e receber a mesma
+          frase ensinaria a lição errada sobre modelos generativos. A redação
+          quer o contrário: conferir o mesmo texto duas vezes e receber
+          vereditos diferentes é o que faria a criança perder a confiança no
+          retorno. Daí a temperatura baixa deste lado.
+        */
+        temperature: ehRedacao ? 0.2 : 0.8,
         maxOutputTokens: 2000,
         thinkingConfig: { thinkingBudget: 0 },
       };
+      if (acao === "redacao_validar") {
+        body.generationConfig = {
+          ...(body.generationConfig as Record<string, unknown>),
+          responseMimeType: "application/json",
+        };
+      }
     }
 
     const generate = (id: string) => fetch(`${API_BASE}/${id}:generateContent?key=${apiKey}`, {
@@ -332,12 +418,18 @@ Deno.serve(async (req: Request) => {
       response = await generate(candidate);
       data = await response.json();
 
-      // Same model, minus the field it refused. Only worth one attempt.
-      if (!response.ok && /invalid argument/i.test(data?.error?.message ?? "")
-          && (body.generationConfig as Record<string, unknown>)?.thinkingConfig) {
-        delete (body.generationConfig as Record<string, unknown>).thinkingConfig;
-        response = await generate(candidate);
-        data = await response.json();
+      // Same model, minus the fields it refused. Only worth one attempt.
+      // `responseMimeType` entrou junto porque é opcional pelo mesmo motivo que
+      // `thinkingConfig`: sem ele o JSON ainda chega, só que dentro de uma cerca
+      // de markdown — e `lerVeredito` já sabe tirar a cerca.
+      if (!response.ok && /invalid argument/i.test(data?.error?.message ?? "")) {
+        const cfg = body.generationConfig as Record<string, unknown> | undefined;
+        if (cfg?.thinkingConfig || cfg?.responseMimeType) {
+          delete cfg!.thinkingConfig;
+          delete cfg!.responseMimeType;
+          response = await generate(candidate);
+          data = await response.json();
+        }
       }
 
       if (response.ok) break;
@@ -418,6 +510,32 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!textOut) return json({ error: "A IA não retornou texto. Tente novamente." }, 200);
+
+    /*
+      O log da redação guarda o que o desbravador escreveu e o veredito, não o
+      prompt: o prompt é o mesmo texto embrulhado nas instruções fixas deste
+      arquivo, e é a resposta dele que a liderança do clube vai querer ler se
+      precisar conferir como o relatório foi construído.
+    */
+    if (ehRedacao) {
+      const conferencia = acao === "redacao_validar" ? lerVeredito(textOut) : undefined;
+
+      await admin.from("activity_events").insert({
+        user_id: userId,
+        event_type: "ai_redacao",
+        metadata: {
+          acao,
+          especialidade: corpo.especialidade,
+          etapaId: corpo.etapaId,
+          etapa: etapaEmConferencia?.titulo,
+          veredito: conferencia?.veredito,
+          model,
+        },
+      });
+
+      if (conferencia) return json({ conferencia, model, provider: "gemini" });
+      return json({ result: textOut, model, provider: "gemini" });
+    }
 
     await admin.from("activity_events").insert({
       user_id: userId,
