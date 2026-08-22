@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Circle, ShieldCheck, ArrowUp, ArrowDown } from 'lucide-react';
+import { CheckCircle2, Circle, ShieldCheck } from 'lucide-react';
+import ListaOrdenavel from '../components/ui/ListaOrdenavel';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
@@ -110,16 +111,6 @@ export default function ComputerCareLab({ specialtyCode, lessonCode, requirement
   const mesaOk = mesa.every(o => classifMesa[o.id]);
   const acoesOk = acoes.every(a => classifAcoes[a.id]);
   const ordemOk = ordem.every((p, i) => p.id === PASSOS[i].id);
-
-  const mover = (i: number, dir: -1 | 1) => {
-    const j = i + dir;
-    if (j < 0 || j >= ordem.length) return;
-    const nova = [...ordem];
-    [nova[i], nova[j]] = [nova[j], nova[i]];
-    setOrdem(nova);
-    setOrdemConferida(false);
-    setCorrecao('');
-  };
 
   const conferirOrdem = () => {
     setOrdemConferida(true);
@@ -259,24 +250,19 @@ export default function ComputerCareLab({ specialtyCode, lessonCode, requirement
           <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
             Ponha os passos na ordem, do primeiro ao último.
           </p>
-          <ol className="space-y-2">
-            {ordem.map((p, i) => (
-              <li key={p.id} className="flex items-center gap-2 p-2 rounded-lg"
-                style={{
-                  backgroundColor: ordemConferida && ordemOk ? 'var(--color-success-a10)' : 'var(--color-bg-input)',
-                  border: '1px solid var(--color-border)',
-                }}>
-                <span className="w-6 text-center text-sm font-bold" style={{ color: 'var(--color-secondary)' }}>{i + 1}</span>
-                <span className="flex-1 text-sm" style={{ color: 'var(--color-text)' }}>{p.rotulo}</span>
-                <button onClick={() => mover(i, -1)} disabled={i === 0} className="btn-secondary text-xs py-1 px-2">
-                  <ArrowUp className="w-3 h-3" />
-                </button>
-                <button onClick={() => mover(i, 1)} disabled={i === ordem.length - 1} className="btn-secondary text-xs py-1 px-2">
-                  <ArrowDown className="w-3 h-3" />
-                </button>
-              </li>
-            ))}
-          </ol>
+          <ListaOrdenavel
+            itens={ordem.map(p => ({ id: p.id, conteudo: p.rotulo }))}
+            ordem={ordem.map(p => p.id)}
+            aoReordenar={ids => {
+              setOrdem(ids.map(id => ordem.find(p => p.id === id)!));
+              setOrdemConferida(false);
+              setCorrecao('');
+            }}
+            travada={ordemConferida && ordemOk}
+            estiloDaLinha={() => (ordemConferida && ordemOk
+              ? { backgroundColor: 'var(--color-success-a10)' }
+              : {})}
+          />
           {!(ordemConferida && ordemOk) && (
             <button onClick={conferirOrdem} className="btn-secondary mt-3 text-sm">Conferir a ordem</button>
           )}

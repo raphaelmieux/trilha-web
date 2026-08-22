@@ -59,7 +59,7 @@ afterEach(() => {
   container.remove();
 });
 
-const linhas = () => [...container.querySelectorAll<HTMLElement>('div[draggable]')];
+const linhas = () => [...container.querySelectorAll<HTMLElement>('[draggable]')];
 const textos = () => linhas().map(l => l.querySelector('span.flex-1')?.textContent);
 const linhaDe = (texto: string) => linhas().find(l => l.textContent?.includes(texto))!;
 

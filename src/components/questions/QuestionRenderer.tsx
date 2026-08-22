@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GripVertical } from 'lucide-react';
+import ListaOrdenavel from '../ui/ListaOrdenavel';
 import type { Question } from '../../types';
 import { sequenciaCorreta } from '../../lib/questoes';
 import { shuffleArray } from '../../lib/progress';
@@ -87,37 +87,8 @@ function OrderingQuestion({ question, answer, showFeedback, onAnswer }: Question
      começar por uma ordem qualquer — que é o ponto de partida da tarefa. */
   const [ordered, setOrdered] = useState<string[]>(() => Array.isArray(answer) && answer.length === items.length ? answer : items.map(i => i.id));
   const [confirmed, setConfirmed] = useState(false);
-  const [arrastando, setArrastando] = useState<string | null>(null);
 
   const isLocked = showFeedback || confirmed;
-
-  const move = (id: string, dir: 'up' | 'down') => {
-    if (isLocked) return;
-    const arr = [...ordered];
-    const idx = arr.indexOf(id);
-    if (dir === 'up' && idx > 0) { [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]; }
-    if (dir === 'down' && idx < arr.length - 1) { [arr[idx + 1], arr[idx]] = [arr[idx], arr[idx + 1]]; }
-    setOrdered(arr);
-    setConfirmed(false);
-  };
-
-  /*
-    Reordena enquanto o item passa por cima, e não só ao soltar.
-    A lista acompanha o dedo, então dá para ver onde a peça vai cair antes de
-    largá-la — soltar às cegas e conferir depois é o que torna arrastar ruim.
-  */
-  const passarSobre = (idAlvo: string) => {
-    if (isLocked || !arrastando || arrastando === idAlvo) return;
-    setOrdered(atual => {
-      const arr = [...atual];
-      const de = arr.indexOf(arrastando);
-      const para = arr.indexOf(idAlvo);
-      if (de < 0 || para < 0) return atual;
-      arr.splice(para, 0, ...arr.splice(de, 1));
-      return arr;
-    });
-    setConfirmed(false);
-  };
 
   const confirm = () => {
     onAnswer(ordered);
@@ -126,52 +97,20 @@ function OrderingQuestion({ question, answer, showFeedback, onAnswer }: Question
 
   return (
     <div>
-      <div className="space-y-2">
-        {ordered.map((id, idx) => {
-          const item = items.find(i => i.id === id)!;
-          /* Pelo `order` do item, não pela posição dele no array: os itens
-             chegam embaralhados, e a leitura antiga marcaria de vermelho
-             justamente quem acertou. */
-          const correctIdx = certa[idx] === id;
-          const sendoArrastado = arrastando === id;
-          return (
-            <div
-              key={id}
-              draggable={!isLocked}
-              onDragStart={() => setArrastando(id)}
-              onDragEnd={() => setArrastando(null)}
-              onDragOver={e => { e.preventDefault(); passarSobre(id); }}
-              onDrop={e => { e.preventDefault(); setArrastando(null); }}
-              className={`flex items-center gap-2 p-3 border-2 rounded-lg transition ${
-                showFeedback ? (correctIdx ? 'border-[var(--color-success)] bg-[var(--color-success-a10)]' : 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]') : 'border-[var(--color-border)]'
-              }`}
-              style={{
-                opacity: sendoArrastado ? 0.5 : 1,
-                cursor: isLocked ? 'default' : 'grab',
-              }}
-            >
-              {!isLocked && (
-                <GripVertical
-                  className="w-4 h-4 flex-shrink-0"
-                  style={{ color: 'var(--color-text-faint)' }}
-                  aria-hidden="true"
-                />
-              )}
-              <span className="font-bold" style={{ color: 'var(--color-text-muted)' }}>{idx + 1}.</span>
-              <span className="flex-1">{item.text}</span>
-              <button onClick={() => move(id, 'up')} disabled={idx === 0 || isLocked}
-                className="btn-secondary px-2 py-1 text-sm" aria-label="Subir um lugar">↑</button>
-              <button onClick={() => move(id, 'down')} disabled={idx === ordered.length - 1 || isLocked}
-                className="btn-secondary px-2 py-1 text-sm" aria-label="Descer um lugar">↓</button>
-            </div>
-          );
-        })}
-      </div>
-      {!isLocked && (
-        <p className="text-xs mt-2" style={{ color: 'var(--color-text-faint)' }}>
-          Arraste para trocar de lugar, ou use as setas.
-        </p>
-      )}
+      <ListaOrdenavel
+        itens={items.map(i => ({ id: i.id, conteudo: i.text }))}
+        ordem={ordered}
+        aoReordenar={nova => { setOrdered(nova); setConfirmed(false); }}
+        travada={isLocked}
+        /* Verde onde a posição bate com o `order` do item; vermelho onde não
+           bate. Pela posição no array a leitura marcaria de vermelho justamente
+           quem acertou, porque os itens chegam embaralhados. */
+        estiloDaLinha={(id, idx) => (showFeedback
+          ? certa[idx] === id
+            ? { borderColor: 'var(--color-success)', backgroundColor: 'var(--color-success-a10)' }
+            : { borderColor: 'var(--color-primary)', backgroundColor: 'var(--color-primary-a10)' }
+          : {})}
+      />
       <ConfirmButton onConfirm={confirm} disabled={false} showFeedback={isLocked} />
     </div>
   );
