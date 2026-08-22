@@ -92,6 +92,35 @@ describe('AP041 curriculum', () => {
   });
 });
 
+describe('laboratórios', () => {
+  /*
+    Cada laboratório pertence a uma lição só em toda a plataforma.
+
+    Não é arrumação: o painel de atividade depende disso. Os eventos gravados
+    antes de os laboratórios registrarem a trilha trazem apenas o tipo do
+    laboratório, e é por ele que a lição — e com ela a trilha — são recuperadas.
+    Dois usos do mesmo laboratório tornariam essa volta ambígua, e o histórico
+    passaria a nomear a lição errada.
+
+    A prova final fica de fora: ela é, por definição, uma por trilha.
+  */
+  it('never uses the same lab in two different lessons', () => {
+    const usos = new Map<string, string[]>();
+    for (const s of getAllSpecialties()) {
+      for (const m of s.modules) {
+        for (const l of m.lessons) {
+          if (!l.labType || l.labType === 'final_exam') continue;
+          usos.set(l.labType, [...(usos.get(l.labType) ?? []), l.code]);
+        }
+      }
+    }
+    const repetidos = [...usos.entries()]
+      .filter(([, codes]) => codes.length > 1)
+      .map(([lab, codes]) => `${lab}: ${codes.join(', ')}`);
+    expect(repetidos, repetidos.join(' | ')).toEqual([]);
+  });
+});
+
 describe('Final exam questions', () => {
   it('AP034 final has at least 15 questions', () => {
     const qs = getFinalExamQuestions('AP034');

@@ -394,7 +394,7 @@ export default function WebLab({ specialtyCode, lessonCode, requirementCodes, us
        Requirements 6.1 and 6.2 are demonstrations the sheet asks the instructor
        to see; this club runs them by recorded evidence, so the report has to be
        able to state what was visited and what was found. */
-    await logActivity(userId, 'web_lab_completed', {
+    await logActivity(userId, 'web_lab_completed', { specialtyCode, lessonCode,
       checksPassed: passedCount, total: allChecks.length,
       enderecosDePrimeira: suspectFirstCorrect, arquivosDePrimeira: filesFirstCorrect,
       visits: visits.map(v => ({ url: v.url.trim(), note: v.note.trim() })),

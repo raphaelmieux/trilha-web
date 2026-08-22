@@ -254,8 +254,8 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, requiremen
     setEnviado(true);
     /* Enviado: o servidor tem a versão boa, e o rascunho local só atrapalharia. */
     descartarRascunho(userId, lessonCode);
-    await logActivity(userId, 'text_submitted', {
-      specialtyCode, wordCount: contarPalavras(textoFinal), etapas: prontas,
+    await logActivity(userId, 'text_submitted', { specialtyCode, lessonCode,
+      wordCount: contarPalavras(textoFinal), etapas: prontas,
     });
   };
 

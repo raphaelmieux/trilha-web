@@ -197,7 +197,7 @@ export default function AILab({ specialtyCode, lessonCode, requirementCodes, use
         attempts: 1, correct_count: 3, total_questions: 3,
       });
     }
-    await logActivity(userId, 'ai_lab_completed', {
+    await logActivity(userId, 'ai_lab_completed', { specialtyCode, lessonCode,
       critiquePositive: critique.good.slice(0, 200),
       critiqueImprovement: critique.improve.slice(0, 200),
     });

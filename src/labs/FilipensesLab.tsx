@@ -221,7 +221,7 @@ export default function FilipensesLab({ specialtyCode, lessonCode, requirementCo
         attempts: 1, correct_count: firstCorrect, total_questions: SITUATIONS.length,
       });
     }
-    await logActivity(userId, 'filipenses_completed', {
+    await logActivity(userId, 'filipenses_completed', { specialtyCode, lessonCode,
       dicasUsadas: hintsUsed, situacoesDePrimeira: firstCorrect,
     });
     setCompleted(true);

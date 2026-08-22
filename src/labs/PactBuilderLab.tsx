@@ -109,7 +109,7 @@ export default function PactBuilderLab({ specialtyCode, lessonCode, requirementC
         attempts: 1, correct_count: clausesDone, total_questions: clauseVerdicts.length,
       });
     }
-    await logActivity(userId, 'pact_completed', { redes: networks.length, baixouPdf: downloaded });
+    await logActivity(userId, 'pact_completed', { specialtyCode, lessonCode, redes: networks.length, baixouPdf: downloaded });
     setCompleted(true);
   };
 

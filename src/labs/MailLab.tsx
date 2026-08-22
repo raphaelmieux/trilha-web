@@ -151,7 +151,7 @@ export default function MailLab({ specialtyCode, lessonCode, requirementCodes, u
     setComposeError('');
     setSent(prev => [...prev, { to: composeTo.trim(), subject: composeSubject.trim(), body: composeBody.trim() }]);
     setComposeTo(''); setComposeSubject(''); setComposeBody('');
-    void logActivity(userId, 'mail_sent', { assunto: composeSubject.trim() });
+    void logActivity(userId, 'mail_sent', { specialtyCode, lessonCode, assunto: composeSubject.trim() });
   };
 
   const checks: Check[] = [
@@ -209,7 +209,7 @@ export default function MailLab({ specialtyCode, lessonCode, requirementCodes, u
         attempts: 1, correct_count: firstCorrect, total_questions: INBOX.length,
       });
     }
-    await logActivity(userId, 'mail_lab_completed', {
+    await logActivity(userId, 'mail_lab_completed', { specialtyCode, lessonCode,
       golpesDePrimeira: firstCorrect, enviadas: sent.length,
     });
     setCompleted(true);

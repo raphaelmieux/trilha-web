@@ -49,9 +49,11 @@ describe('descrever o que a pessoa fez', () => {
   });
 
   /*
-    Os laboratórios não gravam o código da lição — gravam o próprio nome no tipo
-    do evento. Como cada trilha usa um laboratório uma vez só, o tipo basta para
-    achar a lição, e nenhum dos catorze precisou ser alterado.
+    Os eventos gravados antes de os laboratórios registrarem a lição.
+
+    Eles trazem só o próprio nome no tipo do evento. Como cada trilha usa um
+    laboratório uma vez só — há teste garantindo isso —, o tipo do laboratório
+    ainda basta para achar a lição, e o histórico continua legível.
   */
   it('acha a lição do laboratório pelo tipo do evento', () => {
     const d = descreverAtividade({
@@ -91,6 +93,31 @@ describe('descrever o que a pessoa fez', () => {
   it('descreve os passos de dentro dos laboratórios', () => {
     expect(descreverAtividade({ event_type: 'mail_sent' }).texto).toBe('E-mail enviado no laboratório');
     expect(descreverAtividade({ event_type: 'text_saved' }).texto).toBe('Rascunho do texto salvo');
+  });
+
+  it('nomeia o laboratório pelo código da lição quando ele foi gravado', () => {
+    const d = descreverAtividade({
+      event_type: 'web_lab_completed',
+      metadata: { specialtyCode: 'AP034', lessonCode: 'AP034.6-L1' },
+    });
+    expect(d.texto).toBe('Laboratório concluído: Navegando e pesquisando com cuidado');
+  });
+
+  /* Do laboratório de pré-requisito, aposentado; os eventos dele continuam no
+     banco e continuam legíveis. */
+  it('ainda descreve o que o laboratório aposentado gravou', () => {
+    expect(descreverAtividade({ event_type: 'prerequisite_verified' }).texto).toBe('Pré-requisito conferido');
+  });
+
+  /*
+    O histórico de quem usou a plataforma antes de os laboratórios gravarem a
+    trilha: do evento vem só o tipo. Como cada laboratório é usado uma vez em
+    todo o currículo, o tipo devolve a lição e, por ela, a trilha.
+  */
+  it('recupera trilha e lição de um evento que não guardou nada', () => {
+    const d = descreverAtividade({ event_type: 'file_manager_completed' });
+    expect(d.trilha).toBe('AP041');
+    expect(d.texto).toBe('Laboratório concluído: Mexendo em pastas e arquivos');
   });
 
   /* Evento novo não some da lista: aparece legível o bastante para alguém

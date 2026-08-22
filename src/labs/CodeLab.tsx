@@ -133,7 +133,7 @@ export default function CodeLab({ specialtyCode, lessonCode, requirementCodes, u
         attempts: 1, correct_count: passedCount, total_questions: results.length,
       });
     }
-    await logActivity(userId, 'code_lab_completed', { variant, checksPassed: passedCount, total: results.length });
+    await logActivity(userId, 'code_lab_completed', { specialtyCode, lessonCode, variant, checksPassed: passedCount, total: results.length });
     setCompleted(true);
   };
 

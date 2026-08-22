@@ -333,7 +333,7 @@ export default function ImageLab({ specialtyCode, lessonCode, requirementCodes, 
         attempts: 1, correct_count: passedCount, total_questions: allChecks.length,
       });
     }
-    await logActivity(userId, 'image_lab_completed', {
+    await logActivity(userId, 'image_lab_completed', { specialtyCode, lessonCode,
       jpgBytes: photo?.jpegBytes, pngBytes: logo?.pngBytes, botoes: filledLabels,
     });
     setCompleted(true);

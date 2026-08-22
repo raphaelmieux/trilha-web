@@ -154,7 +154,7 @@ export default function ComputerCareLab({ specialtyCode, lessonCode, requirement
       setErro('Você concluiu tudo, mas o progresso não pôde ser guardado agora. Avise a liderança do clube.');
       return;
     }
-    await logActivity(userId, 'cuidados_concluido', { etapas: 3 });
+    await logActivity(userId, 'cuidados_concluido', { specialtyCode, lessonCode, etapas: 3 });
     setPronto(true);
   };
 

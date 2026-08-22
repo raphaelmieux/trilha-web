@@ -1,4 +1,4 @@
-import { getSpecialty } from '../curriculum';
+import { getSpecialty, getAllSpecialties } from '../curriculum';
 import type { LabType } from '../types';
 
 /*
@@ -87,7 +87,20 @@ const PASSOS: Record<string, string> = {
   redacao_montada: 'Texto da redação montado',
   ai_generation: 'Pedido feito à IA',
   ai_redacao: 'Resposta conferida na redação',
+  /* Do laboratório de pré-requisito, aposentado quando o bloqueio da trilha
+     passou a cumprir esse papel sozinho. Os eventos dele continuam no banco, e
+     continuam legíveis. */
+  prerequisite_verified: 'Pré-requisito conferido',
 };
+
+/** Onde mora o laboratório, procurado no currículo inteiro. */
+function acharLicaoPorLaboratorio(lab: LabType): { trilha: string; titulo: string } | undefined {
+  for (const t of getAllSpecialties()) {
+    const l = t.modules.flatMap(m => m.lessons).find(x => x.labType === lab);
+    if (l) return { trilha: t.code, titulo: l.title };
+  }
+  return undefined;
+}
 
 function tituloDaLicao(trilha: string | undefined, achar: (l: { labType?: LabType; code: string }) => boolean): string | undefined {
   if (!trilha) return undefined;
@@ -128,8 +141,24 @@ export function descreverAtividade(e: EventoDeAtividade): AtividadeDescrita {
 
   const lab = LABORATORIO_DO_EVENTO[e.event_type];
   if (lab) {
-    const titulo = tituloDaLicao(trilha, l => l.labType === lab);
-    return { trilha, texto: titulo ? `Laboratório concluído: ${titulo}` : 'Laboratório concluído' };
+    const codigo = texto(m.lessonCode);
+    const porCodigo = codigo ? tituloDaLicao(trilha, l => l.code === codigo) : undefined;
+    if (porCodigo) return { trilha, texto: `Laboratório concluído: ${porCodigo}` };
+
+    /*
+      Os eventos gravados antes de os laboratórios registrarem a trilha e a
+      lição — e são a maioria do histórico de quem já usou a plataforma.
+
+      Deles só vem o tipo do evento. Mas cada laboratório é usado uma vez em
+      todo o currículo, e não só dentro de uma trilha: `file_manager` só existe
+      na AP041, `web_lab` só na AP034. Então o tipo basta para achar a lição e,
+      por ela, a trilha — o que devolve a frase inteira a um evento que não
+      guardou nada além do nome.
+    */
+    const achada = acharLicaoPorLaboratorio(lab);
+    if (achada) return { trilha: trilha ?? achada.trilha, texto: `Laboratório concluído: ${achada.titulo}` };
+
+    return { trilha, texto: 'Laboratório concluído' };
   }
 
   const passo = PASSOS[e.event_type];

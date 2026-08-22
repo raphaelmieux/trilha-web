@@ -129,7 +129,7 @@ export default function ThreatLab({ specialtyCode, lessonCode, requirementCodes,
 
   const runSimulation = () => {
     setRuns(prev => [...prev, { setup, result: outcome.infected }]);
-    void logActivity(userId, 'threat_sim_run', {
+    void logActivity(userId, 'threat_sim_run', { specialtyCode, lessonCode,
       signatureAgeDays: setup.signatureAgeDays,
       infected: outcome.infected,
     });
@@ -208,7 +208,7 @@ export default function ThreatLab({ specialtyCode, lessonCode, requirementCodes,
         total_questions: SITUATIONS.length + DAMAGES.filter(d => d.real).length,
       });
     }
-    await logActivity(userId, 'threat_lab_completed', {
+    await logActivity(userId, 'threat_lab_completed', { specialtyCode, lessonCode,
       situacoesDePrimeira: firstCorrect, simulacoes: runs.length,
     });
     setCompleted(true);

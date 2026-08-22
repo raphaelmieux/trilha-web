@@ -97,7 +97,7 @@ export default function SiteLab({ specialtyCode, lessonCode, requirementCodes, u
         attempts: 1, correct_count: passedCount, total_questions: allChecks.length,
       });
     }
-    await logActivity(userId, 'site_lab_completed', { checksPassed: passedCount, total: allChecks.length });
+    await logActivity(userId, 'site_lab_completed', { specialtyCode, lessonCode, checksPassed: passedCount, total: allChecks.length });
     setCompleted(true);
   };
 

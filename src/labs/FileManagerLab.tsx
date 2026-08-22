@@ -410,7 +410,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, requirementC
         + 'Nada do que você fez se perdeu — avise a liderança do clube.');
       return;
     }
-    await logActivity(userId, 'file_manager_completed', { operacoes: TAREFAS.length });
+    await logActivity(userId, 'file_manager_completed', { specialtyCode, lessonCode, operacoes: TAREFAS.length });
     setSalvo(true);
   };
 
