@@ -7,13 +7,15 @@ import { getSpecialty, getFamilias, preRequisitoCumprido } from '../curriculum';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
-import { getPublicName, ROTULO_DO_NIVEL, type Specialty, type Certification } from '../types';
-import { franchiseConfig } from '../config/franchise';
+import { useMinhasPosicoes } from '../hooks/useMinhasPosicoes';
+import { getPublicName, nomeCompleto, ROTULO_DO_NIVEL, type Specialty, type Certification } from '../types';
 import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
 import { descreverAtividade } from '../lib/atividade';
 import ProgressBar from '../components/ui/ProgressBar';
 import SpecialtyEmblem from '../components/ui/SpecialtyEmblem';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
+import EstanteDeInsignias from '../components/ui/EstanteDeInsignias';
+import { INSIGNIAS } from '../lib/insignias';
 import type { ProgressMap } from '../lib/progress';
 import { Lock, Award, Flame, Star, Clock, FileText, ArrowRight, Medal, HardHat } from 'lucide-react';
 
@@ -43,12 +45,9 @@ function CardDaTrilha({ e, progress, cert, liberada }: {
 
   const identificacao = (
     <div className="min-w-0">
-      <h3 className="text-xl font-bold">{e.name}</h3>
+      <h3 className="text-xl font-bold">{nomeCompleto(e)}</h3>
       <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>
-        {e.code} · Nível {ROTULO_DO_NIVEL[e.level]}
-      </p>
-      <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
-        Insígnia para a faixa do desbravador
+        Nível {ROTULO_DO_NIVEL[e.level]}
       </p>
     </div>
   );
@@ -126,7 +125,9 @@ export default function DashboardPage() {
   const { badges } = useBadges(profile?.id);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [recentEvents, setRecentEvents] = useState<any[]>([]);
+  const [noRanking, setNoRanking] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { posicoes } = useMinhasPosicoes(profile?.id, noRanking);
 
   useEffect(() => {
     if (!profile) return;
@@ -135,6 +136,11 @@ export default function DashboardPage() {
       setEnrollments(enrolls || []);
       const { data: events } = await supabase.from('activity_events').select('*').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(10);
       setRecentEvents(events || []);
+      /* A colocação só é buscada de quem optou por aparecer: para quem não
+         optou, ela nem existe. */
+      const { data: prefs } = await supabase
+        .from('privacy_preferences').select('show_on_leaderboard').eq('user_id', profile.id).maybeSingle();
+      setNoRanking(!!prefs?.show_on_leaderboard);
       setLoading(false);
     })();
   }, [profile]);
@@ -162,7 +168,6 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Olá, {getPublicName(profile)}!</h1>
-          <p style={{ color: 'var(--color-text-dim)' }}>Bem-vindo(a) de volta à sua trilha de aprendizagem</p>
         </div>
         <div className="flex gap-4">
           <div className="card px-4 py-2 flex items-center gap-2">
@@ -179,6 +184,13 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* As insígnias logo abaixo do nome — ver EstanteDeInsignias. */}
+      <EstanteDeInsignias
+        badges={badges}
+        total={INSIGNIAS.length + familias.flatMap(f => f.trilhas).filter(t => !t.emConstrucao).length}
+        posicoes={posicoes}
+      />
 
       {/*
         Uma seção por assunto, e dentro dela os níveis em ordem.
@@ -228,7 +240,7 @@ export default function DashboardPage() {
                     <p className="font-semibold">
                       {(() => {
                         const e = getSpecialty(cert.curriculum_code);
-                        return e ? `${e.name} (${e.code})` : cert.curriculum_code;
+                        return e ? nomeCompleto(e) : cert.curriculum_code;
                       })()}
                     </p>
                     <p className="text-xs font-mono" style={{ color: 'var(--color-text-dim)' }}>{cert.code}</p>
@@ -280,9 +292,6 @@ export default function DashboardPage() {
         <Link to="/verificar" className="btn-secondary"><Award className="w-4 h-4 mr-1" /> Verificar Token.Web()</Link>
       </div>
 
-      <div className="card p-4" style={{ backgroundColor: 'var(--color-bg-input)', borderColor: 'var(--color-tertiary-a20)' }}>
-        <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>{franchiseConfig.institutionalTexts.tokenDisclaimer}</p>
-      </div>
     </div>
   );
 }

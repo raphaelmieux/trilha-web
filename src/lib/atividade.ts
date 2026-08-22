@@ -65,7 +65,7 @@ export function trilhaDoEvento(e: EventoDeAtividade): string | undefined {
  * isso em curriculum/index.test.ts —, o tipo do laboratório é suficiente para
  * achar a lição e, com ela, o título que a pessoa viu na tela.
  */
-const LABORATORIO_DO_EVENTO: Record<string, LabType> = {
+export const LABORATORIO_DO_EVENTO: Record<string, LabType> = {
   ai_lab_completed: 'ai_lab',
   code_lab_completed: 'code_lab',
   cuidados_concluido: 'computer_care',

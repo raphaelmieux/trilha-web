@@ -1,4 +1,4 @@
-import { Footprints, Layers, Flame, Trophy, Star, Award, type LucideIcon } from 'lucide-react';
+import { Footprints, Layers, Flame, Trophy, Star, Award, Beaker, Clock, Zap, Calendar, type LucideIcon } from 'lucide-react';
 import type { Badge } from '../../types';
 /* Shared with the PDF renderer so the printed report and the screen cannot show
    the same badge in two different colours. See src/lib/badgeIcons.ts. */
@@ -11,6 +11,10 @@ const ICONS: Record<string, LucideIcon> = {
   trophy: Trophy,
   star: Star,
   award: Award,
+  beaker: Beaker,
+  clock: Clock,
+  zap: Zap,
+  calendar: Calendar,
 };
 
 export default function BadgeIcon({ badge, size = 'md' }: { badge: Badge; size?: 'sm' | 'md' | 'lg' }) {
