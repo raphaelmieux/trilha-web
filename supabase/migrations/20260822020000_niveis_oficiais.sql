@@ -19,13 +19,32 @@
 */
 
 DO $$
+DECLARE
+  r record;
 BEGIN
+  /*
+    Derruba QUALQUER restrição de verificação que fale de `level` nas duas
+    tabelas, em vez de confiar no nome que o Postgres deu a ela.
+
+    Um `DROP CONSTRAINT IF EXISTS` com o nome errado não falha: ele não faz
+    nada. A restrição antiga continuaria de pé, a nova entraria ao lado, e a
+    conversão adiante esbarraria numa regra que ninguém viu — com a migration
+    inteira revertida e nenhuma pista do motivo.
+  */
+  FOR r IN
+    SELECT c.conrelid::regclass::text AS tabela, c.conname AS nome
+    FROM pg_constraint c
+    WHERE c.contype = 'c'
+      AND c.conrelid IN ('specialties'::regclass, 'certifications'::regclass)
+      AND pg_get_constraintdef(c.oid) ILIKE '%level%'
+  LOOP
+    EXECUTE format('ALTER TABLE %s DROP CONSTRAINT %I', r.tabela, r.nome);
+  END LOOP;
+
   -- ── 1. A restrição aceita os antigos e os novos ao mesmo tempo ────────
-  ALTER TABLE specialties DROP CONSTRAINT IF EXISTS specialties_level_check;
   ALTER TABLE specialties ADD CONSTRAINT specialties_level_check
     CHECK (level IN ('fundamental','advanced','basico','intermediario','avancado'));
 
-  ALTER TABLE certifications DROP CONSTRAINT IF EXISTS certifications_level_check;
   ALTER TABLE certifications ADD CONSTRAINT certifications_level_check
     CHECK (level IN ('fundamental','advanced','basico','intermediario','avancado'));
 

@@ -1,0 +1,112 @@
+import { describe, it, expect } from 'vitest';
+import { descreverAtividade, trilhaDoEvento } from './atividade';
+
+/*
+  O painel de atividade mostrava o tipo do evento cru: "lesson completed",
+  "certification issued", "file manager completed". Em inglês, e sem dizer de
+  qual trilha nem de qual lição — sobrava a data, que sozinha não conta nada.
+
+  O que se vigia aqui: que a trilha seja encontrada em qualquer um dos formatos
+  em que os eventos foram gravados ao longo do tempo, e que a lição seja nomeada
+  pelo título que a pessoa viu na tela.
+*/
+
+describe('achar a trilha do evento', () => {
+  it('pelo campo direto', () => {
+    expect(trilhaDoEvento({ event_type: 'x', metadata: { specialtyCode: 'AP041' } })).toBe('AP041');
+  });
+
+  /* A página de lição grava o código da trilha na coluna de versão do
+     currículo — é onde ele coube quando a função foi escrita. */
+  it('pela coluna de versão do currículo', () => {
+    expect(trilhaDoEvento({ event_type: 'x', curriculum_version: 'AP035' })).toBe('AP035');
+  });
+
+  it('pelo prefixo do código da lição', () => {
+    expect(trilhaDoEvento({ event_type: 'x', metadata: { lessonCode: 'AP041.5-L1' } })).toBe('AP041');
+  });
+
+  it('pelo prefixo do código do requisito', () => {
+    expect(trilhaDoEvento({ event_type: 'x', metadata: { requirementCode: 'AP034-6.1' } })).toBe('AP034');
+  });
+
+  it('não inventa trilha quando não há de onde tirar', () => {
+    expect(trilhaDoEvento({ event_type: 'x' })).toBeUndefined();
+    expect(trilhaDoEvento({ event_type: 'x', curriculum_version: '1.0' })).toBeUndefined();
+  });
+});
+
+describe('descrever o que a pessoa fez', () => {
+  it('nomeia a lição concluída pelo título que ela viu', () => {
+    const d = descreverAtividade({
+      event_type: 'lesson_completed',
+      metadata: { lessonCode: 'AP041.3-L1', score: 5, total: 5 },
+      curriculum_version: 'AP041',
+    });
+    expect(d.trilha).toBe('AP041');
+    expect(d.texto).toBe('Lição concluída: Levar para dentro: teclado, mouse e scanner');
+    expect(d.detalhe).toBe('5 de 5');
+  });
+
+  /*
+    Os laboratórios não gravam o código da lição — gravam o próprio nome no tipo
+    do evento. Como cada trilha usa um laboratório uma vez só, o tipo basta para
+    achar a lição, e nenhum dos catorze precisou ser alterado.
+  */
+  it('acha a lição do laboratório pelo tipo do evento', () => {
+    const d = descreverAtividade({
+      event_type: 'file_manager_completed',
+      metadata: { specialtyCode: 'AP041' },
+    });
+    expect(d.texto).toBe('Laboratório concluído: Mexendo em pastas e arquivos');
+  });
+
+  it('descreve o certificado com o código dele', () => {
+    const d = descreverAtividade({
+      event_type: 'certification_issued',
+      metadata: { specialtyCode: 'AP034', certCode: 'TW-AAAA-BBBB' },
+    });
+    expect(d.trilha).toBe('AP034');
+    expect(d.texto).toBe('Certificado emitido');
+    expect(d.detalhe).toBe('TW-AAAA-BBBB');
+  });
+
+  it('descreve a avaliação final com a nota', () => {
+    const d = descreverAtividade({
+      event_type: 'final_exam_completed',
+      metadata: { specialtyCode: 'AP035', score: 18, total: 22 },
+    });
+    expect(d.texto).toBe('Avaliação final concluída');
+    expect(d.detalhe).toBe('18 de 22');
+  });
+
+  it('nomeia o relatório enviado pela lição de redação da trilha', () => {
+    const d = descreverAtividade({
+      event_type: 'text_submitted',
+      metadata: { specialtyCode: 'AP041' },
+    });
+    expect(d.texto).toBe('Relatório enviado: Escrevendo sobre a história dos computadores');
+  });
+
+  it('descreve os passos de dentro dos laboratórios', () => {
+    expect(descreverAtividade({ event_type: 'mail_sent' }).texto).toBe('E-mail enviado no laboratório');
+    expect(descreverAtividade({ event_type: 'text_saved' }).texto).toBe('Rascunho do texto salvo');
+  });
+
+  /* Evento novo não some da lista: aparece legível o bastante para alguém
+     perceber que falta descrevê-lo. */
+  it('não engole um tipo que ainda não tem frase', () => {
+    const d = descreverAtividade({ event_type: 'algo_novo_aconteceu' });
+    expect(d.texto).toBe('Algo novo aconteceu');
+  });
+
+  it('descreve mesmo sem saber a trilha', () => {
+    const d = descreverAtividade({ event_type: 'lesson_completed', metadata: {} });
+    expect(d.trilha).toBeUndefined();
+    expect(d.texto).toBe('Lição concluída');
+  });
+
+  it('não quebra com metadata ausente', () => {
+    expect(() => descreverAtividade({ event_type: 'lesson_completed', metadata: null })).not.toThrow();
+  });
+});
