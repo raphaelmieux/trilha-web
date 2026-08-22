@@ -7,6 +7,7 @@ import {
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
+  registrarConclusaoDeLicao,
 } from '../lib/progress';
 
 /*
@@ -64,9 +65,9 @@ type TarefaId = (typeof TAREFAS)[number]['id'];
 
 const proximoId = (() => { let n = 0; return () => `n${++n}`; })();
 
-interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
+interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
-export default function FileManagerLab({ specialtyCode, requirementCodes, userId }: Props) {
+export default function FileManagerLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
   const [itens, setItens] = useState<Item[]>(INICIAL);
   const [local, setLocal] = useState<Local>('area');
   const [selecionado, setSelecionado] = useState<string | null>(null);
@@ -187,6 +188,7 @@ export default function FileManagerLab({ specialtyCode, requirementCodes, userId
       await ensureEnrollment(userId, specId);
       await updateEnrollmentActivity(userId, specId);
     }
+    await registrarConclusaoDeLicao(userId, lessonCode);
 
     /*
       Conta quantos requisitos foram de fato gravados.

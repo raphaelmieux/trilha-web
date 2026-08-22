@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCertifications } from '../hooks/useCertifications';
-import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId } from '../lib/progress';
+import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId,
+  registrarConclusaoDeLicao,
+} from '../lib/progress';
 import { LoadingState } from '../components/ui/PageState';
 import { ShieldCheck, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 
-interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
+interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
 /**
  * AP035 requirement 1: "Ter a especialidade de Internet".
@@ -20,7 +22,7 @@ interface Props { specialtyCode: string; requirementCodes: string[]; userId: str
  * this student, which is the same record the report and the verification page
  * read.
  */
-export default function PrerequisiteLab({ specialtyCode, requirementCodes, userId }: Props) {
+export default function PrerequisiteLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
   const { certifications, loading } = useCertifications(userId);
   const [recorded, setRecorded] = useState(false);
 
@@ -31,6 +33,7 @@ export default function PrerequisiteLab({ specialtyCode, requirementCodes, userI
     (async () => {
       const specId = await getSpecialtyId(specialtyCode);
       if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
+      await registrarConclusaoDeLicao(userId, lessonCode);
       for (const reqCode of requirementCodes) {
         const reqId = await getRequirementId(reqCode);
         if (reqId) await upsertRequirementProgress(userId, reqId, {
@@ -41,7 +44,7 @@ export default function PrerequisiteLab({ specialtyCode, requirementCodes, userI
       await logActivity(userId, 'prerequisite_verified', { certificado: held.code });
       setRecorded(true);
     })();
-  }, [loading, held, recorded, specialtyCode, requirementCodes, userId]);
+  }, [loading, held, recorded, specialtyCode, lessonCode, requirementCodes, userId]);
 
   if (loading) return <LoadingState label="Conferindo o pré-requisito..." />;
 

@@ -4,6 +4,7 @@ import { CheckCircle2, Circle, ShieldCheck, ArrowUp, ArrowDown } from 'lucide-re
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
+  registrarConclusaoDeLicao,
 } from '../lib/progress';
 
 /*
@@ -78,9 +79,9 @@ const embaralhar = <T,>(l: T[]): T[] => {
   return c;
 };
 
-interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
+interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
-export default function ComputerCareLab({ specialtyCode, requirementCodes, userId }: Props) {
+export default function ComputerCareLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
   const [mesa] = useState(() => embaralhar(MESA));
   const [acoes] = useState(() => embaralhar(ACOES));
   const [ordem, setOrdem] = useState(() => embaralhar(PASSOS));
@@ -138,6 +139,7 @@ export default function ComputerCareLab({ specialtyCode, requirementCodes, userI
       await ensureEnrollment(userId, specId);
       await updateEnrollmentActivity(userId, specId);
     }
+    await registrarConclusaoDeLicao(userId, lessonCode);
     let gravados = 0;
     for (const reqCode of requirementCodes) {
       const reqId = await getRequirementId(reqCode);

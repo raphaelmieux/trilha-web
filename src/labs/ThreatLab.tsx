@@ -1,6 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId } from '../lib/progress';
+import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId,
+  registrarConclusaoDeLicao,
+} from '../lib/progress';
 import {
   simulateOutbreak, detectionRate, type ClubSetup,
 } from '../lib/infection';
@@ -9,7 +11,7 @@ import {
   RotateCcw, Play,
 } from 'lucide-react';
 
-interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
+interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
 /**
  * ThreatLab — requirements AP034-4.1 to 4.4.
@@ -82,7 +84,7 @@ const DAMAGES: Damage[] = [
 
 const DEVICES = 12;
 
-export default function ThreatLab({ specialtyCode, requirementCodes, userId }: Props) {
+export default function ThreatLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -196,6 +198,7 @@ export default function ThreatLab({ specialtyCode, requirementCodes, userId }: P
     setSaving(true);
     const specId = await getSpecialtyId(specialtyCode);
     if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
+    await registrarConclusaoDeLicao(userId, lessonCode);
     for (const reqCode of requirementCodes) {
       const reqId = await getRequirementId(reqCode);
       if (reqId) await upsertRequirementProgress(userId, reqId, {

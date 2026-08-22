@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getPublicName } from '../types';
-import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId } from '../lib/progress';
+import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId,
+  registrarConclusaoDeLicao,
+} from '../lib/progress';
 import {
   checkStatement, checkWeeklyBudget, checkDailyLimit, checkBudgetsAgree,
   checkSocialNetworks, checkSignature, MAX_SOCIAL_NETWORKS,
@@ -11,7 +13,7 @@ import {
 import { exportPactPdf } from '../lib/pdf';
 import { FileSignature, Shield, CheckCircle2, AlertCircle, Download } from 'lucide-react';
 
-interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
+interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
 /**
  * Meu Compromisso Digital — requirements AP034-5.1 … 5.9.
@@ -50,7 +52,7 @@ const DAILY: Clause = { id: 'c9', requirement: 'AP034-5.9', title: 'Meu limite d
 
 const NETWORKS = ['WhatsApp', 'Instagram', 'YouTube', 'TikTok', 'Facebook', 'Discord', 'Telegram', 'Pinterest'];
 
-export default function PactBuilderLab({ specialtyCode, requirementCodes, userId }: Props) {
+export default function PactBuilderLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
   const { profile } = useAuth();
   const [texts, setTexts] = useState<Record<string, string>>({});
   const [networks, setNetworks] = useState<string[]>([]);
@@ -99,6 +101,7 @@ export default function PactBuilderLab({ specialtyCode, requirementCodes, userId
     setSaving(true);
     const specId = await getSpecialtyId(specialtyCode);
     if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
+    await registrarConclusaoDeLicao(userId, lessonCode);
     for (const reqCode of requirementCodes) {
       const reqId = await getRequirementId(reqCode);
       if (reqId) await upsertRequirementProgress(userId, reqId, {

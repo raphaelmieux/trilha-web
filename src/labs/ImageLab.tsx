@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId } from '../lib/progress';
+import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId,
+  registrarConclusaoDeLicao,
+} from '../lib/progress';
 import {
   calculateResize, formatBytes, contrastRatio, loadImageFile,
   drawResized, sourceSize, drawSamplePhoto, drawLogo, drawButton, drawHeader,
@@ -12,7 +14,7 @@ import {
   MousePointerClick, PanelTop, Shapes, Camera, Palette,
 } from 'lucide-react';
 
-interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
+interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
 /**
  * ImageLab — requirement AP035-5.2, quoted from the official sheet:
@@ -87,7 +89,7 @@ const TOUCH_TARGET_MIN = 44;
 /** "pelo menos, cinco botões de navegação gráfica" */
 const NAV_LABELS_DEFAULT = ['Início', 'Sobre', 'Galeria', 'Contato', 'Eventos'];
 
-export default function ImageLab({ specialtyCode, requirementCodes, userId }: Props) {
+export default function ImageLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<Record<string, boolean>>({});
@@ -323,6 +325,7 @@ export default function ImageLab({ specialtyCode, requirementCodes, userId }: Pr
     setSaving(true);
     const specId = await getSpecialtyId(specialtyCode);
     if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
+    await registrarConclusaoDeLicao(userId, lessonCode);
     for (const reqCode of requirementCodes) {
       const reqId = await getRequirementId(reqCode);
       if (reqId) await upsertRequirementProgress(userId, reqId, {

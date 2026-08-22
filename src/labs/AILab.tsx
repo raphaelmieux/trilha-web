@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId } from '../lib/progress';
+import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId,
+  registrarConclusaoDeLicao,
+} from '../lib/progress';
 import { Sparkles, Image as ImageIcon, Palette, CheckCircle2, AlertCircle, ThumbsUp, ThumbsDown, FileText, Loader2 } from 'lucide-react';
 
-interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
+interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
 type Stage = 'text' | 'image' | 'logo' | 'review';
 
@@ -97,7 +99,7 @@ function Picker({ label, options, value, onChange }: {
   );
 }
 
-export default function AILab({ specialtyCode, requirementCodes, userId }: Props) {
+export default function AILab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
   const [stage, setStage] = useState<Stage>('text');
   const [completed, setCompleted] = useState(false);
 
@@ -187,6 +189,7 @@ export default function AILab({ specialtyCode, requirementCodes, userId }: Props
     setBusy(true);
     const specId = await getSpecialtyId(specialtyCode);
     if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
+    await registrarConclusaoDeLicao(userId, lessonCode);
     for (const reqCode of requirementCodes) {
       const reqId = await getRequirementId(reqCode);
       if (reqId) await upsertRequirementProgress(userId, reqId, {

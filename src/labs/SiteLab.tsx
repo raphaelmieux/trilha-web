@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId } from '../lib/progress';
+import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId,
+  registrarConclusaoDeLicao,
+} from '../lib/progress';
 import { validateHtml, validateSiteLinks, type CheckResult } from '../lib/htmlValidator';
 import { CheckCircle2, AlertCircle, FileCode, Globe, Eye, PanelsTopLeft } from 'lucide-react';
 
-interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
+interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
 const PAGES = [
   { file: 'index.html', title: 'Início' },
@@ -39,7 +41,7 @@ const STARTERS: Record<string, string> = {
 /** Per-page requirements. Every page must stand on its own as valid HTML. */
 const PAGE_CHECKS = ['html', 'head', 'body', 'title', 'heading'];
 
-export default function SiteLab({ specialtyCode, requirementCodes, userId }: Props) {
+export default function SiteLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
   const [pages, setPages] = useState<Record<string, string>>(() => ({ ...STARTERS }));
   const [active, setActive] = useState('index.html');
   const [mobileView, setMobileView] = useState<'code' | 'preview'>('code');
@@ -87,6 +89,7 @@ export default function SiteLab({ specialtyCode, requirementCodes, userId }: Pro
     setSaving(true);
     const specId = await getSpecialtyId(specialtyCode);
     if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
+    await registrarConclusaoDeLicao(userId, lessonCode);
     for (const reqCode of requirementCodes) {
       const reqId = await getRequirementId(reqCode);
       if (reqId) await upsertRequirementProgress(userId, reqId, {

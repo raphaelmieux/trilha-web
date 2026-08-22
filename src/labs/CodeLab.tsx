@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId } from '../lib/progress';
+import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId,
+  registrarConclusaoDeLicao,
+} from '../lib/progress';
 import { validateHtml, type CheckResult } from '../lib/htmlValidator';
 import { Code2, RotateCcw, CheckCircle2, AlertCircle, FileCode, Eye, PanelsTopLeft } from 'lucide-react';
 
@@ -19,6 +21,7 @@ export type CodeLabVariant = 'elementos' | 'tabela';
 
 interface Props {
   specialtyCode: string;
+  lessonCode: string;
   requirementCodes: string[];
   userId: string;
   variant?: CodeLabVariant;
@@ -94,7 +97,7 @@ const INTROS: Record<CodeLabVariant, string> = {
   tabela: 'O requisito 4 pede uma página inteira: uma tabela com texto, um gráfico, uma regra horizontal e um link, com algum texto colorido por código hexadecimal e um título maior que o corpo. Escolha algo do seu clube para tabelar — a escala da unidade, os hinos do trimestre — e troque o exemplo que já está no editor, que não conta.',
 };
 
-export default function CodeLab({ specialtyCode, requirementCodes, userId, variant = 'elementos' }: Props) {
+export default function CodeLab({ specialtyCode, lessonCode, requirementCodes, userId, variant = 'elementos' }: Props) {
   const starter = STARTERS[variant];
   const [code, setCode] = useState(starter);
   const [completed, setCompleted] = useState(false);
@@ -122,6 +125,7 @@ export default function CodeLab({ specialtyCode, requirementCodes, userId, varia
     setSaving(true);
     const specId = await getSpecialtyId(specialtyCode);
     if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
+    await registrarConclusaoDeLicao(userId, lessonCode);
     for (const reqCode of requirementCodes) {
       const reqId = await getRequirementId(reqCode);
       if (reqId) await upsertRequirementProgress(userId, reqId, {

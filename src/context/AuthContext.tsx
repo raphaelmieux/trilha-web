@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { limparCacheDeProgresso } from '../lib/progress';
+import { limparRascunhos } from '../lib/rascunho';
 import { supabase } from '../lib/supabase';
 import type { UserProfile } from '../types';
 
@@ -83,6 +84,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
        limpar aqui, quem entrasse depois na mesma aba veria, por um instante,
        as barras de quem saiu. */
     limparCacheDeProgresso();
+    /* O clube costuma ter um computador só: o rascunho de um não pode
+       aparecer para o próximo que entrar. */
+    limparRascunhos();
   };
 
   return <AuthContext.Provider value={{ session, profile, loading, signOut }}>{children}</AuthContext.Provider>;

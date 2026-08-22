@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSpecialty } from '../curriculum';
-import { shuffleQuestionOptions } from '../curriculum/ap034';
+import { embaralharQuestao } from '../lib/questoes';
 
 import type { RequirementStatus } from '../types';
 import {
@@ -16,6 +16,7 @@ import { supabase } from '../lib/supabase';
 import FinalExam from '../components/FinalExam';
 import QuestionRenderer from '../components/questions/QuestionRenderer';
 import TextEditorLab from '../labs/TextEditorLab';
+import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import PactBuilderLab from '../labs/PactBuilderLab';
 import ThreatLab from '../labs/ThreatLab';
 import PrerequisiteLab from '../labs/PrerequisiteLab';
@@ -66,7 +67,9 @@ export default function LessonPage() {
 
   // Hooks must run unconditionally on every render, so this stays above the
   // "not found" early return below (it previously ran after it).
-  const questions = useMemo(() => (lesson?.questions || []).map(shuffleQuestionOptions), [lesson]);
+  /* Reembaralha a cada lição aberta: a dependência é a lição, então voltar a
+     uma já vista devolve as alternativas e os itens em outra ordem. */
+  const questions = useMemo(() => (lesson?.questions || []).map(embaralharQuestao), [lesson]);
 
   if (specialty?.emConstrucao) return (
     <div className="max-w-lg mx-auto text-center py-12">
@@ -90,6 +93,10 @@ export default function LessonPage() {
   if (lesson.labType) {
     const labProps = {
       specialtyCode: specialty.code,
+      /* O laboratório precisa saber qual lição ele é para registrar a própria
+         conclusão — sem isso, o estado dele teria de ser deduzido do requisito,
+         que é o que fazia a teoria ao lado marcá-lo como feito. */
+      lessonCode: lesson.code,
       requirementCodes: lesson.requirementCodes,
       userId: profile.id,
     };
@@ -101,6 +108,7 @@ export default function LessonPage() {
           <span className="font-medium" style={{ color: 'var(--color-text)' }}>{lesson.title}</span>
         </div>
         {lesson.labType === 'text_editor' && <TextEditorLab {...labProps} />}
+        {lesson.labType === 'redacao_guiada' && <RedacaoGuiadaLab {...labProps} />}
         {lesson.labType === 'pact_builder' && <PactBuilderLab {...labProps} />}
         {lesson.labType === 'threat_lab' && <ThreatLab {...labProps} />}
         {lesson.labType === 'prerequisite' && <PrerequisiteLab {...labProps} />}

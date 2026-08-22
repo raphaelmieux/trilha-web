@@ -1,8 +1,10 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getPublicName } from '../types';
-import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId } from '../lib/progress';
+import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId,
+  registrarConclusaoDeLicao,
+} from '../lib/progress';
 import {
   parseAddress, assessAddress, analyzeQuery, buildSearchUrl, assessDownload,
   type RiskLevel,
@@ -11,12 +13,15 @@ import {
   parseReference, countDistinctReferences, countDistinctVersions, BIBLE_VERSIONS,
 } from '../lib/bibleStudy';
 import { exportStudySheetPdf } from '../lib/pdf';
+import { lerRascunho, descartarRascunho } from '../lib/rascunho';
+import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
+import LinkExterno from '../components/ui/LinkExterno';
 import {
   Globe, Link2, ShieldCheck, Search, FileDown, CheckCircle2, AlertCircle,
   ExternalLink, Lock, Unlock, Download, RotateCcw, Compass, BookOpen,
 } from 'lucide-react';
 
-interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
+interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
 /**
  * WebLab — requirements AP034-6.1, 6.2 and 6.3: visit three sites, find three
@@ -61,7 +66,35 @@ const RISK_ANSWERS: { level: RiskLevel; label: string }[] = [
   { level: 'perigoso', label: 'Não baixo' },
 ];
 
-export default function WebLab({ specialtyCode, requirementCodes, userId }: Props) {
+/*
+  Tudo o que o desbravador digita neste laboratório.
+
+  O WebLab nunca leu nada do servidor: o estado morava só na tela, e qualquer
+  recarga apagava horas de trabalho. No celular isso deixou de ser hipótese —
+  abrir um dos sites do requisito 3 trocava a página, e voltar significava
+  recomeçar do zero.
+*/
+interface RascunhoWebLab {
+  typed: string;
+  judged: Record<string, boolean>;
+  firstJudged: Record<string, boolean>;
+  visits: { url: string; note: string }[];
+  opened: Record<number, boolean>;
+  query: string;
+  searchOpened: boolean;
+  bibleSite: string;
+  passages: { reference: string; version: string; text: string }[];
+  fileJudged: Record<string, RiskLevel>;
+  fileFirstJudged: Record<string, RiskLevel>;
+  sheetSaved: boolean;
+}
+
+export default function WebLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+  /* Lido uma vez, na montagem: cada useState abaixo começa do que estava
+     guardado. Restaurar por efeito faria a tela piscar vazia antes, e o
+     primeiro estado vazio sobrescreveria o rascunho bom. */
+  const guardado = useRef(lerRascunho<RascunhoWebLab>(userId, lessonCode)?.conteudo).current;
+
   const { profile } = useAuth();
   const studentName = profile ? getPublicName(profile) : 'Desbravador(a)';
 
@@ -69,7 +102,7 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
   const [saving, setSaving] = useState(false);
 
   /* ── 1. Anatomia do endereço ────────────────────────────────────────────── */
-  const [typed, setTyped] = useState('');
+  const [typed, setTyped] = useState(guardado?.typed ?? '');
   const address = useMemo(() => parseAddress(typed), [typed]);
 
   // What the student typed as the host, before the parser touched it. A mismatch
@@ -113,8 +146,8 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
    * Without it the check would only measure whether the student can read the
    * answer off the screen and click again.
    */
-  const [judged, setJudged] = useState<Record<string, boolean>>({});
-  const [firstJudged, setFirstJudged] = useState<Record<string, boolean>>({});
+  const [judged, setJudged] = useState<Record<string, boolean>>(guardado?.judged ?? {});
+  const [firstJudged, setFirstJudged] = useState<Record<string, boolean>>(guardado?.firstJudged ?? {});
 
   const judge = (url: string, answer: boolean) => {
     setJudged(p => ({ ...p, [url]: answer }));
@@ -148,10 +181,10 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
      para o seu instrutor." A conferência é presencial no documento; aqui o
      desbravador registra a evidência e ela sai no relatório impresso, que é
      o que o instrutor lê. */
-  const [visits, setVisits] = useState([
+  const [visits, setVisits] = useState(guardado?.visits ?? [
     { url: '', note: '' }, { url: '', note: '' }, { url: '', note: '' },
   ]);
-  const [opened, setOpened] = useState<Record<number, boolean>>({});
+  const [opened, setOpened] = useState<Record<number, boolean>>(guardado?.opened ?? {});
 
   const setVisit = (index: number, patch: Partial<{ url: string; note: string }>) =>
     setVisits(prev => prev.map((v, i) => i === index ? { ...v, ...patch } : v));
@@ -189,9 +222,9 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
   ];
 
   /* ── 3. Pesquisa ────────────────────────────────────────────────────────── */
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(guardado?.query ?? '');
   const parsedQuery = useMemo(() => analyzeQuery(query), [query]);
-  const [searchOpened, setSearchOpened] = useState(false);
+  const [searchOpened, setSearchOpened] = useState(guardado?.searchOpened ?? false);
   const searchUrl = buildSearchUrl(query);
 
   const queryChecks: Check[] = [
@@ -223,8 +256,8 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
      pode ser conferido contando caixas: "Fp 4:8" e "Filipenses 4:8" são o mesmo
      versículo, e "NVI" e "nvi" são a mesma versão. Ambos são comparados depois
      de interpretados, em src/lib/bibleStudy.ts. */
-  const [bibleSite, setBibleSite] = useState('');
-  const [passages, setPassages] = useState([
+  const [bibleSite, setBibleSite] = useState(guardado?.bibleSite ?? '');
+  const [passages, setPassages] = useState(guardado?.passages ?? [
     { reference: '', version: '', text: '' },
     { reference: '', version: '', text: '' },
     { reference: '', version: '', text: '' },
@@ -268,8 +301,8 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
    * opened. Forcing that into "would download / would not" would teach a rule
    * that is wrong half the time.
    */
-  const [fileJudged, setFileJudged] = useState<Record<string, RiskLevel>>({});
-  const [fileFirstJudged, setFileFirstJudged] = useState<Record<string, RiskLevel>>({});
+  const [fileJudged, setFileJudged] = useState<Record<string, RiskLevel>>(guardado?.fileJudged ?? {});
+  const [fileFirstJudged, setFileFirstJudged] = useState<Record<string, RiskLevel>>(guardado?.fileFirstJudged ?? {});
 
   const judgeFile = (name: string, answer: RiskLevel) => {
     setFileJudged(p => ({ ...p, [name]: answer }));
@@ -284,7 +317,7 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
     f => fileFirstJudged[f] !== undefined && fileFirstJudged[f] === fileVerdicts[f].level,
   ).length;
   const FILE_PASS_MARK = 4;
-  const [sheetSaved, setSheetSaved] = useState(false);
+  const [sheetSaved, setSheetSaved] = useState(guardado?.sheetSaved ?? false);
 
   const downloadChecks: Check[] = [
     {
@@ -311,10 +344,17 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
   const passedCount = allChecks.filter(c => c.passed).length;
   const allPassed = passedCount === allChecks.length;
 
-  const openSearch = () => {
-    window.open(searchUrl, '_blank', 'noopener,noreferrer');
-    setSearchOpened(true);
-  };
+  /* A rede embaixo do laboratório: grava no navegador a cada pausa, e some
+     quando a lição é concluída — daí em diante quem guarda é o servidor. */
+  useRascunhoLocal(
+    userId, lessonCode,
+    useMemo(() => ({
+      typed, judged, firstJudged, visits, opened, query, searchOpened,
+      bibleSite, passages, fileJudged, fileFirstJudged, sheetSaved,
+    }), [typed, judged, firstJudged, visits, opened, query, searchOpened,
+         bibleSite, passages, fileJudged, fileFirstJudged, sheetSaved]),
+    !completed,
+  );
 
   const downloadSheet = () => {
     exportStudySheetPdf({
@@ -340,6 +380,7 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
     setSaving(true);
     const specId = await getSpecialtyId(specialtyCode);
     if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
+    await registrarConclusaoDeLicao(userId, lessonCode);
     for (const reqCode of requirementCodes) {
       const reqId = await getRequirementId(reqCode);
       if (reqId) await upsertRequirementProgress(userId, reqId, {
@@ -363,6 +404,7 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
       })),
     });
     setCompleted(true);
+    descartarRascunho(userId, lessonCode);
   };
 
   if (completed) {
@@ -561,17 +603,14 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
                     aria-label={`Endereço do site ${i + 1}`}
                     spellCheck={false}
                   />
-                  <button
-                    onClick={() => {
-                      window.open(visit.url, '_blank', 'noopener,noreferrer');
-                      setOpened(p => ({ ...p, [i]: true }));
-                    }}
+                  <LinkExterno
+                    href={visit.url}
                     disabled={!parsed.valid}
-                    className="btn-secondary"
+                    onOpen={() => setOpened(p => ({ ...p, [i]: true }))}
                   >
                     <ExternalLink className="w-4 h-4 mr-1" />
                     {opened[i] ? 'Abrir de novo' : 'Abrir'}
-                  </button>
+                  </LinkExterno>
                 </div>
                 {parsed.valid ? (
                   <p className="text-xs mb-2" style={{ color: 'var(--color-text-dim)' }}>
@@ -620,9 +659,14 @@ export default function WebLab({ specialtyCode, requirementCodes, userId }: Prop
           <Token label="Palavras soltas" items={parsedQuery.terms} />
         </div>
 
-        <button onClick={openSearch} disabled={!query.trim()} className="btn-primary w-full">
+        <LinkExterno
+          href={searchUrl}
+          disabled={!query.trim()}
+          onOpen={() => setSearchOpened(true)}
+          className="btn-primary w-full"
+        >
           <ExternalLink className="w-4 h-4 mr-1" /> Pesquisar agora
-        </button>
+        </LinkExterno>
         <p className="text-xs mt-2" style={{ color: 'var(--color-text-dim)' }}>
           Abre em uma aba nova, num buscador que não guarda histórico e com o filtro de
           conteúdo adulto ligado.

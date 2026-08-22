@@ -4,10 +4,13 @@ import { supabase } from '../lib/supabase';
 import {
   logActivity, upsertRequirementProgress, ensureEnrollment,
   updateEnrollmentActivity, getSpecialtyId, getRequirementId,
+  registrarConclusaoDeLicao,
 } from '../lib/progress';
 import { normalizar } from '../lib/respostaTexto';
 import { TEMAS } from './temasDeRedacao';
-import { CheckCircle2, Save, FileText, AlertCircle } from 'lucide-react';
+import { lerRascunho, descartarRascunho, rascunhoEhMaisNovo } from '../lib/rascunho';
+import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
+import { CheckCircle2, Save, FileText, AlertCircle, RotateCcw } from 'lucide-react';
 
 /*
  * O laboratório de redação, agora servindo qualquer trilha.
@@ -22,15 +25,18 @@ import { CheckCircle2, Save, FileText, AlertCircle } from 'lucide-react';
  * do que assumir que aquilo não é avaliado aqui: quem lê a lista acredita nela.
  */
 
-interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
+interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
-export default function TextEditorLab({ specialtyCode, requirementCodes, userId }: Props) {
+export default function TextEditorLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
   const tema = TEMAS[specialtyCode] ?? TEMAS.AP034;
 
   const [text, setText] = useState('');
   const [saved, setSaved] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [erro, setErro] = useState('');
+  const [carregando, setCarregando] = useState(true);
+  /* Avisa que o texto voltou do navegador, em vez de reaparecer sozinho. */
+  const [recuperado, setRecuperado] = useState(false);
 
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
   const plano = normalizar(text);
@@ -70,8 +76,25 @@ export default function TextEditorLab({ specialtyCode, requirementCodes, userId 
         setText(data.body || '');
         if (data.status === 'submitted') setSubmitted(true);
       }
+
+      /*
+        O que ficou no navegador e não chegou ao servidor. Aqui o texto só sobe
+        ao clicar em salvar ou enviar, então o intervalo desprotegido é a redação
+        inteira — foi assim que cem palavras se perderam numa atualização.
+      */
+      if (data?.status !== 'submitted') {
+        const local = lerRascunho<string>(userId, lessonCode);
+        if (rascunhoEhMaisNovo(local, data?.updated_at) && local!.conteudo) {
+          setText(local!.conteudo);
+          setRecuperado(true);
+        }
+      }
+      setCarregando(false);
     })();
-  }, [userId, specialtyCode]);
+  }, [userId, specialtyCode, lessonCode]);
+
+  /* A rede embaixo do salvamento: grava no navegador a cada pausa. */
+  useRascunhoLocal(userId, lessonCode, text, !carregando && !submitted);
 
   /** Grava o rascunho e devolve o id, para o envio não depender do estado. */
   const gravar = async (status: 'draft' | 'submitted'): Promise<string | null> => {
@@ -110,6 +133,7 @@ export default function TextEditorLab({ specialtyCode, requirementCodes, userId 
 
     const specId = await getSpecialtyId(specialtyCode);
     if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
+    await registrarConclusaoDeLicao(userId, lessonCode);
 
     let gravados = 0;
     for (const reqCode of requirementCodes) {
@@ -129,6 +153,8 @@ export default function TextEditorLab({ specialtyCode, requirementCodes, userId 
     }
 
     setSubmitted(true);
+    /* Enviado: o servidor tem a versão boa. */
+    descartarRascunho(userId, lessonCode);
     await logActivity(userId, 'text_submitted', { specialtyCode, wordCount, criteriaMet: metCount });
   };
 
@@ -149,6 +175,19 @@ export default function TextEditorLab({ specialtyCode, requirementCodes, userId 
 
   return (
     <div className="space-y-4">
+      {recuperado && (
+        <div
+          className="p-3 rounded-lg text-sm flex items-start gap-2"
+          style={{ backgroundColor: 'var(--color-tertiary-dim)', border: '1px solid var(--color-tertiary-light)' }}
+        >
+          <RotateCcw className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-tertiary-light)' }} />
+          <span>
+            <strong>Recuperamos o que você estava escrevendo.</strong> O texto tinha ficado
+            guardado aqui no navegador e ainda não havia chegado ao servidor. Confira e salve.
+          </span>
+        </div>
+      )}
+
       <div className="card p-6">
         <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
           <FileText className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {tema.titulo}

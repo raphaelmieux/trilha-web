@@ -1,11 +1,13 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId } from '../lib/progress';
+import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId,
+  registrarConclusaoDeLicao,
+} from '../lib/progress';
 import {
   BookOpen, Lightbulb, RotateCcw, CheckCircle2, AlertCircle, Filter, PenLine,
 } from 'lucide-react';
 
-interface Props { specialtyCode: string; requirementCodes: string[]; userId: string; }
+interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
 /**
  * Filipenses 4:8 — requirement AP034-8.1: learn *and apply* the principle.
@@ -101,7 +103,7 @@ const SITUATION_PASS = 5;
 
 interface Check { id: string; label: string; passed: boolean; hint: string }
 
-export default function FilipensesLab({ specialtyCode, requirementCodes, userId }: Props) {
+export default function FilipensesLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -209,6 +211,7 @@ export default function FilipensesLab({ specialtyCode, requirementCodes, userId 
     setSaving(true);
     const specId = await getSpecialtyId(specialtyCode);
     if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
+    await registrarConclusaoDeLicao(userId, lessonCode);
     for (const reqCode of requirementCodes) {
       const reqId = await getRequirementId(reqCode);
       if (reqId) await upsertRequirementProgress(userId, reqId, {
