@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, AlertCircle, Loader2, PenLine } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Loader2, PenLine, RefreshCw } from 'lucide-react';
 
 /**
  * Picks a club from the official Adventist directory.
@@ -59,6 +59,40 @@ export default function ClubPicker({
      only way forward and switching automatically is kinder than an error. */
   const [manual, setManual] = useState(false);
 
+  /*
+    Quem já tem clube vê o clube, não três caixas vazias.
+
+    A cascata é estado → cidade → clube, e nada disso é reconstruível a partir do
+    que fica guardado: o perfil grava o nome, o código, a cidade e a associação,
+    mas nunca gravou a UF. Sem ela as três caixas abriam vazias — e a tela dava a
+    entender que não havia clube nenhum registrado.
+
+    Pior que parecer vazio: mexer no primeiro select chamava onChange com o clube
+    em branco. Bastava abrir o seletor de estado por curiosidade para perder o
+    clube que estava salvo.
+
+    Então a cascata só aparece quando a pessoa pede para trocar. Até lá, o que se
+    vê é a escolha que ela fez, com a origem dela — lista oficial ou digitada à
+    mão. Cancelar devolve exatamente o que havia antes.
+  */
+  const [trocando, setTrocando] = useState(false);
+  const [anterior, setAnterior] = useState<ClubeEscolhido | null>(null);
+
+  const comecarTroca = () => {
+    setAnterior(valor);
+    setTrocando(true);
+  };
+
+  const cancelarTroca = () => {
+    if (anterior) onChange(anterior);
+    setEstado('');
+    setCidade('');
+    setCidades([]);
+    setClubes([]);
+    setManual(false);
+    setTrocando(false);
+  };
+
   useEffect(() => {
     let cancelado = false;
     (async () => {
@@ -114,6 +148,33 @@ export default function ClubPicker({
       : { nome: '', codigo: null, cidade: null, associacao: null });
   };
 
+  if (valor.nome && !trocando) {
+    return (
+      <div
+        className="p-3 rounded-lg flex items-start justify-between gap-3"
+        style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}
+      >
+        <div className="min-w-0">
+          <p className="font-medium" style={{ color: 'var(--color-text)' }}>{valor.nome}</p>
+          {(valor.cidade || valor.associacao) && (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              {[valor.cidade, valor.associacao].filter(Boolean).join(' · ')}
+            </p>
+          )}
+          <p className="text-xs mt-1 flex items-start gap-1.5"
+            style={{ color: valor.codigo ? 'var(--color-success)' : 'var(--color-text-dim)' }}>
+            {valor.codigo
+              ? <><CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-px" /> Confirmado na lista oficial</>
+              : <><AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-px" /> Digitado à mão, sem validação na lista oficial</>}
+          </p>
+        </div>
+        <button type="button" onClick={comecarTroca} className="btn-secondary text-xs flex-shrink-0">
+          <RefreshCw className="w-3 h-3 mr-1" /> Trocar
+        </button>
+      </div>
+    );
+  }
+
   if (manual) {
     return (
       <div>
@@ -130,11 +191,18 @@ export default function ClubPicker({
             ? 'A lista oficial não respondeu agora. O nome digitado fica registrado sem validação.'
             : 'Digitado à mão, sem validação na lista oficial.'}
         </p>
-        {!indisponivel && (
-          <button type="button" onClick={() => setManual(false)} className="btn-secondary text-xs mt-2">
-            Escolher da lista oficial
-          </button>
-        )}
+        <div className="flex gap-2 mt-2">
+          {!indisponivel && (
+            <button type="button" onClick={() => setManual(false)} className="btn-secondary text-xs">
+              Escolher da lista oficial
+            </button>
+          )}
+          {anterior?.nome && (
+            <button type="button" onClick={cancelarTroca} className="btn-secondary text-xs">
+              Cancelar
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -196,9 +264,16 @@ export default function ClubPicker({
         </p>
       )}
 
-      <button type="button" onClick={() => setManual(true)} className="btn-secondary text-xs">
-        <PenLine className="w-3 h-3 mr-1" /> Meu clube não está na lista
-      </button>
+      <div className="flex gap-2 flex-wrap">
+        <button type="button" onClick={() => setManual(true)} className="btn-secondary text-xs">
+          <PenLine className="w-3 h-3 mr-1" /> Meu clube não está na lista
+        </button>
+        {anterior?.nome && (
+          <button type="button" onClick={cancelarTroca} className="btn-secondary text-xs">
+            Cancelar
+          </button>
+        )}
+      </div>
     </div>
   );
 }

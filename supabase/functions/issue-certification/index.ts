@@ -26,6 +26,21 @@ async function sha256(text: string): Promise<string> {
   return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/**
+ * Qual certificado cada trilha exige antes da sua.
+ *
+ * Era deduzido do grau: "avançada" pedia qualquer certificado "fundamental".
+ * Enquanto a AP034 era a única fundamental, isso acertava por acidente. Com a
+ * AP041 aberta, concluir Computação 1 passaria a destravar a emissão de
+ * Internet, Avançado — que exige a trilha de Internet, e não outra.
+ *
+ * Explícito por trilha, e por código: quem não aparece aqui não depende de
+ * ninguém.
+ */
+const PRE_REQUISITO: Record<string, string> = {
+  AP035: "AP034",
+};
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -78,12 +93,21 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Check if certification already exists
+    /*
+      Já existe certificado DESTA trilha?
+
+      A pergunta era feita pelo grau, e devolvia o primeiro certificado do mesmo
+      grau que a pessoa tivesse. Quem já tinha o de Internet e concluísse
+      Computação 1 — as duas fundamentais — receberia de volta o código da
+      Internet com "Already certified", e o token de Computação 1 nunca seria
+      emitido. E, com dois certificados do mesmo grau na conta, o maybeSingle()
+      passaria a falhar.
+    */
     const { data: existing } = await supabase
       .from("certifications")
       .select("*")
       .eq("user_id", userId)
-      .eq("level", level)
+      .eq("curriculum_code", specialtyCode)
       .eq("status", "active")
       .maybeSingle();
 
@@ -93,18 +117,19 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // For advanced level, check fundamental certification exists first
-    if (level === "advanced") {
-      const { data: fundamental } = await supabase
+    // A trilha exigida antes desta, quando houver.
+    const exigido = PRE_REQUISITO[specialtyCode];
+    if (exigido) {
+      const { data: anterior } = await supabase
         .from("certifications")
         .select("*")
         .eq("user_id", userId)
-        .eq("level", "fundamental")
+        .eq("curriculum_code", exigido)
         .eq("status", "active")
         .maybeSingle();
 
-      if (!fundamental) {
-        return new Response(JSON.stringify({ error: "Fundamental certification required first" }), {
+      if (!anterior) {
+        return new Response(JSON.stringify({ error: `Certificação ${exigido} exigida antes desta.` }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -162,17 +187,18 @@ Deno.serve(async (req: Request) => {
       .eq("id", specialty.curriculum_version_id)
       .maybeSingle();
 
-    // Get reference certification for advanced
+    /* O certificado que este cita como base — o mesmo que foi exigido acima,
+       e pelo mesmo código, para os dois não poderem discordar. */
     let referenceId = null;
-    if (level === "advanced") {
-      const { data: fundamental } = await supabase
+    if (exigido) {
+      const { data: anterior } = await supabase
         .from("certifications")
         .select("id")
         .eq("user_id", userId)
-        .eq("level", "fundamental")
+        .eq("curriculum_code", exigido)
         .eq("status", "active")
         .maybeSingle();
-      referenceId = fundamental?.id || null;
+      referenceId = anterior?.id || null;
     }
 
     // Insert certification

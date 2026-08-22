@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getFinalExamQuestions } from '../curriculum/finalExams';
@@ -30,6 +30,11 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
   const [certifyError, setCertifyError] = useState('');
 
   const certified = getByCurriculum(specialtyCode)?.code || null;
+
+  /* Contado do currículo, e não do estado: as questões só são sorteadas quando a
+     prova começa, então na tela de abertura a lista ainda está vazia — e
+     prometer "0 questões" é pior do que o número fixo que havia antes. */
+  const totalDeQuestoes = useMemo(() => getFinalExamQuestions(specialtyCode).length, [specialtyCode]);
 
   const startExam = () => {
     setQuestions(getFinalExamQuestions(specialtyCode));
@@ -94,7 +99,10 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
           <Award className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-secondary)' }} />
           <h1 className="text-2xl font-bold mb-2">Avaliação Final — {specialtyName}</h1>
           <p className="mb-6" style={{ color: 'var(--color-text-muted)' }}>
-            Esta avaliação contém {specialtyCode === 'AP034' ? 22 : 22} questões de diversos tipos:
+            {/* Contado da própria prova: era um ternário com 22 dos dois lados,
+                escrito quando só havia duas trilhas com o mesmo tamanho. A prova
+                da AP041 tem 19, e a tela prometia 22. */}
+            Esta avaliação contém {totalDeQuestoes} questões de diversos tipos:
             múltipla escolha, verdadeiro/falso, ordenação, associação, lacunas e cenários.
             Você precisa acertar pelo menos {LIMIAR_DOMINIO}% para ser aprovado e receber seu Token.Web().
           </p>

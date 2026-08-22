@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { getSpecialty } from '../curriculum';
+import { getOpenSpecialties } from '../curriculum';
 
 // Deliberately does not import from progress.ts (which will call evaluateBadges
 // after every completion) to avoid a circular module dependency — this fetches its
@@ -32,13 +32,19 @@ export async function evaluateBadges(userId: string): Promise<void> {
 
   if (completed.size >= 1) eligible.add('first_step');
 
-  for (const specCode of ['AP034', 'AP035'] as const) {
-    const spec = getSpecialty(specCode);
-    if (!spec) continue;
+  /*
+    Toda trilha aberta, e não um par escrito à mão.
 
+    A lista era ['AP034', 'AP035']. Concluir Computação 1 não dava insígnia
+    nenhuma, e os módulos dela não contavam para a de módulo concluído — a
+    trilha inteira terminava sem nada acontecer. O código da insígnia sai do
+    código da trilha, então a próxima entra sozinha; falta só semeá-la na tabela
+    `badges`, e uma insígnia que não existe lá é ignorada sem erro.
+  */
+  for (const spec of getOpenSpecialties()) {
     const reqCodes = spec.requirements.map(r => r.code);
     if (reqCodes.length > 0 && reqCodes.every(c => completed.has(c))) {
-      eligible.add(specCode === 'AP034' ? 'ap034_complete' : 'ap035_complete');
+      eligible.add(`${spec.code.toLowerCase()}_complete`);
     }
 
     const hasCompletedModule = spec.modules.some(module => {
