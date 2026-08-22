@@ -170,6 +170,56 @@ export const modulo1: Module = {
           },
           explanation: 'Primeiro a pessoa calculava, depois a máquina calculou, depois passou a seguir instruções — e então foi encolhendo.',
         },
+        {
+          id: 'AP041.1-L1-Q7', type: 'multiple_choice',
+          prompt: 'A máquina analítica de Babbage teve uma ideia que a Pascalina não tinha. Qual foi?',
+          data: { options: [
+            { id: 'a', text: 'Podia receber outras instruções e passar a fazer outra coisa.', correct: true },
+            { id: 'b', text: 'Somava números muito maiores do que a Pascalina conseguia somar.',
+              porque: 'Somar números maiores é a mesma tarefa em outro tamanho, e não uma ideia nova.' },
+            { id: 'c', text: 'Funcionava com energia elétrica, e não com engrenagens de metal.',
+              porque: 'Ela também era mecânica, de engrenagens. A eletricidade só chegou às máquinas depois.' },
+            { id: 'd', text: 'Era pequena o bastante para caber em cima de uma mesa comum.',
+              porque: 'Era enorme, e nem chegou a ser terminada. O tamanho não era o que ela tinha de novo.' },
+          ]},
+          explanation: 'Trocando as instruções, a mesma máquina faz outra coisa. É essa ideia que separa uma calculadora de um computador.',
+        },
+        {
+          id: 'AP041.1-L1-Q8', type: 'fill_blank',
+          prompt: 'Complete: quem escreveu o primeiro programa para uma máquina foi _____; a peça que substituiu a válvula e encolheu os computadores é o _____.',
+          data: {
+            blanks: [
+              { id: 'b1', answer: 'Ada Lovelace', aceitas: ['ada', 'lovelace', 'ada byron'], hint: 'Escreveu as instruções da máquina analítica' },
+              { id: 'b2', answer: 'transistor', aceitas: ['transístor', 'transistores'], hint: 'Faz o trabalho da válvula ocupando quase nada' },
+            ],
+          },
+          explanation: 'Uma escreveu o que a máquina deveria fazer; o outro permitiu que a máquina coubesse numa mesa.',
+        },
+        {
+          id: 'AP041.1-L1-Q9', type: 'scenario',
+          prompt: 'Um amigo diz: "o computador foi inventado por uma pessoa só, de uma vez". O que você responde?',
+          data: { scenarios: [
+            { id: 'a', text: 'Que ele tem razão, e que essa pessoa foi Charles Babbage.',
+              porque: 'Babbage deu um passo importante, mas nem chegou a terminar a máquina que projetou.' },
+            { id: 'b', text: 'Que foram muitos, ao longo de séculos, cada um com um pedaço.', correct: true },
+            { id: 'c', text: 'Que ninguém sabe quem inventou, porque isso se perdeu no tempo.',
+              porque: 'Sabe-se bastante: há nomes, datas e máquinas guardadas em museus até hoje.' },
+            { id: 'd', text: 'Que foi inventado por uma empresa grande, quando o ENIAC ficou pronto.',
+              porque: 'O ENIAC é um capítulo da história, não o começo dela. O ábaco vem milhares de anos antes.' },
+          ]},
+          explanation: 'Cada inventor resolveu um problema que o anterior tinha deixado aberto. É assim que quase toda invenção acontece.',
+        },
+        {
+          id: 'AP041.1-L1-Q10', type: 'matching',
+          prompt: 'Ligue cada invenção ao que ela trouxe de novo.',
+          data: { pairs: [
+            { left: 'Ábaco', right: 'Guarda o número enquanto a pessoa faz a conta' },
+            { left: 'Pascalina', right: 'Faz a soma sozinha, girando engrenagens' },
+            { left: 'Máquina analítica', right: 'Segue instruções que podem ser trocadas' },
+            { left: 'Transistor', right: 'Faz o serviço da válvula ocupando quase nada' },
+          ]},
+          explanation: 'Primeiro a pessoa calculava, depois a máquina calculou, depois passou a obedecer instruções — e então encolheu.',
+        },
       ],
     },
     {

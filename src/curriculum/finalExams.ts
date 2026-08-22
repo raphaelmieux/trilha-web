@@ -804,6 +804,94 @@ const rawAp041Final: Question[] = [
     },
     explanation: 'Um precisa do outro: computador sem software é violão que ninguém toca.',
   },
+  {
+    id: 'AP041-F-Q20', type: 'multiple_choice',
+    prompt: 'Qual é a função do monitor?',
+    data: { options: [
+      { id: 'a', text: 'Mostrar o que o computador está fazendo naquele momento.', correct: true },
+      { id: 'b', text: 'Guardar as imagens e os textos que foram abertos nele.', porque: 'O monitor não guarda nada: apagou a tela, não sobrou imagem. Quem guarda é o disco.' },
+      { id: 'c', text: 'Enviar para o computador o que a pessoa desenha nele.', porque: 'Isso seria entrada. O monitor comum só exibe o que já foi calculado.' },
+      { id: 'd', text: 'Fazer as contas necessárias para desenhar cada figura.', porque: 'As contas são da CPU e da placa de vídeo. O monitor recebe pronto e acende os pontos.' },
+    ]},
+    explanation: 'Monitor é saída: ele entrega aos olhos o que a máquina já resolveu por dentro.',
+  },
+  {
+    id: 'AP041-F-Q21', type: 'multiple_choice',
+    prompt: 'Para que servem os cabos de um computador?',
+    data: { options: [
+      { id: 'a', text: 'Levar energia e também sinal de uma peça até a outra.', correct: true },
+      { id: 'b', text: 'Levar apenas energia elétrica da tomada até o aparelho.', porque: 'Muitos levam informação: o cabo do monitor carrega a imagem, e o de rede carrega os dados.' },
+      { id: 'c', text: 'Segurar as peças no lugar para elas não se soltarem.', porque: 'Quem prende peça é parafuso e encaixe. O cabo serve para ligar, não para sustentar.' },
+      { id: 'd', text: 'Guardar os arquivos enquanto eles passam de uma peça a outra.', porque: 'Nada fica guardado num cabo: ele é caminho de passagem, e não depósito.' },
+    ]},
+    explanation: 'Há cabo de força e cabo de sinal. Um leva energia; o outro leva conversa entre as peças.',
+  },
+  {
+    id: 'AP041-F-Q22', type: 'multiple_choice',
+    prompt: 'O que faz o roteador?',
+    data: { options: [
+      { id: 'a', text: 'Reparte a internet entre os aparelhos da casa.', correct: true },
+      { id: 'b', text: 'Traz o sinal da operadora da rua para dentro.', porque: 'Esse é o modem. O roteador trabalha com o sinal que já entrou na casa.' },
+      { id: 'c', text: 'Aumenta a velocidade que foi contratada na operadora.', porque: 'A velocidade é a contratada. O roteador divide o que existe, sem criar mais.' },
+      { id: 'd', text: 'Guarda as páginas visitadas por quem usa a rede.', porque: 'O roteador encaminha e não arquiva. O histórico fica no navegador de cada um.' },
+    ]},
+    explanation: 'Modem é a porta da rua; roteador é o corredor que leva a cada quarto.',
+  },
+  {
+    id: 'AP041-F-Q23', type: 'ordering',
+    prompt: 'Ordene os passos de desligar o computador do jeito certo.',
+    data: {
+      items: [
+        { id: 'a', text: 'Salvar o trabalho e fechar os programas abertos', order: 1 },
+        { id: 'b', text: 'Abrir o menu do sistema e escolher Desligar', order: 2 },
+        { id: 'c', text: 'Esperar a tela apagar sozinha, sem apertar nada', order: 3 },
+        { id: 'd', text: 'Só então, se for preciso, tirar da tomada', order: 4 },
+      ],
+    },
+    explanation: 'Cada passo dá tempo ao seguinte. Pular um é pedir que o sistema pare no meio de uma gravação.',
+  },
+  {
+    id: 'AP041-F-Q24', type: 'multiple_choice',
+    prompt: 'Por que se desliga o computador pelo menu, e não segurando o botão?',
+    data: { options: [
+      { id: 'a', text: 'Para o sistema fechar os arquivos e gravar o que faltava.', correct: true },
+      { id: 'b', text: 'Para o botão de ligar não estragar de tanto ser apertado.', porque: 'O botão aguenta bem. Quem sofre é o que estava sendo gravado quando a energia sumiu.' },
+      { id: 'c', text: 'Para a máquina não fazer barulho ao apagar de uma vez só.', porque: 'Barulho não é o problema. O risco é o arquivo aberto ficar corrompido.' },
+      { id: 'd', text: 'Para gastar menos energia elétrica ao desligar o aparelho.', porque: 'O consumo é o mesmo. O que muda é a máquina ter ou não tempo de se despedir.' },
+    ]},
+    explanation: 'Segurar o botão corta a energia na força — é recurso de emergência, para quando a máquina travou de vez.',
+  },
+  {
+    id: 'AP041-F-Q25', type: 'scenario',
+    prompt: 'O Davi usa o notebook em cima do edredom e reclama que ele esquenta. Qual é o motivo?',
+    data: { scenarios: [
+      { id: 'a', text: 'As saídas de ar ficam embaixo, e o tecido tapa todas elas.', correct: true },
+      { id: 'b', text: 'A bateria esquenta sempre que o aparelho sai da tomada.', porque: 'A bateria esquenta um pouco, e esquentaria igual na mesa. O tecido é que muda tudo.' },
+      { id: 'c', text: 'O quarto costuma ser mais quente do que a sala da casa.', porque: 'A temperatura ajuda pouco. O que prende o calor é o ar que não consegue sair.' },
+      { id: 'd', text: 'Notebook esquenta assim mesmo, e não há o que se fazer.', porque: 'Há: numa superfície dura e plana o ar circula, e a máquina trabalha bem mais fria.' },
+    ]},
+    explanation: 'Mesa, chão de madeira, uma tábua — qualquer superfície dura resolve. O que não pode é tecido tapando a saída do ar.',
+  },
+  {
+    id: 'AP041-F-Q26', type: 'scenario',
+    prompt: 'O Téo quer a mesma pasta em dois lugares: na área de trabalho e no pen drive. O que ele faz?',
+    data: { scenarios: [
+      { id: 'a', text: 'Copia a pasta, porque copiar deixa uma em cada lugar.', correct: true },
+      { id: 'b', text: 'Move a pasta, porque mover leva ela para os dois lugares.', porque: 'Mover tira de onde estava. Ele ficaria com uma só, agora no pen drive.' },
+      { id: 'c', text: 'Renomeia a pasta, porque o nome novo cria outra igual.', porque: 'Renomear só troca o nome. Continua sendo a mesma pasta, num lugar só.' },
+      { id: 'd', text: 'Cria um atalho, porque o atalho é uma segunda cópia.', porque: 'Atalho é só um caminho até a pasta. Sem o original, ele não abre nada.' },
+    ]},
+    explanation: 'Copiar duplica; mover transporta; o atalho aponta. Três coisas parecidas na tela e bem diferentes no resultado.',
+  },
+  {
+    id: 'AP041-F-Q27', type: 'true_false',
+    prompt: 'Esvaziar a lixeira apaga os arquivos de vez, e depois não dá mais para arrastá-los de volta.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', correct: true },
+      { id: 'b', text: 'Falso', porque: 'É verdadeiro. Enquanto está na lixeira dá para restaurar; depois de esvaziada, não.' },
+    ]},
+    explanation: 'A lixeira é a última chance de mudar de ideia. Por isso vale conferir o que há nela antes de esvaziar.',
+  },
 ];
 
 /*

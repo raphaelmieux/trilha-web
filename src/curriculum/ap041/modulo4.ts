@@ -28,7 +28,12 @@ trava a tecla. E líquido derrubado no teclado costuma ser o fim dele — por is
 comer e beber é na cozinha, não na frente da máquina.</p>
 <p class="mb-3">Para limpar, o computador precisa estar <strong>desligado</strong>.
 Pano seco e macio, e nunca o produto de limpeza direto na tela: molha-se o pano,
-não o aparelho. Quando não estiver em uso, uma capa evita a poeira do dia a dia.</p>
+não o aparelho.</p>
+<p class="mb-3">Onde a máquina fica também conta. Computador no chão engole
+poeira e pelo de bicho; encostado na parede, não tem por onde soltar o ar quente.
+E notebook em cima da cama, do sofá ou do travesseiro é o erro mais comum de
+todos: <strong>as saídas de ar dele ficam embaixo</strong>, e o tecido tapa
+todas de uma vez. Mesa, ou qualquer superfície dura e plana.</p>
 
 <h3 class="font-bold mt-4 mb-2">Manutenção preventiva: cuidar antes de quebrar</h3>
 <p class="mb-3"><strong>Manutenção preventiva</strong> é o que se faz enquanto
@@ -154,6 +159,61 @@ export const modulo4: Module = {
             { left: 'Não comer perto', right: 'Evita migalha e líquido dentro do teclado' },
           ]},
           explanation: 'Deixe o ar passar, cuide antes de quebrar, e dê ao sistema o tempo de se despedir.',
+        },
+        {
+          id: 'AP041.4-L1-Q7', type: 'scenario',
+          prompt: 'O Davi assiste a vídeos com o notebook em cima da cama, apoiado no edredom. Ele reclama que o aparelho esquenta muito. Por quê?',
+          data: { scenarios: [
+            { id: 'a', text: 'Porque as saídas de ar ficam embaixo, e o edredom tapa elas.', correct: true },
+            { id: 'b', text: 'Porque o quarto é mais quente que a sala onde ele costuma ficar.',
+              porque: 'A temperatura do quarto ajuda pouco. O que prende o calor é o ar que não consegue sair.' },
+            { id: 'c', text: 'Porque assistir a vídeo é o que mais esquenta qualquer computador.',
+              porque: 'Vídeo dá trabalho à máquina, mas na mesa ela daria conta. O problema é a ventilação.' },
+            { id: 'd', text: 'Porque a bateria esquenta sempre que o aparelho fica sem tomada.',
+              porque: 'A bateria esquenta um pouco, e esquentaria igual na mesa. O tecido é que muda tudo.' },
+          ]},
+          explanation: 'Mesa, chão de madeira, uma tábua — qualquer superfície dura e plana resolve. O que não pode é tecido tapando a saída do ar.',
+        },
+        {
+          id: 'AP041.4-L1-Q8', type: 'ordering',
+          prompt: 'Ordene os passos de desligar o computador do jeito certo.',
+          data: {
+            items: [
+              { id: 'a', text: 'Salvar o que estava fazendo e fechar os programas', order: 1 },
+              { id: 'b', text: 'Abrir o menu do sistema e escolher Desligar', order: 2 },
+              { id: 'c', text: 'Esperar a tela apagar sozinha, sem apertar nada', order: 3 },
+              { id: 'd', text: 'Só então, se for preciso, tirar da tomada', order: 4 },
+            ],
+          },
+          explanation: 'Cada passo dá tempo ao seguinte. Pular um é pedir que o sistema pare no meio de uma gravação.',
+        },
+        {
+          id: 'AP041.4-L1-Q9', type: 'multiple_choice',
+          prompt: 'Por que não se pode desligar o computador durante uma atualização?',
+          data: { options: [
+            { id: 'a', text: 'Porque o sistema está sendo reescrito e pode ficar pela metade.', correct: true },
+            { id: 'b', text: 'Porque a atualização precisa ser paga de novo se for interrompida.',
+              porque: 'Atualização do sistema não se paga por tentativa. O risco é outro, e é bem pior.' },
+            { id: 'c', text: 'Porque a máquina fica mais lenta por alguns dias depois disso.',
+              porque: 'O estrago não é lentidão passageira: o computador pode não conseguir ligar de novo.' },
+            { id: 'd', text: 'Porque os arquivos pessoais são apagados quando isso acontece.',
+              porque: 'Os arquivos costumam continuar lá. Quem fica quebrado é o sistema que os abre.' },
+          ]},
+          explanation: 'É como arrancar as páginas de um livro enquanto alguém troca o miolo: o que fica não serve mais para ler.',
+        },
+        {
+          id: 'AP041.4-L1-Q10', type: 'scenario',
+          prompt: 'O computador da Rita queimou e não liga mais. Ela tinha cópia dos arquivos numa nuvem. O que ela perdeu?',
+          data: { scenarios: [
+            { id: 'a', text: 'A máquina, que terá de ser consertada ou trocada por outra.', correct: true },
+            { id: 'b', text: 'Tudo, porque arquivo copiado some junto com o computador de origem.',
+              porque: 'A cópia fica em outro lugar. É exatamente para isso que ela existe.' },
+            { id: 'c', text: 'Só as fotos, porque cópia de segurança guarda apenas documentos.',
+              porque: 'A cópia guarda o que você mandar guardar, incluindo foto, vídeo e trabalho de escola.' },
+            { id: 'd', text: 'Nada, porque o computador volta a ligar assim que a cópia for baixada.',
+              porque: 'A cópia salva os arquivos, não a peça queimada. A máquina continua precisando de conserto.' },
+          ]},
+          explanation: 'Peça quebrada se compra outra; três meses de trabalho de escola, não. É por isso que a cópia é o cuidado que mais salva.',
         },
       ],
     },
