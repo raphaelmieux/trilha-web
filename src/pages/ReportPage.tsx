@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getOpenSpecialties } from '../curriculum';
+import { nomeCompleto } from '../types';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
@@ -125,7 +126,7 @@ export default function ReportPage() {
     itens.length <= 1 ? (itens[0] ?? '')
       : `${itens.slice(0, -1).join(', ')} e ${itens[itens.length - 1]}`;
 
-  const nomeExtenso = enumerar(narratives.map(n => `${n.code} (${n.name})`));
+  const nomeExtenso = enumerar(narratives.map(n => nomeCompleto(n)));
   const subtitle = `Trilha.Web() — ${narratives.length === 1 ? 'Especialidade' : 'Especialidades'} ${nomeExtenso}`;
 
   const intro = `Este documento descreve, em linguagem corrente, as competências efetivamente demonstradas por ${studentName} ao longo da Trilha.Web(), plataforma de estudo autônomo de especialidades do Clube de Desbravadores. Abrange ${narratives.length === 1 ? 'a especialidade' : 'as especialidades'} ${nomeExtenso}. Destina-se à apresentação à liderança do Clube, para subsidiar o reconhecimento e o registro ${narratives.length === 1 ? 'da especialidade' : 'das especialidades'} pelos canais oficiais do clube.`;
@@ -143,7 +144,7 @@ export default function ReportPage() {
     try {
       const sections: ReportSection[] = [
         ...narratives.map(n => ({
-          heading: `${n.code} — ${n.name}`,
+          heading: nomeCompleto(n),
           paragraphs: [
             n.opening,
             ...n.modules.flatMap(m => [m.paragraph, ...m.requirements]),
@@ -261,7 +262,7 @@ export default function ReportPage() {
 
           {narratives.map(n => (
             <div key={n.code} className="report-section">
-              <h2>{n.code} — {n.name}</h2>
+              <h2>{nomeCompleto(n)}</h2>
               <p>{n.opening}</p>
               {n.modules.map(m => (
                 <div key={m.title}>

@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSpecialty } from '../curriculum';
+import { nomeCompleto } from '../types';
 import { embaralharQuestao } from '../lib/questoes';
 
 import type { RequirementStatus } from '../types';
@@ -102,7 +103,7 @@ export default function LessonPage() {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-sm">
-          <Link to={`/especialidade/${specialty.code}`} style={{ color: 'var(--color-text-dim)' }} className="hover:underline">{specialty.name}</Link>
+          <Link to={`/especialidade/${specialty.code}`} style={{ color: 'var(--color-text-dim)' }} className="hover:underline">{nomeCompleto(specialty)}</Link>
           <span style={{ color: 'var(--color-text-faint)' }}>/</span>
           <span className="font-medium" style={{ color: 'var(--color-text)' }}>{lesson.title}</span>
         </div>
@@ -219,7 +220,7 @@ export default function LessonPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-sm">
-        <Link to={`/especialidade/${specialty.code}`} style={{ color: 'var(--color-text-dim)' }} className="hover:underline">{specialty.name}</Link>
+        <Link to={`/especialidade/${specialty.code}`} style={{ color: 'var(--color-text-dim)' }} className="hover:underline">{nomeCompleto(specialty)}</Link>
         <span style={{ color: 'var(--color-text-faint)' }}>/</span>
         <span className="font-medium" style={{ color: 'var(--color-text)' }}>{lesson.title}</span>
       </div>

@@ -143,6 +143,22 @@ export const ROTULO_DO_NIVEL: Record<NivelDaEspecialidade, string> = {
 /** A ordem em que os níveis se sucedem, para ordenar e agrupar. */
 export const ORDEM_DOS_NIVEIS: NivelDaEspecialidade[] = ['basico', 'intermediario', 'avancado'];
 
+/**
+ * O nome pelo qual uma trilha é chamada em toda a plataforma: código e nome.
+ *
+ * Cada tela escrevia o seu: o card mostrava "Internet", o painel de
+ * certificações "Internet (AP034)", o relatório "AP034 — Internet". Três formas
+ * do mesmo nome, e quem via duas ao mesmo tempo tinha motivo para achar que
+ * eram coisas diferentes.
+ *
+ * Sem separador entre os dois: o travessão entrega texto gerado, e o parêntese
+ * transforma o código em nota de rodapé quando ele é parte do nome — é assim
+ * que a especialidade aparece no material dos Desbravadores.
+ */
+export function nomeCompleto(e: { code: string; name: string }): string {
+  return `${e.code} ${e.name}`;
+}
+
 export interface Specialty {
   code: string;
   name: string;

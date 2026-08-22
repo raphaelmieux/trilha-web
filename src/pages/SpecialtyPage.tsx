@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSpecialty, preRequisitoCumprido } from '../curriculum';
+import { nomeCompleto } from '../types';
 import {
   getProgressPercent, getProgressDetail, getModuleStatus, statusDasLicoes,
   getRequirementId, upsertRequirementProgress,
@@ -87,14 +88,14 @@ export default function SpecialtyPage() {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
         <Lock className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-border-hover)' }} />
-        <h1 className="text-2xl font-bold mb-2">{specialty.name} está bloqueada</h1>
+        <h1 className="text-2xl font-bold mb-2">{nomeCompleto(specialty)} está bloqueada</h1>
         <p className="mb-6" style={{ color: 'var(--color-text-dim)' }}>
-          Conclua {anterior ? anterior.name : specialty.preRequisito} para abrir esta trilha.
+          Conclua {anterior ? nomeCompleto(anterior) : specialty.preRequisito} para abrir esta trilha.
           Ela libera sozinha assim que o último requisito for cumprido.
         </p>
         {anterior && (
           <Link to={`/especialidade/${anterior.code}`} className="btn-primary">
-            Ir para {anterior.name}
+            Ir para {nomeCompleto(anterior)}
           </Link>
         )}
       </div>
@@ -136,7 +137,7 @@ export default function SpecialtyPage() {
         <div className="flex items-center gap-3">
           <img src={`${import.meta.env.BASE_URL}assets/specialties/${specialty.code}.svg`} alt={specialty.code} className="w-14 h-14" />
           <div>
-            <h1 className="text-2xl font-bold">{specialty.name}</h1>
+            <h1 className="text-2xl font-bold">{nomeCompleto(specialty)}</h1>
             <p style={{ color: 'var(--color-text-dim)' }}>{specialty.description}</p>
           </div>
         </div>
