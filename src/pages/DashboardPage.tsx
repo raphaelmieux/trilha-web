@@ -9,7 +9,7 @@ import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
 import { getPublicName } from '../types';
 import { franchiseConfig } from '../config/franchise';
-import { coresDaTrilha, corDoPercentual } from '../lib/coresDaTrilha';
+import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
 import ProgressBar from '../components/ui/ProgressBar';
 import SpecialtyEmblem from '../components/ui/SpecialtyEmblem';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
@@ -48,9 +48,10 @@ export default function DashboardPage() {
 
   /* Vem do currículo: uma trilha nova aparece aqui sozinha, sem esta tela
      precisar saber dela. */
-  /* Uma fonte só para a cor de cada trilha; as telas não decidem mais isso. */
-  const coresAp034 = coresDaTrilha(ap034.level);
-  const coresAp035 = coresDaTrilha(ap035.level);
+  /* Pelo andamento, e não pela trilha: três barras lado a lado dizendo a mesma
+     coisa em três cores davam a entender que a cor significava algo. */
+  const coresAp034 = coresDoProgresso(ap034Percent);
+  const coresAp035 = coresDoProgresso(ap035Percent);
 
   const emConstrucao = getAllSpecialties().filter(e => e.emConstrucao);
 
@@ -121,7 +122,7 @@ export default function DashboardPage() {
           <div className="mb-3">
             <div className="flex justify-between text-sm mb-1">
               <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
-              <span className="font-semibold" style={{ color: corDoPercentual(ap034.level, ap034Percent) }}>{ap034Percent}%</span>
+              <span className="font-semibold" style={{ color: corDoPercentual(ap034Percent) }}>{ap034Percent}%</span>
             </div>
             <ProgressBar percent={ap034Percent} partial={ap034Detail.parcial} color={coresAp034.gradiente} />
           </div>
@@ -158,7 +159,7 @@ export default function DashboardPage() {
             <div className="mb-3">
               <div className="flex justify-between text-sm mb-1">
                 <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
-                <span className="font-semibold" style={{ color: corDoPercentual(ap035.level, ap035Percent) }}>{ap035Percent}%</span>
+                <span className="font-semibold" style={{ color: corDoPercentual(ap035Percent) }}>{ap035Percent}%</span>
               </div>
               <ProgressBar percent={ap035Percent} partial={ap035Detail.parcial} color={coresAp035.gradiente} />
             </div>
@@ -188,7 +189,7 @@ export default function DashboardPage() {
           const percent = getProgressPercent(codes, progress);
           const detail = getProgressDetail(codes, progress);
           const feitos = e.requirements.filter(r => progress[r.code]?.status === 'completed').length;
-          const cores = coresDaTrilha(e.level);
+          const cores = coresDoProgresso(percent);
           return (
             <Link key={e.code} to={`/especialidade/${e.code}`} className="card p-6 block transition"
               style={{ borderColor: percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)', transition: 'border-color 0.2s' }}
@@ -212,7 +213,7 @@ export default function DashboardPage() {
               <div className="mb-3">
                 <div className="flex justify-between text-sm mb-1">
                   <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
-                  <span className="font-semibold" style={{ color: corDoPercentual(e.level, percent) }}>{percent}%</span>
+                  <span className="font-semibold" style={{ color: corDoPercentual(percent) }}>{percent}%</span>
                 </div>
                 <ProgressBar percent={percent} partial={detail.parcial} color={cores.gradiente} />
               </div>

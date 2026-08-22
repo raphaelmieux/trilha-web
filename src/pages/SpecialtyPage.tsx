@@ -5,7 +5,7 @@ import { getProgressPercent, getProgressDetail, getModuleStatus, statusDasLicoes
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useLicoesConcluidas } from '../hooks/useLicoesConcluidas';
 import { useCertifications } from '../hooks/useCertifications';
-import { coresDaTrilha } from '../lib/coresDaTrilha';
+import { coresDoProgresso } from '../lib/coresDoProgresso';
 import ProgressBar from '../components/ui/ProgressBar';
 import { Lock, CheckCircle2, Play, Star, Award, HardHat } from 'lucide-react';
 
@@ -65,13 +65,15 @@ export default function SpecialtyPage() {
   const licoes = specialty.modules.flatMap(m => m.lessons).filter(l => l.type !== 'final');
   const licoesFeitas = licoes.filter(l => statusPorLicao[l.code] === 'completed').length;
   /*
-    Pelo grau da trilha, e não pelo código dela.
+    Pelo andamento, e não pela trilha.
 
-    Era `specialty.code === 'AP034' ? vermelho : azul`. A AP041 é fundamental e
-    não é a AP034, então caía no azul aqui e aparecia vermelha no painel — a
-    mesma trilha em duas cores, dependendo da tela. Ver coresDaTrilha.
+    Passou por duas versões erradas: primeiro `code === 'AP034' ? … : …`, que
+    fazia a AP041 ser vermelha no painel e azul aqui; depois pelo grau, que
+    deixava o painel com uma barra verde, uma azul e uma vermelha lado a lado,
+    todas medindo a mesma coisa. A cor agora responde só a "em que ponto isto
+    está", e quem troca para o verde ao completar é a própria ProgressBar.
   */
-  const cores = coresDaTrilha(specialty.level);
+  const cores = coresDoProgresso(overallPercent);
   const accentColor = cores.destaque;
   const accentGrad = cores.gradiente;
 
