@@ -2,6 +2,19 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Shield, Users, Award, CalendarDays, AlertCircle, KeyRound, Copy, X } from 'lucide-react';
+import { getOpenSpecialties } from '../curriculum';
+import { nomeCompleto } from '../types';
+
+/* O que a contagem por trilha devolve. Só números e datas — ver a migration
+   20260822040000_contagem_de_certificados.sql. */
+interface ContagemDeCertificados {
+  curriculum_code: string;
+  emitidos: number;
+  ativos: number;
+  revogados: number;
+  primeiro: string | null;
+  ultimo: string | null;
+}
 
 export default function AdminPage() {
   const { profile } = useAuth();
@@ -11,6 +24,7 @@ export default function AdminPage() {
   const [revokeMsg, setRevokeMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   const [resetTarget, setResetTarget] = useState<{ email: string; password?: string; error?: string; loading?: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [certificados, setCertificados] = useState<ContagemDeCertificados[]>([]);
 
   useEffect(() => {
     if (!profile?.is_admin) return;
@@ -21,6 +35,9 @@ export default function AdminPage() {
 
       const { data: usersData } = await supabase.from('user_profiles').select('*').order('created_at', { ascending: false }).limit(50);
       setUsers(usersData || []);
+
+      const { data: contagem } = await supabase.rpc('admin_certificate_counts');
+      setCertificados((contagem as ContagemDeCertificados[] | null) || []);
 
     })();
   }, [profile]);
@@ -106,6 +123,26 @@ export default function AdminPage() {
   const Tr = ({ children }: { children: React.ReactNode }) => (
     <tr style={{ borderBottom: '1px solid var(--color-bg-hover)' }}>{children}</tr>
   );
+  const Td = ({ children }: { children: React.ReactNode }) => (
+    <td className="py-2" style={{ color: 'var(--color-text)' }}>{children}</td>
+  );
+
+  /*
+    Uma linha por trilha aberta, mais qualquer código que só exista no banco.
+
+    A segunda parte cobre a trilha que saiu do ar depois de já ter certificado
+    alguém: o documento continua valendo, e sumir da contagem seria perder o
+    registro contábil justamente do que não pode mais ser reemitido.
+  */
+  const contagemPorCodigo = new Map(certificados.map(c => [c.curriculum_code, c]));
+  const abertas = getOpenSpecialties();
+  const porTrilha = [
+    ...abertas.map(e => ({ code: e.code, nome: nomeCompleto(e), contagem: contagemPorCodigo.get(e.code) })),
+    ...certificados
+      .filter(c => !abertas.some(e => e.code === c.curriculum_code))
+      .map(c => ({ code: c.curriculum_code, nome: c.curriculum_code, contagem: c })),
+  ];
+  const totalEmitidos = certificados.reduce((soma, c) => soma + c.emitidos, 0);
 
   return (
     <div className="space-y-6">
@@ -125,6 +162,52 @@ export default function AdminPage() {
           <CalendarDays className="w-6 h-6 mb-2" style={{ color: 'var(--color-success)' }} />
           <p className="text-2xl font-bold">{stats.events}</p>
           <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>Eventos</p>
+        </div>
+      </div>
+
+      {/*
+        Certificados por trilha, para controle contábil.
+
+        Só a contagem: a tabela de certificações deixou de ser legível pelo
+        cliente de propósito, e listar quem recebeu o quê não é o que "quantos
+        foram emitidos" pergunta. Revogar continua sendo pelo código, abaixo.
+
+        As trilhas vêm do currículo, e não da resposta: uma trilha aberta que
+        ainda não certificou ninguém precisa aparecer com zero — é justamente a
+        linha que diz alguma coisa.
+      */}
+      <div className="card p-6">
+        <h2 className="font-bold mb-1 flex items-center gap-2">
+          <Award className="w-5 h-5" style={{ color: 'var(--color-secondary)' }} /> Certificados emitidos
+        </h2>
+        <p className="text-sm mb-3" style={{ color: 'var(--color-text-dim)' }}>
+          Total de {totalEmitidos} {totalEmitidos === 1 ? 'certificado' : 'certificados'} em todas as trilhas.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <Th>Trilha</Th><Th>Emitidos</Th><Th>Ativos</Th><Th>Revogados</Th><Th>Último</Th>
+            </tr></thead>
+            <tbody>
+              {porTrilha.map(({ code, nome, contagem }) => (
+                <Tr key={code}>
+                  <Td>{nome}</Td>
+                  <Td>{contagem?.emitidos ?? 0}</Td>
+                  <Td>{contagem?.ativos ?? 0}</Td>
+                  <Td>
+                    {contagem?.revogados
+                      ? <span style={{ color: 'var(--color-error)' }}>{contagem.revogados}</span>
+                      : 0}
+                  </Td>
+                  <Td>
+                    {contagem?.ultimo
+                      ? new Date(contagem.ultimo).toLocaleDateString('pt-BR')
+                      : <span style={{ color: 'var(--color-text-muted)' }}>—</span>}
+                  </Td>
+                </Tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 

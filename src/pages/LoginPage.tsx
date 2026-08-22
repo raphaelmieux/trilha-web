@@ -3,6 +3,7 @@ import BrandMark from '../components/ui/BrandMark';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { traduzirErroDeAuth } from '../lib/authErrors';
+import { ShieldCheck } from 'lucide-react';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -59,6 +60,24 @@ export default function LoginPage() {
             <span style={{ color: 'var(--color-text-dim)' }}>Esqueceu a senha?</span>
             <Link to="/recuperar-senha" className="font-medium" style={{ color: 'var(--color-primary)' }}>Recuperar</Link>
           </div>
+        </div>
+
+        {/*
+          Conferir um certificado nunca exigiu conta — mas o único caminho até a
+          página era a barra de navegação, que não existe antes de entrar. Quem
+          recebe um Token.Web() para conferir é justamente quem não tem conta:
+          o diretor do clube, a secretaria da associação, quem vê o certificado
+          impresso. Fazer essa pessoa se cadastrar para verificar o documento de
+          outra é o oposto do que a verificação serve para fazer.
+        */}
+        <div className="card mt-4 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium" style={{ color: 'var(--color-text-soft)' }}>Recebeu um Token.Web()?</p>
+            <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>Confira a autenticidade sem precisar de conta.</p>
+          </div>
+          <Link to="/verificar" className="btn-secondary whitespace-nowrap flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4" /> Verificar
+          </Link>
         </div>
       </div>
     </div>
