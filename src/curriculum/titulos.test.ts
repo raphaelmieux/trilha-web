@@ -52,7 +52,7 @@ describe('cada tipo de lição tem a sua forma', () => {
   it('toda avaliação final se anuncia como tal, com o nome da trilha', () => {
     const fora = licoes
       .filter(l => l.type === 'final')
-      .filter(l => !l.title.startsWith('Avaliação Final — '))
+      .filter(l => !l.title.startsWith('Avaliação Final de '))
       .map(l => `${l.code}: "${l.title}"`);
     expect(fora, fora.join(' | ')).toEqual([]);
   });
@@ -69,7 +69,7 @@ describe('os títulos são frases, não etiquetas de catálogo', () => {
     são o assunto da lição, não uma escolha de caixa.
 
     As avaliações finais ficam de fora — o formato delas é fixo e conferido pelo
-    teste acima, e "Avaliação Final — Internet, Avançado" é nome de trilha.
+    teste acima, e "Avaliação Final de Internet, Avançado" traz nome de trilha.
   */
   it('nenhum título usa Caixa Alta Em Cada Palavra', () => {
     const suspeitos: string[] = [];

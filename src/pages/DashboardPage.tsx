@@ -3,17 +3,121 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getProgressPercent, getProgressDetail } from '../lib/progress';
-import { getSpecialty, getAllSpecialties, getOpenSpecialties } from '../curriculum';
+import { getSpecialty, getFamilias, preRequisitoCumprido } from '../curriculum';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
-import { getPublicName } from '../types';
+import { getPublicName, ROTULO_DO_NIVEL, type Specialty, type Certification } from '../types';
 import { franchiseConfig } from '../config/franchise';
 import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
+import { descreverAtividade } from '../lib/atividade';
 import ProgressBar from '../components/ui/ProgressBar';
 import SpecialtyEmblem from '../components/ui/SpecialtyEmblem';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
+import type { ProgressMap } from '../lib/progress';
 import { Lock, Award, Flame, Star, Clock, FileText, ArrowRight, Medal, HardHat } from 'lucide-react';
+
+/**
+ * O card de uma trilha, em qualquer um dos seus três estados.
+ *
+ * Anunciada, bloqueada por pré-requisito, ou aberta. Antes eram dois cards
+ * escritos à mão mais uma lista para "as outras", e cada estado repetia a mesma
+ * marcação com pequenas diferenças. Aqui há um lugar só, e a trilha nova entra
+ * sem que esta tela precise saber o nome dela.
+ *
+ * O código e o nível ficam numa linha própria, abaixo do nome. Estavam colados
+ * ao nome com travessão — "AP034 — Internet" —, o que não é como nenhum
+ * material de desbravador escreve.
+ */
+function CardDaTrilha({ e, progress, cert, liberada }: {
+  e: Specialty;
+  progress: ProgressMap;
+  cert: Certification | undefined;
+  liberada: boolean;
+}) {
+  const codes = e.requirements.map(r => r.code);
+  const percent = getProgressPercent(codes, progress);
+  const detalhe = getProgressDetail(codes, progress);
+  const feitos = e.requirements.filter(r => progress[r.code]?.status === 'completed').length;
+  const cores = coresDoProgresso(percent);
+
+  const identificacao = (
+    <div className="min-w-0">
+      <h3 className="text-xl font-bold">{e.name}</h3>
+      <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>
+        {e.code} · Nível {ROTULO_DO_NIVEL[e.level]}
+      </p>
+      <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+        Insígnia para a faixa do desbravador
+      </p>
+    </div>
+  );
+
+  /* Anunciada: o clube vê o que vem, acinzentado e sem link. */
+  if (e.emConstrucao) {
+    return (
+      <div className="card p-6 opacity-60" style={{ border: '2px dashed var(--color-border)' }}>
+        <div className="flex items-center gap-4 mb-3">
+          <SpecialtyEmblem code={e.code} status="bloqueado" />
+          {identificacao}
+        </div>
+        <span className="text-xs px-2 py-1 rounded inline-flex items-center gap-1 mb-2"
+          style={{ backgroundColor: 'var(--color-secondary-a08)', color: 'var(--color-secondary)' }}>
+          <HardHat className="w-3.5 h-3.5" /> Em construção
+        </span>
+        <p className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{e.description}</p>
+      </div>
+    );
+  }
+
+  /* Bloqueada: o pré-requisito é cumprido pelo próprio bloqueio, e não por um
+     módulo dentro da trilha pedindo prova do que a plataforma já sabe. */
+  if (!liberada) {
+    const anterior = e.preRequisito;
+    return (
+      <div className="card p-6 opacity-70">
+        <div className="flex items-center gap-4 mb-3">
+          <SpecialtyEmblem code={e.code} status="bloqueado" />
+          {identificacao}
+        </div>
+        <p className="text-sm flex items-center gap-1.5" style={{ color: 'var(--color-text-faint)' }}>
+          <Lock className="w-4 h-4" /> Conclua a {anterior} para abrir esta trilha.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <Link to={`/especialidade/${e.code}`} className="card p-6 block transition"
+      style={{ borderColor: percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)', transition: 'border-color 0.2s' }}
+      onMouseEnter={ev => (ev.currentTarget.style.borderColor = cores.bordaAoPassar)}
+      onMouseLeave={ev => (ev.currentTarget.style.borderColor = percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)')}>
+      <div className="flex items-center gap-4 mb-4">
+        <SpecialtyEmblem
+          code={e.code}
+          status={cert ? 'certificado' : percent === 100 ? 'concluido' : 'em-andamento'}
+        />
+        {identificacao}
+      </div>
+      <div className="mb-3">
+        <div className="flex justify-between text-sm mb-1">
+          <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
+          <span className="font-semibold" style={{ color: corDoPercentual(percent) }}>{percent}%</span>
+        </div>
+        <ProgressBar percent={percent} partial={detalhe.parcial} color={cores.gradiente} />
+      </div>
+      <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
+        {feitos} de {e.requirements.length} requisitos concluídos
+      </p>
+      {cert && (
+        <div className="mt-3 p-2 rounded-lg text-sm" style={{ backgroundColor: 'var(--color-secondary-a08)', border: '1px solid var(--color-secondary-a20)' }}>
+          <span className="font-semibold" style={{ color: 'var(--color-secondary)' }}>Token.Web() emitido!</span><br />
+          <span className="text-xs font-mono" style={{ color: 'var(--color-text-dim)' }}>{cert.code.substring(0, 16)}...</span>
+        </div>
+      )}
+    </Link>
+  );
+}
 
 export default function DashboardPage() {
   const { profile } = useAuth();
@@ -37,42 +141,18 @@ export default function DashboardPage() {
 
   if (!profile) return null;
 
-  const ap034 = getSpecialty('AP034')!;
-  const ap035 = getSpecialty('AP035')!;
-
-  const ap034ReqCodes = ap034.requirements.map(r => r.code);
-  const ap035ReqCodes = ap035.requirements.map(r => r.code);
-  const ap034Percent = getProgressPercent(ap034ReqCodes, progress);
-  const ap035Percent = getProgressPercent(ap035ReqCodes, progress);
-  const ap034Detail = getProgressDetail(ap034ReqCodes, progress);
-
-  /* Vem do currículo: uma trilha nova aparece aqui sozinha, sem esta tela
-     precisar saber dela. */
-  /* Pelo andamento, e não pela trilha: três barras lado a lado dizendo a mesma
-     coisa em três cores davam a entender que a cor significava algo. */
-  const coresAp034 = coresDoProgresso(ap034Percent);
-  const coresAp035 = coresDoProgresso(ap035Percent);
-
-  const emConstrucao = getAllSpecialties().filter(e => e.emConstrucao);
-
   /*
-    As demais trilhas abertas.
+    Tudo o que a tela precisa saber vem do currículo.
 
-    AP034 e AP035 têm card próprio porque uma destrava a outra, e essa relação
-    não generaliza. Toda outra trilha aberta é independente e entra por aqui.
-    Sem isto, a AP041 sumiria da tela no dia em que ficasse pronta: ela não
-    está no par acima, e ao deixar de ser "em construção" saiu da lista de
-    anunciadas — aberta e invisível ao mesmo tempo.
+    Aqui havia seis constantes por trilha, escritas duas vezes — uma para a
+    AP034 e outra para a AP035. Cada trilha nova pedia mais seis.
   */
-  const outrasAbertas = getOpenSpecialties()
-    .filter(e => e.code !== 'AP034' && e.code !== 'AP035');
-  const ap035Detail = getProgressDetail(ap035ReqCodes, progress);
-
-  /* Pelo código da trilha: a AP041 também é "fundamental", e procurar pelo
-     grau devolveria o certificado de uma trilha no card de outra. */
-  const ap034Cert = getByCurriculum('AP034');
-  const ap035Cert = getByCurriculum('AP035');
-  const ap034Completed = ap034Percent === 100;
+  const familias = getFamilias();
+  const concluiu = (code: string) => {
+    const t = getFamilias().flatMap(f => f.trilhas).find(x => x.code === code);
+    return !!t && t.requirements.length > 0
+      && getProgressPercent(t.requirements.map(r => r.code), progress) === 100;
+  };
 
   const xp = enrollments.reduce((sum, e) => sum + (e.xp || 0), 0);
   const streak = enrollments.reduce((max, e) => Math.max(max, e.streak_days || 0), 0);
@@ -100,167 +180,32 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* AP034 */}
-        <Link to="/especialidade/AP034" className="card p-6 block transition"
-          style={{ borderColor: ap034Completed ? 'var(--color-primary-a40)' : 'var(--color-border)', transition: 'border-color 0.2s' }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = coresAp034.bordaAoPassar)}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = ap034Completed ? 'var(--color-primary-a40)' : 'var(--color-border)')}>
-          <div className="flex items-center gap-4 mb-4">
-            <SpecialtyEmblem
-              code="AP034"
-              status={ap034Cert ? 'certificado' : ap034Completed ? 'concluido' : 'em-andamento'}
-            />
-            <div className="min-w-0">
-              <h2 className="text-xl font-bold">AP034 — Internet</h2>
-              <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>Nível Fundamental</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                Insígnia para a faixa do desbravador
-              </p>
-            </div>
-          </div>
-          <div className="mb-3">
-            <div className="flex justify-between text-sm mb-1">
-              <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
-              <span className="font-semibold" style={{ color: corDoPercentual(ap034Percent) }}>{ap034Percent}%</span>
-            </div>
-            <ProgressBar percent={ap034Percent} partial={ap034Detail.parcial} color={coresAp034.gradiente} />
-          </div>
-          <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
-            {ap034.requirements.filter(r => progress[r.code]?.status === 'completed').length} de {ap034.requirements.length} requisitos concluídos
-          </p>
-          {ap034Cert && (
-            <div className="mt-3 p-2 rounded-lg text-sm" style={{ backgroundColor: 'var(--color-secondary-a08)', border: '1px solid var(--color-secondary-a20)' }}>
-              <span className="font-semibold" style={{ color: 'var(--color-secondary)' }}>Token.Web() emitido!</span><br />
-              <span className="text-xs font-mono" style={{ color: 'var(--color-text-dim)' }}>{ap034Cert.code.substring(0, 16)}...</span>
-            </div>
-          )}
-        </Link>
+      {/*
+        Uma seção por assunto, e dentro dela os níveis em ordem.
 
-        {/* AP035 */}
-        {ap034Completed ? (
-          <Link to="/especialidade/AP035" className="card p-6 block transition"
-            style={{ borderColor: ap035Percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)', transition: 'border-color 0.2s' }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = coresAp035.bordaAoPassar)}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = ap035Percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)')}>
-            <div className="flex items-center gap-4 mb-4">
-              <SpecialtyEmblem
-                code="AP035"
-                status={ap035Cert ? 'certificado' : ap035Percent === 100 ? 'concluido' : 'em-andamento'}
+        Eram dois cards escritos à mão, AP034 e AP035, mais uma lista genérica
+        para "as outras". Com sete trilhas e mais por vir, escrever cada uma é
+        insustentável — e foi assim que a AP041 sumiu da tela no dia em que
+        deixou de ser anunciada. Aqui não há trilha citada pelo nome: o que a
+        tela sabe vem do currículo.
+      */}
+      {familias.map(({ nome, trilhas }) => (
+        <section key={nome} className="space-y-3">
+          <h2 className="text-lg font-bold" style={{ color: 'var(--color-text-soft)' }}>{nome}</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {trilhas.map(e => (
+              <CardDaTrilha
+                key={e.code}
+                e={e}
+                progress={progress}
+                cert={getByCurriculum(e.code)}
+                liberada={preRequisitoCumprido(e, concluiu)}
               />
-              <div className="min-w-0">
-                <h2 className="text-xl font-bold">AP035 — Internet, Avançado</h2>
-                <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>Nível Avançado</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                  Insígnia para a faixa do desbravador
-                </p>
-              </div>
-            </div>
-            <div className="mb-3">
-              <div className="flex justify-between text-sm mb-1">
-                <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
-                <span className="font-semibold" style={{ color: corDoPercentual(ap035Percent) }}>{ap035Percent}%</span>
-              </div>
-              <ProgressBar percent={ap035Percent} partial={ap035Detail.parcial} color={coresAp035.gradiente} />
-            </div>
-            <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
-              {ap035.requirements.filter(r => progress[r.code]?.status === 'completed').length} de {ap035.requirements.length} requisitos concluídos
-            </p>
-            {ap035Cert && (
-              <div className="mt-3 p-2 rounded-lg text-sm" style={{ backgroundColor: 'var(--color-secondary-a08)', border: '1px solid var(--color-secondary-a20)' }}>
-                <span className="font-semibold" style={{ color: 'var(--color-secondary)' }}>Token.Web() Avançado emitido!</span><br />
-                <span className="text-xs font-mono" style={{ color: 'var(--color-text-dim)' }}>{ap035Cert.code.substring(0, 16)}...</span>
-              </div>
-            )}
-          </Link>
-        ) : (
-          <div className="card p-6 opacity-50" style={{ border: '2px dashed var(--color-border)' }}>
-            <div className="flex items-center gap-2 mb-4">
-              <Lock className="w-5 h-5" style={{ color: 'var(--color-border-hover)' }} />
-              <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-dim)' }}>AP035 — Internet, Avançado</h2>
-            </div>
-            <p className="text-sm mb-2" style={{ color: 'var(--color-text-faint)' }}>Bloqueado</p>
-            <p className="text-xs" style={{ color: 'var(--color-text-faint)' }}>Conclua a AP034 — Internet para desbloquear automaticamente a trilha avançada.</p>
+            ))}
           </div>
-        )}
+        </section>
+      ))}
 
-        {outrasAbertas.map(e => {
-          const codes = e.requirements.map(r => r.code);
-          const percent = getProgressPercent(codes, progress);
-          const detail = getProgressDetail(codes, progress);
-          const feitos = e.requirements.filter(r => progress[r.code]?.status === 'completed').length;
-          const cores = coresDoProgresso(percent);
-          return (
-            <Link key={e.code} to={`/especialidade/${e.code}`} className="card p-6 block transition"
-              style={{ borderColor: percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)', transition: 'border-color 0.2s' }}
-              onMouseEnter={ev => (ev.currentTarget.style.borderColor = cores.bordaAoPassar)}
-              onMouseLeave={ev => (ev.currentTarget.style.borderColor = percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)')}>
-              <div className="flex items-center gap-4 mb-4">
-                <SpecialtyEmblem
-                  code={e.code}
-                  status={getByCurriculum(e.code) ? 'certificado' : percent === 100 ? 'concluido' : 'em-andamento'}
-                />
-                <div className="min-w-0">
-                  <h2 className="text-xl font-bold">{e.code} — {e.name}</h2>
-                  <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>
-                    Nível {e.level === 'fundamental' ? 'Fundamental' : 'Avançado'}
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                    Insígnia para a faixa do desbravador
-                  </p>
-                </div>
-              </div>
-              <div className="mb-3">
-                <div className="flex justify-between text-sm mb-1">
-                  <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
-                  <span className="font-semibold" style={{ color: corDoPercentual(percent) }}>{percent}%</span>
-                </div>
-                <ProgressBar percent={percent} partial={detail.parcial} color={cores.gradiente} />
-              </div>
-              <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
-                {feitos} de {e.requirements.length} requisitos concluídos
-              </p>
-            </Link>
-          );
-        })}
-
-        {/*
-          As trilhas anunciadas e ainda não abertas. Ficam ao lado das outras
-          para o clube saber o que vem — apareceriam do nada, prontas, se só
-          entrassem no dia em que ficassem prontas.
-        */}
-        {emConstrucao.map(e => (
-          <div key={e.code} className="card p-6 opacity-60" style={{ border: '2px dashed var(--color-border)' }}>
-            <div className="flex items-center gap-3 mb-2">
-              {/* O emblema real, dessaturado: mostra o que vem sem prometer que
-                  já dá para começar. */}
-              <img
-                src={`${import.meta.env.BASE_URL}assets/specialties/${e.code}.svg`}
-                alt=""
-                className="w-14 h-14 flex-shrink-0 object-contain"
-                style={{ filter: 'grayscale(1)', opacity: 0.7 }}
-                onError={ev => { (ev.currentTarget as HTMLImageElement).style.display = 'none'; }}
-              />
-              <div className="min-w-0">
-                <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--color-text-dim)' }}>
-                  <HardHat className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-secondary)' }} />
-                  {e.code} — {e.name}
-                </h2>
-              </div>
-            </div>
-            <span
-              className="inline-block text-xs px-2 py-0.5 rounded-full mb-3"
-              style={{ backgroundColor: 'var(--color-secondary-a08)', color: 'var(--color-secondary)', border: '1px solid var(--color-secondary-a20)' }}
-            >
-              Em construção
-            </span>
-            <p className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{e.description}</p>
-            <p className="text-xs mt-3" style={{ color: 'var(--color-text-faint)' }}>
-              {e.requirements.length} requisitos, em {e.modules.length} módulos. Avisaremos quando abrir.
-            </p>
-          </div>
-        ))}
-      </div>
 
       {certifications.length > 0 && (
         <div className="card p-6" style={{ borderColor: 'var(--color-secondary-a20)' }}>
@@ -279,11 +224,11 @@ export default function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     {/* Pelo código da trilha: com três especialidades, "fundamental"
                         deixou de identificar uma delas, e um certificado da AP041
-                        apareceria escrito "AP034 — Internet". */}
+                        apareceria escrito como se fosse de Internet. */}
                     <p className="font-semibold">
                       {(() => {
                         const e = getSpecialty(cert.curriculum_code);
-                        return e ? `${e.code} — ${e.name}` : cert.curriculum_code;
+                        return e ? `${e.name} (${e.code})` : cert.curriculum_code;
                       })()}
                     </p>
                     <p className="text-xs font-mono" style={{ color: 'var(--color-text-dim)' }}>{cert.code}</p>
@@ -306,13 +251,26 @@ export default function DashboardPage() {
           <EmptyState title="Nenhuma atividade ainda" description="Comece a estudar para ver seu progresso aqui!" />
         ) : (
           <ul className="space-y-2">
-            {recentEvents.map(event => (
-              <li key={event.id} className="flex items-center gap-3 text-sm pb-2" style={{ borderBottom: '1px solid var(--color-bg-hover)' }}>
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--color-primary)' }}></span>
-                <span className="font-medium" style={{ color: 'var(--color-text-soft)' }}>{event.event_type.replace(/_/g, ' ')}</span>
-                <span className="ml-auto text-xs" style={{ color: 'var(--color-text-faint)' }}>{new Date(event.created_at).toLocaleString('pt-BR')}</span>
-              </li>
-            ))}
+            {recentEvents.map(event => {
+              const a = descreverAtividade(event);
+              return (
+                <li key={event.id} className="flex items-start gap-3 text-sm pb-2" style={{ borderBottom: '1px solid var(--color-bg-hover)' }}>
+                  <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: 'var(--color-primary)' }}></span>
+                  <span className="min-w-0">
+                    {a.trilha && (
+                      <span className="font-mono text-xs mr-1.5" style={{ color: 'var(--color-secondary)' }}>{a.trilha}</span>
+                    )}
+                    <span className="font-medium" style={{ color: 'var(--color-text-soft)' }}>{a.texto}</span>
+                    {a.detalhe && (
+                      <span className="text-xs ml-1.5" style={{ color: 'var(--color-text-muted)' }}>({a.detalhe})</span>
+                    )}
+                  </span>
+                  <span className="ml-auto text-xs flex-shrink-0 whitespace-nowrap" style={{ color: 'var(--color-text-faint)' }}>
+                    {new Date(event.created_at).toLocaleString('pt-BR')}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

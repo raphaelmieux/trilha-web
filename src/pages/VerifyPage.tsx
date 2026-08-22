@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { type CertificadoVerificado } from '../types';
+import { ROTULO_DO_NIVEL, type CertificadoVerificado } from '../types';
 import { getSpecialty } from '../curriculum';
 import { Award, Search, CheckCircle2 } from 'lucide-react';
 import { ErrorState } from '../components/ui/PageState';
@@ -92,7 +92,7 @@ export default function VerifyPage() {
                 const e = getSpecialty(result.curriculum_code);
                 return e ? `${e.code} — ${e.name}` : result.curriculum_code;
               })()],
-              ['Nível:', result.level === 'fundamental' ? 'Fundamental' : 'Avançado'],
+              ['Nível:', ROTULO_DO_NIVEL[result.level] ?? result.level],
               ['Currículo:', `${result.curriculum_code} v${result.curriculum_version}`],
               ['Emitido em:', new Date(result.issued_at).toLocaleDateString('pt-BR')],
             ].map(([label, value]) => (

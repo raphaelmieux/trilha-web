@@ -1,7 +1,11 @@
+import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getSpecialty } from '../curriculum';
-import { getProgressPercent, getProgressDetail, getModuleStatus, statusDasLicoes } from '../lib/progress';
+import { getSpecialty, preRequisitoCumprido } from '../curriculum';
+import {
+  getProgressPercent, getProgressDetail, getModuleStatus, statusDasLicoes,
+  getRequirementId, upsertRequirementProgress,
+} from '../lib/progress';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useLicoesConcluidas } from '../hooks/useLicoesConcluidas';
 import { useCertifications } from '../hooks/useCertifications';
@@ -18,6 +22,51 @@ export default function SpecialtyPage() {
   const { getByCurriculum } = useCertifications(profile?.id);
   const cert = specialty ? getByCurriculum(specialty.code) : undefined;
 
+  /*
+    A trilha exigida antes desta já foi concluída?
+
+    A pergunta era um `if` para a AP035 escrito nesta tela; agora sai do
+    currículo, e a próxima trilha com pré-requisito não precisa de código novo.
+    Conclusão aqui é ter todos os requisitos cumpridos, e não o certificado
+    emitido: quem terminou a trilha anterior já pode começar a seguinte, mesmo
+    que ainda não tenha clicado em emitir.
+  */
+  const concluiu = (codigo: string) => {
+    const t = getSpecialty(codigo);
+    return !!t && t.requirements.length > 0
+      && getProgressPercent(t.requirements.map(r => r.code), progress) === 100;
+  };
+  const liberada = !specialty || preRequisitoCumprido(specialty, concluiu);
+
+  /*
+    O requisito que o próprio portão cumpre.
+
+    "Ter concluído a especialidade anterior" é requisito oficial, e precisa
+    constar no progresso para o relatório e para a emissão do certificado. Ele
+    era marcado por um laboratório que pedia um clique para conferir o que a
+    plataforma já sabia; agora é registrado no instante em que a trilha abre.
+
+    O upsert é idempotente, então repetir a visita não faz nada de novo.
+  */
+  useEffect(() => {
+    if (!profile || !specialty || !liberada) return;
+    const pendentes = specialty.requirements.filter(
+      r => r.peloPreRequisito && progress[r.code]?.status !== 'completed',
+    );
+    if (pendentes.length === 0) return;
+
+    (async () => {
+      for (const r of pendentes) {
+        const reqId = await getRequirementId(r.code);
+        if (!reqId) continue;
+        await upsertRequirementProgress(profile.id, reqId, {
+          status: 'completed', mastery_score: 100, checkpoint_passed: true,
+          attempts: 1, correct_count: 1, total_questions: 1,
+        });
+      }
+    })();
+  }, [profile, specialty, liberada, progress]);
+
   if (!specialty) return <div style={{ color: 'var(--color-text-muted)' }}>Especialidade não encontrada</div>;
   /* O card do painel não leva aqui, mas o endereço é adivinhável — sem esta
      guarda, bastaria digitá-lo para entrar numa trilha inacabada. */
@@ -33,19 +82,23 @@ export default function SpecialtyPage() {
   );
   if (!profile) return null;
 
-  if (specialty.code === 'AP035') {
-    const ap034 = getSpecialty('AP034')!;
-    const ap034Percent = getProgressPercent(ap034.requirements.map(r => r.code), progress);
-    if (ap034Percent < 100) {
-      return (
-        <div className="max-w-2xl mx-auto text-center py-12">
-          <Lock className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-border-hover)' }} />
-          <h1 className="text-2xl font-bold mb-2">AP035 Bloqueada</h1>
-          <p className="mb-6" style={{ color: 'var(--color-text-dim)' }}>Conclua a AP034 — Internet para desbloquear automaticamente.</p>
-          <Link to="/especialidade/AP034" className="btn-primary">Ir para AP034</Link>
-        </div>
-      );
-    }
+  if (!liberada) {
+    const anterior = getSpecialty(specialty.preRequisito!);
+    return (
+      <div className="max-w-2xl mx-auto text-center py-12">
+        <Lock className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-border-hover)' }} />
+        <h1 className="text-2xl font-bold mb-2">{specialty.name} está bloqueada</h1>
+        <p className="mb-6" style={{ color: 'var(--color-text-dim)' }}>
+          Conclua {anterior ? anterior.name : specialty.preRequisito} para abrir esta trilha.
+          Ela libera sozinha assim que o último requisito for cumprido.
+        </p>
+        {anterior && (
+          <Link to={`/especialidade/${anterior.code}`} className="btn-primary">
+            Ir para {anterior.name}
+          </Link>
+        )}
+      </div>
+    );
   }
 
   const overallPercent = getProgressPercent(specialty.requirements.map(r => r.code), progress);

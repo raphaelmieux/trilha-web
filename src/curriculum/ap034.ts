@@ -1093,7 +1093,8 @@ const rawQuestions_5L0: Question[] = [
 export const ap034: Specialty = {
   code: 'AP034',
   name: 'Internet',
-  level: 'fundamental',
+  level: 'basico',
+  familia: 'Internet',
   description: 'Especialidade fundamental sobre internet, serviços, navegação, segurança e uso consciente.',
   requirements: [
     { code: 'AP034-1.1', title: 'Internet', description: 'Definir internet e diferenciá-la de website e WWW.', type: 'theory' },
@@ -1199,7 +1200,7 @@ export const ap034: Specialty = {
       code: 'AP034.F', title: 'Avaliação Final',
       description: 'A prova que fecha a trilha, com questões de todos os requisitos.',
       lessons: [
-        { code: 'AP034.F-L1', title: 'Avaliação Final — Internet', type: 'final', content: '', requirementCodes: [], labType: 'final_exam' },
+        { code: 'AP034.F-L1', title: 'Avaliação Final de Internet', type: 'final', content: '', requirementCodes: [], labType: 'final_exam' },
       ],
     },
   ],

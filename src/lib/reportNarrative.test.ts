@@ -6,7 +6,7 @@ import type { ProgressMap } from './progress';
 const specialty: Specialty = {
   code: 'AP034',
   name: 'Internet',
-  level: 'fundamental',
+  level: 'basico', familia: 'Teste',
   description: 'Especialidade fundamental sobre internet.',
   requirements: [
     { code: 'R1', title: 'Internet', description: 'Definir internet e diferenciá-la de website.', type: 'theory' },
@@ -35,7 +35,7 @@ const progressFor = (codes: string[]): ProgressMap =>
   }]));
 
 const cert: Certification = {
-  id: 'c1', code: 'TW-AAAA-BBBB', hash: 'h', level: 'fundamental',
+  id: 'c1', code: 'TW-AAAA-BBBB', hash: 'h', level: 'basico',
   curriculum_code: 'AP034', curriculum_version: '1.0', status: 'active',
   issued_at: '2026-08-13T12:00:00Z', user_id: 'u1',
 };
@@ -107,10 +107,20 @@ describe('buildSpecialtyNarrative', () => {
     expect(n.opening).toContain('ainda não registrou');
   });
 
-  it('ignores certifications belonging to the other level', () => {
-    const advanced = { ...cert, level: 'advanced' as const };
-    const n = buildSpecialtyNarrative(specialty, progressFor(['R1']), [advanced], 'Ana');
+  /* Pelo código da trilha, e não pelo grau: três especialidades podem ser
+     básicas, e procurar pelo grau anexaria ao relatório de uma o certificado de
+     outra. O grau diferente aqui não basta para descartar — o que descarta é
+     ser de outra trilha. */
+  it('ignores certifications belonging to another trail', () => {
+    const deOutraTrilha = { ...cert, curriculum_code: 'AP999' };
+    const n = buildSpecialtyNarrative(specialty, progressFor(['R1']), [deOutraTrilha], 'Ana');
     expect(n.certificate).toBeNull();
+  });
+
+  it('finds the certificate of this trail even at another level', () => {
+    const mesmaTrilha = { ...cert, level: 'avancado' as const, curriculum_code: specialty.code };
+    const n = buildSpecialtyNarrative(specialty, progressFor(['R1']), [mesmaTrilha], 'Ana');
+    expect(n.certificate).not.toBeNull();
   });
 
   it('ignores revoked certifications', () => {
@@ -215,7 +225,7 @@ describe('per-requirement sentences', () => {
      so every requirement has to appear by its official number. Uses AP034 codes
      rather than the R1..R4 fixture because the numbering is the point. */
   const navSpecialty: Specialty = {
-    code: 'AP034', name: 'Internet', level: 'fundamental', description: '',
+    code: 'AP034', name: 'Internet', level: 'basico', familia: 'Teste', description: '',
     requirements: [
       { code: 'AP034-6.1', title: 'Visitar três sites', description: 'Visitar três sites diferentes e registrar a primeira página de cada um.', type: 'practice' },
       { code: 'AP034-6.2', title: 'Pesquisa bíblica', description: 'Encontrar uma Bíblia on-line e localizar três textos em três versões.', type: 'practice' },

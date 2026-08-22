@@ -1,4 +1,4 @@
-import type { Specialty, Certification, Badge } from '../types';
+import { ROTULO_DO_NIVEL, type Specialty, type Certification, type Badge } from '../types';
 import type { ProgressMap } from './progress';
 import { TIER_LABELS } from './badgeIcons';
 
@@ -131,7 +131,7 @@ export function buildSpecialtyNarrative(
   studentName: string,
   evidence: LabEvidence = {},
 ): SpecialtyNarrative {
-  const levelLabel = specialty.level === 'fundamental' ? 'Fundamental' : 'Avançado';
+  const levelLabel = ROTULO_DO_NIVEL[specialty.level];
   const requirements = specialty.requirements;
   const isDone = (code: string) => progress[code]?.status === 'completed';
 
@@ -142,8 +142,11 @@ export function buildSpecialtyNarrative(
     : Math.round((completed.length / requirements.length) * 100);
   const started = completed.length > 0;
 
+  /* Pelo código da trilha, não pelo grau: três especialidades podem ser
+     básicas, e procurar pelo grau anexaria ao relatório de uma o certificado
+     de outra. */
   const certificate = certifications.find(c =>
-    c.status === 'active' && c.level === specialty.level
+    c.status === 'active' && c.curriculum_code === specialty.code
   ) || null;
 
   let opening: string;

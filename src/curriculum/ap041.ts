@@ -23,7 +23,8 @@ import { modulo4 } from './ap041/modulo4';
 export const ap041: Specialty = {
   code: 'AP041',
   name: 'Computação 1',
-  level: 'fundamental',
+  level: 'basico',
+  familia: 'Computação',
   description: 'Como o computador funciona por dentro, para que serve cada peça e como cuidar dele.',
 
   requirements: [
@@ -102,7 +103,7 @@ export const ap041: Specialty = {
       lessons: [
         {
           code: 'AP041.F-L1',
-          title: 'Avaliação Final — Computação 1',
+          title: 'Avaliação Final de Computação 1',
           type: 'final',
           content: '',
           requirementCodes: [],

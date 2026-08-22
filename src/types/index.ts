@@ -13,7 +13,6 @@ export type LabType =
   | 'text_editor'
   | 'redacao_guiada'
   | 'pact_builder'
-  | 'prerequisite'
   | 'threat_lab'
   | 'web_lab'
   | 'mail_lab'
@@ -32,6 +31,19 @@ export interface Requirement {
   title: string;
   description: string;
   type: 'theory' | 'practice' | 'mixed';
+  /**
+   * Cumprido pelo próprio bloqueio da trilha, e não por uma lição.
+   *
+   * Algumas especialidades avançadas trazem, como primeiro requisito oficial,
+   * "ter concluído a especialidade anterior". Havia um módulo inteiro só para
+   * isso, com um laboratório que conferia a certificação e pedia um clique.
+   *
+   * Era pedir ao desbravador que provasse o que já está registrado na conta
+   * dele. Quem controla o acesso é a própria plataforma: enquanto a trilha
+   * anterior não estiver concluída, esta nem abre; assim que estiver, abre — e o
+   * requisito se dá por cumprido no mesmo instante.
+   */
+  peloPreRequisito?: boolean;
 }
 
 export interface Question {
@@ -63,6 +75,20 @@ export interface QuestionData {
   options?: QuestionOption[];
   scenarios?: QuestionOption[];
   pairs?: { left: string; right: string }[];
+  /**
+   * Os itens de uma questão de ordenar.
+   *
+   * `order` é a resposta — 1 a n, sem repetir —, e é o único lugar de onde ela
+   * sai: a posição no array não significa nada, porque os itens são
+   * embaralhados antes de aparecer (ver lib/questoes.ts).
+   *
+   * A forma de mexer neles é sempre a mesma, em lição e em prova: arrastar para
+   * o lugar, com as setas ao lado para quem está no celular, onde arrastar não
+   * existe. Isso não é escolha de cada questão — todas passam por
+   * `OrderingQuestion`, em components/questions/QuestionRenderer.tsx, que é
+   * quem desenha o tipo. Questão de ordenar nova só precisa dos itens e do
+   * `order`; a interface vem junto.
+   */
   items?: { id: string; text: string; order: number }[];
   blanks?: {
     id: string;
@@ -98,6 +124,25 @@ export interface Module {
   lessons: Lesson[];
 }
 
+/**
+ * Os três níveis da classificação oficial dos Desbravadores.
+ *
+ * Eram dois, `fundamental` e `advanced`, escritos quando a plataforma tinha as
+ * duas trilhas de Internet e a palavra "fundamental" parecia descrever a
+ * primeira. A classificação real é Básico, Intermediário e Avançado, e a
+ * família de Computação usa os três — daí o nome e o número certos.
+ */
+export type NivelDaEspecialidade = 'basico' | 'intermediario' | 'avancado';
+
+export const ROTULO_DO_NIVEL: Record<NivelDaEspecialidade, string> = {
+  basico: 'Básico',
+  intermediario: 'Intermediário',
+  avancado: 'Avançado',
+};
+
+/** A ordem em que os níveis se sucedem, para ordenar e agrupar. */
+export const ORDEM_DOS_NIVEIS: NivelDaEspecialidade[] = ['basico', 'intermediario', 'avancado'];
+
 export interface Specialty {
   code: string;
   name: string;
@@ -105,10 +150,30 @@ export interface Specialty {
    * O grau da especialidade dentro da própria família — "Internet" e "Internet,
    * Avançado" são o mesmo assunto em dois níveis.
    *
-   * Não serve para identificar a trilha: duas especialidades diferentes podem
-   * ser ambas fundamentais. Quem identifica é `code`.
+   * Não serve para identificar a trilha: várias especialidades podem ser
+   * básicas. Quem identifica é `code`.
    */
-  level: 'fundamental' | 'advanced';
+  level: NivelDaEspecialidade;
+  /**
+   * O assunto a que a trilha pertence — "Internet", "Computação".
+   *
+   * É por aqui que o painel agrupa. Com duas trilhas dava para listar as duas e
+   * pronto; com cinco de Computação a mais, uma parede de cards sem hierarquia
+   * esconde o percurso que existe dentro de cada família.
+   */
+  familia: string;
+  /**
+   * O código da trilha que precisa estar concluída antes desta.
+   *
+   * Declarado aqui, e não escrito dentro de uma tela: era um `if` para a AP035
+   * na página da trilha, e cada nova trilha com pré-requisito exigiria outro.
+   *
+   * O pré-requisito é cumprido pelo próprio bloqueio — quem não concluiu a
+   * anterior não entra, e quem concluiu entra. Não existe módulo para isso: a
+   * plataforma já sabe a resposta, e perguntá-la ao desbravador seria pedir que
+   * ele provasse o que está registrado na conta dele.
+   */
+  preRequisito?: string;
   description: string;
   /**
    * Anunciada, mas ainda não aberta.
@@ -160,7 +225,7 @@ export interface Certification {
   id: string;
   code: string;
   hash: string;
-  level: 'fundamental' | 'advanced';
+  level: NivelDaEspecialidade;
   curriculum_code: string;
   curriculum_version: string;
   status: 'active' | 'revoked';
@@ -189,7 +254,7 @@ export type CertificadoImprimivel = Pick<Certification, 'code' | 'curriculum_cod
 export interface CertificadoVerificado {
   code: string;
   hash: string;
-  level: 'fundamental' | 'advanced';
+  level: NivelDaEspecialidade;
   curriculum_code: string;
   curriculum_version: string;
   status: 'active' | 'revoked';

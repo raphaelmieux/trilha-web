@@ -223,7 +223,7 @@ async function requestCertification(userId: string, specialtyCode: string): Prom
         /* O grau vem do currículo, e não de um ternário que só conhecia duas
            trilhas — com a terceira, "tudo que não for AP034 é avançado" passa a
            mentir sobre a especialidade. */
-        level: getSpecialty(specialtyCode)?.level ?? 'fundamental',
+        level: getSpecialty(specialtyCode)?.level ?? 'basico',
       }),
     });
     const data = await response.json();

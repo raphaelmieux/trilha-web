@@ -19,7 +19,6 @@ import TextEditorLab from '../labs/TextEditorLab';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import PactBuilderLab from '../labs/PactBuilderLab';
 import ThreatLab from '../labs/ThreatLab';
-import PrerequisiteLab from '../labs/PrerequisiteLab';
 import WebLab from '../labs/WebLab';
 import MailLab from '../labs/MailLab';
 import FilipensesLab from '../labs/FilipensesLab';
@@ -111,7 +110,6 @@ export default function LessonPage() {
         {lesson.labType === 'redacao_guiada' && <RedacaoGuiadaLab {...labProps} />}
         {lesson.labType === 'pact_builder' && <PactBuilderLab {...labProps} />}
         {lesson.labType === 'threat_lab' && <ThreatLab {...labProps} />}
-        {lesson.labType === 'prerequisite' && <PrerequisiteLab {...labProps} />}
         {lesson.labType === 'web_lab' && <WebLab {...labProps} />}
         {lesson.labType === 'mail_lab' && <MailLab {...labProps} />}
         {lesson.labType === 'filipenses' && <FilipensesLab {...labProps} />}

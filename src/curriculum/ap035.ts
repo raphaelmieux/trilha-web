@@ -714,10 +714,12 @@ const rawQ_graficos: Question[] = [
 export const ap035: Specialty = {
   code: 'AP035',
   name: 'Internet, Avançado',
-  level: 'advanced',
+  level: 'avancado',
+  familia: 'Internet',
+  preRequisito: 'AP034',
   description: 'Especialidade avançada sobre internet: HTTP, HTML, imagens, sites e inteligência artificial.',
   requirements: [
-    { code: 'AP035-1.1', title: 'Especialidade de Internet', description: 'Ter concluído a especialidade AP034 — Internet.', type: 'practice' },
+    { code: 'AP035-1.1', title: 'Especialidade de Internet', description: 'Ter concluído a especialidade AP034 Internet.', type: 'practice', peloPreRequisito: true },
     { code: 'AP035-2.1', title: 'HTTP', description: 'Explicar HTTP e HTTPS.', type: 'theory' },
     { code: 'AP035-2.2', title: 'Hyperlink', description: 'Explicar hyperlink.', type: 'theory' },
     { code: 'AP035-2.3', title: 'HTML e PHP', description: 'Diferenciar HTML e PHP.', type: 'theory' },
@@ -751,12 +753,6 @@ export const ap035: Specialty = {
   ],
   modules: [
     {
-      code: 'AP035.0', title: 'Antes de começar', description: 'A trilha de Internet concluída é a porta de entrada desta.',
-      lessons: [
-        { code: 'AP035.0-L1', title: 'Conferindo a especialidade de Internet', type: 'lab', content: '', requirementCodes: ['AP035-1.1'], labType: 'prerequisite' },
-      ],
-    },
-    {
       code: 'AP035.1', title: 'Como a página chega até você', description: 'Endereços, protocolos e o que acontece entre o clique e a tela.',
       lessons: [
         { code: 'AP035.1-L1', title: 'HTTP, HTTPS e hyperlinks', type: 'theory', content: content_1L1, requirementCodes: ['AP035-2.1', 'AP035-2.2'], questions: rawQ_1L1 },
@@ -775,20 +771,20 @@ export const ap035: Specialty = {
     {
       code: 'AP035.3', title: 'Organizar em tabela', description: 'Pôr informação em linhas e colunas, e deixar a página apresentável.',
       lessons: [
-        { code: 'AP035.3-L1', title: 'Organizando dados numa tabela', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">Desafio: Página com Tabela</h2><p class="mb-3">Agora que você praticou com os elementos individuais no CodeLab, crie uma página HTML completa que inclua uma tabela com dados reais. Use sua criatividade — pode ser uma tabela de horários, de produtos, de notas, etc.</p><p class="mb-3">Lembre-se de incluir: <code style="color: var(--color-secondary)">&lt;table&gt;</code>, <code style="color: var(--color-secondary)">&lt;tr&gt;</code> (linhas) e <code style="color: var(--color-secondary)">&lt;td&gt;</code> (células).</p>', requirementCodes: ['AP035-4.1'], labType: 'table_challenge' },
+        { code: 'AP035.3-L1', title: 'Organizando dados numa tabela', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">Organizando dados numa tabela</h2><p class="mb-3">Agora que você praticou com os elementos individuais, crie uma página HTML completa que inclua uma tabela com dados reais. Use sua criatividade — pode ser uma tabela de horários, de produtos, de notas, etc.</p><p class="mb-3">Lembre-se de incluir: <code style="color: var(--color-secondary)">&lt;table&gt;</code>, <code style="color: var(--color-secondary)">&lt;tr&gt;</code> (linhas) e <code style="color: var(--color-secondary)">&lt;td&gt;</code> (células).</p>', requirementCodes: ['AP035-4.1'], labType: 'table_challenge' },
       ],
     },
     {
       code: 'AP035.4', title: 'Imagens que carregam rápido', description: 'Escolher o formato certo e o tamanho que não faz ninguém esperar.',
       lessons: [
         { code: 'AP035.4-L0', title: 'Gráficos que carregam rápido', type: 'theory', content: content_graficos, requirementCodes: ['AP035-5.1'], questions: rawQ_graficos },
-        { code: 'AP035.4-L1', title: 'Deixando as imagens leves', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">ImageLab — Otimização de Imagens</h2><p class="mb-3">Neste laboratório você vai produzir quatro imagens de verdade: uma fotografia otimizada em JPEG, um logo em PNG com fundo transparente, um botão e um header. Ao final, os quatro arquivos ficam salvos no seu dispositivo.</p><p class="mb-3">Escolher o formato certo é o que decide se a página abre rápido ou trava no 3G do acampamento. O JPEG descarta detalhe que o olho não percebe e vence em fotografias; o PNG guarda cada pixel e é o único que guarda transparência — sem ele, o logo do clube viaja dentro de uma caixa branca.</p><p class="mb-3">Cada etapa já vem preenchida com um defeito de propósito. Descubra qual é e corrija: as verificações medem os pixels e os bytes que você gerou, não a resposta que você escolheu.</p>', requirementCodes: ['AP035-5.2'], labType: 'image_lab' },
+        { code: 'AP035.4-L1', title: 'Deixando as imagens leves', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">Deixando as imagens leves</h2><p class="mb-3">Neste laboratório você vai produzir quatro imagens de verdade: uma fotografia otimizada em JPEG, um logo em PNG com fundo transparente, um botão e um header. Ao final, os quatro arquivos ficam salvos no seu dispositivo.</p><p class="mb-3">Escolher o formato certo é o que decide se a página abre rápido ou trava no 3G do acampamento. O JPEG descarta detalhe que o olho não percebe e vence em fotografias; o PNG guarda cada pixel e é o único que guarda transparência — sem ele, o logo do clube viaja dentro de uma caixa branca.</p><p class="mb-3">Cada etapa já vem preenchida com um defeito de propósito. Descubra qual é e corrija: as verificações medem os pixels e os bytes que você gerou, não a resposta que você escolheu.</p>', requirementCodes: ['AP035-5.2'], labType: 'image_lab' },
       ],
     },
     {
       code: 'AP035.5', title: 'Um site de verdade', description: 'Quatro páginas ligadas entre si, do começo ao fim.',
       lessons: [
-        { code: 'AP035.5-L1', title: 'Montando um site de quatro páginas', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">SiteLab — Projeto de Site</h2><p class="mb-3">Crie um site completo com quatro páginas interligadas: <strong>Início</strong>, <strong>Sobre</strong>, <strong>Contato</strong> e <strong>Galeria</strong>. Cada página deve ter navegação consistente (menu com links) e a página de contato deve incluir um formulário.</p><p class="mb-3">Use a tag <code style="color: var(--color-secondary)">&lt;a href="pagina.html"&gt;</code> para criar os links entre as páginas. O formulário deve usar <code style="color: var(--color-secondary)">&lt;form&gt;</code>, <code style="color: var(--color-secondary)">&lt;input&gt;</code> e <code style="color: var(--color-secondary)">&lt;button&gt;</code>.</p>', requirementCodes: ['AP035-6.1', 'AP035-6.2', 'AP035-6.3'], labType: 'site_lab' },
+        { code: 'AP035.5-L1', title: 'Montando um site de quatro páginas', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">Montando um site de quatro páginas</h2><p class="mb-3">Crie um site completo com quatro páginas interligadas: <strong>Início</strong>, <strong>Sobre</strong>, <strong>Contato</strong> e <strong>Galeria</strong>. Cada página deve ter navegação consistente (menu com links) e a página de contato deve incluir um formulário.</p><p class="mb-3">Use a tag <code style="color: var(--color-secondary)">&lt;a href="pagina.html"&gt;</code> para criar os links entre as páginas. O formulário deve usar <code style="color: var(--color-secondary)">&lt;form&gt;</code>, <code style="color: var(--color-secondary)">&lt;input&gt;</code> e <code style="color: var(--color-secondary)">&lt;button&gt;</code>.</p>', requirementCodes: ['AP035-6.1', 'AP035-6.2', 'AP035-6.3'], labType: 'site_lab' },
       ],
     },
     {
@@ -800,13 +796,13 @@ export const ap035: Specialty = {
     {
       code: 'AP035.7', title: 'Pedir bem, e conferir', description: 'Montar um pedido peça por peça, e julgar o que voltou.',
       lessons: [
-        { code: 'AP035.7-L1', title: 'Pedindo à IA, e conferindo o que voltou', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">AI Lab — Produção com IA</h2><p class="mb-3">Neste laboratório você vai usar IA generativa para criar conteúdo: gerar texto, gerar uma imagem e criar um logo para um clube. Depois, você vai avaliar criticamente os resultados.</p><p class="mb-3">Lembre-se: a IA é uma ferramenta. O conteúdo gerado deve ser revisado e melhorado por você. A IA pode cometer erros ou produzir conteúdo inadequado.</p>', requirementCodes: ['AP035-8.1', 'AP035-8.2', 'AP035-8.3'], labType: 'ai_lab' },
+        { code: 'AP035.7-L1', title: 'Pedindo à IA, e conferindo o que voltou', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">Pedindo à IA, e conferindo o que voltou</h2><p class="mb-3">Neste laboratório você vai usar IA generativa para criar conteúdo: gerar texto, gerar uma imagem e criar um logo para um clube. Depois, você vai avaliar criticamente os resultados.</p><p class="mb-3">Lembre-se: a IA é uma ferramenta. O conteúdo gerado deve ser revisado e melhorado por você. A IA pode cometer erros ou produzir conteúdo inadequado.</p>', requirementCodes: ['AP035-8.1', 'AP035-8.2', 'AP035-8.3'], labType: 'ai_lab' },
       ],
     },
     {
       code: 'AP035.F', title: 'Avaliação Final', description: 'A prova que fecha a trilha, com questões de todos os requisitos.',
       lessons: [
-        { code: 'AP035.F-L1', title: 'Avaliação Final — Internet, Avançado', type: 'final', content: '', requirementCodes: [], labType: 'final_exam' },
+        { code: 'AP035.F-L1', title: 'Avaliação Final de Internet, Avançado', type: 'final', content: '', requirementCodes: [], labType: 'final_exam' },
       ],
     },
   ],

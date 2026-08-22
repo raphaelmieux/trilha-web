@@ -49,8 +49,15 @@ describe('AP035 curriculum', () => {
     expect(ap035.requirements).toHaveLength(31);
   });
 
-  it('has 9 modules, counting the prerequisite gate', () => {
-    expect(ap035.modules).toHaveLength(9);
+  /* Eram nove: o nono era um módulo só para conferir a especialidade
+     anterior. O bloqueio da trilha faz isso sozinho. */
+  it('has 8 modules, with no gate module', () => {
+    expect(ap035.modules).toHaveLength(8);
+  });
+
+  it('keeps no lesson pointing at the retired prerequisite lab', () => {
+    const labs = ap035.modules.flatMap(m => m.lessons).map(l => l.labType);
+    expect(labs).not.toContain('prerequisite');
   });
 });
 
@@ -199,10 +206,25 @@ describe.each([
     expect(unknown).toEqual([]);
   });
 
+  /*
+    Todo requisito precisa de uma lição — menos os que o próprio bloqueio da
+    trilha cumpre. "Ter concluído a especialidade anterior" não é matéria a
+    estudar: é uma condição que a plataforma confere sozinha, e que só deixa
+    entrar quem já a satisfez.
+  */
   it('covers every requirement with at least one lesson', () => {
     const covered = new Set(lessons.flatMap(l => l.requirementCodes ?? []));
-    const orphans = specialty.requirements.map(r => r.code).filter(rc => !covered.has(rc));
+    const orphans = specialty.requirements
+      .filter(r => !r.peloPreRequisito)
+      .map(r => r.code)
+      .filter(rc => !covered.has(rc));
     expect(orphans).toEqual([]);
+  });
+
+  /* Requisito cumprido pelo bloqueio só faz sentido onde há bloqueio. */
+  it('only lets the gate fulfil a requirement when there is a gate', () => {
+    const pelaPorta = specialty.requirements.filter(r => r.peloPreRequisito);
+    if (pelaPorta.length > 0) expect(specialty.preRequisito).toBeTruthy();
   });
 
   it('gives every lab lesson a labType', () => {
