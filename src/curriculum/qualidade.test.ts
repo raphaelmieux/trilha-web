@@ -67,7 +67,17 @@ function vantagemMedia(qs: Question[]): number {
 
 const licoes = getAllSpecialties().flatMap(s =>
   s.modules.flatMap(m => m.lessons.flatMap(l => l.questions ?? [])));
-const provas = [...getFinalExamQuestions('AP034'), ...getFinalExamQuestions('AP035')];
+/*
+  As provas saem do currículo, e não de uma lista escrita à mão.
+
+  Estavam fixas em AP034 e AP035. A prova da AP041 nasceu fora dessa lista e,
+  por isso, fora de todas as travas deste arquivo — questões novas sem motivo
+  na alternativa errada, ou com a correta sempre mais comprida, passariam
+  direto. Derivar da trilha faz a próxima prova entrar sozinha.
+*/
+const provas = getAllSpecialties()
+  .filter(s => s.modules.some(m => m.lessons.some(l => l.labType === 'final_exam')))
+  .flatMap(s => getFinalExamQuestions(s.code));
 
 describe('as alternativas não entregam a resposta pelo tamanho', () => {
   /* Alguma variação de redação é inevitável; o que não pode é "marque a mais
@@ -120,6 +130,27 @@ describe('as questões de ordenar não trazem a resposta no enunciado', () => {
       .filter(q => (q.data.items ?? []).some(i => /\b(19|20)\d{2}\b/.test(i.text)))
       .map(q => q.id);
     expect(comData, 'ordenar por data escrita na tela não mede conhecimento').toEqual([]);
+  });
+
+  /*
+    `order` passou a carregar peso.
+
+    Durante muito tempo ninguém leu esse campo: a correção deduzia o certo pela
+    posição no array, e os itens chegavam à tela na ordem em que foram escritos
+    — ou seja, resolvidos. Agora os itens são embaralhados e `order` é a única
+    fonte da resposta, então um número repetido ou fora da faixa deixa de ser
+    detalhe e passa a ser uma questão sem gabarito, que reprova quem acertar.
+  */
+  it('toda questão de ordenar numera os itens de 1 a n, sem repetir', () => {
+    const quebradas: string[] = [];
+    for (const q of [...licoes, ...provas].filter(q => q.type === 'ordering')) {
+      const orders = (q.data.items ?? []).map(i => i.order);
+      const esperado = orders.map((_, i) => i + 1).join();
+      if ([...orders].sort((a, b) => a - b).join() !== esperado) {
+        quebradas.push(`${q.id}: [${orders.join(', ')}]`);
+      }
+    }
+    expect(quebradas, quebradas.join(' | ')).toEqual([]);
   });
 });
 

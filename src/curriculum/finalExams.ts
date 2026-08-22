@@ -1,12 +1,5 @@
 import type { Question } from '../types';
-import { shuffleArray } from '../lib/progress';
-
-function shuffleOptions(q: Question): Question {
-  if (q.data.options) return { ...q, data: { ...q.data, options: shuffleArray(q.data.options) } };
-  if (q.data.scenarios) return { ...q, data: { ...q.data, scenarios: shuffleArray(q.data.scenarios) } };
-  return q;
-}
-function shuffleAll(qs: Question[]): Question[] { return qs.map(shuffleOptions); }
+import { embaralharQuestoes } from '../lib/questoes';
 
 const rawAp034Final: Question[] = [
   {
@@ -554,7 +547,281 @@ const rawAp035Final: Question[] = [
   },
 ];
 
+/*
+  A prova final da AP041.
+
+  Cobre os cinco blocos do documento oficial na proporção em que eles pesam na
+  trilha: história, as sete definições, os cuidados, as nove peças e o trabalho
+  com pastas. Nada aqui pede data decorada — o requisito 1 pede pesquisar e
+  escrever, e isso é avaliado na redação guiada, não numa alternativa.
+*/
+const rawAp041Final: Question[] = [
+  {
+    id: 'AP041-F-Q1', type: 'multiple_choice',
+    prompt: 'O ábaco serve para:',
+    data: { options: [
+      { id: 'a', text: 'Ajudar a pessoa a guardar números enquanto ela mesma calcula.', correct: true },
+      { id: 'b', text: 'Fazer a conta sozinho, sem ninguém precisar acompanhar nada.',
+        porque: 'Quem calcula no ábaco é a pessoa. Máquina que calcula sozinha só veio com a Pascalina.' },
+      { id: 'c', text: 'Guardar arquivos e textos escritos, como um caderno de anotações.',
+        porque: 'Ele não guarda texto: representa números, com contas que deslizam em varetas.' },
+      { id: 'd', text: 'Medir o tempo que uma tarefa demora, parecido com um relógio.',
+        porque: 'Ábaco não mede tempo. O que ele representa é quantidade.' },
+    ]},
+    explanation: 'O ábaco é um apoio para a memória de quem calcula, e não uma máquina de calcular.',
+  },
+  {
+    id: 'AP041-F-Q2', type: 'multiple_choice',
+    prompt: 'A máquina analítica de Charles Babbage é importante porque:',
+    data: { options: [
+      { id: 'a', text: 'Foi o primeiro computador a ser vendido para o público em geral, nas lojas.',
+        porque: 'Ela nunca chegou a ser construída. Vender ao público aconteceu mais de um século depois.' },
+      { id: 'b', text: 'Seria a primeira máquina a seguir instruções, e não uma conta só.', correct: true },
+      { id: 'c', text: 'Substituiu o ábaco nas escolas e nos comércios daquela época.',
+        porque: 'Ela não saiu do papel, então não substituiu coisa alguma.' },
+      { id: 'd', text: 'Foi construída por Ada Lovelace, que também a programou depois.',
+        porque: 'Ada Lovelace escreveu o programa; o projeto era de Babbage, e ninguém a construiu.' },
+    ]},
+    explanation: 'É a ideia de computador: uma máquina que faz a conta que mandarem, e não uma só.',
+  },
+  {
+    id: 'AP041-F-Q3', type: 'ordering',
+    prompt: 'Ordene as invenções, da mais antiga para a mais nova.',
+    data: {
+      items: [
+        { id: 'a', text: 'O ábaco ajuda a contar, com contas que deslizam em varetas', order: 1 },
+        { id: 'b', text: 'A Pascalina soma e subtrai por meio de engrenagens', order: 2 },
+        { id: 'c', text: 'O ENIAC funciona com válvulas e ocupa uma sala inteira', order: 3 },
+        { id: 'd', text: 'O transistor toma o lugar da válvula e encolhe as máquinas', order: 4 },
+        { id: 'e', text: 'O computador pessoal chega à casa das famílias', order: 5 },
+      ],
+    },
+    explanation: 'Primeiro a pessoa calculava, depois a máquina calculou, depois ela seguiu instruções — e então encolheu.',
+  },
+  {
+    id: 'AP041-F-Q4', type: 'multiple_choice',
+    prompt: 'Hardware é:',
+    data: { options: [
+      { id: 'a', text: 'A parte física do computador, que dá para pegar com a mão.', correct: true },
+      { id: 'b', text: 'O conjunto dos programas instalados na máquina pelo usuário.',
+        porque: 'Isso é software. Hardware ocupa lugar no mundo: teclado, tela, cabos.' },
+      { id: 'c', text: 'A parte mais difícil de aprender a usar num computador novo.',
+        porque: '"Hard" aqui é duro no sentido de físico, e não de difícil.' },
+      { id: 'd', text: 'A memória onde ficam guardados os arquivos quando desligado.',
+        porque: 'Isso é o HD ou o SSD, que são só uma peça. Hardware é o conjunto delas.' },
+    ]},
+    explanation: 'Se cai no seu pé e dói, é hardware.',
+  },
+  {
+    id: 'AP041-F-Q5', type: 'multiple_choice',
+    prompt: 'Software é:',
+    data: { options: [
+      { id: 'a', text: 'As peças de dentro do gabinete, escondidas atrás da tampa.',
+        porque: 'Isso é hardware. Software não tem peça: são instruções.' },
+      { id: 'b', text: 'Os programas: as instruções que dizem à máquina o que fazer.', correct: true },
+      { id: 'c', text: 'Os arquivos que a pessoa cria, como fotos e trabalhos da escola.',
+        porque: 'Arquivo é o que o programa abre ou produz. O programa em si é o software.' },
+      { id: 'd', text: 'A parte macia do computador, feita para não machucar quem usa.',
+        porque: '"Soft" quer dizer que muda fácil: instala, apaga e atualiza sem trocar peça.' },
+    ]},
+    explanation: 'Se você apaga e instala de novo sem trocar peça nenhuma, é software.',
+  },
+  {
+    id: 'AP041-F-Q6', type: 'multiple_choice',
+    prompt: 'O sistema operacional é:',
+    data: { options: [
+      { id: 'a', text: 'O programa principal, que organiza memória, arquivos e peças.', correct: true },
+      { id: 'b', text: 'O programa que abre páginas da internet e guarda os favoritos.',
+        porque: 'Isso é o navegador, e ele roda dentro do sistema operacional.' },
+      { id: 'c', text: 'A peça que faz as contas e comanda as outras peças da máquina.',
+        porque: 'Isso é a CPU, que é hardware. O sistema operacional é software.' },
+      { id: 'd', text: 'O antivírus que fica ligado protegendo a máquina o tempo todo.',
+        porque: 'Antivírus é um programa entre muitos, e também roda dentro do sistema.' },
+    ]},
+    explanation: 'Windows, Linux, macOS e Android são sistemas operacionais — e o celular também tem o seu.',
+  },
+  {
+    id: 'AP041-F-Q7', type: 'multiple_choice',
+    prompt: 'Para que serve um driver?',
+    data: { options: [
+      { id: 'a', text: 'Para deixar a máquina mais rápida, liberando memória parada.',
+        porque: 'Driver não acelera nada: ele traduz. Quem cuida da memória é o sistema.' },
+      { id: 'b', text: 'Para ensinar o sistema a conversar com um modelo de peça.', correct: true },
+      { id: 'c', text: 'Para guardar cópia dos arquivos toda vez que algo é salvo.',
+        porque: 'Isso é cópia de segurança. Driver não guarda arquivo nenhum.' },
+      { id: 'd', text: 'Para dirigir o computador de longe, de outro lugar da casa.',
+        porque: 'Apesar do nome, driver não tem relação com dirigir à distância.' },
+    ]},
+    explanation: 'Existem milhares de modelos de impressora; o driver é o tradutor de cada um.',
+  },
+  {
+    id: 'AP041-F-Q8', type: 'fill_blank',
+    prompt: 'Complete: a memória que esvazia ao desligar é a _____, e a que já vem gravada de fábrica com as instruções para ligar é a _____.',
+    data: {
+      blanks: [
+        { id: 'b1', answer: 'RAM', aceitas: ['ram', 'memória RAM', 'memoria RAM'], hint: 'A mesa de trabalho' },
+        { id: 'b2', answer: 'ROM', aceitas: ['rom', 'memória ROM', 'memoria ROM'], hint: 'O bilhete colado na porta' },
+      ],
+    },
+    explanation: 'RAM é a mesa, que esvazia quando a luz apaga. ROM é o bilhete colado, gravado de fábrica.',
+  },
+  {
+    id: 'AP041-F-Q9', type: 'multiple_choice',
+    prompt: 'A principal diferença entre o HD e o SSD é que:',
+    data: { options: [
+      { id: 'a', text: 'O HD tem discos que giram, e o SSD não tem peça que se mexa.', correct: true },
+      { id: 'b', text: 'O HD guarda arquivos e o SSD guarda apenas os programas do sistema.',
+        porque: 'Os dois guardam de tudo. A diferença está em como gravam.' },
+      { id: 'c', text: 'O SSD perde tudo ao desligar, e só o HD mantém os arquivos.',
+        porque: 'Os dois mantêm. Quem perde tudo ao desligar é a RAM.' },
+      { id: 'd', text: 'O HD é mais novo e veio para substituir o SSD nas máquinas atuais.',
+        porque: 'É o contrário: o HD é mais antigo, e os computadores novos vêm com SSD.' },
+    ]},
+    explanation: 'Sem peça girando, o SSD é mais rápido, mais silencioso e aguenta melhor um tranco.',
+  },
+  {
+    id: 'AP041-F-Q10', type: 'true_false',
+    prompt: 'Tudo o que está na memória RAM continua guardado depois de o computador ser desligado.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro',
+        porque: 'A RAM só se mantém com energia. Salvar é justamente passar o que está nela para o disco.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'É por isso que um trabalho não salvo se perde quando falta luz.',
+  },
+  {
+    id: 'AP041-F-Q11', type: 'matching',
+    prompt: 'Ligue cada memória ao que ela guarda.',
+    data: { pairs: [
+      { left: 'HD ou SSD', right: 'Seus arquivos e programas, mesmo desligado' },
+      { left: 'RAM', right: 'O que está aberto agora, e esvazia ao desligar' },
+      { left: 'ROM', right: 'As instruções de fábrica para a máquina ligar' },
+    ]},
+    explanation: 'Armário, mesa de trabalho e bilhete colado na porta.',
+  },
+  {
+    id: 'AP041-F-Q12', type: 'multiple_choice',
+    prompt: 'Teclado, mouse e scanner têm em comum que:',
+    data: { options: [
+      { id: 'a', text: 'Levam informação de fora para dentro do computador.', correct: true },
+      { id: 'b', text: 'Mostram para a pessoa o resultado do que a máquina fez.',
+        porque: 'Isso é saída, e é trabalho do monitor e da impressora.' },
+      { id: 'c', text: 'Guardam os dados enquanto a máquina estiver desligada.',
+        porque: 'Guardar é do HD ou do SSD. Nenhum dos três retém nada.' },
+      { id: 'd', text: 'Fazem as contas que os programas abertos vão precisar.',
+        porque: 'Quem calcula é a CPU. Os três apenas levam informação para dentro.' },
+    ]},
+    explanation: 'Digitar, clicar e digitalizar são três jeitos de a informação entrar.',
+  },
+  {
+    id: 'AP041-F-Q13', type: 'multiple_choice',
+    prompt: 'A impressora e o scanner:',
+    data: { options: [
+      { id: 'a', text: 'Fazem o mesmo trabalho, apenas com nomes diferentes.',
+        porque: 'Trabalham em sentidos opostos, e por isso não se substituem.' },
+      { id: 'b', text: 'Vão em sentidos opostos: um leva ao papel, o outro traz dele.', correct: true },
+      { id: 'c', text: 'São os dois aparelhos de entrada, que trazem coisas de fora.',
+        porque: 'O scanner é de entrada; a impressora é de saída.' },
+      { id: 'd', text: 'Precisam estar sempre ligados um no outro para funcionarem bem.',
+        porque: 'São independentes. Só na multifuncional vêm dentro da mesma caixa.' },
+    ]},
+    explanation: 'O scanner vai do papel para o arquivo; a impressora, do arquivo para o papel.',
+  },
+  {
+    id: 'AP041-F-Q14', type: 'multiple_choice',
+    prompt: 'A CPU é responsável por:',
+    data: { options: [
+      { id: 'a', text: 'Guardar de forma permanente os arquivos e os programas.',
+        porque: 'Guardar é do HD ou do SSD. A CPU trabalha com a informação, mas não fica com ela.' },
+      { id: 'b', text: 'Fazer as contas e comandar o que cada peça deve fazer.', correct: true },
+      { id: 'c', text: 'Mostrar na tela o resultado das operações para o usuário.',
+        porque: 'Mostrar é do monitor. A CPU calcula, e outra peça exibe.' },
+      { id: 'd', text: 'Repartir a internet entre os aparelhos ligados na casa.',
+        porque: 'Isso é o roteador. A CPU trabalha dentro da máquina.' },
+    ]},
+    explanation: 'CPU quer dizer unidade central de processamento: é o cérebro, e tudo passa por ela.',
+  },
+  {
+    id: 'AP041-F-Q15', type: 'scenario',
+    prompt: 'A internet caiu em casa. O técnico diz que o aparelho que traz o sinal da rua queimou. O que precisa ser trocado?',
+    data: { scenarios: [
+      { id: 'a', text: 'O roteador, que é quem busca o sinal lá na rua e o traz para dentro.',
+        porque: 'O roteador fica depois: ele reparte o sinal que já chegou, e não vai buscá-lo.' },
+      { id: 'b', text: 'O modem, que recebe o sinal da operadora e o entrega à casa.', correct: true },
+      { id: 'c', text: 'A CPU, já que é ela que comanda tudo o que a máquina faz.',
+        porque: 'A CPU trabalha dentro do computador. A internet cai igual com a CPU perfeita.' },
+      { id: 'd', text: 'O monitor, porque sem ele não dá para ver as páginas abrindo.',
+        porque: 'Sem monitor você não enxerga, mas o sinal continua chegando.' },
+    ]},
+    explanation: 'Quem faz a ponte com a rua é o modem. O roteador só trabalha com o que já entrou.',
+  },
+  {
+    id: 'AP041-F-Q16', type: 'multiple_choice',
+    prompt: 'Manutenção preventiva quer dizer:',
+    data: { options: [
+      { id: 'a', text: 'Cuidar da máquina antes que ela apresente problema.', correct: true },
+      { id: 'b', text: 'Consertar a máquina assim que ela parar de funcionar.',
+        porque: 'Isso é corretiva. Preventiva acontece enquanto ainda está tudo bem.' },
+      { id: 'c', text: 'Trocar todas as peças por peças novas uma vez por ano.',
+        porque: 'Trocar peça boa é desperdício. Prevenir é limpar, atualizar e copiar.' },
+      { id: 'd', text: 'Deixar o computador desligado o máximo de tempo possível.',
+        porque: 'Não usar não é cuidar. Máquina parada também junta poeira.' },
+    ]},
+    explanation: 'É a mesma ideia de escovar os dentes: escova-se para não doer, e não porque já dói.',
+  },
+  {
+    id: 'AP041-F-Q17', type: 'true_false',
+    prompt: 'Antes de limpar o computador, ele deve estar desligado.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', correct: true },
+      { id: 'b', text: 'Falso',
+        porque: 'É verdadeiro. Limpar ligado arrisca choque, curto-circuito e apertar teclas sem querer.' },
+    ]},
+    explanation: 'E o produto de limpeza vai no pano, nunca direto na tela.',
+  },
+  {
+    id: 'AP041-F-Q18', type: 'scenario',
+    prompt: 'A Bia baixou trinta fotos do acampamento e elas estão todas soltas na área de trabalho. O que resolve melhor?',
+    data: { scenarios: [
+      { id: 'a', text: 'Criar uma pasta chamada Acampamento e mover as fotos para dentro.', correct: true },
+      { id: 'b', text: 'Renomear as trinta fotos, uma por uma, com o nome do acampamento.',
+        porque: 'Renomear ajuda a achar, mas elas continuam espalhadas pela área de trabalho.' },
+      { id: 'c', text: 'Apagar as que não ficaram boas e deixar o resto onde já estava.',
+        porque: 'Apagar diminui a bagunça, mas não organiza o que sobrou.' },
+      { id: 'd', text: 'Deixar como está e usar a busca do sistema toda vez que precisar.',
+        porque: 'A busca acha uma foto por vez. Uma pasta mantém as trinta juntas.' },
+    ]},
+    explanation: 'Pasta é o que mantém junto o que pertence junto — e é o que o requisito 5 pede na prática.',
+  },
+  {
+    id: 'AP041-F-Q19', type: 'fill_blank',
+    prompt: 'Complete: o que dá para pegar com a mão é o _____; os programas, que não se pegam, são o _____.',
+    data: {
+      blanks: [
+        { id: 'b1', answer: 'hardware', aceitas: ['Hardware'], hint: 'A parte física' },
+        { id: 'b2', answer: 'software', aceitas: ['Software'], hint: 'As instruções' },
+      ],
+    },
+    explanation: 'Um precisa do outro: computador sem software é violão que ninguém toca.',
+  },
+];
+
+/*
+  Qual prova vai para qual trilha.
+
+  Era um ternário: a AP034 recebia a dela, e *qualquer outro código* recebia a
+  da AP035 — inclusive uma trilha que ainda não tivesse prova nenhuma. A AP041
+  teria estreado aplicando a prova de Internet, Avançado aos desbravadores dela,
+  e nada no sistema de tipos denunciaria isso. O mapa explícito não tem esse
+  ramo calado: código sem prova devolve vazio, e há teste exigindo que toda
+  trilha com módulo final tenha a sua.
+*/
+const PROVAS: Record<string, Question[]> = {
+  AP034: rawAp034Final,
+  AP035: rawAp035Final,
+  AP041: rawAp041Final,
+};
+
 export function getFinalExamQuestions(specialtyCode: string): Question[] {
-  const raw = specialtyCode === 'AP034' ? rawAp034Final : rawAp035Final;
-  return shuffleAll(raw);
+  return embaralharQuestoes(PROVAS[specialtyCode] ?? []);
 }

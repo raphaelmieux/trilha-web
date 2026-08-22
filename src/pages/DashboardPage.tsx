@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getProgressPercent, getProgressDetail } from '../lib/progress';
-import { getSpecialty, getAllSpecialties } from '../curriculum';
+import { getSpecialty, getAllSpecialties, getOpenSpecialties } from '../curriculum';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
 import { getPublicName } from '../types';
 import { franchiseConfig } from '../config/franchise';
+import { coresDaTrilha, corDoPercentual } from '../lib/coresDaTrilha';
 import ProgressBar from '../components/ui/ProgressBar';
 import SpecialtyEmblem from '../components/ui/SpecialtyEmblem';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
@@ -17,7 +18,7 @@ import { Lock, Award, Flame, Star, Clock, FileText, ArrowRight, Medal, HardHat }
 export default function DashboardPage() {
   const { profile } = useAuth();
   const { progress } = useRequirementProgress(profile?.id);
-  const { certifications } = useCertifications(profile?.id);
+  const { certifications, getByCurriculum } = useCertifications(profile?.id);
   const { badges } = useBadges(profile?.id);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [recentEvents, setRecentEvents] = useState<any[]>([]);
@@ -47,11 +48,29 @@ export default function DashboardPage() {
 
   /* Vem do currículo: uma trilha nova aparece aqui sozinha, sem esta tela
      precisar saber dela. */
+  /* Uma fonte só para a cor de cada trilha; as telas não decidem mais isso. */
+  const coresAp034 = coresDaTrilha(ap034.level);
+  const coresAp035 = coresDaTrilha(ap035.level);
+
   const emConstrucao = getAllSpecialties().filter(e => e.emConstrucao);
+
+  /*
+    As demais trilhas abertas.
+
+    AP034 e AP035 têm card próprio porque uma destrava a outra, e essa relação
+    não generaliza. Toda outra trilha aberta é independente e entra por aqui.
+    Sem isto, a AP041 sumiria da tela no dia em que ficasse pronta: ela não
+    está no par acima, e ao deixar de ser "em construção" saiu da lista de
+    anunciadas — aberta e invisível ao mesmo tempo.
+  */
+  const outrasAbertas = getOpenSpecialties()
+    .filter(e => e.code !== 'AP034' && e.code !== 'AP035');
   const ap035Detail = getProgressDetail(ap035ReqCodes, progress);
 
-  const ap034Cert = certifications.find(c => c.level === 'fundamental');
-  const ap035Cert = certifications.find(c => c.level === 'advanced');
+  /* Pelo código da trilha: a AP041 também é "fundamental", e procurar pelo
+     grau devolveria o certificado de uma trilha no card de outra. */
+  const ap034Cert = getByCurriculum('AP034');
+  const ap035Cert = getByCurriculum('AP035');
   const ap034Completed = ap034Percent === 100;
 
   const xp = enrollments.reduce((sum, e) => sum + (e.xp || 0), 0);
@@ -84,7 +103,7 @@ export default function DashboardPage() {
         {/* AP034 */}
         <Link to="/especialidade/AP034" className="card p-6 block transition"
           style={{ borderColor: ap034Completed ? 'var(--color-primary-a40)' : 'var(--color-border)', transition: 'border-color 0.2s' }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-primary-a50)')}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = coresAp034.bordaAoPassar)}
           onMouseLeave={e => (e.currentTarget.style.borderColor = ap034Completed ? 'var(--color-primary-a40)' : 'var(--color-border)')}>
           <div className="flex items-center gap-4 mb-4">
             <SpecialtyEmblem
@@ -102,9 +121,9 @@ export default function DashboardPage() {
           <div className="mb-3">
             <div className="flex justify-between text-sm mb-1">
               <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
-              <span className="font-semibold" style={{ color: ap034Completed ? 'var(--color-success)' : 'var(--color-primary)' }}>{ap034Percent}%</span>
+              <span className="font-semibold" style={{ color: corDoPercentual(ap034.level, ap034Percent) }}>{ap034Percent}%</span>
             </div>
-            <ProgressBar percent={ap034Percent} partial={ap034Detail.parcial} color="linear-gradient(90deg, var(--color-primary), var(--color-primary-hover))" />
+            <ProgressBar percent={ap034Percent} partial={ap034Detail.parcial} color={coresAp034.gradiente} />
           </div>
           <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
             {ap034.requirements.filter(r => progress[r.code]?.status === 'completed').length} de {ap034.requirements.length} requisitos concluídos
@@ -121,7 +140,7 @@ export default function DashboardPage() {
         {ap034Completed ? (
           <Link to="/especialidade/AP035" className="card p-6 block transition"
             style={{ borderColor: ap035Percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)', transition: 'border-color 0.2s' }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-tertiary-a50)')}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = coresAp035.bordaAoPassar)}
             onMouseLeave={e => (e.currentTarget.style.borderColor = ap035Percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)')}>
             <div className="flex items-center gap-4 mb-4">
               <SpecialtyEmblem
@@ -139,9 +158,9 @@ export default function DashboardPage() {
             <div className="mb-3">
               <div className="flex justify-between text-sm mb-1">
                 <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
-                <span className="font-semibold" style={{ color: ap035Percent === 100 ? 'var(--color-success)' : 'var(--color-tertiary-light)' }}>{ap035Percent}%</span>
+                <span className="font-semibold" style={{ color: corDoPercentual(ap035.level, ap035Percent) }}>{ap035Percent}%</span>
               </div>
-              <ProgressBar percent={ap035Percent} partial={ap035Detail.parcial} color="linear-gradient(90deg, var(--color-tertiary), var(--color-tertiary-light))" />
+              <ProgressBar percent={ap035Percent} partial={ap035Detail.parcial} color={coresAp035.gradiente} />
             </div>
             <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
               {ap035.requirements.filter(r => progress[r.code]?.status === 'completed').length} de {ap035.requirements.length} requisitos concluídos
@@ -163,6 +182,46 @@ export default function DashboardPage() {
             <p className="text-xs" style={{ color: 'var(--color-text-faint)' }}>Conclua a AP034 — Internet para desbloquear automaticamente a trilha avançada.</p>
           </div>
         )}
+
+        {outrasAbertas.map(e => {
+          const codes = e.requirements.map(r => r.code);
+          const percent = getProgressPercent(codes, progress);
+          const detail = getProgressDetail(codes, progress);
+          const feitos = e.requirements.filter(r => progress[r.code]?.status === 'completed').length;
+          const cores = coresDaTrilha(e.level);
+          return (
+            <Link key={e.code} to={`/especialidade/${e.code}`} className="card p-6 block transition"
+              style={{ borderColor: percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)', transition: 'border-color 0.2s' }}
+              onMouseEnter={ev => (ev.currentTarget.style.borderColor = cores.bordaAoPassar)}
+              onMouseLeave={ev => (ev.currentTarget.style.borderColor = percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)')}>
+              <div className="flex items-center gap-4 mb-4">
+                <SpecialtyEmblem
+                  code={e.code}
+                  status={getByCurriculum(e.code) ? 'certificado' : percent === 100 ? 'concluido' : 'em-andamento'}
+                />
+                <div className="min-w-0">
+                  <h2 className="text-xl font-bold">{e.code} — {e.name}</h2>
+                  <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>
+                    Nível {e.level === 'fundamental' ? 'Fundamental' : 'Avançado'}
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                    Insígnia para a faixa do desbravador
+                  </p>
+                </div>
+              </div>
+              <div className="mb-3">
+                <div className="flex justify-between text-sm mb-1">
+                  <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
+                  <span className="font-semibold" style={{ color: corDoPercentual(e.level, percent) }}>{percent}%</span>
+                </div>
+                <ProgressBar percent={percent} partial={detail.parcial} color={cores.gradiente} />
+              </div>
+              <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
+                {feitos} de {e.requirements.length} requisitos concluídos
+              </p>
+            </Link>
+          );
+        })}
 
         {/*
           As trilhas anunciadas e ainda não abertas. Ficam ao lado das outras

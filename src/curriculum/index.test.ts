@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ap034, ap035 } from './index';
+import { ap034, ap035, ap041, getAllSpecialties } from './index';
 import { getFinalExamQuestions } from './finalExams';
 
 describe('AP034 curriculum', () => {
@@ -54,6 +54,37 @@ describe('AP035 curriculum', () => {
   });
 });
 
+describe('AP041 curriculum', () => {
+  it('has the 26 requirements of the official AP041 sheet', () => {
+    expect(ap041.requirements).toHaveLength(26);
+  });
+
+  it('has 5 content modules plus the final exam', () => {
+    expect(ap041.modules).toHaveLength(6);
+  });
+
+  it('is open, not under construction', () => {
+    expect(ap041.emConstrucao).toBeFalsy();
+  });
+
+  /* Uma trilha aberta com módulo vazio é pior do que uma trilha anunciada:
+     o desbravador entra, não encontra nada e não sabe se é erro dele. */
+  it('leaves no module without lessons', () => {
+    const vazios = ap041.modules.filter(m => m.lessons.length === 0).map(m => m.code);
+    expect(vazios).toEqual([]);
+  });
+
+  it('gives every theory lesson its questions', () => {
+    for (const m of ap041.modules) {
+      for (const l of m.lessons) {
+        if (l.type !== 'theory') continue;
+        expect(l.questions, l.code).toBeDefined();
+        expect(l.questions!.length, l.code).toBeGreaterThan(0);
+      }
+    }
+  });
+});
+
 describe('Final exam questions', () => {
   it('AP034 final has at least 15 questions', () => {
     const qs = getFinalExamQuestions('AP034');
@@ -86,6 +117,41 @@ describe('Final exam questions', () => {
     expect(types.has('scenario')).toBe(true);
   });
 
+  it('AP041 final has at least 15 questions', () => {
+    expect(getFinalExamQuestions('AP041').length).toBeGreaterThanOrEqual(15);
+  });
+
+  it('AP041 final has diverse question types', () => {
+    const types = new Set(getFinalExamQuestions('AP041').map(q => q.type));
+    for (const t of ['multiple_choice', 'true_false', 'ordering', 'matching', 'fill_blank', 'scenario']) {
+      expect(types.has(t as never), t).toBe(true);
+    }
+  });
+
+  /*
+    A trava do despacho da prova.
+
+    getFinalExamQuestions era um ternário: AP034 recebia a dela e qualquer
+    outro código recebia a da AP035 — uma trilha sem prova aplicaria a prova
+    de outra especialidade, calada. Aqui a pergunta é feita ao contrário:
+    toda trilha que tem módulo de avaliação final precisa ter questões.
+  */
+  it('gives every trail with a final module its own exam', () => {
+    const semProva = getAllSpecialties()
+      .filter(s => s.modules.some(m => m.lessons.some(l => l.labType === 'final_exam')))
+      .filter(s => getFinalExamQuestions(s.code).length === 0)
+      .map(s => s.code);
+    expect(semProva).toEqual([]);
+  });
+
+  /* Duas trilhas não podem compartilhar a mesma prova: foi o que o ternário
+     fazia, e nada no sistema de tipos denunciava. */
+  it('never hands two trails the same questions', () => {
+    const ids = ['AP034', 'AP035', 'AP041']
+      .map(c => getFinalExamQuestions(c).map(q => q.id).sort().join('|'));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it('all final exam questions have explanations', () => {
     const qs034 = getFinalExamQuestions('AP034');
     for (const q of qs034) {
@@ -113,6 +179,7 @@ describe('Final exam questions', () => {
 describe.each([
   ['AP034', ap034],
   ['AP035', ap035],
+  ['AP041', ap041],
 ])('%s structure', (code, specialty) => {
   const lessons = specialty.modules.flatMap(m => m.lessons);
 

@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import type { Badge, Certification, CertificadoImprimivel } from '../types';
 import { CERT_WIDTH } from '../components/CertificateCanvas';
+import { codigoDaArte } from './certificados';
 import { renderBadgeIconPng, TIER_LABELS } from './badgeIcons';
 
 /**
@@ -56,7 +57,7 @@ function formatIssuedDate(cert: CertificadoImprimivel): string {
  * shrink-to-fit rule for long names.
  */
 async function drawCertificate(doc: jsPDF, cert: CertificadoImprimivel, studentName: string): Promise<void> {
-  const specialtyCode = cert.curriculum_code === 'AP035' ? 'AP035' : 'AP034';
+  const specialtyCode = codigoDaArte(cert.curriculum_code);
   const artwork = await loadImageAsDataUrl(
     `${import.meta.env.BASE_URL}assets/certificates/${specialtyCode}.png`
   );

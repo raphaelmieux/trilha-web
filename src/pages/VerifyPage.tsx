@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { type CertificadoVerificado } from '../types';
+import { getSpecialty } from '../curriculum';
 import { Award, Search, CheckCircle2 } from 'lucide-react';
 import { ErrorState } from '../components/ui/PageState';
 
@@ -78,7 +79,19 @@ export default function VerifyPage() {
                  em mãos é daquela pessoa. */
               ['Titular:', result.full_name],
               ...(result.club ? [['Clube:', result.club]] : []),
-              ['Especialidade:', result.level === 'fundamental' ? 'AP034 — Internet' : 'AP035 — Internet, Avançado'],
+              /*
+                A trilha vem do código dela, não do grau.
+
+                Era `level === 'fundamental' ? 'AP034' : 'AP035'`, e a AP041
+                também é fundamental: o certificado dela seria verificado, em
+                público, como se fosse o de Internet. Esta é a página que dá
+                validade ao Token.Web() fora do aplicativo — errar o nome da
+                especialidade aqui é errar no único lugar que não perdoa.
+              */
+              ['Especialidade:', (() => {
+                const e = getSpecialty(result.curriculum_code);
+                return e ? `${e.code} — ${e.name}` : result.curriculum_code;
+              })()],
               ['Nível:', result.level === 'fundamental' ? 'Fundamental' : 'Avançado'],
               ['Currículo:', `${result.curriculum_code} v${result.curriculum_version}`],
               ['Emitido em:', new Date(result.issued_at).toLocaleDateString('pt-BR')],

@@ -1,9 +1,11 @@
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSpecialty } from '../curriculum';
-import { getProgressPercent, getProgressDetail, getModuleStatus, getLessonStatus } from '../lib/progress';
+import { getProgressPercent, getProgressDetail, getModuleStatus, statusDasLicoes } from '../lib/progress';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
+import { useLicoesConcluidas } from '../hooks/useLicoesConcluidas';
 import { useCertifications } from '../hooks/useCertifications';
+import { coresDaTrilha } from '../lib/coresDaTrilha';
 import ProgressBar from '../components/ui/ProgressBar';
 import { Lock, CheckCircle2, Play, Star, Award, HardHat } from 'lucide-react';
 
@@ -12,6 +14,7 @@ export default function SpecialtyPage() {
   const { profile } = useAuth();
   const specialty = code ? getSpecialty(code) : undefined;
   const { progress } = useRequirementProgress(profile?.id);
+  const { licoesFeitas: feitas } = useLicoesConcluidas(profile?.id);
   const { getByCurriculum } = useCertifications(profile?.id);
   const cert = specialty ? getByCurriculum(specialty.code) : undefined;
 
@@ -56,11 +59,21 @@ export default function SpecialtyPage() {
     A contagem de lições anda de um em um, que é o tamanho do passo que a pessoa
     acabou de dar. A prova final fica de fora: ela não é uma lição do percurso.
   */
+  /* O mapa é montado sobre TODAS as lições da trilha, inclusive a prova: é ele
+     que descobre quais requisitos são reivindicados por mais de uma lição. */
+  const statusPorLicao = statusDasLicoes(specialty.modules.flatMap(m => m.lessons), progress, feitas);
   const licoes = specialty.modules.flatMap(m => m.lessons).filter(l => l.type !== 'final');
-  const licoesFeitas = licoes.filter(l => getLessonStatus(l, progress) === 'completed').length;
-  const isAP034 = specialty.code === 'AP034';
-  const accentColor = isAP034 ? 'var(--color-primary)' : 'var(--color-tertiary-light)';
-  const accentGrad = isAP034 ? 'linear-gradient(90deg, var(--color-primary), var(--color-primary-hover))' : 'linear-gradient(90deg, var(--color-tertiary), var(--color-tertiary-light))';
+  const licoesFeitas = licoes.filter(l => statusPorLicao[l.code] === 'completed').length;
+  /*
+    Pelo grau da trilha, e não pelo código dela.
+
+    Era `specialty.code === 'AP034' ? vermelho : azul`. A AP041 é fundamental e
+    não é a AP034, então caía no azul aqui e aparecia vermelha no painel — a
+    mesma trilha em duas cores, dependendo da tela. Ver coresDaTrilha.
+  */
+  const cores = coresDaTrilha(specialty.level);
+  const accentColor = cores.destaque;
+  const accentGrad = cores.gradiente;
 
   return (
     <div className="space-y-6">
@@ -118,9 +131,12 @@ export default function SpecialtyPage() {
             <div key={module.code} className="card p-5">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+                  /* O módulo em andamento usa a cor da própria trilha: estava
+                     fixo no vermelho, e numa trilha azul o número destoava do
+                     resto da página. */
                   style={{
-                    backgroundColor: moduleStatus === 'completed' ? 'var(--color-success-a20)' : moduleStatus === 'not_started' ? 'var(--color-bg-hover)' : 'var(--color-primary-a20)',
-                    color: moduleStatus === 'completed' ? 'var(--color-success)' : moduleStatus === 'not_started' ? 'var(--color-text-faint)' : 'var(--color-primary)',
+                    backgroundColor: moduleStatus === 'completed' ? 'var(--color-success-a20)' : moduleStatus === 'not_started' ? 'var(--color-bg-hover)' : cores.fundoSuave,
+                    color: moduleStatus === 'completed' ? 'var(--color-success)' : moduleStatus === 'not_started' ? 'var(--color-text-faint)' : accentColor,
                   }}>
                   {moduleStatus === 'completed' ? <CheckCircle2 className="w-5 h-5" /> : idx + 1}
                 </div>
@@ -141,7 +157,7 @@ export default function SpecialtyPage() {
               </div>
               <div className="ml-13 space-y-2">
                 {module.lessons.map(lesson => {
-                  const lessonStatus = getLessonStatus(lesson, progress);
+                  const lessonStatus = statusPorLicao[lesson.code];
                   const lessonPercent = getProgressPercent(lesson.requirementCodes, progress);
                   const lessonDetail = getProgressDetail(lesson.requirementCodes, progress);
                   /*

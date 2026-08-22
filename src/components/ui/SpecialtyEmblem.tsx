@@ -28,7 +28,15 @@ export default function SpecialtyEmblem({
   status,
   size = 88,
 }: {
-  code: 'AP034' | 'AP035';
+  /*
+    O código da trilha, e não um par fechado.
+
+    Estava tipado como 'AP034' | 'AP035'. O componente só monta o caminho de um
+    SVG a partir dele, então a união literal não protegia nada — apenas impedia
+    que a terceira trilha usasse o emblema, e a AP041 já tem o dela em
+    public/assets/specialties. Um código sem arte cai no onError abaixo.
+  */
+  code: string;
   status: EmblemStatus;
   size?: number;
 }) {
@@ -52,6 +60,9 @@ export default function SpecialtyEmblem({
         <img
           src={`${import.meta.env.BASE_URL}assets/specialties/${code}.svg`}
           alt={`Emblema da especialidade ${code}`}
+          /* Sem arte, o disco e o selo de status continuam de pé; o que não
+             pode aparecer é o ícone de imagem quebrada dentro da medalha. */
+          onError={ev => { (ev.currentTarget as HTMLImageElement).style.display = 'none'; }}
           style={{
             width: size * 0.72,
             height: size * 0.72,

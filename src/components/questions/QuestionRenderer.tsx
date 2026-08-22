@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { Question } from '../../types';
+import { sequenciaCorreta } from '../../lib/questoes';
+import { shuffleArray } from '../../lib/progress';
 
 interface QuestionProps {
   question: Question;
@@ -65,6 +67,9 @@ function OptionsQuestion({ question, answer, showFeedback, onAnswer }: QuestionP
 
 function OrderingQuestion({ question, answer, showFeedback, onAnswer }: QuestionProps) {
   const items = question.data.items || [];
+  const certa = sequenciaCorreta(items);
+  /* `items` já vem embaralhado de embaralharQuestao, então começar por ele é
+     começar por uma ordem qualquer — que é o ponto de partida da tarefa. */
   const [ordered, setOrdered] = useState<string[]>(() => Array.isArray(answer) && answer.length === items.length ? answer : items.map(i => i.id));
   const [confirmed, setConfirmed] = useState(false);
 
@@ -90,7 +95,10 @@ function OrderingQuestion({ question, answer, showFeedback, onAnswer }: Question
       <div className="space-y-2">
         {ordered.map((id, idx) => {
           const item = items.find(i => i.id === id)!;
-          const correctIdx = items.findIndex(i => i.id === id) === idx;
+          /* Pelo `order` do item, não pela posição dele no array: os itens
+             chegam embaralhados, e a leitura antiga marcaria de vermelho
+             justamente quem acertou. */
+          const correctIdx = certa[idx] === id;
           return (
             <div key={id} className={`flex items-center gap-2 p-3 border-2 rounded-lg transition ${
               showFeedback ? (correctIdx ? 'border-[var(--color-success)] bg-[var(--color-success-a10)]' : 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]') : 'border-[var(--color-border)]'
@@ -160,7 +168,11 @@ function FillBlankQuestion({ question, answer, showFeedback, onAnswer }: Questio
 
 function MatchingQuestion({ question, answer, showFeedback, onAnswer }: QuestionProps) {
   const pairs = question.data.pairs || [];
-  const [shuffledRights] = useState(() => [...pairs.map(p => p.right)].sort(() => Math.random() - 0.5));
+  /* `sort(() => Math.random() - 0.5)` não embaralha por igual: o comparador é
+     incoerente, e a ordem resultante fica presa perto da original em boa parte
+     dos sorteios. Numa questão de ligar, isso é a resposta parcialmente
+     entregue. shuffleArray é Fisher-Yates, e já existia ao lado. */
+  const [shuffledRights] = useState(() => shuffleArray(pairs.map(p => p.right)));
   const [matches, setMatches] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     if (Array.isArray(answer)) answer.forEach((a: any) => { if (a.right) init[a.left] = a.right; });

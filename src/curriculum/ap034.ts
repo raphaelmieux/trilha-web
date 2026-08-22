@@ -1,14 +1,4 @@
 import type { Specialty, Question } from '../types';
-import { shuffleArray } from '../lib/progress';
-
-export function shuffleQuestionOptions(q: Question): Question {
-  if (q.data.options) return { ...q, data: { ...q.data, options: shuffleArray(q.data.options) } };
-  if (q.data.scenarios) return { ...q, data: { ...q.data, scenarios: shuffleArray(q.data.scenarios) } };
-  return q;
-}
-export function shuffleAllQuestions(questions: Question[]): Question[] {
-  return questions.map(shuffleQuestionOptions);
-}
 
 // ═══════════════════════════════════════════════════════════
 // MODULE 1 — CONCEITOS FUNDAMENTAIS
@@ -1144,8 +1134,8 @@ export const ap034: Specialty = {
   ],
   modules: [
     {
-      code: 'AP034.1', title: 'Conceitos Fundamentais',
-      description: 'Internet, WWW, download, upload, website, e-mail e vírus.',
+      code: 'AP034.1', title: 'O que é a internet, afinal',
+      description: 'As palavras que todo mundo usa e quase ninguém sabe explicar.',
       lessons: [
         { code: 'AP034.1-L1', title: 'O que é a Internet', type: 'theory', content: content_L1, requirementCodes: ['AP034-1.1', 'AP034-1.2'], questions: rawQuestions_L1 },
         { code: 'AP034.1-L2', title: 'Download e Upload', type: 'theory', content: content_L2, requirementCodes: ['AP034-1.3', 'AP034-1.4'], questions: rawQuestions_L2 },
@@ -1153,61 +1143,61 @@ export const ap034: Specialty = {
       ],
     },
     {
-      code: 'AP034.2', title: 'Serviços e Ferramentas',
-      description: 'Webmail, POP3, IMAP, navegador, streaming, busca e antivírus.',
+      code: 'AP034.2', title: 'As ferramentas do dia a dia',
+      description: 'Correio, navegador, buscador e streaming — quem faz o quê.',
       lessons: [
         { code: 'AP034.2-L1', title: 'Webmail, POP3 e IMAP', type: 'theory', content: content_2L1, requirementCodes: ['AP034-2.1'], questions: rawQuestions_2L1 },
         { code: 'AP034.2-L2', title: 'Navegador, Streaming, Busca e Antivírus', type: 'theory', content: content_2L2, requirementCodes: ['AP034-2.2', 'AP034-2.3', 'AP034-2.4', 'AP034-2.5'], questions: rawQuestions_2L2 },
       ],
     },
     {
-      code: 'AP034.3', title: 'História da Internet',
-      description: 'Linha do tempo e produção de texto.',
+      code: 'AP034.3', title: 'De onde veio a internet',
+      description: 'A linha do tempo da rede, e o seu texto contando essa história.',
       lessons: [
         { code: 'AP034.3-L1', title: 'Linha do Tempo da Internet', type: 'theory', content: content_3L1, requirementCodes: ['AP034-3.1'], questions: rawQuestions_3L1 },
         { code: 'AP034.3-L2', title: 'Editor de Texto: História da Internet', type: 'lab', content: '', requirementCodes: ['AP034-3.1'], labType: 'text_editor' },
       ],
     },
     {
-      code: 'AP034.4', title: 'Antivírus e Ameaças',
-      description: 'Formas de ameaças, atualização, propagação e prejuízos.',
+      code: 'AP034.4', title: 'O que pode dar errado',
+      description: 'Vírus, golpes, o estrago que fazem e como não cair neles.',
       lessons: [
         { code: 'AP034.4-L1', title: 'Ameaças e Proteção', type: 'theory', content: content_4L1, requirementCodes: ['AP034-4.1', 'AP034-4.2', 'AP034-4.3', 'AP034-4.4'], questions: rawQuestions_4L1 },
         { code: 'AP034.4-L2', title: 'Laboratório de Ameaças e Antivírus', type: 'lab', content: '', requirementCodes: ['AP034-4.1', 'AP034-4.2', 'AP034-4.3', 'AP034-4.4'], labType: 'threat_lab' },
       ],
     },
     {
-      code: 'AP034.5', title: 'Meu Compromisso Digital',
-      description: 'O acordo pessoal de uso da internet, cláusula por cláusula.',
+      code: 'AP034.5', title: 'Combinar as regras de casa',
+      description: 'O acordo de uso da internet, escrito por você, cláusula por cláusula.',
       lessons: [
         { code: 'AP034.5-L0', title: 'Filtros de Conteúdo', type: 'theory', content: content_5L0, requirementCodes: ['AP034-5.0'], questions: rawQuestions_5L0 },
         { code: 'AP034.5-L1', title: 'Meu Compromisso Digital', type: 'lab', content: content_5L1, requirementCodes: ['AP034-5.1', 'AP034-5.2', 'AP034-5.3', 'AP034-5.4', 'AP034-5.5', 'AP034-5.6', 'AP034-5.7', 'AP034-5.8', 'AP034-5.9'], labType: 'pact_builder' },
       ],
     },
     {
-      code: 'AP034.6', title: 'Navegação e Pesquisa',
-      description: 'WebLab: simulação de navegador.',
+      code: 'AP034.6', title: 'Achar o que se procura',
+      description: 'Navegar, pesquisar e desconfiar do que aparece na frente.',
       lessons: [
         { code: 'AP034.6-L1', title: 'WebLab - Navegação e Pesquisa', type: 'lab', content: content_6L1, requirementCodes: ['AP034-6.1', 'AP034-6.2', 'AP034-6.3'], labType: 'web_lab' },
       ],
     },
     {
-      code: 'AP034.7', title: 'E-mail',
-      description: 'MailLab: simulação de e-mail.',
+      code: 'AP034.7', title: 'Escrever e receber e-mail',
+      description: 'Mandar mensagem, reconhecer golpe e responder com cuidado.',
       lessons: [
         { code: 'AP034.7-L1', title: 'MailLab - E-mail e Segurança', type: 'lab', content: content_7L1, requirementCodes: ['AP034-7.1', 'AP034-7.2', 'AP034-7.3', 'AP034-7.4'], labType: 'mail_lab' },
       ],
     },
     {
-      code: 'AP034.8', title: 'Filipenses 4:8',
-      description: 'Aprendizado e aplicação do princípio.',
+      code: 'AP034.8', title: 'O filtro de Filipenses 4:8',
+      description: 'Um critério bíblico para decidir o que ver e o que fechar.',
       lessons: [
         { code: 'AP034.8-L1', title: 'Filipenses 4:8', type: 'lab', content: content_8L1, requirementCodes: ['AP034-8.1'], labType: 'filipenses' },
       ],
     },
     {
       code: 'AP034.F', title: 'Avaliação Final',
-      description: 'Avaliação adaptativa.',
+      description: 'A prova que fecha a trilha, com questões de todos os requisitos.',
       lessons: [
         { code: 'AP034.F-L1', title: 'Avaliação Final — Internet', type: 'final', content: '', requirementCodes: [], labType: 'final_exam' },
       ],

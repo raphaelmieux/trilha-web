@@ -1,5 +1,6 @@
 import type { Question } from '../types';
 import { respostaConfere } from './respostaTexto';
+import { sequenciaCorreta } from './questoes';
 
 export function checkAnswer(question: Question, answer: any): boolean {
   if (!answer) return false;
@@ -21,7 +22,12 @@ export function checkAnswer(question: Question, answer: any): boolean {
     case 'ordering': {
       const items = question.data.items || [];
       if (!Array.isArray(answer) || answer.length !== items.length) return false;
-      return answer.every((id: string, i: number) => items[i].id === id);
+      /* Pelo campo `order`, e não pela posição no array: os itens chegam aqui
+         embaralhados, e comparar com `items[i]` reprovaria a resposta certa.
+         Ver questoes.ts — enquanto nada embaralhava, as duas leituras davam no
+         mesmo, e era isso que entregava a resposta pronta na tela. */
+      const correta = sequenciaCorreta(items);
+      return answer.every((id: string, i: number) => correta[i] === id);
     }
     case 'fill_blank': {
       const blanks = question.data.blanks || [];

@@ -80,11 +80,101 @@ export function getModuleStatus(reqCodes: string[], progress: ProgressMap): Requ
   return 'not_started';
 }
 
-export function getLessonStatus(lesson: { type: string; requirementCodes: string[]; labType?: string }, progress: ProgressMap): RequirementStatus {
-  if (lesson.type === 'final') {
-    return 'not_started';
+/* ── Quais lições a pessoa realmente fez ──────────────────────────────────── */
+
+type LicaoParaStatus = { code: string; type: string; requirementCodes: string[] };
+
+/**
+ * O estado de cada lição da trilha, pelo código dela.
+ *
+ * Antes isto era `getLessonStatus`, e olhava só para os requisitos da lição. O
+ * problema é que duas lições podem cobrir o mesmo requisito — na AP041, a lição
+ * teórica sobre a história dos computadores e o laboratório onde a redação é
+ * escrita cobrem ambas o requisito 1.1, e na AP034 acontece o mesmo em cinco
+ * requisitos. Deduzir o estado da lição a partir do requisito tornava as duas
+ * indistinguíveis: concluir a teoria marcava o laboratório como feito, e a
+ * contagem de lições saltava de duas em duas.
+ *
+ * A evidência de que *esta* lição foi feita está em `lesson_attempts`. Quando
+ * ela existe, manda. Quando não existe:
+ *
+ * - se nenhuma outra lição divide os requisitos desta, o progresso do requisito
+ *   só pode ter vindo daqui, e continua valendo como prova — é o que preserva o
+ *   histórico de quem concluiu trilhas antes de os laboratórios registrarem a
+ *   própria conclusão;
+ * - se há divisão, a prova é ambígua, e a lição para em "em andamento" em vez de
+ *   afirmar uma conclusão que ninguém pode confirmar.
+ */
+export function statusDasLicoes(
+  licoes: LicaoParaStatus[],
+  progress: ProgressMap,
+  feitas: Set<string>,
+): Record<string, RequirementStatus> {
+  const reivindicacoes = new Map<string, number>();
+  for (const l of licoes) {
+    for (const rc of l.requirementCodes ?? []) {
+      reivindicacoes.set(rc, (reivindicacoes.get(rc) ?? 0) + 1);
+    }
   }
-  return getModuleStatus(lesson.requirementCodes, progress);
+
+  const saida: Record<string, RequirementStatus> = {};
+  for (const l of licoes) {
+    if (l.type === 'final') { saida[l.code] = 'not_started'; continue; }
+    if (feitas.has(l.code)) { saida[l.code] = 'completed'; continue; }
+
+    const derivado = getModuleStatus(l.requirementCodes, progress);
+    const ambigua = (l.requirementCodes ?? []).some(rc => (reivindicacoes.get(rc) ?? 0) > 1);
+    saida[l.code] = ambigua && derivado === 'completed' ? 'learning' : derivado;
+  }
+  return saida;
+}
+
+/**
+ * Registra que esta lição foi feita.
+ *
+ * A página de lição já gravava isto ao fim do questionário; os laboratórios não
+ * gravavam nada além do progresso do requisito, e por isso não havia como saber
+ * se um laboratório tinha sido feito ou se o requisito dele tinha vindo da lição
+ * teórica ao lado.
+ *
+ * `passed` é verdadeiro porque chegar até aqui, num laboratório, é tê-lo
+ * concluído — não há nota abaixo da qual ele não conte.
+ */
+export async function registrarConclusaoDeLicao(
+  userId: string,
+  lessonCode: string,
+  resultado?: { correct: number; total: number },
+): Promise<void> {
+  const lessonId = await getLessonId(lessonCode);
+  if (!lessonId) return;
+  await supabase.from('lesson_attempts').insert({
+    user_id: userId,
+    lesson_id: lessonId,
+    score: resultado?.correct ?? 0,
+    total: resultado?.total ?? 0,
+    passed: true,
+    answers: [],
+    completed_at: new Date().toISOString(),
+  });
+}
+
+/** Os códigos das lições que a pessoa concluiu de fato. */
+export async function fetchLicoesConcluidas(userId: string): Promise<Set<string>> {
+  const { data } = await supabase
+    .from('lesson_attempts')
+    .select('passed, lessons(code)')
+    .eq('user_id', userId)
+    .eq('passed', true);
+
+  const codigos = (data ?? [])
+    .map((linha: { lessons?: { code?: string } | { code?: string }[] }) => {
+      /* O embed vem como objeto ou lista, conforme o PostgREST resolva a relação. */
+      const rel = Array.isArray(linha.lessons) ? linha.lessons[0] : linha.lessons;
+      return rel?.code;
+    })
+    .filter((c): c is string => !!c);
+
+  return new Set(codigos);
 }
 
 export function getProgressPercent(reqCodes: string[], progress: ProgressMap): number {

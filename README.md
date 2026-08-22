@@ -36,8 +36,9 @@ npm run build        # build de produção em dist/
 3. Aplique as migrations em `supabase/migrations/` **na ordem em que aparecem**
    (nome do arquivo = timestamp), via SQL Editor do painel ou `supabase db push`
    se estiver usando a [Supabase CLI](https://supabase.com/docs/guides/cli).
-4. Faça deploy das três Edge Functions em `supabase/functions/` (`issue-certification`,
-   `admin-reset-password`, `ai-gateway`) — pelo painel ou `supabase functions deploy <nome>`.
+4. Faça deploy das cinco Edge Functions em `supabase/functions/` (`issue-certification`,
+   `admin-reset-password`, `self-reset-password`,
+   `clubes`, `ai-gateway`) — pelo painel ou `supabase functions deploy <nome>`.
 5. Em **Authentication**, na página de configurações gerais, **desligue `Confirm email`**
    (o campo `MAILER_AUTOCONFIRM` da API). Ver *Confirmação de e-mail*, abaixo — sem isso
    o cadastro trava depois de poucas contas.
@@ -49,6 +50,29 @@ npm run build        # build de produção em dist/
 
 Sem SMTP configurado no projeto, a recuperação de senha é feita pelo administrador
 do clube (aba **Admin**), não por e-mail — ver `supabase/functions/admin-reset-password`.
+
+### Integração com IA
+
+Dois laboratórios usam um modelo de linguagem, e sempre através da Edge Function
+`ai-gateway` — a chave nunca chega ao navegador. Os segredos ficam em
+**Project Settings → Edge Functions → Secrets**:
+
+| Segredo | Para quê | Padrão |
+| --- | --- | --- |
+| `GEMINI_API_KEY` | Obrigatório para qualquer uso de IA | — |
+| `AI_DAILY_LIMIT` | Gerações do laboratório de IA, por pessoa e por dia | 12 |
+| `AI_REDACAO_DAILY_LIMIT` | Conferências da redação guiada, por pessoa e por dia | 60 |
+| `CLOUDFLARE_ACCOUNT_ID` e `CLOUDFLARE_API_TOKEN` | Imagens, que o plano gratuito do Gemini não inclui | — |
+
+Os dois orçamentos são contados em separado, a partir do log de auditoria:
+escrever o relatório da AP041 custa cerca de nove conferências, e não pode
+esgotar o laboratório de IA do mesmo dia.
+
+**Sem `GEMINI_API_KEY` a AP041 continua completável.** A redação guiada passa a
+aceitar as respostas sem conferir os fatos, e monta o texto final emendando os
+parágrafos no próprio navegador; a tela diz que a conferência está desligada, em
+vez de prometer uma verificação que não aconteceu. O laboratório de IA, esse sim,
+fica indisponível.
 
 ### Confirmação de e-mail
 
@@ -75,9 +99,9 @@ src/
     questions/      # renderizadores de questão compartilhados (lição + prova final)
     ui/              # kit de UI mínimo (ProgressBar, StatusBadge, PageState, BadgeIcon)
   context/           # AuthContext (sessão + perfil)
-  curriculum/         # conteúdo das trilhas AP034/AP035, hardcoded em TS
+  curriculum/         # conteúdo das trilhas AP034/AP035/AP041, hardcoded em TS
   hooks/              # useRequirementProgress, useCertifications, useBadges
-  labs/               # 9 laboratórios interativos (WebLab, MailLab, CodeLab, ...)
+  labs/               # 14 laboratórios interativos (WebLab, MailLab, CodeLab, ...)
   lib/                # supabase client, progress.ts, gamification.ts, checkAnswer
   pages/              # uma página por rota
 supabase/

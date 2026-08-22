@@ -1,4 +1,8 @@
 import type { Specialty } from '../types';
+import { modulo1 } from './ap041/modulo1';
+import { modulo2 } from './ap041/modulo2';
+import { modulo3 } from './ap041/modulo3';
+import { modulo4 } from './ap041/modulo4';
 
 /*
  * AP041 — Computação 1
@@ -11,8 +15,9 @@ import type { Specialty } from '../types';
  * A trilha é escrita para desbravadores a partir de dez anos: frases curtas,
  * exemplos do dia a dia deles, lições menores que as da AP034.
  *
- * Enquanto `emConstrucao` for verdadeiro, a especialidade aparece no painel
- * como aviso do que está por vir, sem link e sem permitir início.
+ * A trilha foi aberta em 21/08/2026, quando o último módulo ficou pronto. Até
+ * ali ela vinha com `emConstrucao`, que a mostra no painel como aviso do que
+ * está por vir — acinzentada, sem link e sem permitir início.
  */
 
 export const ap041: Specialty = {
@@ -20,7 +25,6 @@ export const ap041: Specialty = {
   name: 'Computação 1',
   level: 'fundamental',
   description: 'Como o computador funciona por dentro, para que serve cada peça e como cuidar dele.',
-  emConstrucao: true,
 
   requirements: [
     // 1 — História
@@ -61,54 +65,18 @@ export const ap041: Specialty = {
   ],
 
   /*
-   * Os cinco módulos seguem a ordem dos requisitos oficiais, um por requisito.
-   * As lições entram por aqui conforme forem escritas; enquanto a trilha está
-   * em construção ela não é acessível, então nenhum módulo vazio aparece para
-   * desbravador nenhum.
+   * Os cinco módulos de conteúdo seguem a ordem dos requisitos oficiais, um por
+   * requisito, e a avaliação final fecha a trilha.
+   *
+   * Cada módulo mora no seu arquivo, em ap041/. A AP034 guarda os nove no mesmo
+   * lugar, passa de mil e duzentas linhas, e achar uma questão lá dentro custa
+   * caro; aqui a separação veio desde o começo.
    */
   modules: [
-    {
-      code: 'AP041.1',
-      title: 'De onde vêm os computadores',
-      description: 'A história das máquinas que calculam, do ábaco ao celular no seu bolso.',
-      lessons: [
-        {
-          code: 'AP041.1-L2',
-          title: 'Escrevendo sobre a história dos computadores',
-          type: 'lab',
-          content: '',
-          requirementCodes: ['AP041-1.1'],
-          labType: 'text_editor',
-        },
-      ],
-    },
-    {
-      code: 'AP041.2',
-      title: 'O que está por dentro',
-      description: 'Hardware, software, sistema operacional, drivers e os tipos de memória.',
-      lessons: [],
-    },
-    {
-      code: 'AP041.3',
-      title: 'As peças e o que cada uma faz',
-      description: 'Teclado, mouse, monitor, impressora, scanner, CPU, cabos, modem e roteador.',
-      lessons: [],
-    },
-    {
-      code: 'AP041.4',
-      title: 'Cuidar da máquina',
-      description: 'Sujeira, manutenção preventiva e o jeito certo de ligar e desligar.',
-      lessons: [
-        {
-          code: 'AP041.4-L2',
-          title: 'Cuidando do computador',
-          type: 'lab',
-          content: '',
-          requirementCodes: ['AP041-3.1', 'AP041-3.2', 'AP041-3.3'],
-          labType: 'computer_care',
-        },
-      ],
-    },
+    modulo1,
+    modulo2,
+    modulo3,
+    modulo4,
     {
       code: 'AP041.5',
       title: 'Achar as coisas depois',
@@ -124,6 +92,21 @@ export const ap041: Specialty = {
             'AP041-5.4', 'AP041-5.5', 'AP041-5.6',
           ],
           labType: 'file_manager',
+        },
+      ],
+    },
+    {
+      code: 'AP041.F',
+      title: 'Avaliação Final',
+      description: 'A prova que fecha a trilha, com questões dos cinco requisitos.',
+      lessons: [
+        {
+          code: 'AP041.F-L1',
+          title: 'Avaliação Final — Computação 1',
+          type: 'final',
+          content: '',
+          requirementCodes: [],
+          labType: 'final_exam',
         },
       ],
     },
