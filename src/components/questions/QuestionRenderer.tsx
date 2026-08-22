@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { GripVertical } from 'lucide-react';
 import type { Question } from '../../types';
 import { sequenciaCorreta } from '../../lib/questoes';
 import { shuffleArray } from '../../lib/progress';
@@ -65,6 +66,20 @@ function OptionsQuestion({ question, answer, showFeedback, onAnswer }: QuestionP
   );
 }
 
+/*
+ * A questão de ordenar: arrastar para o lugar, ou as setas.
+ *
+ * Toda questão do tipo `ordering` passa por aqui, em lição e em prova — não há
+ * uma segunda tela desenhando esse tipo. Quem escrever uma questão de ordenar
+ * nova só precisa dos itens e do campo `order`; a forma de mexer neles é esta, e
+ * é a mesma em toda a plataforma.
+ *
+ * Arrastar é o gesto que a pessoa já conhece de outras listas, e é o caminho
+ * principal no computador. As setas continuam porque arrastar não funciona em
+ * tela de toque — o evento de arrastar do HTML não existe no celular — e boa
+ * parte dos desbravadores abre isto pelo telefone. Nenhuma questão pode depender
+ * de um dos dois.
+ */
 function OrderingQuestion({ question, answer, showFeedback, onAnswer }: QuestionProps) {
   const items = question.data.items || [];
   const certa = sequenciaCorreta(items);
@@ -72,9 +87,12 @@ function OrderingQuestion({ question, answer, showFeedback, onAnswer }: Question
      começar por uma ordem qualquer — que é o ponto de partida da tarefa. */
   const [ordered, setOrdered] = useState<string[]>(() => Array.isArray(answer) && answer.length === items.length ? answer : items.map(i => i.id));
   const [confirmed, setConfirmed] = useState(false);
+  const [arrastando, setArrastando] = useState<string | null>(null);
+
+  const isLocked = showFeedback || confirmed;
 
   const move = (id: string, dir: 'up' | 'down') => {
-    if (showFeedback) return;
+    if (isLocked) return;
     const arr = [...ordered];
     const idx = arr.indexOf(id);
     if (dir === 'up' && idx > 0) { [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]; }
@@ -83,12 +101,28 @@ function OrderingQuestion({ question, answer, showFeedback, onAnswer }: Question
     setConfirmed(false);
   };
 
+  /*
+    Reordena enquanto o item passa por cima, e não só ao soltar.
+    A lista acompanha o dedo, então dá para ver onde a peça vai cair antes de
+    largá-la — soltar às cegas e conferir depois é o que torna arrastar ruim.
+  */
+  const passarSobre = (idAlvo: string) => {
+    if (isLocked || !arrastando || arrastando === idAlvo) return;
+    setOrdered(atual => {
+      const arr = [...atual];
+      const de = arr.indexOf(arrastando);
+      const para = arr.indexOf(idAlvo);
+      if (de < 0 || para < 0) return atual;
+      arr.splice(para, 0, ...arr.splice(de, 1));
+      return arr;
+    });
+    setConfirmed(false);
+  };
+
   const confirm = () => {
     onAnswer(ordered);
     setConfirmed(true);
   };
-
-  const isLocked = showFeedback || confirmed;
 
   return (
     <div>
@@ -99,18 +133,45 @@ function OrderingQuestion({ question, answer, showFeedback, onAnswer }: Question
              chegam embaralhados, e a leitura antiga marcaria de vermelho
              justamente quem acertou. */
           const correctIdx = certa[idx] === id;
+          const sendoArrastado = arrastando === id;
           return (
-            <div key={id} className={`flex items-center gap-2 p-3 border-2 rounded-lg transition ${
-              showFeedback ? (correctIdx ? 'border-[var(--color-success)] bg-[var(--color-success-a10)]' : 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]') : 'border-[var(--color-border)]'
-            }`}>
+            <div
+              key={id}
+              draggable={!isLocked}
+              onDragStart={() => setArrastando(id)}
+              onDragEnd={() => setArrastando(null)}
+              onDragOver={e => { e.preventDefault(); passarSobre(id); }}
+              onDrop={e => { e.preventDefault(); setArrastando(null); }}
+              className={`flex items-center gap-2 p-3 border-2 rounded-lg transition ${
+                showFeedback ? (correctIdx ? 'border-[var(--color-success)] bg-[var(--color-success-a10)]' : 'border-[var(--color-primary)] bg-[var(--color-primary-a10)]') : 'border-[var(--color-border)]'
+              }`}
+              style={{
+                opacity: sendoArrastado ? 0.5 : 1,
+                cursor: isLocked ? 'default' : 'grab',
+              }}
+            >
+              {!isLocked && (
+                <GripVertical
+                  className="w-4 h-4 flex-shrink-0"
+                  style={{ color: 'var(--color-text-faint)' }}
+                  aria-hidden="true"
+                />
+              )}
               <span className="font-bold" style={{ color: 'var(--color-text-muted)' }}>{idx + 1}.</span>
               <span className="flex-1">{item.text}</span>
-              <button onClick={() => move(id, 'up')} disabled={idx === 0 || isLocked} className="btn-secondary px-2 py-1 text-sm">↑</button>
-              <button onClick={() => move(id, 'down')} disabled={idx === ordered.length - 1 || isLocked} className="btn-secondary px-2 py-1 text-sm">↓</button>
+              <button onClick={() => move(id, 'up')} disabled={idx === 0 || isLocked}
+                className="btn-secondary px-2 py-1 text-sm" aria-label="Subir um lugar">↑</button>
+              <button onClick={() => move(id, 'down')} disabled={idx === ordered.length - 1 || isLocked}
+                className="btn-secondary px-2 py-1 text-sm" aria-label="Descer um lugar">↓</button>
             </div>
           );
         })}
       </div>
+      {!isLocked && (
+        <p className="text-xs mt-2" style={{ color: 'var(--color-text-faint)' }}>
+          Arraste para trocar de lugar, ou use as setas.
+        </p>
+      )}
       <ConfirmButton onConfirm={confirm} disabled={false} showFeedback={isLocked} />
     </div>
   );
