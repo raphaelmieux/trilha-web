@@ -91,7 +91,6 @@ export default function SpecialtyPage() {
         <h1 className="text-2xl font-bold mb-2">{nomeCompleto(specialty)} está bloqueada</h1>
         <p className="mb-6" style={{ color: 'var(--color-text-dim)' }}>
           Conclua {anterior ? nomeCompleto(anterior) : specialty.preRequisito} para abrir esta trilha.
-          Ela libera sozinha assim que o último requisito for cumprido.
         </p>
         {anterior && (
           <Link to={`/especialidade/${anterior.code}`} className="btn-primary">

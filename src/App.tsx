@@ -1,5 +1,6 @@
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import BrandMark from './components/ui/BrandMark';
+import AvisoDeVersao from './components/ui/AvisoDeVersao';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -168,6 +169,8 @@ export default function App() {
         <div className="min-h-screen">
           <NavBar />
           <AppRoutes />
+          {/* Fora das rotas: um deploy novo interessa em qualquer tela. */}
+          <AvisoDeVersao />
         </div>
       </HashRouter>
     </AuthProvider>

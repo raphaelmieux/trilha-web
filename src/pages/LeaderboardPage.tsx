@@ -36,10 +36,6 @@ export default function LeaderboardPage() {
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Podium className="w-6 h-6" style={{ color: 'var(--color-secondary)' }} /> Ranking
         </h1>
-        <p style={{ color: 'var(--color-text-dim)' }}>
-          Desbravadores que optaram por aparecer publicamente, ordenados por XP
-          {periodo === 'tudo' ? ' acumulado.' : ' ganho no período.'}
-        </p>
       </div>
 
       <div className="card p-4 text-sm flex items-start gap-2" style={{ backgroundColor: 'var(--color-tertiary-a05)', borderColor: 'var(--color-tertiary-a20)' }}>

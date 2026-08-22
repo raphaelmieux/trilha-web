@@ -1,5 +1,5 @@
 // Bumping this name is what evicts the previous deploy's cache on activate.
-const CACHE_NAME = 'trilha-web-v3';
+const CACHE_NAME = 'trilha-web-v4';
 
 // Resolved relative to this script's own URL so the cache list is correct whether
 // the app is served from the domain root or a GitHub Pages subpath (/trilha-web/).
@@ -51,8 +51,14 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== location.origin) return;
 
   if (isHtmlRequest(request, url)) {
+    /*
+      cache: 'no-store' porque o GitHub Pages entrega o index.html com dez
+      minutos de validade, e sem isto o "network-first" pergunta ao cache do
+      navegador — que é exatamente quem já está desatualizado. Recarregar a
+      página logo depois de um deploy continuava servindo o pacote anterior.
+    */
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: 'no-store' })
         .then((response) => {
           if (response.ok) {
             const clone = response.clone();

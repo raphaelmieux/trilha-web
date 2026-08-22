@@ -202,7 +202,6 @@ export default function ProfilePage() {
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <User className="w-6 h-6" style={{ color: 'var(--color-primary)' }} /> Meu Perfil
         </h1>
-        <p style={{ color: 'var(--color-text-dim)' }}>Gerencie seus dados, senha, foto e privacidade</p>
       </div>
 
       {error && (

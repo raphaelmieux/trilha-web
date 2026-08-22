@@ -50,7 +50,6 @@ export default function VerifyPage() {
         <h1 className="text-2xl font-bold mb-2 flex items-center gap-2">
           <Award className="w-6 h-6" style={{ color: 'var(--color-secondary)' }} /> Verificar Token.Web()
         </h1>
-        <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>Digite o código do Token.Web() para verificar sua autenticidade.</p>
         <div className="flex gap-2">
           <input
             value={code}
