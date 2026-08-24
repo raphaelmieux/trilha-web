@@ -94,67 +94,6 @@ jobs:
       - name: Apply migrations
         run: supabase db push
 
-      # src/types/database.ts is what makes `.from()` and `.rpc()` type-checked.
-      # It is generated, so it can fall behind the schema without anything
-      # noticing — and a stale row type is worse than none, because it is
-      # confidently wrong about a column that no longer exists.
-      #
-      # Regenerating here rather than trusting whoever wrote the migration: this
-      # runs right after `db push`, against the database that push just changed,
-      # and it is the only place with both the CLI and the credentials.
-      #
-      # `--project-id` reads through the Management API, so no Docker is needed;
-      # `gen types --db-url` would need one and there is none on the runner.
-      #
-      # The comparison skips the file's header comment, which is written by hand
-      # and deliberately not something the generator knows about.
-      - name: The committed database types still match the schema
-        id: tipos
-        run: |
-          set -uo pipefail
-
-          # Nothing committed, nothing to drift from. This is not a hole: it is
-          # src/lib/supabase.ts that imports `Database` from that file, so
-          # deleting it fails typecheck in ci.yml on every push and PR, long
-          # before this workflow gets a chance to notice.
-          if [ ! -f src/types/database.ts ]; then
-            echo "::notice::src/types/database.ts is not in the repository — nothing to compare against."
-            exit 0
-          fi
-
-          supabase gen types typescript --project-id "$PROJECT_REF" --schema public > /tmp/gerado.ts
-
-          corpo() { sed -n '/^export type Json/,$p' "$1"; }
-          corpo src/types/database.ts > /tmp/versionado-corpo.ts
-          corpo /tmp/gerado.ts        > /tmp/gerado-corpo.ts
-
-          if [ ! -s /tmp/gerado-corpo.ts ]; then
-            echo "::error::supabase gen types produced no 'export type Json' — the output is below, unchanged."
-            head -40 /tmp/gerado.ts
-            exit 1
-          fi
-
-          if diff -u /tmp/versionado-corpo.ts /tmp/gerado-corpo.ts; then
-            echo "src/types/database.ts matches the schema."
-            exit 0
-          fi
-
-          # A drop-in replacement, header included, published as an artifact so
-          # the fix is a download and a commit from the browser — no local CLI,
-          # which is the whole point of this workflow existing.
-          sed -n '1,/^export type Json/p' src/types/database.ts | sed '$d' > /tmp/cabecalho.txt
-          cat /tmp/cabecalho.txt /tmp/gerado-corpo.ts > /tmp/database.ts
-          echo "::error::src/types/database.ts is behind the schema. The diff is above. Download the 'database-types' artifact from this run and commit it as src/types/database.ts."
-          exit 1
-
-      - name: Publish the regenerated types
-        if: always() && steps.tipos.outcome == 'failure'
-        uses: actions/upload-artifact@v4
-        with:
-          name: database-types
-          path: /tmp/database.ts
-          if-no-files-found: ignore
-
       # Function secrets are not part of a function's code, so deploying does
       # not carry them — they live in the project until something changes them.
       #
@@ -225,6 +164,73 @@ jobs:
             exit 1
           fi
           echo "All ${#publicadas[@]} functions accounted for."
+
+      # src/types/database.ts is what makes `.from()` and `.rpc()` type-checked.
+      # It is generated, so it can fall behind the schema without anything
+      # noticing — and a stale row type is worse than none, because it is
+      # confidently wrong about a column that no longer exists.
+      #
+      # Regenerating rather than trusting whoever wrote the migration: this is
+      # the only place with both the CLI and the credentials.
+      #
+      # Down here with the auth check, and for the same reason. This step sat
+      # between `db push` and the function deploys on its first run, failed on a
+      # types file that was merely not canonical yet, and skipped the deploys —
+      # a generated file being out of date is not a reason to hold back working
+      # code. Reporting after everything shipped is the whole point; putting a
+      # check that can fail ahead of a deploy step turns it into a gate.
+      #
+      # `--project-id` reads through the Management API, so no Docker is needed;
+      # `gen types --db-url` would need one and there is none on the runner.
+      #
+      # The comparison skips the file's header comment, which is written by hand
+      # and deliberately not something the generator knows about.
+      - name: The committed database types still match the schema
+        id: tipos
+        run: |
+          set -uo pipefail
+
+          # Nothing committed, nothing to drift from. This is not a hole: it is
+          # src/lib/supabase.ts that imports `Database` from that file, so
+          # deleting it fails typecheck in ci.yml on every push and PR, long
+          # before this workflow gets a chance to notice.
+          if [ ! -f src/types/database.ts ]; then
+            echo "::notice::src/types/database.ts is not in the repository — nothing to compare against."
+            exit 0
+          fi
+
+          supabase gen types typescript --project-id "$PROJECT_REF" --schema public > /tmp/gerado.ts
+
+          corpo() { sed -n '/^export type Json/,$p' "$1"; }
+          corpo src/types/database.ts > /tmp/versionado-corpo.ts
+          corpo /tmp/gerado.ts        > /tmp/gerado-corpo.ts
+
+          if [ ! -s /tmp/gerado-corpo.ts ]; then
+            echo "::error::supabase gen types produced no 'export type Json' — the output is below, unchanged."
+            head -40 /tmp/gerado.ts
+            exit 1
+          fi
+
+          if diff -u /tmp/versionado-corpo.ts /tmp/gerado-corpo.ts; then
+            echo "src/types/database.ts matches the schema."
+            exit 0
+          fi
+
+          # A drop-in replacement, header included, published as an artifact so
+          # the fix is a download and a commit from the browser — no local CLI,
+          # which is the whole point of this workflow existing.
+          sed -n '1,/^export type Json/p' src/types/database.ts | sed '$d' > /tmp/cabecalho.txt
+          cat /tmp/cabecalho.txt /tmp/gerado-corpo.ts > /tmp/database.ts
+          echo "::error::src/types/database.ts does not match what the CLI generates. Everything else in this run already shipped — this step reports, it does not gate. The diff is above; the 'database-types' artifact on this run's summary page is the corrected file, header included. Download it and commit it as src/types/database.ts."
+          exit 1
+
+      - name: Publish the regenerated types
+        if: always() && steps.tipos.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-types
+          path: /tmp/database.ts
+          if-no-files-found: ignore
 
       # Auth settings live in the dashboard, and one of them is load-bearing:
       # with "Confirm email" on, a new account cannot sign in until it confirms,
