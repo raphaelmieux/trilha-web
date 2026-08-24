@@ -3,6 +3,7 @@ import BrandMark from './components/ui/BrandMark';
 import AvisoDeVersao from './components/ui/AvisoDeVersao';
 import { AuthProvider } from './context/AuthProvider';
 import { useAuth } from './context/AuthContext';
+import { rotaDaTrilhaAtual } from './lib/navegacao';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -31,7 +32,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 const NAV_ITEMS = [
   { to: '/', label: 'Início', icon: Home, exact: true },
-  { to: '/especialidade/AP034', label: 'Trilhas', icon: Map, exact: false },
+  /* O destino real sai do endereço; "/especialidade" é só a marca do item, e
+     ele some quando não há trilha aberta. Ver rotaDaTrilhaAtual. */
+  { to: '/especialidade', label: 'Trilha Atual', icon: Map, exact: false },
   { to: '/relatorio', label: 'Relatório', icon: FileText, exact: false },
   { to: '/ranking', label: 'Ranking', icon: Podium, exact: false },
   { to: '/verificar', label: 'Verificar', icon: Award, exact: false },
@@ -47,6 +50,11 @@ function NavBar() {
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + '/');
 
+  const trilhaAtual = rotaDaTrilhaAtual(location.pathname);
+  const paraOnde = (to: string) => (to === '/especialidade' ? (trilhaAtual ?? '/') : to);
+  /* Sem trilha aberta, o item sai do menu inteiro. */
+  const itens = NAV_ITEMS.filter(i => i.to !== '/especialidade' || trilhaAtual);
+
   const linkColor = (active: boolean) => ({ color: active ? 'var(--color-primary)' : 'var(--color-text-muted)' });
 
   return (
@@ -57,10 +65,10 @@ function NavBar() {
         </Link>
 
         <div className="hidden md:flex items-center gap-5">
-          {NAV_ITEMS.map(({ to, label, icon: Icon, exact }) => {
+          {itens.map(({ to, label, icon: Icon, exact }) => {
             const active = exact ? location.pathname === to : isActive(to);
             return (
-              <Link key={to} to={to} className="text-sm flex items-center gap-1.5 transition-colors" style={linkColor(active)}>
+              <Link key={to} to={paraOnde(to)} className="text-sm flex items-center gap-1.5 transition-colors" style={linkColor(active)}>
                 <Icon className="w-4 h-4" />
                 <span>{label}</span>
               </Link>
@@ -107,10 +115,10 @@ function NavBar() {
 
       {menuOpen && (
         <div className="md:hidden px-4 pb-3 flex flex-col gap-1" style={{ borderTop: '1px solid var(--color-border)' }}>
-          {NAV_ITEMS.map(({ to, label, icon: Icon, exact }) => {
+          {itens.map(({ to, label, icon: Icon, exact }) => {
             const active = exact ? location.pathname === to : isActive(to);
             return (
-              <Link key={to} to={to} onClick={() => setMenuOpen(false)}
+              <Link key={to} to={paraOnde(to)} onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-2 py-2.5 rounded-lg text-sm font-medium"
                 style={{ ...linkColor(active), backgroundColor: active ? 'var(--color-primary-a10)' : 'transparent' }}>
                 <Icon className="w-4 h-4" /> {label}
