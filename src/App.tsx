@@ -1,7 +1,8 @@
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import BrandMark from './components/ui/BrandMark';
 import AvisoDeVersao from './components/ui/AvisoDeVersao';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthProvider';
+import { useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
