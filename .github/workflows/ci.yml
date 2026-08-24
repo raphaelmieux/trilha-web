@@ -9,12 +9,10 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    env:
-      # Placeholder values: the Supabase client is instantiated at module load
-      # time, so even the unit tests (which never call Supabase) need these set
-      # or `createClient` throws before any test runs.
-      VITE_SUPABASE_URL: https://placeholder.supabase.co
-      VITE_SUPABASE_ANON_KEY: placeholder
+    # Deliberately no VITE_SUPABASE_* here. A fresh clone has no .env, and CI is
+    # the only place that would notice if importing the Supabase client started
+    # throwing again at module load. Setting placeholders would hide exactly the
+    # failure this job should catch. See src/lib/supabase.ts.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
