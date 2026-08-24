@@ -7,6 +7,26 @@
  * dela, que não adiantava tentar de novo, nem quanto tempo esperar.
  */
 
+/**
+ * A mensagem de dentro de um erro, venha ele de onde vier.
+ *
+ * Com `strict`, o `catch` entrega `unknown` — e é o tipo certo, porque ali
+ * pode cair qualquer coisa que alguém tenha jogado. O que o Supabase joga não é
+ * uniforme: `AuthError` estende `Error`, e `PostgrestError` é objeto simples
+ * com `message`. Escrever `err: any` fazia o `.message` compilar em cima das
+ * duas formas sem conferir nenhuma; este é o único lugar que precisa saber a
+ * diferença.
+ */
+export function mensagemDoErro(err: unknown): string | undefined {
+  if (typeof err === 'string') return err || undefined;
+  if (err instanceof Error) return err.message || undefined;
+  if (err !== null && typeof err === 'object' && 'message' in err) {
+    const m = (err as { message: unknown }).message;
+    if (typeof m === 'string') return m || undefined;
+  }
+  return undefined;
+}
+
 /** Devolve o texto em português, ou uma mensagem genérica se não reconhecer. */
 export function traduzirErroDeAuth(mensagem: string | undefined | null): string {
   const m = (mensagem ?? '').toLowerCase();

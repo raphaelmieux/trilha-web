@@ -14,7 +14,7 @@ async function getCompletedRequirementCodes(userId: string): Promise<Set<string>
     .eq('user_id', userId)
     .eq('status', 'completed');
 
-  return new Set((data as any[] | null)?.map(row => row.requirements?.code).filter(Boolean) || []);
+  return new Set((data ?? []).map(row => row.requirements.code));
 }
 
 /**

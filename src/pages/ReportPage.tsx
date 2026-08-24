@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getOpenSpecialties } from '../curriculum';
-import { nomeCompleto } from '../types';
+import { nomeCompleto, type Tabela } from '../types';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
@@ -20,7 +20,7 @@ export default function ReportPage() {
   const { progress, loading: progressLoading } = useRequirementProgress(profile?.id);
   const { certifications, loading: certsLoading } = useCertifications(profile?.id);
   const { badges, loading: badgesLoading } = useBadges(profile?.id);
-  const [lessonAttempts, setLessonAttempts] = useState<any[]>([]);
+  const [lessonAttempts, setLessonAttempts] = useState<Pick<Tabela<'lesson_attempts'>, 'score' | 'total'>[]>([]);
   const [evidence, setEvidence] = useState<LabEvidence>({});
   const [attemptsLoading, setAttemptsLoading] = useState(true);
   const [exporting, setExporting] = useState(false);

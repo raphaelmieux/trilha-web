@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { porqueDaEscolha } from './porque';
-import type { Question } from '../types';
+import type { Question, QuestionOption } from '../types';
 
-const q = (options: any[]): Question => ({
+const q = (options: QuestionOption[]): Question => ({
   id: 'x', type: 'multiple_choice', prompt: 'p', data: { options },
 });
 

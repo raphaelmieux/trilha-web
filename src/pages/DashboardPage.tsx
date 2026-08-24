@@ -8,7 +8,7 @@ import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
 import { useMinhasPosicoes } from '../hooks/useMinhasPosicoes';
-import { getPublicName, nomeCompleto, ROTULO_DO_NIVEL, type Specialty, type Certification } from '../types';
+import { getPublicName, nomeCompleto, ROTULO_DO_NIVEL, type Specialty, type Certification, type Tabela } from '../types';
 import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
 import { descreverAtividade } from '../lib/atividade';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -118,13 +118,18 @@ function CardDaTrilha({ e, progress, cert, liberada }: {
   );
 }
 
+/* O que `select('*, specialties(*)')` traz: a matrícula e a trilha dela. */
+type MatriculaComTrilha = Tabela<'enrollments'> & {
+  specialties: Tabela<'specialties'> | null;
+};
+
 export default function DashboardPage() {
   const { profile } = useAuth();
   const { progress } = useRequirementProgress(profile?.id);
   const { certifications, getByCurriculum } = useCertifications(profile?.id);
   const { badges } = useBadges(profile?.id);
-  const [enrollments, setEnrollments] = useState<any[]>([]);
-  const [recentEvents, setRecentEvents] = useState<any[]>([]);
+  const [enrollments, setEnrollments] = useState<MatriculaComTrilha[]>([]);
+  const [recentEvents, setRecentEvents] = useState<Tabela<'activity_events'>[]>([]);
   const [noRanking, setNoRanking] = useState(false);
   const [loading, setLoading] = useState(true);
   const { posicoes } = useMinhasPosicoes(profile?.id, noRanking);

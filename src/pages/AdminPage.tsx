@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Shield, Users, Award, CalendarDays, AlertCircle, KeyRound, Copy, X } from 'lucide-react';
 import { getOpenSpecialties } from '../curriculum';
-import { nomeCompleto } from '../types';
+import { nomeCompleto, type Tabela } from '../types';
 
 /* O que a contagem por trilha devolve. Só números e datas — ver a migration
    20260822040000_contagem_de_certificados.sql. */
@@ -19,7 +19,7 @@ interface ContagemDeCertificados {
 export default function AdminPage() {
   const { profile } = useAuth();
   const [stats, setStats] = useState({ users: 0, events: 0 });
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<Tabela<'user_profiles'>[]>([]);
   const [revokeCode, setRevokeCode] = useState('');
   const [revokeMsg, setRevokeMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   const [resetTarget, setResetTarget] = useState<{ email: string; password?: string; error?: string; loading?: boolean } | null>(null);
@@ -37,7 +37,21 @@ export default function AdminPage() {
       setUsers(usersData || []);
 
       const { data: contagem } = await supabase.rpc('admin_certificate_counts');
-      setCertificados((contagem as ContagemDeCertificados[] | null) || []);
+      /*
+        As seis colunas chegam anuláveis porque `returns table` do Postgres não
+        sabe dizer NOT NULL — nenhuma delas é nula de verdade (`count` não é, e
+        `min`/`max` de um grupo que existe não são). Em vez de afirmar isso com
+        `as`, o padrão é assumido aqui: se um dia vier nulo, a tela mostra zero
+        em vez de NaN.
+      */
+      setCertificados((contagem ?? []).map(c => ({
+        curriculum_code: c.curriculum_code ?? '',
+        emitidos: c.emitidos ?? 0,
+        ativos: c.ativos ?? 0,
+        revogados: c.revogados ?? 0,
+        primeiro: c.primeiro,
+        ultimo: c.ultimo,
+      })));
 
     })();
   }, [profile]);

@@ -35,7 +35,7 @@ export function useMinhasPosicoes(userId: string | undefined, participando: bool
       const resultados = await Promise.all(
         LEADERBOARD_PERIODS.map(async ({ value, label }): Promise<PosicaoNoRanking> => {
           const { data } = await supabase.rpc('leaderboard', { p_periodo: value });
-          const linhas = (data as { id: string }[] | null) ?? [];
+          const linhas = data ?? [];
           const i = linhas.findIndex(l => l.id === userId);
           return { periodo: value, rotulo: label, posicao: i < 0 ? null : i + 1, total: linhas.length };
         }),

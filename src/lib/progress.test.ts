@@ -1,5 +1,24 @@
 import { describe, it, expect } from 'vitest';
-import { calculateMastery, getModuleStatus, getProgressPercent, shuffleArray, type ProgressMap, melhorResultado, getProgressDetail, LIMIAR_DOMINIO } from './progress';
+import { calculateMastery, getModuleStatus, getProgressPercent, shuffleArray, type ProgressMap, type RequirementProgress, melhorResultado, getProgressDetail, LIMIAR_DOMINIO } from './progress';
+import type { RequirementStatus } from '../types';
+
+/*
+  Uma linha de progresso inteira a partir do que o teste realmente olha.
+
+  Aqui havia `{ status: 'completed' } as any` treze vezes. O `as any` não
+  encurtava só a escrita: desligava a conferência da forma toda, e um campo
+  renomeado em RequirementProgress passaria por estes testes sem queixa.
+*/
+const progresso = (status: RequirementStatus, mastery = 0): RequirementProgress => ({
+  requirement_id: 'req',
+  status,
+  mastery_score: mastery,
+  attempts: 0,
+  correct_count: 0,
+  total_questions: 0,
+  retention_passed: false,
+  checkpoint_passed: false,
+});
 
 describe('calculateMastery', () => {
   it('returns not_started when total is 0', () => {
@@ -40,23 +59,23 @@ describe('getModuleStatus', () => {
 
   it('returns completed when all requirements are completed', () => {
     const progress: ProgressMap = {
-      'AP034.1': { status: 'completed' } as any,
-      'AP034.2': { status: 'completed' } as any,
+      'AP034.1': progresso('completed'),
+      'AP034.2': progresso('completed'),
     };
     expect(getModuleStatus(['AP034.1', 'AP034.2'], progress)).toBe('completed');
   });
 
   it('returns needs_review when any requirement needs review', () => {
     const progress: ProgressMap = {
-      'AP034.1': { status: 'completed' } as any,
-      'AP034.2': { status: 'needs_review' } as any,
+      'AP034.1': progresso('completed'),
+      'AP034.2': progresso('needs_review'),
     };
     expect(getModuleStatus(['AP034.1', 'AP034.2'], progress)).toBe('needs_review');
   });
 
   it('returns learning when any requirement is in progress', () => {
     const progress: ProgressMap = {
-      'AP034.1': { status: 'learning' } as any,
+      'AP034.1': progresso('learning'),
     };
     expect(getModuleStatus(['AP034.1'], progress)).toBe('learning');
   });
@@ -73,25 +92,25 @@ describe('getProgressPercent', () => {
 
   it('returns 0 when no requirements are completed', () => {
     const progress: ProgressMap = {
-      'AP034.1': { status: 'learning' } as any,
+      'AP034.1': progresso('learning'),
     };
     expect(getProgressPercent(['AP034.1'], progress)).toBe(0);
   });
 
   it('returns correct percentage for partial completion', () => {
     const progress: ProgressMap = {
-      'AP034.1': { status: 'completed' } as any,
-      'AP034.2': { status: 'learning' } as any,
-      'AP034.3': { status: 'completed' } as any,
-      'AP034.4': { status: 'not_started' } as any,
+      'AP034.1': progresso('completed'),
+      'AP034.2': progresso('learning'),
+      'AP034.3': progresso('completed'),
+      'AP034.4': progresso('not_started'),
     };
     expect(getProgressPercent(['AP034.1', 'AP034.2', 'AP034.3', 'AP034.4'], progress)).toBe(50);
   });
 
   it('returns 100 when all requirements are completed', () => {
     const progress: ProgressMap = {
-      'AP034.1': { status: 'completed' } as any,
-      'AP034.2': { status: 'completed' } as any,
+      'AP034.1': progresso('completed'),
+      'AP034.2': progresso('completed'),
     };
     expect(getProgressPercent(['AP034.1', 'AP034.2'], progress)).toBe(100);
   });
@@ -192,8 +211,7 @@ describe('melhorResultado', () => {
   tinha aberto a lição.
 */
 describe('getProgressDetail', () => {
-  const req = (status: string, mastery: number) =>
-    ({ status, mastery_score: mastery } as any);
+  const req = (status: RequirementStatus, mastery: number) => progresso(status, mastery);
 
   it('separa o cumprido do que está a recuperar', () => {
     const d = getProgressDetail(['A', 'B'], {
