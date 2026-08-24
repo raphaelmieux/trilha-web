@@ -1,0 +1,108 @@
+# Applies migrations and deploys Edge Functions to Supabase.
+#
+# Until now this was the one part of the project that only existed on one
+# laptop: the CLI link lives in supabase/.temp/, which is gitignored, and the
+# access token was on that machine. Every schema change since the first day came
+# from there, which meant the project could never be driven entirely from the
+# cloud or from a phone.
+#
+# Runs on push to main, and only when something under supabase/ actually
+# changed. `db push` applies the migrations the remote history hasn't seen and
+# skips the rest, so a push that touches only functions is harmless.
+#
+# NOTE ON THE TRIGGER: this applies to production without a human in between.
+# That was a deliberate choice — the alternative offered was a manual trigger.
+# A migration that corrupts data has no undo, so what protects this repo is the
+# rule that an applied migration is never edited: fix forward, in a new file.
+#
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   SUPABASE_ACCESS_TOKEN  supabase.com/dashboard/account/tokens
+#   SUPABASE_DB_PASSWORD   the project's database password
+#
+# The project ref is not a secret: it is the subdomain of the public API URL,
+# and already ships inside the browser bundle.
+
+name: Deploy Supabase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/supabase.yml'
+  # Lets you re-run it from the Actions tab after adding the secrets, without
+  # having to invent a commit.
+  workflow_dispatch:
+
+concurrency:
+  # Two runs applying migrations at once would race on the same history table.
+  group: supabase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: horilmubakkczmevjbnj
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # A missing secret otherwise surfaces as an opaque CLI error halfway
+      # through, which reads like the deploy broke rather than like it was never
+      # configured.
+      - name: Check the secrets are configured
+        run: |
+          faltando=""
+          [ -n "$SUPABASE_ACCESS_TOKEN" ] || faltando="$faltando SUPABASE_ACCESS_TOKEN"
+          [ -n "$SUPABASE_DB_PASSWORD" ] || faltando="$faltando SUPABASE_DB_PASSWORD"
+          if [ -n "$faltando" ]; then
+            echo "::error::Missing repository secret(s):$faltando — add them under Settings > Secrets and variables > Actions, then re-run this workflow."
+            exit 1
+          fi
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.114.0
+
+      - name: Link the project
+        run: supabase link --project-ref "$PROJECT_REF"
+
+      - name: Apply migrations
+        run: supabase db push
+
+      # Every function is named here on purpose, rather than deploying the
+      # directory in one sweep.
+      #
+      # `clubes` is public: the club picker calls it during registration, when
+      # nobody has a session yet, sending only the apikey header. It has been
+      # deployed with JWT verification off since the beginning, and a sweep
+      # deploy would silently turn verification back on and break registration
+      # with a 401 — a failure nobody would connect to a deploy of something
+      # else. The other four require a real user token and check it themselves.
+      #
+      # A function added later must be added below. The guard after this step
+      # is what makes forgetting it loud instead of silent.
+      - name: Deploy Edge Functions
+        run: |
+          set -e
+          supabase functions deploy clubes --project-ref "$PROJECT_REF" --use-api --no-verify-jwt
+          for f in ai-gateway issue-certification admin-reset-password self-reset-password; do
+            supabase functions deploy "$f" --project-ref "$PROJECT_REF" --use-api
+          done
+
+      - name: Every function in the repo was deployed
+        run: |
+          declare -A publicadas=( [clubes]=1 [ai-gateway]=1 [issue-certification]=1 [admin-reset-password]=1 [self-reset-password]=1 )
+          esquecidas=""
+          for dir in supabase/functions/*/; do
+            nome=$(basename "$dir")
+            [ -n "${publicadas[$nome]:-}" ] || esquecidas="$esquecidas $nome"
+          done
+          if [ -n "$esquecidas" ]; then
+            echo "::error::Function(s) present in the repo but not deployed by this workflow:$esquecidas — add them to the step above, deciding for each whether it needs --no-verify-jwt."
+            exit 1
+          fi
+          echo "All ${#publicadas[@]} functions accounted for."
