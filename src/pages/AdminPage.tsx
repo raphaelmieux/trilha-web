@@ -16,10 +16,31 @@ interface ContagemDeCertificados {
   ultimo: string | null;
 }
 
+/*
+  As colunas que a tabela de usuários mostra, nomeadas uma a uma.
+
+  `select('*')` não serve aqui, e o motivo é sutil: existe uma função
+  `is_admin()` no schema — a que as policies usam para conferir o papel de quem
+  chama. O supabase-js entende nome de função como campo computado, que só entra
+  quando pedido, então `*` devolvia a linha inteira **menos** `is_admin`. O tipo
+  ficava sem a coluna enquanto o banco continuava mandando ela: divergência
+  silenciosa entre o que o compilador acredita e o que chega.
+
+  Nomear resolve, e paga outra dívida junto: esta tela precisa de seis campos, e
+  `*` arrastava os dezoito — incluindo `security_answer_hash`, que não tem por
+  que trafegar para desenhar uma lista de nomes.
+*/
+const COLUNAS_DO_USUARIO = 'id, display_name, email, club, is_admin, created_at' as const;
+
+type LinhaDeUsuario = Pick<
+  Tabela<'user_profiles'>,
+  'id' | 'display_name' | 'email' | 'club' | 'is_admin' | 'created_at'
+>;
+
 export default function AdminPage() {
   const { profile } = useAuth();
   const [stats, setStats] = useState({ users: 0, events: 0 });
-  const [users, setUsers] = useState<Tabela<'user_profiles'>[]>([]);
+  const [users, setUsers] = useState<LinhaDeUsuario[]>([]);
   const [revokeCode, setRevokeCode] = useState('');
   const [revokeMsg, setRevokeMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   const [resetTarget, setResetTarget] = useState<{ email: string; password?: string; error?: string; loading?: boolean } | null>(null);
@@ -33,7 +54,11 @@ export default function AdminPage() {
       const { count: eventCount } = await supabase.from('activity_events').select('*', { count: 'exact', head: true });
       setStats({ users: userCount || 0, events: eventCount || 0 });
 
-      const { data: usersData } = await supabase.from('user_profiles').select('*').order('created_at', { ascending: false }).limit(50);
+      const { data: usersData } = await supabase
+        .from('user_profiles')
+        .select(COLUNAS_DO_USUARIO)
+        .order('created_at', { ascending: false })
+        .limit(50);
       setUsers(usersData || []);
 
       const { data: contagem } = await supabase.rpc('admin_certificate_counts');
