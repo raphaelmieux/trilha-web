@@ -309,21 +309,29 @@ export interface Specialty {
   modules: Module[];
 }
 
+/*
+  O perfil de quem está logado, na forma que a tela usa.
+
+  Os campos opcionais dizem `| null`, e não `?`, porque é isso que o banco
+  devolve: a linha sempre existe com a coluna, e o que varia é o valor ser nulo.
+  Três deles diziam `?: string` — uma promessa que a coluna nunca fez — e a
+  diferença estava sendo apagada por um `as UserProfile` em AuthContext.
+*/
 export interface UserProfile {
   id: string;
   email: string;
   display_name: string;
-  username?: string;
-  club?: string;
+  username: string | null;
+  club: string | null;
   /* From clubes.adventistas.org. Null when the club was typed by hand — the
      admin screen uses that to tell a validated club from an unverified one. */
-  club_code?: string | null;
-  club_city?: string | null;
-  club_association?: string | null;
-  unit?: string;
+  club_code: string | null;
+  club_city: string | null;
+  club_association: string | null;
+  unit: string | null;
   public_name_form: FormaDeNome;
   is_admin: boolean;
-  avatar_url?: string | null;
+  avatar_url: string | null;
 }
 
 // Non-sensitive projection of UserProfile, backed by the `public_profiles` view.

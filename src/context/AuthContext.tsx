@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { limparCacheDeProgresso } from '../lib/progress';
 import { limparRascunhos } from '../lib/rascunho';
 import { supabase } from '../lib/supabase';
+import { umDe, FORMAS_DE_NOME } from '../types';
 import type { UserProfile } from '../types';
 
 interface AuthContextValue {
@@ -14,6 +15,23 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue>({ session: null, profile: null, loading: true, signOut: async () => {} });
 
+/*
+  As colunas do perfil, nomeadas uma a uma.
+
+  `select('*')` não serve por duas razões. A primeira é sutil: existe uma função
+  `is_admin()` no schema, e o supabase-js entende nome de função como campo
+  computado, que só entra quando pedido — então `*` devolvia a linha **menos**
+  `is_admin`, justamente o campo que libera o painel administrativo. Um
+  `as UserProfile` tapava isso, e um `as` é uma afirmação sem prova: a coluna
+  continuava chegando, e o compilador tinha parado de saber disso.
+
+  A segunda é que este contexto vive na memória do navegador durante toda a
+  sessão, e `*` enchia ele com `security_answer_hash` e `security_question_code`
+  — o material de recuperação de senha, que nenhuma tela lê daqui.
+*/
+const COLUNAS_DO_PERFIL =
+  'id, email, display_name, username, club, club_code, club_city, club_association, unit, public_name_form, is_admin, avatar_url' as const;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -23,7 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const loadProfile = async (uid: string) => {
-      const { data, error } = await supabase.from('user_profiles').select('*').eq('id', uid).maybeSingle();
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select(COLUNAS_DO_PERFIL)
+        .eq('id', uid)
+        .maybeSingle();
       if (!mounted) return;
       /*
         Uma falha na requisição não é a mesma coisa que "esta conta não tem
@@ -33,7 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         presa numa sessão meio viva.
       */
       if (error) return;
-      setProfile(data as UserProfile | null);
+      /* `public_name_form` é `text` com CHECK no banco, então chega como string.
+         Fora da lista cai em 'anonymous', e não em 'full': valor que ninguém
+         reconhece não pode ser motivo para mostrar mais do que o desbravador
+         escolheu. `umDe` reclama no console, então o desvio aparece. */
+      setProfile(data && {
+        ...data,
+        public_name_form: umDe(FORMAS_DE_NOME, data.public_name_form, 'anonymous'),
+      });
     };
 
     supabase.auth.getSession().then(({ data: { session: s } }) => {
