@@ -242,12 +242,12 @@ const content_1L3 = `
     <th class="text-left py-2" style="color: var(--color-text-dim)">Hexadecimal</th>
     <th class="text-left py-2" style="color: var(--color-text-dim)">Significado</th>
   </tr>
-  <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2" style="color: var(--color-text)">Branco</td><td class="py-2">var(--color-text)</td><td class="py-2">Máximo de R, G e B</td></tr>
-  <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2" style="color: var(--color-bg)">Preto</td><td class="py-2">var(--color-bg)</td><td class="py-2">Ausência de cor</td></tr>
-  <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2" style="color: #FF0000">Vermelho</td><td class="py-2">#FF0000</td><td class="py-2">Apenas vermelho máximo</td></tr>
-  <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2" style="color: #00FF00">Verde</td><td class="py-2">#00FF00</td><td class="py-2">Apenas verde máximo</td></tr>
-  <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2" style="color: #0000FF">Azul</td><td class="py-2">#0000FF</td><td class="py-2">Apenas azul máximo</td></tr>
-  <tr><td class="py-2" style="color: #FFFF00">Amarelo</td><td class="py-2">#FFFF00</td><td class="py-2">Vermelho + Verde</td></tr>
+  <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#FFFFFF;border:1px solid var(--color-border);vertical-align:middle;margin-right:6px"></span>Branco</td><td class="py-2"><code style="color: var(--color-secondary)">#FFFFFF</code></td><td class="py-2">Máximo de R, G e B</td></tr>
+  <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#000000;border:1px solid var(--color-border);vertical-align:middle;margin-right:6px"></span>Preto</td><td class="py-2"><code style="color: var(--color-secondary)">#000000</code></td><td class="py-2">Ausência de cor</td></tr>
+  <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#FF0000;border:1px solid var(--color-border);vertical-align:middle;margin-right:6px"></span>Vermelho</td><td class="py-2"><code style="color: var(--color-secondary)">#FF0000</code></td><td class="py-2">Apenas vermelho máximo</td></tr>
+  <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#00FF00;border:1px solid var(--color-border);vertical-align:middle;margin-right:6px"></span>Verde</td><td class="py-2"><code style="color: var(--color-secondary)">#00FF00</code></td><td class="py-2">Apenas verde máximo</td></tr>
+  <tr style="border-bottom: 1px solid var(--color-bg-hover)"><td class="py-2"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#0000FF;border:1px solid var(--color-border);vertical-align:middle;margin-right:6px"></span>Azul</td><td class="py-2"><code style="color: var(--color-secondary)">#0000FF</code></td><td class="py-2">Apenas azul máximo</td></tr>
+  <tr><td class="py-2"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#FFFF00;border:1px solid var(--color-border);vertical-align:middle;margin-right:6px"></span>Amarelo</td><td class="py-2"><code style="color: var(--color-secondary)">#FFFF00</code></td><td class="py-2">Vermelho + Verde</td></tr>
 </table>
 `;
 
