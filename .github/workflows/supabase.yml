@@ -247,7 +247,16 @@ jobs:
       # Last on purpose. A dashboard setting drifting is not a reason to hold
       # back a code deploy — the run goes red after everything shipped, which is
       # the signal, not a gate.
+      #
+      # `!cancelled()` because being last is not enough on its own. A failed step
+      # skips the rest of the job by default, so the types check failing above
+      # took this one down with it — two independent report-only checks, and the
+      # first one silenced the second. The one that matters here is the auth
+      # invariant: nothing else in the repository watches it, so it going quiet
+      # is the failure mode this step exists to prevent. It depends on none of
+      # the steps above, only on the access token.
       - name: Confirm email is still off
+        if: ${{ !cancelled() }}
         run: |
           set -uo pipefail
           resposta=$(curl -sS -m 30 -w '\n%{http_code}' \
