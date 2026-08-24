@@ -1,12 +1,13 @@
-# Applies migrations and deploys Edge Functions to Supabase.
+# Applies migrations, deploys Edge Functions, and guards the settings that live
+# outside the repository.
 #
-# Until now this was the one part of the project that only existed on one
+# Until recently this was the one part of the project that only existed on one
 # laptop: the CLI link lives in supabase/.temp/, which is gitignored, and the
 # access token was on that machine. Every schema change since the first day came
 # from there, which meant the project could never be driven entirely from the
 # cloud or from a phone.
 #
-# Runs on push to main, and only when something under supabase/ actually
+# Runs on push to main, and only when something the Supabase side owns actually
 # changed. `db push` applies the migrations the remote history hasn't seen and
 # skips the rest, so a push that touches only functions is harmless.
 #
@@ -14,10 +15,27 @@
 # That was a deliberate choice — the alternative offered was a manual trigger.
 # A migration that corrupts data has no undo, so what protects this repo is the
 # rule that an applied migration is never edited: fix forward, in a new file.
+# The single documented exception is at the top of 20260821230000_ap041_licoes,
+# which never executed at all; migrations.test.ts now catches that class before
+# it reaches here.
 #
 # Required repository secrets (Settings > Secrets and variables > Actions):
 #   SUPABASE_ACCESS_TOKEN  supabase.com/dashboard/account/tokens
 #   SUPABASE_DB_PASSWORD   the project's database password
+#
+# Optional repository secrets. Each one is only written to the project when it
+# is set here, so leaving one empty keeps whatever the dashboard already holds
+# instead of blanking it. Add one when you want this repo, rather than the
+# dashboard, to be where that value is changed:
+#   GEMINI_API_KEY            required by the AI Lab; without it ai-gateway
+#                             answers 503 with a message saying so
+#   CLOUDFLARE_ACCOUNT_ID     image fallback; the function checks for both and
+#   CLOUDFLARE_API_TOKEN      simply skips the fallback when either is missing
+#   GEMINI_TEXT_MODEL         overrides; the code has defaults for all four
+#   GEMINI_IMAGE_MODEL
+#   CLOUDFLARE_IMAGE_MODEL
+#   AI_DAILY_LIMIT
+#   AI_REDACAO_DAILY_LIMIT
 #
 # The project ref is not a secret: it is the subdomain of the public API URL,
 # and already ships inside the browser bundle.
@@ -30,6 +48,9 @@ on:
     paths:
       - 'supabase/**'
       - '.github/workflows/supabase.yml'
+      # Generated from the schema, so a hand edit here is drift by definition.
+      # Listed so the guard below runs on it.
+      - 'src/types/database.ts'
   # Lets you re-run it from the Actions tab after adding the secrets, without
   # having to invent a commit.
   workflow_dispatch:
@@ -73,6 +94,104 @@ jobs:
       - name: Apply migrations
         run: supabase db push
 
+      # src/types/database.ts is what makes `.from()` and `.rpc()` type-checked.
+      # It is generated, so it can fall behind the schema without anything
+      # noticing — and a stale row type is worse than none, because it is
+      # confidently wrong about a column that no longer exists.
+      #
+      # Regenerating here rather than trusting whoever wrote the migration: this
+      # runs right after `db push`, against the database that push just changed,
+      # and it is the only place with both the CLI and the credentials.
+      #
+      # `--project-id` reads through the Management API, so no Docker is needed;
+      # `gen types --db-url` would need one and there is none on the runner.
+      #
+      # The comparison skips the file's header comment, which is written by hand
+      # and deliberately not something the generator knows about.
+      - name: The committed database types still match the schema
+        id: tipos
+        run: |
+          set -uo pipefail
+
+          # Nothing committed, nothing to drift from. This is not a hole: it is
+          # src/lib/supabase.ts that imports `Database` from that file, so
+          # deleting it fails typecheck in ci.yml on every push and PR, long
+          # before this workflow gets a chance to notice.
+          if [ ! -f src/types/database.ts ]; then
+            echo "::notice::src/types/database.ts is not in the repository — nothing to compare against."
+            exit 0
+          fi
+
+          supabase gen types typescript --project-id "$PROJECT_REF" --schema public > /tmp/gerado.ts
+
+          corpo() { sed -n '/^export type Json/,$p' "$1"; }
+          corpo src/types/database.ts > /tmp/versionado-corpo.ts
+          corpo /tmp/gerado.ts        > /tmp/gerado-corpo.ts
+
+          if [ ! -s /tmp/gerado-corpo.ts ]; then
+            echo "::error::supabase gen types produced no 'export type Json' — the output is below, unchanged."
+            head -40 /tmp/gerado.ts
+            exit 1
+          fi
+
+          if diff -u /tmp/versionado-corpo.ts /tmp/gerado-corpo.ts; then
+            echo "src/types/database.ts matches the schema."
+            exit 0
+          fi
+
+          # A drop-in replacement, header included, published as an artifact so
+          # the fix is a download and a commit from the browser — no local CLI,
+          # which is the whole point of this workflow existing.
+          sed -n '1,/^export type Json/p' src/types/database.ts | sed '$d' > /tmp/cabecalho.txt
+          cat /tmp/cabecalho.txt /tmp/gerado-corpo.ts > /tmp/database.ts
+          echo "::error::src/types/database.ts is behind the schema. The diff is above. Download the 'database-types' artifact from this run and commit it as src/types/database.ts."
+          exit 1
+
+      - name: Publish the regenerated types
+        if: always() && steps.tipos.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-types
+          path: /tmp/database.ts
+          if-no-files-found: ignore
+
+      # Function secrets are not part of a function's code, so deploying does
+      # not carry them — they live in the project until something changes them.
+      #
+      # Only the ones set as repository secrets are written, and an empty value
+      # is never sent: a missing secret here has to mean "the dashboard owns
+      # this one", never "blank it". Getting that backwards would take the AI
+      # Lab down on an unrelated deploy.
+      - name: Push the function secrets
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_TEXT_MODEL: ${{ secrets.GEMINI_TEXT_MODEL }}
+          GEMINI_IMAGE_MODEL: ${{ secrets.GEMINI_IMAGE_MODEL }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_IMAGE_MODEL: ${{ secrets.CLOUDFLARE_IMAGE_MODEL }}
+          AI_DAILY_LIMIT: ${{ secrets.AI_DAILY_LIMIT }}
+          AI_REDACAO_DAILY_LIMIT: ${{ secrets.AI_REDACAO_DAILY_LIMIT }}
+        run: |
+          set -euo pipefail
+          definir=()
+          for nome in GEMINI_API_KEY GEMINI_TEXT_MODEL GEMINI_IMAGE_MODEL \
+                      CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_TOKEN CLOUDFLARE_IMAGE_MODEL \
+                      AI_DAILY_LIMIT AI_REDACAO_DAILY_LIMIT; do
+            valor="${!nome}"
+            if [ -n "$valor" ]; then definir+=("$nome=$valor"); fi
+          done
+
+          if [ ${#definir[@]} -eq 0 ]; then
+            echo "::notice::No function secrets set in this repository — the project keeps whatever the dashboard holds."
+            exit 0
+          fi
+
+          # Only the names are printed. The values are registered secrets, which
+          # Actions masks, but there is no reason to put them on a line at all.
+          echo "Setting: $(printf '%s ' "${definir[@]%%=*}")"
+          supabase secrets set --project-ref "$PROJECT_REF" "${definir[@]}"
+
       # Every function is named here on purpose, rather than deploying the
       # directory in one sweep.
       #
@@ -106,3 +225,45 @@ jobs:
             exit 1
           fi
           echo "All ${#publicadas[@]} functions accounted for."
+
+      # Auth settings live in the dashboard, and one of them is load-bearing:
+      # with "Confirm email" on, a new account cannot sign in until it confirms,
+      # the shared SMTP quota runs out after a handful of registrations, and the
+      # screen shows "email rate limit exceeded" — which names neither the cause
+      # nor anything the Pathfinder can do. See README, "Confirmação de e-mail".
+      #
+      # `supabase config push` was the obvious alternative and was rejected: it
+      # writes the whole [auth] block, so a config.toml written without knowing
+      # the project's current values would quietly reset the ones it does not
+      # mention. Reading and asserting is the part that can be done safely from
+      # here.
+      #
+      # Last on purpose. A dashboard setting drifting is not a reason to hold
+      # back a code deploy — the run goes red after everything shipped, which is
+      # the signal, not a gate.
+      - name: Confirm email is still off
+        run: |
+          set -uo pipefail
+          resposta=$(curl -sS -m 30 -w '\n%{http_code}' \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth") || {
+              echo "::warning::Could not reach the Management API to check the auth settings. Not failing the run over it."
+              exit 0
+            }
+          codigo=$(printf '%s' "$resposta" | tail -n1)
+          corpo=$(printf '%s' "$resposta" | sed '$d')
+
+          if [ "$codigo" != "200" ]; then
+            echo "::warning::The auth settings check got HTTP $codigo. Not failing the run over it; check the token's scope if this repeats."
+            exit 0
+          fi
+
+          # mailer_autoconfirm true is the API's name for "Confirm email" off.
+          autoconfirm=$(printf '%s' "$corpo" | jq -r '.mailer_autoconfirm // empty')
+          if [ "$autoconfirm" = "true" ]; then
+            echo "Confirm email is off, as registration needs."
+            exit 0
+          fi
+
+          echo "::error::\"Confirm email\" is ON for this project (mailer_autoconfirm=${autoconfirm:-absent}). Registration will break once the shared SMTP quota runs out, showing \"email rate limit exceeded\" to the Pathfinder. Turn it off under Authentication > Sign In / Providers > Email."
+          exit 1
