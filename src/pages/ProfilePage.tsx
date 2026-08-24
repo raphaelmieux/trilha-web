@@ -8,8 +8,11 @@ import BadgeIcon from '../components/ui/BadgeIcon';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
 import { SECURITY_QUESTIONS, hashSecurityAnswer } from '../lib/securityQuestions';
 import { User, Lock, Eye, EyeOff, Camera, Shield, Save, CheckCircle2, AlertCircle, Medal, Trophy, KeyRound } from 'lucide-react';
+import { mensagemDoErro } from '../lib/authErrors';
+import type { FormaDeNome } from '../types';
 
-type PrivacyForm = 'full' | 'first' | 'initials' | 'anonymous';
+/* A união mora em types/index.ts, ao lado do CHECK que a sustenta. */
+type PrivacyForm = FormaDeNome;
 
 export default function ProfilePage() {
   const { profile, signOut } = useAuth();
@@ -130,8 +133,8 @@ export default function ProfilePage() {
       if (updateError) throw updateError;
       setProfileSaved(true);
       setTimeout(() => setProfileSaved(false), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao salvar perfil.');
+    } catch (err) {
+      setError(mensagemDoErro(err) || 'Erro ao salvar perfil.');
     } finally {
       setSavingProfile(false);
     }
@@ -152,8 +155,8 @@ export default function ProfilePage() {
       setConfirmPassword('');
       setPasswordSaved(true);
       setTimeout(() => setPasswordSaved(false), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao alterar senha.');
+    } catch (err) {
+      setError(mensagemDoErro(err) || 'Erro ao alterar senha.');
     } finally {
       setSavingPassword(false);
     }
@@ -182,8 +185,8 @@ export default function ProfilePage() {
       setSecurityAnswer('');
       setSecuritySaved(true);
       setTimeout(() => setSecuritySaved(false), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao salvar pergunta de segurança.');
+    } catch (err) {
+      setError(mensagemDoErro(err) || 'Erro ao salvar pergunta de segurança.');
     } finally {
       setSavingSecurity(false);
     }

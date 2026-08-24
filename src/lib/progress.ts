@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { evaluateBadges } from './gamification';
-import type { RequirementStatus } from '../types';
+import { umDe, STATUS_DO_REQUISITO } from '../types';
+import type { Json, RequirementStatus } from '../types';
 
 export interface RequirementProgress {
   requirement_id: string;
@@ -279,12 +280,12 @@ export async function fetchRequirementProgress(userId: string): Promise<Progress
   if (error || !data) return cacheProgresso.get(userId) ?? {};
 
   const map: ProgressMap = {};
-  for (const row of data as any[]) {
+  for (const row of data) {
     const code = row.requirements?.code;
     if (code) {
       map[code] = {
         requirement_id: row.requirement_id,
-        status: row.status,
+        status: umDe(STATUS_DO_REQUISITO, row.status, 'not_started'),
         mastery_score: row.mastery_score,
         attempts: row.attempts,
         correct_count: row.correct_count,
@@ -325,7 +326,7 @@ export async function upsertRequirementProgress(
 export async function logActivity(
   userId: string,
   eventType: string,
-  metadata: Record<string, any> = {},
+  metadata: Json = {},
   requirementId?: string,
   entityType?: string,
   entityId?: string,

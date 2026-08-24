@@ -8,7 +8,7 @@ import { checkAnswer } from '../lib/checkAnswer';
 import { porqueDaEscolha } from '../lib/porque';
 import { supabase } from '../lib/supabase';
 import { useCertifications } from '../hooks/useCertifications';
-import type { Question } from '../types';
+import type { Question, RespostaDaQuestao } from '../types';
 import QuestionRenderer from './questions/QuestionRenderer';
 import { CheckCircle2, CircleX, Award, AlertCircle } from 'lucide-react';
 
@@ -23,7 +23,7 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
   const { profile } = useAuth();
   const { getByCurriculum, refresh: refreshCertifications } = useCertifications(profile?.id);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, RespostaDaQuestao>>({});
   const [showFeedback, setShowFeedback] = useState<Record<string, boolean>>({});
   const [phase, setPhase] = useState<'intro' | 'exam' | 'result'>('intro');
   const [score, setScore] = useState<{ correct: number; total: number } | null>(null);
@@ -43,7 +43,7 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
     setPhase('exam');
   };
 
-  const handleAnswer = (questionId: string, answer: any) => {
+  const handleAnswer = (questionId: string, answer: RespostaDaQuestao) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
     setShowFeedback(prev => ({ ...prev, [questionId]: true }));
   };

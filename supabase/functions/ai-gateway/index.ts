@@ -6,6 +6,30 @@ import {
 } from "./redacao.ts";
 
 /**
+ * O pedaço da resposta do Gemini que este arquivo realmente lê.
+ *
+ * Era `any`, com um comentário dizendo que a forma varia e que os acessos são
+ * todos guardados. Os acessos continuam guardados — o que muda é que agora um
+ * campo escrito errado vira erro de compilação, em vez de `undefined` silencioso
+ * em produção. Tudo é opcional de propósito: a resposta de erro não traz
+ * `candidates`, e a de sucesso não traz `error`.
+ */
+interface ParteDaResposta {
+  text?: string;
+  /** Rascunho de raciocínio. Nunca chega ao desbravador — ver o filtro abaixo. */
+  thought?: boolean;
+  inlineData?: { data?: string; mimeType?: string };
+}
+
+interface RespostaDoModelo {
+  error?: { message?: string };
+  candidates?: Array<{
+    finishReason?: string;
+    content?: { parts?: ParteDaResposta[] };
+  }>;
+}
+
+/**
  * Gemini gateway for the AI Lab.
  *
  * The API key lives here, in a Supabase secret, and never reaches the browser —
@@ -407,9 +431,7 @@ Deno.serve(async (req: Request) => {
     // Walk down the ranked list. Three attempts is enough to clear a retired
     // model and a busy one without leaving a student watching a spinner.
     let response!: Response;
-    // Shape varies by model and by error; the accesses below are all guarded.
-    // deno-lint-ignore no-explicit-any
-    let data: any = {};
+    let data: RespostaDoModelo = {};
     let model = candidates[0];
     let staleCache = false;
 
@@ -480,9 +502,11 @@ Deno.serve(async (req: Request) => {
      * model's own deliberation on screen — the lab showed «"trocar essa ideia"?
      * Let's stick closer to Attempt 2…» instead of the invitation it asked for.
      */
-    const answerParts = parts.filter((p: { text?: string; thought?: boolean }) => p.text && !p.thought);
-    const textOut = answerParts.map((p: { text: string }) => p.text).join("\n").trim();
-    const inline = parts.find((p: { inlineData?: unknown }) => p.inlineData)?.inlineData;
+    const answerParts = parts.filter(
+      (p): p is ParteDaResposta & { text: string } => !!p.text && !p.thought,
+    );
+    const textOut = answerParts.map(p => p.text).join("\n").trim();
+    const inline = parts.find(p => p.inlineData)?.inlineData;
 
     // A truncated answer is worse than none: the student would grade the model on
     // a sentence that stops mid-word.

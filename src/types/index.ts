@@ -1,11 +1,74 @@
-export type RequirementStatus =
-  | 'not_started'
-  | 'learning'
-  | 'practicing'
-  | 'needs_review'
-  | 'demonstrated'
-  | 'completed'
-  | 'blocked';
+import type { Database } from './database';
+
+export type { Json } from './database';
+
+/*
+  A linha de uma tabela ou view do banco: `Tabela<'user_profiles'>`.
+
+  O nome por extenso (`Database['public']['Tables']['x']['Row']`) apareceria em
+  toda tela que lê o banco, e ninguém escreve isso duas vezes sem voltar para o
+  `any`. O que um INSERT aceita e o que uma função devolve seguem o mesmo
+  molde, trocando `Row` por `Insert` ou indo em `['Functions']`.
+*/
+export type Tabela<
+  T extends keyof (Database['public']['Tables'] & Database['public']['Views']),
+> = (Database['public']['Tables'] & Database['public']['Views'])[T]['Row'];
+
+/*
+  Os estados de um requisito, na mesma ordem do CHECK de `requirement_progress`.
+
+  Lista e união saem do mesmo lugar para não poderem divergir: quem acrescentar
+  um estado no banco precisa acrescentar aqui, e `umDe` avisa em voz alta se
+  chegar um valor que esta lista não conhece.
+*/
+export const STATUS_DO_REQUISITO = [
+  'not_started',
+  'learning',
+  'practicing',
+  'needs_review',
+  'demonstrated',
+  'completed',
+  'blocked',
+] as const;
+
+export type RequirementStatus = (typeof STATUS_DO_REQUISITO)[number];
+
+/*
+  Como o nome aparece para os outros, igual ao CHECK de `user_profiles`.
+
+  Estava escrita à mão em três lugares — perfil, perfil público e linha do
+  ranking —, e uma forma nova teria que ser lembrada nos três.
+*/
+export const FORMAS_DE_NOME = ['full', 'first', 'initials', 'anonymous'] as const;
+
+export type FormaDeNome = (typeof FORMAS_DE_NOME)[number];
+
+/** Os níveis de insígnia, como no CHECK de `badges`. */
+export const NIVEIS_DA_INSIGNIA = ['bronze', 'silver', 'gold'] as const;
+
+export type NivelDaInsignia = (typeof NIVEIS_DA_INSIGNIA)[number];
+
+/*
+  A fronteira onde o texto do banco vira união do domínio.
+
+  Estas colunas são `text` com CHECK, e o tipo gerado não tem como dizer mais
+  que `string` — o Postgres deste projeto não usa enum. Converter na mão, com
+  `as`, seria trocar um `any` por uma afirmação sem prova.
+
+  Valor fora da lista não derruba a tela nem segue adiante disfarçado: cai no
+  padrão e reclama no console. O caso real é uma migration ter acrescentado um
+  valor novo sem que o TypeScript soubesse — e isso tem que aparecer para quem
+  desenvolve, em vez de virar uma tela em branco para o desbravador.
+*/
+export function umDe<T extends readonly string[]>(
+  aceitos: T,
+  valor: string,
+  padrao: T[number],
+): T[number] {
+  if ((aceitos as readonly string[]).includes(valor)) return valor;
+  console.warn(`Valor fora do previsto: "${valor}". Esperado um de: ${aceitos.join(', ')}.`);
+  return padrao;
+}
 
 export type LessonType = 'theory' | 'quiz' | 'lab' | 'checkpoint' | 'final';
 
@@ -74,7 +137,7 @@ export interface QuestionOption {
 export interface QuestionData {
   options?: QuestionOption[];
   scenarios?: QuestionOption[];
-  pairs?: { left: string; right: string }[];
+  pairs?: ParDeLigar[];
   /**
    * Os itens de uma questão de ordenar.
    *
@@ -105,6 +168,49 @@ export interface QuestionData {
      */
     aceitas?: string[];
   }[];
+}
+
+/*
+  Um par já ligado numa questão de associar.
+
+  `type` e não `interface`: as respostas da lição inteira são gravadas na
+  coluna `answers` de `lesson_attempts`, que é jsonb, e só apelido de tipo
+  ganha index signature implícita — `interface` é recusada por `Json`. Mesma
+  razão de ConferenciaEtapa, em labs/redacaoGuiada.ts.
+*/
+export type ParDeLigar = {
+  left: string;
+  right: string;
+};
+
+/*
+  O que o desbravador respondeu, na forma que cada tipo de questão produz.
+
+  São três formas, e o tipo da questão decide qual: id da alternativa escolhida
+  em múltipla escolha, verdadeiro/falso e cenário; lista de ids na ordem
+  montada em questão de ordenar; lista de textos, um por lacuna, em completar;
+  e os pares em questão de ligar.
+
+  Era `any` de ponta a ponta — da tela ao `checkAnswer` —, e `any` aqui é caro:
+  é justamente onde a resposta certa é conferida.
+*/
+export type RespostaDaQuestao = string | string[] | ParDeLigar[];
+
+/*
+  As duas guardas abaixo separam as três formas. Elas conferem de verdade, em
+  execução — com `any` a leitura errada compilava e só aparecia como resposta
+  certa marcada como errada.
+*/
+
+/** Ordenar e completar produzem lista de textos. */
+export function ehListaDeTextos(v: RespostaDaQuestao | null | undefined): v is string[] {
+  return Array.isArray(v) && v.every(x => typeof x === 'string');
+}
+
+/** Só questão de ligar produz lista de pares. */
+export function ehListaDePares(v: RespostaDaQuestao | null | undefined): v is ParDeLigar[] {
+  return Array.isArray(v)
+    && v.every(x => typeof x === 'object' && x !== null && typeof x.left === 'string');
 }
 
 export interface Lesson {
@@ -215,7 +321,7 @@ export interface UserProfile {
   club_city?: string | null;
   club_association?: string | null;
   unit?: string;
-  public_name_form: 'full' | 'first' | 'initials' | 'anonymous';
+  public_name_form: FormaDeNome;
   is_admin: boolean;
   avatar_url?: string | null;
 }
@@ -233,7 +339,7 @@ export interface PublicProfile {
   club_city?: string | null;
   club_association?: string | null;
   unit?: string;
-  public_name_form: 'full' | 'first' | 'initials' | 'anonymous';
+  public_name_form: FormaDeNome;
   avatar_url?: string | null;
 }
 
@@ -285,7 +391,7 @@ export interface Badge {
   name: string;
   description: string;
   icon: string;
-  tier: 'bronze' | 'silver' | 'gold';
+  tier: NivelDaInsignia;
 }
 
 /* As janelas do ranking. Os valores são os que a função leaderboard() espera. */
@@ -301,7 +407,7 @@ export type LeaderboardPeriod = (typeof LEADERBOARD_PERIODS)[number]['value'];
 export interface LeaderboardEntry {
   id: string;
   display_name: string;
-  public_name_form: 'full' | 'first' | 'initials' | 'anonymous';
+  public_name_form: FormaDeNome;
   avatar_url: string | null;
   /* Nulos quando a pessoa não marcou "mostrar meu clube": a linha continua,
      só o clube some. */

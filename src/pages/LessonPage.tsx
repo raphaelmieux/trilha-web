@@ -5,7 +5,7 @@ import { getSpecialty } from '../curriculum';
 import { nomeCompleto } from '../types';
 import { embaralharQuestao } from '../lib/questoes';
 
-import type { RequirementStatus } from '../types';
+import type { RequirementStatus, RespostaDaQuestao } from '../types';
 import {
   upsertRequirementProgress, logActivity, calculateMastery, melhorResultado, LIMIAR_DOMINIO,
   ensureEnrollment, updateEnrollmentActivity, getRequirementId, getLessonId, getSpecialtyId,
@@ -36,7 +36,7 @@ export default function LessonPage() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { progress, refresh: refreshProgress } = useRequirementProgress(profile?.id);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, RespostaDaQuestao>>({});
   const [showFeedback, setShowFeedback] = useState<Record<string, boolean>>({});
   const [completed, setCompleted] = useState(false);
   const [score, setScore] = useState<{ correct: number; total: number } | null>(null);
@@ -125,7 +125,7 @@ export default function LessonPage() {
     );
   }
 
-  const handleAnswer = (questionId: string, answer: any, _isCorrect: boolean) => {
+  const handleAnswer = (questionId: string, answer: RespostaDaQuestao, _isCorrect: boolean) => {
     void _isCorrect;
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
     setShowFeedback(prev => ({ ...prev, [questionId]: true }));

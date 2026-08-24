@@ -1,5 +1,5 @@
 import { getSpecialty, getAllSpecialties } from '../curriculum';
-import type { LabType } from '../types';
+import type { Json, LabType } from '../types';
 
 /*
  * O que dizer de cada coisa que a pessoa fez.
@@ -22,7 +22,10 @@ import type { LabType } from '../types';
 export interface EventoDeAtividade {
   id?: string;
   event_type: string;
-  metadata?: Record<string, unknown> | null;
+  /* `Json`, e não `Record<string, unknown>`: a coluna é jsonb, e jsonb aceita
+     lista e escalar também. Prometer objeto era prometer o que o banco não
+     garante — `objeto()` logo abaixo é quem resolve isso na leitura. */
+  metadata?: Json | null;
   curriculum_version?: string | null;
   created_at?: string;
 }
@@ -39,9 +42,14 @@ export interface AtividadeDescrita {
 const texto = (v: unknown): string | undefined =>
   typeof v === 'string' && v.trim() ? v.trim() : undefined;
 
+/* Só objeto tem campo para ler. Lista, escalar e nulo viram {} e caem nos
+   mesmos caminhos de "não sei" que já existiam. */
+const objeto = (v: Json | null | undefined): Record<string, unknown> =>
+  v !== null && typeof v === 'object' && !Array.isArray(v) ? v : {};
+
 /** O código da trilha, procurado em tudo o que o evento pode carregar. */
 export function trilhaDoEvento(e: EventoDeAtividade): string | undefined {
-  const m = e.metadata ?? {};
+  const m = objeto(e.metadata);
   const direto = texto(m.specialtyCode) ?? texto(m.especialidade);
   if (direto) return direto;
 
@@ -109,7 +117,7 @@ function tituloDaLicao(trilha: string | undefined, achar: (l: { labType?: LabTyp
 }
 
 export function descreverAtividade(e: EventoDeAtividade): AtividadeDescrita {
-  const m = e.metadata ?? {};
+  const m = objeto(e.metadata);
   const trilha = trilhaDoEvento(e);
 
   if (e.event_type === 'certification_issued') {

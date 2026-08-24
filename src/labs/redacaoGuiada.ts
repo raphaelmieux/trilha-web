@@ -134,21 +134,30 @@ export const ROTEIROS: Record<string, RoteiroRedacao> = {
 
 export type Veredito = 'ok' | 'impreciso' | 'fora_do_tema';
 
-export interface ConferenciaEtapa {
+/*
+  `type` e não `interface`, aqui e em RespostaEtapa, de propósito.
+
+  As duas viajam inteiras para a coluna `etapas` de `text_projects`, que é
+  jsonb — e o tipo gerado do banco recebe jsonb como `Json`. Uma `interface`
+  não é atribuível a `Json`: o TypeScript só dá index signature implícita a
+  apelido de tipo, então a mesma forma passa como `type` e é recusada como
+  `interface`. Voltar para `interface` quebra a gravação do rascunho.
+*/
+export type ConferenciaEtapa = {
   veredito: Veredito;
   /** O que dizer ao desbravador, em português e sem jargão. */
   observacao: string;
   /** Preenchido só quando há um fato a corrigir. */
   correcao?: string;
-}
+};
 
-export interface RespostaEtapa {
+export type RespostaEtapa = {
   texto: string;
   /** Ausente enquanto a resposta não passou pela conferência. */
   conferencia?: ConferenciaEtapa;
   /** O texto que estava no campo quando a conferência rodou. */
   conferidoEm?: string;
-}
+};
 
 export type RespostasRedacao = Record<string, RespostaEtapa>;
 

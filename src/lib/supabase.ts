@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '../types/database';
 
 /*
   Sem configuração, o cliente nasce apontando para lugar nenhum — e não estoura.
@@ -26,7 +27,13 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sem-configura
 /** Há projeto configurado? A tela usa isto para explicar em vez de só falhar. */
 export const supabaseConfigurado = supabaseUrl !== SEM_CONFIGURACAO;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+/*
+  O parâmetro <Database> é o que faz `.from()`, `.select()` e `.rpc()` serem
+  conferidos. Sem ele o cliente devolve `any` em toda consulta, e o `any`
+  escorria para as telas — inclusive nas junções embutidas, que é onde ele mais
+  doía: `select('badges(...)')` voltava sem forma nenhuma.
+*/
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

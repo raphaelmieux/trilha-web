@@ -26,7 +26,7 @@ function comAlternativas(qs: Question[]) {
        que "Falso", e com duas opções escolher a maior é escolher sempre
        "Verdadeiro" — o que esse tipo tem de vazar está no teste abaixo. */
     if (q.type === 'true_false') return false;
-    return o.length > 1 && o.some((x: any) => x.correct);
+    return o.length > 1 && o.some(x => x.correct);
   });
 }
 
@@ -44,7 +44,7 @@ function proporcaoMaiorEhCorreta(qs: Question[]): { taxa: number; total: number;
   const casos: string[] = [];
   const alvo = comAlternativas(qs);
   for (const q of alvo) {
-    const o = alternativas(q) as any[];
+    const o = alternativas(q);
     const certa = o.find(x => x.correct)!;
     const maiorErrada = o.filter(x => x !== certa)
       .reduce((a, b) => (b.text.length > a.text.length ? b : a));
@@ -56,7 +56,7 @@ function proporcaoMaiorEhCorreta(qs: Question[]): { taxa: number; total: number;
 /** Quantos caracteres a correta tem a mais que a média das erradas. */
 function vantagemMedia(qs: Question[]): number {
   const difs = comAlternativas(qs).map(q => {
-    const o = alternativas(q) as any[];
+    const o = alternativas(q);
     const certa = o.find(x => x.correct)!;
     const outras = o.filter(x => x !== certa);
     const media = outras.reduce((s, x) => s + x.text.length, 0) / outras.length;
@@ -113,7 +113,7 @@ describe('as alternativas não entregam a resposta pelo tamanho', () => {
     const ehAMaior = (qs: Question[]) => {
       const alvo = comAlternativas(qs);
       const n = alvo.filter(q => {
-        const o = alternativas(q) as any[];
+        const o = alternativas(q);
         return o.reduce((a, b) => (b.text.length > a.text.length ? b : a)) === o.find(x => x.correct);
       }).length;
       return n / alvo.length;
@@ -158,7 +158,7 @@ describe('verdadeiro/falso não tem resposta previsível', () => {
   it('nem sempre a afirmação é verdadeira', () => {
     const vf = [...licoes, ...provas].filter(q => q.type === 'true_false');
     const verdadeiras = vf.filter(q =>
-      (q.data.options ?? []).find((o: any) => o.correct)?.text.toLowerCase().startsWith('verdadeiro'));
+      (q.data.options ?? []).find(o => o.correct)?.text.toLowerCase().startsWith('verdadeiro'));
     const taxa = verdadeiras.length / vf.length;
     /* Sempre responder "Verdadeiro" não pode ser estratégia melhor que o acaso. */
     expect(taxa, `${verdadeiras.length} de ${vf.length} afirmações são verdadeiras`)
@@ -177,7 +177,7 @@ describe('toda alternativa errada diz o que foi confundido', () => {
   it('nenhuma alternativa incorreta fica sem motivo', () => {
     const semMotivo: string[] = [];
     for (const q of [...licoes, ...provas]) {
-      const o = alternativas(q) as any[];
+      const o = alternativas(q);
       if (!o.length || !o.some(x => x.correct)) continue;
       for (const x of o) {
         if (!x.correct && !x.porque) semMotivo.push(`${q.id}: "${x.text.slice(0, 40)}"`);
@@ -188,7 +188,7 @@ describe('toda alternativa errada diz o que foi confundido', () => {
 
   it('a alternativa certa não carrega motivo de erro', () => {
     const indevidos = [...licoes, ...provas]
-      .flatMap(q => (alternativas(q) as any[]).map(x => ({ q, x })))
+      .flatMap(q => alternativas(q).map(x => ({ q, x })))
       .filter(({ x }) => x.correct && x.porque)
       .map(({ q }) => q.id);
     expect(indevidos, 'motivo em alternativa correta confunde quem acertou').toEqual([]);

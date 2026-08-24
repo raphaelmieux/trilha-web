@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import ListaOrdenavel from '../ui/ListaOrdenavel';
-import type { Question } from '../../types';
+import { ehListaDePares, ehListaDeTextos } from '../../types';
+import type { Question, RespostaDaQuestao } from '../../types';
 import { sequenciaCorreta } from '../../lib/questoes';
 import { shuffleArray } from '../../lib/progress';
 
 interface QuestionProps {
   question: Question;
-  answer: any;
+  answer: RespostaDaQuestao | undefined;
   showFeedback: boolean;
-  onAnswer: (answer: any) => void;
+  onAnswer: (answer: RespostaDaQuestao) => void;
 }
 
 export default function QuestionRenderer({ question, answer, showFeedback, onAnswer }: QuestionProps) {
@@ -85,7 +86,7 @@ function OrderingQuestion({ question, answer, showFeedback, onAnswer }: Question
   const certa = sequenciaCorreta(items);
   /* `items` já vem embaralhado de embaralharQuestao, então começar por ele é
      começar por uma ordem qualquer — que é o ponto de partida da tarefa. */
-  const [ordered, setOrdered] = useState<string[]>(() => Array.isArray(answer) && answer.length === items.length ? answer : items.map(i => i.id));
+  const [ordered, setOrdered] = useState<string[]>(() => ehListaDeTextos(answer) && answer.length === items.length ? answer : items.map(i => i.id));
   const [confirmed, setConfirmed] = useState(false);
 
   const isLocked = showFeedback || confirmed;
@@ -118,7 +119,7 @@ function OrderingQuestion({ question, answer, showFeedback, onAnswer }: Question
 
 function FillBlankQuestion({ question, answer, showFeedback, onAnswer }: QuestionProps) {
   const blanks = question.data.blanks || [];
-  const [values, setValues] = useState<string[]>(answer || blanks.map(() => ''));
+  const [values, setValues] = useState<string[]>(ehListaDeTextos(answer) ? answer : blanks.map(() => ''));
   const [confirmed, setConfirmed] = useState(false);
 
   const handleChange = (idx: number, val: string) => {
@@ -139,7 +140,7 @@ function FillBlankQuestion({ question, answer, showFeedback, onAnswer }: Questio
   return (
     <div>
       <div className="space-y-3">
-        {blanks.map((blank: any, idx: number) => {
+        {blanks.map((blank, idx) => {
           const isCorrect = showFeedback && (values[idx] || '').trim().toLowerCase() === blank.answer.trim().toLowerCase();
           const isWrong = showFeedback && !isCorrect;
           return (
@@ -175,7 +176,7 @@ function MatchingQuestion({ question, answer, showFeedback, onAnswer }: Question
   const [shuffledRights] = useState(() => shuffleArray(pairs.map(p => p.right)));
   const [matches, setMatches] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
-    if (Array.isArray(answer)) answer.forEach((a: any) => { if (a.right) init[a.left] = a.right; });
+    if (ehListaDePares(answer)) answer.forEach(a => { if (a.right) init[a.left] = a.right; });
     return init;
   });
   const [confirmed, setConfirmed] = useState(false);
@@ -197,7 +198,7 @@ function MatchingQuestion({ question, answer, showFeedback, onAnswer }: Question
   return (
     <div>
       <div className="space-y-3">
-        {pairs.map((pair: any) => {
+        {pairs.map(pair => {
           const correctRight = pair.right;
           const selectedRight = matches[pair.left];
           const isCorrect = showFeedback && selectedRight === correctRight;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { getPublicName, LEADERBOARD_PERIODS, type LeaderboardEntry, type LeaderboardPeriod } from '../types';
+import { getPublicName, LEADERBOARD_PERIODS, umDe, FORMAS_DE_NOME, type LeaderboardEntry, type LeaderboardPeriod } from '../types';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
 import { Podium, Flame, Award, Medal, MapPin } from 'lucide-react';
 
@@ -24,7 +24,20 @@ export default function LeaderboardPage() {
       */
       const { data } = await supabase.rpc('leaderboard', { p_periodo: periodo });
       if (cancelado) return;          // troca rápida de aba não pode embaralhar
-      setEntries(((data as LeaderboardEntry[]) || []).slice(0, 50));
+      /* Mesma história da contagem de certificados: `returns table` entrega
+         tudo anulável. O ranking só lista quem tem nome e forma de exibição,
+         então a linha sem eles não teria o que mostrar. */
+      setEntries((data ?? []).slice(0, 50).map(l => ({
+        id: l.id ?? '',
+        display_name: l.display_name ?? '',
+        public_name_form: umDe(FORMAS_DE_NOME, l.public_name_form ?? 'anonymous', 'anonymous'),
+        avatar_url: l.avatar_url,
+        club: l.club,
+        club_city: l.club_city,
+        total_xp: l.total_xp ?? 0,
+        best_streak: l.best_streak ?? 0,
+        badge_count: l.badge_count ?? 0,
+      })));
       setLoading(false);
     })();
     return () => { cancelado = true; };
