@@ -1,19 +1,11 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { limparCacheDeProgresso } from '../lib/progress';
 import { limparRascunhos } from '../lib/rascunho';
 import { supabase } from '../lib/supabase';
 import { umDe, FORMAS_DE_NOME } from '../types';
 import type { UserProfile } from '../types';
-
-interface AuthContextValue {
-  session: Session | null;
-  profile: UserProfile | null;
-  loading: boolean;
-  signOut: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextValue>({ session: null, profile: null, loading: true, signOut: async () => {} });
+import { AuthContext } from './AuthContext';
 
 /*
   As colunas do perfil, nomeadas uma a uma.
@@ -119,8 +111,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return <AuthContext.Provider value={{ session, profile, loading, signOut }}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
 }
