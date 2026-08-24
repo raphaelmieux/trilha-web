@@ -34,12 +34,14 @@ npm run build        # build de produção em dist/
 
 1. Crie um projeto em [supabase.com](https://supabase.com).
 2. Em **Project Settings → API**, copie a `URL` e a `anon key` para o seu `.env`.
-3. Aplique as migrations em `supabase/migrations/` **na ordem em que aparecem**
-   (nome do arquivo = timestamp), via SQL Editor do painel ou `supabase db push`
-   se estiver usando a [Supabase CLI](https://supabase.com/docs/guides/cli).
-4. Faça deploy das cinco Edge Functions em `supabase/functions/` (`issue-certification`,
-   `admin-reset-password`, `self-reset-password`,
-   `clubes`, `ai-gateway`) — pelo painel ou `supabase functions deploy <nome>`.
+3. Aponte `PROJECT_REF`, em `.github/workflows/supabase.yml`, para o seu projeto,
+   e preencha os secrets do repositório (ver *Deploy*). O schema e as cinco Edge
+   Functions passam a ser publicados de lá — não há passo à mão nem CLI local.
+   Para semear um projeto novo, execute o workflow pela aba **Actions**.
+4. À mão, se preferir: aplique `supabase/migrations/` no SQL Editor **na ordem em
+   que aparecem** (nome do arquivo = timestamp) e publique as funções de
+   `supabase/functions/` pelo painel. `clubes` tem que ficar com a verificação de
+   JWT **desligada** — é chamada no cadastro, antes de existir sessão.
 5. Em **Authentication**, na página de configurações gerais, **desligue `Confirm email`**
    (o campo `MAILER_AUTOCONFIRM` da API). Ver *Confirmação de e-mail*, abaixo — sem isso
    o cadastro trava depois de poucas contas.
@@ -56,7 +58,9 @@ do clube (aba **Admin**), não por e-mail — ver `supabase/functions/admin-rese
 
 Dois laboratórios usam um modelo de linguagem, e sempre através da Edge Function
 `ai-gateway` — a chave nunca chega ao navegador. Os segredos ficam em
-**Project Settings → Edge Functions → Secrets**:
+**Project Settings → Edge Functions → Secrets**, e podem também ser mantidos como
+secrets do repositório, de onde `supabase.yml` os escreve no projeto a cada
+deploy (ver *Deploy*):
 
 | Segredo | Para quê | Padrão |
 | --- | --- | --- |
@@ -130,13 +134,44 @@ só para resolver IDs usados nas tabelas de progresso.
 
 ## Deploy
 
-Publicado no GitHub Pages via `.github/workflows/deploy.yml`, a cada push em `main`.
-Configure os secrets do repositório (`Settings → Secrets and variables → Actions`):
+Tudo o que chega em produção sai de um push em `main`. Nenhuma etapa exige máquina
+local — o projeto pode ser conduzido inteiro pelo navegador.
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+| Workflow | Dispara em | O que faz |
+| --- | --- | --- |
+| `ci.yml` | push e PR em `main` | lint, typecheck, testes e build |
+| `deploy.yml` | push em `main` | build e publicação no GitHub Pages |
+| `supabase.yml` | push em `main` que toque `supabase/**` ou `src/types/database.ts` | aplica as migrations, publica as cinco Edge Functions, escreve os segredos de função, confere `src/types/database.ts` contra o schema real e verifica que `Confirm email` continua desligado |
 
-E habilite Pages em `Settings → Pages → Source: GitHub Actions`.
+Os dois últimos também rodam sob demanda pela aba **Actions**
+(`workflow_dispatch`), o que é o caminho depois de acrescentar um secret.
+
+Habilite Pages em `Settings → Pages → Source: GitHub Actions`.
+
+### Secrets do repositório
+
+Em `Settings → Secrets and variables → Actions`.
+
+| Secret | Para quê |
+| --- | --- |
+| `VITE_SUPABASE_URL` | entra no pacote do navegador, no build |
+| `VITE_SUPABASE_ANON_KEY` | idem — publicável; quem protege os dados é o RLS |
+| `SUPABASE_ACCESS_TOKEN` | [token de conta](https://supabase.com/dashboard/account/tokens), para migrations e funções |
+| `SUPABASE_DB_PASSWORD` | senha do banco do projeto |
+
+Os segredos das Edge Functions (`GEMINI_API_KEY` e os demais de *Integração com
+IA*) são opcionais aqui. Cada um só é escrito no projeto quando existe como secret
+do repositório: ausente significa **"o painel manda nesse"**, nunca "apague" — um
+deploy não pode derrubar a IA por causa de um secret que ninguém cadastrou aqui.
+
+### O que ainda mora só no painel
+
+As configurações de **Authentication** — SMTP, URLs de redirecionamento, limites de
+taxa. `supabase config push` aplicaria o bloco `[auth]` inteiro, então um
+`config.toml` escrito sem conhecer os valores atuais do projeto apagaria em
+silêncio os que não mencionasse. O que dá para fazer com segurança daqui é
+conferir: `supabase.yml` lê a Management API e reprova a execução se `Confirm
+email` voltar a ficar ligado.
 
 ## Licença
 

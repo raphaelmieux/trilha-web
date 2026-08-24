@@ -1,4 +1,30 @@
 /*
+  ATENÇÃO: esta migration foi editada depois de constar como aplicada, o que
+  este repositório proíbe. A exceção está explicada aqui para não virar
+  precedente.
+
+  O bloco abaixo abria `DO $$` e fechava com `END $;` — delimitador
+  inválido. O Postgres recusa o arquivo inteiro com "unterminated dollar-quoted
+  string", então nenhuma linha dele jamais rodou. Ele consta como aplicado no
+  histórico remoto, e `supabase db push` seleciona por versão ausente da
+  tabela de histórico: nunca vai repetir.
+
+  Em produção isso não deixou buraco. A 20260821260000_ap041_licoes_completas
+  foi escrita para consertar outro problema desta mesma migration, repete o
+  conjunto inteiro por ON CONFLICT e cobre um superconjunto do que está aqui.
+  O que faltou entrou por lá.
+
+  O que a edição conserta é o banco *novo*: com o delimitador quebrado, um
+  `db push` num projeto recém-criado — restauração, staging, reserva — para
+  neste arquivo e deixa o banco pela metade. Não existe conserto adiante para
+  arquivo que não analisa: as migrations posteriores nem chegam a ser lidas.
+
+  Corrigir um caractere não muda o estado de banco nenhum: onde já consta
+  aplicada, não roda; onde não consta, o resultado é o mesmo da 260000.
+  migrations.test.ts passou a reprovar esta classe de erro antes do deploy.
+*/
+
+/*
   As lições da AP041 escritas até aqui.
 
   A tabela lessons existe para o progresso e o histórico referenciarem uma
@@ -77,4 +103,4 @@ BEGIN
   (v_mod, 'AP041.F-L1', 'Avaliação Final — Computação 1', 'final',
    '{"requirementCodes":[],"labType":"final_exam"}', 1)
   ON CONFLICT (module_id, code) DO UPDATE SET title = EXCLUDED.title, lesson_type = EXCLUDED.lesson_type, content = EXCLUDED.content;
-END $;
+END $$;
