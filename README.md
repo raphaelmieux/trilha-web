@@ -1,10 +1,11 @@
 # Trilha.Web()
 
-Plataforma de trilha de especialidades para Desbravadores — **Líder Máster (AP034)**
-e **Líder Máster Avançado (AP035)**. Aulas teóricas, laboratórios interativos
-(navegador, e-mail, editor de código, imagens, site, IA), acompanhamento de
-progresso com XP/sequência/badges, ranking opcional e emissão/verificação pública
-de certificado (Token.Web()).
+Plataforma de trilhas de especialidades dos Desbravadores. Três abertas —
+**AP034 Internet**, **AP035 Internet, Avançado** e **AP041 Computação 1** — e a
+família de Computação anunciada até a AP045. Aulas teóricas, laboratórios
+interativos (navegador, e-mail, editor de código, imagens, site, arquivos, IA),
+acompanhamento de progresso com XP, sequência e 57 insígnias, ranking opcional e
+certificado (Token.Web()) privado, conferível por código.
 
 ## Stack
 
@@ -99,7 +100,7 @@ src/
     questions/      # renderizadores de questão compartilhados (lição + prova final)
     ui/              # kit de UI mínimo (ProgressBar, StatusBadge, PageState, BadgeIcon)
   context/           # AuthContext (sessão + perfil)
-  curriculum/         # conteúdo das trilhas AP034/AP035/AP041, hardcoded em TS
+  curriculum/         # conteúdo das trilhas, em TS (ap041/ tem um arquivo por módulo)
   hooks/              # useRequirementProgress, useCertifications, useBadges
   labs/               # 14 laboratórios interativos (WebLab, MailLab, CodeLab, ...)
   lib/                # supabase client, progress.ts, gamification.ts, checkAnswer
