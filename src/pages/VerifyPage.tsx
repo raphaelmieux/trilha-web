@@ -4,6 +4,7 @@ import { ROTULO_DO_NIVEL, type CertificadoVerificado } from '../types';
 import { getSpecialty } from '../curriculum';
 import { Award, Search, CheckCircle2 } from 'lucide-react';
 import { ErrorState } from '../components/ui/PageState';
+import { comoCertificadoVerificado } from '../lib/certificados';
 
 export default function VerifyPage() {
   const [code, setCode] = useState('');
@@ -23,7 +24,8 @@ export default function VerifyPage() {
       Aqui se informa um código e se recebe um certificado — não há como varrer.
     */
     const { data, error: rpcError } = await supabase.rpc('verify_certificate', { p_code: code.trim() });
-    const cert = (data as CertificadoVerificado[] | null)?.[0];
+    const linha = data?.[0];
+    const cert = linha && comoCertificadoVerificado(linha);
 
     if (rpcError || !cert) {
       setError('Token não encontrado ou inválido.');

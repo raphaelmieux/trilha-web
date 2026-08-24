@@ -14,6 +14,10 @@ export type Tabela<
   T extends keyof (Database['public']['Tables'] & Database['public']['Views']),
 > = (Database['public']['Tables'] & Database['public']['Views'])[T]['Row'];
 
+/** O que uma função do banco devolve: `RetornoDe<'verify_certificate'>`. */
+export type RetornoDe<T extends keyof Database['public']['Functions']> =
+  Database['public']['Functions'][T]['Returns'];
+
 /*
   Os estados de um requisito, na mesma ordem do CHECK de `requirement_progress`.
 
@@ -231,14 +235,22 @@ export interface Module {
 }
 
 /**
- * Os três níveis da classificação oficial dos Desbravadores.
+ * Os três níveis da classificação oficial dos Desbravadores, na ordem em que se
+ * sucedem — a mesma que ordena e agrupa as trilhas.
  *
  * Eram dois, `fundamental` e `advanced`, escritos quando a plataforma tinha as
  * duas trilhas de Internet e a palavra "fundamental" parecia descrever a
  * primeira. A classificação real é Básico, Intermediário e Avançado, e a
  * família de Computação usa os três — daí o nome e o número certos.
+ *
+ * A união sai desta lista, e não ao contrário. Antes eram duas declarações, e a
+ * lista era conferida contra a união sem que nada exigisse que ela estivesse
+ * completa: um nível novo na união e esquecido aqui passaria despercebido, e
+ * `umDe` recusaria um nível legítimo por não achá-lo na lista.
  */
-export type NivelDaEspecialidade = 'basico' | 'intermediario' | 'avancado';
+export const ORDEM_DOS_NIVEIS = ['basico', 'intermediario', 'avancado'] as const;
+
+export type NivelDaEspecialidade = (typeof ORDEM_DOS_NIVEIS)[number];
 
 export const ROTULO_DO_NIVEL: Record<NivelDaEspecialidade, string> = {
   basico: 'Básico',
@@ -246,8 +258,17 @@ export const ROTULO_DO_NIVEL: Record<NivelDaEspecialidade, string> = {
   avancado: 'Avançado',
 };
 
-/** A ordem em que os níveis se sucedem, para ordenar e agrupar. */
-export const ORDEM_DOS_NIVEIS: NivelDaEspecialidade[] = ['basico', 'intermediario', 'avancado'];
+/*
+  O que um certificado pode ser, igual ao CHECK de `certifications`.
+
+  O padrão, quando o texto do banco não é nenhum dos dois, é 'revoked' — ver
+  `comoCertificadoVerificado` em lib/certificados.ts. Um Token.Web() exibido
+  como válido por engano é pior do que um exibido como revogado por engano: o
+  primeiro é a plataforma afirmando algo que não conferiu.
+*/
+export const STATUS_DO_CERTIFICADO = ['active', 'revoked'] as const;
+
+export type StatusDoCertificado = (typeof STATUS_DO_CERTIFICADO)[number];
 
 /**
  * O nome pelo qual uma trilha é chamada em toda a plataforma: código e nome.
@@ -358,7 +379,7 @@ export interface Certification {
   level: NivelDaEspecialidade;
   curriculum_code: string;
   curriculum_version: string;
-  status: 'active' | 'revoked';
+  status: StatusDoCertificado;
   issued_at: string;
   user_id: string;
 }
@@ -387,7 +408,7 @@ export interface CertificadoVerificado {
   level: NivelDaEspecialidade;
   curriculum_code: string;
   curriculum_version: string;
-  status: 'active' | 'revoked';
+  status: StatusDoCertificado;
   issued_at: string;
   full_name: string;
   club: string | null;

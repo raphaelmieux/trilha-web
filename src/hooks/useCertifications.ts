@@ -1,19 +1,34 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { umDe, ORDEM_DOS_NIVEIS, STATUS_DO_CERTIFICADO } from '../types';
 import type { Certification } from '../types';
 
 // A user has at most two active certifications (fundamental, advanced), so fetching
 // all of them once and filtering client-side (via getByLevel) is simpler than a
 // second "single cert by level" query — replaces that duplicated query in
 // SpecialtyPage and FinalExam as well as the "all certs" query in Dashboard/Report.
+/* As nove colunas que o domínio descreve. A tabela tem catorze: `signature`,
+   `revocation_reason` e as outras três não são lidas por tela nenhuma. */
+const COLUNAS_DO_CERTIFICADO =
+  'id, code, hash, level, curriculum_code, curriculum_version, status, issued_at, user_id' as const;
+
 export function useCertifications(userId: string | undefined) {
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     if (!userId) return;
-    const { data } = await supabase.from('certifications').select('*').eq('user_id', userId);
-    setCertifications((data as Certification[]) || []);
+    const { data } = await supabase
+      .from('certifications')
+      .select(COLUNAS_DO_CERTIFICADO)
+      .eq('user_id', userId);
+    /* `level` e `status` são `text` com CHECK; o padrão de `status` é 'revoked'
+       pelo motivo escrito em lib/certificados.ts. */
+    setCertifications((data ?? []).map(c => ({
+      ...c,
+      level: umDe(ORDEM_DOS_NIVEIS, c.level, 'basico'),
+      status: umDe(STATUS_DO_CERTIFICADO, c.status, 'revoked'),
+    })));
   }, [userId]);
 
   useEffect(() => {
