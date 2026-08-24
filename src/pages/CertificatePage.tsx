@@ -7,6 +7,7 @@ import StatusBadge from '../components/ui/StatusBadge';
 import { LoadingState, ErrorState } from '../components/ui/PageState';
 import CertificateCanvas from '../components/CertificateCanvas';
 import { exportCertificatePdf } from '../lib/pdf';
+import { comoCertificadoVerificado } from '../lib/certificados';
 
 export default function CertificatePage() {
   const { code } = useParams();
@@ -22,7 +23,8 @@ export default function CertificatePage() {
       /* Uma consulta só, por código, contra a função de verificação — a tabela
          de certificações não é mais legível publicamente. */
       const { data, error: rpcError } = await supabase.rpc('verify_certificate', { p_code: code });
-      const encontrado = (data as CertificadoVerificado[] | null)?.[0];
+      const linha = data?.[0];
+      const encontrado = linha && comoCertificadoVerificado(linha);
 
       if (rpcError || !encontrado) {
         setError('Certificado não encontrado.');
