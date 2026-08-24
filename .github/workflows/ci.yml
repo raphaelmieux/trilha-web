@@ -15,6 +15,26 @@ jobs:
     # failure this job should catch. See src/lib/supabase.ts.
     steps:
       - uses: actions/checkout@v4
+
+      # `.gitignore` only ever applies to files git is not already tracking.
+      # Once `.env` is committed the ignore rule stops protecting it: it is a
+      # tracked file like any other, and every later push carries it along
+      # without a word. That is how it got in — uploading through the GitHub web
+      # interface does not consult .gitignore at all.
+      #
+      # The two values it held are publishable and already ship inside the
+      # browser bundle, so nothing had to be rotated. This guard is about the
+      # next one: a .env in a public repository is an invitation to put a real
+      # secret there, and the check that catches it has to be cheaper than the
+      # habit of remembering.
+      - name: No .env in the repository
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "::error::.env is tracked by git. Remove it with 'git rm --cached .env' and commit — the .gitignore entry cannot help while the file is tracked. Configuration for CI belongs in repository secrets; see .env.example and the README."
+            exit 1
+          fi
+          echo "No .env tracked."
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
