@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -d node_modules ] || npm install --no-audit --no-fund; true",
+            "statusMessage": "Conferindo as dependencias do projeto",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
+  }
+}
