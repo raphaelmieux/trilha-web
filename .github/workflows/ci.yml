@@ -1,8 +1,16 @@
 name: CI
 
 on:
+  # `'**'` and not `'*'`: a single star stops at a slash, so it would have
+  # matched `main` and nothing else that runs here — every working branch in
+  # this repo is named like `claude/online-project-management-yf3sg0`. It would
+  # have looked like the fix while changing nothing.
+  #
+  # Until now a push to a branch with no pull request open ran no checks at all:
+  # lint, typecheck, the tests and the build only met the code once a PR existed
+  # — or once it was already on `main`, which is where it deploys from.
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
     branches: [main]
 
