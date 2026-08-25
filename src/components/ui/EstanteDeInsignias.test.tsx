@@ -47,12 +47,25 @@ afterEach(() => {
 });
 
 describe('as insígnias', () => {
-  it('mostra uma por insígnia conquistada, com nome e descrição ao passar o mouse', () => {
+  it('mostra uma por insígnia conquistada, e diz o nome ao passar o mouse', () => {
     desenhar({ badges: [insignia('a', 'Primeiro Passo'), insignia('b', 'Coruja')], total: 57, posicoes: [] });
 
+    /*
+      Um `title` só por insígnia.
+
+      Havia dois, aninhados: o do link, com nome e descrição, e o do ícone, com
+      o nome. O navegador mostra o mais interno, então a descrição prometida
+      pelo de fora nunca aparecia — e este teste passava assim, porque olhava o
+      atributo no DOM em vez de olhar qual deles chega à pessoa.
+    */
     const titulos = [...container.querySelectorAll('[title]')].map(e => e.getAttribute('title'));
-    expect(titulos).toContain('Primeiro Passo — Descrição de Primeiro Passo');
-    expect(titulos).toContain('Coruja — Descrição de Coruja');
+    expect(titulos).toEqual(['Primeiro Passo', 'Coruja']);
+
+    /* A descrição não se perde: vai no nome acessível do link, que é onde ela
+       serve a quem navega por leitor de tela. */
+    const rotulos = [...container.querySelectorAll('[aria-label]')].map(e => e.getAttribute('aria-label'));
+    expect(rotulos).toContain('Primeiro Passo. Descrição de Primeiro Passo');
+
     expect(container.textContent).toContain('Suas insígnias (2)');
     expect(container.textContent).toContain('faltam 55');
   });

@@ -46,7 +46,10 @@ export default function EstanteDeInsignias({ badges, total, posicoes }: {
             <Link
               key={badge.id}
               to="/perfil"
-              title={`${badge.name} — ${badge.description}`}
+              /* Sem `title` aqui. O BadgeIcon já põe um, e o navegador mostra
+                 só o mais interno — a descrição que este prometia nunca
+                 chegava à tela. O `aria-label` fica, porque esse o leitor de
+                 tela usa, e é onde a descrição faz falta de verdade. */
               aria-label={`${badge.name}. ${badge.description}`}
               className="transition hover:opacity-80"
             >
