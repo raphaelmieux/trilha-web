@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, X } from 'lucide-react';
 import { haVersaoNova } from '../../lib/versao';
 
 /* De quanto em quanto tempo perguntar, com a aba à vista. Quinze minutos é
@@ -19,6 +19,17 @@ const INTERVALO_MS = 15 * 60 * 1000;
  * vez, quando um deploy apagou um texto de cem palavras. O rascunho local
  * protege o conteúdo (ver useRascunhoLocal), mas o susto continua sendo dela.
  * Aqui a decisão é de quem está usando, e é um clique.
+ *
+ * ── Dá para dispensar ────────────────────────────────────────────────────
+ * A barra é fixa no rodapé, e o rodapé é onde os laboratórios põem o botão de
+ * concluir. Sem como fechá-la, ela cobria essa ação no celular até a pessoa
+ * aceitar recarregar — um aviso que obriga a atender é um bloqueio, não um
+ * aviso.
+ *
+ * Fechar não desliga nada: some da tela e volta na conferência seguinte, ao
+ * voltar para a aba ou no próximo intervalo. A versão nova continua sendo
+ * versão nova, e insistir é justamente o que evita a aba presa no pacote
+ * antigo — só que agora quem escolhe a hora é quem está trabalhando.
  */
 export default function AvisoDeVersao() {
   const [temNova, setTemNova] = useState(false);
@@ -63,6 +74,17 @@ export default function AvisoDeVersao() {
         className="btn-primary text-sm py-1 px-3 flex items-center gap-1.5 whitespace-nowrap"
       >
         <RefreshCw className="w-4 h-4" /> Atualizar
+      </button>
+      <button
+        onClick={() => setTemNova(false)}
+        aria-label="Fechar o aviso por enquanto"
+        title="Fechar por enquanto"
+        /* p-2 e não p-1: o ícone tem 16px, e o dedo precisa de mais que isso.
+           Quem usa a plataforma pelo celular é a maioria. */
+        className="p-2 -m-1 rounded transition hover:opacity-70"
+        style={{ color: 'var(--color-text-muted)' }}
+      >
+        <X className="w-4 h-4" />
       </button>
     </div>
   );
