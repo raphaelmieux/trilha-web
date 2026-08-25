@@ -411,6 +411,18 @@
     page-break-inside: avoid;
   }
 
+  /* O bloco do texto no papel: fundo branco, régua cinza, e o rótulo em cinza
+     para não competir com o corpo. O fundo de tela é escuro e sairia como uma
+     mancha de tinta. */
+  .report-texto {
+    background-color: transparent !important;
+    border-left-color: #bbbbbb !important;
+    padding: 0.4rem 0 0.4rem 0.9rem !important;
+  }
+
+  .report-texto h3 { color: #555555 !important; }
+  .report-texto-corpo { color: #1a1a1a !important; }
+
   .report-head,
   .report-id {
     page-break-inside: avoid;
@@ -608,6 +620,36 @@
   padding-left: 0.75rem;
   border-left: 2px solid var(--color-border);
   font-size: 0.94em;
+}
+
+/*
+  O relatório que o desbravador escreveu, dentro da seção da trilha dele.
+
+  Fica visivelmente separado do texto à volta porque as duas coisas têm autores
+  diferentes: o resto da página é gerado a partir do progresso, e este bloco é
+  a pessoa falando. Quem confere o requisito precisa saber de olho qual é qual.
+*/
+.report-texto {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border-left: 3px solid var(--color-secondary);
+  background-color: var(--color-bg-input);
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.report-texto h3 {
+  font-size: 0.82em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-dim);
+  margin-bottom: 0.4rem;
+}
+
+/* `pre-wrap` porque o texto vem com os parágrafos que a pessoa escreveu, e
+   perdê-los transformaria oito respostas num bloco único. */
+.report-texto-corpo {
+  white-space: pre-wrap;
 }
 
 .report-annex-note {

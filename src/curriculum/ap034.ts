@@ -1156,7 +1156,7 @@ export const ap034: Specialty = {
       description: 'A linha do tempo da rede, e o seu texto contando essa história.',
       lessons: [
         { code: 'AP034.3-L1', title: 'A linha do tempo da Internet', type: 'theory', content: content_3L1, requirementCodes: ['AP034-3.1'], questions: rawQuestions_3L1 },
-        { code: 'AP034.3-L2', title: 'Escrevendo a história da Internet', type: 'lab', content: '', requirementCodes: ['AP034-3.1'], labType: 'text_editor' },
+        { code: 'AP034.3-L2', title: 'Escrevendo a história da Internet', type: 'lab', content: '', requirementCodes: ['AP034-3.1'], labType: 'redacao_guiada' },
       ],
     },
     {

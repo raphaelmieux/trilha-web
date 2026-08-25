@@ -22,6 +22,9 @@ export default function ReportPage() {
   const { badges, loading: badgesLoading } = useBadges(profile?.id);
   const [lessonAttempts, setLessonAttempts] = useState<Pick<Tabela<'lesson_attempts'>, 'score' | 'total'>[]>([]);
   const [evidence, setEvidence] = useState<LabEvidence>({});
+  /* Os relatórios escritos nos laboratórios de redação, por código de trilha.
+     São a prova do cumprimento do requisito, e por isso vão impressos. */
+  const [textos, setTextos] = useState<Record<string, string>>({});
   const [attemptsLoading, setAttemptsLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
@@ -48,6 +51,25 @@ export default function ReportPage() {
         .limit(1);
       const latest = events?.[0]?.metadata as LabEvidence | undefined;
       if (latest) setEvidence(latest);
+
+      /*
+        Os textos entregues, de qualquer um dos dois laboratórios de escrita.
+
+        Os dois gravam na mesma tabela, com a mesma chave, então quem escreveu
+        na caixa de texto antiga e quem montou o relatório por etapas aparecem
+        aqui do mesmo jeito. Só entram os que foram entregues: rascunho não é
+        prova de cumprimento.
+      */
+      const { data: projetos } = await supabase
+        .from('text_projects')
+        .select('specialty_code, body, status')
+        .eq('user_id', profile.id)
+        .eq('status', 'submitted');
+      setTextos(Object.fromEntries(
+        (projetos ?? [])
+          .filter(p => p.specialty_code && (p.body ?? '').trim())
+          .map(p => [p.specialty_code as string, (p.body as string).trim()]),
+      ));
 
       setAttemptsLoading(false);
     })();
@@ -150,6 +172,10 @@ export default function ReportPage() {
             ...n.modules.flatMap(m => [m.paragraph, ...m.requirements]),
             ...(n.pending ? [n.pending] : []),
             ...(n.certification ? [n.certification] : []),
+            /* O texto vai inteiro, e no PDF também: um relatório que prova o
+               cumprimento na tela e não prova no papel não serve ao clube, que
+               é quem recebe o papel. */
+            ...(textos[n.code] ? ['Relatório escrito pelo desbravador:', textos[n.code]] : []),
           ],
         })),
         { heading: 'Considerações finais', paragraphs: [closing] },
@@ -274,6 +300,12 @@ export default function ReportPage() {
               ))}
               {n.pending && <p>{n.pending}</p>}
               {n.certification && <p>{n.certification}</p>}
+              {textos[n.code] && (
+                <div className="report-texto">
+                  <h3>Relatório escrito pelo desbravador</h3>
+                  <p className="report-texto-corpo">{textos[n.code]}</p>
+                </div>
+              )}
             </div>
           ))}
 

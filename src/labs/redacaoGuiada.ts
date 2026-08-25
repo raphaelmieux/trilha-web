@@ -54,6 +54,83 @@ export interface RoteiroRedacao {
 }
 
 export const ROTEIROS: Record<string, RoteiroRedacao> = {
+  AP034: {
+    titulo: 'História da Internet',
+    introducao:
+      'Você vai montar seu relatório respondendo oito perguntas. Pesquise cada uma antes de responder, '
+      + 'escreva com suas palavras, e no fim o texto todo é montado a partir do que você escreveu.',
+    /* O documento oficial pede de 250 a 300 palavras. O portão fica no piso
+       dele; os mínimos das etapas somam 310, então quem cumpre as oito passa
+       do topo da faixa sem precisar contar nada. */
+    minPalavrasTotal: 250,
+    etapas: [
+      {
+        id: 'por-que',
+        titulo: 'Por que a rede nasceu',
+        pergunta: 'Por que se quis ligar computadores em rede? Diga qual problema isso resolvia.',
+        paraPesquisar: 'Procure por "ARPANET" e "compartilhar computadores". Veja quem pagou a pesquisa e o que se queria resolver.',
+        exemplo: 'Nos anos ... , computadores eram ... . Ligá-los em rede permitiria ... , e por isso ...',
+        minPalavras: 35,
+      },
+      {
+        id: 'arpanet',
+        titulo: 'A primeira rede',
+        pergunta: 'Qual foi a primeira rede a funcionar, em que ano, e o que aconteceu na primeira mensagem enviada?',
+        paraPesquisar: 'Procure por "ARPANET 1969", "primeira mensagem" e "UCLA Stanford". Anote o ano e o que deu errado na primeira tentativa.',
+        exemplo: 'A ... entrou no ar em ... . A primeira mensagem seria ... , mas ...',
+        minPalavras: 40,
+      },
+      {
+        id: 'lingua-comum',
+        titulo: 'A língua comum',
+        pergunta: 'O que é o TCP/IP e por que ele foi tão importante? Cite quem o criou.',
+        paraPesquisar: 'Procure por "TCP/IP", "Vinton Cerf" e "Robert Kahn". Veja por que redes diferentes não conseguiam conversar antes dele.',
+        exemplo: 'O ... é ... , criado por ... e ... . Antes dele, cada rede ... , e por isso ...',
+        minPalavras: 40,
+      },
+      {
+        id: 'web',
+        titulo: 'A Web, que não é a internet',
+        pergunta: 'Quem inventou a World Wide Web, quando, e o que ela acrescentou à internet que já existia?',
+        paraPesquisar: 'Procure por "Tim Berners-Lee", "CERN" e "primeiro site". Veja a diferença entre a internet e a Web.',
+        exemplo: 'Em ... , ... criou a Web no ... . A internet já existia, mas a Web trouxe ...',
+        minPalavras: 40,
+      },
+      {
+        id: 'navegador',
+        titulo: 'A janela para a Web',
+        pergunta: 'O que é um navegador, e qual foi um dos primeiros a deixar a Web fácil de usar?',
+        paraPesquisar: 'Procure por "Mosaic", "Netscape" e "navegador". Veja o que mudou quando as páginas passaram a mostrar imagens.',
+        exemplo: 'Um navegador serve para ... . O ... , de ... , foi um dos primeiros a ...',
+        minPalavras: 35,
+      },
+      {
+        id: 'brasil',
+        titulo: 'A internet chega ao Brasil',
+        pergunta: 'Quando a internet chegou ao Brasil e quando ela passou a ser aberta ao público em geral?',
+        paraPesquisar: 'Procure por "internet no Brasil", "RNP" e "1995". Veja a diferença entre o uso nas universidades e a abertura comercial.',
+        exemplo: 'No Brasil, a internet começou em ... , usada por ... . Em ... ela foi aberta para ...',
+        minPalavras: 40,
+      },
+      {
+        id: 'hoje',
+        titulo: 'A internet hoje',
+        pergunta: 'Como usamos a internet hoje? Fale do celular e de pelo menos duas coisas que se fazem por ela.',
+        paraPesquisar: 'Pense em mensagens, vídeo, escola e banco. Procure quantas pessoas no mundo estão conectadas hoje.',
+        exemplo: 'Hoje a maior parte das pessoas acessa por ... . Dá para ... e também ...',
+        minPalavras: 40,
+      },
+      {
+        id: 'mudou',
+        titulo: 'O que mudou para nós',
+        pergunta: 'O que a internet mudou na vida das pessoas? Escreva o que você pensa sobre isso.',
+        paraPesquisar: 'Aqui não precisa pesquisar: pense na sua escola, na sua casa e no seu clube, e escreva a sua opinião.',
+        exemplo: 'Para mim, o que mais mudou foi ... , porque ... . No meu clube, por exemplo, ...',
+        minPalavras: 40,
+        opiniao: true,
+      },
+    ],
+  },
   AP041: {
     titulo: 'História dos computadores',
     introducao:

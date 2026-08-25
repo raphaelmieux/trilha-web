@@ -33,6 +33,90 @@ export interface RoteiroServidor {
 }
 
 export const ROTEIROS: Record<string, RoteiroServidor> = {
+  AP034: {
+    assunto: 'a história da internet',
+    etapas: {
+      'por-que': {
+        titulo: 'Por que a rede nasceu',
+        pergunta: 'Por que se quis ligar computadores em rede?',
+        fatos: [
+          'Nos anos 1960 os computadores eram enormes, caríssimos e havia poucos deles; ligá-los em rede permitiria que pesquisadores de universidades distantes usassem a mesma máquina e trocassem arquivos.',
+          'A pesquisa foi financiada pela ARPA, agência do Departamento de Defesa dos Estados Unidos.',
+          'A ideia técnica que tornou a rede possível é a comutação de pacotes, proposta de forma independente por Paul Baran, nos Estados Unidos, e Donald Davies, no Reino Unido: a mensagem é picada em pedaços que viajam separados e são remontados no destino.',
+          'A comutação de pacotes também torna a rede resistente a falhas, porque um pedaço pode seguir por outro caminho se um trecho parar.',
+        ],
+      },
+      'arpanet': {
+        titulo: 'A primeira rede',
+        pergunta: 'Qual foi a primeira rede a funcionar, em que ano, e o que aconteceu na primeira mensagem?',
+        fatos: [
+          'A ARPANET foi a primeira rede desse tipo a funcionar; o primeiro nó entrou em operação na UCLA em 1969.',
+          'A primeira mensagem foi enviada em 29 de outubro de 1969, da UCLA para o Stanford Research Institute.',
+          'A palavra que se tentou enviar foi "LOGIN", mas o sistema travou depois das duas primeiras letras, e do outro lado chegou apenas "LO".',
+          'Ainda em 1969 a ARPANET tinha quatro nós: UCLA, Stanford Research Institute, Universidade da Califórnia em Santa Bárbara e Universidade de Utah.',
+        ],
+      },
+      'lingua-comum': {
+        titulo: 'A língua comum',
+        pergunta: 'O que é o TCP/IP e por que ele foi importante?',
+        fatos: [
+          'O TCP/IP é o conjunto de regras que permite a computadores e redes diferentes trocarem dados entre si.',
+          'Foi criado por Vinton Cerf e Robert Kahn, que publicaram o desenho em 1974.',
+          'Antes dele, cada rede falava do seu jeito e não conseguia conversar com as outras; o TCP/IP é a língua comum que permitiu ligar rede a rede.',
+          'A ARPANET adotou o TCP/IP em 1º de janeiro de 1983, data usada por muitos como o nascimento da internet como a conhecemos.',
+          'É dessa ligação entre redes que vem o nome internet: uma rede de redes.',
+        ],
+      },
+      'web': {
+        titulo: 'A Web, que não é a internet',
+        pergunta: 'Quem inventou a World Wide Web, quando, e o que ela acrescentou?',
+        fatos: [
+          'A World Wide Web foi inventada por Tim Berners-Lee, que apresentou a proposta em 1989 enquanto trabalhava no CERN, na Suíça.',
+          'O primeiro site do mundo entrou no ar em 1991, no próprio CERN.',
+          'A Web trouxe as páginas ligadas por links, e para isso Berners-Lee criou o HTML, o HTTP e o endereço de página (URL).',
+          'A internet e a Web não são a mesma coisa: a internet é a rede que liga os computadores, e a Web é um dos serviços que funcionam em cima dela, ao lado do e-mail e de outros.',
+          'Em 1993 o CERN liberou a Web para uso livre, sem cobrar nada por ela.',
+        ],
+      },
+      'navegador': {
+        titulo: 'A janela para a Web',
+        pergunta: 'O que é um navegador, e qual foi um dos primeiros a popularizar a Web?',
+        fatos: [
+          'O navegador é o programa que pede as páginas ao servidor e as desenha na tela para a pessoa ler.',
+          'O Mosaic, lançado em 1993 pelo NCSA, foi um dos primeiros navegadores populares e ajudou a espalhar a Web por mostrar imagens junto do texto, na mesma página.',
+          'Marc Andreessen participou da criação do Mosaic e depois do Netscape Navigator, lançado em 1994.',
+          'Antes desses navegadores, usar a rede exigia comandos digitados, o que mantinha a Web restrita a quem sabia usá-los.',
+        ],
+      },
+      'brasil': {
+        titulo: 'A internet chega ao Brasil',
+        pergunta: 'Quando a internet chegou ao Brasil e quando foi aberta ao público?',
+        fatos: [
+          'As primeiras conexões brasileiras foram acadêmicas, no fim dos anos 1980, ligando universidades e centros de pesquisa.',
+          'A RNP, Rede Nacional de Pesquisa, foi criada em 1989 para construir e operar essa rede acadêmica no país.',
+          'A internet comercial, aberta ao público em geral, começou no Brasil em 1995.',
+          'O Comitê Gestor da Internet no Brasil (CGI.br) foi criado em 1995, no mesmo período da abertura comercial.',
+          'Nos primeiros anos o acesso doméstico era discado, feito pela linha telefônica, e ocupava o telefone da casa enquanto durava.',
+        ],
+      },
+      'hoje': {
+        titulo: 'A internet hoje',
+        pergunta: 'Como usamos a internet hoje?',
+        fatos: [
+          'Hoje mais de cinco bilhões de pessoas usam a internet no mundo.',
+          'A maior parte dos acessos é feita pelo celular, e não mais pelo computador de mesa.',
+          'Pela internet se enviam mensagens, se assiste a vídeo, se estuda, se trabalha, se paga conta e se fala com quem está longe.',
+          'A conexão hoje costuma ser permanente e por banda larga ou rede móvel, diferente do acesso discado dos primeiros anos.',
+        ],
+      },
+      'mudou': {
+        titulo: 'O que mudou para nós',
+        pergunta: 'O que a internet mudou na vida das pessoas?',
+        fatos: [],
+        opiniao: true,
+      },
+    },
+  },
   AP041: {
     assunto: 'a história dos computadores',
     etapas: {

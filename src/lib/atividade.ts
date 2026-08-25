@@ -101,13 +101,77 @@ const PASSOS: Record<string, string> = {
   prerequisite_verified: 'Pré-requisito conferido',
 };
 
-/** Onde mora o laboratório, procurado no currículo inteiro. */
-function acharLicaoPorLaboratorio(lab: LabType): { trilha: string; titulo: string } | undefined {
-  for (const t of getAllSpecialties()) {
-    const l = t.modules.flatMap(m => m.lessons).find(x => x.labType === lab);
-    if (l) return { trilha: t.code, titulo: l.title };
+/**
+ * De qual laboratório o evento fala, de verdade.
+ *
+ * O mapa acima resolve a maioria: um tipo de evento, um laboratório. Três
+ * ficavam de fora, e o preço não era cosmético — `lab_text_editor`,
+ * `lab_redacao_guiada` e `lab_table_challenge` existem no catálogo de
+ * insígnias e na tabela do banco, e nunca podiam ser conquistadas, porque o
+ * critério delas espera um laboratório que este mapa nunca nomeava.
+ *
+ * Os dois laboratórios de escrita gravam `text_submitted`, o mesmo evento para
+ * mecânicas diferentes. E `table_challenge` é o CodeLab noutra variante, então
+ * grava `code_lab_completed` igual à lição de HTML — as duas convivem na AP035.
+ *
+ * O que desempata já está gravado: `lessonCode`. Com ele, o laboratório sai da
+ * própria lição no currículo, que é a fonte da verdade sobre qual mecânica
+ * aquela lição usa. Sem ele — eventos antigos do editor de texto — resta a
+ * trilha, e dentro dela a lição de escrita é uma só.
+ */
+export function laboratorioDoEvento(e: EventoDeAtividade): LabType | undefined {
+  const m = objeto(e.metadata);
+
+  /* A lição citada manda, quando existe: ela sabe a própria mecânica. */
+  const codigo = texto(m.lessonCode);
+  if (codigo) {
+    for (const t of getAllSpecialties()) {
+      const l = t.modules.flatMap(x => x.lessons).find(x => x.code === codigo);
+      if (l?.labType) return l.labType;
+    }
   }
+
+  const doMapa = LABORATORIO_DO_EVENTO[e.event_type];
+  if (doMapa) return doMapa;
+
+  /* Entrega de texto sem lição: a trilha tem uma lição de escrita só. */
+  if (e.event_type === 'text_submitted') {
+    const trilha = trilhaDoEvento(e);
+    const t = trilha ? getSpecialty(trilha) : undefined;
+    const l = t?.modules.flatMap(x => x.lessons)
+      .find(x => x.labType === 'redacao_guiada' || x.labType === 'text_editor');
+    return l?.labType;
+  }
+
   return undefined;
+}
+
+/**
+ * Onde mora o laboratório — quando dá para saber.
+ *
+ * Um mesmo tipo de laboratório pode servir a mais de uma trilha. A redação
+ * guiada é a primeira: nasceu na AP041 e passou a montar também o relatório da
+ * AP034, porque a mecânica é boa e o requisito das duas é o mesmo tipo de
+ * texto.
+ *
+ * Isso torna o tipo, sozinho, insuficiente para achar a lição. Antes ele
+ * bastava, e a função devolvia a primeira ocorrência do currículo inteiro — o
+ * que, com dois usos, nomearia a lição de uma trilha para o evento da outra.
+ *
+ * Com a trilha conhecida, procura só dentro dela. Sem a trilha, só responde se
+ * o laboratório existir num lugar só; havendo dois, devolve nada. O painel
+ * então diz "Laboratório concluído", sem nomear a lição. Frase mais pobre e
+ * verdadeira vale mais que frase completa e errada — é a mesma escolha do
+ * certificado ilegível, que se declara revogado em vez de válido.
+ */
+function acharLicaoPorLaboratorio(lab: LabType, trilha?: string): { trilha: string; titulo: string } | undefined {
+  const achados: { trilha: string; titulo: string }[] = [];
+  for (const t of getAllSpecialties()) {
+    if (trilha && t.code !== trilha) continue;
+    const l = t.modules.flatMap(m => m.lessons).find(x => x.labType === lab);
+    if (l) achados.push({ trilha: t.code, titulo: l.title });
+  }
+  return achados.length === 1 ? achados[0] : undefined;
 }
 
 function tituloDaLicao(trilha: string | undefined, achar: (l: { labType?: LabType; code: string }) => boolean): string | undefined {
@@ -157,13 +221,12 @@ export function descreverAtividade(e: EventoDeAtividade): AtividadeDescrita {
       Os eventos gravados antes de os laboratórios registrarem a trilha e a
       lição — e são a maioria do histórico de quem já usou a plataforma.
 
-      Deles só vem o tipo do evento. Mas cada laboratório é usado uma vez em
-      todo o currículo, e não só dentro de uma trilha: `file_manager` só existe
-      na AP041, `web_lab` só na AP034. Então o tipo basta para achar a lição e,
-      por ela, a trilha — o que devolve a frase inteira a um evento que não
-      guardou nada além do nome.
+      Deles só vem o tipo do evento. Para quase todos os laboratórios isso
+      basta, porque existem num lugar só: `file_manager` na AP041, `web_lab`
+      na AP034. Para os que servem a mais de uma trilha, o tipo não decide, e
+      aí a frase sai sem o nome da lição em vez de sair com o nome errado.
     */
-    const achada = acharLicaoPorLaboratorio(lab);
+    const achada = acharLicaoPorLaboratorio(lab, trilha);
     if (achada) return { trilha: trilha ?? achada.trilha, texto: `Laboratório concluído: ${achada.titulo}` };
 
     return { trilha, texto: 'Laboratório concluído' };

@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { getOpenSpecialties } from '../curriculum';
-import { LABORATORIO_DO_EVENTO } from './atividade';
+import { laboratorioDoEvento } from './atividade';
 import { insigniasConquistadas, type ResumoDoDesbravador } from './insignias';
 import type { LabType } from '../types';
 
@@ -30,7 +30,7 @@ export async function montarResumo(userId: string): Promise<ResumoDoDesbravador>
 
   const [tentativas, eventos, matriculas, certificados] = await Promise.all([
     supabase.from('lesson_attempts').select('lesson_id, score, total, passed').eq('user_id', userId),
-    supabase.from('activity_events').select('event_type, created_at').eq('user_id', userId),
+    supabase.from('activity_events').select('event_type, created_at, metadata, curriculum_version').eq('user_id', userId),
     supabase.from('enrollments').select('xp, streak_days').eq('user_id', userId),
     supabase.from('certifications').select('curriculum_code').eq('user_id', userId).eq('status', 'active'),
   ]);
@@ -55,7 +55,7 @@ export async function montarResumo(userId: string): Promise<ResumoDoDesbravador>
   let provas = 0;
 
   for (const e of eventos.data ?? []) {
-    const lab = LABORATORIO_DO_EVENTO[e.event_type as string];
+    const lab = laboratorioDoEvento(e);
     if (lab) laboratorios.add(lab);
     if (e.event_type === 'final_exam_completed') provas++;
     if (e.created_at) {

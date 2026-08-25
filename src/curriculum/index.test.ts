@@ -94,29 +94,39 @@ describe('AP041 curriculum', () => {
 
 describe('laboratórios', () => {
   /*
-    Cada laboratório pertence a uma lição só em toda a plataforma.
+    Um laboratório pode servir a mais de uma trilha — mas nunca duas vezes na
+    mesma.
 
-    Não é arrumação: o painel de atividade depende disso. Os eventos gravados
-    antes de os laboratórios registrarem a trilha trazem apenas o tipo do
-    laboratório, e é por ele que a lição — e com ela a trilha — são recuperadas.
-    Dois usos do mesmo laboratório tornariam essa volta ambígua, e o histórico
-    passaria a nomear a lição errada.
+    A regra era mais dura: um laboratório, uma lição em toda a plataforma. Ela
+    existia por causa do painel de atividade, que recuperava a lição a partir do
+    tipo do laboratório e nomearia a errada se houvesse duas.
 
-    A prova final fica de fora: ela é, por definição, uma por trilha.
+    A redação guiada furou essa regra pelo motivo certo: a mecânica nasceu na
+    AP041 e passou a montar também o relatório da AP034, porque as duas pedem o
+    mesmo tipo de texto e a caixa vazia falhava igual nas duas. Reescrever o
+    laboratório com outro nome só para satisfazer a regra seria duplicar código
+    para agradar um teste.
+
+    Quem mudou foi a busca: `acharLicaoPorLaboratorio` agora recebe a trilha, e
+    sem ela só responde quando não há ambiguidade (ver lib/atividade.ts).
+
+    Dentro de uma trilha a proibição continua, e essa é real: ali nem a trilha
+    do evento desempata, e nada distinguiria as duas lições.
   */
-  it('never uses the same lab in two different lessons', () => {
-    const usos = new Map<string, string[]>();
+  it('nunca usa o mesmo laboratório duas vezes na mesma trilha', () => {
+    const repetidos: string[] = [];
     for (const s of getAllSpecialties()) {
+      const usos = new Map<string, string[]>();
       for (const m of s.modules) {
         for (const l of m.lessons) {
           if (!l.labType || l.labType === 'final_exam') continue;
           usos.set(l.labType, [...(usos.get(l.labType) ?? []), l.code]);
         }
       }
+      for (const [lab, codes] of usos) {
+        if (codes.length > 1) repetidos.push(`${s.code}/${lab}: ${codes.join(', ')}`);
+      }
     }
-    const repetidos = [...usos.entries()]
-      .filter(([, codes]) => codes.length > 1)
-      .map(([lab, codes]) => `${lab}: ${codes.join(', ')}`);
     expect(repetidos, repetidos.join(' | ')).toEqual([]);
   });
 });

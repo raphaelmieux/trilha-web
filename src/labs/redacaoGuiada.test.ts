@@ -4,6 +4,8 @@ import {
   respostasParaUniao, podeUnir, unirLocalmente,
   type RoteiroRedacao, type RespostasRedacao,
 } from './redacaoGuiada';
+import { ROTEIROS as ROTEIROS_SERVIDOR } from '../../supabase/functions/ai-gateway/redacao';
+import { getOpenSpecialties } from '../curriculum';
 
 /**
  * Uma resposta conferida e em ordem, do tamanho pedido.
@@ -137,12 +139,18 @@ describe('união local, para quando a IA não responde', () => {
   });
 });
 
-describe('o roteiro da AP041', () => {
-  const roteiro = ROTEIROS.AP041;
+/*
+  As travas de todo roteiro, e não as de um.
 
-  it('existe e pede as 250 palavras do documento oficial', () => {
-    expect(roteiro).toBeDefined();
-    expect(roteiro.minPalavrasTotal).toBe(250);
+  Elas nasceram olhando só para `ROTEIROS.AP041`, porque só existia esse. Uma
+  trilha nova entraria fora de todas elas, e os defeitos que estas travas pegam
+  não aparecem na tela: o beco sem saída dos mínimos só se manifesta em quem
+  cumpriu as oito etapas, e etapa que o servidor não conhece só falha na hora
+  de conferir a resposta.
+*/
+describe.each(Object.entries(ROTEIROS))('o roteiro da %s', (codigo, roteiro) => {
+  it('pede um total de palavras', () => {
+    expect(roteiro.minPalavrasTotal).toBeGreaterThan(0);
   });
 
   it('dá a cada etapa um id único', () => {
@@ -158,19 +166,71 @@ describe('o roteiro da AP041', () => {
   */
   it('soma dos mínimos das etapas alcança o total exigido', () => {
     const soma = roteiro.etapas.reduce((s, e) => s + e.minPalavras, 0);
-    expect(soma).toBeGreaterThanOrEqual(roteiro.minPalavrasTotal);
+    expect(soma, `${codigo}: mínimos somam ${soma}`).toBeGreaterThanOrEqual(roteiro.minPalavrasTotal);
   });
 
-  it('só a última etapa é de opinião', () => {
-    const opiniao = roteiro.etapas.filter(e => e.opiniao).map(e => e.id);
-    expect(opiniao).toEqual(['mudou']);
+  /* A opinião fecha o texto. No meio, ela interrompe a narrativa de fatos —
+     e é a única etapa que o validador não confere contra nada. */
+  it('tem no máximo uma etapa de opinião, e é a última', () => {
+    const opiniao = roteiro.etapas.filter(e => e.opiniao);
+    expect(opiniao.length).toBeLessThanOrEqual(1);
+    if (opiniao.length === 1) {
+      expect(roteiro.etapas[roteiro.etapas.length - 1].opiniao).toBe(true);
+    }
   });
 
   it('toda etapa diz o que pesquisar e mostra um exemplo', () => {
     for (const e of roteiro.etapas) {
-      expect(e.pergunta.length, e.id).toBeGreaterThan(20);
-      expect(e.paraPesquisar.length, e.id).toBeGreaterThan(20);
-      expect(e.exemplo.length, e.id).toBeGreaterThan(10);
+      expect(e.pergunta.length, `${codigo}/${e.id}`).toBeGreaterThan(20);
+      expect(e.paraPesquisar.length, `${codigo}/${e.id}`).toBeGreaterThan(20);
+      expect(e.exemplo.length, `${codigo}/${e.id}`).toBeGreaterThan(10);
     }
+  });
+});
+
+/*
+  As duas pontas da redação guiada precisam falar das mesmas etapas.
+
+  A tela conhece as perguntas; o servidor conhece os fatos contra os quais a
+  resposta é conferida. O servidor recusa validar id que não conheça — de
+  propósito, para o navegador não poder mandar fatos inventados junto. O preço
+  é que uma etapa que exista só de um lado vira uma etapa que nunca aprova, e a
+  tela não tem como explicar isso a quem está escrevendo.
+*/
+describe('cliente e servidor conhecem as mesmas etapas', () => {
+  for (const [codigo, roteiro] of Object.entries(ROTEIROS)) {
+    it(`${codigo}`, () => {
+      const noServidor = ROTEIROS_SERVIDOR[codigo];
+      expect(noServidor, `${codigo} não tem fatos no servidor`).toBeDefined();
+
+      const naTela = roteiro.etapas.map(e => e.id).sort();
+      const noBanco = Object.keys(noServidor.etapas).sort();
+      expect(noBanco).toEqual(naTela);
+
+      /* Etapa de fato precisa de fato; etapa de opinião não confere nada. */
+      for (const e of roteiro.etapas) {
+        const s = noServidor.etapas[e.id];
+        expect(!!s.opiniao, `${codigo}/${e.id}: opinião difere entre as pontas`).toBe(!!e.opiniao);
+        if (!e.opiniao) expect(s.fatos.length, `${codigo}/${e.id}: sem fatos`).toBeGreaterThan(0);
+      }
+    });
+  }
+});
+
+/*
+  Trilha com laboratório de redação guiada precisa de roteiro.
+
+  Sem ele o laboratório abre vazio: nem perguntas, nem etapas, nem como
+  concluir — e o requisito oficial da trilha fica impossível de cumprir sem que
+  nada na tela diga o porquê.
+*/
+describe('todo laboratório de redação guiada tem roteiro', () => {
+  it('nenhuma trilha aberta fica sem', () => {
+    const semRoteiro: string[] = [];
+    for (const e of getOpenSpecialties()) {
+      const temLab = e.modules.some(m => m.lessons.some(l => l.labType === 'redacao_guiada'));
+      if (temLab && !ROTEIROS[e.code]) semRoteiro.push(e.code);
+    }
+    expect(semRoteiro, semRoteiro.join(', ')).toEqual([]);
   });
 });

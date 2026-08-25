@@ -287,16 +287,42 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, requiremen
   }
 
   if (enviado) {
+    /*
+      Quem entregou pela caixa de texto antiga não passou por etapa nenhuma.
+
+      A frase dizia "construídas a partir das suas 8 respostas" para todo mundo,
+      inclusive para quem escreveu o texto de uma vez só, antes de este
+      laboratório existir. O trabalho dessas pessoas continua valendo — o que
+      não pode é a tela contar uma história que não foi a delas.
+    */
+    const porEtapas = Object.keys(respostas).length > 0;
     return (
-      <div className="card p-6 text-center">
-        <CheckCircle2 className="w-16 h-16 mx-auto mb-3" style={{ color: 'var(--color-success)' }} />
-        <h2 className="text-xl font-bold mb-2">Relatório enviado!</h2>
-        <p style={{ color: 'var(--color-text-muted)' }}>
-          {contarPalavras(textoFinal)} palavras, construídas a partir das suas {etapas.length} respostas.
-        </p>
-        <Link to={`/especialidade/${specialtyCode}`} className="btn-primary mt-4 inline-flex">
-          Voltar para a Trilha
-        </Link>
+      <div className="card p-6">
+        <div className="text-center">
+          <CheckCircle2 className="w-16 h-16 mx-auto mb-3" style={{ color: 'var(--color-success)' }} />
+          <h2 className="text-xl font-bold mb-2">Relatório enviado!</h2>
+          <p style={{ color: 'var(--color-text-muted)' }}>
+            {contarPalavras(textoFinal)} palavras
+            {porEtapas && `, construídas a partir das suas ${etapas.length} respostas`}.
+          </p>
+        </div>
+
+        {/* O texto fica à vista: é o trabalho da pessoa, e antes a tela o
+            guardava sem oferecer nenhum jeito de reler. */}
+        {textoFinal && (
+          <div
+            className="mt-4 p-4 rounded-lg text-sm whitespace-pre-wrap"
+            style={{ backgroundColor: 'var(--color-bg-input)', color: 'var(--color-text-soft)' }}
+          >
+            {textoFinal}
+          </div>
+        )}
+
+        <div className="text-center">
+          <Link to={`/especialidade/${specialtyCode}`} className="btn-primary mt-4 inline-flex">
+            Voltar para a Trilha
+          </Link>
+        </div>
       </div>
     );
   }

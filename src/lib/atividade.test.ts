@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { descreverAtividade, trilhaDoEvento } from './atividade';
+import { descreverAtividade, trilhaDoEvento, laboratorioDoEvento } from './atividade';
 
 /*
   O painel de atividade mostrava o tipo do evento cru: "lesson completed",
@@ -135,5 +135,57 @@ describe('descrever o que a pessoa fez', () => {
 
   it('não quebra com metadata ausente', () => {
     expect(() => descreverAtividade({ event_type: 'lesson_completed', metadata: null })).not.toThrow();
+  });
+});
+
+/*
+  De qual laboratório o evento fala.
+
+  Três insígnias de laboratório não podiam ser conquistadas por ninguém:
+  `lab_text_editor`, `lab_redacao_guiada` e `lab_table_challenge`. A linha
+  existia na tabela e o critério estava escrito, mas o motor procurava o
+  laboratório num mapa de tipo de evento — e esses três não têm evento próprio.
+  Os dois de escrita gravam `text_submitted`, e o de tabela é o CodeLab noutra
+  variante, gravando `code_lab_completed` igual à lição de HTML.
+
+  Nada disso aparecia na tela: a pessoa concluía o laboratório e simplesmente
+  não ganhava nada, sem erro em lugar nenhum.
+*/
+describe('o laboratório de que o evento fala', () => {
+  it('sai do mapa, quando o tipo do evento basta', () => {
+    expect(laboratorioDoEvento({ event_type: 'file_manager_completed' })).toBe('file_manager');
+    expect(laboratorioDoEvento({ event_type: 'web_lab_completed' })).toBe('web_lab');
+  });
+
+  /* As duas mecânicas de escrita gravam o mesmo evento; quem desempata é a
+     lição, que sabe qual delas usa. */
+  it('distingue a redação guiada do editor de texto pela lição', () => {
+    expect(laboratorioDoEvento({
+      event_type: 'text_submitted',
+      metadata: { specialtyCode: 'AP041', lessonCode: 'AP041.1-L2' },
+    })).toBe('redacao_guiada');
+  });
+
+  /* O desafio da tabela e a lição de HTML convivem na AP035 e gravam o mesmo
+     evento — sem a lição, não haveria como saber qual foi. */
+  it('distingue o desafio da tabela da lição de HTML', () => {
+    expect(laboratorioDoEvento({
+      event_type: 'code_lab_completed',
+      metadata: { specialtyCode: 'AP035', lessonCode: 'AP035.3-L1' },
+    })).toBe('table_challenge');
+  });
+
+  /* Evento antigo do editor de texto, gravado sem a lição: dentro de uma
+     trilha, a lição de escrita é uma só. */
+  it('resolve a entrega antiga pela trilha, sem a lição', () => {
+    expect(laboratorioDoEvento({
+      event_type: 'text_submitted',
+      metadata: { specialtyCode: 'AP034' },
+    })).toBe('redacao_guiada');
+  });
+
+  it('não chuta quando não há como saber', () => {
+    expect(laboratorioDoEvento({ event_type: 'text_submitted' })).toBeUndefined();
+    expect(laboratorioDoEvento({ event_type: 'coisa_que_nao_existe' })).toBeUndefined();
   });
 });

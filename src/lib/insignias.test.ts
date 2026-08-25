@@ -3,6 +3,12 @@ import { readFileSync } from 'node:fs';
 import { INSIGNIAS, insigniasConquistadas, codigoDaInsigniaDaTrilha, type ResumoDoDesbravador } from './insignias';
 import { getOpenSpecialties } from '../curriculum';
 import { hasIcon } from './badgeIcons';
+import { laboratorioDoEvento, LABORATORIO_DO_EVENTO } from './atividade';
+
+/* O evento que cada laboratório grava ao concluir, invertido do mapa. */
+const EVENTO_DA_LICAO: Record<string, string> = Object.fromEntries(
+  Object.entries(LABORATORIO_DO_EVENTO).map(([evento, lab]) => [lab, evento]),
+);
 
 const CATALOGO = 'supabase/migrations/20260822030000_catalogo_de_insignias.sql';
 
@@ -123,5 +129,46 @@ describe('a hora do estudo', () => {
   it('pede os sete dias para a semana inteira', () => {
     expect(insigniasConquistadas(com({ diasDaSemana: new Set([0, 1, 2, 3, 4, 5] ) }))).not.toContain('semana_inteira');
     expect(insigniasConquistadas(com({ diasDaSemana: new Set([0, 1, 2, 3, 4, 5, 6]) }))).toContain('semana_inteira');
+  });
+});
+
+/*
+  Insígnia de laboratório que nenhum evento consegue disparar.
+
+  Pior que a insígnia sem linha na tabela, porque aqui a linha existe: o
+  catálogo está certo, o banco está semeado, a tela desenharia o ícone — e o
+  critério espera um laboratório que o motor nunca nomeia. `lab_text_editor`,
+  `lab_redacao_guiada` e `lab_table_challenge` ficaram assim desde que foram
+  escritas, e ninguém percebeu porque concluir o laboratório simplesmente não
+  dava nada, sem erro em lugar nenhum.
+
+  Este teste percorre o caminho inteiro ao contrário: para cada insígnia de
+  laboratório, monta o evento que aquela lição gravaria e confere que ele
+  chega ao laboratório certo.
+*/
+describe('toda insígnia de laboratório é alcançável', () => {
+  it('cada laboratório do currículo é reconhecido a partir do evento da lição', () => {
+    const inalcancaveis: string[] = [];
+
+    for (const e of getOpenSpecialties()) {
+      for (const m of e.modules) {
+        for (const l of m.lessons) {
+          if (!l.labType || l.labType === 'final_exam') continue;
+          if (!INSIGNIAS.some(i => i.code === `lab_${l.labType}`)) continue;
+
+          /* O evento que essa lição grava ao concluir: os laboratórios que
+             registram a lição são a maioria, e é por ela que o tipo se resolve. */
+          const evento = {
+            event_type: EVENTO_DA_LICAO[l.labType] ?? 'text_submitted',
+            metadata: { specialtyCode: e.code, lessonCode: l.code },
+          };
+          if (laboratorioDoEvento(evento) !== l.labType) {
+            inalcancaveis.push(`${e.code}/${l.code} (${l.labType})`);
+          }
+        }
+      }
+    }
+
+    expect(inalcancaveis, inalcancaveis.join(' | ')).toEqual([]);
   });
 });
