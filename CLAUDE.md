@@ -77,7 +77,10 @@ não se percebe; em banco novo — restauração, staging — o resultado é um 
 pela metade. `supabase/migrations/migrations.test.ts` pega isso — mas repare que
 ele vive no `ci.yml`, que corre em paralelo com o `supabase.yml`, não antes
 dele. Num PR isso reprova antes do merge; num push direto em `main`, os dois
-começam juntos.
+começam juntos. Num branch o `ci.yml` corre sozinho — o `supabase.yml` só
+dispara em `main` —, e é a única janela em que a migration é lida sem nada
+correndo para aplicá-la: escreva no branch, deixe conferir, leve para `main`
+depois.
 
 **Publicação em paralelo, não em ordem.** O frontend e o Supabase saem do mesmo
 push e correm ao mesmo tempo. Quando a mudança precisa do schema primeiro —
@@ -136,7 +139,8 @@ diagnóstico. Cobrar melhor não é usar palavra difícil.
 ## As outras travas
 
 Quase todas nasceram de um erro que já aconteceu. Se uma delas reprovar, ela
-está fazendo o trabalho dela — leia a mensagem antes de contorná-la.
+está fazendo o trabalho dela — leia a mensagem antes de contorná-la. O `ci.yml`
+roda em push de qualquer branch, então elas te encontram antes de existir PR.
 
 | Onde | O que reprova |
 | --- | --- |
