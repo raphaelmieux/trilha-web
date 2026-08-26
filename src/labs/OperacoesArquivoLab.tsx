@@ -11,9 +11,10 @@ import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import { CSS_WINDOWS, BarraDeTitulo, DialogoDoWindows, IconeWinRAR } from './windows';
 import {
   JanelaWinRAR, JanelaEditor, JanelaConfiguracoes, JanelaNavegador,
-  ControlesDeImpressao, ControlesDeSalvar, ControlesDeCompactar, ControlesDeExtrair,
-  type Impressao, type Origem, type ItemDoMenuArquivo, type LinhaDoArquivo,
+  ControlesDeCompactar, ControlesDeExtrair,
+  type Origem, type LinhaDoArquivo,
 } from './operacoesJanelas';
+import type { AjustesDeImpressao } from './word';
 import {
   AssistenteDeInstalacao, AvisoDeContaDeUsuario, JanelaDesenhador,
   type EscolhasDaInstalacao, type DestinoDaInstalacao,
@@ -72,7 +73,7 @@ interface Props { specialtyCode: string; lessonCode: string; requirementCodes: s
 /* ── O disco simulado ──────────────────────────────────────────────────────── */
 
 type Pasta = 'area' | 'clube' | 'programas' | 'downloads' | 'extraida' | 'desenhador';
-type Especie = 'jpg' | 'odt' | 'rar' | 'pdf' | 'pasta' | 'atalho' | 'exe';
+type Especie = 'jpg' | 'docx' | 'rar' | 'pdf' | 'pasta' | 'atalho' | 'exe';
 
 interface Item {
   id: string;
@@ -105,8 +106,8 @@ const CAMINHO: Record<Pasta, string[]> = {
 const ARQUIVOS_DO_CLUBE: Item[] = [
   { id: 'f1', nome: 'acampamento-01.jpg', especie: 'jpg', mb: 3.4, data: '09/08/2026 14:12' },
   { id: 'f2', nome: 'acampamento-02.jpg', especie: 'jpg', mb: 2.9, data: '09/08/2026 14:15' },
-  { id: 'f3', nome: 'lista-de-presenca.odt', especie: 'odt', mb: 0.2, data: '11/08/2026 20:03' },
-  { id: 'f4', nome: 'relatorio-da-unidade.odt', especie: 'odt', mb: 0.3, data: '18/08/2026 21:40' },
+  { id: 'f3', nome: 'lista-de-presenca.docx', especie: 'docx', mb: 0.2, data: '11/08/2026 20:03' },
+  { id: 'f4', nome: 'relatorio-da-unidade.docx', especie: 'docx', mb: 0.3, data: '18/08/2026 21:40' },
 ];
 
 const TOTAL = ARQUIVOS_DO_CLUBE.reduce((s, a) => s + a.mb, 0);
@@ -118,15 +119,15 @@ const TOTAL_RAR = 5.1;
 const DENTRO_DO_RAR: LinhaDoArquivo[] = [
   { nome: 'acampamento-01.jpg', kb: 3482, compactado: 3390, tipo: 'Imagem JPEG' },
   { nome: 'acampamento-02.jpg', kb: 2970, compactado: 2884, tipo: 'Imagem JPEG' },
-  { nome: 'lista-de-presenca.odt', kb: 205, compactado: 128, tipo: 'Documento ODF' },
-  { nome: 'relatorio-da-unidade.odt', kb: 307, compactado: 176, tipo: 'Documento ODF' },
+  { nome: 'lista-de-presenca.docx', kb: 205, compactado: 128, tipo: 'Documento do Word' },
+  { nome: 'relatorio-da-unidade.docx', kb: 307, compactado: 176, tipo: 'Documento do Word' },
 ];
 
 const brasileiro = (n: number) => n.toFixed(1).replace('.', ',');
 
 const ROTULO_DO_TIPO: Record<Especie, string> = {
   jpg: 'Imagem JPEG',
-  odt: 'Documento ODF',
+  docx: 'Documento do Word',
   rar: 'Arquivo WinRAR',
   pdf: 'Documento PDF',
   pasta: 'Pasta de arquivos',
@@ -139,7 +140,7 @@ function IconeDoItem({ item }: { item: Item }) {
   switch (item.especie) {
     case 'pasta': return <Folder className={c} style={{ color: '#E6B14C' }} />;
     case 'jpg': return <FileImage className={c} style={{ color: '#2E7D32' }} />;
-    case 'odt': return <FileText className={c} style={{ color: '#1F6FB2' }} />;
+    case 'docx': return <FileText className={c} style={{ color: '#1F6FB2' }} />;
     case 'pdf': return <FileType2 className={c} style={{ color: '#B71C1C' }} />;
     case 'atalho': return <Link2 className={c} style={{ color: '#0F6CBD' }} />;
     case 'exe': return <Grid2x2 className={c} style={{ color: '#5B5B5B' }} />;
@@ -149,12 +150,12 @@ function IconeDoItem({ item }: { item: Item }) {
 
 /* ── As tarefas ────────────────────────────────────────────────────────────── */
 
-const PEDIDO: Impressao = {
+const PEDIDO: AjustesDeImpressao = {
   copias: 3, agrupado: true, qualidade: 'alta', ajuste: 'pagina', porFolha: 2,
 };
 
 type Programa = 'winrar' | 'editor' | 'config' | 'navegador' | 'instalador' | 'desenhador';
-type Dialogo = 'compactar' | 'extrair' | 'salvar-como' | 'imprimir' | 'uac' | null;
+type Dialogo = 'compactar' | 'extrair' | 'uac' | null;
 
 const INSTALADOR = 'desenhador-6.2-instalador.exe';
 
@@ -172,7 +173,7 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
   const [extraido, setExtraido] = useState(false);
 
   /* ── 2. Salvar em pdf ── */
-  const [formato, setFormato] = useState('odt');
+  const [formato, setFormato] = useState('docx');
   const [pdfPronto, setPdfPronto] = useState(false);
 
   /* ── 3. Instalar e desinstalar ──
@@ -186,7 +187,7 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
   const [desinstalado, setDesinstalado] = useState(false);
 
   /* ── 4. Imprimir ── */
-  const [imp, setImp] = useState<Impressao>({
+  const [imp, setImp] = useState<AjustesDeImpressao>({
     copias: 1, agrupado: false, qualidade: 'normal', ajuste: 'real', porFolha: 1,
   });
   const [impresso, setImpresso] = useState(false);
@@ -313,7 +314,7 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
       case 'pasta':
         return irPara(item.nome === 'acampamento' ? 'extraida' : 'desenhador');
       case 'rar': return abrir('winrar');
-      case 'odt': return abrir('editor');
+      case 'docx': return abrir('editor');
       case 'pdf':
         return setAviso('O pdf abre no leitor do sistema. Aqui ele já cumpriu o que tinha de cumprir: existe, e vai chegar igual do outro lado.');
       case 'atalho':
@@ -361,28 +362,19 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
 
   /* ── 2. Salvar em pdf ──────────────────────────────────────────────────── */
 
-  const noMenuArquivo = (o: ItemDoMenuArquivo) => {
-    if (o === 'salvar') {
-      setAviso('Salvar apenas grava por cima do mesmo .odt. Para virar pdf é preciso trocar o formato, e isso está em "Salvar como" ou em "Exportar como PDF".');
-      return;
-    }
-    if (o === 'salvar-como') { setFormato('odt'); setDialogo('salvar-como'); setAviso(''); return; }
-    if (o === 'exportar-pdf') { concluirPdf('pelo Exportar como PDF'); return; }
-    setDialogo('imprimir');
-    setAviso('');
-  };
-
   const concluirPdf = (caminho: string) => {
-    setDialogo(null);
     setPdfPronto(true);
     setAviso(`Pronto, ${caminho}: relatorio-da-unidade.pdf está na pasta do clube. Em pdf o relatório chega com as margens, as fontes e as quebras de página do jeito que você deixou — e ninguém muda o texto sem querer.`);
   };
+
+  const salvar = () =>
+    setAviso('Salvar apenas grava por cima do mesmo documento do Word. Para virar pdf é preciso trocar o formato — e isso está em "Salvar como", na lista Tipo, ou em "Exportar".');
 
   const salvarComo = () => {
     if (formato === 'pdf') { concluirPdf('pelo Salvar como'); return; }
     setAviso(formato === 'txt'
       ? 'O .txt guarda só as letras: perde negrito, margem e imagem. Não serve para entregar um relatório formatado.'
-      : 'Esse formato continua sendo documento editável, e vai abrir diferente em cada computador. Escolha PDF.');
+      : 'Esse formato continua sendo documento editável, e vai abrir diferente em cada computador. Na lista Tipo, escolha PDF.');
   };
 
   /* ── 3. Instalar e desinstalar ─────────────────────────────────────────── */
@@ -471,7 +463,6 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
     if (imp.porFolha !== PEDIDO.porFolha) faltas.push('as páginas por folha');
 
     if (faltas.length) { setAviso(`Ainda falta acertar ${faltas.join('; ')}.`); return; }
-    setDialogo(null);
     setImpresso(true);
     setAviso('Saíram 3 cópias completas, uma depois da outra, em 6 folhas. Sem agrupar seriam as mesmas folhas fora de ordem, para separar à mão.');
   };
@@ -554,13 +545,14 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
     },
     {
       id: 't2', titulo: 'Salvar o relatório em pdf', feita: feito.t2,
-      onde: 'Editor de Texto → menu Arquivo',
+      onde: 'Word → guia Arquivo → Salvar como',
       passos: [
-        'Dois cliques em relatorio-da-unidade.odt, na pasta do clube — ou abra o Editor de Texto pelo menu Iniciar.',
-        'No editor, clique no menu Arquivo.',
-        'Escolha "Salvar como…" (ou "Exportar como PDF…", que dá no mesmo).',
-        'Na lista Tipo, troque para PDF (*.pdf).',
-        'Clique em Salvar.',
+        'Dois cliques em relatorio-da-unidade.docx, na pasta do clube — ou abra o Editor de Texto pelo menu Iniciar.',
+        'No Word, clique na guia Arquivo, a primeira, azul. Ela abre uma tela inteira: são os bastidores.',
+        'Na faixa azul da esquerda, clique em "Salvar como".',
+        'Na lista Tipo, troque de "Documento do Word" para "PDF (*.pdf)".',
+        'Clique no botão Salvar.',
+        'Pelo caminho "Exportar" dá no mesmo: lá o botão se chama "Criar PDF/XPS".',
       ],
     },
     {
@@ -587,14 +579,14 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
     },
     {
       id: 't4', titulo: 'Imprimir 3 cópias agrupadas, alta, ajustadas, 2 por folha', feita: feito.t4,
-      onde: 'Editor de Texto → Arquivo → Imprimir',
+      onde: 'Word → guia Arquivo → Imprimir',
       passos: [
-        'Abra relatorio-da-unidade.odt com dois cliques, ou pelo menu Iniciar.',
-        'No editor, menu Arquivo → "Imprimir…".',
-        'Cópias: 3.',
-        'Marque a caixinha Agrupar.',
-        'Qualidade: Alta. Tamanho: Ajustar à página. Páginas por folha: 2.',
-        'Confira a linha "Vai sair" no rodapé do diálogo e clique em Imprimir.',
+        'Abra relatorio-da-unidade.docx com dois cliques, ou pelo menu Iniciar.',
+        'No Word, guia Arquivo → "Imprimir", na faixa azul da esquerda.',
+        'Ao lado do botão Imprimir, ponha Cópias em 3.',
+        'Em Configurações, na lista Agrupamento, escolha "Agrupado" — repare no 1,2,3 1,2,3 embaixo dela.',
+        'Qualidade de impressão: Alta. Tamanho: Ajustar à Página. Páginas por folha: 2 Páginas por Folha.',
+        'A linha embaixo diz quantas folhas vão sair. Confira e clique em Imprimir.',
       ],
     },
   ];
@@ -834,9 +826,16 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
           )}
           {emFoco === 'editor' && (
             <JanelaEditor
-              nome="relatorio-da-unidade.odt"
+              nome="relatorio-da-unidade.docx"
               pdfPronto={pdfPronto}
-              aoEscolher={noMenuArquivo}
+              formato={formato}
+              aoMudarFormato={setFormato}
+              aoSalvar={salvar}
+              aoSalvarComo={salvarComo}
+              aoExportarPdf={() => concluirPdf('pelo Exportar')}
+              imp={imp}
+              aoMudarImpressao={setImp}
+              aoImprimir={imprimir}
               aoAvisar={naoFazParte}
               aoMinimizar={() => minimizar('editor')}
               aoFechar={() => fechar('editor')}
@@ -909,30 +908,6 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
               </>}
             >
               <ControlesDeExtrair destino="C:\Documentos\Clube\acampamento" />
-            </DialogoDoWindows>
-          )}
-
-          {dialogo === 'salvar-como' && (
-            <DialogoDoWindows
-              titulo="Salvar como"
-              acoes={<>
-                <button className="win-bt primario" onClick={salvarComo}>Salvar</button>
-                <button className="win-bt" onClick={() => setDialogo(null)}>Cancelar</button>
-              </>}
-            >
-              <ControlesDeSalvar nome="relatorio-da-unidade" formato={formato} aoMudarFormato={setFormato} />
-            </DialogoDoWindows>
-          )}
-
-          {dialogo === 'imprimir' && (
-            <DialogoDoWindows
-              titulo="Imprimir"
-              acoes={<>
-                <button className="win-bt primario" onClick={imprimir}>Imprimir</button>
-                <button className="win-bt" onClick={() => setDialogo(null)}>Cancelar</button>
-              </>}
-            >
-              <ControlesDeImpressao imp={imp} aoMudar={setImp} />
             </DialogoDoWindows>
           )}
 

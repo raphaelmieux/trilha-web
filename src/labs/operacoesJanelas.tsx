@@ -4,8 +4,10 @@ import {
   FileSearch, Wand2, Info, ShieldCheck, ArrowUp, Globe, Search, Settings,
   Monitor, Bluetooth, Network, AppWindow, User, MoreHorizontal, Package,
   Printer, ShieldAlert, Lock, Download, Palette, CheckCircle2, X,
+  FileType2, ClipboardPaste,
 } from 'lucide-react';
 import { BarraDeJanela, IconeWinRAR } from './windows';
+import { CSS_WORD, BastidoresDoWord, type PainelDosBastidores, type AjustesDeImpressao } from './word';
 
 /*
  * As janelas do laboratório de operações com arquivos.
@@ -120,7 +122,7 @@ export function JanelaWinRAR({ nomeDoArquivo, linhas, aoExtrair, aoAvisar, aoMin
         {linhas.map(l => (
           <div key={l.nome} className="rar-linha">
             <span className="win-c-nome truncate" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {l.nome.endsWith('.odt')
+              {l.nome.endsWith('.docx')
                 ? <FileText className="w-4 h-4" style={{ color: '#1F6FB2' }} />
                 : <FileImage className="w-4 h-4" style={{ color: '#2E7D32' }} />}
               {l.nome}
@@ -142,94 +144,144 @@ export function JanelaWinRAR({ nomeDoArquivo, linhas, aoExtrair, aoAvisar, aoMin
   );
 }
 
-/* ── 2. Editor de texto ────────────────────────────────────────────────────── */
-
-export type ItemDoMenuArquivo = 'salvar' | 'salvar-como' | 'exportar-pdf' | 'imprimir';
+/* ── 2. O Word ─────────────────────────────────────────────────────────────── */
 
 /**
- * O editor de texto com o relatório aberto.
+ * O editor de texto, que agora é o Word.
  *
- * O menu Arquivo é o laboratório inteiro desta estação: é lá que mora a
- * escolha entre Salvar — que não vira pdf — e os dois caminhos que viram.
+ * As duas estações desta janela — exportar em pdf e imprimir — moram nos
+ * bastidores, que é a tela que o Word abre quando se clica em Arquivo. Era um
+ * menuzinho suspenso antes: praticava a decisão certa e ensinava a procurar no
+ * lugar errado, porque no Word de verdade não existe menu suspenso ali.
  */
-export function JanelaEditor({ nome, pdfPronto, aoEscolher, aoAvisar, aoMinimizar, aoFechar }: Fechavel & {
+export function JanelaEditor({
+  nome, pdfPronto, formato, aoMudarFormato, aoSalvar, aoSalvarComo, aoExportarPdf,
+  imp, aoMudarImpressao, aoImprimir, aoAvisar, aoMinimizar, aoFechar,
+}: Fechavel & {
   nome: string;
   pdfPronto: boolean;
-  aoEscolher: (o: ItemDoMenuArquivo) => void;
+  formato: string;
+  aoMudarFormato: (f: string) => void;
+  aoSalvar: () => void;
+  aoSalvarComo: () => void;
+  aoExportarPdf: () => void;
+  imp: AjustesDeImpressao;
+  aoMudarImpressao: (i: AjustesDeImpressao) => void;
+  aoImprimir: () => void;
   aoAvisar: (o: string) => void;
 }) {
-  const [menu, setMenu] = useState(false);
+  const [painel, setPainel] = useState<PainelDosBastidores | null>(null);
 
-  const itens: [ItemDoMenuArquivo, string, string][] = [
-    ['salvar', 'Salvar', 'Ctrl+S'],
-    ['salvar-como', 'Salvar como…', 'Ctrl+Shift+S'],
-    ['exportar-pdf', 'Exportar como PDF…', ''],
-    ['imprimir', 'Imprimir…', 'Ctrl+P'],
-  ];
+  const guias = ['Página Inicial', 'Inserir', 'Layout', 'Referências', 'Revisão', 'Exibir'];
 
   return (
-    <div className="win-janela media" onClick={() => setMenu(false)}>
+    <div className="win-janela media">
+      <style>{CSS_WORD}</style>
       <BarraDeJanela
-        icone={<FileText className="w-4 h-4" style={{ color: '#1F6FB2' }} />}
-        titulo={`${nome} — Editor de Texto`}
+        icone={<FileType2 className="w-4 h-4" style={{ color: '#2B579A' }} />}
+        titulo={`${nome.replace(/\.[^.]+$/, '')} — Word`}
         aoMinimizar={aoMinimizar}
         aoFechar={aoFechar}
       />
 
-      <div className="win-menus" style={{ position: 'relative' }}>
-        {/* O clique precisa parar aqui: se subir, cai no onClick da janela que
-            fecha o menu, e ele abriria e sumiria no mesmo gesto. */}
-        <button onClick={e => { e.stopPropagation(); setMenu(a => !a); }}
-          style={menu ? { background: '#E5E5E5' } : undefined}>
-          Arquivo
-        </button>
-        {['Editar', 'Exibir', 'Inserir', 'Formatar', 'Ferramentas'].map(m => (
-          <button key={m} onClick={() => aoAvisar(`O menu ${m}`)}>{m}</button>
-        ))}
-
-        {menu && (
-          <div className="win-menu" style={{ position: 'absolute', left: 4, top: 28 }}
-            onClick={e => e.stopPropagation()}>
-            {itens.map(([id, rotulo, atalho]) => (
-              <button key={id} onClick={() => { setMenu(false); aoEscolher(id); }}>
-                <span style={{ flex: 1 }}>{rotulo}</span>
-                <span style={{ color: '#767676', fontSize: 11.5 }}>{atalho}</span>
+      {painel ? (
+        <BastidoresDoWord
+          nomeDoArquivo={nome}
+          painel={painel}
+          aoTrocarPainel={setPainel}
+          aoVoltar={() => setPainel(null)}
+          formato={formato}
+          aoMudarFormato={aoMudarFormato}
+          aoSalvarComo={aoSalvarComo}
+          aoSalvar={aoSalvar}
+          aoExportarPdf={aoExportarPdf}
+          imp={imp}
+          aoMudarImpressao={aoMudarImpressao}
+          aoImprimir={aoImprimir}
+          aoAvisar={aoAvisar}
+        />
+      ) : (
+        <div className="wd-janela">
+          <div className="wd-guias">
+            {/* Arquivo é a primeira guia e não é uma guia: abre os bastidores.
+                É por ela que se chega a Salvar como, Exportar e Imprimir. */}
+            <button className="wd-guia" style={{ background: '#2B579A', color: '#FFFFFF' }}
+              onClick={() => setPainel('salvar-como')}>
+              Arquivo
+            </button>
+            {guias.map((g, i) => (
+              <button key={g} className="wd-guia" aria-selected={i === 0}
+                onClick={() => i !== 0 && aoAvisar(`A guia ${g}`)}>
+                {g}
               </button>
             ))}
           </div>
-        )}
-      </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', background: '#9E9E9E', padding: 16 }}>
-        <div style={{
-          maxWidth: 560, margin: '0 auto', background: '#FFFFFF', color: '#1B1B1B',
-          padding: '28px 32px', boxShadow: '0 2px 10px rgba(0,0,0,.3)', fontSize: 12.5, lineHeight: 1.7,
-        }}>
-          <p style={{ fontSize: 15, fontWeight: 700, textAlign: 'center', marginBottom: 12 }}>
-            Relatório da Unidade Falcão
-          </p>
-          <p style={{ marginBottom: 8 }}>
-            No primeiro semestre a unidade participou de quatro programações do
-            clube e de um acampamento de três dias no Parque das Águas.
-          </p>
-          <p style={{ marginBottom: 8 }}>
-            Oito desbravadores começaram especialidades novas, e cinco delas
-            foram concluídas antes do acampamento.
-          </p>
-          <p>
-            A unidade pede à diretoria duas barracas para a próxima saída, já que
-            uma das atuais teve a vareta quebrada na última chuva.
-          </p>
+          <div className="wd-faixa">
+            <div className="wd-grupo">
+              <div className="wd-grupo-corpo">
+                <button className="wd-bt" onClick={() => aoAvisar('Colar')}>
+                  <ClipboardPaste className="w-4 h-4" /> Colar
+                </button>
+              </div>
+              <span className="wd-grupo-nome">Área de Transferência</span>
+            </div>
+            <div className="wd-grupo">
+              <div className="wd-grupo-corpo">
+                <select className="wd-combo" defaultValue="Calibri" aria-label="Fonte"
+                  onChange={() => aoAvisar('Trocar a fonte, aqui,')}>
+                  <option>Calibri</option>
+                  <option>Times New Roman</option>
+                  <option>Arial</option>
+                </select>
+                <select className="wd-combo" defaultValue="11" aria-label="Tamanho da fonte"
+                  onChange={() => aoAvisar('Trocar o tamanho da fonte, aqui,')}>
+                  {[9, 10, 11, 12, 14].map(n => <option key={n}>{n}</option>)}
+                </select>
+                <button className="wd-bt" style={{ fontWeight: 700, fontFamily: 'Georgia, serif' }}
+                  onClick={() => aoAvisar('Negrito')}>N</button>
+                <button className="wd-bt" style={{ fontStyle: 'italic', fontFamily: 'Georgia, serif' }}
+                  onClick={() => aoAvisar('Itálico')}>I</button>
+                <button className="wd-bt" style={{ textDecoration: 'underline', fontFamily: 'Georgia, serif' }}
+                  onClick={() => aoAvisar('Sublinhado')}>S</button>
+              </div>
+              <span className="wd-grupo-nome">Fonte</span>
+            </div>
+            <div className="wd-grupo" style={{ borderRight: 'none' }}>
+              <div className="wd-grupo-corpo">
+                <button className="wd-bt" onClick={() => aoAvisar('Localizar')}>
+                  <Search className="w-4 h-4" /> Localizar
+                </button>
+              </div>
+              <span className="wd-grupo-nome">Edição</span>
+            </div>
+          </div>
+
+          <div className="wd-canvas">
+            <div className="wd-pagina" style={{ ['--largura-cm' as string]: 15, ['--margem-cm' as string]: 1.5 }}>
+              <p className="wd-par" style={{ ['--pt' as string]: 14, fontWeight: 700, textAlign: 'center', marginBottom: 10 }}>
+                Relatório da Unidade Falcão
+              </p>
+              {[
+                'No primeiro semestre a unidade participou de quatro programações do clube e de um acampamento de três dias no Parque das Águas.',
+                'Oito desbravadores começaram especialidades novas, e cinco delas foram concluídas antes do acampamento.',
+                'A unidade pede à diretoria duas barracas para a próxima saída, já que uma das atuais teve a vareta quebrada na última chuva.',
+              ].map((t, i) => (
+                <p key={i} className="wd-par" style={{ ['--pt' as string]: 11, marginBottom: 7 }}>{t}</p>
+              ))}
+            </div>
+          </div>
+
+          <div className="wd-status">
+            <span>Página 1 de 4</span>
+            <span>168 palavras</span>
+            <span>Português (Brasil)</span>
+            <span style={{ marginLeft: 'auto' }}>
+              {pdfPronto ? 'PDF criado' : 'Documento do Word'}
+            </span>
+          </div>
         </div>
-      </div>
-
-      <div className="win-status">
-        <span>Página 1 de 4</span>
-        <span>168 palavras</span>
-        <span style={{ marginLeft: 'auto' }}>
-          {pdfPronto ? 'PDF exportado' : 'Documento de texto ODF (.odt)'}
-        </span>
-      </div>
+      )}
     </div>
   );
 }

@@ -83,10 +83,16 @@ const pelaIniciar = (nome: string) => {
 const naArvore = (nome: string) =>
   todos('.win-painel div.cursor-pointer').find(d => d.textContent?.trim() === nome);
 
-const noMenuArquivo = (texto: string) => {
-  clicar(todos('.win-menus button').find(b => b.textContent?.trim() === 'Arquivo'), 'menu Arquivo');
-  const opcao = todos('.win-menu button').find(b => b.textContent?.includes(texto));
-  clicar(opcao, `${texto} no menu Arquivo`);
+/*
+  Os bastidores do Word: a guia Arquivo abre a tela azul, e a faixa da
+  esquerda leva a Salvar como, Exportar e Imprimir. Não é menu suspenso — é
+  tela inteira, como no Word de verdade.
+*/
+const nosBastidores = (aba: string) => {
+  const guia = todos('.wd-guias button').find(b => b.textContent?.trim() === 'Arquivo');
+  if (guia) clicar(guia, 'a guia Arquivo');
+  const item = todos('.wd-rail button').find(b => b.textContent?.trim() === aba);
+  clicar(item, `${aba} na faixa dos bastidores`);
 };
 
 const escolher = (rotulo: string, valor: string) => {
@@ -106,7 +112,7 @@ const marcarCaixa = (indice = 0) => {
 };
 
 const marcarOsQuatro = () => {
-  for (const n of ['acampamento-01.jpg', 'acampamento-02.jpg', 'lista-de-presenca.odt', 'relatorio-da-unidade.odt']) {
+  for (const n of ['acampamento-01.jpg', 'acampamento-02.jpg', 'lista-de-presenca.docx', 'relatorio-da-unidade.docx']) {
     clicar(linha(n), n);
   }
 };
@@ -166,12 +172,15 @@ const instalar = ({ atalhoNaArea = true } = {}) => {
   clicar(noAssistente('Concluir'), 'concluir');
 };
 
+/* No Word, agrupar é uma lista de duas opções, e não uma caixinha. */
+const agrupar = () => escolher('Agrupamento', 'sim');
+
 /* ── A área de trabalho ───────────────────────────────────────────────────── */
 
 describe('a área de trabalho', () => {
   it('abre no Explorador, na pasta do clube, com os quatro arquivos', () => {
     expect(container.textContent).toContain('Clube');
-    expect(nomesVisiveis()).toContain('relatorio-da-unidade.odt');
+    expect(nomesVisiveis()).toContain('relatorio-da-unidade.docx');
     expect(todos('.win-linha')).toHaveLength(4);
   });
 
@@ -210,7 +219,7 @@ describe('compactar e extrair', () => {
 
     const lista = nomesVisiveis();
     expect(lista).toContain('acampamento.rar');
-    for (const n of ['acampamento-01.jpg', 'acampamento-02.jpg', 'lista-de-presenca.odt', 'relatorio-da-unidade.odt']) {
+    for (const n of ['acampamento-01.jpg', 'acampamento-02.jpg', 'lista-de-presenca.docx', 'relatorio-da-unidade.docx']) {
       expect(lista, `${n} continua na pasta`).toContain(n);
     }
     expect(container.textContent).toContain('Compactar copia, não move');
@@ -237,32 +246,33 @@ describe('salvar o relatório em pdf', () => {
 
   it('não vira pdf ao apertar Salvar', () => {
     abrirEditor();
-    noMenuArquivo('Salvar');
-    expect(container.textContent).toContain('Salvar apenas grava por cima do mesmo .odt');
+    nosBastidores('Salvar');
+    expect(container.textContent).toContain('Salvar apenas grava por cima do mesmo documento do Word');
     expect(botaoFinal().textContent).toMatch(/Faltam 4/);
   });
 
   it('recusa o .txt, que perde a formatação', () => {
     abrirEditor();
-    noMenuArquivo('Salvar como');
+    nosBastidores('Salvar como');
     escolher('Tipo', 'txt');
-    clicar(botao('Salvar'), 'Salvar do diálogo');
+    clicar(todos('.wd-bast-corpo button').find(b => b.textContent?.includes('Salvar')), 'Salvar dos bastidores');
     expect(container.textContent).toContain('guarda só as letras');
     expect(botaoFinal().textContent).toMatch(/Faltam 4/);
   });
 
   it('aceita o pdf, e o arquivo aparece na pasta', () => {
     abrirEditor();
-    noMenuArquivo('Salvar como');
+    nosBastidores('Salvar como');
     escolher('Tipo', 'pdf');
-    clicar(botao('Salvar'), 'Salvar do diálogo');
+    clicar(todos('.wd-bast-corpo button').find(b => b.textContent?.includes('Salvar')), 'Salvar dos bastidores');
     expect(botaoFinal().textContent).toMatch(/Faltam 3/);
     expect(nomesVisiveis()).toContain('relatorio-da-unidade.pdf');
   });
 
-  it('aceita também o Exportar como PDF, que é o outro caminho de verdade', () => {
+  it('aceita também o Exportar, que é o outro caminho de verdade', () => {
     abrirEditor();
-    noMenuArquivo('Exportar como PDF');
+    nosBastidores('Exportar');
+    clicar(contendo('Criar PDF/XPS'), 'Criar PDF/XPS');
     expect(botaoFinal().textContent).toMatch(/Faltam 3/);
   });
 });
@@ -390,12 +400,14 @@ describe('instalar e desinstalar', () => {
 describe('imprimir do jeito que foi pedido', () => {
   const abrirImpressao = () => {
     pelaIniciar('Editor de Texto');
-    noMenuArquivo('Imprimir');
+    nosBastidores('Imprimir');
   };
+
+
 
   it('diz o que ainda falta acertar, em vez de só recusar', () => {
     abrirImpressao();
-    clicar(botao('Imprimir'), 'Imprimir do diálogo');
+    clicar(todos('.wd-bast-corpo button').find(b => b.textContent?.trim() === 'Imprimir'), 'Imprimir dos bastidores');
     const texto = container.textContent ?? '';
     expect(texto).toContain('Ainda falta acertar');
     expect(texto, 'e nomeia o agrupamento, que é a parte que ninguém enxerga').toContain('agrupamento');
@@ -411,11 +423,11 @@ describe('imprimir do jeito que foi pedido', () => {
   it('imprime quando as cinco escolhas batem com o pedido', () => {
     abrirImpressao();
     escolher('Cópias', '3');
-    escolher('Qualidade', 'alta');
-    marcarCaixa();
+    escolher('Qualidade de impressão', 'alta');
+    agrupar();
     escolher('Tamanho', 'pagina');
     escolher('Páginas por folha', '2');
-    clicar(botao('Imprimir'), 'Imprimir do diálogo');
+    clicar(todos('.wd-bast-corpo button').find(b => b.textContent?.trim() === 'Imprimir'), 'Imprimir dos bastidores');
     expect(container.textContent).toContain('Saíram 3 cópias completas');
     expect(botaoFinal().textContent).toMatch(/Faltam 3/);
   });
@@ -435,16 +447,17 @@ describe('as quatro tarefas', () => {
 
     // 2 — pdf
     pelaIniciar('Editor de Texto');
-    noMenuArquivo('Exportar como PDF');
+    nosBastidores('Exportar');
+    clicar(contendo('Criar PDF/XPS'), 'Criar PDF/XPS');
 
     // 4 — imprimir
-    noMenuArquivo('Imprimir');
+    nosBastidores('Imprimir');
     escolher('Cópias', '3');
-    escolher('Qualidade', 'alta');
-    marcarCaixa();
+    escolher('Qualidade de impressão', 'alta');
+    agrupar();
     escolher('Tamanho', 'pagina');
     escolher('Páginas por folha', '2');
-    clicar(botao('Imprimir'), 'Imprimir do diálogo');
+    clicar(todos('.wd-bast-corpo button').find(b => b.textContent?.trim() === 'Imprimir'), 'Imprimir dos bastidores');
     expect(botaoFinal().textContent, 'ainda falta instalar e desinstalar').toMatch(/Faltam 1/);
 
     // 3 — instalar e desinstalar

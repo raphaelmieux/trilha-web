@@ -10,6 +10,7 @@ import {
   FileCheck2, RotateCcw, Minus, X,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
+import { CSS_WORD } from './word';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
@@ -416,95 +417,7 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
       aviso={aviso}
       acoes={acoes}
     >
-      <style>{`
-        /* A janela não tem mais moldura: ela é a tela. */
-        .wd-janela {
-          background: #F3F2F1; color: #201F1E;
-          flex: 1; display: flex; flex-direction: column; min-height: 0;
-          font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-          /* Pixels por centímetro, e portanto o zoom da folha. 34 é 90% do
-             tamanho real numa tela de 96 dpi; num celular de 390 px isso
-             deixaria metade do documento fora da tela, e o Word também reduz.
-             Mora na janela, e não no canvas, porque a régua precisa da mesma
-             medida — foi o que a deixou sem largura na primeira tentativa. */
-          --px-cm: 34;
-        }
-        @media (max-width: 640px)  { .wd-janela { --px-cm: 17; } }
-        @media (min-width: 641px) and (max-width: 1023px) { .wd-janela { --px-cm: 26; } }
-        .wd-titulo {
-          background: #F9F8F7; border-bottom: 1px solid #E1DFDD;
-          display: flex; align-items: center; gap: 10px; padding: 6px 10px; font-size: 12px;
-        }
-        .wd-guias {
-          display: flex; gap: 2px; padding: 0 8px; background: #F9F8F7;
-          border-bottom: 1px solid #E1DFDD; overflow-x: auto;
-        }
-        .wd-guia {
-          padding: 6px 10px 7px; font-size: 12.5px; white-space: nowrap;
-          border: none; background: none; color: #201F1E; cursor: pointer;
-          border-bottom: 2px solid transparent;
-        }
-        .wd-guia:hover { background: #EDEBE9; }
-        .wd-guia[aria-selected="true"] { color: #2B579A; border-bottom-color: #2B579A; font-weight: 600; }
-        .wd-faixa {
-          display: flex; align-items: stretch; gap: 0; padding: 4px 6px 2px;
-          background: #F3F2F1; border-bottom: 1px solid #E1DFDD; overflow-x: auto;
-        }
-        .wd-grupo {
-          display: flex; flex-direction: column; justify-content: space-between;
-          padding: 0 8px; border-right: 1px solid #E1DFDD; min-width: max-content;
-        }
-        .wd-grupo-corpo { display: flex; align-items: flex-start; gap: 3px; padding: 2px 0 4px; }
-        .wd-grupo-nome { font-size: 10px; color: #605E5C; text-align: center; padding-bottom: 3px; }
-        .wd-bt {
-          height: 24px; padding: 0 4px; border-radius: 3px; cursor: pointer;
-          display: inline-flex; align-items: center; justify-content: center; gap: 3px;
-          color: #201F1E; font-size: 12px;
-        }
-        .wd-bt:hover { background: #EDEBE9 !important; }
-        .wd-bt:focus-visible { outline: 2px solid #2B579A; outline-offset: 1px; }
-        .wd-combo {
-          height: 24px; border: 1px solid #C8C6C4; background: #FFFFFF; color: #201F1E;
-          border-radius: 2px; font-size: 12px; padding: 0 4px;
-        }
-        .wd-linhas { display: flex; flex-direction: column; gap: 3px; }
-        .wd-menu {
-          position: absolute; z-index: 30; top: 100%; left: 0; margin-top: 2px;
-          background: #FFFFFF; border: 1px solid #C8C6C4; border-radius: 3px;
-          box-shadow: 0 6px 18px rgba(0,0,0,0.22); min-width: 210px; padding: 4px;
-          text-align: left;
-        }
-        .wd-menu-item {
-          display: block; width: 100%; text-align: left; padding: 6px 10px;
-          font-size: 12.5px; border: none; border-radius: 2px; cursor: pointer; color: #201F1E;
-        }
-        .wd-menu-item:hover { background: #EDEBE9 !important; }
-        .wd-regua {
-          background: #FFFFFF; border-bottom: 1px solid #E1DFDD; padding: 3px 0;
-          display: flex; justify-content: center;
-        }
-        .wd-canvas {
-          background: #E6E6E6; padding: 18px 12px 40px; flex: 1; min-height: 0; overflow: auto;
-        }
-        .wd-pagina {
-          background: #FFFFFF; margin: 0 auto; min-height: 260px;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.28);
-          width: calc(var(--largura-cm) * var(--px-cm) * 1px);
-          padding: calc(var(--margem-cm) * var(--px-cm) * 1px);
-        }
-        /* 1 pt = (96/72)/37,795 cm de pixel — a letra acompanha o zoom da folha. */
-        .wd-par { font-size: calc(var(--pt) * var(--px-cm) * 0.035277px); }
-        .wd-regua-barra {
-          width: calc(var(--largura-cm) * var(--px-cm) * 1px);
-          height: 16px; position: relative; background: #C8C6C4; border-radius: 1px;
-        }
-        .wd-status {
-          background: #F3F2F1; border-top: 1px solid #E1DFDD; color: #605E5C;
-          font-size: 11.5px; padding: 4px 10px; display: flex; gap: 14px; align-items: center;
-        }
-        .wd-par { cursor: text; padding: 0 2px; }
-        .wd-par:hover { background: #F2F7FC; }
-      `}</style>
+      <style>{CSS_WORD}</style>
 
       {/* ── A janela do Word ── */}
       <div className="wd-janela">
