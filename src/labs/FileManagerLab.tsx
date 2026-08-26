@@ -22,6 +22,7 @@ import {
   copiarPara, moverPara, mandarParaLixeira, restaurar, esvaziarLixeira,
   criarGerador, formatarTamanho, formatarData, rotuloDoTipo,
 } from './arquivos';
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 /*
  * AP041 requisito 5 — as seis operações de pasta e arquivo.
@@ -46,8 +47,6 @@ import {
  * está aqui; no celular ele é impreciso, e lá valem a barra de ferramentas e o
  * menu de contexto por toque longo. Nenhum requisito depende de arrastar.
  */
-
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
 const DIA = 86_400_000;
 
@@ -214,7 +213,7 @@ function Cmd({ onClick, desabilitado, Ico, dica, children }: {
   );
 }
 
-export default function FileManagerLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const agora = useRef(Date.now()).current;
   const novoId = useRef(criarGerador('n')).current;
 
@@ -557,7 +556,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, requirementC
   return (
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
-      titulo="Mexendo em pastas e arquivos"
+      titulo={lessonTitle}
       tarefas={tarefas}
       aviso={aviso}
       acoes={acoes}

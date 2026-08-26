@@ -20,8 +20,7 @@ import {
   Globe, Link2, ShieldCheck, Search, FileDown, CheckCircle2, AlertCircle,
   ExternalLink, Lock, Unlock, Download, RotateCcw, Compass, BookOpen,
 } from 'lucide-react';
-
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 /**
  * WebLab — requirements AP034-6.1, 6.2 and 6.3: visit three sites, find three
@@ -89,7 +88,7 @@ interface RascunhoWebLab {
   sheetSaved: boolean;
 }
 
-export default function WebLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+export default function WebLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   /* Lido uma vez, na montagem: cada useState abaixo começa do que estava
      guardado. Restaurar por efeito faria a tela piscar vazia antes, e o
      primeiro estado vazio sobrescreveria o rascunho bom. */
@@ -411,7 +410,7 @@ export default function WebLab({ specialtyCode, lessonCode, requirementCodes, us
     return (
       <div className="card p-8 text-center">
         <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
-        <h1 className="text-2xl font-bold mb-2">WebLab concluído!</h1>
+        <h1 className="text-2xl font-bold mb-2">{lessonTitle} — concluído!</h1>
         <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Você leu um endereço peça por peça, separou sites legítimos de imitações,
           montou uma consulta com operadores e a executou de verdade, e levou embora
@@ -426,7 +425,7 @@ export default function WebLab({ specialtyCode, lessonCode, requirementCodes, us
     <div className="space-y-4">
       <div className="card p-6">
         <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <Globe className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> WebLab — Navegação e Pesquisa
+          <Globe className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {lessonTitle}
         </h1>
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
           Quatro habilidades de quem usa a internet com autonomia: ler um endereço,

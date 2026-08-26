@@ -34,6 +34,7 @@ let root: Root;
 const props = {
   specialtyCode: 'AP042',
   lessonCode: 'AP042.2-L2',
+  lessonTitle: 'Formatando um documento inteiro',
   requirementCodes: ['AP042-3.1'],
   userId: '00000000-0000-0000-0000-000000000000',
 };

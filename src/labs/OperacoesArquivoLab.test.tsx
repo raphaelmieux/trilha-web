@@ -33,7 +33,7 @@ beforeEach(() => {
   act(() => {
     root.render(
       <MemoryRouter>
-        <OperacoesArquivoLab specialtyCode="AP042" lessonCode="AP042.6-L1" requirementCodes={['AP042-6.1']} userId="u1" />
+        <OperacoesArquivoLab specialtyCode="AP042" lessonCode="AP042.6-L1" lessonTitle="Compactar, exportar, instalar e imprimir" requirementCodes={['AP042-6.1']} userId="u1" />
       </MemoryRouter>,
     );
   });

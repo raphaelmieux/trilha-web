@@ -11,8 +11,7 @@ import {
   Mail, Send, Inbox, AlertCircle, CheckCircle2, ShieldAlert, Paperclip,
   Trash2, Reply, RotateCcw,
 } from 'lucide-react';
-
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 /**
  * MailLab — requirement AP034-7.1: send, receive, attachments, safety.
@@ -94,7 +93,7 @@ const PHISHING_COUNT = INBOX.filter(m => m.phishing).length;
 
 interface Check { id: string; label: string; passed: boolean; hint: string }
 
-export default function MailLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+export default function MailLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const { profile } = useAuth();
   const studentName = profile ? getPublicName(profile) : 'Desbravador(a)';
   const [completed, setCompleted] = useState(false);
@@ -219,7 +218,7 @@ export default function MailLab({ specialtyCode, lessonCode, requirementCodes, u
     return (
       <div className="card p-8 text-center">
         <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
-        <h1 className="text-2xl font-bold mb-2">MailLab concluído!</h1>
+        <h1 className="text-2xl font-bold mb-2">{lessonTitle} — concluído!</h1>
         <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Você leu a caixa inteira, separou os golpes das mensagens verdadeiras, recusou o
           anexo que era um programa disfarçado e escreveu um e-mail completo.
@@ -233,7 +232,7 @@ export default function MailLab({ specialtyCode, lessonCode, requirementCodes, u
     <div className="space-y-4">
       <div className="card p-6">
         <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <Mail className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> MailLab — E-mail e Segurança
+          <Mail className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {lessonTitle}
         </h1>
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
           Cinco mensagens na caixa de entrada. Leia cada uma, decida se é golpe ou é

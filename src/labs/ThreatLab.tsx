@@ -10,8 +10,7 @@ import {
   ShieldAlert, Bug, Activity, ClipboardList, CheckCircle2, AlertCircle,
   RotateCcw, Play,
 } from 'lucide-react';
-
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 /**
  * ThreatLab — requirements AP034-4.1 to 4.4.
@@ -84,7 +83,7 @@ const DAMAGES: Damage[] = [
 
 const DEVICES = 12;
 
-export default function ThreatLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+export default function ThreatLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -218,7 +217,7 @@ export default function ThreatLab({ specialtyCode, lessonCode, requirementCodes,
     return (
       <div className="card p-8 text-center">
         <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
-        <h1 className="text-2xl font-bold mb-2">Laboratório de Ameaças concluído!</h1>
+        <h1 className="text-2xl font-bold mb-2">{lessonTitle} — concluído!</h1>
         <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Você identificou por onde as ameaças entram, mostrou na simulação o que a
           atualização do antivírus muda, e listou os prejuízos que um vírus causa de verdade.
@@ -232,7 +231,7 @@ export default function ThreatLab({ specialtyCode, lessonCode, requirementCodes,
     <div className="space-y-4">
       <div className="card p-6">
         <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> Laboratório de Ameaças e Antivírus
+          <ShieldAlert className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {lessonTitle}
         </h1>
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
           Três coisas para resolver: reconhecer por onde uma ameaça entra, entender o

@@ -5,6 +5,7 @@ import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollm
 } from '../lib/progress';
 import { validateHtml, type CheckResult } from '../lib/htmlValidator';
 import { Code2, RotateCcw, CheckCircle2, AlertCircle, FileCode, Eye, PanelsTopLeft } from 'lucide-react';
+import type { PropsDeLaboratorio } from './tipos';
 
 /**
  * Two variants, one editor.
@@ -19,13 +20,7 @@ import { Code2, RotateCcw, CheckCircle2, AlertCircle, FileCode, Eye, PanelsTopLe
  */
 export type CodeLabVariant = 'elementos' | 'tabela';
 
-interface Props {
-  specialtyCode: string;
-  lessonCode: string;
-  requirementCodes: string[];
-  userId: string;
-  variant?: CodeLabVariant;
-}
+type Props = PropsDeLaboratorio & { variant?: CodeLabVariant };
 
 const STARTERS: Record<CodeLabVariant, string> = {
   elementos: `<!DOCTYPE html>
@@ -87,17 +82,12 @@ const CHECK_IDS: Record<CodeLabVariant, string[]> = {
   ],
 };
 
-const TITLES: Record<CodeLabVariant, string> = {
-  elementos: 'CodeLab — Editor HTML',
-  tabela: 'Desafio: Página com Tabela',
-};
-
 const INTROS: Record<CodeLabVariant, string> = {
   elementos: 'Escreva uma página HTML completa. A prévia ao lado mostra o resultado real, e a lista de requisitos é conferida enquanto você digita — cada item só é marcado quando o elemento existe de verdade na página, com o conteúdo e os atributos que o requisito pede.',
   tabela: 'O requisito 4 pede uma página inteira: uma tabela com texto, um gráfico, uma regra horizontal e um link, com algum texto colorido por código hexadecimal e um título maior que o corpo. Escolha algo do seu clube para tabelar — a escala da unidade, os hinos do trimestre — e troque o exemplo que já está no editor, que não conta.',
 };
 
-export default function CodeLab({ specialtyCode, lessonCode, requirementCodes, userId, variant = 'elementos' }: Props) {
+export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId, variant = 'elementos' }: Props) {
   const starter = STARTERS[variant];
   const [code, setCode] = useState(starter);
   const [completed, setCompleted] = useState(false);
@@ -155,7 +145,7 @@ export default function CodeLab({ specialtyCode, lessonCode, requirementCodes, u
     return (
       <div className="card p-8 text-center">
         <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
-        <h1 className="text-2xl font-bold mb-2">{TITLES[variant]} — concluído!</h1>
+        <h1 className="text-2xl font-bold mb-2">{lessonTitle} — concluído!</h1>
         <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Sua página passou nas {results.length} verificações.
         </p>
@@ -168,7 +158,7 @@ export default function CodeLab({ specialtyCode, lessonCode, requirementCodes, u
     <div className="space-y-4">
       <div className="card p-6">
         <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <Code2 className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {TITLES[variant]}
+          <Code2 className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {lessonTitle}
         </h1>
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
           {INTROS[variant]}

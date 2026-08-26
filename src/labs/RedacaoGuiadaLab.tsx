@@ -17,6 +17,7 @@ import {
   CheckCircle2, AlertTriangle, XCircle, Search, Sparkles,
   Save, ChevronLeft, ChevronRight, FileText, Loader2, RotateCcw,
 } from 'lucide-react';
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 /*
  * A redação guiada: o relatório de 250 palavras construído por etapas.
@@ -38,14 +39,12 @@ import {
  * conferência que não aconteceu seria pior do que admitir que ela faltou.
  */
 
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
-
 type EstadoIA = 'ok' | 'indisponivel';
 
 /** O que o rascunho local guarda: o laboratório inteiro, menos o que veio do servidor. */
 interface RascunhoRedacao { respostas: RespostasRedacao; textoFinal: string }
 
-export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const roteiro = ROTEIROS[specialtyCode];
 
   const [respostas, setRespostas] = useState<RespostasRedacao>({});
@@ -348,7 +347,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, requiremen
 
       <div className="card p-6">
         <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <FileText className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {roteiro.titulo}
+          <FileText className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {lessonTitle}
         </h1>
         <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>{roteiro.introducao}</p>
 

@@ -12,8 +12,7 @@ import {
 } from '../lib/pact';
 import { exportPactPdf } from '../lib/pdf';
 import { FileSignature, Shield, CheckCircle2, AlertCircle, Download } from 'lucide-react';
-
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 /**
  * Meu Compromisso Digital — requirements AP034-5.1 … 5.9.
@@ -52,7 +51,7 @@ const DAILY: Clause = { id: 'c9', requirement: 'AP034-5.9', title: 'Meu limite d
 
 const NETWORKS = ['WhatsApp', 'Instagram', 'YouTube', 'TikTok', 'Facebook', 'Discord', 'Telegram', 'Pinterest'];
 
-export default function PactBuilderLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+export default function PactBuilderLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const { profile } = useAuth();
   const [texts, setTexts] = useState<Record<string, string>>({});
   const [networks, setNetworks] = useState<string[]>([]);
@@ -136,7 +135,7 @@ export default function PactBuilderLab({ specialtyCode, lessonCode, requirementC
     <div className="space-y-4">
       <div className="card p-6">
         <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <FileSignature className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> Meu Compromisso Digital
+          <FileSignature className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {lessonTitle}
         </h1>
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
           Nove compromissos, escritos por você. Não copie os exemplos: eles estão aí só

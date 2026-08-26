@@ -34,7 +34,7 @@ beforeEach(() => {
     root.render(
       <MemoryRouter>
         <ComputerCareLab
-          specialtyCode="AP041" lessonCode="AP041.4-L2"
+          specialtyCode="AP041" lessonCode="AP041.4-L2" lessonTitle="Cuidando do computador"
           requirementCodes={['AP041-3.3']} userId="u1"
         />
       </MemoryRouter>,

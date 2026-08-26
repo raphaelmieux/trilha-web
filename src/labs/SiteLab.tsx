@@ -5,8 +5,7 @@ import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollm
 } from '../lib/progress';
 import { validateHtml, validateSiteLinks, type CheckResult } from '../lib/htmlValidator';
 import { CheckCircle2, AlertCircle, FileCode, Globe, Eye, PanelsTopLeft } from 'lucide-react';
-
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 const PAGES = [
   { file: 'index.html', title: 'Início' },
@@ -41,7 +40,7 @@ const STARTERS: Record<string, string> = {
 /** Per-page requirements. Every page must stand on its own as valid HTML. */
 const PAGE_CHECKS = ['html', 'head', 'body', 'title', 'heading'];
 
-export default function SiteLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+export default function SiteLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const [pages, setPages] = useState<Record<string, string>>(() => ({ ...STARTERS }));
   const [active, setActive] = useState('index.html');
   const [mobileView, setMobileView] = useState<'code' | 'preview'>('code');
@@ -105,7 +104,7 @@ export default function SiteLab({ specialtyCode, lessonCode, requirementCodes, u
     return (
       <div className="card p-8 text-center">
         <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
-        <h1 className="text-2xl font-bold mb-2">SiteLab concluído!</h1>
+        <h1 className="text-2xl font-bold mb-2">{lessonTitle} — concluído!</h1>
         <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Seu site de quatro páginas está estruturado, interligado e com formulário funcionando.
         </p>
@@ -120,7 +119,7 @@ export default function SiteLab({ specialtyCode, lessonCode, requirementCodes, u
     <div className="space-y-4">
       <div className="card p-6">
         <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <Globe className="w-5 h-5" style={{ color: 'var(--color-tertiary-light)' }} /> SiteLab — Site com quatro páginas
+          <Globe className="w-5 h-5" style={{ color: 'var(--color-tertiary-light)' }} /> {lessonTitle}
         </h1>
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
           Construa um site completo com quatro páginas ligadas entre si. Os links são

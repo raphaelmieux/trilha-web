@@ -24,6 +24,7 @@ import {
   ensureEnrollment, updateEnrollmentActivity, logActivity,
   registrarConclusaoDeLicao,
 } from '../lib/progress';
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 /*
  * AP042 requisito 6 — as quatro tarefas que o documento manda demonstrar.
@@ -67,8 +68,6 @@ import {
  *
  * Errar não reprova: explica e devolve a vez, como no laboratório de cuidados.
  */
-
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
 /* ── O disco simulado ──────────────────────────────────────────────────────── */
 
@@ -167,7 +166,7 @@ const CAMINHO_ESCOLHIDO: Record<DestinoDaInstalacao, string> = {
 
 /* ── O laboratório ─────────────────────────────────────────────────────────── */
 
-export default function OperacoesArquivoLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+export default function OperacoesArquivoLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   /* ── 1. Compactar e extrair ── */
   const [rarCriado, setRarCriado] = useState(false);
   const [extraido, setExtraido] = useState(false);
@@ -681,7 +680,7 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
   return (
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
-      titulo="Compactar, exportar, instalar e imprimir"
+      titulo={lessonTitle}
       tarefas={tarefas}
       aviso={aviso}
       acoes={acoes}

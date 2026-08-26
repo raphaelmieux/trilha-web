@@ -13,8 +13,7 @@ import {
   Image as ImageIcon, Upload, Wand2, Download, CheckCircle2, AlertCircle,
   MousePointerClick, PanelTop, Shapes, Camera, Palette,
 } from 'lucide-react';
-
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 /**
  * ImageLab — requirement AP035-5.2, quoted from the official sheet:
@@ -89,7 +88,7 @@ const TOUCH_TARGET_MIN = 44;
 /** "pelo menos, cinco botões de navegação gráfica" */
 const NAV_LABELS_DEFAULT = ['Início', 'Sobre', 'Galeria', 'Contato', 'Eventos'];
 
-export default function ImageLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+export default function ImageLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<Record<string, boolean>>({});
@@ -348,7 +347,7 @@ export default function ImageLab({ specialtyCode, lessonCode, requirementCodes, 
     return (
       <div className="card p-8 text-center">
         <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
-        <h1 className="text-2xl font-bold mb-2">ImageLab concluído!</h1>
+        <h1 className="text-2xl font-bold mb-2">{lessonTitle} — concluído!</h1>
         <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Você entregou o que o requisito 5.2 pede: um JPG e um PNG abaixo de 15 KB e ainda
           legíveis, cinco botões de navegação em cores seguras e um header para o site.
@@ -362,7 +361,7 @@ export default function ImageLab({ specialtyCode, lessonCode, requirementCodes, 
     <div className="space-y-4">
       <div className="card p-6">
         <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <ImageIcon className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> ImageLab — Imagens para a Web
+          <ImageIcon className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {lessonTitle}
         </h1>
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
           O requisito é literal: um JPG e um GIF/PNG <strong>ambos abaixo de 15 KB</strong> e

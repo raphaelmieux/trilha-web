@@ -21,7 +21,7 @@ export const modulo5: Module = {
   lessons: [
     {
       code: 'AP042.5-L1',
-      title: 'Comprimindo, exportando e imprimindo',
+      title: 'Comprimindo, exportando, instalando e imprimindo',
       type: 'lab',
       content: '',
       requirementCodes: ['AP042-6.1', 'AP042-6.2', 'AP042-6.3', 'AP042-6.4'],

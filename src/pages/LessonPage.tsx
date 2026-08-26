@@ -99,6 +99,9 @@ export default function LessonPage() {
          conclusão — sem isso, o estado dele teria de ser deduzido do requisito,
          que é o que fazia a teoria ao lado marcá-lo como feito. */
       lessonCode: lesson.code,
+      /* O nome vem daqui, e não escrito dentro de cada laboratório: eles
+         divergiram uma vez, e quem estudava via dois nomes para a mesma lição. */
+      lessonTitle: lesson.title,
       requirementCodes: lesson.requirementCodes,
       userId: profile.id,
     };

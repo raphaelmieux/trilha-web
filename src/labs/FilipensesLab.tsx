@@ -6,8 +6,7 @@ import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollm
 import {
   BookOpen, Lightbulb, RotateCcw, CheckCircle2, AlertCircle, Filter, PenLine,
 } from 'lucide-react';
-
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 /**
  * Filipenses 4:8 — requirement AP034-8.1: learn *and apply* the principle.
@@ -103,7 +102,7 @@ const SITUATION_PASS = 5;
 
 interface Check { id: string; label: string; passed: boolean; hint: string }
 
-export default function FilipensesLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+export default function FilipensesLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -254,7 +253,7 @@ export default function FilipensesLab({ specialtyCode, lessonCode, requirementCo
     <div className="space-y-4">
       <div className="card p-6">
         <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <BookOpen className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> Filipenses 4:8
+          <BookOpen className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {lessonTitle}
         </h1>
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
           Duas metades: aprender o versículo e usá-lo. A segunda é a que muda alguma

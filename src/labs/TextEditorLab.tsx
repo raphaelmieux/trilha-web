@@ -11,6 +11,7 @@ import { TEMAS } from './temasDeRedacao';
 import { lerRascunho, descartarRascunho, rascunhoEhMaisNovo } from '../lib/rascunho';
 import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
 import { CheckCircle2, Save, FileText, AlertCircle, RotateCcw } from 'lucide-react';
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 /*
  * O laboratório de redação, agora servindo qualquer trilha.
@@ -25,9 +26,7 @@ import { CheckCircle2, Save, FileText, AlertCircle, RotateCcw } from 'lucide-rea
  * do que assumir que aquilo não é avaliado aqui: quem lê a lista acredita nela.
  */
 
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
-
-export default function TextEditorLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+export default function TextEditorLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const tema = TEMAS[specialtyCode] ?? TEMAS.AP034;
 
   const [text, setText] = useState('');
@@ -190,7 +189,7 @@ export default function TextEditorLab({ specialtyCode, lessonCode, requirementCo
 
       <div className="card p-6">
         <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <FileText className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {tema.titulo}
+          <FileText className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {lessonTitle}
         </h1>
         <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>{tema.instrucoes}</p>
         <textarea

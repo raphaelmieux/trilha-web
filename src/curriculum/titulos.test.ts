@@ -83,3 +83,43 @@ describe('os títulos são frases, não etiquetas de catálogo', () => {
     expect(suspeitos, suspeitos.join(' | ')).toEqual([]);
   });
 });
+
+/* ── E a tela do laboratório diz o mesmo que a lição ───────────────────────── */
+
+/*
+  O título dentro do laboratório já divergiu do nome da lição: a lição
+  "Montando um site de quatro páginas" abria um cartão escrito "SiteLab — Site
+  com quatro páginas", e quem estudava via dois nomes para a mesma coisa. O
+  nome agora desce do currículo por `lessonTitle`, e estes dois testes cobram
+  que continue descendo.
+*/
+import { readFileSync, readdirSync } from 'node:fs';
+
+const PASTA = new URL('../labs/', import.meta.url);
+
+const arquivosDeLaboratorio = readdirSync(PASTA)
+  .filter(n => n.endsWith('Lab.tsx'))
+  .map(n => ({ nome: n, texto: readFileSync(new URL(n, PASTA), 'utf8') }));
+
+/** O código sem comentários — é na tela que o nome errado faz estrago. */
+const semComentarios = (texto: string) =>
+  texto.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+describe('o nome na tela do laboratório vem do currículo', () => {
+  /* Laboratório que não põe título nenhum está certo — a migalha de pão já
+     diz onde a pessoa está. O que não pode é pôr um título *diferente*. */
+  it('quem põe título usa o da lição', () => {
+    const sem = arquivosDeLaboratorio
+      .filter(a => a.texto.includes('<h1') && !a.texto.includes('lessonTitle'))
+      .map(a => a.nome);
+    expect(sem, sem.join(' | ')).toEqual([]);
+  });
+
+  it('e nenhum escreve o próprio nome de componente na tela', () => {
+    const APARECENDO = /(WebLab|MailLab|CodeLab|SiteLab|ImageLab|AI ?Lab)\s*(—|-|concluído)/i;
+    const sujos = arquivosDeLaboratorio
+      .filter(a => APARECENDO.test(semComentarios(a.texto)))
+      .map(a => a.nome);
+    expect(sujos, sujos.join(' | ')).toEqual([]);
+  });
+});

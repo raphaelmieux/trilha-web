@@ -5,8 +5,7 @@ import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollm
   registrarConclusaoDeLicao,
 } from '../lib/progress';
 import { Sparkles, Image as ImageIcon, Palette, CheckCircle2, AlertCircle, ThumbsUp, ThumbsDown, FileText, Loader2 } from 'lucide-react';
-
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 type Stage = 'text' | 'image' | 'logo' | 'review';
 
@@ -99,7 +98,7 @@ function Picker({ label, options, value, onChange }: {
   );
 }
 
-export default function AILab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+export default function AILab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const [stage, setStage] = useState<Stage>('text');
   const [completed, setCompleted] = useState(false);
 
@@ -208,7 +207,7 @@ export default function AILab({ specialtyCode, lessonCode, requirementCodes, use
     return (
       <div className="card p-8 text-center">
         <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
-        <h1 className="text-2xl font-bold mb-2">AI Lab concluído!</h1>
+        <h1 className="text-2xl font-bold mb-2">{lessonTitle} — concluído!</h1>
         <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Você produziu texto, imagem e logotipo com inteligência artificial — e, mais
           importante, avaliou criticamente o que a ferramenta entregou.
@@ -229,7 +228,7 @@ export default function AILab({ specialtyCode, lessonCode, requirementCodes, use
     <div className="space-y-4">
       <div className="card p-6">
         <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <Sparkles className="w-5 h-5" style={{ color: 'var(--color-secondary)' }} /> AI Lab — Produção com IA
+          <Sparkles className="w-5 h-5" style={{ color: 'var(--color-secondary)' }} /> {lessonTitle}
         </h1>
         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
           Você vai montar pedidos (<em>prompts</em>) escolhendo cada parte: o assunto, para

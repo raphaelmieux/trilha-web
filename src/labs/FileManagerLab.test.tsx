@@ -31,7 +31,7 @@ beforeEach(() => {
   act(() => {
     root.render(
       <MemoryRouter>
-        <FileManagerLab specialtyCode="AP041" lessonCode="AP041.5-L1" requirementCodes={['AP041-5.1']} userId="u1" />
+        <FileManagerLab specialtyCode="AP041" lessonCode="AP041.5-L1" lessonTitle="Mexendo em pastas e arquivos" requirementCodes={['AP041-5.1']} userId="u1" />
       </MemoryRouter>,
     );
   });

@@ -7,6 +7,7 @@ import {
   ensureEnrollment, updateEnrollmentActivity, logActivity,
   registrarConclusaoDeLicao,
 } from '../lib/progress';
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 /*
  * AP041 requisito 3 — cuidar do computador.
@@ -79,8 +80,6 @@ const embaralhar = <T,>(l: T[]): T[] => {
   }
   return c;
 };
-
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
 export default function ComputerCareLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
   const [mesa] = useState(() => embaralhar(MESA));

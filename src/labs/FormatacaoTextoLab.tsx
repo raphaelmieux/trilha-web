@@ -16,6 +16,7 @@ import {
   ensureEnrollment, updateEnrollmentActivity, logActivity,
   registrarConclusaoDeLicao,
 } from '../lib/progress';
+import type { PropsDeLaboratorio as Props } from './tipos';
 
 /*
  * AP042 requisito 3 — as sete demonstrações de formatação, num Word.
@@ -203,9 +204,7 @@ const METAS: Meta[] = [
 const MARGENS_CM: Record<Margem, number> = { estreita: 1.27, normal: 2.5, larga: 5.08 };
 const LARGURA_CM: Record<Papel, number> = { A4: 21, Carta: 21.6 };
 
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
-
-export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
+export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const [doc, setDoc] = useState<Bloco[]>(DOCUMENTO);
   const [folha, setFolha] = useState<Folha>({ papel: 'Carta', orientacao: 'paisagem', margem: 'estreita' });
   const [guia, setGuia] = useState<Guia>('inicio');
@@ -412,7 +411,7 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
   return (
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
-      titulo="Formatando um documento inteiro"
+      titulo={lessonTitle}
       tarefas={tarefas}
       aviso={aviso}
       acoes={acoes}
