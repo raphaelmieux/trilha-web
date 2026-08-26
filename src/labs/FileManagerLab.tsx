@@ -3,9 +3,12 @@ import { Link } from 'react-router-dom';
 import {
   Folder, FolderOpen, File as FileIcon, Link2, Trash2, Monitor,
   FolderPlus, Pencil, Copy, Scissors, ClipboardPaste, X,
-  ChevronRight, ChevronDown, ArrowLeft, ArrowRight, ArrowUp,
-  CheckCircle2, Circle, RotateCcw, ArrowUpNarrowWide, ArrowDownWideNarrow,
+  ChevronRight, ChevronDown, ArrowLeft, ArrowRight, ArrowUp, RotateCw,
+  CheckCircle2, RotateCcw, ArrowUpNarrowWide, ArrowDownWideNarrow,
+  Search, ArrowUpDown, LayoutGrid,
 } from 'lucide-react';
+import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
+import { CSS_WINDOWS, BarraDeTitulo } from './windows';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
@@ -45,6 +48,14 @@ import {
 interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
 const DIA = 86_400_000;
+
+/** As colunas, na ordem em que o Explorer as oferece no menu Classificar. */
+const ORDENS: [Coluna, string][] = [
+  ['nome', 'Nome'],
+  ['modificado', 'Data de modificação'],
+  ['tipo', 'Tipo'],
+  ['tamanho', 'Tamanho'],
+];
 
 function arvoreInicial(agora: number): No[] {
   const pasta = (id: string, nome: string, paiId: string | null, dias: number): No =>
@@ -100,14 +111,17 @@ const ICONE_RAIZ: Record<string, typeof Monitor> = {
  * identidade é estável e o que muda chega por props.
  */
 
+/* As cores são as do Explorer, e não as da plataforma: pasta âmbar, atalho
+   azul, arquivo cinza. Dentro da janela clara, um ícone com a cor da
+   plataforma seria a única peça fora do lugar. */
 function IconeDe({ n, tamanho = 'w-4 h-4' }: { n: No; tamanho?: string }) {
   if (ehRaiz(n.id)) {
     const Ico = ICONE_RAIZ[n.id];
-    return <Ico className={tamanho} style={{ color: 'var(--color-text-muted)' }} />;
+    return <Ico className={tamanho} style={{ color: '#5B5B5B' }} />;
   }
-  if (n.tipo === 'pasta') return <Folder className={tamanho} style={{ color: 'var(--color-secondary)' }} />;
-  if (n.tipo === 'atalho') return <Link2 className={tamanho} style={{ color: 'var(--color-tertiary-light)' }} />;
-  return <FileIcon className={tamanho} style={{ color: 'var(--color-text-dim)' }} />;
+  if (n.tipo === 'pasta') return <Folder className={tamanho} style={{ color: '#E6B14C' }} />;
+  if (n.tipo === 'atalho') return <Link2 className={tamanho} style={{ color: '#0F6CBD' }} />;
+  return <FileIcon className={tamanho} style={{ color: '#6E6E6E' }} />;
 }
 
 interface GalhoProps {
@@ -138,9 +152,9 @@ function Galho(p: GalhoProps) {
         className="flex items-center gap-1 px-1 py-1 rounded cursor-pointer text-sm"
         style={{
           paddingLeft: 4 + nivel * 14,
-          backgroundColor: recebendo ? 'var(--color-primary-a20)' : aqui ? 'var(--color-bg-hover)' : 'transparent',
-          outline: recebendo ? '1px dashed var(--color-primary)' : 'none',
-          color: aqui ? 'var(--color-text)' : 'var(--color-text-muted)',
+          backgroundColor: recebendo ? '#E3F0FB' : aqui ? '#EAEAEA' : 'transparent',
+          outline: recebendo ? '1px dashed #0F6CBD' : 'none',
+          color: '#1B1B1B', fontSize: 12.5,
         }}
         onClick={() => p.aoIr(n.id)}
         onDragOver={e => {
@@ -165,15 +179,15 @@ function Galho(p: GalhoProps) {
   );
 }
 
-function Cabecalho({ c, rotulo, largura, coluna, crescente, aoOrdenar }: {
-  c: Coluna; rotulo: string; largura: string;
+function Cabecalho({ c, rotulo, classe, coluna, crescente, aoOrdenar }: {
+  c: Coluna; rotulo: string; classe: string;
   coluna: Coluna; crescente: boolean; aoOrdenar: (c: Coluna) => void;
 }) {
   return (
     <button
       onClick={() => aoOrdenar(c)}
-      className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-left"
-      style={{ width: largura, color: coluna === c ? 'var(--color-text)' : 'var(--color-text-muted)' }}
+      className={classe}
+      style={{ color: coluna === c ? '#0F6CBD' : '#444' }}
       title={`Ordenar por ${rotulo.toLowerCase()}`}
     >
       {rotulo}
@@ -184,17 +198,16 @@ function Cabecalho({ c, rotulo, largura, coluna, crescente, aoOrdenar }: {
   );
 }
 
-function BotaoBarra({ onClick, desabilitado, Ico, children }: {
-  onClick: () => void; desabilitado?: boolean; Ico: typeof Folder; children: React.ReactNode;
+/** Um botão da barra de comandos do Explorer. */
+function Cmd({ onClick, desabilitado, Ico, dica, children }: {
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  desabilitado?: boolean; Ico: typeof Folder;
+  dica: string; children?: React.ReactNode;
 }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={desabilitado}
-      className="px-2 py-1.5 rounded text-xs flex items-center gap-1.5 disabled:opacity-40"
-      style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)', color: 'var(--color-text-soft)' }}
-    >
-      <Ico className="w-3.5 h-3.5" /> {children}
+    <button className="win-cmd" onClick={onClick} disabled={desabilitado} title={dica} aria-label={dica}>
+      <Ico className="w-4 h-4" />
+      {children && <span className="win-rotulo">{children}</span>}
     </button>
   );
 }
@@ -215,6 +228,11 @@ export default function FileManagerLab({ specialtyCode, lessonCode, requirementC
   const [renomeando, setRenomeando] = useState<string | null>(null);
   const [rascunho, setRascunho] = useState('');
   const [menu, setMenu] = useState<{ x: number; y: number; id: string } | null>(null);
+  /* O menu Classificar da barra. Existe porque em tela estreita as colunas do
+     meio somem, e sem ele a tarefa de ordenar por data ficaria impossível no
+     celular — que é onde boa parte dos desbravadores estuda. O Explorer de
+     verdade tem esse menu pelo mesmo motivo. */
+  const [menuOrdem, setMenuOrdem] = useState<{ x: number; y: number } | null>(null);
   const [arrastando, setArrastando] = useState<string | null>(null);
   const [alvoSolto, setAlvoSolto] = useState<string | null>(null);
   const [feitas, setFeitas] = useState<Set<TarefaId>>(new Set());
@@ -236,12 +254,12 @@ export default function FileManagerLab({ specialtyCode, lessonCode, requirementC
   /* Fecha o menu de contexto ao clicar em qualquer lugar — é o que todo menu de
      sistema faz, e sem isso ele fica preso na tela. */
   useEffect(() => {
-    if (!menu) return;
-    const fechar = () => setMenu(null);
+    if (!menu && !menuOrdem) return;
+    const fechar = () => { setMenu(null); setMenuOrdem(null); };
     window.addEventListener('click', fechar);
     window.addEventListener('scroll', fechar, true);
     return () => { window.removeEventListener('click', fechar); window.removeEventListener('scroll', fechar, true); };
-  }, [menu]);
+  }, [menu, menuOrdem]);
 
   /* ── Navegação ─────────────────────────────────────────────────────────── */
 
@@ -432,96 +450,134 @@ export default function FileManagerLab({ specialtyCode, lessonCode, requirementC
 
   const caminho = caminhoDe(arvore, pastaAtual);
 
+  const naoFazParte = (nome: string) =>
+    setAviso(`${nome} existe no Explorador de verdade, e está aqui para a janela ficar igual — mas não faz parte deste exercício.`);
+
+  const tarefas = TAREFAS.map(x => ({
+    id: x.id,
+    titulo: x.rotulo,
+    detalhe: x.id === 't6' && !feitas.has('t6')
+      ? `Clique nos títulos das colunas, ou use Classificar. ${ordensUsadas.size} de 3 até agora.`
+      : undefined,
+    onde: x.id === 't6' ? 'Cabeçalhos da lista ou menu Classificar' : 'Barra de comandos ou botão direito',
+    feita: feitas.has(x.id),
+  }));
+
+  const acoes = (
+    <div className="flex flex-col gap-2">
+      <button onClick={finalizar} disabled={!tudoFeito}
+        className="btn-primary text-sm w-full justify-center disabled:opacity-50">
+        {tudoFeito ? 'Concluir o laboratório' : `Faltam ${TAREFAS.length - feitas.size}`}
+      </button>
+      <p style={{ fontSize: 11, color: 'var(--color-text-dim)' }}>
+        Dois toques abrem uma pasta. Arraste até uma pasta para mover; com Ctrl, copia.
+        No celular, use a barra de cima ou segure o item.
+      </p>
+    </div>
+  );
+
   return (
-    <div className="space-y-4">
-      <div className="card p-4">
-        <h2 className="font-bold mb-1">Mexendo em pastas e arquivos</h2>
-        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-          Este é um computador de mentirinha, com a mesma janela que você vai
-          encontrar num de verdade. Faça as seis coisas da lista — nada aqui
-          estraga o seu computador.
-        </p>
-      </div>
+    <LaboratorioEmTelaCheia
+      trilha={specialtyCode}
+      titulo="Mexendo em pastas e arquivos"
+      tarefas={tarefas}
+      aviso={aviso}
+      acoes={acoes}
+    >
+      <style>{CSS_WINDOWS}</style>
 
-      {/* ── A lista do requisito ── */}
-      <div className="card p-4">
-        <p className="text-sm font-medium mb-2">O que falta fazer</p>
-        <ul className="space-y-1.5">
-          {TAREFAS.map(t => {
-            const ok = feitas.has(t.id);
-            return (
-              <li key={t.id} className="flex items-start gap-2 text-sm">
-                {ok
-                  ? <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-success)' }} />
-                  : <Circle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-text-faint)' }} />}
-                <span style={{ color: ok ? 'var(--color-success)' : 'var(--color-text-muted)' }}>{t.rotulo}</span>
-                {t.id === 't6' && !ok && (
-                  <span className="text-xs" style={{ color: 'var(--color-text-faint)' }}>
-                    ({ordensUsadas.size} de 3 — clique nos títulos das colunas)
-                  </span>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+      <div className="win">
+        <BarraDeTitulo
+          icone={<Folder className="w-4 h-4" style={{ color: '#E6B14C' }} />}
+          nome={noAtual?.nome ?? 'Explorador de Arquivos'}
+          aoAvisar={naoFazParte}
+        />
 
-      {/* ── A janela ── */}
-      <div className="card overflow-hidden" style={{ padding: 0 }}>
-        {/* Barra de navegação e caminho */}
-        <div className="flex items-center gap-1 px-2 py-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
-          <button onClick={() => { setPosicao(p => Math.max(0, p - 1)); setSelecionado(null); }}
-            disabled={posicao === 0} className="p-1.5 rounded disabled:opacity-30" aria-label="Voltar">
+        {/* ── Barra de comandos ──
+            No Windows 11 os comandos do meio são só ícone, e é assim que a
+            pessoa vai encontrá-los: reconhecer a tesoura importa mais do que
+            ler "Recortar". Os que ficam com texto são os que o Explorer também
+            escreve por extenso. */}
+        <div className="win-barra">
+          <Cmd onClick={criarPasta} Ico={FolderPlus} dica="Nova pasta" desabilitado={pastaAtual === LIXEIRA}>
+            Novo
+          </Cmd>
+          <div className="win-sep" />
+          <Cmd dica="Recortar (Ctrl+X)" Ico={Scissors} desabilitado={!item || ehRaiz(item.id)}
+            onClick={() => { setTransferencia({ id: item!.id, recortar: true }); setAviso('Recortado. Vá até o destino e cole.'); }} />
+          <Cmd dica="Copiar (Ctrl+C)" Ico={Copy} desabilitado={!item || ehRaiz(item.id)}
+            onClick={() => { setTransferencia({ id: item!.id, recortar: false }); setAviso('Copiado. Vá até o destino e cole.'); }} />
+          <Cmd dica="Colar (Ctrl+V)" Ico={ClipboardPaste} desabilitado={!transferencia}
+            onClick={() => colar(pastaAtual)} />
+          <Cmd dica="Renomear (F2)" Ico={Pencil} desabilitado={!item || ehRaiz(item.id)}
+            onClick={() => { setRenomeando(item!.id); setRascunho(item!.nome); }} />
+          {naLixeira
+            ? <Cmd dica="Restaurar" Ico={RotateCcw} desabilitado={!item} onClick={devolver} />
+            : <Cmd dica="Excluir (Del)" Ico={Trash2} desabilitado={!item || ehRaiz(item.id)} onClick={excluir} />}
+          <div className="win-sep" />
+          <Cmd onClick={criarAtalho} Ico={Link2} dica="Criar atalho"
+            desabilitado={!item || ehRaiz(item.id) || naLixeira}>
+            Criar atalho
+          </Cmd>
+          {pastaAtual === LIXEIRA && (
+            <Cmd onClick={esvaziar} Ico={X} dica="Esvaziar a Lixeira"
+              desabilitado={filhosDe(arvore, LIXEIRA).length === 0}>
+              Esvaziar Lixeira
+            </Cmd>
+          )}
+          <div className="win-sep" />
+          <Cmd Ico={ArrowUpDown} dica="Classificar"
+            onClick={e => {
+              /* Sem parar aqui, o mesmo clique que abre o menu sobe até o
+                 window e cai no ouvinte que fecha menu — o menu abriria e
+                 sumiria no mesmo gesto. */
+              e.stopPropagation();
+              const r = e.currentTarget.getBoundingClientRect();
+              setMenuOrdem({ x: r.left, y: r.bottom + 4 });
+            }}>
+            Classificar
+          </Cmd>
+          <Cmd onClick={() => naoFazParte('O menu Exibir')} Ico={LayoutGrid} dica="Exibir">
+            Exibir
+          </Cmd>
+        </div>
+
+        {/* ── Barra de endereço ── */}
+        <div className="win-endereco">
+          <button className="win-nav" aria-label="Voltar" disabled={posicao === 0}
+            onClick={() => { setPosicao(p => Math.max(0, p - 1)); setSelecionado(null); }}>
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <button onClick={() => { setPosicao(p => Math.min(historico.length - 1, p + 1)); setSelecionado(null); }}
-            disabled={posicao >= historico.length - 1} className="p-1.5 rounded disabled:opacity-30" aria-label="Avançar">
+          <button className="win-nav" aria-label="Avançar" disabled={posicao >= historico.length - 1}
+            onClick={() => { setPosicao(p => Math.min(historico.length - 1, p + 1)); setSelecionado(null); }}>
             <ArrowRight className="w-4 h-4" />
           </button>
-          <button onClick={() => noAtual?.paiId && irPara(noAtual.paiId)}
-            disabled={!noAtual?.paiId} className="p-1.5 rounded disabled:opacity-30" aria-label="Acima">
+          <button className="win-nav" aria-label="Acima" disabled={!noAtual?.paiId}
+            onClick={() => noAtual?.paiId && irPara(noAtual.paiId)}>
             <ArrowUp className="w-4 h-4" />
           </button>
+          <button className="win-nav" aria-label="Atualizar" onClick={() => naoFazParte('Atualizar')}>
+            <RotateCw className="w-4 h-4" />
+          </button>
 
-          <div className="flex items-center gap-1 flex-1 min-w-0 ml-1 px-2 py-1 rounded text-sm overflow-x-auto"
-            style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
+          <div className="win-caminho">
             {caminho.map((n, i) => (
-              <span key={n.id} className="flex items-center gap-1 flex-shrink-0">
-                {i > 0 && <ChevronRight className="w-3 h-3" style={{ color: 'var(--color-text-faint)' }} />}
-                <button onClick={() => irPara(n.id)} className="hover:underline whitespace-nowrap"
-                  style={{ color: i === caminho.length - 1 ? 'var(--color-text)' : 'var(--color-text-muted)' }}>
-                  {n.nome}
-                </button>
+              <span key={n.id} className="flex items-center flex-shrink-0">
+                {i > 0 && <ChevronRight className="w-3 h-3" style={{ color: '#767676' }} />}
+                <button onClick={() => irPara(n.id)}>{n.nome}</button>
               </span>
             ))}
           </div>
+
+          <div className="win-busca">
+            <Search className="w-3.5 h-3.5" />
+            <span className="truncate">Pesquisar em {noAtual?.nome ?? ''}</span>
+          </div>
         </div>
 
-        {/* Barra de ferramentas */}
-        <div className="flex items-center gap-1.5 px-2 py-2 flex-wrap" style={{ borderBottom: '1px solid var(--color-border)' }}>
-          <BotaoBarra onClick={criarPasta} Ico={FolderPlus} desabilitado={pastaAtual === LIXEIRA}>Nova pasta</BotaoBarra>
-          <BotaoBarra onClick={() => { setTransferencia({ id: item!.id, recortar: true }); setAviso('Recortado. Vá até o destino e clique em Colar.'); }}
-            Ico={Scissors} desabilitado={!item || ehRaiz(item.id)}>Recortar</BotaoBarra>
-          <BotaoBarra onClick={() => { setTransferencia({ id: item!.id, recortar: false }); setAviso('Copiado. Vá até o destino e clique em Colar.'); }}
-            Ico={Copy} desabilitado={!item || ehRaiz(item.id)}>Copiar</BotaoBarra>
-          <BotaoBarra onClick={() => colar(pastaAtual)} Ico={ClipboardPaste} desabilitado={!transferencia}>Colar</BotaoBarra>
-          <BotaoBarra onClick={() => { setRenomeando(item!.id); setRascunho(item!.nome); }}
-            Ico={Pencil} desabilitado={!item || ehRaiz(item.id)}>Renomear</BotaoBarra>
-          <BotaoBarra onClick={criarAtalho} Ico={Link2} desabilitado={!item || ehRaiz(item.id) || naLixeira}>Atalho</BotaoBarra>
-          {naLixeira
-            ? <BotaoBarra onClick={devolver} Ico={RotateCcw} desabilitado={!item}>Restaurar</BotaoBarra>
-            : <BotaoBarra onClick={excluir} Ico={Trash2} desabilitado={!item || ehRaiz(item.id)}>Excluir</BotaoBarra>}
-          {pastaAtual === LIXEIRA && (
-            <BotaoBarra onClick={esvaziar} Ico={X} desabilitado={filhosDe(arvore, LIXEIRA).length === 0}>
-              Esvaziar Lixeira
-            </BotaoBarra>
-          )}
-        </div>
-
-        <div className="flex" style={{ minHeight: 300 }}>
-          {/* Árvore */}
-          <div className="w-40 sm:w-52 flex-shrink-0 py-2 overflow-y-auto"
-            style={{ borderRight: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-input)' }}>
+        {/* ── Corpo: painel de navegação e lista ── */}
+        <div className="win-corpo">
+          <div className="win-painel">
             {arvore.filter(n => n.paiId === null).map(r => (
               <Galho
                 key={r.id} n={r} nivel={0}
@@ -539,96 +595,108 @@ export default function FileManagerLab({ specialtyCode, lessonCode, requirementC
             ))}
           </div>
 
-          {/* Lista de detalhes */}
-          <div className="flex-1 min-w-0 overflow-x-auto">
-            <div className="flex" style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <Cabecalho c="nome" rotulo="Nome" largura="45%" coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
-              <Cabecalho c="modificado" rotulo="Data de modificação" largura="25%" coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
-              <Cabecalho c="tipo" rotulo="Tipo" largura="18%" coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
-              <Cabecalho c="tamanho" rotulo="Tamanho" largura="12%" coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
+          <div className="win-lista">
+            <div className="win-cabecalhos">
+              <Cabecalho c="nome" rotulo="Nome" classe="win-c-nome" coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
+              <Cabecalho c="modificado" rotulo="Data de modificação" classe="win-c-data" coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
+              <Cabecalho c="tipo" rotulo="Tipo" classe="win-c-tipo" coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
+              <Cabecalho c="tamanho" rotulo="Tamanho" classe="win-c-tam" coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
             </div>
 
-            {visiveis.length === 0 && (
-              <p className="p-4 text-sm" style={{ color: 'var(--color-text-faint)' }}>Esta pasta está vazia.</p>
-            )}
+            <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+              {visiveis.length === 0 && (
+                <p style={{ padding: 16, fontSize: 12.5, color: '#767676' }}>Esta pasta está vazia.</p>
+              )}
 
-            {visiveis.map(n => {
-              const escolhido = selecionado === n.id;
-              const recebendo = alvoSolto === n.id;
-              return (
-                <div
-                  key={n.id}
-                  className="flex items-center text-sm cursor-default select-none"
-                  style={{
-                    backgroundColor: recebendo ? 'var(--color-primary-a20)' : escolhido ? 'var(--color-primary-dim)' : 'transparent',
-                    outline: recebendo ? '1px dashed var(--color-primary)' : 'none',
-                  }}
-                  draggable={!ehRaiz(n.id) && renomeando !== n.id}
-                  onDragStart={() => { setArrastando(n.id); setSelecionado(n.id); }}
-                  onDragEnd={() => { setArrastando(null); setAlvoSolto(null); }}
-                  onDragOver={e => { if (arrastando && podeSoltarEm(arvore, arrastando, n.id)) { e.preventDefault(); setAlvoSolto(n.id); } }}
-                  onDragLeave={() => setAlvoSolto(a => (a === n.id ? null : a))}
-                  onDrop={e => { e.preventDefault(); soltarEm(n.id, e.ctrlKey || e.metaKey); }}
-                  onClick={() => { setSelecionado(n.id); setAviso(''); }}
-                  onDoubleClick={() => abrir(n)}
-                  onContextMenu={e => { e.preventDefault(); setSelecionado(n.id); setMenu({ x: e.clientX, y: e.clientY, id: n.id }); }}
-                >
-                  <div className="flex items-center gap-2 px-2 py-1.5 min-w-0" style={{ width: '45%' }}>
-                    <IconeDe n={n} />
-                    {renomeando === n.id ? (
-                      <input
-                        autoFocus
-                        value={rascunho}
-                        onChange={e => setRascunho(e.target.value)}
-                        onBlur={confirmarNome}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') confirmarNome();
-                          if (e.key === 'Escape') setRenomeando(null);
-                        }}
-                        className="input-field text-sm py-0.5 px-1"
-                        aria-label="Novo nome"
-                      />
-                    ) : (
-                      <span className="truncate">{n.nome}</span>
-                    )}
+              {visiveis.map(n => {
+                const escolhido = selecionado === n.id;
+                const recebendo = alvoSolto === n.id;
+                return (
+                  <div
+                    key={n.id}
+                    className={`win-linha${escolhido ? ' escolhida' : ''}${recebendo ? ' recebendo' : ''}`}
+                    draggable={!ehRaiz(n.id) && renomeando !== n.id}
+                    onDragStart={() => { setArrastando(n.id); setSelecionado(n.id); }}
+                    onDragEnd={() => { setArrastando(null); setAlvoSolto(null); }}
+                    onDragOver={e => { if (arrastando && podeSoltarEm(arvore, arrastando, n.id)) { e.preventDefault(); setAlvoSolto(n.id); } }}
+                    onDragLeave={() => setAlvoSolto(a => (a === n.id ? null : a))}
+                    onDrop={e => { e.preventDefault(); soltarEm(n.id, e.ctrlKey || e.metaKey); }}
+                    onClick={() => { setSelecionado(n.id); setAviso(''); }}
+                    onDoubleClick={() => abrir(n)}
+                    onContextMenu={e => { e.preventDefault(); setSelecionado(n.id); setMenu({ x: e.clientX, y: e.clientY, id: n.id }); }}
+                  >
+                    <div className="win-c-nome flex items-center gap-2 px-2">
+                      <IconeDe n={n} />
+                      {renomeando === n.id ? (
+                        <input
+                          autoFocus
+                          value={rascunho}
+                          onChange={e => setRascunho(e.target.value)}
+                          onBlur={confirmarNome}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') confirmarNome();
+                            if (e.key === 'Escape') setRenomeando(null);
+                          }}
+                          aria-label="Novo nome"
+                          style={{
+                            font: 'inherit', padding: '1px 4px', width: '100%',
+                            background: '#FFFFFF', border: '1px solid #0F6CBD', color: '#1B1B1B',
+                          }}
+                        />
+                      ) : (
+                        <span className="truncate">{n.nome}</span>
+                      )}
+                    </div>
+                    <span className="win-c-data px-2 truncate" style={{ color: '#5B5B5B' }}>
+                      {formatarData(n.modificadoEm)}
+                    </span>
+                    <span className="win-c-tipo px-2 truncate" style={{ color: '#5B5B5B' }}>
+                      {rotuloDoTipo(n)}
+                    </span>
+                    <span className="win-c-tam px-2" style={{ color: '#5B5B5B' }}>
+                      {formatarTamanho(n)}
+                    </span>
                   </div>
-                  <span className="px-2 py-1.5 truncate" style={{ width: '25%', color: 'var(--color-text-muted)' }}>
-                    {formatarData(n.modificadoEm)}
-                  </span>
-                  <span className="px-2 py-1.5 truncate" style={{ width: '18%', color: 'var(--color-text-muted)' }}>
-                    {rotuloDoTipo(n)}
-                  </span>
-                  <span className="px-2 py-1.5 text-right" style={{ width: '12%', color: 'var(--color-text-muted)' }}>
-                    {formatarTamanho(n)}
-                  </span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Barra de status */}
-        <div className="px-3 py-1.5 text-xs flex justify-between"
-          style={{ borderTop: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg-input)', color: 'var(--color-text-muted)' }}>
-          <span>{visiveis.length} {visiveis.length === 1 ? 'item' : 'itens'}{item ? ' · 1 selecionado' : ''}</span>
+        <div className="win-status">
+          <span>{visiveis.length} {visiveis.length === 1 ? 'item' : 'itens'}</span>
+          {item && <span>1 item selecionado</span>}
           {transferencia && (
-            <span>{transferencia.recortar ? 'Recortado' : 'Copiado'}: {acharNo(arvore, transferencia.id)?.nome}</span>
+            <span style={{ marginLeft: 'auto' }}>
+              {transferencia.recortar ? 'Recortado' : 'Copiado'}: {acharNo(arvore, transferencia.id)?.nome}
+            </span>
           )}
         </div>
       </div>
 
-      {aviso && <p className="text-sm px-1" style={{ color: 'var(--color-secondary)' }}>{aviso}</p>}
+      {/* ── Menu Classificar, o mesmo do Explorer ── */}
+      {menuOrdem && (
+        <div
+          className="win-menu"
+          style={{ left: Math.min(menuOrdem.x, window.innerWidth - 220), top: menuOrdem.y }}
+          onClick={e => e.stopPropagation()}
+        >
+          {ORDENS.map(([c, rotulo]) => (
+            <button key={c} onClick={() => { ordenarPor(c); setMenuOrdem(null); }}>
+              <span style={{ width: 14, flex: 'none' }}>{coluna === c ? '•' : ''}</span> {rotulo}
+            </button>
+          ))}
+          <div style={{ height: 1, background: '#E0E0E0', margin: '4px 6px' }} />
+          <button onClick={() => { setCrescente(true); setMenuOrdem(null); }}>
+            <span style={{ width: 14, flex: 'none' }}>{crescente ? '•' : ''}</span> Crescente
+          </button>
+          <button onClick={() => { setCrescente(false); setMenuOrdem(null); }}>
+            <span style={{ width: 14, flex: 'none' }}>{crescente ? '' : '•'}</span> Decrescente
+          </button>
+        </div>
+      )}
 
-      <p className="text-xs px-1" style={{ color: 'var(--color-text-faint)' }}>
-        Dois toques abrem uma pasta. Arraste um item até uma pasta para mover — segurando
-        Ctrl, copia. No celular, use a barra de cima ou segure o item para abrir o menu.
-      </p>
-
-      <button onClick={finalizar} disabled={!tudoFeito} className="btn-primary">
-        {tudoFeito ? 'Concluir o laboratório' : `Faltam ${TAREFAS.length - feitas.size} operação(ões)`}
-      </button>
-
-      {/* Menu de contexto */}
+      {/* ── Menu de contexto ── */}
       {menu && (() => {
         const n = acharNo(arvore, menu.id);
         if (!n) return null;
@@ -637,34 +705,28 @@ export default function FileManagerLab({ specialtyCode, lessonCode, requirementC
           ['Abrir', FolderOpen, () => abrir(n), true],
           ['Recortar', Scissors, () => setTransferencia({ id: n.id, recortar: true }), naoRaiz],
           ['Copiar', Copy, () => setTransferencia({ id: n.id, recortar: false }), naoRaiz],
-          ['Colar aqui', ClipboardPaste, () => colar(n.tipo === 'pasta' ? n.id : pastaAtual), !!transferencia],
+          ['Colar', ClipboardPaste, () => colar(n.tipo === 'pasta' ? n.id : pastaAtual), !!transferencia],
           ['Criar atalho', Link2, criarAtalho, naoRaiz && !naLixeira],
           ['Renomear', Pencil, () => { setRenomeando(n.id); setRascunho(n.nome); }, naoRaiz],
           [naLixeira ? 'Restaurar' : 'Excluir', naLixeira ? RotateCcw : Trash2, naLixeira ? devolver : excluir, naoRaiz],
         ];
         return (
-          <ul
-            className="fixed z-50 py-1 rounded-lg text-sm shadow-xl"
+          <div
+            className="win-menu"
             style={{
-              left: Math.min(menu.x, window.innerWidth - 180), top: Math.min(menu.y, window.innerHeight - 260),
-              minWidth: 168, backgroundColor: 'var(--color-bg-card)', border: '1px solid var(--color-border)',
+              left: Math.min(menu.x, window.innerWidth - 220),
+              top: Math.min(menu.y, window.innerHeight - 280),
             }}
             onClick={e => e.stopPropagation()}
           >
             {opcoes.filter(([, , , mostrar]) => mostrar).map(([rotulo, Ico, acao]) => (
-              <li key={rotulo}>
-                <button
-                  className="w-full text-left px-3 py-1.5 flex items-center gap-2 hover:opacity-80"
-                  style={{ color: 'var(--color-text-soft)' }}
-                  onClick={() => { acao(); setMenu(null); }}
-                >
-                  <Ico className="w-3.5 h-3.5" /> {rotulo}
-                </button>
-              </li>
+              <button key={rotulo} onClick={() => { acao(); setMenu(null); }}>
+                <Ico className="w-3.5 h-3.5" /> {rotulo}
+              </button>
             ))}
-          </ul>
+          </div>
         );
       })()}
-    </div>
+    </LaboratorioEmTelaCheia>
   );
 }

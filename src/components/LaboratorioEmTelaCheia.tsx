@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronUp, ArrowLeft, X, ListChecks } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowLeft, X, ListChecks, MonitorSmartphone } from 'lucide-react';
 
 /*
  * A moldura do laboratório que imita um programa.
@@ -59,13 +59,45 @@ interface Props {
   children: React.ReactNode;
   /** As ações da lição: entregar, recomeçar. Ficam no pé do painel. */
   acoes?: React.ReactNode;
+  /**
+   * Altura, em pixels, do que o programa imitado já tem colado no pé da tela —
+   * barra de tarefas, régua de status. A cápsula e a bolha da plataforma sobem
+   * essa altura para não tapá-lo: é a mesma regra da barra de título, que o que
+   * o desbravador precisa reconhecer depois não se cobre.
+   */
+  rodape?: number;
+}
+
+/*
+  O aviso de tela pequena.
+
+  Estes laboratórios imitam programas de computador, e programa de computador
+  foi desenhado para tela de computador: a janela encolhe até caber num
+  celular, mas o que ela mostra fica menor do que o desbravador vai encontrar
+  na escola. Dizer isso uma vez é honesto; repetir a cada lição é estorvo — daí
+  a lembrança guardada.
+
+  Guardada com try, como todo acesso a localStorage nesta base: em navegação
+  privada ele lança, e um aviso não pode derrubar o laboratório.
+*/
+const CHAVE_AVISO = 'trilha:aviso-tela-pequena';
+
+function jaAvisado(): boolean {
+  try { return localStorage.getItem(CHAVE_AVISO) === '1'; } catch { return false; }
+}
+
+function marcarAvisado(): void {
+  try { localStorage.setItem(CHAVE_AVISO, '1'); } catch { /* sem memória, avisa de novo */ }
 }
 
 export default function LaboratorioEmTelaCheia({
-  trilha, titulo, tarefas, aviso, children, acoes,
+  trilha, titulo, tarefas, aviso, children, acoes, rodape = 0,
 }: Props) {
   const [painelAberto, setPainelAberto] = useState(true);
-  const [bolhaAberta, setBolhaAberta] = useState(true);
+  const [avisoDeTela, setAvisoDeTela] = useState(() => !jaAvisado());
+  /* Com o aviso de pé a bolha começa fechada: dois painéis escuros empilhados
+     num celular são um só borrão, e o aviso vem antes da lista de tarefas. */
+  const [bolhaAberta, setBolhaAberta] = useState(() => jaAvisado());
 
   const feitas = tarefas.filter(t => t.feita).length;
   const proporcao = tarefas.length ? feitas / tarefas.length : 0;
@@ -162,8 +194,9 @@ export default function LaboratorioEmTelaCheia({
       {/* Acima da barra de status, e não em cima dela: a régua de baixo do
           programa continua legível, que é a regra desta moldura — o que a
           pessoa precisa reconhecer depois não se cobre. */}
-      <div className="hidden lg:flex absolute left-3 bottom-9 z-10 items-center gap-2.5 rounded-full pl-2 pr-3.5 py-1.5"
+      <div className="hidden lg:flex absolute left-3 z-10 items-center gap-2.5 rounded-full pl-2 pr-3.5 py-1.5"
         style={{
+          bottom: 36 + rodape,
           background: 'rgba(10, 11, 16, 0.74)',
           backdropFilter: 'blur(14px) saturate(140%)',
           WebkitBackdropFilter: 'blur(14px) saturate(140%)',
@@ -184,8 +217,9 @@ export default function LaboratorioEmTelaCheia({
       </div>
 
       {/* B · a bolha do celular */}
-      <div className="lg:hidden absolute right-3 bottom-9 z-10 rounded-2xl"
+      <div className="lg:hidden absolute right-3 z-10 rounded-2xl"
         style={{
+          bottom: 36 + rodape,
           width: bolhaAberta ? 'min(320px, calc(100vw - 24px))' : 'auto',
           background: 'rgba(10, 11, 16, 0.78)',
           backdropFilter: 'blur(14px) saturate(140%)',
@@ -238,6 +272,44 @@ export default function LaboratorioEmTelaCheia({
           </div>
         )}
       </div>
+
+      {/*
+        O aviso de tela pequena, uma vez só.
+
+        Aparece abaixo de 768 px — celular. Tablet em pé já tem 768 e passa
+        sem aviso, que é o que a mensagem promete. Vem como faixa de baixo, e
+        não como caixa no meio: barra de título e faixa de opções do programa
+        imitado são o que o desbravador precisa reconhecer depois, e um aviso
+        em cima delas esconderia justamente a matéria.
+      */}
+      {avisoDeTela && (
+        <div className="md:hidden absolute inset-x-0 bottom-0 z-20 p-3">
+          <div className="flex items-start gap-3 rounded-2xl p-3"
+            style={{
+              background: 'rgba(10, 11, 16, 0.94)',
+              backdropFilter: 'blur(14px) saturate(140%)',
+              WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
+              color: 'var(--color-text)',
+            }}>
+            <MonitorSmartphone className="w-5 h-5 flex-none" style={{ color: 'var(--color-secondary)' }} />
+            <div className="min-w-0">
+              <p style={{ fontSize: 13, fontWeight: 700 }}>Melhor numa tela maior</p>
+              <p className="mt-1" style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                Este laboratório imita um programa de computador, e no celular ele
+                fica apertado: os botões encolhem e algumas colunas somem. Dá para
+                fazer tudo por aqui, mas num tablet ou num computador você vê a
+                tela do jeito que vai encontrar na escola.
+              </p>
+              <button onClick={() => { setAvisoDeTela(false); marcarAvisado(); setBolhaAberta(true); }}
+                className="btn-primary text-sm mt-3">
+                Entendi, pode continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
