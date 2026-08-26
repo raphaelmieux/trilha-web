@@ -1,10 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId,
   registrarConclusaoDeLicao,
 } from '../lib/progress';
 import { validateHtml, type CheckResult } from '../lib/htmlValidator';
-import { Code2, RotateCcw, CheckCircle2, AlertCircle, FileCode, Eye, PanelsTopLeft } from 'lucide-react';
+import { CheckCircle2, RotateCcw } from 'lucide-react';
+import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
+import {
+  CSS_IDE, CabecalhoDaIde, LateralDaIde, EditorDeCodigo, PreviaDaIde,
+  StatusDaIde, AlternadorDaIde,
+} from './ide';
+import { contarLinhas } from './realce';
 import type { PropsDeLaboratorio } from './tipos';
 
 /**
@@ -82,9 +88,50 @@ const CHECK_IDS: Record<CodeLabVariant, string[]> = {
   ],
 };
 
-const INTROS: Record<CodeLabVariant, string> = {
-  elementos: 'Escreva uma página HTML completa. A prévia ao lado mostra o resultado real, e a lista de requisitos é conferida enquanto você digita — cada item só é marcado quando o elemento existe de verdade na página, com o conteúdo e os atributos que o requisito pede.',
-  tabela: 'O requisito 4 pede uma página inteira: uma tabela com texto, um gráfico, uma regra horizontal e um link, com algum texto colorido por código hexadecimal e um título maior que o corpo. Escolha algo do seu clube para tabelar — a escala da unidade, os hinos do trimestre — e troque o exemplo que já está no editor, que não conta.',
+const ARQUIVO = 'index.html';
+
+/** O nome da pasta do projeto, na lateral do editor. */
+const PROJETO: Record<CodeLabVariant, string> = {
+  elementos: 'meu-clube',
+  tabela: 'escala-da-unidade',
+};
+
+/*
+  O caminho de cada verificação que ainda falta, para quem empacar. A moldura
+  só oferece isto depois de um tempo sem ninguém concluir nada.
+
+  A chave é o `id` da verificação, o mesmo do validador — assim o passo a passo
+  não tem como falar de um requisito e a lista falar de outro.
+*/
+const PASSOS: Record<string, string[]> = {
+  doctype: ['Na primeira linha do arquivo, escreva <!DOCTYPE html>.'],
+  html: ['Envolva a página inteira: <html> na segunda linha e </html> na última.'],
+  head: ['Depois de <html>, abra <head> e feche </head>. É onde vão as informações da página.'],
+  body: ['Depois do </head>, abra <body> e feche </body>. É o que aparece na tela.'],
+  title: ['Dentro do <head>, escreva <title>Nome da página</title>.'],
+  heading: ['Dentro do <body>, escreva <h1>Um título</h1>.'],
+  paragraph: ['Dentro do <body>, escreva <p>Um parágrafo de texto.</p>.'],
+  list: [
+    'Abra uma lista com <ul> e feche com </ul>.',
+    'Dentro dela, cada item é <li>texto do item</li>.',
+    'Ponha pelo menos dois itens.',
+  ],
+  link: ['Escreva <a href="https://adventistas.org">Site oficial</a>.'],
+  image: [
+    'Escreva <img src="foto.jpg" alt="Descrição da foto">.',
+    'O alt não é enfeite: é o que a pessoa cega ouve no lugar da imagem.',
+  ],
+  table: [
+    'Abra <table> e feche </table>.',
+    'Cada linha é <tr>…</tr>, e cada célula, <td>…</td>.',
+  ],
+  bold: ['Ponha <strong>alguma palavra</strong> no meio de um parágrafo.'],
+  italic: ['Ponha <em>alguma palavra</em> no meio de um parágrafo.'],
+  comment: ['Escreva um comentário: <!-- isto não aparece na página -->.'],
+  form: [
+    'Abra <form> e feche </form>.',
+    'Dentro, ponha um <input> e um <button>Enviar</button>.',
+  ],
 };
 
 export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId, variant = 'elementos' }: Props) {
@@ -92,8 +139,10 @@ export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requir
   const [code, setCode] = useState(starter);
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [mobileView, setMobileView] = useState<'code' | 'preview'>('code');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  /* Em tela estreita o editor e a prévia não cabem lado a lado, e a escolha
+     entre os dois é de quem está usando. */
+  const [vendo, setVendo] = useState<'codigo' | 'previa'>('codigo');
+  const [aviso, setAviso] = useState('');
 
   // Live validation: the student sees a requirement tick the moment the markup
   // becomes correct, which is the feedback loop that teaches the element. The
@@ -108,8 +157,6 @@ export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requir
     const t = setTimeout(() => setPreviewCode(code), 400);
     return () => clearTimeout(t);
   }, [code]);
-
-  const lineCount = useMemo(() => code.split('\n').length, [code]);
 
   const handleComplete = async () => {
     setSaving(true);
@@ -127,20 +174,6 @@ export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requir
     setCompleted(true);
   };
 
-  /** Inserts a snippet at the caret so beginners are not stuck on syntax. */
-  const insert = (snippet: string) => {
-    const el = textareaRef.current;
-    if (!el) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const next = code.slice(0, start) + snippet + code.slice(end);
-    setCode(next);
-    requestAnimationFrame(() => {
-      el.focus();
-      el.selectionStart = el.selectionEnd = start + snippet.length;
-    });
-  };
-
   if (completed) {
     return (
       <div className="card p-8 text-center">
@@ -154,142 +187,79 @@ export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requir
     );
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="card p-6">
-        <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <Code2 className="w-5 h-5" style={{ color: 'var(--color-primary)' }} /> {lessonTitle}
-        </h1>
-        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-          {INTROS[variant]}
-        </p>
-      </div>
+  /*
+    O que falta, tarefa a tarefa, para o painel da moldura. Uma verificação é
+    uma tarefa: é o mesmo que o painel de Problemas de um editor mostra, e é
+    disso que o desbravador precisa — não de uma nota no fim.
+  */
+  const tarefas = results.map(r => ({
+    id: r.id,
+    titulo: r.label,
+    detalhe: r.passed ? undefined : (r.detail || r.hint),
+    passos: PASSOS[r.id],
+    feita: r.passed,
+  }));
 
-      <div className="card p-4">
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h2 className="font-bold flex items-center gap-2">
-            <span style={{ color: allPassed ? 'var(--color-success)' : 'var(--color-text)' }}>
-              {passedCount} de {results.length}
-            </span>
-            <span className="text-sm font-normal" style={{ color: 'var(--color-text-muted)' }}>requisitos atendidos</span>
-          </h2>
-          {allPassed && (
-            <button onClick={handleComplete} disabled={saving} className="btn-primary">
-              {saving ? 'Salvando...' : 'Concluir'}
-            </button>
-          )}
-        </div>
-        <div className="w-full rounded-full h-2 overflow-hidden" style={{ backgroundColor: 'var(--color-bg-hover)' }}>
-          <div
-            className="h-2 rounded-full transition-all duration-300"
-            style={{
-              width: `${(passedCount / results.length) * 100}%`,
-              background: allPassed ? 'var(--color-success)' : 'linear-gradient(90deg, var(--color-primary), var(--color-secondary))',
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Mobile switch — on small screens editor and preview cannot sit side by side */}
-      <div className="flex gap-2 lg:hidden">
-        <button
-          onClick={() => setMobileView('code')}
-          className={mobileView === 'code' ? 'btn-primary flex-1' : 'btn-secondary flex-1'}
-        >
-          <FileCode className="w-4 h-4 mr-1" /> Código
-        </button>
-        <button
-          onClick={() => setMobileView('preview')}
-          className={mobileView === 'preview' ? 'btn-primary flex-1' : 'btn-secondary flex-1'}
-        >
-          <Eye className="w-4 h-4 mr-1" /> Prévia
-        </button>
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-4">
-        <div className={`card p-4 ${mobileView === 'code' ? '' : 'hidden lg:block'}`}>
-          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-            <h2 className="font-bold flex items-center gap-2 text-sm">
-              <FileCode className="w-4 h-4" style={{ color: 'var(--color-primary)' }} /> index.html
-              <span className="text-xs font-normal" style={{ color: 'var(--color-text-dim)' }}>{lineCount} linhas</span>
-            </h2>
-            <button onClick={() => setCode(starter)} className="btn-secondary text-xs">
-              <RotateCcw className="w-3 h-3 mr-1" /> Recomeçar
-            </button>
-          </div>
-
-          <div className="flex flex-wrap gap-1 mb-2">
-            {[
-              { label: '<p>', snip: '<p>Texto do parágrafo</p>\n' },
-              { label: '<h1>', snip: '<h1>Título</h1>\n' },
-              { label: 'lista', snip: '<ul>\n  <li>Primeiro item</li>\n  <li>Segundo item</li>\n</ul>\n' },
-              { label: 'link', snip: '<a href="https://adventistas.org">Site oficial</a>\n' },
-              { label: 'imagem', snip: '<img src="foto.jpg" alt="Descrição da foto">\n' },
-              { label: 'tabela', snip: '<table>\n  <tr>\n    <td>Nome</td>\n    <td>Unidade</td>\n  </tr>\n  <tr>\n    <td>Ana</td>\n    <td>Falcão</td>\n  </tr>\n</table>\n' },
-            ].map(b => (
-              <button
-                key={b.label}
-                onClick={() => insert(b.snip)}
-                className="text-xs px-2 py-1 rounded font-mono transition"
-                style={{ backgroundColor: 'var(--color-bg-hover)', color: 'var(--color-secondary)', border: '1px solid var(--color-border)' }}
-                title="Inserir no cursor"
-              >
-                + {b.label}
-              </button>
-            ))}
-          </div>
-
-          <textarea
-            ref={textareaRef}
-            value={code}
-            onChange={e => setCode(e.target.value)}
-            spellCheck={false}
-            className="input-field font-mono text-xs leading-relaxed"
-            style={{ height: '440px', resize: 'vertical', tabSize: 2 }}
-            aria-label="Editor de código HTML"
-          />
-        </div>
-
-        <div className={`card p-4 ${mobileView === 'preview' ? '' : 'hidden lg:block'}`}>
-          <h2 className="font-bold mb-2 flex items-center gap-2 text-sm">
-            <PanelsTopLeft className="w-4 h-4" style={{ color: 'var(--color-tertiary-light)' }} /> Prévia ao vivo
-          </h2>
-          {/* sandbox with no allow-scripts: student markup renders, but cannot run
-              JavaScript or navigate the parent page. */}
-          <iframe
-            srcDoc={previewCode}
-            sandbox=""
-            title="Prévia da página"
-            className="w-full rounded-lg"
-            style={{ height: '440px', backgroundColor: '#ffffff', border: '1px solid var(--color-border)' }}
-          />
-        </div>
-      </div>
-
-      <div className="card p-4">
-        <h2 className="font-bold mb-3 text-sm">Requisitos verificados</h2>
-        <ul className="grid sm:grid-cols-2 gap-2">
-          {results.map(r => (
-            <li
-              key={r.id}
-              className="flex items-start gap-2 text-sm p-2 rounded-lg"
-              style={{ backgroundColor: r.passed ? 'var(--color-success-a10)' : 'var(--color-bg-input)' }}
-            >
-              {r.passed
-                ? <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-success)' }} />
-                : <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-text-faint)' }} />}
-              <div className="min-w-0">
-                <span className="font-mono font-bold" style={{ color: r.passed ? 'var(--color-success)' : 'var(--color-text-soft)' }}>
-                  {r.label}
-                </span>
-                <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
-                  {r.passed ? r.hint : (r.detail || r.hint)}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+  const acoes = (
+    <div className="flex flex-col gap-2">
+      <button onClick={handleComplete} disabled={!allPassed || saving}
+        className="btn-primary text-sm w-full justify-center disabled:opacity-50">
+        {saving ? 'Salvando…' : allPassed ? 'Concluir o laboratório' : `Faltam ${results.length - passedCount}`}
+      </button>
+      <button onClick={() => setCode(starter)} className="btn-secondary text-xs w-full justify-center">
+        <RotateCcw className="w-3 h-3 mr-1" /> Recomeçar do zero
+      </button>
     </div>
+  );
+
+  const naoFazParte = (o: string) =>
+    setAviso(`${o} existe num editor de verdade, e está aqui para a tela ficar igual — mas não faz parte deste exercício.`);
+
+  return (
+    <LaboratorioEmTelaCheia
+      trilha={specialtyCode}
+      titulo={lessonTitle}
+      tarefas={tarefas}
+      aviso={aviso}
+      acoes={acoes}
+      rodape={26}
+    >
+      <style>{CSS_IDE}</style>
+
+      <div className="ide">
+        <CabecalhoDaIde arquivo={ARQUIVO} projeto={PROJETO[variant]} aoAvisar={naoFazParte} />
+
+        <div className="ide-corpo">
+          <LateralDaIde
+            projeto={PROJETO[variant]}
+            arquivos={[{ nome: ARQUIVO, problemas: results.length - passedCount }]}
+            atual={ARQUIVO}
+            aoAbrir={() => {}}
+            aoAvisar={naoFazParte}
+          />
+
+          <div className="ide-painel">
+            <div className="ide-guias">
+              <button className="ide-guia" aria-current="true">
+                <span style={{ color: '#E37933' }}>◆</span> {ARQUIVO}
+              </button>
+            </div>
+
+            <AlternadorDaIde vendo={vendo} aoTrocar={setVendo} />
+
+            <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+              <div className={vendo === 'codigo' ? 'ide-lado-codigo' : 'ide-lado-codigo escondido'}>
+                <EditorDeCodigo codigo={code} aoMudar={setCode} rotulo="Editor de código HTML" />
+              </div>
+              <div className={vendo === 'previa' ? 'ide-lado-previa' : 'ide-lado-previa escondido'}>
+                <PreviaDaIde html={previewCode} arquivo={ARQUIVO} aoAvisar={naoFazParte} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <StatusDaIde problemas={results.length - passedCount} linhas={contarLinhas(code)} aoAvisar={naoFazParte} />
+      </div>
+    </LaboratorioEmTelaCheia>
   );
 }

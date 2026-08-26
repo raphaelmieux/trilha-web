@@ -4,7 +4,13 @@ import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollm
   registrarConclusaoDeLicao,
 } from '../lib/progress';
 import { validateHtml, validateSiteLinks, type CheckResult } from '../lib/htmlValidator';
-import { CheckCircle2, AlertCircle, FileCode, Globe, Eye, PanelsTopLeft } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
+import {
+  CSS_IDE, CabecalhoDaIde, LateralDaIde, EditorDeCodigo, PreviaDaIde,
+  StatusDaIde, AlternadorDaIde,
+} from './ide';
+import { contarLinhas } from './realce';
 import type { PropsDeLaboratorio as Props } from './tipos';
 
 const PAGES = [
@@ -37,13 +43,56 @@ const STARTERS: Record<string, string> = {
   'contato.html': starter('Contato', '  <!-- Crie um formulário com um campo e um botão -->'),
 };
 
+const PROJETO = 'site-do-clube';
+
+/*
+  O caminho de cada verificação que ainda falta, para quem empacar. A chave é o
+  `id` do validador — assim o passo a passo não fala de um requisito enquanto a
+  lista fala de outro.
+*/
+const PASSOS: Record<string, string[]> = {
+  html: ['A página inteira vai entre <html> e </html>.'],
+  head: ['Depois de <html>, abra <head> e feche </head>.'],
+  body: ['Depois do </head>, abra <body> e feche </body>.'],
+  title: ['Dentro do <head>, escreva <title>Nome da página</title>.'],
+  heading: ['Dentro do <body>, escreva <h1>Título da página</h1>.'],
+  image: [
+    'Abra galeria.html na lateral do editor.',
+    'Escreva <img src="foto.jpg" alt="Descrição da foto">.',
+    'O alt é o que a pessoa cega ouve no lugar da imagem — não deixe vazio.',
+  ],
+  form: [
+    'Abra contato.html na lateral do editor.',
+    'Abra <form> e feche </form>.',
+    'Dentro dele ponha um <input> e um <button>Enviar</button>.',
+  ],
+  welcomeReason: [
+    'Em index.html, diga num parágrafo por que o site existe.',
+    'Uma frase basta: para que serve o site e para quem ele é.',
+  ],
+  welcomeImage: ['Em index.html, ponha uma imagem com <img src="…" alt="…">.'],
+  linksAllPages: [
+    'Cada página precisa de links para as outras três.',
+    'O menu já está pronto no começo de cada arquivo — confira se os quatro <a href="…"> continuam lá.',
+  ],
+  linksValid: [
+    'Um link aponta para um arquivo que não existe.',
+    'Confira se cada href é exatamente index.html, sobre.html, galeria.html ou contato.html.',
+  ],
+  linksReciprocal: [
+    'Alguma página não é apontada por ninguém.',
+    'Abra cada arquivo e veja se o menu tem os quatro links, sem faltar nenhum.',
+  ],
+};
+
 /** Per-page requirements. Every page must stand on its own as valid HTML. */
 const PAGE_CHECKS = ['html', 'head', 'body', 'title', 'heading'];
 
 export default function SiteLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const [pages, setPages] = useState<Record<string, string>>(() => ({ ...STARTERS }));
   const [active, setActive] = useState('index.html');
-  const [mobileView, setMobileView] = useState<'code' | 'preview'>('code');
+  const [vendo, setVendo] = useState<'codigo' | 'previa'>('codigo');
+  const [aviso, setAviso] = useState('');
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -113,146 +162,99 @@ export default function SiteLab({ specialtyCode, lessonCode, lessonTitle, requir
     );
   }
 
-  const pageErrors = (file: string) => perPage[file].filter(c => !c.passed).length;
+  const errosDe = (arquivo: string) => perPage[arquivo].filter(c => !c.passed).length;
+
+  /*
+    Toda verificação vira uma tarefa no painel da moldura — as de estrutura,
+    página por página, e as do site inteiro. É o mesmo que o painel de
+    Problemas de um editor mostra, e é o que se precisa saber enquanto se
+    escreve, não no fim.
+  */
+  const tarefas = [
+    ...PAGES.flatMap(p => perPage[p.file].map(r => ({
+      id: `${p.file}:${r.id}`,
+      titulo: `${p.file} — ${r.label}`,
+      detalhe: r.passed ? undefined : (r.detail || r.hint),
+      onde: `Abra ${p.file} na lateral do editor`,
+      passos: PASSOS[r.id],
+      feita: r.passed,
+    }))),
+    ...siteChecks.map(r => ({
+      id: `site:${r.id}`,
+      titulo: r.label,
+      detalhe: r.passed ? undefined : (r.detail || r.hint),
+      passos: PASSOS[r.id],
+      feita: r.passed,
+    })),
+  ];
+
+  const acoes = (
+    <button onClick={handleComplete} disabled={!allPassed || saving}
+      className="btn-primary text-sm w-full justify-center disabled:opacity-50">
+      {saving ? 'Salvando…' : allPassed ? 'Concluir o laboratório' : `Faltam ${allChecks.length - passedCount}`}
+    </button>
+  );
+
+  const naoFazParte = (o: string) =>
+    setAviso(`${o} existe num editor de verdade, e está aqui para a tela ficar igual — mas não faz parte deste exercício.`);
 
   return (
-    <div className="space-y-4">
-      <div className="card p-6">
-        <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <Globe className="w-5 h-5" style={{ color: 'var(--color-tertiary-light)' }} /> {lessonTitle}
-        </h1>
-        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-          Construa um site completo com quatro páginas ligadas entre si. Os links são
-          conferidos de verdade: uma página que ninguém aponta, ou um link para um
-          arquivo que não existe, aparecem como erro — é assim que se testa um site real.
-        </p>
-      </div>
+    <LaboratorioEmTelaCheia
+      trilha={specialtyCode}
+      titulo={lessonTitle}
+      tarefas={tarefas}
+      aviso={aviso}
+      acoes={acoes}
+      rodape={26}
+    >
+      <style>{CSS_IDE}</style>
 
-      <div className="card p-4">
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <h2 className="font-bold">
-            <span style={{ color: allPassed ? 'var(--color-success)' : 'var(--color-text)' }}>
-              {passedCount} de {allChecks.length}
-            </span>
-            <span className="text-sm font-normal ml-2" style={{ color: 'var(--color-text-muted)' }}>verificações</span>
-          </h2>
-          {allPassed && (
-            <button onClick={handleComplete} disabled={saving} className="btn-primary">
-              {saving ? 'Salvando...' : 'Concluir SiteLab'}
-            </button>
-          )}
-        </div>
-        <div className="w-full rounded-full h-2 overflow-hidden" style={{ backgroundColor: 'var(--color-bg-hover)' }}>
-          <div className="h-2 rounded-full transition-all duration-300" style={{
-            width: `${(passedCount / allChecks.length) * 100}%`,
-            background: allPassed ? 'var(--color-success)' : 'linear-gradient(90deg, var(--color-tertiary), var(--color-tertiary-light))',
-          }} />
-        </div>
-      </div>
+      <div className="ide">
+        <CabecalhoDaIde arquivo={active} projeto={PROJETO} aoAvisar={naoFazParte} />
 
-      <div className="flex flex-wrap gap-2">
-        {PAGES.map(p => {
-          const errors = pageErrors(p.file);
-          const isActive = active === p.file;
-          return (
-            <button
-              key={p.file}
-              onClick={() => setActive(p.file)}
-              className="px-3 py-2 rounded-lg text-sm font-mono transition flex items-center gap-2"
-              style={{
-                backgroundColor: isActive ? 'var(--color-primary-a15)' : 'var(--color-bg-input)',
-                border: `1px solid ${isActive ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)',
-              }}
-            >
-              <FileCode className="w-3.5 h-3.5" />
-              {p.file}
-              {errors > 0 && (
-                <span className="text-xs px-1.5 rounded-full" style={{ backgroundColor: 'var(--color-error-a20)', color: 'var(--color-error)' }}>
-                  {errors}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="flex gap-2 lg:hidden">
-        <button onClick={() => setMobileView('code')} className={mobileView === 'code' ? 'btn-primary flex-1' : 'btn-secondary flex-1'}>
-          <FileCode className="w-4 h-4 mr-1" /> Código
-        </button>
-        <button onClick={() => setMobileView('preview')} className={mobileView === 'preview' ? 'btn-primary flex-1' : 'btn-secondary flex-1'}>
-          <Eye className="w-4 h-4 mr-1" /> Prévia
-        </button>
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-4">
-        <div className={`card p-4 ${mobileView === 'code' ? '' : 'hidden lg:block'}`}>
-          <h2 className="font-bold mb-2 text-sm font-mono" style={{ color: 'var(--color-primary)' }}>{active}</h2>
-          <textarea
-            value={pages[active]}
-            onChange={e => setPages({ ...pages, [active]: e.target.value })}
-            spellCheck={false}
-            className="input-field font-mono text-xs leading-relaxed"
-            style={{ height: '420px', resize: 'vertical', tabSize: 2 }}
-            aria-label={`Editor de ${active}`}
+        <div className="ide-corpo">
+          <LateralDaIde
+            projeto={PROJETO}
+            arquivos={PAGES.map(p => ({ nome: p.file, problemas: errosDe(p.file) }))}
+            atual={active}
+            aoAbrir={setActive}
+            aoAvisar={naoFazParte}
           />
+
+          <div className="ide-painel">
+            {/* Uma guia por arquivo, como num editor com quatro abertos. */}
+            <div className="ide-guias">
+              {PAGES.map(p => (
+                <button key={p.file} className="ide-guia" aria-current={p.file === active}
+                  onClick={() => setActive(p.file)}>
+                  <span style={{ color: '#E37933' }}>◆</span> {p.file}
+                  {errosDe(p.file) > 0 && (
+                    <span style={{ fontSize: 10.5, color: '#F48771' }}>{errosDe(p.file)}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <AlternadorDaIde vendo={vendo} aoTrocar={setVendo} />
+
+            <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+              <div className={vendo === 'codigo' ? 'ide-lado-codigo' : 'ide-lado-codigo escondido'}>
+                <EditorDeCodigo
+                  codigo={pages[active]}
+                  aoMudar={c => setPages({ ...pages, [active]: c })}
+                  rotulo={`Editor de ${active}`}
+                />
+              </div>
+              <div className={vendo === 'previa' ? 'ide-lado-previa' : 'ide-lado-previa escondido'}>
+                <PreviaDaIde html={previewCode} arquivo={active} aoAvisar={naoFazParte} />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className={`card p-4 ${mobileView === 'preview' ? '' : 'hidden lg:block'}`}>
-          <h2 className="font-bold mb-2 flex items-center gap-2 text-sm">
-            <PanelsTopLeft className="w-4 h-4" style={{ color: 'var(--color-tertiary-light)' }} /> Prévia de {active}
-          </h2>
-          <iframe
-            srcDoc={previewCode}
-            sandbox=""
-            title={`Prévia de ${active}`}
-            className="w-full rounded-lg"
-            style={{ height: '420px', backgroundColor: '#ffffff', border: '1px solid var(--color-border)' }}
-          />
-          <p className="text-xs mt-2" style={{ color: 'var(--color-text-dim)' }}>
-            Os links não navegam aqui dentro — eles são conferidos pela lista de verificações abaixo.
-          </p>
-        </div>
+        <StatusDaIde problemas={allChecks.length - passedCount}
+          linhas={contarLinhas(pages[active])} aoAvisar={naoFazParte} />
       </div>
-
-      <div className="grid lg:grid-cols-2 gap-4">
-        <div className="card p-4">
-          <h2 className="font-bold mb-3 text-sm">Estrutura de {active}</h2>
-          <ul className="space-y-2">
-            {perPage[active].map(r => (
-              <li key={r.id} className="flex items-start gap-2 text-sm p-2 rounded-lg"
-                style={{ backgroundColor: r.passed ? 'var(--color-success-a10)' : 'var(--color-bg-input)' }}>
-                {r.passed
-                  ? <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-success)' }} />
-                  : <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-text-faint)' }} />}
-                <div>
-                  <span className="font-mono font-bold" style={{ color: r.passed ? 'var(--color-success)' : 'var(--color-text-soft)' }}>{r.label}</span>
-                  <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>{r.passed ? r.hint : (r.detail || r.hint)}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="card p-4">
-          <h2 className="font-bold mb-3 text-sm">Site completo</h2>
-          <ul className="space-y-2">
-            {siteChecks.map(r => (
-              <li key={r.id} className="flex items-start gap-2 text-sm p-2 rounded-lg"
-                style={{ backgroundColor: r.passed ? 'var(--color-success-a10)' : 'var(--color-bg-input)' }}>
-                {r.passed
-                  ? <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-success)' }} />
-                  : <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-text-faint)' }} />}
-                <div>
-                  <span className="font-bold" style={{ color: r.passed ? 'var(--color-success)' : 'var(--color-text-soft)' }}>{r.label}</span>
-                  <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>{r.passed ? r.hint : (r.detail || r.hint)}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </div>
+    </LaboratorioEmTelaCheia>
   );
 }

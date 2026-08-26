@@ -136,6 +136,32 @@ Superfície clara dentro da moldura precisa **dizer a própria cor**: a platafor
 pinta `h1..h4` de quase branco, o que está certo num aplicativo escuro e some em
 cima de painel branco.
 
+**A simulação tem de aguentar curiosidade.** Ela é verdadeira no caminho
+previsto e vira muro em todo o resto — dois cliques num .jpg respondendo "isto
+abriria no programa do computador" —, e muro ensina a andar no trilho, que é o
+que não existe fora daqui. Todo arquivo abre; todo passo que o programa de
+verdade tem, aparece. Instalar não é um clique: é a página do produto, o
+download, a permissão do sistema, o idioma, o contrato, a pasta, os atalhos e a
+barra de progresso — e as escolhas valem, senão a caixinha que ninguém lê
+continua não sendo lida.
+
+**Quem trava precisa de saída.** Depois de um tempo sem ninguém concluir nada,
+a moldura oferece o passo a passo da tarefa da vez, escrito em `passos`. É
+convite, não despejo: quem está achando sozinho tem o direito de achar sozinho.
+
+**O nome da lição desce do currículo.** Laboratório não escreve o próprio
+título: recebe `lessonTitle`. Oito escreviam, e a lição "Montando um site de
+quatro páginas" abria um cartão escrito "SiteLab — Site com quatro páginas".
+`src/curriculum/titulos.test.ts` cobra.
+
+**Editor de código não imita marca.** Word e Explorador são *aquele* programa;
+editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
+o editor do celular. O que se repete entre os três é o arranjo, e é ele que
+`src/labs/ide.tsx` desenha: lateral com os arquivos, guias, números de linha,
+cores por tipo de coisa, prévia ao lado e régua de status. O realce mora em
+`src/labs/realce.ts`, e o que ele devolve vai para a página como HTML — por
+isso **todo texto passa por `escapar` antes de sair**, sem exceção.
+
 Vale para laboratório que imita um programa. Os que não imitam nada — ordenar,
 classificar, escrever — continuam sendo tela da plataforma, e moldura de
 aplicativo neles seria fantasia sem ganho.
