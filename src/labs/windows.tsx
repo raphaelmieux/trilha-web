@@ -172,6 +172,73 @@ export const CSS_WINDOWS = `
   .win-bt.primario { background: #0F6CBD; border-color: #0F6CBD; color: #FFFFFF; }
   .win-bt.primario:hover { background: #115EA3; }
 
+  /* ── A área de trabalho, quando o laboratório precisa de mais de um programa ──
+     O de compactar precisa de quatro: Explorador, WinRAR, o editor de texto e
+     as Configurações. Empilhar quatro telas dentro de uma só faria um
+     acordeão que não existe em computador nenhum; o que existe é a área de
+     trabalho com janelas em cima e a barra de tarefas embaixo. */
+  .win-mesa {
+    flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column;
+    background: linear-gradient(150deg, #0B3B6F 0%, #1C6EA4 45%, #3E9AC4 100%);
+  }
+  .win-area { flex: 1; min-height: 0; position: relative; }
+  .win-janela {
+    position: absolute; display: flex; flex-direction: column; min-height: 0;
+    background: #F3F3F3; color: #1B1B1B; border: 1px solid #C9C9C9; border-radius: 8px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.42); overflow: hidden;
+    font-family: 'Segoe UI', system-ui, Roboto, sans-serif;
+  }
+  /* A janela de baixo ocupa tudo, como o Explorador maximizado. */
+  .win-janela.cheia { inset: 0; border-radius: 0; border: none; box-shadow: none; }
+
+  .win-tarefas {
+    flex: none; height: 46px; display: flex; align-items: center; justify-content: center;
+    gap: 6px; background: rgba(243,243,243,.86); border-top: 1px solid rgba(0,0,0,.08);
+    backdrop-filter: blur(18px);
+  }
+  .win-tarefas button {
+    width: 40px; height: 38px; display: grid; place-items: center; border-radius: 6px;
+    background: none; border: none; cursor: pointer; color: #1B1B1B; position: relative;
+  }
+  .win-tarefas button:hover { background: rgba(0,0,0,.06); }
+  /* O tracinho embaixo do ícone: no Windows 11 é ele que diz o que está aberto. */
+  .win-tarefas button.aberta::after {
+    content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+    width: 14px; height: 3px; border-radius: 2px; background: #0F6CBD;
+  }
+
+  .win-iniciar {
+    position: absolute; left: 50%; transform: translateX(-50%); bottom: 52px; z-index: 90;
+    width: min(300px, calc(100% - 24px)); padding: 10px; border-radius: 10px;
+    background: rgba(249,249,249,.98); border: 1px solid #E0E0E0;
+    box-shadow: 0 20px 48px rgba(0,0,0,.35);
+  }
+  .win-iniciar button {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    padding: 9px 10px; font-size: 13px; color: #1B1B1B; background: none;
+    border: none; border-radius: 6px; cursor: pointer;
+  }
+  .win-iniciar button:hover { background: #EAEAEA; }
+
+  /* Caixinha de seleção do Explorador. No Windows ela é opção; aqui é sempre,
+     porque no celular não existe Ctrl para marcar o segundo arquivo. */
+  .win-caixa {
+    width: 15px; height: 15px; flex: none; border-radius: 3px; border: 1px solid #8A8A8A;
+    background: #FFFFFF; display: grid; place-items: center; font-size: 10px; color: #fff;
+  }
+  .win-caixa.marcada { background: #0F6CBD; border-color: #0F6CBD; }
+
+  /* Barra de menus antiga — o editor de texto e o WinRAR têm uma. */
+  .win-menus {
+    display: flex; gap: 2px; padding: 2px 4px; background: #F3F3F3;
+    border-bottom: 1px solid #E5E5E5; font-size: 12.5px; flex: none;
+  }
+  .win-menus > button {
+    padding: 4px 9px; background: none; border: none; cursor: pointer; color: #1B1B1B;
+    border-radius: 4px;
+  }
+  .win-menus > button:hover { background: #E5E5E5; }
+
   /* ── WinRAR: outra época, outra paleta ── */
   .rar { background: #F0F0F0; color: #000; font-family: 'Segoe UI', Tahoma, sans-serif; }
   .rar-menu {
