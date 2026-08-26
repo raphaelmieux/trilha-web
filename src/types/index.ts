@@ -90,6 +90,8 @@ export type LabType =
   | 'site_lab'
   | 'file_manager'
   | 'computer_care'
+  | 'formatacao_texto'
+  | 'operacoes_arquivo'
   | 'ai_lab'
   | 'final_exam';
 

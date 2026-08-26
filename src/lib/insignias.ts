@@ -93,6 +93,8 @@ const LABORATORIOS: [LabType, string, string][] = [
   ['ai_lab', 'Pedido bem feito', 'Concluiu o laboratório de produção com IA.'],
   ['computer_care', 'Máquina cuidada', 'Concluiu o laboratório de cuidados com o computador.'],
   ['file_manager', 'Pastas em ordem', 'Concluiu o laboratório de pastas e arquivos.'],
+  ['formatacao_texto', 'Documento apresentável', 'Formatou um documento inteiro, da folha às listas.'],
+  ['operacoes_arquivo', 'Tarefas do dia', 'Compactou, exportou em pdf, instalou e imprimiu.'],
 ];
 
 export const INSIGNIAS: Insignia[] = [

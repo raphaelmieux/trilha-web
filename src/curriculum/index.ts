@@ -2,7 +2,8 @@ import { ORDEM_DOS_NIVEIS, type Specialty } from '../types';
 import { ap034 } from './ap034';
 import { ap035 } from './ap035';
 import { ap041 } from './ap041';
-import { ap042, ap043, ap044, ap045 } from './anunciadas';
+import { ap042 } from './ap042';
+import { ap043, ap044, ap045 } from './anunciadas';
 
 const specialties: Record<string, Specialty> = {
   AP034: ap034,

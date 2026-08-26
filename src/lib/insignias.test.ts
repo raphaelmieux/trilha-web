@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { INSIGNIAS, insigniasConquistadas, codigoDaInsigniaDaTrilha, type ResumoDoDesbravador } from './insignias';
 import { getOpenSpecialties } from '../curriculum';
 import { hasIcon } from './badgeIcons';
@@ -10,7 +11,30 @@ const EVENTO_DA_LICAO: Record<string, string> = Object.fromEntries(
   Object.entries(LABORATORIO_DO_EVENTO).map(([evento, lab]) => [lab, evento]),
 );
 
-const CATALOGO = 'supabase/migrations/20260822030000_catalogo_de_insignias.sql';
+/*
+  Toda migration que semeia insígnia, e não só o catálogo original.
+
+  Apontava para um arquivo só, o 20260822030000. Mas a insígnia da AP041 já
+  nascia noutro arquivo, e cada trilha nova traz as suas do mesmo jeito — o
+  catálogo deixou de ser um arquivo e passou a ser o conjunto deles. Manter o
+  teste preso ao primeiro exigiria editar uma migration já aplicada a cada
+  trilha, que é justamente o que este repositório proíbe.
+*/
+const DIR_MIGRATIONS = 'supabase/migrations';
+
+function insigniasSemeadas(): Set<string> {
+  const codigos = new Set<string>();
+  for (const arquivo of readdirSync(DIR_MIGRATIONS).filter(f => f.endsWith('.sql'))) {
+    const sql = readFileSync(join(DIR_MIGRATIONS, arquivo), 'utf8');
+    /* Só o bloco de VALUES de cada INSERT em badges: um arquivo pode ter outras
+       tuplas indentadas, e elas não são códigos de insígnia. */
+    for (const bloco of sql.split(/INSERT INTO badges/i).slice(1)) {
+      const valores = bloco.split(';')[0];
+      for (const m of valores.matchAll(/^ {2}\('([a-z0-9_]+)'/gm)) codigos.add(m[1]);
+    }
+  }
+  return codigos;
+}
 
 /** Um percurso vazio: nada feito, nenhuma insígnia. */
 const zerado = (): ResumoDoDesbravador => ({
@@ -45,8 +69,7 @@ describe('o catálogo', () => {
     parece que a pessoa simplesmente não conquistou nada. Só um teste vê.
   */
   it('tem todas as insígnias semeadas na migration', () => {
-    const sql = readFileSync(CATALOGO, 'utf8');
-    const semeados = new Set([...sql.matchAll(/^ {2}\('([a-z0-9_]+)'/gm)].map(m => m[1]));
+    const semeados = insigniasSemeadas();
 
     for (const i of INSIGNIAS) expect(semeados, i.code).toContain(i.code);
     /* Inclusive a de cada trilha aberta: trilha nova sem linha aqui é uma

@@ -29,6 +29,8 @@ import SiteLab from '../labs/SiteLab';
 import FileManagerLab from '../labs/FileManagerLab';
 import ComputerCareLab from '../labs/ComputerCareLab';
 import AILab from '../labs/AILab';
+import FormatacaoTextoLab from '../labs/FormatacaoTextoLab';
+import OperacoesArquivoLab from '../labs/OperacoesArquivoLab';
 import { CheckCircle2, CircleX, ArrowRight, BookOpen, RefreshCw, Loader2, HardHat } from 'lucide-react';
 
 export default function LessonPage() {
@@ -120,6 +122,8 @@ export default function LessonPage() {
         {lesson.labType === 'site_lab' && <SiteLab {...labProps} />}
         {lesson.labType === 'file_manager' && <FileManagerLab {...labProps} />}
         {lesson.labType === 'computer_care' && <ComputerCareLab {...labProps} />}
+        {lesson.labType === 'formatacao_texto' && <FormatacaoTextoLab {...labProps} />}
+        {lesson.labType === 'operacoes_arquivo' && <OperacoesArquivoLab {...labProps} />}
         {lesson.labType === 'ai_lab' && <AILab {...labProps} />}
       </div>
     );
