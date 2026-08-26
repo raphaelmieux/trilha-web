@@ -1,20 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Shapes, MousePointerClick, PanelTop, Download, CheckCircle2, Palette, Type,
-  Ruler, Contrast, AlertTriangle,
+  Ruler, Contrast, AlertTriangle, Plus, X, Ban, Sparkles,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
-  formatBytes, contrastRatio, drawLogo, drawButton, drawHeader,
+  formatBytes, contrastRatio, drawLogo, drawButton, drawHeader, desenharSimbolo,
   canvasToBlob, hasTransparency, downloadBlob, isWebSafe, nearestWebSafe,
-  type LogoShape,
+  NOME_DA_FORMA, NOME_DO_SIMBOLO, NOME_DA_FONTE,
+  type LogoShape, type Simbolo, type FonteDeDesenho,
 } from '../lib/imageTools';
 import {
   logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity,
   getSpecialtyId, getRequirementId, registrarConclusaoDeLicao,
 } from '../lib/progress';
 import type { PropsDeLaboratorio as Props } from './tipos';
+import {
+  LOGO_INICIAL, BOTOES_INICIAIS, HEADER_INICIAL,
+  ORCAMENTO, ALVO_DE_TOQUE, MINIMO_DE_BOTOES, MAXIMO_DE_BOTOES,
+  CONTRASTE_MINIMO, PROPORCAO_MINIMA, MAXIMO_DE_LETRAS, MAIOR_LADO_DO_LOGO,
+} from './modeloInicial';
 
 /*
  * AP035 requisito 5.2, segunda metade: um PNG abaixo de 15 KB com fundo
@@ -34,14 +40,31 @@ import type { PropsDeLaboratorio as Props } from './tipos';
  * Contraste, transparência, cor segura da web e bytes saem do arquivo que a
  * pessoa gerou — não de uma resposta que ela escolheu. Um logo com texto
  * ilegível passa por qualquer questionário e não passa aqui.
+ *
+ * ── Por que os modelos começam errados ───────────────────────────────────
+ * Já começaram certos, e era pior: as três peças nasciam aprovadas, e o
+ * desbravador concluía a lição sem ter decidido nada. O modelo e os limites
+ * moram em `modeloInicial.ts`, com o motivo escrito lá e um teste que confere
+ * que ele continua reprovando em tudo.
  */
 
-const ORCAMENTO = 15 * 1024;
-const ALVO_DE_TOQUE = 44;
-/** "pelo menos, cinco botões de navegação gráfica" */
-const ROTULOS_PADRAO = ['Início', 'Sobre', 'Galeria', 'Contato', 'Eventos'];
+const SUGESTOES = ['Sobre o clube', 'Galeria', 'Eventos', 'Unidades', 'Notícias', 'Contato'];
 
 type Peca = 'logo' | 'botoes' | 'header';
+
+/** As formas em miniatura, para o botão dizer o que faz sem precisar do nome. */
+const DESENHO_DA_FORMA: Record<LogoShape, string> = {
+  circulo: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z',
+  escudo: 'M4 4.5h16v8.2c0 4.2-4.2 6.4-8 7.3-3.8-.9-8-3.1-8-7.3z',
+  hexagono: 'M12 2.6l8.1 4.7v9.4L12 21.4l-8.1-4.7V7.3z',
+  losango: 'M12 2.5l8.2 9.5-8.2 9.5L3.8 12z',
+  estrela: 'M12 2.6l2.7 6.5 7 .5-5.4 4.6 1.7 6.8L12 17.3l-6 3.7 1.7-6.8L2.3 9.6l7-.5z',
+  quadrado: 'M7.5 4h9A3.5 3.5 0 0 1 20 7.5v9a3.5 3.5 0 0 1-3.5 3.5h-9A3.5 3.5 0 0 1 4 16.5v-9A3.5 3.5 0 0 1 7.5 4z',
+};
+
+const FORMAS = Object.keys(DESENHO_DA_FORMA) as LogoShape[];
+const FIGURAS = Object.keys(NOME_DO_SIMBOLO) as Simbolo[];
+const FONTES = Object.keys(NOME_DA_FONTE) as FonteDeDesenho[];
 
 const CSS_ESTUDIO = `
   .es {
@@ -118,6 +141,31 @@ const CSS_ESTUDIO = `
   }
   .es-opcoes button[aria-pressed="true"] { background: #8B5CF6; border-color: #8B5CF6; color: #FFFFFF; }
 
+  /* Formas e figuras entram como grade de miniaturas, e não como lista de
+     nomes: escolher desenho olhando palavra é o que nenhum editor faz. */
+  .es-grade { display: grid; gap: 6px; }
+  .es-grade.formas { grid-template-columns: repeat(3, 1fr); }
+  .es-grade.figuras { grid-template-columns: repeat(4, 1fr); }
+  .es-grade button {
+    display: flex; align-items: center; justify-content: center; height: 40px;
+    border-radius: 6px; cursor: pointer; padding: 0;
+    background: #2E2E38; border: 1px solid #3E3E4A; color: #C9C9D3;
+  }
+  .es-grade button:hover { background: #383843; color: #FFFFFF; }
+  .es-grade button[aria-pressed="true"] { background: #3B2F55; border-color: #8B5CF6; color: #FFFFFF; }
+  .es-grade canvas { display: block; }
+
+  /* A lista de botões: cada linha tem o seu excluir, como em qualquer editor. */
+  .es-linha { display: flex; gap: 6px; margin-bottom: 5px; }
+  .es-linha .es-entrada { flex: 1; min-width: 0; }
+  .es-tirar {
+    width: 32px; height: 32px; flex: none; border-radius: 6px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    background: #2E2E38; border: 1px solid #3E3E4A; color: #9C9CA8;
+  }
+  .es-tirar:hover { background: #4A2A2A; border-color: #7A3B3B; color: #FCA5A5; }
+  .es-tirar:disabled { opacity: .4; cursor: default; background: #2E2E38; border-color: #3E3E4A; color: #9C9CA8; }
+
   /* A leitura de contraste e de peso: medida, e não opinião. */
   .es-leitura {
     display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 7px;
@@ -149,6 +197,62 @@ function Leitura({ Ico, texto, valor, bom }: {
   );
 }
 
+/**
+ * A figura em miniatura, desenhada pelo mesmo código da prancheta.
+ *
+ * Poderia ser um ícone parecido, e aí a pessoa escolheria uma coisa e receberia
+ * outra. Sai do mesmo `desenharSimbolo`, então o que ela vê no botão é o que
+ * vai para o arquivo.
+ */
+function Figurinha({ simbolo }: { simbolo: Simbolo }) {
+  const tela = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = tela.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    desenharSimbolo(ctx, simbolo, canvas.width / 2, canvas.height / 2, canvas.width * 0.84, '#D8D8E2');
+  }, [simbolo]);
+  return <canvas ref={tela} width={28} height={28} aria-hidden="true" />;
+}
+
+/** A grade de figuras, usada pelo logo e pelo header — os dois pedem o mesmo. */
+function EscolhaDeFigura({ valor, aoEscolher, rotulo }: {
+  valor: Simbolo; aoEscolher: (s: Simbolo) => void; rotulo: string;
+}) {
+  return (
+    <div className="es-campo">
+      <span className="es-rotulo"><Sparkles className="w-3.5 h-3.5" /> {rotulo}</span>
+      <div className="es-grade figuras">
+        {FIGURAS.map(s => (
+          <button key={s} aria-pressed={valor === s} title={NOME_DO_SIMBOLO[s]}
+            aria-label={NOME_DO_SIMBOLO[s]} onClick={() => aoEscolher(s)}>
+            {s === 'nenhum' ? <Ban className="w-4 h-4" /> : <Figurinha simbolo={s} />}
+          </button>
+        ))}
+      </div>
+      <span className="es-medida" style={{ display: 'block', marginTop: 5 }}>
+        {NOME_DO_SIMBOLO[valor]}
+      </span>
+    </div>
+  );
+}
+
+/** O seletor de fonte, igual nas três peças. */
+function EscolhaDeFonte({ valor, aoEscolher, id }: {
+  valor: FonteDeDesenho; aoEscolher: (f: FonteDeDesenho) => void; id: string;
+}) {
+  return (
+    <div className="es-campo">
+      <span className="es-rotulo"><Type className="w-3.5 h-3.5" /> Fonte</span>
+      <select className="es-entrada" value={valor} aria-label={`Fonte ${id}`}
+        onChange={e => aoEscolher(e.target.value as FonteDeDesenho)}>
+        {FONTES.map(f => <option key={f} value={f}>{NOME_DA_FONTE[f]}</option>)}
+      </select>
+    </div>
+  );
+}
+
 export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const [peca, setPeca] = useState<Peca>('logo');
   const [salvo, setSalvo] = useState<Record<Peca, boolean>>({ logo: false, botoes: false, header: false });
@@ -157,51 +261,67 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
   const [aviso] = useState('');
 
   /* ── 1. O logo ─────────────────────────────────────────────────────────── */
-  const [logoTexto, setLogoTexto] = useState('DBV');
-  const [logoForma, setLogoForma] = useState<LogoShape>('escudo');
-  const [logoTamanho, setLogoTamanho] = useState(512);
-  const [logoFundo, setLogoFundo] = useState('#F5A623');
-  const [logoFrente, setLogoFrente] = useState('#FFFFFF');
+  const [logoTexto, setLogoTexto] = useState(LOGO_INICIAL.texto);
+  const [logoForma, setLogoForma] = useState<LogoShape>(LOGO_INICIAL.forma);
+  const [logoFigura, setLogoFigura] = useState<Simbolo>(LOGO_INICIAL.figura);
+  const [logoFonte, setLogoFonte] = useState<FonteDeDesenho>(LOGO_INICIAL.fonte);
+  const [logoTamanho, setLogoTamanho] = useState(LOGO_INICIAL.tamanho);
+  const [logoFundoBranco, setLogoFundoBranco] = useState(LOGO_INICIAL.fundoBranco);
+  const [logoFundo, setLogoFundo] = useState(LOGO_INICIAL.fundo);
+  const [logoFrente, setLogoFrente] = useState(LOGO_INICIAL.frente);
 
   const telaDoLogo = useMemo(
-    () => drawLogo({ text: logoTexto, shape: logoForma, fill: logoFundo, fg: logoFrente, size: logoTamanho }),
-    [logoTexto, logoForma, logoFundo, logoFrente, logoTamanho],
+    () => drawLogo({
+      text: logoTexto, shape: logoForma, fill: logoFundo, fg: logoFrente, size: logoTamanho,
+      symbol: logoFigura, font: logoFonte, background: logoFundoBranco ? 'branco' : 'transparente',
+    }),
+    [logoTexto, logoForma, logoFundo, logoFrente, logoTamanho, logoFigura, logoFonte, logoFundoBranco],
   );
   const contrasteDoLogo = contrastRatio(logoFundo, logoFrente);
 
-  /* ── 2. Os cinco botões ────────────────────────────────────────────────── */
-  const [rotulos, setRotulos] = useState(ROTULOS_PADRAO);
-  const [botaoAltura, setBotaoAltura] = useState(48);
-  const [botaoRaio, setBotaoRaio] = useState(10);
-  const [botaoFundo, setBotaoFundo] = useState('#CC3300');
-  const [botaoFrente, setBotaoFrente] = useState('#FFFFFF');
+  /* ── 2. Os botões de navegação ─────────────────────────────────────────── */
+  // Cópia, e não a constante: o modelo é compartilhado com o teste que o
+  // vigia, e uma peça que se edita não pode ser a mesma que serve de padrão.
+  const [rotulos, setRotulos] = useState<string[]>([...BOTOES_INICIAIS.rotulos]);
+  const [botaoAltura, setBotaoAltura] = useState(BOTOES_INICIAIS.altura);
+  const [botaoRaio, setBotaoRaio] = useState(BOTOES_INICIAIS.raio);
+  const [botaoFonte, setBotaoFonte] = useState<FonteDeDesenho>(BOTOES_INICIAIS.fonte);
+  const [botaoFundo, setBotaoFundo] = useState(BOTOES_INICIAIS.fundo);
+  const [botaoFrente, setBotaoFrente] = useState(BOTOES_INICIAIS.frente);
 
   const telasDosBotoes = useMemo(
     () => rotulos.map(r => drawButton({
       label: r || ' ', width: Math.max(140, r.length * 16 + 60),
-      height: botaoAltura, bg: botaoFundo, fg: botaoFrente, radius: botaoRaio,
+      height: botaoAltura, bg: botaoFundo, fg: botaoFrente, radius: botaoRaio, font: botaoFonte,
     })),
-    [rotulos, botaoAltura, botaoFundo, botaoFrente, botaoRaio],
+    [rotulos, botaoAltura, botaoFundo, botaoFrente, botaoRaio, botaoFonte],
   );
   const contrasteDoBotao = contrastRatio(botaoFundo, botaoFrente);
   const rotulosPreenchidos = rotulos.filter(r => r.trim().length >= 2).length;
   const coresSeguras = isWebSafe(botaoFundo) && isWebSafe(botaoFrente);
 
+  const acrescentarBotao = () => setRotulos(r => (r.length >= MAXIMO_DE_BOTOES ? r : [...r, '']));
+  const tirarBotao = (i: number) => setRotulos(r => (r.length <= 1 ? r : r.filter((_, j) => j !== i)));
+
   /* ── 3. O header ───────────────────────────────────────────────────────── */
-  const [tituloHeader, setTituloHeader] = useState('Clube de Desbravadores');
-  const [subtituloHeader, setSubtituloHeader] = useState('Aventura, serviço e amizade');
-  const [headerLargura, setHeaderLargura] = useState(1200);
-  const [headerAltura, setHeaderAltura] = useState(300);
-  const [headerDe, setHeaderDe] = useState('#003366');
-  const [headerAte, setHeaderAte] = useState('#CC3300');
-  const [headerFrente, setHeaderFrente] = useState('#FFFFFF');
+  const [tituloHeader, setTituloHeader] = useState(HEADER_INICIAL.titulo);
+  const [subtituloHeader, setSubtituloHeader] = useState(HEADER_INICIAL.subtitulo);
+  const [headerFigura, setHeaderFigura] = useState<Simbolo>(HEADER_INICIAL.figura);
+  const [headerFonte, setHeaderFonte] = useState<FonteDeDesenho>(HEADER_INICIAL.fonte);
+  const [headerLargura, setHeaderLargura] = useState(HEADER_INICIAL.largura);
+  const [headerAltura, setHeaderAltura] = useState(HEADER_INICIAL.altura);
+  const [headerDe, setHeaderDe] = useState(HEADER_INICIAL.de);
+  const [headerAte, setHeaderAte] = useState(HEADER_INICIAL.ate);
+  const [headerFrente, setHeaderFrente] = useState(HEADER_INICIAL.frente);
 
   const telaDoHeader = useMemo(
     () => drawHeader({
       title: tituloHeader, subtitle: subtituloHeader, width: headerLargura,
       height: headerAltura, from: headerDe, to: headerAte, fg: headerFrente,
+      symbol: headerFigura, font: headerFonte,
     }),
-    [tituloHeader, subtituloHeader, headerLargura, headerAltura, headerDe, headerAte, headerFrente],
+    [tituloHeader, subtituloHeader, headerLargura, headerAltura, headerDe, headerAte,
+      headerFrente, headerFigura, headerFonte],
   );
   const contrasteInicio = contrastRatio(headerDe, headerFrente);
   const contrasteFim = contrastRatio(headerAte, headerFrente);
@@ -211,6 +331,16 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
   const [png, setPng] = useState<Record<Peca, { url: string; blob: Blob; bytes: number; alfa: boolean }[] | null>>({
     logo: null, botoes: null, header: null,
   });
+  /*
+   * O header também sai em JPEG, e é o único dos três que sai.
+   *
+   * Degradê é o que o PNG faz de pior: o navegador espalha ruído no degradê
+   * para não sair em faixas, e o PNG, que guarda tudo sem perder nada, guarda
+   * o ruído inteiro — meio megabyte de banner. Sem transparência para
+   * defender, o JPEG ganha por vinte vezes. É a outra metade da mesma lição do
+   * logo: o formato sai do que a imagem tem, e não do gosto de quem salva.
+   */
+  const [jpegDoHeader, setJpegDoHeader] = useState<{ blob: Blob; bytes: number } | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -222,11 +352,13 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
         urls.push(url);
         return { url, blob, bytes: blob.size, alfa: hasTransparency(tela) };
       }));
-      const [l, b, h] = await Promise.all([
+      const [l, b, h, jpegH] = await Promise.all([
         codificar([telaDoLogo]), codificar(telasDosBotoes), codificar([telaDoHeader]),
+        canvasToBlob(telaDoHeader, 'jpeg'),
       ]);
       if (cancelado) return;
       setPng({ logo: l, botoes: b, header: h });
+      setJpegDoHeader({ blob: jpegH, bytes: jpegH.size });
     })();
     return () => { cancelado = true; urls.forEach(URL.revokeObjectURL); };
   }, [telaDoLogo, telasDosBotoes, telaDoHeader]);
@@ -235,26 +367,33 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
   const logoTemAlfa = png.logo?.[0]?.alfa ?? false;
   const botoesComAlfa = !!png.botoes?.length && png.botoes.every(b => b.alfa);
   const bytesDoHeader = png.header?.[0]?.bytes ?? 0;
+  const bytesJpegDoHeader = jpegDoHeader?.bytes ?? 0;
+  const headerVaiEmJpeg = !!jpegDoHeader && bytesJpegDoHeader < bytesDoHeader;
+  const letrasDoLogo = logoTexto.trim().length;
 
   /* ── O que o requisito cobra ───────────────────────────────────────────── */
-  const logoPronto = logoTexto.trim().length > 0 && logoTexto.trim().length <= 6
-    && logoTemAlfa && contrasteDoLogo >= 4.5 && bytesDoLogo <= ORCAMENTO;
-  const botoesProntos = rotulosPreenchidos >= 5 && botaoAltura >= ALVO_DE_TOQUE
-    && contrasteDoBotao >= 4.5 && coresSeguras && botoesComAlfa && botaoRaio > 0;
-  const headerPronto = tituloHeader.trim().length >= 3 && proporcaoDoHeader >= 3
-    && contrasteInicio >= 4.5 && contrasteFim >= 4.5;
+  const logoPronto = letrasDoLogo > 0 && letrasDoLogo <= MAXIMO_DE_LETRAS
+    && logoTemAlfa && contrasteDoLogo >= CONTRASTE_MINIMO && bytesDoLogo <= ORCAMENTO;
+  const botoesProntos = rotulosPreenchidos >= MINIMO_DE_BOTOES && botaoAltura >= ALVO_DE_TOQUE
+    && contrasteDoBotao >= CONTRASTE_MINIMO && coresSeguras && botoesComAlfa && botaoRaio > 0;
+  const headerPronto = tituloHeader.trim().length >= 3 && proporcaoDoHeader >= PROPORCAO_MINIMA
+    && contrasteInicio >= CONTRASTE_MINIMO && contrasteFim >= CONTRASTE_MINIMO;
 
   const tarefas = [
     {
       id: 't1', titulo: 'Um logo em PNG, com fundo transparente e abaixo de 15 KB', feita: logoPronto && salvo.logo,
       onde: 'Peça Logo, na lateral',
       detalhe: !logoPronto
-        ? (contrasteDoLogo < 4.5 ? `O contraste do texto está em ${contrasteDoLogo.toFixed(1)}:1.`
-          : bytesDoLogo > ORCAMENTO ? `O arquivo está em ${formatBytes(bytesDoLogo)}.`
-            : logoTexto.trim().length > 6 ? 'A sigla passou de seis letras.' : undefined)
+        ? (letrasDoLogo === 0 ? 'O logo está sem sigla.'
+          : letrasDoLogo > MAXIMO_DE_LETRAS ? `A sigla tem ${letrasDoLogo} letras; cabem ${MAXIMO_DE_LETRAS}.`
+            : !logoTemAlfa ? 'O fundo ainda é branco, e não transparente.'
+              : contrasteDoLogo < CONTRASTE_MINIMO ? `O contraste do texto está em ${contrasteDoLogo.toFixed(1)}:1.`
+                : bytesDoLogo > ORCAMENTO ? `O arquivo está em ${formatBytes(bytesDoLogo)}.` : undefined)
         : (!salvo.logo ? 'Falta baixar o arquivo.' : undefined),
       passos: [
-        'Escreva de uma a seis letras — um logo com frase inteira some quando fica pequeno.',
+        'Troque o nome inteiro por uma sigla de até seis letras — nome comprido vira borrão quando o logo fica pequeno.',
+        'Escolha uma figura: pinheiro, fogueira, pegada, Cruzeiro do Sul. É ela que se reconhece de longe, antes das letras.',
+        'Ponha o fundo em Transparente. No Branco o logo vai carregar uma caixa branca para dentro de qualquer página.',
         'Escureça a forma ou clareie o texto até o contraste passar de 4,5:1.',
         'Se o arquivo passar de 15 KB, reduza o tamanho: cor chapada comprime bem, mas pixel demais pesa.',
         'Repare no xadrez atrás do logo: é ele que mostra que o fundo é transparente de verdade.',
@@ -265,29 +404,36 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
       id: 't2', titulo: 'Cinco botões de navegação, em cores seguras da web', feita: botoesProntos && salvo.botoes,
       onde: 'Peça Botões, na lateral',
       detalhe: !botoesProntos
-        ? (rotulosPreenchidos < 5 ? `${rotulosPreenchidos} de 5 preenchidos.`
-          : !coresSeguras ? 'As cores não são seguras da web.'
-            : botaoAltura < ALVO_DE_TOQUE ? `A altura está em ${botaoAltura} px.` : undefined)
-        : (!salvo.botoes ? 'Falta baixar os cinco.' : undefined),
+        ? (rotulosPreenchidos < MINIMO_DE_BOTOES ? `${rotulosPreenchidos} de ${MINIMO_DE_BOTOES} preenchidos.`
+          : botaoAltura < ALVO_DE_TOQUE ? `A altura está em ${botaoAltura} px.`
+            : botaoRaio === 0 ? 'Os cantos ainda são quadrados.'
+              : !coresSeguras ? 'As cores não são seguras da web.'
+                : contrasteDoBotao < CONTRASTE_MINIMO ? `O contraste do rótulo está em ${contrasteDoBotao.toFixed(1)}:1.` : undefined)
+        : (!salvo.botoes ? 'Falta baixar todos.' : undefined),
       passos: [
-        'Preencha os cinco rótulos — o requisito pede pelo menos cinco botões.',
+        `Use o + para acrescentar botões: o requisito pede pelo menos ${MINIMO_DE_BOTOES}, e começam dois.`,
+        'Dê nome a cada um. Botão sem rótulo não navega para lugar nenhum.',
         `Deixe a altura em ${ALVO_DE_TOQUE} px ou mais: abaixo disso o dedo erra o alvo no celular.`,
         'Use cores seguras da web: só os valores 00, 33, 66, 99, CC e FF em cada canal. O botão "Ajustar" arruma.',
+        'Clareie o rótulo ou escureça o fundo até o contraste passar de 4,5:1.',
         'Arredonde os cantos — é esse recorte que só sobrevive em PNG.',
-        'Clique em Baixar os cinco.',
+        'Clique em Baixar todos.',
       ],
     },
     {
       id: 't3', titulo: 'Um header para o topo do site', feita: headerPronto && salvo.header,
       onde: 'Peça Header, na lateral',
       detalhe: !headerPronto
-        ? (proporcaoDoHeader < 3 ? `A proporção está em ${proporcaoDoHeader.toFixed(1)}×.`
-          : 'O texto precisa ser legível nas duas pontas do degradê.')
+        ? (tituloHeader.trim().length < 3 ? 'O header está sem título.'
+          : proporcaoDoHeader < PROPORCAO_MINIMA ? `A proporção está em ${proporcaoDoHeader.toFixed(1)}×.`
+            : 'O texto precisa ser legível nas duas pontas do degradê.')
         : (!salvo.header ? 'Falta baixar o arquivo.' : undefined),
       passos: [
         'Escreva o nome do clube: o header é a primeira coisa que a pessoa lê.',
+        'Ponha uma figura à esquerda do título, como o brasão no papel timbrado.',
         'Deixe a largura em pelo menos três vezes a altura — header alto empurra o conteúdo para fora da tela.',
         'O texto atravessa o degradê inteiro: confira o contraste nas duas pontas, não só numa.',
+        'Repare nos dois pesos embaixo da prancheta: o header não tem transparência para defender, e aí o JPEG ganha do PNG com folga. É por isso que ele baixa em JPEG.',
         'Clique em Baixar.',
       ],
     },
@@ -325,7 +471,7 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
         <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
         <h1 className="text-2xl font-bold mb-2">{lessonTitle} — concluído!</h1>
         <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
-          Um logo com fundo transparente, cinco botões em cores seguras e um header —
+          Um logo com fundo transparente, {rotulos.length} botões em cores seguras e um header —
           todos legíveis, todos leves, todos salvos no seu aparelho.
         </p>
         <Link to={`/especialidade/${specialtyCode}`} className="btn-primary">Voltar para a Trilha</Link>
@@ -389,10 +535,11 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
             {peca === 'botoes' && png.botoes && (
               <>
                 <div className="es-papel"><div className="es-fila">
-                  {png.botoes.map((b, i) => <img key={i} src={b.url} alt={`Botão ${rotulos[i]}`} />)}
+                  {png.botoes.map((b, i) => <img key={i} src={b.url} alt={`Botão ${rotulos[i] || 'sem nome'}`} />)}
                 </div></div>
                 <p className="es-medida">
-                  {png.botoes.length} botões · o mais pesado tem {formatBytes(Math.max(...png.botoes.map(b => b.bytes)))}
+                  {png.botoes.length} {png.botoes.length === 1 ? 'botão' : 'botões'} ·
+                  {' '}o mais pesado tem {formatBytes(Math.max(...png.botoes.map(b => b.bytes)))}
                 </p>
               </>
             )}
@@ -403,7 +550,9 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
                   <img src={png.header[0].url} alt="O header em construção" />
                 </div>
                 <p className="es-medida">
-                  {headerLargura} × {headerAltura} px · {proporcaoDoHeader.toFixed(1)}× · {formatBytes(bytesDoHeader)}
+                  {headerLargura} × {headerAltura} px · {proporcaoDoHeader.toFixed(1)}× ·
+                  {' '}PNG {formatBytes(bytesDoHeader)}
+                  {jpegDoHeader && ` · JPEG ${formatBytes(bytesJpegDoHeader)}`}
                 </p>
               </>
             )}
@@ -413,18 +562,27 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
             {peca === 'logo' && (
               <>
                 <div className="es-campo">
-                  <span className="es-rotulo"><Type className="w-3.5 h-3.5" /> Sigla (até 6 letras)</span>
-                  <input className="es-entrada" value={logoTexto} maxLength={6}
+                  <span className="es-rotulo"><Type className="w-3.5 h-3.5" /> Sigla (até {MAXIMO_DE_LETRAS} letras)</span>
+                  <input className="es-entrada" value={logoTexto} maxLength={24}
                     aria-label="Sigla do logo" onChange={e => setLogoTexto(e.target.value)} />
                 </div>
                 <div className="es-campo">
-                  <span className="es-rotulo"><Shapes className="w-3.5 h-3.5" /> Forma</span>
-                  <div className="es-opcoes">
-                    {(['escudo', 'circulo', 'hexagono'] as LogoShape[]).map(f => (
-                      <button key={f} aria-pressed={logoForma === f} onClick={() => setLogoForma(f)}>{f}</button>
+                  <span className="es-rotulo"><Shapes className="w-3.5 h-3.5" /> Forma · {NOME_DA_FORMA[logoForma]}</span>
+                  <div className="es-grade formas">
+                    {FORMAS.map(f => (
+                      <button key={f} aria-pressed={logoForma === f} title={NOME_DA_FORMA[f]}
+                        aria-label={NOME_DA_FORMA[f]} onClick={() => setLogoForma(f)}>
+                        <svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true">
+                          <path d={DESENHO_DA_FORMA[f]} fill="currentColor" />
+                        </svg>
+                      </button>
                     ))}
                   </div>
                 </div>
+
+                <EscolhaDeFigura valor={logoFigura} aoEscolher={setLogoFigura} rotulo="Figura do logo" />
+                <EscolhaDeFonte valor={logoFonte} aoEscolher={setLogoFonte} id="do logo" />
+
                 <div className="es-campo">
                   <span className="es-rotulo"><Palette className="w-3.5 h-3.5" /> Cores</span>
                   <div className="es-cores">
@@ -436,14 +594,24 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
                   </div>
                 </div>
                 <div className="es-campo">
+                  <span className="es-rotulo"><AlertTriangle className="w-3.5 h-3.5" /> Fundo do arquivo</span>
+                  <div className="es-opcoes">
+                    <button aria-pressed={!logoFundoBranco} onClick={() => setLogoFundoBranco(false)}>Transparente</button>
+                    <button aria-pressed={logoFundoBranco} onClick={() => setLogoFundoBranco(true)}>Branco</button>
+                  </div>
+                </div>
+                <div className="es-campo">
                   <span className="es-rotulo"><Ruler className="w-3.5 h-3.5" /> Tamanho · {logoTamanho} px</span>
-                  <input className="es-faixa" type="range" min={128} max={1024} step={32}
+                  <input className="es-faixa" type="range" min={128} max={MAIOR_LADO_DO_LOGO} step={32}
                     value={logoTamanho} aria-label="Tamanho do logo"
                     onChange={e => setLogoTamanho(Number(e.target.value))} />
                 </div>
 
+                <Leitura Ico={Type} texto="Letras da sigla"
+                  valor={`${letrasDoLogo} de ${MAXIMO_DE_LETRAS}`}
+                  bom={letrasDoLogo > 0 && letrasDoLogo <= MAXIMO_DE_LETRAS} />
                 <Leitura Ico={Contrast} texto="Contraste do texto"
-                  valor={`${contrasteDoLogo.toFixed(1)}:1`} bom={contrasteDoLogo >= 4.5} />
+                  valor={`${contrasteDoLogo.toFixed(1)}:1`} bom={contrasteDoLogo >= CONTRASTE_MINIMO} />
                 <Leitura Ico={AlertTriangle} texto="Fundo transparente"
                   valor={logoTemAlfa ? 'sim' : 'não'} bom={logoTemAlfa} />
                 <Leitura Ico={Download} texto="Tamanho do arquivo"
@@ -459,13 +627,30 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
             {peca === 'botoes' && (
               <>
                 <div className="es-campo">
-                  <span className="es-rotulo"><Type className="w-3.5 h-3.5" /> Os cinco rótulos</span>
+                  <span className="es-rotulo">
+                    <Type className="w-3.5 h-3.5" /> Rótulos ({rotulos.length} de {MINIMO_DE_BOTOES}+)
+                  </span>
                   {rotulos.map((r, i) => (
-                    <input key={i} className="es-entrada" value={r} maxLength={14}
-                      style={{ marginBottom: 5 }} aria-label={`Rótulo do botão ${i + 1}`}
-                      onChange={e => setRotulos(rotulos.map((v, j) => (j === i ? e.target.value : v)))} />
+                    <div className="es-linha" key={i}>
+                      <input className="es-entrada" value={r} maxLength={14}
+                        placeholder={SUGESTOES[i % SUGESTOES.length]}
+                        aria-label={`Rótulo do botão ${i + 1}`}
+                        onChange={e => setRotulos(rotulos.map((v, j) => (j === i ? e.target.value : v)))} />
+                      <button className="es-tirar" disabled={rotulos.length <= 1}
+                        aria-label={`Excluir o botão ${i + 1}`} title="Excluir este botão"
+                        onClick={() => tirarBotao(i)}>
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   ))}
+                  <button className="es-bt" style={{ width: '100%', justifyContent: 'center', marginTop: 3 }}
+                    disabled={rotulos.length >= MAXIMO_DE_BOTOES} onClick={acrescentarBotao}>
+                    <Plus className="w-3.5 h-3.5" /> Acrescentar botão
+                  </button>
                 </div>
+
+                <EscolhaDeFonte valor={botaoFonte} aoEscolher={setBotaoFonte} id="dos botões" />
+
                 <div className="es-campo">
                   <span className="es-rotulo"><Ruler className="w-3.5 h-3.5" /> Altura · {botaoAltura} px</span>
                   <input className="es-faixa" type="range" min={28} max={72} step={2}
@@ -493,17 +678,19 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
                 </div>
 
                 <Leitura Ico={MousePointerClick} texto="Rótulos preenchidos"
-                  valor={`${rotulosPreenchidos} de 5`} bom={rotulosPreenchidos >= 5} />
+                  valor={`${rotulosPreenchidos} de ${MINIMO_DE_BOTOES}`} bom={rotulosPreenchidos >= MINIMO_DE_BOTOES} />
                 <Leitura Ico={Contrast} texto="Contraste do rótulo"
-                  valor={`${contrasteDoBotao.toFixed(1)}:1`} bom={contrasteDoBotao >= 4.5} />
+                  valor={`${contrasteDoBotao.toFixed(1)}:1`} bom={contrasteDoBotao >= CONTRASTE_MINIMO} />
                 <Leitura Ico={Palette} texto="Cores seguras da web"
                   valor={coresSeguras ? 'sim' : 'não'} bom={coresSeguras} />
                 <Leitura Ico={Ruler} texto="Alvo de toque"
                   valor={`${botaoAltura} px`} bom={botaoAltura >= ALVO_DE_TOQUE} />
+                <Leitura Ico={Shapes} texto="Cantos arredondados"
+                  valor={botaoRaio > 0 ? `${botaoRaio} px` : 'não'} bom={botaoRaio > 0 && botoesComAlfa} />
 
                 <button className="es-bt forte" style={{ width: '100%', justifyContent: 'center', marginTop: 6 }}
                   onClick={() => png.botoes && baixar(png.botoes, rotulos.map((r, i) => `botao-${i + 1}-${r.toLowerCase().replace(/\s+/g, '-') || 'sem-nome'}.png`), 'botoes')}>
-                  <Download className="w-4 h-4" /> Baixar os cinco
+                  <Download className="w-4 h-4" /> Baixar todos
                 </button>
               </>
             )}
@@ -513,13 +700,19 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
                 <div className="es-campo">
                   <span className="es-rotulo"><Type className="w-3.5 h-3.5" /> Título</span>
                   <input className="es-entrada" value={tituloHeader} maxLength={40}
-                    aria-label="Título do header" onChange={e => setTituloHeader(e.target.value)} />
+                    placeholder="Nome do seu clube" aria-label="Título do header"
+                    onChange={e => setTituloHeader(e.target.value)} />
                 </div>
                 <div className="es-campo">
                   <span className="es-rotulo"><Type className="w-3.5 h-3.5" /> Subtítulo</span>
                   <input className="es-entrada" value={subtituloHeader} maxLength={50}
-                    aria-label="Subtítulo do header" onChange={e => setSubtituloHeader(e.target.value)} />
+                    placeholder="Aventura, serviço e amizade" aria-label="Subtítulo do header"
+                    onChange={e => setSubtituloHeader(e.target.value)} />
                 </div>
+
+                <EscolhaDeFigura valor={headerFigura} aoEscolher={setHeaderFigura} rotulo="Figura do header" />
+                <EscolhaDeFonte valor={headerFonte} aoEscolher={setHeaderFonte} id="do header" />
+
                 <div className="es-campo">
                   <span className="es-rotulo"><Ruler className="w-3.5 h-3.5" /> Largura · {headerLargura} px</span>
                   <input className="es-faixa" type="range" min={600} max={1600} step={50}
@@ -545,15 +738,17 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
                 </div>
 
                 <Leitura Ico={Ruler} texto="Proporção de banner"
-                  valor={`${proporcaoDoHeader.toFixed(1)}×`} bom={proporcaoDoHeader >= 3} />
+                  valor={`${proporcaoDoHeader.toFixed(1)}×`} bom={proporcaoDoHeader >= PROPORCAO_MINIMA} />
                 <Leitura Ico={Contrast} texto="Contraste no início"
-                  valor={`${contrasteInicio.toFixed(1)}:1`} bom={contrasteInicio >= 4.5} />
+                  valor={`${contrasteInicio.toFixed(1)}:1`} bom={contrasteInicio >= CONTRASTE_MINIMO} />
                 <Leitura Ico={Contrast} texto="Contraste no fim"
-                  valor={`${contrasteFim.toFixed(1)}:1`} bom={contrasteFim >= 4.5} />
+                  valor={`${contrasteFim.toFixed(1)}:1`} bom={contrasteFim >= CONTRASTE_MINIMO} />
 
                 <button className="es-bt forte" style={{ width: '100%', justifyContent: 'center', marginTop: 6 }}
-                  onClick={() => png.header && baixar(png.header, ['header-do-clube.png'], 'header')}>
-                  <Download className="w-4 h-4" /> Baixar PNG
+                  onClick={() => png.header && baixar(
+                    headerVaiEmJpeg && jpegDoHeader ? [jpegDoHeader] : png.header,
+                    [`header-do-clube.${headerVaiEmJpeg ? 'jpg' : 'png'}`], 'header')}>
+                  <Download className="w-4 h-4" /> Baixar {headerVaiEmJpeg ? 'JPEG' : 'PNG'}
                 </button>
               </>
             )}

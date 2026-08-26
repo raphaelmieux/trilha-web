@@ -93,6 +93,16 @@ critério mora em `src/lib/insignias.ts`; a linha, na migration do catálogo. Ao
 abrir trilha nova, o código nasce sozinho (`codigoDaInsigniaDaTrilha`), mas a
 linha ainda é à mão — `src/lib/insignias.test.ts` cobra.
 
+**Laboratório que abre resolvido não ensina nada.** O de desenhar imagens
+nascia com sigla curta, fundo transparente, contraste bom e cinco rótulos
+preenchidos: bastava clicar em Baixar três vezes para concluir a lição sem ter
+decidido coisa nenhuma. E o erro não aparece — tudo fica verde, que é
+exatamente o que se espera de um laboratório funcionando. O modelo com que ele
+abre mora em `src/labs/modeloInicial.ts`, fora do componente, e
+`modeloInicial.test.ts` confere item por item que ele continua reprovando em
+todos. Modelo é o que sai de quem aceita o que veio na frente, e não o
+gabarito.
+
 **Questão de ordenar tem uma interface só**: `ListaOrdenavel`, com arrastar e
 setas. A resposta sai do campo `order`, nunca da posição no array, porque os
 itens são embaralhados antes de aparecer.
@@ -229,6 +239,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `supabase/migrations/migrations.test.ts` | migration que não fecha um bloco que abre; timestamp repetido |
 | `src/lib/certificados.test.ts` | o padrão de um certificado ilegível — inverter para `'active'` reprova |
 | `src/lib/insignias.test.ts` | insígnia com critério no código e sem linha no catálogo |
+| `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 

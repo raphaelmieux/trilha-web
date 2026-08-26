@@ -282,26 +282,281 @@ export function drawSamplePhoto(width = 1600, height = 1067): HTMLCanvasElement 
   return canvas;
 }
 
-export type LogoShape = 'circulo' | 'escudo' | 'hexagono';
+/* ── O material de desenho: formas, símbolos e fontes ─────────────────────
+ *
+ * Um logo de clube não é uma sigla dentro de um círculo. É uma figura — o
+ * pinheiro, a fogueira, o Cruzeiro do Sul — e é ela que a pessoa reconhece de
+ * longe. Sem esse repertório aqui, o laboratório vira escolha de cor, e o
+ * desbravador sai sem ter desenhado nada.
+ *
+ * Tudo é caminho de canvas, não imagem: assim a figura acompanha a cor
+ * escolhida, cresce sem borrar e não acrescenta um único byte de download.
+ */
+
+export type LogoShape = 'circulo' | 'escudo' | 'hexagono' | 'losango' | 'estrela' | 'quadrado';
+
+export const NOME_DA_FORMA: Record<LogoShape, string> = {
+  escudo: 'Escudo', circulo: 'Círculo', hexagono: 'Hexágono',
+  losango: 'Losango', estrela: 'Estrela', quadrado: 'Quadrado',
+};
+
+export type Simbolo =
+  | 'nenhum' | 'arvore' | 'montanha' | 'chama' | 'bussola' | 'barraca'
+  | 'pegada' | 'aguia' | 'lobo' | 'cruzeiro' | 'ursa';
+
+export const NOME_DO_SIMBOLO: Record<Simbolo, string> = {
+  nenhum: 'Sem figura', arvore: 'Pinheiro', montanha: 'Montanha', chama: 'Fogueira',
+  bussola: 'Bússola', barraca: 'Barraca', pegada: 'Pegada', aguia: 'Águia',
+  lobo: 'Lobo', cruzeiro: 'Cruzeiro do Sul', ursa: 'Ursa Maior',
+};
+
+export type FonteDeDesenho =
+  | 'sem-serifa' | 'serifada' | 'estreita' | 'pesada' | 'monoespacada' | 'redonda';
+
+/**
+ * Pilhas de fonte, não fontes.
+ *
+ * Nada aqui é baixado: são as famílias que já existem em Windows, Mac, Android
+ * e Linux, cada uma com substituta ao lado. Uma fonte que o navegador não tem
+ * não avisa — ele desenha com outra, e o logo que a pessoa baixou fica
+ * diferente do que ela viu. Por isso cada pilha termina numa família genérica.
+ */
+export const PILHA_DA_FONTE: Record<FonteDeDesenho, string> = {
+  'sem-serifa': 'Helvetica, Arial, sans-serif',
+  serifada: 'Georgia, "Times New Roman", serif',
+  estreita: '"Arial Narrow", "Liberation Sans Narrow", Arial, sans-serif',
+  pesada: 'Impact, "Arial Black", Haettenschweiler, sans-serif',
+  monoespacada: '"Courier New", Courier, monospace',
+  redonda: '"Trebuchet MS", Verdana, Geneva, sans-serif',
+};
+
+export const NOME_DA_FONTE: Record<FonteDeDesenho, string> = {
+  'sem-serifa': 'Sem serifa', serifada: 'Serifada', estreita: 'Estreita',
+  pesada: 'Pesada', monoespacada: 'Monoespaçada', redonda: 'Arredondada',
+};
+
+/** Caminho de uma estrela de n pontas, usado na forma e nas constelações. */
+function caminhoDeEstrela(
+  ctx: CanvasRenderingContext2D, cx: number, cy: number,
+  raio: number, pontas = 5, interno = 0.42,
+): void {
+  ctx.beginPath();
+  for (let i = 0; i < pontas * 2; i++) {
+    const r = i % 2 === 0 ? raio : raio * interno;
+    const a = (Math.PI / pontas) * i - Math.PI / 2;
+    const x = cx + r * Math.cos(a);
+    const y = cy + r * Math.sin(a);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+
+/**
+ * Desenha uma figura centrada em (cx, cy), dentro de uma caixa de `tamanho`.
+ *
+ * As coordenadas de cada figura são frações de meia-caixa — de -1 a 1 nos dois
+ * eixos —, então a mesma figura serve ao logo de 128 px e ao header de 1600.
+ */
+export function desenharSimbolo(
+  ctx: CanvasRenderingContext2D, simbolo: Simbolo,
+  cx: number, cy: number, tamanho: number, cor: string,
+): void {
+  if (simbolo === 'nenhum') return;
+  const u = tamanho / 2;
+  const x = (f: number) => cx + f * u;
+  const y = (f: number) => cy + f * u;
+
+  ctx.save();
+  ctx.fillStyle = cor;
+  ctx.strokeStyle = cor;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  if (simbolo === 'arvore') {
+    ctx.beginPath();
+    ctx.moveTo(x(0), y(-0.98));
+    ctx.lineTo(x(0.44), y(-0.3)); ctx.lineTo(x(0.2), y(-0.3));
+    ctx.lineTo(x(0.62), y(0.18)); ctx.lineTo(x(0.3), y(0.18));
+    ctx.lineTo(x(0.78), y(0.62)); ctx.lineTo(x(-0.78), y(0.62));
+    ctx.lineTo(x(-0.3), y(0.18)); ctx.lineTo(x(-0.62), y(0.18));
+    ctx.lineTo(x(-0.2), y(-0.3)); ctx.lineTo(x(-0.44), y(-0.3));
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(x(-0.11), y(0.62), u * 0.22, u * 0.36);
+  } else if (simbolo === 'montanha') {
+    ctx.beginPath();
+    ctx.moveTo(x(-1), y(0.68));
+    ctx.lineTo(x(-0.32), y(-0.56));
+    ctx.lineTo(x(-0.02), y(-0.02));
+    ctx.lineTo(x(0.26), y(-0.34));
+    ctx.lineTo(x(1), y(0.68));
+    ctx.closePath();
+    ctx.fill();
+  } else if (simbolo === 'chama') {
+    ctx.beginPath();
+    ctx.moveTo(x(0), y(-0.96));
+    ctx.bezierCurveTo(x(0.64), y(-0.32), x(0.54), y(0.1), x(0.22), y(0.4));
+    ctx.bezierCurveTo(x(0.36), y(0.02), x(0.12), y(-0.12), x(0.05), y(-0.36));
+    ctx.bezierCurveTo(x(-0.05), y(-0.06), x(-0.5), y(-0.06), x(-0.32), y(0.4));
+    ctx.bezierCurveTo(x(-0.64), y(0.08), x(-0.44), y(-0.34), x(0), y(-0.96));
+    ctx.closePath();
+    ctx.fill();
+    // As achas cruzadas: é o que separa fogueira de gota d'água virada.
+    ctx.lineWidth = u * 0.15;
+    ctx.beginPath(); ctx.moveTo(x(-0.82), y(0.88)); ctx.lineTo(x(0.82), y(0.56)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x(-0.82), y(0.56)); ctx.lineTo(x(0.82), y(0.88)); ctx.stroke();
+  } else if (simbolo === 'bussola') {
+    ctx.lineWidth = u * 0.13;
+    ctx.beginPath(); ctx.arc(cx, cy, u * 0.9, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x(0), y(-0.62)); ctx.lineTo(x(0.26), y(0.08)); ctx.lineTo(x(-0.26), y(0.08));
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 0.45;
+    ctx.beginPath();
+    ctx.moveTo(x(0), y(0.62)); ctx.lineTo(x(0.26), y(-0.08)); ctx.lineTo(x(-0.26), y(-0.08));
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 1;
+  } else if (simbolo === 'barraca') {
+    // Um vértice só, com a porta recortada de baixo: separar as duas abas no
+    // alto faz a figura virar duas velas de barco.
+    ctx.beginPath();
+    ctx.moveTo(x(0), y(-0.88));
+    ctx.lineTo(x(0.98), y(0.58));
+    ctx.lineTo(x(0.3), y(0.58));
+    ctx.lineTo(x(0), y(-0.08));
+    ctx.lineTo(x(-0.3), y(0.58));
+    ctx.lineTo(x(-0.98), y(0.58));
+    ctx.closePath();
+    ctx.fill();
+    ctx.lineWidth = u * 0.1;
+    ctx.beginPath(); ctx.moveTo(x(-1), y(0.82)); ctx.lineTo(x(1), y(0.82)); ctx.stroke();
+  } else if (simbolo === 'pegada') {
+    ctx.beginPath();
+    ctx.ellipse(x(0), y(0.44), u * 0.56, u * 0.46, 0, 0, Math.PI * 2);
+    ctx.fill();
+    const dedos: [number, number, number, number, number][] = [
+      [-0.68, -0.16, 0.2, 0.29, -0.38],
+      [-0.25, -0.62, 0.2, 0.29, -0.13],
+      [0.25, -0.62, 0.2, 0.29, 0.13],
+      [0.68, -0.16, 0.2, 0.29, 0.38],
+    ];
+    for (const [fx, fy, rx, ry, giro] of dedos) {
+      ctx.beginPath();
+      ctx.ellipse(x(fx), y(fy), u * rx, u * ry, giro, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (simbolo === 'aguia') {
+    // Cabeça acima da linha das asas, e cauda abaixo dela. Sem essas duas
+    // saliências a silhueta fecha num arco e a ave vira morcego.
+    for (const lado of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(x(lado * 0.06), y(-0.3));
+      ctx.bezierCurveTo(x(lado * 0.45), y(-0.96), x(lado * 0.86), y(-0.92), x(lado * 0.99), y(-0.64));
+      ctx.bezierCurveTo(x(lado * 0.78), y(-0.58), x(lado * 0.6), y(-0.32), x(lado * 0.5), y(0));
+      ctx.bezierCurveTo(x(lado * 0.38), y(-0.26), x(lado * 0.24), y(-0.3), x(lado * 0.06), y(-0.12));
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.moveTo(x(-0.12), y(-0.36));
+    ctx.lineTo(x(0.12), y(-0.36));
+    ctx.lineTo(x(0.15), y(0.3));
+    ctx.lineTo(x(0), y(0.64));
+    ctx.lineTo(x(-0.15), y(0.3));
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath(); ctx.arc(x(0), y(-0.5), u * 0.17, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x(0.11), y(-0.59)); ctx.lineTo(x(0.4), y(-0.49)); ctx.lineTo(x(0.11), y(-0.39));
+    ctx.closePath(); ctx.fill();
+  } else if (simbolo === 'lobo') {
+    ctx.beginPath();
+    ctx.moveTo(x(-0.66), y(-0.92));
+    ctx.lineTo(x(-0.36), y(-0.26));
+    ctx.lineTo(x(0.36), y(-0.26));
+    ctx.lineTo(x(0.66), y(-0.92));
+    ctx.lineTo(x(0.76), y(-0.06));
+    ctx.lineTo(x(0.46), y(0.4));
+    ctx.lineTo(x(0.14), y(0.56));
+    ctx.lineTo(x(0.04), y(0.96));
+    ctx.lineTo(x(-0.22), y(0.58));
+    ctx.lineTo(x(-0.5), y(0.36));
+    ctx.lineTo(x(-0.76), y(-0.06));
+    ctx.closePath();
+    ctx.fill();
+  } else if (simbolo === 'cruzeiro' || simbolo === 'ursa') {
+    // Constelações: as ligações primeiro, mais apagadas, e as estrelas por cima.
+    // No céu não há linha nenhuma — ela é o desenho que a gente põe para achar.
+    const estrelas: [number, number, number][] = simbolo === 'cruzeiro'
+      ? [[0.08, -0.9, 0.17], [-0.08, 0.9, 0.21], [-0.78, 0.1, 0.18],
+        [0.74, -0.04, 0.15], [-0.3, 0.42, 0.09]]
+      : [[-0.9, -0.34, 0.15], [-0.86, 0.3, 0.14], [-0.34, 0.44, 0.13],
+        [-0.28, -0.02, 0.11], [0.16, -0.16, 0.14], [0.56, -0.06, 0.13],
+        [0.96, -0.46, 0.15]];
+    const ligacoes: number[][] = simbolo === 'cruzeiro'
+      ? [[0, 1], [2, 3]]
+      : [[0, 1, 2, 3, 0], [3, 4, 5, 6]];
+    ctx.globalAlpha = 0.4;
+    ctx.lineWidth = u * 0.045;
+    for (const caminho of ligacoes) {
+      ctx.beginPath();
+      caminho.forEach((i, passo) => {
+        const [fx, fy] = estrelas[i];
+        if (passo === 0) ctx.moveTo(x(fx), y(fy)); else ctx.lineTo(x(fx), y(fy));
+      });
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    for (const [fx, fy, r] of estrelas) {
+      caminhoDeEstrela(ctx, x(fx), y(fy), u * r);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+/** Encolhe a fonte até o texto caber em `maxLargura`. Devolve o tamanho usado. */
+function ajustarFonte(
+  ctx: CanvasRenderingContext2D, texto: string,
+  inicial: number, maxLargura: number, pilha: string, peso = 'bold',
+): number {
+  let corpo = inicial;
+  ctx.font = `${peso} ${Math.round(corpo)}px ${pilha}`;
+  while (ctx.measureText(texto).width > maxLargura && corpo > 8) {
+    corpo -= 2;
+    ctx.font = `${peso} ${Math.round(corpo)}px ${pilha}`;
+  }
+  return corpo;
+}
 
 /**
  * Draws an emblem on a transparent canvas.
  *
- * The background is deliberately left empty. Exported as PNG the shape floats
- * over whatever is behind it; exported as JPEG the same drawing comes back
- * sitting in a black rectangle, because JPEG has no alpha channel and the
- * undefined pixels collapse to zero. That side-by-side is the lesson.
+ * The background is deliberately left empty by default. Exported as PNG the shape
+ * floats over whatever is behind it; flattened onto white — the `background`
+ * option — the same drawing comes back sitting in a box, which is exactly what
+ * happens to a logo saved as JPEG. That side-by-side is the lesson, and it only
+ * works if the student can produce the wrong one on purpose.
  */
 export function drawLogo(opts: {
   text: string; shape: LogoShape; fill: string; fg: string; size?: number;
+  symbol?: Simbolo; font?: FonteDeDesenho; background?: 'transparente' | 'branco';
 }): HTMLCanvasElement {
-  const { text, shape, fill, fg, size = 512 } = opts;
+  const {
+    text, shape, fill, fg, size = 512,
+    symbol = 'nenhum', font = 'sem-serifa', background = 'transparente',
+  } = opts;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d')!;
   const c = size / 2;
   const r = size * 0.44;
+
+  if (background === 'branco') {
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, size, size);
+  }
 
   ctx.beginPath();
   if (shape === 'circulo') {
@@ -313,6 +568,25 @@ export function drawLogo(opts: {
       const y = c + r * Math.sin(a);
       if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
+    ctx.closePath();
+  } else if (shape === 'losango') {
+    ctx.moveTo(c, c - r);
+    ctx.lineTo(c + r * 0.86, c);
+    ctx.lineTo(c, c + r);
+    ctx.lineTo(c - r * 0.86, c);
+    ctx.closePath();
+  } else if (shape === 'estrela') {
+    caminhoDeEstrela(ctx, c, c, r, 5, 0.5);
+  } else if (shape === 'quadrado') {
+    const lado = r * 1.78;
+    const canto = lado * 0.2;
+    const e = c - lado / 2;
+    const d = c + lado / 2;
+    ctx.moveTo(e + canto, e);
+    ctx.arcTo(d, e, d, d, canto);
+    ctx.arcTo(d, d, e, d, canto);
+    ctx.arcTo(e, d, e, e, canto);
+    ctx.arcTo(e, e, d, e, canto);
     ctx.closePath();
   } else {
     const top = c - r;
@@ -328,19 +602,24 @@ export function drawLogo(opts: {
   ctx.fill();
 
   const label = text.trim().toUpperCase();
-  if (label) {
-    ctx.fillStyle = fg;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    // Shrink to fit: three initials must not spill past the shape's edge.
-    let fontSize = size * (label.length <= 2 ? 0.38 : label.length <= 4 ? 0.26 : 0.17);
-    ctx.font = `bold ${Math.round(fontSize)}px Helvetica, Arial, sans-serif`;
-    const maxWidth = r * 1.4;
-    while (ctx.measureText(label).width > maxWidth && fontSize > 10) {
-      fontSize -= 2;
-      ctx.font = `bold ${Math.round(fontSize)}px Helvetica, Arial, sans-serif`;
-    }
-    ctx.fillText(label, c, c + (shape === 'escudo' ? -size * 0.02 : 0));
+  const pilha = PILHA_DA_FONTE[font];
+  const desvio = shape === 'escudo' ? -size * 0.03 : 0;
+  ctx.fillStyle = fg;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  if (symbol !== 'nenhum' && label) {
+    // Figura em cima, nome embaixo: a ordem de qualquer emblema de clube.
+    desenharSimbolo(ctx, symbol, c, c - size * 0.13 + desvio, size * 0.42, fg);
+    ajustarFonte(ctx, label, size * 0.15, r * 1.36, pilha);
+    ctx.fillText(label, c, c + size * 0.24 + desvio);
+  } else if (symbol !== 'nenhum') {
+    desenharSimbolo(ctx, symbol, c, c + desvio, size * 0.62, fg);
+  } else if (label) {
+    // Encolhe para caber: três iniciais não podem transbordar a forma.
+    const inicial = size * (label.length <= 2 ? 0.38 : label.length <= 4 ? 0.26 : 0.17);
+    ajustarFonte(ctx, label, inicial, r * 1.4, pilha);
+    ctx.fillText(label, c, c + desvio);
   }
   return canvas;
 }
@@ -348,9 +627,9 @@ export function drawLogo(opts: {
 /** Draws a web button with transparent corners, so PNG vs JPEG has a visible consequence. */
 export function drawButton(opts: {
   label: string; width: number; height: number;
-  bg: string; fg: string; radius: number;
+  bg: string; fg: string; radius: number; font?: FonteDeDesenho;
 }): HTMLCanvasElement {
-  const { label, width, height, bg, fg, radius } = opts;
+  const { label, width, height, bg, fg, radius, font = 'sem-serifa' } = opts;
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -368,9 +647,9 @@ export function drawButton(opts: {
   ctx.fill();
 
   ctx.fillStyle = fg;
-  ctx.font = `bold ${Math.round(height * 0.36)}px Helvetica, Arial, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+  ajustarFonte(ctx, label, height * 0.36, width - height * 0.6, PILHA_DA_FONTE[font]);
   ctx.fillText(label, width / 2, height / 2 + 1);
   return canvas;
 }
@@ -379,8 +658,12 @@ export function drawButton(opts: {
 export function drawHeader(opts: {
   title: string; subtitle: string; width: number; height: number;
   from: string; to: string; fg: string;
+  symbol?: Simbolo; font?: FonteDeDesenho;
 }): HTMLCanvasElement {
-  const { title, subtitle, width, height, from, to, fg } = opts;
+  const {
+    title, subtitle, width, height, from, to, fg,
+    symbol = 'nenhum', font = 'sem-serifa',
+  } = opts;
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -392,13 +675,22 @@ export function drawHeader(opts: {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);
 
+  const pilha = PILHA_DA_FONTE[font];
+  const comFigura = symbol !== 'nenhum';
+  if (comFigura) desenharSimbolo(ctx, symbol, height * 0.62, height * 0.5, height * 0.62, fg);
+
+  // Com figura o texto encosta nela à esquerda; sem figura, fica centrado. O
+  // header centrado com um brasão largado num canto é o erro clássico.
+  const eixo = comFigura ? height * 1.12 : width / 2;
+  const espaco = comFigura ? width - eixo - height * 0.3 : width * 0.9;
   ctx.fillStyle = fg;
-  ctx.textAlign = 'center';
+  ctx.textAlign = comFigura ? 'left' : 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `bold ${Math.round(height * 0.26)}px Helvetica, Arial, sans-serif`;
-  ctx.fillText(title, width / 2, height * 0.42);
-  ctx.font = `${Math.round(height * 0.13)}px Helvetica, Arial, sans-serif`;
+
+  ajustarFonte(ctx, title, height * 0.26, espaco, pilha);
+  ctx.fillText(title, eixo, height * 0.42);
+  ajustarFonte(ctx, subtitle, height * 0.13, espaco, pilha, 'normal');
   ctx.globalAlpha = 0.9;
-  ctx.fillText(subtitle, width / 2, height * 0.66);
+  ctx.fillText(subtitle, eixo, height * 0.66);
   return canvas;
 }
