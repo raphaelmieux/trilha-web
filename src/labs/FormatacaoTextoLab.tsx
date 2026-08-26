@@ -7,8 +7,9 @@ import {
   ArrowDownAZ, Pilcrow, ArrowUpDown, PaintBucket, Square,
   Copy, ClipboardPaste, Scissors, Paintbrush, Eraser, CaseSensitive, Columns,
   Highlighter, Baseline, Sparkles, Search, ChevronDown, Type,
-  CheckCircle2, Circle, FileCheck2, RotateCcw, Minus, X,
+  FileCheck2, RotateCcw, Minus, X,
 } from 'lucide-react';
+import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
@@ -379,21 +380,57 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
      real numa tela de 96 dpi — é esse número que a barra de status mostra, como
      o Word mostra o dele. A letra acompanha: 1 pt vira 1,2 px nessa escala, e
      por isso 11 pt na tela tem o tamanho que teria no papel a 90%. */
-  const PX_POR_CM = 34;
-  const PX_POR_PT = (96 / 72) * (PX_POR_CM / 37.795);
-  const zoom = Math.round((PX_POR_CM / 37.795) * 100);
-  const larguraPx = larguraCm * PX_POR_CM;
-  const margemPx = margemCm * PX_POR_CM;
+  /* As medidas em centímetros descem para o CSS; quem multiplica por pixel é a
+     media query, que é quem sabe o tamanho da tela. */
+  const medidas = {
+    '--largura-cm': larguraCm,
+    '--margem-cm': margemCm,
+  } as React.CSSProperties;
+
+  const tarefas = METAS.map(m => ({
+    id: m.id, titulo: m.titulo, detalhe: m.detalhe, onde: m.onde,
+    feita: m.feita(doc, folha),
+  }));
+
+  const acoes = (
+    <div className="flex flex-col gap-2">
+      {tudoFeito && (
+        <>
+          {erro && <p style={{ fontSize: 11.5, color: 'var(--color-error)' }}>{erro}</p>}
+          <button onClick={registrar} disabled={gravando} className="btn-primary text-sm w-full justify-center">
+            {gravando ? 'Guardando…' : 'Entregar o documento'}
+          </button>
+        </>
+      )}
+      <button onClick={recomecar} className="btn-secondary text-xs py-2 w-full justify-center inline-flex items-center gap-1">
+        <RotateCcw className="w-3 h-3" /> Recomeçar o documento
+      </button>
+    </div>
+  );
 
   return (
-    <div className="space-y-4" onClick={fecharMenu}>
+    <LaboratorioEmTelaCheia
+      trilha={specialtyCode}
+      titulo="Formatando um documento inteiro"
+      tarefas={tarefas}
+      aviso={aviso}
+      acoes={acoes}
+    >
       <style>{`
+        /* A janela não tem mais moldura: ela é a tela. */
         .wd-janela {
           background: #F3F2F1; color: #201F1E;
-          border: 1px solid #C8C6C4; border-radius: 8px; overflow: hidden;
-          box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+          flex: 1; display: flex; flex-direction: column; min-height: 0;
           font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+          /* Pixels por centímetro, e portanto o zoom da folha. 34 é 90% do
+             tamanho real numa tela de 96 dpi; num celular de 390 px isso
+             deixaria metade do documento fora da tela, e o Word também reduz.
+             Mora na janela, e não no canvas, porque a régua precisa da mesma
+             medida — foi o que a deixou sem largura na primeira tentativa. */
+          --px-cm: 34;
         }
+        @media (max-width: 640px)  { .wd-janela { --px-cm: 17; } }
+        @media (min-width: 641px) and (max-width: 1023px) { .wd-janela { --px-cm: 26; } }
         .wd-titulo {
           background: #F9F8F7; border-bottom: 1px solid #E1DFDD;
           display: flex; align-items: center; gap: 10px; padding: 6px 10px; font-size: 12px;
@@ -447,7 +484,19 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
           display: flex; justify-content: center;
         }
         .wd-canvas {
-          background: #E6E6E6; padding: 18px 12px 24px; max-height: 520px; overflow: auto;
+          background: #E6E6E6; padding: 18px 12px 40px; flex: 1; min-height: 0; overflow: auto;
+        }
+        .wd-pagina {
+          background: #FFFFFF; margin: 0 auto; min-height: 260px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.28);
+          width: calc(var(--largura-cm) * var(--px-cm) * 1px);
+          padding: calc(var(--margem-cm) * var(--px-cm) * 1px);
+        }
+        /* 1 pt = (96/72)/37,795 cm de pixel — a letra acompanha o zoom da folha. */
+        .wd-par { font-size: calc(var(--pt) * var(--px-cm) * 0.035277px); }
+        .wd-regua-barra {
+          width: calc(var(--largura-cm) * var(--px-cm) * 1px);
+          height: 16px; position: relative; background: #C8C6C4; border-radius: 1px;
         }
         .wd-status {
           background: #F3F2F1; border-top: 1px solid #E1DFDD; color: #605E5C;
@@ -457,47 +506,8 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
         .wd-par:hover { background: #F2F7FC; }
       `}</style>
 
-      {/* ── As sete tarefas, fora da janela: é o exercício, não o programa ── */}
-      <div className="card p-4">
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <h2 className="font-bold">O que este documento ainda precisa</h2>
-          <span className="text-sm" style={{ color: 'var(--color-text-dim)' }}>
-            {cumpridas.length} de {METAS.length}
-          </span>
-        </div>
-        <div className="space-y-2">
-          {METAS.map(m => {
-            const feita = m.feita(doc, folha);
-            return (
-              <div key={m.id} className="flex items-start gap-2 p-2 rounded-lg"
-                style={{ backgroundColor: feita ? 'var(--color-success-a10)' : 'var(--color-bg-input)' }}>
-                {feita
-                  ? <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--color-success)' }} />
-                  : <Circle className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--color-text-faint)' }} />}
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">{m.titulo}</p>
-                  {!feita && (
-                    <>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{m.detalhe}</p>
-                      <p className="text-xs mt-1" style={{ color: 'var(--color-secondary)' }}>{m.onde}</p>
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {aviso && (
-        <p className="text-sm p-3 rounded-lg"
-          style={{ backgroundColor: 'var(--color-warning-a10)', color: 'var(--color-text)' }}>
-          {aviso}
-        </p>
-      )}
-
       {/* ── A janela do Word ── */}
-      <div className="wd-janela" onClick={e => e.stopPropagation()}>
+      <div className="wd-janela">
         {/* Barra de título */}
         <div className="wd-titulo">
           <span style={{ color: '#2B579A', fontWeight: 700, fontSize: 13 }}>W</span>
@@ -794,32 +804,27 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
             contam a partir da margem esquerda — como no Word. Ela muda junto
             quando a margem ou o papel mudam, que é o retorno visível de ter
             mexido em Layout. */}
-        <div className="wd-regua">
-          <div style={{ width: larguraPx, height: 16, position: 'relative', background: '#C8C6C4', borderRadius: 1 }}>
+        <div className="wd-regua" style={medidas}>
+          <div className="wd-regua-barra">
             <div style={{
-              position: 'absolute', left: margemPx, right: margemPx, top: 0, bottom: 0,
+              position: 'absolute', top: 0, bottom: 0,
+              left: 'calc(var(--margem-cm) * var(--px-cm) * 1px)',
+              right: 'calc(var(--margem-cm) * var(--px-cm) * 1px)',
               background: '#FFFFFF', borderLeft: '1px solid #A19F9D', borderRight: '1px solid #A19F9D',
             }} />
-            {Array.from({ length: Math.floor(larguraCm) }, (_, i) => i + 1).map(cm => {
-              const x = cm * PX_POR_CM;
-              const dentro = x > margemPx && x < larguraPx - margemPx;
-              const numero = Math.round(Math.abs(x - margemPx) / PX_POR_CM);
-              return (
-                <span key={cm} style={{
-                  position: 'absolute', left: x, top: 1, transform: 'translateX(-50%)',
-                  fontSize: 8, color: dentro ? '#605E5C' : '#797775', lineHeight: '14px',
-                }}>{numero || ''}</span>
-              );
-            })}
+            {Array.from({ length: Math.floor(larguraCm) }, (_, i) => i + 1).map(cm => (
+              <span key={cm} style={{
+                position: 'absolute', top: 1, transform: 'translateX(-50%)',
+                left: `calc(${cm} * var(--px-cm) * 1px)`,
+                fontSize: 8, color: '#605E5C', lineHeight: '14px',
+              }}>{Math.round(Math.abs(cm - margemCm)) || ''}</span>
+            ))}
           </div>
         </div>
 
         {/* A folha */}
-        <div className="wd-canvas">
-          <div style={{
-            width: larguraPx, margin: '0 auto', background: '#FFFFFF',
-            padding: margemPx, boxShadow: '0 1px 4px rgba(0,0,0,0.28)', minHeight: 260,
-          }}>
+        <div className="wd-canvas" onClick={fecharMenu} style={medidas}>
+          <div className="wd-pagina">
             {doc.map((b, i) => {
               const numero = b.lista === 'numeracao'
                 ? doc.filter(x => x.grupo === b.grupo).findIndex(x => x.id === b.id) + 1
@@ -833,7 +838,7 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
                     backgroundColor: marcado ? '#CFE3F7' : undefined,
                     marginTop: i === 0 ? 0 : 6,
                     fontFamily: pilhaDaFonte(b.fonte),
-                    fontSize: b.tamanho * PX_POR_PT,
+                    ['--pt' as string]: b.tamanho,
                     fontWeight: b.negrito ? 700 : 400,
                     fontStyle: b.italico ? 'italic' : 'normal',
                     textDecoration: b.sublinhado ? 'underline' : 'none',
@@ -865,38 +870,20 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
             <Minus className="w-3 h-3" />
             <span style={{ width: 60, height: 3, background: '#C8C6C4', borderRadius: 2, position: 'relative' }}>
               <span style={{
-                position: 'absolute', left: `${Math.min(96, zoom * 0.62)}%`, top: -3,
+                position: 'absolute', left: '56%', top: -3,
                 width: 8, height: 9, background: '#605E5C', borderRadius: 1,
               }} />
             </span>
             <span style={{ fontSize: 13, lineHeight: 1 }}>+</span>
-            <span style={{ minWidth: 32, textAlign: 'right' }}>{zoom}%</span>
+            <span style={{ minWidth: 32, textAlign: 'right' }}>
+              <span className="sm:hidden">45%</span>
+              <span className="hidden sm:inline lg:hidden">69%</span>
+              <span className="hidden lg:inline">90%</span>
+            </span>
           </span>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 items-center">
-        <button onClick={recomecar} className="btn-secondary text-xs py-2 inline-flex items-center gap-1">
-          <RotateCcw className="w-3 h-3" /> Recomeçar o documento
-        </button>
-        <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
-          Selecionar aqui é clicar no parágrafo inteiro — no Word, o mesmo efeito de
-          três cliques em cima dele.
-        </p>
-      </div>
-
-      {tudoFeito && (
-        <div className="card p-4 text-center">
-          <p className="mb-3" style={{ color: 'var(--color-text-muted)' }}>
-            As sete estão feitas. O documento está formatado como um trabalho que
-            se entrega.
-          </p>
-          {erro && <p className="mb-3 text-sm" style={{ color: 'var(--color-error)' }}>{erro}</p>}
-          <button onClick={registrar} disabled={gravando} className="btn-primary inline-flex">
-            {gravando ? 'Guardando…' : 'Entregar o documento'}
-          </button>
-        </div>
-      )}
-    </div>
+    </LaboratorioEmTelaCheia>
   );
 }

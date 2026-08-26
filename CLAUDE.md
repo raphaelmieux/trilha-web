@@ -97,6 +97,29 @@ linha ainda é à mão — `src/lib/insignias.test.ts` cobra.
 setas. A resposta sai do campo `order`, nunca da posição no array, porque os
 itens são embaralhados antes de aparecer.
 
+**"Parecer um aplicativo" quer dizer a tela inteira.** Quando um laboratório
+imita um programa, ele não é um cartão dentro da página: ocupa a tela e a
+plataforma sai de cena. `LaboratorioEmTelaCheia` é a moldura que faz isso, e ela
+devolve por cima o que é da plataforma — tarefas, progresso e o caminho de volta,
+que sem ela ficaria só no botão voltar do navegador.
+
+De preferência na forma que o próprio programa imitado usaria: no editor de
+texto, a lista de tarefas é painel lateral, porque o Word tem painéis laterais.
+No celular não cabe painel — vira bolha no canto, que recolhe. A escolha entre as
+duas é do CSS, por largura.
+
+O que a sobreposição não cobre: **barra de título e faixa de opções**. São elas
+que o desbravador precisa reconhecer depois, e tapá-las para caber um aviso seria
+esconder a matéria. Canto inferior e lateral são de quem sobrepõe.
+
+Superfície clara dentro da moldura precisa **dizer a própria cor**: a plataforma
+pinta `h1..h4` de quase branco, o que está certo num aplicativo escuro e some em
+cima de painel branco.
+
+Vale para laboratório que imita um programa. Os que não imitam nada — ordenar,
+classificar, escrever — continuam sendo tela da plataforma, e moldura de
+aplicativo neles seria fantasia sem ganho.
+
 **Link externo é sempre `<a target="_blank">`**, pelo componente `LinkExterno`.
 `window.open` funciona no computador e falha no celular.
 

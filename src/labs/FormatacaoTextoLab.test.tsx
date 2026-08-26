@@ -84,6 +84,29 @@ describe('a faixa de opções', () => {
   });
 });
 
+describe('os menus da faixa', () => {
+  /*
+    Um menu que se fecha sozinho no clique que o abre.
+
+    Ao pôr o laboratório em tela cheia, o `fecharMenu` — que existe para o menu
+    sumir quando se clica fora dele — foi parar na janela inteira. O clique no
+    botão Margens abria o menu e subia até a janela, que o fechava no mesmo
+    gesto. Nada quebrou: nem tipo, nem lint, nem teste. Só clicando é que se
+    via, e o menu de Margens é o caminho do requisito 3.1.
+  */
+  it('abrem e continuam abertos', () => {
+    const layout = [...container.querySelectorAll('[role="tab"]')]
+      .find(g => g.textContent === 'Layout')!;
+    act(() => { layout.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+
+    const margens = porTitulo('Margens')!;
+    act(() => { margens.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+
+    expect(container.querySelector('[role="menu"]'), 'o menu deveria estar aberto').not.toBeNull();
+    expect(container.textContent).toContain('2,5 cm em todos os lados');
+  });
+});
+
 describe('formatar sem ter selecionado nada', () => {
   it('não muda o documento, e explica por quê', () => {
     const antes = paragrafo('Relatório do acampamento da')!.style.fontWeight;
