@@ -24,7 +24,8 @@ import WebLab from '../labs/WebLab';
 import MailLab from '../labs/MailLab';
 import FilipensesLab from '../labs/FilipensesLab';
 import CodeLab from '../labs/CodeLab';
-import ImageLab from '../labs/ImageLab';
+import ImageCompressLab from '../labs/ImageCompressLab';
+import ImageCreateLab from '../labs/ImageCreateLab';
 import SiteLab from '../labs/SiteLab';
 import FileManagerLab from '../labs/FileManagerLab';
 import ComputerCareLab from '../labs/ComputerCareLab';
@@ -121,7 +122,8 @@ export default function LessonPage() {
         {lesson.labType === 'filipenses' && <FilipensesLab {...labProps} />}
         {lesson.labType === 'code_lab' && <CodeLab {...labProps} variant="elementos" />}
         {lesson.labType === 'table_challenge' && <CodeLab {...labProps} variant="tabela" />}
-        {lesson.labType === 'image_lab' && <ImageLab {...labProps} />}
+        {lesson.labType === 'image_compress' && <ImageCompressLab {...labProps} />}
+        {lesson.labType === 'image_create' && <ImageCreateLab {...labProps} />}
         {lesson.labType === 'site_lab' && <SiteLab {...labProps} />}
         {lesson.labType === 'file_manager' && <FileManagerLab {...labProps} />}
         {lesson.labType === 'computer_care' && <ComputerCareLab {...labProps} />}

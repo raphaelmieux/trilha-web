@@ -80,7 +80,11 @@ export const LABORATORIO_DO_EVENTO: Record<string, LabType> = {
   file_manager_completed: 'file_manager',
   filipenses_completed: 'filipenses',
   formatacao_concluida: 'formatacao_texto',
-  image_lab_completed: 'image_lab',
+  /* O evento antigo continua valendo, apontando para a metade que herdou o
+     assunto: quem concluiu o laboratório de antes não perde o que fez. */
+  image_lab_completed: 'image_compress',
+  image_compress_completed: 'image_compress',
+  image_create_completed: 'image_create',
   mail_lab_completed: 'mail_lab',
   operacoes_concluidas: 'operacoes_arquivo',
   pact_completed: 'pact_builder',
