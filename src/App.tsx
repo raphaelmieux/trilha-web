@@ -19,14 +19,42 @@ import LeaderboardPage from './pages/LeaderboardPage';
 import { useState } from 'react';
 import { LogOut, Home, Map, FileText, Award, ShieldCheck, User, Podium, Menu, X } from 'lucide-react';
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { session, loading } = useAuth();
-  if (loading) return (
+/* Enquanto a sessão guardada ainda está sendo lida, as duas guardas abaixo
+   esperam com a mesma tela — decidir antes seria decidir sem saber. */
+function Carregando() {
+  return (
     <div className="min-h-screen flex items-center justify-center">
       <p style={{ color: 'var(--color-text-dim)' }}>Carregando...</p>
     </div>
   );
+}
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useAuth();
+  if (loading) return <Carregando />;
   if (!session) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+/*
+  O espelho de ProtectedRoute: a rota que só faz sentido para quem ainda não
+  entrou.
+
+  /login, /cadastro e /recuperar-senha não eram protegidas de nada, o que está
+  certo para quem chega de fora e errado para quem já entrou. Com sessão aberta,
+  quem caísse numa delas — atalho antigo, botão voltar do navegador, endereço
+  digitado — via o formulário de login com a barra de menu do aplicativo em cima
+  dele, e um botão "Sair" logo acima do campo que pedia a senha. A tela pedia
+  para entrar a quem já estava dentro.
+
+  Esperar o `loading` é parte do conserto, e não detalhe: sem isso o formulário
+  aparece por um instante, antes de a sessão guardada terminar de ser lida, e
+  some sozinho em seguida — um piscar que parece defeito.
+*/
+export function RotaDeVisitante({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useAuth();
+  if (loading) return <Carregando />;
+  if (session) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -151,9 +179,9 @@ function AppRoutes() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/cadastro" element={<RegisterPage />} />
-        <Route path="/recuperar-senha" element={<ForgotPasswordPage />} />
+        <Route path="/login" element={<RotaDeVisitante><LoginPage /></RotaDeVisitante>} />
+        <Route path="/cadastro" element={<RotaDeVisitante><RegisterPage /></RotaDeVisitante>} />
+        <Route path="/recuperar-senha" element={<RotaDeVisitante><ForgotPasswordPage /></RotaDeVisitante>} />
         <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/especialidade/:code" element={<ProtectedRoute><SpecialtyPage /></ProtectedRoute>} />
         <Route path="/licao/:specialtyCode/:moduleCode/:lessonCode" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
