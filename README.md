@@ -139,11 +139,15 @@ local — o projeto pode ser conduzido inteiro pelo navegador.
 
 | Workflow | Dispara em | O que faz |
 | --- | --- | --- |
-| `ci.yml` | push e PR em `main` | lint, typecheck, testes e build |
+| `ci.yml` | push em qualquer branch, e PR em `main` | lint, typecheck, testes e build |
 | `deploy.yml` | push em `main` | build e publicação no GitHub Pages |
 | `supabase.yml` | push em `main` que toque `supabase/**` ou `src/types/database.ts` | aplica as migrations, publica as cinco Edge Functions, escreve os segredos de função, confere `src/types/database.ts` contra o schema real e verifica que `Confirm email` continua desligado |
 
-Os dois últimos também rodam sob demanda pela aba **Actions**
+O `ci.yml` dispara em push de qualquer branch, e não só em `main`: quem edita
+pelo navegador empurra para um branch antes de existir PR, e sem isso essa
+edição só encontrava as travas depois — ou já em `main`, de onde se publica.
+
+O `deploy.yml` e o `supabase.yml` também rodam sob demanda pela aba **Actions**
 (`workflow_dispatch`), o que é o caminho depois de acrescentar um secret.
 
 Habilite Pages em `Settings → Pages → Source: GitHub Actions`.
