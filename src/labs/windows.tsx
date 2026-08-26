@@ -257,6 +257,36 @@ export const CSS_WINDOWS = `
   .win-rotulo-campo { display: block; font-size: 12px; color: #444; margin-bottom: 4px; }
   .win-marca { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #1B1B1B; }
 
+  /* ── Assistente de instalação ──
+     O formato é o do Inno Setup, que é o instalador que a maior parte dos
+     programas de Windows usa: faixa lateral na primeira página, cabeçalho com
+     título e subtítulo nas de dentro, e os botões Voltar / Avançar / Cancelar
+     no rodapé cinza. É essa sequência de telas que o desbravador vai ver
+     quando instalar qualquer coisa, e é por isso que ela está aqui inteira em
+     vez de virar um botão "instalar". */
+  .setup-faixa {
+    width: 164px; flex: none; display: flex; align-items: flex-end; padding: 14px;
+    background: linear-gradient(160deg, #2A5699 0%, #4A7DBD 60%, #7FA8D6 100%);
+  }
+  .setup-cab {
+    display: flex; align-items: center; gap: 12px; padding: 11px 14px; flex: none;
+    background: #FFFFFF; border-bottom: 1px solid #DFDFDF;
+  }
+  .setup-corpo {
+    flex: 1; min-height: 0; overflow: auto; padding: 16px;
+    background: #FFFFFF; font-size: 12.5px; color: #1B1B1B; line-height: 1.55;
+  }
+  .setup-pe {
+    display: flex; gap: 8px; justify-content: flex-end; padding: 10px 14px; flex: none;
+    background: #F0F0F0; border-top: 1px solid #DFDFDF;
+  }
+  .setup-quadro {
+    height: 148px; overflow: auto; border: 1px solid #B8B8B8; background: #FFFFFF;
+    padding: 8px 10px; font-size: 12px; color: #1B1B1B;
+  }
+  .setup-barra { height: 18px; border: 1px solid #B8B8B8; background: #FFFFFF; overflow: hidden; }
+  .setup-barra > span { display: block; height: 100%; background: #0F6CBD; transition: width .12s linear; }
+
   /* ── WinRAR: outra época, outra paleta ── */
   .rar { background: #F0F0F0; color: #000; font-family: 'Segoe UI', Tahoma, sans-serif; }
   .rar-menu {

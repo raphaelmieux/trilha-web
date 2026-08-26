@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronUp, ArrowLeft, X, ListChecks, MonitorSmartphone } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowLeft, X, ListChecks, MonitorSmartphone, LifeBuoy } from 'lucide-react';
 
 /*
  * A moldura do laboratório que imita um programa.
@@ -44,6 +44,14 @@ export interface TarefaDoLaboratorio {
   detalhe?: string;
   /** Onde, dentro do programa imitado, isso se resolve. */
   onde?: string;
+  /**
+   * O caminho inteiro, clique a clique, para quem empacou. Não aparece de
+   * saída: a moldura oferece depois de um tempo sem ninguém concluir nada.
+   * Escreva na ordem em que se faz, e nomeando o que está na tela — "o menu
+   * ⋯", "a caixinha à esquerda do nome" —, porque quem lê isto é justamente
+   * quem não está achando.
+   */
+  passos?: string[];
   feita: boolean;
 }
 
@@ -82,6 +90,19 @@ interface Props {
 */
 const CHAVE_AVISO = 'trilha:aviso-tela-pequena';
 
+/*
+  Quanto tempo sem ninguém concluir nada até a moldura oferecer o passo a passo.
+
+  Um minoto e meio é o que separa "está lendo a tela" de "está tentando a mesma
+  coisa de novo". Menos que isso atropela quem só está lendo com calma, e para
+  um desbravador de dez anos ler com calma é o normal.
+
+  Por que tempo, e não contar erro: o laboratório usa o mesmo `aviso` para
+  corrigir e para explicar o que deu certo. Contar aviso ofereceria ajuda a
+  quem está acertando, que é o contrário do que se quer.
+*/
+const SEGUNDOS_ATE_OFERECER = 90;
+
 function jaAvisado(): boolean {
   try { return localStorage.getItem(CHAVE_AVISO) === '1'; } catch { return false; }
 }
@@ -98,9 +119,27 @@ export default function LaboratorioEmTelaCheia({
   /* Com o aviso de pé a bolha começa fechada: dois painéis escuros empilhados
      num celular são um só borrão, e o aviso vem antes da lista de tarefas. */
   const [bolhaAberta, setBolhaAberta] = useState(() => jaAvisado());
+  const [ajudaOferecida, setAjudaOferecida] = useState(false);
+  const [ajudaAberta, setAjudaAberta] = useState(false);
 
   const feitas = tarefas.filter(t => t.feita).length;
   const proporcao = tarefas.length ? feitas / tarefas.length : 0;
+
+  /* A tarefa da vez: a primeira que ainda não foi feita. É dela que o passo a
+     passo fala, e é ela que reinicia a contagem ao ser concluída. */
+  const daVez = tarefas.find(t => !t.feita);
+  const passos = daVez?.passos ?? [];
+
+  useEffect(() => {
+    setAjudaOferecida(false);
+    setAjudaAberta(false);
+    if (!passos.length) return;
+    const conta = setTimeout(() => setAjudaOferecida(true), SEGUNDOS_ATE_OFERECER * 1000);
+    return () => clearTimeout(conta);
+    /* Depende do id, e não do vetor de passos: o vetor é literal escrito no
+       laboratório, então é outro objeto a cada render, e a contagem
+       reiniciaria sozinha para sempre. */
+  }, [daVez?.id, passos.length]);
 
   /* A página atrás não deve rolar por baixo da moldura: no celular isso vira
      aquele arrasto que devolve a tela para um lugar que ninguém pediu. */
@@ -109,6 +148,39 @@ export default function LaboratorioEmTelaCheia({
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = anterior; };
   }, []);
+
+  /*
+    O convite e o passo a passo. Convite, e não abertura automática: quem está
+    tentando merece a chance de achar sozinho — o que não pode é ficar sem
+    saída. Some junto com a tarefa, quando ela é concluída.
+  */
+  const Ajuda = ({ escuro }: { escuro?: boolean }) => {
+    if (!ajudaOferecida || !passos.length) return null;
+    const cor = escuro ? 'var(--color-secondary)' : '#8A5700';
+    const fundo = escuro ? 'rgba(255,255,255,0.06)' : '#FFF8E1';
+
+    return (
+      <div style={{ marginTop: 8, background: fundo, borderRadius: 6, padding: '8px 10px' }}>
+        <button onClick={() => setAjudaAberta(a => !a)}
+          className="flex items-center gap-1.5 w-full text-left"
+          aria-expanded={ajudaAberta}
+          style={{ fontSize: 11.5, fontWeight: 700, color: cor }}>
+          <LifeBuoy className="w-3.5 h-3.5 flex-none" />
+          {ajudaAberta ? 'Esconder o passo a passo' : 'Travou? Veja o passo a passo'}
+          {ajudaAberta
+            ? <ChevronUp className="w-3.5 h-3.5 ml-auto flex-none" />
+            : <ChevronDown className="w-3.5 h-3.5 ml-auto flex-none" />}
+        </button>
+        {ajudaAberta && (
+          <ol style={{ marginTop: 6, paddingLeft: 16, listStyle: 'decimal', fontSize: 11.5, color: escuro ? 'var(--color-text-muted)' : '#3B3A39' }}>
+            {passos.map((passo, i) => (
+              <li key={i} style={{ marginBottom: 4 }}>{passo}</li>
+            ))}
+          </ol>
+        )}
+      </div>
+    );
+  };
 
   const Marca = ({ feita }: { feita: boolean }) => (
     <span aria-hidden="true" style={{
@@ -162,6 +234,7 @@ export default function LaboratorioEmTelaCheia({
                     {!t.feita && t.onde && (
                       <p style={{ marginTop: 3, color: '#2B579A', fontSize: 10.5 }}>{t.onde}</p>
                     )}
+                    {t.id === daVez?.id && <Ajuda />}
                   </div>
                 </div>
               ))}
@@ -264,6 +337,7 @@ export default function LaboratorioEmTelaCheia({
                     {!t.feita && t.onde && (
                       <p style={{ fontSize: 11, color: 'var(--color-secondary)' }}>{t.onde}</p>
                     )}
+                    {t.id === daVez?.id && <Ajuda escuro />}
                   </div>
                 </li>
               ))}

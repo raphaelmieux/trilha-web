@@ -5,10 +5,12 @@ import {
   FolderPlus, Pencil, Copy, Scissors, ClipboardPaste, X,
   ChevronRight, ChevronDown, ArrowLeft, ArrowRight, ArrowUp, RotateCw,
   CheckCircle2, RotateCcw, ArrowUpNarrowWide, ArrowDownWideNarrow,
-  Search, ArrowUpDown, LayoutGrid,
+  Search, ArrowUpDown, LayoutGrid, Grid2x2, Music, FileType2, Image as IconeImagem,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import { CSS_WINDOWS, BarraDeTitulo } from './windows';
+import { VisualizadorDe } from './visualizadores';
+import { familiaDe, PROGRAMA_DA_FAMILIA } from './tiposDeArquivo';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
@@ -233,6 +235,11 @@ export default function FileManagerLab({ specialtyCode, lessonCode, requirementC
      celular — que é onde boa parte dos desbravadores estuda. O Explorer de
      verdade tem esse menu pelo mesmo motivo. */
   const [menuOrdem, setMenuOrdem] = useState<{ x: number; y: number } | null>(null);
+  /* Os arquivos abertos, na ordem em que foram usados. Todo arquivo abre —
+     não porque cada visualizador ensine algo, mas porque não abrir quebraria a
+     única coisa que a janela toda constrói, que é estar num computador. */
+  const [abertos, setAbertos] = useState<{ id: string; nome: string }[]>([]);
+  const [minimizados, setMinimizados] = useState<Set<string>>(new Set());
   const [arrastando, setArrastando] = useState<string | null>(null);
   const [alvoSolto, setAlvoSolto] = useState<string | null>(null);
   const [feitas, setFeitas] = useState<Set<TarefaId>>(new Set());
@@ -273,8 +280,33 @@ export default function FileManagerLab({ specialtyCode, lessonCode, requirementC
   };
 
   const abrir = (n: No) => {
-    if (n.tipo === 'pasta') irPara(n.id);
-    else setAviso(`"${n.nome}" abriria no programa do computador. Aqui o que interessa é mexer nele.`);
+    if (n.tipo === 'pasta') return irPara(n.id);
+
+    if (n.tipo === 'atalho') {
+      setAviso(`"${n.nome}" é um atalho: ele aponta para outro arquivo, e abrir o atalho abre o arquivo. Apagar o atalho não apaga o arquivo.`);
+      return;
+    }
+
+    /* O Windows recusa abrir de dentro da Lixeira, e diz para restaurar antes.
+       É recusa de verdade, e por isso está aqui. */
+    if (caminhoDe(arvore, n.id).some(p => p.id === LIXEIRA)) {
+      setAviso('Não dá para abrir um arquivo de dentro da Lixeira. Restaure antes, e ele volta para a pasta de onde saiu.');
+      return;
+    }
+
+    const familia = familiaDe(n.nome);
+    if (!familia) {
+      setAviso(`O Windows não sabe com que programa abrir "${n.nome}" — é o que ele diz quando a extensão não está associada a nada.`);
+      return;
+    }
+    setAviso('');
+    setAbertos(a => [...a.filter(x => x.id !== n.id), { id: n.id, nome: n.nome }]);
+    setMinimizados(m => { const c = new Set(m); c.delete(n.id); return c; });
+  };
+
+  const fecharJanela = (id: string) => {
+    setAbertos(a => a.filter(x => x.id !== id));
+    setMinimizados(m => { const c = new Set(m); c.delete(id); return c; });
   };
 
   /* ── Operações ─────────────────────────────────────────────────────────── */
@@ -450,8 +482,53 @@ export default function FileManagerLab({ specialtyCode, lessonCode, requirementC
 
   const caminho = caminhoDe(arvore, pastaAtual);
 
+  /* A janela de cima é a última usada que não esteja minimizada. */
+  const emFoco = [...abertos].reverse().find(a => !minimizados.has(a.id)) ?? null;
+
   const naoFazParte = (nome: string) =>
     setAviso(`${nome} existe no Explorador de verdade, e está aqui para a janela ficar igual — mas não faz parte deste exercício.`);
+
+  /*
+    O caminho de cada operação, clique a clique. A moldura só oferece isso
+    depois de um tempo sem ninguém concluir nada: quem está achando sozinho
+    não é interrompido, e quem empacou não fica sem saída.
+  */
+  const PASSOS: Record<TarefaId, string[]> = {
+    t1: [
+      'Clique em "Novo", no começo da barra de comandos.',
+      'A pasta nasce com o nome já selecionado para trocar.',
+      'Digite o nome que quiser e aperte Enter.',
+    ],
+    t2: [
+      'Clique uma vez na pasta que você criou, para selecioná-la.',
+      'Na barra de comandos, clique no ícone de duas folhas (Copiar).',
+      'No painel da esquerda, clique em Documentos.',
+      'Clique no ícone da prancheta (Colar).',
+    ],
+    t3: [
+      'Volte à Área de Trabalho pelo painel da esquerda.',
+      'Clique uma vez em "Acampamento 2026".',
+      'Clique na tesoura (Recortar) — recortar é o que move.',
+      'Vá até Documentos e clique em Colar.',
+      'No computador dá para arrastar a pasta até o destino; com Ctrl apertado, copia em vez de mover.',
+    ],
+    t4: [
+      'Clique uma vez num arquivo, por exemplo hino.mp3.',
+      'Na barra de comandos, clique em "Criar atalho".',
+      'Aparece um item novo com "Atalho" no nome: ele é só o caminho até o arquivo, não uma cópia.',
+    ],
+    t5: [
+      'Clique uma vez no arquivo que vai sair.',
+      'Clique na lixeirinha (Excluir). Ele vai para a Lixeira, e ainda dá para voltar.',
+      'No painel da esquerda, clique em Lixeira.',
+      'Clique em "Esvaziar Lixeira". Agora sim ele não volta mais.',
+    ],
+    t6: [
+      'Clique no título da coluna Nome. Clicar de novo inverte a ordem.',
+      'Clique em "Data de modificação" e depois em "Tamanho".',
+      'Em tela estreita as colunas do meio somem: use o menu Classificar, na barra de comandos.',
+    ],
+  };
 
   const tarefas = TAREFAS.map(x => ({
     id: x.id,
@@ -460,6 +537,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, requirementC
       ? `Clique nos títulos das colunas, ou use Classificar. ${ordensUsadas.size} de 3 até agora.`
       : undefined,
     onde: x.id === 't6' ? 'Cabeçalhos da lista ou menu Classificar' : 'Barra de comandos ou botão direito',
+    passos: PASSOS[x.id],
     feita: feitas.has(x.id),
   }));
 
@@ -483,10 +561,13 @@ export default function FileManagerLab({ specialtyCode, lessonCode, requirementC
       tarefas={tarefas}
       aviso={aviso}
       acoes={acoes}
+      rodape={46}
     >
       <style>{CSS_WINDOWS}</style>
 
-      <div className="win">
+      <div className="win-mesa">
+      <div className="win-area">
+      <div className="win-janela cheia win">
         <BarraDeTitulo
           icone={<Folder className="w-4 h-4" style={{ color: '#E6B14C' }} />}
           nome={noAtual?.nome ?? 'Explorador de Arquivos'}
@@ -672,6 +753,53 @@ export default function FileManagerLab({ specialtyCode, lessonCode, requirementC
             </span>
           )}
         </div>
+      </div>
+
+      {/* ── Os arquivos abertos, um por cima do outro ── */}
+      {emFoco && (() => {
+        const familia = familiaDe(emFoco.nome);
+        if (!familia) return null;
+        return (
+          <VisualizadorDe
+            key={emFoco.id}
+            nome={emFoco.nome}
+            familia={familia}
+            aoAvisar={naoFazParte}
+            aoMinimizar={() => setMinimizados(m => new Set(m).add(emFoco.id))}
+            aoFechar={() => fecharJanela(emFoco.id)}
+          />
+        );
+      })()}
+
+      </div>
+
+      {/* ── A barra de tarefas ── */}
+      <div className="win-tarefas">
+        <button aria-label="Iniciar" title="Iniciar" onClick={() => naoFazParte('O menu Iniciar')}>
+          <Grid2x2 className="w-5 h-5" style={{ color: '#0F6CBD' }} />
+        </button>
+        <button aria-label="Explorador de Arquivos" title="Explorador de Arquivos" className="aberta"
+          onClick={() => setMinimizados(new Set(abertos.map(a => a.id)))}>
+          <Folder className="w-5 h-5" style={{ color: '#E6B14C' }} />
+        </button>
+        {abertos.map(a => {
+          const familia = familiaDe(a.nome);
+          if (!familia) return null;
+          const Ico = { imagem: IconeImagem, texto: FileIcon, audio: Music, pdf: FileType2, documento: FileIcon }[familia];
+          const cor = { imagem: '#2E7D32', texto: '#5B5B5B', audio: '#6B2E8F', pdf: '#B71C1C', documento: '#1F6FB2' }[familia];
+          return (
+            <button key={a.id} className="aberta" title={`${a.nome} — ${PROGRAMA_DA_FAMILIA[familia]}`}
+              aria-label={`${a.nome} — ${PROGRAMA_DA_FAMILIA[familia]}`}
+              onClick={() => {
+                if (emFoco?.id === a.id) { setMinimizados(m => new Set(m).add(a.id)); return; }
+                setAbertos(x => [...x.filter(y => y.id !== a.id), a]);
+                setMinimizados(m => { const c = new Set(m); c.delete(a.id); return c; });
+              }}>
+              <Ico className="w-5 h-5" style={{ color: cor }} />
+            </button>
+          );
+        })}
+      </div>
       </div>
 
       {/* ── Menu Classificar, o mesmo do Explorer ── */}

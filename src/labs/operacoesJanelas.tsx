@@ -3,7 +3,7 @@ import {
   FileArchive, FileText, FileImage, Folder, Plus, PackageOpen, Eye, Trash2,
   FileSearch, Wand2, Info, ShieldCheck, ArrowUp, Globe, Search, Settings,
   Monitor, Bluetooth, Network, AppWindow, User, MoreHorizontal, Package,
-  Printer, ShieldAlert, Lock,
+  Printer, ShieldAlert, Lock, Download, Palette, CheckCircle2, X,
 } from 'lucide-react';
 import { BarraDeJanela, IconeWinRAR } from './windows';
 
@@ -353,8 +353,15 @@ export type Origem = 'oficial' | 'agregador' | 'link';
  * programa para baixar, e na ordem em que costumam aparecer — o oficial não é
  * sempre o primeiro.
  */
-export function JanelaNavegador({ aoEscolher, aoMinimizar, aoFechar }: Fechavel & {
+export function JanelaNavegador({ pagina, baixando, baixado, aoEscolher, aoBaixar, aoAbrirBaixado, aoMinimizar, aoFechar }: Fechavel & {
+  /** 'busca' na lista de resultados; 'produto' na página do site oficial. */
+  pagina: 'busca' | 'produto';
+  /** Progresso do download, de 0 a 100, ou null quando não há download. */
+  baixando: number | null;
+  baixado: boolean;
   aoEscolher: (o: Origem) => void;
+  aoBaixar: () => void;
+  aoAbrirBaixado: () => void;
 }) {
   const resultados: [Origem, string, string, string, boolean][] = [
     ['agregador', 'Baixaki Programas — Desenhador 2026 grátis',
@@ -368,11 +375,17 @@ export function JanelaNavegador({ aoEscolher, aoMinimizar, aoFechar }: Fechavel 
       'Versão paga liberada, já com a licença aplicada. Serve em qualquer Windows.', false],
   ];
 
+  const endereco = pagina === 'busca'
+    ? 'buscador.com/pesquisa?q=programa+de+desenho+para+baixar'
+    : 'desenhador.org/baixar';
+
   return (
     <div className="win-janela media">
       <BarraDeJanela
         icone={<Globe className="w-4 h-4" style={{ color: '#0F6CBD' }} />}
-        titulo="programa de desenho para baixar — Navegador Web"
+        titulo={pagina === 'busca'
+          ? 'programa de desenho para baixar — Navegador Web'
+          : 'Desenhador — Baixar — Navegador Web'}
         aoMinimizar={aoMinimizar}
         aoFechar={aoFechar}
       />
@@ -380,33 +393,110 @@ export function JanelaNavegador({ aoEscolher, aoMinimizar, aoFechar }: Fechavel 
       <div className="win-endereco">
         <div className="win-caminho" style={{ gap: 7 }}>
           <Lock className="w-3.5 h-3.5" style={{ color: '#2E7D32', flex: 'none' }} />
-          <span className="truncate" style={{ fontSize: 12 }}>
-            buscador.com/pesquisa?q=programa+de+desenho+para+baixar
-          </span>
+          <span className="truncate" style={{ fontSize: 12 }}>{endereco}</span>
         </div>
       </div>
 
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto', background: '#FFFFFF', padding: 16 }}>
-        <p style={{ fontSize: 11.5, color: '#767676', marginBottom: 12 }}>
-          Cerca de 2.140.000 resultados
-        </p>
-        {resultados.map(([id, titulo, endereco, resumo, seguro]) => (
-          <button key={id} onClick={() => aoEscolher(id)}
-            style={{
-              display: 'block', width: '100%', textAlign: 'left', marginBottom: 16,
-              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            }}>
-            <p style={{ fontSize: 11.5, color: '#3C6E3C', display: 'flex', alignItems: 'center', gap: 5 }}>
-              {seguro
-                ? <Lock className="w-3 h-3" style={{ color: '#2E7D32' }} />
-                : <ShieldAlert className="w-3 h-3" style={{ color: '#B26A00' }} />}
-              <span className="truncate">{endereco}</span>
+        {pagina === 'busca' && (
+          <>
+            <p style={{ fontSize: 11.5, color: '#767676', marginBottom: 12 }}>
+              Cerca de 2.140.000 resultados
             </p>
-            <p style={{ fontSize: 14.5, color: '#1A0DAB', textDecoration: 'underline' }}>{titulo}</p>
-            <p style={{ fontSize: 12.5, color: '#4D5156' }}>{resumo}</p>
-          </button>
-        ))}
+            {resultados.map(([id, titulo, endereco, resumo, seguro]) => (
+              <button key={id} onClick={() => aoEscolher(id)}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left', marginBottom: 16,
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                }}>
+                <p style={{ fontSize: 11.5, color: '#3C6E3C', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  {seguro
+                    ? <Lock className="w-3 h-3" style={{ color: '#2E7D32' }} />
+                    : <ShieldAlert className="w-3 h-3" style={{ color: '#B26A00' }} />}
+                  <span className="truncate">{endereco}</span>
+                </p>
+                <p style={{ fontSize: 14.5, color: '#1A0DAB', textDecoration: 'underline' }}>{titulo}</p>
+                <p style={{ fontSize: 12.5, color: '#4D5156' }}>{resumo}</p>
+              </button>
+            ))}
+          </>
+        )}
+
+        {/* A página do produto existe porque clicar num resultado de busca não
+            baixa nada: leva ao site, e é lá que fica o botão. Pular esse passo
+            ensinaria a esperar um download que começa sozinho — que é
+            justamente o comportamento dos sites que não se deve usar. */}
+        {pagina === 'produto' && (
+          <div style={{ maxWidth: 520, margin: '0 auto', color: '#1B1B1B' }}>
+            <div className="flex items-center gap-3" style={{ marginBottom: 16 }}>
+              <Palette className="w-9 h-9 flex-none" style={{ color: '#C0392B' }} />
+              <div>
+                <p style={{ fontSize: 19, fontWeight: 700 }}>Desenhador</p>
+                <p style={{ fontSize: 12.5, color: '#5B5B5B' }}>
+                  Programa livre de desenho e pintura · versão 6.2
+                </p>
+              </div>
+            </div>
+
+            <p style={{ fontSize: 13, marginBottom: 14, lineHeight: 1.6 }}>
+              Pincéis, camadas e ferramentas de pintura para computador. Serve
+              para cartaz de clube, convite e desenho livre.
+            </p>
+
+            <button onClick={aoBaixar} disabled={baixando !== null || baixado}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 20px',
+                background: baixado ? '#8FBF8F' : '#2E7D32', color: '#FFFFFF', border: 'none',
+                borderRadius: 5, fontSize: 14, fontWeight: 600,
+                cursor: baixando !== null || baixado ? 'default' : 'pointer',
+              }}>
+              <Download className="w-4 h-4" />
+              {baixado ? 'Baixado' : 'Baixar para Windows'}
+            </button>
+            <p style={{ marginTop: 8, fontSize: 11.5, color: '#5B5B5B' }}>
+              desenhador-6.2-instalador.exe · 86,4 MB · Windows 10 ou mais novo
+            </p>
+
+            <div style={{ marginTop: 18, padding: 12, background: '#F1F7F1', borderRadius: 6, fontSize: 12, color: '#2E5B2E' }}>
+              <Lock className="w-3.5 h-3.5 inline mr-1" />
+              Este é o site do fabricante. O arquivo é assinado, e o Windows vai
+              mostrar o nome dele antes de instalar.
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* A barra de downloads do rodapé, que é por onde quase todo mundo abre o
+          que acabou de baixar — e por isso ela abre o instalador daqui também,
+          além do Explorador. */}
+      {(baixando !== null || baixado) && (
+        <div style={{
+          flex: 'none', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+          background: '#F3F3F3', borderTop: '1px solid #DCDCDC',
+        }}>
+          {baixado
+            ? <CheckCircle2 className="w-5 h-5 flex-none" style={{ color: '#2E7D32' }} />
+            : <Download className="w-5 h-5 flex-none" style={{ color: '#0F6CBD' }} />}
+          <div className="min-w-0" style={{ flex: 1 }}>
+            <p className="truncate" style={{ fontSize: 12, color: '#1B1B1B' }}>
+              desenhador-6.2-instalador.exe
+            </p>
+            {baixado ? (
+              <p style={{ fontSize: 11, color: '#5B5B5B' }}>Concluído · 86,4 MB</p>
+            ) : (
+              <div className="setup-barra" style={{ height: 6, marginTop: 4 }}>
+                <span style={{ width: `${baixando ?? 0}%` }} />
+              </div>
+            )}
+          </div>
+          {baixado && (
+            <button className="win-bt" style={{ minWidth: 0, height: 26 }} onClick={aoAbrirBaixado}>
+              Abrir arquivo
+            </button>
+          )}
+          <X className="w-4 h-4 flex-none" style={{ color: '#767676' }} aria-hidden="true" />
+        </div>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   ChevronRight, ChevronDown, ArrowLeft, ArrowRight, ArrowUp, RotateCw, Search,
   FolderPlus, Scissors, Copy, ClipboardPaste, Pencil, Trash2, MoreHorizontal,
   ArrowUpDown, LayoutGrid, Grid2x2, Settings, Globe, PartyPopper,
+  Download, Palette, AppWindow,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import { CSS_WINDOWS, BarraDeTitulo, DialogoDoWindows, IconeWinRAR } from './windows';
@@ -13,6 +14,10 @@ import {
   ControlesDeImpressao, ControlesDeSalvar, ControlesDeCompactar, ControlesDeExtrair,
   type Impressao, type Origem, type ItemDoMenuArquivo, type LinhaDoArquivo,
 } from './operacoesJanelas';
+import {
+  AssistenteDeInstalacao, AvisoDeContaDeUsuario, JanelaDesenhador,
+  type EscolhasDaInstalacao, type DestinoDaInstalacao,
+} from './instalador';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
@@ -66,7 +71,7 @@ interface Props { specialtyCode: string; lessonCode: string; requirementCodes: s
 
 /* ── O disco simulado ──────────────────────────────────────────────────────── */
 
-type Pasta = 'area' | 'clube' | 'programas' | 'extraida' | 'desenhador';
+type Pasta = 'area' | 'clube' | 'programas' | 'downloads' | 'extraida' | 'desenhador';
 type Especie = 'jpg' | 'odt' | 'rar' | 'pdf' | 'pasta' | 'atalho' | 'exe';
 
 interface Item {
@@ -82,6 +87,7 @@ const NOME_DA_PASTA: Record<Pasta, string> = {
   area: 'Área de Trabalho',
   clube: 'Clube',
   programas: 'Arquivos de Programas',
+  downloads: 'Downloads',
   extraida: 'acampamento',
   desenhador: 'Desenhador',
 };
@@ -91,6 +97,7 @@ const CAMINHO: Record<Pasta, string[]> = {
   area: ['Área de Trabalho'],
   clube: ['Documentos', 'Clube'],
   programas: ['Este Computador', 'Disco Local (C:)', 'Arquivos de Programas'],
+  downloads: ['Downloads'],
   extraida: ['Documentos', 'Clube', 'acampamento'],
   desenhador: ['Este Computador', 'Disco Local (C:)', 'Arquivos de Programas', 'Desenhador'],
 };
@@ -146,8 +153,16 @@ const PEDIDO: Impressao = {
   copias: 3, agrupado: true, qualidade: 'alta', ajuste: 'pagina', porFolha: 2,
 };
 
-type Programa = 'winrar' | 'editor' | 'config' | 'navegador';
-type Dialogo = 'compactar' | 'extrair' | 'salvar-como' | 'imprimir' | null;
+type Programa = 'winrar' | 'editor' | 'config' | 'navegador' | 'instalador' | 'desenhador';
+type Dialogo = 'compactar' | 'extrair' | 'salvar-como' | 'imprimir' | 'uac' | null;
+
+const INSTALADOR = 'desenhador-6.2-instalador.exe';
+
+const CAMINHO_ESCOLHIDO: Record<DestinoDaInstalacao, string> = {
+  programas: 'Arquivos de Programas',
+  clube: 'Documentos › Clube',
+  area: 'Área de Trabalho',
+};
 
 /* ── O laboratório ─────────────────────────────────────────────────────────── */
 
@@ -160,8 +175,14 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
   const [formato, setFormato] = useState('odt');
   const [pdfPronto, setPdfPronto] = useState(false);
 
-  /* ── 3. Instalar e desinstalar ── */
+  /* ── 3. Instalar e desinstalar ──
+     Mais estado do que as outras porque o caminho é mais longo, e é o caminho
+     que ensina: achar o site, baixar, autorizar, escolher, ver instalar. */
+  const [paginaDoNavegador, setPaginaDoNavegador] = useState<'busca' | 'produto'>('busca');
+  const [baixando, setBaixando] = useState<number | null>(null);
+  const [baixado, setBaixado] = useState(false);
   const [instalado, setInstalado] = useState(false);
+  const [escolhas, setEscolhas] = useState<EscolhasDaInstalacao | null>(null);
   const [desinstalado, setDesinstalado] = useState(false);
 
   /* ── 4. Imprimir ── */
@@ -215,17 +236,31 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
   const conteudoDe = (p: Pasta): Item[] => {
     switch (p) {
       case 'clube': return [
+        ...(programaPresente && escolhas?.destino === 'clube'
+          ? [{ id: 'prog', nome: 'Desenhador', especie: 'pasta' as const, mb: 0, data: '26/08/2026 11:24' }]
+          : []),
         ...ARQUIVOS_DO_CLUBE,
         ...(extraido ? [{ id: 'ext', nome: 'acampamento', especie: 'pasta' as const, mb: 0, data: '26/08/2026 11:04' }] : []),
         ...(rarCriado ? [{ id: 'rar', nome: nomeDoRar, especie: 'rar' as const, mb: TOTAL_RAR, data: '26/08/2026 11:02' }] : []),
         ...(pdfPronto ? [{ id: 'pdf', nome: 'relatorio-da-unidade.pdf', especie: 'pdf' as const, mb: 0.4, data: '26/08/2026 11:08' }] : []),
       ];
       case 'extraida': return extraido ? ARQUIVOS_DO_CLUBE.map(a => ({ ...a, id: `x-${a.id}` })) : [];
-      case 'area': return programaPresente
-        ? [{ id: 'atalho', nome: 'Desenhador — Atalho', especie: 'atalho', mb: 0, data: '20/08/2026 19:22' }]
+      /* O instalador continua em Downloads depois de instalar, e continua
+         depois de desinstalar — é assim mesmo, e é o que explica a pasta
+         Downloads cheia de instalador velho em toda máquina de clube. */
+      case 'downloads': return baixado
+        ? [{ id: 'inst', nome: INSTALADOR, especie: 'exe' as const, mb: 86.4, data: '26/08/2026 11:20' }]
         : [];
-      case 'programas': return programaPresente
-        ? [{ id: 'prog', nome: 'Desenhador', especie: 'pasta', mb: 0, data: '20/08/2026 19:22' }]
+      case 'area': return [
+        ...(programaPresente && escolhas?.destino === 'area'
+          ? [{ id: 'prog', nome: 'Desenhador', especie: 'pasta' as const, mb: 0, data: '26/08/2026 11:24' }]
+          : []),
+        ...(programaPresente && escolhas?.atalhoNaArea
+          ? [{ id: 'atalho', nome: 'Desenhador — Atalho', especie: 'atalho' as const, mb: 0, data: '26/08/2026 11:24' }]
+          : []),
+      ];
+      case 'programas': return programaPresente && escolhas?.destino === 'programas'
+        ? [{ id: 'prog', nome: 'Desenhador', especie: 'pasta', mb: 0, data: '26/08/2026 11:24' }]
         : [];
       case 'desenhador': return programaPresente ? [
         { id: 'd1', nome: 'desenhador.exe', especie: 'exe', mb: 42.6, data: '20/08/2026 19:22' },
@@ -266,6 +301,10 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
     setMinimizados(m => { const c = new Set(m); c.delete(p); return c; });
   };
 
+  /* Onde o programa foi parar, para a lição de apagar a pasta continuar valendo
+     mesmo quem tenha mudado o destino no assistente. */
+  const pastaDoPrograma: Pasta = escolhas?.destino ?? 'programas';
+
   /* A janela de cima é a última usada que não esteja minimizada. */
   const emFoco = [...abertos].reverse().find(p => !minimizados.has(p)) ?? null;
 
@@ -279,8 +318,10 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
         return setAviso('O pdf abre no leitor do sistema. Aqui ele já cumpriu o que tinha de cumprir: existe, e vai chegar igual do outro lado.');
       case 'atalho':
         return setAviso('O atalho abriria o Desenhador. Repare que ele é só um caminho até o programa — o programa mesmo está em Arquivos de Programas.');
-      case 'jpg':
       case 'exe':
+        if (item.nome === INSTALADOR) return abrirInstalador();
+        return naoFazParte(`Abrir ${item.nome}`);
+      case 'jpg':
         return naoFazParte(`Abrir ${item.nome}`);
     }
   };
@@ -348,9 +389,8 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
 
   const escolherOrigem = (o: Origem) => {
     if (o === 'oficial') {
-      setInstalado(true);
-      fechar('navegador');
-      setAviso('Instalado a partir do site oficial. Agora a diretoria pediu para tirar da máquina: em Configurações → Aplicativos, e não pela lixeira.');
+      setPaginaDoNavegador('produto');
+      setAviso('Este é o site de quem faz o programa. Repare que clicar no resultado não baixou nada: levou ao site, e o botão de baixar está lá dentro.');
       return;
     }
     setAviso(o === 'agregador'
@@ -358,10 +398,54 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
       : 'Programa pago que aparece de graça num link de mensagem é isca. É assim que entra a maior parte dos vírus em computador de casa.');
   };
 
+  /* O download anda sozinho, como anda. Dois segundos: dá para ver a barra
+     encher sem virar espera — quem aprende alguma coisa esperando 86 MB
+     chegarem é ninguém.
+
+     Um intervalo só, e não um setTimeout que se reagenda a cada passo: a
+     versão reagendada depende de o efeito rodar de novo entre um passo e o
+     seguinte, e sob relógio de teste isso não acontece dentro do mesmo avanço
+     — a barra parava no primeiro passo e o teste ficava esperando para
+     sempre. */
+  const baixandoAgora = baixando !== null;
+
+  useEffect(() => {
+    if (!baixandoAgora) return;
+    const passo = setInterval(
+      () => setBaixando(b => (b === null || b >= 100 ? b : b + 5)),
+      90,
+    );
+    return () => clearInterval(passo);
+  }, [baixandoAgora]);
+
+  useEffect(() => {
+    if (baixando === null || baixando < 100) return;
+    setBaixando(null);
+    setBaixado(true);
+    setAviso(`${INSTALADOR} foi baixado. Ele está na pasta Downloads — e repare que baixar não é instalar: o programa ainda não existe na máquina. Abra o instalador para começar.`);
+  }, [baixando]);
+
+  const abrirInstalador = () => {
+    if (!baixado) return;
+    setDialogo('uac');
+  };
+
+  const concluirInstalacao = (e: EscolhasDaInstalacao) => {
+    setEscolhas(e);
+    setInstalado(true);
+    fechar('instalador');
+    if (e.executarAoFim) abrir('desenhador');
+    const onde = e.atalhoNaArea
+      ? 'O atalho ficou na Área de Trabalho, como você pediu.'
+      : 'Você desmarcou o atalho da Área de Trabalho, então ele não está lá — o programa está instalado do mesmo jeito.';
+    setAviso(`Instalado em ${CAMINHO_ESCOLHIDO[e.destino]}. ${onde} Agora a diretoria pediu para tirar da máquina: isso é em Configurações → Aplicativos, e não pela lixeira.`);
+  };
+
   const desinstalar = () => {
     setDesinstalado(true);
     fechar('config');
-    setAviso('Desinstalado pelo caminho certo. O desinstalador desfaz o que a instalação fez — arquivos, atalhos e registros — em vez de deixar sobra pelo sistema. Repare que o atalho da Área de Trabalho sumiu junto.');
+    fechar('desenhador');
+    setAviso('Desinstalado pelo caminho certo. O desinstalador desfaz o que a instalação fez — arquivos, atalhos e registros — em vez de deixar sobra pelo sistema. Repare que o atalho sumiu junto, e que o instalador continua em Downloads: ele não é o programa, é só a caixa em que o programa veio.');
   };
 
   const excluir = () => {
@@ -445,24 +529,73 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
 
   /* ── A tela ────────────────────────────────────────────────────────────── */
 
+  /*
+    As quatro tarefas, com o caminho inteiro guardado em `passos`. A moldura só
+    oferece esse caminho depois de um tempo sem ninguém concluir nada — quem
+    está achando sozinho não é interrompido, e quem empacou não fica sem saída.
+  */
   const tarefas = [
     {
       id: 't1', titulo: 'Compactar os quatro arquivos e extrair de volta', feita: feito.t1,
       onde: 'Explorador → marcar os quatro → ⋯ → WinRAR',
       detalhe: !feito.t1 && rarCriado ? 'Falta abrir o arquivo compactado e extrair.' : undefined,
+      passos: rarCriado ? [
+        'Na lista, clique na linha do acampamento.rar para marcá-lo.',
+        'Clique no ⋯ na ponta da barra de comandos.',
+        'Escolha "Extrair para \'acampamento\\\'".',
+        'No diálogo do WinRAR, clique em OK.',
+      ] : [
+        'Clique na caixinha à esquerda de cada um dos quatro arquivos do clube — as duas fotos e os dois documentos.',
+        'Clique no ⋯ na ponta da barra de comandos, ou aperte o botão direito em cima de um deles.',
+        'Escolha "Adicionar para o arquivo…".',
+        'Deixe o nome acampamento.rar como está e clique em OK.',
+        'Depois, dois cliques no acampamento.rar abrem o WinRAR, e o botão "Extrair Para" devolve os arquivos.',
+      ],
     },
     {
       id: 't2', titulo: 'Salvar o relatório em pdf', feita: feito.t2,
       onde: 'Editor de Texto → menu Arquivo',
+      passos: [
+        'Dois cliques em relatorio-da-unidade.odt, na pasta do clube — ou abra o Editor de Texto pelo menu Iniciar.',
+        'No editor, clique no menu Arquivo.',
+        'Escolha "Salvar como…" (ou "Exportar como PDF…", que dá no mesmo).',
+        'Na lista Tipo, troque para PDF (*.pdf).',
+        'Clique em Salvar.',
+      ],
     },
     {
       id: 't3', titulo: 'Instalar e desinstalar um programa', feita: feito.t3,
-      onde: instalado ? 'Configurações → Aplicativos' : 'Iniciar → Navegador Web',
-      detalhe: !feito.t3 && instalado ? 'Instalado. Falta tirar da máquina pelo caminho certo.' : undefined,
+      onde: instalado
+        ? 'Iniciar → Configurações → Aplicativos'
+        : 'Iniciar → Navegador Web',
+      detalhe: !feito.t3 && instalado
+        ? `Instalado em ${CAMINHO_ESCOLHIDO[pastaDoPrograma]}. Falta tirar da máquina pelo caminho certo.`
+        : undefined,
+      passos: instalado ? [
+        'Clique no botão Iniciar, na barra de tarefas, e abra as Configurações.',
+        'A seção Aplicativos já vem aberta, com a lista dos programas instalados.',
+        'Ache o Desenhador na lista e clique nas três bolinhas à direita dele.',
+        'Escolha Desinstalar.',
+      ] : [
+        'Clique no botão Iniciar, na barra de tarefas, e abra o Navegador Web.',
+        'Entre os três resultados, escolha o do site oficial — o endereço é desenhador.org.',
+        'Na página do programa, clique em "Baixar para Windows" e espere o download terminar.',
+        'Clique em "Abrir arquivo" na barra de baixo, ou ache o instalador na pasta Downloads e dê dois cliques.',
+        'O Windows vai perguntar se pode fazer alterações no dispositivo: responda Sim.',
+        'Siga o assistente: idioma, Avançar, aceitar o contrato, a pasta, os atalhos, e então Instalar.',
+      ],
     },
     {
       id: 't4', titulo: 'Imprimir 3 cópias agrupadas, alta, ajustadas, 2 por folha', feita: feito.t4,
       onde: 'Editor de Texto → Arquivo → Imprimir',
+      passos: [
+        'Abra relatorio-da-unidade.odt com dois cliques, ou pelo menu Iniciar.',
+        'No editor, menu Arquivo → "Imprimir…".',
+        'Cópias: 3.',
+        'Marque a caixinha Agrupar.',
+        'Qualidade: Alta. Tamanho: Ajustar à página. Páginas por folha: 2.',
+        'Confira a linha "Vai sair" no rodapé do diálogo e clique em Imprimir.',
+      ],
     },
   ];
 
@@ -627,6 +760,7 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
             <div className="win-corpo">
               <div className="win-painel">
                 <Raiz p="area" Ico={Monitor} nome="Área de Trabalho" />
+                <Raiz p="downloads" Ico={Download} nome="Downloads" />
                 <Raiz p="clube" Ico={Folder} nome="Documentos" filhos={[['clube', 'Clube']]} />
                 <Raiz p="programas" Ico={HardDrive} nome="Este Computador"
                   filhos={[['programas', 'Arquivos de Programas']]} />
@@ -719,9 +853,30 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
           )}
           {emFoco === 'navegador' && (
             <JanelaNavegador
+              pagina={paginaDoNavegador}
+              baixando={baixando}
+              baixado={baixado}
               aoEscolher={escolherOrigem}
+              aoBaixar={() => { setBaixando(0); setAviso(''); }}
+              aoAbrirBaixado={abrirInstalador}
               aoMinimizar={() => minimizar('navegador')}
               aoFechar={() => fechar('navegador')}
+            />
+          )}
+          {emFoco === 'instalador' && (
+            <AssistenteDeInstalacao
+              aoConcluir={concluirInstalacao}
+              aoCancelar={() => {
+                fechar('instalador');
+                setAviso('Instalação cancelada. Nada foi instalado — o instalador continua em Downloads, e dá para abrir de novo quando quiser.');
+              }}
+              aoMinimizar={() => minimizar('instalador')}
+            />
+          )}
+          {emFoco === 'desenhador' && (
+            <JanelaDesenhador
+              aoMinimizar={() => minimizar('desenhador')}
+              aoFechar={() => fechar('desenhador')}
             />
           )}
 
@@ -781,6 +936,17 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
             </DialogoDoWindows>
           )}
 
+          {dialogo === 'uac' && (
+            <AvisoDeContaDeUsuario
+              arquivo={INSTALADOR}
+              aoPermitir={() => { setDialogo(null); abrir('instalador'); }}
+              aoRecusar={() => {
+                setDialogo(null);
+                setAviso('Sem essa permissão nenhum instalador roda — é ela que separa mexer nos seus arquivos de mexer no sistema. Repare que ela mostra quem assinou o arquivo: quando disser "Editor desconhecido", pense duas vezes.');
+              }}
+            />
+          )}
+
           {/* ── O menu ⋯ ── */}
           {menuMais && (
             <div className="win-menu" style={{ left: menuMais.x, top: menuMais.y }}
@@ -805,6 +971,14 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
               <button onClick={() => (rarCriado ? abrir('winrar') : naoFazParte('O WinRAR sem arquivo aberto'))}>
                 <IconeWinRAR /> WinRAR
               </button>
+              {/* Só aparece se o atalho do Menu Iniciar tiver sido marcado no
+                  assistente. É a consequência de uma caixinha que quase ninguém
+                  lê — e agora dá para ver o efeito dela. */}
+              {programaPresente && escolhas?.atalhoNoMenu && (
+                <button onClick={() => abrir('desenhador')}>
+                  <Palette className="w-4 h-4" style={{ color: '#C0392B' }} /> Desenhador
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -825,6 +999,8 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
               editor: ['Editor de Texto', () => <FileText className="w-5 h-5" style={{ color: '#1F6FB2' }} />] as const,
               config: ['Configurações', () => <Settings className="w-5 h-5" style={{ color: '#0F6CBD' }} />] as const,
               navegador: ['Navegador Web', () => <Globe className="w-5 h-5" style={{ color: '#0F6CBD' }} />] as const,
+              instalador: ['Instalar - Desenhador', () => <AppWindow className="w-5 h-5" style={{ color: '#5B5B5B' }} />] as const,
+              desenhador: ['Desenhador', () => <Palette className="w-5 h-5" style={{ color: '#C0392B' }} />] as const,
             })[p];
             return (
               <button key={p} aria-label={rotulo} title={rotulo} className="aberta"

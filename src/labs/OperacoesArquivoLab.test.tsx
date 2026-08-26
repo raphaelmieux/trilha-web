@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
@@ -111,8 +111,60 @@ const marcarOsQuatro = () => {
   }
 };
 
+/** Um botão do rodapé do assistente de instalação. */
+const noAssistente = (texto: string) =>
+  todos('.setup-pe button').find(b => b.textContent?.trim().startsWith(texto));
+
+/** Marca uma caixa ou um botão de opção pelo texto do rótulo que o acompanha. */
+const marcarRotulo = (texto: string, ligado = true) => {
+  const rotulo = todos('label').find(l => l.textContent?.includes(texto));
+  const campo = rotulo?.querySelector<HTMLInputElement>('input');
+  if (!campo) throw new Error(`não achei a marcação: ${texto}`);
+  if (campo.checked === ligado) return;
+  act(() => { campo.click(); });
+};
+
 const botaoFinal = () =>
   todos('button').find(b => /Concluir o laborat|Faltam/.test(b.textContent ?? ''))! as HTMLButtonElement;
+
+/*
+  A instalação tem duas esperas de verdade — o download e a barra de progresso —
+  e teste não espera de verdade. Relógio de mentira, e o tempo anda quando o
+  teste manda. Vale para o arquivo todo: nenhum outro trecho depende de relógio.
+*/
+beforeEach(() => { vi.useFakeTimers(); });
+afterEach(() => { vi.useRealTimers(); });
+
+const correr = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
+
+const contendo = (texto: string) => todos('button').find(b => b.textContent?.includes(texto));
+const noDialogo = (texto: string) =>
+  todos('.win-modal-pe button').find(b => b.textContent === texto);
+
+/** Do menu Iniciar até o instalador baixado, na pasta Downloads. */
+const baixar = () => {
+  pelaIniciar('Navegador Web');
+  clicar(contendo('Site oficial'), 'o site oficial');
+  clicar(contendo('Baixar para Windows'), 'baixar');
+  correr(3000);
+};
+
+/** O caminho inteiro: baixar, autorizar e percorrer o assistente. */
+const instalar = ({ atalhoNaArea = true } = {}) => {
+  baixar();
+  clicar(contendo('Abrir arquivo'), 'abrir o instalador');
+  clicar(noDialogo('Sim'), 'permitir no controle de conta');
+  clicar(noDialogo('OK'), 'confirmar o idioma');
+  clicar(noAssistente('Avançar'), 'sair das boas-vindas');
+  marcarRotulo('Eu aceito');
+  clicar(noAssistente('Avançar'), 'sair do contrato');
+  clicar(noAssistente('Avançar'), 'sair do destino');
+  marcarRotulo('Criar um ícone na Área de Trabalho', atalhoNaArea);
+  clicar(noAssistente('Avançar'), 'sair dos atalhos');
+  clicar(noAssistente('Instalar'), 'instalar');
+  correr(3000);
+  clicar(noAssistente('Concluir'), 'concluir');
+};
 
 /* ── A área de trabalho ───────────────────────────────────────────────────── */
 
@@ -218,22 +270,85 @@ describe('salvar o relatório em pdf', () => {
 /* ── 3. Instalar e desinstalar ────────────────────────────────────────────── */
 
 describe('instalar e desinstalar', () => {
-  const instalar = () => {
-    pelaIniciar('Navegador Web');
-    clicar(botao('Desenhador — Site oficial') ?? todos('button').find(b => b.textContent?.includes('Site oficial')),
-      'o site oficial');
-  };
-
   it('recusa o site que junta programas grátis', () => {
     pelaIniciar('Navegador Web');
-    clicar(todos('button').find(b => b.textContent?.includes('Baixaki')), 'o agregador');
+    clicar(contendo('Baixaki'), 'o agregador');
     expect(container.textContent).toContain('empacotar o instalador com outras coisas junto');
   });
 
   it('recusa o link do grupo com a versão paga liberada', () => {
     pelaIniciar('Navegador Web');
-    clicar(todos('button').find(b => b.textContent?.includes('ATIVADO')), 'o link do grupo');
+    clicar(contendo('ATIVADO'), 'o link do grupo');
     expect(container.textContent).toContain('é isca');
+  });
+
+  /* Clicar no resultado de busca leva ao site; não baixa. Confundir os dois é
+     o que faz alguém aceitar um download que começou sozinho. */
+  it('leva ao site do fabricante em vez de baixar de cara', () => {
+    pelaIniciar('Navegador Web');
+    clicar(contendo('Site oficial'), 'o site oficial');
+    expect(container.textContent).toContain('Baixar para Windows');
+    expect(botaoFinal().textContent, 'e nada foi instalado').toMatch(/Faltam 4/);
+  });
+
+  it('baixa para a pasta Downloads, e baixar ainda não é instalar', () => {
+    baixar();
+    expect(container.textContent).toContain('baixar não é instalar');
+    clicar(naArvore('Downloads'), 'Downloads');
+    expect(nomesVisiveis()).toContain('desenhador-6.2-instalador.exe');
+    expect(botaoFinal().textContent).toMatch(/Faltam 4/);
+  });
+
+  /* Sem a permissão do controle de conta nenhum instalador roda, e é essa
+     tela que mostra quem assinou o arquivo. */
+  it('não instala nada quando a permissão do sistema é negada', () => {
+    baixar();
+    clicar(contendo('Abrir arquivo'), 'abrir o instalador');
+    expect(container.textContent).toContain('Editor verificado');
+    clicar(noDialogo('Não'), 'recusar');
+    expect(container.querySelector('.setup-pe'), 'o assistente não abriu').toBeFalsy();
+    expect(botaoFinal().textContent).toMatch(/Faltam 4/);
+  });
+
+  it('não deixa avançar sem aceitar o contrato', () => {
+    baixar();
+    clicar(contendo('Abrir arquivo'), 'abrir o instalador');
+    clicar(noDialogo('Sim'), 'permitir');
+    clicar(noDialogo('OK'), 'idioma');
+    clicar(noAssistente('Avançar'), 'boas-vindas');
+    expect(container.textContent).toContain('CONTRATO DE LICENÇA');
+    expect((noAssistente('Avançar') as HTMLButtonElement).disabled).toBe(true);
+    marcarRotulo('Eu aceito');
+    expect((noAssistente('Avançar') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('cancelar no meio não deixa nada instalado', () => {
+    baixar();
+    clicar(contendo('Abrir arquivo'), 'abrir o instalador');
+    clicar(noDialogo('Sim'), 'permitir');
+    clicar(noDialogo('OK'), 'idioma');
+    clicar(noAssistente('Cancelar'), 'cancelar');
+    expect(container.textContent).toContain('Nada foi instalado');
+    clicar(naArvore('Arquivos de Programas'), 'Arquivos de Programas');
+    expect(nomesVisiveis()).not.toContain('Desenhador');
+  });
+
+  it('instala, e o atalho aparece porque foi marcado', () => {
+    instalar();
+    clicar(naArvore('Arquivos de Programas'), 'Arquivos de Programas');
+    expect(nomesVisiveis()).toContain('Desenhador');
+    clicar(naArvore('Área de Trabalho'), 'Área de Trabalho');
+    expect(nomesVisiveis()).toContain('Desenhador — Atalho');
+  });
+
+  /* A caixinha que quase ninguém lê tem efeito, e o efeito é visível. Um
+     assistente onde marcar ou desmarcar dá no mesmo ensina a não ler. */
+  it('não cria atalho na área de trabalho quando a caixa é desmarcada', () => {
+    instalar({ atalhoNaArea: false });
+    clicar(naArvore('Área de Trabalho'), 'Área de Trabalho');
+    expect(nomesVisiveis()).not.toContain('Atalho');
+    clicar(naArvore('Arquivos de Programas'), 'Arquivos de Programas');
+    expect(nomesVisiveis(), 'e o programa está instalado do mesmo jeito').toContain('Desenhador');
   });
 
   /* Os dois enganos clássicos, cada um no lugar onde ele existe de verdade. */
@@ -264,6 +379,9 @@ describe('instalar e desinstalar', () => {
     expect(botaoFinal().textContent).toMatch(/Faltam 3/);
     clicar(naArvore('Área de Trabalho'), 'Área de Trabalho');
     expect(nomesVisiveis(), 'o atalho foi junto').not.toContain('Desenhador');
+    clicar(naArvore('Downloads'), 'Downloads');
+    expect(nomesVisiveis(), 'e o instalador continua lá, que é o que acontece')
+      .toContain('desenhador-6.2-instalador.exe');
   });
 });
 
@@ -330,8 +448,7 @@ describe('as quatro tarefas', () => {
     expect(botaoFinal().textContent, 'ainda falta instalar e desinstalar').toMatch(/Faltam 1/);
 
     // 3 — instalar e desinstalar
-    pelaIniciar('Navegador Web');
-    clicar(todos('button').find(b => b.textContent?.includes('Site oficial')), 'o site oficial');
+    instalar();
     pelaIniciar('Configurações');
     clicar(todos('button').find(b => b.getAttribute('aria-label') === 'Mais opções de Desenhador'), 'as três bolinhas');
     clicar(todos('.win-menu button').find(b => b.textContent === 'Desinstalar'), 'Desinstalar');
