@@ -778,7 +778,16 @@ export const ap035: Specialty = {
       code: 'AP035.4', title: 'Imagens que carregam rápido', description: 'Escolher o formato certo e o tamanho que não faz ninguém esperar.',
       lessons: [
         { code: 'AP035.4-L0', title: 'Gráficos que carregam rápido', type: 'theory', content: content_graficos, requirementCodes: ['AP035-5.1'], questions: rawQ_graficos },
-        { code: 'AP035.4-L1', title: 'Deixando as imagens leves', type: 'lab', content: '<h2 class="text-xl font-bold mb-3">Deixando as imagens leves</h2><p class="mb-3">Neste laboratório você vai produzir quatro imagens de verdade: uma fotografia otimizada em JPEG, um logo em PNG com fundo transparente, um botão e um header. Ao final, os quatro arquivos ficam salvos no seu dispositivo.</p><p class="mb-3">Escolher o formato certo é o que decide se a página abre rápido ou trava no 3G do acampamento. O JPEG descarta detalhe que o olho não percebe e vence em fotografias; o PNG guarda cada pixel e é o único que guarda transparência — sem ele, o logo do clube viaja dentro de uma caixa branca.</p><p class="mb-3">Cada etapa já vem preenchida com um defeito de propósito. Descubra qual é e corrija: as verificações medem os pixels e os bytes que você gerou, não a resposta que você escolheu.</p>', requirementCodes: ['AP035-5.2'], labType: 'image_lab' },
+        /*
+          O requisito 5.2 tem dois lados — espremer uma foto e desenhar as
+          peças do site —, e por muito tempo eles dividiram um laboratório só.
+          São assuntos diferentes, e na vida são dois programas diferentes:
+          ninguém faz banner no mesmo lugar em que comprime foto. Daí as duas
+          lições, as duas apontando para o mesmo requisito oficial, que é um só
+          no documento.
+        */
+        { code: 'AP035.4-L1', title: 'Deixando uma foto leve', type: 'lab', content: '', requirementCodes: ['AP035-5.2'], labType: 'image_compress' },
+        { code: 'AP035.4-L2', title: 'Desenhando as imagens do site', type: 'lab', content: '', requirementCodes: ['AP035-5.2'], labType: 'image_create' },
       ],
     },
     {

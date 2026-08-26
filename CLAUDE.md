@@ -154,6 +154,19 @@ título: recebe `lessonTitle`. Oito escreviam, e a lição "Montando um site de
 quatro páginas" abria um cartão escrito "SiteLab — Site com quatro páginas".
 `src/curriculum/titulos.test.ts` cobra.
 
+**Um laboratório, um assunto.** 'Deixando as imagens leves' fazia quatro
+coisas: espremer foto, desenhar logo, desenhar botões e desenhar header. São
+dois assuntos — escolher o que jogar fora e escolher o que pôr —, e na vida são
+dois programas. Viraram dois laboratórios, os dois apontando para o mesmo
+requisito oficial, que continua sendo um só no documento.
+
+**Webapp também é aplicativo.** Vale a mesma regra dos programas de Windows: o
+compressor tem divisória arrastável entre antes e depois, porque comprimir só
+ensina quando dá para ver o que se perdeu; o editor de imagens tem peças na
+lateral, prancheta no meio e propriedades à direita; o de IA é a conversa do
+Gemini, e a avaliação crítica acontece no polegar que o próprio aplicativo tem
+embaixo de cada resposta — não num formulário da plataforma logo abaixo.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que

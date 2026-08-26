@@ -4,7 +4,12 @@ import { supabase } from '../lib/supabase';
 import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, getRequirementId,
   registrarConclusaoDeLicao,
 } from '../lib/progress';
-import { Sparkles, Image as ImageIcon, Palette, CheckCircle2, AlertCircle, ThumbsUp, ThumbsDown, FileText, Loader2 } from 'lucide-react';
+import { CheckCircle2, ThumbsUp, ThumbsDown, RotateCw, Share2, MoreVertical } from 'lucide-react';
+import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
+import {
+  CSS_GEMINI, LateralDoGemini, TopoDoGemini, PerguntaDoGemini, RespostaDoGemini,
+  CaixaDoGemini, ChipDoGemini,
+} from './gemini';
 import type { PropsDeLaboratorio as Props } from './tipos';
 
 type Stage = 'text' | 'image' | 'logo' | 'review';
@@ -82,24 +87,9 @@ const LOGO_OPTIONS = {
 
 const MAX_FREE_TEXT = 60;
 
-function Picker({ label, options, value, onChange }: {
-  label: string;
-  options: { id: string; label: string }[];
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div>
-      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>{label}</label>
-      <select value={value} onChange={e => onChange(e.target.value)} className="input-field text-sm">
-        {options.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
-      </select>
-    </div>
-  );
-}
+
 
 export default function AILab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
-  const [stage, setStage] = useState<Stage>('text');
   const [completed, setCompleted] = useState(false);
 
   const [textSel, setTextSel] = useState({ subject: 'importancia', audience: 'pais', tone: 'convite', length: 'curto' });
@@ -116,6 +106,11 @@ export default function AILab({ specialtyCode, lessonCode, lessonTitle, requirem
   const [notConfigured, setNotConfigured] = useState(false);
 
   const [critique, setCritique] = useState({ good: '', improve: '' });
+  /* O painel que o polegar abre. É nele que a avaliação crítica acontece —
+     no botão que o aplicativo já tem, e não num formulário à parte. */
+  const [retornoAberto, setRetornoAberto] = useState(false);
+  const [polegar, setPolegar] = useState<'cima' | 'baixo' | null>(null);
+  const [aviso, setAviso] = useState('');
 
   const pick = (opts: { id: string; label: string }[], id: string) =>
     opts.find(o => o.id === id)?.label ?? '';
@@ -217,174 +212,232 @@ export default function AILab({ specialtyCode, lessonCode, lessonTitle, requirem
     );
   }
 
-  const stages: { id: Stage; label: string; icon: typeof Sparkles; done: boolean }[] = [
-    { id: 'text', label: 'Texto', icon: FileText, done: !!textOut },
-    { id: 'image', label: 'Imagem', icon: ImageIcon, done: !!imageOut },
-    { id: 'logo', label: 'Logotipo', icon: Palette, done: !!logoOut },
-    { id: 'review', label: 'Avaliação', icon: ThumbsUp, done: canFinish },
+  const naoFazParte = (o: string) =>
+    setAviso(`${o} existe no Gemini de verdade, e está aqui para a tela ficar igual — mas não faz parte deste exercício.`);
+
+  /*
+    A conversa: cada pedido é uma pergunta e uma resposta, na ordem em que
+    foram feitos. É esta lista que a tela desenha, e é dela que sai a etapa
+    de agora — a primeira que ainda não tem resposta.
+  */
+  const trocas = [
+    { id: 'text' as Stage, prompt: textPrompt, saida: textOut, tipo: 'texto' as const },
+    { id: 'image' as Stage, prompt: imagePrompt, saida: imageOut, tipo: 'imagem' as const },
+    { id: 'logo' as Stage, prompt: logoPrompt, saida: logoOut, tipo: 'imagem' as const },
+  ];
+  const daVez = trocas.find(t => !t.saida);
+
+  const tarefas = [
+    {
+      id: 't1', titulo: 'Pedir um texto sobre o clube', feita: !!textOut,
+      onde: 'Monte o pedido nos chips e envie',
+      passos: [
+        'Na barra de baixo, escolha o assunto, para quem é, o tom e o tamanho.',
+        'Repare que o pedido vai sendo escrito ali em cima, frase por frase: é isso que um prompt é.',
+        'Se quiser, acrescente um detalhe no campo ao lado.',
+        'Clique na setinha azul para enviar.',
+      ],
+    },
+    {
+      id: 't2', titulo: 'Pedir uma imagem do clube acampando', feita: !!imageOut,
+      onde: 'Os chips mudam para cena, hora e estilo',
+      passos: [
+        'Depois do texto, os chips passam a pedir a cena, a hora do dia e o estilo.',
+        'Escolha os três e envie.',
+        'A imagem demora mais que o texto — é normal.',
+      ],
+    },
+    {
+      id: 't3', titulo: 'Pedir um logotipo com o nome do clube', feita: !!logoOut,
+      onde: 'Escreva o nome do clube no campo do meio',
+      passos: [
+        'Escreva o nome do seu clube no campo de texto da barra.',
+        'Escolha a forma, o símbolo e as cores.',
+        'Envie e espere o logotipo chegar.',
+      ],
+    },
+    {
+      id: 't4', titulo: 'Dizer o que ficou bom e o que você mudaria', feita: canFinish,
+      onde: 'Nos polegares embaixo de qualquer resposta',
+      passos: [
+        'Embaixo de qualquer resposta há um polegar para cima e um para baixo.',
+        'Clique num deles: o Gemini abre um painel perguntando o que você achou.',
+        'Escreva o que ficou bom e o que você mudaria — pelo menos uma frase em cada.',
+      ],
+    },
   ];
 
+  const acoes = (
+    <button onClick={handleComplete} disabled={!canFinish || busy}
+      className="btn-primary text-sm w-full justify-center disabled:opacity-50">
+      {busy ? 'Salvando…' : canFinish ? 'Concluir o laboratório' : `Faltam ${4 - tarefas.filter(t => t.feita).length}`}
+    </button>
+  );
+
+  const chips = () => {
+    if (!daVez) return null;
+    if (daVez.id === 'text') return (
+      <>
+        <ChipDoGemini rotulo="Assunto" opcoes={TEXT_OPTIONS.subject} valor={textSel.subject}
+          aoMudar={v => setTextSel({ ...textSel, subject: v })} />
+        <ChipDoGemini rotulo="Para quem" opcoes={TEXT_OPTIONS.audience} valor={textSel.audience}
+          aoMudar={v => setTextSel({ ...textSel, audience: v })} />
+        <ChipDoGemini rotulo="Tom" opcoes={TEXT_OPTIONS.tone} valor={textSel.tone}
+          aoMudar={v => setTextSel({ ...textSel, tone: v })} />
+        <ChipDoGemini rotulo="Tamanho" opcoes={TEXT_OPTIONS.length} valor={textSel.length}
+          aoMudar={v => setTextSel({ ...textSel, length: v })} />
+        <input className="gem-detalhe" value={extra} maxLength={MAX_FREE_TEXT}
+          onChange={e => setExtra(e.target.value)} aria-label="Detalhe extra"
+          placeholder="detalhe (opcional)" />
+      </>
+    );
+    if (daVez.id === 'image') return (
+      <>
+        <ChipDoGemini rotulo="Cena" opcoes={IMAGE_OPTIONS.scene} valor={imageSel.scene}
+          aoMudar={v => setImageSel({ ...imageSel, scene: v })} />
+        <ChipDoGemini rotulo="Hora" opcoes={IMAGE_OPTIONS.time} valor={imageSel.time}
+          aoMudar={v => setImageSel({ ...imageSel, time: v })} />
+        <ChipDoGemini rotulo="Estilo" opcoes={IMAGE_OPTIONS.style} valor={imageSel.style}
+          aoMudar={v => setImageSel({ ...imageSel, style: v })} />
+      </>
+    );
+    return (
+      <>
+        <input className="gem-detalhe" value={clubName} maxLength={40}
+          onChange={e => setClubName(e.target.value)} aria-label="Nome do clube"
+          placeholder="nome do clube" />
+        <ChipDoGemini rotulo="Forma" opcoes={LOGO_OPTIONS.shape} valor={logoSel.shape}
+          aoMudar={v => setLogoSel({ ...logoSel, shape: v })} />
+        <ChipDoGemini rotulo="Símbolo" opcoes={LOGO_OPTIONS.symbol} valor={logoSel.symbol}
+          aoMudar={v => setLogoSel({ ...logoSel, symbol: v })} />
+        <ChipDoGemini rotulo="Cores" opcoes={LOGO_OPTIONS.colors} valor={logoSel.colors}
+          aoMudar={v => setLogoSel({ ...logoSel, colors: v })} />
+      </>
+    );
+  };
+
+  const polegares = (
+    <>
+      <button aria-label="Boa resposta" aria-pressed={polegar === 'cima'}
+        onClick={() => { setPolegar('cima'); setRetornoAberto(true); }}>
+        <ThumbsUp className="w-4 h-4" />
+      </button>
+      <button aria-label="Resposta ruim" aria-pressed={polegar === 'baixo'}
+        onClick={() => { setPolegar('baixo'); setRetornoAberto(true); }}>
+        <ThumbsDown className="w-4 h-4" />
+      </button>
+      <button aria-label="Compartilhar" onClick={() => naoFazParte('Compartilhar')}>
+        <Share2 className="w-4 h-4" />
+      </button>
+      <button aria-label="Gerar de novo" onClick={() => naoFazParte('Gerar a resposta de novo')}>
+        <RotateCw className="w-4 h-4" />
+      </button>
+      <button aria-label="Mais opções" onClick={() => naoFazParte('O menu de opções da resposta')}>
+        <MoreVertical className="w-4 h-4" />
+      </button>
+    </>
+  );
+
   return (
-    <div className="space-y-4">
-      <div className="card p-6">
-        <h1 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <Sparkles className="w-5 h-5" style={{ color: 'var(--color-secondary)' }} /> {lessonTitle}
-        </h1>
-        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-          Você vai montar pedidos (<em>prompts</em>) escolhendo cada parte: o assunto, para
-          quem é, o tom e o tamanho. Depois compara o que pediu com o que a IA
-          devolveu. Um bom pedido gera um bom resultado — é isso que este laboratório ensina.
-        </p>
-      </div>
+    <LaboratorioEmTelaCheia
+      trilha={specialtyCode}
+      titulo={lessonTitle}
+      tarefas={tarefas}
+      aviso={aviso || error}
+      acoes={acoes}
+      /* A cápsula sobe para não tapar Ajuda e Configurações, que no Gemini
+         ficam no pé da barra lateral — no mesmo canto que ela ocupa. */
+      rodape={72}
+    >
+      <style>{CSS_GEMINI}</style>
 
-      {notConfigured && (
-        <div className="card p-4 flex items-start gap-2" style={{ borderColor: 'var(--color-warning-a10)' }}>
-          <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-warning)' }} />
-          <div className="text-sm">
-            <p style={{ color: 'var(--color-text)' }}>A integração com IA ainda não foi ativada.</p>
-            <p style={{ color: 'var(--color-text-dim)' }}>
-              O administrador precisa cadastrar a chave do Gemini no servidor. Enquanto isso,
-              você pode montar os pedidos e ver como um prompt é construído.
-            </p>
-          </div>
-        </div>
-      )}
+      <div className="gem">
+        <LateralDoGemini
+          conversas={['Imagens para o site do clube', 'Ideias de programação', 'Versos para o culto']}
+          atual={0}
+          aoAvisar={naoFazParte}
+        />
 
-      <div className="flex gap-2 flex-wrap">
-        {stages.map(s => {
-          const Icon = s.icon;
-          const active = stage === s.id;
-          return (
-            <button key={s.id} onClick={() => setStage(s.id)}
-              className="px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition"
-              style={{
-                backgroundColor: active ? 'var(--color-primary-a15)' : 'var(--color-bg-input)',
-                border: `1px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                color: active ? 'var(--color-primary)' : 'var(--color-text-muted)',
-              }}>
-              {s.done ? <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--color-success)' }} /> : <Icon className="w-4 h-4" />}
-              {s.label}
-            </button>
-          );
-        })}
-      </div>
+        <div className="gem-palco">
+          <TopoDoGemini inicial="D" aoAvisar={naoFazParte} />
 
-      {error && (
-        <div className="card p-3 flex items-center gap-2 text-sm" style={{ borderColor: 'var(--color-error-a20)' }}>
-          <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-error)' }} />
-          <span style={{ color: 'var(--color-error)' }}>{error}</span>
-        </div>
-      )}
+          <div className="gem-fluxo">
+            <div className="gem-centro">
+              {!textOut && !busy && (
+                <>
+                  <p className="gem-saudacao">Olá, desbravador</p>
+                  <p className="gem-subsaudacao">
+                    Monte o pedido nos botões abaixo. Um pedido bem feito é o que
+                    separa uma resposta útil de uma resposta qualquer.
+                  </p>
+                </>
+              )}
 
-      {stage === 'text' && (
-        <div className="card p-4 space-y-3">
-          <h2 className="font-bold text-sm">1. Texto para divulgar o clube</h2>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <Picker label="Assunto" options={TEXT_OPTIONS.subject} value={textSel.subject} onChange={v => setTextSel({ ...textSel, subject: v })} />
-            <Picker label="Para quem" options={TEXT_OPTIONS.audience} value={textSel.audience} onChange={v => setTextSel({ ...textSel, audience: v })} />
-            <Picker label="Tom" options={TEXT_OPTIONS.tone} value={textSel.tone} onChange={v => setTextSel({ ...textSel, tone: v })} />
-            <Picker label="Tamanho" options={TEXT_OPTIONS.length} value={textSel.length} onChange={v => setTextSel({ ...textSel, length: v })} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>
-              Detalhe extra (opcional, até {MAX_FREE_TEXT} caracteres)
-            </label>
-            <input value={extra} maxLength={MAX_FREE_TEXT} onChange={e => setExtra(e.target.value)}
-              className="input-field text-sm" placeholder="ex.: citar a data do próximo encontro" />
-          </div>
-          <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
-            <p className="text-xs font-bold mb-1" style={{ color: 'var(--color-secondary)' }}>Seu pedido ficou assim:</p>
-            <p className="text-xs font-mono" style={{ color: 'var(--color-text-soft)' }}>{textPrompt}</p>
-          </div>
-          <button onClick={() => generate('text')} disabled={busy} className="btn-primary w-full">
-            {busy ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Sparkles className="w-4 h-4 mr-1" /> Gerar texto</>}
-          </button>
-          {textOut && (
-            <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-success-a10)', border: '1px solid var(--color-success-a20)' }}>
-              <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--color-text)' }}>{textOut}</p>
+              {notConfigured && (
+                <div className="gem-retorno" style={{ marginTop: 20 }}>
+                  <h4>A integração com IA ainda não foi ativada</h4>
+                  <p style={{ fontSize: 13.5, color: '#444746', margin: 0 }}>
+                    Falta cadastrar a chave no servidor. Enquanto isso dá para montar
+                    os pedidos e ver como um prompt é construído, parte por parte.
+                  </p>
+                </div>
+              )}
+
+              {trocas.filter(t => t.saida).map(t => (
+                <div key={t.id}>
+                  <PerguntaDoGemini texto={t.prompt} />
+                  <RespostaDoGemini acoes={polegares}>
+                    {t.tipo === 'texto'
+                      ? t.saida.split('\n').filter(Boolean).map((par, i) => <p key={i}>{par}</p>)
+                      : <img src={t.saida} alt={t.id === 'image' ? 'Imagem gerada do clube acampando' : 'Logotipo gerado para o clube'} />}
+                  </RespostaDoGemini>
+                </div>
+              ))}
+
+              {busy && daVez && (
+                <div>
+                  <PerguntaDoGemini texto={daVez.prompt} />
+                  <RespostaDoGemini carregando />
+                </div>
+              )}
+
+              {/* O painel de retorno do próprio Gemini, onde mora a avaliação. */}
+              {retornoAberto && (
+                <div className="gem-retorno">
+                  <h4>
+                    {polegar === 'cima' ? 'Que bom que ajudou. ' : 'Obrigado pelo retorno. '}
+                    Conte um pouco mais:
+                  </h4>
+                  <label className="gem-rotulo" htmlFor="gem-bom">O que ficou bom no que a IA entregou?</label>
+                  <textarea id="gem-bom" className="gem-campo" value={critique.good}
+                    onChange={e => setCritique({ ...critique, good: e.target.value })}
+                    placeholder="ex.: o texto explicou o que o clube faz sem enrolar" />
+                  <label className="gem-rotulo" htmlFor="gem-mudar" style={{ marginTop: 12 }}>
+                    O que você mudaria antes de usar de verdade?
+                  </label>
+                  <textarea id="gem-mudar" className="gem-campo" value={critique.improve}
+                    onChange={e => setCritique({ ...critique, improve: e.target.value })}
+                    placeholder="ex.: trocaria o final, que ficou parecendo propaganda" />
+                  <p style={{ fontSize: 12, color: '#6B7075', marginTop: 10 }}>
+                    Pelo menos uma frase em cada. É esta parte que o requisito chama de
+                    avaliação crítica — e é ela que separa usar a IA de obedecer a ela.
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
+          </div>
 
-      {stage === 'image' && (
-        <div className="card p-4 space-y-3">
-          <h2 className="font-bold text-sm">2. Imagem de uma cena do clube</h2>
-          <div className="grid sm:grid-cols-3 gap-3">
-            <Picker label="Cena" options={IMAGE_OPTIONS.scene} value={imageSel.scene} onChange={v => setImageSel({ ...imageSel, scene: v })} />
-            <Picker label="Momento" options={IMAGE_OPTIONS.time} value={imageSel.time} onChange={v => setImageSel({ ...imageSel, time: v })} />
-            <Picker label="Estilo" options={IMAGE_OPTIONS.style} value={imageSel.style} onChange={v => setImageSel({ ...imageSel, style: v })} />
-          </div>
-          <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
-            <p className="text-xs font-bold mb-1" style={{ color: 'var(--color-secondary)' }}>Seu pedido ficou assim:</p>
-            <p className="text-xs font-mono" style={{ color: 'var(--color-text-soft)' }}>{imagePrompt}</p>
-          </div>
-          <button onClick={() => generate('image')} disabled={busy} className="btn-primary w-full">
-            {busy ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><ImageIcon className="w-4 h-4 mr-1" /> Gerar imagem</>}
-          </button>
-          {imageOut && <img src={imageOut} alt="Imagem gerada pela IA" className="w-full rounded-lg" style={{ border: '1px solid var(--color-border)' }} />}
+          <CaixaDoGemini
+            prompt={daVez ? daVez.prompt : 'Os três pedidos foram feitos. Avalie as respostas nos polegares acima.'}
+            podeEnviar={!!daVez}
+            enviando={busy}
+            aoEnviar={() => daVez && generate(daVez.id)}
+            aoAvisar={naoFazParte}
+          >
+            {chips()}
+          </CaixaDoGemini>
         </div>
-      )}
-
-      {stage === 'logo' && (
-        <div className="card p-4 space-y-3">
-          <h2 className="font-bold text-sm">3. Logotipo do clube</h2>
-          <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-soft)' }}>Nome do clube (opcional)</label>
-            <input value={clubName} maxLength={40} onChange={e => setClubName(e.target.value)} className="input-field text-sm" placeholder="ex.: Clube Pioneiros" />
-          </div>
-          <div className="grid sm:grid-cols-3 gap-3">
-            <Picker label="Formato" options={LOGO_OPTIONS.shape} value={logoSel.shape} onChange={v => setLogoSel({ ...logoSel, shape: v })} />
-            <Picker label="Símbolo" options={LOGO_OPTIONS.symbol} value={logoSel.symbol} onChange={v => setLogoSel({ ...logoSel, symbol: v })} />
-            <Picker label="Cores" options={LOGO_OPTIONS.colors} value={logoSel.colors} onChange={v => setLogoSel({ ...logoSel, colors: v })} />
-          </div>
-          <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
-            <p className="text-xs font-bold mb-1" style={{ color: 'var(--color-secondary)' }}>Seu pedido ficou assim:</p>
-            <p className="text-xs font-mono" style={{ color: 'var(--color-text-soft)' }}>{logoPrompt}</p>
-          </div>
-          <button onClick={() => generate('logo')} disabled={busy} className="btn-primary w-full">
-            {busy ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Palette className="w-4 h-4 mr-1" /> Gerar logotipo</>}
-          </button>
-          {logoOut && <img src={logoOut} alt="Logotipo gerado pela IA" className="w-full max-w-xs mx-auto rounded-lg" style={{ border: '1px solid var(--color-border)' }} />}
-        </div>
-      )}
-
-      {stage === 'review' && (
-        <div className="card p-4 space-y-3">
-          <h2 className="font-bold text-sm">4. Avaliação crítica</h2>
-          <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-            A IA erra, inventa fatos e às vezes ignora parte do pedido. Saber revisar é
-            tão importante quanto saber pedir. Olhe os três resultados e responda:
-          </p>
-
-          {!textOut || !imageOut || !logoOut ? (
-            <div className="flex items-center gap-2 text-sm p-3 rounded-lg" style={{ backgroundColor: 'var(--color-bg-input)' }}>
-              <AlertCircle className="w-4 h-4" style={{ color: 'var(--color-warning)' }} />
-              <span style={{ color: 'var(--color-text-dim)' }}>Gere o texto, a imagem e o logotipo antes de avaliar.</span>
-            </div>
-          ) : (
-            <>
-              <div>
-                <label className="block text-xs font-medium mb-1 flex items-center gap-1" style={{ color: 'var(--color-success)' }}>
-                  <ThumbsUp className="w-3 h-3" /> O que a IA fez bem? (mínimo 15 caracteres)
-                </label>
-                <textarea value={critique.good} onChange={e => setCritique({ ...critique, good: e.target.value })}
-                  rows={3} className="input-field text-sm" placeholder="ex.: o texto usou o tom de convite que eu pedi..." />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1 flex items-center gap-1" style={{ color: 'var(--color-warning)' }}>
-                  <ThumbsDown className="w-3 h-3" /> O que precisaria ser corrigido por uma pessoa? (mínimo 15 caracteres)
-                </label>
-                <textarea value={critique.improve} onChange={e => setCritique({ ...critique, improve: e.target.value })}
-                  rows={3} className="input-field text-sm" placeholder="ex.: inventou uma data que não existe..." />
-              </div>
-              <button onClick={handleComplete} disabled={!canFinish || busy} className="btn-primary w-full">
-                {canFinish ? 'Concluir AI Lab' : 'Responda as duas perguntas para concluir'}
-              </button>
-            </>
-          )}
-        </div>
-      )}
-    </div>
+      </div>
+    </LaboratorioEmTelaCheia>
   );
 }

@@ -86,7 +86,10 @@ export type LabType =
   | 'filipenses'
   | 'code_lab'
   | 'table_challenge'
-  | 'image_lab'
+  /* O antigo `image_lab` virou dois: comprimir e criar são assuntos
+     diferentes, e na vida são dois programas diferentes. */
+  | 'image_compress'
+  | 'image_create'
   | 'site_lab'
   | 'file_manager'
   | 'computer_care'
