@@ -1,9 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FileArchive, FileText, Download, Printer, CheckCircle2, Circle,
-  PackageOpen, Trash2, Settings, PartyPopper,
+  Folder, FolderOpen, FileText, FileImage, FileType2, Link2, Monitor, HardDrive,
+  ChevronRight, ChevronDown, ArrowLeft, ArrowRight, ArrowUp, RotateCw, Search,
+  FolderPlus, Scissors, Copy, ClipboardPaste, Pencil, Trash2, MoreHorizontal,
+  ArrowUpDown, LayoutGrid, Grid2x2, Settings, Globe, PartyPopper,
 } from 'lucide-react';
+import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
+import { CSS_WINDOWS, BarraDeTitulo, DialogoDoWindows, IconeWinRAR } from './windows';
+import {
+  JanelaWinRAR, JanelaEditor, JanelaConfiguracoes, JanelaNavegador,
+  ControlesDeImpressao, ControlesDeSalvar, ControlesDeCompactar, ControlesDeExtrair,
+  type Impressao, type Origem, type ItemDoMenuArquivo, type LinhaDoArquivo,
+} from './operacoesJanelas';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
@@ -19,19 +28,33 @@ import {
  * marcar "fiz" numa lista, e autodeclaração é o que o resto da plataforma
  * evita — então as quatro acontecem aqui dentro, e o laboratório vê cada uma.
  *
- * ── Onde mora a lição de cada estação ────────────────────────────────────
- * Não é no acerto, é no erro que se escolhe. Três das quatro estações têm um
- * caminho errado que parece certo, e é ele que o desbravador vai encontrar na
- * vida:
+ * ── Por que uma área de trabalho, e não quatro cartões ───────────────────
+ * A primeira versão eram quatro cartões empilhados na página, um por tarefa.
+ * Praticavam as quatro, e não se pareciam com computador nenhum: no Windows
+ * essas tarefas não moram numa lista, moram em quatro programas diferentes,
+ * e boa parte do que há para aprender é justamente *em qual deles* cada uma
+ * acontece. Compactar é o Explorador chamando o WinRAR pelo menu de contexto;
+ * desinstalar é Configurações, e não a lixeira.
  *
- *   compactar   — "compactar" não é "apagar": o original continua lá, e é por
- *                 isso que o espaço no disco não some sozinho depois;
+ * Daí a forma daqui: área de trabalho, Explorador maximizado, barra de tarefas,
+ * e os outros três programas abrindo por cima. As peças de janela vêm de
+ * `windows.tsx`, compartilhadas com o laboratório de pastas e arquivos.
+ *
+ * ── Onde mora a lição de cada estação ────────────────────────────────────
+ * Não é no acerto, é no erro que se escolhe. Três das quatro têm um caminho
+ * errado que parece certo, e é ele que o desbravador vai encontrar na vida:
+ *
+ *   compactar   — "compactar" não é "apagar": o original continua lá. A opção
+ *                 que apaga existe no diálogo do WinRAR, desmarcada, e é isso
+ *                 que mostra que apagar é escolha à parte;
  *   pdf         — apertar Salvar não vira pdf. Vira pdf quem troca o formato,
  *                 em Salvar como ou Exportar;
  *   desinstalar — arrastar o atalho para a lixeira não desinstala nada, e
- *                 apagar a pasta deixa sobra espalhada pelo sistema. Este é o
- *                 engano mais comum dos quatro, e o que mais entope máquina de
- *                 clube;
+ *                 apagar a pasta deixa sobra espalhada pelo sistema. Os dois
+ *                 caminhos errados estão no Explorador, no lugar exato onde
+ *                 estão num Windows de verdade: o atalho na Área de Trabalho e
+ *                 a pasta em Arquivos de Programas. Este é o engano mais comum
+ *                 dos quatro, e o que mais entope máquina de clube;
  *   imprimir    — três cópias não agrupadas saem em ordem de página, e não em
  *                 ordem de documento. Quem descobre isso com o papel na mão já
  *                 gastou a tinta.
@@ -39,103 +62,340 @@ import {
  * Errar não reprova: explica e devolve a vez, como no laboratório de cuidados.
  */
 
-interface Arquivo { id: string; nome: string; tamanho: number }
+interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
-const PASTA: Arquivo[] = [
-  { id: 'f1', nome: 'acampamento-01.jpg', tamanho: 3.4 },
-  { id: 'f2', nome: 'acampamento-02.jpg', tamanho: 2.9 },
-  { id: 'f3', nome: 'lista-de-presenca.odt', tamanho: 0.2 },
-  { id: 'f4', nome: 'relatorio-da-unidade.odt', tamanho: 0.3 },
+/* ── O disco simulado ──────────────────────────────────────────────────────── */
+
+type Pasta = 'area' | 'clube' | 'programas' | 'extraida' | 'desenhador';
+type Especie = 'jpg' | 'odt' | 'rar' | 'pdf' | 'pasta' | 'atalho' | 'exe';
+
+interface Item {
+  id: string;
+  nome: string;
+  especie: Especie;
+  /** Em MB. Pasta e atalho não contam tamanho, como no Explorador. */
+  mb: number;
+  data: string;
+}
+
+const NOME_DA_PASTA: Record<Pasta, string> = {
+  area: 'Área de Trabalho',
+  clube: 'Clube',
+  programas: 'Arquivos de Programas',
+  extraida: 'acampamento',
+  desenhador: 'Desenhador',
+};
+
+/** O caminho até cada pasta, para a barra de endereço e para a árvore. */
+const CAMINHO: Record<Pasta, string[]> = {
+  area: ['Área de Trabalho'],
+  clube: ['Documentos', 'Clube'],
+  programas: ['Este Computador', 'Disco Local (C:)', 'Arquivos de Programas'],
+  extraida: ['Documentos', 'Clube', 'acampamento'],
+  desenhador: ['Este Computador', 'Disco Local (C:)', 'Arquivos de Programas', 'Desenhador'],
+};
+
+const ARQUIVOS_DO_CLUBE: Item[] = [
+  { id: 'f1', nome: 'acampamento-01.jpg', especie: 'jpg', mb: 3.4, data: '09/08/2026 14:12' },
+  { id: 'f2', nome: 'acampamento-02.jpg', especie: 'jpg', mb: 2.9, data: '09/08/2026 14:15' },
+  { id: 'f3', nome: 'lista-de-presenca.odt', especie: 'odt', mb: 0.2, data: '11/08/2026 20:03' },
+  { id: 'f4', nome: 'relatorio-da-unidade.odt', especie: 'odt', mb: 0.3, data: '18/08/2026 21:40' },
 ];
 
-const TOTAL = PASTA.reduce((s, a) => s + a.tamanho, 0);
-/* Foto já vem comprimida de fábrica: o zip encolhe pouco aqui, e é isso que a
+const TOTAL = ARQUIVOS_DO_CLUBE.reduce((s, a) => s + a.mb, 0);
+/* Foto já vem comprimida de fábrica: o rar encolhe pouco aqui, e é isso que a
    estação diz em voz alta em vez de prometer milagre. */
-const TOTAL_ZIP = 5.1;
+const TOTAL_RAR = 5.1;
+
+/** O que o WinRAR mostra quando o arquivo está aberto — ele conta em KB. */
+const DENTRO_DO_RAR: LinhaDoArquivo[] = [
+  { nome: 'acampamento-01.jpg', kb: 3482, compactado: 3390, tipo: 'Imagem JPEG' },
+  { nome: 'acampamento-02.jpg', kb: 2970, compactado: 2884, tipo: 'Imagem JPEG' },
+  { nome: 'lista-de-presenca.odt', kb: 205, compactado: 128, tipo: 'Documento ODF' },
+  { nome: 'relatorio-da-unidade.odt', kb: 307, compactado: 176, tipo: 'Documento ODF' },
+];
 
 const brasileiro = (n: number) => n.toFixed(1).replace('.', ',');
 
-type Etapa = 'compactar' | 'pdf' | 'programa' | 'imprimir';
+const ROTULO_DO_TIPO: Record<Especie, string> = {
+  jpg: 'Imagem JPEG',
+  odt: 'Documento ODF',
+  rar: 'Arquivo WinRAR',
+  pdf: 'Documento PDF',
+  pasta: 'Pasta de arquivos',
+  atalho: 'Atalho',
+  exe: 'Aplicativo',
+};
 
-interface Impressao {
-  copias: number;
-  agrupado: boolean;
-  qualidade: 'rascunho' | 'normal' | 'alta';
-  ajuste: 'real' | 'pagina';
-  porFolha: 1 | 2 | 4;
+function IconeDoItem({ item }: { item: Item }) {
+  const c = 'w-4 h-4 flex-none';
+  switch (item.especie) {
+    case 'pasta': return <Folder className={c} style={{ color: '#E6B14C' }} />;
+    case 'jpg': return <FileImage className={c} style={{ color: '#2E7D32' }} />;
+    case 'odt': return <FileText className={c} style={{ color: '#1F6FB2' }} />;
+    case 'pdf': return <FileType2 className={c} style={{ color: '#B71C1C' }} />;
+    case 'atalho': return <Link2 className={c} style={{ color: '#0F6CBD' }} />;
+    case 'exe': return <Grid2x2 className={c} style={{ color: '#5B5B5B' }} />;
+    case 'rar': return <span className={c}><IconeWinRAR /></span>;
+  }
 }
+
+/* ── As tarefas ────────────────────────────────────────────────────────────── */
 
 const PEDIDO: Impressao = {
   copias: 3, agrupado: true, qualidade: 'alta', ajuste: 'pagina', porFolha: 2,
 };
 
-interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
+type Programa = 'winrar' | 'editor' | 'config' | 'navegador';
+type Dialogo = 'compactar' | 'extrair' | 'salvar-como' | 'imprimir' | null;
+
+/* ── O laboratório ─────────────────────────────────────────────────────────── */
 
 export default function OperacoesArquivoLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
-  // ── 1. Compactar e descompactar ──
-  const [marcados, setMarcados] = useState<Record<string, boolean>>({});
-  const [zipCriado, setZipCriado] = useState(false);
+  /* ── 1. Compactar e extrair ── */
+  const [rarCriado, setRarCriado] = useState(false);
   const [extraido, setExtraido] = useState(false);
 
-  // ── 2. Salvar em pdf ──
-  const [menuAberto, setMenuAberto] = useState(false);
-  const [salvarComo, setSalvarComo] = useState(false);
+  /* ── 2. Salvar em pdf ── */
   const [formato, setFormato] = useState('odt');
   const [pdfPronto, setPdfPronto] = useState(false);
 
-  // ── 3. Instalar e desinstalar ──
+  /* ── 3. Instalar e desinstalar ── */
   const [instalado, setInstalado] = useState(false);
   const [desinstalado, setDesinstalado] = useState(false);
 
-  // ── 4. Imprimir ──
+  /* ── 4. Imprimir ── */
   const [imp, setImp] = useState<Impressao>({
     copias: 1, agrupado: false, qualidade: 'normal', ajuste: 'real', porFolha: 1,
   });
   const [impresso, setImpresso] = useState(false);
 
-  const [correcao, setCorrecao] = useState('');
-  const [pronto, setPronto] = useState(false);
-  const [erro, setErro] = useState('');
+  /* ── A área de trabalho ── */
+  const [pasta, setPasta] = useState<Pasta>('clube');
+  const [marcados, setMarcados] = useState<Set<string>>(new Set());
+  const [abertos, setAbertos] = useState<Programa[]>([]);
+  const [minimizados, setMinimizados] = useState<Set<Programa>>(new Set());
+  const [iniciar, setIniciar] = useState(false);
+  const [menuMais, setMenuMais] = useState<{ x: number; y: number } | null>(null);
+  const [dialogo, setDialogo] = useState<Dialogo>(null);
+
+  /* ── Diálogos ── */
+  const [nomeDoRar, setNomeDoRar] = useState('acampamento.rar');
+  const [formatoDoRar, setFormatoDoRar] = useState('rar');
+  const [apagarDepois, setApagarDepois] = useState(false);
+
+  const [aviso, setAviso] = useState('');
+  const [salvo, setSalvo] = useState(false);
   const [gravando, setGravando] = useState(false);
 
-  const feito: Record<Etapa, boolean> = {
-    compactar: zipCriado && extraido,
-    pdf: pdfPronto,
-    programa: instalado && desinstalado,
-    imprimir: impresso,
+  const programaPresente = instalado && !desinstalado;
+
+  const feito = {
+    t1: rarCriado && extraido,
+    t2: pdfPronto,
+    t3: instalado && desinstalado,
+    t4: impresso,
   };
   const tudoFeito = Object.values(feito).every(Boolean);
 
-  const todosMarcados = PASTA.every(a => marcados[a.id]);
+  /* Fecha os menus flutuantes ao clicar em qualquer lugar, como todo menu de
+     sistema faz. Quem abre um deles para o clique antes de subir até aqui. */
+  useEffect(() => {
+    if (!iniciar && !menuMais) return;
+    const fechar = () => { setIniciar(false); setMenuMais(null); };
+    window.addEventListener('click', fechar);
+    return () => window.removeEventListener('click', fechar);
+  }, [iniciar, menuMais]);
 
-  const compactar = () => {
-    if (!todosMarcados) {
-      setCorrecao('Marque os quatro arquivos antes. Compactar age sobre o que está selecionado — o que ficar de fora não entra no zip.');
-      return;
+  /* ── O conteúdo de cada pasta ────────────────────────────────────────────
+     Montado na hora a partir do que já aconteceu, e não guardado em estado:
+     o arquivo compactado, a pasta extraída, o pdf e o programa instalado são
+     consequências das quatro tarefas, e derivá-los evita a classe de erro em
+     que a lista e as tarefas discordam. */
+  const conteudoDe = (p: Pasta): Item[] => {
+    switch (p) {
+      case 'clube': return [
+        ...ARQUIVOS_DO_CLUBE,
+        ...(extraido ? [{ id: 'ext', nome: 'acampamento', especie: 'pasta' as const, mb: 0, data: '26/08/2026 11:04' }] : []),
+        ...(rarCriado ? [{ id: 'rar', nome: nomeDoRar, especie: 'rar' as const, mb: TOTAL_RAR, data: '26/08/2026 11:02' }] : []),
+        ...(pdfPronto ? [{ id: 'pdf', nome: 'relatorio-da-unidade.pdf', especie: 'pdf' as const, mb: 0.4, data: '26/08/2026 11:08' }] : []),
+      ];
+      case 'extraida': return extraido ? ARQUIVOS_DO_CLUBE.map(a => ({ ...a, id: `x-${a.id}` })) : [];
+      case 'area': return programaPresente
+        ? [{ id: 'atalho', nome: 'Desenhador — Atalho', especie: 'atalho', mb: 0, data: '20/08/2026 19:22' }]
+        : [];
+      case 'programas': return programaPresente
+        ? [{ id: 'prog', nome: 'Desenhador', especie: 'pasta', mb: 0, data: '20/08/2026 19:22' }]
+        : [];
+      case 'desenhador': return programaPresente ? [
+        { id: 'd1', nome: 'desenhador.exe', especie: 'exe', mb: 42.6, data: '20/08/2026 19:22' },
+        { id: 'd2', nome: 'pinceis', especie: 'pasta', mb: 0, data: '20/08/2026 19:22' },
+        { id: 'd3', nome: 'desinstalar.exe', especie: 'exe', mb: 1.2, data: '20/08/2026 19:22' },
+      ] : [];
     }
-    setCorrecao('');
-    setZipCriado(true);
   };
 
-  const imprimirIgual = imp.copias === PEDIDO.copias
-    && imp.agrupado === PEDIDO.agrupado
-    && imp.qualidade === PEDIDO.qualidade
-    && imp.ajuste === PEDIDO.ajuste
-    && imp.porFolha === PEDIDO.porFolha;
+  const itens = conteudoDe(pasta);
+  const selecionados = itens.filter(i => marcados.has(i.id));
+
+  const irPara = (p: Pasta) => { setPasta(p); setMarcados(new Set()); setAviso(''); };
+
+  const alternar = (id: string) => {
+    setAviso('');
+    setMarcados(m => {
+      const c = new Set(m);
+      if (c.has(id)) c.delete(id); else c.add(id);
+      return c;
+    });
+  };
+
+  const naoFazParte = (o: string) =>
+    setAviso(`${o} existe no Windows de verdade, e está aqui para a tela ficar igual — mas não faz parte deste exercício.`);
+
+  /* ── Abrir janelas ─────────────────────────────────────────────────────── */
+
+  const abrir = (p: Programa) => {
+    setAbertos(a => (a.includes(p) ? [...a.filter(x => x !== p), p] : [...a, p]));
+    setMinimizados(m => { const c = new Set(m); c.delete(p); return c; });
+    setIniciar(false);
+    setAviso('');
+  };
+  const minimizar = (p: Programa) => setMinimizados(m => new Set(m).add(p));
+  const fechar = (p: Programa) => {
+    setAbertos(a => a.filter(x => x !== p));
+    setMinimizados(m => { const c = new Set(m); c.delete(p); return c; });
+  };
+
+  /* A janela de cima é a última usada que não esteja minimizada. */
+  const emFoco = [...abertos].reverse().find(p => !minimizados.has(p)) ?? null;
+
+  const abrirItem = (item: Item) => {
+    switch (item.especie) {
+      case 'pasta':
+        return irPara(item.nome === 'acampamento' ? 'extraida' : 'desenhador');
+      case 'rar': return abrir('winrar');
+      case 'odt': return abrir('editor');
+      case 'pdf':
+        return setAviso('O pdf abre no leitor do sistema. Aqui ele já cumpriu o que tinha de cumprir: existe, e vai chegar igual do outro lado.');
+      case 'atalho':
+        return setAviso('O atalho abriria o Desenhador. Repare que ele é só um caminho até o programa — o programa mesmo está em Arquivos de Programas.');
+      case 'jpg':
+      case 'exe':
+        return naoFazParte(`Abrir ${item.nome}`);
+    }
+  };
+
+  /* ── 1. Compactar ──────────────────────────────────────────────────────── */
+
+  const pedirCompactacao = () => {
+    if (selecionados.length !== ARQUIVOS_DO_CLUBE.length
+      || !selecionados.every(s => ARQUIVOS_DO_CLUBE.some(a => a.id === s.id))) {
+      setAviso('Marque os quatro arquivos do clube antes. Compactar age sobre o que está selecionado — o que ficar de fora não entra no arquivo compactado.');
+      return;
+    }
+    setAviso('');
+    setDialogo('compactar');
+  };
+
+  const compactar = () => {
+    if (apagarDepois) {
+      setAviso('Essa opção apaga os quatro originais depois de compactar — e repare que ela é uma opção, desmarcada por padrão. Compactar, sozinho, não apaga nada. Desmarque para ver os originais continuarem na pasta.');
+      return;
+    }
+    if (!nomeDoRar.trim()) {
+      setAviso('O arquivo compactado precisa de um nome.');
+      return;
+    }
+    setDialogo(null);
+    setRarCriado(true);
+    setMarcados(new Set());
+    setAviso(`De ${brasileiro(TOTAL)} MB para ${brasileiro(TOTAL_RAR)} MB. Encolheu pouco porque foto já vem comprimida de fábrica — o ganho aqui foi virar um anexo só, e não o tamanho. E repare: os quatro originais continuam na pasta. Compactar copia, não move.`);
+  };
+
+  const extrair = () => {
+    setDialogo(null);
+    setExtraido(true);
+    setAviso('Os quatro arquivos voltaram inteiros, com o mesmo nome e o mesmo conteúdo, na pasta "acampamento". Compactar não estraga nada no caminho.');
+  };
+
+  /* ── 2. Salvar em pdf ──────────────────────────────────────────────────── */
+
+  const noMenuArquivo = (o: ItemDoMenuArquivo) => {
+    if (o === 'salvar') {
+      setAviso('Salvar apenas grava por cima do mesmo .odt. Para virar pdf é preciso trocar o formato, e isso está em "Salvar como" ou em "Exportar como PDF".');
+      return;
+    }
+    if (o === 'salvar-como') { setFormato('odt'); setDialogo('salvar-como'); setAviso(''); return; }
+    if (o === 'exportar-pdf') { concluirPdf('pelo Exportar como PDF'); return; }
+    setDialogo('imprimir');
+    setAviso('');
+  };
+
+  const concluirPdf = (caminho: string) => {
+    setDialogo(null);
+    setPdfPronto(true);
+    setAviso(`Pronto, ${caminho}: relatorio-da-unidade.pdf está na pasta do clube. Em pdf o relatório chega com as margens, as fontes e as quebras de página do jeito que você deixou — e ninguém muda o texto sem querer.`);
+  };
+
+  const salvarComo = () => {
+    if (formato === 'pdf') { concluirPdf('pelo Salvar como'); return; }
+    setAviso(formato === 'txt'
+      ? 'O .txt guarda só as letras: perde negrito, margem e imagem. Não serve para entregar um relatório formatado.'
+      : 'Esse formato continua sendo documento editável, e vai abrir diferente em cada computador. Escolha PDF.');
+  };
+
+  /* ── 3. Instalar e desinstalar ─────────────────────────────────────────── */
+
+  const escolherOrigem = (o: Origem) => {
+    if (o === 'oficial') {
+      setInstalado(true);
+      fechar('navegador');
+      setAviso('Instalado a partir do site oficial. Agora a diretoria pediu para tirar da máquina: em Configurações → Aplicativos, e não pela lixeira.');
+      return;
+    }
+    setAviso(o === 'agregador'
+      ? 'Sites que juntam "programas grátis" costumam empacotar o instalador com outras coisas junto — barra de navegador, anúncio, às vezes pior. O programa até instala, e vem acompanhado.'
+      : 'Programa pago que aparece de graça num link de mensagem é isca. É assim que entra a maior parte dos vírus em computador de casa.');
+  };
+
+  const desinstalar = () => {
+    setDesinstalado(true);
+    fechar('config');
+    setAviso('Desinstalado pelo caminho certo. O desinstalador desfaz o que a instalação fez — arquivos, atalhos e registros — em vez de deixar sobra pelo sistema. Repare que o atalho da Área de Trabalho sumiu junto.');
+  };
+
+  const excluir = () => {
+    if (selecionados.some(s => s.especie === 'atalho')) {
+      setAviso('Apagar o atalho apaga o atalho, e só. O programa continua instalado, ocupando o mesmo espaço — some apenas o caminho até ele. É o engano que mais entope máquina de clube.');
+      return;
+    }
+    if (selecionados.some(s => s.nome === 'Desenhador' || s.nome.endsWith('.exe'))) {
+      setAviso('Apagar a pasta tira os arquivos principais e deixa o resto: registros do sistema, atalhos e configurações espalhadas. O sistema continua achando que o programa existe. Quem tira um programa é o desinstalador, em Configurações → Aplicativos.');
+      return;
+    }
+    setAviso('Neste laboratório os arquivos do clube ficam onde estão — o que se pratica aqui é compactar, exportar em pdf, instalar e imprimir.');
+  };
+
+  /* ── 4. Imprimir ───────────────────────────────────────────────────────── */
 
   const imprimir = () => {
-    if (imprimirIgual) { setCorrecao(''); setImpresso(true); return; }
     const faltas: string[] = [];
     if (imp.copias !== PEDIDO.copias) faltas.push('a quantidade de cópias');
     if (imp.agrupado !== PEDIDO.agrupado) faltas.push('o agrupamento — sem ele saem todas as páginas 1, depois todas as 2');
     if (imp.qualidade !== PEDIDO.qualidade) faltas.push('a qualidade');
     if (imp.ajuste !== PEDIDO.ajuste) faltas.push('o ajuste de tamanho');
     if (imp.porFolha !== PEDIDO.porFolha) faltas.push('as páginas por folha');
-    setCorrecao(`Ainda falta acertar ${faltas.join('; ')}.`);
+
+    if (faltas.length) { setAviso(`Ainda falta acertar ${faltas.join('; ')}.`); return; }
+    setDialogo(null);
+    setImpresso(true);
+    setAviso('Saíram 3 cópias completas, uma depois da outra, em 6 folhas. Sem agrupar seriam as mesmas folhas fora de ordem, para separar à mão.');
   };
 
+  /* ── Conclusão ─────────────────────────────────────────────────────────── */
+
   const registrar = async () => {
-    setErro('');
+    setAviso('');
     setGravando(true);
     const specId = await getSpecialtyId(specialtyCode);
     if (specId) {
@@ -143,6 +403,10 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
       await updateEnrollmentActivity(userId, specId);
     }
     await registrarConclusaoDeLicao(userId, lessonCode);
+
+    /* Conferir quantos requisitos foram gravados, e não só disparar a gravação:
+       comemorar sem ter registrado é a falha que mais custa a aparecer, porque
+       parece sucesso. */
     let gravados = 0;
     for (const reqCode of requirementCodes) {
       const reqId = await getRequirementId(reqCode);
@@ -155,14 +419,14 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
     }
     setGravando(false);
     if (gravados < requirementCodes.length) {
-      setErro('Você concluiu as quatro tarefas, mas o progresso não pôde ser guardado agora. Avise a liderança do clube.');
+      setAviso('Você concluiu as quatro tarefas, mas o progresso não pôde ser guardado agora. Nada do que você fez se perdeu — avise a liderança do clube.');
       return;
     }
     await logActivity(userId, 'operacoes_concluidas', { specialtyCode, lessonCode, etapas: 4 });
-    setPronto(true);
+    setSalvo(true);
   };
 
-  if (pronto) {
+  if (salvo) {
     return (
       <div className="card p-6 text-center">
         <PartyPopper className="w-16 h-16 mx-auto mb-3" style={{ color: 'var(--color-success)' }} />
@@ -179,312 +443,398 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, require
     );
   }
 
-  const Cabecalho = ({ n, titulo, ok }: { n: number; titulo: string; ok: boolean }) => (
-    <div className="flex items-center gap-2 mb-3">
-      {ok
-        ? <CheckCircle2 className="w-5 h-5" style={{ color: 'var(--color-success)' }} />
-        : <Circle className="w-5 h-5" style={{ color: 'var(--color-text-faint)' }} />}
-      <h2 className="font-bold">{n}. {titulo}</h2>
-    </div>
-  );
+  /* ── A tela ────────────────────────────────────────────────────────────── */
 
-  const escolha = (rotulo: string, ativo: boolean, aoClicar: () => void) => (
-    <button key={rotulo} onClick={aoClicar} className="btn-secondary text-xs py-1"
-      style={ativo ? { borderColor: 'var(--color-primary)', color: 'var(--color-primary)' } : undefined}>
-      {rotulo}
+  const tarefas = [
+    {
+      id: 't1', titulo: 'Compactar os quatro arquivos e extrair de volta', feita: feito.t1,
+      onde: 'Explorador → marcar os quatro → ⋯ → WinRAR',
+      detalhe: !feito.t1 && rarCriado ? 'Falta abrir o arquivo compactado e extrair.' : undefined,
+    },
+    {
+      id: 't2', titulo: 'Salvar o relatório em pdf', feita: feito.t2,
+      onde: 'Editor de Texto → menu Arquivo',
+    },
+    {
+      id: 't3', titulo: 'Instalar e desinstalar um programa', feita: feito.t3,
+      onde: instalado ? 'Configurações → Aplicativos' : 'Iniciar → Navegador Web',
+      detalhe: !feito.t3 && instalado ? 'Instalado. Falta tirar da máquina pelo caminho certo.' : undefined,
+    },
+    {
+      id: 't4', titulo: 'Imprimir 3 cópias agrupadas, alta, ajustadas, 2 por folha', feita: feito.t4,
+      onde: 'Editor de Texto → Arquivo → Imprimir',
+    },
+  ];
+
+  const acoes = (
+    <button onClick={registrar} disabled={!tudoFeito || gravando}
+      className="btn-primary text-sm w-full justify-center disabled:opacity-50">
+      {gravando ? 'Guardando…' : tudoFeito ? 'Concluir o laboratório' : `Faltam ${4 - Object.values(feito).filter(Boolean).length}`}
     </button>
   );
 
-  return (
-    <div className="space-y-4">
-      {correcao && (
-        <p className="text-sm p-3 rounded-lg"
-          style={{ backgroundColor: 'var(--color-warning-a10)', color: 'var(--color-text)' }}>
-          {correcao}
-        </p>
-      )}
+  const caminho = CAMINHO[pasta];
 
-      {/* ── 1. Compactar ── */}
-      <div className="card p-4">
-        <Cabecalho n={1} titulo="Comprimir e descomprimir" ok={feito.compactar} />
-        <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
-          Você vai mandar estes quatro arquivos para a secretaria do clube. Mandar
-          quatro anexos separados dá trabalho de organizar do outro lado — junte
-          tudo num arquivo só. Marque os quatro e compacte.
-        </p>
+  const Cmd = ({ Ico, dica, onClick, desabilitado, children }: {
+    Ico: typeof Folder; dica: string;
+    onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+    desabilitado?: boolean; children?: React.ReactNode;
+  }) => (
+    <button className="win-cmd" onClick={onClick} disabled={desabilitado} title={dica} aria-label={dica}>
+      <Ico className="w-4 h-4" />
+      {children && <span className="win-rotulo">{children}</span>}
+    </button>
+  );
 
-        <div className="rounded-lg p-3 mb-3" style={{ backgroundColor: 'var(--color-bg-input)' }}>
-          {PASTA.map(a => (
-            <label key={a.id} className="flex items-center gap-2 py-1 text-sm cursor-pointer">
-              <input type="checkbox" checked={!!marcados[a.id]}
-                onChange={e => setMarcados(m => ({ ...m, [a.id]: e.target.checked }))} />
-              <FileText className="w-4 h-4" style={{ color: 'var(--color-text-dim)' }} />
-              <span className="flex-1">{a.nome}</span>
-              <span style={{ color: 'var(--color-text-dim)' }}>{brasileiro(a.tamanho)} MB</span>
-            </label>
-          ))}
-          <p className="text-xs mt-2 pt-2" style={{ color: 'var(--color-text-dim)', borderTop: '1px solid var(--color-border)' }}>
-            Total na pasta: {brasileiro(TOTAL)} MB
-          </p>
-        </div>
-
-        {!zipCriado ? (
-          <button onClick={compactar} className="btn-primary text-sm inline-flex items-center gap-2">
-            <FileArchive className="w-4 h-4" /> Compactar em .zip
-          </button>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 p-2 rounded-lg text-sm"
-              style={{ backgroundColor: 'var(--color-success-a10)' }}>
-              <FileArchive className="w-4 h-4" style={{ color: 'var(--color-success)' }} />
-              <span className="flex-1">acampamento.zip</span>
-              <span style={{ color: 'var(--color-text-dim)' }}>{brasileiro(TOTAL_ZIP)} MB</span>
-            </div>
-            <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-              De {brasileiro(TOTAL)} MB para {brasileiro(TOTAL_ZIP)} MB. Encolheu pouco
-              porque foto já vem comprimida de fábrica — o ganho aqui foi virar
-              <strong> um anexo só</strong>, e não o tamanho. Repare também que os
-              quatro originais continuam na pasta: compactar copia, não move.
-            </p>
-            {!extraido ? (
-              <>
-                <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                  A secretaria recebeu o zip e precisa abrir. Descompacte para ver
-                  os arquivos de volta.
-                </p>
-                <button onClick={() => setExtraido(true)} className="btn-secondary text-sm inline-flex items-center gap-2">
-                  <PackageOpen className="w-4 h-4" /> Extrair aqui
-                </button>
-              </>
-            ) : (
-              <p className="text-sm" style={{ color: 'var(--color-success)' }}>
-                ✓ Os quatro arquivos voltaram inteiros, com o mesmo nome e o mesmo
-                conteúdo. Compactar não estraga nada no caminho.
-              </p>
-            )}
-          </div>
-        )}
+  const Raiz = ({ p, Ico, nome, filhos }: {
+    p: Pasta; Ico: typeof Folder; nome: string; filhos?: [Pasta, string][];
+  }) => (
+    <div>
+      <div className="flex items-center gap-1 px-1 py-1 rounded cursor-pointer"
+        style={{
+          paddingLeft: 4, fontSize: 12.5, color: '#1B1B1B',
+          background: !filhos?.length && pasta === p ? '#EAEAEA' : 'transparent',
+        }}
+        onClick={() => irPara(p)}>
+        <ChevronDown className="w-3.5 h-3.5 flex-none" style={{ visibility: filhos?.length ? 'visible' : 'hidden' }} />
+        <Ico className="w-4 h-4 flex-none" style={{ color: '#5B5B5B' }} />
+        <span className="truncate">{nome}</span>
       </div>
-
-      {/* ── 2. Salvar em pdf ── */}
-      {feito.compactar && (
-        <div className="card p-4">
-          <Cabecalho n={2} titulo="Salvar um documento em pdf" ok={feito.pdf} />
-          <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
-            O relatório vai para a coordenação, que abre em outro computador. Em
-            pdf ele chega com as margens, as fontes e as quebras de página do
-            jeito que você deixou — e ninguém muda o texto sem querer.
-          </p>
-
-          <div className="rounded-lg p-3" style={{ backgroundColor: 'var(--color-bg-input)' }}>
-            <div className="flex items-center gap-2 text-sm mb-3">
-              <FileText className="w-4 h-4" style={{ color: 'var(--color-text-dim)' }} />
-              <span>relatorio-da-unidade.odt</span>
-            </div>
-
-            {!pdfPronto && (
-              <>
-                <button onClick={() => setMenuAberto(a => !a)} className="btn-secondary text-xs py-1">
-                  Arquivo
-                </button>
-                {menuAberto && !salvarComo && (
-                  <div className="mt-2 space-y-1">
-                    <button
-                      onClick={() => setCorrecao('Salvar apenas grava por cima do mesmo .odt. Para virar pdf é preciso trocar o formato, e isso está em "Salvar como" ou em "Exportar".')}
-                      className="block w-full text-left text-sm px-2 py-1 rounded"
-                      style={{ backgroundColor: 'var(--color-bg-hover)' }}>
-                      Salvar
-                    </button>
-                    <button onClick={() => { setSalvarComo(true); setCorrecao(''); }}
-                      className="block w-full text-left text-sm px-2 py-1 rounded"
-                      style={{ backgroundColor: 'var(--color-bg-hover)' }}>
-                      Salvar como…
-                    </button>
-                    <button
-                      onClick={() => setCorrecao('Imprimir manda para o papel. O que você quer é gerar um arquivo — continue por "Salvar como".')}
-                      className="block w-full text-left text-sm px-2 py-1 rounded"
-                      style={{ backgroundColor: 'var(--color-bg-hover)' }}>
-                      Imprimir…
-                    </button>
-                  </div>
-                )}
-                {salvarComo && (
-                  <div className="mt-3 space-y-2">
-                    <label className="block text-sm">
-                      <span className="block text-xs mb-1" style={{ color: 'var(--color-text-dim)' }}>Tipo de arquivo</span>
-                      <select value={formato} onChange={e => setFormato(e.target.value)} className="input-field text-sm">
-                        <option value="odt">Documento de texto (.odt)</option>
-                        <option value="docx">Documento do Word (.docx)</option>
-                        <option value="txt">Texto sem formatação (.txt)</option>
-                        <option value="pdf">PDF (.pdf)</option>
-                      </select>
-                    </label>
-                    <button
-                      onClick={() => {
-                        if (formato === 'pdf') { setPdfPronto(true); setCorrecao(''); return; }
-                        setCorrecao(formato === 'txt'
-                          ? 'O .txt guarda só as letras: perde negrito, margem e imagem. Não serve para entregar um relatório formatado.'
-                          : 'Esse formato continua sendo documento editável, e vai abrir diferente em cada computador. Escolha PDF.');
-                      }}
-                      className="btn-primary text-sm">
-                      Salvar
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-
-            {pdfPronto && (
-              <div className="flex items-center gap-2 p-2 rounded-lg text-sm"
-                style={{ backgroundColor: 'var(--color-success-a10)' }}>
-                <Download className="w-4 h-4" style={{ color: 'var(--color-success)' }} />
-                <span>relatorio-da-unidade.pdf — pronto para enviar</span>
-              </div>
-            )}
-          </div>
+      {filhos?.map(([fp, fn]) => (
+        <div key={fp} className="flex items-center gap-1 px-1 py-1 rounded cursor-pointer"
+          style={{
+            paddingLeft: 22, fontSize: 12.5, color: '#1B1B1B',
+            background: pasta === fp ? '#EAEAEA' : 'transparent',
+          }}
+          onClick={() => irPara(fp)}>
+          <Folder className="w-4 h-4 flex-none" style={{ color: '#E6B14C' }} />
+          <span className="truncate">{fn}</span>
         </div>
-      )}
-
-      {/* ── 3. Instalar e desinstalar ── */}
-      {feito.pdf && (
-        <div className="card p-4">
-          <Cabecalho n={3} titulo="Instalar e desinstalar um programa" ok={feito.programa} />
-
-          {!instalado ? (
-            <>
-              <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
-                O clube quer um programa de desenhar nos computadores da sala. De
-                onde você baixa?
-              </p>
-              <div className="space-y-2">
-                <button onClick={() => { setInstalado(true); setCorrecao(''); }}
-                  className="block w-full text-left text-sm p-2 rounded-lg"
-                  style={{ backgroundColor: 'var(--color-bg-input)' }}>
-                  Do site oficial do programa, ou da loja de aplicativos do sistema
-                </button>
-                <button
-                  onClick={() => setCorrecao('Sites que juntam "programas grátis" costumam empacotar o instalador com outras coisas junto — barra de navegador, anúncio, às vezes pior. O programa até instala, e vem acompanhado.')}
-                  className="block w-full text-left text-sm p-2 rounded-lg"
-                  style={{ backgroundColor: 'var(--color-bg-input)' }}>
-                  De um site que reúne muitos programas grátis para baixar
-                </button>
-                <button
-                  onClick={() => setCorrecao('Programa pago que aparece de graça num link de mensagem é isca. É assim que entra a maior parte dos vírus em computador de casa.')}
-                  className="block w-full text-left text-sm p-2 rounded-lg"
-                  style={{ backgroundColor: 'var(--color-bg-input)' }}>
-                  De um link que chegou no grupo, com a versão paga liberada
-                </button>
-              </div>
-            </>
-          ) : !desinstalado ? (
-            <>
-              <p className="text-sm mb-2" style={{ color: 'var(--color-success)' }}>
-                ✓ Instalado a partir do site oficial.
-              </p>
-              <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
-                Passou um mês e ninguém usou o programa. A diretoria pediu para
-                tirar da máquina. Como se tira um programa de verdade?
-              </p>
-              <div className="space-y-2">
-                <button
-                  onClick={() => setCorrecao('Arrastar o atalho para a lixeira apaga o atalho, e só. O programa continua instalado, ocupando o mesmo espaço — some só o caminho até ele.')}
-                  className="flex items-center gap-2 w-full text-left text-sm p-2 rounded-lg"
-                  style={{ backgroundColor: 'var(--color-bg-input)' }}>
-                  <Trash2 className="w-4 h-4" style={{ color: 'var(--color-text-dim)' }} />
-                  Arrastar o atalho da área de trabalho para a lixeira
-                </button>
-                <button
-                  onClick={() => setCorrecao('Apagar a pasta tira os arquivos principais e deixa o resto: registros do sistema, atalhos e configurações espalhadas. O sistema continua achando que o programa existe.')}
-                  className="flex items-center gap-2 w-full text-left text-sm p-2 rounded-lg"
-                  style={{ backgroundColor: 'var(--color-bg-input)' }}>
-                  <Trash2 className="w-4 h-4" style={{ color: 'var(--color-text-dim)' }} />
-                  Apagar a pasta do programa dentro de Arquivos de Programas
-                </button>
-                <button onClick={() => { setDesinstalado(true); setCorrecao(''); }}
-                  className="flex items-center gap-2 w-full text-left text-sm p-2 rounded-lg"
-                  style={{ backgroundColor: 'var(--color-bg-input)' }}>
-                  <Settings className="w-4 h-4" style={{ color: 'var(--color-text-dim)' }} />
-                  Abrir Configurações, ir em Aplicativos e mandar desinstalar
-                </button>
-              </div>
-            </>
-          ) : (
-            <p className="text-sm" style={{ color: 'var(--color-success)' }}>
-              ✓ Desinstalado pelo caminho certo. O desinstalador desfaz o que a
-              instalação fez — arquivos, atalhos e registros — em vez de deixar
-              sobra pelo sistema.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* ── 4. Imprimir ── */}
-      {feito.programa && (
-        <div className="card p-4">
-          <Cabecalho n={4} titulo="Imprimir do jeito certo" ok={feito.imprimir} />
-          <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
-            O relatório tem 4 páginas e a diretoria pediu:
-            <strong> 3 cópias agrupadas, em qualidade alta, ajustadas à página e
-            com 2 páginas por folha</strong>. Acerte a janela de impressão antes
-            de mandar.
-          </p>
-
-          <div className="rounded-lg p-3 space-y-3" style={{ backgroundColor: 'var(--color-bg-input)' }}>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs w-32" style={{ color: 'var(--color-text-dim)' }}>Cópias</span>
-              {[1, 2, 3, 5].map(n => escolha(String(n), imp.copias === n, () => setImp(i => ({ ...i, copias: n }))))}
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs w-32" style={{ color: 'var(--color-text-dim)' }}>Agrupamento</span>
-              {escolha('Agrupado', imp.agrupado, () => setImp(i => ({ ...i, agrupado: true })))}
-              {escolha('Não agrupado', !imp.agrupado, () => setImp(i => ({ ...i, agrupado: false })))}
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs w-32" style={{ color: 'var(--color-text-dim)' }}>Qualidade</span>
-              {escolha('Rascunho', imp.qualidade === 'rascunho', () => setImp(i => ({ ...i, qualidade: 'rascunho' })))}
-              {escolha('Normal', imp.qualidade === 'normal', () => setImp(i => ({ ...i, qualidade: 'normal' })))}
-              {escolha('Alta', imp.qualidade === 'alta', () => setImp(i => ({ ...i, qualidade: 'alta' })))}
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs w-32" style={{ color: 'var(--color-text-dim)' }}>Tamanho</span>
-              {escolha('Tamanho real', imp.ajuste === 'real', () => setImp(i => ({ ...i, ajuste: 'real' })))}
-              {escolha('Ajustar à página', imp.ajuste === 'pagina', () => setImp(i => ({ ...i, ajuste: 'pagina' })))}
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs w-32" style={{ color: 'var(--color-text-dim)' }}>Páginas por folha</span>
-              {([1, 2, 4] as const).map(n => escolha(String(n), imp.porFolha === n, () => setImp(i => ({ ...i, porFolha: n }))))}
-            </div>
-
-            <p className="text-xs pt-2" style={{ color: 'var(--color-text-dim)', borderTop: '1px solid var(--color-border)' }}>
-              Vai sair: {imp.copias} {imp.copias === 1 ? 'cópia' : 'cópias'} de 4 páginas,
-              {imp.agrupado ? ' cada cópia inteira de uma vez' : ' todas as páginas 1, depois todas as 2'},
-              {imp.porFolha === 1 ? ' uma página por folha' : ` ${imp.porFolha} páginas por folha`} —
-              {' '}{Math.ceil(4 / imp.porFolha) * imp.copias} folhas de papel.
-            </p>
-          </div>
-
-          {!impresso ? (
-            <button onClick={imprimir} className="btn-primary text-sm mt-3 inline-flex items-center gap-2">
-              <Printer className="w-4 h-4" /> Imprimir
-            </button>
-          ) : (
-            <p className="text-sm mt-3" style={{ color: 'var(--color-success)' }}>
-              ✓ Saíram 3 cópias completas, uma depois da outra, em 6 folhas. Sem
-              agrupar seriam as mesmas folhas fora de ordem, para separar à mão.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* ── Entregar ── */}
-      {tudoFeito && (
-        <div className="card p-4 text-center">
-          {erro && <p className="mb-3 text-sm" style={{ color: 'var(--color-error)' }}>{erro}</p>}
-          <button onClick={registrar} disabled={gravando} className="btn-primary inline-flex">
-            {gravando ? 'Guardando…' : 'Concluir o laboratório'}
-          </button>
-        </div>
-      )}
+      ))}
     </div>
+  );
+
+  /* O menu ⋯ do Explorador, que é onde o WinRAR se enfia num Windows de
+     verdade — e o mesmo que abre com o botão direito. */
+  const opcoesDoMais = () => {
+    const um = selecionados.length === 1 ? selecionados[0] : null;
+    const soRar = um?.especie === 'rar';
+    return (
+      <>
+        <button disabled={!um} onClick={() => { setMenuMais(null); if (um) abrirItem(um); }}>
+          <FolderOpen className="w-3.5 h-3.5" /> Abrir
+        </button>
+        <div style={{ height: 1, background: '#E0E0E0', margin: '4px 6px' }} />
+        <button onClick={() => { setMenuMais(null); pedirCompactacao(); }}>
+          <span style={{ display: 'flex', width: 14 }}><IconeWinRAR tamanho={14} /></span>
+          Adicionar para o arquivo…
+        </button>
+        <button disabled={!soRar} onClick={() => { setMenuMais(null); abrir('winrar'); }}>
+          <span style={{ display: 'flex', width: 14 }}><IconeWinRAR tamanho={14} /></span>
+          Abrir com o WinRAR
+        </button>
+        <button disabled={!soRar} onClick={() => { setMenuMais(null); setDialogo('extrair'); }}>
+          <span style={{ display: 'flex', width: 14 }}><IconeWinRAR tamanho={14} /></span>
+          Extrair para "acampamento\"
+        </button>
+        <div style={{ height: 1, background: '#E0E0E0', margin: '4px 6px' }} />
+        <button onClick={() => { setMenuMais(null); naoFazParte('Propriedades'); }}>
+          Propriedades
+        </button>
+      </>
+    );
+  };
+
+  const abrirMais = (e: React.MouseEvent) => {
+    /* Sem parar aqui, o mesmo clique que abre o menu sobe até o window e cai
+       no ouvinte que o fecha — abriria e sumiria no mesmo gesto. */
+    e.stopPropagation();
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setMenuMais({ x: Math.min(r.left, window.innerWidth - 240), y: r.bottom + 4 });
+  };
+
+  return (
+    <LaboratorioEmTelaCheia
+      trilha={specialtyCode}
+      titulo="Compactar, exportar, instalar e imprimir"
+      tarefas={tarefas}
+      aviso={aviso}
+      acoes={acoes}
+      rodape={46}
+    >
+      <style>{CSS_WINDOWS}</style>
+
+      <div className="win-mesa">
+        <div className="win-area">
+          {/* ── O Explorador, sempre por baixo ── */}
+          <div className="win-janela cheia win">
+            <BarraDeTitulo
+              icone={<Folder className="w-4 h-4" style={{ color: '#E6B14C' }} />}
+              nome={NOME_DA_PASTA[pasta]}
+              aoAvisar={naoFazParte}
+            />
+
+            <div className="win-barra">
+              <Cmd Ico={FolderPlus} dica="Nova pasta" onClick={() => naoFazParte('Novo')}>Novo</Cmd>
+              <div className="win-sep" />
+              <Cmd Ico={Scissors} dica="Recortar (Ctrl+X)" desabilitado={!selecionados.length}
+                onClick={() => naoFazParte('Recortar')} />
+              <Cmd Ico={Copy} dica="Copiar (Ctrl+C)" desabilitado={!selecionados.length}
+                onClick={() => naoFazParte('Copiar')} />
+              <Cmd Ico={ClipboardPaste} dica="Colar (Ctrl+V)" desabilitado onClick={() => {}} />
+              <Cmd Ico={Pencil} dica="Renomear (F2)" desabilitado={selecionados.length !== 1}
+                onClick={() => naoFazParte('Renomear')} />
+              <Cmd Ico={Trash2} dica="Excluir (Del)" desabilitado={!selecionados.length} onClick={excluir} />
+              <div className="win-sep" />
+              <Cmd Ico={ArrowUpDown} dica="Classificar" onClick={() => naoFazParte('O menu Classificar')}>
+                Classificar
+              </Cmd>
+              <Cmd Ico={LayoutGrid} dica="Exibir" onClick={() => naoFazParte('O menu Exibir')}>Exibir</Cmd>
+              <Cmd Ico={MoreHorizontal} dica="Ver mais" onClick={abrirMais} />
+            </div>
+
+            <div className="win-endereco">
+              <button className="win-nav" aria-label="Voltar" disabled onClick={() => {}}>
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <button className="win-nav" aria-label="Avançar" disabled onClick={() => {}}>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button className="win-nav" aria-label="Acima"
+                disabled={pasta !== 'extraida' && pasta !== 'desenhador'}
+                onClick={() => irPara(pasta === 'extraida' ? 'clube' : 'programas')}>
+                <ArrowUp className="w-4 h-4" />
+              </button>
+              <button className="win-nav" aria-label="Atualizar" onClick={() => naoFazParte('Atualizar')}>
+                <RotateCw className="w-4 h-4" />
+              </button>
+
+              <div className="win-caminho">
+                {caminho.map((n, i) => (
+                  <span key={n} className="flex items-center flex-shrink-0">
+                    {i > 0 && <ChevronRight className="w-3 h-3" style={{ color: '#767676' }} />}
+                    <button>{n}</button>
+                  </span>
+                ))}
+              </div>
+
+              <div className="win-busca">
+                <Search className="w-3.5 h-3.5" />
+                <span className="truncate">Pesquisar em {NOME_DA_PASTA[pasta]}</span>
+              </div>
+            </div>
+
+            <div className="win-corpo">
+              <div className="win-painel">
+                <Raiz p="area" Ico={Monitor} nome="Área de Trabalho" />
+                <Raiz p="clube" Ico={Folder} nome="Documentos" filhos={[['clube', 'Clube']]} />
+                <Raiz p="programas" Ico={HardDrive} nome="Este Computador"
+                  filhos={[['programas', 'Arquivos de Programas']]} />
+              </div>
+
+              <div className="win-lista">
+                <div className="win-cabecalhos">
+                  <button className="win-c-nome" onClick={() => naoFazParte('Ordenar pela coluna')}>Nome</button>
+                  <button className="win-c-data" onClick={() => naoFazParte('Ordenar pela coluna')}>Data de modificação</button>
+                  <button className="win-c-tipo" onClick={() => naoFazParte('Ordenar pela coluna')}>Tipo</button>
+                  <button className="win-c-tam" onClick={() => naoFazParte('Ordenar pela coluna')}>Tamanho</button>
+                </div>
+
+                <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                  {itens.length === 0 && (
+                    <p style={{ padding: 16, fontSize: 12.5, color: '#767676' }}>Esta pasta está vazia.</p>
+                  )}
+                  {itens.map(item => (
+                    <div
+                      key={item.id}
+                      className={`win-linha${marcados.has(item.id) ? ' escolhida' : ''}`}
+                      onClick={() => alternar(item.id)}
+                      onDoubleClick={() => abrirItem(item)}
+                      onContextMenu={e => {
+                        e.preventDefault();
+                        setMarcados(m => (m.has(item.id) ? m : new Set(m).add(item.id)));
+                        setMenuMais({ x: Math.min(e.clientX, window.innerWidth - 240), y: e.clientY });
+                      }}
+                    >
+                      <div className="win-c-nome flex items-center gap-2 px-2">
+                        {/* A caixinha do Explorador. No Windows ela é opção; aqui
+                            é sempre, porque no celular não existe Ctrl para
+                            marcar o segundo arquivo. */}
+                        <span className={`win-caixa${marcados.has(item.id) ? ' marcada' : ''}`} aria-hidden="true">
+                          {marcados.has(item.id) ? '✓' : ''}
+                        </span>
+                        <IconeDoItem item={item} />
+                        <span className="truncate">{item.nome}</span>
+                      </div>
+                      <span className="win-c-data px-2 truncate" style={{ color: '#5B5B5B' }}>{item.data}</span>
+                      <span className="win-c-tipo px-2 truncate" style={{ color: '#5B5B5B' }}>
+                        {ROTULO_DO_TIPO[item.especie]}
+                      </span>
+                      <span className="win-c-tam px-2" style={{ color: '#5B5B5B' }}>
+                        {item.mb ? `${brasileiro(item.mb)} MB` : ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="win-status">
+              <span>{itens.length} {itens.length === 1 ? 'item' : 'itens'}</span>
+              {selecionados.length > 0 && (
+                <span>{selecionados.length} {selecionados.length === 1 ? 'item selecionado' : 'itens selecionados'}</span>
+              )}
+            </div>
+          </div>
+
+          {/* ── As janelas por cima ── */}
+          {emFoco === 'winrar' && (
+            <JanelaWinRAR
+              nomeDoArquivo={nomeDoRar}
+              linhas={DENTRO_DO_RAR}
+              aoExtrair={() => setDialogo('extrair')}
+              aoAvisar={naoFazParte}
+              aoMinimizar={() => minimizar('winrar')}
+              aoFechar={() => fechar('winrar')}
+            />
+          )}
+          {emFoco === 'editor' && (
+            <JanelaEditor
+              nome="relatorio-da-unidade.odt"
+              pdfPronto={pdfPronto}
+              aoEscolher={noMenuArquivo}
+              aoAvisar={naoFazParte}
+              aoMinimizar={() => minimizar('editor')}
+              aoFechar={() => fechar('editor')}
+            />
+          )}
+          {emFoco === 'config' && (
+            <JanelaConfiguracoes
+              desenhadorInstalado={programaPresente}
+              aoDesinstalar={desinstalar}
+              aoAvisar={naoFazParte}
+              aoMinimizar={() => minimizar('config')}
+              aoFechar={() => fechar('config')}
+            />
+          )}
+          {emFoco === 'navegador' && (
+            <JanelaNavegador
+              aoEscolher={escolherOrigem}
+              aoMinimizar={() => minimizar('navegador')}
+              aoFechar={() => fechar('navegador')}
+            />
+          )}
+
+          {/* ── Os diálogos ── */}
+          {dialogo === 'compactar' && (
+            <DialogoDoWindows
+              titulo="Nome e parâmetros do arquivo"
+              acoes={<>
+                <button className="win-bt primario" onClick={compactar}>OK</button>
+                <button className="win-bt" onClick={() => setDialogo(null)}>Cancelar</button>
+              </>}
+            >
+              <ControlesDeCompactar
+                nome={nomeDoRar} aoMudarNome={setNomeDoRar}
+                formato={formatoDoRar} aoMudarFormato={f => {
+                  setFormatoDoRar(f);
+                  setNomeDoRar(n => n.replace(/\.(rar|zip)$/, `.${f}`));
+                }}
+                apagar={apagarDepois} aoMudarApagar={setApagarDepois}
+              />
+            </DialogoDoWindows>
+          )}
+
+          {dialogo === 'extrair' && (
+            <DialogoDoWindows
+              titulo="Caminho e opções de extração"
+              acoes={<>
+                <button className="win-bt primario" onClick={extrair}>OK</button>
+                <button className="win-bt" onClick={() => setDialogo(null)}>Cancelar</button>
+              </>}
+            >
+              <ControlesDeExtrair destino="C:\Documentos\Clube\acampamento" />
+            </DialogoDoWindows>
+          )}
+
+          {dialogo === 'salvar-como' && (
+            <DialogoDoWindows
+              titulo="Salvar como"
+              acoes={<>
+                <button className="win-bt primario" onClick={salvarComo}>Salvar</button>
+                <button className="win-bt" onClick={() => setDialogo(null)}>Cancelar</button>
+              </>}
+            >
+              <ControlesDeSalvar nome="relatorio-da-unidade" formato={formato} aoMudarFormato={setFormato} />
+            </DialogoDoWindows>
+          )}
+
+          {dialogo === 'imprimir' && (
+            <DialogoDoWindows
+              titulo="Imprimir"
+              acoes={<>
+                <button className="win-bt primario" onClick={imprimir}>Imprimir</button>
+                <button className="win-bt" onClick={() => setDialogo(null)}>Cancelar</button>
+              </>}
+            >
+              <ControlesDeImpressao imp={imp} aoMudar={setImp} />
+            </DialogoDoWindows>
+          )}
+
+          {/* ── O menu ⋯ ── */}
+          {menuMais && (
+            <div className="win-menu" style={{ left: menuMais.x, top: menuMais.y }}
+              onClick={e => e.stopPropagation()}>
+              {opcoesDoMais()}
+            </div>
+          )}
+
+          {/* ── O menu Iniciar ── */}
+          {iniciar && (
+            <div className="win-iniciar" onClick={e => e.stopPropagation()}>
+              <p style={{ fontSize: 11.5, color: '#5B5B5B', padding: '2px 10px 6px' }}>Todos os aplicativos</p>
+              <button onClick={() => abrir('navegador')}>
+                <Globe className="w-4 h-4" style={{ color: '#0F6CBD' }} /> Navegador Web
+              </button>
+              <button onClick={() => abrir('editor')}>
+                <FileText className="w-4 h-4" style={{ color: '#1F6FB2' }} /> Editor de Texto
+              </button>
+              <button onClick={() => abrir('config')}>
+                <Settings className="w-4 h-4" style={{ color: '#0F6CBD' }} /> Configurações
+              </button>
+              <button onClick={() => (rarCriado ? abrir('winrar') : naoFazParte('O WinRAR sem arquivo aberto'))}>
+                <IconeWinRAR /> WinRAR
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ── A barra de tarefas ── */}
+        <div className="win-tarefas">
+          <button aria-label="Iniciar" title="Iniciar"
+            onClick={e => { e.stopPropagation(); setIniciar(a => !a); setMenuMais(null); }}>
+            <Grid2x2 className="w-5 h-5" style={{ color: '#0F6CBD' }} />
+          </button>
+          <button aria-label="Explorador de Arquivos" title="Explorador de Arquivos"
+            className="aberta" onClick={() => { setMinimizados(new Set(abertos)); }}>
+            <Folder className="w-5 h-5" style={{ color: '#E6B14C' }} />
+          </button>
+          {abertos.map(p => {
+            const [rotulo, Desenho] = ({
+              winrar: ['WinRAR', () => <IconeWinRAR tamanho={20} />] as const,
+              editor: ['Editor de Texto', () => <FileText className="w-5 h-5" style={{ color: '#1F6FB2' }} />] as const,
+              config: ['Configurações', () => <Settings className="w-5 h-5" style={{ color: '#0F6CBD' }} />] as const,
+              navegador: ['Navegador Web', () => <Globe className="w-5 h-5" style={{ color: '#0F6CBD' }} />] as const,
+            })[p];
+            return (
+              <button key={p} aria-label={rotulo} title={rotulo} className="aberta"
+                onClick={() => (emFoco === p ? minimizar(p) : abrir(p))}>
+                <Desenho />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </LaboratorioEmTelaCheia>
   );
 }

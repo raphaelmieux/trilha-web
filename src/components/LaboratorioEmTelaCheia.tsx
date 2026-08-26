@@ -59,6 +59,13 @@ interface Props {
   children: React.ReactNode;
   /** As ações da lição: entregar, recomeçar. Ficam no pé do painel. */
   acoes?: React.ReactNode;
+  /**
+   * Altura, em pixels, do que o programa imitado já tem colado no pé da tela —
+   * barra de tarefas, régua de status. A cápsula e a bolha da plataforma sobem
+   * essa altura para não tapá-lo: é a mesma regra da barra de título, que o que
+   * o desbravador precisa reconhecer depois não se cobre.
+   */
+  rodape?: number;
 }
 
 /*
@@ -84,7 +91,7 @@ function marcarAvisado(): void {
 }
 
 export default function LaboratorioEmTelaCheia({
-  trilha, titulo, tarefas, aviso, children, acoes,
+  trilha, titulo, tarefas, aviso, children, acoes, rodape = 0,
 }: Props) {
   const [painelAberto, setPainelAberto] = useState(true);
   const [avisoDeTela, setAvisoDeTela] = useState(() => !jaAvisado());
@@ -187,8 +194,9 @@ export default function LaboratorioEmTelaCheia({
       {/* Acima da barra de status, e não em cima dela: a régua de baixo do
           programa continua legível, que é a regra desta moldura — o que a
           pessoa precisa reconhecer depois não se cobre. */}
-      <div className="hidden lg:flex absolute left-3 bottom-9 z-10 items-center gap-2.5 rounded-full pl-2 pr-3.5 py-1.5"
+      <div className="hidden lg:flex absolute left-3 z-10 items-center gap-2.5 rounded-full pl-2 pr-3.5 py-1.5"
         style={{
+          bottom: 36 + rodape,
           background: 'rgba(10, 11, 16, 0.74)',
           backdropFilter: 'blur(14px) saturate(140%)',
           WebkitBackdropFilter: 'blur(14px) saturate(140%)',
@@ -209,8 +217,9 @@ export default function LaboratorioEmTelaCheia({
       </div>
 
       {/* B · a bolha do celular */}
-      <div className="lg:hidden absolute right-3 bottom-9 z-10 rounded-2xl"
+      <div className="lg:hidden absolute right-3 z-10 rounded-2xl"
         style={{
+          bottom: 36 + rodape,
           width: bolhaAberta ? 'min(320px, calc(100vw - 24px))' : 'auto',
           background: 'rgba(10, 11, 16, 0.78)',
           backdropFilter: 'blur(14px) saturate(140%)',

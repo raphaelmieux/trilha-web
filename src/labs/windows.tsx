@@ -130,7 +130,9 @@ export const CSS_WINDOWS = `
     /* Escrito com o pai junto porque .win-cabecalhos button é mais
        específico do que a classe da coluna, e ganharia o display. */
     .win-linha .win-c-data, .win-linha .win-c-tipo,
-    .win-cabecalhos .win-c-data, .win-cabecalhos .win-c-tipo { display: none; }
+    .win-cabecalhos .win-c-data, .win-cabecalhos .win-c-tipo,
+    .rar-linha .win-c-tipo, .rar-cabecalhos .win-c-tipo { display: none; }
+    .win-janela.media { inset: 8px; }
   }
 
   .win-menu {
@@ -190,6 +192,12 @@ export const CSS_WINDOWS = `
   }
   /* A janela de baixo ocupa tudo, como o Explorador maximizado. */
   .win-janela.cheia { inset: 0; border-radius: 0; border: none; box-shadow: none; }
+  /* As de cima deixam ver a de baixo pela borda — é o que diz que existe uma
+     janela atrás, e não que a tela inteira virou outro programa.
+     O vão de baixo é maior do que o de cima de propósito: é ali que a cápsula
+     da plataforma flutua, e sem o vão ela cairia justamente sobre a régua de
+     status da janela de cima. */
+  .win-janela.media { inset: 5% 6% 96px 6%; }
 
   .win-tarefas {
     flex: none; height: 46px; display: flex; align-items: center; justify-content: center;
@@ -238,6 +246,16 @@ export const CSS_WINDOWS = `
     border-radius: 4px;
   }
   .win-menus > button:hover { background: #E5E5E5; }
+
+  /* Controles de diálogo. O Windows desenha campo e lista do mesmo jeito nos
+     dois, e escrever isso em cada janela faria elas divergirem. */
+  .win-campo, .win-lista-op {
+    height: 30px; padding: 0 8px; font-size: 12.5px; color: #1B1B1B;
+    background: #FFFFFF; border: 1px solid #B8B8B8; border-radius: 3px; width: 100%;
+  }
+  .win-campo:focus, .win-lista-op:focus { outline: 2px solid #0F6CBD; outline-offset: -1px; }
+  .win-rotulo-campo { display: block; font-size: 12px; color: #444; margin-bottom: 4px; }
+  .win-marca { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #1B1B1B; }
 
   /* ── WinRAR: outra época, outra paleta ── */
   .rar { background: #F0F0F0; color: #000; font-family: 'Segoe UI', Tahoma, sans-serif; }
@@ -298,6 +316,50 @@ export function BarraDeTitulo({ icone, nome, aoAvisar }: {
         <button onClick={() => aoAvisar('Minimizar')} aria-label="Minimizar"><Minus className="w-3.5 h-3.5" /></button>
         <button onClick={() => aoAvisar('Maximizar')} aria-label="Maximizar"><Square className="w-3 h-3" /></button>
         <button onClick={() => aoAvisar('Fechar a janela')} aria-label="Fechar"><X className="w-3.5 h-3.5" /></button>
+      </div>
+    </div>
+  );
+}
+
+/*
+  O ícone do WinRAR: três livros empilhados. Vale a pena desenhar em vez de
+  pegar um ícone genérico de pasta zipada — é por essa pilha que a pessoa
+  reconhece o programa na máquina do clube, e é ela que aparece na barra de
+  tarefas do laboratório.
+*/
+export function IconeWinRAR({ tamanho = 16 }: { tamanho?: number }) {
+  return (
+    <svg width={tamanho} height={tamanho} viewBox="0 0 16 16" aria-hidden="true">
+      <rect x="1.5" y="3" width="3.4" height="10.5" rx="0.6" fill="#8B1A1A" />
+      <rect x="5.4" y="4.2" width="3.4" height="9.3" rx="0.6" fill="#1F4E9C" />
+      <rect x="9.3" y="2.4" width="3.4" height="11.1" rx="0.6" fill="#6B2E8F" />
+      <rect x="1.5" y="5.4" width="3.4" height="1" fill="#F0C674" />
+      <rect x="5.4" y="6.4" width="3.4" height="1" fill="#F0C674" />
+      <rect x="9.3" y="4.8" width="3.4" height="1" fill="#F0C674" />
+    </svg>
+  );
+}
+
+/**
+ * A barra de título de uma janela solta — as que abrem por cima do Explorador.
+ * Diferente da do Explorador, que carrega guia; esta é a clássica: ícone e
+ * nome à esquerda, os botões à direita.
+ */
+export function BarraDeJanela({ icone, titulo, aoMinimizar, aoFechar }: {
+  icone: React.ReactNode; titulo: string;
+  aoMinimizar: () => void; aoFechar: () => void;
+}) {
+  return (
+    <div className="win-titulo" style={{ paddingLeft: 10, height: 34, gap: 8 }}>
+      {icone}
+      <span className="truncate" style={{ fontSize: 12.5 }}>{titulo}</span>
+      <div className="win-botoes-janela">
+        <button onClick={aoMinimizar} aria-label="Minimizar" style={{ height: 34 }}>
+          <Minus className="w-3.5 h-3.5" />
+        </button>
+        <button onClick={aoFechar} aria-label="Fechar" style={{ height: 34 }}>
+          <X className="w-3.5 h-3.5" />
+        </button>
       </div>
     </div>
   );

@@ -110,7 +110,27 @@ duas é do CSS, por largura.
 
 O que a sobreposição não cobre: **barra de título e faixa de opções**. São elas
 que o desbravador precisa reconhecer depois, e tapá-las para caber um aviso seria
-esconder a matéria. Canto inferior e lateral são de quem sobrepõe.
+esconder a matéria. Canto inferior e lateral são de quem sobrepõe — e quando o
+programa imitado tem coisa própria colada no pé (barra de tarefas, régua de
+status), o laboratório diz a altura dela em `rodape` e a cápsula sobe.
+
+**Mais de um programa quer dizer área de trabalho, não sanfona.** O laboratório
+de compactar precisa de quatro — Explorador, WinRAR, editor e Configurações —, e
+empilhá-los em cartões faria um acordeão que não existe em computador nenhum.
+Existe área de trabalho com janelas por cima e barra de tarefas embaixo. As peças
+de janela moram em `src/labs/windows.tsx`, compartilhadas: duas cópias divergem
+no primeiro ajuste, e a trilha passa a mostrar dois "Windows" diferentes.
+
+**A janela encolhe como a de verdade encolhe.** Abaixo de 768 px o Explorador
+tira o texto dos comandos, a caixa de pesquisa e as colunas do meio, e o painel
+de navegação afina. Quando isso tira o único caminho até uma tarefa — ordenar por
+data, que só existia no cabeçalho da coluna —, o caminho que falta é o que o
+programa de verdade também tem: o menu Classificar. Reduzir a tela nunca reduz o
+que dá para fazer nela.
+
+A moldura avisa **uma vez**, no celular, que a experiência é melhor em tela
+maior, e guarda a resposta. Aviso que volta a cada lição é o que ensina a pessoa
+a não ler avisos.
 
 Superfície clara dentro da moldura precisa **dizer a própria cor**: a plataforma
 pinta `h1..h4` de quase branco, o que está certo num aplicativo escuro e some em
