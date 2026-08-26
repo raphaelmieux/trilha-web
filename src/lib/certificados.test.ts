@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { existsSync } from 'node:fs';
+import { getOpenSpecialties } from '../curriculum';
 import { comoCertificadoVerificado, codigoDaArte } from './certificados';
 import type { RetornoDe } from '../types';
 
@@ -75,5 +77,31 @@ describe('codigoDaArte', () => {
 
   it('cai na AP034 para código que o currículo não conhece', () => {
     expect(codigoDaArte('AP099')).toBe('AP034');
+  });
+});
+
+/*
+  Toda trilha aberta tem a arte do certificado.
+
+  `codigoDaArte` devolve o próprio código quando o currículo conhece a trilha, e
+  é dele que a tela e o PDF montam o caminho do arquivo. Uma trilha aberta sem
+  `public/assets/certificates/<CODE>.png` não quebra build, nem tipo, nem
+  nenhum outro teste: ela produz um certificado com o fundo faltando, e quem
+  descobre é a primeira pessoa que concluir a trilha inteira — no documento que
+  ela leva ao clube.
+
+  A AP042 chegou perto disso: a trilha ficou pronta antes da arte, e entre as
+  duas houve uma janela em que só um teste como este teria avisado.
+
+  A trilha em construção fica de fora de propósito: ela não emite certificado
+  nenhum, e cobrar a arte antes de a trilha existir travaria o anúncio de uma
+  especialidade que ainda não tem conteúdo.
+*/
+describe('a arte do certificado', () => {
+  it('existe para toda trilha aberta', () => {
+    const faltando = getOpenSpecialties()
+      .map(e => codigoDaArte(e.code))
+      .filter(codigo => !existsSync(`public/assets/certificates/${codigo}.png`));
+    expect(faltando, `sem arte: ${faltando.join(', ')}`).toEqual([]);
   });
 });
