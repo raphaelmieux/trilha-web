@@ -218,7 +218,11 @@ export default function ImageCompressLab({ specialtyCode, lessonCode, lessonTitl
   const dentroDoOrcamento = !!saida && saida.bytes <= ORCAMENTO;
   const aindaVisivel = !!saida && saida.w >= LARGURA_MINIMA_VISIVEL;
   const proporcaoDoOrcamento = saida ? saida.bytes / ORCAMENTO : 0;
-  const economia = bytesOriginais && saida ? 1 - saida.bytes / bytesOriginais : 0;
+  /* Quantas vezes menor, e não quantos por cento: 2,71 MB virando 4,5 KB dá
+     99,83%, que arredonda para "100% menor" — e 100% menor é zero byte. Vezes
+     é exato em qualquer escala, e diz mais a quem tem dez anos. */
+  const vezesMenor = bytesOriginais && saida ? bytesOriginais / saida.bytes : 0;
+  const quantasVezes = vezesMenor >= 10 ? Math.round(vezesMenor) : Math.round(vezesMenor * 10) / 10;
 
   const tarefas = [
     {
@@ -284,8 +288,9 @@ export default function ImageCompressLab({ specialtyCode, lessonCode, lessonTitl
         <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
         <h1 className="text-2xl font-bold mb-2">{lessonTitle} — concluído!</h1>
         <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
-          {formatBytes(bytesOriginais)} viraram {formatBytes(saida?.bytes ?? 0)} sem que a foto
-          deixasse de ser vista. É essa troca que faz uma página abrir no 3G do acampamento.
+          {formatBytes(bytesOriginais)} viraram {formatBytes(saida?.bytes ?? 0)} — {quantasVezes.toLocaleString('pt-BR')} vezes
+          menor — sem que a foto deixasse de ser vista. É essa troca que faz uma página
+          abrir no 3G do acampamento.
         </p>
         <Link to={`/especialidade/${specialtyCode}`} className="btn-primary">Voltar para a Trilha</Link>
       </div>
@@ -409,7 +414,7 @@ export default function ImageCompressLab({ specialtyCode, lessonCode, lessonTitl
               <p className="cp-nota">
                 {!saida ? 'Abra uma foto para medir.'
                   : dentroDoOrcamento
-                    ? `Dentro do limite de ${formatBytes(ORCAMENTO)}. A foto ficou ${Math.round(economia * 100)}% menor que a original.`
+                    ? `Dentro do limite de ${formatBytes(ORCAMENTO)}. A foto ficou ${quantasVezes.toLocaleString('pt-BR')} vezes menor que a original.`
                     : `O limite é ${formatBytes(ORCAMENTO)}. Falta tirar ${formatBytes(saida.bytes - ORCAMENTO)}.`}
               </p>
             </div>
