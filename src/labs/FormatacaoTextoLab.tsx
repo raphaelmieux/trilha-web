@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
-  List, ListOrdered, Copy, ClipboardPaste, FileCheck2, CheckCircle2, Circle,
-  MousePointerClick, RotateCcw,
+  Strikethrough, Subscript, Superscript,
+  AlignLeft, AlignCenter, AlignRight, AlignJustify,
+  List, ListOrdered, ListTree, IndentIncrease, IndentDecrease,
+  ArrowDownAZ, Pilcrow, ArrowUpDown, PaintBucket, Square,
+  Copy, ClipboardPaste, Scissors, Paintbrush, Eraser, CaseSensitive, Columns,
+  Highlighter, Baseline, Sparkles, Search, ChevronDown, Type,
+  CheckCircle2, Circle, FileCheck2, RotateCcw, Minus, X,
 } from 'lucide-react';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
@@ -12,7 +16,7 @@ import {
 } from '../lib/progress';
 
 /*
- * AP042 requisito 3 — as sete demonstrações de formatação.
+ * AP042 requisito 3 — as sete demonstrações de formatação, num Word.
  *
  * O requisito manda ajustar margem, copiar, colar, trocar fonte, usar negrito,
  * alinhar, espaçar e listar. São gestos, e gesto não se prova em múltipla
@@ -20,24 +24,42 @@ import {
  * apertado um. Então aqui existe um documento de verdade, e o laboratório
  * observa cada operação acontecer nele.
  *
- * ── Por que um documento só, e não sete exercícios ───────────────────────
- * Sete telas, uma por alínea, ensinariam sete botões soltos. O que se aprende
- * aqui é formatar um documento — a ordem em que as coisas se fazem, e o fato de
- * que a folha se acerta antes do texto. Um documento só também deixa o erro
- * aparecer onde ele aparece na vida: o parágrafo justificado ao lado do que não
- * foi, e a diferença visível entre os dois.
+ * ── Por que a interface imita o Word, e não a plataforma ─────────────────
+ * O laboratório de pastas e arquivos tomou a decisão contrária, e está escrito
+ * lá: usa as cores da plataforma porque "imitar o cinza do sistema deixaria uma
+ * ilha clara dentro de um aplicativo escuro, e o que precisa ser reconhecido é o
+ * arranjo, não a paleta".
+ *
+ * Aqui a conta dá outro resultado, por dois motivos. O primeiro é que o
+ * gerenciador de arquivos existe em toda máquina com aparência diferente, e o
+ * Word é um programa só, com uma interface que o desbravador vai encontrar
+ * idêntica na escola e no clube — a faixa de opções, as guias, os grupos com o
+ * nome embaixo. O segundo é que metade do que o requisito cobra é *onde fica*:
+ * margem, orientação e tamanho do papel não estão na guia Início, estão em
+ * Layout, e um painel inventado ensinaria a procurar no lugar errado.
+ *
+ * A ilha clara continua sendo um risco real, e ele é resolvido pela moldura: a
+ * janela tem barra de título, botões de janela e sombra, então lê-se como
+ * janela de outro programa dentro da plataforma — que é o que ela é. O painel
+ * de tarefas fica fora dela, na paleta escura, e a separação entre "o exercício"
+ * e "o programa" fica visível.
+ *
+ * ── O que é fiel de propósito ────────────────────────────────────────────
+ *   · as guias na ordem do Word, com Início e Layout funcionando;
+ *   · os grupos com o rótulo embaixo, e os botões na posição em que estão lá;
+ *   · os atalhos em português nas dicas — Negrito é Ctrl+N, e não Ctrl+B, que
+ *     é a primeira coisa que confunde quem aprendeu em vídeo em inglês;
+ *   · a régua acompanhando a margem escolhida;
+ *   · a barra de status contando as palavras de verdade.
+ *
+ * Os botões que não fazem parte do exercício estão desenhados e não respondem —
+ * tirá-los deixaria a faixa irreconhecível, e fazê-los funcionar seria escrever
+ * um editor de texto. Clicar num deles diz isso, em vez de ficar mudo.
  *
  * ── A seleção primeiro ───────────────────────────────────────────────────
- * Nenhum botão faz nada sem bloco selecionado, e isso é de propósito. É o engano
- * número um de quem começa: apertar negrito sem ter marcado nada, não ver
- * mudança nenhuma e concluir que o programa quebrou. Aqui o programa responde —
- * diz que falta escolher onde — em vez de ficar mudo como o programa de verdade
- * fica.
- *
- * ── O documento começa errado ────────────────────────────────────────────
- * Papel Carta, deitado, margens estreitas. Se ele começasse em A4 retrato, o
- * requisito 3.1 estaria cumprido antes de a pessoa tocar em nada, e "ajustar a
- * folha" viraria "conferir a folha". A tarefa tem que exigir a mudança.
+ * Nenhum botão faz nada sem seleção, e isso é de propósito: é o engano número um
+ * de quem começa. No Word o botão aplica ao ponto de inserção e nada muda na
+ * tela, e a pessoa conclui que o programa quebrou. Aqui o programa responde.
  */
 
 type Alinhamento = 'esquerda' | 'centro' | 'direita' | 'justificado';
@@ -45,6 +67,7 @@ type Lista = 'nenhuma' | 'marcadores' | 'numeracao';
 type Papel = 'A4' | 'Carta';
 type Orientacao = 'retrato' | 'paisagem';
 type Margem = 'estreita' | 'normal' | 'larga';
+type Guia = 'inicio' | 'layout';
 
 interface Bloco {
   id: string;
@@ -62,12 +85,26 @@ interface Bloco {
   lista: Lista;
 }
 
-const FONTES = ['Times New Roman', 'Arial', 'Calibri', 'Georgia'];
-const TAMANHOS = [10, 11, 12, 14, 18, 24];
+/* Cada fonte com a pilha que a faz parecer o que ela é, já que nenhuma delas
+   está instalada num Linux: o que precisa mudar na tela é o desenho da letra. */
+const FONTES: { nome: string; pilha: string }[] = [
+  { nome: 'Aptos', pilha: 'system-ui, "Segoe UI", sans-serif' },
+  { nome: 'Arial', pilha: 'Arial, Helvetica, sans-serif' },
+  { nome: 'Calibri', pilha: 'Carlito, Calibri, system-ui, sans-serif' },
+  { nome: 'Comic Sans MS', pilha: '"Comic Sans MS", "Comic Neue", cursive' },
+  { nome: 'Georgia', pilha: 'Georgia, "Times New Roman", serif' },
+  { nome: 'Times New Roman', pilha: '"Times New Roman", Times, serif' },
+  { nome: 'Verdana', pilha: 'Verdana, Geneva, sans-serif' },
+];
+const pilhaDaFonte = (nome: string) => FONTES.find(f => f.nome === nome)?.pilha ?? 'sans-serif';
+
+const TAMANHOS = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48];
+
+const FONTE_INICIAL = 'Aptos';
 
 const bloco = (id: string, texto: string, grupo: Bloco['grupo']): Bloco => ({
   id, texto, grupo,
-  fonte: 'Times New Roman', tamanho: 12,
+  fonte: FONTE_INICIAL, tamanho: 11,
   negrito: false, italico: false, sublinhado: false,
   alinhamento: 'esquerda', espacamento: 1, lista: 'nenhuma',
 });
@@ -88,15 +125,16 @@ const DOCUMENTO: Bloco[] = [
   bloco('ass', 'Curitiba, 12 de outubro', 'assinatura'),
 ];
 
+interface Folha { papel: Papel; orientacao: Orientacao; margem: Margem }
+
 interface Meta {
   id: string;
   titulo: string;
   detalhe: string;
-  /** Cumprida? Recebe o documento e a folha como estão agora. */
+  /** Onde, na faixa de opções, isso se resolve. */
+  onde: string;
   feita: (d: Bloco[], f: Folha) => boolean;
 }
-
-interface Folha { papel: Papel; orientacao: Orientacao; margem: Margem }
 
 const doGrupo = (d: Bloco[], g: Bloco['grupo']) => d.filter(b => b.grupo === g);
 const um = (d: Bloco[], id: string) => d.find(b => b.id === id);
@@ -106,33 +144,38 @@ const METAS: Meta[] = [
     id: 'folha',
     titulo: 'Acertar a folha',
     detalhe: 'Deixe o papel em A4, na orientação retrato e com margens normais. O documento chegou com a folha errada.',
+    onde: 'Layout › Configurar Página',
     feita: (_d, f) => f.papel === 'A4' && f.orientacao === 'retrato' && f.margem === 'normal',
   },
   {
     id: 'copiar',
     titulo: 'Copiar e colar',
     detalhe: 'O nome do clube precisa aparecer também no fim, embaixo da data. Copie a primeira linha e cole no fim do documento.',
+    onde: 'Início › Área de Transferência',
     feita: d => doGrupo(d, 'clube').length >= 2 && d[d.length - 1].grupo === 'clube',
   },
   {
     id: 'fonte',
     titulo: 'Trocar a fonte e o tamanho',
     detalhe: 'O título tem que se destacar: escolha outra fonte para ele e um tamanho de 18 ou mais.',
+    onde: 'Início › Fonte',
     feita: d => {
       const t = um(d, 'titulo');
-      return !!t && t.fonte !== 'Times New Roman' && t.tamanho >= 18;
+      return !!t && t.fonte !== FONTE_INICIAL && t.tamanho >= 18;
     },
   },
   {
     id: 'destaque',
     titulo: 'Usar negrito, itálico e sublinhado',
     detalhe: 'Título em negrito. O parágrafo que cita o nome do livro em itálico. A data sublinhada.',
+    onde: 'Início › Fonte',
     feita: d => !!um(d, 'titulo')?.negrito && !!um(d, 'p2')?.italico && !!um(d, 'ass')?.sublinhado,
   },
   {
     id: 'alinhar',
     titulo: 'Alinhar cada parte',
     detalhe: 'Título centralizado, os dois parágrafos do corpo justificados e a data alinhada à direita.',
+    onde: 'Início › Parágrafo',
     feita: d => um(d, 'titulo')?.alinhamento === 'centro'
       && doGrupo(d, 'corpo').every(b => b.alinhamento === 'justificado')
       && um(d, 'ass')?.alinhamento === 'direita',
@@ -141,26 +184,32 @@ const METAS: Meta[] = [
     id: 'espacar',
     titulo: 'Ajustar o espaçamento',
     detalhe: 'Os dois parágrafos do corpo com espaçamento 1,5, que é o pedido em trabalho escolar.',
+    onde: 'Início › Parágrafo',
     feita: d => doGrupo(d, 'corpo').every(b => b.espacamento === 1.5),
   },
   {
     id: 'listas',
     titulo: 'Usar marcadores e numeração',
     detalhe: 'O material vira lista com marcadores — a ordem não importa. A montagem da barraca vira lista numerada, porque ali a ordem importa.',
+    onde: 'Início › Parágrafo',
     feita: d => doGrupo(d, 'materiais').every(b => b.lista === 'marcadores')
       && doGrupo(d, 'passos').every(b => b.lista === 'numeracao'),
   },
 ];
 
-const MARGEM_EM_PX: Record<Margem, number> = { estreita: 8, normal: 22, larga: 40 };
+/* Medidas em centímetros, como o Word mostra em Margens. */
+const MARGENS_CM: Record<Margem, number> = { estreita: 1.27, normal: 2.5, larga: 5.08 };
+const LARGURA_CM: Record<Papel, number> = { A4: 21, Carta: 21.6 };
 
 interface Props { specialtyCode: string; lessonCode: string; requirementCodes: string[]; userId: string; }
 
 export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirementCodes, userId }: Props) {
   const [doc, setDoc] = useState<Bloco[]>(DOCUMENTO);
   const [folha, setFolha] = useState<Folha>({ papel: 'Carta', orientacao: 'paisagem', margem: 'estreita' });
+  const [guia, setGuia] = useState<Guia>('inicio');
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [areaDeTransferencia, setAreaDeTransferencia] = useState<Bloco | null>(null);
+  const [menu, setMenu] = useState<string | null>(null);
   const [aviso, setAviso] = useState('');
   const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState('');
@@ -169,15 +218,19 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
   const alvo = doc.find(b => b.id === selecionado) ?? null;
   const cumpridas = METAS.filter(m => m.feita(doc, folha));
   const tudoFeito = cumpridas.length === METAS.length;
+  const palavras = doc.reduce((n, b) => n + b.texto.trim().split(/\s+/).length, 0);
+
+  const fecharMenu = () => setMenu(null);
 
   /*
     Toda mudança de formatação passa por aqui, e por isso o aviso de "selecione
-    primeiro" também. Espalhar essa checagem por cada botão deixaria um deles
-    de fora mais cedo ou mais tarde.
+    primeiro" também. Espalhar essa checagem por cada botão deixaria um deles de
+    fora mais cedo ou mais tarde.
   */
   const formatar = (mudanca: Partial<Bloco>, valeParaOGrupo = false) => {
+    fecharMenu();
     if (!alvo) {
-      setAviso('Escolha antes onde aplicar: clique num trecho do documento. Botão de formatação sem seleção não faz nada — no computador de verdade também não.');
+      setAviso('Escolha antes onde aplicar: clique num parágrafo do documento. Botão de formatação sem seleção não faz nada — no Word também não.');
       return;
     }
     setAviso('');
@@ -187,22 +240,27 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
     }));
   };
 
+  const naoFazParte = (nome: string) => {
+    fecharMenu();
+    setAviso(`${nome} existe no Word de verdade, e está aqui para a faixa ficar igual — mas não faz parte deste exercício.`);
+  };
+
   const copiar = () => {
+    fecharMenu();
     if (!alvo) {
-      setAviso('Selecione o trecho que você quer copiar antes de apertar Copiar.');
+      setAviso('Selecione o parágrafo que você quer copiar antes de apertar Copiar.');
       return;
     }
     setAreaDeTransferencia(alvo);
-    setAviso(`"${alvo.texto.slice(0, 30)}…" foi copiado. Agora escolha onde colar.`);
+    setAviso(`"${alvo.texto.slice(0, 34)}…" foi para a área de transferência. Agora escolha onde colar.`);
   };
 
   const colar = () => {
+    fecharMenu();
     if (!areaDeTransferencia) {
-      setAviso('Não há nada copiado ainda. Selecione um trecho e aperte Copiar primeiro.');
+      setAviso('A área de transferência está vazia. Selecione um parágrafo e aperte Copiar primeiro.');
       return;
     }
-    /* Sem seleção, cola no fim — que é o comportamento de quem clicou no fim do
-       documento antes de colar, e é o que a tarefa pede. */
     const copia: Bloco = {
       ...areaDeTransferencia,
       id: `${areaDeTransferencia.id}-copia-${doc.length}`,
@@ -220,6 +278,8 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
     setFolha({ papel: 'Carta', orientacao: 'paisagem', margem: 'estreita' });
     setSelecionado(null);
     setAreaDeTransferencia(null);
+    setGuia('inicio');
+    fecharMenu();
     setAviso('');
   };
 
@@ -257,9 +317,10 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
         <FileCheck2 className="w-16 h-16 mx-auto mb-3" style={{ color: 'var(--color-success)' }} />
         <h2 className="text-xl font-bold mb-2">Documento pronto para entregar!</h2>
         <p style={{ color: 'var(--color-text-muted)' }}>
-          Você acertou a folha, copiou, trocou a letra, destacou, alinhou, espaçou
-          e listou. É exatamente o que se faz com um trabalho antes de imprimir —
-          e agora você faz num programa de verdade sem procurar botão.
+          Você acertou a folha em Layout, copiou, trocou a letra, destacou,
+          alinhou, espaçou e listou — nos mesmos lugares em que esses botões ficam
+          no Word de verdade. Abrir o programa na escola agora é reconhecer a
+          faixa, e não procurar nela.
         </p>
         <Link to={`/especialidade/${specialtyCode}`} className="btn-primary mt-4 inline-flex">
           Voltar para a Trilha
@@ -268,24 +329,135 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
     );
   }
 
-  const Botao = ({ onClick, ativo, titulo, children }: {
-    onClick: () => void; ativo?: boolean; titulo: string; children: React.ReactNode;
+  // ── Peças da faixa de opções ──────────────────────────────────────────
+
+  /** Botão pequeno da faixa, com dica igual à do Word. */
+  const Bt = ({ dica, ativo, aoClicar, children, largo }: {
+    dica: string; ativo?: boolean; aoClicar: () => void; children: React.ReactNode; largo?: boolean;
   }) => (
-    <button onClick={onClick} title={titulo} aria-label={titulo}
-      className="p-2 rounded-lg"
+    <button
+      type="button" title={dica} aria-label={dica} aria-pressed={ativo}
+      onClick={aoClicar}
+      className="wd-bt"
       style={{
-        backgroundColor: ativo ? 'var(--color-primary-a20)' : 'var(--color-bg-input)',
-        color: ativo ? 'var(--color-primary)' : 'var(--color-text)',
-      }}>
+        backgroundColor: ativo ? '#D6E8F7' : 'transparent',
+        border: ativo ? '1px solid #9EC5E8' : '1px solid transparent',
+        minWidth: largo ? 'auto' : 24,
+      }}
+    >
       {children}
     </button>
   );
 
-  const larguraDaPagina = folha.orientacao === 'retrato' ? 'max-w-md' : 'max-w-2xl';
+  /** Grupo da faixa: os botões e, embaixo, o nome — como no Word. */
+  const Grupo = ({ nome, children }: { nome: string; children: React.ReactNode }) => (
+    <div className="wd-grupo">
+      <div className="wd-grupo-corpo">{children}</div>
+      <div className="wd-grupo-nome">{nome}</div>
+    </div>
+  );
+
+  const Menu = ({ id, children }: { id: string; children: React.ReactNode }) => (
+    menu === id ? <div className="wd-menu" role="menu">{children}</div> : null
+  );
+
+  const ItemMenu = ({ aoClicar, ativo, children }: {
+    aoClicar: () => void; ativo?: boolean; children: React.ReactNode;
+  }) => (
+    <button type="button" role="menuitem" onClick={aoClicar} className="wd-menu-item"
+      style={{ backgroundColor: ativo ? '#D6E8F7' : 'transparent' }}>
+      {children}
+    </button>
+  );
+
+  const margemCm = MARGENS_CM[folha.margem];
+  const larguraCm = folha.orientacao === 'retrato'
+    ? LARGURA_CM[folha.papel]
+    : (folha.papel === 'A4' ? 29.7 : 27.9);
+  /* A página na tela: pixels por centímetro fixos, para a folha mudar de forma
+     de verdade quando o papel e a orientação mudam. 34 px/cm dá 90% do tamanho
+     real numa tela de 96 dpi — é esse número que a barra de status mostra, como
+     o Word mostra o dele. A letra acompanha: 1 pt vira 1,2 px nessa escala, e
+     por isso 11 pt na tela tem o tamanho que teria no papel a 90%. */
+  const PX_POR_CM = 34;
+  const PX_POR_PT = (96 / 72) * (PX_POR_CM / 37.795);
+  const zoom = Math.round((PX_POR_CM / 37.795) * 100);
+  const larguraPx = larguraCm * PX_POR_CM;
+  const margemPx = margemCm * PX_POR_CM;
 
   return (
-    <div className="space-y-4">
-      {/* ── As sete tarefas ── */}
+    <div className="space-y-4" onClick={fecharMenu}>
+      <style>{`
+        .wd-janela {
+          background: #F3F2F1; color: #201F1E;
+          border: 1px solid #C8C6C4; border-radius: 8px; overflow: hidden;
+          box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+          font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+        }
+        .wd-titulo {
+          background: #F9F8F7; border-bottom: 1px solid #E1DFDD;
+          display: flex; align-items: center; gap: 10px; padding: 6px 10px; font-size: 12px;
+        }
+        .wd-guias {
+          display: flex; gap: 2px; padding: 0 8px; background: #F9F8F7;
+          border-bottom: 1px solid #E1DFDD; overflow-x: auto;
+        }
+        .wd-guia {
+          padding: 6px 10px 7px; font-size: 12.5px; white-space: nowrap;
+          border: none; background: none; color: #201F1E; cursor: pointer;
+          border-bottom: 2px solid transparent;
+        }
+        .wd-guia:hover { background: #EDEBE9; }
+        .wd-guia[aria-selected="true"] { color: #2B579A; border-bottom-color: #2B579A; font-weight: 600; }
+        .wd-faixa {
+          display: flex; align-items: stretch; gap: 0; padding: 4px 6px 2px;
+          background: #F3F2F1; border-bottom: 1px solid #E1DFDD; overflow-x: auto;
+        }
+        .wd-grupo {
+          display: flex; flex-direction: column; justify-content: space-between;
+          padding: 0 8px; border-right: 1px solid #E1DFDD; min-width: max-content;
+        }
+        .wd-grupo-corpo { display: flex; align-items: flex-start; gap: 3px; padding: 2px 0 4px; }
+        .wd-grupo-nome { font-size: 10px; color: #605E5C; text-align: center; padding-bottom: 3px; }
+        .wd-bt {
+          height: 24px; padding: 0 4px; border-radius: 3px; cursor: pointer;
+          display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+          color: #201F1E; font-size: 12px;
+        }
+        .wd-bt:hover { background: #EDEBE9 !important; }
+        .wd-bt:focus-visible { outline: 2px solid #2B579A; outline-offset: 1px; }
+        .wd-combo {
+          height: 24px; border: 1px solid #C8C6C4; background: #FFFFFF; color: #201F1E;
+          border-radius: 2px; font-size: 12px; padding: 0 4px;
+        }
+        .wd-linhas { display: flex; flex-direction: column; gap: 3px; }
+        .wd-menu {
+          position: absolute; z-index: 30; top: 100%; left: 0; margin-top: 2px;
+          background: #FFFFFF; border: 1px solid #C8C6C4; border-radius: 3px;
+          box-shadow: 0 6px 18px rgba(0,0,0,0.22); min-width: 210px; padding: 4px;
+          text-align: left;
+        }
+        .wd-menu-item {
+          display: block; width: 100%; text-align: left; padding: 6px 10px;
+          font-size: 12.5px; border: none; border-radius: 2px; cursor: pointer; color: #201F1E;
+        }
+        .wd-menu-item:hover { background: #EDEBE9 !important; }
+        .wd-regua {
+          background: #FFFFFF; border-bottom: 1px solid #E1DFDD; padding: 3px 0;
+          display: flex; justify-content: center;
+        }
+        .wd-canvas {
+          background: #E6E6E6; padding: 18px 12px 24px; max-height: 520px; overflow: auto;
+        }
+        .wd-status {
+          background: #F3F2F1; border-top: 1px solid #E1DFDD; color: #605E5C;
+          font-size: 11.5px; padding: 4px 10px; display: flex; gap: 14px; align-items: center;
+        }
+        .wd-par { cursor: text; padding: 0 2px; }
+        .wd-par:hover { background: #F2F7FC; }
+      `}</style>
+
+      {/* ── As sete tarefas, fora da janela: é o exercício, não o programa ── */}
       <div className="card p-4">
         <div className="flex items-center justify-between gap-2 mb-3">
           <h2 className="font-bold">O que este documento ainda precisa</h2>
@@ -305,7 +477,10 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
                 <div className="min-w-0">
                   <p className="text-sm font-medium">{m.titulo}</p>
                   {!feita && (
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{m.detalhe}</p>
+                    <>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{m.detalhe}</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--color-secondary)' }}>{m.onde}</p>
+                    </>
                   )}
                 </div>
               </div>
@@ -314,181 +489,402 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, requirem
         </div>
       </div>
 
-      {/* ── A folha ── */}
-      <div className="card p-4">
-        <h2 className="font-bold mb-1">A folha</h2>
-        <p className="text-xs mb-3" style={{ color: 'var(--color-text-muted)' }}>
-          A folha se acerta antes do texto: mudar o papel depois de tudo pronto
-          desmancha o que já estava no lugar.
+      {aviso && (
+        <p className="text-sm p-3 rounded-lg"
+          style={{ backgroundColor: 'var(--color-warning-a10)', color: 'var(--color-text)' }}>
+          {aviso}
         </p>
-        <div className="flex flex-wrap gap-3">
-          <label className="text-sm">
-            <span className="block text-xs mb-1" style={{ color: 'var(--color-text-dim)' }}>Tamanho do papel</span>
-            <select value={folha.papel} onChange={e => setFolha(f => ({ ...f, papel: e.target.value as Papel }))}
-              className="input-field text-sm">
-              <option value="A4">A4</option>
-              <option value="Carta">Carta</option>
-            </select>
-          </label>
-          <label className="text-sm">
-            <span className="block text-xs mb-1" style={{ color: 'var(--color-text-dim)' }}>Orientação</span>
-            <select value={folha.orientacao} onChange={e => setFolha(f => ({ ...f, orientacao: e.target.value as Orientacao }))}
-              className="input-field text-sm">
-              <option value="retrato">Retrato (em pé)</option>
-              <option value="paisagem">Paisagem (deitada)</option>
-            </select>
-          </label>
-          <label className="text-sm">
-            <span className="block text-xs mb-1" style={{ color: 'var(--color-text-dim)' }}>Margens</span>
-            <select value={folha.margem} onChange={e => setFolha(f => ({ ...f, margem: e.target.value as Margem }))}
-              className="input-field text-sm">
-              <option value="estreita">Estreitas</option>
-              <option value="normal">Normais</option>
-              <option value="larga">Largas</option>
-            </select>
-          </label>
-        </div>
-      </div>
+      )}
 
-      {/* ── A barra de ferramentas ── */}
-      <div className="card p-4">
-        <h2 className="font-bold mb-3">A barra de ferramentas</h2>
-        <div className="flex flex-wrap items-end gap-2">
-          <label className="text-sm">
-            <span className="block text-xs mb-1" style={{ color: 'var(--color-text-dim)' }}>Fonte</span>
-            <select value={alvo?.fonte ?? 'Times New Roman'} onChange={e => formatar({ fonte: e.target.value })}
-              className="input-field text-sm">
-              {FONTES.map(f => <option key={f} value={f}>{f}</option>)}
-            </select>
-          </label>
-          <label className="text-sm">
-            <span className="block text-xs mb-1" style={{ color: 'var(--color-text-dim)' }}>Tamanho</span>
-            <select value={alvo?.tamanho ?? 12} onChange={e => formatar({ tamanho: Number(e.target.value) })}
-              className="input-field text-sm">
-              {TAMANHOS.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </label>
-
-          <div className="flex gap-1">
-            <Botao titulo="Negrito" ativo={alvo?.negrito} onClick={() => formatar({ negrito: !alvo?.negrito })}>
-              <Bold className="w-4 h-4" />
-            </Botao>
-            <Botao titulo="Itálico" ativo={alvo?.italico} onClick={() => formatar({ italico: !alvo?.italico })}>
-              <Italic className="w-4 h-4" />
-            </Botao>
-            <Botao titulo="Sublinhado" ativo={alvo?.sublinhado} onClick={() => formatar({ sublinhado: !alvo?.sublinhado })}>
-              <Underline className="w-4 h-4" />
-            </Botao>
-          </div>
-
-          <div className="flex gap-1">
-            <Botao titulo="Alinhar à esquerda" ativo={alvo?.alinhamento === 'esquerda'} onClick={() => formatar({ alinhamento: 'esquerda' })}>
-              <AlignLeft className="w-4 h-4" />
-            </Botao>
-            <Botao titulo="Centralizar" ativo={alvo?.alinhamento === 'centro'} onClick={() => formatar({ alinhamento: 'centro' })}>
-              <AlignCenter className="w-4 h-4" />
-            </Botao>
-            <Botao titulo="Alinhar à direita" ativo={alvo?.alinhamento === 'direita'} onClick={() => formatar({ alinhamento: 'direita' })}>
-              <AlignRight className="w-4 h-4" />
-            </Botao>
-            <Botao titulo="Justificar" ativo={alvo?.alinhamento === 'justificado'} onClick={() => formatar({ alinhamento: 'justificado' })}>
-              <AlignJustify className="w-4 h-4" />
-            </Botao>
-          </div>
-
-          <label className="text-sm">
-            <span className="block text-xs mb-1" style={{ color: 'var(--color-text-dim)' }}>Espaçamento</span>
-            <select value={alvo?.espacamento ?? 1} onChange={e => formatar({ espacamento: Number(e.target.value) })}
-              className="input-field text-sm">
-              <option value={1}>Simples</option>
-              <option value={1.5}>1,5</option>
-              <option value={2}>Duplo</option>
-            </select>
-          </label>
-
-          <div className="flex gap-1">
-            <Botao titulo="Marcadores" ativo={alvo?.lista === 'marcadores'}
-              onClick={() => formatar({ lista: alvo?.lista === 'marcadores' ? 'nenhuma' : 'marcadores' }, true)}>
-              <List className="w-4 h-4" />
-            </Botao>
-            <Botao titulo="Numeração" ativo={alvo?.lista === 'numeracao'}
-              onClick={() => formatar({ lista: alvo?.lista === 'numeracao' ? 'nenhuma' : 'numeracao' }, true)}>
-              <ListOrdered className="w-4 h-4" />
-            </Botao>
-          </div>
-
-          <div className="flex gap-1">
-            <Botao titulo="Copiar" onClick={copiar}><Copy className="w-4 h-4" /></Botao>
-            <Botao titulo="Colar" onClick={colar}><ClipboardPaste className="w-4 h-4" /></Botao>
-          </div>
-
-          <button onClick={recomecar} className="btn-secondary text-xs py-2 ml-auto inline-flex items-center gap-1">
-            <RotateCcw className="w-3 h-3" /> Recomeçar
-          </button>
-        </div>
-
-        <div className="mt-3 flex items-start gap-2 text-xs p-2 rounded-lg"
-          style={{ backgroundColor: 'var(--color-bg-input)', color: 'var(--color-text-muted)' }}>
-          <MousePointerClick className="w-4 h-4 shrink-0" style={{ color: 'var(--color-secondary)' }} />
-          <span>
-            {alvo
-              ? <>Selecionado: <strong style={{ color: 'var(--color-text)' }}>{alvo.texto.slice(0, 40)}{alvo.texto.length > 40 ? '…' : ''}</strong></>
-              : 'Nada selecionado. Clique num trecho do documento para escolher onde a formatação vai valer.'}
+      {/* ── A janela do Word ── */}
+      <div className="wd-janela" onClick={e => e.stopPropagation()}>
+        {/* Barra de título */}
+        <div className="wd-titulo">
+          <span style={{ color: '#2B579A', fontWeight: 700, fontSize: 13 }}>W</span>
+          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full"
+            style={{ background: '#E6EEF7', color: '#2B579A', fontSize: 10.5, fontWeight: 600 }}>
+            AutoSalvamento
+          </span>
+          <span style={{ fontWeight: 600 }}>Relatório do acampamento</span>
+          <span style={{ color: '#605E5C' }}>— Salvo</span>
+          <span className="hidden sm:flex items-center gap-1 mx-auto px-3 py-1 rounded"
+            style={{ background: '#EFEDEB', color: '#605E5C', fontSize: 11.5 }}>
+            <Search className="w-3 h-3" /> Pesquisar
+          </span>
+          <span className="ml-auto sm:ml-0 flex items-center gap-3" style={{ color: '#605E5C' }} aria-hidden="true">
+            <Minus className="w-3 h-3" /><Square className="w-2.5 h-2.5" /><X className="w-3 h-3" />
           </span>
         </div>
 
-        {aviso && (
-          <p className="mt-2 text-sm p-2 rounded-lg"
-            style={{ backgroundColor: 'var(--color-warning-a10)', color: 'var(--color-text)' }}>
-            {aviso}
-          </p>
-        )}
-      </div>
+        {/* Guias */}
+        <div className="wd-guias" role="tablist">
+          <button className="wd-guia" style={{ background: '#2B579A', color: '#fff', borderRadius: '3px 3px 0 0' }}
+            onClick={() => naoFazParte('A guia Arquivo')}>Arquivo</button>
+          {([['inicio', 'Início'], ['layout', 'Layout']] as const).map(([id, rotulo]) => (
+            <button key={id} role="tab" aria-selected={guia === id} className="wd-guia"
+              onClick={() => { setGuia(id); fecharMenu(); }}>{rotulo}</button>
+          ))}
+          {['Inserir', 'Desenhar', 'Design', 'Referências', 'Revisão', 'Exibir', 'Ajuda'].map(g => (
+            <button key={g} className="wd-guia" style={{ color: '#8A8886' }}
+              onClick={() => naoFazParte(`A guia ${g}`)}>{g}</button>
+          ))}
+        </div>
 
-      {/* ── O documento ── */}
-      <div className="card p-4">
-        <h2 className="font-bold mb-3">O documento</h2>
-        <div className={`mx-auto ${larguraDaPagina} rounded-lg`}
-          style={{
-            backgroundColor: '#ffffff',
-            padding: MARGEM_EM_PX[folha.margem],
-            border: '1px solid var(--color-border)',
-          }}>
-          {doc.map((b, i) => {
-            const numero = b.lista === 'numeracao'
-              ? doc.filter(x => x.grupo === b.grupo).findIndex(x => x.id === b.id) + 1
-              : 0;
-            const selecionadoAqui = b.id === selecionado;
-            return (
-              <div key={b.id}
-                onClick={() => { setSelecionado(b.id); setAviso(''); }}
-                className="cursor-pointer rounded px-1 py-0.5"
-                style={{
-                  outline: selecionadoAqui ? '2px solid #2563eb' : 'none',
-                  backgroundColor: selecionadoAqui ? '#dbeafe' : 'transparent',
-                  marginTop: i === 0 ? 0 : 6,
-                  fontFamily: b.fonte,
-                  fontSize: b.tamanho,
-                  fontWeight: b.negrito ? 700 : 400,
-                  fontStyle: b.italico ? 'italic' : 'normal',
-                  textDecoration: b.sublinhado ? 'underline' : 'none',
-                  textAlign: b.alinhamento === 'centro' ? 'center'
-                    : b.alinhamento === 'direita' ? 'right'
-                    : b.alinhamento === 'justificado' ? 'justify' : 'left',
-                  lineHeight: b.espacamento,
-                  color: '#111827',
-                  paddingLeft: b.lista === 'nenhuma' ? undefined : 18,
-                }}>
-                {b.lista === 'marcadores' && <span style={{ marginLeft: -14, marginRight: 6 }}>•</span>}
-                {b.lista === 'numeracao' && <span style={{ marginLeft: -16, marginRight: 6 }}>{numero}.</span>}
-                {b.texto}
+        {/* Faixa de opções */}
+        {/* Com menu aberto a faixa deixa de recortar: `overflow-x: auto` cria um
+            contexto de recorte, e era ele que cortava o menu de Margens pela
+            metade. Enquanto o menu está aberto, ninguém precisa rolar a faixa. */}
+        {guia === 'inicio' ? (
+          <div className="wd-faixa" style={{ overflowX: menu ? 'visible' : 'auto' }}>
+            <Grupo nome="Área de Transferência">
+              <div style={{ position: 'relative' }}>
+                <button type="button" className="wd-bt" onClick={colar}
+                  title="Colar (Ctrl+V)" style={{ flexDirection: 'column', height: 'auto', padding: '2px 6px' }}>
+                  <ClipboardPaste className="w-5 h-5" />
+                  <span style={{ fontSize: 10.5 }}>Colar</span>
+                </button>
               </div>
-            );
-          })}
+              <div className="wd-linhas">
+                <Bt dica="Recortar (Ctrl+X)" aoClicar={() => naoFazParte('Recortar')}><Scissors className="w-3.5 h-3.5" /></Bt>
+                <Bt dica="Copiar (Ctrl+C)" aoClicar={copiar}><Copy className="w-3.5 h-3.5" /></Bt>
+                <Bt dica="Pincel de Formatação" aoClicar={() => naoFazParte('O Pincel de Formatação')}><Paintbrush className="w-3.5 h-3.5" /></Bt>
+              </div>
+            </Grupo>
+
+            <Grupo nome="Fonte">
+              <div className="wd-linhas">
+                <div className="flex items-center gap-1">
+                  <select className="wd-combo" style={{ width: 128 }} aria-label="Fonte"
+                    value={alvo?.fonte ?? FONTE_INICIAL}
+                    onChange={e => formatar({ fonte: e.target.value })}>
+                    {FONTES.map(f => <option key={f.nome} value={f.nome}>{f.nome}</option>)}
+                  </select>
+                  <select className="wd-combo" style={{ width: 52 }} aria-label="Tamanho da fonte"
+                    value={alvo?.tamanho ?? 11}
+                    onChange={e => formatar({ tamanho: Number(e.target.value) })}>
+                    {TAMANHOS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <Bt dica="Aumentar Tamanho da Fonte (Ctrl+>)"
+                    aoClicar={() => formatar({ tamanho: Math.min(48, (alvo?.tamanho ?? 11) + 2) })}>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>A</span>
+                  </Bt>
+                  <Bt dica="Diminuir Tamanho da Fonte (Ctrl+&lt;)"
+                    aoClicar={() => formatar({ tamanho: Math.max(8, (alvo?.tamanho ?? 11) - 2) })}>
+                    <span style={{ fontSize: 10 }}>A</span>
+                  </Bt>
+                  <Bt dica="Maiúsculas e Minúsculas" aoClicar={() => naoFazParte('Maiúsculas e Minúsculas')}><CaseSensitive className="w-4 h-4" /></Bt>
+                  <Bt dica="Limpar Toda a Formatação" aoClicar={() => naoFazParte('Limpar Toda a Formatação')}><Eraser className="w-3.5 h-3.5" /></Bt>
+                </div>
+                <div className="flex items-center gap-1">
+                  {/* N, I e S, e não B, I e U: é assim que o Word em português
+                      desenha estes três, e o atalho segue a letra — Ctrl+N para
+                      negrito. Quem aprendeu por vídeo em inglês tropeça aqui. */}
+                  <Bt dica="Negrito (Ctrl+N)" ativo={alvo?.negrito} aoClicar={() => formatar({ negrito: !alvo?.negrito })}>
+                    <span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: 14 }}>N</span>
+                  </Bt>
+                  <Bt dica="Itálico (Ctrl+I)" ativo={alvo?.italico} aoClicar={() => formatar({ italico: !alvo?.italico })}>
+                    <span style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 14 }}>I</span>
+                  </Bt>
+                  <Bt dica="Sublinhado (Ctrl+S)" ativo={alvo?.sublinhado} aoClicar={() => formatar({ sublinhado: !alvo?.sublinhado })}>
+                    <span style={{ fontFamily: 'Georgia, serif', textDecoration: 'underline', fontSize: 14 }}>S</span>
+                  </Bt>
+                  <Bt dica="Tachado" aoClicar={() => naoFazParte('Tachado')}><Strikethrough className="w-3.5 h-3.5" /></Bt>
+                  <Bt dica="Subscrito" aoClicar={() => naoFazParte('Subscrito')}><Subscript className="w-3.5 h-3.5" /></Bt>
+                  <Bt dica="Sobrescrito" aoClicar={() => naoFazParte('Sobrescrito')}><Superscript className="w-3.5 h-3.5" /></Bt>
+                  <Bt dica="Efeitos de Texto" aoClicar={() => naoFazParte('Efeitos de Texto')}><Sparkles className="w-3.5 h-3.5" /></Bt>
+                  <Bt dica="Cor do Realce do Texto" aoClicar={() => naoFazParte('A Cor do Realce')}><Highlighter className="w-3.5 h-3.5" /></Bt>
+                  <Bt dica="Cor da Fonte" aoClicar={() => naoFazParte('A Cor da Fonte')}><Baseline className="w-3.5 h-3.5" /></Bt>
+                </div>
+              </div>
+            </Grupo>
+
+            <Grupo nome="Parágrafo">
+              <div className="wd-linhas">
+                <div className="flex items-center gap-1">
+                  <Bt dica="Marcadores" ativo={alvo?.lista === 'marcadores'}
+                    aoClicar={() => formatar({ lista: alvo?.lista === 'marcadores' ? 'nenhuma' : 'marcadores' }, true)}>
+                    <List className="w-3.5 h-3.5" />
+                  </Bt>
+                  <Bt dica="Numeração" ativo={alvo?.lista === 'numeracao'}
+                    aoClicar={() => formatar({ lista: alvo?.lista === 'numeracao' ? 'nenhuma' : 'numeracao' }, true)}>
+                    <ListOrdered className="w-3.5 h-3.5" />
+                  </Bt>
+                  <Bt dica="Lista de Vários Níveis" aoClicar={() => naoFazParte('A Lista de Vários Níveis')}><ListTree className="w-3.5 h-3.5" /></Bt>
+                  <Bt dica="Diminuir Recuo" aoClicar={() => naoFazParte('Diminuir Recuo')}><IndentDecrease className="w-3.5 h-3.5" /></Bt>
+                  <Bt dica="Aumentar Recuo" aoClicar={() => naoFazParte('Aumentar Recuo')}><IndentIncrease className="w-3.5 h-3.5" /></Bt>
+                  <Bt dica="Classificar" aoClicar={() => naoFazParte('Classificar')}><ArrowDownAZ className="w-3.5 h-3.5" /></Bt>
+                  <Bt dica="Mostrar Tudo (Ctrl+*)" aoClicar={() => naoFazParte('Mostrar Tudo')}><Pilcrow className="w-3.5 h-3.5" /></Bt>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Bt dica="Alinhar à Esquerda (Ctrl+Q)" ativo={alvo?.alinhamento === 'esquerda'}
+                    aoClicar={() => formatar({ alinhamento: 'esquerda' })}><AlignLeft className="w-3.5 h-3.5" /></Bt>
+                  <Bt dica="Centralizar (Ctrl+E)" ativo={alvo?.alinhamento === 'centro'}
+                    aoClicar={() => formatar({ alinhamento: 'centro' })}><AlignCenter className="w-3.5 h-3.5" /></Bt>
+                  <Bt dica="Alinhar à Direita (Ctrl+G)" ativo={alvo?.alinhamento === 'direita'}
+                    aoClicar={() => formatar({ alinhamento: 'direita' })}><AlignRight className="w-3.5 h-3.5" /></Bt>
+                  <Bt dica="Justificar (Ctrl+J)" ativo={alvo?.alinhamento === 'justificado'}
+                    aoClicar={() => formatar({ alinhamento: 'justificado' })}><AlignJustify className="w-3.5 h-3.5" /></Bt>
+                  <div style={{ position: 'relative' }}>
+                    <Bt dica="Espaçamento de Linha e Parágrafo" ativo={menu === 'espacamento'}
+                      aoClicar={() => setMenu(menu === 'espacamento' ? null : 'espacamento')}>
+                      <ArrowUpDown className="w-3.5 h-3.5" /><ChevronDown className="w-3 h-3" />
+                    </Bt>
+                    <Menu id="espacamento">
+                      {[1, 1.15, 1.5, 2].map(v => (
+                        <ItemMenu key={v} ativo={alvo?.espacamento === v} aoClicar={() => formatar({ espacamento: v })}>
+                          {v.toString().replace('.', ',')}
+                        </ItemMenu>
+                      ))}
+                    </Menu>
+                  </div>
+                  <Bt dica="Sombreamento" aoClicar={() => naoFazParte('Sombreamento')}><PaintBucket className="w-3.5 h-3.5" /></Bt>
+                  <Bt dica="Bordas" aoClicar={() => naoFazParte('Bordas')}><Square className="w-3.5 h-3.5" /></Bt>
+                </div>
+              </div>
+            </Grupo>
+
+            <Grupo nome="Estilos">
+              <div className="flex items-center gap-1">
+                {['Normal', 'Sem Espaç.', 'Título 1'].map(e => (
+                  <button key={e} type="button" className="wd-bt" onClick={() => naoFazParte('A galeria de Estilos')}
+                    title={`Estilo ${e}`}
+                    style={{ flexDirection: 'column', height: 'auto', padding: '2px 8px', border: '1px solid #E1DFDD', background: '#FFF' }}>
+                    <span style={{ fontSize: 12, fontWeight: e === 'Título 1' ? 700 : 400, color: e === 'Título 1' ? '#2B579A' : '#201F1E' }}>AaBb</span>
+                    <span style={{ fontSize: 9.5, color: '#605E5C' }}>{e}</span>
+                  </button>
+                ))}
+              </div>
+            </Grupo>
+
+            <Grupo nome="Edição">
+              <div className="wd-linhas">
+                <Bt dica="Localizar (Ctrl+L)" aoClicar={() => naoFazParte('Localizar')}><Search className="w-3.5 h-3.5" /></Bt>
+                <Bt dica="Substituir (Ctrl+U)" aoClicar={() => naoFazParte('Substituir')}><Type className="w-3.5 h-3.5" /></Bt>
+              </div>
+            </Grupo>
+          </div>
+        ) : (
+          <div className="wd-faixa" style={{ overflowX: menu ? 'visible' : 'auto' }}>
+            <Grupo nome="Configurar Página">
+              <div className="flex items-start gap-1">
+                <div style={{ position: 'relative' }}>
+                  <button type="button" className="wd-bt" title="Margens"
+                    onClick={() => setMenu(menu === 'margens' ? null : 'margens')}
+                    style={{ flexDirection: 'column', height: 'auto', padding: '2px 8px' }}>
+                    <IndentIncrease className="w-5 h-5" />
+                    <span style={{ fontSize: 10.5 }}>Margens</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  <Menu id="margens">
+                    {([['normal', 'Normal', '2,5 cm em todos os lados'],
+                       ['estreita', 'Estreita', '1,27 cm em todos os lados'],
+                       ['larga', 'Larga', '5,08 cm à esquerda e à direita']] as const).map(([v, nome, medida]) => (
+                      <ItemMenu key={v} ativo={folha.margem === v}
+                        aoClicar={() => { setFolha(f => ({ ...f, margem: v })); fecharMenu(); }}>
+                        <strong>{nome}</strong>
+                        <span style={{ display: 'block', fontSize: 11, color: '#605E5C' }}>{medida}</span>
+                      </ItemMenu>
+                    ))}
+                  </Menu>
+                </div>
+
+                <div style={{ position: 'relative' }}>
+                  <button type="button" className="wd-bt" title="Orientação"
+                    onClick={() => setMenu(menu === 'orientacao' ? null : 'orientacao')}
+                    style={{ flexDirection: 'column', height: 'auto', padding: '2px 8px' }}>
+                    <Square className="w-5 h-5" />
+                    <span style={{ fontSize: 10.5 }}>Orientação</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  <Menu id="orientacao">
+                    {([['retrato', 'Retrato'], ['paisagem', 'Paisagem']] as const).map(([v, nome]) => (
+                      <ItemMenu key={v} ativo={folha.orientacao === v}
+                        aoClicar={() => { setFolha(f => ({ ...f, orientacao: v })); fecharMenu(); }}>
+                        {nome}
+                      </ItemMenu>
+                    ))}
+                  </Menu>
+                </div>
+
+                <div style={{ position: 'relative' }}>
+                  <button type="button" className="wd-bt" title="Tamanho"
+                    onClick={() => setMenu(menu === 'tamanho' ? null : 'tamanho')}
+                    style={{ flexDirection: 'column', height: 'auto', padding: '2px 8px' }}>
+                    <ClipboardPaste className="w-5 h-5" />
+                    <span style={{ fontSize: 10.5 }}>Tamanho</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  <Menu id="tamanho">
+                    {([['A4', 'A4', '21 cm × 29,7 cm'], ['Carta', 'Carta', '21,6 cm × 27,9 cm']] as const).map(([v, nome, medida]) => (
+                      <ItemMenu key={v} ativo={folha.papel === v}
+                        aoClicar={() => { setFolha(f => ({ ...f, papel: v })); fecharMenu(); }}>
+                        <strong>{nome}</strong>
+                        <span style={{ display: 'block', fontSize: 11, color: '#605E5C' }}>{medida}</span>
+                      </ItemMenu>
+                    ))}
+                  </Menu>
+                </div>
+
+                <button type="button" className="wd-bt" title="Colunas"
+                  onClick={() => naoFazParte('Colunas')}
+                  style={{ flexDirection: 'column', height: 'auto', padding: '2px 8px' }}>
+                  <Columns className="w-5 h-5" />
+                  <span style={{ fontSize: 10.5 }}>Colunas</span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                <div className="wd-linhas" style={{ paddingLeft: 6, borderLeft: '1px solid #E1DFDD' }}>
+                  {['Quebras', 'Números de Linha', 'Hifenização'].map(n => (
+                    <Bt key={n} dica={n} aoClicar={() => naoFazParte(n)} largo>
+                      <span style={{ fontSize: 11 }}>{n}</span><ChevronDown className="w-3 h-3" />
+                    </Bt>
+                  ))}
+                </div>
+              </div>
+            </Grupo>
+
+            <Grupo nome="Parágrafo">
+              {/* Os quatro campos que o Word mostra aqui. Ficam desenhados e não
+                  respondem: o requisito 3.6 pede o espaçamento entre linhas, que
+                  é o botão da guia Início, e não o espaçamento antes e depois do
+                  parágrafo, que é este. Somem os dois seria perder a referência
+                  de onde cada coisa mora. */}
+              <div className="flex items-start gap-5">
+                <div className="wd-linhas">
+                  <span style={{ fontSize: 10.5, color: '#605E5C' }}>Recuar</span>
+                  <label className="flex items-center gap-1" style={{ fontSize: 11 }}>
+                    <IndentDecrease className="w-3.5 h-3.5" /> Esquerda:
+                    <input className="wd-combo" style={{ width: 56 }} value="0 cm" readOnly
+                      onClick={() => naoFazParte('O recuo à esquerda')} />
+                  </label>
+                  <label className="flex items-center gap-1" style={{ fontSize: 11 }}>
+                    <IndentIncrease className="w-3.5 h-3.5" /> Direita:
+                    <input className="wd-combo" style={{ width: 56 }} value="0 cm" readOnly
+                      onClick={() => naoFazParte('O recuo à direita')} />
+                  </label>
+                </div>
+                <div className="wd-linhas">
+                  <span style={{ fontSize: 10.5, color: '#605E5C' }}>Espaçamento</span>
+                  <label className="flex items-center gap-1" style={{ fontSize: 11 }}>
+                    <ArrowUpDown className="w-3.5 h-3.5" /> Antes:
+                    <input className="wd-combo" style={{ width: 52 }} value="0 pt" readOnly
+                      onClick={() => naoFazParte('O espaçamento antes do parágrafo')} />
+                  </label>
+                  <label className="flex items-center gap-1" style={{ fontSize: 11 }}>
+                    <ArrowUpDown className="w-3.5 h-3.5" /> Depois:
+                    <input className="wd-combo" style={{ width: 52 }} value="8 pt" readOnly
+                      onClick={() => naoFazParte('O espaçamento depois do parágrafo')} />
+                  </label>
+                </div>
+              </div>
+            </Grupo>
+
+            <Grupo nome="Organizar">
+              <div className="wd-linhas">
+                {['Posição', 'Quebra de Texto', 'Alinhar'].map(n => (
+                  <Bt key={n} dica={n} aoClicar={() => naoFazParte(n)} largo>
+                    <span style={{ fontSize: 11 }}>{n}</span>
+                  </Bt>
+                ))}
+              </div>
+            </Grupo>
+          </div>
+        )}
+
+        {/* Régua: o cinza é a margem, o branco é onde o texto cabe, e os números
+            contam a partir da margem esquerda — como no Word. Ela muda junto
+            quando a margem ou o papel mudam, que é o retorno visível de ter
+            mexido em Layout. */}
+        <div className="wd-regua">
+          <div style={{ width: larguraPx, height: 16, position: 'relative', background: '#C8C6C4', borderRadius: 1 }}>
+            <div style={{
+              position: 'absolute', left: margemPx, right: margemPx, top: 0, bottom: 0,
+              background: '#FFFFFF', borderLeft: '1px solid #A19F9D', borderRight: '1px solid #A19F9D',
+            }} />
+            {Array.from({ length: Math.floor(larguraCm) }, (_, i) => i + 1).map(cm => {
+              const x = cm * PX_POR_CM;
+              const dentro = x > margemPx && x < larguraPx - margemPx;
+              const numero = Math.round(Math.abs(x - margemPx) / PX_POR_CM);
+              return (
+                <span key={cm} style={{
+                  position: 'absolute', left: x, top: 1, transform: 'translateX(-50%)',
+                  fontSize: 8, color: dentro ? '#605E5C' : '#797775', lineHeight: '14px',
+                }}>{numero || ''}</span>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* A folha */}
+        <div className="wd-canvas">
+          <div style={{
+            width: larguraPx, margin: '0 auto', background: '#FFFFFF',
+            padding: margemPx, boxShadow: '0 1px 4px rgba(0,0,0,0.28)', minHeight: 260,
+          }}>
+            {doc.map((b, i) => {
+              const numero = b.lista === 'numeracao'
+                ? doc.filter(x => x.grupo === b.grupo).findIndex(x => x.id === b.id) + 1
+                : 0;
+              const marcado = b.id === selecionado;
+              return (
+                <div key={b.id}
+                  onClick={() => { setSelecionado(b.id); fecharMenu(); setAviso(''); }}
+                  className="wd-par"
+                  style={{
+                    backgroundColor: marcado ? '#CFE3F7' : undefined,
+                    marginTop: i === 0 ? 0 : 6,
+                    fontFamily: pilhaDaFonte(b.fonte),
+                    fontSize: b.tamanho * PX_POR_PT,
+                    fontWeight: b.negrito ? 700 : 400,
+                    fontStyle: b.italico ? 'italic' : 'normal',
+                    textDecoration: b.sublinhado ? 'underline' : 'none',
+                    textAlign: b.alinhamento === 'centro' ? 'center'
+                      : b.alinhamento === 'direita' ? 'right'
+                      : b.alinhamento === 'justificado' ? 'justify' : 'left',
+                    lineHeight: b.espacamento,
+                    color: '#000000',
+                    paddingLeft: b.lista === 'nenhuma' ? undefined : 20,
+                  }}>
+                  {b.lista === 'marcadores' && <span style={{ marginLeft: -14, marginRight: 6 }}>•</span>}
+                  {b.lista === 'numeracao' && <span style={{ marginLeft: -17, marginRight: 6 }}>{numero}.</span>}
+                  {b.texto}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Barra de status */}
+        <div className="wd-status">
+          <span>Página 1 de 1</span>
+          <span>{palavras} palavras</span>
+          <span className="hidden sm:inline">Português (Brasil)</span>
+          <span className="hidden md:inline" style={{ marginLeft: 'auto' }}>
+            {alvo ? `Selecionado: ${alvo.texto.slice(0, 28)}${alvo.texto.length > 28 ? '…' : ''}` : 'Clique num parágrafo para selecioná-lo'}
+          </span>
+          <span className="flex items-center gap-2 md:ml-4" style={{ marginLeft: 'auto' }} aria-hidden="true">
+            <Minus className="w-3 h-3" />
+            <span style={{ width: 60, height: 3, background: '#C8C6C4', borderRadius: 2, position: 'relative' }}>
+              <span style={{
+                position: 'absolute', left: `${Math.min(96, zoom * 0.62)}%`, top: -3,
+                width: 8, height: 9, background: '#605E5C', borderRadius: 1,
+              }} />
+            </span>
+            <span style={{ fontSize: 13, lineHeight: 1 }}>+</span>
+            <span style={{ minWidth: 32, textAlign: 'right' }}>{zoom}%</span>
+          </span>
         </div>
       </div>
 
-      {/* ── Entregar ── */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <button onClick={recomecar} className="btn-secondary text-xs py-2 inline-flex items-center gap-1">
+          <RotateCcw className="w-3 h-3" /> Recomeçar o documento
+        </button>
+        <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
+          Selecionar aqui é clicar no parágrafo inteiro — no Word, o mesmo efeito de
+          três cliques em cima dele.
+        </p>
+      </div>
+
       {tudoFeito && (
         <div className="card p-4 text-center">
           <p className="mb-3" style={{ color: 'var(--color-text-muted)' }}>
