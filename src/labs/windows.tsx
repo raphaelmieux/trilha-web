@@ -173,6 +173,11 @@ export const CSS_WINDOWS = `
   .win-bt:hover { background: #F5F5F5; }
   .win-bt.primario { background: #0F6CBD; border-color: #0F6CBD; color: #FFFFFF; }
   .win-bt.primario:hover { background: #115EA3; }
+  /* Botão desligado tem de parecer desligado: azul vivo durante a instalação
+     convida a clicar no que não responde. */
+  .win-bt:disabled, .win-bt.primario:disabled {
+    background: #F0F0F0; border-color: #D8D8D8; color: #A0A0A0; cursor: default;
+  }
 
   /* ── A área de trabalho, quando o laboratório precisa de mais de um programa ──
      O de compactar precisa de quatro: Explorador, WinRAR, o editor de texto e
