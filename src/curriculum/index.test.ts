@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ap034, ap035, ap041, getAllSpecialties } from './index';
+import { ap034, ap035, ap041, ap042, getAllSpecialties } from './index';
 import { getFinalExamQuestions } from './finalExams';
 
 describe('AP034 curriculum', () => {
@@ -89,6 +89,52 @@ describe('AP041 curriculum', () => {
         expect(l.questions!.length, l.code).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+describe('AP042 curriculum', () => {
+  it('has the 24 requirements of the official AP042 sheet', () => {
+    expect(ap042.requirements).toHaveLength(24);
+  });
+
+  it('has 5 content modules plus the final exam', () => {
+    expect(ap042.modules).toHaveLength(6);
+  });
+
+  it('is open, not under construction', () => {
+    expect(ap042.emConstrucao).toBeFalsy();
+  });
+
+  /* O requisito 1 é "ter a especialidade de Computação 1", e quem o cumpre é o
+     bloqueio da trilha. Se o pré-requisito sumir, ele vira um requisito que
+     ninguém consegue cumprir — e nenhuma lição o cobre. */
+  it('is gated by AP041, which is what fulfils its first requirement', () => {
+    expect(ap042.preRequisito).toBe('AP041');
+    expect(ap042.requirements.find(r => r.code === 'AP042-1.1')?.peloPreRequisito).toBe(true);
+  });
+
+  it('leaves no module without lessons', () => {
+    const vazios = ap042.modules.filter(m => m.lessons.length === 0).map(m => m.code);
+    expect(vazios).toEqual([]);
+  });
+
+  it('gives every theory lesson its questions', () => {
+    for (const m of ap042.modules) {
+      for (const l of m.lessons) {
+        if (l.type !== 'theory') continue;
+        expect(l.questions, l.code).toBeDefined();
+        expect(l.questions!.length, l.code).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  /* Os dois laboratórios novos nasceram com esta trilha. Uma lição apontando
+     para um tipo que a tela não desenha é uma tela em branco no meio da
+     trilha — e o `labType` errado não quebra compilação nenhuma. */
+  it('uses the two labs written for it', () => {
+    const labs = ap042.modules.flatMap(m => m.lessons).map(l => l.labType).filter(Boolean);
+    expect(labs).toContain('formatacao_texto');
+    expect(labs).toContain('operacoes_arquivo');
   });
 });
 
@@ -182,6 +228,17 @@ describe('Final exam questions', () => {
     de outra especialidade, calada. Aqui a pergunta é feita ao contrário:
     toda trilha que tem módulo de avaliação final precisa ter questões.
   */
+  it('AP042 final has at least 15 questions', () => {
+    expect(getFinalExamQuestions('AP042').length).toBeGreaterThanOrEqual(15);
+  });
+
+  it('AP042 final has diverse question types', () => {
+    const types = new Set(getFinalExamQuestions('AP042').map(q => q.type));
+    for (const t of ['multiple_choice', 'true_false', 'ordering', 'matching', 'fill_blank', 'scenario']) {
+      expect(types.has(t as never), t).toBe(true);
+    }
+  });
+
   it('gives every trail with a final module its own exam', () => {
     const semProva = getAllSpecialties()
       .filter(s => s.modules.some(m => m.lessons.some(l => l.labType === 'final_exam')))
@@ -193,7 +250,7 @@ describe('Final exam questions', () => {
   /* Duas trilhas não podem compartilhar a mesma prova: foi o que o ternário
      fazia, e nada no sistema de tipos denunciava. */
   it('never hands two trails the same questions', () => {
-    const ids = ['AP034', 'AP035', 'AP041']
+    const ids = ['AP034', 'AP035', 'AP041', 'AP042']
       .map(c => getFinalExamQuestions(c).map(q => q.id).sort().join('|'));
     expect(new Set(ids).size).toBe(ids.length);
   });
@@ -226,6 +283,7 @@ describe.each([
   ['AP034', ap034],
   ['AP035', ap035],
   ['AP041', ap041],
+  ['AP042', ap042],
 ])('%s structure', (code, specialty) => {
   const lessons = specialty.modules.flatMap(m => m.lessons);
 

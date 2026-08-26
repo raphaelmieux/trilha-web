@@ -8,6 +8,9 @@ import type { Specialty } from '../types';
  * pronta não deixa ninguém se planejar. Enquanto `emConstrucao` for verdadeiro
  * elas aparecem acinzentadas no painel, sem link e sem permitir início.
  *
+ * Eram quatro. A AP042 saiu daqui quando os requisitos dela foram publicados e
+ * a trilha ganhou conteúdo — que é exatamente o percurso previsto abaixo.
+ *
  * Ficam neste arquivo, e não cada uma no seu, porque não há o que separar: são
  * quatro declarações de existência. Quando os requisitos de uma chegarem, ela
  * ganha o próprio arquivo e sai daqui.
@@ -31,9 +34,6 @@ function anunciada(
   };
 }
 
-export const ap042 = anunciada('AP042', 'Computação 2', 'basico',
-  'A segunda especialidade da família Computação. Os requisitos serão publicados quando a trilha abrir.');
-
 export const ap043 = anunciada('AP043', 'Computação 3', 'intermediario',
   'A terceira da família, já no nível intermediário. Os requisitos serão publicados quando a trilha abrir.');
 
@@ -43,4 +43,4 @@ export const ap044 = anunciada('AP044', 'Computação 4', 'intermediario',
 export const ap045 = anunciada('AP045', 'Computação 5', 'avancado',
   'A que fecha a família Computação, no nível avançado. Os requisitos serão publicados quando a trilha abrir.');
 
-export const anunciadas = [ap042, ap043, ap044, ap045];
+export const anunciadas = [ap043, ap044, ap045];

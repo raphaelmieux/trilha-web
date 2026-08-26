@@ -895,6 +895,209 @@ const rawAp041Final: Question[] = [
 ];
 
 /*
+  A prova da AP042.
+
+  Dezoito questões, cobrindo os cinco requisitos que têm matéria — o primeiro é
+  cumprido pelo bloqueio da trilha, e não há o que perguntar sobre ele.
+
+  Metade delas não pergunta a definição: pergunta a consequência. "O que é um
+  estabilizador" mede memória; "a luz pisca quando ligam o chuveiro, o que
+  resolve" mede se a pessoa sabe usar o que aprendeu. A trilha inteira foi
+  escrita assim, e a prova que a fecha não podia ser mais fácil que as lições.
+*/
+const rawAp042Final: Question[] = [
+  {
+    id: 'AP042-F-Q1', type: 'multiple_choice',
+    prompt: 'Qual é a diferença que mais importa entre um netbook e um notebook?',
+    data: { options: [
+      { id: 'a', text: 'O netbook tem menos potência e foi feito para tarefas leves.', correct: true },
+      { id: 'b', text: 'O netbook não tem teclado próprio: ele usa um teclado que aparece na tela.', porque: 'Isso descreve o tablet. Os dois têm teclado preso e fecham como caderno.' },
+      { id: 'c', text: 'O netbook não se liga à internet, e é por isso que ele custa bem mais barato.', porque: 'É o contrário do nome dele: "net" é rede, e ficar na internet é para o que ele nasceu.' },
+      { id: 'd', text: 'O netbook só funciona ligado na tomada, porque não tem bateria instalada de fábrica.', porque: 'Ele tem bateria, e costuma durar mais que a de um notebook comum.' },
+    ]},
+    explanation: 'Os dois fecham e têm teclado. O que separa é a potência: netbook é para navegar, escrever e assistir.',
+  },
+  {
+    id: 'AP042-F-Q2', type: 'multiple_choice',
+    prompt: 'O que faz de um computador um servidor?',
+    data: { options: [
+      { id: 'a', text: 'Ele fica ligado atendendo pedidos de outras máquinas pela rede.', correct: true },
+      { id: 'b', text: 'Ele tem a maior quantidade de memória e o processador mais caro do escritório.', porque: 'Servidor não se define por ficha técnica, e sim por para quem ele trabalha.' },
+      { id: 'c', text: 'Ele guarda os arquivos de quem trabalha ali, funcionando como um armário digital.', porque: 'Guardar arquivo é uma das tarefas possíveis, mas não é o que define um servidor.' },
+      { id: 'd', text: 'Ele fica trancado numa sala refrigerada, longe de quem possa mexer nele sem permissão.', porque: 'A sala refrigerada é consequência de ele ficar sempre ligado, não a definição dele.' },
+    ]},
+    explanation: 'A pergunta que resolve é sempre a mesma: para quem esta máquina trabalha?',
+  },
+  {
+    id: 'AP042-F-Q3', type: 'matching',
+    prompt: 'Ligue cada aparelho à descrição que cabe nele.',
+    data: { pairs: [
+      { left: 'Microcomputador', right: 'Computador de mesa, com gabinete separado' },
+      { left: 'Tablet', right: 'Tela de tocar, sem teclado preso' },
+      { left: 'Smartphone', right: 'Cabe na mão e tem chip de telefone' },
+      { left: 'Servidor', right: 'Fica ligado atendendo outras máquinas' },
+    ]},
+    explanation: 'Todos são computadores. O que muda é o tamanho, a potência e para que cada um foi feito.',
+  },
+  {
+    id: 'AP042-F-Q4', type: 'true_false',
+    prompt: 'O "micro" de microcomputador quer dizer que ele é do tamanho de uma caixa de fósforos.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'É falso. O "micro" compara com os computadores que ocupavam salas inteiras.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'Quando ele apareceu, um computador que cabia numa escrivaninha era espantosamente pequeno.',
+  },
+  {
+    id: 'AP042-F-Q5', type: 'multiple_choice',
+    prompt: 'Você selecionou um parágrafo e apertou o botão de justificar. O que acontece com ele?',
+    data: { options: [
+      { id: 'a', text: 'As linhas passam a encostar nos dois lados da margem.', correct: true },
+      { id: 'b', text: 'O parágrafo vai para o meio da folha, com espaço igual dos dois lados.', porque: 'Isso é centralizar. Justificado encosta nas bordas, e não fica no meio.' },
+      { id: 'c', text: 'A letra aumenta até a linha ficar completa de uma margem à outra.', porque: 'A letra não muda de tamanho: o que o programa estica é o espaço entre as palavras.' },
+      { id: 'd', text: 'As linhas ficam com o mesmo número de palavras, uma embaixo da outra.', porque: 'O número de palavras por linha continua variando. O que fica reto é a borda direita.' },
+    ]},
+    explanation: 'Para encostar nos dois lados, o programa estica os espaços entre as palavras.',
+  },
+  {
+    id: 'AP042-F-Q6', type: 'multiple_choice',
+    prompt: 'Você apertou o botão de negrito e o texto não mudou. Qual é a primeira coisa a conferir?',
+    data: { options: [
+      { id: 'a', text: 'Se havia algum trecho selecionado na hora do clique.', correct: true },
+      { id: 'b', text: 'Se o documento foi salvo depois da última alteração feita no texto.', porque: 'Salvar guarda o que já mudou. Não é o que impede a mudança de acontecer.' },
+      { id: 'c', text: 'Se a impressora está ligada, porque sem ela o programa bloqueia a formatação.', porque: 'Impressora não tem relação nenhuma com formatar texto na tela.' },
+      { id: 'd', text: 'Se o computador tem memória suficiente para aplicar o efeito no documento.', porque: 'Negrito não pesa. Se a máquina liga e abre o texto, ela dá conta disso.' },
+    ]},
+    explanation: 'Formatação sem seleção é ordem sem endereço: o programa não sabe onde aplicar.',
+  },
+  {
+    id: 'AP042-F-Q7', type: 'ordering',
+    prompt: 'Ponha na ordem os passos para levar um trecho para outro lugar do documento, mantendo o original onde está.',
+    data: { items: [
+      { id: 'i1', text: 'Selecionar o trecho', order: 1 },
+      { id: 'i2', text: 'Apertar Copiar', order: 2 },
+      { id: 'i3', text: 'Clicar no lugar de destino', order: 3 },
+      { id: 'i4', text: 'Apertar Colar', order: 4 },
+    ]},
+    explanation: 'Quem quer levar embora, em vez de duplicar, troca copiar por recortar. O resto é igual.',
+  },
+  {
+    id: 'AP042-F-Q8', type: 'fill_blank',
+    prompt: 'Numa lista em que a ordem dos itens importa, como um passo a passo, usam-se ___ em vez de marcadores.',
+    data: { blanks: [
+      { id: 'b1', answer: 'números', hint: 'É o outro botão de lista, ao lado do de bolinhas.', aceitas: ['numeração', 'numeros', 'numeracao', 'lista numerada'] },
+    ]},
+    explanation: 'Bolinha numa receita esconde que o passo 3 vem depois do 2.',
+  },
+  {
+    id: 'AP042-F-Q9', type: 'multiple_choice',
+    prompt: 'Um computador trava quando muitos programas ficam abertos ao mesmo tempo. O que precisa aumentar?',
+    data: { options: [
+      { id: 'a', text: 'A memória RAM.', correct: true },
+      { id: 'b', text: 'O espaço de armazenamento, comprando um disco maior para caber mais coisa.', porque: 'Disco maior guarda mais arquivos. Não muda quanto cabe aberto ao mesmo tempo.' },
+      { id: 'c', text: 'A velocidade da internet, para as páginas terminarem de carregar mais rápido.', porque: 'Internet lenta demora a carregar, mas não trava a máquina inteira.' },
+      { id: 'd', text: 'A resolução do monitor, que com mais pontos consegue mostrar mais janelas juntas.', porque: 'A tela muda o que você enxerga, não o que a máquina consegue manter aberto.' },
+    ]},
+    explanation: 'Quando a RAM enche, o computador passa a usar o disco como apoio — e o disco é muito mais lento.',
+  },
+  {
+    id: 'AP042-F-Q10', type: 'true_false',
+    prompt: 'Trocar um HD por um SSD costuma mudar mais o dia a dia do que dobrar a capacidade do disco.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', correct: true },
+      { id: 'b', text: 'Falso', porque: 'É verdadeiro. Com SSD a máquina liga em segundos; espaço a mais só serve se ele estiver faltando.' },
+    ]},
+    explanation: 'O SSD não tem peça em movimento, e é isso que dá a diferença de velocidade que se sente ao ligar.',
+  },
+  {
+    id: 'AP042-F-Q11', type: 'multiple_choice',
+    prompt: 'Num anúncio aparece só "Intel Core i5". Que informação importante está faltando?',
+    data: { options: [
+      { id: 'a', text: 'A geração do processador.', correct: true },
+      { id: 'b', text: 'O nome do fabricante do computador em que esse processador foi instalado.', porque: 'A marca da máquina muda pouco o desempenho. A geração do chip muda muito.' },
+      { id: 'c', text: 'A quantidade de memória RAM, que é a peça que faz as contas na máquina.', porque: 'RAM realmente falta no anúncio, mas quem faz as contas é o processador, não ela.' },
+      { id: 'd', text: 'O sistema operacional que vem instalado de fábrica junto com a máquina.', porque: 'É bom saber, mas não é o que está faltando para avaliar o processador.' },
+    ]},
+    explanation: 'Um i5 de geração nova é muito mais rápido que um i5 antigo. Anúncio que esconde a geração costuma esconder idade.',
+  },
+  {
+    id: 'AP042-F-Q12', type: 'scenario',
+    prompt: 'A Ana vai comprar um notebook para estudar e assistir aula. Dois modelos custam igual: um tem 4 GB de RAM com SSD, o outro tem 16 GB de RAM com HD. Qual é o problema de olhar só o número maior?',
+    data: { scenarios: [
+      { id: 'a', text: 'Os 4 GB vão apertar, mas o HD deixa a máquina lenta o tempo todo.', correct: true },
+      { id: 'b', text: 'Não há problema nenhum: 16 GB é mais que 4 GB, e mais memória é sempre melhor.', porque: 'Os dois números falam de coisas diferentes. Aqui um deles vem junto com um disco lento.' },
+      { id: 'c', text: 'O de 4 GB não vai conseguir abrir o navegador, porque hoje nenhum site abre com tão pouco.', porque: 'Abre, sim — vai apertar com muitas abas, que é diferente de não funcionar.' },
+      { id: 'd', text: 'O de 16 GB é melhor de qualquer jeito, já que dá para trocar o HD por um SSD depois.', porque: 'Dá para trocar, e isso é gasto novo. A pergunta é qual leva mais longe pelo mesmo dinheiro hoje.' },
+    ]},
+    explanation: 'Avaliar é olhar o conjunto: memória, tipo de disco, processador e tela, comparados com o uso pretendido.',
+  },
+  {
+    id: 'AP042-F-Q13', type: 'multiple_choice',
+    prompt: 'A energia da casa oscila e a lâmpada pisca sempre que ligam o chuveiro. O que resolve isso para o computador?',
+    data: { options: [
+      { id: 'a', text: 'Um estabilizador, que entrega energia constante à máquina.', correct: true },
+      { id: 'b', text: 'Um filtro de linha com várias tomadas, para dividir melhor a energia da casa.', porque: 'Filtro comum só aumenta o número de tomadas: a piscada continuaria igual.' },
+      { id: 'c', text: 'Uma extensão mais longa, ligando o computador numa tomada de outro cômodo.', porque: 'A oscilação é da instalação inteira. Mudar de tomada não muda a energia que chega.' },
+      { id: 'd', text: 'Trocar a fonte do computador por uma de potência maior, que aguente mais carga.', porque: 'Fonte maior recebe a mesma energia irregular. Ela não conserta o que chega.' },
+    ]},
+    explanation: 'A piscada é queda de energia, e corrigir queda é exatamente o trabalho do estabilizador.',
+  },
+  {
+    id: 'AP042-F-Q14', type: 'multiple_choice',
+    prompt: 'O que um nobreak faz e um estabilizador não faz?',
+    data: { options: [
+      { id: 'a', text: 'Mantém a máquina ligada por alguns minutos quando a energia acaba.', correct: true },
+      { id: 'b', text: 'Deixa o computador mais rápido, porque entrega energia limpa e sem interrupção.', porque: 'Energia estável protege a máquina, mas não acelera nada.' },
+      { id: 'c', text: 'Protege contra raio, cortando a energia assim que a descarga chega pela fiação.', porque: 'Contra raio o que funciona é tirar da tomada. Nenhum dos dois dá conta.' },
+      { id: 'd', text: 'Aumenta o número de tomadas disponíveis, funcionando como uma régua de energia.', porque: 'Isso é o filtro de linha. O nobreak tem tomadas, mas não é para isso que ele existe.' },
+    ]},
+    explanation: 'A bateria é a diferença — e ela existe para você salvar o arquivo e desligar direito, não para continuar trabalhando.',
+  },
+  {
+    id: 'AP042-F-Q15', type: 'true_false',
+    prompt: 'Durante uma tempestade com raios, desligar o computador no botão já basta para protegê-lo.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'É falso. Espetado na tomada ele continua ligado à fiação, que é por onde o raio chega.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'Tire da tomada o cabo de força e também o de internet: o raio entra pelos dois.',
+  },
+  {
+    id: 'AP042-F-Q16', type: 'multiple_choice',
+    prompt: 'Qual é o jeito certo de tirar um programa do computador?',
+    data: { options: [
+      { id: 'a', text: 'Abrir as configurações do sistema e mandar desinstalar o programa.', correct: true },
+      { id: 'b', text: 'Arrastar o atalho da área de trabalho para a lixeira e depois esvaziá-la.', porque: 'Isso apaga o atalho. O programa continua instalado, ocupando o mesmo espaço.' },
+      { id: 'c', text: 'Apagar a pasta do programa dentro da pasta de Arquivos de Programas do sistema.', porque: 'Tira os arquivos principais e deixa registros, atalhos e configurações espalhados.' },
+      { id: 'd', text: 'Instalar por cima uma versão mais nova, que substitui a antiga e libera o espaço.', porque: 'Isso atualiza o programa. Ele continua na máquina, e era justamente o que se queria tirar.' },
+    ]},
+    explanation: 'O desinstalador desfaz o que a instalação fez. Qualquer outro caminho deixa sobra pelo sistema.',
+  },
+  {
+    id: 'AP042-F-Q17', type: 'multiple_choice',
+    prompt: 'Por que exportar um relatório em pdf antes de mandar para outra pessoa?',
+    data: { options: [
+      { id: 'a', text: 'Porque ele chega com a formatação que você deixou, em qualquer computador.', correct: true },
+      { id: 'b', text: 'Porque o pdf ocupa sempre menos espaço do que qualquer documento de texto.', porque: 'Nem sempre: pdf com muita imagem pode ficar maior que o documento original.' },
+      { id: 'c', text: 'Porque só o pdf pode ser enviado como anexo em mensagem de correio eletrônico.', porque: 'Qualquer arquivo vai como anexo. O motivo do pdf é outro.' },
+      { id: 'd', text: 'Porque o pdf corrige sozinho os erros de digitação antes de gerar o arquivo final.', porque: 'Nenhum formato corrige texto. Exportar só congela o documento como ele está.' },
+    ]},
+    explanation: 'Margem, fonte e quebra de página ficam travadas — e ninguém muda o texto sem querer.',
+  },
+  {
+    id: 'AP042-F-Q18', type: 'scenario',
+    prompt: 'Você vai imprimir 3 cópias de um relatório de 4 páginas para entregar a três pessoas. Esqueceu de marcar "agrupado". O que sai da impressora?',
+    data: { scenarios: [
+      { id: 'a', text: 'As três páginas 1 juntas, depois as três páginas 2, e assim por diante.', correct: true },
+      { id: 'b', text: 'Apenas uma cópia, porque sem o agrupamento a impressora ignora a quantidade pedida.', porque: 'A quantidade é obedecida. O que muda é a ordem em que as folhas saem.' },
+      { id: 'c', text: 'As três cópias completas e em ordem, porque agrupar serve só para grampear no fim.', porque: 'É justamente o contrário: agrupado é o que faz cada cópia sair inteira e em ordem.' },
+      { id: 'd', text: 'Uma cópia em ordem e as outras duas embaralhadas, misturando as páginas de cada uma.', porque: 'Não é aleatório: sem agrupar, a impressora vai página por página, do começo ao fim.' },
+    ]},
+    explanation: 'Dá o mesmo papel e a mesma tinta — mas alguém vai separar tudo à mão depois.',
+  },
+];
+
+/*
   Qual prova vai para qual trilha.
 
   Era um ternário: a AP034 recebia a dela, e *qualquer outro código* recebia a
@@ -908,6 +1111,7 @@ const PROVAS: Record<string, Question[]> = {
   AP034: rawAp034Final,
   AP035: rawAp035Final,
   AP041: rawAp041Final,
+  AP042: rawAp042Final,
 };
 
 export function getFinalExamQuestions(specialtyCode: string): Question[] {
