@@ -60,6 +60,13 @@ interface Props {
   trilha: string;
   /** O nome da lição, na cápsula do computador. */
   titulo: string;
+  /**
+   * O programa imitado, em uma palavra — 'explorador', 'word',
+   * 'editor-de-codigo'. Não vai para a tela: é por ele que a moldura lembra
+   * se já avisou sobre a tela pequena. Dois laboratórios que imitam o mesmo
+   * programa passam o mesmo valor, e aí o aviso vale para os dois.
+   */
+  programa: string;
   tarefas: TarefaDoLaboratorio[];
   /** Mensagem passageira do laboratório — erro, dica, retorno de um clique. */
   aviso?: string;
@@ -85,10 +92,17 @@ interface Props {
   na escola. Dizer isso uma vez é honesto; repetir a cada lição é estorvo — daí
   a lembrança guardada.
 
+  ── Uma vez por programa, e não uma vez na vida ──
+  A lembrança era uma chave só para tudo. Quem dispensasse o aviso no
+  Explorador nunca mais o via — nem ao abrir o editor de código, que é onde
+  escrever pelo celular custa mais caro. Dispensar o aviso de um programa não
+  é dizer que já se conhece o próximo: cada programa imitado avisa uma vez, e
+  os dois laboratórios que imitam o mesmo editor avisam juntos.
+
   Guardada com try, como todo acesso a localStorage nesta base: em navegação
   privada ele lança, e um aviso não pode derrubar o laboratório.
 */
-const CHAVE_AVISO = 'trilha:aviso-tela-pequena';
+const CHAVE_AVISO = 'trilha:aviso-tela-pequena:';
 
 /*
   Quanto tempo sem ninguém concluir nada até a moldura oferecer o passo a passo.
@@ -103,22 +117,22 @@ const CHAVE_AVISO = 'trilha:aviso-tela-pequena';
 */
 const SEGUNDOS_ATE_OFERECER = 90;
 
-function jaAvisado(): boolean {
-  try { return localStorage.getItem(CHAVE_AVISO) === '1'; } catch { return false; }
+function jaAvisado(programa: string): boolean {
+  try { return localStorage.getItem(CHAVE_AVISO + programa) === '1'; } catch { return false; }
 }
 
-function marcarAvisado(): void {
-  try { localStorage.setItem(CHAVE_AVISO, '1'); } catch { /* sem memória, avisa de novo */ }
+function marcarAvisado(programa: string): void {
+  try { localStorage.setItem(CHAVE_AVISO + programa, '1'); } catch { /* sem memória, avisa de novo */ }
 }
 
 export default function LaboratorioEmTelaCheia({
-  trilha, titulo, tarefas, aviso, children, acoes, rodape = 0,
+  trilha, titulo, programa, tarefas, aviso, children, acoes, rodape = 0,
 }: Props) {
   const [painelAberto, setPainelAberto] = useState(true);
-  const [avisoDeTela, setAvisoDeTela] = useState(() => !jaAvisado());
+  const [avisoDeTela, setAvisoDeTela] = useState(() => !jaAvisado(programa));
   /* Com o aviso de pé a bolha começa fechada: dois painéis escuros empilhados
      num celular são um só borrão, e o aviso vem antes da lista de tarefas. */
-  const [bolhaAberta, setBolhaAberta] = useState(() => jaAvisado());
+  const [bolhaAberta, setBolhaAberta] = useState(() => jaAvisado(programa));
   const [ajudaOferecida, setAjudaOferecida] = useState(false);
   const [ajudaAberta, setAjudaAberta] = useState(false);
 
@@ -376,7 +390,7 @@ export default function LaboratorioEmTelaCheia({
                 fazer tudo por aqui, mas num tablet ou num computador você vê a
                 tela do jeito que vai encontrar na escola.
               </p>
-              <button onClick={() => { setAvisoDeTela(false); marcarAvisado(); setBolhaAberta(true); }}
+              <button onClick={() => { setAvisoDeTela(false); marcarAvisado(programa); setBolhaAberta(true); }}
                 className="btn-primary text-sm mt-3">
                 Entendi, pode continuar
               </button>

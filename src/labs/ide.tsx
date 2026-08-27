@@ -1,9 +1,8 @@
-import { useRef } from 'react';
 import {
   Files, Search, GitBranch, Blocks, Play, RotateCw, Lock,
   FileCode, ChevronDown, CircleAlert, TriangleAlert, Code2, Eye,
 } from 'lucide-react';
-import { realcarHtml, contarLinhas } from './realce';
+import { realcarLinhas } from './realce';
 
 /*
  * A moldura do editor de código, compartilhada pelos laboratórios de HTML.
@@ -87,24 +86,47 @@ export const CSS_IDE = `
   /* ── O editor: régua, realce e campo, os três no mesmo lugar ──
      O campo de texto fica por cima, transparente, e o realce por baixo. Os
      dois precisam da mesma fonte, do mesmo tamanho e do mesmo recuo, ou a
-     letra que se digita não cai em cima da letra colorida. */
-  .ide-codigo { flex: 1; min-height: 0; display: flex; background: #1E1E1E; overflow: hidden; }
-  .ide-regua {
-    flex: none; width: 46px; overflow: hidden; text-align: right;
-    padding: 10px 8px 10px 0; color: #6E7681; user-select: none;
+     letra que se digita não cai em cima da letra colorida.
+
+     ── A linha quebra ──
+     Não quebrava, e uma linha de <img src="..." alt="..."> saía pela direita:
+     no computador dava para rolar de lado, no celular o desbravador escrevia
+     às cegas o que já não cabia na tela. Agora quebra, como quebra em
+     qualquer editor com quebra automática ligada.
+
+     Quebrar custa a régua: com uma linha ocupando três faixas, uma coluna de
+     alturas fixas ao lado desalinha na primeira quebra. Por isso a régua não
+     é mais uma coluna — cada linha lógica virou uma faixa de grade, com o
+     número numa célula e o código na outra, e a faixa cresce junto com o que
+     ela contém. Ninguém mede nada, e nada dessincroniza.
+
+     A faixa que continua uma linha não recebe número, e é justamente por aí
+     que se lê que ela é continuação, e não linha nova. Continuação começa na
+     margem, sem herdar o recuo: um <textarea> é um bloco só, e recuo pendente
+     por linha não existe nele — se o realce recuasse e o campo não, o cursor
+     deixaria de cair em cima da letra que o desbravador vê. */
+  .ide-codigo {
+    --regua: 46px;
+    flex: 1; min-height: 0; position: relative; background: #1E1E1E;
+    overflow-y: auto; overflow-x: hidden;
   }
-  .ide-caixa { flex: 1; min-width: 0; position: relative; }
-  .ide-regua, .ide-realce, .ide-texto {
+  .ide-folha { position: relative; min-height: 100%; padding: 10px 0; }
+  .ide-realce, .ide-texto {
     font-family: 'Cascadia Code', Consolas, 'Courier New', monospace;
     font-size: 12.5px; line-height: 19px; tab-size: 2;
+    white-space: pre-wrap; overflow-wrap: break-word;
   }
-  .ide-realce, .ide-texto {
-    position: absolute; inset: 0; margin: 0; padding: 10px 12px;
-    white-space: pre; overflow: auto; border: none;
-  }
-  .ide-realce { pointer-events: none; color: #D4D4D4; }
+  .ide-realce { margin: 0; color: #D4D4D4; pointer-events: none; }
+  .ide-linha { display: grid; grid-template-columns: var(--regua) 1fr; min-height: 19px; }
+  .ide-num { text-align: right; padding-right: 10px; color: #6E7681; user-select: none; }
+  .ide-cod { min-width: 0; padding-right: 12px; }
   .ide-texto {
-    background: transparent; color: transparent; caret-color: #FFFFFF; resize: none;
+    position: absolute; top: 10px; right: 0; bottom: 10px; left: var(--regua);
+    width: auto; margin: 0; padding: 0 12px 0 0; border: none; resize: none;
+    /* Escondido, e não automático: quem rola é a folha inteira, com a régua
+       junto. Duas barras de rolagem seriam dois lugares para o mesmo texto. */
+    overflow: hidden;
+    background: transparent; color: transparent; caret-color: #FFFFFF;
   }
   .ide-texto:focus { outline: none; }
   .ide-texto::selection { background: #264F78; color: transparent; }
@@ -161,7 +183,7 @@ export const CSS_IDE = `
   @media (max-width: 767px) {
     .ide-atividade { display: none; }
     .ide-lateral { width: 124px; }
-    .ide-regua { width: 34px; }
+    .ide-codigo { --regua: 34px; }
   }
 `;
 
@@ -238,43 +260,143 @@ export function LateralDaIde({ projeto, arquivos, atual, aoAbrir, aoAvisar }: {
   );
 }
 
+/* ── O recuo ────────────────────────────────────────────────────────────────
+ *
+ * Sem isto, escrever HTML aninhado no laboratório era impossível: o Tab levava
+ * o foco para o próximo botão, e a única forma de recuar era segurar a barra de
+ * espaço. Quem escreve HTML de verdade aperta Tab, e o editor recua.
+ *
+ * Dois espaços por nível, que é o que os modelos deste currículo usam. Sair do
+ * campo com o teclado continua possível pelo Esc — sem essa saída, um Tab
+ * capturado prenderia quem não usa mouse dentro do editor.
+ */
+const RECUO = '  ';
+
+/** Tags sem fechamento: depois delas o próximo nível não aumenta. */
+const SEM_FECHAMENTO = new Set([
+  'br', 'hr', 'img', 'input', 'meta', 'link', 'area', 'base', 'col', 'embed',
+  'source', 'track', 'wbr', '!doctype',
+]);
+
+/** O branco com que começa a linha em que o cursor está. */
+function recuoDaLinha(texto: string, posicao: number): string {
+  const inicio = texto.lastIndexOf('\n', posicao - 1) + 1;
+  return /^[ \t]*/.exec(texto.slice(inicio, posicao))![0];
+}
+
+/** O que vem antes do cursor termina abrindo uma tag que ainda vai fechar? */
+function abriuTag(antes: string): boolean {
+  if (/\/>\s*$/.test(antes)) return false;
+  const tag = /<([A-Za-z!][\w:-]*)(?:\s[^<>]*)?>\s*$/.exec(antes);
+  return !!tag && !SEM_FECHAMENTO.has(tag[1].toLowerCase());
+}
+
+/**
+ * Escreve no campo pelo caminho do próprio navegador.
+ *
+ * `execCommand` está marcado como obsoleto e continua sendo o único jeito de
+ * escrever num textarea sem zerar a pilha de desfazer: mexer no valor na mão
+ * faz o Ctrl+Z devolver o arquivo inteiro de uma vez, e perder meia hora de
+ * trabalho num atalho é pior do que não ter o atalho. Quando ele não existe,
+ * cai no caminho manual, que ao menos escreve.
+ */
+function escrever(
+  campo: HTMLTextAreaElement, texto: string, de: number, ate: number,
+  aoMudar: (c: string) => void,
+): void {
+  campo.setSelectionRange(de, ate);
+  try {
+    if (document.execCommand('insertText', false, texto)) return;
+  } catch { /* navegador sem execCommand: segue abaixo */ }
+  const novo = campo.value.slice(0, de) + texto + campo.value.slice(ate);
+  campo.value = novo;
+  campo.setSelectionRange(de + texto.length, de + texto.length);
+  aoMudar(novo);
+}
+
 /**
  * O editor: régua de linhas, realce por baixo e campo de texto por cima.
  *
- * O campo rola, e a régua e o realce acompanham — sem isso, passar da
- * trigésima linha desalinha tudo.
+ * Uma faixa por linha lógica, com o número ao lado do código. Como a faixa
+ * cresce quando a linha quebra, a régua acompanha sozinha — antes ela era uma
+ * coluna de alturas fixas com a rolagem espelhada à mão, e bastava uma linha
+ * comprida para o número deixar de bater com o código.
  */
 export function EditorDeCodigo({ codigo, aoMudar, rotulo }: {
   codigo: string; aoMudar: (c: string) => void; rotulo: string;
 }) {
-  const regua = useRef<HTMLDivElement>(null);
-  const realce = useRef<HTMLPreElement>(null);
+  const linhas = realcarLinhas(codigo);
 
-  const linhas = contarLinhas(codigo);
+  const aoTeclar = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const campo = e.currentTarget;
+    const { selectionStart: de, selectionEnd: ate, value } = campo;
 
-  const acompanhar = (e: React.UIEvent<HTMLTextAreaElement>) => {
-    const alvo = e.currentTarget;
-    if (regua.current) regua.current.scrollTop = alvo.scrollTop;
-    if (realce.current) {
-      realce.current.scrollTop = alvo.scrollTop;
-      realce.current.scrollLeft = alvo.scrollLeft;
+    /* A saída para quem navega por teclado: Esc devolve o foco à página, e daí
+       o Tab volta a andar entre os controles. */
+    if (e.key === 'Escape') { campo.blur(); return; }
+
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const daLinha = value.lastIndexOf('\n', de - 1) + 1;
+      const varias = value.slice(de, ate).includes('\n');
+
+      /* Cursor solto e sem Shift: recua onde ele está. */
+      if (!varias && !e.shiftKey) { escrever(campo, RECUO, de, ate, aoMudar); return; }
+
+      /* Com bloco selecionado, ou com Shift, mexe em linha inteira — é como
+         se arruma um trecho aninhado de uma vez. */
+      const quebra = value.indexOf('\n', ate);
+      const fim = quebra === -1 ? value.length : quebra;
+      const bloco = value.slice(daLinha, fim);
+      const trocado = bloco
+        .split('\n')
+        .map(l => (e.shiftKey ? l.replace(/^ {1,2}|^\t/, '') : RECUO + l))
+        .join('\n');
+      if (trocado !== bloco) escrever(campo, trocado, daLinha, fim, aoMudar);
+      return;
+    }
+
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const recuo = recuoDaLinha(value, de);
+      if (!abriuTag(value.slice(0, de))) {
+        /* Linha comum: repete o recuo da anterior. Sem recuo nenhum, o
+           comportamento do navegador já serve e sai mais barato. */
+        if (!recuo) return;
+        e.preventDefault();
+        escrever(campo, '\n' + recuo, de, ate, aoMudar);
+        return;
+      }
+      /* Acabou de abrir uma tag: entra um nível. E se o fechamento já estiver
+         logo adiante, a tag ganha o miolo aberto e o cursor fica dentro dele,
+         que é o que qualquer editor faz e o que o desbravador vai querer. */
+      e.preventDefault();
+      const dentro = recuo + RECUO;
+      const fechaLogo = /^\s*<\//.test(value.slice(ate));
+      escrever(campo, fechaLogo ? `\n${dentro}\n${recuo}` : `\n${dentro}`, de, ate, aoMudar);
+      if (fechaLogo) {
+        const cursor = de + 1 + dentro.length;
+        campo.setSelectionRange(cursor, cursor);
+      }
     }
   };
 
   return (
     <div className="ide-codigo">
-      <div className="ide-regua" ref={regua} aria-hidden="true">
-        {Array.from({ length: linhas }, (_, i) => <div key={i}>{i + 1}</div>)}
-      </div>
-      <div className="ide-caixa">
+      <div className="ide-folha">
         {/* O realce é decoração: quem lê a tela lê o campo de texto. */}
-        <pre className="ide-realce" ref={realce} aria-hidden="true"
-          dangerouslySetInnerHTML={{ __html: realcarHtml(codigo) }} />
+        <pre className="ide-realce" aria-hidden="true">
+          {linhas.map((html, i) => (
+            <div className="ide-linha" key={i}>
+              <span className="ide-num">{i + 1}</span>
+              <span className="ide-cod" dangerouslySetInnerHTML={{ __html: html }} />
+            </div>
+          ))}
+        </pre>
         <textarea
           className="ide-texto"
           value={codigo}
           onChange={e => aoMudar(e.target.value)}
-          onScroll={acompanhar}
+          onKeyDown={aoTeclar}
           spellCheck={false}
           aria-label={rotulo}
         />
@@ -319,6 +441,11 @@ export function StatusDaIde({ problemas, linhas, aoAvisar }: {
         <TriangleAlert className="w-3.5 h-3.5" style={{ marginLeft: 8 }} /> 0
       </button>
       <span style={{ marginLeft: 'auto' }}>{linhas} linhas</span>
+      {/* "Espaços: 2" é régua de editor de verdade; o Esc está escrito ao lado
+          porque o Tab agora recua em vez de trocar de campo, e quem navega
+          por teclado precisa saber por onde sai. */}
+      <span>Espaços: 2</span>
+      <span className="hidden sm:inline">Tab recua · Esc sai</span>
       <span>UTF-8</span>
       <span>HTML</span>
     </div>

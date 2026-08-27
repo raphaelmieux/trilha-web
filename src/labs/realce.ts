@@ -21,8 +21,22 @@ const ESCAPES: Record<string, string> = {
 
 export const escapar = (t: string) => t.replace(/[&<>"']/g, c => ESCAPES[c]);
 
-const pinta = (cor: Cor, texto: string) =>
-  texto ? `<span class="ide-${cor}">${escapar(texto)}</span>` : '';
+/*
+ * Um pedaço colorido — e um `<span>` por linha, nunca um atravessando duas.
+ *
+ * A quebra importa porque quem monta a tela precisa de cada linha como um
+ * texto fechado em si: é assim que a régua da esquerda consegue ter uma faixa
+ * por linha lógica. Como a saída é uma sequência plana de `<span>` — nenhum
+ * dentro de outro —, cortar nos `\n` devolve HTML equilibrado em cada pedaço.
+ * Os `\n` ficam de fora dos spans, no nível de cima, que é onde o corte é
+ * seguro.
+ */
+const pinta = (cor: Cor, texto: string) => texto
+  ? texto
+    .split('\n')
+    .map(t => (t ? `<span class="ide-${cor}">${escapar(t)}</span>` : ''))
+    .join('\n')
+  : '';
 
 /**
  * Divide o miolo de uma tag em nome, atributos e valores.
@@ -77,11 +91,15 @@ function pintarMiolo(miolo: string): string {
 }
 
 /**
- * Devolve o código com `<span>` de cor em volta de cada pedaço.
+ * Devolve o código com `<span>` de cor em volta de cada pedaço, **uma entrada
+ * por linha do original**.
  *
- * O que entra é texto puro; o que sai é HTML seguro para pôr na página.
+ * O que entra é texto puro; o que sai é HTML seguro para pôr na página. O
+ * vetor tem exatamente `contarLinhas(codigo)` posições, e a de índice `i` é a
+ * linha `i + 1` — é essa correspondência que segura o número da régua ao lado
+ * do código certo, mesmo quando a linha quebra em três na tela do celular.
  */
-export function realcarHtml(codigo: string): string {
+export function realcarLinhas(codigo: string): string[] {
   let saida = '';
   let i = 0;
 
@@ -113,9 +131,7 @@ export function realcarHtml(codigo: string): string {
     i = fecha + 1;
   }
 
-  /* Uma quebra a mais no fim: sem ela, a última linha vazia some no <pre> e o
-     realce fica um pixel fora do lugar em relação ao campo de texto. */
-  return saida + '\n';
+  return saida.split('\n');
 }
 
 /** Quantas linhas o código tem — a régua da esquerda vem daqui. */

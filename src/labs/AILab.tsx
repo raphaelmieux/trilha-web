@@ -342,6 +342,7 @@ export default function AILab({ specialtyCode, lessonCode, lessonTitle, requirem
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
       titulo={lessonTitle}
+      programa="gemini"
       tarefas={tarefas}
       aviso={aviso || error}
       acoes={acoes}

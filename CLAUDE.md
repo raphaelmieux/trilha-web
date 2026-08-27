@@ -138,9 +138,13 @@ data, que só existia no cabeçalho da coluna —, o caminho que falta é o que 
 programa de verdade também tem: o menu Classificar. Reduzir a tela nunca reduz o
 que dá para fazer nela.
 
-A moldura avisa **uma vez**, no celular, que a experiência é melhor em tela
-maior, e guarda a resposta. Aviso que volta a cada lição é o que ensina a pessoa
-a não ler avisos.
+A moldura avisa **uma vez por programa imitado**, no celular, que a experiência
+é melhor em tela maior, e guarda a resposta em `programa` — cada laboratório
+diz qual imita, e os dois que imitam o mesmo editor avisam juntos. A lembrança
+já foi uma chave só para tudo, e aí quem dispensava o aviso no Explorador
+entrava no editor de código sem ser avisado, que é onde escrever pelo celular
+custa mais caro. Aviso que volta a cada lição é o que ensina a pessoa a não ler
+avisos; aviso que nunca mais volta é o que deixa ela se prejudicar em silêncio.
 
 Superfície clara dentro da moldura precisa **dizer a própria cor**: a plataforma
 pinta `h1..h4` de quase branco, o que está certo num aplicativo escuro e some em
@@ -176,6 +180,31 @@ ensina quando dá para ver o que se perdeu; o editor de imagens tem peças na
 lateral, prancheta no meio e propriedades à direita; o de IA é a conversa do
 Gemini, e a avaliação crítica acontece no polegar que o próprio aplicativo tem
 embaixo de cada resposta — não num formulário da plataforma logo abaixo.
+
+**No editor de código, a linha quebra — e a régua quebra junto.** Não quebrava,
+e uma linha de `<img src="..." alt="...">` saía pela direita: no computador dava
+para rolar de lado, no celular o desbravador escrevia às cegas o que já não
+cabia. Quebrar custa a régua, porque uma coluna de alturas fixas ao lado
+desalinha na primeira quebra — então cada linha lógica virou uma faixa de
+grade, número numa célula e código na outra, e a faixa cresce com o que contém.
+A faixa que continua uma linha não recebe número, e é por aí que se lê que ela é
+continuação.
+
+A continuação começa na margem, sem herdar o recuo: `<textarea>` é um bloco só,
+e recuo pendente por linha não existe nele — se o realce recuasse e o campo não,
+o cursor deixaria de cair em cima da letra que a pessoa vê. **Tab recua** dois
+espaços, Enter repete o recuo da linha anterior e abre miolo entre uma tag e o
+fechamento dela; **Esc sai do campo**, senão o Tab capturado prende quem navega
+por teclado. Tudo escrito por `execCommand('insertText')`, obsoleto e ainda
+assim o único jeito de não zerar o Ctrl+Z.
+
+**Código escrito é trabalho de horas, e mora no navegador até a entrega.** Os
+dois laboratórios de HTML gravam por `useRascunhoLocal` a cada pausa e na hora
+em que a página some — recarregar sem querer apagava tudo, e quem perde meia
+hora de trabalho não recomeça: desiste. Ao voltar, a tela **diz** que voltou,
+porque encontrar o próprio texto sem explicação assusta mais do que ajuda. Na
+entrega o rascunho é descartado: o computador do clube costuma ser de todo
+mundo.
 
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou

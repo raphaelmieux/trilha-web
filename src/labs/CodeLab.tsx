@@ -12,6 +12,8 @@ import {
 } from './ide';
 import { contarLinhas } from './realce';
 import type { PropsDeLaboratorio } from './tipos';
+import { lerRascunho, descartarRascunho } from '../lib/rascunho';
+import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
 
 /**
  * Two variants, one editor.
@@ -136,13 +138,38 @@ const PASSOS: Record<string, string[]> = {
 
 export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId, variant = 'elementos' }: Props) {
   const starter = STARTERS[variant];
-  const [code, setCode] = useState(starter);
+  /*
+    O código volta como foi deixado.
+
+    Escrever uma página inteira leva bastante tempo, e o texto só existia na
+    tela: recarregar sem querer, o aplicativo se atualizar por baixo, ou
+    simplesmente sair para conferir outra coisa apagava tudo — e quem perde
+    meia hora de trabalho não recomeça, desiste. `useRascunhoLocal` grava a
+    cada pausa e também na hora em que a página some, que é o momento em que
+    um temporizador de meio segundo nunca chega a disparar no celular.
+
+    A leitura é preguiçosa, no primeiro estado: restaurar por efeito faria a
+    tela piscar o modelo antes do trabalho da pessoa.
+  */
+  const [code, setCode] = useState(() => {
+    const guardado = lerRascunho<string>(userId, lessonCode);
+    return typeof guardado?.conteudo === 'string' ? guardado.conteudo : starter;
+  });
+  const [voltou] = useState(() => {
+    const guardado = lerRascunho<string>(userId, lessonCode);
+    return typeof guardado?.conteudo === 'string' && guardado.conteudo !== starter;
+  });
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
   /* Em tela estreita o editor e a prévia não cabem lado a lado, e a escolha
      entre os dois é de quem está usando. */
   const [vendo, setVendo] = useState<'codigo' | 'previa'>('codigo');
-  const [aviso, setAviso] = useState('');
+  /* Avisa que o código voltou do navegador, em vez de reaparecer sozinho:
+     encontrar a tela diferente do que se lembra sem explicação assusta mais
+     do que ajuda. */
+  const [aviso, setAviso] = useState(voltou ? 'Seu código voltou como você deixou.' : '');
+
+  useRascunhoLocal(userId, lessonCode, code, !completed);
 
   // Live validation: the student sees a requirement tick the moment the markup
   // becomes correct, which is the feedback loop that teaches the element. The
@@ -171,6 +198,10 @@ export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requir
       });
     }
     await logActivity(userId, 'code_lab_completed', { specialtyCode, lessonCode, variant, checksPassed: passedCount, total: results.length });
+    /* Entregue, o rascunho não protege mais nada — e deixá-lo no navegador
+       de um clube, que costuma ser compartilhado, é lixo com o texto de
+       alguém dentro. */
+    descartarRascunho(userId, lessonCode);
     setCompleted(true);
   };
 
@@ -219,6 +250,7 @@ export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requir
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
       titulo={lessonTitle}
+      programa="editor-de-codigo"
       tarefas={tarefas}
       aviso={aviso}
       acoes={acoes}

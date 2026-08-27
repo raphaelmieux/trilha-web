@@ -557,6 +557,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
       titulo={lessonTitle}
+      programa="explorador"
       tarefas={tarefas}
       aviso={aviso}
       acoes={acoes}

@@ -412,6 +412,7 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTi
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
       titulo={lessonTitle}
+      programa="word"
       tarefas={tarefas}
       aviso={aviso}
       acoes={acoes}

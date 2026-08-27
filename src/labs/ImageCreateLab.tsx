@@ -496,6 +496,7 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
       titulo={lessonTitle}
+      programa="estudio-de-design"
       tarefas={tarefas}
       aviso={aviso}
       acoes={acoes}

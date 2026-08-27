@@ -6,9 +6,11 @@ import { MemoryRouter } from 'react-router-dom';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 
 /*
-  O aviso de tela pequena promete duas coisas ao desbravador: que aparece, e
-  que aparece uma vez só. A segunda é a frágil — um aviso que volta a cada
-  lição vira estorvo, e o estorvo é o que faz a pessoa parar de ler avisos.
+  O aviso de tela pequena promete três coisas ao desbravador: que aparece, que
+  não volta na lição seguinte do mesmo programa, e que volta quando o programa
+  é outro. As três se equilibram — um aviso que repete vira estorvo, e estorvo
+  é o que ensina a não ler avisos; um aviso que nunca mais volta deixa quem
+  dispensou no Explorador entrar no editor de código sem ser avisado.
 
   A largura em si é do CSS (`md:hidden`), e o jsdom não aplica media query.
   O que se confere aqui é a memória.
@@ -24,7 +26,10 @@ let root: Root;
 
 const PASSOS = ['Abra o menu Arquivo.', 'Escolha Salvar como.'];
 
-const montar = (tarefas = [{ id: 't1', titulo: 'Fazer alguma coisa', feita: false }]) => {
+const montar = (
+  tarefas = [{ id: 't1', titulo: 'Fazer alguma coisa', feita: false }],
+  programa = 'explorador',
+) => {
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -34,6 +39,7 @@ const montar = (tarefas = [{ id: 't1', titulo: 'Fazer alguma coisa', feita: fals
         <LaboratorioEmTelaCheia
           trilha="AP041"
           titulo="Mexendo em pastas e arquivos"
+          programa={programa}
           tarefas={tarefas}
         >
           <p>o programa imitado</p>
@@ -50,6 +56,7 @@ const rerender = (tarefas: { id: string; titulo: string; feita: boolean; passos?
         <LaboratorioEmTelaCheia
           trilha="AP041"
           titulo="Mexendo em pastas e arquivos"
+          programa="explorador"
           tarefas={tarefas}
         >
           <p>o programa imitado</p>
@@ -85,13 +92,25 @@ describe('o aviso de tela pequena', () => {
     desmontar();
   });
 
-  it('não volta na lição seguinte', () => {
+  it('não volta na lição seguinte do mesmo programa', () => {
     montar();
     act(() => { botao('Entendi')!.click(); });
     desmontar();
 
     montar();
     expect(container.textContent).not.toContain('Melhor numa tela maior');
+    desmontar();
+  });
+
+  /* Dispensar o aviso do Explorador não é dizer que já se conhece o editor de
+     código — e é no editor que escrever pelo celular custa mais caro. */
+  it('volta quando o laboratório imita outro programa', () => {
+    montar(undefined, 'explorador');
+    act(() => { botao('Entendi')!.click(); });
+    desmontar();
+
+    montar(undefined, 'editor-de-codigo');
+    expect(container.textContent).toContain('Melhor numa tela maior');
     desmontar();
   });
 
@@ -120,7 +139,7 @@ describe('o passo a passo de quem travou', () => {
     { id: 't2', titulo: 'Imprimir', feita: false, passos: ['Menu Arquivo, Imprimir.'] },
   ];
 
-  beforeEach(() => { vi.useFakeTimers(); localStorage.setItem('trilha:aviso-tela-pequena', '1'); });
+  beforeEach(() => { vi.useFakeTimers(); localStorage.setItem('trilha:aviso-tela-pequena:explorador', '1'); });
   afterEach(() => { vi.useRealTimers(); });
 
   const correr = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });

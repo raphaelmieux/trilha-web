@@ -12,6 +12,8 @@ import {
 } from './ide';
 import { contarLinhas } from './realce';
 import type { PropsDeLaboratorio as Props } from './tipos';
+import { lerRascunho, descartarRascunho } from '../lib/rascunho';
+import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
 
 const PAGES = [
   { file: 'index.html', title: 'Início' },
@@ -89,11 +91,35 @@ const PASSOS: Record<string, string[]> = {
 const PAGE_CHECKS = ['html', 'head', 'body', 'title', 'heading'];
 
 export default function SiteLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
-  const [pages, setPages] = useState<Record<string, string>>(() => ({ ...STARTERS }));
+  /*
+    As quatro páginas voltam como foram deixadas.
+
+    Aqui são quatro arquivos, e não um: são horas de trabalho vivendo só na
+    tela até a entrega. Uma recarga sem querer levava as quatro de uma vez, e
+    quem perde isso não recomeça — desiste. `useRascunhoLocal` grava a cada
+    pausa e na hora em que a página some.
+
+    O que voltou é conferido arquivo por arquivo: o formato guardado é de uma
+    versão anterior do laboratório, ou está pela metade, e o que falta volta
+    a ser o modelo em vez de virar `undefined` dentro do editor.
+  */
+  const [pages, setPages] = useState<Record<string, string>>(() => {
+    const guardado = lerRascunho<Record<string, string>>(userId, lessonCode)?.conteudo;
+    const voltando: Record<string, string> = { ...STARTERS };
+    for (const { file } of PAGES) {
+      const texto = guardado?.[file];
+      if (typeof texto === 'string') voltando[file] = texto;
+    }
+    return voltando;
+  });
+  const [voltou] = useState(() => PAGES.some(p => pages[p.file] !== STARTERS[p.file]));
   const [active, setActive] = useState('index.html');
   const [vendo, setVendo] = useState<'codigo' | 'previa'>('codigo');
-  const [aviso, setAviso] = useState('');
+  /* Avisa que o trabalho voltou do navegador, em vez de reaparecer sozinho. */
+  const [aviso, setAviso] = useState(voltou ? 'Suas quatro páginas voltaram como você deixou.' : '');
   const [completed, setCompleted] = useState(false);
+
+  useRascunhoLocal(userId, lessonCode, pages, !completed);
   const [saving, setSaving] = useState(false);
 
   const [previewCode, setPreviewCode] = useState(pages[active]);
@@ -146,6 +172,9 @@ export default function SiteLab({ specialtyCode, lessonCode, lessonTitle, requir
       });
     }
     await logActivity(userId, 'site_lab_completed', { specialtyCode, lessonCode, checksPassed: passedCount, total: allChecks.length });
+    /* Entregue, o rascunho não protege mais nada — e o navegador do clube
+       costuma ser de todo mundo. */
+    descartarRascunho(userId, lessonCode);
     setCompleted(true);
   };
 
@@ -202,6 +231,7 @@ export default function SiteLab({ specialtyCode, lessonCode, lessonTitle, requir
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
       titulo={lessonTitle}
+      programa="editor-de-codigo"
       tarefas={tarefas}
       aviso={aviso}
       acoes={acoes}

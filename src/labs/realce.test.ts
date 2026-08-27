@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { realcarHtml, escapar, contarLinhas } from './realce';
+import { realcarLinhas, escapar, contarLinhas } from './realce';
+
+/* O realce inteiro, num texto só: é sobre ele que valem as garantias de escape
+   — o corte em linhas é arranjo de tela, e não pode mudar o que sai. */
+const realcarHtml = (codigo: string) => realcarLinhas(codigo).join('\n');
 
 /*
   O realce escreve HTML que vai para a página por cima do que o desbravador
@@ -73,5 +77,32 @@ describe('a régua da esquerda', () => {
     expect(contarLinhas('a\nb\nc')).toBe(3);
     expect(contarLinhas('a\n')).toBe(2);
     expect(contarLinhas('')).toBe(1);
+  });
+});
+
+describe('o corte em linhas', () => {
+  it('devolve uma entrada por linha do original', () => {
+    expect(realcarLinhas('<p>a</p>\n<p>b</p>')).toHaveLength(2);
+    expect(realcarLinhas('a\n\nb')).toHaveLength(3);
+    expect(realcarLinhas('')).toHaveLength(1);
+  });
+
+  it('anda junto com a régua, sempre', () => {
+    for (const codigo of [
+      '', 'x', '<a>\n</a>', '<!-- um\ndois\ntrês -->\n<p>fim</p>',
+      '<img\n  src="a.png"\n  alt="a">', '\n\n\n', '<p>sem fechar',
+    ]) {
+      expect(realcarLinhas(codigo)).toHaveLength(contarLinhas(codigo));
+    }
+  });
+
+  it('não deixa um span atravessar a quebra de linha', () => {
+    /* Se um <span> abrisse numa linha e fechasse na outra, cada metade viraria
+       marcação quebrada ao ser posta na página separadamente. */
+    for (const linha of realcarLinhas('<!-- um\ndois -->')) {
+      const abre = (linha.match(/<span/g) ?? []).length;
+      const fecha = (linha.match(/<\/span>/g) ?? []).length;
+      expect(abre).toBe(fecha);
+    }
   });
 });
