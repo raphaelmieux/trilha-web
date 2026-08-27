@@ -12,129 +12,23 @@ import {
 } from './ide';
 import { contarLinhas } from './realce';
 import type { PropsDeLaboratorio } from './tipos';
+/*
+  De onde a página parte, o que é cobrado dela e o caminho de cada cobrança —
+  tudo em `desafioDeHtml`, fora daqui, porque é o que um teste precisa alcançar:
+  o desafio da tabela já abriu com oito das doze verificações verdes, e isso não
+  aparece em tela nenhuma.
+*/
+import {
+  STARTERS, CHECK_IDS, PROJETO, PASSOS, type CodeLabVariant,
+} from './desafioDeHtml';
 import { lerRascunho, descartarRascunho } from '../lib/rascunho';
 import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
 
-/**
- * Two variants, one editor.
- *
- * `elementos` is the guided run through requirements AP035-3.1 … 3.13: sixteen
- * checks, one per element. `tabela` is requirement AP035-3.14, "criar página
- * completa" — and it exists as a separate variant because the curriculum used to
- * point that lesson at this very component with the very same sixteen checks, so
- * the student met the identical screen twice and the second visit proved
- * nothing. The table challenge judges a finished artefact instead: a header row,
- * a shape worth tabulating, no empty cells, and data that is the student's own.
- */
-export type CodeLabVariant = 'elementos' | 'tabela';
+export type { CodeLabVariant };
 
 type Props = PropsDeLaboratorio & { variant?: CodeLabVariant };
 
-const STARTERS: Record<CodeLabVariant, string> = {
-  elementos: `<!DOCTYPE html>
-<html>
-<head>
-  <title>Meu Clube de Desbravadores</title>
-</head>
-<body>
-
-  <!-- Escreva seu HTML aqui. A prévia ao lado atualiza sozinha. -->
-
-</body>
-</html>`,
-  tabela: `<!DOCTYPE html>
-<html>
-<head>
-  <title>Escala da Unidade</title>
-</head>
-<body>
-
-  <h1>Escala da Unidade Falcão</h1>
-
-  <p>Escreva aqui o texto do documento, explicando do que trata esta tabela.</p>
-
-  <hr>
-
-  <table>
-    <caption>Trocar por uma descrição da sua tabela</caption>
-    <tr>
-      <th>Coluna 1</th>
-      <th>Coluna 2</th>
-      <th>Coluna 3</th>
-    </tr>
-    <tr>
-      <td>Dado 1</td>
-      <td>Dado 2</td>
-      <td>Dado 3</td>
-    </tr>
-  </table>
-
-  <p><a href="https://adventistas.org">Site oficial</a></p>
-
-</body>
-</html>`,
-};
-
-const CHECK_IDS: Record<CodeLabVariant, string[]> = {
-  // Mirrors requirements AP035-3.1 … 3.13.
-  elementos: [
-    'html', 'head', 'body', 'title', 'heading', 'paragraph', 'bold', 'italic',
-    'listItem', 'link', 'lineBreak', 'image', 'horizontalRule',
-    'table', 'tableRow', 'tableCell',
-  ],
-  // Requirement AP035-4.1, which names every one of these.
-  tabela: [
-    'pageComplete', 'tableHeadingSize', 'tableStructure', 'tableHeader', 'tableSize',
-    'tableFilled', 'tableGraphic', 'tableRule', 'tableLink', 'tableHexColour',
-    'tableCaption', 'tableOwnContent',
-  ],
-};
-
 const ARQUIVO = 'index.html';
-
-/** O nome da pasta do projeto, na lateral do editor. */
-const PROJETO: Record<CodeLabVariant, string> = {
-  elementos: 'meu-clube',
-  tabela: 'escala-da-unidade',
-};
-
-/*
-  O caminho de cada verificação que ainda falta, para quem empacar. A moldura
-  só oferece isto depois de um tempo sem ninguém concluir nada.
-
-  A chave é o `id` da verificação, o mesmo do validador — assim o passo a passo
-  não tem como falar de um requisito e a lista falar de outro.
-*/
-const PASSOS: Record<string, string[]> = {
-  doctype: ['Na primeira linha do arquivo, escreva <!DOCTYPE html>.'],
-  html: ['Envolva a página inteira: <html> na segunda linha e </html> na última.'],
-  head: ['Depois de <html>, abra <head> e feche </head>. É onde vão as informações da página.'],
-  body: ['Depois do </head>, abra <body> e feche </body>. É o que aparece na tela.'],
-  title: ['Dentro do <head>, escreva <title>Nome da página</title>.'],
-  heading: ['Dentro do <body>, escreva <h1>Um título</h1>.'],
-  paragraph: ['Dentro do <body>, escreva <p>Um parágrafo de texto.</p>.'],
-  list: [
-    'Abra uma lista com <ul> e feche com </ul>.',
-    'Dentro dela, cada item é <li>texto do item</li>.',
-    'Ponha pelo menos dois itens.',
-  ],
-  link: ['Escreva <a href="https://adventistas.org">Site oficial</a>.'],
-  image: [
-    'Escreva <img src="foto.jpg" alt="Descrição da foto">.',
-    'O alt não é enfeite: é o que a pessoa cega ouve no lugar da imagem.',
-  ],
-  table: [
-    'Abra <table> e feche </table>.',
-    'Cada linha é <tr>…</tr>, e cada célula, <td>…</td>.',
-  ],
-  bold: ['Ponha <strong>alguma palavra</strong> no meio de um parágrafo.'],
-  italic: ['Ponha <em>alguma palavra</em> no meio de um parágrafo.'],
-  comment: ['Escreva um comentário: <!-- isto não aparece na página -->.'],
-  form: [
-    'Abra <form> e feche </form>.',
-    'Dentro, ponha um <input> e um <button>Enviar</button>.',
-  ],
-};
 
 export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId, variant = 'elementos' }: Props) {
   const starter = STARTERS[variant];

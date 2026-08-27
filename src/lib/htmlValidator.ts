@@ -335,13 +335,14 @@ export const TABLE_CHALLENGE_CHECKS: Record<string, CheckSpec> = {
         .map(c => c.textContent!.trim().toLowerCase())
         .join('|');
       if (!text) return { passed: false, detail: 'Ainda não há dados nas células.' };
-      // The starter ships one filled row so the student can see the shape; leaving
-      // it untouched is the one way to pass every other check without deciding
-      // anything, so it is checked for by name.
-      const starter = ['coluna 1', 'coluna 2', 'coluna 3', 'dado 1', 'dado 2', 'dado 3'];
-      const untouched = starter.filter(s => text.includes(s)).length;
-      if (untouched >= 3) {
-        return { passed: false, detail: 'Essas são as células de exemplo. Troque por dados de verdade — a escala da unidade, os hinos do trimestre, o que você quiser tabelar.' };
+      // "Coluna 1" and "Dado 1" are what someone writes to fill the shape before
+      // deciding what to tabulate — a table that satisfies every structural check
+      // while saying nothing. The starter no longer ships them, but the words
+      // still arrive by hand, so they are checked for by name.
+      const guardadores = ['coluna 1', 'coluna 2', 'coluna 3', 'dado 1', 'dado 2', 'dado 3'];
+      const vazias = guardadores.filter(g => text.includes(g)).length;
+      if (vazias >= 3) {
+        return { passed: false, detail: 'Isso é nome de lugar guardado, e não informação. Escreva dados de verdade — a escala da unidade, os hinos do trimestre, o que você quiser tabelar.' };
       }
       return { passed: true };
     },

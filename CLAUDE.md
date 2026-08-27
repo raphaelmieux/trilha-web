@@ -93,15 +93,25 @@ critério mora em `src/lib/insignias.ts`; a linha, na migration do catálogo. Ao
 abrir trilha nova, o código nasce sozinho (`codigoDaInsigniaDaTrilha`), mas a
 linha ainda é à mão — `src/lib/insignias.test.ts` cobra.
 
-**Laboratório que abre resolvido não ensina nada.** O de desenhar imagens
-nascia com sigla curta, fundo transparente, contraste bom e cinco rótulos
-preenchidos: bastava clicar em Baixar três vezes para concluir a lição sem ter
-decidido coisa nenhuma. E o erro não aparece — tudo fica verde, que é
-exatamente o que se espera de um laboratório funcionando. O modelo com que ele
-abre mora em `src/labs/modeloInicial.ts`, fora do componente, e
-`modeloInicial.test.ts` confere item por item que ele continua reprovando em
-todos. Modelo é o que sai de quem aceita o que veio na frente, e não o
-gabarito.
+**Laboratório que abre resolvido não ensina nada.** Já aconteceu duas vezes, e
+das duas o erro é invisível de dentro: o painel mostra tarefas concluídas, que é
+exatamente o que se espera de um laboratório funcionando.
+
+O de desenhar imagens nascia com sigla curta, fundo transparente, contraste bom
+e cinco rótulos preenchidos — bastava clicar em Baixar três vezes. O da tabela
+abria com **oito das doze** verificações verdes: o modelo trazia título,
+parágrafo, régua, link e uma tabela montada com cabeçalho, e sobrava trocar o
+texto de seis células.
+
+Por isso o modelo mora fora do componente nos dois — `src/labs/modeloInicial.ts`
+e `src/labs/desafioDeHtml.ts` —, com um teste que confere item por item que ele
+continua abrindo com tudo por fazer. Modelo é o que sai de quem aceita o que veio
+na frente, e não o gabarito.
+
+E tirar o andaime só é honesto se o caminho ficar: as doze verificações da tabela
+não tinham passo a passo nenhum, então o desafio que mais dava trabalho era o
+único em que a moldura não tinha o que oferecer a quem travasse. Modelo vazio
+pede `passos` completos, e o teste cobra os dois juntos.
 
 **Questão de ordenar tem uma interface só**: `ListaOrdenavel`, com arrastar e
 setas. A resposta sai do campo `order`, nunca da posição no array, porque os
@@ -269,6 +279,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/certificados.test.ts` | o padrão de um certificado ilegível — inverter para `'active'` reprova |
 | `src/lib/insignias.test.ts` | insígnia com critério no código e sem linha no catálogo |
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
+| `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 
