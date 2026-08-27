@@ -6,86 +6,19 @@ import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollm
 import { validateHtml, validateSiteLinks, type CheckResult } from '../lib/htmlValidator';
 import { CheckCircle2 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
+import ReferenciaDeHtml from '../components/ReferenciaDeHtml';
 import {
   CSS_IDE, CabecalhoDaIde, LateralDaIde, EditorDeCodigo, PreviaDaIde,
   StatusDaIde, AlternadorDaIde,
 } from './ide';
 import { contarLinhas } from './realce';
 import type { PropsDeLaboratorio as Props } from './tipos';
+import {
+  PAGINAS_DO_SITE as PAGES, STARTERS_DO_SITE as STARTERS, PASSOS_DO_SITE as PASSOS,
+  PROJETO_DO_SITE as PROJETO,
+} from './desafioDeHtml';
 import { lerRascunho, descartarRascunho } from '../lib/rascunho';
 import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
-
-const PAGES = [
-  { file: 'index.html', title: 'Início' },
-  { file: 'sobre.html', title: 'Sobre o Clube' },
-  { file: 'galeria.html', title: 'Galeria' },
-  { file: 'contato.html', title: 'Contato' },
-];
-
-const NAV = PAGES.map(p => `    <a href="${p.file}">${p.title}</a>`).join('\n');
-
-const starter = (title: string, body: string) => `<!DOCTYPE html>
-<html>
-<head>
-  <title>${title}</title>
-</head>
-<body>
-  <nav>
-${NAV}
-  </nav>
-  <h1>${title}</h1>
-${body}
-</body>
-</html>`;
-
-const STARTERS: Record<string, string> = {
-  'index.html': starter('Início', '  <p>Bem-vindo ao site do nosso clube!</p>'),
-  'sobre.html': starter('Sobre o Clube', '  <p>Conte aqui a história do clube.</p>'),
-  'galeria.html': starter('Galeria', '  <!-- Adicione imagens com <img src="..." alt="..."> -->'),
-  'contato.html': starter('Contato', '  <!-- Crie um formulário com um campo e um botão -->'),
-};
-
-const PROJETO = 'site-do-clube';
-
-/*
-  O caminho de cada verificação que ainda falta, para quem empacar. A chave é o
-  `id` do validador — assim o passo a passo não fala de um requisito enquanto a
-  lista fala de outro.
-*/
-const PASSOS: Record<string, string[]> = {
-  html: ['A página inteira vai entre <html> e </html>.'],
-  head: ['Depois de <html>, abra <head> e feche </head>.'],
-  body: ['Depois do </head>, abra <body> e feche </body>.'],
-  title: ['Dentro do <head>, escreva <title>Nome da página</title>.'],
-  heading: ['Dentro do <body>, escreva <h1>Título da página</h1>.'],
-  image: [
-    'Abra galeria.html na lateral do editor.',
-    'Escreva <img src="foto.jpg" alt="Descrição da foto">.',
-    'O alt é o que a pessoa cega ouve no lugar da imagem — não deixe vazio.',
-  ],
-  form: [
-    'Abra contato.html na lateral do editor.',
-    'Abra <form> e feche </form>.',
-    'Dentro dele ponha um <input> e um <button>Enviar</button>.',
-  ],
-  welcomeReason: [
-    'Em index.html, diga num parágrafo por que o site existe.',
-    'Uma frase basta: para que serve o site e para quem ele é.',
-  ],
-  welcomeImage: ['Em index.html, ponha uma imagem com <img src="…" alt="…">.'],
-  linksAllPages: [
-    'Cada página precisa de links para as outras três.',
-    'O menu já está pronto no começo de cada arquivo — confira se os quatro <a href="…"> continuam lá.',
-  ],
-  linksValid: [
-    'Um link aponta para um arquivo que não existe.',
-    'Confira se cada href é exatamente index.html, sobre.html, galeria.html ou contato.html.',
-  ],
-  linksReciprocal: [
-    'Alguma página não é apontada por ninguém.',
-    'Abra cada arquivo e veja se o menu tem os quatro links, sem faltar nenhum.',
-  ],
-};
 
 /** Per-page requirements. Every page must stand on its own as valid HTML. */
 const PAGE_CHECKS = ['html', 'head', 'body', 'title', 'heading'];
@@ -116,6 +49,7 @@ export default function SiteLab({ specialtyCode, lessonCode, lessonTitle, requir
   const [active, setActive] = useState('index.html');
   const [vendo, setVendo] = useState<'codigo' | 'previa'>('codigo');
   /* Avisa que o trabalho voltou do navegador, em vez de reaparecer sozinho. */
+  const [consultando, setConsultando] = useState(false);
   const [aviso, setAviso] = useState(voltou ? 'Suas quatro páginas voltaram como você deixou.' : '');
   const [completed, setCompleted] = useState(false);
 
@@ -243,12 +177,21 @@ export default function SiteLab({ specialtyCode, lessonCode, lessonTitle, requir
         <CabecalhoDaIde arquivo={active} projeto={PROJETO} aoAvisar={naoFazParte} />
 
         <div className="ide-corpo">
+          {/* Por cima do editor, com o arquivo aberto atrás: sair da referência
+              devolve o que já estava escrito, sem passar pela rota da lição. */}
+          {consultando && (
+            <div className="ide-referencia">
+              <ReferenciaDeHtml aoFechar={() => setConsultando(false)} />
+            </div>
+          )}
+
           <LateralDaIde
             projeto={PROJETO}
             arquivos={PAGES.map(p => ({ nome: p.file, problemas: errosDe(p.file) }))}
             atual={active}
             aoAbrir={setActive}
             aoAvisar={naoFazParte}
+            aoConsultar={() => setConsultando(true)}
           />
 
           <div className="ide-painel">

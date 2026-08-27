@@ -38,6 +38,8 @@ push seguinte o carrega em silêncio. O `ci.yml` reprova se ele voltar.
 - `src/curriculum/` — **o conteúdo é código**. Módulos, lições e questões em TS.
   O banco guarda identidade e progresso, nunca o conteúdo.
 - `src/labs/` — os laboratórios, um arquivo por tipo (`LabType` em `src/types`).
+- `src/curriculum/sintaxeHtml.ts` — a mini-trilha de sintaxe do HTML, que os
+  laboratórios de código abrem por cima do editor.
 - `src/lib/` — regras puras, testáveis sem servidor.
 - `src/types/index.ts` — os tipos do domínio, escritos à mão.
 - `src/types/database.ts` — **gerado**, espelha o schema. Não edite: o
@@ -99,9 +101,14 @@ exatamente o que se espera de um laboratório funcionando.
 
 O de desenhar imagens nascia com sigla curta, fundo transparente, contraste bom
 e cinco rótulos preenchidos — bastava clicar em Baixar três vezes. O da tabela
-abria com **oito das doze** verificações verdes: o modelo trazia título,
-parágrafo, régua, link e uma tabela montada com cabeçalho, e sobrava trocar o
-texto de seis células.
+abria com **oito das doze** verificações verdes. E o do site de quatro páginas
+era o pior: **vinte e duas das vinte e seis**, porque as quatro páginas vinham
+com esqueleto, título e o menu de navegação inteiro montado — e interligar as
+páginas *é* o requisito, que chegava resolvido de fábrica.
+
+Hoje só a página inicial do site traz o esqueleto, e as outras três chegam
+vazias: copiar a estrutura de uma para as outras é o que se faz na vida, e é a
+lição.
 
 Por isso o modelo mora fora do componente nos dois — `src/labs/modeloInicial.ts`
 e `src/labs/desafioDeHtml.ts` —, com um teste que confere item por item que ele
@@ -216,6 +223,26 @@ porque encontrar o próprio texto sem explicação assusta mais do que ajuda. Na
 entrega o rascunho é descartado: o computador do clube costuma ser de todo
 mundo.
 
+**Zero link não é zero link quebrado.** A verificação "sem links quebrados"
+passava num site em que ninguém tinha escrito link nenhum — nada quebrado
+porque nada existia. Numa lista de tarefas isso é uma tarefa verde de graça.
+Toda verificação que pode ser satisfeita pelo vazio precisa exigir que algo
+exista primeiro.
+
+**Quem escreve não deve ter de sair da tela para lembrar sintaxe.** A
+mini-trilha mora em `src/curriculum/sintaxeHtml.ts` — capítulo, tópico,
+exemplo, resultado e a armadilha — e `ReferenciaDeHtml` a desenha em dois
+lugares: por cima do editor, pelo ícone de livro da barra de atividades, e na
+rota `/sintaxe-html`, para quem quer ler antes. É **a mesma peça nos dois**:
+referência que diverge do que o laboratório mostra é pior do que referência
+nenhuma. Cada exemplo roda num iframe sem `allow-scripts`, e o realce sai do
+mesmo `realce.ts` do editor, então o exemplo tem as cores que a pessoa vai ver
+ao digitar a mesma coisa.
+
+O atalho na tela da trilha aparece quando ela **tem laboratório de código** —
+nunca por um `if` com o código da trilha escrito na tela, que é o erro do
+`level === 'avancado'` em outra roupa.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que
@@ -267,6 +294,13 @@ Questão nova: a definição vale uma vez. Depois dela vêm as que medem
 entendimento — consequência, discriminação entre o que se confunde, e
 diagnóstico. Cobrar melhor não é usar palavra difícil.
 
+E a definição vale uma vez **na prova inteira**. A AP035 perguntava "O que é
+Inteligência Artificial generativa?" e, sete questões depois, "O que é IA
+generativa?" — mesmas alternativas, mesma explicação. Quem sabia uma acertava
+duas, e a nota deixava de dizer o que dizia. O teste compara enunciados depois
+de normalizar as siglas, e compara também a alternativa correta, que é o que a
+repetição de fato entrega.
+
 ## As outras travas
 
 Quase todas nasceram de um erro que já aconteceu. Se uma delas reprovar, ela
@@ -280,6 +314,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/insignias.test.ts` | insígnia com critério no código e sem linha no catálogo |
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
+| `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 

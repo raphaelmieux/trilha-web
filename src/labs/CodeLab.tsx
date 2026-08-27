@@ -6,6 +6,7 @@ import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollm
 import { validateHtml, type CheckResult } from '../lib/htmlValidator';
 import { CheckCircle2, RotateCcw } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
+import ReferenciaDeHtml from '../components/ReferenciaDeHtml';
 import {
   CSS_IDE, CabecalhoDaIde, LateralDaIde, EditorDeCodigo, PreviaDaIde,
   StatusDaIde, AlternadorDaIde,
@@ -61,6 +62,7 @@ export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requir
   /* Avisa que o código voltou do navegador, em vez de reaparecer sozinho:
      encontrar a tela diferente do que se lembra sem explicação assusta mais
      do que ajuda. */
+  const [consultando, setConsultando] = useState(false);
   const [aviso, setAviso] = useState(voltou ? 'Seu código voltou como você deixou.' : '');
 
   useRascunhoLocal(userId, lessonCode, code, !completed);
@@ -156,12 +158,21 @@ export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requir
         <CabecalhoDaIde arquivo={ARQUIVO} projeto={PROJETO[variant]} aoAvisar={naoFazParte} />
 
         <div className="ide-corpo">
+          {/* Por cima do editor, com o arquivo aberto atrás: sair da referência
+              devolve o que já estava escrito, sem passar pela rota da lição. */}
+          {consultando && (
+            <div className="ide-referencia">
+              <ReferenciaDeHtml aoFechar={() => setConsultando(false)} />
+            </div>
+          )}
+
           <LateralDaIde
             projeto={PROJETO[variant]}
             arquivos={[{ nome: ARQUIVO, problemas: results.length - passedCount }]}
             atual={ARQUIVO}
             aoAbrir={() => {}}
             aoAvisar={naoFazParte}
+            aoConsultar={() => setConsultando(true)}
           />
 
           <div className="ide-painel">

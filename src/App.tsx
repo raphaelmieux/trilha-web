@@ -11,6 +11,7 @@ import DashboardPage from './pages/DashboardPage';
 import SpecialtyPage from './pages/SpecialtyPage';
 import LessonPage from './pages/LessonPage';
 import ReportPage from './pages/ReportPage';
+import SintaxeHtmlPage from './pages/SintaxeHtmlPage';
 import VerifyPage from './pages/VerifyPage';
 import CertificatePage from './pages/CertificatePage';
 import AdminPage from './pages/AdminPage';
@@ -185,6 +186,7 @@ function AppRoutes() {
         <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/especialidade/:code" element={<ProtectedRoute><SpecialtyPage /></ProtectedRoute>} />
         <Route path="/licao/:specialtyCode/:moduleCode/:lessonCode" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
+        <Route path="/sintaxe-html" element={<ProtectedRoute><SintaxeHtmlPage /></ProtectedRoute>} />
         <Route path="/relatorio" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
         <Route path="/ranking" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />

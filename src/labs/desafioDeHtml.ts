@@ -192,3 +192,99 @@ export const PASSOS: Record<string, string[]> = {
     'Coluna 1 e Dado 1 não valem — são nome de lugar guardado, e não informação.',
   ],
 };
+
+/* ── O site de quatro páginas ──────────────────────────────────────────────
+ *
+ * Este abria pior que o da tabela: as quatro páginas vinham com esqueleto,
+ * <h1> e o menu de navegação inteiro montado. Vinte das vinte verificações de
+ * estrutura e as duas de ligação já verdes, e o desbravador que abrisse a
+ * lição encontrava vinte e duas das vinte e seis tarefas feitas.
+ *
+ * O menu pronto era o pior pedaço: interligar as páginas *é* o requisito
+ * AP035-6.1, e ele vinha resolvido de fábrica.
+ *
+ * Agora só a página inicial traz o esqueleto, e as outras três chegam vazias.
+ * Não é abandono, é a lição: toda página de um site é um documento completo,
+ * e copiar a estrutura de uma para as outras é exatamente o que se faz.
+ */
+
+export const PAGINAS_DO_SITE = [
+  { file: 'index.html', title: 'Início' },
+  { file: 'sobre.html', title: 'Sobre o Clube' },
+  { file: 'galeria.html', title: 'Galeria' },
+  { file: 'contato.html', title: 'Contato' },
+];
+
+/** Página vazia, com o que ela precisa ter escrito em comentário. */
+const paginaVazia = (oQue: string) => `<!-- Arquivo vazio.
+
+     Toda página de um site é um documento completo por conta própria:
+     precisa de html, de head com o nome da página, e de body.
+     Copie a estrutura de index.html e troque o que for desta página.
+
+     ${oQue} -->
+`;
+
+/** O nome da pasta do projeto, na lateral do editor. */
+export const PROJETO_DO_SITE = 'site-do-clube';
+
+export const STARTERS_DO_SITE: Record<string, string> = {
+  /* A única com esqueleto. É de onde as outras três são copiadas — e o nome da
+     página fica em branco de propósito, porque é a primeira coisa cobrada. */
+  'index.html': `<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+
+  <!-- A página inicial. Ainda sem nada dentro.
+       O que ela precisa ter está na lista de tarefas, ao lado. -->
+
+</body>
+</html>`,
+  'sobre.html': paginaVazia('Esta é a página que conta a história do clube.'),
+  'galeria.html': paginaVazia('Esta é a página das fotos do clube.'),
+  'contato.html': paginaVazia('Esta é a página de falar com o clube.'),
+};
+
+/*
+  O caminho de cada verificação do site.
+
+  Três destas eram `linksAllPages`, `linksValid` e `linksReciprocal` — nomes
+  que verificação nenhuma tem. As de ligação se chamam `interlinked` e
+  `noBrokenLinks`, então o passo a passo das três nunca chegou a aparecer:
+  a moldura procurava por uma chave que não existia.
+*/
+export const PASSOS_DO_SITE: Record<string, string[]> = {
+  html: ['A página inteira vai entre <html> e </html>.'],
+  head: ['Depois de <html>, abra <head> e feche </head>.'],
+  body: ['Depois do </head>, abra <body> e feche </body>.'],
+  title: ['Dentro do <head>, escreva <title>Nome da página</title>.'],
+  heading: ['Dentro do <body>, escreva <h1>Título da página</h1>.'],
+  image: [
+    'Abra galeria.html na lateral do editor.',
+    'Escreva <img src="foto.jpg" alt="Descrição da foto">.',
+    'O alt é o que a pessoa cega ouve no lugar da imagem — não deixe vazio.',
+  ],
+  form: [
+    'Abra contato.html na lateral do editor.',
+    'Abra <form> e feche </form>.',
+    'Dentro dele ponha um <input> e um <button>Enviar</button>.',
+  ],
+  welcomeReason: [
+    'Em index.html, escreva um parágrafo dizendo por que o site existe.',
+    'Diga para quem ele é e o que a pessoa encontra nele — precisa passar de sessenta letras.',
+  ],
+  welcomeImage: ['Em index.html, ponha uma imagem com <img src="foto.jpg" alt="Descrição da foto">.'],
+  interlinked: [
+    'Cada página precisa de links para as outras três — é o menu do site.',
+    'Em cada arquivo, dentro do <body>, escreva <a href="index.html">Início</a> e os outros três.',
+    'Se alguma página não for apontada por ninguém, ela existe e ninguém chega nela.',
+  ],
+  noBrokenLinks: [
+    'O href de um link interno é o nome do arquivo, escrito igualzinho.',
+    'São quatro, e só quatro: index.html, sobre.html, galeria.html e contato.html.',
+    'Uma letra trocada aponta para uma página que não existe.',
+  ],
+};

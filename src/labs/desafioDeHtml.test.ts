@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { validateHtml } from '../lib/htmlValidator';
-import { STARTERS, CHECK_IDS, PASSOS } from './desafioDeHtml';
+import { validateHtml, validateSiteLinks } from '../lib/htmlValidator';
+import {
+  STARTERS, CHECK_IDS, PASSOS,
+  PAGINAS_DO_SITE, STARTERS_DO_SITE, PASSOS_DO_SITE,
+} from './desafioDeHtml';
 
 /*
   O laboratório abre com tudo por fazer, e é isso que estes testes cobram.
@@ -72,5 +75,52 @@ describe('o modelo da primeira lição de HTML', () => {
       .filter(r => r.passed)
       .map(r => r.id);
     expect(verdes).toEqual(['html', 'head', 'body', 'title']);
+  });
+});
+
+/*
+  O site de quatro páginas abria pior que a tabela: as quatro chegavam com
+  esqueleto, título e o menu de navegação inteiro montado — vinte e duas das
+  vinte e seis tarefas feitas antes de alguém digitar coisa alguma, e o menu
+  pronto resolvia de fábrica justamente o que o requisito pede, que é
+  interligar as páginas.
+
+  O que sobra de propósito é o esqueleto de index.html: é de onde as outras
+  três são copiadas, e a cópia é a lição.
+*/
+describe('o modelo com que o site de quatro páginas abre', () => {
+  const doSite = () => {
+    const daPagina = PAGINAS_DO_SITE.flatMap(p =>
+      validateHtml(STARTERS_DO_SITE[p.file], ['html', 'head', 'body', 'title', 'heading'])
+        .map(r => ({ ...r, id: `${p.file}:${r.id}` })));
+    const ligacoes = validateSiteLinks(
+      PAGINAS_DO_SITE.map(p => ({ filename: p.file, content: STARTERS_DO_SITE[p.file] })));
+    const inicial = validateHtml(STARTERS_DO_SITE['index.html'], ['welcomeReason', 'welcomeImage']);
+    const galeria = validateHtml(STARTERS_DO_SITE['galeria.html'], ['image']);
+    const contato = validateHtml(STARTERS_DO_SITE['contato.html'], ['form']);
+    return [...daPagina, ...ligacoes, ...inicial, ...galeria, ...contato];
+  };
+
+  it('entrega o esqueleto da página inicial, e nada além dele', () => {
+    const verdes = doSite().filter(r => r.passed).map(r => r.id);
+    expect(verdes).toEqual(['index.html:html', 'index.html:head', 'index.html:body']);
+  });
+
+  it('não monta o menu que interligar as páginas é o requisito', () => {
+    for (const p of PAGINAS_DO_SITE) {
+      expect(STARTERS_DO_SITE[p.file]).not.toContain('<a href=');
+    }
+  });
+
+  it('deixa as outras três páginas em branco, para serem copiadas da primeira', () => {
+    for (const p of PAGINAS_DO_SITE.slice(1)) {
+      expect(STARTERS_DO_SITE[p.file].replace(/<!--[\s\S]*?-->/g, '').trim()).toBe('');
+    }
+  });
+
+  it('tem o caminho de cada verificação que ele cobra', () => {
+    const ids = ['html', 'head', 'body', 'title', 'heading', 'interlinked', 'noBrokenLinks',
+      'welcomeReason', 'welcomeImage', 'image', 'form'];
+    expect(ids.filter(id => !PASSOS_DO_SITE[id]?.length)).toEqual([]);
   });
 });

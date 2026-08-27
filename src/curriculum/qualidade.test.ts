@@ -194,3 +194,95 @@ describe('toda alternativa errada diz o que foi confundido', () => {
     expect(indevidos, 'motivo em alternativa correta confunde quem acertou').toEqual([]);
   });
 });
+
+/*
+  Trava contra a mesma questão duas vezes.
+
+  A prova da AP035 perguntava "O que é Inteligência Artificial generativa?" e,
+  sete questões depois, "O que é IA generativa?" — mesmas alternativas, mesma
+  explicação, mesma resposta certa. Quem fazia a prova acertava duas por saber
+  uma, e a nota deixava de dizer o que dizia.
+
+  Não dá para comparar enunciado só por igualdade de texto: as duas trocavam
+  "Inteligência Artificial" por "IA" e escapavam. Então compara-se o que
+  sobra depois de normalizar as siglas e tirar as palavras de ligação — e,
+  separadamente, a alternativa correta, que é o que a repetição de fato
+  entrega.
+*/
+const SINONIMOS: [RegExp, string][] = [
+  [/inteligencia artificial/g, 'ia'],
+  [/world wide web/g, 'web'],
+  [/correio eletronico/g, 'email'],
+  [/e mail/g, 'email'],
+];
+const LIGACAO = new Set([
+  'a', 'o', 'as', 'os', 'um', 'uma', 'de', 'do', 'da', 'dos', 'das', 'e', 'em',
+  'no', 'na', 'nos', 'nas', 'que', 'qual', 'quais', 'e', 'para', 'por', 'com',
+  'ao', 'aos', 'se', 'sua', 'seu', 'sobre', 'the',
+]);
+
+function essencia(texto: string): Set<string> {
+  let t = texto.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+  for (const [de, para] of SINONIMOS) t = t.replace(de, para);
+  return new Set(
+    t.replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(p => p && !LIGACAO.has(p)),
+  );
+}
+
+/** Quanto duas frases têm em comum, de 0 a 1. */
+function parecenca(a: Set<string>, b: Set<string>): number {
+  if (!a.size || !b.size) return 0;
+  const juntos = new Set([...a, ...b]);
+  let comuns = 0;
+  for (const p of a) if (b.has(p)) comuns += 1;
+  return comuns / juntos.size;
+}
+
+/*
+  Acima disso, são a mesma pergunta escrita de dois jeitos.
+
+  "O que é ia generativa" contra "o que é ia generativa" dá 1,0; as duas
+  questões de HTTP e HTTPS da AP035, que são perguntas diferentes, ficam bem
+  abaixo. Setenta por cento passa entre as duas sem apertar nenhuma.
+*/
+const PARECENCA_DEMAIS = 0.7;
+
+describe('nenhuma prova cobra a mesma coisa duas vezes', () => {
+  const provasPorTrilha = getAllSpecialties()
+    .filter(s => s.modules.some(m => m.lessons.some(l => l.labType === 'final_exam')))
+    .map(s => [s.code, getFinalExamQuestions(s.code)] as const);
+
+  it('nenhum par de enunciados diz a mesma coisa', () => {
+    const repetidos: string[] = [];
+    for (const [trilha, qs] of provasPorTrilha) {
+      const essencias = qs.map(q => ({ id: q.id, palavras: essencia(q.prompt) }));
+      for (let i = 0; i < essencias.length; i++) {
+        for (let j = i + 1; j < essencias.length; j++) {
+          const p = parecenca(essencias[i].palavras, essencias[j].palavras);
+          if (p >= PARECENCA_DEMAIS) {
+            repetidos.push(`${trilha}: ${essencias[i].id} e ${essencias[j].id} (${p.toFixed(2)})`);
+          }
+        }
+      }
+    }
+    expect(repetidos).toEqual([]);
+  });
+
+  it('nenhuma resposta certa aparece em duas questões', () => {
+    const repetidas: string[] = [];
+    for (const [trilha, qs] of provasPorTrilha) {
+      const vistas = new Map<string, string>();
+      for (const q of qs) {
+        const certa = alternativas(q).find(o => o.correct);
+        /* Verdadeiro/falso fica de fora: "Verdadeiro" é a resposta certa de
+           metade delas, e isso é a natureza do tipo, não repetição. */
+        if (!certa || q.type === 'true_false') continue;
+        const chave = [...essencia(certa.text)].sort().join(' ');
+        const antes = vistas.get(chave);
+        if (antes) repetidas.push(`${trilha}: ${antes} e ${q.id} — "${certa.text.slice(0, 60)}…"`);
+        else vistas.set(chave, q.id);
+      }
+    }
+    expect(repetidas).toEqual([]);
+  });
+});

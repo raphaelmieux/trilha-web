@@ -133,7 +133,9 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q11', type: 'fill_blank',
-    prompt: 'Complete as lacunas sobre navegação segura.',
+    /* O enunciado era o mesmo da Q19, palavra por palavra. As lacunas sempre
+       foram outras; quem fazia a prova é que via a mesma pergunta duas vezes. */
+    prompt: 'Complete as lacunas sobre as ameaças e a defesa.',
     data: {
       blanks: [
         { id: 'b1', answer: 'antivírus', hint: 'Programa que protege contra software malicioso' },
@@ -249,7 +251,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q19', type: 'fill_blank',
-    prompt: 'Complete as lacunas sobre navegação segura.',
+    prompt: 'Complete as lacunas sobre o que mostra que a conexão é segura.',
     data: {
       blanks: [
         { id: 'b1', answer: 'HTTPS', hint: 'Protocolo seguro (sigla)' },
@@ -492,15 +494,20 @@ const rawAp035Final: Question[] = [
     explanation: 'Cada formato é otimizado para um tipo de conteúdo visual.',
   },
   {
+    /* Era a definição de IA generativa outra vez, com as mesmas alternativas
+       da Q10 e a mesma explicação — a prova cobrava duas vezes a mesma coisa.
+       A definição vale uma vez; esta agora mede o entendimento dela, no
+       engano que mais custa caro: achar que o assistente procura a resposta
+       em algum lugar, em vez de montá-la. */
     id: 'AP035-F-Q18', type: 'multiple_choice',
-    prompt: 'O que é IA generativa?',
+    prompt: 'Você faz a mesma pergunta duas vezes ao assistente de IA e recebe duas respostas diferentes. Por quê?',
     data: { options: [
-      { id: 'a', text: 'Sistemas que criam novo conteúdo (texto, imagem, código) a partir de instruções.', correct: true },
-      { id: 'b', text: 'Um antivírus que encontra e remove as ameaças sozinho, sem nunca pedir confirmação.', porque: 'Antivírus reconhece ameaças de uma lista. Gerar é produzir algo que não estava em lista alguma.' },
-      { id: 'c', text: 'Um cabo de rede de alta velocidade usado para ligar servidores entre si.', porque: 'Cabo é equipamento. IA generativa é software que produz conteúdo novo.' },
-      { id: 'd', text: 'Um formato de imagem capaz de guardar mais cores e transparência.', porque: 'Formato guarda figura pronta. A IA generativa cria o que ainda não existia.' },
+      { id: 'a', text: 'Ele monta a resposta pedaço por pedaço, escolhendo entre continuações prováveis, em vez de buscar uma resposta guardada.', correct: true },
+      { id: 'b', text: 'Porque entre uma pergunta e outra a Internet mudou, e ele leu uma página nova sobre o assunto.', porque: 'Ele não sai lendo a Internet a cada pergunta. A diferença vem de como a resposta é montada, e não de o mundo ter mudado em dez segundos.' },
+      { id: 'c', text: 'Porque a primeira resposta estava errada e ele percebeu sozinho, corrigindo na segunda vez.', porque: 'Ele não sabe qual das duas está certa: as duas saíram do mesmo jeito. Conferir continua sendo trabalho de quem perguntou.' },
+      { id: 'd', text: 'Porque cada resposta vem de um site diferente, e ele mostra o que achou em cada um deles.', porque: 'Resposta de IA generativa não é recorte de site. Ela é escrita na hora, e é por isso que ela pode inventar o que nenhum site diz.' },
     ]},
-    explanation: 'IA generativa produz conteúdo original, como ChatGPT para texto ou DALL-E para imagens.',
+    explanation: 'O modelo escreve a resposta na hora, escolhendo a cada passo entre continuações prováveis. Por isso a mesma pergunta rende textos diferentes — e por isso o que ele diz precisa ser conferido.',
   },
   {
     id: 'AP035-F-Q19', type: 'true_false',

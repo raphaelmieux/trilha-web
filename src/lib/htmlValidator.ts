@@ -537,12 +537,24 @@ export function validateSiteLinks(pages: { filename: string; content: string }[]
       .map(h => `${p.filename} → ${h}`)
   );
 
+  /*
+    Zero link não é zero link quebrado.
+
+    A checagem devolvia "sem links quebrados" para um site em que ninguém tinha
+    escrito link nenhum: nada quebrado porque nada existia. Numa lista de
+    tarefas isso vira uma tarefa verde de graça, e creditar trabalho que não
+    foi feito é o contrário do que a lista serve para fazer.
+  */
+  const escritos = pages.flatMap(p => linkTargetsOf(p.content));
+
   results.push({
     id: 'noBrokenLinks',
     label: 'Sem links quebrados',
     hint: 'Links internos devem apontar para páginas existentes',
-    passed: broken.length === 0,
-    detail: broken.length > 0 ? `Link para página inexistente: ${broken.join('; ')}.` : undefined,
+    passed: escritos.length > 0 && broken.length === 0,
+    detail: broken.length > 0
+      ? `Link para página inexistente: ${broken.join('; ')}.`
+      : escritos.length === 0 ? 'Ainda não há nenhum link escrito para conferir.' : undefined,
   });
 
   return results;

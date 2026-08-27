@@ -1,6 +1,6 @@
 import {
   Files, Search, GitBranch, Blocks, Play, RotateCw, Lock,
-  FileCode, ChevronDown, CircleAlert, TriangleAlert, Code2, Eye,
+  FileCode, ChevronDown, CircleAlert, TriangleAlert, Code2, Eye, BookOpen,
 } from 'lucide-react';
 import { realcarLinhas } from './realce';
 
@@ -43,7 +43,15 @@ export const CSS_IDE = `
   }
   .ide-menus button:hover { background: #505050; }
 
-  .ide-corpo { flex: 1; min-height: 0; display: flex; }
+  .ide-corpo { flex: 1; min-height: 0; display: flex; position: relative; }
+  /* A referência entra por cima do editor, e não no lugar dele: o arquivo
+     continua aberto atrás, com o que já foi escrito. Cobre da barra de
+     atividades para a direita e deixa a barra de título à mostra, que é a
+     regra desta moldura — o que se precisa reconhecer depois não se tapa. */
+  .ide-referencia { position: absolute; inset: 0; z-index: 5; display: flex; }
+  /* Sem isto a referência fica com a largura do próprio conteúdo e a prévia
+     do editor aparece por baixo, do lado direito. */
+  .ide-referencia > * { flex: 1; min-width: 0; }
   .ide-atividade {
     width: 48px; flex: none; background: #333333; display: flex; flex-direction: column;
     align-items: center; padding-top: 6px; gap: 2px;
@@ -215,12 +223,14 @@ export function CabecalhoDaIde({ arquivo, projeto, aoAvisar }: {
 }
 
 /** A barra de ícones e a lista de arquivos do projeto. */
-export function LateralDaIde({ projeto, arquivos, atual, aoAbrir, aoAvisar }: {
+export function LateralDaIde({ projeto, arquivos, atual, aoAbrir, aoAvisar, aoConsultar }: {
   projeto: string;
   arquivos: ArquivoDoProjeto[];
   atual: string;
   aoAbrir: (nome: string) => void;
   aoAvisar: (o: string) => void;
+  /** Abre a referência de sintaxe. É o único ícone da barra que faz algo. */
+  aoConsultar: () => void;
 }) {
   return (
     <>
@@ -236,6 +246,13 @@ export function LateralDaIde({ projeto, arquivos, atual, aoAbrir, aoAvisar }: {
         </button>
         <button title="Extensões" aria-label="Extensões" onClick={() => aoAvisar('As extensões')}>
           <Blocks className="w-5 h-5" />
+        </button>
+        {/* Num editor de verdade este seria o painel de documentação de uma
+            extensão. Aqui é a mini-trilha de sintaxe, e é o motivo de ela
+            existir: quem está escrevendo não deveria ter de sair da tela para
+            lembrar como se escreve uma tabela. */}
+        <button title="Sintaxe do HTML" aria-label="Sintaxe do HTML" onClick={aoConsultar}>
+          <BookOpen className="w-5 h-5" />
         </button>
       </div>
 
