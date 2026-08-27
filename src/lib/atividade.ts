@@ -44,7 +44,7 @@ const texto = (v: unknown): string | undefined =>
 
 /* Só objeto tem campo para ler. Lista, escalar e nulo viram {} e caem nos
    mesmos caminhos de "não sei" que já existiam. */
-const objeto = (v: Json | null | undefined): Record<string, unknown> =>
+export const objeto = (v: Json | null | undefined): Record<string, unknown> =>
   v !== null && typeof v === 'object' && !Array.isArray(v) ? v : {};
 
 /** O código da trilha, procurado em tudo o que o evento pode carregar. */

@@ -15,6 +15,7 @@ import ProgressBar from '../components/ui/ProgressBar';
 import SpecialtyEmblem from '../components/ui/SpecialtyEmblem';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
 import EstanteDeInsignias from '../components/ui/EstanteDeInsignias';
+import SecaoDeMiniTrilhas from '../components/SecaoDeMiniTrilhas';
 import { INSIGNIAS } from '../lib/insignias';
 import type { ProgressMap } from '../lib/progress';
 import { Lock, Award, Flame, Star, Clock, FileText, ArrowRight, Medal, HardHat } from 'lucide-react';
@@ -291,6 +292,10 @@ export default function DashboardPage() {
           </ul>
         )}
       </div>
+
+      {/* Última seção da página: quem abre o painel vem para a trilha em que
+          está, e a mini-trilha é o extra. */}
+      <SecaoDeMiniTrilhas userId={profile?.id} />
 
       <div className="flex gap-3 flex-wrap">
         <Link to="/relatorio" className="btn-secondary"><FileText className="w-4 h-4 mr-1" /> Ver Relatório de Aprendizagem</Link>

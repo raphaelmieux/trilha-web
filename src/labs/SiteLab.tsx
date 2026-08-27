@@ -6,7 +6,8 @@ import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollm
 import { validateHtml, validateSiteLinks, type CheckResult } from '../lib/htmlValidator';
 import { CheckCircle2 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
-import ReferenciaDeHtml from '../components/ReferenciaDeHtml';
+import LeitorDeMiniTrilha from '../components/LeitorDeMiniTrilha';
+import { getMiniTrilha } from '../curriculum/miniTrilhas';
 import {
   CSS_IDE, CabecalhoDaIde, LateralDaIde, EditorDeCodigo, PreviaDaIde,
   StatusDaIde, AlternadorDaIde,
@@ -22,6 +23,10 @@ import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
 
 /** Per-page requirements. Every page must stand on its own as valid HTML. */
 const PAGE_CHECKS = ['html', 'head', 'body', 'title', 'heading'];
+
+/* A mini-trilha que este editor abre pelo ícone de livro. Não-nula por
+   construção: `html` é entrada fixa do registro. */
+const MINI_TRILHA_HTML = getMiniTrilha('html')!;
 
 export default function SiteLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   /*
@@ -181,7 +186,8 @@ export default function SiteLab({ specialtyCode, lessonCode, lessonTitle, requir
               devolve o que já estava escrito, sem passar pela rota da lição. */}
           {consultando && (
             <div className="ide-referencia">
-              <ReferenciaDeHtml aoFechar={() => setConsultando(false)} />
+              <LeitorDeMiniTrilha trilha={MINI_TRILHA_HTML} userId={userId}
+                aoFechar={() => setConsultando(false)} />
             </div>
           )}
 

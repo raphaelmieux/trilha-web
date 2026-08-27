@@ -38,8 +38,8 @@ push seguinte o carrega em silêncio. O `ci.yml` reprova se ele voltar.
 - `src/curriculum/` — **o conteúdo é código**. Módulos, lições e questões em TS.
   O banco guarda identidade e progresso, nunca o conteúdo.
 - `src/labs/` — os laboratórios, um arquivo por tipo (`LabType` em `src/types`).
-- `src/curriculum/sintaxeHtml.ts` — a mini-trilha de sintaxe do HTML, que os
-  laboratórios de código abrem por cima do editor.
+- `src/curriculum/miniTrilhas.ts` — o registro das mini-trilhas; o conteúdo de
+  cada uma num arquivo ao lado, como `sintaxeHtml.ts`.
 - `src/lib/` — regras puras, testáveis sem servidor.
 - `src/types/index.ts` — os tipos do domínio, escritos à mão.
 - `src/types/database.ts` — **gerado**, espelha o schema. Não edite: o
@@ -229,19 +229,35 @@ porque nada existia. Numa lista de tarefas isso é uma tarefa verde de graça.
 Toda verificação que pode ser satisfeita pelo vazio precisa exigir que algo
 exista primeiro.
 
-**Quem escreve não deve ter de sair da tela para lembrar sintaxe.** A
-mini-trilha mora em `src/curriculum/sintaxeHtml.ts` — capítulo, tópico,
-exemplo, resultado e a armadilha — e `ReferenciaDeHtml` a desenha em dois
-lugares: por cima do editor, pelo ícone de livro da barra de atividades, e na
-rota `/sintaxe-html`, para quem quer ler antes. É **a mesma peça nos dois**:
-referência que diverge do que o laboratório mostra é pior do que referência
-nenhuma. Cada exemplo roda num iframe sem `allow-scripts`, e o realce sai do
-mesmo `realce.ts` do editor, então o exemplo tem as cores que a pessoa vai ver
-ao digitar a mesma coisa.
+**Mini-trilha é material curto que vale sozinho.** Nasce de uma trilha
+completa e se solta dela: a sintaxe do HTML saiu da AP035 porque quem escreve
+HTML precisa dela, tenha ou não feito a especialidade de Internet — presa ali,
+só quem estivesse naquela trilha a encontraria. Não tem requisito oficial, não
+dá nota e não entra em percentual nenhum. É **bônus**: rende insígnia e uma
+seção própria no relatório.
 
-O atalho na tela da trilha aparece quando ela **tem laboratório de código** —
-nunca por um `if` com o código da trilha escrito na tela, que é o erro do
-`level === 'avancado'` em outra roupa.
+Mora em `src/curriculum/miniTrilhas.ts` — capítulo, tópico, exemplo, resultado
+e a armadilha —, aparece na última seção da página inicial, e `LeitorDeMiniTrilha`
+a desenha em dois lugares: por cima do editor, pelo ícone de livro da barra de
+atividades, e na rota `/mini-trilha/:id`, para quem quer ler antes. É **a mesma
+peça nos dois**: referência que diverge do que o laboratório mostra é pior do
+que referência nenhuma. Cada exemplo roda num iframe sem `allow-scripts`, e o
+realce sai do mesmo `realce.ts` do editor, então o exemplo tem as cores que a
+pessoa vai ver ao digitar a mesma coisa.
+
+**Tópico lido é um evento, e não uma tabela nova.** `mini_trilha_topico` grava
+cada tópico na primeira abertura; a mini-trilha está concluída quando todos os
+dela apareceram. Fica no servidor, e não no navegador, porque quem lê metade no
+celular e metade no computador do clube nunca chegaria ao fim se cada aparelho
+contasse a sua metade. O mural de Atividade Recente não mostra esses eventos —
+vinte e dois deles viraria o registro de rolagem de página de alguém; quem
+aparece lá é `mini_trilha_completed`, uma vez.
+
+**Para acrescentar uma mini-trilha:** o conteúdo num arquivo como
+`sintaxeHtml.ts`, a entrada em `MINI_TRILHAS` com o próximo código `MT`, e a
+linha da insígnia (`mini_<id>`) numa migration nova — `insignias.test.ts`
+cobra. A arte vai em `public/assets/mini-trilhas/<CODIGO>.svg`; sem ela o
+cartão mostra o ícone de livro, e não um buraco.
 
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou

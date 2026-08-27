@@ -1,10 +1,15 @@
-import { useMemo, useState } from 'react';
-import { BookOpen, Search, X, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
-import { SINTAXE_HTML, TOPICOS_DE_SINTAXE } from '../curriculum/sintaxeHtml';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { BookOpen, Search, X, ChevronLeft, ChevronRight, AlertTriangle, Check } from 'lucide-react';
+import { topicosDaMiniTrilha, type MiniTrilha } from '../curriculum/miniTrilhas';
+import { registrarTopicoLido, buscarLeitura, leituraDosEventos } from '../lib/miniTrilhas';
 import { realcarLinhas } from '../labs/realce';
 
 /*
- * A mini-trilha de sintaxe do HTML, na tela.
+ * O leitor de mini-trilha.
+ *
+ * Serve a qualquer uma: recebe a trilha e desenha o sumário, o tópico e o
+ * resultado. A de sintaxe do HTML é a primeira; a próxima entra sem tocar
+ * neste arquivo.
  *
  * Lê-se em ordem, pelas setas do rodapé, ou cai-se direto no tópico que está
  * faltando, pela lista ou pela busca. A busca procura pela marca — quem está
@@ -18,6 +23,12 @@ import { realcarLinhas } from '../labs/realce';
  * O realce sai do mesmo `realce.ts` do editor, então o exemplo aqui tem
  * exatamente as cores que o desbravador vai ver quando digitar a mesma coisa
  * lá. E, como lá, tudo passa por `escapar` antes de virar HTML.
+ *
+ * ── O que conta como lido ────────────────────────────────────────────────
+ * Abrir o tópico. Não há botão de "marcar como lido": um botão desses vira
+ * uma fila de cliques no fim da leitura, e aí ele mede clique, não leitura.
+ * A gravação é uma por tópico, na primeira vez, e some no segundo em que a
+ * pessoa volta a um que já viu.
  */
 
 export const CSS_REFERENCIA = `
@@ -42,10 +53,13 @@ export const CSS_REFERENCIA = `
     color: #D4D4D4; font-size: 12.5px; }
   .ref-cap { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
     color: #8A8A96; padding: 10px 12px 4px; }
-  .ref-item { display: block; width: 100%; text-align: left; padding: 5px 12px 5px 18px;
+  .ref-item { width: 100%; text-align: left; padding: 5px 12px 5px 18px;
     background: none; border: none; border-left: 2px solid transparent;
     color: #CCCCCC; font-size: 12.5px; cursor: pointer; }
+  .ref-item { display: flex; align-items: center; gap: 6px; }
   .ref-item:hover { background: #2A2D2E; }
+  .ref-lido { flex: none; color: #4EC9B0; }
+  .ref-item .ref-titulo { flex: 1; min-width: 0; }
   .ref-item[aria-current="true"] { background: #37373D; color: #FFFFFF; border-left-color: #007ACC; }
   .ref-vazio { padding: 14px 12px; font-size: 12.5px; color: #8A8A96; }
 
@@ -120,29 +134,67 @@ function Resultado({ html, titulo }: { html: string; titulo: string }) {
   return <iframe srcDoc={pagina} sandbox="" title={`Resultado: ${titulo}`} />;
 }
 
-export default function ReferenciaDeHtml({ aoFechar }: { aoFechar?: () => void }) {
-  const [atual, setAtual] = useState(TOPICOS_DE_SINTAXE[0].id);
+export default function LeitorDeMiniTrilha({ trilha, userId, aoFechar }: {
+  trilha: MiniTrilha;
+  /** Quem está lendo. Sem isso a leitura não é gravada — nem tenta. */
+  userId?: string;
+  aoFechar?: () => void;
+}) {
+  const topicos = useMemo(() => topicosDaMiniTrilha(trilha), [trilha]);
+  const [atual, setAtual] = useState(topicos[0].id);
   const [busca, setBusca] = useState('');
+  const [lidos, setLidos] = useState<Set<string>>(new Set());
+
+  /* O que já foi lido chega do servidor: quem leu metade no celular continua
+     de onde parou no computador do clube. */
+  useEffect(() => {
+    if (!userId) return;
+    let cancelado = false;
+    (async () => {
+      const eventos = await buscarLeitura(userId);
+      if (!cancelado) setLidos(leituraDosEventos(eventos)[trilha.id] ?? new Set());
+    })();
+    return () => { cancelado = true; };
+  }, [userId, trilha.id]);
+
+  /*
+    Grava o tópico aberto, uma vez.
+
+    A ref guarda o que já foi gravado nesta sessão porque `lidos` só muda
+    depois da ida ao servidor: sem ela, trocar de tópico e voltar depressa
+    gravaria o mesmo duas vezes, e a contagem viraria número de cliques.
+  */
+  const gravados = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!userId || gravados.current.has(atual)) return;
+    gravados.current.add(atual);
+    (async () => {
+      const novo = await registrarTopicoLido(userId, trilha, atual, lidos);
+      if (novo) setLidos(antes => new Set(antes).add(atual));
+    })();
+  }, [userId, trilha, atual, lidos]);
 
   const procurado = busca.trim().toLowerCase();
   const achou = useMemo(() => {
     if (!procurado) return null;
     /* Procura pela marca antes do texto: quem está travado numa tabela digita
        "table", e não "como se escreve uma tabela". */
-    return TOPICOS_DE_SINTAXE.filter(t =>
+    return topicos.filter(t =>
       t.marcas.some(m => m.toLowerCase().includes(procurado))
       || t.titulo.toLowerCase().includes(procurado)
       || t.resumo.toLowerCase().includes(procurado));
-  }, [procurado]);
+  }, [procurado, topicos]);
 
-  const indice = TOPICOS_DE_SINTAXE.findIndex(t => t.id === atual);
-  const topico = TOPICOS_DE_SINTAXE[indice] ?? TOPICOS_DE_SINTAXE[0];
-  const anterior = TOPICOS_DE_SINTAXE[indice - 1];
-  const proximo = TOPICOS_DE_SINTAXE[indice + 1];
+  const indice = topicos.findIndex(t => t.id === atual);
+  const topico = topicos[indice] ?? topicos[0];
+  const anterior = topicos[indice - 1];
+  const proximo = topicos[indice + 1];
+  const concluida = lidos.size >= topicos.length;
 
   const Item = ({ id, titulo }: { id: string; titulo: string }) => (
     <button className="ref-item" aria-current={id === atual} onClick={() => setAtual(id)}>
-      {titulo}
+      <span className="ref-titulo">{titulo}</span>
+      {lidos.has(id) && <Check className="w-3.5 h-3.5 ref-lido" aria-label="lido" />}
     </button>
   );
 
@@ -152,9 +204,9 @@ export default function ReferenciaDeHtml({ aoFechar }: { aoFechar?: () => void }
 
       <div className="ref-topo">
         <BookOpen className="w-4 h-4" style={{ color: '#4EC9B0' }} />
-        <h2>Sintaxe do HTML</h2>
-        <span style={{ fontSize: 11.5, color: '#8A8A96' }}>
-          {indice + 1} de {TOPICOS_DE_SINTAXE.length}
+        <h2>{trilha.titulo}</h2>
+        <span style={{ fontSize: 11.5, color: concluida ? '#4EC9B0' : '#8A8A96' }}>
+          {concluida ? 'concluída' : `${lidos.size} de ${topicos.length} lidos`}
         </span>
         {aoFechar && (
           <button className="ref-fechar" onClick={aoFechar} aria-label="Fechar a referência">
@@ -177,7 +229,7 @@ export default function ReferenciaDeHtml({ aoFechar }: { aoFechar?: () => void }
             ? (achou.length
               ? achou.map(t => <Item key={t.id} id={t.id} titulo={t.titulo} />)
               : <p className="ref-vazio">Nada com esse nome. Tente table, img, href, style.</p>)
-            : SINTAXE_HTML.map(c => (
+            : trilha.capitulos.map(c => (
               <div key={c.id}>
                 <p className="ref-cap">{c.titulo}</p>
                 {c.topicos.map(t => <Item key={t.id} id={t.id} titulo={t.titulo} />)}
@@ -201,15 +253,17 @@ export default function ReferenciaDeHtml({ aoFechar }: { aoFechar?: () => void }
             </p>
           )}
 
-          <div className="ref-dupla">
+          <div className={trilha.mostraResultado ? 'ref-dupla' : ''}>
             <div className="ref-caixa">
               <p className="ref-caixa-topo">Você escreve</p>
               <Codigo html={topico.exemplo} />
             </div>
-            <div className="ref-caixa">
-              <p className="ref-caixa-topo">O navegador mostra</p>
-              <Resultado html={topico.exemplo} titulo={topico.titulo} />
-            </div>
+            {trilha.mostraResultado && (
+              <div className="ref-caixa">
+                <p className="ref-caixa-topo">O navegador mostra</p>
+                <Resultado html={topico.exemplo} titulo={topico.titulo} />
+              </div>
+            )}
           </div>
 
           <div className="ref-pe">

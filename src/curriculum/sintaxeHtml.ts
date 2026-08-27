@@ -22,31 +22,13 @@
  * cores, e o site de várias páginas.
  *
  * O conteúdo é código, como o resto do currículo: nada disto mora no banco.
+ * A forma dos capítulos e dos tópicos mora em `miniTrilhas.ts`, que é o
+ * registro: este arquivo é uma das trilhas, e não o molde delas.
  */
 
-export interface TopicoDeSintaxe {
-  id: string;
-  titulo: string;
-  /** Uma frase: o que se aprende aqui. Aparece na lista de tópicos. */
-  resumo: string;
-  /** Dois ou três parágrafos curtos. Frase curta, exemplo do dia a dia. */
-  explicacao: string[];
-  /** HTML que roda de verdade no quadro do resultado. */
-  exemplo: string;
-  /** O engano que este tópico costuma produzir. Aparece em destaque. */
-  atencao?: string;
-  /** Os elementos e atributos que o tópico cobre — é por aqui que se procura. */
-  marcas: string[];
-}
+import type { CapituloDeMiniTrilha } from './miniTrilhas';
 
-export interface CapituloDeSintaxe {
-  id: string;
-  titulo: string;
-  resumo: string;
-  topicos: TopicoDeSintaxe[];
-}
-
-export const SINTAXE_HTML: CapituloDeSintaxe[] = [
+export const SINTAXE_HTML: CapituloDeMiniTrilha[] = [
   {
     id: 'comeco',
     titulo: 'Como uma página é feita',
@@ -466,7 +448,3 @@ Centro — Anápolis</p>
     ],
   },
 ];
-
-/** Todos os tópicos, na ordem em que se lê — a mini-trilha do começo ao fim. */
-export const TOPICOS_DE_SINTAXE = SINTAXE_HTML.flatMap(c =>
-  c.topicos.map(t => ({ ...t, capitulo: c.titulo, capituloId: c.id })));

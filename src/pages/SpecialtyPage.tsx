@@ -12,7 +12,7 @@ import { useLicoesConcluidas } from '../hooks/useLicoesConcluidas';
 import { useCertifications } from '../hooks/useCertifications';
 import { coresDoProgresso } from '../lib/coresDoProgresso';
 import ProgressBar from '../components/ui/ProgressBar';
-import { Lock, CheckCircle2, Play, Star, Award, HardHat, BookOpen } from 'lucide-react';
+import { Lock, CheckCircle2, Play, Star, Award, HardHat } from 'lucide-react';
 
 export default function SpecialtyPage() {
   const { code } = useParams<{ code: string }>();
@@ -126,15 +126,6 @@ export default function SpecialtyPage() {
     todas medindo a mesma coisa. A cor agora responde só a "em que ponto isto
     está", e quem troca para o verde ao completar é a própria ProgressBar.
   */
-  /*
-    A trilha ensina HTML? Sai dos laboratórios que ela tem, e não de um `if`
-    com o código dela escrito aqui — foi assim que a AP041 acabou vermelha no
-    painel e azul na própria tela. Uma trilha nova com laboratório de código
-    ganha o atalho sozinha.
-  */
-  const ensinaHtml = specialty.modules.some(m => m.lessons.some(
-    l => l.labType === 'code_lab' || l.labType === 'table_challenge' || l.labType === 'site_lab'));
-
   const cores = coresDoProgresso(overallPercent);
   const accentColor = cores.destaque;
   const accentGrad = cores.gradiente;
@@ -150,16 +141,6 @@ export default function SpecialtyPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-        {ensinaHtml && (
-          <Link to="/sintaxe-html"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg transition"
-            style={{ backgroundColor: 'var(--color-primary-a08)', border: '1px solid var(--color-primary-a20)' }}>
-            <BookOpen className="w-5 h-5" style={{ color: 'var(--color-primary-hover)' }} />
-            <span className="font-semibold text-sm" style={{ color: 'var(--color-primary-hover)' }}>
-              Sintaxe do HTML
-            </span>
-          </Link>
-        )}
         {cert && (
           <Link to={`/certificado/${cert.code}`}
             className="flex items-center gap-2 px-4 py-2 rounded-lg transition group"

@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { getOpenSpecialties } from '../curriculum';
 import { laboratorioDoEvento } from './atividade';
 import { insigniasConquistadas, type ResumoDoDesbravador } from './insignias';
+import { miniTrilhasConcluidas } from './miniTrilhas';
 import type { LabType } from '../types';
 
 // Deliberately does not import from progress.ts (which will call evaluateBadges
@@ -106,6 +107,9 @@ export async function montarResumo(userId: string): Promise<ResumoDoDesbravador>
     diasDaSemana,
     xp: (matriculas.data ?? []).reduce((s, e) => s + (e.xp || 0), 0),
     certificados: (certificados.data ?? []).map(c => c.curriculum_code as string).filter(Boolean),
+    /* Sai dos mesmos eventos já buscados acima: um tópico lido é um evento,
+       e a mini-trilha está concluída quando todos os dela apareceram. */
+    miniTrilhas: miniTrilhasConcluidas(eventos.data ?? []),
   };
 }
 

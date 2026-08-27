@@ -6,7 +6,8 @@ import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollm
 import { validateHtml, type CheckResult } from '../lib/htmlValidator';
 import { CheckCircle2, RotateCcw } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
-import ReferenciaDeHtml from '../components/ReferenciaDeHtml';
+import LeitorDeMiniTrilha from '../components/LeitorDeMiniTrilha';
+import { getMiniTrilha } from '../curriculum/miniTrilhas';
 import {
   CSS_IDE, CabecalhoDaIde, LateralDaIde, EditorDeCodigo, PreviaDaIde,
   StatusDaIde, AlternadorDaIde,
@@ -30,6 +31,10 @@ export type { CodeLabVariant };
 type Props = PropsDeLaboratorio & { variant?: CodeLabVariant };
 
 const ARQUIVO = 'index.html';
+
+/* A mini-trilha que este editor abre pelo ícone de livro. Não-nula por
+   construção: `html` é entrada fixa do registro. */
+const MINI_TRILHA_HTML = getMiniTrilha('html')!;
 
 export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId, variant = 'elementos' }: Props) {
   const starter = STARTERS[variant];
@@ -162,7 +167,8 @@ export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requir
               devolve o que já estava escrito, sem passar pela rota da lição. */}
           {consultando && (
             <div className="ide-referencia">
-              <ReferenciaDeHtml aoFechar={() => setConsultando(false)} />
+              <LeitorDeMiniTrilha trilha={MINI_TRILHA_HTML} userId={userId}
+                aoFechar={() => setConsultando(false)} />
             </div>
           )}
 

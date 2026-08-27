@@ -7,6 +7,8 @@ import { nomeCompleto, type Tabela } from '../types';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
+import { useMiniTrilhas } from '../hooks/useMiniTrilhas';
+import { MINI_TRILHAS } from '../curriculum/miniTrilhas';
 import { buildSpecialtyNarrative, buildClosingParagraph, buildBadgeParagraph, type LabEvidence } from '../lib/reportNarrative';
 import { LoadingState } from '../components/ui/PageState';
 import CertificateCanvas from '../components/CertificateCanvas';
@@ -20,6 +22,7 @@ export default function ReportPage() {
   const { progress, loading: progressLoading } = useRequirementProgress(profile?.id);
   const { certifications, loading: certsLoading } = useCertifications(profile?.id);
   const { badges, loading: badgesLoading } = useBadges(profile?.id);
+  const { andamento } = useMiniTrilhas(profile?.id);
   const [lessonAttempts, setLessonAttempts] = useState<Pick<Tabela<'lesson_attempts'>, 'score' | 'total'>[]>([]);
   const [evidence, setEvidence] = useState<LabEvidence>({});
   /* Os relatórios escritos nos laboratórios de redação, por código de trilha.
@@ -154,6 +157,10 @@ export default function ReportPage() {
   const intro = `Este documento descreve, em linguagem corrente, as competências efetivamente demonstradas por ${studentName} ao longo da Trilha.Web(), plataforma de estudo autônomo de especialidades do Clube de Desbravadores. Abrange ${narratives.length === 1 ? 'a especialidade' : 'as especialidades'} ${nomeExtenso}. Destina-se à apresentação à liderança do Clube, para subsidiar o reconhecimento e o registro ${narratives.length === 1 ? 'da especialidade' : 'das especialidades'} pelos canais oficiais do clube.`;
 
   const badgeIntro = buildBadgeParagraph(badges, studentName);
+
+  /* Bônus, e por isso fora de toda a contabilidade acima: nada aqui entra em
+     percentual de trilha, em requisito nem em nota. */
+  const miniTrilhasFeitas = MINI_TRILHAS.filter(t => andamento.find(a => a.id === t.id)?.concluida);
 
   const annexNote = attachedCerts.length === 0 ? undefined
     : attachedCerts.length === 1
@@ -308,6 +315,29 @@ export default function ReportPage() {
               )}
             </div>
           ))}
+
+          {/*
+            As mini-trilhas entram antes das Conquistas e depois das trilhas,
+            porque é isso que elas são na ordem das coisas: não é requisito
+            cumprido, e não é insígnia — é uma coisa a mais que o desbravador
+            leu por conta, e o relatório de aprendizagem existe para dizer o que
+            a pessoa fez.
+          */}
+          {miniTrilhasFeitas.length > 0 && (
+            <div className="report-section">
+              <h2>Mini-trilhas concluídas</h2>
+              <p>
+                {miniTrilhasFeitas.length === 1
+                  ? 'Além do currículo das especialidades, percorreu por conta própria uma mini-trilha — material curto, sem requisito oficial e sem nota, que existe para dar conta de um assunto que aparece na prática.'
+                  : `Além do currículo das especialidades, percorreu por conta própria ${miniTrilhasFeitas.length} mini-trilhas — material curto, sem requisito oficial e sem nota, que existe para dar conta de assuntos que aparecem na prática.`}
+              </p>
+              {miniTrilhasFeitas.map(t => (
+                <p key={t.id} className="report-req">
+                  <strong>{t.titulo}</strong> ({t.codigo}) — {t.resumo} Nasceu da trilha {t.origem}.
+                </p>
+              ))}
+            </div>
+          )}
 
           {badges.length > 0 && (
             <div className="report-section">

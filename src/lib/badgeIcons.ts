@@ -43,6 +43,7 @@ const ICON_SHAPES: Record<string, string> = {
     '<circle cx="12" cy="8" r="6"/>',
   ].join(''),
   beaker: ['<path d="M4.5 3h15"/>','<path d="M6 3v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3"/>','<path d="M6 14h12"/>'].join(''),
+  book: ['<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>','<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>','<path d="M9 7h7"/>'].join(''),
   clock: ['<circle cx="12" cy="12" r="10"/>','<polyline points="12 6 12 12 16 14"/>'].join(''),
   zap: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
   calendar: ['<path d="M8 2v4"/>','<path d="M16 2v4"/>','<rect width="18" height="18" x="3" y="4" rx="2"/>','<path d="M3 10h18"/>'].join(''),
