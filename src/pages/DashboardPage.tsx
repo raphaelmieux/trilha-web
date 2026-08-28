@@ -15,7 +15,7 @@ import ProgressBar from '../components/ui/ProgressBar';
 import SpecialtyEmblem from '../components/ui/SpecialtyEmblem';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
 import EstanteDeInsignias from '../components/ui/EstanteDeInsignias';
-import SecaoDeMiniTrilhas from '../components/SecaoDeMiniTrilhas';
+import SecaoDeVeredas from '../components/SecaoDeVeredas';
 import { INSIGNIAS } from '../lib/insignias';
 import type { ProgressMap } from '../lib/progress';
 import { Lock, Award, Flame, Star, Clock, FileText, ArrowRight, Medal, HardHat } from 'lucide-react';
@@ -225,6 +225,12 @@ export default function DashboardPage() {
       ))}
 
 
+      {/* Último bloco de cursos, antes das certificações: a mini-trilha é um
+          percurso como os de cima, e por isso fica junto deles — depois, porque
+          é o extra. Ficou uma vez no pé da página, atrás do mural de atividade,
+          onde ninguém procura um curso. */}
+      <SecaoDeVeredas userId={profile?.id} />
+
       {certifications.length > 0 && (
         <div className="card p-6" style={{ borderColor: 'var(--color-secondary-a20)' }}>
           <h2 className="font-bold mb-4 flex items-center gap-2">
@@ -292,10 +298,6 @@ export default function DashboardPage() {
           </ul>
         )}
       </div>
-
-      {/* Última seção da página: quem abre o painel vem para a trilha em que
-          está, e a mini-trilha é o extra. */}
-      <SecaoDeMiniTrilhas userId={profile?.id} />
 
       <div className="flex gap-3 flex-wrap">
         <Link to="/relatorio" className="btn-secondary"><FileText className="w-4 h-4 mr-1" /> Ver Relatório de Aprendizagem</Link>

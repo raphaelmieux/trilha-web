@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { INSIGNIAS, insigniasConquistadas, codigoDaInsigniaDaTrilha, type ResumoDoDesbravador } from './insignias';
 import { getOpenSpecialties } from '../curriculum';
-import { MINI_TRILHAS, codigoDaInsigniaDaMiniTrilha } from '../curriculum/miniTrilhas';
+import { VEREDAS, codigoDaInsigniaDaVereda } from '../curriculum/veredas';
 import { hasIcon } from './badgeIcons';
 import { laboratorioDoEvento, LABORATORIO_DO_EVENTO } from './atividade';
 
@@ -42,7 +42,7 @@ const zerado = (): ResumoDoDesbravador => ({
   requisitos: 0, licoes: 0, licoesPerfeitas: 0, modulos: 0, trilhas: [],
   laboratorios: new Set(), provas: 0, provasPerfeitas: 0, melhorSequencia: 0,
   diasAtivos: 0, horas: new Set(), diasDaSemana: new Set(), xp: 0, certificados: [],
-  miniTrilhas: [],
+  veredas: [],
 });
 
 const com = (mudancas: Partial<ResumoDoDesbravador>): ResumoDoDesbravador => ({ ...zerado(), ...mudancas });
@@ -199,24 +199,24 @@ describe('toda insígnia de laboratório é alcançável', () => {
 });
 
 /*
-  As mini-trilhas seguem a mesma regra das trilhas: o critério nasce do
-  currículo, e a linha do catálogo é à mão. Sem a linha, a insígnia é ignorada
+  As veredas seguem a mesma regra das trilhas: o critério nasce do currículo,
+  e a linha do catálogo é à mão. Sem a linha, a insígnia é ignorada
   sem erro e sem prêmio — que é exatamente o tipo de falha que não aparece em
   tela nenhuma.
 */
-describe('as insígnias das mini-trilhas', () => {
-  it('toda mini-trilha tem a linha dela semeada', () => {
+describe('as insígnias das veredas', () => {
+  it('toda vereda tem a linha dela semeada', () => {
     const semeadas = insigniasSemeadas();
-    const faltando = MINI_TRILHAS
-      .map(t => codigoDaInsigniaDaMiniTrilha(t.id))
+    const faltando = VEREDAS
+      .map(v => codigoDaInsigniaDaVereda(v.id))
       .filter(codigo => !semeadas.has(codigo));
     expect(faltando).toEqual([]);
   });
 
-  it('é conquistada por quem leu a mini-trilha inteira, e só por essa pessoa', () => {
-    const id = MINI_TRILHAS[0].id;
-    expect(insigniasConquistadas(zerado())).not.toContain(codigoDaInsigniaDaMiniTrilha(id));
-    expect(insigniasConquistadas({ ...zerado(), miniTrilhas: [id] }))
-      .toContain(codigoDaInsigniaDaMiniTrilha(id));
+  it('é conquistada por quem percorreu a vereda inteira, e só por essa pessoa', () => {
+    const id = VEREDAS[0].id;
+    expect(insigniasConquistadas(zerado())).not.toContain(codigoDaInsigniaDaVereda(id));
+    expect(insigniasConquistadas({ ...zerado(), veredas: [id] }))
+      .toContain(codigoDaInsigniaDaVereda(id));
   });
 });

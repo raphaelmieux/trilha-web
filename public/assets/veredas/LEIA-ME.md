@@ -1,6 +1,6 @@
-# A arte das mini-trilhas
+# A arte das veredas
 
-Um arquivo por mini-trilha, com o nome do código dela: `MT01.svg`, `MT02.svg`.
+Um arquivo por vereda, com o nome do código dela: `VD01.svg`, `VD02.svg`.
 
 O cartão da página inicial desenha a arte em **48 × 48**, então o SVG precisa
 de `viewBox` e de traço que aguente esse tamanho — as artes das trilhas

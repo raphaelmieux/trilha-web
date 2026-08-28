@@ -38,8 +38,8 @@ push seguinte o carrega em silêncio. O `ci.yml` reprova se ele voltar.
 - `src/curriculum/` — **o conteúdo é código**. Módulos, lições e questões em TS.
   O banco guarda identidade e progresso, nunca o conteúdo.
 - `src/labs/` — os laboratórios, um arquivo por tipo (`LabType` em `src/types`).
-- `src/curriculum/miniTrilhas.ts` — o registro das mini-trilhas; o conteúdo de
-  cada uma num arquivo ao lado, como `sintaxeHtml.ts`.
+- `src/curriculum/veredas.ts` — o registro das veredas; o conteúdo de cada uma
+  num arquivo ao lado, como `sintaxeHtml.ts`.
 - `src/lib/` — regras puras, testáveis sem servidor.
 - `src/types/index.ts` — os tipos do domínio, escritos à mão.
 - `src/types/database.ts` — **gerado**, espelha o schema. Não edite: o
@@ -229,35 +229,62 @@ porque nada existia. Numa lista de tarefas isso é uma tarefa verde de graça.
 Toda verificação que pode ser satisfeita pelo vazio precisa exigir que algo
 exista primeiro.
 
-**Mini-trilha é material curto que vale sozinho.** Nasce de uma trilha
-completa e se solta dela: a sintaxe do HTML saiu da AP035 porque quem escreve
-HTML precisa dela, tenha ou não feito a especialidade de Internet — presa ali,
-só quem estivesse naquela trilha a encontraria. Não tem requisito oficial, não
-dá nota e não entra em percentual nenhum. É **bônus**: rende insígnia e uma
-seção própria no relatório.
+**Vereda é percurso curto que vale sozinho.** Vereda é o caminho estreito que
+sai da trilha principal, e é isso que ela é: nasce de uma trilha completa e se
+solta dela — a sintaxe do HTML saiu da AP035 porque quem escreve HTML precisa
+dela, tenha ou não feito a especialidade de Internet; presa ali, só quem
+estivesse naquela trilha a encontraria. Chamou-se "mini-trilha" por uma hora,
+nome que dizia o tamanho e não dizia o que a coisa é.
 
-Mora em `src/curriculum/miniTrilhas.ts` — capítulo, tópico, exemplo, resultado
-e a armadilha —, aparece na última seção da página inicial, e `LeitorDeMiniTrilha`
-a desenha em dois lugares: por cima do editor, pelo ícone de livro da barra de
-atividades, e na rota `/mini-trilha/:id`, para quem quer ler antes. É **a mesma
-peça nos dois**: referência que diverge do que o laboratório mostra é pior do
-que referência nenhuma. Cada exemplo roda num iframe sem `allow-scripts`, e o
-realce sai do mesmo `realce.ts` do editor, então o exemplo tem as cores que a
-pessoa vai ver ao digitar a mesma coisa.
+**Tem a forma de uma trilha, e não o peso dela.** Módulos, cada um com uma
+lição de teoria e um laboratório a vencer, e progresso à vista — porque é assim
+que o desbravador já sabe percorrer uma coisa aqui, e inventar uma segunda
+gramática de percurso só para o material curto seria pedir que ele aprendesse
+duas. O que ela não tem é requisito oficial, nota, ou entrada em percentual
+nenhum. É **bônus**: rende insígnia e uma seção própria no relatório.
 
-**Tópico lido é um evento, e não uma tabela nova.** `mini_trilha_topico` grava
-cada tópico na primeira abertura; a mini-trilha está concluída quando todos os
-dela apareceram. Fica no servidor, e não no navegador, porque quem lê metade no
-celular e metade no computador do clube nunca chegaria ao fim se cada aparelho
-contasse a sua metade. O mural de Atividade Recente não mostra esses eventos —
-vinte e dois deles viraria o registro de rolagem de página de alguém; quem
-aparece lá é `mini_trilha_completed`, uma vez.
+**Não vira uma `Specialty`**, e é decisão, não preguiça: uma especialidade
+precisa de linha em `specialties`, `modules`, `lessons` e `requirements` para
+gravar progresso, e a partir daí entra no percentual, na família do painel, no
+XP e nas insígnias de trilha — o contrário de bônus. O progresso da vereda sai
+de eventos de atividade, que é onde as insígnias já procuram tudo.
 
-**Para acrescentar uma mini-trilha:** o conteúdo num arquivo como
-`sintaxeHtml.ts`, a entrada em `MINI_TRILHAS` com o próximo código `MT`, e a
-linha da insígnia (`mini_<id>`) numa migration nova — `insignias.test.ts`
-cobra. A arte vai em `public/assets/mini-trilhas/<CODIGO>.svg`; sem ela o
-cartão mostra o ícone de livro, e não um buraco.
+A vereda aparece no painel como **último bloco de cursos, antes das
+certificações** — junto dos percursos, porque é um; depois deles, porque é o
+extra. Ficou uma vez no pé da página, atrás do mural de atividade, onde
+ninguém procura curso.
+
+`LeitorDeVereda` desenha a teoria em dois lugares: numa lição, mostrando só os
+tópicos dela, e por cima do editor pelo ícone de livro, mostrando a vereda
+inteira para consulta. É **a mesma peça nos dois**: referência que diverge do
+que o laboratório mostra é pior do que referência nenhuma. Cada exemplo roda
+num iframe sem `allow-scripts`, e o realce sai do mesmo `realce.ts` do editor.
+
+O laboratório é o mesmo editor da trilha — as peças saem de `ide.tsx` —, e o
+que ele cobra é uma lista de ids de `htmlValidator` escrita na lição. Assim um
+laboratório novo é uma lista, e não uma tela.
+
+**Tópico lido e laboratório vencido são eventos, e não tabela nova.**
+`vereda_topico` e `vereda_laboratorio` gravam cada um na primeira vez; a vereda
+está concluída quando todas as lições apareceram — a teoria toda lida **e** os
+laboratórios feitos. Fica no servidor, e não no navegador, porque quem lê
+metade no celular e metade no computador do clube nunca chegaria ao fim se cada
+aparelho contasse a sua metade. O mural de Atividade Recente não mostra o
+evento de tópico: vinte e dois deles viraria o registro de rolagem de página de
+alguém.
+
+Os nomes antigos (`mini_trilha_topico`, `mini_trilha_completed`) continuam
+sendo **lidos**. Houve quem lesse na hora em que o nome era outro, e apagar o
+que essa pessoa fez para arrumar um nome nosso seria cobrar dela o preço de uma
+decisão nossa.
+
+**Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
+a entrada em `VEREDAS` com o próximo código `VD`, e a linha da insígnia
+(`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra. A arte vai em
+`public/assets/veredas/<CODIGO>.svg`; sem ela o cartão mostra o ícone de livro,
+e não um buraco. `veredas.test.ts` reprova laboratório que abra com verificação
+já verde, verificação sem passo a passo, e módulo que repita o próprio nome
+numa lição.
 
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
@@ -330,6 +357,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/insignias.test.ts` | insígnia com critério no código e sem linha no catálogo |
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
+| `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, ou sem passo a passo |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |

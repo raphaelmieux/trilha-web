@@ -1,15 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, Search, X, ChevronLeft, ChevronRight, AlertTriangle, Check } from 'lucide-react';
-import { topicosDaMiniTrilha, type MiniTrilha } from '../curriculum/miniTrilhas';
-import { registrarTopicoLido, buscarLeitura, leituraDosEventos } from '../lib/miniTrilhas';
+import {
+  topicosDaVereda, licoesDaVereda, type Vereda, type TopicoDeVereda,
+} from '../curriculum/veredas';
+import { registrarTopicoLido, buscarPercurso, percursoDosEventos } from '../lib/veredas';
 import { realcarLinhas } from '../labs/realce';
 
 /*
- * O leitor de mini-trilha.
+ * O leitor de vereda.
  *
- * Serve a qualquer uma: recebe a trilha e desenha o sumário, o tópico e o
+ * Serve a qualquer uma: recebe a vereda e desenha o sumário, o tópico e o
  * resultado. A de sintaxe do HTML é a primeira; a próxima entra sem tocar
  * neste arquivo.
+ *
+ * Abre de dois jeitos. Numa lição de teoria, com `licaoId`, mostra só os
+ * tópicos daquela lição — é o percurso. Sem `licaoId`, mostra a vereda
+ * inteira: é o que o ícone de livro do editor abre, para consulta no meio do
+ * trabalho, e aí o sumário serve para achar, e não para andar.
  *
  * Lê-se em ordem, pelas setas do rodapé, ou cai-se direto no tópico que está
  * faltando, pela lista ou pela busca. A busca procura pela marca — quem está
@@ -134,14 +141,32 @@ function Resultado({ html, titulo }: { html: string; titulo: string }) {
   return <iframe srcDoc={pagina} sandbox="" title={`Resultado: ${titulo}`} />;
 }
 
-export default function LeitorDeMiniTrilha({ trilha, userId, aoFechar }: {
-  trilha: MiniTrilha;
+export default function LeitorDeVereda({ vereda, userId, licaoId, aoFechar }: {
+  vereda: Vereda;
   /** Quem está lendo. Sem isso a leitura não é gravada — nem tenta. */
   userId?: string;
+  /** A lição de teoria a percorrer. Sem ela, o leitor é a vereda inteira. */
+  licaoId?: string;
   aoFechar?: () => void;
 }) {
-  const topicos = useMemo(() => topicosDaMiniTrilha(trilha), [trilha]);
-  const [atual, setAtual] = useState(topicos[0].id);
+  /* Os tópicos desta abertura: os da lição, ou os da vereda inteira. */
+  const topicos = useMemo(() => {
+    const todos = topicosDaVereda(vereda);
+    return licaoId ? todos.filter(t => t.licaoId === licaoId) : todos;
+  }, [vereda, licaoId]);
+
+  /* O sumário agrupa por lição de teoria — que é o capítulo desta vereda. */
+  const grupos = useMemo(() => {
+    const vistos = new Map<string, { titulo: string; topicos: TopicoDeVereda[] }>();
+    for (const t of topicos) {
+      const g = vistos.get(t.licaoId) ?? { titulo: t.licao, topicos: [] };
+      g.topicos.push(t);
+      vistos.set(t.licaoId, g);
+    }
+    return [...vistos.values()];
+  }, [topicos]);
+
+  const [atual, setAtual] = useState(topicos[0]?.id ?? '');
   const [busca, setBusca] = useState('');
   const [lidos, setLidos] = useState<Set<string>>(new Set());
 
@@ -151,11 +176,11 @@ export default function LeitorDeMiniTrilha({ trilha, userId, aoFechar }: {
     if (!userId) return;
     let cancelado = false;
     (async () => {
-      const eventos = await buscarLeitura(userId);
-      if (!cancelado) setLidos(leituraDosEventos(eventos)[trilha.id] ?? new Set());
+      const eventos = await buscarPercurso(userId);
+      if (!cancelado) setLidos(percursoDosEventos(eventos)[vereda.id]?.topicos ?? new Set());
     })();
     return () => { cancelado = true; };
-  }, [userId, trilha.id]);
+  }, [userId, vereda.id]);
 
   /*
     Grava o tópico aberto, uma vez.
@@ -166,13 +191,18 @@ export default function LeitorDeMiniTrilha({ trilha, userId, aoFechar }: {
   */
   const gravados = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (!userId || gravados.current.has(atual)) return;
+    if (!userId || !atual || gravados.current.has(atual)) return;
     gravados.current.add(atual);
     (async () => {
-      const novo = await registrarTopicoLido(userId, trilha, atual, lidos);
+      const percurso = { topicos: lidos, laboratorios: new Set<string>() };
+      /* O laboratório vencido não entra aqui: quem sabe se a vereda acabou é
+         a página dela, que enxerga as duas metades. Este efeito só grava o
+         tópico — a conclusão sai do mesmo `registrarTopicoLido`, que relê o
+         percurso inteiro antes de decidir. */
+      const novo = await registrarTopicoLido(userId, vereda, atual, percurso);
       if (novo) setLidos(antes => new Set(antes).add(atual));
     })();
-  }, [userId, trilha, atual, lidos]);
+  }, [userId, vereda, atual, lidos]);
 
   const procurado = busca.trim().toLowerCase();
   const achou = useMemo(() => {
@@ -185,11 +215,18 @@ export default function LeitorDeMiniTrilha({ trilha, userId, aoFechar }: {
       || t.resumo.toLowerCase().includes(procurado));
   }, [procurado, topicos]);
 
+  /* O nome no topo: o da lição quando se percorre uma, o da vereda quando se
+     consulta a coisa inteira. */
+  const titulo = licaoId
+    ? (licoesDaVereda(vereda).find(l => l.id === licaoId)?.titulo ?? vereda.titulo)
+    : vereda.titulo;
+
   const indice = topicos.findIndex(t => t.id === atual);
   const topico = topicos[indice] ?? topicos[0];
   const anterior = topicos[indice - 1];
   const proximo = topicos[indice + 1];
-  const concluida = lidos.size >= topicos.length;
+  const feitos = topicos.filter(t => lidos.has(t.id)).length;
+  const concluida = feitos >= topicos.length;
 
   const Item = ({ id, titulo }: { id: string; titulo: string }) => (
     <button className="ref-item" aria-current={id === atual} onClick={() => setAtual(id)}>
@@ -204,9 +241,9 @@ export default function LeitorDeMiniTrilha({ trilha, userId, aoFechar }: {
 
       <div className="ref-topo">
         <BookOpen className="w-4 h-4" style={{ color: '#4EC9B0' }} />
-        <h2>{trilha.titulo}</h2>
+        <h2>{titulo}</h2>
         <span style={{ fontSize: 11.5, color: concluida ? '#4EC9B0' : '#8A8A96' }}>
-          {concluida ? 'concluída' : `${lidos.size} de ${topicos.length} lidos`}
+          {concluida ? 'lida' : `${feitos} de ${topicos.length} lidos`}
         </span>
         {aoFechar && (
           <button className="ref-fechar" onClick={aoFechar} aria-label="Fechar a referência">
@@ -229,16 +266,16 @@ export default function LeitorDeMiniTrilha({ trilha, userId, aoFechar }: {
             ? (achou.length
               ? achou.map(t => <Item key={t.id} id={t.id} titulo={t.titulo} />)
               : <p className="ref-vazio">Nada com esse nome. Tente table, img, href, style.</p>)
-            : trilha.capitulos.map(c => (
-              <div key={c.id}>
-                <p className="ref-cap">{c.titulo}</p>
-                {c.topicos.map(t => <Item key={t.id} id={t.id} titulo={t.titulo} />)}
+            : grupos.map(g => (
+              <div key={g.titulo}>
+                {grupos.length > 1 && <p className="ref-cap">{g.titulo}</p>}
+                {g.topicos.map(t => <Item key={t.id} id={t.id} titulo={t.titulo} />)}
               </div>
             ))}
         </div>
 
         <div className="ref-texto">
-          <p className="ref-migalha">{topico.capitulo}</p>
+          <p className="ref-migalha">{topico.modulo}</p>
           <h3>{topico.titulo}</h3>
           <div className="ref-marcas">
             {topico.marcas.map(m => <span className="ref-marca" key={m}>{m}</span>)}
@@ -253,12 +290,12 @@ export default function LeitorDeMiniTrilha({ trilha, userId, aoFechar }: {
             </p>
           )}
 
-          <div className={trilha.mostraResultado ? 'ref-dupla' : ''}>
+          <div className={vereda.mostraResultado ? 'ref-dupla' : ''}>
             <div className="ref-caixa">
               <p className="ref-caixa-topo">Você escreve</p>
               <Codigo html={topico.exemplo} />
             </div>
-            {trilha.mostraResultado && (
+            {vereda.mostraResultado && (
               <div className="ref-caixa">
                 <p className="ref-caixa-topo">O navegador mostra</p>
                 <Resultado html={topico.exemplo} titulo={topico.titulo} />

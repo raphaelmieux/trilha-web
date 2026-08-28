@@ -7,8 +7,8 @@ import { nomeCompleto, type Tabela } from '../types';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
-import { useMiniTrilhas } from '../hooks/useMiniTrilhas';
-import { MINI_TRILHAS } from '../curriculum/miniTrilhas';
+import { useVeredas } from '../hooks/useVeredas';
+import { VEREDAS } from '../curriculum/veredas';
 import { buildSpecialtyNarrative, buildClosingParagraph, buildBadgeParagraph, type LabEvidence } from '../lib/reportNarrative';
 import { LoadingState } from '../components/ui/PageState';
 import CertificateCanvas from '../components/CertificateCanvas';
@@ -22,7 +22,7 @@ export default function ReportPage() {
   const { progress, loading: progressLoading } = useRequirementProgress(profile?.id);
   const { certifications, loading: certsLoading } = useCertifications(profile?.id);
   const { badges, loading: badgesLoading } = useBadges(profile?.id);
-  const { andamento } = useMiniTrilhas(profile?.id);
+  const { andamento } = useVeredas(profile?.id);
   const [lessonAttempts, setLessonAttempts] = useState<Pick<Tabela<'lesson_attempts'>, 'score' | 'total'>[]>([]);
   const [evidence, setEvidence] = useState<LabEvidence>({});
   /* Os relatórios escritos nos laboratórios de redação, por código de trilha.
@@ -160,7 +160,7 @@ export default function ReportPage() {
 
   /* Bônus, e por isso fora de toda a contabilidade acima: nada aqui entra em
      percentual de trilha, em requisito nem em nota. */
-  const miniTrilhasFeitas = MINI_TRILHAS.filter(t => andamento.find(a => a.id === t.id)?.concluida);
+  const veredasFeitas = VEREDAS.filter(v => andamento.find(a => a.id === v.id)?.concluida);
 
   const annexNote = attachedCerts.length === 0 ? undefined
     : attachedCerts.length === 1
@@ -317,23 +317,23 @@ export default function ReportPage() {
           ))}
 
           {/*
-            As mini-trilhas entram antes das Conquistas e depois das trilhas,
-            porque é isso que elas são na ordem das coisas: não é requisito
-            cumprido, e não é insígnia — é uma coisa a mais que o desbravador
-            leu por conta, e o relatório de aprendizagem existe para dizer o que
-            a pessoa fez.
+            As veredas entram antes das Conquistas e depois das trilhas, porque
+            é isso que elas são na ordem das coisas: não é requisito cumprido, e
+            não é insígnia — é um percurso a mais que o desbravador fez por
+            conta, e o relatório de aprendizagem existe para dizer o que a
+            pessoa fez.
           */}
-          {miniTrilhasFeitas.length > 0 && (
+          {veredasFeitas.length > 0 && (
             <div className="report-section">
-              <h2>Mini-trilhas concluídas</h2>
+              <h2>Veredas concluídas</h2>
               <p>
-                {miniTrilhasFeitas.length === 1
-                  ? 'Além do currículo das especialidades, percorreu por conta própria uma mini-trilha — material curto, sem requisito oficial e sem nota, que existe para dar conta de um assunto que aparece na prática.'
-                  : `Além do currículo das especialidades, percorreu por conta própria ${miniTrilhasFeitas.length} mini-trilhas — material curto, sem requisito oficial e sem nota, que existe para dar conta de assuntos que aparecem na prática.`}
+                {veredasFeitas.length === 1
+                  ? 'Além do currículo das especialidades, percorreu por conta própria uma vereda — percurso curto, com teoria e laboratório, sem requisito oficial e sem nota, que existe para dar conta de um assunto que aparece na prática.'
+                  : `Além do currículo das especialidades, percorreu por conta própria ${veredasFeitas.length} veredas — percursos curtos, com teoria e laboratório, sem requisito oficial e sem nota, que existem para dar conta de assuntos que aparecem na prática.`}
               </p>
-              {miniTrilhasFeitas.map(t => (
-                <p key={t.id} className="report-req">
-                  <strong>{t.titulo}</strong> ({t.codigo}) — {t.resumo} Nasceu da trilha {t.origem}.
+              {veredasFeitas.map(v => (
+                <p key={v.id} className="report-req">
+                  <strong>{v.titulo}</strong> ({v.codigo}) — {v.resumo} Nasceu da trilha {v.origem}.
                 </p>
               ))}
             </div>

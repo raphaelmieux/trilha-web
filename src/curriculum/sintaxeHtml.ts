@@ -26,9 +26,16 @@
  * registro: este arquivo é uma das trilhas, e não o molde delas.
  */
 
-import type { CapituloDeMiniTrilha } from './miniTrilhas';
+import type { ModuloDeVereda, TopicoDeVereda } from './veredas';
 
-export const SINTAXE_HTML: CapituloDeMiniTrilha[] = [
+/*
+  Os tópicos, agrupados como foram escritos. É matéria-prima: quem monta os
+  módulos abaixo é `MODULOS_DE_HTML`, e é lá que a teoria encontra o
+  laboratório que a cobra.
+*/
+interface Capitulo { id: string; titulo: string; resumo: string; topicos: TopicoDeVereda[] }
+
+const CAPITULOS: Capitulo[] = [
   {
     id: 'comeco',
     titulo: 'Como uma página é feita',
@@ -444,6 +451,192 @@ Centro — Anápolis</p>
 </body>`,
         atencao: 'O menu tem que estar nas quatro páginas. Deixar de fora justamente a página em que a pessoa está é o erro comum — e aí não dá para voltar.',
         marcas: ['<nav>', '<a>'],
+      },
+    ],
+  },
+];
+
+const cap = (id: string): Capitulo => {
+  const achado = CAPITULOS.find(c => c.id === id);
+  if (!achado) throw new Error(`capítulo ${id} não existe`);
+  return achado;
+};
+
+/*
+  O modelo de cada laboratório abre reprovando em tudo.
+
+  É a regra desta base, aprendida três vezes: laboratório que abre resolvido
+  não ensina nada, e o erro é invisível de dentro porque o painel mostra
+  tarefas concluídas. O esqueleto vem escrito a partir do segundo módulo — o
+  primeiro é justamente sobre escrevê-lo —, e o que o módulo cobra nunca vem
+  junto.
+*/
+const esqueleto = (titulo: string, dentro: string) => `<!DOCTYPE html>
+<html>
+<head>
+  <title>${titulo}</title>
+</head>
+<body>
+
+  <!-- ${dentro} -->
+
+</body>
+</html>`;
+
+export const MODULOS_DE_HTML: ModuloDeVereda[] = [
+  {
+    id: 'm1',
+    titulo: 'Como uma página é feita',
+    resumo: 'A tag, o esqueleto do documento e o nome da página.',
+    licoes: [
+      {
+        id: 'm1-teoria', tipo: 'teoria',
+        titulo: 'A tag e o esqueleto',
+        resumo: 'Abrir, fechar, e as quatro peças que toda página tem.',
+        topicos: cap('comeco').topicos,
+      },
+      {
+        id: 'm1-lab', tipo: 'laboratorio',
+        titulo: 'A sua primeira página',
+        resumo: 'Escreva o documento inteiro, do <!DOCTYPE html> ao </html>.',
+        arquivo: 'index.html', projeto: 'primeira-pagina',
+        /* Arquivo em branco de propósito: o módulo é sobre escrever o
+           esqueleto, então entregá-lo pronto seria entregar a lição. */
+        modelo: `<!-- Arquivo vazio.
+
+     Este é o único laboratório da vereda que começa sem nada: escrever a
+     estrutura do documento é o que ele cobra. Do próximo em diante ela já
+     vem pronta.
+
+     O que a página precisa ter está na lista de tarefas, ao lado. -->
+`,
+        verificacoes: ['html', 'head', 'body', 'title', 'heading'],
+      },
+    ],
+  },
+  {
+    id: 'm2',
+    titulo: 'Texto',
+    resumo: 'Títulos, parágrafos, ênfase, e as duas tags que não fecham.',
+    licoes: [
+      {
+        id: 'm2-teoria', tipo: 'teoria',
+        titulo: 'Títulos, parágrafos e ênfase',
+        resumo: 'Os seis níveis de título, o bloco de texto, e o que se marca dentro dele.',
+        topicos: cap('texto').topicos,
+      },
+      {
+        id: 'm2-lab', tipo: 'laboratorio',
+        titulo: 'Um recado para o clube',
+        resumo: 'Um aviso com título, dois parágrafos, uma palavra em destaque e uma linha separando.',
+        arquivo: 'recado.html', projeto: 'recado-do-clube',
+        modelo: esqueleto('Recado', 'Escreva aqui o recado. O que ele precisa ter está na lista de tarefas.'),
+        verificacoes: ['heading', 'paragraph', 'bold', 'italic', 'lineBreak', 'horizontalRule'],
+      },
+    ],
+  },
+  {
+    id: 'm3',
+    titulo: 'Listas',
+    resumo: 'Quando a ordem importa e quando não importa.',
+    licoes: [
+      {
+        id: 'm3-teoria', tipo: 'teoria',
+        titulo: 'Com ordem e sem ordem',
+        resumo: 'A bolinha, o número, e quem decide qual dos dois.',
+        topicos: cap('listas').topicos,
+      },
+      {
+        id: 'm3-lab', tipo: 'laboratorio',
+        titulo: 'O que levar no acampamento',
+        resumo: 'Uma lista do que levar, com um título em cima e um parágrafo explicando.',
+        arquivo: 'acampamento.html', projeto: 'lista-do-acampamento',
+        modelo: esqueleto('Acampamento', 'Escreva a lista aqui.'),
+        verificacoes: ['heading', 'paragraph', 'listItem'],
+      },
+    ],
+  },
+  {
+    id: 'm4',
+    titulo: 'Links e imagens',
+    resumo: 'A tag que liga uma página à outra, e a que traz a foto.',
+    licoes: [
+      {
+        id: 'm4-teoria', tipo: 'teoria',
+        titulo: 'O link, o caminho e a foto',
+        resumo: 'href para fora e para dentro do site, e a imagem que não fecha.',
+        topicos: [...cap('links').topicos, ...cap('imagens').topicos],
+      },
+      {
+        id: 'm4-lab', tipo: 'laboratorio',
+        titulo: 'A página do clube, com foto e link',
+        resumo: 'Um título, uma foto com alt e um link para fora.',
+        arquivo: 'clube.html', projeto: 'pagina-do-clube',
+        modelo: esqueleto('Nosso clube', 'Escreva a página aqui.'),
+        verificacoes: ['heading', 'image', 'link'],
+      },
+    ],
+  },
+  {
+    id: 'm5',
+    titulo: 'Tabelas',
+    resumo: 'Dados em linhas e colunas — e só isso.',
+    licoes: [
+      {
+        id: 'm5-teoria', tipo: 'teoria',
+        titulo: 'Linhas, células e cabeçalho',
+        resumo: 'A tabela por dentro, e por que <th> não é <td> em negrito.',
+        topicos: cap('tabelas').topicos,
+      },
+      {
+        id: 'm5-lab', tipo: 'laboratorio',
+        titulo: 'A escala da unidade',
+        resumo: 'Uma tabela com legenda, cabeçalho e três linhas de dados de verdade.',
+        arquivo: 'escala.html', projeto: 'escala-da-unidade',
+        modelo: esqueleto('Escala', 'Escreva a tabela aqui.'),
+        verificacoes: ['tableStructure', 'tableHeader', 'tableSize', 'tableFilled', 'tableCaption'],
+      },
+    ],
+  },
+  {
+    id: 'm6',
+    titulo: 'Formulários e cor',
+    resumo: 'Campos para quem visita escrever, e como se ajusta uma marca por dentro.',
+    licoes: [
+      {
+        id: 'm6-teoria', tipo: 'teoria',
+        titulo: 'Campos, atributos e hexadecimal',
+        resumo: 'Como se pede uma informação, e como #RRGGBB vira cor.',
+        topicos: [...cap('formularios').topicos, ...cap('atributos').topicos],
+      },
+      {
+        id: 'm6-lab', tipo: 'laboratorio',
+        titulo: 'Fale com o clube',
+        resumo: 'Um formulário com campo e botão, e um título pintado em hexadecimal.',
+        arquivo: 'contato.html', projeto: 'fale-com-o-clube',
+        modelo: esqueleto('Contato', 'Escreva o formulário aqui.'),
+        verificacoes: ['heading', 'form', 'tableHexColour'],
+      },
+    ],
+  },
+  {
+    id: 'm7',
+    titulo: 'Um site de várias páginas',
+    resumo: 'Como quatro arquivos viram um site só.',
+    licoes: [
+      {
+        id: 'm7-teoria', tipo: 'teoria',
+        titulo: 'Arquivos e o menu',
+        resumo: 'Cada página é um documento inteiro, e o menu é o que os junta.',
+        topicos: cap('site').topicos,
+      },
+      {
+        id: 'm7-lab', tipo: 'laboratorio',
+        titulo: 'O menu do site',
+        resumo: 'O bloco de navegação que se repete em todas as páginas.',
+        arquivo: 'index.html', projeto: 'site-do-clube',
+        modelo: esqueleto('Início', 'Escreva o menu aqui, e o título da página.'),
+        verificacoes: ['heading', 'navMenu'],
       },
     ],
   },

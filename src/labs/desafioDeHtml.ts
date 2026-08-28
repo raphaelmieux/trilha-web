@@ -127,6 +127,11 @@ export const PASSOS: Record<string, string[]> = {
     'Abra <table> e feche </table>.',
     'Cada linha é <tr>…</tr>, e cada célula, <td>…</td>.',
   ],
+  navMenu: [
+    'Logo no começo do <body>, abra <nav> e feche </nav>.',
+    'Dentro dele, um link por página: <a href="index.html">Início</a>, e os outros.',
+    'São pelo menos três — um link solto no meio do texto não é menu.',
+  ],
   tableRow: ['Dentro de <table>, abra uma linha com <tr> e feche com </tr>.'],
   tableCell: ['Dentro de <tr>, cada célula vai entre <td> e </td>.'],
   bold: ['Ponha <strong>alguma palavra</strong> no meio de um parágrafo.'],

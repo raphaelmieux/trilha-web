@@ -218,6 +218,32 @@ export const CHECKS: Record<string, CheckSpec> = {
       return { passed: false, detail: 'A tabela precisa de pelo menos 2 linhas e 2 colunas.' };
     },
   },
+  /*
+    O menu de navegação, para a vereda de HTML.
+
+    Não basta haver links: o que faz um site ser um site é o bloco que se
+    repete em toda página apontando para as outras. Por isso a exigência é o
+    <nav> com três links de destino — um link solto no meio do texto não é
+    menu.
+  */
+  navMenu: {
+    id: 'navMenu', label: 'Um menu de navegação', hint: 'Um <nav> com links para as outras páginas',
+    run: (doc) => {
+      const nav = doc.querySelector('nav');
+      if (!nav) return { passed: false, detail: 'Ainda não há um <nav> na página.' };
+      const links = [...nav.querySelectorAll('a[href]')].filter(
+        a => (a.getAttribute('href') || '').trim() && a.textContent!.trim().length > 0,
+      );
+      if (links.length < 3) {
+        return {
+          passed: false,
+          detail: `O menu tem ${links.length} ${links.length === 1 ? 'link' : 'links'} com destino e texto. Um menu de site tem pelo menos 3.`,
+        };
+      }
+      return { passed: true };
+    },
+  },
+
   heading: {
     id: 'heading', label: 'Título (<h1>…<h6>)', hint: 'Um título para a página',
     run: (doc) => {

@@ -1,5 +1,5 @@
 import type { LabType } from '../types';
-import { codigoDaInsigniaDaMiniTrilha } from '../curriculum/miniTrilhas';
+import { codigoDaInsigniaDaVereda } from '../curriculum/veredas';
 
 /*
  * O catálogo de insígnias, e o que cada uma exige.
@@ -54,8 +54,8 @@ export interface ResumoDoDesbravador {
   xp: number;
   /** Certificados ativos, pelo código da trilha. */
   certificados: string[];
-  /** Mini-trilhas lidas até o fim, pelo id. */
-  miniTrilhas: string[];
+  /** Veredas percorridas até o fim — teoria lida e laboratório vencido. */
+  veredas: string[];
 }
 
 export type Tier = 'bronze' | 'silver' | 'gold';
@@ -204,6 +204,6 @@ export function insigniasConquistadas(r: ResumoDoDesbravador): string[] {
   return [
     ...codigos,
     ...r.trilhas.map(codigoDaInsigniaDaTrilha),
-    ...r.miniTrilhas.map(codigoDaInsigniaDaMiniTrilha),
+    ...r.veredas.map(codigoDaInsigniaDaVereda),
   ];
 }
