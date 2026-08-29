@@ -254,29 +254,42 @@ certificações** — junto dos percursos, porque é um; depois deles, porque é
 extra. Ficou uma vez no pé da página, atrás do mural de atividade, onde
 ninguém procura curso.
 
-`LeitorDeVereda` desenha a teoria em dois lugares: numa lição, mostrando só os
-tópicos dela, e por cima do editor pelo ícone de livro, mostrando a vereda
-inteira para consulta. É **a mesma peça nos dois**: referência que diverge do
-que o laboratório mostra é pior do que referência nenhuma. Cada exemplo roda
-num iframe sem `allow-scripts`, e o realce sai do mesmo `realce.ts` do editor.
+**A lição de teoria da vereda é uma lição da plataforma**, e não um leitor.
+Abria em tela cheia, escura, com sumário e setas, e se vencia rolando até o
+fim — a pessoa entrava numa coisa que não se parecia com nenhuma lição daqui, e
+o que a conclusão media era rolagem. Hoje é `TeoriaDaVereda`: o conteúdo
+primeiro, as questões depois, o mesmo `QuestionRenderer` da trilha, e o mesmo
+`LIMIAR_DOMINIO` para vencer.
+
+`LeitorDeVereda` continua existindo como **referência**, por cima do editor
+pelo ícone de livro, e não grava nada. Os dois desenham o mesmo conteúdo:
+referência que diverge do que o laboratório mostra é pior do que referência
+nenhuma. Cada exemplo roda num iframe sem `allow-scripts`, e o realce sai do
+mesmo `realce.ts` do editor.
+
+**A marca da lição é a mesma na trilha e na vereda.** `MarcaDaLicao` — um disco
+com o ícone do tipo — nasceu na vereda e virou padrão. A trilha mostrava quatro
+ícones soltos que só diziam feito/não feito: play não é teoria, estrela não é
+laboratório, e o mesmo triângulo servia para tudo o que faltava. Agora o
+**ícone diz o tipo** e o **disco diz o estado**.
 
 O laboratório é o mesmo editor da trilha — as peças saem de `ide.tsx` —, e o
 que ele cobra é uma lista de ids de `htmlValidator` escrita na lição. Assim um
 laboratório novo é uma lista, e não uma tela.
 
-**Tópico lido e laboratório vencido são eventos, e não tabela nova.**
-`vereda_topico` e `vereda_laboratorio` gravam cada um na primeira vez; a vereda
-está concluída quando todas as lições apareceram — a teoria toda lida **e** os
-laboratórios feitos. Fica no servidor, e não no navegador, porque quem lê
+**Lição vencida é um evento, e não tabela nova.** `vereda_teoria` e
+`vereda_laboratorio` gravam cada lição na primeira vez; a vereda está concluída
+quando todas apareceram — a teoria respondida **e** os laboratórios feitos. Fica no servidor, e não no navegador, porque quem lê
 metade no celular e metade no computador do clube nunca chegaria ao fim se cada
 aparelho contasse a sua metade. O mural de Atividade Recente não mostra o
 evento de tópico: vinte e dois deles viraria o registro de rolagem de página de
 alguém.
 
-Os nomes antigos (`mini_trilha_topico`, `mini_trilha_completed`) continuam
-sendo **lidos**. Houve quem lesse na hora em que o nome era outro, e apagar o
-que essa pessoa fez para arrumar um nome nosso seria cobrar dela o preço de uma
-decisão nossa.
+O registro antigo continua sendo **lido**: os nomes de quando a vereda se
+chamava mini-trilha, e a regra de quando abrir todos os tópicos vencia a
+teoria. Nada novo entra por esses caminhos — o evento de tópico deixou de ser
+escrito —, mas quem percorreu a vereda antes não perde o que fez. Uma decisão
+nossa não se cobra de quem já andou.
 
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o próximo código `VD`, e a linha da insígnia
@@ -285,6 +298,10 @@ a entrada em `VEREDAS` com o próximo código `VD`, e a linha da insígnia
 e não um buraco. `veredas.test.ts` reprova laboratório que abra com verificação
 já verde, verificação sem passo a passo, e módulo que repita o próprio nome
 numa lição.
+
+As questões da vereda passam pelas mesmas travas das provas: `qualidade.test.ts`
+as inclui, então alternativa errada sem `porque`, correta sistematicamente mais
+comprida e pergunta repetida reprovam ali também.
 
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
