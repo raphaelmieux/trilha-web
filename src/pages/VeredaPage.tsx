@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import {
-  ArrowLeft, CircleAlert, BookOpen, FlaskConical, Check, Play, Lock,
-} from 'lucide-react';
+import { ArrowLeft, CircleAlert, Play, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { NOME_DO_TIPO } from '../types';
 import {
   getVereda, licoesDaVereda, type LicaoDeVereda,
 } from '../curriculum/veredas';
-import { licaoVencida, registrarLaboratorioVencido } from '../lib/veredas';
+import { licaoVencida, registrarLicaoVencida, percursoVazio } from '../lib/veredas';
 import { useVeredas } from '../hooks/useVeredas';
-import LeitorDeVereda from '../components/LeitorDeVereda';
+import TeoriaDaVereda from '../components/TeoriaDaVereda';
 import LaboratorioDeVereda from '../components/LaboratorioDeVereda';
 import ProgressBar from '../components/ui/ProgressBar';
+import MarcaDaLicao from '../components/ui/MarcaDaLicao';
 
 /*
  * A tela de uma vereda.
@@ -55,34 +55,25 @@ export default function VeredaPage() {
 
   const fechar = async () => { setAberta(null); await recarregar(); };
 
-  if (licaoAberta?.tipo === 'teoria') {
-    return (
-      <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: '#1E1E1E' }}>
-        <LeitorDeVereda vereda={vereda} userId={profile?.id} licaoId={licaoAberta.id}
-          aoFechar={fechar} />
-      </div>
-    );
+  /* Uma gravação só para os dois tipos: a lição diz qual evento é dela. */
+  const vencer = async () => {
+    if (!profile?.id || !licaoAberta) return;
+    await registrarLicaoVencida(profile.id, vereda, licaoAberta, feito ?? percursoVazio());
+  };
+
+  if (licaoAberta?.tipo === 'teoria' && profile?.id) {
+    return <TeoriaDaVereda vereda={vereda} licao={licaoAberta} aoVencer={vencer} aoSair={fechar} />;
   }
 
   if (licaoAberta?.tipo === 'laboratorio' && profile?.id) {
     return (
-      <LaboratorioDeVereda
-        vereda={vereda}
-        licao={licaoAberta}
-        userId={profile.id}
-        aoVencer={async () => {
-          await registrarLaboratorioVencido(
-            profile.id, vereda, licaoAberta.id,
-            feito ?? { topicos: new Set(), laboratorios: new Set() });
-        }}
-        aoSair={fechar}
-      />
+      <LaboratorioDeVereda vereda={vereda} licao={licaoAberta} userId={profile.id}
+        aoVencer={vencer} aoSair={fechar} />
     );
   }
 
   const Licao = ({ licao, ordem }: { licao: LicaoDeVereda; ordem: number }) => {
     const pronta = licaoVencida(licao, feito);
-    const Ico = licao.tipo === 'teoria' ? BookOpen : FlaskConical;
     /* Sem conta, a vereda se lê mas não se grava — e um laboratório que não
        registra nada não é lição, é rascunho. Melhor dizer isso do que deixar
        a pessoa fazer tudo e descobrir depois. */
@@ -97,12 +88,9 @@ export default function VeredaPage() {
           backgroundColor: 'var(--color-bg-input)',
           border: `1px solid ${pronta ? 'var(--color-success-a40, var(--color-border))' : 'var(--color-border)'}`,
         }}>
-        <span className="flex-none w-8 h-8 rounded-full flex items-center justify-center mt-0.5"
-          style={{
-            backgroundColor: pronta ? 'var(--color-success)' : 'var(--color-bg-hover)',
-            color: pronta ? '#fff' : 'var(--color-text-muted)',
-          }}>
-          {pronta ? <Check className="w-4 h-4" /> : <Ico className="w-4 h-4" />}
+        {/* A mesma marca da trilha: o ícone diz o tipo, o disco diz o estado. */}
+        <span className="mt-0.5">
+          <MarcaDaLicao tipo={licao.tipo === 'teoria' ? 'theory' : 'lab'} feita={pronta} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2 flex-wrap">
@@ -115,7 +103,7 @@ export default function VeredaPage() {
                 backgroundColor: 'var(--color-bg-hover)',
                 color: 'var(--color-text-muted)',
               }}>
-              {licao.tipo === 'teoria' ? 'teoria' : 'laboratório'}
+              {NOME_DO_TIPO[licao.tipo === 'teoria' ? 'theory' : 'lab']}
             </span>
           </span>
           <span className="block text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>

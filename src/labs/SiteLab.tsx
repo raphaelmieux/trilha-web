@@ -186,8 +186,7 @@ export default function SiteLab({ specialtyCode, lessonCode, lessonTitle, requir
               devolve o que já estava escrito, sem passar pela rota da lição. */}
           {consultando && (
             <div className="ide-referencia">
-              <LeitorDeVereda vereda={VEREDA_HTML} userId={userId}
-                aoFechar={() => setConsultando(false)} />
+              <LeitorDeVereda vereda={VEREDA_HTML} aoFechar={() => setConsultando(false)} />
             </div>
           )}
 

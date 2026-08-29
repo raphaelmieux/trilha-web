@@ -1,9 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpen, Search, X, ChevronLeft, ChevronRight, AlertTriangle, Check } from 'lucide-react';
-import {
-  topicosDaVereda, licoesDaVereda, type Vereda, type TopicoDeVereda,
-} from '../curriculum/veredas';
-import { registrarTopicoLido, buscarPercurso, percursoDosEventos } from '../lib/veredas';
+import { useMemo, useState } from 'react';
+import { BookOpen, Search, X, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { topicosDaVereda, type Vereda, type TopicoDeVereda } from '../curriculum/veredas';
 import { realcarLinhas } from '../labs/realce';
 
 /*
@@ -13,10 +10,12 @@ import { realcarLinhas } from '../labs/realce';
  * resultado. A de sintaxe do HTML é a primeira; a próxima entra sem tocar
  * neste arquivo.
  *
- * Abre de dois jeitos. Numa lição de teoria, com `licaoId`, mostra só os
- * tópicos daquela lição — é o percurso. Sem `licaoId`, mostra a vereda
- * inteira: é o que o ícone de livro do editor abre, para consulta no meio do
- * trabalho, e aí o sumário serve para achar, e não para andar.
+ * É **referência**, e só: o que se percorre é a lição de teoria, que tem o
+ * conteúdo e as questões. Aqui não se grava nada — abrir um tópico não vence
+ * coisa nenhuma, porque abrir mede rolagem, e não entendimento.
+ *
+ * Vive por cima do editor, pelo ícone de livro, para consulta no meio do
+ * trabalho. O sumário serve para achar, e não para andar.
  *
  * Lê-se em ordem, pelas setas do rodapé, ou cai-se direto no tópico que está
  * faltando, pela lista ou pela busca. A busca procura pela marca — quem está
@@ -141,19 +140,11 @@ function Resultado({ html, titulo }: { html: string; titulo: string }) {
   return <iframe srcDoc={pagina} sandbox="" title={`Resultado: ${titulo}`} />;
 }
 
-export default function LeitorDeVereda({ vereda, userId, licaoId, aoFechar }: {
+export default function LeitorDeVereda({ vereda, aoFechar }: {
   vereda: Vereda;
-  /** Quem está lendo. Sem isso a leitura não é gravada — nem tenta. */
-  userId?: string;
-  /** A lição de teoria a percorrer. Sem ela, o leitor é a vereda inteira. */
-  licaoId?: string;
   aoFechar?: () => void;
 }) {
-  /* Os tópicos desta abertura: os da lição, ou os da vereda inteira. */
-  const topicos = useMemo(() => {
-    const todos = topicosDaVereda(vereda);
-    return licaoId ? todos.filter(t => t.licaoId === licaoId) : todos;
-  }, [vereda, licaoId]);
+  const topicos = useMemo(() => topicosDaVereda(vereda), [vereda]);
 
   /* O sumário agrupa por lição de teoria — que é o capítulo desta vereda. */
   const grupos = useMemo(() => {
@@ -168,41 +159,6 @@ export default function LeitorDeVereda({ vereda, userId, licaoId, aoFechar }: {
 
   const [atual, setAtual] = useState(topicos[0]?.id ?? '');
   const [busca, setBusca] = useState('');
-  const [lidos, setLidos] = useState<Set<string>>(new Set());
-
-  /* O que já foi lido chega do servidor: quem leu metade no celular continua
-     de onde parou no computador do clube. */
-  useEffect(() => {
-    if (!userId) return;
-    let cancelado = false;
-    (async () => {
-      const eventos = await buscarPercurso(userId);
-      if (!cancelado) setLidos(percursoDosEventos(eventos)[vereda.id]?.topicos ?? new Set());
-    })();
-    return () => { cancelado = true; };
-  }, [userId, vereda.id]);
-
-  /*
-    Grava o tópico aberto, uma vez.
-
-    A ref guarda o que já foi gravado nesta sessão porque `lidos` só muda
-    depois da ida ao servidor: sem ela, trocar de tópico e voltar depressa
-    gravaria o mesmo duas vezes, e a contagem viraria número de cliques.
-  */
-  const gravados = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    if (!userId || !atual || gravados.current.has(atual)) return;
-    gravados.current.add(atual);
-    (async () => {
-      const percurso = { topicos: lidos, laboratorios: new Set<string>() };
-      /* O laboratório vencido não entra aqui: quem sabe se a vereda acabou é
-         a página dela, que enxerga as duas metades. Este efeito só grava o
-         tópico — a conclusão sai do mesmo `registrarTopicoLido`, que relê o
-         percurso inteiro antes de decidir. */
-      const novo = await registrarTopicoLido(userId, vereda, atual, percurso);
-      if (novo) setLidos(antes => new Set(antes).add(atual));
-    })();
-  }, [userId, vereda, atual, lidos]);
 
   const procurado = busca.trim().toLowerCase();
   const achou = useMemo(() => {
@@ -215,23 +171,14 @@ export default function LeitorDeVereda({ vereda, userId, licaoId, aoFechar }: {
       || t.resumo.toLowerCase().includes(procurado));
   }, [procurado, topicos]);
 
-  /* O nome no topo: o da lição quando se percorre uma, o da vereda quando se
-     consulta a coisa inteira. */
-  const titulo = licaoId
-    ? (licoesDaVereda(vereda).find(l => l.id === licaoId)?.titulo ?? vereda.titulo)
-    : vereda.titulo;
-
   const indice = topicos.findIndex(t => t.id === atual);
   const topico = topicos[indice] ?? topicos[0];
   const anterior = topicos[indice - 1];
   const proximo = topicos[indice + 1];
-  const feitos = topicos.filter(t => lidos.has(t.id)).length;
-  const concluida = feitos >= topicos.length;
 
   const Item = ({ id, titulo }: { id: string; titulo: string }) => (
     <button className="ref-item" aria-current={id === atual} onClick={() => setAtual(id)}>
       <span className="ref-titulo">{titulo}</span>
-      {lidos.has(id) && <Check className="w-3.5 h-3.5 ref-lido" aria-label="lido" />}
     </button>
   );
 
@@ -241,9 +188,9 @@ export default function LeitorDeVereda({ vereda, userId, licaoId, aoFechar }: {
 
       <div className="ref-topo">
         <BookOpen className="w-4 h-4" style={{ color: '#4EC9B0' }} />
-        <h2>{titulo}</h2>
-        <span style={{ fontSize: 11.5, color: concluida ? '#4EC9B0' : '#8A8A96' }}>
-          {concluida ? 'lida' : `${feitos} de ${topicos.length} lidos`}
+        <h2>{vereda.titulo}</h2>
+        <span style={{ fontSize: 11.5, color: '#8A8A96' }}>
+          {indice + 1} de {topicos.length}
         </span>
         {aoFechar && (
           <button className="ref-fechar" onClick={aoFechar} aria-label="Fechar a referência">

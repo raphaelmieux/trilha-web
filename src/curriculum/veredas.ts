@@ -1,4 +1,5 @@
 import { MODULOS_DE_HTML } from './sintaxeHtml';
+import type { Question } from '../types';
 
 /*
  * As veredas.
@@ -63,6 +64,14 @@ export type LicaoDeVereda =
     titulo: string;
     resumo: string;
     topicos: TopicoDeVereda[];
+    /**
+     * As questões que fecham a lição.
+     *
+     * Lição de teoria da plataforma não se conclui sem responder, e não havia
+     * razão para a vereda ser a exceção: abrir os tópicos media rolagem, e não
+     * entendimento.
+     */
+    questoes: Question[];
   }
   | {
     id: string;
@@ -127,6 +136,11 @@ export function licoesDaVereda(vereda: Vereda) {
 
 export function getLicaoDaVereda(vereda: Vereda, licaoId: string | undefined) {
   return licoesDaVereda(vereda).find(l => l.id === licaoId);
+}
+
+/** As questões de uma vereda, para as travas de qualidade. */
+export function questoesDaVereda(vereda: Vereda): Question[] {
+  return licoesDaVereda(vereda).flatMap(l => (l.tipo === 'teoria' ? l.questoes : []));
 }
 
 /** Só os tópicos, na ordem — é o que o leitor desenha. */

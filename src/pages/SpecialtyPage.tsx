@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSpecialty, preRequisitoCumprido } from '../curriculum';
-import { nomeCompleto } from '../types';
+import { nomeCompleto, NOME_DO_TIPO } from '../types';
 import {
   getProgressPercent, getProgressDetail, getModuleStatus, statusDasLicoes,
   getRequirementId, upsertRequirementProgress,
@@ -12,7 +12,8 @@ import { useLicoesConcluidas } from '../hooks/useLicoesConcluidas';
 import { useCertifications } from '../hooks/useCertifications';
 import { coresDoProgresso } from '../lib/coresDoProgresso';
 import ProgressBar from '../components/ui/ProgressBar';
-import { Lock, CheckCircle2, Play, Star, Award, HardHat } from 'lucide-react';
+import MarcaDaLicao from '../components/ui/MarcaDaLicao';
+import { Lock, CheckCircle2, Award, HardHat } from 'lucide-react';
 
 export default function SpecialtyPage() {
   const { code } = useParams<{ code: string }>();
@@ -241,10 +242,11 @@ export default function SpecialtyPage() {
                       }}
                       onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-primary-a40)')}
                       onMouseLeave={e => (e.currentTarget.style.borderColor = lessonStatus === 'completed' ? 'var(--color-success-a20)' : 'var(--color-border)')}>
-                      {lessonStatus === 'completed' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-success)' }} /> :
-                       lesson.type === 'final' ? <Award className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-secondary)' }} /> :
-                       lesson.type === 'lab' ? <Star className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-success)' }} /> :
-                       <Play className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-text-faint)' }} />}
+                      {/* O ícone diz o tipo, o disco diz o estado — a mesma
+                          leitura da vereda. Eram quatro ícones soltos que só
+                          diziam feito/não feito: play não é teoria, e estrela
+                          não é laboratório. */}
+                      <MarcaDaLicao tipo={lesson.type} feita={lessonStatus === 'completed'} />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm" style={{ color: 'var(--color-text)' }}>{lesson.title}</p>
                         <div className="flex items-center gap-2 mt-1">
@@ -252,7 +254,7 @@ export default function SpecialtyPage() {
                             <ProgressBar percent={lessonPercent} partial={lessonDetail.parcial} color={accentGrad} height="sm" />
                           </div>
                           <span className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
-                            {lesson.type === 'theory' ? 'Teoria' : lesson.type === 'lab' ? 'Laboratório' : lesson.type === 'final' ? 'Avaliação Final' : 'Quiz'}
+                            {NOME_DO_TIPO[lesson.type]}
                           </span>
                           {melhorNota > 0 && (
                             <span className="text-xs whitespace-nowrap" style={{ color: 'var(--color-secondary)' }}>

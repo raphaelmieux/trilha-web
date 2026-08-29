@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { VEREDAS, licoesDaVereda, topicosDaVereda } from '../curriculum/veredas';
 import {
-  EVENTO_TOPICO, EVENTO_LABORATORIO,
+  EVENTO_TOPICO, EVENTO_TEORIA, EVENTO_LABORATORIO,
   percursoDosEventos, veredasConcluidas, licaoVencida, licoesVencidas,
 } from './veredas';
 import type { EventoDeAtividade } from './atividade';
@@ -12,25 +12,30 @@ import { PASSOS } from '../labs/desafioDeHtml';
 const vereda = VEREDAS[0];
 const licoes = licoesDaVereda(vereda);
 const topicos = topicosDaVereda(vereda).map(t => t.id);
+const teorias = licoes.filter(l => l.tipo === 'teoria').map(l => l.id);
 const laboratorios = licoes.filter(l => l.tipo === 'laboratorio').map(l => l.id);
 
 const lido = (topico: string, qual = vereda.id): EventoDeAtividade =>
   ({ event_type: EVENTO_TOPICO, metadata: { vereda: qual, topico } });
-const vencido = (licao: string, qual = vereda.id): EventoDeAtividade =>
-  ({ event_type: EVENTO_LABORATORIO, metadata: { vereda: qual, licao } });
+const vencido = (licao: string, evento = EVENTO_LABORATORIO, qual = vereda.id): EventoDeAtividade =>
+  ({ event_type: evento, metadata: { vereda: qual, licao } });
 
-const tudo = [...topicos.map(t => lido(t)), ...laboratorios.map(l => vencido(l))];
+const tudo = [
+  ...teorias.map(l => vencido(l, EVENTO_TEORIA)),
+  ...laboratorios.map(l => vencido(l)),
+];
 
 describe('o percurso de uma vereda', () => {
-  it('separa o que foi lido do que foi vencido', () => {
-    const p = percursoDosEventos([lido(topicos[0]), vencido(laboratorios[0])])[vereda.id];
-    expect(p.topicos).toEqual(new Set([topicos[0]]));
-    expect(p.laboratorios).toEqual(new Set([laboratorios[0]]));
+  it('junta as lições vencidas, de qualquer tipo', () => {
+    const p = percursoDosEventos([
+      vencido(teorias[0], EVENTO_TEORIA), vencido(laboratorios[0]),
+    ])[vereda.id];
+    expect(p.licoes).toEqual(new Set([teorias[0], laboratorios[0]]));
   });
 
-  it('não conta a mesma coisa duas vezes', () => {
-    const p = percursoDosEventos([lido(topicos[0]), lido(topicos[0])])[vereda.id];
-    expect(p.topicos.size).toBe(1);
+  it('não conta a mesma lição duas vezes', () => {
+    const p = percursoDosEventos([vencido(laboratorios[0]), vencido(laboratorios[0])])[vereda.id];
+    expect(p.licoes.size).toBe(1);
   });
 
   /* A vereda se chamou mini-trilha por uma hora, e nessa hora houve quem
@@ -46,12 +51,24 @@ describe('o percurso de uma vereda', () => {
 });
 
 describe('o que conta como lição vencida', () => {
-  it('a teoria pede todos os tópicos dela, e não um a menos', () => {
+  it('a teoria pede o evento dela: abrir os tópicos não vence mais', () => {
+    const teoria = licoes.find(l => l.tipo === 'teoria')!;
+    expect(licaoVencida(teoria, percursoDosEventos([vencido(teoria.id, EVENTO_TEORIA)])[vereda.id]))
+      .toBe(true);
+  });
+
+  /*
+    A regra mudou depois que a vereda ganhou questões, e quem percorreu a
+    teoria pelo caminho antigo — todos os tópicos abertos — continua com ela
+    vencida. Nada novo entra por aí: o evento de tópico deixou de ser escrito.
+  */
+  it('aceita a teoria vencida pela regra antiga, com todos os tópicos abertos', () => {
     const teoria = licoes.find(l => l.tipo === 'teoria')!;
     const seus = teoria.tipo === 'teoria' ? teoria.topicos.map(t => t.id) : [];
-    const quaseTodos = percursoDosEventos(seus.slice(0, -1).map(t => lido(t)))[vereda.id];
-    expect(licaoVencida(teoria, quaseTodos)).toBe(false);
-    expect(licaoVencida(teoria, percursoDosEventos(seus.map(t => lido(t)))[vereda.id])).toBe(true);
+    expect(licaoVencida(teoria, percursoDosEventos(seus.slice(0, -1).map(t => lido(t)))[vereda.id]))
+      .toBe(false);
+    expect(licaoVencida(teoria, percursoDosEventos(seus.map(t => lido(t)))[vereda.id]))
+      .toBe(true);
   });
 
   it('o laboratório pede o evento dele, e ler a teoria não o vence', () => {
@@ -62,11 +79,11 @@ describe('o que conta como lição vencida', () => {
 });
 
 describe('quando a vereda acaba', () => {
-  it('não acaba com a teoria toda lida e os laboratórios por fazer', () => {
-    expect(veredasConcluidas(topicos.map(t => lido(t)))).toEqual([]);
+  it('não acaba com a teoria toda vencida e os laboratórios por fazer', () => {
+    expect(veredasConcluidas(teorias.map(l => vencido(l, EVENTO_TEORIA)))).toEqual([]);
   });
 
-  it('não acaba com os laboratórios feitos e a teoria por ler', () => {
+  it('não acaba com os laboratórios feitos e a teoria por vencer', () => {
     expect(veredasConcluidas(laboratorios.map(l => vencido(l)))).toEqual([]);
   });
 
@@ -85,7 +102,7 @@ describe('quando a vereda acaba', () => {
       { event_type: EVENTO_TOPICO, metadata: [1, 2] },
       { event_type: EVENTO_TOPICO, metadata: { vereda: vereda.id } },
       { event_type: EVENTO_LABORATORIO, metadata: { vereda: vereda.id } },
-      { event_type: 'outra_coisa', metadata: { vereda: vereda.id, topico: topicos[0] } },
+      { event_type: 'outra_coisa', metadata: { vereda: vereda.id, licao: laboratorios[0] } },
     ];
     expect(percursoDosEventos(torto)).toEqual({});
     expect(veredasConcluidas(torto)).toEqual([]);

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getAllSpecialties } from './index';
 import { getFinalExamQuestions } from './finalExams';
+import { VEREDAS, questoesDaVereda } from './veredas';
 import type { Question } from '../types';
 
 /*
@@ -65,8 +66,19 @@ function vantagemMedia(qs: Question[]): number {
   return difs.reduce((a, b) => a + b, 0) / difs.length;
 }
 
-const licoes = getAllSpecialties().flatMap(s =>
-  s.modules.flatMap(m => m.lessons.flatMap(l => l.questions ?? [])));
+/*
+  As questões das veredas entram junto com as das lições.
+
+  Uma vereda não é especialidade e não sai de `getAllSpecialties()` — mas
+  cobra questão do mesmo desbravador, e por isso responde ao mesmo padrão. A
+  trava que nasceu de um erro numa prova vale para toda pergunta que a
+  plataforma faz.
+*/
+const licoes = [
+  ...getAllSpecialties().flatMap(s =>
+    s.modules.flatMap(m => m.lessons.flatMap(l => l.questions ?? []))),
+  ...VEREDAS.flatMap(questoesDaVereda),
+];
 /*
   As provas saem do currículo, e não de uma lista escrita à mão.
 
@@ -248,9 +260,14 @@ function parecenca(a: Set<string>, b: Set<string>): number {
 const PARECENCA_DEMAIS = 0.7;
 
 describe('nenhuma prova cobra a mesma coisa duas vezes', () => {
-  const provasPorTrilha = getAllSpecialties()
-    .filter(s => s.modules.some(m => m.lessons.some(l => l.labType === 'final_exam')))
-    .map(s => [s.code, getFinalExamQuestions(s.code)] as const);
+  const provasPorTrilha = [
+    ...getAllSpecialties()
+      .filter(s => s.modules.some(m => m.lessons.some(l => l.labType === 'final_exam')))
+      .map(s => [s.code, getFinalExamQuestions(s.code)] as const),
+    /* A vereda inteira é um conjunto só: repetir a pergunta entre dois módulos
+       dela é o mesmo defeito que repeti-la dentro de uma prova. */
+    ...VEREDAS.map(v => [v.codigo, questoesDaVereda(v)] as const),
+  ];
 
   it('nenhum par de enunciados diz a mesma coisa', () => {
     const repetidos: string[] = [];

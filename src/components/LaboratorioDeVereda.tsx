@@ -127,8 +127,7 @@ export default function LaboratorioDeVereda({ vereda, licao, userId, aoVencer, a
         <div className="ide-corpo">
           {consultando && (
             <div className="ide-referencia">
-              <LeitorDeVereda vereda={vereda} userId={userId}
-                aoFechar={() => setConsultando(false)} />
+              <LeitorDeVereda vereda={vereda} aoFechar={() => setConsultando(false)} />
             </div>
           )}
 

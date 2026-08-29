@@ -76,6 +76,15 @@ export function umDe<T extends readonly string[]>(
 
 export type LessonType = 'theory' | 'quiz' | 'lab' | 'checkpoint' | 'final';
 
+/** Como cada tipo de lição se chama na tela. */
+export const NOME_DO_TIPO: Record<LessonType, string> = {
+  theory: 'Teoria',
+  quiz: 'Quiz',
+  lab: 'Laboratório',
+  checkpoint: 'Checkpoint',
+  final: 'Avaliação Final',
+};
+
 export type LabType =
   | 'text_editor'
   | 'redacao_guiada'

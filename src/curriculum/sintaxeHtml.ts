@@ -27,6 +27,7 @@
  */
 
 import type { ModuloDeVereda, TopicoDeVereda } from './veredas';
+import { QUESTOES_DE_HTML } from './questoesDeHtml';
 
 /*
   Os tópicos, agrupados como foram escritos. É matéria-prima: quem monta os
@@ -491,6 +492,7 @@ export const MODULOS_DE_HTML: ModuloDeVereda[] = [
     licoes: [
       {
         id: 'm1-teoria', tipo: 'teoria',
+        questoes: QUESTOES_DE_HTML['m1-teoria'],
         titulo: 'A tag e o esqueleto',
         resumo: 'Abrir, fechar, e as quatro peças que toda página tem.',
         topicos: cap('comeco').topicos,
@@ -521,6 +523,7 @@ export const MODULOS_DE_HTML: ModuloDeVereda[] = [
     licoes: [
       {
         id: 'm2-teoria', tipo: 'teoria',
+        questoes: QUESTOES_DE_HTML['m2-teoria'],
         titulo: 'Títulos, parágrafos e ênfase',
         resumo: 'Os seis níveis de título, o bloco de texto, e o que se marca dentro dele.',
         topicos: cap('texto').topicos,
@@ -542,6 +545,7 @@ export const MODULOS_DE_HTML: ModuloDeVereda[] = [
     licoes: [
       {
         id: 'm3-teoria', tipo: 'teoria',
+        questoes: QUESTOES_DE_HTML['m3-teoria'],
         titulo: 'Com ordem e sem ordem',
         resumo: 'A bolinha, o número, e quem decide qual dos dois.',
         topicos: cap('listas').topicos,
@@ -563,6 +567,7 @@ export const MODULOS_DE_HTML: ModuloDeVereda[] = [
     licoes: [
       {
         id: 'm4-teoria', tipo: 'teoria',
+        questoes: QUESTOES_DE_HTML['m4-teoria'],
         titulo: 'O link, o caminho e a foto',
         resumo: 'href para fora e para dentro do site, e a imagem que não fecha.',
         topicos: [...cap('links').topicos, ...cap('imagens').topicos],
@@ -584,6 +589,7 @@ export const MODULOS_DE_HTML: ModuloDeVereda[] = [
     licoes: [
       {
         id: 'm5-teoria', tipo: 'teoria',
+        questoes: QUESTOES_DE_HTML['m5-teoria'],
         titulo: 'Linhas, células e cabeçalho',
         resumo: 'A tabela por dentro, e por que <th> não é <td> em negrito.',
         topicos: cap('tabelas').topicos,
@@ -605,6 +611,7 @@ export const MODULOS_DE_HTML: ModuloDeVereda[] = [
     licoes: [
       {
         id: 'm6-teoria', tipo: 'teoria',
+        questoes: QUESTOES_DE_HTML['m6-teoria'],
         titulo: 'Campos, atributos e hexadecimal',
         resumo: 'Como se pede uma informação, e como #RRGGBB vira cor.',
         topicos: [...cap('formularios').topicos, ...cap('atributos').topicos],
@@ -626,6 +633,7 @@ export const MODULOS_DE_HTML: ModuloDeVereda[] = [
     licoes: [
       {
         id: 'm7-teoria', tipo: 'teoria',
+        questoes: QUESTOES_DE_HTML['m7-teoria'],
         titulo: 'Arquivos e o menu',
         resumo: 'Cada página é um documento inteiro, e o menu é o que os junta.',
         topicos: cap('site').topicos,

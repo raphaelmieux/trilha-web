@@ -29,6 +29,7 @@ import { objeto, type EventoDeAtividade } from './atividade';
 
 export const EVENTO_TOPICO = 'vereda_topico';
 export const EVENTO_LABORATORIO = 'vereda_laboratorio';
+export const EVENTO_TEORIA = 'vereda_teoria';
 export const EVENTO_CONCLUSAO = 'vereda_completed';
 
 /*
@@ -40,17 +41,28 @@ export const EVENTO_CONCLUSAO = 'vereda_completed';
 */
 const EVENTOS_DE_TOPICO = [EVENTO_TOPICO, 'mini_trilha_topico'];
 const EVENTOS_DE_CONCLUSAO = [EVENTO_CONCLUSAO, 'mini_trilha_completed'];
-const TODOS_OS_EVENTOS = [...EVENTOS_DE_TOPICO, EVENTO_LABORATORIO, ...EVENTOS_DE_CONCLUSAO];
+const TODOS_OS_EVENTOS = [
+  ...EVENTOS_DE_TOPICO, EVENTO_TEORIA, EVENTO_LABORATORIO, ...EVENTOS_DE_CONCLUSAO,
+];
 
-/** O que já foi vencido em cada vereda: tópicos lidos e laboratórios feitos. */
+/** O que já foi vencido em cada vereda. */
 export interface PercursoDeVereda {
+  /** Lições vencidas, de qualquer tipo: teoria respondida, laboratório feito. */
+  licoes: Set<string>;
+  /*
+    Tópicos abertos, do tempo em que abrir bastava para vencer a teoria.
+
+    Não são mais gravados — a teoria agora se vence respondendo, como toda
+    lição de teoria da plataforma. Continuam sendo lidos para que quem
+    percorreu a vereda sob a regra antiga não perca o que fez: uma decisão
+    nossa não se cobra de quem já andou.
+  */
   topicos: Set<string>;
-  laboratorios: Set<string>;
 }
 
 export type PercursoDasVeredas = Record<string, PercursoDeVereda>;
 
-const vazio = (): PercursoDeVereda => ({ topicos: new Set(), laboratorios: new Set() });
+export const percursoVazio = (): PercursoDeVereda => ({ licoes: new Set(), topicos: new Set() });
 
 /** Monta o percurso a partir dos eventos que já se tem em mãos. */
 export function percursoDosEventos(eventos: EventoDeAtividade[]): PercursoDasVeredas {
@@ -63,21 +75,27 @@ export function percursoDosEventos(eventos: EventoDeAtividade[]): PercursoDasVer
 
     if (EVENTOS_DE_TOPICO.includes(e.event_type)) {
       const topico = typeof m.topico === 'string' ? m.topico : null;
-      if (topico) (feito[vereda] ??= vazio()).topicos.add(topico);
-    } else if (e.event_type === EVENTO_LABORATORIO) {
+      if (topico) (feito[vereda] ??= percursoVazio()).topicos.add(topico);
+    } else if (e.event_type === EVENTO_LABORATORIO || e.event_type === EVENTO_TEORIA) {
       const licao = typeof m.licao === 'string' ? m.licao : null;
-      if (licao) (feito[vereda] ??= vazio()).laboratorios.add(licao);
+      if (licao) (feito[vereda] ??= percursoVazio()).licoes.add(licao);
     }
   }
   return feito;
 }
 
-/** Uma lição está vencida? Teoria pede todos os tópicos; laboratório, o evento. */
+/**
+ * Uma lição está vencida?
+ *
+ * O evento dela basta, para os dois tipos. A teoria aceita também o registro
+ * antigo — todos os tópicos abertos —, que é o que quem percorreu a vereda
+ * antes das questões tem gravado. Nada novo entra por esse caminho: o evento
+ * de tópico deixou de ser escrito.
+ */
 export function licaoVencida(licao: LicaoDeVereda, feito: PercursoDeVereda | undefined): boolean {
   if (!feito) return false;
-  return licao.tipo === 'teoria'
-    ? licao.topicos.every(t => feito.topicos.has(t.id))
-    : feito.laboratorios.has(licao.id);
+  if (feito.licoes.has(licao.id)) return true;
+  return licao.tipo === 'teoria' && licao.topicos.every(t => feito.topicos.has(t.id));
 }
 
 /** Quantas lições de uma vereda já foram vencidas. */
@@ -111,47 +129,30 @@ export async function buscarPercurso(userId: string): Promise<EventoDeAtividade[
 }
 
 /**
- * Grava o que acabou de ser vencido, e a conclusão quando for a última coisa.
+ * Grava a lição vencida, e a conclusão quando ela for a última.
  *
- * `feito` é o que a tela já sabe: sem isso, reabrir um tópico gravaria de
- * novo, e a contagem de "quanto li" viraria "quantas vezes cliquei".
+ * `feito` é o que a tela já sabe: sem isso, entregar a mesma lição duas vezes
+ * gravaria duas, e a contagem de "quanto venci" viraria "quantas vezes cliquei".
  */
-async function registrar(
+export async function registrarLicaoVencida(
   userId: string,
   vereda: Vereda,
+  licao: LicaoDeVereda,
   feito: PercursoDeVereda,
-  gravar: () => Promise<void>,
-): Promise<void> {
-  await gravar();
-  if (licoesVencidas(vereda, feito) === licoesDaVereda(vereda).length) {
+): Promise<boolean> {
+  if (licaoVencida(licao, feito)) return false;
+
+  const evento = licao.tipo === 'teoria' ? EVENTO_TEORIA : EVENTO_LABORATORIO;
+  await logActivity(userId, evento, { vereda: vereda.id, licao: licao.id });
+
+  const depois: PercursoDeVereda = {
+    licoes: new Set(feito.licoes).add(licao.id),
+    topicos: feito.topicos,
+  };
+  if (licoesVencidas(vereda, depois) === licoesDaVereda(vereda).length) {
     await logActivity(userId, EVENTO_CONCLUSAO, {
       vereda: vereda.id, codigo: vereda.codigo, licoes: licoesDaVereda(vereda).length,
     });
   }
-}
-
-export async function registrarTopicoLido(
-  userId: string, vereda: Vereda, topicoId: string, feito: PercursoDeVereda,
-): Promise<boolean> {
-  if (feito.topicos.has(topicoId)) return false;
-  const depois: PercursoDeVereda = {
-    topicos: new Set(feito.topicos).add(topicoId),
-    laboratorios: feito.laboratorios,
-  };
-  await registrar(userId, vereda, depois, () =>
-    logActivity(userId, EVENTO_TOPICO, { vereda: vereda.id, topico: topicoId }));
-  return true;
-}
-
-export async function registrarLaboratorioVencido(
-  userId: string, vereda: Vereda, licaoId: string, feito: PercursoDeVereda,
-): Promise<boolean> {
-  if (feito.laboratorios.has(licaoId)) return false;
-  const depois: PercursoDeVereda = {
-    topicos: feito.topicos,
-    laboratorios: new Set(feito.laboratorios).add(licaoId),
-  };
-  await registrar(userId, vereda, depois, () =>
-    logActivity(userId, EVENTO_LABORATORIO, { vereda: vereda.id, licao: licaoId }));
   return true;
 }
