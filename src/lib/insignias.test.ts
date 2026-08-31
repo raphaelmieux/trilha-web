@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { INSIGNIAS, insigniasConquistadas, codigoDaInsigniaDaTrilha, type ResumoDoDesbravador } from './insignias';
 import { getOpenSpecialties } from '../curriculum';
-import { VEREDAS, codigoDaInsigniaDaVereda } from '../curriculum/veredas';
+import { veredasAbertas, codigoDaInsigniaDaVereda } from '../curriculum/veredas';
 import { hasIcon } from './badgeIcons';
 import { laboratorioDoEvento, LABORATORIO_DO_EVENTO } from './atividade';
 
@@ -205,16 +205,19 @@ describe('toda insígnia de laboratório é alcançável', () => {
   tela nenhuma.
 */
 describe('as insígnias das veredas', () => {
-  it('toda vereda tem a linha dela semeada', () => {
+  /* Só as abertas: a vereda anunciada ainda não tem conteúdo, e semear a
+     insígnia dela agora seria prometer prêmio por percurso que não existe. É
+     a mesma regra das trilhas, que usam `getOpenSpecialties`. */
+  it('toda vereda aberta tem a linha dela semeada', () => {
     const semeadas = insigniasSemeadas();
-    const faltando = VEREDAS
+    const faltando = veredasAbertas()
       .map(v => codigoDaInsigniaDaVereda(v.id))
       .filter(codigo => !semeadas.has(codigo));
     expect(faltando).toEqual([]);
   });
 
   it('é conquistada por quem percorreu a vereda inteira, e só por essa pessoa', () => {
-    const id = VEREDAS[0].id;
+    const id = veredasAbertas()[0].id;
     expect(insigniasConquistadas(zerado())).not.toContain(codigoDaInsigniaDaVereda(id));
     expect(insigniasConquistadas({ ...zerado(), veredas: [id] }))
       .toContain(codigoDaInsigniaDaVereda(id));

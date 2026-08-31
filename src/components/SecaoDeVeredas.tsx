@@ -1,39 +1,86 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Check, ArrowRight } from 'lucide-react';
-import { VEREDAS, licoesDaVereda } from '../curriculum/veredas';
-import { useVeredas } from '../hooks/useVeredas';
+import { HardHat } from 'lucide-react';
+import { VEREDAS, veredasPorFamilia, licoesDaVereda, type Vereda } from '../curriculum/veredas';
+import { useVeredas, type AndamentoDeVereda } from '../hooks/useVeredas';
+import { nomeCompleto } from '../types';
+import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
+import Emblema from './ui/Emblema';
+import ProgressBar from './ui/ProgressBar';
 
 /*
- * A seção das veredas, no painel.
+ * As veredas no painel.
  *
  * Último bloco de cursos, antes das certificações: a vereda é um percurso como
  * os de cima, e por isso fica junto deles — depois, porque é o extra. Ficou uma
  * vez no pé da página, atrás do mural de atividade, onde ninguém procura curso.
  *
- * A arte de cada uma mora em `public/assets/veredas/<CODIGO>.svg`, do mesmo
- * jeito que a das trilhas. Enquanto ela não existe, o cartão mostra o ícone de
- * livro — um código sem arte não deixa buraco na tela.
- */
-/**
- * A arte da mini-trilha, com o livro no lugar dela enquanto não existe.
+ * ── O mesmo cartão da trilha ─────────────────────────────────────────────
+ * Emblema, nome completo, família, barra de progresso, e a contagem embaixo.
+ * Não é imitação: são a mesma coisa vista de dois tamanhos, e um desbravador
+ * que aprendeu a ler o cartão de uma trilha não deveria ter de aprender a ler
+ * outro. Em construção acinzenta e tira o link, como lá.
  *
- * O ícone não fica ao lado da imagem: fica no lugar dela. Os dois juntos é o
- * que o primeiro rascunho fazia, e o cartão saía com duas figuras dizendo a
- * mesma coisa.
+ * A arte sai da mesma pasta e do mesmo componente das trilhas — os emblemas
+ * viraram PNG e passaram a conviver em `public/assets/specialties`. Um código
+ * sem arte cai no ícone de reserva do `Emblema`, e não deixa buraco.
  */
-function ArteDaVereda({ codigo }: { codigo: string }) {
-  const [semArte, setSemArte] = useState(false);
-  if (semArte) {
-    return <BookOpen className="w-12 h-12 flex-none" style={{ color: 'var(--color-primary-hover)' }} />;
+
+function CardDaVereda({ v, andamento }: { v: Vereda; andamento?: AndamentoDeVereda }) {
+  const identificacao = (
+    <div className="min-w-0">
+      <h3 className="text-xl font-bold">{nomeCompleto(v)}</h3>
+      <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>
+        Vereda de {v.familia}
+      </p>
+    </div>
+  );
+
+  /* Anunciada: o clube vê o que vem, acinzentado e sem link. */
+  if (v.emConstrucao) {
+    return (
+      <div className="card p-6 opacity-60" style={{ border: '2px dashed var(--color-border)' }}>
+        <div className="flex items-center gap-4 mb-3">
+          <Emblema code={v.code} status="bloqueado" />
+          {identificacao}
+        </div>
+        <span className="text-xs px-2 py-1 rounded inline-flex items-center gap-1 mb-2"
+          style={{ backgroundColor: 'var(--color-secondary-a08)', color: 'var(--color-secondary)' }}>
+          <HardHat className="w-3.5 h-3.5" /> Em construção
+        </span>
+        <p className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{v.description}</p>
+      </div>
+    );
   }
+
+  const total = andamento?.total ?? licoesDaVereda(v).length;
+  const vencidas = andamento?.vencidas ?? 0;
+  const percent = total ? Math.round((vencidas / total) * 100) : 0;
+  const cores = coresDoProgresso(percent);
+
   return (
-    <img
-      src={`${import.meta.env.BASE_URL}assets/veredas/${codigo}.svg`}
-      alt=""
-      className="w-12 h-12 flex-none"
-      onError={() => setSemArte(true)}
-    />
+    <Link to={`/vereda/${v.code}`} className="card p-6 block transition"
+      style={{
+        borderColor: percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)',
+        transition: 'border-color 0.2s',
+      }}
+      onMouseEnter={ev => (ev.currentTarget.style.borderColor = cores.bordaAoPassar)}
+      onMouseLeave={ev => (ev.currentTarget.style.borderColor = percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)')}>
+      <div className="flex items-center gap-4 mb-4">
+        <Emblema code={v.code} status={percent === 100 ? 'concluido' : 'em-andamento'} />
+        {identificacao}
+      </div>
+      <div className="mb-3">
+        <div className="flex justify-between text-sm mb-1">
+          <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
+          <span className="font-semibold" style={{ color: corDoPercentual(percent) }}>{percent}%</span>
+        </div>
+        <ProgressBar percent={percent} color={cores.gradiente} />
+      </div>
+      <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
+        {vencidas} de {total} {total === 1 ? 'lição vencida' : 'lições vencidas'}
+        {v.origem && ` · saiu da trilha ${v.origem}`}
+      </p>
+    </Link>
   );
 }
 
@@ -42,64 +89,26 @@ export default function SecaoDeVeredas({ userId }: { userId?: string }) {
   if (VEREDAS.length === 0) return null;
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-4">
       <div>
         <h2 className="text-lg font-bold" style={{ color: 'var(--color-text-soft)' }}>Veredas</h2>
         <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>
           Vereda é o caminho estreito que sai da trilha. Percurso curto, com
-          teoria e laboratório, que nasceu de uma trilha e vale sozinho — não
-          conta no percentual de especialidade nenhuma, e rende insígnia.
+          módulos de teoria e laboratórios a vencer, que vale sozinho — não conta
+          no percentual de especialidade nenhuma, e rende insígnia.
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {VEREDAS.map(v => {
-          const a = andamento.find(x => x.id === v.id);
-          const proporcao = a && a.total ? a.vencidas / a.total : 0;
-          return (
-            <Link key={v.id} to={`/vereda/${v.id}`}
-              className="card p-6 block transition group"
-              style={{ transition: 'border-color 0.2s' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-primary-a40)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = '')}>
-              <div className="flex items-start gap-4">
-                <ArteDaVereda codigo={v.codigo} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-xl font-bold">{v.titulo}</h3>
-                    <span className="font-mono text-xs" style={{ color: 'var(--color-text-faint)' }}>{v.codigo}</span>
-                    {a?.concluida && (
-                      <span className="flex items-center gap-1 text-xs font-semibold"
-                        style={{ color: 'var(--color-success)' }}>
-                        <Check className="w-3.5 h-3.5" /> concluída
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>{v.resumo}</p>
-
-                  <div className="mt-3 flex items-center gap-3">
-                    <span className="flex-1 h-1.5 rounded-full overflow-hidden"
-                      style={{ background: 'var(--color-bg-hover)' }}>
-                      <span className="block h-full rounded-full" style={{
-                        width: `${proporcao * 100}%`,
-                        background: a?.concluida ? 'var(--color-success)' : 'var(--color-primary)',
-                      }} />
-                    </span>
-                    <span className="text-xs whitespace-nowrap" style={{ color: 'var(--color-text-muted)' }}>
-                      {a ? `${a.vencidas} de ${a.total} lições` : `${licoesDaVereda(v).length} lições`}
-                    </span>
-                    <ArrowRight className="w-4 h-4 flex-none" style={{ color: 'var(--color-text-faint)' }} />
-                  </div>
-
-                  <p className="text-xs mt-2" style={{ color: 'var(--color-text-faint)' }}>
-                    Saiu da trilha {v.origem}
-                  </p>
-                </div>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+      {veredasPorFamilia().map(({ nome, veredas }) => (
+        <div key={nome} className="space-y-3">
+          <h3 className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>{nome}</h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            {veredas.map(v => (
+              <CardDaVereda key={v.id} v={v} andamento={andamento.find(a => a.id === v.id)} />
+            ))}
+          </div>
+        </div>
+      ))}
     </section>
   );
 }

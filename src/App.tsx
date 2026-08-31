@@ -186,7 +186,7 @@ function AppRoutes() {
         <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/especialidade/:code" element={<ProtectedRoute><SpecialtyPage /></ProtectedRoute>} />
         <Route path="/licao/:specialtyCode/:moduleCode/:lessonCode" element={<ProtectedRoute><LessonPage /></ProtectedRoute>} />
-        <Route path="/vereda/:id" element={<ProtectedRoute><VeredaPage /></ProtectedRoute>} />
+        <Route path="/vereda/:code" element={<ProtectedRoute><VeredaPage /></ProtectedRoute>} />
         <Route path="/relatorio" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
         <Route path="/ranking" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />

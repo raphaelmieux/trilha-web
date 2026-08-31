@@ -40,6 +40,9 @@ push seguinte o carrega em silêncio. O `ci.yml` reprova se ele voltar.
 - `src/labs/` — os laboratórios, um arquivo por tipo (`LabType` em `src/types`).
 - `src/curriculum/veredas.ts` — o registro das veredas; o conteúdo de cada uma
   num arquivo ao lado, como `sintaxeHtml.ts`.
+- `public/assets/specialties/<CODIGO>.png` — o emblema, de trilha **e** de
+  vereda, na mesma pasta e pelo mesmo componente (`Emblema`).
+- `public/assets/certificates/<CODIGO>.png` — o fundo do certificado.
 - `src/lib/` — regras puras, testáveis sem servidor.
 - `src/types/index.ts` — os tipos do domínio, escritos à mão.
 - `src/types/database.ts` — **gerado**, espelha o schema. Não edite: o
@@ -291,11 +294,31 @@ teoria. Nada novo entra por esses caminhos — o evento de tópico deixou de ser
 escrito —, mas quem percorreu a vereda antes não perde o que fez. Uma decisão
 nossa não se cobra de quem já andou.
 
+**Vereda tem os campos de uma trilha, e o cartão de uma trilha.** `code`,
+`name`, `familia`, `description`, `emConstrucao` — os mesmos nomes de
+`Specialty`, para que `nomeCompleto` sirva aos dois e o cartão seja o mesmo
+cartão. Quem aprendeu a ler o de uma trilha não deveria ter de aprender outro.
+
+**O `id` da vereda é interno e nunca muda.** É por ele que a insígnia se chama
+e que os eventos de percurso são gravados; o `code` da tela pode ser renomeado
+— o da vereda de HTML já foi, de `VD01` para `CC-FE001` — sem que ninguém
+perca o que percorreu. Por isso a de HTML ainda tem `id: 'html'` e insígnia
+`vereda_html`.
+
+**Vereda anunciada tem zero lições, e zero de zero é tudo.** As trinta e uma
+por escrever apareciam concluídas para todo mundo, com insígnia, porque
+"vencidas === total" é verdade quando os dois são zero. `veredasConcluidas`
+exige que exista lição, e só olha para `veredasAbertas()` — a mesma armadilha
+do "zero link não é zero link quebrado". As travas de conteúdo e a de insígnia
+também só valem para as abertas: semear insígnia de percurso que não existe é
+prometer prêmio por nada.
+
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
-a entrada em `VEREDAS` com o próximo código `VD`, e a linha da insígnia
-(`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra. A arte vai em
-`public/assets/veredas/<CODIGO>.svg`; sem ela o cartão mostra o ícone de livro,
-e não um buraco. `veredas.test.ts` reprova laboratório que abra com verificação
+a entrada em `VEREDAS` com o código dela, e a linha da insígnia
+(`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois
+que ela deixa de ser `emConstrucao`. A arte vai em
+`public/assets/specialties/<CODIGO>.png` e o fundo do certificado em
+`public/assets/certificates/<CODIGO>.png`; `veredas.test.ts` cobra as duas. `veredas.test.ts` reprova laboratório que abra com verificação
 já verde, verificação sem passo a passo, e módulo que repita o próprio nome
 numa lição.
 
@@ -374,7 +397,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/insignias.test.ts` | insígnia com critério no código e sem linha no catálogo |
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
-| `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, ou sem passo a passo |
+| `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |

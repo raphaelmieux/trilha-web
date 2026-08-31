@@ -9,6 +9,7 @@ import { LIMIAR_DOMINIO } from '../lib/progress';
 import QuestionRenderer from './questions/QuestionRenderer';
 import { realcarLinhas } from '../labs/realce';
 import type { RespostaDaQuestao } from '../types';
+import { nomeCompleto } from '../types';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
 
 /*
@@ -141,7 +142,7 @@ export default function TeoriaDaVereda({ vereda, licao, aoVencer, aoSair }: {
 
       <button onClick={aoSair} className="flex items-center gap-1.5 text-sm"
         style={{ color: 'var(--color-text-muted)' }}>
-        <ArrowLeft className="w-4 h-4" /> {vereda.titulo}
+        <ArrowLeft className="w-4 h-4" /> {nomeCompleto(vereda)}
       </button>
 
       <div className="card p-6">
