@@ -320,6 +320,12 @@ O espaço reservado continua quadrado, para que as duas formas se alinhem na
 mesma coluna. E o selo de estado pousa **sobre a curva, a 45°**, e não no canto
 da caixa: no círculo o canto quase encosta na borda, na elipse fica longe dela.
 
+**E o cabeçalho da página usa o `Emblema`, não um `<img>`.** O defeito voltou por
+ali depois de corrigido no cartão: a tela da trilha desenhava a arte por conta
+própria, num `w-14 h-14`, e o oval chegava espremido de novo. Quem sabe a forma
+da arte é o componente — toda tela que mostra emblema passa por ele, no tamanho
+do cartão do painel, para que a medalha que se clicou seja a que se reencontra.
+
 **Vereda tem os campos de uma trilha, e o cartão de uma trilha.** `code`,
 `name`, `familia`, `description`, `emConstrucao` — os mesmos nomes de
 `Specialty`, para que `nomeCompleto` sirva aos dois e o cartão seja o mesmo

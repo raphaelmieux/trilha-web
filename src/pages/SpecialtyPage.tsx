@@ -13,7 +13,8 @@ import { useCertifications } from '../hooks/useCertifications';
 import { coresDoProgresso } from '../lib/coresDoProgresso';
 import ProgressBar from '../components/ui/ProgressBar';
 import MarcaDaLicao from '../components/ui/MarcaDaLicao';
-import { Lock, CheckCircle2, Award, HardHat } from 'lucide-react';
+import Emblema from '../components/ui/Emblema';
+import { CheckCircle2, Award, HardHat } from 'lucide-react';
 
 export default function SpecialtyPage() {
   const { code } = useParams<{ code: string }>();
@@ -88,7 +89,12 @@ export default function SpecialtyPage() {
     const anterior = getSpecialty(specialty.preRequisito!);
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
-        <Lock className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-border-hover)' }} />
+        {/* A arte da trilha, apagada e com o cadeado no aro: o prêmio continua
+            à vista, que é a razão de destravá-la. Era um cadeado solto, que
+            dizia o estado e não dizia de quê. */}
+        <div className="flex justify-center mb-4">
+          <Emblema code={specialty.code} status="bloqueado" size={96} />
+        </div>
         <h1 className="text-2xl font-bold mb-2">{nomeCompleto(specialty)} está bloqueada</h1>
         <p className="mb-6" style={{ color: 'var(--color-text-dim)' }}>
           Conclua {anterior ? nomeCompleto(anterior) : specialty.preRequisito} para abrir esta trilha.
@@ -135,7 +141,26 @@ export default function SpecialtyPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
-          <img src={`${import.meta.env.BASE_URL}assets/specialties/${specialty.code}.png`} alt={specialty.code} className="w-14 h-14" />
+          {/*
+            O `Emblema`, e não um <img> solto.
+
+            Aqui era `className="w-14 h-14"` — 56×56, um quadrado —, e a arte da
+            especialidade é o patch oval de 710×558: o emblema chegava espremido
+            num círculo achatado, com o texto dele estreitado junto. É o mesmo
+            defeito que o cartão do painel já teve, e ele voltou por este lado
+            porque esta tela desenhava a imagem por conta própria em vez de usar
+            a peça que sabe a forma da arte.
+
+            88 é a caixa, não a largura: o oval sai 88 × 69, e o disco da vereda
+            sai 88 × 88 — o mesmo tamanho do cartão do painel, de propósito.
+            Quem chega aqui clicando num cartão reencontra a mesma medalha, no
+            mesmo tamanho, e não uma miniatura dela.
+          */}
+          <Emblema
+            code={specialty.code}
+            status={cert ? 'certificado' : overallPercent === 100 ? 'concluido' : 'em-andamento'}
+            size={88}
+          />
           <div>
             <h1 className="text-2xl font-bold">{nomeCompleto(specialty)}</h1>
             <p style={{ color: 'var(--color-text-dim)' }}>{specialty.description}</p>

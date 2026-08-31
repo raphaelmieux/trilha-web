@@ -14,6 +14,7 @@ import TokenDaVereda from '../components/TokenDaVereda';
 import LaboratorioDeVereda from '../components/LaboratorioDeVereda';
 import ProgressBar from '../components/ui/ProgressBar';
 import MarcaDaLicao from '../components/ui/MarcaDaLicao';
+import Emblema from '../components/ui/Emblema';
 
 /*
  * A tela de uma vereda.
@@ -124,16 +125,36 @@ export default function VeredaPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 flex-wrap">
-        <Link to="/" className="flex items-center gap-1.5 text-sm"
+      {/*
+        O emblema encabeça a página, como na trilha.
+
+        Ele não estava aqui, e a vereda abria só com o nome — enquanto o cartão
+        que trouxe a pessoa até aqui mostrava a medalha. O disco da vereda e a
+        elipse da trilha saem do mesmo `Emblema`, que lê a forma da própria arte:
+        o que se reencontra ao entrar é o que se viu no painel.
+
+        O caminho de volta sobe para a linha de cima: com a medalha ao lado do
+        título, "Início" no meio da mesma linha empurrava o nome para longe dela.
+      */}
+      <div className="space-y-3">
+        <Link to="/" className="inline-flex items-center gap-1.5 text-sm"
           style={{ color: 'var(--color-text-muted)' }}>
           <ArrowLeft className="w-4 h-4" /> Início
         </Link>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-4">
+          <Emblema
+            code={vereda.code}
+            status={
+              getByCurriculum(vereda.code) ? 'certificado'
+                : licoes.length > 0 && vencidas === licoes.length ? 'concluido'
+                : 'em-andamento'
+            }
+            size={88}
+          />
+          <div className="min-w-0">
             <h1 className="text-2xl font-bold">{nomeCompleto(vereda)}</h1>
+            <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>{vereda.description}</p>
           </div>
-          <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>{vereda.description}</p>
         </div>
       </div>
 
