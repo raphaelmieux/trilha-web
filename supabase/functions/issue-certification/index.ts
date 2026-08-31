@@ -68,10 +68,43 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { userId, specialtyCode, level } = await req.json();
+    /*
+      `tipo` diz qual percurso está sendo certificado.
+
+      A vereda também emite Token.Web(), e o caminho dela é outro: ela não tem
+      linha em `specialties` nem requisitos no banco — o conteúdo é código, e o
+      que fica gravado é o percurso, em eventos de atividade. Ausente, o padrão
+      é 'trilha', que é como todo chamador antigo continua funcionando.
+
+      `veredaId` é a chave interna da vereda, e serve só para reconhecer o
+      registro antigo: quem concluiu quando ela se chamava VD01 tem um evento
+      com aquele código, e não perde o certificado por causa de uma renomeação
+      nossa.
+    */
+    const { userId, specialtyCode, level, tipo, veredaId } = await req.json();
 
     if (!userId || !specialtyCode || !level) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const ehVereda = tipo === "vereda";
+
+    /*
+      O código entra em filtro, então ele é conferido antes — e a forma é a
+      mesma dos dois lados: letras, números e hífen. Um código fora disso não
+      existe no currículo, e recusá-lo aqui é mais barato do que confiar.
+    */
+    if (!/^[A-Za-z0-9-]{3,20}$/.test(specialtyCode)) {
+      return new Response(JSON.stringify({ error: "Código de percurso inválido." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (veredaId !== undefined && !/^[a-z0-9_-]{1,40}$/.test(String(veredaId))) {
+      return new Response(JSON.stringify({ error: "Identificador de vereda inválido." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -113,6 +146,100 @@ Deno.serve(async (req: Request) => {
 
     if (existing) {
       return new Response(JSON.stringify({ success: true, code: existing.code, message: "Already certified" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    /*
+      ── A vereda: percurso conferido nos eventos, e não em requisitos ────────
+
+      A trilha guarda os requisitos no banco, e é contra eles que a emissão
+      confere. A vereda não guarda — "o conteúdo é código, o banco guarda
+      identidade e progresso" —, então o que se confere é o evento que a
+      plataforma escreve quando a última lição é vencida. É a mesma confiança
+      do outro caminho: `requirement_progress` também é escrito pelo aplicativo
+      da própria pessoa; o que protege os dois é a RLS, não a origem do dado.
+    */
+    if (ehVereda) {
+      const concluiu = async (coluna: string, valor: string) => {
+        const { count } = await supabase
+          .from("activity_events")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .in("event_type", ["vereda_completed", "mini_trilha_completed"])
+          .eq(coluna, valor);
+        return (count ?? 0) > 0;
+      };
+
+      /* Pelo código de hoje ou pela chave interna: a chave é a que sobrevive à
+         renomeação, e o registro antigo guarda o código de então. */
+      const venceu = await concluiu("metadata->>codigo", specialtyCode)
+        || (veredaId ? await concluiu("metadata->>vereda", String(veredaId)) : false);
+
+      if (!venceu) {
+        return new Response(JSON.stringify({ error: "Vereda ainda não concluída." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const code = generateCode();
+      const hashInput = `${userId}:${specialtyCode}:${level}:${code}:${Date.now()}`;
+      const hash = await sha256(hashInput);
+      const signature = await sha256(hash + Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!.substring(0, 32));
+
+      const { data: cert, error: certError } = await supabase
+        .from("certifications")
+        .insert({
+          user_id: userId,
+          /* Nulo de propósito: a vereda não é `Specialty`, e não ter linha em
+             `specialties` é a decisão que a mantém fora do percentual e do XP. */
+          specialty_id: null,
+          code,
+          hash,
+          signature,
+          level,
+          curriculum_code: specialtyCode,
+          curriculum_version: "1.0",
+          status: "active",
+        })
+        .select()
+        .single();
+
+      if (certError) {
+        return new Response(JSON.stringify({ error: certError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      /* O retrato do percurso: as lições vencidas, que é o que a vereda tem no
+         lugar dos requisitos. Um certificado sem retrato não se audita. */
+      const { data: licoes } = await supabase
+        .from("activity_events")
+        .select("event_type, metadata, created_at")
+        .eq("user_id", userId)
+        .in("event_type", ["vereda_teoria", "vereda_laboratorio"]);
+
+      await supabase.from("certification_snapshots").insert({
+        certification_id: cert.id,
+        requirements_snapshot: [],
+        progress_snapshot: licoes ?? [],
+      });
+
+      await supabase.from("certification_events").insert({
+        certification_id: cert.id,
+        event_type: "issued",
+        metadata: { code, level, specialtyCode, tipo: "vereda" },
+      });
+
+      await supabase.from("activity_events").insert({
+        user_id: userId,
+        event_type: "certification_issued",
+        metadata: { code, level, specialtyCode, tipo: "vereda" },
+      });
+
+      return new Response(JSON.stringify({ success: true, code, hash: hash.substring(0, 32) }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
