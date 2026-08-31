@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { existsSync } from 'node:fs';
 import { ap034, ap035, ap041, ap042, getAllSpecialties } from './index';
 import { getFinalExamQuestions } from './finalExams';
 
@@ -344,4 +345,25 @@ describe.each([
   it(`names the specialty ${code}`, () => {
     expect(specialty.code).toBe(code);
   });
+});
+
+/*
+  Toda trilha tem emblema e fundo de certificado no repositório.
+
+  A vereda já tinha essa trava; a trilha, não — e foi por isso que os cinco
+  certificados de Sistemas ficaram com o nome errado até alguém abrir a pasta e
+  comparar. Um código sem arte não quebra nada: o `Emblema` esconde a imagem e o
+  cartão segue de pé, com um buraco onde deveria estar a insígnia que a pessoa
+  vai costurar na faixa.
+
+  Vale para as em construção também. A arte chega antes do conteúdo justamente
+  para que o cartão anunciado mostre o que vem.
+*/
+describe('a arte de cada trilha', () => {
+  for (const s of getAllSpecialties()) {
+    it(`${s.code} tem emblema e certificado no repositório`, () => {
+      expect(existsSync(`public/assets/specialties/${s.code}.png`), 'emblema').toBe(true);
+      expect(existsSync(`public/assets/certificates/${s.code}.png`), 'certificado').toBe(true);
+    });
+  }
 });

@@ -1,6 +1,9 @@
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { HardHat } from 'lucide-react';
-import { VEREDAS, veredasPorFamilia, licoesDaVereda, type Vereda } from '../curriculum/veredas';
+import { ChevronDown, ChevronUp, HardHat } from 'lucide-react';
+import {
+  VEREDAS, veredasAbertas, veredasPorFamilia, licoesDaVereda, type Vereda,
+} from '../curriculum/veredas';
 import { useVeredas, type AndamentoDeVereda } from '../hooks/useVeredas';
 import { nomeCompleto } from '../types';
 import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
@@ -84,12 +87,52 @@ function CardDaVereda({ v, andamento }: { v: Vereda; andamento?: AndamentoDeVere
   );
 }
 
+/*
+  Quantos cartões o resumo mostra.
+
+  Quatro, porque a grade tem duas colunas: são duas fileiras cheias, e não uma
+  fileira e meia com um buraco do lado direito.
+*/
+const NO_RESUMO = 4;
+
 export default function SecaoDeVeredas({ userId }: { userId?: string }) {
   const { andamento } = useVeredas(userId);
+  /*
+    ── Trinta e duas de uma vez é um muro, não um convite ───────────────────
+
+    Eram duas, e listar tudo era listar tudo. Com as seis famílias registradas
+    a seção passou a despejar trinta e dois cartões — dezesseis fileiras — em
+    cima de quem só queria chegar às certificações logo abaixo. O bloco que
+    devia dizer "olha o que mais dá para fazer" virou o bloco que se rola até
+    o fim sem ler.
+
+    Então o resumo mostra poucos e o botão abre o resto, como num feed. O que
+    o resumo mostra primeiro são as **abertas** — as que dá para percorrer hoje
+    —, e só depois as anunciadas, porque um resumo feito só de cartão cinza
+    anuncia que aqui não há nada para fazer.
+
+    Aberto, volta a grade agrupada por família: fechado é o convite, aberto é
+    o catálogo, e catálogo sem a família não se navega.
+  */
+  const [tudoAberto, setTudoAberto] = useState(false);
+  /* Fechar de baixo deixaria a pessoa boiando no rodapé: o botão está a quase
+     cinco mil pixels do começo da seção, e a seção some debaixo dele. */
+  const secao = useRef<HTMLElement>(null);
+
   if (VEREDAS.length === 0) return null;
 
+  const abertas = veredasAbertas();
+  const familias = veredasPorFamilia();
+  const emConstrucao = VEREDAS.length - abertas.length;
+  const resumo = [...abertas, ...VEREDAS.filter(v => v.emConstrucao)].slice(0, NO_RESUMO);
+  const temMais = VEREDAS.length > resumo.length;
+
+  const cartao = (v: Vereda) => (
+    <CardDaVereda key={v.id} v={v} andamento={andamento.find(a => a.id === v.id)} />
+  );
+
   return (
-    <section className="space-y-4">
+    <section ref={secao} className="space-y-4">
       <div>
         <h2 className="text-lg font-bold" style={{ color: 'var(--color-text-soft)' }}>Veredas</h2>
         <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>
@@ -97,18 +140,44 @@ export default function SecaoDeVeredas({ userId }: { userId?: string }) {
           módulos de teoria e laboratórios a vencer, que vale sozinho — não conta
           no percentual de especialidade nenhuma, e rende insígnia.
         </p>
+        {/* A contagem sai do registro, e não de um número escrito à mão que
+            envelhece na vereda seguinte. */}
+        <p className="text-xs mt-1" style={{ color: 'var(--color-text-faint)' }}>
+          {abertas.length === 1 ? '1 vereda aberta' : `${abertas.length} veredas abertas`}
+          {emConstrucao > 0 && ` e ${emConstrucao} a caminho`}
+          {` · ${familias.length} famílias`}
+        </p>
       </div>
 
-      {veredasPorFamilia().map(({ nome, veredas }) => (
-        <div key={nome} className="space-y-3">
-          <h3 className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>{nome}</h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            {veredas.map(v => (
-              <CardDaVereda key={v.id} v={v} andamento={andamento.find(a => a.id === v.id)} />
-            ))}
+      {tudoAberto ? (
+        familias.map(({ nome, veredas }) => (
+          <div key={nome} className="space-y-3">
+            <h3 className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>{nome}</h3>
+            <div className="grid md:grid-cols-2 gap-6">{veredas.map(cartao)}</div>
           </div>
-        </div>
-      ))}
+        ))
+      ) : (
+        <div className="grid md:grid-cols-2 gap-6">{resumo.map(cartao)}</div>
+      )}
+
+      {temMais && (
+        <button
+          type="button"
+          onClick={() => {
+            setTudoAberto(a => !a);
+            if (tudoAberto) secao.current?.scrollIntoView({ block: 'start' });
+          }}
+          aria-expanded={tudoAberto}
+          className="w-full card p-3 flex items-center justify-center gap-2 text-sm font-semibold transition"
+          style={{ color: 'var(--color-text-muted)' }}
+          onMouseEnter={ev => (ev.currentTarget.style.color = 'var(--color-text-soft)')}
+          onMouseLeave={ev => (ev.currentTarget.style.color = 'var(--color-text-muted)')}
+        >
+          {tudoAberto
+            ? <>Ver menos <ChevronUp className="w-4 h-4" /></>
+            : <>Ver as {VEREDAS.length} veredas <ChevronDown className="w-4 h-4" /></>}
+        </button>
+      )}
     </section>
   );
 }

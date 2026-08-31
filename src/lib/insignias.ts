@@ -104,15 +104,15 @@ const LABORATORIOS: [LabType, string, string][] = [
 export const INSIGNIAS: Insignia[] = [
   // ── Primeiros passos ───────────────────────────────────────────────────
   marco('first_step', 'Primeiro Passo', 'Cumpriu o primeiro requisito de uma trilha.', 'footprints', 'bronze', r => r.requisitos, 1),
-  marco('primeira_licao', 'Primeira Lição', 'Concluiu a primeira lição.', 'footprints', 'bronze', r => r.licoes, 1),
-  marco('primeiro_laboratorio', 'Primeiro Laboratório', 'Concluiu o primeiro laboratório.', 'beaker', 'bronze', r => r.laboratorios.size, 1),
+  marco('primeira_licao', 'Primeira Lição', 'Concluiu a primeira lição.', 'theory', 'bronze', r => r.licoes, 1),
+  marco('primeiro_laboratorio', 'Primeiro Laboratório', 'Concluiu o primeiro laboratório.', 'lab', 'bronze', r => r.laboratorios.size, 1),
   marco('primeira_prova', 'Primeira Avaliação', 'Concluiu a primeira avaliação final.', 'star', 'bronze', r => r.provas, 1),
 
   // ── Lições ─────────────────────────────────────────────────────────────
-  marco('licoes_5', 'Cinco Lições', 'Concluiu cinco lições.', 'layers', 'bronze', r => r.licoes, 5),
-  marco('licoes_10', 'Dez Lições', 'Concluiu dez lições.', 'layers', 'bronze', r => r.licoes, 10),
-  marco('licoes_25', 'Vinte e Cinco Lições', 'Concluiu vinte e cinco lições.', 'layers', 'silver', r => r.licoes, 25),
-  marco('licoes_50', 'Cinquenta Lições', 'Concluiu cinquenta lições.', 'layers', 'gold', r => r.licoes, 50),
+  marco('licoes_5', 'Cinco Lições', 'Concluiu cinco lições.', 'theory', 'bronze', r => r.licoes, 5),
+  marco('licoes_10', 'Dez Lições', 'Concluiu dez lições.', 'theory', 'bronze', r => r.licoes, 10),
+  marco('licoes_25', 'Vinte e Cinco Lições', 'Concluiu vinte e cinco lições.', 'theory', 'silver', r => r.licoes, 25),
+  marco('licoes_50', 'Cinquenta Lições', 'Concluiu cinquenta lições.', 'theory', 'gold', r => r.licoes, 50),
 
   // ── Requisitos ─────────────────────────────────────────────────────────
   marco('requisitos_10', 'Dez Requisitos', 'Cumpriu dez requisitos oficiais.', 'footprints', 'bronze', r => r.requisitos, 10),
@@ -182,7 +182,7 @@ export const INSIGNIAS: Insignia[] = [
 
   // ── Um por laboratório ─────────────────────────────────────────────────
   ...LABORATORIOS.map(([lab, nome, descricao]): Insignia => ({
-    code: `lab_${lab}`, nome, descricao, icone: 'beaker', tier: 'bronze',
+    code: `lab_${lab}`, nome, descricao, icone: 'lab', tier: 'bronze',
     conquistou: r => r.laboratorios.has(lab),
   })),
 ];

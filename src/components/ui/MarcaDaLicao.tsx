@@ -1,4 +1,5 @@
-import { BookOpen, FlaskConical, Award, HelpCircle, Check, Flag } from 'lucide-react';
+import { Check } from 'lucide-react';
+import { ICONE_DA_LICAO } from './iconesDeLicao';
 import type { LessonType } from '../../types';
 
 /*
@@ -15,20 +16,12 @@ import type { LessonType } from '../../types';
  * vereda, e uma lição de teoria tem a mesma cara nos dois lugares.
  */
 
-const ICONES = {
-  theory: BookOpen,
-  quiz: HelpCircle,
-  lab: FlaskConical,
-  checkpoint: Flag,
-  final: Award,
-} as const;
-
 export default function MarcaDaLicao({ tipo, feita, size = 32 }: {
   tipo: LessonType;
   feita?: boolean;
   size?: number;
 }) {
-  const Ico = ICONES[tipo];
+  const Ico = ICONE_DA_LICAO[tipo];
   return (
     <span
       aria-hidden="true"

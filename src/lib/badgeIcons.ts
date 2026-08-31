@@ -42,8 +42,28 @@ const ICON_SHAPES: Record<string, string> = {
     '<path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/>',
     '<circle cx="12" cy="8" r="6"/>',
   ].join(''),
-  beaker: ['<path d="M4.5 3h15"/>','<path d="M6 3v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3"/>','<path d="M6 14h12"/>'].join(''),
-  book: ['<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>','<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>','<path d="M9 7h7"/>'].join(''),
+  /*
+    Estes dois são os mesmos de `MarcaDaLicao`, e o nome deles diz isso.
+
+    A insígnia de laboratório vinha com o `Beaker` — a proveta reta — enquanto
+    o módulo de laboratório é marcado pelo `FlaskConical`, o erlenmeyer. Dois
+    desenhos para a mesma coisa, e nada dizia qual valia: quem via a insígnia
+    na estante não a ligava ao módulo que a rendeu. O mesmo vale para a lição,
+    que não tinha desenho nenhum e usava a pilha de camadas dos módulos.
+
+    Por isso o nome aqui é `lab` e `theory`, e não `flask` e `book`: o que se
+    escolhe é "o ícone do laboratório", e o desenho vem atrás. Trocar o desenho
+    de um dos lados um dia é trocar nos dois.
+  */
+  lab: [
+    '<path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/>',
+    '<path d="M6.453 15h11.094"/>',
+    '<path d="M8.5 2h7"/>',
+  ].join(''),
+  theory: [
+    '<path d="M12 5v16"/>',
+    '<path d="M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/>',
+  ].join(''),
   clock: ['<circle cx="12" cy="12" r="10"/>','<polyline points="12 6 12 12 16 14"/>'].join(''),
   zap: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
   calendar: ['<path d="M8 2v4"/>','<path d="M16 2v4"/>','<rect width="18" height="18" x="3" y="4" rx="2"/>','<path d="M3 10h18"/>'].join(''),
@@ -70,13 +90,32 @@ export const TIER_LABELS: Record<Badge['tier'], string> = {
   gold: 'ouro',
 };
 
+/*
+  Os nomes que o banco ainda pode trazer, e o que eles querem dizer hoje.
+
+  A coluna `badges.icon` é semeada por migration, e a migration sai no mesmo
+  push que o frontend — em paralelo, não em ordem. Durante essa janela a tela
+  nova recebe o nome velho, e sem esta tabela a insígnia de laboratório cairia
+  na medalha genérica bem no dia da mudança. Vale também para o banco de quem
+  restaurou um dump antigo.
+*/
+const APELIDOS: Record<string, string> = {
+  beaker: 'lab',
+  book: 'theory',
+};
+
+/** O nome de hoje para um ícone, seja qual for o nome com que ele chegou. */
+export function iconeCanonico(nome: string): string {
+  return APELIDOS[nome] ?? nome;
+}
+
 /** Falls back to the award medal for a badge whose icon name is unknown. */
 export function iconShape(name: string): string {
-  return ICON_SHAPES[name] ?? ICON_SHAPES.award;
+  return ICON_SHAPES[iconeCanonico(name)] ?? ICON_SHAPES.award;
 }
 
 export function hasIcon(name: string): boolean {
-  return name in ICON_SHAPES;
+  return iconeCanonico(name) in ICON_SHAPES;
 }
 
 /**

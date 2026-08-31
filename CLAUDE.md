@@ -276,6 +276,19 @@ com o ícone do tipo — nasceu na vereda e virou padrão. A trilha mostrava qua
 laboratório, e o mesmo triângulo servia para tudo o que faltava. Agora o
 **ícone diz o tipo** e o **disco diz o estado**.
 
+**E é a mesma na insígnia que a lição rendeu.** O módulo de laboratório saía com
+o erlenmeyer e a insígnia do mesmo laboratório com a proveta reta — dois vidros
+diferentes, nada ligando um ao outro. Eram dois mapas de ícone, e dois mapas
+divergem: agora é um só, `ICONE_DA_LICAO` em `components/ui/`, de onde
+`MarcaDaLicao` e `BadgeIcon` tiram o desenho. Por isso o nome do ícone no
+catálogo é `lab` e `theory`, e não `flask` e `book`: escolhe-se "o ícone do
+laboratório", e o desenho vem atrás.
+
+O nome do ícone também mora no banco, em `badges.icon`, semeado por migration —
+e o `supabase.yml` corre em paralelo com o frontend, nunca antes. `iconeCanonico`
+em `badgeIcons.ts` traduz os nomes velhos justamente por causa dessa janela, e
+de quem restaura um dump antigo.
+
 O laboratório é o mesmo editor da trilha — as peças saem de `ide.tsx` —, e o
 que ele cobra é uma lista de ids de `htmlValidator` escrita na lição. Assim um
 laboratório novo é uma lista, e não uma tela.
@@ -293,6 +306,19 @@ chamava mini-trilha, e a regra de quando abrir todos os tópicos vencia a
 teoria. Nada novo entra por esses caminhos — o evento de tópico deixou de ser
 escrito —, mas quem percorreu a vereda antes não perde o que fez. Uma decisão
 nossa não se cobra de quem já andou.
+
+**Emblema de trilha é oval; o de vereda é círculo.** A arte da especialidade é
+o patch que se costura na faixa, 710×558 deitado; a da vereda é um disco de
+592×592. O `Emblema` travava largura e altura no mesmo número e espremia o oval
+para dentro de um quadrado — a trilha saía como um círculo achatado, com o texto
+do emblema estreitado junto, e ninguém tinha desenhado aquele círculo. Hoje a
+proporção sai da própria imagem no `onLoad` e a moldura toma a forma dela:
+`border-radius: 50%` numa caixa 1.27:1 é elipse, numa caixa 1:1 é círculo. Sem
+lista de códigos por forma — arte nova, em qualquer proporção, chega certa.
+
+O espaço reservado continua quadrado, para que as duas formas se alinhem na
+mesma coluna. E o selo de estado pousa **sobre a curva, a 45°**, e não no canto
+da caixa: no círculo o canto quase encosta na borda, na elipse fica longe dela.
 
 **Vereda tem os campos de uma trilha, e o cartão de uma trilha.** `code`,
 `name`, `familia`, `description`, `emConstrucao` — os mesmos nomes de
@@ -312,6 +338,14 @@ exige que exista lição, e só olha para `veredasAbertas()` — a mesma armadil
 do "zero link não é zero link quebrado". As travas de conteúdo e a de insígnia
 também só valem para as abertas: semear insígnia de percurso que não existe é
 prometer prêmio por nada.
+
+**Trinta e duas de uma vez é muro, não convite.** Eram duas, e listar tudo era
+listar tudo. Com as seis famílias registradas a seção passou a despejar trinta e
+dois cartões — dezesseis fileiras — em cima de quem só queria chegar às
+certificações logo abaixo. Fechada, ela mostra quatro, e as **abertas vêm
+primeiro**: resumo feito só de cartão cinza anuncia que ali não há o que fazer.
+Aberta, volta a grade por família — fechado é o convite, aberto é o catálogo, e
+catálogo sem família não se navega.
 
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
@@ -398,6 +432,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
+| `src/curriculum/index.test.ts` | trilha sem emblema ou sem fundo de certificado no repositório |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
