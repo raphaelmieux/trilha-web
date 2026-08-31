@@ -347,6 +347,24 @@ primeiro**: resumo feito só de cartão cinza anuncia que ali não há o que faz
 Aberta, volta a grade por família — fechado é o convite, aberto é o catálogo, e
 catálogo sem família não se navega.
 
+**A vereda emite Token.Web(), e é o mesmo documento.** O clube não tem por que
+aprender dois: mesma tabela `certifications`, mesma verificação pública em
+`/verificar`, mesmo PDF, e conta nas insígnias de certificado. O que impedia
+era `specialty_id NOT NULL` — a vereda não tem linha em `specialties`, e não
+ter é a decisão que a mantém fora do percentual e do XP. Nenhuma tela lia essa
+coluna, então ela passou a aceitar nulo.
+
+A emissão confere **o evento**, e não requisitos: a trilha guarda os requisitos
+no banco, a vereda não guarda nada — o conteúdo é código. A confiança é a
+mesma dos dois lados, porque `requirement_progress` também é escrito pelo
+aplicativo de quem estuda; quem protege é a RLS. E é botão, não automático ao
+vencer a última lição: o pedido atravessa a rede, e falhar em silêncio bem na
+hora da vitória é a pior hora.
+
+Vereda não tem nível, tem tamanho. Grava `'basico'` — o lado que reivindica
+menos — e a tela pública não imprime grau nenhum para ela: escreve que é
+vereda.
+
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois

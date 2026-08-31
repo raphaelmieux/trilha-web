@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { ROTULO_DO_NIVEL, type CertificadoVerificado } from '../types';
-import { getSpecialty } from '../curriculum';
 import { Award, Search, CheckCircle2 } from 'lucide-react';
 import { ErrorState } from '../components/ui/PageState';
-import { comoCertificadoVerificado } from '../lib/certificados';
+import { comoCertificadoVerificado, percursoDoCertificado } from '../lib/certificados';
 
 export default function VerifyPage() {
   const [code, setCode] = useState('');
@@ -68,7 +67,11 @@ export default function VerifyPage() {
 
       {error && <ErrorState message={error} />}
 
-      {result && (
+      {result && (() => {
+      /* O percurso que este certificado atesta — trilha ou vereda —, resolvido
+         uma vez para as duas linhas que falam dele. */
+      const percurso = percursoDoCertificado(result.curriculum_code);
+      return (
         <div className="card p-8" style={{ borderColor: 'var(--color-secondary-a30)', backgroundColor: 'var(--color-secondary-a03)' }}>
           <div className="text-center mb-6">
             <Award className="w-16 h-16 mx-auto mb-3" style={{ color: 'var(--color-secondary)' }} />
@@ -89,11 +92,17 @@ export default function VerifyPage() {
                 validade ao Token.Web() fora do aplicativo — errar o nome da
                 especialidade aqui é errar no único lugar que não perdoa.
               */
-              ['Especialidade:', (() => {
-                const e = getSpecialty(result.curriculum_code);
-                return e ? `${e.code} — ${e.name}` : result.curriculum_code;
-              })()],
-              ['Nível:', ROTULO_DO_NIVEL[result.level] ?? result.level],
+              /*
+                A vereda também emite Token.Web(), e ela não é especialidade —
+                então o rótulo diz qual das duas coisas é, e a linha seguinte
+                deixa de afirmar um nível que vereda não tem. Dizer "Nível:
+                Básico" ali seria inventar grau para um percurso que se mede
+                em lições.
+              */
+              [percurso.tipo === 'vereda' ? 'Vereda:' : 'Especialidade:', percurso.nome],
+              ...(percurso.tipo === 'vereda'
+                ? [['Percurso:', 'Vereda — percurso curto, fora do currículo oficial']]
+                : [['Nível:', ROTULO_DO_NIVEL[result.level] ?? result.level]]),
               ['Currículo:', `${result.curriculum_code} v${result.curriculum_version}`],
               ['Emitido em:', new Date(result.issued_at).toLocaleDateString('pt-BR')],
             ].map(([label, value]) => (
@@ -110,7 +119,8 @@ export default function VerifyPage() {
             </div>
           </div>
         </div>
-      )}
+      );
+      })()}
 
       {searched && !result && !error && (
         <div className="card p-6 text-center" style={{ color: 'var(--color-text-dim)' }}>Token não encontrado.</div>

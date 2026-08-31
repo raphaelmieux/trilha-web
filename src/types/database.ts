@@ -237,7 +237,7 @@ export type Database = {
           revocation_reason: string | null
           revoked_at: string | null
           signature: string | null
-          specialty_id: string
+          specialty_id: string | null
           status: string
           user_id: string
         }
@@ -253,7 +253,7 @@ export type Database = {
           revocation_reason?: string | null
           revoked_at?: string | null
           signature?: string | null
-          specialty_id: string
+          specialty_id?: string | null
           status?: string
           user_id: string
         }
@@ -269,7 +269,7 @@ export type Database = {
           revocation_reason?: string | null
           revoked_at?: string | null
           signature?: string | null
-          specialty_id?: string
+          specialty_id?: string | null
           status?: string
           user_id?: string
         }

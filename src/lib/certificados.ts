@@ -1,4 +1,5 @@
 import { getSpecialty } from '../curriculum';
+import { getVereda } from '../curriculum/veredas';
 import { umDe, ORDEM_DOS_NIVEIS, STATUS_DO_CERTIFICADO } from '../types';
 import type { CertificadoVerificado, RetornoDe } from '../types';
 
@@ -18,9 +19,31 @@ import type { CertificadoVerificado, RetornoDe } from '../types';
  *
  * Mora aqui, e não junto do canvas, porque o PDF precisa da mesma resposta: as
  * duas saídas têm de mostrar o mesmo certificado.
+ *
+ * A vereda também emite Token.Web(), e a arte dela está na mesma pasta, sob o
+ * código dela — `getVereda` entra aqui pela mesma razão que `getSpecialty`:
+ * sem ela, o certificado de uma vereda sairia vestido de Internet.
  */
 export function codigoDaArte(curriculumCode: string): string {
-  return getSpecialty(curriculumCode) ? curriculumCode : 'AP034';
+  const conhecido = getSpecialty(curriculumCode) || getVereda(curriculumCode);
+  return conhecido ? curriculumCode : 'AP034';
+}
+
+/**
+ * O nome do percurso que um certificado atesta, e o que ele é.
+ *
+ * A tela pública tinha `getSpecialty(code) ?? code`, e para uma vereda isso
+ * imprimiria o código cru — "CC-FE001" — no único lugar que dá validade ao
+ * documento fora do aplicativo. E a linha de baixo dizia "Nível: Básico", que
+ * ninguém decidiu: vereda não tem nível, tem tamanho.
+ */
+export function percursoDoCertificado(curriculumCode: string):
+  { nome: string; tipo: 'trilha' } | { nome: string; tipo: 'vereda' } | { nome: string; tipo: 'desconhecido' } {
+  const trilha = getSpecialty(curriculumCode);
+  if (trilha) return { nome: `${trilha.code} — ${trilha.name}`, tipo: 'trilha' };
+  const vereda = getVereda(curriculumCode);
+  if (vereda) return { nome: `${vereda.code} — ${vereda.name}`, tipo: 'vereda' };
+  return { nome: curriculumCode, tipo: 'desconhecido' };
 }
 
 /**

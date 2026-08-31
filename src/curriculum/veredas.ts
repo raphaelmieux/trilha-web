@@ -150,7 +150,7 @@ const anunciada = (
 
 export const VEREDAS: Vereda[] = [
   /* ── Base ── */
-  anunciada('CC001', 'Lógica no Scratch', 'Base',
+  anunciada('CC001', 'Lógica com Scratch', 'Base',
     'Montar um programa arrastando blocos: sequência, repetição e condição, sem digitar uma linha.'),
   anunciada('CC002', 'Python', 'Base',
     'A primeira linguagem escrita: variável, condição, laço e função, resolvendo problemas pequenos.'),

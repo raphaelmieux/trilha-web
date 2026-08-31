@@ -8,7 +8,9 @@ import {
 } from '../curriculum/veredas';
 import { licaoVencida, registrarLicaoVencida, percursoVazio } from '../lib/veredas';
 import { useVeredas } from '../hooks/useVeredas';
+import { useCertifications } from '../hooks/useCertifications';
 import TeoriaDaVereda from '../components/TeoriaDaVereda';
+import TokenDaVereda from '../components/TokenDaVereda';
 import LaboratorioDeVereda from '../components/LaboratorioDeVereda';
 import ProgressBar from '../components/ui/ProgressBar';
 import MarcaDaLicao from '../components/ui/MarcaDaLicao';
@@ -31,6 +33,7 @@ export default function VeredaPage() {
   const { profile } = useAuth();
   const vereda = getVereda(code);
   const { percursoDe, recarregar, carregando } = useVeredas(profile?.id);
+  const { getByCurriculum, refresh: recarregarCertificados } = useCertifications(profile?.id);
   const [aberta, setAberta] = useState<string | null>(null);
 
   if (!vereda) {
@@ -155,6 +158,17 @@ export default function VeredaPage() {
           percentual de nenhuma especialidade — é bônus, e rende insígnia ao terminar.
         </p>
       </div>
+
+      {/* Concluída: o certificado. Depois do progresso e antes dos módulos, que
+          é onde a conquista fica à vista sem empurrar a lista para baixo. */}
+      {profile?.id && licoes.length > 0 && vencidas === licoes.length && (
+        <TokenDaVereda
+          vereda={vereda}
+          userId={profile.id}
+          certificado={getByCurriculum(vereda.code)}
+          aoEmitir={recarregarCertificados}
+        />
+      )}
 
       {vereda.modulos.map(m => (
         <section key={m.id} className="card p-5 space-y-3">

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { existsSync } from 'node:fs';
 import { getOpenSpecialties } from '../curriculum';
-import { comoCertificadoVerificado, codigoDaArte } from './certificados';
+import { comoCertificadoVerificado, codigoDaArte, percursoDoCertificado } from './certificados';
+import { VEREDAS } from '../curriculum/veredas';
 import type { RetornoDe } from '../types';
 
 type LinhaVerificada = RetornoDe<'verify_certificate'>[number];
@@ -75,8 +76,39 @@ describe('codigoDaArte', () => {
     expect(codigoDaArte('AP041')).toBe('AP041');
   });
 
+  /*
+    A vereda também emite Token.Web(), e a arte dela mora na mesma pasta. Sem
+    esta linha o certificado de uma vereda sairia vestido de Internet — o
+    documento que a pessoa leva ao clube, com o fundo de outra coisa.
+  */
+  it('usa a arte da própria vereda', () => {
+    for (const v of VEREDAS) expect(codigoDaArte(v.code)).toBe(v.code);
+  });
+
   it('cai na AP034 para código que o currículo não conhece', () => {
     expect(codigoDaArte('AP099')).toBe('AP034');
+  });
+});
+
+describe('percursoDoCertificado', () => {
+  it('nomeia a trilha e diz que é trilha', () => {
+    expect(percursoDoCertificado('AP041')).toEqual({
+      nome: 'AP041 — Computação 1', tipo: 'trilha',
+    });
+  });
+
+  /* A tela pública imprimia o código cru para uma vereda, e logo abaixo
+     "Nível: Básico" — grau que vereda não tem. */
+  it('nomeia a vereda e diz que é vereda', () => {
+    expect(percursoDoCertificado('CC-FE001')).toEqual({
+      nome: 'CC-FE001 — HTML', tipo: 'vereda',
+    });
+  });
+
+  it('devolve o código cru para o que não reconhece, e assume nada', () => {
+    expect(percursoDoCertificado('XX999')).toEqual({
+      nome: 'XX999', tipo: 'desconhecido',
+    });
   });
 });
 
