@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getAllSpecialties } from './index';
 import { getFinalExamQuestions } from './finalExams';
-import { VEREDAS, questoesDaVereda } from './veredas';
+import { veredasAbertas, questoesDaVereda } from './veredas';
 import type { Question } from '../types';
 
 /*
@@ -77,7 +77,7 @@ function vantagemMedia(qs: Question[]): number {
 const licoes = [
   ...getAllSpecialties().flatMap(s =>
     s.modules.flatMap(m => m.lessons.flatMap(l => l.questions ?? []))),
-  ...VEREDAS.flatMap(questoesDaVereda),
+  ...veredasAbertas().flatMap(questoesDaVereda),
 ];
 /*
   As provas saem do currículo, e não de uma lista escrita à mão.
@@ -266,7 +266,7 @@ describe('nenhuma prova cobra a mesma coisa duas vezes', () => {
       .map(s => [s.code, getFinalExamQuestions(s.code)] as const),
     /* A vereda inteira é um conjunto só: repetir a pergunta entre dois módulos
        dela é o mesmo defeito que repeti-la dentro de uma prova. */
-    ...VEREDAS.map(v => [v.codigo, questoesDaVereda(v)] as const),
+    ...veredasAbertas().map(v => [v.code, questoesDaVereda(v)] as const),
   ];
 
   it('nenhum par de enunciados diz a mesma coisa', () => {

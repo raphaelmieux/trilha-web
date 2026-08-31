@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { VEREDAS, licoesDaVereda, topicosDaVereda } from '../curriculum/veredas';
+import { existsSync } from 'node:fs';
+import { VEREDAS, veredasAbertas, licoesDaVereda, topicosDaVereda } from '../curriculum/veredas';
 import {
   EVENTO_TOPICO, EVENTO_TEORIA, EVENTO_LABORATORIO,
   percursoDosEventos, veredasConcluidas, licaoVencida, licoesVencidas,
@@ -9,7 +10,7 @@ import type { EventoDeAtividade } from './atividade';
 import { validateHtml } from './htmlValidator';
 import { PASSOS } from '../labs/desafioDeHtml';
 
-const vereda = VEREDAS[0];
+const vereda = veredasAbertas()[0];
 const licoes = licoesDaVereda(vereda);
 const topicos = topicosDaVereda(vereda).map(t => t.id);
 const teorias = licoes.filter(l => l.tipo === 'teoria').map(l => l.id);
@@ -118,10 +119,10 @@ describe('quando a vereda acaba', () => {
   chances de repetir o erro sem ninguém ver.
 */
 describe('os modelos dos laboratórios da vereda', () => {
-  for (const vereda of VEREDAS) {
+  for (const vereda of veredasAbertas()) {
     for (const licao of licoesDaVereda(vereda)) {
       if (licao.tipo !== 'laboratorio') continue;
-      it(`${vereda.codigo} · ${licao.id} abre sem nenhuma verificação verde`, () => {
+      it(`${vereda.code} · ${licao.id} abre sem nenhuma verificação verde`, () => {
         const verdes = validateHtml(licao.modelo, licao.verificacoes)
           .filter(r => r.passed).map(r => r.id);
         expect(verdes).toEqual([]);
@@ -130,7 +131,7 @@ describe('os modelos dos laboratórios da vereda', () => {
   }
 
   it('toda verificação cobrada tem passo a passo para quem travar', () => {
-    const sem = VEREDAS.flatMap(v => licoesDaVereda(v))
+    const sem = veredasAbertas().flatMap(v => licoesDaVereda(v))
       .flatMap(l => (l.tipo === 'laboratorio' ? l.verificacoes : []))
       .filter(id => !PASSOS[id]?.length);
     expect([...new Set(sem)]).toEqual([]);
@@ -145,7 +146,7 @@ describe('os modelos dos laboratórios da vereda', () => {
   embaixo da outra — que lido de cima parece erro de montagem, e não hierarquia.
 */
 describe('os nomes dentro de um módulo', () => {
-  for (const vereda of VEREDAS) {
+  for (const vereda of veredasAbertas()) {
     for (const modulo of vereda.modulos) {
       it(`${modulo.id} não repete o próprio nome numa lição`, () => {
         for (const licao of modulo.licoes) {
@@ -154,5 +155,41 @@ describe('os nomes dentro de um módulo', () => {
         }
       });
     }
+  }
+});
+
+/*
+  A vereda anunciada não se conclui sozinha.
+
+  Ela tem zero lições, e "zero vencidas de zero" satisfazia a comparação: as
+  trinta e uma que ainda não existem apareciam concluídas para todo mundo, com
+  insígnia. É o mesmo vazio que já enganou a verificação de links quebrados.
+*/
+describe('as veredas ainda em construção', () => {
+  it('não contam como concluídas, nem para quem nunca abriu nada', () => {
+    expect(veredasConcluidas([])).toEqual([]);
+    expect(veredasConcluidas(tudo)).toEqual([vereda.id]);
+  });
+
+  it('ficam de fora do que se cobra insígnia', () => {
+    const anunciadas = VEREDAS.filter(v => v.emConstrucao).map(v => v.id);
+    expect(anunciadas.length).toBeGreaterThan(0);
+    for (const id of anunciadas) expect(veredasConcluidas(tudo)).not.toContain(id);
+  });
+});
+
+/*
+  Toda vereda anunciada tem emblema e certificado esperando por ela.
+
+  A arte foi enviada antes do conteúdo, de propósito: o cartão em construção
+  mostra o emblema, e é ele que faz o clube ver o que vem. Um código sem
+  arquivo cai no ícone de reserva e some da lista do que está por vir.
+*/
+describe('a arte de cada vereda', () => {
+  for (const v of VEREDAS) {
+    it(`${v.code} tem emblema e certificado no repositório`, () => {
+      expect(existsSync(`public/assets/specialties/${v.code}.png`), 'emblema').toBe(true);
+      expect(existsSync(`public/assets/certificates/${v.code}.png`), 'certificado').toBe(true);
+    });
   }
 });

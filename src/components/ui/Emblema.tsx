@@ -23,18 +23,20 @@ const RING: Record<EmblemStatus, string> = {
   bloqueado: 'var(--color-border)',
 };
 
-export default function SpecialtyEmblem({
+export default function Emblema({
   code,
   status,
   size = 88,
 }: {
   /*
-    O código da trilha, e não um par fechado.
+    O código do percurso — trilha ou vereda —, e não um par fechado.
 
-    Estava tipado como 'AP034' | 'AP035'. O componente só monta o caminho de um
-    SVG a partir dele, então a união literal não protegia nada — apenas impedia
-    que a terceira trilha usasse o emblema, e a AP041 já tem o dela em
-    public/assets/specialties. Um código sem arte cai no onError abaixo.
+    Estava tipado como 'AP034' | 'AP035'. O componente só monta o caminho de
+    uma imagem a partir dele, então a união literal não protegia nada — apenas
+    impedia que a terceira trilha usasse o emblema. Hoje as veredas usam o
+    mesmo emblema, da mesma pasta, e é por isso que o tipo é `string`.
+
+    Um código sem arte cai no onError abaixo.
   */
   code: string;
   status: EmblemStatus;
@@ -58,8 +60,8 @@ export default function SpecialtyEmblem({
         }}
       >
         <img
-          src={`${import.meta.env.BASE_URL}assets/specialties/${code}.svg`}
-          alt={`Emblema da especialidade ${code}`}
+          src={`${import.meta.env.BASE_URL}assets/specialties/${code}.png`}
+          alt={`Emblema de ${code}`}
           /* Sem arte, o disco e o selo de status continuam de pé; o que não
              pode aparecer é o ícone de imagem quebrada dentro da medalha. */
           onError={ev => { (ev.currentTarget as HTMLImageElement).style.display = 'none'; }}

@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { logActivity } from './progress';
 import {
-  VEREDAS, licoesDaVereda, type Vereda, type LicaoDeVereda,
+  veredasAbertas, licoesDaVereda, type Vereda, type LicaoDeVereda,
 } from '../curriculum/veredas';
 import { objeto, type EventoDeAtividade } from './atividade';
 
@@ -113,8 +113,20 @@ export function licoesVencidas(vereda: Vereda, feito: PercursoDeVereda | undefin
  */
 export function veredasConcluidas(eventos: EventoDeAtividade[]): string[] {
   const percurso = percursoDosEventos(eventos);
-  return VEREDAS
-    .filter(v => licoesVencidas(v, percurso[v.id]) === licoesDaVereda(v).length)
+  /*
+    Só as abertas, e só as que têm lição.
+
+    Uma vereda anunciada tem zero lições, e "zero vencidas de zero" satisfazia
+    a igualdade: as trinta e uma que ainda não existem apareciam concluídas
+    para todo mundo, insígnia inclusa. É o mesmo vazio que já enganou a
+    verificação de links quebrados — comparação que o nada satisfaz precisa
+    exigir que algo exista primeiro.
+  */
+  return veredasAbertas()
+    .filter(v => {
+      const total = licoesDaVereda(v).length;
+      return total > 0 && licoesVencidas(v, percurso[v.id]) === total;
+    })
     .map(v => v.id);
 }
 
@@ -151,7 +163,7 @@ export async function registrarLicaoVencida(
   };
   if (licoesVencidas(vereda, depois) === licoesDaVereda(vereda).length) {
     await logActivity(userId, EVENTO_CONCLUSAO, {
-      vereda: vereda.id, codigo: vereda.codigo, licoes: licoesDaVereda(vereda).length,
+      vereda: vereda.id, codigo: vereda.code, licoes: licoesDaVereda(vereda).length,
     });
   }
   return true;

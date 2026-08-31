@@ -188,7 +188,7 @@ export default function LeitorDeVereda({ vereda, aoFechar }: {
 
       <div className="ref-topo">
         <BookOpen className="w-4 h-4" style={{ color: '#4EC9B0' }} />
-        <h2>{vereda.titulo}</h2>
+        <h2>{vereda.name}</h2>
         <span style={{ fontSize: 11.5, color: '#8A8A96' }}>
           {indice + 1} de {topicos.length}
         </span>

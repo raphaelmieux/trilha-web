@@ -12,7 +12,7 @@ import { getPublicName, nomeCompleto, ROTULO_DO_NIVEL, type Specialty, type Cert
 import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
 import { descreverAtividade } from '../lib/atividade';
 import ProgressBar from '../components/ui/ProgressBar';
-import SpecialtyEmblem from '../components/ui/SpecialtyEmblem';
+import Emblema from '../components/ui/Emblema';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
 import EstanteDeInsignias from '../components/ui/EstanteDeInsignias';
 import SecaoDeVeredas from '../components/SecaoDeVeredas';
@@ -58,7 +58,7 @@ function CardDaTrilha({ e, progress, cert, liberada }: {
     return (
       <div className="card p-6 opacity-60" style={{ border: '2px dashed var(--color-border)' }}>
         <div className="flex items-center gap-4 mb-3">
-          <SpecialtyEmblem code={e.code} status="bloqueado" />
+          <Emblema code={e.code} status="bloqueado" />
           {identificacao}
         </div>
         <span className="text-xs px-2 py-1 rounded inline-flex items-center gap-1 mb-2"
@@ -77,7 +77,7 @@ function CardDaTrilha({ e, progress, cert, liberada }: {
     return (
       <div className="card p-6 opacity-70">
         <div className="flex items-center gap-4 mb-3">
-          <SpecialtyEmblem code={e.code} status="bloqueado" />
+          <Emblema code={e.code} status="bloqueado" />
           {identificacao}
         </div>
         <p className="text-sm flex items-center gap-1.5" style={{ color: 'var(--color-text-faint)' }}>
@@ -93,7 +93,7 @@ function CardDaTrilha({ e, progress, cert, liberada }: {
       onMouseEnter={ev => (ev.currentTarget.style.borderColor = cores.bordaAoPassar)}
       onMouseLeave={ev => (ev.currentTarget.style.borderColor = percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)')}>
       <div className="flex items-center gap-4 mb-4">
-        <SpecialtyEmblem
+        <Emblema
           code={e.code}
           status={cert ? 'certificado' : percent === 100 ? 'concluido' : 'em-andamento'}
         />

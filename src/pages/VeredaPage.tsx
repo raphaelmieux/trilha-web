@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, CircleAlert, Play, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { NOME_DO_TIPO } from '../types';
+import { NOME_DO_TIPO, nomeCompleto } from '../types';
 import {
   getVereda, licoesDaVereda, type LicaoDeVereda,
 } from '../curriculum/veredas';
@@ -27,9 +27,9 @@ import MarcaDaLicao from '../components/ui/MarcaDaLicao';
  * lista se repinta sem recarregar a página.
  */
 export default function VeredaPage() {
-  const { id } = useParams();
+  const { code } = useParams();
   const { profile } = useAuth();
-  const vereda = getVereda(id);
+  const vereda = getVereda(code);
   const { percursoDe, recarregar, carregando } = useVeredas(profile?.id);
   const [aberta, setAberta] = useState<string | null>(null);
 
@@ -128,12 +128,9 @@ export default function VeredaPage() {
         </Link>
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold">{vereda.titulo}</h1>
-            <span className="font-mono text-xs" style={{ color: 'var(--color-text-faint)' }}>
-              {vereda.codigo}
-            </span>
+            <h1 className="text-2xl font-bold">{nomeCompleto(vereda)}</h1>
           </div>
-          <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>{vereda.resumo}</p>
+          <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>{vereda.description}</p>
         </div>
       </div>
 
@@ -154,8 +151,8 @@ export default function VeredaPage() {
         {/* Dito na tela, e não só no relatório: quem percorre uma vereda
             precisa saber, antes de começar, que ela não move a trilha. */}
         <p className="text-xs mt-2" style={{ color: 'var(--color-text-faint)' }}>
-          Saiu da trilha {vereda.origem}. Não conta no percentual de nenhuma
-          especialidade — é bônus, e rende insígnia ao terminar.
+          {vereda.origem && `Saiu da trilha ${vereda.origem}. `}Não conta no
+          percentual de nenhuma especialidade — é bônus, e rende insígnia ao terminar.
         </p>
       </div>
 

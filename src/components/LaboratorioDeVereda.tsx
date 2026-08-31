@@ -35,7 +35,7 @@ export default function LaboratorioDeVereda({ vereda, licao, userId, aoVencer, a
 }) {
   /* A chave do rascunho leva a lição: sete laboratórios numa vereda são sete
      arquivos diferentes, e um só rascunho misturaria os sete. */
-  const chave = `${vereda.codigo}-${licao.id}`;
+  const chave = `${vereda.code}-${licao.id}`;
   const [codigo, setCodigo] = useState(() => {
     const guardado = lerRascunho<string>(userId, chave);
     return typeof guardado?.conteudo === 'string' ? guardado.conteudo : licao.modelo;
@@ -111,7 +111,7 @@ export default function LaboratorioDeVereda({ vereda, licao, userId, aoVencer, a
 
   return (
     <LaboratorioEmTelaCheia
-      trilha={vereda.codigo}
+      trilha={vereda.code}
       titulo={licao.titulo}
       programa="editor-de-codigo"
       tarefas={tarefas}

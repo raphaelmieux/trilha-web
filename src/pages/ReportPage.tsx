@@ -333,7 +333,8 @@ export default function ReportPage() {
               </p>
               {veredasFeitas.map(v => (
                 <p key={v.id} className="report-req">
-                  <strong>{v.titulo}</strong> ({v.codigo}) — {v.resumo} Nasceu da trilha {v.origem}.
+                  <strong>{v.name}</strong> ({v.code}) — {v.description}
+                  {v.origem && ` Nasceu da trilha ${v.origem}.`}
                 </p>
               ))}
             </div>
