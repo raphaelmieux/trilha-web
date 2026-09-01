@@ -93,7 +93,18 @@ export type LicaoDeVereda =
      * folha de estilo sem página é texto, e o resultado só existe quando ela
      * encontra a marcação.
      */
-    linguagem?: 'html' | 'css';
+    linguagem?: 'html' | 'css' | 'blocos';
+    /**
+     * Só para `'blocos'`: o projeto de onde a pessoa parte.
+     *
+     * A vereda de lógica não escreve texto — ela monta uma árvore —, então o
+     * modelo dela não é uma string. `modelo` continua existindo por causa do
+     * tipo, e não é lido neste caminho. O nome é `projetoDeBlocos` e não
+     * `projeto` porque `projeto` já é a pasta que o editor de código mostra na
+     * lateral, e dois campos com o mesmo nome e significados diferentes é o
+     * tipo de coisa que ninguém percebe até ler o arquivo errado.
+     */
+    projetoDeBlocos?: import('../labs/blocos').Projeto;
     /**
      * Só para `'css'`: a página a que a folha se aplica.
      *

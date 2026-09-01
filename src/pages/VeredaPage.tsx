@@ -12,6 +12,7 @@ import { useCertifications } from '../hooks/useCertifications';
 import TeoriaDaVereda from '../components/TeoriaDaVereda';
 import TokenDaVereda from '../components/TokenDaVereda';
 import LaboratorioDeVereda from '../components/LaboratorioDeVereda';
+import LaboratorioDeBlocos from '../components/LaboratorioDeBlocos';
 import ProgressBar from '../components/ui/ProgressBar';
 import MarcaDaLicao from '../components/ui/MarcaDaLicao';
 import Emblema from '../components/ui/Emblema';
@@ -96,6 +97,21 @@ export default function VeredaPage() {
   }
 
   if (licaoAberta?.tipo === 'laboratorio' && profile?.id) {
+    /*
+      Blocos não é uma linguagem a mais do editor de código — é outro editor.
+
+      HTML e CSS são texto, e por isso dividem a mesma IDE: muda o realce e o
+      validador, o resto é o mesmo. Blocos não tem texto para realçar nem
+      arquivo para escrever; tem paleta, palco e árvore. Enfiá-lo no editor de
+      código pediria um `<textarea>` que ninguém digita, e a lateral de
+      arquivos de um projeto sem arquivo.
+    */
+    if (licaoAberta.linguagem === 'blocos') {
+      return (
+        <LaboratorioDeBlocos vereda={vereda} licao={licaoAberta} userId={profile.id}
+          aoVencer={vencer} aoSair={fechar} />
+      );
+    }
     return (
       <LaboratorioDeVereda vereda={vereda} licao={licaoAberta} userId={profile.id}
         aoVencer={vencer} aoSair={fechar} />
