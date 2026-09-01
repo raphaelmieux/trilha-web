@@ -63,7 +63,7 @@ export const ap045 = anunciada('AP045', 'Computação 5', 'avancado', 'Computaç
   máquina executa. É também para onde as veredas de Back-end e Sistemas
   apontam quando ganharem conteúdo.
 */
-export const ap049 = anunciada('AP049', 'Desenvolvimento de Sistemas', 'avancado', 'Programação',
+export const ap049 = anunciada('AP049', 'Desenvolvimento de Software', 'avancado', 'Programação',
   'Levar um sistema do problema ao programa que funciona. Os requisitos serão publicados quando a trilha abrir.');
 
 export const ap052 = anunciada('AP052', 'Informática Programável', 'intermediario', 'Programação',
@@ -81,7 +81,7 @@ export const ap052 = anunciada('AP052', 'Informática Programável', 'intermedia
 export const ap063 = anunciada('AP063', 'Web Designer', 'intermediario', 'Web Design',
   'Desenhar e construir páginas para a web. Os requisitos serão publicados quando a trilha abrir.');
 
-export const ap064 = anunciada('AP064', 'Web Designer Avançado', 'avancado', 'Web Design',
+export const ap064 = anunciada('AP064', 'Web Designer, Avançado', 'avancado', 'Web Design',
   'A continuação da Web Designer, no nível avançado. Os requisitos serão publicados quando a trilha abrir.',
   'AP063');
 

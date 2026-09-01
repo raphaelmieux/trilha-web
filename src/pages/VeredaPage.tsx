@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, CircleAlert, Play, Lock } from 'lucide-react';
+import { ArrowLeft, CircleAlert, Play, Lock, HardHat } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { NOME_DO_TIPO, nomeCompleto } from '../types';
 import {
@@ -15,6 +15,7 @@ import LaboratorioDeVereda from '../components/LaboratorioDeVereda';
 import ProgressBar from '../components/ui/ProgressBar';
 import MarcaDaLicao from '../components/ui/MarcaDaLicao';
 import Emblema from '../components/ui/Emblema';
+import BotaoDeRequisitos from '../components/ui/BotaoDeRequisitos';
 
 /*
  * A tela de uma vereda.
@@ -46,6 +47,31 @@ export default function VeredaPage() {
           O endereço aponta para uma vereda que não existe.
         </p>
         <Link to="/" className="btn-primary">Voltar ao Início</Link>
+      </div>
+    );
+  }
+
+  /*
+    A vereda anunciada não abre, nem pelo endereço.
+
+    O cartão do painel não leva aqui — ele é cinza e sem link —, mas o endereço
+    é adivinhável, e uma vereda sem lição abria uma página de progresso 0 de 0,
+    sem nada para fazer. É a mesma guarda que a trilha já tinha; a vereda ficou
+    sem ela quando a tela nasceu, e com trinta e uma anunciadas isso passou a
+    ser trinta e uma páginas vazias acessíveis a quem digitar o código.
+  */
+  if (vereda.emConstrucao) {
+    return (
+      <div className="max-w-lg mx-auto text-center py-12">
+        <HardHat className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--color-secondary)' }} />
+        <h1 className="text-xl font-bold mb-2">Esta vereda ainda está em construção</h1>
+        <p style={{ color: 'var(--color-text-dim)' }}>
+          Estamos preparando as lições. Ela abre no painel assim que ficar pronta.
+        </p>
+        <div className="flex justify-center mt-4">
+          <BotaoDeRequisitos percurso={vereda} />
+        </div>
+        <Link to="/" className="btn-primary mt-6 inline-flex">Voltar ao Início</Link>
       </div>
     );
   }
@@ -151,9 +177,12 @@ export default function VeredaPage() {
             }
             size={88}
           />
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold">{nomeCompleto(vereda)}</h1>
-            <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>{vereda.description}</p>
+          <div className="min-w-0 space-y-2">
+            <div>
+              <h1 className="text-2xl font-bold">{nomeCompleto(vereda)}</h1>
+              <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>{vereda.description}</p>
+            </div>
+            <BotaoDeRequisitos percurso={vereda} />
           </div>
         </div>
       </div>

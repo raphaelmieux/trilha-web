@@ -156,7 +156,7 @@ export const VEREDAS: Vereda[] = [
     'A primeira linguagem escrita: variável, condição, laço e função, resolvendo problemas pequenos.'),
   anunciada('CC003', 'Terminal e Git', 'Base',
     'Conversar com o computador por texto, e guardar o histórico do que se escreveu.'),
-  anunciada('CC004', 'Python Avançado', 'Base',
+  anunciada('CC004', 'Python, Avançado', 'Base',
     'Listas, dicionários, arquivos e erros — o que separa um exercício de um programa que se usa.'),
   anunciada('CC005', 'SQL', 'Base',
     'Guardar e procurar informação numa base de dados, que é onde quase todo programa a guarda.'),
