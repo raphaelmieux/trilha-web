@@ -2,7 +2,7 @@ import {
   Files, Search, GitBranch, Blocks, Play, RotateCw, Lock,
   FileCode, ChevronDown, CircleAlert, TriangleAlert, Code2, Eye, BookOpen,
 } from 'lucide-react';
-import { realcarLinhas } from './realce';
+import { realcarLinhasCss, realcarLinhas } from './realce';
 
 /*
  * A moldura do editor de código, compartilhada pelos laboratórios de HTML.
@@ -339,10 +339,21 @@ function escrever(
  * coluna de alturas fixas com a rolagem espelhada à mão, e bastava uma linha
  * comprida para o número deixar de bater com o código.
  */
-export function EditorDeCodigo({ codigo, aoMudar, rotulo }: {
+export function EditorDeCodigo({ codigo, aoMudar, rotulo, somenteLeitura = false, linguagem = 'html' }: {
   codigo: string; aoMudar: (c: string) => void; rotulo: string;
+  /** Decide o realce. O arranjo do editor é o mesmo; a coloração, não. */
+  linguagem?: 'html' | 'css';
+  /**
+   * Arquivo de referência, aberto e não editável.
+   *
+   * O laboratório de CSS mostra a marcação a que a folha se aplica: sem ler o
+   * `class=` e o `id=` não há como escrever um seletor que acerte alguém. Ela
+   * é dada, então o campo continua realçado e navegável — só não recebe
+   * digitação.
+   */
+  somenteLeitura?: boolean;
 }) {
-  const linhas = realcarLinhas(codigo);
+  const linhas = (linguagem === 'css' ? realcarLinhasCss : realcarLinhas)(codigo);
 
   const aoTeclar = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const campo = e.currentTarget;
@@ -413,7 +424,8 @@ export function EditorDeCodigo({ codigo, aoMudar, rotulo }: {
           className="ide-texto"
           value={codigo}
           onChange={e => aoMudar(e.target.value)}
-          onKeyDown={aoTeclar}
+          onKeyDown={somenteLeitura ? undefined : aoTeclar}
+          readOnly={somenteLeitura}
           spellCheck={false}
           aria-label={rotulo}
         />
@@ -448,8 +460,10 @@ export function PreviaDaIde({ html, arquivo, aoAvisar }: {
 }
 
 /** A régua de status, com a contagem de problemas à esquerda. */
-export function StatusDaIde({ problemas, linhas, aoAvisar }: {
+export function StatusDaIde({ problemas, linhas, aoAvisar, linguagem = 'HTML' }: {
   problemas: number; linhas: number; aoAvisar: (o: string) => void;
+  /** O que a régua diz à direita. Editor de verdade nomeia o arquivo aberto. */
+  linguagem?: string;
 }) {
   return (
     <div className="ide-status">
@@ -464,7 +478,7 @@ export function StatusDaIde({ problemas, linhas, aoAvisar }: {
       <span>Espaços: 2</span>
       <span className="hidden sm:inline">Tab recua · Esc sai</span>
       <span>UTF-8</span>
-      <span>HTML</span>
+      <span>{linguagem}</span>
     </div>
   );
 }

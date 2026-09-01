@@ -1,4 +1,5 @@
 import { MODULOS_DE_HTML } from './sintaxeHtml';
+import { MODULOS_DE_CSS } from './folhaDeEstilo';
 import type { Question } from '../types';
 
 /*
@@ -80,11 +81,28 @@ export type LicaoDeVereda =
     resumo: string;
     /** De onde a pessoa parte. Abre reprovando em tudo, como todo modelo aqui. */
     modelo: string;
-    /** Os ids das verificações de `htmlValidator` que este laboratório cobra. */
+    /** Os ids de verificação que este laboratório cobra, no validador da linguagem. */
     verificacoes: string[];
     /** O nome do arquivo e o da pasta, na lateral do editor. */
     arquivo: string;
     projeto: string;
+    /**
+     * A linguagem do arquivo. Ausente, `'html'` — como a vereda nasceu.
+     *
+     * O que muda com ela é o validador e a prévia. CSS não se vê sozinho: uma
+     * folha de estilo sem página é texto, e o resultado só existe quando ela
+     * encontra a marcação.
+     */
+    linguagem?: 'html' | 'css';
+    /**
+     * Só para `'css'`: a página a que a folha se aplica.
+     *
+     * Fixa e só de leitura, e é assim que se trabalha CSS na vida — a
+     * marcação vem dada, e o que se escreve é o estilo. Ela fica visível na
+     * lateral do editor, porque sem ler o `class=` e o `id=` não há como
+     * escrever seletor que acerte alguém.
+     */
+    marcacao?: string;
   };
 
 export interface ModuloDeVereda {
@@ -174,8 +192,22 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_HTML,
   },
-  anunciada('CC-FE002', 'CSS', 'Front-end',
-    'Dizer como a página se parece: cor, espaço, tamanho e o que muda quando a tela encolhe.'),
+  {
+    id: 'css',
+    code: 'CC-FE002',
+    name: 'CSS',
+    familia: 'Front-end',
+    description: 'Dizer como a página se parece: cor, espaço, tamanho e o que muda quando a tela encolhe.',
+    /*
+      Ainda em construção: três dos sete módulos estão escritos, e o que falta
+      é o modelo de caixa, o Flexbox, o Grid e o ajuste para tela pequena. Um
+      percurso pela metade aberto ao clube é pior do que um fechado — a pessoa
+      chega ao fim do que existe achando que terminou.
+    */
+    emConstrucao: true,
+    mostraResultado: true,
+    modulos: MODULOS_DE_CSS,
+  },
   anunciada('CC-FE003', 'JavaScript', 'Front-end',
     'Fazer a página responder: guardar valores, decidir e reagir ao que a pessoa faz.'),
   anunciada('CC-FE004', 'DOM', 'Front-end',
@@ -255,6 +287,22 @@ export function veredasPorFamilia() {
 /** As que já se pode percorrer. É delas que se cobra insígnia. */
 export function veredasAbertas(): Vereda[] {
   return VEREDAS.filter(v => !v.emConstrucao);
+}
+
+/**
+ * As que têm conteúdo escrito, publicadas ou não.
+ *
+ * É contra esta lista que a qualidade é conferida, e não contra as abertas.
+ * O conteúdo entra por partes — uma vereda de sete módulos leva vários dias —,
+ * e enquanto ela está `emConstrucao` nenhuma trava a olhava: laboratório
+ * abrindo resolvido, verificação sem passo a passo e questão repetida só
+ * seriam reprovados no dia em que ela abrisse, com tudo já escrito.
+ *
+ * Insígnia e certificado continuam saindo de `veredasAbertas()`: prometer
+ * prêmio por percurso que ninguém pode percorrer é outra coisa.
+ */
+export function veredasComConteudo(): Vereda[] {
+  return VEREDAS.filter(v => licoesDaVereda(v).length > 0);
 }
 
 /**
