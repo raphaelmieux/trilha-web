@@ -198,13 +198,7 @@ export const VEREDAS: Vereda[] = [
     name: 'CSS',
     familia: 'Front-end',
     description: 'Dizer como a página se parece: cor, espaço, tamanho e o que muda quando a tela encolhe.',
-    /*
-      Ainda em construção: três dos sete módulos estão escritos, e o que falta
-      é o modelo de caixa, o Flexbox, o Grid e o ajuste para tela pequena. Um
-      percurso pela metade aberto ao clube é pior do que um fechado — a pessoa
-      chega ao fim do que existe achando que terminou.
-    */
-    emConstrucao: true,
+    origem: 'CC-FE001',
     mostraResultado: true,
     modulos: MODULOS_DE_CSS,
   },

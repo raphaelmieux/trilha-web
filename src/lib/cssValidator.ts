@@ -117,9 +117,24 @@ export function lerFolha(css: string): RegraLida[] {
    As verificações
    ──────────────────────────────────────────────────────────────────────── */
 
-/** Alguma declaração desta regra usa a propriedade, com valor? */
-const declara = (r: RegraLida, ...props: string[]) =>
-  props.some(p => (r.declaracoes[p] ?? '').length > 0);
+/**
+ * Alguma declaração desta regra pertence a uma destas famílias?
+ *
+ * Por família, e não por nome exato, porque o navegador **expande a forma
+ * curta** e cada motor expande diferente. `border: 2px solid #333` não deixa
+ * uma declaração chamada `border` no Chromium: deixa `border-top-width`,
+ * `border-top-style`, `border-top-color` e as outras nove. Uma lista de nomes
+ * exatos passava no jsdom, onde a expansão é outra, e reprovava no navegador
+ * de verdade — dizendo a quem escreveu a borda certa que ela não existe.
+ *
+ * Então casa o nome exato ou o que começa com ele e um hífen. `color` não pega
+ * `background-color`, porque a raiz precisa estar no começo; `margin` pega
+ * `margin-top`; `gap` pega `row-gap`? Não — e é por isso que `row-gap` e
+ * `column-gap` continuam escritos por extenso onde importam.
+ */
+const declara = (r: RegraLida, ...familias: string[]) =>
+  Object.entries(r.declaracoes).some(([nome, valor]) =>
+    valor.length > 0 && familias.some(f => nome === f || nome.startsWith(`${f}-`)));
 
 /** O seletor acerta algum elemento da página a que a folha se aplica? */
 function acertaAlguem(seletor: string, pagina: Document): boolean {
@@ -257,7 +272,8 @@ const SPECS: CssCheckSpec[] = [
       if (!caixa) {
         return { passed: false, detail: 'Nenhuma regra tem display: flex numa caixa que exista na página.' };
       }
-      return declara(caixa, 'justify-content', 'align-items', 'flex-direction', 'gap', 'flex-wrap')
+      return declara(caixa, 'justify-content', 'align-items', 'flex-direction', 'flex-wrap',
+        'gap', 'row-gap', 'column-gap')
         ? { passed: true }
         : { passed: false, detail: 'A caixa é flex, mas nada alinha nada ainda. display: flex só liga o modo; quem dispõe é justify-content, align-items, gap ou flex-direction.' };
     },

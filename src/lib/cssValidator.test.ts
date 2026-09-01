@@ -157,3 +157,44 @@ describe('a lista de verificações', () => {
     }
   });
 });
+
+/*
+  A forma curta, expandida pelo navegador.
+
+  `border: 2px solid #333` não deixa uma declaração chamada `border`: o motor a
+  expande, e cada um expande de um jeito. A primeira versão listava nomes
+  exatos, passava no jsdom e reprovava no Chromium — dizendo a quem escreveu a
+  borda certa que ela não existe. Estes casos são a memória disso.
+*/
+describe('as formas curtas expandidas', () => {
+  const props = (css: string) => {
+    const el = document.createElement('style');
+    el.textContent = css;
+    document.head.appendChild(el);
+    const r = (el.sheet!.cssRules[0] as CSSStyleRule).style;
+    const nomes: string[] = [];
+    for (let i = 0; i < r.length; i++) nomes.push(r.item(i));
+    el.remove();
+    return nomes;
+  };
+
+  it('a borda passa por qualquer nome que a expansão produza', () => {
+    /* Seja qual for o motor, todo nome gerado começa por "border". */
+    expect(props('p { border: 2px solid #333 }').every(n => n.startsWith('border'))).toBe(true);
+    expect(um('p { border: 2px solid #333 }', 'borda').passed).toBe(true);
+  });
+
+  it('a margem e o espaçamento também, escritos por inteiro ou por lado', () => {
+    expect(um('p { margin: 0 }', 'margem').passed).toBe(true);
+    expect(um('p { padding: 1rem 2rem }', 'espacamento').passed).toBe(true);
+  });
+
+  it('gap conta para o flex mesmo virando row-gap e column-gap', () => {
+    expect(um('main { display: flex; gap: 1rem }', 'flex').passed).toBe(true);
+  });
+
+  /* A família casa pelo começo, então `color` não pode pegar background-color. */
+  it('a raiz precisa estar no começo do nome', () => {
+    expect(um('p { background-color: gold }', 'cor').passed).toBe(false);
+  });
+});
