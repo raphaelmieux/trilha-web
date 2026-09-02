@@ -209,3 +209,109 @@ export function realcarLinhasCss(codigo: string): string[] {
 
   return saida.split('\n');
 }
+
+/**
+ * O mesmo realce, para Python.
+ *
+ * Terceira linguagem, terceira coloração, e pela mesma razão que a segunda: as
+ * regras do HTML pintariam um arquivo de Python de uma cor só, e a cor é o que
+ * ensina a distinguir palavra-chave de nome enquanto se digita.
+ *
+ * As cores seguem o sentido que já existe: `com` para comentário, `tag` para
+ * palavra-chave, `val` para texto e número, `attr` para as funções embutidas
+ * que o desbravador vai usar o tempo todo, `pon` para pontuação.
+ *
+ * Reaproveita `pinta`, então vale a mesma garantia dos outros dois: todo texto
+ * passa por `escapar`, nenhum `<span>` atravessa duas linhas, e a régua da
+ * esquerda continua alinhada.
+ */
+
+/* As palavras que o Python reserva. Só as que aparecem nesta vereda: pintar
+   `nonlocal` e `yield` de azul num percurso que não os ensina promete um
+   assunto que não vem. */
+const CHAVES_PYTHON = new Set([
+  'and', 'as', 'break', 'class', 'continue', 'def', 'del', 'elif', 'else',
+  'except', 'False', 'finally', 'for', 'from', 'if', 'import', 'in', 'is',
+  'lambda', 'None', 'not', 'or', 'pass', 'raise', 'return', 'True', 'try',
+  'while', 'with',
+]);
+
+/* As embutidas que esta vereda usa. */
+const EMBUTIDAS_PYTHON = new Set([
+  'abs', 'bool', 'dict', 'enumerate', 'float', 'input', 'int', 'len', 'list',
+  'max', 'min', 'print', 'range', 'round', 'sorted', 'str', 'sum', 'type',
+]);
+
+export function realcarLinhasPython(codigo: string): string[] {
+  let saida = '';
+  let i = 0;
+
+  while (i < codigo.length) {
+    const resto = codigo.slice(i);
+    const c = resto[0];
+
+    /* Comentário primeiro: dentro dele não há aspas nem palavra-chave que
+       valham, e é justamente aí que uma varredura ingênua se perde. */
+    if (c === '#') {
+      const fim = codigo.indexOf('\n', i);
+      const ate = fim === -1 ? codigo.length : fim;
+      saida += pinta('com', codigo.slice(i, ate));
+      i = ate;
+      continue;
+    }
+
+    /* Texto: aspas triplas antes das simples, senão o fechamento sai errado. */
+    const tripla = /^("""|''')/.exec(resto);
+    if (tripla) {
+      const fim = codigo.indexOf(tripla[1], i + 3);
+      const ate = fim === -1 ? codigo.length : fim + 3;
+      saida += pinta('val', codigo.slice(i, ate));
+      i = ate;
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      /* Aspa escapada não fecha o texto: "ele disse \"oi\"" é uma string só. */
+      let j = i + 1;
+      while (j < codigo.length && codigo[j] !== c && codigo[j] !== '\n') {
+        j += codigo[j] === '\\' ? 2 : 1;
+      }
+      const ate = Math.min(j + 1, codigo.length);
+      saida += pinta('val', codigo.slice(i, ate));
+      i = ate;
+      continue;
+    }
+
+    /* Número: inteiro ou decimal. */
+    const numero = /^\d+(\.\d+)?/.exec(resto);
+    if (numero) {
+      saida += pinta('val', numero[0]);
+      i += numero[0].length;
+      continue;
+    }
+
+    /* Palavra: chave, embutida, ou nome comum. */
+    const palavra = /^[A-Za-z_]\w*/.exec(resto);
+    if (palavra) {
+      const p = palavra[0];
+      saida += pinta(
+        CHAVES_PYTHON.has(p) ? 'tag' : EMBUTIDAS_PYTHON.has(p) ? 'attr' : 'txt',
+        p,
+      );
+      i += p.length;
+      continue;
+    }
+
+    const pontuacao = /^[()[\]{}:,.=+\-*/%<>!&|^~@]+/.exec(resto);
+    if (pontuacao) {
+      saida += pinta('pon', pontuacao[0]);
+      i += pontuacao[0].length;
+      continue;
+    }
+
+    /* Espaço, quebra de linha e o que sobrar: texto comum. */
+    saida += pinta('txt', c);
+    i += 1;
+  }
+
+  return saida.split('\n');
+}

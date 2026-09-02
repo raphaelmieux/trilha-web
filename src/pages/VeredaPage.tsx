@@ -13,6 +13,7 @@ import TeoriaDaVereda from '../components/TeoriaDaVereda';
 import TokenDaVereda from '../components/TokenDaVereda';
 import LaboratorioDeVereda from '../components/LaboratorioDeVereda';
 import LaboratorioDeBlocos from '../components/LaboratorioDeBlocos';
+import LaboratorioDePython from '../components/LaboratorioDePython';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import ProgressBar from '../components/ui/ProgressBar';
 import MarcaDaLicao from '../components/ui/MarcaDaLicao';
@@ -132,6 +133,20 @@ export default function VeredaPage() {
     if (licaoAberta.linguagem === 'blocos') {
       return (
         <LaboratorioDeBlocos vereda={vereda} licao={licaoAberta} userId={profile.id}
+          aoVencer={vencer} aoSair={fechar} />
+      );
+    }
+    /*
+      Python usa o mesmo arranjo de editor, e mesmo assim é outra tela.
+
+      Em HTML e CSS a verificação é síncrona: o texto muda e a lista se
+      repinta. Saber se um programa Python roda exige rodá-lo — leva tempo,
+      acontece noutra thread e pode não terminar. A lista passa a mostrar a
+      última execução, e não o texto de agora, e isso muda a tela toda.
+    */
+    if (licaoAberta.linguagem === 'python') {
+      return (
+        <LaboratorioDePython vereda={vereda} licao={licaoAberta} userId={profile.id}
           aoVencer={vencer} aoSair={fechar} />
       );
     }

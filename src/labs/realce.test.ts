@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { realcarLinhas, escapar, contarLinhas } from './realce';
+import { realcarLinhas, escapar, contarLinhas, realcarLinhasPython } from './realce';
 
 /* O realce inteiro, num texto só: é sobre ele que valem as garantias de escape
    — o corte em linhas é arranjo de tela, e não pode mudar o que sai. */
@@ -103,6 +103,76 @@ describe('o corte em linhas', () => {
       const abre = (linha.match(/<span/g) ?? []).length;
       const fecha = (linha.match(/<\/span>/g) ?? []).length;
       expect(abre).toBe(fecha);
+    }
+  });
+});
+
+describe('o realce de Python', () => {
+  const html = (codigo: string) => realcarLinhasPython(codigo).join('\n');
+
+  /*
+    A garantia que carrega o arquivo inteiro: o que sai daqui vai para a página
+    como HTML, por cima do que o desbravador digitou. Um `<` que escape sem
+    virar `&lt;` deixa de ser texto dele e vira marcação nossa.
+  */
+  it('escapa o que o desbravador digitou', () => {
+    const saida = html('print("<script>alert(1)</script>")');
+    expect(saida).not.toContain('<script>');
+    expect(saida).toContain('&lt;script&gt;');
+  });
+
+  it('pinta palavra-chave, embutida e nome de formas diferentes', () => {
+    const saida = html('if idade > 17:\n    print(idade)');
+    expect(saida).toContain('<span class="ide-tag">if</span>');
+    expect(saida).toContain('<span class="ide-attr">print</span>');
+    expect(saida).toContain('<span class="ide-txt">idade</span>');
+  });
+
+  /* Dentro de um comentário nada mais vale — é onde a varredura ingênua erra. */
+  it('não pinta palavra-chave dentro de comentário', () => {
+    const saida = html('# aqui eu ia usar um while');
+    expect(saida).toContain('<span class="ide-com"># aqui eu ia usar um while</span>');
+    expect(saida).not.toContain('ide-tag');
+  });
+
+  it('não pinta palavra-chave dentro de texto', () => {
+    const saida = html('t = "while for if"');
+    expect(saida).not.toContain('ide-tag');
+    /* As aspas saem escapadas, que é a garantia deste arquivo: o texto do
+       desbravador nunca vira marcação nossa. */
+    expect(saida).toContain('<span class="ide-val">&quot;while for if&quot;</span>');
+  });
+
+  it('a aspa escapada não fecha o texto', () => {
+    const saida = html('t = "ele disse \\"oi\\" agora"');
+    /* Se a aspa do meio fechasse, `agora` sairia como nome e não como texto. */
+    expect(saida).not.toContain('<span class="ide-txt">agora</span>');
+  });
+
+  /*
+    A aspa tripla precisa ser vista antes da simples. Lida como uma aspa só, o
+    texto fecharia no caractere seguinte e o resto do arquivo sairia colorido
+    como se fosse código.
+  */
+  it('aspas triplas fecham só na tripla, e atravessam a linha', () => {
+    const linhas = realcarLinhasPython('t = """linha um\nlinha dois"""\nx = 1');
+    expect(linhas).toHaveLength(3);
+    expect(linhas[0]).toContain('ide-val');
+    expect(linhas[1]).toContain('ide-val');
+    /* Depois do fechamento a linha volta a ser código. */
+    expect(linhas[2]).toContain('<span class="ide-txt">x</span>');
+  });
+
+  it('devolve uma entrada por linha, para a régua alinhar', () => {
+    expect(realcarLinhasPython('a = 1\nb = 2\nc = 3')).toHaveLength(3);
+    expect(realcarLinhasPython('')).toHaveLength(1);
+  });
+
+  it('nenhum span atravessa duas linhas', () => {
+    for (const linha of realcarLinhasPython('# um\n"""dois\ntres"""\nx = 1')) {
+      const abre = (linha.match(/<span/g) ?? []).length;
+      const fecha = (linha.match(/<\/span>/g) ?? []).length;
+      expect(abre, linha).toBe(fecha);
     }
   });
 });

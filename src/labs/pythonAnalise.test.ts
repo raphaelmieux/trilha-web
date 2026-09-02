@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createRequire } from 'node:module';
-import { apararTraceback, ANALISADOR } from './pythonAnalise';
+import {
+  apararTraceback, erroDeSintaxeEmTexto, ANALISADOR, type SaidaDaAnalise,
+} from './pythonAnalise';
 
 /*
   O analisador roda contra o Python de verdade, e não contra uma imitação dele.
@@ -21,9 +23,15 @@ beforeAll(async () => {
   py = await loadPyodide({ indexURL: dir }) as Py;
 }, 120_000);
 
-const analisar = (fonte: string): Record<string, boolean> => {
+const rodarAnalise = (fonte: string): SaidaDaAnalise => {
   py.runPython(`_fonte = ${JSON.stringify(fonte)}`);
   return JSON.parse(py.runPython(ANALISADOR) as string);
+};
+
+const analisar = (fonte: string): Record<string, boolean> => {
+  const r = rodarAnalise(fonte);
+  if (!r.ok) throw new Error(`não compilou: ${r.erro.msg}`);
+  return r.achados;
 };
 
 describe('o analisador lê a árvore, e não o texto', () => {
@@ -168,5 +176,57 @@ describe('o traceback aparado', () => {
 
   it('não some com o erro quando não há quadro do programa', () => {
     expect(apararTraceback('MemoryError')).toBe('MemoryError');
+  });
+});
+
+describe('o erro de sintaxe é o da pessoa, e não o nosso', () => {
+  /*
+    Este é o defeito que só apareceu dirigindo no navegador. O analisador chama
+    `ast.parse` dentro de um script nosso, então o traceback que o Python monta
+    fala das linhas DESSE script: a tela dizia "line 73" num programa de duas
+    linhas. Errar a linha é pior do que não dizer nada — manda procurar onde
+    não há o que achar, e o requisito 6 é justamente ler essa mensagem.
+  */
+  it('devolve a linha do programa, e não a do analisador', () => {
+    const r = rodarAnalise('x = 1\nfor i in range(3)\n    print(i)');
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.erro.linha).toBe(2);
+    expect(r.erro.msg).toContain(':');
+    expect(r.erro.trecho.trim()).toBe('for i in range(3)');
+  });
+
+  it('escreve a mensagem como o Python escreveria', () => {
+    const r = rodarAnalise('for i in range(3)\n    print(i)');
+    if (r.ok) throw new Error('deveria ter falhado');
+    const texto = erroDeSintaxeEmTexto(r.erro);
+    expect(texto).toContain('File "programa.py", line 1');
+    expect(texto).toContain('for i in range(3)');
+    expect(texto).toContain('^');
+    expect(texto).toContain('SyntaxError:');
+    /* Nada do analisador aparece. */
+    expect(texto).not.toContain('analisar');
+    expect(texto).not.toContain('ast.parse');
+  });
+
+  it('o analisador em si compila — ele mesmo é código Python', () => {
+    /* Um `\\n` escrito dentro do template literal do TypeScript vira quebra de
+       linha antes de chegar ao Python, e quebra dentro de aspas simples é erro
+       de sintaxe aqui dentro. Já aconteceu. */
+    expect(() => rodarAnalise('x = 1')).not.toThrow();
+  });
+});
+
+describe('input() atribuído é uma variável de texto', () => {
+  /* O passo a passo diz isso a quem trava, e o analisador não contava —
+     as duas metades da plataforma discordavam sobre a mesma regra. */
+  it('conta como tipoTexto', () => {
+    expect(analisar('nome = input("Nome: ")').tipoTexto).toBe(true);
+  });
+
+  it('mas int(input()) continua sendo inteiro, e não texto', () => {
+    const a = analisar('idade = int(input("Idade: "))');
+    expect(a.tipoInteiro).toBe(true);
+    expect(a.tipoTexto).toBe(false);
   });
 });

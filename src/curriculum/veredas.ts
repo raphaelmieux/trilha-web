@@ -94,7 +94,7 @@ export type LicaoDeVereda =
      * folha de estilo sem página é texto, e o resultado só existe quando ela
      * encontra a marcação.
      */
-    linguagem?: 'html' | 'css' | 'blocos';
+    linguagem?: 'html' | 'css' | 'blocos' | 'python';
     /**
      * Só para `'blocos'`: o projeto de onde a pessoa parte.
      *
@@ -115,6 +115,25 @@ export type LicaoDeVereda =
      * escrever seletor que acerte alguém.
      */
     marcacao?: string;
+    /**
+     * Só para `'python'`: as linhas que `input()` vai consumir.
+     *
+     * `input()` é síncrono e um worker não consegue esperar digitação na página
+     * sem SharedArrayBuffer, que exige cabeçalhos que o GitHub Pages não deixa
+     * definir. Então a entrada é decidida antes de executar — que é como todo
+     * juiz de código online funciona, e como se testa um programa de verdade.
+     *
+     * A lição dá o valor inicial do campo; a pessoa pode mudá-lo.
+     */
+    entradaPadrao?: string[];
+    /**
+     * Só para `'python'`: a saída que o programa deve produzir.
+     *
+     * Usada pela verificação `saidaEsperada`, que é o que dá dente ao
+     * laboratório de consertar programa quebrado: sem ela, "roda sem erro"
+     * aprovaria um programa que roda e responde errado.
+     */
+    saidaEsperada?: string;
   }
   | {
     /*

@@ -24,7 +24,9 @@
  * bloqueado não dá erro que alguém entenda.
  */
 
-import { ANALISADOR, apararTraceback } from './pythonAnalise';
+import {
+  ANALISADOR, apararTraceback, erroDeSintaxeEmTexto, type SaidaDaAnalise,
+} from './pythonAnalise';
 
 interface Pyodide {
   runPython: (codigo: string) => unknown;
@@ -73,10 +75,20 @@ async function analisar(codigo: string): Promise<RespostaDoPython> {
   try {
     py.runPython(`_fonte = ${JSON.stringify(codigo)}`);
     const bruto = py.runPython(ANALISADOR) as string;
-    return { tipo: 'analise', achados: JSON.parse(bruto), erro: null };
+    const saida = JSON.parse(bruto) as SaidaDaAnalise;
+    /*
+      Código que não compila não tem árvore, e isso não é falha do analisador:
+      é o erro de sintaxe que o requisito 6 quer que a pessoa leia. Ele vem
+      estruturado de propósito — o traceback que o Python monta ao redor da
+      nossa chamada de `ast.parse` fala das linhas do nosso script, e apontá-lo
+      diria "linha 73" num programa de duas linhas.
+    */
+    return saida.ok
+      ? { tipo: 'analise', achados: saida.achados, erro: null }
+      : { tipo: 'analise', achados: {}, erro: erroDeSintaxeEmTexto(saida.erro) };
   } catch (e) {
-    /* Código que não compila não tem árvore, e isso não é falha do analisador:
-       é o erro de sintaxe que o requisito 6 quer que a pessoa leia. */
+    /* Sobra o que o analisador não previu — e aí o traceback aparado é o
+       melhor que se tem. */
     return {
       tipo: 'analise',
       achados: {},
