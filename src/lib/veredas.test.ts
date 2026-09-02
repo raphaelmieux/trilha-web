@@ -10,10 +10,12 @@ import type { EventoDeAtividade } from './atividade';
 import { validateHtml, CHECKS, TABLE_CHALLENGE_CHECKS, SITE_CHECKS } from './htmlValidator';
 import { validateCss, IDS_DE_CSS } from './cssValidator';
 import { validarBlocos, IDS_DE_BLOCOS } from './blocosValidator';
+import { validarScratch, IDS_DE_SCRATCH, type ProjetoSb3 } from './scratchValidator';
 import { validarPython, IDS_DE_PYTHON } from './pythonValidator';
 import { PASSOS } from '../labs/desafioDeHtml';
 import { PASSOS_DE_CSS } from '../labs/passosDeCss';
 import { PASSOS_DE_BLOCOS } from '../labs/passosDeBlocos';
+import { PASSOS_DE_SCRATCH } from '../labs/passosDeScratch';
 import { PASSOS_DE_PYTHON } from '../labs/passosDePython';
 import { ROTEIROS } from '../labs/redacaoGuiada';
 
@@ -162,7 +164,8 @@ describe('os modelos dos laboratórios da vereda', () => {
           de HTML, que não conhece nenhum daqueles ids: nada passava, a lista
           saía vazia e o teste ficava verde sem ter conferido coisa alguma. É a
           armadilha do "zero link não é zero link quebrado", agora na trava que
-          existe justamente para pegá-la.
+          existe justamente para pegá-la. Toda linguagem nova entra aqui — foi
+          por isso que `scratch` entrou junto com o editor de verdade.
         */
         const verdes = (licao.linguagem === 'python'
           /* Sem execução não há resultado, e é justamente esse o estado em que
@@ -171,11 +174,15 @@ describe('os modelos dos laboratórios da vereda', () => {
             codigo: licao.modelo, achados: {}, erroDeAnalise: null,
             execucao: null, saidaEsperada: licao.saidaEsperada,
           }, licao.verificacoes)
-          : licao.linguagem === 'blocos'
-            ? validarBlocos(licao.projetoDeBlocos ?? { personagens: [], variaveis: [] }, licao.verificacoes)
-            : licao.linguagem === 'css'
-              ? validateCss(licao.modelo, licao.marcacao ?? '', licao.verificacoes)
-              : validateHtml(licao.modelo, licao.verificacoes))
+          : licao.linguagem === 'scratch'
+            ? validarScratch(
+              JSON.parse(licao.projetoDeScratch ?? '{"targets":[]}') as ProjetoSb3,
+              licao.verificacoes)
+            : licao.linguagem === 'blocos'
+              ? validarBlocos(licao.projetoDeBlocos ?? { personagens: [], variaveis: [] }, licao.verificacoes)
+              : licao.linguagem === 'css'
+                ? validateCss(licao.modelo, licao.marcacao ?? '', licao.verificacoes)
+                : validateHtml(licao.modelo, licao.verificacoes))
           .filter(r => r.passed).map(r => r.id);
         expect(verdes).toEqual([]);
       });
@@ -188,8 +195,9 @@ describe('os modelos dos laboratórios da vereda', () => {
           inventados. Aqui se confere que cada um existe de verdade.
         */
         const conhecidos = licao.linguagem === 'python' ? IDS_DE_PYTHON
-          : licao.linguagem === 'blocos' ? IDS_DE_BLOCOS
-            : licao.linguagem === 'css' ? IDS_DE_CSS : IDS_DE_HTML;
+          : licao.linguagem === 'scratch' ? IDS_DE_SCRATCH
+            : licao.linguagem === 'blocos' ? IDS_DE_BLOCOS
+              : licao.linguagem === 'css' ? IDS_DE_CSS : IDS_DE_HTML;
         expect(licao.verificacoes.filter(id => !conhecidos.includes(id))).toEqual([]);
       });
     }
@@ -198,8 +206,12 @@ describe('os modelos dos laboratórios da vereda', () => {
   it('toda verificação cobrada tem passo a passo para quem travar', () => {
     const passosDe = (linguagem: string | undefined) =>
       (linguagem === 'python' ? PASSOS_DE_PYTHON
-        : linguagem === 'blocos' ? PASSOS_DE_BLOCOS
-          : linguagem === 'css' ? PASSOS_DE_CSS : PASSOS);
+        /* Scratch e blocos cobram os mesmos dez ids e mesmo assim têm passo a
+           passo separado: um é de arrastar e o outro era de tocar, e a
+           instrução errada chega justamente para quem já travou. */
+        : linguagem === 'scratch' ? PASSOS_DE_SCRATCH
+          : linguagem === 'blocos' ? PASSOS_DE_BLOCOS
+            : linguagem === 'css' ? PASSOS_DE_CSS : PASSOS);
     const sem = veredasComConteudo().flatMap(v => licoesDaVereda(v))
       .flatMap(l => (l.tipo === 'laboratorio'
         ? l.verificacoes.map(id => [passosDe(l.linguagem), id] as const)

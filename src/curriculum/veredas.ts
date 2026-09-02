@@ -94,7 +94,7 @@ export type LicaoDeVereda =
      * folha de estilo sem página é texto, e o resultado só existe quando ela
      * encontra a marcação.
      */
-    linguagem?: 'html' | 'css' | 'blocos' | 'python';
+    linguagem?: 'html' | 'css' | 'blocos' | 'python' | 'scratch';
     /**
      * Só para `'blocos'`: o projeto de onde a pessoa parte.
      *
@@ -125,6 +125,15 @@ export type LicaoDeVereda =
      *
      * A lição dá o valor inicial do campo; a pessoa pode mudá-lo.
      */
+    /**
+     * Só para `'scratch'`: o projeto de onde a pessoa parte, em sb3.
+     *
+     * É o mesmo formato que o Scratch salva e abre, então o modelo pode ser
+     * feito no próprio Scratch e colado aqui. `vm.loadProject` o semeia, e
+     * `vm.toJSON` devolve o que a pessoa montou para o validador ler — as duas
+     * pontas de que o laboratório precisa.
+     */
+    projetoDeScratch?: string;
     entradaPadrao?: string[];
     /**
      * Só para `'python'`: a saída que o programa deve produzir.

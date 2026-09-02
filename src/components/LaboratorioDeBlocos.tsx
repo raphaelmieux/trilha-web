@@ -6,6 +6,7 @@ import {
   type Cursor,
 } from '../labs/blocosUi';
 import { blocoNovo } from '../labs/blocosPaleta';
+import { palcoInicial } from '../labs/modeloDeBlocos';
 import {
   ehChapeu, novoId, type Categoria, type Personagem, type Projeto, type Tecla, type TipoDeBloco,
 } from '../labs/blocos';
@@ -45,10 +46,10 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
   aoSair: () => void;
 }) {
   /* O tipo permite ausência porque a maioria dos laboratórios de vereda é de
-     texto. Sem projeto não há o que montar, e um palco vazio silencioso seria
-     pior do que a mensagem. */
-  const inicial: Projeto = licao.projetoDeBlocos
-    ?? { personagens: [], variaveis: [] };
+     texto. Sem projeto, o padrão é o palco de dois personagens — um palco vazio
+     abriria uma tela em que não há o que fazer, sem uma palavra dizendo por
+     quê, que é o defeito que esta casa já pagou três vezes. */
+  const inicial: Projeto = licao.projetoDeBlocos ?? palcoInicial();
   const chave = `${vereda.code}-${licao.id}`;
 
   const [projeto, setProjeto] = useState<Projeto>(() => {
