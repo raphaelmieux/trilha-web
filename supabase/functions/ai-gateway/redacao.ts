@@ -193,6 +193,106 @@ export const ROTEIROS: Record<string, RoteiroServidor> = {
       },
     },
   },
+  /*
+    A CC001 é a primeira vereda a usar a redação guiada, e a primeira em que o
+    relatório tem três alvos ao mesmo tempo: a origem da programação em blocos,
+    o que é um algoritmo, e dois exemplos do cotidiano sem computador. Os três
+    são do requisito 1; a sétima etapa cobre o requisito 3, que também pede
+    texto escrito, e assim ele deixa de precisar de um laboratório só para ele.
+  */
+  CC001: {
+    assunto: 'a origem da programação em blocos e o que é um algoritmo',
+    etapas: {
+      'o-que-e-algoritmo': {
+        titulo: 'O que é um algoritmo',
+        pergunta: 'O que é um algoritmo? Explique com suas palavras.',
+        fatos: [
+          'Um algoritmo é uma sequência finita de passos, em ordem, que leva de um ponto de partida a um resultado.',
+          'A palavra vem do nome do matemático persa al-Khwarizmi, que viveu por volta do ano 800 e escreveu sobre métodos de cálculo passo a passo.',
+          'Um algoritmo precisa ter começo e fim, e cada passo precisa ser claro o bastante para ser seguido sem adivinhação.',
+          'Algoritmo não é a mesma coisa que programa: o algoritmo é o plano, e o programa é esse plano escrito numa linguagem que a máquina entende.',
+          'A ordem faz parte do algoritmo: trocar dois passos de lugar pode mudar o resultado ou impedir que ele aconteça.',
+        ],
+      },
+      'no-dia-a-dia': {
+        titulo: 'Dois algoritmos sem computador',
+        pergunta: 'Cite dois exemplos de algoritmo no seu dia a dia que não envolvam computador, e diga os passos de cada um.',
+        /*
+          Os fatos aqui dizem o critério, e não uma lista de exemplos aceitos.
+          Enumerar exemplos reprovaria quem trouxesse um bom exemplo de fora da
+          lista — e a regra 2 do conferidor já manda aceitar verdade que não
+          está nela. O que ainda se pega é o exemplo que usa computador, que
+          contradiz o último fato e é exatamente o que o requisito exclui.
+        */
+        fatos: [
+          'Um exemplo do cotidiano vale como algoritmo quando é uma sequência de passos em ordem, com começo e fim, e trocar a ordem muda o resultado.',
+          'Receita de bolo, o caminho de casa até a igreja, amarrar o cadarço, escovar os dentes e armar a barraca são exemplos válidos.',
+          'O requisito pede exemplos que não envolvam computador: usar aplicativo, celular ou qualquer programa não vale, porque o ponto é enxergar o algoritmo fora da máquina.',
+        ],
+      },
+      'antes-dos-blocos': {
+        titulo: 'Antes dos blocos',
+        pergunta: 'Quem teve a ideia de ensinar crianças a programar, e qual foi a primeira linguagem feita para isso?',
+        fatos: [
+          'A linguagem Logo foi criada em 1967 por Wally Feurzeig, Seymour Papert e Cynthia Solomon.',
+          'Seymour Papert trabalhou com o psicólogo Jean Piaget em Genebra antes de ir para o MIT, e levou daí a ideia de que a criança aprende construindo.',
+          'O Logo ficou conhecido pela tartaruga, que desenhava no chão ou na tela o caminho por onde andava, obedecendo a comandos como "para frente 100".',
+          'No livro Mindstorms, de 1980, Papert defendeu que a criança deve programar o computador, e não ser programada por ele.',
+          'O Logo era digitado, e não montado com blocos: ele é o antepassado da ideia, não do formato.',
+        ],
+      },
+      'por-que-blocos': {
+        titulo: 'Por que blocos, e não texto',
+        pergunta: 'Qual é a vantagem de programar arrastando blocos em vez de digitar o código?',
+        fatos: [
+          'Os blocos só encaixam onde fazem sentido, então o erro de sintaxe — ponto e vírgula esquecido, palavra escrita errada — simplesmente não acontece.',
+          'Isso tira do caminho o erro que não tem nada a ver com a ideia, e deixa o iniciante gastar o tempo pensando na lógica.',
+          'Os blocos vêm escritos por extenso e à vista na paleta, então não é preciso decorar comandos antes de começar.',
+          'A limitação aparece nos programas grandes, em que a pilha de blocos fica comprida demais para ler; é por isso que depois se passa para uma linguagem digitada.',
+          'A lógica é a mesma nos dois formatos: sequência, repetição, condição e variável existem igualmente em blocos e em texto.',
+        ],
+      },
+      'scratch': {
+        titulo: 'O Scratch',
+        pergunta: 'Quem criou o Scratch, quando, e para quem ele foi feito?',
+        fatos: [
+          'O Scratch foi criado pelo grupo Lifelong Kindergarten, do Media Lab do MIT, liderado por Mitchel Resnick.',
+          'A primeira versão foi lançada ao público em 2007.',
+          'O Scratch é gratuito, e os projetos podem ser publicados e vistos por outras pessoas no site.',
+          'O nome vem do scratching dos DJs, a técnica de misturar e reaproveitar pedaços de música — a ideia de reaproveitar o que já existe está no centro do projeto.',
+          'O Scratch 3.0, de 2019, roda no navegador e funciona também em tablets, o que a versão anterior não fazia.',
+        ],
+      },
+      'depois-do-scratch': {
+        titulo: 'O que veio depois',
+        pergunta: 'Cite outro lugar onde a programação em blocos é usada hoje, além do Scratch.',
+        fatos: [
+          'O ScratchJr, de 2014, é a versão para crianças de 5 a 7 anos, feita por Mitchel Resnick com Marina Umaschi Bers, da Universidade Tufts.',
+          'O Blockly é a biblioteca de blocos do Google, de 2012, usada por outros sites para montar os próprios editores.',
+          'O Code.org usa blocos na Hora do Código, campanha que começou em 2013.',
+          'A placa micro:bit, usada em escolas, também se programa com blocos, e o mesmo programa pode ser visto em texto.',
+          'Vários desses editores mostram o mesmo programa em blocos e em texto lado a lado, para ajudar na passagem de um formato ao outro.',
+        ],
+      },
+      'uma-vez-ou-esperando': {
+        titulo: 'Correr até o fim, ou ficar esperando',
+        pergunta: 'Qual é a diferença entre um programa que executa uma vez do início ao fim e um programa que fica esperando a ação do usuário?',
+        fatos: [
+          'O programa que executa uma vez faz os seus passos na ordem e termina; depois do último passo ele acabou, e não há mais nada acontecendo.',
+          'O programa que espera continua rodando sem fazer nada até que algo aconteça, e então reage — uma tecla pressionada, um clique, dois personagens que se encostam.',
+          'Esse segundo tipo se chama programa orientado a eventos, e é o que jogos, aplicativos e sites são.',
+          'No Scratch a diferença aparece no chapéu da pilha e no laço: uma pilha que desenha e para executa uma vez; uma pilha com "sempre" dentro fica de guarda esperando.',
+          'Os dois tipos convivem no mesmo projeto: é comum uma pilha arrumar o cenário uma vez e outras ficarem esperando o jogador.',
+        ],
+      },
+      'o-que-voce-acha': {
+        titulo: 'O que você achou',
+        pergunta: 'O que mais te surpreendeu no que você pesquisou, e o que você quer construir com o que aprender?',
+        fatos: [],
+        opiniao: true,
+      },
+    },
+  },
 };
 
 /** Bounded so a long paste cannot turn the checker into a free text channel. */

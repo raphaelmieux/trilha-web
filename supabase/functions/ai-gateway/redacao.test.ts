@@ -133,17 +133,39 @@ describe('o prompt de união', () => {
 });
 
 describe('o roteiro do servidor', () => {
-  it('cobre as mesmas etapas que a tela mostra', async () => {
+  /*
+    Confere todos os roteiros, e não só um.
+
+    A trava olhava a AP041 pelo nome. A AP034 nunca foi conferida, e a primeira
+    vereda a usar a redação entraria pelo mesmo buraco: uma etapa que a tela
+    mostra e o servidor não conhece é recusada — a pessoa escreve, clica em
+    conferir e leva "Etapa desconhecida", sem que nada aqui tivesse reprovado.
+  */
+  it('cobre as mesmas etapas que a tela mostra, em todo roteiro', async () => {
     const { ROTEIROS: doCliente } = await import('../../../src/labs/redacaoGuiada');
-    const idsCliente = doCliente.AP041.etapas.map(e => e.id).sort();
-    const idsServidor = Object.keys(roteiro.etapas).sort();
-    expect(idsServidor).toEqual(idsCliente);
+    const codigos = Object.keys(doCliente);
+    expect(codigos.length).toBeGreaterThan(0);
+
+    for (const codigo of codigos) {
+      /*
+        A assimetria é de propósito. Roteiro na tela sem fatos no servidor é o
+        laboratório quebrado, e reprova aqui. O contrário — fatos publicados
+        antes da tela — é a ordem que a casa exige: Edge Function sai pelo
+        `supabase.yml`, que corre em paralelo com o frontend, nunca antes dele.
+      */
+      const noServidor = ROTEIROS[codigo];
+      expect(noServidor, `${codigo} aparece na tela e não existe no servidor`).toBeDefined();
+      expect(Object.keys(noServidor.etapas).sort(), codigo)
+        .toEqual(doCliente[codigo].etapas.map(e => e.id).sort());
+    }
   });
 
   it('dá fatos a toda etapa que não é de opinião', () => {
-    for (const [id, etapa] of Object.entries(roteiro.etapas)) {
-      if (etapa.opiniao) expect(etapa.fatos, id).toHaveLength(0);
-      else expect(etapa.fatos.length, id).toBeGreaterThan(0);
+    for (const [codigo, r] of Object.entries(ROTEIROS)) {
+      for (const [id, etapa] of Object.entries(r.etapas)) {
+        if (etapa.opiniao) expect(etapa.fatos, `${codigo}/${id}`).toHaveLength(0);
+        else expect(etapa.fatos.length, `${codigo}/${id}`).toBeGreaterThan(0);
+      }
     }
   });
 });
