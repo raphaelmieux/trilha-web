@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSpecialty, preRequisitoCumprido } from '../curriculum';
+import { recomendacoesDaTrilha, veredasQueFaltam } from '../lib/recomendacoes';
+import { useVeredas } from '../hooks/useVeredas';
 import { nomeCompleto, NOME_DO_TIPO } from '../types';
 import {
   getProgressPercent, getProgressDetail, getModuleStatus, statusDasLicoes,
@@ -15,7 +17,7 @@ import ProgressBar from '../components/ui/ProgressBar';
 import MarcaDaLicao from '../components/ui/MarcaDaLicao';
 import Emblema from '../components/ui/Emblema';
 import BotaoDeRequisitos from '../components/ui/BotaoDeRequisitos';
-import { CheckCircle2, Award, HardHat } from 'lucide-react';
+import { CheckCircle2, Award, HardHat, Signpost } from 'lucide-react';
 
 export default function SpecialtyPage() {
   const { code } = useParams<{ code: string }>();
@@ -41,6 +43,19 @@ export default function SpecialtyPage() {
       && getProgressPercent(t.requirements.map(r => r.code), progress) === 100;
   };
   const liberada = !specialty || preRequisitoCumprido(specialty, concluiu);
+
+  /*
+    As veredas que esta trilha recomenda, e as que a seguram.
+
+    Recomendar é quase sempre certo: a vereda existe porque alguém precisava
+    daquilo. Travar é a plataforma criando um pré-requisito que a ficha oficial
+    não tem — só vale onde o requisito supõe um conhecimento que a trilha não
+    ensina em lugar nenhum. Ver `curriculum/recomendacoes.ts`.
+  */
+  const { andamento } = useVeredas(profile?.id);
+  const veredasFeitas = andamento.filter(a => a.concluida).map(a => a.id);
+  const recomendadas = specialty ? recomendacoesDaTrilha(specialty.code) : [];
+  const faltando = specialty ? veredasQueFaltam(specialty.code, veredasFeitas) : [];
 
   /*
     O requisito que o próprio portão cumpre.
@@ -88,6 +103,39 @@ export default function SpecialtyPage() {
     </div>
   );
   if (!profile) return null;
+
+  /*
+    A trava por vereda usa a mesma tela do pré-requisito de trilha, e não uma
+    nova: para quem está do lado de fora as duas são a mesma coisa — falta uma
+    coisa antes. O que muda é o texto, que precisa dizer qual e por quê, senão o
+    cadeado informa o estado e esconde o motivo.
+  */
+  if (faltando.length > 0) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-12">
+        <div className="flex justify-center mb-4">
+          <Emblema code={specialty.code} status="bloqueado" size={96} />
+        </div>
+        <h1 className="text-2xl font-bold mb-2">{nomeCompleto(specialty)} está bloqueada</h1>
+        <p className="mb-2" style={{ color: 'var(--color-text-dim)' }}>
+          {faltando.length === 1
+            ? 'Esta trilha parte de um conhecimento que ela não ensina, e que uma vereda ensina inteiro.'
+            : 'Esta trilha parte de conhecimentos que ela não ensina, e que estas veredas ensinam inteiros.'}
+        </p>
+        <div className="flex flex-col gap-3 mt-6">
+          {faltando.map(r => (
+            <div key={r.vereda} className="card p-4 text-left">
+              <p className="font-semibold mb-1">{nomeCompleto(r.aberta)}</p>
+              <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>{r.porque}</p>
+              <Link to={`/vereda/${r.aberta.code}`} className="btn-primary inline-flex">
+                Percorrer {nomeCompleto(r.aberta)}
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (!liberada) {
     const anterior = getSpecialty(specialty.preRequisito!);
@@ -213,6 +261,54 @@ export default function SpecialtyPage() {
         </div>
         <ProgressBar percent={overallPercent} partial={overallDetail.parcial} color={accentGrad} height="lg" />
       </div>
+
+      {/*
+        As veredas que ajudam nesta trilha, em destaque e antes dos módulos.
+
+        Antes dos módulos porque o proveito é começar por elas: dito depois da
+        lista, o conselho chega a quem já escolheu por onde começar. E são
+        convite, não porta — quem quiser ir direto vai, e a ficha oficial não
+        cobra nenhuma delas.
+      */}
+      {recomendadas.length > 0 && (
+        <div className="card p-5 mb-4"
+          style={{ borderLeft: '3px solid var(--color-secondary)' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <Signpost className="w-4 h-4" style={{ color: 'var(--color-secondary)' }} />
+            <h2 className="font-bold">
+              {recomendadas.length === 1 ? 'Uma vereda ajuda nesta trilha' : 'Veredas que ajudam nesta trilha'}
+            </h2>
+          </div>
+          <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
+            São percursos curtos e de bônus: rendem insígnia e Token.Web(), e não
+            entram no percentual desta trilha nem são cobrados na avaliação.
+          </p>
+          <div className="space-y-3">
+            {recomendadas.map(r => {
+              const feita = veredasFeitas.includes(r.vereda);
+              return (
+                <div key={r.vereda} className="flex items-start gap-3">
+                  <span className="mt-0.5">
+                    <Emblema code={r.aberta.code} size={34}
+                      status={feita ? 'concluido' : 'em-andamento'} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <Link to={`/vereda/${r.aberta.code}`} className="font-semibold hover:underline">
+                      {nomeCompleto(r.aberta)}
+                    </Link>
+                    {feita && (
+                      <span className="ml-2 text-xs" style={{ color: 'var(--color-success)' }}>
+                        concluída
+                      </span>
+                    )}
+                    <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>{r.porque}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         {specialty.modules.map((module, idx) => {

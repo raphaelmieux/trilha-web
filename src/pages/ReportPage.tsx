@@ -8,7 +8,7 @@ import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
 import { useVeredas } from '../hooks/useVeredas';
-import { VEREDAS } from '../curriculum/veredas';
+import { veredasAbertas } from '../curriculum/veredas';
 import { buildSpecialtyNarrative, buildClosingParagraph, buildBadgeParagraph, type LabEvidence } from '../lib/reportNarrative';
 import { LoadingState } from '../components/ui/PageState';
 import CertificateCanvas from '../components/CertificateCanvas';
@@ -160,7 +160,8 @@ export default function ReportPage() {
 
   /* Bônus, e por isso fora de toda a contabilidade acima: nada aqui entra em
      percentual de trilha, em requisito nem em nota. */
-  const veredasFeitas = VEREDAS.filter(v => andamento.find(a => a.id === v.id)?.concluida);
+  const veredasFeitas = veredasAbertas()
+    .filter(v => andamento.find(a => a.id === v.id)?.concluida);
 
   const annexNote = attachedCerts.length === 0 ? undefined
     : attachedCerts.length === 1

@@ -38,7 +38,17 @@ export function useVeredas(userId: string | undefined) {
   const andamento: AndamentoDeVereda[] = VEREDAS.map(v => {
     const total = licoesDaVereda(v).length;
     const vencidas = licoesVencidas(v, percurso[v.id]);
-    return { id: v.id, vencidas, total, concluida: vencidas === total };
+    /*
+      `total > 0` carrega o peso todo.
+
+      Vereda anunciada tem zero lições, e `0 === 0` é verdadeiro: sem esta
+      guarda toda vereda por escrever nasce concluída para todo mundo. É o
+      mesmo vazio que já enganou a verificação de links quebrados e o percentual
+      das veredas — `veredasConcluidas` foi corrigida na época, e este cálculo,
+      que é outra cópia da mesma conta, ficou para trás. O relatório entregue ao
+      clube listava as vinte e nove por escrever como cumpridas.
+    */
+    return { id: v.id, vencidas, total, concluida: total > 0 && vencidas === total };
   });
 
   const percursoDe = (id: string): PercursoDeVereda | undefined => percurso[id];

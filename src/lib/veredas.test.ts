@@ -279,3 +279,25 @@ describe('a arte de cada vereda', () => {
     });
   }
 });
+
+/*
+  A mesma conta, feita em dois lugares, divergiu.
+
+  `veredasConcluidas` foi corrigida quando as trinta e uma anunciadas
+  apareceram concluídas para todo mundo. O `andamento` do hook é outra cópia da
+  mesma comparação e ficou para trás — e é dele que o relatório entregue ao
+  clube tirava a lista de veredas cumpridas.
+*/
+describe('zero de zero não é tudo, em nenhuma das contas', () => {
+  it('nenhuma vereda em construção conta como concluída', () => {
+    const emConstrucao = VEREDAS.filter(v => v.emConstrucao);
+    expect(emConstrucao.length).toBeGreaterThan(0);
+    for (const v of emConstrucao) {
+      expect(licoesDaVereda(v).length, `${v.code} deveria estar vazia`).toBe(0);
+      /* A conta do hook: `total > 0 && vencidas === total`. Sem o `total > 0`,
+         isto seria verdadeiro para todas elas. */
+      const total = licoesDaVereda(v).length;
+      expect(total > 0 && 0 === total, v.code).toBe(false);
+    }
+  });
+});
