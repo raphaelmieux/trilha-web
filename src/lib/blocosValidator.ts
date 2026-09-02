@@ -139,7 +139,7 @@ const SPECS: BlocoCheckSpec[] = [
   {
     id: 'variavel',
     label: 'Uma variável que muda durante a execução',
-    hint: 'Crie a variável e use "mude ... em ..." ou "defina ... para ..." numa pilha que roda.',
+    hint: 'Crie a variável na paleta e use "mude ... em ..." ou "defina ... para ..." numa pilha que roda.',
     run: ctx => {
       if (ctx.projeto.variaveis.length === 0) {
         return { passed: false, detail: 'Nenhuma variável foi criada.' };

@@ -16,4 +16,17 @@ export interface PropsDeLaboratorio {
   lessonTitle: string;
   requirementCodes: string[];
   userId: string;
+  /*
+    Só quando o laboratório é de uma vereda.
+
+    A trilha grava progresso em `requirement_progress` e matrícula em
+    `enrollments`; a vereda não tem nem uma coisa nem outra — de propósito, é a
+    decisão que a mantém fora do percentual e do XP. O progresso dela é um
+    evento de atividade, e quem sabe gravá-lo é a tela da vereda.
+
+    Quando isto vem preenchido, o laboratório chama isto e não escreve nada de
+    trilha: `getSpecialtyId('CC001')` devolveria nulo em silêncio, e o resto
+    seria escrita em tabelas onde a vereda não tem linha.
+  */
+  aoVencer?: () => Promise<void>;
 }

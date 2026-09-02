@@ -205,6 +205,91 @@ export const ROTEIROS: Record<string, RoteiroRedacao> = {
       },
     ],
   },
+  /*
+    A CC001 é a primeira vereda a usar a redação guiada.
+
+    Os oito ids são os mesmos do servidor, e têm de ser: uma etapa que a tela
+    mostra e o servidor não conhece é recusada na hora de conferir, e a pessoa
+    leva "Etapa desconhecida" depois de já ter escrito. `redacao.test.ts`
+    percorre todos os roteiros e reprova a divergência.
+
+    Os mínimos somam 300, acima das 250 que o documento pede: quem cumprir as
+    oito etapas passa do piso sem precisar contar palavra nenhuma.
+  */
+  CC001: {
+    titulo: 'De onde vieram os blocos',
+    introducao:
+      'Você vai montar seu relatório respondendo oito perguntas. Pesquise cada uma antes de responder, '
+      + 'escreva com suas palavras, e no fim o texto todo é montado a partir do que você escreveu.',
+    minPalavrasTotal: 250,
+    etapas: [
+      {
+        id: 'o-que-e-algoritmo',
+        titulo: 'O que é um algoritmo',
+        pergunta: 'O que é um algoritmo? Explique com suas palavras.',
+        paraPesquisar: 'Procure por "algoritmo definição" e por "al-Khwarizmi". Veja de onde vem a palavra e o que todo algoritmo precisa ter.',
+        exemplo: 'Um algoritmo é ... . Ele precisa ter ... , e a palavra vem de ...',
+        minPalavras: 35,
+      },
+      {
+        id: 'no-dia-a-dia',
+        titulo: 'Dois algoritmos sem computador',
+        pergunta: 'Cite dois exemplos de algoritmo no seu dia a dia que não envolvam computador, e diga os passos de cada um.',
+        paraPesquisar: 'Não precisa pesquisar: olhe para a sua rotina. Pense em coisas que você faz numa ordem que não dá para trocar.',
+        exemplo: 'O primeiro é ... : primeiro eu ... , depois ... , e por fim ... . O segundo é ...',
+        minPalavras: 35,
+      },
+      {
+        id: 'antes-dos-blocos',
+        titulo: 'Antes dos blocos',
+        pergunta: 'Quem teve a ideia de ensinar crianças a programar, e qual foi a primeira linguagem feita para isso?',
+        paraPesquisar: 'Procure por "linguagem Logo", "Seymour Papert" e "tartaruga do Logo". Veja o ano e o que a tartaruga fazia.',
+        exemplo: 'A linguagem ... foi criada em ... por ... . Ela ficou conhecida por ... , que ...',
+        minPalavras: 40,
+      },
+      {
+        id: 'por-que-blocos',
+        titulo: 'Por que blocos, e não texto',
+        pergunta: 'Qual é a vantagem de programar arrastando blocos em vez de digitar o código?',
+        paraPesquisar: 'Procure por "erro de sintaxe" e veja o que acontece quando falta um ponto e vírgula numa linguagem digitada.',
+        exemplo: 'Com blocos, ... não pode acontecer, porque ... . Isso ajuda quem está começando porque ...',
+        minPalavras: 40,
+      },
+      {
+        id: 'scratch',
+        titulo: 'O Scratch',
+        pergunta: 'Quem criou o Scratch, quando, e para quem ele foi feito?',
+        paraPesquisar: 'Procure por "Scratch MIT Media Lab", "Lifelong Kindergarten" e "Mitchel Resnick". Veja também de onde vem o nome.',
+        exemplo: 'O Scratch foi criado por ... , em ... . O nome vem de ... , e ele foi feito para ...',
+        minPalavras: 40,
+      },
+      {
+        id: 'depois-do-scratch',
+        titulo: 'O que veio depois',
+        pergunta: 'Cite outro lugar onde a programação em blocos é usada hoje, além do Scratch.',
+        paraPesquisar: 'Procure por "ScratchJr", "Blockly", "Hora do Código" e "micro:bit". Escolha um e veja para quem ele serve.',
+        exemplo: 'Além do Scratch existe o ... , que serve para ... . Ele foi feito por ... e é usado em ...',
+        minPalavras: 35,
+      },
+      {
+        id: 'uma-vez-ou-esperando',
+        titulo: 'Correr até o fim, ou ficar esperando',
+        pergunta: 'Qual é a diferença entre um programa que executa uma vez do início ao fim e um programa que fica esperando a ação do usuário?',
+        paraPesquisar: 'Procure por "programa orientado a eventos". Pense num jogo e num programa que só imprime um resultado e fecha.',
+        exemplo: 'O primeiro tipo ... e então termina. O segundo ... , e só reage quando ... . Um exemplo de cada é ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'o-que-voce-acha',
+        titulo: 'O que você achou',
+        pergunta: 'O que mais te surpreendeu no que você pesquisou, e o que você quer construir com o que aprender?',
+        paraPesquisar: 'Aqui não há resposta certa: é a sua opinião. Releia o que você escreveu nas etapas anteriores antes de responder.',
+        exemplo: 'O que mais me surpreendeu foi ... , porque eu achava que ... . Eu quero construir ...',
+        minPalavras: 30,
+        opiniao: true,
+      },
+    ],
+  },
 };
 
 /* ── Estado de cada resposta ──────────────────────────────────────────────── */

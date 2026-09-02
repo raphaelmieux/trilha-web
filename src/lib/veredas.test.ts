@@ -7,16 +7,34 @@ import {
   percursoDosEventos, veredasConcluidas, licaoVencida, licoesVencidas,
 } from './veredas';
 import type { EventoDeAtividade } from './atividade';
-import { validateHtml } from './htmlValidator';
-import { validateCss } from './cssValidator';
+import { validateHtml, CHECKS, TABLE_CHALLENGE_CHECKS, SITE_CHECKS } from './htmlValidator';
+import { validateCss, IDS_DE_CSS } from './cssValidator';
+import { validarBlocos, IDS_DE_BLOCOS } from './blocosValidator';
 import { PASSOS } from '../labs/desafioDeHtml';
 import { PASSOS_DE_CSS } from '../labs/passosDeCss';
+import { PASSOS_DE_BLOCOS } from '../labs/passosDeBlocos';
+import { ROTEIROS } from '../labs/redacaoGuiada';
+
+/* O validador de HTML lança em id desconhecido, então a lista dele se monta
+   dos três registros que `validateHtml` consulta. */
+const IDS_DE_HTML = Object.keys({ ...CHECKS, ...TABLE_CHALLENGE_CHECKS, ...SITE_CHECKS });
 
 const vereda = veredasAbertas()[0];
 const licoes = licoesDaVereda(vereda);
 const topicos = topicosDaVereda(vereda).map(t => t.id);
 const teorias = licoes.filter(l => l.tipo === 'teoria').map(l => l.id);
-const laboratorios = licoes.filter(l => l.tipo === 'laboratorio').map(l => l.id);
+/*
+  Tudo o que não é teoria: laboratório e redação.
+
+  Estava escrito `tipo === 'laboratorio'`, e por isso a redação da CC001 ficou
+  de fora de `tudo` — o conjunto que representa "a vereda inteira vencida"
+  cobria treze das quatorze lições, e o teste da conclusão reprovou. A trava
+  fez o trabalho dela; o defeito era do próprio conjunto.
+
+  Escrito pela negativa de propósito: um quarto tipo de lição entra aqui
+  sozinho, em vez de sumir em silêncio como este sumiu.
+*/
+const deFazer = licoes.filter(l => l.tipo !== 'teoria').map(l => l.id);
 
 const lido = (topico: string, qual = vereda.id): EventoDeAtividade =>
   ({ event_type: EVENTO_TOPICO, metadata: { vereda: qual, topico } });
@@ -25,19 +43,26 @@ const vencido = (licao: string, evento = EVENTO_LABORATORIO, qual = vereda.id): 
 
 const tudo = [
   ...teorias.map(l => vencido(l, EVENTO_TEORIA)),
-  ...laboratorios.map(l => vencido(l)),
+  ...deFazer.map(l => vencido(l)),
 ];
+
+/* `tudo` precisa ser mesmo tudo: é ele que representa a vereda inteira
+   vencida, e um conjunto incompleto faria a trava da conclusão medir outra
+   coisa. */
+if (tudo.length !== licoes.length) {
+  throw new Error(`o conjunto do teste cobre ${tudo.length} de ${licoes.length} lições`);
+}
 
 describe('o percurso de uma vereda', () => {
   it('junta as lições vencidas, de qualquer tipo', () => {
     const p = percursoDosEventos([
-      vencido(teorias[0], EVENTO_TEORIA), vencido(laboratorios[0]),
+      vencido(teorias[0], EVENTO_TEORIA), vencido(deFazer[0]),
     ])[vereda.id];
-    expect(p.licoes).toEqual(new Set([teorias[0], laboratorios[0]]));
+    expect(p.licoes).toEqual(new Set([teorias[0], deFazer[0]]));
   });
 
   it('não conta a mesma lição duas vezes', () => {
-    const p = percursoDosEventos([vencido(laboratorios[0]), vencido(laboratorios[0])])[vereda.id];
+    const p = percursoDosEventos([vencido(deFazer[0]), vencido(deFazer[0])])[vereda.id];
     expect(p.licoes.size).toBe(1);
   });
 
@@ -87,7 +112,7 @@ describe('quando a vereda acaba', () => {
   });
 
   it('não acaba com os laboratórios feitos e a teoria por vencer', () => {
-    expect(veredasConcluidas(laboratorios.map(l => vencido(l)))).toEqual([]);
+    expect(veredasConcluidas(deFazer.map(l => vencido(l)))).toEqual([]);
   });
 
   it('acaba quando as duas metades estão vencidas', () => {
@@ -105,7 +130,7 @@ describe('quando a vereda acaba', () => {
       { event_type: EVENTO_TOPICO, metadata: [1, 2] },
       { event_type: EVENTO_TOPICO, metadata: { vereda: vereda.id } },
       { event_type: EVENTO_LABORATORIO, metadata: { vereda: vereda.id } },
-      { event_type: 'outra_coisa', metadata: { vereda: vereda.id, licao: laboratorios[0] } },
+      { event_type: 'outra_coisa', metadata: { vereda: vereda.id, licao: deFazer[0] } },
     ];
     expect(percursoDosEventos(torto)).toEqual({});
     expect(veredasConcluidas(torto)).toEqual([]);
@@ -125,26 +150,66 @@ describe('os modelos dos laboratórios da vereda', () => {
     for (const licao of licoesDaVereda(vereda)) {
       if (licao.tipo !== 'laboratorio') continue;
       it(`${vereda.code} · ${licao.id} abre sem nenhuma verificação verde`, () => {
-        /* Cada linguagem tem o seu validador, e o modelo é conferido pelo
-           mesmo que o laboratório usa — conferir CSS com o validador de HTML
-           não mediria nada. */
-        const verdes = (licao.linguagem === 'css'
-          ? validateCss(licao.modelo, licao.marcacao ?? '', licao.verificacoes)
-          : validateHtml(licao.modelo, licao.verificacoes))
+        /*
+          Cada linguagem tem o seu validador, e o modelo é conferido pelo mesmo
+          que o laboratório usa — conferir CSS com o validador de HTML não
+          mediria nada.
+
+          E blocos precisou entrar aqui explicitamente. Caindo no `else`, o
+          modelo vazio de um laboratório de blocos era conferido pelo validador
+          de HTML, que não conhece nenhum daqueles ids: nada passava, a lista
+          saía vazia e o teste ficava verde sem ter conferido coisa alguma. É a
+          armadilha do "zero link não é zero link quebrado", agora na trava que
+          existe justamente para pegá-la.
+        */
+        const verdes = (licao.linguagem === 'blocos'
+          ? validarBlocos(licao.projetoDeBlocos ?? { personagens: [], variaveis: [] }, licao.verificacoes)
+          : licao.linguagem === 'css'
+            ? validateCss(licao.modelo, licao.marcacao ?? '', licao.verificacoes)
+            : validateHtml(licao.modelo, licao.verificacoes))
           .filter(r => r.passed).map(r => r.id);
         expect(verdes).toEqual([]);
+      });
+
+      it(`${vereda.code} · ${licao.id} cobra verificação que o validador conhece`, () => {
+        /*
+          Id desconhecido vira uma verificação que nunca passa — os validadores
+          fazem isso de propósito, para o laboratório não encolher em silêncio.
+          O efeito colateral é que a trava acima aprova qualquer lista de ids
+          inventados. Aqui se confere que cada um existe de verdade.
+        */
+        const conhecidos = licao.linguagem === 'blocos' ? IDS_DE_BLOCOS
+          : licao.linguagem === 'css' ? IDS_DE_CSS : IDS_DE_HTML;
+        expect(licao.verificacoes.filter(id => !conhecidos.includes(id))).toEqual([]);
       });
     }
   }
 
   it('toda verificação cobrada tem passo a passo para quem travar', () => {
+    const passosDe = (linguagem: string | undefined) =>
+      (linguagem === 'blocos' ? PASSOS_DE_BLOCOS
+        : linguagem === 'css' ? PASSOS_DE_CSS : PASSOS);
     const sem = veredasComConteudo().flatMap(v => licoesDaVereda(v))
       .flatMap(l => (l.tipo === 'laboratorio'
-        ? l.verificacoes.map(id => [l.linguagem === 'css' ? PASSOS_DE_CSS : PASSOS, id] as const)
+        ? l.verificacoes.map(id => [passosDe(l.linguagem), id] as const)
         : []))
       .filter(([mapa, id]) => !mapa[id]?.length)
       .map(([, id]) => id);
     expect([...new Set(sem)]).toEqual([]);
+  });
+
+  /*
+    A redação não tem modelo nem verificação, e por isso escapa das duas travas
+    acima. O que ela pode quebrar é o par com o servidor: um roteiro que a tela
+    aponta e o servidor não conhece devolve "Etapa desconhecida" depois de a
+    pessoa já ter escrito. `redacao.test.ts` confere os ids das etapas; aqui se
+    confere que o roteiro citado pela lição existe.
+  */
+  it('toda lição de redação aponta para um roteiro que existe', () => {
+    const sem = veredasComConteudo().flatMap(v => licoesDaVereda(v))
+      .filter(l => l.tipo === 'redacao' && !ROTEIROS[l.roteiro])
+      .map(l => (l.tipo === 'redacao' ? `${l.id} → ${l.roteiro}` : ''));
+    expect(sem).toEqual([]);
   });
 });
 

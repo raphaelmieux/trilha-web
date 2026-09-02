@@ -13,6 +13,7 @@ import { Palco, QUADROS_POR_SEGUNDO, estadoInicial, type EstadoDoPalco } from '.
 import { inserirDentro, inserirDepois, alterar, remover, mover, naPilha, contem } from '../labs/blocosEdicao';
 import { validarBlocos, type CheckResult } from '../lib/blocosValidator';
 import { PASSOS_DE_BLOCOS } from '../labs/passosDeBlocos';
+import { roteiroDeApresentacao, pilhasSemChapeu } from '../labs/roteiroDeApresentacao';
 import { lerRascunho, descartarRascunho } from '../lib/rascunho';
 import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
@@ -166,6 +167,24 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
   const outros = projeto.personagens.filter(p => p.id !== atual).map(p => ({ id: p.id, nome: p.nome }));
   const variaveis = projeto.variaveis.map(v => v.nome);
 
+  /*
+    Criar variável é ação do laboratório, e não da lição.
+
+    O requisito pede "criar uma variável e alterar seu valor durante a
+    execução", e as duas metades são da pessoa. Entregá-la pronta no
+    `projetoDeBlocos` dava a primeira de graça e deixava a verificação medir só
+    a segunda — sem que nada na tela denunciasse.
+
+    Ela nasce em zero: é o valor de placar, de vidas e de tempo no instante em
+    que o jogo começa, e é o que o bloco "defina para 0" da bandeira verde
+    depois repete de propósito, para que recomeçar o jogo zere de novo.
+  */
+  const criarVariavel = useCallback((nome: string) => {
+    aplicar(agora => (agora.variaveis.some(v => v.nome === nome)
+      ? agora
+      : { ...agora, variaveis: [...agora.variaveis, { nome, valor: 0 }] }));
+  }, [aplicar]);
+
   const trocarPersonagem = useCallback((p: (x: Personagem) => Personagem) => {
     aplicar(agora => ({
       ...agora,
@@ -224,6 +243,15 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
 
   /* ── A entrega ──────────────────────────────────────────────────────── */
 
+  /*
+    O jogo é o laboratório que cobra a interação entre os dois personagens.
+
+    É por essa verificação que se reconhece o último, e não pelo id da lição:
+    id se renomeia sem que ninguém repare, e aí o roteiro de apresentação
+    sumiria em silêncio justamente do único lugar onde ele serve.
+  */
+  const ehOJogo = licao.verificacoes.includes('interacao');
+
   const entregar = async () => {
     setSalvando(true);
     await aoVencer();
@@ -233,14 +261,73 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
   };
 
   if (entregue) {
+    /*
+      O roteiro da apresentação sai daqui, e só no último laboratório.
+
+      O requisito 6 pede apresentar o jogo ao examinador explicando em voz alta
+      a função de cada grupo de blocos — o requisito mais difícil, porque montar
+      copiando é possível e explicar copiando não é. A plataforma não tem como
+      conferi-lo, e o que ela pode fazer é preparar: ler a árvore que a pessoa
+      montou e dizer, em português, o que cada pilha dela faz.
+
+      Só no último porque antes dele não há jogo para apresentar: um roteiro de
+      duas linhas no laboratório do módulo 2 ensinaria a tratá-lo como enfeite
+      de fim de tela.
+    */
+    const roteiro = ehOJogo ? roteiroDeApresentacao(projeto) : [];
+    const mudas = ehOJogo ? pilhasSemChapeu(projeto) : 0;
+
     return (
-      <div className="card p-8 text-center">
-        <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
-        <h1 className="text-2xl font-bold mb-2">{licao.titulo} — vencido!</h1>
-        <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
-          Seu projeto passou nas {resultados.length} verificações.
-        </p>
-        <button onClick={aoSair} className="btn-primary">Voltar para a vereda</button>
+      <div className="card p-8">
+        <div className="text-center">
+          <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
+          <h1 className="text-2xl font-bold mb-2">{licao.titulo} — vencido!</h1>
+          <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
+            Seu projeto passou nas {resultados.length} verificações.
+          </p>
+        </div>
+
+        {roteiro.length > 0 && (
+          <div className="mt-6 text-left">
+            <h2 className="text-lg font-bold mb-1">Para apresentar ao examinador</h2>
+            <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
+              O requisito 6 pede que você explique em voz alta o que cada grupo de
+              blocos faz. Este é o roteiro do <b>seu</b> jogo, escrito a partir do
+              que você montou. Treine em voz alta — por dentro parece fácil até a
+              primeira vez que se tenta na frente de alguém.
+            </p>
+
+            {roteiro.map((t, i) => (
+              <div key={i} className="mb-4 p-4 rounded-lg"
+                style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
+                <p className="text-sm font-semibold mb-2">
+                  {t.personagem}: “Esta pilha roda {t.quando}…”
+                </p>
+                <ul className="text-sm space-y-1" style={{ color: 'var(--color-text-dim)' }}>
+                  {t.faz.map((f, j) => (
+                    <li key={j} style={{ paddingLeft: `${(f.length - f.trimStart().length) / 2 * 14}px` }}>
+                      … {f.trimStart()}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
+            {mudas > 0 && (
+              /* Pilha sem chapéu não roda, e o examinador não a verá acontecer.
+                 Dizer isso agora evita que a pessoa a explique como se rodasse. */
+              <p className="text-sm mb-4" style={{ color: 'var(--color-secondary)' }}>
+                {mudas === 1
+                  ? 'Há uma pilha sem bloco de chapéu no seu projeto. Ela não roda, e por isso ficou de fora do roteiro.'
+                  : `Há ${mudas} pilhas sem bloco de chapéu no seu projeto. Elas não rodam, e por isso ficaram de fora do roteiro.`}
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="text-center mt-4">
+          <button onClick={aoSair} className="btn-primary">Voltar para a vereda</button>
+        </div>
       </div>
     );
   }
@@ -284,8 +371,8 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
 
         <div className="bl-corpo">
           <Paleta categoria={categoria} aoTrocarCategoria={setCategoria}
-            aoEscolher={acrescentar}
-            variavel={variaveis[0] ?? 'placar'} outro={outros[0]?.id ?? 'borda'} />
+            aoEscolher={acrescentar} aoCriarVariavel={criarVariavel}
+            variaveis={variaveis} outro={outros[0]?.id ?? 'borda'} />
 
           <div className="bl-scripts">
             {!personagem || personagem.pilhas.length === 0 ? (
