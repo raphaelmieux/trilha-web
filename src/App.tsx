@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import BrandMark from './components/ui/BrandMark';
 import AvisoDeVersao from './components/ui/AvisoDeVersao';
+import CodigoFonte from './components/ui/CodigoFonte';
 import { AuthProvider } from './context/AuthProvider';
 import { useAuth } from './context/AuthContext';
 import { percursoAtual } from './lib/navegacao';
@@ -217,6 +218,10 @@ export default function App() {
         <div className="min-h-screen">
           <NavBar />
           <AppRoutes />
+          {/* Fora das rotas, e por obrigação: a AGPL §13 pede que quem usa o
+              programa pela rede tenha como obter a fonte. Uma tela sem o link
+              seria uma tela servida sem cumprir a licença. */}
+          <CodigoFonte />
           {/* Fora das rotas: um deploy novo interessa em qualquer tela. */}
           <AvisoDeVersao />
         </div>

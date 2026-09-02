@@ -9,6 +9,22 @@ passo manual nem CLI local em lugar nenhum do caminho.
 O público é desbravador a partir de dez anos. Frase curta, exemplo do dia a dia
 deles, e nada de conselho que ninguém segue no Brasil.
 
+## A licença
+
+A plataforma é **AGPL-3.0-only**, e não MIT como nasceu. Não foi escolha de
+princípio: ela embute o `scratch-gui`, que é AGPL, e a AGPL exige que o
+trabalho combinado saia sob ela. A titularidade continua sendo do autor — a
+licença obriga quem recebe, não quem escreveu.
+
+O que isso cobra de nós, na prática, é uma coisa só e todo dia: a seção 13 diz
+que quem usa o programa **pela rede** precisa ter como obter a fonte
+correspondente. É o `CodigoFonte`, no rodapé de toda tela, montado em `App` e
+não em cada página — página que esquecesse o link seria tela servida sem
+cumprir a licença.
+
+E cobra uma coisa de cada dependência nova: ela precisa ser compatível com
+AGPL. MIT, BSD e Apache-2.0 entram; licença proprietária, não.
+
 ## Comandos
 
 ```bash

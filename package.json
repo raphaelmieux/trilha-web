@@ -1,6 +1,7 @@
 {
   "name": "trilha-web",
   "version": "1.0.0",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
     "predev": "node scripts/copiar-pyodide.mjs",
