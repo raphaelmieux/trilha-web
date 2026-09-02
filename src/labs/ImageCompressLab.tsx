@@ -309,6 +309,7 @@ export default function ImageCompressLab({ specialtyCode, lessonCode, lessonTitl
   return (
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
+      voltarPara={`/especialidade/${specialtyCode}`}
       titulo={lessonTitle}
       programa="compressor-de-imagens"
       tarefas={tarefas}

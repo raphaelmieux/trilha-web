@@ -411,6 +411,7 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTi
   return (
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
+      voltarPara={`/especialidade/${specialtyCode}`}
       titulo={lessonTitle}
       programa="word"
       tarefas={tarefas}

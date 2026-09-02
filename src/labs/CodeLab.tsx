@@ -150,6 +150,7 @@ export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requir
   return (
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
+      voltarPara={`/especialidade/${specialtyCode}`}
       titulo={lessonTitle}
       programa="editor-de-codigo"
       tarefas={tarefas}

@@ -37,7 +37,7 @@ const montar = (
     root.render(
       <MemoryRouter>
         <LaboratorioEmTelaCheia
-          trilha="AP041"
+          trilha="AP041" voltarPara="/especialidade/AP041"
           titulo="Mexendo em pastas e arquivos"
           programa={programa}
           tarefas={tarefas}
@@ -54,7 +54,7 @@ const rerender = (tarefas: { id: string; titulo: string; feita: boolean; passos?
     root.render(
       <MemoryRouter>
         <LaboratorioEmTelaCheia
-          trilha="AP041"
+          trilha="AP041" voltarPara="/especialidade/AP041"
           titulo="Mexendo em pastas e arquivos"
           programa="explorador"
           tarefas={tarefas}

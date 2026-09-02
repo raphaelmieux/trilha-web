@@ -3,7 +3,7 @@ import BrandMark from './components/ui/BrandMark';
 import AvisoDeVersao from './components/ui/AvisoDeVersao';
 import { AuthProvider } from './context/AuthProvider';
 import { useAuth } from './context/AuthContext';
-import { rotaDaTrilhaAtual } from './lib/navegacao';
+import { percursoAtual } from './lib/navegacao';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -59,11 +59,13 @@ export function RotaDeVisitante({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/* A marca do item de percurso. O destino e o rótulo saem do endereço, e ele
+   some quando não há percurso aberto. Ver `percursoAtual`. */
+const PERCURSO = '@percurso';
+
 const NAV_ITEMS = [
   { to: '/', label: 'Início', icon: Home, exact: true },
-  /* O destino real sai do endereço; "/especialidade" é só a marca do item, e
-     ele some quando não há trilha aberta. Ver rotaDaTrilhaAtual. */
-  { to: '/especialidade', label: 'Trilha Atual', icon: Map, exact: false },
+  { to: PERCURSO, label: 'Trilha Atual', icon: Map, exact: false },
   { to: '/relatorio', label: 'Relatório', icon: FileText, exact: false },
   { to: '/ranking', label: 'Ranking', icon: Podium, exact: false },
   { to: '/verificar', label: 'Verificar', icon: Award, exact: false },
@@ -79,10 +81,15 @@ function NavBar() {
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + '/');
 
-  const trilhaAtual = rotaDaTrilhaAtual(location.pathname);
-  const paraOnde = (to: string) => (to === '/especialidade' ? (trilhaAtual ?? '/') : to);
-  /* Sem trilha aberta, o item sai do menu inteiro. */
-  const itens = NAV_ITEMS.filter(i => i.to !== '/especialidade' || trilhaAtual);
+  const percurso = percursoAtual(location.pathname);
+  const paraOnde = (to: string) => (to === PERCURSO ? (percurso?.rota ?? '/') : to);
+  /* O rótulo é do percurso aberto: numa vereda ele diz "Vereda Atual", porque
+     chamá-la de trilha desfaria a distinção que o resto da plataforma
+     sustenta. */
+  const rotuloDe = (to: string, padrao: string) =>
+    (to === PERCURSO ? (percurso?.rotulo ?? padrao) : padrao);
+  /* Sem percurso aberto, o item sai do menu inteiro. */
+  const itens = NAV_ITEMS.filter(i => i.to !== PERCURSO || percurso);
 
   const linkColor = (active: boolean) => ({ color: active ? 'var(--color-primary)' : 'var(--color-text-muted)' });
 
@@ -95,11 +102,12 @@ function NavBar() {
 
         <div className="hidden md:flex items-center gap-5">
           {itens.map(({ to, label, icon: Icon, exact }) => {
-            const active = exact ? location.pathname === to : isActive(to);
+            const active = to === PERCURSO ? true
+              : exact ? location.pathname === to : isActive(to);
             return (
               <Link key={to} to={paraOnde(to)} className="text-sm flex items-center gap-1.5 transition-colors" style={linkColor(active)}>
                 <Icon className="w-4 h-4" />
-                <span>{label}</span>
+                <span>{rotuloDe(to, label)}</span>
               </Link>
             );
           })}
@@ -145,12 +153,13 @@ function NavBar() {
       {menuOpen && (
         <div className="md:hidden px-4 pb-3 flex flex-col gap-1" style={{ borderTop: '1px solid var(--color-border)' }}>
           {itens.map(({ to, label, icon: Icon, exact }) => {
-            const active = exact ? location.pathname === to : isActive(to);
+            const active = to === PERCURSO ? true
+              : exact ? location.pathname === to : isActive(to);
             return (
               <Link key={to} to={paraOnde(to)} onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-2 py-2.5 rounded-lg text-sm font-medium"
                 style={{ ...linkColor(active), backgroundColor: active ? 'var(--color-primary-a10)' : 'transparent' }}>
-                <Icon className="w-4 h-4" /> {label}
+                <Icon className="w-4 h-4" /> {rotuloDe(to, label)}
               </Link>
             );
           })}

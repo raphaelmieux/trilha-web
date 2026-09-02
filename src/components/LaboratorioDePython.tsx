@@ -159,6 +159,7 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
   return (
     <LaboratorioEmTelaCheia
       trilha={vereda.code}
+      voltarPara={`/vereda/${vereda.code}`}
       titulo={licao.titulo}
       programa="editor-de-codigo"
       tarefas={tarefas}

@@ -56,8 +56,21 @@ export interface TarefaDoLaboratorio {
 }
 
 interface Props {
-  /** Código da trilha, para o caminho de volta e para a cápsula. */
+  /** Código do percurso, para a cápsula. É rótulo, e não endereço. */
   trilha: string;
+  /**
+   * Para onde a seta de voltar leva.
+   *
+   * Era deduzido: a cápsula montava `/especialidade/${trilha}`. Nos oito
+   * laboratórios de trilha isso estava certo por acidente — o código é mesmo o
+   * de uma especialidade. Nos três de vereda a seta levava a
+   * `/especialidade/CC001`, uma especialidade que não existe, e o único caminho
+   * de volta virava o botão do navegador.
+   *
+   * Agora é dito, e não deduzido. O rótulo e o endereço eram a mesma coisa por
+   * coincidência, e coincidência não é contrato.
+   */
+  voltarPara: string;
   /** O nome da lição, na cápsula do computador. */
   titulo: string;
   /**
@@ -126,7 +139,7 @@ function marcarAvisado(programa: string): void {
 }
 
 export default function LaboratorioEmTelaCheia({
-  trilha, titulo, programa, tarefas, aviso, children, acoes, rodape = 0,
+  trilha, voltarPara, titulo, programa, tarefas, aviso, children, acoes, rodape = 0,
 }: Props) {
   const [painelAberto, setPainelAberto] = useState(true);
   const [avisoDeTela, setAvisoDeTela] = useState(() => !jaAvisado(programa));
@@ -291,7 +304,7 @@ export default function LaboratorioEmTelaCheia({
           boxShadow: '0 10px 26px rgba(0,0,0,0.5)',
           color: 'var(--color-text)',
         }}>
-        <Link to={`/especialidade/${trilha}`} aria-label={`Voltar para a trilha ${trilha}`}
+        <Link to={voltarPara} aria-label={`Voltar para ${trilha}`}
           style={{ color: 'var(--color-primary-hover)', display: 'flex' }}>
           <ArrowLeft className="w-4 h-4" />
         </Link>
@@ -322,7 +335,7 @@ export default function LaboratorioEmTelaCheia({
         <button onClick={() => setBolhaAberta(a => !a)}
           className="flex items-center gap-2 w-full px-3 py-2"
           aria-expanded={bolhaAberta}>
-          <Link to={`/especialidade/${trilha}`} aria-label={`Voltar para a trilha ${trilha}`}
+          <Link to={voltarPara} aria-label={`Voltar para ${trilha}`}
             onClick={e => e.stopPropagation()}
             style={{ color: 'var(--color-primary-hover)', display: 'flex' }}>
             <ArrowLeft className="w-4 h-4" />

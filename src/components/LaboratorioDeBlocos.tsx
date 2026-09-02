@@ -356,6 +356,7 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
   return (
     <LaboratorioEmTelaCheia
       trilha={vereda.code}
+      voltarPara={`/vereda/${vereda.code}`}
       titulo={licao.titulo}
       programa="editor-de-blocos"
       tarefas={tarefas}

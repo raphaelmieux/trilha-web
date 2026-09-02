@@ -680,6 +680,7 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, lessonT
   return (
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
+      voltarPara={`/especialidade/${specialtyCode}`}
       titulo={lessonTitle}
       programa="area-de-trabalho"
       tarefas={tarefas}

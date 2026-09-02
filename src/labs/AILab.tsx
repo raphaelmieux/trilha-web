@@ -341,6 +341,7 @@ export default function AILab({ specialtyCode, lessonCode, lessonTitle, requirem
   return (
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
+      voltarPara={`/especialidade/${specialtyCode}`}
       titulo={lessonTitle}
       programa="gemini"
       tarefas={tarefas}
