@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, CircleAlert, Play, Lock } from 'lucide-react';
+import { ArrowLeft, CircleAlert, Play, Lock, HardHat } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { NOME_DO_TIPO, nomeCompleto } from '../types';
 import {
@@ -12,9 +12,11 @@ import { useCertifications } from '../hooks/useCertifications';
 import TeoriaDaVereda from '../components/TeoriaDaVereda';
 import TokenDaVereda from '../components/TokenDaVereda';
 import LaboratorioDeVereda from '../components/LaboratorioDeVereda';
+import LaboratorioDeBlocos from '../components/LaboratorioDeBlocos';
 import ProgressBar from '../components/ui/ProgressBar';
 import MarcaDaLicao from '../components/ui/MarcaDaLicao';
 import Emblema from '../components/ui/Emblema';
+import BotaoDeRequisitos from '../components/ui/BotaoDeRequisitos';
 
 /*
  * A tela de uma vereda.
@@ -50,6 +52,31 @@ export default function VeredaPage() {
     );
   }
 
+  /*
+    A vereda anunciada não abre, nem pelo endereço.
+
+    O cartão do painel não leva aqui — ele é cinza e sem link —, mas o endereço
+    é adivinhável, e uma vereda sem lição abria uma página de progresso 0 de 0,
+    sem nada para fazer. É a mesma guarda que a trilha já tinha; a vereda ficou
+    sem ela quando a tela nasceu, e com trinta e uma anunciadas isso passou a
+    ser trinta e uma páginas vazias acessíveis a quem digitar o código.
+  */
+  if (vereda.emConstrucao) {
+    return (
+      <div className="max-w-lg mx-auto text-center py-12">
+        <HardHat className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--color-secondary)' }} />
+        <h1 className="text-xl font-bold mb-2">Esta vereda ainda está em construção</h1>
+        <p style={{ color: 'var(--color-text-dim)' }}>
+          Estamos preparando as lições. Ela abre no painel assim que ficar pronta.
+        </p>
+        <div className="flex justify-center mt-4">
+          <BotaoDeRequisitos percurso={vereda} />
+        </div>
+        <Link to="/" className="btn-primary mt-6 inline-flex">Voltar ao Início</Link>
+      </div>
+    );
+  }
+
   const feito = percursoDe(vereda.id);
   const licoes = licoesDaVereda(vereda);
   const vencidas = licoes.filter(l => licaoVencida(l, feito)).length;
@@ -70,6 +97,21 @@ export default function VeredaPage() {
   }
 
   if (licaoAberta?.tipo === 'laboratorio' && profile?.id) {
+    /*
+      Blocos não é uma linguagem a mais do editor de código — é outro editor.
+
+      HTML e CSS são texto, e por isso dividem a mesma IDE: muda o realce e o
+      validador, o resto é o mesmo. Blocos não tem texto para realçar nem
+      arquivo para escrever; tem paleta, palco e árvore. Enfiá-lo no editor de
+      código pediria um `<textarea>` que ninguém digita, e a lateral de
+      arquivos de um projeto sem arquivo.
+    */
+    if (licaoAberta.linguagem === 'blocos') {
+      return (
+        <LaboratorioDeBlocos vereda={vereda} licao={licaoAberta} userId={profile.id}
+          aoVencer={vencer} aoSair={fechar} />
+      );
+    }
     return (
       <LaboratorioDeVereda vereda={vereda} licao={licaoAberta} userId={profile.id}
         aoVencer={vencer} aoSair={fechar} />
@@ -151,9 +193,12 @@ export default function VeredaPage() {
             }
             size={88}
           />
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold">{nomeCompleto(vereda)}</h1>
-            <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>{vereda.description}</p>
+          <div className="min-w-0 space-y-2">
+            <div>
+              <h1 className="text-2xl font-bold">{nomeCompleto(vereda)}</h1>
+              <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>{vereda.description}</p>
+            </div>
+            <BotaoDeRequisitos percurso={vereda} />
           </div>
         </div>
       </div>

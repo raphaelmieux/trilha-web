@@ -1,14 +1,16 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
-import { VEREDAS, veredasAbertas, licoesDaVereda, topicosDaVereda } from '../curriculum/veredas';
+import { VEREDAS, veredasAbertas, veredasComConteudo, licoesDaVereda, topicosDaVereda } from '../curriculum/veredas';
 import {
   EVENTO_TOPICO, EVENTO_TEORIA, EVENTO_LABORATORIO,
   percursoDosEventos, veredasConcluidas, licaoVencida, licoesVencidas,
 } from './veredas';
 import type { EventoDeAtividade } from './atividade';
 import { validateHtml } from './htmlValidator';
+import { validateCss } from './cssValidator';
 import { PASSOS } from '../labs/desafioDeHtml';
+import { PASSOS_DE_CSS } from '../labs/passosDeCss';
 
 const vereda = veredasAbertas()[0];
 const licoes = licoesDaVereda(vereda);
@@ -119,11 +121,16 @@ describe('quando a vereda acaba', () => {
   chances de repetir o erro sem ninguém ver.
 */
 describe('os modelos dos laboratórios da vereda', () => {
-  for (const vereda of veredasAbertas()) {
+  for (const vereda of veredasComConteudo()) {
     for (const licao of licoesDaVereda(vereda)) {
       if (licao.tipo !== 'laboratorio') continue;
       it(`${vereda.code} · ${licao.id} abre sem nenhuma verificação verde`, () => {
-        const verdes = validateHtml(licao.modelo, licao.verificacoes)
+        /* Cada linguagem tem o seu validador, e o modelo é conferido pelo
+           mesmo que o laboratório usa — conferir CSS com o validador de HTML
+           não mediria nada. */
+        const verdes = (licao.linguagem === 'css'
+          ? validateCss(licao.modelo, licao.marcacao ?? '', licao.verificacoes)
+          : validateHtml(licao.modelo, licao.verificacoes))
           .filter(r => r.passed).map(r => r.id);
         expect(verdes).toEqual([]);
       });
@@ -131,9 +138,12 @@ describe('os modelos dos laboratórios da vereda', () => {
   }
 
   it('toda verificação cobrada tem passo a passo para quem travar', () => {
-    const sem = veredasAbertas().flatMap(v => licoesDaVereda(v))
-      .flatMap(l => (l.tipo === 'laboratorio' ? l.verificacoes : []))
-      .filter(id => !PASSOS[id]?.length);
+    const sem = veredasComConteudo().flatMap(v => licoesDaVereda(v))
+      .flatMap(l => (l.tipo === 'laboratorio'
+        ? l.verificacoes.map(id => [l.linguagem === 'css' ? PASSOS_DE_CSS : PASSOS, id] as const)
+        : []))
+      .filter(([mapa, id]) => !mapa[id]?.length)
+      .map(([, id]) => id);
     expect([...new Set(sem)]).toEqual([]);
   });
 });
@@ -146,7 +156,7 @@ describe('os modelos dos laboratórios da vereda', () => {
   embaixo da outra — que lido de cima parece erro de montagem, e não hierarquia.
 */
 describe('os nomes dentro de um módulo', () => {
-  for (const vereda of veredasAbertas()) {
+  for (const vereda of veredasComConteudo()) {
     for (const modulo of vereda.modulos) {
       it(`${modulo.id} não repete o próprio nome numa lição`, () => {
         for (const licao of modulo.licoes) {

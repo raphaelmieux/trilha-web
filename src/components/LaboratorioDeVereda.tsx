@@ -8,7 +8,9 @@ import {
 } from '../labs/ide';
 import { contarLinhas } from '../labs/realce';
 import { PASSOS } from '../labs/desafioDeHtml';
+import { PASSOS_DE_CSS } from '../labs/passosDeCss';
 import { validateHtml, type CheckResult } from '../lib/htmlValidator';
+import { validateCss } from '../lib/cssValidator';
 import { lerRascunho, descartarRascunho } from '../lib/rascunho';
 import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
@@ -21,9 +23,15 @@ import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
  * requisito nenhum, porque vereda não tem requisito, e o que ela grava é um
  * evento de atividade dizendo que este laboratório foi vencido.
  *
- * O que é cobrado sai da própria lição, em `verificacoes`, contra o mesmo
- * validador que a trilha usa. Assim um laboratório novo é uma lista de ids, e
- * não uma tela nova.
+ * O que é cobrado sai da própria lição, em `verificacoes`, contra o validador
+ * da linguagem dela. Assim um laboratório novo é uma lista de ids, e não uma
+ * tela nova.
+ *
+ * ── CSS não se vê sozinho ────────────────────────────────────────────────
+ * Uma folha de estilo sem página é texto. Por isso a lição de CSS traz a
+ * marcação a que ela se aplica: a prévia junta as duas, e a lateral do editor
+ * mostra o arquivo da página, aberto e não editável — sem ler o `class=` e o
+ * `id=` não há como escrever um seletor que acerte alguém.
  */
 export default function LaboratorioDeVereda({ vereda, licao, userId, aoVencer, aoSair }: {
   vereda: Vereda;
@@ -52,8 +60,14 @@ export default function LaboratorioDeVereda({ vereda, licao, userId, aoVencer, a
 
   useRascunhoLocal(userId, chave, codigo, !entregue);
 
+  const ehCss = licao.linguagem === 'css';
+  const marcacao = licao.marcacao ?? '';
+
   const resultados: CheckResult[] = useMemo(
-    () => validateHtml(codigo, licao.verificacoes), [codigo, licao.verificacoes]);
+    () => (ehCss
+      ? validateCss(codigo, marcacao, licao.verificacoes)
+      : validateHtml(codigo, licao.verificacoes)),
+    [ehCss, codigo, marcacao, licao.verificacoes]);
   const passaram = resultados.filter(r => r.passed).length;
   const tudoPassa = passaram === resultados.length;
 
@@ -64,6 +78,17 @@ export default function LaboratorioDeVereda({ vereda, licao, userId, aoVencer, a
     const t = setTimeout(() => setPrevia(codigo), 400);
     return () => clearTimeout(t);
   }, [codigo]);
+
+  /* O que o iframe recebe. No CSS é a página com a folha dentro: é a única
+     forma de ver estilo, e é o que o navegador faz de verdade com um <link>. */
+  const paginaDaPrevia = ehCss
+    ? marcacao.replace('</head>', `<style>\n${previa}\n</style>\n</head>`)
+    : previa;
+
+  /* Qual arquivo está aberto no editor. Só o CSS tem dois. */
+  const [aberto, setAberto] = useState(licao.arquivo);
+  const arquivoDaMarcacao = 'pagina.html';
+  const lendoMarcacao = ehCss && aberto === arquivoDaMarcacao;
 
   const entregar = async () => {
     setSalvando(true);
@@ -90,7 +115,7 @@ export default function LaboratorioDeVereda({ vereda, licao, userId, aoVencer, a
     id: r.id,
     titulo: r.label,
     detalhe: r.passed ? undefined : (r.detail || r.hint),
-    passos: PASSOS[r.id],
+    passos: (ehCss ? PASSOS_DE_CSS : PASSOS)[r.id],
     feita: r.passed,
   }));
 
@@ -122,7 +147,7 @@ export default function LaboratorioDeVereda({ vereda, licao, userId, aoVencer, a
       <style>{CSS_IDE}</style>
 
       <div className="ide">
-        <CabecalhoDaIde arquivo={licao.arquivo} projeto={licao.projeto} aoAvisar={naoFazParte} />
+        <CabecalhoDaIde arquivo={aberto} projeto={licao.projeto} aoAvisar={naoFazParte} />
 
         <div className="ide-corpo">
           {consultando && (
@@ -133,34 +158,58 @@ export default function LaboratorioDeVereda({ vereda, licao, userId, aoVencer, a
 
           <LateralDaIde
             projeto={licao.projeto}
-            arquivos={[{ nome: licao.arquivo, problemas: resultados.length - passaram }]}
-            atual={licao.arquivo}
-            aoAbrir={() => {}}
+            arquivos={ehCss
+              ? [
+                { nome: licao.arquivo, problemas: resultados.length - passaram },
+                /* A página é dada, então não tem problema a corrigir — ela
+                   está ali para ser lida. */
+                { nome: arquivoDaMarcacao, problemas: 0 },
+              ]
+              : [{ nome: licao.arquivo, problemas: resultados.length - passaram }]}
+            atual={aberto}
+            aoAbrir={setAberto}
             aoAvisar={naoFazParte}
             aoConsultar={() => setConsultando(true)}
           />
 
           <div className="ide-painel">
             <div className="ide-guias">
-              <button className="ide-guia" aria-current="true">
-                <span style={{ color: '#E37933' }}>◆</span> {licao.arquivo}
-              </button>
+              {(ehCss ? [licao.arquivo, arquivoDaMarcacao] : [licao.arquivo]).map(nome => (
+                <button key={nome} className="ide-guia" aria-current={nome === aberto}
+                  onClick={() => setAberto(nome)}>
+                  <span style={{ color: nome.endsWith('.css') ? '#42A5F5' : '#E37933' }}>◆</span> {nome}
+                </button>
+              ))}
             </div>
 
             <AlternadorDaIde vendo={vendo} aoTrocar={setVendo} />
 
             <div className="ide-codigo-e-previa" style={{ flex: 1, minHeight: 0, display: 'flex' }}>
               <div className={`ide-lado-codigo${vendo === 'previa' ? ' escondido' : ''}`}>
-                <EditorDeCodigo codigo={codigo} aoMudar={setCodigo} rotulo="Editor de código HTML" />
+                {lendoMarcacao ? (
+                  <EditorDeCodigo
+                    codigo={marcacao}
+                    aoMudar={() => {}}
+                    somenteLeitura
+                    rotulo="A página a que a sua folha de estilo se aplica — só de leitura"
+                  />
+                ) : (
+                  <EditorDeCodigo codigo={codigo} aoMudar={setCodigo}
+                    linguagem={ehCss ? 'css' : 'html'}
+                    rotulo={ehCss ? 'Editor de folha de estilo CSS' : 'Editor de código HTML'} />
+                )}
               </div>
               <div className={`ide-lado-previa${vendo === 'codigo' ? ' escondido' : ''}`}>
-                <PreviaDaIde html={previa} arquivo={licao.arquivo} aoAvisar={naoFazParte} />
+                <PreviaDaIde html={paginaDaPrevia}
+                  arquivo={ehCss ? arquivoDaMarcacao : licao.arquivo} aoAvisar={naoFazParte} />
               </div>
             </div>
           </div>
         </div>
 
-        <StatusDaIde problemas={resultados.length - passaram} linhas={contarLinhas(codigo)}
+        <StatusDaIde problemas={resultados.length - passaram}
+          linhas={contarLinhas(lendoMarcacao ? marcacao : codigo)}
+          linguagem={lendoMarcacao || !ehCss ? 'HTML' : 'CSS'}
           aoAvisar={naoFazParte} />
       </div>
     </LaboratorioEmTelaCheia>

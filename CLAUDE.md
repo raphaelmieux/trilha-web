@@ -371,6 +371,28 @@ Vereda não tem nível, tem tamanho. Grava `'basico'` — o lado que reivindica
 menos — e a tela pública não imprime grau nenhum para ela: escreve que é
 vereda.
 
+**Vereda com conteúdo é conferida, publicada ou não.** As travas olhavam para
+`veredasAbertas()`, e uma vereda leva vários dias para ficar pronta: enquanto
+`emConstrucao`, laboratório abrindo resolvido e questão repetida só reprovariam
+no dia da abertura, com tudo já escrito. Hoje elas olham para
+`veredasComConteudo()` — quem tem lição é conferido. Insígnia e certificado
+continuam saindo das abertas: prometer prêmio por percurso que ninguém pode
+percorrer é outra coisa.
+
+**CSS não se vê sozinho, e não se verifica por busca de texto.** A lição de
+laboratório diz a `linguagem` e traz a `marcacao` a que a folha se aplica —
+fixa, aberta e só de leitura na lateral, porque sem ler o `class=` não há como
+escrever seletor que acerte alguém. O validador (`cssValidator.ts`) analisa a
+folha pelo CSSOM do próprio navegador: o que ele descarta não conta, que é
+justamente a armadilha do CSS — `colr: red` não dá erro, some. E seletor que
+não casa com a página não vale: regra para uma classe inexistente é CSS que não
+pinta nada. `display: flex` sozinho também não passa — o requisito é
+*alinhamento*, e quem alinha é a propriedade seguinte. E a propriedade se procura por
+**família**, e não por nome exato: `border: 2px solid #333` não deixa nenhuma
+declaração chamada `border` — o motor expande a forma curta, e cada um expande
+de um jeito. A lista de nomes exatos passava no jsdom e reprovava no Chromium,
+dizendo a quem escreveu a borda certa que ela não existe.
+
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois

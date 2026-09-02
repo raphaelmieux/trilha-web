@@ -136,3 +136,76 @@ export function realcarLinhas(codigo: string): string[] {
 
 /** Quantas linhas o código tem — a régua da esquerda vem daqui. */
 export const contarLinhas = (codigo: string) => codigo.split('\n').length;
+
+/**
+ * O mesmo realce, para uma folha de estilo.
+ *
+ * O editor é o mesmo dos laboratórios de HTML — o arranjo se repete, e é ele
+ * que se reconhece num editor de verdade. O que não se pode repetir é a
+ * coloração: pintar CSS com as regras do HTML deixa o arquivo inteiro de uma
+ * cor só, e a cor é justamente o que ensina a distinguir seletor de
+ * propriedade enquanto se digita.
+ *
+ * Reaproveita `pinta`, então vale aqui a mesma garantia: nenhum `<span>`
+ * atravessa duas linhas, e a régua continua alinhada.
+ *
+ * As cores seguem o sentido que já existe: `com` para comentário, `tag` para o
+ * seletor, `attr` para a propriedade, `val` para o valor, `pon` para a
+ * pontuação. Não há vocabulário novo a aprender.
+ */
+export function realcarLinhasCss(codigo: string): string[] {
+  let saida = '';
+  let i = 0;
+  /* Dentro das chaves lê-se propriedade e valor; fora delas, seletor. É a
+     única distinção que o realce precisa fazer. */
+  let dentro = false;
+
+  while (i < codigo.length) {
+    const resto = codigo.slice(i);
+
+    /* Comentário primeiro, e antes de tudo: ele pode conter chave, dois-pontos
+       e ponto e vírgula, e nada disso vale enquanto ele não fechar. */
+    if (resto.startsWith('/*')) {
+      const fim = codigo.indexOf('*/', i + 2);
+      const ate = fim === -1 ? codigo.length : fim + 2;
+      saida += pinta('com', codigo.slice(i, ate));
+      i = ate;
+      continue;
+    }
+
+    const c = resto[0];
+
+    if (c === '{') { saida += pinta('pon', '{'); dentro = true; i += 1; continue; }
+    if (c === '}') { saida += pinta('pon', '}'); dentro = false; i += 1; continue; }
+
+    if (!dentro) {
+      /* O seletor vai até a chave, o comentário ou o fim. */
+      const ate = Math.min(
+        ...[codigo.indexOf('{', i), codigo.indexOf('/*', i)]
+          .filter(n => n !== -1)
+          .concat(codigo.length),
+      );
+      saida += pinta('tag', codigo.slice(i, ate));
+      i = ate;
+      continue;
+    }
+
+    /* Dentro: nome da propriedade até os dois-pontos, valor até o ponto e
+       vírgula ou a chave de fechar. */
+    const prop = /^[\s]*[-\w]+(?=\s*:)/.exec(resto);
+    if (prop) { saida += pinta('attr', prop[0]); i += prop[0].length; continue; }
+
+    if (c === ':') {
+      saida += pinta('pon', ':');
+      i += 1;
+      const valor = /^[^;}]*/.exec(codigo.slice(i));
+      if (valor && valor[0]) { saida += pinta('val', valor[0]); i += valor[0].length; }
+      continue;
+    }
+
+    saida += pinta('pon', c);
+    i += 1;
+  }
+
+  return saida.split('\n');
+}

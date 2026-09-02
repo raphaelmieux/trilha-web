@@ -14,6 +14,7 @@ import { coresDoProgresso } from '../lib/coresDoProgresso';
 import ProgressBar from '../components/ui/ProgressBar';
 import MarcaDaLicao from '../components/ui/MarcaDaLicao';
 import Emblema from '../components/ui/Emblema';
+import BotaoDeRequisitos from '../components/ui/BotaoDeRequisitos';
 import { CheckCircle2, Award, HardHat } from 'lucide-react';
 
 export default function SpecialtyPage() {
@@ -80,6 +81,9 @@ export default function SpecialtyPage() {
       <p style={{ color: 'var(--color-text-dim)' }}>
         Estamos preparando as lições. Ela aparece no painel assim que abrir.
       </p>
+      <div className="flex justify-center mt-4">
+        <BotaoDeRequisitos percurso={specialty} />
+      </div>
       <Link to="/" className="btn-primary mt-6 inline-flex">Voltar ao Início</Link>
     </div>
   );
@@ -161,9 +165,15 @@ export default function SpecialtyPage() {
             status={cert ? 'certificado' : overallPercent === 100 ? 'concluido' : 'em-andamento'}
             size={88}
           />
-          <div>
-            <h1 className="text-2xl font-bold">{nomeCompleto(specialty)}</h1>
-            <p style={{ color: 'var(--color-text-dim)' }}>{specialty.description}</p>
+          <div className="space-y-2">
+            <div>
+              <h1 className="text-2xl font-bold">{nomeCompleto(specialty)}</h1>
+              <p style={{ color: 'var(--color-text-dim)' }}>{specialty.description}</p>
+            </div>
+            {/* O documento pelo qual a pessoa será avaliada, à mão desde a
+                primeira lição: estudar sem saber o que a folha oficial pede é
+                descobrir o requisito que faltou depois de terminar. */}
+            <BotaoDeRequisitos percurso={specialty} />
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

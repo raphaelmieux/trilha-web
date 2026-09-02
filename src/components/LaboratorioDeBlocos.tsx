@@ -1,0 +1,324 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CheckCircle2, RotateCcw } from 'lucide-react';
+import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
+import {
+  CSS_BLOCOS, Paleta, PalcoDeBlocos, ListaDePersonagens, BlocoNaPilha, BarraDoPalco,
+  type Cursor,
+} from '../labs/blocosUi';
+import { blocoNovo } from '../labs/blocosPaleta';
+import {
+  ehChapeu, novoId, type Categoria, type Personagem, type Projeto, type Tecla, type TipoDeBloco,
+} from '../labs/blocos';
+import { Palco, QUADROS_POR_SEGUNDO, estadoInicial, type EstadoDoPalco } from '../labs/blocosRuntime';
+import { inserirDentro, inserirDepois, alterar, remover, mover, naPilha, contem } from '../labs/blocosEdicao';
+import { validarBlocos, type CheckResult } from '../lib/blocosValidator';
+import { PASSOS_DE_BLOCOS } from '../labs/passosDeBlocos';
+import { lerRascunho, descartarRascunho } from '../lib/rascunho';
+import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
+import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
+
+/*
+ * O laboratório de blocos.
+ *
+ * Imita o Scratch de propósito — ele é *aquele* programa, como o Word e o
+ * Explorador —, e por isso a paleta por categoria, o palco no canto e a lista
+ * de personagens embaixo dele estão onde a pessoa vai encontrá-los depois.
+ *
+ * O que ele cobra sai de `verificacoes`, contra `blocosValidator`, que olha a
+ * árvore de blocos e não a tela. E o palco roda de verdade: a bandeira verde
+ * dispara as pilhas, as teclas movem, o placar sobe. Um laboratório de
+ * programação em que o programa não executa ensina a montar desenho de
+ * programa, que é outra coisa.
+ */
+
+/** Teclas do navegador para as do palco. As outras não interessam ao palco. */
+const TECLA_DO_EVENTO: Record<string, Tecla> = {
+  ArrowRight: 'direita', ArrowLeft: 'esquerda', ArrowUp: 'cima', ArrowDown: 'baixo', ' ': 'espaço',
+};
+
+export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, aoSair }: {
+  vereda: Vereda;
+  licao: Extract<LicaoDeVereda, { tipo: 'laboratorio' }>;
+  userId: string;
+  aoVencer: () => Promise<void> | void;
+  aoSair: () => void;
+}) {
+  /* O tipo permite ausência porque a maioria dos laboratórios de vereda é de
+     texto. Sem projeto não há o que montar, e um palco vazio silencioso seria
+     pior do que a mensagem. */
+  const inicial: Projeto = licao.projetoDeBlocos
+    ?? { personagens: [], variaveis: [] };
+  const chave = `${vereda.code}-${licao.id}`;
+
+  const [projeto, setProjeto] = useState<Projeto>(() => {
+    const guardado = lerRascunho<Projeto>(userId, chave);
+    return guardado?.conteudo && typeof guardado.conteudo === 'object'
+      ? (guardado.conteudo as Projeto) : inicial;
+  });
+  const [voltou] = useState(() => {
+    const g = lerRascunho<Projeto>(userId, chave);
+    return !!g?.conteudo && JSON.stringify(g.conteudo) !== JSON.stringify(inicial);
+  });
+
+  /*
+    O projeto também num ref, e é o ref que os cálculos leem.
+
+    `setProjeto(f)` não roda `f` na hora: o React o guarda e o executa na
+    renderização seguinte. Então tudo o que se quisesse saber sobre o resultado
+    — em qual pilha o bloco caiu, para onde o cursor vai — chegava tarde, e o
+    clique seguinte lia o projeto de antes. Duas cliques rápidos punham o
+    segundo bloco na pilha errada.
+
+    O ref é a verdade para quem calcula; o estado é o que desenha.
+  */
+  const projetoRef = useRef(projeto);
+  const aplicar = useCallback((f: (p: Projeto) => Projeto) => {
+    const proximo = f(projetoRef.current);
+    projetoRef.current = proximo;
+    setProjeto(proximo);
+  }, []);
+
+  const [atual, setAtual] = useState(inicial.personagens[0]?.id ?? '');
+  const [categoria, setCategoria] = useState<Categoria>('eventos');
+  const [cursor, setCursorEstado] = useState<Cursor | null>(null);
+  /*
+    O cursor também num ref, e é o ref que a inserção lê.
+
+    Dois cliques na paleta dentro do mesmo quadro liam o cursor do render
+    anterior: o segundo bloco entrava depois do mesmo vizinho que o primeiro —
+    ou seja, **antes** dele. Uma criança clicando depressa monta a pilha ao
+    contrário e não tem como saber por quê. O estado continua existindo porque
+    é ele que desenha a linha do cursor na tela.
+  */
+  const cursorRef = useRef<Cursor | null>(null);
+  const setCursor = useCallback((c: Cursor | null) => {
+    cursorRef.current = c;
+    setCursorEstado(c);
+  }, []);
+  const [entregue, setEntregue] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [aviso, setAviso] = useState(voltou ? 'Seu projeto voltou como você deixou.' : '');
+
+  useRascunhoLocal(userId, chave, projeto, !entregue);
+
+  const resultados: CheckResult[] = useMemo(
+    () => validarBlocos(projeto, licao.verificacoes), [projeto, licao.verificacoes]);
+  const passaram = resultados.filter(r => r.passed).length;
+  const tudoPassa = passaram === resultados.length;
+
+  /* ── O palco ────────────────────────────────────────────────────────── */
+
+  const palco = useRef<Palco | null>(null);
+  const teclas = useRef<Set<Tecla>>(new Set());
+  const clique = useRef<string | undefined>(undefined);
+  const [estado, setEstado] = useState<EstadoDoPalco>(() => estadoInicial(projeto));
+
+  /* O palco é remontado quando o projeto muda: editar um bloco enquanto o
+     programa roda deve valer no próximo Começar, e não no meio da execução. */
+  useEffect(() => {
+    palco.current = new Palco(projeto);
+    setEstado(palco.current.estado);
+  }, [projeto]);
+
+  useEffect(() => {
+    const desce = (e: KeyboardEvent) => {
+      const t = TECLA_DO_EVENTO[e.key];
+      if (t) { teclas.current.add(t); if (t === 'espaço') e.preventDefault(); }
+    };
+    const sobe = (e: KeyboardEvent) => {
+      const t = TECLA_DO_EVENTO[e.key];
+      if (t) teclas.current.delete(t);
+    };
+    window.addEventListener('keydown', desce);
+    window.addEventListener('keyup', sobe);
+    return () => {
+      window.removeEventListener('keydown', desce);
+      window.removeEventListener('keyup', sobe);
+    };
+  }, []);
+
+  /* O laço de quadros. `setInterval` e não `requestAnimationFrame`: o palco tem
+     ritmo próprio — trinta quadros por segundo, como o Scratch —, e amarrá-lo à
+     taxa do monitor faria o mesmo programa correr mais rápido em telas de 120Hz. */
+  useEffect(() => {
+    const id = setInterval(() => {
+      const p = palco.current;
+      if (!p || !p.estado.rodando) return;
+      p.quadro({ teclas: new Set(teclas.current), clicado: clique.current });
+      clique.current = undefined;
+      setEstado({ ...p.estado, personagens: p.estado.personagens.map(x => ({ ...x })) });
+    }, 1000 / QUADROS_POR_SEGUNDO);
+    return () => clearInterval(id);
+  }, []);
+
+  const comecar = () => {
+    palco.current?.bandeira();
+    if (palco.current) setEstado({ ...palco.current.estado });
+  };
+  const parar = () => {
+    palco.current?.parar();
+    if (palco.current) setEstado({ ...palco.current.estado });
+  };
+
+  /* ── A edição ───────────────────────────────────────────────────────── */
+
+  const personagem = projeto.personagens.find(p => p.id === atual);
+  const outros = projeto.personagens.filter(p => p.id !== atual).map(p => ({ id: p.id, nome: p.nome }));
+  const variaveis = projeto.variaveis.map(v => v.nome);
+
+  const trocarPersonagem = useCallback((p: (x: Personagem) => Personagem) => {
+    aplicar(agora => ({
+      ...agora,
+      personagens: agora.personagens.map(x => (x.id === atual ? p(x) : x)),
+    }));
+  }, [aplicar, atual]);
+
+  /**
+   * Põe um bloco onde o cursor está.
+   *
+   * Tudo é calculado agora, a partir de `projetoRef`, porque o cursor seguinte
+   * depende de onde o bloco caiu — e esperar o React aplicar o estado para
+   * descobrir isso é o defeito que punha o segundo bloco na pilha anterior.
+   */
+  const acrescentar = (tipo: TipoDeBloco) => {
+    const projetoAgora = projetoRef.current;
+    const p = projetoAgora.personagens.find(x => x.id === atual);
+    if (!p) return;
+
+    const novo = blocoNovo(tipo, novoId(), variaveis[0] ?? 'placar', outros[0]?.id ?? 'borda');
+
+    /* Um chapéu sempre abre uma pilha nova: encaixá-lo no meio de outra
+       deixaria dois gatilhos numa pilha só, que o Scratch não permite e que
+       ninguém consegue ler. */
+    if (ehChapeu(novo)) {
+      const pilha = { id: novoId('p'), blocos: [novo] };
+      aplicar(agora => ({
+        ...agora,
+        personagens: agora.personagens.map(x =>
+          (x.id === atual ? { ...x, pilhas: [...x.pilhas, pilha] } : x)),
+      }));
+      setCursor({ pilha: pilha.id, depois: novo.id });
+      return;
+    }
+
+    const c = cursorRef.current;
+    const alvo = c && p.pilhas.some(x => x.id === c.pilha)
+      ? c
+      : { pilha: p.pilhas[p.pilhas.length - 1]?.id ?? '', depois: undefined, dentro: undefined };
+
+    if (!alvo.pilha) {
+      setAviso('Comece por um bloco de Eventos: sem um chapéu, a pilha não roda.');
+      return;
+    }
+
+    trocarPersonagem(x => naPilha(x, alvo.pilha, blocos => {
+      if (alvo.dentro) return inserirDentro(blocos, alvo.dentro, novo);
+      if (alvo.depois && contem(blocos, alvo.depois)) return inserirDepois(blocos, alvo.depois, novo);
+      return [...blocos, novo];
+    }));
+    setCursor({ pilha: alvo.pilha, depois: novo.id });
+  };
+
+  const naPilhaAtual = (pilha: string, op: Parameters<typeof naPilha>[2]) =>
+    trocarPersonagem(p => naPilha(p, pilha, op));
+
+  /* ── A entrega ──────────────────────────────────────────────────────── */
+
+  const entregar = async () => {
+    setSalvando(true);
+    await aoVencer();
+    descartarRascunho(userId, chave);
+    setSalvando(false);
+    setEntregue(true);
+  };
+
+  if (entregue) {
+    return (
+      <div className="card p-8 text-center">
+        <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
+        <h1 className="text-2xl font-bold mb-2">{licao.titulo} — vencido!</h1>
+        <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
+          Seu projeto passou nas {resultados.length} verificações.
+        </p>
+        <button onClick={aoSair} className="btn-primary">Voltar para a vereda</button>
+      </div>
+    );
+  }
+
+  const tarefas = resultados.map(r => ({
+    id: r.id,
+    titulo: r.label,
+    detalhe: r.passed ? undefined : (r.detail || r.hint),
+    passos: PASSOS_DE_BLOCOS[r.id],
+    feita: r.passed,
+  }));
+
+  const acoes = (
+    <div className="flex flex-col gap-2">
+      <button onClick={entregar} disabled={!tudoPassa || salvando}
+        className="btn-primary text-sm w-full justify-center disabled:opacity-50">
+        {salvando ? 'Salvando…' : tudoPassa ? 'Entregar' : `Faltam ${resultados.length - passaram}`}
+      </button>
+      <button onClick={() => { aplicar(() => inicial); setCursor(null); }}
+        className="btn-secondary text-xs w-full justify-center">
+        <RotateCcw className="w-3 h-3 mr-1" /> Recomeçar do zero
+      </button>
+    </div>
+  );
+
+  return (
+    <LaboratorioEmTelaCheia
+      trilha={vereda.code}
+      titulo={licao.titulo}
+      programa="editor-de-blocos"
+      tarefas={tarefas}
+      aviso={aviso}
+      acoes={acoes}
+      rodape={0}
+    >
+      <style>{CSS_BLOCOS}</style>
+
+      <div className="bl">
+        <BarraDoPalco rodando={estado.rodando} aoRodar={comecar} aoParar={parar}
+          nome={`${licao.projeto} — ${personagem?.nome ?? ''}`} />
+
+        <div className="bl-corpo">
+          <Paleta categoria={categoria} aoTrocarCategoria={setCategoria}
+            aoEscolher={acrescentar}
+            variavel={variaveis[0] ?? 'placar'} outro={outros[0]?.id ?? 'borda'} />
+
+          <div className="bl-scripts">
+            {!personagem || personagem.pilhas.length === 0 ? (
+              <p className="bl-vazio-scripts">
+                Nada aqui ainda. Comece por <b>Eventos</b>, na paleta: um bloco de
+                chapéu diz <i>quando</i> o programa roda, e sem ele nada acontece
+                ao clicar em Começar.
+              </p>
+            ) : personagem.pilhas.map(pilha => (
+              <div key={pilha.id} className="bl-pilha">
+                {pilha.blocos.map((b, i) => (
+                  <BlocoNaPilha key={b.id} bloco={b} cursor={cursor} pilha={pilha.id}
+                    primeiro={i === 0} ultimo={i === pilha.blocos.length - 1}
+                    variaveis={variaveis} personagens={outros}
+                    aoSelecionar={setCursor}
+                    aoMudar={(id, m) => naPilhaAtual(pilha.id, bs => alterar(bs, id, m))}
+                    aoRemover={id => {
+                      naPilhaAtual(pilha.id, bs => remover(bs, id));
+                      setCursor(null);
+                    }}
+                    aoMover={(id, d) => naPilhaAtual(pilha.id, bs => mover(bs, id, d))} />
+                ))}
+              </div>
+            ))}
+          </div>
+
+          <div className="bl-lado">
+            <PalcoDeBlocos estado={estado} aoClicarNoAtor={id => { clique.current = id; }} />
+            <ListaDePersonagens personagens={projeto.personagens} atual={atual}
+              aoEscolher={id => { setAtual(id); setCursor(null); }} />
+          </div>
+        </div>
+      </div>
+    </LaboratorioEmTelaCheia>
+  );
+}
