@@ -1,4 +1,5 @@
-import { Flag, Square, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
+import { Flag, Square, Trash2, ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import {
   CATEGORIAS, PALCO, TECLAS, corDoBloco, ehChapeu, ehContainer, textoDoBloco,
   type Bloco, type Categoria, type Condicao, type Personagem, type Tecla, type TipoDeBloco,
@@ -44,6 +45,11 @@ export const CSS_BLOCOS = `
 
 .bl-paleta { width: 214px; flex: none; background: #F9F9F9; border-right: 1px solid #E6E6E6; overflow-y: auto; padding: 10px 8px; }
 .bl-paleta h4 { font-size: 12px; color: #575E75; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .04em; }
+.bl-nova-var { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+.bl-nova-var input { border: 1px solid #D9D9D9; border-radius: 4px; padding: 5px 7px; font-size: 12px; color: #1E1E1E; background: #fff; }
+.bl-nova-var button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 0; border-radius: 4px; background: #FF8C1A; color: #fff; font-size: 12px; font-weight: 700; padding: 6px 8px; cursor: pointer; }
+.bl-nova-var button:disabled { opacity: .45; cursor: default; }
+.bl-aviso-var { font-size: 11px; color: #C1442E; margin: 0; }
 
 .bl-scripts { flex: 1; min-width: 0; overflow: auto; padding: 14px; background:
   radial-gradient(circle, #D9E3F2 1px, transparent 1px) 0 0 / 18px 18px, #F2F6FB; }
@@ -92,14 +98,51 @@ export const CSS_BLOCOS = `
    A paleta
    ──────────────────────────────────────────────────────────────────────── */
 
-export function Paleta({ categoria, aoEscolher, aoTrocarCategoria, variavel, outro }: {
+/*
+  A variável se cria aqui, e não vem pronta da lição.
+
+  O requisito 4.4 pede "criar uma variável **e** alterar seu valor durante a
+  execução". Enquanto a lição entregava a variável montada, metade do requisito
+  chegava de graça — a mesma família do laboratório que abre resolvido, em
+  miniatura: a verificação olhava se existia variável, e existia porque nós a
+  tínhamos posto lá.
+
+  Com a lista vazia os blocos de variável não aparecem. Mostrá-los antes daria
+  um "mude placar em 1" apontando para um placar que não existe, e o erro só
+  apareceria ao rodar.
+*/
+function NovaVariavel({ aoCriar, existentes }: {
+  aoCriar: (nome: string) => void;
+  existentes: string[];
+}) {
+  const [nome, setNome] = useState('');
+  const limpo = nome.trim();
+  const repetida = existentes.includes(limpo);
+  const criar = () => { if (limpo && !repetida) { aoCriar(limpo); setNome(''); } };
+
+  return (
+    <div className="bl-nova-var">
+      <input value={nome} aria-label="nome da variável" placeholder="placar"
+        onChange={e => setNome(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); criar(); } }} />
+      <button onClick={criar} disabled={!limpo || repetida}>
+        <Plus className="w-3.5 h-3.5" /> Nova variável
+      </button>
+      {repetida && <p className="bl-aviso-var">Já existe uma variável com esse nome.</p>}
+    </div>
+  );
+}
+
+export function Paleta({ categoria, aoEscolher, aoTrocarCategoria, variaveis, outro, aoCriarVariavel }: {
   categoria: Categoria;
   aoEscolher: (tipo: TipoDeBloco) => void;
   aoTrocarCategoria: (c: Categoria) => void;
-  variavel: string;
+  variaveis: string[];
   outro: string;
+  aoCriarVariavel: (nome: string) => void;
 }) {
   const nome = CATEGORIAS.find(c => c.id === categoria)!.nome;
+  const semVariavel = categoria === 'variaveis' && variaveis.length === 0;
   return (
     <>
       <div className="bl-categorias">
@@ -114,14 +157,25 @@ export function Paleta({ categoria, aoEscolher, aoTrocarCategoria, variavel, out
 
       <div className="bl-paleta">
         <h4>{nome}</h4>
-        {MODELOS[categoria].length === 0 ? (
+
+        {categoria === 'variaveis' && (
+          <NovaVariavel aoCriar={aoCriarVariavel} existentes={variaveis} />
+        )}
+
+        {semVariavel ? (
+          <p style={{ fontSize: 12, color: '#7B8497', lineHeight: 1.5 }}>
+            Os blocos de variável aparecem aqui depois que você criar a primeira.
+            Dê a ela um nome que diga o que ela guarda — <b>placar</b>, <b>vidas</b>,
+            <b> tempo</b>.
+          </p>
+        ) : MODELOS[categoria].length === 0 ? (
           /* Sensores não tem bloco solto: o "tocando" mora dentro do `se`, e
              separá-lo daria um bloco que não faz nada sozinho. */
           <p style={{ fontSize: 12, color: '#7B8497', lineHeight: 1.5 }}>
             As perguntas dos sensores ficam dentro do bloco <b>se</b>, em Controle.
           </p>
         ) : MODELOS[categoria].map(tipo => {
-          const exemplo = blocoNovo(tipo, `paleta-${tipo}`, variavel, outro);
+          const exemplo = blocoNovo(tipo, `paleta-${tipo}`, variaveis[0] ?? 'placar', outro);
           return (
             <div key={tipo} className={`bl-bloco${ehChapeu(exemplo) ? ' chapeu' : ''}`}
               style={{ background: corDoBloco(tipo) }}
@@ -345,7 +399,9 @@ function SeletorDeCondicao({ condicao, variaveis, personagens, aoMudar }: {
         }}>
         <option value="tocando">tocando em</option>
         <option value="teclaPressionada">tecla pressionada</option>
-        <option value="variavelMaiorQue">variável maior que</option>
+        {/* Sem variável criada não há o que comparar, e oferecer a opção
+            produziria uma pergunta sobre um nome que não existe. */}
+        {variaveis.length > 0 && <option value="variavelMaiorQue">variável maior que</option>}
       </select>
 
       {condicao.tipo === 'tocando' && (

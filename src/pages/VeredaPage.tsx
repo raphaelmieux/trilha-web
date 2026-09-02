@@ -13,6 +13,7 @@ import TeoriaDaVereda from '../components/TeoriaDaVereda';
 import TokenDaVereda from '../components/TokenDaVereda';
 import LaboratorioDeVereda from '../components/LaboratorioDeVereda';
 import LaboratorioDeBlocos from '../components/LaboratorioDeBlocos';
+import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import ProgressBar from '../components/ui/ProgressBar';
 import MarcaDaLicao from '../components/ui/MarcaDaLicao';
 import Emblema from '../components/ui/Emblema';
@@ -94,6 +95,28 @@ export default function VeredaPage() {
 
   if (licaoAberta?.tipo === 'teoria' && profile?.id) {
     return <TeoriaDaVereda vereda={vereda} licao={licaoAberta} aoVencer={vencer} aoSair={fechar} />;
+  }
+
+  /*
+    A redação é o laboratório de redação guiada da plataforma, o mesmo da AP034
+    e da AP041 — e não uma tela nova. `aoVencer` é o que muda: a vereda grava um
+    evento de percurso, e não requisito nem matrícula, que ela não tem.
+
+    `roteiro` é a chave em ROTEIROS, e vai no lugar do código da trilha porque é
+    por ela que o laboratório acha as perguntas — e é a mesma chave que o
+    servidor usa para achar os fatos.
+  */
+  if (licaoAberta?.tipo === 'redacao' && profile?.id) {
+    return (
+      <RedacaoGuiadaLab
+        specialtyCode={licaoAberta.roteiro}
+        lessonCode={`${vereda.id}:${licaoAberta.id}`}
+        lessonTitle={licaoAberta.titulo}
+        requirementCodes={[]}
+        userId={profile.id}
+        aoVencer={async () => { await vencer(); await fechar(); }}
+      />
+    );
   }
 
   if (licaoAberta?.tipo === 'laboratorio' && profile?.id) {

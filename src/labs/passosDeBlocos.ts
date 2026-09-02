@@ -32,8 +32,8 @@ export const PASSOS_DE_BLOCOS: Record<string, string[]> = {
     'Toque no espaço vazio de dentro e escolha o que deve acontecer quando a resposta for sim.',
   ],
   variavel: [
-    'A variável do projeto já existe — o nome dela aparece no canto do palco.',
-    'Em Variáveis, toque em "mude ... em ..." para somar ao valor, ou em "defina ... para ..." para trocá-lo.',
+    'Abra Variáveis, na paleta, escreva um nome e toque em "Nova variável". Dê a ela um nome que diga o que guarda: placar, vidas, tempo.',
+    'Os blocos de variável só aparecem depois que existe uma. Toque em "mude ... em ..." para somar ao valor, ou em "defina ... para ..." para trocá-lo.',
     'Ponha o bloco dentro de uma pilha que comece por um chapéu; solto, ele nunca executa.',
     'Criar a variável não basta: o requisito pede que o valor mude enquanto o programa roda.',
   ],

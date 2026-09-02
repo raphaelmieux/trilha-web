@@ -44,7 +44,7 @@ type EstadoIA = 'ok' | 'indisponivel';
 /** O que o rascunho local guarda: o laboratório inteiro, menos o que veio do servidor. */
 interface RascunhoRedacao { respostas: RespostasRedacao; textoFinal: string }
 
-export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
+export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId, aoVencer }: Props) {
   const roteiro = ROTEIROS[specialtyCode];
 
   const [respostas, setRespostas] = useState<RespostasRedacao>({});
@@ -230,25 +230,32 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
     setErro('');
     if (!await gravar('submitted', { respostas, corpo: textoFinal })) return;
 
-    const specId = await getSpecialtyId(specialtyCode);
-    if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
-    await registrarConclusaoDeLicao(userId, lessonCode);
+    /* A vereda grava o próprio evento e não tem requisito, matrícula nem linha
+       em `lessons`. Tentar escrever nessas tabelas com o código dela não daria
+       erro — daria nada, que é pior. */
+    if (aoVencer) {
+      await aoVencer();
+    } else {
+      const specId = await getSpecialtyId(specialtyCode);
+      if (specId) { await ensureEnrollment(userId, specId); await updateEnrollmentActivity(userId, specId); }
+      await registrarConclusaoDeLicao(userId, lessonCode);
 
-    let gravados = 0;
-    for (const reqCode of requirementCodes) {
-      const reqId = await getRequirementId(reqCode);
-      if (!reqId) continue;
-      await upsertRequirementProgress(userId, reqId, {
-        status: 'completed',
-        mastery_score: Math.round((prontas / etapas.length) * 100),
-        checkpoint_passed: true, attempts: 1,
-        correct_count: prontas, total_questions: etapas.length,
-      });
-      gravados++;
-    }
-    if (gravados < requirementCodes.length) {
-      setErro('O texto foi guardado, mas o progresso não pôde ser registrado agora. Avise a liderança do clube.');
-      return;
+      let gravados = 0;
+      for (const reqCode of requirementCodes) {
+        const reqId = await getRequirementId(reqCode);
+        if (!reqId) continue;
+        await upsertRequirementProgress(userId, reqId, {
+          status: 'completed',
+          mastery_score: Math.round((prontas / etapas.length) * 100),
+          checkpoint_passed: true, attempts: 1,
+          correct_count: prontas, total_questions: etapas.length,
+        });
+        gravados++;
+      }
+      if (gravados < requirementCodes.length) {
+        setErro('O texto foi guardado, mas o progresso não pôde ser registrado agora. Avise a liderança do clube.');
+        return;
+      }
     }
     setEnviado(true);
     /* Enviado: o servidor tem a versão boa, e o rascunho local só atrapalharia. */

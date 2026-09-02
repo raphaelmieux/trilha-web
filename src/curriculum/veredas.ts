@@ -1,5 +1,6 @@
 import { MODULOS_DE_HTML } from './sintaxeHtml';
 import { MODULOS_DE_CSS } from './folhaDeEstilo';
+import { MODULOS_DE_BLOCOS } from './logicaComBlocos';
 import type { Question } from '../types';
 
 /*
@@ -114,6 +115,27 @@ export type LicaoDeVereda =
      * escrever seletor que acerte alguém.
      */
     marcacao?: string;
+  }
+  | {
+    /*
+      A redação guiada, e por que ela é um terceiro tipo.
+
+      O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
+      se lê, se produz — e não é laboratório: não há validador, não há modelo
+      que possa abrir resolvido, e não há verificação com passo a passo. Enfiá-la
+      em `laboratorio` com `verificacoes: []` faria duas travas passarem sem
+      conferir nada, que é a forma que o defeito silencioso costuma tomar aqui.
+
+      Para o progresso ela conta como lição de fazer: grava `vereda_laboratorio`,
+      porque é trabalho e não leitura, e é assim que `registrarLicaoVencida` já
+      trata tudo o que não é teoria.
+    */
+    id: string;
+    tipo: 'redacao';
+    titulo: string;
+    resumo: string;
+    /** A chave do roteiro em `ROTEIROS`, no cliente e no servidor. */
+    roteiro: string;
   };
 
 export interface ModuloDeVereda {
@@ -179,8 +201,20 @@ const anunciada = (
 
 export const VEREDAS: Vereda[] = [
   /* ── Base ── */
-  anunciada('CC001', 'Lógica com Scratch', 'Base',
-    'Montar um programa arrastando blocos: sequência, repetição e condição, sem digitar uma linha.'),
+  {
+    id: 'cc001',
+    code: 'CC001',
+    name: 'Lógica com Scratch',
+    familia: 'Base',
+    description: 'Montar um programa arrastando blocos: sequência, repetição e condição, sem digitar uma linha.',
+    /*
+      Sem `origem`: esta é a primeira vereda de todas, e não sai de trilha
+      nenhuma. As outras nascem de uma trilha completa e se soltam dela — a
+      sintaxe do HTML saiu da AP035 —, e esta vem antes de qualquer uma.
+    */
+    mostraResultado: true,
+    modulos: MODULOS_DE_BLOCOS,
+  },
   anunciada('CC002', 'Python', 'Base',
     'A primeira linguagem escrita: variável, condição, laço e função, resolvendo problemas pequenos.'),
   anunciada('CC003', 'Terminal e Git', 'Base',
