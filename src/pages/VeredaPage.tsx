@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, CircleAlert, Play, Lock, HardHat } from 'lucide-react';
+import { useFecharAoNavegar } from '../hooks/useFecharAoNavegar';
 import { useAuth } from '../context/AuthContext';
 import { NOME_DO_TIPO, nomeCompleto } from '../types';
 import {
@@ -41,6 +42,18 @@ export default function VeredaPage() {
   const { percursoDe, recarregar, carregando } = useVeredas(profile?.id);
   const { getByCurriculum, refresh: recarregarCertificados } = useCertifications(profile?.id);
   const [aberta, setAberta] = useState<string | null>(null);
+
+  const fechar = async () => { setAberta(null); await recarregar(); };
+
+  /*
+    Sair da lição pelo menu.
+
+    "Vereda Atual" aponta para esta mesma página — a lição da vereda não tem
+    endereço próprio, abre aqui dentro por estado. Sem isto o clique não fazia
+    nada: o React Router chegava ao endereço em que já estava e não havia rota a
+    trocar. Ver `useFecharAoNavegar`.
+  */
+  useFecharAoNavegar(() => { if (aberta !== null) void fechar(); });
 
   if (!vereda) {
     return (
@@ -86,8 +99,6 @@ export default function VeredaPage() {
   const percentual = licoes.length ? Math.round((vencidas / licoes.length) * 100) : 0;
 
   const licaoAberta = licoes.find(l => l.id === aberta);
-
-  const fechar = async () => { setAberta(null); await recarregar(); };
 
   /* Uma gravação só para os dois tipos: a lição diz qual evento é dela. */
   const vencer = async () => {
