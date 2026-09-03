@@ -37,8 +37,8 @@
  */
 
 import type { ModuloDeVereda, TopicoDeVereda } from './veredas';
-import type { Projeto } from '../labs/blocos';
 import { QUESTOES_DE_BLOCOS } from './questoesDeBlocos';
+import { PROJETO_INICIAL } from '../labs/scratch/projetoInicial';
 
 /*
   O palco de onde todo laboratório parte: dois personagens e nenhuma pilha.
@@ -57,29 +57,13 @@ import { QUESTOES_DE_BLOCOS } from './questoesDeBlocos';
   invisível de dentro porque o painel mostra tarefa concluída — que é
   exatamente o que se espera de um laboratório funcionando.
 */
-const palco = (): Projeto => ({
-  variaveis: [],
-  personagens: [
-    { id: 'gato', nome: 'Gato', trajes: ['🐱', '😺'], x: -120, y: 0, pilhas: [] },
-    { id: 'maca', nome: 'Maçã', trajes: ['🍎'], x: 120, y: 0, pilhas: [] },
-  ],
-});
-
-/*
-  Os dois na mesma altura, e não em cantos opostos.
-
-  Estiveram em y diferentes, e o jogo montado certo nunca marcava ponto: a seta
-  só muda x, e "tocando" pede as duas distâncias pequenas. O sintoma era o pior
-  possível — programa correto, verificação verde, e o placar parado em zero.
-*/
-
 const laboratorio = (
   id: string, titulo: string, resumo: string, verificacoes: string[],
 ) => ({
   id, tipo: 'laboratorio' as const, titulo, resumo,
-  linguagem: 'blocos' as const,
-  modelo: '', arquivo: 'jogo', projeto: 'jogo-do-clube',
-  projetoDeBlocos: palco(),
+  linguagem: 'scratch' as const,
+  modelo: '', arquivo: 'jogo.sb3', projeto: 'jogo-do-clube',
+  projetoDeScratch: PROJETO_INICIAL,
   verificacoes,
 });
 

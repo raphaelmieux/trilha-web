@@ -1,0 +1,358 @@
+{
+ "targets": [
+  {
+   "isStage": true,
+   "name": "Stage",
+   "variables": {},
+   "lists": {},
+   "broadcasts": {},
+   "blocks": {},
+   "comments": {},
+   "currentCostume": 0,
+   "costumes": [
+    {
+     "name": "cenário",
+     "bitmapResolution": 1,
+     "dataFormat": "svg",
+     "assetId": "8f3a3d76a661ed41bd9617333214bbb5",
+     "md5ext": "8f3a3d76a661ed41bd9617333214bbb5.svg",
+     "rotationCenterX": 240,
+     "rotationCenterY": 180
+    }
+   ],
+   "sounds": [],
+   "volume": 100,
+   "layerOrder": 0,
+   "tempo": 60,
+   "videoTransparency": 50,
+   "videoState": "off",
+   "textToSpeechLanguage": null
+  },
+  {
+   "isStage": false,
+   "name": "Gato",
+   "variables": {
+    "null": [
+     "placar",
+     0
+    ],
+    "Q!{vE`PK^tl%togB%F7=": [
+     "placar",
+     0
+    ]
+   },
+   "lists": {},
+   "broadcasts": {},
+   "blocks": {
+    "flag": {
+     "opcode": "event_whenflagclicked",
+     "next": "zera",
+     "parent": null,
+     "inputs": {},
+     "fields": {},
+     "shadow": false,
+     "topLevel": true,
+     "x": 40,
+     "y": 40
+    },
+    "zera": {
+     "opcode": "data_setvariableto",
+     "next": "sempre",
+     "parent": "flag",
+     "inputs": {
+      "VALUE": [
+       1,
+       [
+        10,
+        "0"
+       ]
+      ]
+     },
+     "fields": {
+      "VARIABLE": [
+       "placar",
+       "Q!{vE`PK^tl%togB%F7="
+      ]
+     },
+     "shadow": false,
+     "topLevel": false
+    },
+    "sempre": {
+     "opcode": "control_forever",
+     "next": null,
+     "parent": "zera",
+     "inputs": {
+      "SUBSTACK": [
+       2,
+       "se1"
+      ]
+     },
+     "fields": {},
+     "shadow": false,
+     "topLevel": false
+    },
+    "se1": {
+     "opcode": "control_if",
+     "next": "se2",
+     "parent": "sempre",
+     "inputs": {
+      "CONDITION": [
+       2,
+       "toca"
+      ],
+      "SUBSTACK": [
+       2,
+       "ponto"
+      ]
+     },
+     "fields": {},
+     "shadow": false,
+     "topLevel": false
+    },
+    "toca": {
+     "opcode": "sensing_touchingobject",
+     "next": null,
+     "parent": "se1",
+     "inputs": {
+      "TOUCHINGOBJECTMENU": [
+       1,
+       "menu"
+      ]
+     },
+     "fields": {},
+     "shadow": false,
+     "topLevel": false
+    },
+    "menu": {
+     "opcode": "sensing_touchingobjectmenu",
+     "next": null,
+     "parent": "toca",
+     "inputs": {},
+     "fields": {
+      "TOUCHINGOBJECTMENU": [
+       "Maca"
+      ]
+     },
+     "shadow": true,
+     "topLevel": false
+    },
+    "ponto": {
+     "opcode": "data_changevariableby",
+     "next": "traje",
+     "parent": "se1",
+     "inputs": {
+      "VALUE": [
+       1,
+       [
+        4,
+        "1"
+       ]
+      ]
+     },
+     "fields": {
+      "VARIABLE": [
+       "placar",
+       "Q!{vE`PK^tl%togB%F7="
+      ]
+     },
+     "shadow": false,
+     "topLevel": false
+    },
+    "traje": {
+     "opcode": "looks_nextcostume",
+     "next": null,
+     "parent": "ponto",
+     "inputs": {},
+     "fields": {},
+     "shadow": false,
+     "topLevel": false
+    },
+    "se2": {
+     "opcode": "control_if",
+     "next": null,
+     "parent": "se1",
+     "inputs": {
+      "CONDITION": [
+       2,
+       "maior"
+      ],
+      "SUBSTACK": [
+       2,
+       "parar"
+      ]
+     },
+     "fields": {},
+     "shadow": false,
+     "topLevel": false
+    },
+    "maior": {
+     "opcode": "operator_gt",
+     "next": null,
+     "parent": "se2",
+     "inputs": {
+      "OPERAND1": [
+       2,
+       [
+        12,
+        "placar",
+        "Q!{vE`PK^tl%togB%F7="
+       ]
+      ],
+      "OPERAND2": [
+       1,
+       [
+        10,
+        "5"
+       ]
+      ]
+     },
+     "fields": {},
+     "shadow": false,
+     "topLevel": false
+    },
+    "parar": {
+     "opcode": "control_stop",
+     "next": null,
+     "parent": "se2",
+     "inputs": {},
+     "fields": {
+      "STOP_OPTION": [
+       "all"
+      ]
+     },
+     "shadow": false,
+     "topLevel": false
+    },
+    "tecla": {
+     "opcode": "event_whenkeypressed",
+     "next": "anda",
+     "parent": null,
+     "inputs": {},
+     "fields": {
+      "KEY_OPTION": [
+       "right arrow"
+      ]
+     },
+     "shadow": false,
+     "topLevel": true,
+     "x": 40,
+     "y": 320
+    },
+    "anda": {
+     "opcode": "motion_changexby",
+     "next": null,
+     "parent": "tecla",
+     "inputs": {
+      "DX": [
+       1,
+       [
+        4,
+        "10"
+       ]
+      ]
+     },
+     "fields": {},
+     "shadow": false,
+     "topLevel": false
+    }
+   },
+   "comments": {},
+   "currentCostume": 0,
+   "costumes": [
+    {
+     "name": "Gato",
+     "bitmapResolution": 1,
+     "dataFormat": "svg",
+     "assetId": "b479b8371696ef4c15810166151bc8ce",
+     "md5ext": "b479b8371696ef4c15810166151bc8ce.svg",
+     "rotationCenterX": 48,
+     "rotationCenterY": 50
+    }
+   ],
+   "sounds": [],
+   "volume": 100,
+   "layerOrder": 1,
+   "visible": true,
+   "x": -120,
+   "y": 0,
+   "size": 100,
+   "direction": 90,
+   "draggable": false,
+   "rotationStyle": "all around"
+  },
+  {
+   "isStage": false,
+   "name": "Maca",
+   "variables": {},
+   "lists": {},
+   "broadcasts": {},
+   "blocks": {
+    "flag2": {
+     "opcode": "event_whenflagclicked",
+     "next": "diz",
+     "parent": null,
+     "inputs": {},
+     "fields": {},
+     "shadow": false,
+     "topLevel": true,
+     "x": 40,
+     "y": 40
+    },
+    "diz": {
+     "opcode": "looks_sayforsecs",
+     "next": null,
+     "parent": "flag2",
+     "inputs": {
+      "MESSAGE": [
+       1,
+       [
+        10,
+        "me pegue!"
+       ]
+      ],
+      "SECS": [
+       1,
+       [
+        4,
+        "2"
+       ]
+      ]
+     },
+     "fields": {},
+     "shadow": false,
+     "topLevel": false
+    }
+   },
+   "comments": {},
+   "currentCostume": 0,
+   "costumes": [
+    {
+     "name": "Maca",
+     "bitmapResolution": 1,
+     "dataFormat": "svg",
+     "assetId": "892d5c591b3caf519d51c872ced2f463",
+     "md5ext": "892d5c591b3caf519d51c872ced2f463.svg",
+     "rotationCenterX": 40,
+     "rotationCenterY": 46
+    }
+   ],
+   "sounds": [],
+   "volume": 100,
+   "layerOrder": 2,
+   "visible": true,
+   "x": 120,
+   "y": 0,
+   "size": 100,
+   "direction": 90,
+   "draggable": false,
+   "rotationStyle": "all around"
+  }
+ ],
+ "monitors": [],
+ "extensions": [],
+ "meta": {
+  "semver": "3.0.0",
+  "vm": "5.0.300",
+  "agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+ }
+}

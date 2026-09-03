@@ -13,6 +13,7 @@ import TeoriaDaVereda from '../components/TeoriaDaVereda';
 import TokenDaVereda from '../components/TokenDaVereda';
 import LaboratorioDeVereda from '../components/LaboratorioDeVereda';
 import LaboratorioDeBlocos from '../components/LaboratorioDeBlocos';
+import LaboratorioDeScratch from '../components/LaboratorioDeScratch';
 import LaboratorioDePython from '../components/LaboratorioDePython';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -130,6 +131,26 @@ export default function VeredaPage() {
       código pediria um `<textarea>` que ninguém digita, e a lateral de
       arquivos de um projeto sem arquivo.
     */
+    /*
+      Scratch é o Scratch de verdade, embutido.
+
+      Foi a decisão que trocou a licença da plataforma inteira para AGPL: o
+      editor do MIT é AGPL, e embutir código AGPL contamina o que o embute. A
+      alternativa era um `<iframe>` para o site deles — e ali o editor é caixa
+      fechada, sem `toJSON()`, o que faria a lição cair em "clicou em salvar,
+      então passou". O laboratório existe para conferir o que foi montado.
+
+      `LaboratorioDeBlocos` continua no repositório como reserva. Ele não é
+      código morto por descuido: é o que volta se o Scratch embutido se mostrar
+      pesado demais para o computador do clube, e a lição não precisa mudar
+      para trocar de um para o outro — os dois cobram os mesmos dez ids.
+    */
+    if (licaoAberta.linguagem === 'scratch') {
+      return (
+        <LaboratorioDeScratch vereda={vereda} licao={licaoAberta} userId={profile.id}
+          aoVencer={vencer} aoSair={fechar} />
+      );
+    }
     if (licaoAberta.linguagem === 'blocos') {
       return (
         <LaboratorioDeBlocos vereda={vereda} licao={licaoAberta} userId={profile.id}

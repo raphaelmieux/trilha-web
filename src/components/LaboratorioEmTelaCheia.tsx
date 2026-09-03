@@ -138,6 +138,22 @@ function marcarAvisado(programa: string): void {
   try { localStorage.setItem(CHAVE_AVISO + programa, '1'); } catch { /* sem memória, avisa de novo */ }
 }
 
+/*
+  A camada da plataforma, acima do programa imitado.
+
+  Enquanto o miolo era só componente nosso, `z-10` bastava. O Scratch de verdade
+  trouxe a escala de empilhamento dele junto: a paleta de blocos é 40, a barra
+  de menus 491, e a cápsula da plataforma sumiu **atrás** da paleta — desenhada,
+  ilegível e não clicável. O que se perdia ali era o caminho de volta, que é a
+  razão de a moldura existir: sem ele, sair da lição vira botão voltar do
+  navegador.
+
+  600 fica acima de tudo que o Scratch pinta como interface, e abaixo do menu de
+  contexto dele (10000) e das dicas (999) — cobrir o menu que a pessoa acabou de
+  abrir seria trocar um defeito por outro.
+*/
+const CAMADA_DA_PLATAFORMA = 600;
+
 export default function LaboratorioEmTelaCheia({
   trilha, voltarPara, titulo, programa, tarefas, aviso, children, acoes, rodape = 0,
 }: Props) {
@@ -285,7 +301,7 @@ export default function LaboratorioEmTelaCheia({
       {!painelAberto && (
         <button onClick={() => setPainelAberto(true)}
           className="hidden lg:flex items-center gap-2 absolute right-4 top-1/2 -translate-y-1/2 px-3 py-2 rounded-l-lg"
-          style={{ background: '#FFFFFF', border: '1px solid #E1DFDD', borderRight: 'none', color: '#2B579A', fontSize: 12 }}>
+          style={{ zIndex: CAMADA_DA_PLATAFORMA, background: '#FFFFFF', border: '1px solid #E1DFDD', borderRight: 'none', color: '#2B579A', fontSize: 12 }}>
           <ListChecks className="w-4 h-4" /> {feitas}/{tarefas.length}
         </button>
       )}
@@ -294,8 +310,9 @@ export default function LaboratorioEmTelaCheia({
       {/* Acima da barra de status, e não em cima dela: a régua de baixo do
           programa continua legível, que é a regra desta moldura — o que a
           pessoa precisa reconhecer depois não se cobre. */}
-      <div className="hidden lg:flex absolute left-3 z-10 items-center gap-2.5 rounded-full pl-2 pr-3.5 py-1.5"
+      <div className="hidden lg:flex absolute left-3 items-center gap-2.5 rounded-full pl-2 pr-3.5 py-1.5"
         style={{
+          zIndex: CAMADA_DA_PLATAFORMA,
           bottom: 36 + rodape,
           background: 'rgba(10, 11, 16, 0.74)',
           backdropFilter: 'blur(14px) saturate(140%)',
@@ -317,8 +334,9 @@ export default function LaboratorioEmTelaCheia({
       </div>
 
       {/* B · a bolha do celular */}
-      <div className="lg:hidden absolute right-3 z-10 rounded-2xl"
+      <div className="lg:hidden absolute right-3 rounded-2xl"
         style={{
+          zIndex: CAMADA_DA_PLATAFORMA,
           bottom: 36 + rodape,
           width: bolhaAberta ? 'min(320px, calc(100vw - 24px))' : 'auto',
           background: 'rgba(10, 11, 16, 0.78)',
@@ -384,7 +402,8 @@ export default function LaboratorioEmTelaCheia({
         em cima delas esconderia justamente a matéria.
       */}
       {avisoDeTela && (
-        <div className="md:hidden absolute inset-x-0 bottom-0 z-20 p-3">
+        <div className="md:hidden absolute inset-x-0 bottom-0 p-3"
+          style={{ zIndex: CAMADA_DA_PLATAFORMA + 1 }}>
           <div className="flex items-start gap-3 rounded-2xl p-3"
             style={{
               background: 'rgba(10, 11, 16, 0.94)',
