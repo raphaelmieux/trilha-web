@@ -47,6 +47,26 @@ export interface TopicoDeVereda {
   explicacao: string[];
   /** O exemplo. Roda de verdade no quadro do resultado, quando a vereda mostra um. */
   exemplo: string;
+  /**
+   * O que o exemplo é, e portanto como ele se desenha.
+   *
+   * Ausente, `'html'` — como a vereda nasceu. Não se adivinha pelo conteúdo: o
+   * que erraria são justamente os casos mistos, um exemplo de CSS que mostra o
+   * `<link>` do HTML, um de blocos que compara texto e blocos na mesma caixa.
+   * Quem escreveu a lição sabe o que está mostrando.
+   *
+   * `'blocos'` desenha a pilha do Scratch, com a cor da categoria; `'texto'` é
+   * um algoritmo ou uma tabela, e não tem resultado nenhum a mostrar.
+   */
+  exemploComo?: 'html' | 'css' | 'blocos' | 'texto';
+  /**
+   * Só para `'css'`: a marcação a que a folha se aplica.
+   *
+   * Sem ela não há resultado — uma regra de CSS sozinha não pinta nada, e era
+   * essa a razão de o quadro do navegador mostrar a regra escrita em vez do
+   * efeito dela.
+   */
+  exemploMarcacao?: string;
   /** O engano que este tópico costuma produzir. Aparece em destaque. */
   atencao?: string;
   /** As marcas que o tópico cobre — é por aqui que se procura. */

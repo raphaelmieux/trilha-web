@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { BookOpen, Search, X, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { topicosDaVereda, type Vereda, type TopicoDeVereda } from '../curriculum/veredas';
-import { realcarLinhas } from '../labs/realce';
+import { ExemploDaTeoria } from './ui/ExemploDaTeoria';
 
 /*
  * O leitor de vereda.
@@ -113,33 +113,6 @@ export const CSS_REFERENCIA = `
   }
 `;
 
-/** O exemplo, com o mesmo realce do editor. */
-function Codigo({ html }: { html: string }) {
-  const linhas = realcarLinhas(html);
-  return (
-    <pre className="ref-codigo">
-      {linhas.map((l, i) => (
-        <div key={i} dangerouslySetInnerHTML={{ __html: l || '&nbsp;' }} />
-      ))}
-    </pre>
-  );
-}
-
-/** O exemplo rodando. Sem allow-scripts: aparece, e não alcança nada. */
-function Resultado({ html, titulo }: { html: string; titulo: string }) {
-  const pagina = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-    body { font: 15px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif; color: #201F1E;
-      margin: 12px; background: #FFFFFF; }
-    table { border-collapse: collapse; }
-    th, td { border: 1px solid #B9B9B9; padding: 4px 9px; text-align: left; }
-    caption { text-align: left; padding-bottom: 5px; font-weight: 600; }
-    img { max-width: 130px; border-radius: 4px; background: #EDEDED; }
-    nav a { margin-right: 10px; }
-    input, button { font: inherit; padding: 3px 7px; }
-  </style></head><body>${html}</body></html>`;
-  return <iframe srcDoc={pagina} sandbox="" title={`Resultado: ${titulo}`} />;
-}
-
 export default function LeitorDeVereda({ vereda, aoFechar }: {
   vereda: Vereda;
   aoFechar?: () => void;
@@ -237,18 +210,10 @@ export default function LeitorDeVereda({ vereda, aoFechar }: {
             </p>
           )}
 
-          <div className={vereda.mostraResultado ? 'ref-dupla' : ''}>
-            <div className="ref-caixa">
-              <p className="ref-caixa-topo">Você escreve</p>
-              <Codigo html={topico.exemplo} />
-            </div>
-            {vereda.mostraResultado && (
-              <div className="ref-caixa">
-                <p className="ref-caixa-topo">O navegador mostra</p>
-                <Resultado html={topico.exemplo} titulo={topico.titulo} />
-              </div>
-            )}
-          </div>
+          {/* O mesmo desenho da teoria, e pelo mesmo componente: referência que
+              diverge do que a lição mostra é pior do que referência nenhuma, e
+              duas cópias divergem no primeiro ajuste. */}
+          <ExemploDaTeoria topico={topico} mostraResultado={vereda.mostraResultado} />
 
           <div className="ref-pe">
             {anterior && (

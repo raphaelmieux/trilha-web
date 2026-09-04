@@ -93,6 +93,7 @@ const CAPITULOS: { id: string; titulo: string; resumo: string; topicos: TopicoDe
   4. pôr a câmara nova
   5. pôr a roda
   6. apertar os freios`,
+        exemploComo: 'texto',
         atencao: 'Algoritmo não é programa. O algoritmo é o plano; o programa é esse plano escrito numa linguagem que a máquina entende. Um algoritmo pode virar programa em Scratch, em Python ou em nenhum dos dois — e continua sendo um algoritmo.',
         marcas: ['algoritmo', 'sequência', 'al-Khwarizmi'],
       },
@@ -114,6 +115,7 @@ Ordem certa:
   1. começar a chover
   2. abrir o guarda-chuva
   3. sair de casa`,
+        exemploComo: 'texto',
         atencao: 'Um passo pode estar certo e no lugar errado. Quando o programa faz quase o que você quer, olhe a ordem antes de mexer nos blocos: costuma ser ela.',
         marcas: ['ordem', 'sequência'],
       },
@@ -133,6 +135,7 @@ Ordem certa:
 Em blocos, encaixado:
   [mova 100 passos]
   [gire 90 graus]`,
+        exemploComo: 'blocos',
         atencao: 'Blocos não são uma linguagem de brinquedo. Sequência, repetição, condição, variável e evento são exatamente os mesmos em Python, em Java e em C. O que muda é a escrita — e é por isso que esta vereda vem antes das outras.',
         marcas: ['Logo', 'Papert', 'Scratch', 'Resnick'],
       },
@@ -156,6 +159,7 @@ Em blocos, encaixado:
         exemplo: `x: -120  y: 0     à esquerda, na altura do meio
 x: 0     y: 0     bem no centro
 x: 240   y: 180   canto de cima, à direita`,
+        exemploComo: 'texto',
         atencao: 'Vá para x: 0 y: 0 não é "voltar ao começo": é ir para o centro. Se o personagem começou em outro lugar, esse bloco o move para longe de onde ele estava.',
         marcas: ['x', 'y', 'palco'],
       },
@@ -171,6 +175,7 @@ x: 240   y: 180   canto de cima, à direita`,
         exemplo: `[quando a bandeira verde for clicada]
   [vá para x: -120 y: 0]
   [diga "vamos!"]`,
+        exemploComo: 'blocos',
         atencao: 'Pilha sem chapéu não roda — nunca, de jeito nenhum. Ela fica bonita na tela, os blocos estão certos, e ao clicar em Começar não acontece nada. É o primeiro erro de todo mundo, e o mais difícil de enxergar justamente porque não há erro nenhum para ler.',
         marcas: ['chapéu', 'bandeira verde'],
       },
@@ -183,12 +188,18 @@ x: 240   y: 180   canto de cima, à direita`,
           'Mas pilhas diferentes rodam ao mesmo tempo. Se o gato e a maçã têm cada um a sua pilha de bandeira verde, as duas começam juntas: uma não espera a outra terminar.',
           'É o que permite um jogo existir. Se o segundo personagem só se mexesse depois que o primeiro acabasse, não haveria jogo nenhum — haveria um desenho animado.',
         ],
-        exemplo: `Gato:                      Maçã:
-[quando bandeira]          [quando bandeira]
-  [vá para x: -120]          [vá para x: 120]
-  [diga "oi"]                [diga "me pegue"]
+        exemplo: `No Gato:
+[quando a bandeira verde for clicada]
+  [vá para x: -120 y: 0]
+  [diga "oi"]
 
-Os dois falam ao mesmo tempo.`,
+Na Maçã:
+[quando a bandeira verde for clicada]
+  [vá para x: 120 y: 0]
+  [diga "me pegue"]
+
+As duas começam juntas: os dois falam ao mesmo tempo.`,
+        exemploComo: 'blocos',
         atencao: 'Um mesmo personagem pode ter várias pilhas, e todas com o mesmo chapéu. Não há uma pilha "principal": clicar na bandeira verde dispara todas as pilhas de bandeira, de todos os personagens, de uma vez.',
         marcas: ['pilha', 'execução'],
       },
@@ -214,6 +225,7 @@ Os dois falam ao mesmo tempo.`,
 
 [quando a tecla esquerda for pressionada]
   [mova -10 passos]`,
+        exemploComo: 'blocos',
         atencao: 'Mova -10 passos anda para trás. Não existe bloco separado para isso: o sinal negativo é a direção, e é o mesmo raciocínio das coordenadas negativas do palco.',
         marcas: ['evento', 'tecla'],
       },
@@ -229,31 +241,33 @@ Os dois falam ao mesmo tempo.`,
         exemplo: `Executa uma vez e acaba:
 [quando a bandeira verde for clicada]
   [vá para x: -120 y: 0]
-  [defina placar para 0]
+  [mude placar para 0]
 
 Fica de guarda:
 [quando a bandeira verde for clicada]
   [sempre]
     [se tocando em Maçã, então]
-      [mude placar em 1]`,
+      [adicione 1 a placar]`,
+        exemploComo: 'blocos',
         atencao: 'Os dois tipos convivem no mesmo projeto, e quase todo jogo usa os dois. Um não substitui o outro: um arruma as coisas, o outro vigia.',
         marcas: ['orientado a eventos', 'sempre'],
       },
       {
         id: 'aparencia-e-som',
         titulo: 'Responder também é aparecer',
-        resumo: 'Trocar de traje e tocar som, em resposta a um evento.',
+        resumo: 'Trocar de fantasia e tocar som, em resposta a um evento.',
         explicacao: [
-          'Um personagem tem trajes: desenhos diferentes do mesmo personagem. O bloco "próximo traje" passa para o seguinte, e depois do último volta ao primeiro.',
-          'Trocando de traje depressa, dentro de um laço, o personagem parece andar. É assim que a animação funciona, no Scratch e no cinema.',
+          'Um personagem tem fantasias: desenhos diferentes do mesmo personagem. O bloco "próxima fantasia" passa para o seguinte, e depois do último volta ao primeiro.',
+          'Trocando de fantasia depressa, dentro de um laço, o personagem parece andar. É assim que a animação funciona, no Scratch e no cinema.',
           'Som é o mesmo raciocínio: um evento acontece, e o programa responde com algo que se ouve. É o que faz um jogo parecer que reage, em vez de apenas mudar.',
         ],
         exemplo: `[quando a tecla direita for pressionada]
   [mova 10 passos]
-  [próximo traje]
-  [toque um som]`,
-        atencao: 'O requisito pede aparência ou som em resposta a um evento. "Próximo traje" solto numa pilha sem chapéu não responde a evento nenhum: ele nunca chega a acontecer.',
-        marcas: ['traje', 'som'],
+  [próxima fantasia]
+  [toque o som]`,
+        exemploComo: 'blocos',
+        atencao: 'O requisito pede aparência ou som em resposta a um evento. "Próxima fantasia" solto numa pilha sem chapéu não responde a evento nenhum: ele nunca chega a acontecer.',
+        marcas: ['fantasia', 'som'],
       },
     ],
   },
@@ -272,11 +286,16 @@ Fica de guarda:
           'Ele não serve para digitar menos. Serve para que trocar dez por cem seja mudar um número — e não apagar dez blocos e encaixar cem.',
           'É a segunda das três estruturas. Com sequência e repetição já se escreve muita coisa; falta só decidir.',
         ],
-        exemplo: `Sem laço:              Com laço:
-[mova 10 passos]       [repita 4 vezes]
-[mova 10 passos]         [mova 10 passos]
+        exemplo: `Sem laço, quatro blocos iguais:
 [mova 10 passos]
-[mova 10 passos]`,
+[mova 10 passos]
+[mova 10 passos]
+[mova 10 passos]
+
+Com laço, um número:
+[repita 4 vezes]
+  [mova 10 passos]`,
+        exemploComo: 'blocos',
         atencao: 'O laço só repete o que está dentro da boca dele. Bloco encaixado embaixo do laço, e não dentro, roda uma vez só — e essa é a confusão mais comum de todas, porque na tela os dois lugares ficam quase colados.',
         marcas: ['repita', 'laço'],
       },
@@ -289,12 +308,15 @@ Fica de guarda:
           '"Sempre" não para nunca. Ele gira até alguém encerrar o programa: o bloco "pare tudo", a bandeira vermelha, ou sair do laboratório.',
           'Use "sempre" para vigiar: perguntar, a cada instante, se algo aconteceu. É onde o "se" do próximo módulo vai morar.',
         ],
-        exemplo: `[repita 4 vezes]        conta e sai
+        exemplo: `Conta e sai:
+[repita 4 vezes]
   [mova 10 passos]
 
-[sempre]                nunca sai sozinho
+Nunca sai sozinho:
+[sempre]
   [se tocando em Maçã, então]
-    [mude placar em 1]`,
+    [adicione 1 a placar]`,
+        exemploComo: 'blocos',
         atencao: 'Blocos encaixados depois de um "sempre" nunca rodam. O laço não termina, então nada que venha abaixo dele chega a acontecer — e o bloco fica ali, visível e inútil.',
         marcas: ['sempre', 'repita'],
       },
@@ -314,7 +336,8 @@ Fica de guarda:
 Isto é:
 [repita 10 vezes]
   [mova 10 passos]
-  [próximo traje]`,
+  [próxima fantasia]`,
+        exemploComo: 'blocos',
         atencao: 'A mesma armadilha vale para o "se" do módulo seguinte, e para a variável do módulo depois dele. O que se cobra é sempre o que a estrutura faz, e nunca que ela esteja na tela.',
         marcas: ['laço vazio'],
       },
@@ -337,7 +360,8 @@ Isto é:
         ],
         exemplo: `[se tocando em Maçã, então]
   [diga "peguei!"]
-  [toque um som]`,
+  [toque o som]`,
+        exemploComo: 'blocos',
         atencao: 'O "se" pergunta uma vez, no momento em que roda. Ele não fica vigiando por conta própria: para isso ele precisa estar dentro de um laço, e é isso que o próximo tópico trata.',
         marcas: ['se', 'condição'],
       },
@@ -353,13 +377,14 @@ Isto é:
         exemplo: `Pergunta uma vez e desiste:
 [quando a bandeira verde for clicada]
   [se tocando em Maçã, então]
-    [mude placar em 1]
+    [adicione 1 a placar]
 
 Vigia o tempo todo:
 [quando a bandeira verde for clicada]
   [sempre]
     [se tocando em Maçã, então]
-      [mude placar em 1]`,
+      [adicione 1 a placar]`,
+        exemploComo: 'blocos',
         atencao: 'Este é o defeito mais frustrante de quem começa, porque o programa está visivelmente certo: os blocos são os certos, na ordem certa. O que falta não é um bloco — é um bloco em volta.',
         marcas: ['sempre', 'se'],
       },
@@ -372,9 +397,15 @@ Vigia o tempo todo:
           'A borda não é um personagem: é a beirada da tela. Perguntar por ela serve para saber que se chegou ao limite — e não serve para o requisito de dois personagens que interajam, que pede que um pergunte pelo outro.',
           '"Variável maior que" compara o valor guardado com um número. É a pergunta que decide quando o jogo acabou, e por isso ela só aparece depois que você criar a primeira variável.',
         ],
-        exemplo: `[se tocando em Maçã, então]        o outro personagem
-[se tocando na borda, então]       a beirada do palco
-[se placar > 5, então]             a comparação`,
+        exemplo: `Pergunta pelo outro personagem:
+[se tocando em Maçã, então]
+
+Pergunta pela beirada do palco:
+[se tocando na borda, então]
+
+Compara com um número:
+[se placar > 5, então]`,
+        exemploComo: 'blocos',
         atencao: 'Tocar a borda é tocar o palco, e não o outro personagem. Trocar um pelo outro deixa o programa rodando e o requisito por cumprir, sem que nada apareça errado na tela.',
         marcas: ['tocando', 'borda', 'sensores'],
       },
@@ -398,6 +429,7 @@ Vigia o tempo todo:
         exemplo: `placar   guarda quantos pontos você fez
 vidas    guarda quantas chances faltam
 tempo    guarda quantos segundos restam`,
+        exemploComo: 'texto',
         atencao: 'Criar a variável é metade do requisito. A outra metade é alterar o valor dela enquanto o programa roda — variável criada e nunca alterada não demonstra nada, e é exatamente o que a verificação recusa.',
         marcas: ['variável', 'placar'],
       },
@@ -408,33 +440,35 @@ tempo    guarda quantos segundos restam`,
         explicacao: [
           '"Defina placar para 0" troca o valor: seja lá o que houvesse antes, agora é zero.',
           '"Mude placar em 1" soma ao que já havia: se o placar estava em 5, passa a 6. Somar 1 é o mais comum, mas dá para somar 10, ou -1 para tirar um ponto.',
-          'Na prática, "defina" vai na bandeira verde, para zerar tudo no começo, e "mude" vai dentro do jogo, marcando pontos. Recomeçar precisa recomeçar de verdade.',
+          'Na prática, "mude ... para" vai na bandeira verde, para zerar tudo no começo, e "adicione ... a" vai dentro do jogo, marcando pontos. Recomeçar precisa recomeçar de verdade.',
         ],
         exemplo: `[quando a bandeira verde for clicada]
-  [defina placar para 0]        zera ao começar
+  [mude placar para 0]
   [sempre]
     [se tocando em Maçã, então]
-      [mude placar em 1]        marca um ponto`,
-        atencao: 'Sem o "defina" no começo, o segundo jogo continua do placar do primeiro. Ninguém nota na primeira partida — só na segunda, e aí parece que o jogo enlouqueceu.',
-        marcas: ['defina', 'mude'],
+      [adicione 1 a placar]`,
+        exemploComo: 'blocos',
+        atencao: 'Sem o "mude placar para 0" no começo, o segundo jogo continua do placar do primeiro. Ninguém nota na primeira partida — só na segunda, e aí parece que o jogo enlouqueceu.',
+        marcas: ['mude para', 'adicione a', 'variável'],
       },
       {
         id: 'o-placar',
         titulo: 'O placar que sobe sozinho',
         resumo: 'Por que o "mude" precisa estar dentro de um "se".',
         explicacao: [
-          'Ponha "mude placar em 1" dentro de um "sempre", mas fora de qualquer "se". Rode o jogo. O placar dispara: sobe centenas de pontos por segundo, sem que ninguém tenha feito nada.',
+          'Ponha "adicione 1 a placar" dentro de um "sempre", mas fora de qualquer "se". Rode o jogo. O placar dispara: sobe centenas de pontos por segundo, sem que ninguém tenha feito nada.',
           'O bloco está funcionando perfeitamente. Ele soma toda vez que é executado, e dentro de um "sempre" ele é executado a cada volta.',
           'O que faz de um contador um placar é a condição em volta dele. Placar marca ponto por alguma coisa; sem o "se", ele marca ponto por existir.',
         ],
         exemplo: `Sobe o tempo todo:
 [sempre]
-  [mude placar em 1]
+  [adicione 1 a placar]
 
 Marca ponto por alguma coisa:
 [sempre]
   [se tocando em Maçã, então]
-    [mude placar em 1]`,
+    [adicione 1 a placar]`,
+        exemploComo: 'blocos',
         atencao: 'Mesmo com o "se" no lugar, encostar por um segundo pode render vários pontos: enquanto o encosto durar, a pergunta continua dando sim. É um comportamento real, e resolvê-lo — afastando a maçã depois do ponto — é o que faz o jogo ficar bom.',
         marcas: ['placar', 'contador'],
       },
@@ -459,8 +493,9 @@ Marca ponto por alguma coisa:
 [quando a bandeira verde for clicada]
   [sempre]
     [se tocando em Maçã, então]
-      [mude placar em 1]
-      [toque um som]`,
+      [adicione 1 a placar]
+      [toque o som]`,
+        exemploComo: 'blocos',
         atencao: 'Se os dois personagens começarem em alturas muito diferentes e a seta só mudar o x, eles nunca se encontram. O programa está certo e o placar nunca sai do zero — e o defeito está na geometria, não nos blocos.',
         marcas: ['interação', 'tocando'],
       },
@@ -475,10 +510,11 @@ Marca ponto por alguma coisa:
         ],
         exemplo: `[sempre]
   [se tocando em Maçã, então]
-    [mude placar em 1]
+    [adicione 1 a placar]
   [se placar > 5, então]
     [diga "você venceu!"]
     [pare tudo]`,
+        exemploComo: 'blocos',
         atencao: 'Fechar a bandeira vermelha não é condição de vitória: é desistir, e funciona em qualquer projeto. O requisito pede uma condição escrita no programa.',
         marcas: ['pare tudo', 'vitória'],
       },
@@ -496,6 +532,7 @@ Marca ponto por alguma coisa:
  que fica perguntando se o gato encostou na maçã.
  Cada vez que encosta, soma um ponto.
  E quando o placar passa de cinco, o jogo para."`,
+        exemploComo: 'texto',
         atencao: 'Treine em voz alta, e não só na cabeça. Explicar por dentro parece fácil até a primeira vez que se tenta em voz alta, na frente de alguém.',
         marcas: ['apresentação', 'requisito 6'],
       },
@@ -573,7 +610,7 @@ export const MODULOS_DE_BLOCOS: ModuloDeVereda[] = [
         id: 'm3-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_BLOCOS['m3-teoria'],
         titulo: 'O programa que espera',
-        resumo: 'O que dispara uma pilha, os dois tipos de programa, e o traje que troca.',
+        resumo: 'O que dispara uma pilha, os dois tipos de programa, e a fantasia que troca.',
         topicos: cap('eventos').topicos,
       },
       /* Requisitos 4.1 e 4.5 juntos: o documento pede aparência ou som **em
@@ -581,7 +618,7 @@ export const MODULOS_DE_BLOCOS: ModuloDeVereda[] = [
       laboratorio(
         'm3-lab',
         'O gato obedece ao teclado',
-        'Mova o gato com as setas, e faça ele mudar de traje ou tocar um som ao responder.',
+        'Mova o gato com as setas, e faça ele mudar de fantasia ou tocar um som ao responder.',
         ['moverPorTecla', 'aparenciaOuSom'],
       ),
     ],

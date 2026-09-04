@@ -110,6 +110,7 @@ const CAPITULOS: Capitulo[] = [
   color: crimson;
   font-size: 2rem;
 }`,
+        exemploComo: 'css',
         atencao: 'Errar o nome da propriedade não dá erro: o navegador descarta a linha em silêncio e segue. A tela fica igual e nada explica por quê. Quando algo não mudou, releia o nome antes de mexer no valor.',
         marcas: ['seletor', 'propriedade', 'valor'],
       },
@@ -125,6 +126,7 @@ const CAPITULOS: Capitulo[] = [
         exemplo: `<head>
   <link rel="stylesheet" href="estilo.css">
 </head>`,
+        exemploComo: 'html',
         atencao: 'O href aponta para o arquivo a partir da pasta da página. Nome errado, pasta errada ou letra maiúscula fora do lugar produzem o mesmo sintoma: a página abre sem estilo nenhum, e sem aviso.',
         marcas: ['<link>', '<style>', 'href'],
       },
@@ -142,6 +144,7 @@ const CAPITULOS: Capitulo[] = [
 
 /* E não o caminho:
    "ache os avisos, percorra um a um, pinte cada um" */`,
+        exemploComo: 'css',
         atencao: 'CSS moderno tem variáveis e faz contas com calc(). Isso confunde, e não muda a resposta: ele continua descrevendo aparência, e é o que a linguagem faz que a classifica.',
         marcas: ['declarativo', 'calc()'],
       },
@@ -165,6 +168,7 @@ const CAPITULOS: Capitulo[] = [
         exemplo: `p        { line-height: 1.6; }
 .aviso   { background-color: gold; }
 #topo    { text-align: center; }`,
+        exemploComo: 'css',
         atencao: 'O nome no CSS tem de ser exatamente o do HTML. `.Aviso` não acerta `class="aviso"`, e nada avisa: a regra fica no arquivo, válida e sem efeito.',
         marcas: ['p', '.classe', '#identificador'],
       },
@@ -183,6 +187,7 @@ const CAPITULOS: Capitulo[] = [
 }
 /* Todo texto da página nasce assim,
    sem uma regra para cada elemento. */`,
+        exemploComo: 'css',
         atencao: 'Herança não é cascata. Herança é o valor descendo de fora para dentro; cascata é a disputa entre regras que miram o mesmo elemento. Confundir as duas leva a procurar o problema no lugar errado.',
         marcas: ['herança', 'font-family', 'color'],
       },
@@ -200,6 +205,7 @@ p { color: navy; }
 
 /* Mesmo peso, então vence a última:
    os parágrafos ficam azul-marinho. */`,
+        exemploComo: 'css',
         atencao: 'A ordem só decide o empate. Uma regra de classe escrita no começo do arquivo vence uma de elemento escrita no fim, porque o peso vem antes da posição.',
         marcas: ['cascata', 'ordem'],
       },
@@ -217,6 +223,7 @@ p { color: navy; }
 #urgente { color: crimson; } /* peso 100 */
 
 /* Num <p class="aviso" id="urgente">, vence o vermelho. */`,
+        exemploComo: 'css',
         atencao: 'A saída fácil para vencer uma disputa é !important. Ele resolve hoje e cria a disputa de amanhã: o próximo ajuste precisará de outro !important, e daí ninguém mais sabe qual regra manda.',
         marcas: ['especificidade', '!important'],
       },
@@ -240,6 +247,7 @@ p { color: navy; }
         exemplo: `.aviso { background-color: gold; }
 .cartao { background-color: #F4F1EA; }
 #topo { background-color: rgb(27, 77, 62); }`,
+        exemploComo: 'css',
         atencao: 'Cor de texto e cor de fundo se decidem juntas. Cinza-claro sobre branco fica bonito na tela do quarto e some no sol da rua — e some sempre para quem enxerga pouco.',
         marcas: ['color', 'background-color', '#hex', 'rgb()'],
       },
@@ -257,6 +265,7 @@ p { color: navy; }
   font-size: 1rem;
   line-height: 1.6;
 }`,
+        exemploComo: 'css',
         atencao: 'Nome de fonte com mais de uma palavra vai entre aspas. Sem elas o navegador lê duas fontes onde havia uma, e nenhuma das duas existe.',
         marcas: ['font-family', 'font-size', 'line-height'],
       },
@@ -276,6 +285,7 @@ p { color: navy; }
   padding: 0.75em;         /* do texto local */
   font-size: 1.125rem;     /* da raiz */
 }`,
+        exemploComo: 'css',
         atencao: 'Uma página inteira escrita em px ignora quem aumentou a letra do navegador por não enxergar bem: o texto continua do mesmo tamanho. É a decisão mais fácil de tomar sem perceber, e uma das que mais excluem gente.',
         marcas: ['px', '%', 'em', 'rem'],
       },
@@ -301,6 +311,7 @@ p { color: navy; }
   border: 1px solid #DDD;
   margin: 1rem 0;
 }`,
+        exemploComo: 'css',
         atencao: 'Aumentar a margem para afastar o texto da borda não funciona: a margem move a caixa inteira, e o texto continua grudado. O que afasta o texto da borda é o padding.',
         marcas: ['padding', 'border', 'margin'],
       },
@@ -317,6 +328,7 @@ p { color: navy; }
   border: 2px solid #1B4D3E;
   border-radius: 8px;
 }`,
+        exemploComo: 'css',
         atencao: 'Espessura de borda é o caso em que px é a escolha certa: uma linha de contorno precisa ser exata, e não acompanhar o tamanho da letra.',
         marcas: ['border', 'solid', 'border-radius'],
       },
@@ -337,6 +349,7 @@ p { color: navy; }
   width: 50%;   /* agora 50% de verdade */
   padding: 1rem;
 }`,
+        exemploComo: 'css',
         atencao: 'O asterisco pega todos os elementos da página. É a única situação em que ele se justifica: uma decisão que vale para a página inteira, escrita uma vez.',
         marcas: ['box-sizing', 'border-box', 'width'],
       },
@@ -360,6 +373,7 @@ p { color: navy; }
         exemplo: `#topo {
   display: flex;
 }`,
+        exemploComo: 'css',
         atencao: 'Declarar display: flex nas peças em vez do contêiner não faz nada de útil. Se as peças não se moveram, confira em qual caixa a declaração está.',
         marcas: ['display: flex', 'contêiner'],
       },
@@ -377,6 +391,7 @@ p { color: navy; }
   justify-content: space-between;
   align-items: center;
 }`,
+        exemploComo: 'css',
         atencao: 'A dupla se confunde justamente porque os nomes não dizem "horizontal" e "vertical" — e não dizem de propósito, porque qual é qual depende de flex-direction.',
         marcas: ['justify-content', 'align-items', 'flex-direction'],
       },
@@ -394,6 +409,7 @@ p { color: navy; }
   flex-wrap: wrap;
   gap: 1rem;
 }`,
+        exemploComo: 'css',
         atencao: 'Quando as peças ficam espremidas em vez de descerem, o que falta quase sempre é o wrap — e não uma consulta de mídia.',
         marcas: ['gap', 'flex-wrap'],
       },
@@ -419,6 +435,7 @@ p { color: navy; }
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }`,
+        exemploComo: 'css',
         atencao: 'O número de colunas é o número de valores, e não um número que se escreve. Três colunas iguais são três valores: 1fr 1fr 1fr.',
         marcas: ['display: grid', 'grid-template-columns'],
       },
@@ -435,6 +452,7 @@ p { color: navy; }
   display: grid;
   grid-template-columns: 2fr 1fr;
 }`,
+        exemploComo: 'css',
         atencao: 'fr resolve o que a porcentagem complica: 50% e 50% com gap no meio estoura a largura, porque a soma passa de cem por cento. Com fr, o gap é descontado antes da divisão.',
         marcas: ['fr', 'gap'],
       },
@@ -452,6 +470,7 @@ main { display: grid; grid-template-columns: 1fr 1fr; }
 
 /* fila dentro de cada cartão */
 .cartao { display: flex; justify-content: space-between; }`,
+        exemploComo: 'css',
         atencao: 'Grid não substituiu o flex. Escolher grid para uma fila de três botões dá mais trabalho e não devolve nada.',
         marcas: ['flex', 'grid'],
       },
@@ -480,6 +499,7 @@ main { display: grid; grid-template-columns: 1fr 1fr; }
 img {
   max-width: 100%;
 }`,
+        exemploComo: 'css',
         atencao: 'Antes de escrever a primeira consulta de mídia, procure a largura fixa. Consulta de mídia que remenda uma medida errada esconde o problema em vez de resolvê-lo.',
         marcas: ['max-width', 'width: 100%'],
       },
@@ -500,6 +520,7 @@ img {
 @media (max-width: 600px) {
   main { grid-template-columns: 1fr; }
 }`,
+        exemploComo: 'css',
         atencao: 'São duas chaves a fechar: a da regra e a da consulta. Esquecer uma faz o navegador descartar o bloco inteiro, em silêncio, e nada muda em tela nenhuma.',
         marcas: ['@media', 'max-width', 'min-width'],
       },
@@ -519,6 +540,7 @@ main { display: grid; grid-template-columns: 1fr; }
 @media (min-width: 700px) {
   main { grid-template-columns: 1fr 1fr; }
 }`,
+        exemploComo: 'css',
         atencao: 'Medida relativa resolve tamanho; consulta de mídia resolve arranjo. Três colunas que viram uma não são questão de encolher — é decisão de arranjo, e só a consulta de mídia toma.',
         marcas: ['min-width', 'mobile-first'],
       },

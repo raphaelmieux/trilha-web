@@ -7,7 +7,7 @@ import { checkAnswer } from '../lib/checkAnswer';
 import { porqueDaEscolha } from '../lib/porque';
 import { LIMIAR_DOMINIO } from '../lib/progress';
 import QuestionRenderer from './questions/QuestionRenderer';
-import { realcarLinhas } from '../labs/realce';
+import { ExemploDaTeoria } from './ui/ExemploDaTeoria';
 import type { RespostaDaQuestao } from '../types';
 import { nomeCompleto } from '../types';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
@@ -51,8 +51,6 @@ const CSS_TEORIA = `
     background: var(--color-warning-a10); color: var(--color-secondary);
     font-size: 13.5px; line-height: 1.55; margin: 4px 0 14px;
   }
-  .teo-dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
-  .teo-caixa { border: 1px solid var(--color-border); border-radius: 8px; overflow: hidden; }
   .teo-caixa-topo {
     padding: 5px 10px; background: var(--color-bg-hover); font-size: 11px;
     letter-spacing: .06em; text-transform: uppercase; color: var(--color-text-dim);
@@ -68,38 +66,6 @@ const CSS_TEORIA = `
   .teo-caixa iframe { display: block; width: 100%; height: 180px; border: none; background: #FFFFFF; }
   @media (max-width: 720px) { .teo-dupla { grid-template-columns: 1fr; } }
 `;
-
-function Exemplo({ html, titulo, roda }: { html: string; titulo: string; roda: boolean }) {
-  const pagina = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-    body { font: 15px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif; color: #201F1E;
-      margin: 12px; background: #FFFFFF; }
-    table { border-collapse: collapse; }
-    th, td { border: 1px solid #B9B9B9; padding: 4px 9px; text-align: left; }
-    caption { text-align: left; padding-bottom: 5px; font-weight: 600; }
-    img { max-width: 130px; border-radius: 4px; background: #EDEDED; }
-    nav a { margin-right: 10px; }
-    input, button { font: inherit; padding: 3px 7px; }
-  </style></head><body>${html}</body></html>`;
-
-  return (
-    <div className={roda ? 'teo-dupla' : ''}>
-      <div className="teo-caixa">
-        <p className="teo-caixa-topo">Você escreve</p>
-        <pre className="teo-codigo">
-          {realcarLinhas(html).map((l, i) => (
-            <div key={i} dangerouslySetInnerHTML={{ __html: l || '&nbsp;' }} />
-          ))}
-        </pre>
-      </div>
-      {roda && (
-        <div className="teo-caixa">
-          <p className="teo-caixa-topo">O navegador mostra</p>
-          <iframe srcDoc={pagina} sandbox="" title={`Resultado: ${titulo}`} />
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function TeoriaDaVereda({ vereda, licao, aoVencer, aoSair }: {
   vereda: Vereda;
@@ -172,7 +138,7 @@ export default function TeoriaDaVereda({ vereda, licao, aoVencer, aoSair }: {
                 {t.atencao}
               </p>
             )}
-            <Exemplo html={t.exemplo} titulo={t.titulo} roda={vereda.mostraResultado} />
+            <ExemploDaTeoria topico={t} mostraResultado={vereda.mostraResultado} />
           </div>
         ))}
       </div>
