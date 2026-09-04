@@ -111,6 +111,8 @@ const CAPITULOS: Capitulo[] = [
   font-size: 2rem;
 }`,
         exemploComo: 'css',
+        exemploMarcacao: `<h1>Clube Pioneiros</h1>
+<p>A reunião é sábado, às 14h.</p>`,
         atencao: 'Errar o nome da propriedade não dá erro: o navegador descarta a linha em silêncio e segue. A tela fica igual e nada explica por quê. Quando algo não mudou, releia o nome antes de mexer no valor.',
         marcas: ['seletor', 'propriedade', 'valor'],
       },
@@ -145,6 +147,8 @@ const CAPITULOS: Capitulo[] = [
 /* E não o caminho:
    "ache os avisos, percorra um a um, pinte cada um" */`,
         exemploComo: 'css',
+        exemploMarcacao: `<p>A reunião é sábado.</p>
+<p class="aviso">Traga garrafa de água.</p>`,
         atencao: 'CSS moderno tem variáveis e faz contas com calc(). Isso confunde, e não muda a resposta: ele continua descrevendo aparência, e é o que a linguagem faz que a classifica.',
         marcas: ['declarativo', 'calc()'],
       },
@@ -169,6 +173,9 @@ const CAPITULOS: Capitulo[] = [
 .aviso   { background-color: gold; }
 #topo    { text-align: center; }`,
         exemploComo: 'css',
+        exemploMarcacao: `<p id="topo">Clube Pioneiros</p>
+<p>Reunião de sábado, às 14h.</p>
+<p class="aviso">Traga garrafa de água.</p>`,
         atencao: 'O nome no CSS tem de ser exatamente o do HTML. `.Aviso` não acerta `class="aviso"`, e nada avisa: a regra fica no arquivo, válida e sem efeito.',
         marcas: ['p', '.classe', '#identificador'],
       },
@@ -188,6 +195,9 @@ const CAPITULOS: Capitulo[] = [
 /* Todo texto da página nasce assim,
    sem uma regra para cada elemento. */`,
         exemploComo: 'css',
+        exemploMarcacao: `<h2>Unidade Falcão</h2>
+<p>Todo texto desta página herdou a letra e a cor do body.</p>
+<p>Nenhuma regra fala destes parágrafos.</p>`,
         atencao: 'Herança não é cascata. Herança é o valor descendo de fora para dentro; cascata é a disputa entre regras que miram o mesmo elemento. Confundir as duas leva a procurar o problema no lugar errado.',
         marcas: ['herança', 'font-family', 'color'],
       },
@@ -206,6 +216,8 @@ p { color: navy; }
 /* Mesmo peso, então vence a última:
    os parágrafos ficam azul-marinho. */`,
         exemploComo: 'css',
+        exemploMarcacao: `<p>As duas regras falam deste parágrafo.</p>
+<p>Vence a última que foi escrita.</p>`,
         atencao: 'A ordem só decide o empate. Uma regra de classe escrita no começo do arquivo vence uma de elemento escrita no fim, porque o peso vem antes da posição.',
         marcas: ['cascata', 'ordem'],
       },
@@ -224,6 +236,9 @@ p { color: navy; }
 
 /* Num <p class="aviso" id="urgente">, vence o vermelho. */`,
         exemploComo: 'css',
+        exemploMarcacao: `<p>Sou só um parágrafo: cinza.</p>
+<p class="aviso">Tenho classe: azul-marinho.</p>
+<p class="aviso" id="urgente">Tenho classe e identificador: vermelho.</p>`,
         atencao: 'A saída fácil para vencer uma disputa é !important. Ele resolve hoje e cria a disputa de amanhã: o próximo ajuste precisará de outro !important, e daí ninguém mais sabe qual regra manda.',
         marcas: ['especificidade', '!important'],
       },
@@ -246,8 +261,11 @@ p { color: navy; }
         ],
         exemplo: `.aviso { background-color: gold; }
 .cartao { background-color: #F4F1EA; }
-#topo { background-color: rgb(27, 77, 62); }`,
+#topo { color: white; background-color: rgb(27, 77, 62); }`,
         exemploComo: 'css',
+        exemploMarcacao: `<p id="topo">Clube Pioneiros</p>
+<p class="aviso">Traga garrafa de água.</p>
+<div class="cartao">Unidade Falcão</div>`,
         atencao: 'Cor de texto e cor de fundo se decidem juntas. Cinza-claro sobre branco fica bonito na tela do quarto e some no sol da rua — e some sempre para quem enxerga pouco.',
         marcas: ['color', 'background-color', '#hex', 'rgb()'],
       },
@@ -266,6 +284,10 @@ p { color: navy; }
   line-height: 1.6;
 }`,
         exemploComo: 'css',
+        exemploMarcacao: `<h2>Unidade Falcão</h2>
+<p>Georgia é uma fonte serifada: repare nos pezinhos das letras.</p>
+<p>A entrelinha de 1,6 é o ar entre uma linha e a de baixo — é ela que deixa um
+texto longo confortável de ler até o fim.</p>`,
         atencao: 'Nome de fonte com mais de uma palavra vai entre aspas. Sem elas o navegador lê duas fontes onde havia uma, e nenhuma das duas existe.',
         marcas: ['font-family', 'font-size', 'line-height'],
       },
@@ -286,6 +308,7 @@ p { color: navy; }
   font-size: 1.125rem;     /* da raiz */
 }`,
         exemploComo: 'css',
+        exemploMarcacao: `<div class="cartao">Cada medida desta caixa vem de uma unidade diferente.</div>`,
         atencao: 'Uma página inteira escrita em px ignora quem aumentou a letra do navegador por não enxergar bem: o texto continua do mesmo tamanho. É a decisão mais fácil de tomar sem perceber, e uma das que mais excluem gente.',
         marcas: ['px', '%', 'em', 'rem'],
       },
@@ -312,6 +335,8 @@ p { color: navy; }
   margin: 1rem 0;
 }`,
         exemploComo: 'css',
+        exemploMarcacao: `<div class="cartao">O padding é o ar entre este texto e a linha em volta.</div>
+<div class="cartao">E a margem é o espaço entre um cartão e o outro, por fora da linha.</div>`,
         atencao: 'Aumentar a margem para afastar o texto da borda não funciona: a margem move a caixa inteira, e o texto continua grudado. O que afasta o texto da borda é o padding.',
         marcas: ['padding', 'border', 'margin'],
       },
@@ -329,6 +354,7 @@ p { color: navy; }
   border-radius: 8px;
 }`,
         exemploComo: 'css',
+        exemploMarcacao: `<p id="topo">Clube Pioneiros</p>`,
         atencao: 'Espessura de borda é o caso em que px é a escolha certa: uma linha de contorno precisa ser exata, e não acompanhar o tamanho da letra.',
         marcas: ['border', 'solid', 'border-radius'],
       },
@@ -374,6 +400,10 @@ p { color: navy; }
   display: flex;
 }`,
         exemploComo: 'css',
+        exemploMarcacao: `<header id="topo">
+  <h1>Clube Pioneiros</h1>
+  <p class="lema">Sempre prontos, sempre atentos.</p>
+</header>`,
         atencao: 'Declarar display: flex nas peças em vez do contêiner não faz nada de útil. Se as peças não se moveram, confira em qual caixa a declaração está.',
         marcas: ['display: flex', 'contêiner'],
       },
@@ -392,6 +422,10 @@ p { color: navy; }
   align-items: center;
 }`,
         exemploComo: 'css',
+        exemploMarcacao: `<header id="topo">
+  <h1>Pioneiros</h1>
+  <p class="lema">Sempre prontos.</p>
+</header>`,
         atencao: 'A dupla se confunde justamente porque os nomes não dizem "horizontal" e "vertical" — e não dizem de propósito, porque qual é qual depende de flex-direction.',
         marcas: ['justify-content', 'align-items', 'flex-direction'],
       },
@@ -410,6 +444,12 @@ p { color: navy; }
   gap: 1rem;
 }`,
         exemploComo: 'css',
+        exemploMarcacao: `<main>
+  <div class="cartao">Unidade Falcão</div>
+  <div class="cartao">Unidade Águia</div>
+  <div class="cartao">Unidade Tucano</div>
+  <div class="cartao">Unidade Arara Azul</div>
+</main>`,
         atencao: 'Quando as peças ficam espremidas em vez de descerem, o que falta quase sempre é o wrap — e não uma consulta de mídia.',
         marcas: ['gap', 'flex-wrap'],
       },
@@ -436,6 +476,12 @@ p { color: navy; }
   gap: 1rem;
 }`,
         exemploComo: 'css',
+        exemploMarcacao: `<main>
+  <div class="cartao">Falcão</div>
+  <div class="cartao">Águia</div>
+  <div class="cartao">Tucano</div>
+  <div class="cartao">Arara</div>
+</main>`,
         atencao: 'O número de colunas é o número de valores, e não um número que se escreve. Três colunas iguais são três valores: 1fr 1fr 1fr.',
         marcas: ['display: grid', 'grid-template-columns'],
       },
@@ -453,6 +499,10 @@ p { color: navy; }
   grid-template-columns: 2fr 1fr;
 }`,
         exemploComo: 'css',
+        exemploMarcacao: `<main>
+  <div class="cartao">Esta coluna vale 2fr, e por isso fica com o dobro do espaço da outra.</div>
+  <div class="cartao">Esta vale 1fr.</div>
+</main>`,
         atencao: 'fr resolve o que a porcentagem complica: 50% e 50% com gap no meio estoura a largura, porque a soma passa de cem por cento. Com fr, o gap é descontado antes da divisão.',
         marcas: ['fr', 'gap'],
       },
@@ -466,11 +516,22 @@ p { color: navy; }
           'Os dois convivem, e o mais comum é usar os dois na mesma página — grid para o arranjo geral, flex dentro de cada peça.',
         ],
         exemplo: `/* grade de cartões */
-main { display: grid; grid-template-columns: 1fr 1fr; }
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
 
 /* fila dentro de cada cartão */
-.cartao { display: flex; justify-content: space-between; }`,
+.cartao {
+  display: flex;
+  justify-content: space-between;
+}`,
         exemploComo: 'css',
+        exemploMarcacao: `<main>
+  <div class="cartao"><span>Unidade Falcão</span><span>12</span></div>
+  <div class="cartao"><span>Unidade Águia</span><span>9</span></div>
+</main>`,
         atencao: 'Grid não substituiu o flex. Escolher grid para uma fila de três botões dá mais trabalho e não devolve nada.',
         marcas: ['flex', 'grid'],
       },

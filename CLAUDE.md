@@ -409,6 +409,33 @@ declaração chamada `border` — o motor expande a forma curta, e cada um expan
 de um jeito. A lista de nomes exatos passava no jsdom e reprovava no Chromium,
 dizendo a quem escreveu a borda certa que ela não existe.
 
+**O exemplo da teoria se desenha do jeito que o assunto é, e quem diz é o
+tópico.** Havia um desenho só, e era o do W3Schools: "você escreve" à esquerda,
+"o navegador mostra" à direita. Serve ao HTML, que foi onde a vereda nasceu, e
+era aplicado a tudo — na CC001 o realce de HTML não achava tag nenhuma nas
+pilhas de blocos e não pintava nada, e o quadro do navegador exibia o algoritmo
+da bicicleta como parágrafo. `exemploComo` decide entre `html`, `css`, `blocos`
+e `texto`, e é escrito à mão de propósito: adivinhar pelo conteúdo erraria
+justamente nos casos mistos. Bloco vira bloco por `blocosDoScratch.ts`, com a
+cor da categoria de verdade — cor errada manda procurar na gaveta errada da
+paleta —, e o que não se reconhece sai cinza, porque cinza diz "não sei".
+
+**No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
+Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
+escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela
+pinta é o `exemploMarcacao` do tópico — pequeno e específico, porque uma página
+cheia esconderia o efeito da regra no meio de tudo o mais. Sem marcação não há
+quadro nenhum: os tópicos de consulta de mídia não têm, porque um quadro de
+largura fixa mostraria um estado só e ensinaria o contrário.
+
+E a marcação erra em silêncio, que é o de sempre: as duas caixas continuam
+aparecendo e a da direita mostra a página intacta. `exemplosDaTeoria.test.ts`
+cobra que todo seletor da lição ache alguém — a mesma regra que o
+`cssValidator` já cobra de quem estuda. Escrever a marcação obriga a olhar o
+quadro: `#topo { background-color: rgb(27, 77, 62); }` saía com o texto escuro
+padrão em cima do verde-escuro, e "a margem entre os dois cartões é a soma
+destas duas" estava errado — margens verticais vizinhas se fundem numa só.
+
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois
@@ -495,6 +522,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/curriculum/index.test.ts` | trilha sem emblema ou sem fundo de certificado no repositório |
+| `src/curriculum/exemplosDaTeoria.test.ts` | seletor do exemplo de CSS que não acha ninguém na marcação do tópico |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
