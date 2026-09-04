@@ -9,3 +9,13 @@
 declare module 'scratch-gui';
 declare module 'scratch-vm';
 declare module 'scratch-storage';
+
+/*
+  As traduções oficiais dos blocos, usadas pela trava que confere se o nome
+  escrito na lição existe na paleta. O pacote é o mesmo que o editor embutido
+  carrega — não há segunda fonte para essa resposta.
+*/
+declare module 'scratch-l10n/locales/blocks-msgs' {
+  const traducoes: Record<string, Record<string, string>>;
+  export default traducoes;
+}

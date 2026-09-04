@@ -3,7 +3,7 @@
  *
  * ── Por que um editor nosso, e não o Scratch embutido ────────────────────
  * A vereda cobra "demonstrar um laço", "criar uma variável e alterá-la durante
- * a execução", "dois personagens que interajam". Nada disso se confere de fora
+ * a execução", "dois atores que interajam". Nada disso se confere de fora
  * do Scratch: embutido num iframe, ele é uma caixa fechada, e o laboratório
  * cairia em "clicou em salvar, então passou" — que é o laboratório que abre
  * resolvido, escrito de outro jeito.
@@ -33,7 +33,7 @@ export const TECLAS: Tecla[] = ['direita', 'esquerda', 'cima', 'baixo', 'espaço
 
 /** O que uma condição pergunta. Toda pergunta é sobre o estado de agora. */
 export type Condicao =
-  /** Este personagem está encostando em quem? `borda` é a beirada do palco. */
+  /** Este ator está encostando em quem? `borda` é a beirada do palco. */
   | { tipo: 'tocando'; quem: string }
   | { tipo: 'teclaPressionada'; tecla: Tecla }
   | { tipo: 'variavelMaiorQue'; nome: string; valor: number };
@@ -52,7 +52,7 @@ export type Bloco =
   | { id: string; tipo: 'mover'; passos: number }
   | { id: string; tipo: 'subir'; passos: number }
   | { id: string; tipo: 'irPara'; x: number; y: number }
-  | { id: string; tipo: 'proximoTraje' }
+  | { id: string; tipo: 'proximaFantasia' }
   | { id: string; tipo: 'diga'; texto: string }
   | { id: string; tipo: 'toqueSom' }
   | { id: string; tipo: 'espere'; segundos: number }
@@ -71,18 +71,18 @@ export interface Pilha {
   blocos: Bloco[];
 }
 
-export interface Personagem {
+export interface Ator {
   id: string;
   nome: string;
-  /** Os trajes, como emoji: trocar de traje troca o desenho na tela. */
-  trajes: string[];
+  /** Os fantasias, como emoji: trocar de fantasia troca o desenho na tela. */
+  fantasias: string[];
   x: number;
   y: number;
   pilhas: Pilha[];
 }
 
 export interface Projeto {
-  personagens: Personagem[];
+  atores: Ator[];
   /** As variáveis do projeto, com o valor inicial que elas têm ao começar. */
   variaveis: { nome: string; valor: number }[];
 }
@@ -117,7 +117,7 @@ export const CATEGORIA_DO_BLOCO: Record<TipoDeBloco, Categoria> = {
   mover: 'movimento',
   subir: 'movimento',
   irPara: 'movimento',
-  proximoTraje: 'aparencia',
+  proximaFantasia: 'aparencia',
   diga: 'aparencia',
   toqueSom: 'som',
   espere: 'controle',
@@ -142,37 +142,59 @@ export const ehContainer = (b: Bloco): b is Extract<Bloco, { corpo: Bloco[] }> =
   b.tipo === 'repita' || b.tipo === 'sempre' || b.tipo === 'se';
 
 /**
- * O texto do bloco, como ele aparece escrito.
+ * O texto do bloco, palavra por palavra como o Scratch pt-BR o escreve.
  *
- * Fica aqui, e não na tela, porque a verificação também precisa dele: a lista
- * de tarefas cita o bloco pelo nome que a pessoa vê, e dois textos diferentes
- * para o mesmo bloco mandariam procurar uma coisa que não existe.
+ * ── Por que aqui, e não na tela ──────────────────────────────────────────
+ * A verificação também precisa dele: a lista de tarefas cita o bloco pelo nome
+ * que a pessoa vê, e dois textos diferentes para o mesmo bloco mandariam
+ * procurar uma coisa que não existe.
+ *
+ * ── Por que exatamente estas palavras ────────────────────────────────────
+ * Este editor é a reserva do Scratch embutido, e a lição é a mesma nos dois.
+ * Uma reserva que chamasse os blocos de outro jeito faria o desbravador
+ * procurar na paleta do Scratch de verdade um bloco que não está lá — que é o
+ * mesmo defeito de errar a cor da categoria, só que nas palavras.
+ *
+ * A fonte é `scratch-l10n`, o arquivo de tradução do próprio MIT, e
+ * `blocos.test.ts` confere cada linha daqui contra ele. Foi assim que se
+ * descobriu que "defina placar para 0" e "mude placar em 1" não existem: são
+ * "mude placar para 0" e "adicione 1 a placar".
  */
 export function textoDoBloco(b: Bloco): string {
   switch (b.tipo) {
-    case 'quandoBandeira': return 'quando a bandeira verde for clicada';
+    /* O %1 do bloco é o desenho da bandeira verde, e não a palavra. */
+    case 'quandoBandeira': return `quando ${BANDEIRA} for clicado`;
     case 'quandoTecla': return `quando a tecla ${b.tecla} for pressionada`;
-    case 'quandoClicado': return 'quando este personagem for clicado';
+    case 'quandoClicado': return 'quando este ator for clicado';
     case 'mover': return `mova ${b.passos} passos`;
-    case 'subir': return `suba ${b.passos} passos`;
+    /* Não existe "suba": subir é somar em y, e é assim que o bloco se chama. */
+    case 'subir': return `adicione ${b.passos} a y`;
     case 'irPara': return `vá para x: ${b.x} y: ${b.y}`;
-    case 'proximoTraje': return 'próximo traje';
-    case 'diga': return `diga "${b.texto}"`;
-    case 'toqueSom': return 'toque um som';
-    case 'espere': return `espere ${b.segundos} segundos`;
+    case 'proximaFantasia': return 'próxima fantasia';
+    case 'diga': return `diga ${b.texto}`;
+    case 'toqueSom': return 'toque o som Miau';
+    case 'espere': return `espere ${b.segundos} seg`;
     case 'repita': return `repita ${b.vezes} vezes`;
     case 'sempre': return 'sempre';
-    case 'se': return `se ${textoDaCondicao(b.condicao)}, então`;
-    case 'definaVariavel': return `defina ${b.nome} para ${b.valor}`;
-    case 'mudeVariavel': return `mude ${b.nome} em ${b.por}`;
-    case 'pareTudo': return 'pare tudo';
+    case 'se': return `se ${textoDaCondicao(b.condicao)} então`;
+    /* "defina X para" e "mude X em" eram invenção nossa: no Scratch quem troca
+       o valor é "mude ... para", e quem soma é "adicione ... a". Os nomes são
+       quase trocados em relação ao que a intuição sugere, e é justamente por
+       isso que inventar outros custava caro. */
+    case 'definaVariavel': return `mude ${b.nome} para ${b.valor}`;
+    case 'mudeVariavel': return `adicione ${b.por} a ${b.nome}`;
+    case 'pareTudo': return 'pare todos';
   }
 }
 
+/** O desenho da bandeira verde, que no bloco ocupa o lugar de uma palavra. */
+export const BANDEIRA = '⚑';
+
 export function textoDaCondicao(c: Condicao): string {
   switch (c.tipo) {
-    case 'tocando': return `tocando em ${c.quem}`;
-    case 'teclaPressionada': return `tecla ${c.tecla} pressionada`;
+    /* Os sensores terminam em interrogação: eles são a pergunta. */
+    case 'tocando': return `tocando em ${c.quem}?`;
+    case 'teclaPressionada': return `tecla ${c.tecla} pressionada?`;
     case 'variavelMaiorQue': return `${c.nome} > ${c.valor}`;
   }
 }
@@ -186,7 +208,7 @@ export function todosOsBlocos(projeto: Projeto): Bloco[] {
       if (ehContainer(b)) descer(b.corpo);
     }
   };
-  for (const p of projeto.personagens) for (const pilha of p.pilhas) descer(pilha.blocos);
+  for (const p of projeto.atores) for (const pilha of p.pilhas) descer(pilha.blocos);
   return saida;
 }
 

@@ -1,6 +1,6 @@
 import {
   ehContainer, todosOsBlocos,
-  type Bloco, type Personagem, type Projeto,
+  type Bloco, type Ator, type Projeto,
 } from '../labs/blocos';
 
 /**
@@ -34,7 +34,7 @@ export interface CheckResult {
 interface Contexto {
   projeto: Projeto;
   /** As pilhas que de fato rodam: as que começam com um chapéu. */
-  pilhasVivas: { personagem: Personagem; blocos: Bloco[] }[];
+  pilhasVivas: { ator: Ator; blocos: Bloco[] }[];
   /** Todos os blocos alcançáveis a partir de um chapéu. */
   vivos: Bloco[];
 }
@@ -60,11 +60,11 @@ function achatar(blocos: Bloco[]): Bloco[] {
 
 function contexto(projeto: Projeto): Contexto {
   const pilhasVivas: Contexto['pilhasVivas'] = [];
-  for (const p of projeto.personagens) {
+  for (const p of projeto.atores) {
     for (const pilha of p.pilhas) {
       const chapeu = pilha.blocos[0];
       if (chapeu && CHAPEUS.has(chapeu.tipo)) {
-        pilhasVivas.push({ personagem: p, blocos: pilha.blocos });
+        pilhasVivas.push({ ator: p, blocos: pilha.blocos });
       }
     }
   }
@@ -90,7 +90,7 @@ const SPECS: BlocoCheckSpec[] = [
   },
   {
     id: 'moverPorTecla',
-    label: 'Mover um personagem pelo teclado',
+    label: 'Mover um ator pelo teclado',
     hint: 'Um chapéu "quando a tecla ... for pressionada" com um bloco de movimento embaixo.',
     run: ctx => {
       const teclas = ctx.pilhasVivas.filter(p => p.blocos[0].tipo === 'quandoTecla');
@@ -101,7 +101,7 @@ const SPECS: BlocoCheckSpec[] = [
         achatar(p.blocos).some(b => b.tipo === 'mover' || b.tipo === 'subir' || b.tipo === 'irPara'));
       return move
         ? { passed: true }
-        : { passed: false, detail: 'A tecla dispara uma pilha, mas nada nela move o personagem. Falta um bloco de movimento.' };
+        : { passed: false, detail: 'A tecla dispara uma pilha, mas nada nela move o ator. Falta um bloco de movimento.' };
     },
   },
   {
@@ -153,36 +153,36 @@ const SPECS: BlocoCheckSpec[] = [
   {
     id: 'aparenciaOuSom',
     label: 'Trocar de aparência ou emitir som por um evento',
-    hint: '"próximo traje" ou "toque um som" dentro de uma pilha que um evento dispara.',
+    hint: '"próxima fantasia" ou "toque um som" dentro de uma pilha que um evento dispara.',
     run: ctx => {
-      const tem = ctx.vivos.some(b => b.tipo === 'proximoTraje' || b.tipo === 'toqueSom');
+      const tem = ctx.vivos.some(b => b.tipo === 'proximaFantasia' || b.tipo === 'toqueSom');
       return tem
         ? { passed: true }
-        : { passed: false, detail: 'Nenhuma pilha troca o traje nem toca um som.' };
+        : { passed: false, detail: 'Nenhuma pilha troca a fantasia nem toca um som.' };
     },
   },
   {
     id: 'doisPersonagens',
-    label: 'Dois personagens com programa',
+    label: 'Dois atores com programa',
     hint: 'Os dois precisam ter pelo menos uma pilha que roda.',
     run: ctx => {
-      const comPrograma = new Set(ctx.pilhasVivas.map(p => p.personagem.id));
+      const comPrograma = new Set(ctx.pilhasVivas.map(p => p.ator.id));
       return comPrograma.size >= 2
         ? { passed: true }
         : {
           passed: false,
           detail: comPrograma.size === 1
-            ? 'Só um personagem tem pilha começando por um chapéu. O jogo precisa de dois que façam alguma coisa.'
-            : 'Nenhum personagem tem pilha começando por um chapéu. O jogo precisa de dois que façam alguma coisa.',
+            ? 'Só um ator tem pilha começando por um chapéu. O jogo precisa de dois que façam alguma coisa.'
+            : 'Nenhum ator tem pilha começando por um chapéu. O jogo precisa de dois que façam alguma coisa.',
         };
     },
   },
   {
     id: 'interacao',
-    label: 'Os dois personagens interagem',
-    hint: 'Um "se tocando em ..." que nomeie o outro personagem.',
+    label: 'Os dois atores interagem',
+    hint: 'Um "se tocando em ..." que nomeie o outro ator.',
     run: ctx => {
-      const nomes = new Set(ctx.projeto.personagens.map(p => p.id));
+      const nomes = new Set(ctx.projeto.atores.map(p => p.id));
       const tem = ctx.vivos.some(b =>
         b.tipo === 'se' && b.condicao.tipo === 'tocando' && nomes.has(b.condicao.quem) && b.corpo.length > 0);
       if (tem) return { passed: true };
@@ -190,8 +190,8 @@ const SPECS: BlocoCheckSpec[] = [
       return {
         passed: false,
         detail: naBorda
-          ? 'Há um "tocando", mas ele fala da borda do palco. O requisito pede que os dois personagens se encontrem — escolha o outro personagem na condição.'
-          : 'Nenhuma condição pergunta se um personagem está tocando no outro.',
+          ? 'Há um "tocando", mas ele fala da borda do palco. O requisito pede que os dois atores se encontrem — escolha o outro ator na condição.'
+          : 'Nenhuma condição pergunta se um ator está tocando no outro.',
       };
     },
   },

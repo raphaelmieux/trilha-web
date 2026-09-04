@@ -10,15 +10,15 @@
 export const PASSOS_DE_BLOCOS: Record<string, string[]> = {
   bandeira: [
     'Na paleta, escolha a categoria Eventos.',
-    'Toque em "quando a bandeira verde for clicada". Ele abre uma pilha nova.',
+    'Toque em "quando ⚑ for clicado" — o da bandeira verde. Ele abre uma pilha nova.',
     'Escolha outra categoria e toque num bloco: ele entra embaixo do chapéu.',
-    'Clique em Começar para ver a pilha rodar.',
+    'Clique na bandeira verde para ver a pilha rodar.',
   ],
   moverPorTecla: [
     'Em Eventos, toque em "quando a tecla ... for pressionada".',
     'No próprio bloco, escolha a tecla — direita, por exemplo.',
     'Em Movimento, toque em "mova ... passos". Ele entra embaixo do chapéu de tecla.',
-    'Clique em Começar e segure a seta. O personagem anda enquanto a tecla estiver pressionada.',
+    'Clique na bandeira verde e segure a seta. O ator anda enquanto a tecla estiver pressionada.',
   ],
   laco: [
     'Em Controle, toque em "repita ... vezes" ou em "sempre".',
@@ -38,19 +38,19 @@ export const PASSOS_DE_BLOCOS: Record<string, string[]> = {
     'Criar a variável não basta: o requisito pede que o valor mude enquanto o programa roda.',
   ],
   aparenciaOuSom: [
-    'Em Aparência, "próximo traje" troca o desenho do personagem.',
+    'Em Aparência, "próxima fantasia" troca o desenho do ator.',
     'Em Som, "toque um som" conta um som tocado.',
-    'Encaixe um dos dois numa pilha que um evento dispare — a bandeira, uma tecla, ou o clique no personagem.',
+    'Encaixe um dos dois numa pilha que um evento dispare — a bandeira, uma tecla, ou o clique no ator.',
   ],
   doisPersonagens: [
-    'Embaixo do palco há a lista de personagens. Toque no segundo para editá-lo.',
-    'A área de scripts troca junto: cada personagem tem as pilhas dele.',
+    'Embaixo do palco há a lista de atores. Toque no segundo para editá-lo.',
+    'A área de scripts troca junto: cada ator tem as pilhas dele.',
     'Dê ao segundo pelo menos uma pilha começando por um chapéu.',
   ],
   interacao: [
-    'Escolha o personagem que vai perceber o encontro.',
+    'Escolha o ator que vai perceber o encontro.',
     'Em Controle, ponha um "se ..., então" numa pilha que rode sempre.',
-    'Na pergunta do "se", escolha "tocando em" e depois o **outro personagem** — e não a borda.',
+    'Na pergunta do "se", escolha "tocando em" e depois o **outro ator** — e não a borda.',
     'Dentro do "se", ponha o que acontece quando eles se encontram.',
   ],
   placar: [

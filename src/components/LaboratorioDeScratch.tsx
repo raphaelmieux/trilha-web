@@ -36,7 +36,7 @@ const EditorDeScratch = lazy(() => import('../labs/scratch/EditorDeScratch'));
   VM no store dele, e ali `mapStateToProps` vence a prop de quem chama — a ação
   `SET_VM` existe no pacote e nunca é despachada por ninguém. O sintoma era o
   pior que há: tela montada, nenhum erro, e `toJSON()` devolvendo um projeto
-  sem personagem nenhum. O laboratório conferia um projeto que não era o que
+  sem ator nenhum. O laboratório conferia um projeto que não era o que
   estava na frente do desbravador.
 
   `guiInitialState.vm` é esse VM — criado uma vez pelo pacote, com o
@@ -59,7 +59,7 @@ async function obterVm(): Promise<VmDeScratch> {
   Espera o editor ligar o desenho ao VM.
 
   O `scratch-gui` faz isso ao montar o palco. Carregar o projeto antes constrói
-  os personagens sem desenho nenhum: eles existem para o validador e não
+  os atores sem desenho nenhum: eles existem para o validador e não
   aparecem na tela — de novo o sintoma que não se vê de dentro.
 
   (E não se espera pelo projeto padrão do Scratch: ele não vem. O
@@ -112,8 +112,8 @@ export default function LaboratorioDeScratch({ vereda, licao, userId, aoVencer, 
      guarda de rascunho — as duas coisas querem exatamente este texto. */
   const [projeto, setProjeto] = useState('');
 
-  /* Sem modelo na lição, o padrão da vereda: palco, dois personagens e nenhum
-     bloco. Deixar vazio abriria um editor sem palco e sem personagem, e não há
+  /* Sem modelo na lição, o padrão da vereda: palco, dois atores e nenhum
+     bloco. Deixar vazio abriria um editor sem palco e sem ator, e não há
      o que fazer numa tela assim. */
   const modelo = licao.projetoDeScratch ?? PROJETO_INICIAL;
 
@@ -161,7 +161,7 @@ export default function LaboratorioDeScratch({ vereda, licao, userId, aoVencer, 
           Modelo que não carrega precisa aparecer.
 
           Isto engolia o erro, e o sintoma era um editor sem palco e sem
-          personagem — uma tela em que não há o que fazer, sem uma palavra
+          ator — uma tela em que não há o que fazer, sem uma palavra
           dizendo por quê. Silenciar o erro do modelo é esconder justamente o
           defeito que só o autor da lição pode consertar.
         */

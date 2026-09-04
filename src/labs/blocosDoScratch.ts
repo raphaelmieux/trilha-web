@@ -6,7 +6,7 @@
  * trocar o pneu da bicicleta, em seis passos —, e vários são pilhas de blocos,
  * escritas assim:
  *
- *     [quando a bandeira verde for clicada]
+ *     [quando ⚑ for clicado]
  *       [vá para x: -120 y: 0]
  *       [diga "vamos!"]
  *

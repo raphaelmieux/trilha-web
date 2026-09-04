@@ -43,7 +43,7 @@ export default function EditorDeScratch({ aoMontar }: { aoMontar?: () => void })
     com `Cannot read properties of null (reading 'trySubscribe')`.
 
     O estrago não é um aviso no console. Em `npm run dev` o laboratório abria
-    **vazio** — sem paleta, sem palco, sem personagem — e só funcionava no
+    **vazio** — sem paleta, sem palco, sem ator — e só funcionava no
     `npm run build`. Quem fosse mexer aqui teria um minuto de build a cada
     tentativa, ou concluiria que o laboratório está quebrado.
 

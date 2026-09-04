@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { TextoDeBloco } from '../components/ui/BandeiraVerde';
 import { Flag, Square, Trash2, ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import {
   CATEGORIAS, PALCO, TECLAS, corDoBloco, ehChapeu, ehContainer, textoDoBloco,
-  type Bloco, type Categoria, type Condicao, type Personagem, type Tecla, type TipoDeBloco,
+  type Bloco, type Categoria, type Condicao, type Ator, type Tecla, type TipoDeBloco,
 } from './blocos';
 import type { EstadoDoPalco } from './blocosRuntime';
 import { MODELOS, blocoNovo } from './blocosPaleta';
@@ -12,7 +13,7 @@ import { MODELOS, blocoNovo } from './blocosPaleta';
  *
  * ── O arranjo é o do Scratch ─────────────────────────────────────────────
  * Paleta por categoria colorida à esquerda, área de scripts no meio, palco no
- * canto superior direito e a lista de personagens embaixo dele. É o que a
+ * canto superior direito e a lista de atores embaixo dele. É o que a
  * pessoa vai reencontrar ao abrir o Scratch de verdade, e é a única razão para
  * imitar uma marca: Scratch é *aquele* programa, como o Word e o Explorador.
  *
@@ -182,7 +183,7 @@ export function Paleta({ categoria, aoEscolher, aoTrocarCategoria, variaveis, ou
               onClick={() => aoEscolher(tipo)}
               role="button" tabIndex={0}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); aoEscolher(tipo); } }}>
-              {textoDoBloco(exemplo)}
+              <TextoDeBloco texto={textoDoBloco(exemplo)} />
             </div>
           );
         })}
@@ -214,7 +215,7 @@ export function PalcoDeBlocos({ estado, aoClicarNoAtor }: {
         ))}
       </div>
 
-      {estado.personagens.map(p => (
+      {estado.atores.map(p => (
         <div key={p.id}>
           {p.fala && (
             <div className="bl-fala" style={{ ...emTela(p.x, p.y + 26) }}>{p.fala}</div>
@@ -222,7 +223,7 @@ export function PalcoDeBlocos({ estado, aoClicarNoAtor }: {
           <div className="bl-ator" style={emTela(p.x, p.y)}
             onClick={() => aoClicarNoAtor(p.id)}
             title={p.nome}>
-            {p.trajes[p.traje] ?? '❓'}
+            {p.fantasias[p.fantasia] ?? '❓'}
           </div>
         </div>
       ))}
@@ -230,17 +231,17 @@ export function PalcoDeBlocos({ estado, aoClicarNoAtor }: {
   );
 }
 
-export function ListaDePersonagens({ personagens, atual, aoEscolher }: {
-  personagens: Personagem[];
+export function ListaDePersonagens({ atores, atual, aoEscolher }: {
+  atores: Ator[];
   atual: string;
   aoEscolher: (id: string) => void;
 }) {
   return (
     <div className="bl-atores">
-      {personagens.map(p => (
+      {atores.map(p => (
         <button key={p.id} className="bl-ator-cartao" aria-current={p.id === atual}
           onClick={() => aoEscolher(p.id)}>
-          <b>{p.trajes[0]}</b>
+          <b>{p.fantasias[0]}</b>
           {p.nome}
         </button>
       ))}
@@ -260,14 +261,14 @@ export function ListaDePersonagens({ personagens, atual, aoEscolher }: {
  */
 export interface Cursor { pilha: string; depois?: string; dentro?: string }
 
-export function BlocoNaPilha({ bloco, cursor, pilha, primeiro, ultimo, variaveis, personagens, aoSelecionar, aoMudar, aoRemover, aoMover }: {
+export function BlocoNaPilha({ bloco, cursor, pilha, primeiro, ultimo, variaveis, atores, aoSelecionar, aoMudar, aoRemover, aoMover }: {
   bloco: Bloco;
   cursor: Cursor | null;
   pilha: string;
   primeiro: boolean;
   ultimo: boolean;
   variaveis: string[];
-  personagens: { id: string; nome: string }[];
+  atores: { id: string; nome: string }[];
   aoSelecionar: (c: Cursor) => void;
   aoMudar: (id: string, mudanca: Partial<Bloco>) => void;
   aoRemover: (id: string) => void;
@@ -293,7 +294,7 @@ export function BlocoNaPilha({ bloco, cursor, pilha, primeiro, ultimo, variaveis
       case 'mover':
         return <>mova {num(bloco.passos, n => aoMudar(bloco.id, { passos: n }), 'passos')} passos</>;
       case 'subir':
-        return <>suba {num(bloco.passos, n => aoMudar(bloco.id, { passos: n }), 'passos')} passos</>;
+        return <>adicione {num(bloco.passos, n => aoMudar(bloco.id, { passos: n }), 'passos')} a y</>;
       case 'irPara':
         return <>vá para x: {num(bloco.x, n => aoMudar(bloco.id, { x: n }), 'x')}{' '}
           y: {num(bloco.y, n => aoMudar(bloco.id, { y: n }), 'y')}</>;
@@ -302,25 +303,28 @@ export function BlocoNaPilha({ bloco, cursor, pilha, primeiro, ultimo, variaveis
           onClick={e => e.stopPropagation()}
           onChange={e => aoMudar(bloco.id, { texto: e.target.value })} /></>;
       case 'espere':
-        return <>espere {num(bloco.segundos, n => aoMudar(bloco.id, { segundos: n }), 'segundos')} segundos</>;
+        return <>espere {num(bloco.segundos, n => aoMudar(bloco.id, { segundos: n }), 'segundos')} seg</>;
       case 'repita':
         return <>repita {num(bloco.vezes, n => aoMudar(bloco.id, { vezes: n }), 'vezes')} vezes</>;
       case 'definaVariavel':
-        return <>defina{' '}
+        return <>mude{' '}
           <select value={bloco.nome} aria-label="variável" onClick={e => e.stopPropagation()}
             onChange={e => aoMudar(bloco.id, { nome: e.target.value })}>
             {variaveis.map(v => <option key={v} value={v}>{v}</option>)}
           </select>{' '}para {num(bloco.valor, n => aoMudar(bloco.id, { valor: n }), 'valor')}</>;
       case 'mudeVariavel':
-        return <>mude{' '}
+        /* A ordem é a do bloco: o quanto vem antes da variável. Escrever
+           "mude placar em 1" era juntar o nome de um bloco com a forma de
+           outro, e nenhum dos dois existe assim. */
+        return <>adicione {num(bloco.por, n => aoMudar(bloco.id, { por: n }), 'quanto')} a{' '}
           <select value={bloco.nome} aria-label="variável" onClick={e => e.stopPropagation()}
             onChange={e => aoMudar(bloco.id, { nome: e.target.value })}>
             {variaveis.map(v => <option key={v} value={v}>{v}</option>)}
-          </select>{' '}em {num(bloco.por, n => aoMudar(bloco.id, { por: n }), 'quanto')}</>;
+          </select></>;
       case 'se':
         return <>se <SeletorDeCondicao condicao={bloco.condicao} variaveis={variaveis}
-          personagens={personagens}
-          aoMudar={c => aoMudar(bloco.id, { condicao: c })} />, então</>;
+          atores={atores}
+          aoMudar={c => aoMudar(bloco.id, { condicao: c })} /> então</>;
       default:
         return textoDoBloco(bloco);
     }
@@ -367,7 +371,7 @@ export function BlocoNaPilha({ bloco, cursor, pilha, primeiro, ultimo, variaveis
               {bloco.corpo.map((f, i) => (
                 <BlocoNaPilha key={f.id} bloco={f} cursor={cursor} pilha={pilha}
                   primeiro={i === 0} ultimo={i === bloco.corpo.length - 1}
-                  variaveis={variaveis} personagens={personagens}
+                  variaveis={variaveis} atores={atores}
                   aoSelecionar={aoSelecionar} aoMudar={aoMudar}
                   aoRemover={aoRemover} aoMover={aoMover} />
               ))}
@@ -379,10 +383,10 @@ export function BlocoNaPilha({ bloco, cursor, pilha, primeiro, ultimo, variaveis
   );
 }
 
-function SeletorDeCondicao({ condicao, variaveis, personagens, aoMudar }: {
+function SeletorDeCondicao({ condicao, variaveis, atores, aoMudar }: {
   condicao: Condicao;
   variaveis: string[];
-  personagens: { id: string; nome: string }[];
+  atores: { id: string; nome: string }[];
   aoMudar: (c: Condicao) => void;
 }) {
   const parar = (e: React.MouseEvent) => e.stopPropagation();
@@ -392,23 +396,26 @@ function SeletorDeCondicao({ condicao, variaveis, personagens, aoMudar }: {
         onChange={e => {
           const t = e.target.value as Condicao['tipo'];
           aoMudar(
-            t === 'tocando' ? { tipo: 'tocando', quem: personagens[0]?.id ?? 'borda' }
+            t === 'tocando' ? { tipo: 'tocando', quem: atores[0]?.id ?? 'borda' }
               : t === 'teclaPressionada' ? { tipo: 'teclaPressionada', tecla: 'espaço' }
                 : { tipo: 'variavelMaiorQue', nome: variaveis[0] ?? 'placar', valor: 5 },
           );
         }}>
-        <option value="tocando">tocando em</option>
-        <option value="teclaPressionada">tecla pressionada</option>
+        <option value="tocando">tocando em …?</option>
+        <option value="teclaPressionada">tecla … pressionada?</option>
         {/* Sem variável criada não há o que comparar, e oferecer a opção
             produziria uma pergunta sobre um nome que não existe. */}
-        {variaveis.length > 0 && <option value="variavelMaiorQue">variável maior que</option>}
+        {/* No Scratch a comparação é o bloco ">", de Operadores, com a variável
+            arrastada para dentro dele. "Variável maior que" não é o nome de
+            bloco nenhum. */}
+        {variaveis.length > 0 && <option value="variavelMaiorQue">… &gt; …</option>}
       </select>
 
       {condicao.tipo === 'tocando' && (
         <select value={condicao.quem} aria-label="quem" onClick={parar}
           onChange={e => aoMudar({ tipo: 'tocando', quem: e.target.value })}>
-          {personagens.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
-          <option value="borda">a borda</option>
+          {atores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+          <option value="borda">borda</option>
         </select>
       )}
 

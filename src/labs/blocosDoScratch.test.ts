@@ -15,7 +15,7 @@ import { VEREDAS } from '../curriculum/veredas';
 
 describe('a categoria sai do que o bloco diz', () => {
   it('reconhece as categorias que a vereda usa', () => {
-    expect(categoriaDoBloco('quando a bandeira verde for clicada')).toBe('eventos');
+    expect(categoriaDoBloco('quando ⚑ for clicado')).toBe('eventos');
     expect(categoriaDoBloco('mova 10 passos')).toBe('movimento');
     expect(categoriaDoBloco('vá para x: -120 y: 0')).toBe('movimento');
     expect(categoriaDoBloco('diga "vamos!"')).toBe('aparencia');
@@ -48,7 +48,7 @@ describe('a categoria sai do que o bloco diz', () => {
   });
 
   it('só o chapéu é chapéu', () => {
-    expect(ehChapeu('quando a bandeira verde for clicada')).toBe(true);
+    expect(ehChapeu('quando ⚑ for clicado')).toBe(true);
     expect(ehChapeu('quando a tecla espaço for pressionada')).toBe(true);
     expect(ehChapeu('mova 10 passos')).toBe(false);
   });
@@ -58,7 +58,7 @@ describe('a leitura do exemplo', () => {
   it('separa bloco de texto, e guarda o recuo', () => {
     const linhas = lerExemploDeBlocos([
       'Em blocos, encaixado:',
-      '[quando a bandeira verde for clicada]',
+      '[quando ⚑ for clicado]',
       '  [vá para x: -120 y: 0]',
       '',
       '    [diga "oi"]',
@@ -99,7 +99,7 @@ describe('os exemplos da CC001', () => {
   /*
     Duas pilhas lado a lado não cabem: o desenho é uma coluna, e uma linha com
     dois blocos viraria um bloco só com o texto dos dois. A lição se escreve
-    uma pilha embaixo da outra, com o nome do personagem em cima de cada uma —
+    uma pilha embaixo da outra, com o nome do ator em cima de cada uma —
     que é também como o Scratch mostra, já que ali se troca de ator para ver o
     programa dele.
   */

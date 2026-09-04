@@ -10,8 +10,8 @@ import type { Projeto } from './blocos';
  * o que fazer.
  *
  * ── Abre com tudo por fazer ──────────────────────────────────────────────
- * Dois personagens e **nenhuma pilha**. O elenco vem montado de propósito, e
- * isso não é adiantar trabalho: escolher personagem é o que se faz antes de
+ * Dois atores e **nenhuma pilha**. O elenco vem montado de propósito, e
+ * isso não é adiantar trabalho: escolher ator é o que se faz antes de
  * programar. A lógica está toda por escrever.
  *
  * ── Os dois na mesma altura ──────────────────────────────────────────────
@@ -24,8 +24,8 @@ import type { Projeto } from './blocos';
  */
 export const palcoInicial = (): Projeto => ({
   variaveis: [],
-  personagens: [
-    { id: 'gato', nome: 'Gato', trajes: ['🐱', '😺'], x: -120, y: 0, pilhas: [] },
-    { id: 'maca', nome: 'Maçã', trajes: ['🍎'], x: 120, y: 0, pilhas: [] },
+  atores: [
+    { id: 'gato', nome: 'Gato', fantasias: ['🐱', '😺'], x: -120, y: 0, pilhas: [] },
+    { id: 'maca', nome: 'Maçã', fantasias: ['🍎'], x: 120, y: 0, pilhas: [] },
   ],
 });

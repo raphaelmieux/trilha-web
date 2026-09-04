@@ -1,5 +1,5 @@
 import {
-  PALCO, ehChapeu, type Bloco, type Condicao, type Personagem, type Projeto, type Tecla,
+  PALCO, ehChapeu, type Bloco, type Condicao, type Ator, type Projeto, type Tecla,
 } from './blocos';
 
 /**
@@ -7,7 +7,7 @@ import {
  *
  * ── Uma pilha é uma corrotina ────────────────────────────────────────────
  * Cada script roda um pouco a cada quadro e para onde estava, exatamente como
- * no Scratch — é o que permite dois personagens se moverem ao mesmo tempo sem
+ * no Scratch — é o que permite dois atores se moverem ao mesmo tempo sem
  * um esperar o outro terminar. Em JavaScript isso é um gerador: `yield` marca
  * "acabou o meu tempo neste quadro", e a próxima chamada continua da linha
  * seguinte. Sem gerador seria preciso guardar à mão uma pilha de posições
@@ -36,14 +36,14 @@ export interface EstadoDoPersonagem {
   nome: string;
   x: number;
   y: number;
-  traje: number;
-  trajes: string[];
+  fantasia: number;
+  fantasias: string[];
   /** O balão de fala, enquanto houver. */
   fala: string;
 }
 
 export interface EstadoDoPalco {
-  personagens: EstadoDoPersonagem[];
+  atores: EstadoDoPersonagem[];
   variaveis: Record<string, number>;
   /** Quantas vezes um som foi tocado — o palco não emite áudio, ele conta. */
   sons: number;
@@ -55,7 +55,7 @@ export interface EstadoDoPalco {
 export interface Entrada {
   /** As teclas seguradas agora. */
   teclas: Set<Tecla>;
-  /** O personagem clicado neste quadro, se houve um. */
+  /** O ator clicado neste quadro, se houve um. */
   clicado?: string;
 }
 
@@ -65,8 +65,8 @@ export interface Entrada {
 
 export function estadoInicial(projeto: Projeto): EstadoDoPalco {
   return {
-    personagens: projeto.personagens.map(p => ({
-      id: p.id, nome: p.nome, x: p.x, y: p.y, traje: 0, trajes: p.trajes, fala: '',
+    atores: projeto.atores.map(p => ({
+      id: p.id, nome: p.nome, x: p.x, y: p.y, fantasia: 0, fantasias: p.fantasias, fala: '',
     })),
     variaveis: Object.fromEntries(projeto.variaveis.map(v => [v.nome, v.valor])),
     sons: 0,
@@ -81,7 +81,7 @@ export function estadoInicial(projeto: Projeto): EstadoDoPalco {
 
 /** O que uma pilha em andamento precisa carregar. */
 interface Tarefa {
-  personagem: string;
+  ator: string;
   pilha: string;
   passo: Generator<void, void, void>;
   pronta: boolean;
@@ -95,9 +95,9 @@ interface Contexto {
   parar: () => void;
 }
 
-const acho = (e: EstadoDoPalco, id: string) => e.personagens.find(p => p.id === id);
+const acho = (e: EstadoDoPalco, id: string) => e.atores.find(p => p.id === id);
 
-/** Encosta um personagem no outro? Caixas de 40×40, que é o tamanho do desenho. */
+/** Encosta um ator no outro? Caixas de 40×40, que é o tamanho do desenho. */
 function tocando(e: EstadoDoPalco, meuId: string, quem: string): boolean {
   const eu = acho(e, meuId);
   if (!eu) return false;
@@ -118,7 +118,7 @@ function avalia(c: Condicao, ctx: Contexto): boolean {
   }
 }
 
-/** Mantém o personagem dentro do palco, como o Scratch faz. */
+/** Mantém o ator dentro do palco, como o Scratch faz. */
 const dentro = (v: number, limite: number) => Math.max(-limite / 2, Math.min(limite / 2, v));
 
 /**
@@ -154,8 +154,8 @@ function* executar(blocos: Bloco[], ctx: Contexto): Generator<void, void, void> 
         eu.y = dentro(b.y, PALCO.altura);
         yield; break;
 
-      case 'proximoTraje':
-        eu.traje = eu.trajes.length ? (eu.traje + 1) % eu.trajes.length : 0;
+      case 'proximaFantasia':
+        eu.fantasia = eu.fantasias.length ? (eu.fantasia + 1) % eu.fantasias.length : 0;
         yield; break;
 
       case 'diga':
@@ -242,7 +242,7 @@ export class Palco {
 
   /** Um evento de tecla ou de clique, enquanto o palco roda. */
   private dispararSe(quando: (b: Bloco) => boolean, entrada: Entrada) {
-    for (const p of this.projeto.personagens) {
+    for (const p of this.projeto.atores) {
       for (const pilha of p.pilhas) {
         const chapeu = pilha.blocos[0];
         if (!chapeu || !ehChapeu(chapeu) || !quando(chapeu)) continue;
@@ -250,7 +250,7 @@ export class Palco {
            que já estava rodando, e é o que se espera de segurar a seta. */
         this.tarefas = this.tarefas.filter(t => t.pilha !== pilha.id);
         this.tarefas.push({
-          personagem: p.id,
+          ator: p.id,
           pilha: pilha.id,
           passo: executar(pilha.blocos, this.contexto(p, entrada)),
           pronta: false,
@@ -259,7 +259,7 @@ export class Palco {
     }
   }
 
-  private contexto(p: Personagem, entrada: Entrada): Contexto {
+  private contexto(p: Ator, entrada: Entrada): Contexto {
     return {
       estado: this.estado,
       entrada,
@@ -286,14 +286,14 @@ export class Palco {
     }
     if (entrada.clicado) {
       const quem = entrada.clicado;
-      for (const p of this.projeto.personagens) {
+      for (const p of this.projeto.atores) {
         if (p.id !== quem) continue;
         for (const pilha of p.pilhas) {
           const chapeu = pilha.blocos[0];
           if (chapeu?.tipo !== 'quandoClicado') continue;
           this.tarefas = this.tarefas.filter(t => t.pilha !== pilha.id);
           this.tarefas.push({
-            personagem: p.id, pilha: pilha.id,
+            ator: p.id, pilha: pilha.id,
             passo: executar(pilha.blocos, this.contexto(p, entrada)), pronta: false,
           });
         }

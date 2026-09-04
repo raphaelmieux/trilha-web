@@ -187,7 +187,7 @@ describe('os modelos dos laboratórios da vereda', () => {
               JSON.parse(licao.projetoDeScratch ?? '{"targets":[]}') as ProjetoSb3,
               licao.verificacoes)
             : licao.linguagem === 'blocos'
-              ? validarBlocos(licao.projetoDeBlocos ?? { personagens: [], variaveis: [] }, licao.verificacoes)
+              ? validarBlocos(licao.projetoDeBlocos ?? { atores: [], variaveis: [] }, licao.verificacoes)
               : licao.linguagem === 'css'
                 ? validateCss(licao.modelo, licao.marcacao ?? '', licao.verificacoes)
                 : validateHtml(licao.modelo, licao.verificacoes))

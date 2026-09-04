@@ -73,10 +73,10 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
       data: { options: [
         { id: 'a', text: 'Dizer quando aquela pilha deve começar a rodar.', correct: true },
         { id: 'b', text: 'Dar nome à pilha, para separá-la das outras na tela.', porque: 'Ele não nomeia nada. Duas pilhas podem começar com o mesmo chapéu e rodam as duas.' },
-        { id: 'c', text: 'Marcar de que personagem aquela pilha é.', porque: 'Quem diz isso é a aba do personagem em que a pilha está, e não o chapéu.' },
+        { id: 'c', text: 'Marcar de que ator aquela pilha é.', porque: 'Quem diz isso é a aba do ator em que a pilha está, e não o chapéu.' },
         { id: 'd', text: 'Guardar o primeiro comando, que roda antes de todos os outros.', porque: 'O chapéu não é um comando: ele não move, não fala e não muda nada. Ele espera.' },
       ]},
-      explanation: 'Bandeira verde, tecla pressionada, personagem clicado: cada chapéu é um "quando".',
+      explanation: 'Bandeira verde, tecla pressionada, ator clicado: cada chapéu é um "quando".',
     },
     {
       id: 'BLK-M2-Q2', type: 'multiple_choice',
@@ -85,7 +85,7 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
         { id: 'a', text: 'Sem chapéu, nada diz quando a pilha roda — e ela nunca roda.', correct: true },
         { id: 'b', text: 'Os blocos foram encaixados na ordem errada dentro da pilha.', porque: 'A ordem só importa depois que a pilha começa. Esta nem começou.' },
         { id: 'c', text: 'Falta salvar o projeto antes de a bandeira verde funcionar.', porque: 'O palco roda o que está montado agora. Salvar guarda o trabalho, não o liga.' },
-        { id: 'd', text: 'A bandeira verde só roda a pilha do primeiro personagem da lista.', porque: 'Ela dispara todas as pilhas de bandeira, de todos os personagens, ao mesmo tempo.' },
+        { id: 'd', text: 'A bandeira verde só roda a pilha do primeiro ator da lista.', porque: 'Ela dispara todas as pilhas de bandeira, de todos os atores, ao mesmo tempo.' },
       ]},
       explanation: 'É o erro mais comum de quem começa: a pilha existe, está certa, e ninguém a chama.',
     },
@@ -96,7 +96,7 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
         { id: 'a', text: 'No centro do palco.', correct: true },
         { id: 'b', text: 'No canto superior esquerdo do palco.', porque: 'É onde fica em muitos programas de desenho, e não aqui. Este palco tem a origem no meio, como um gráfico.' },
         { id: 'c', text: 'No canto inferior esquerdo, como num gráfico de matemática.', porque: 'O eixo y sobe como no gráfico, mas a origem não está no canto: está no centro, e por isso existe x negativo.' },
-        { id: 'd', text: 'Onde o personagem estiver quando o projeto for aberto.', porque: 'A origem é fixa. O personagem é que tem posição, e ela se mede a partir dela.' },
+        { id: 'd', text: 'Onde o ator estiver quando o projeto for aberto.', porque: 'A origem é fixa. O ator é que tem posição, e ela se mede a partir dela.' },
       ]},
       explanation: 'Origem no meio, x de -240 a 240 e y de -180 a 180. É por isso que existem coordenadas negativas.',
     },
@@ -117,7 +117,7 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
       prompt: 'O que é um evento, em programação?',
       data: { options: [
         { id: 'a', text: 'Algo que acontece de fora e faz o programa reagir.', correct: true },
-        { id: 'b', text: 'Um erro que interrompe o programa no meio da execução.', porque: 'Isso é uma falha. Evento é normal e esperado: a tecla, o clique, o encontro de dois personagens.' },
+        { id: 'b', text: 'Um erro que interrompe o programa no meio da execução.', porque: 'Isso é uma falha. Evento é normal e esperado: a tecla, o clique, o encontro de dois atores.' },
         { id: 'c', text: 'Cada passo que o programa dá enquanto está rodando.', porque: 'Os passos são a execução. O evento é o que a dispara, e vem de fora dela.' },
         { id: 'd', text: 'O momento em que o programa termina e devolve o resultado.', porque: 'Esse é o fim da execução. O evento normalmente é o começo dela.' },
       ]},
@@ -136,7 +136,7 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
     },
     {
       id: 'BLK-M3-Q3', type: 'multiple_choice',
-      prompt: 'A pilha começa com "quando a tecla direita for pressionada" e traz um bloco "diga Olá" embaixo. Você segura a seta e o personagem não sai do lugar. O que falta?',
+      prompt: 'A pilha começa com "quando a tecla direita for pressionada" e traz um bloco "diga Olá" embaixo. Você segura a seta e o ator não sai do lugar. O que falta?',
       data: { options: [
         { id: 'a', text: 'Um bloco de movimento: a pilha dispara, mas nada nela move.', correct: true },
         { id: 'b', text: 'Trocar o chapéu, porque tecla de seta não dispara pilha nenhuma.', porque: 'A seta dispara sim — a prova é o balão de fala aparecendo. O chapéu está fazendo o trabalho dele.' },
@@ -163,18 +163,18 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
       data: { options: [
         { id: 'a', text: 'Um bloco que executa de novo o que está dentro dele.', correct: true },
         { id: 'b', text: 'Escrever o mesmo comando várias vezes seguidas na pilha.', porque: 'Isso é copiar e colar. O laço é justamente o que evita essa cópia — e o que permite repetir sem saber quantas vezes.' },
-        { id: 'c', text: 'Um comando que faz o personagem voltar para onde começou.', porque: 'Voltar ao começo é o bloco "vá para". O laço repete, e o que ele repete é escolha de quem monta.' },
+        { id: 'c', text: 'Um comando que faz o ator voltar para onde começou.', porque: 'Voltar ao começo é o bloco "vá para". O laço repete, e o que ele repete é escolha de quem monta.' },
         { id: 'd', text: 'A parte do programa que roda depois que todo o resto terminou.', porque: 'O laço roda onde está, na ordem da pilha. Ele não espera o resto acabar.' },
       ]},
       explanation: '"Repita 10 vezes" e "sempre" são as duas formas. O que muda é quando param.',
     },
     {
       id: 'BLK-M4-Q2', type: 'multiple_choice',
-      prompt: 'Você quer que o personagem ande 4 passos. Por que usar "repita 4 vezes" em vez de encaixar quatro blocos de mover?',
+      prompt: 'Você quer que o ator ande 4 passos. Por que usar "repita 4 vezes" em vez de encaixar quatro blocos de mover?',
       data: { options: [
         { id: 'a', text: 'Para trocar 4 por 40 mudando um número só.', correct: true },
         { id: 'b', text: 'Porque quatro blocos iguais seguidos causam erro no programa.', porque: 'Não causam erro nenhum: funcionam. O problema é o custo de mudar depois, e não a correção.' },
-        { id: 'c', text: 'Porque o laço faz o personagem andar mais rápido que os blocos soltos.', porque: 'A velocidade é a mesma. O laço organiza o programa, não acelera nada.' },
+        { id: 'c', text: 'Porque o laço faz o ator andar mais rápido que os blocos soltos.', porque: 'A velocidade é a mesma. O laço organiza o programa, não acelera nada.' },
         { id: 'd', text: 'Porque o Scratch não deixa encaixar o mesmo bloco duas vezes na pilha.', porque: 'Deixa, sim. Nada impede quatro blocos iguais — o que se ganha com o laço é outra coisa.' },
       ]},
       explanation: 'O laço não é atalho de digitação: é o que deixa o programa mudar sem ser reescrito.',
@@ -194,7 +194,7 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
       id: 'BLK-M4-Q4', type: 'true_false',
       prompt: 'O bloco "sempre" para sozinho depois de um número grande de voltas.',
       data: { options: [
-        { id: 'v', text: 'Verdadeiro', porque: 'Ele não para sozinho nunca. Quem o encerra é o bloco "pare tudo", a bandeira vermelha ou o fim do projeto.' },
+        { id: 'v', text: 'Verdadeiro', porque: 'Ele não para sozinho nunca. Quem o encerra é o bloco "pare todos", o botão vermelho de parar ou o fim do projeto.' },
         { id: 'f', text: 'Falso', correct: true },
       ]},
       explanation: 'É a diferença entre os dois laços: "repita" tem conta para terminar, "sempre" não tem.',
@@ -215,11 +215,11 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
     },
     {
       id: 'BLK-M5-Q2', type: 'multiple_choice',
-      prompt: 'Você pôs um "se tocando na maçã" solto na pilha, logo abaixo da bandeira verde. Os dois se encostam durante o jogo e nada acontece. Por quê?',
+      prompt: 'Você pôs um "se tocando em Maçã? então" solto na pilha, logo abaixo da bandeira verde. Os dois se encostam durante o jogo e nada acontece. Por quê?',
       data: { options: [
         { id: 'a', text: 'O "se" perguntou uma vez, no começo, e nunca mais.', correct: true },
-        { id: 'b', text: 'O sensor de toque só funciona depois que o personagem se move.', porque: 'O sensor responde a qualquer momento. O problema é que ninguém o consultou na hora do encontro.' },
-        { id: 'c', text: 'Falta um segundo "se" no outro personagem para o toque valer.', porque: 'Um lado basta para perceber o encontro. Dois "se" teriam o mesmo problema deste, e duas vezes.' },
+        { id: 'b', text: 'O sensor de toque só funciona depois que o ator se move.', porque: 'O sensor responde a qualquer momento. O problema é que ninguém o consultou na hora do encontro.' },
+        { id: 'c', text: 'Falta um segundo "se" no outro ator para o toque valer.', porque: 'Um lado basta para perceber o encontro. Dois "se" teriam o mesmo problema deste, e duas vezes.' },
         { id: 'd', text: 'O "se" precisa estar sempre dentro de um "repita" com número.', porque: 'Não precisa ser "repita": o "sempre" é o que serve aqui. O que falta é alguém perguntando de novo.' },
       ]},
       explanation: 'Condição pergunta no instante em que é executada. Para vigiar algo, ela precisa morar dentro de um laço.',
@@ -228,12 +228,12 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
       id: 'BLK-M5-Q3', type: 'multiple_choice',
       prompt: 'Qual é a diferença entre "tocando na borda" e "tocando na maçã"?',
       data: { options: [
-        { id: 'a', text: 'A borda é a beirada do palco; a maçã é outro personagem.', correct: true },
-        { id: 'b', text: 'A borda vale para qualquer personagem e a maçã só para o que a criou.', porque: 'Qualquer personagem pode perguntar por qualquer outro. Não há dono da pergunta.' },
+        { id: 'a', text: 'A borda é a beirada do palco; a maçã é outro ator.', correct: true },
+        { id: 'b', text: 'A borda vale para qualquer ator e a maçã só para o que a criou.', porque: 'Qualquer ator pode perguntar por qualquer outro. Não há dono da pergunta.' },
         { id: 'c', text: 'A borda é uma pergunta de posição e a maçã é uma pergunta de cor.', porque: 'As duas são perguntas de encosto. Cor é outro sensor, que não está em jogo aqui.' },
-        { id: 'd', text: 'Nenhuma: as duas perguntam se o personagem chegou ao limite do palco.', porque: 'A maçã pode estar no meio do palco. Encostar nela não tem nada a ver com chegar ao limite.' },
+        { id: 'd', text: 'Nenhuma: as duas perguntam se o ator chegou ao limite do palco.', porque: 'A maçã pode estar no meio do palco. Encostar nela não tem nada a ver com chegar ao limite.' },
       ]},
-      explanation: 'É a distinção que o requisito 5 cobra: os dois personagens precisam interagir entre si, e não com o cenário.',
+      explanation: 'É a distinção que o requisito 5 cobra: os dois atores precisam interagir entre si, e não com o cenário.',
     },
     {
       id: 'BLK-M5-Q4', type: 'true_false',
@@ -276,7 +276,7 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
         { id: 'a', text: 'O placar sobe sem parar, sem que ninguém tenha feito nada.', correct: true },
         { id: 'b', text: 'O placar sobe uma vez e depois fica parado no mesmo número.', porque: 'Dentro do "sempre" ele roda a cada volta. Subir uma vez só é o que aconteceria fora do laço.' },
         { id: 'c', text: 'O placar não muda, porque falta a condição que autoriza a soma.', porque: 'O bloco não precisa de autorização: ele soma sempre que é executado. A condição é o que a gente quer, e não o que ele exige.' },
-        { id: 'd', text: 'O placar sobe apenas quando os dois personagens se encostam.', porque: 'Isso exigiria um "se tocando" em volta. Sem ele, o toque não tem participação nenhuma.' },
+        { id: 'd', text: 'O placar sobe apenas quando os dois atores se encostam.', porque: 'Isso exigiria um "se tocando" em volta. Sem ele, o toque não tem participação nenhuma.' },
       ]},
       explanation: 'Um placar assim não marca ponto por alguma coisa: marca ponto por existir. O que faz dele placar é estar dentro de um "se".',
     },
@@ -297,9 +297,9 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
       prompt: 'O que decide, dentro do programa, que o jogo acabou?',
       data: { options: [
         { id: 'a', text: 'Um "se" que compara a variável com um número.', correct: true },
-        { id: 'b', text: 'O bloco "pare tudo" encaixado no fim da pilha principal.', porque: '"Pare tudo" executa o fim, e não o decide: sem uma pergunta antes dele, ele para na primeira passada.' },
+        { id: 'b', text: 'O bloco "pare todos" encaixado no fim da pilha principal.', porque: '"Pare todos" executa o fim, e não o decide: sem uma pergunta antes dele, ele para na primeira passada.' },
         { id: 'c', text: 'O momento em que o "sempre" termina a última volta dele.', porque: 'O "sempre" não tem última volta. Ele gira até alguém encerrar o programa.' },
-        { id: 'd', text: 'O jogador clicando na bandeira vermelha quando quiser sair.', porque: 'Isso é desistir, e funciona em qualquer projeto. O requisito pede uma condição de vitória ou derrota escrita no programa.' },
+        { id: 'd', text: 'O jogador clicando no botão vermelho de parar quando quiser sair.', porque: 'Isso é desistir, e funciona em qualquer projeto. O requisito pede uma condição de vitória ou derrota escrita no programa.' },
       ]},
       explanation: 'Placar maior que 5, vidas menores que 1, tempo esgotado: é a comparação que decide.',
     },
@@ -307,7 +307,7 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
       id: 'BLK-M7-Q2', type: 'ordering',
       prompt: 'Ponha em ordem os passos de quem monta um jogo de pegar frutas, do primeiro ao último.',
       data: { items: [
-        { id: 'p1', text: 'Pôr os dois personagens no palco e escolher onde cada um começa.', order: 1 },
+        { id: 'p1', text: 'Pôr os dois atores no palco e escolher onde cada um começa.', order: 1 },
         { id: 'p2', text: 'Fazer o jogador se mover com as setas do teclado.', order: 2 },
         { id: 'p3', text: 'Criar a variável do placar e zerá-la na bandeira verde.', order: 3 },
         { id: 'p4', text: 'Somar um ponto dentro de um "se tocando", vigiado por um "sempre".', order: 4 },
@@ -328,12 +328,12 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
     },
     {
       id: 'BLK-M7-Q4', type: 'true_false',
-      prompt: 'Para que dois personagens interajam, basta que os dois existam no palco e tenham alguma pilha rodando.',
+      prompt: 'Para que dois atores interajam, basta que os dois existam no palco e tenham alguma pilha rodando.',
       data: { options: [
         { id: 'v', text: 'Verdadeiro', porque: 'Existir e rodar não é interagir. Sem uma condição em que um pergunta pelo outro, os dois rodam lado a lado sem nunca se notarem.' },
         { id: 'f', text: 'Falso', correct: true },
       ]},
-      explanation: 'A interação é a pergunta: um "se tocando" que nomeia o outro personagem, e faz algo quando a resposta é sim.',
+      explanation: 'A interação é a pergunta: um "se tocando" que nomeia o outro ator, e faz algo quando a resposta é sim.',
     },
   ],
 };

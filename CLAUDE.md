@@ -489,6 +489,28 @@ do "descreve, e não julga" acusar a plataforma de uma palavra que ela não
 disse. O esboço do teste é neutro por isso — um nó de cada tipo, com nomes que
 não dizem nada.
 
+**O nome do bloco na lição é o nome que está na paleta — sem tradução nossa.**
+A CC001 abre o Scratch de verdade, em português, e as lições diziam
+"quando a bandeira verde for clicada" (a paleta diz "quando ⚑ for clicado", com
+a bandeira desenhada no lugar da palavra), "defina placar para 0" (é "mude
+placar para 0"), "mude placar em 1" (é "adicione 1 a placar"), "pare tudo" (é
+"pare todos"), "próximo traje" (é "próxima fantasia"), "suba 10 passos" (é
+"adicione 10 a y"). E chamava o ator de "personagem", que é a palavra que a
+tela não usa: sprite é **ator** no Scratch em português, costume é **fantasia**,
+e o controle vermelho é um octógono de parar, e não uma bandeira.
+
+Nada disso estoura. O desbravador lê a lição, vai procurar na gaveta, não acha,
+e conclui que está no lugar errado — é o mesmo defeito de pintar o bloco da cor
+errada, só que nas palavras.
+
+A resposta vem de `scratch-l10n`, o arquivo de tradução do próprio MIT, que é o
+que o editor embutido carrega; não há segunda fonte. `blocosDaLicao.test.ts`
+confere cada bloco escrito nas lições contra ele, e confere também os rótulos do
+editor de reserva — uma reserva com outros nomes ensinaria uma paleta que não
+existe. O molde tem buracos (`mova %1 passos`), então a comparação é por padrão,
+e o bloco de parar mostra que o item de menu é uma tradução à parte: o texto que
+se lê é "pare" mais "todos".
+
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois
@@ -576,6 +598,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/labs/falhasDePython.test.ts` | painel de falhas que abre respondido, ou recado de erro que entrega a resposta |
 | `src/labs/roteiroDePython.test.ts` | roteiro que julga o programa, ou que faz escada com a cadeia de elif |
+| `src/curriculum/blocosDaLicao.test.ts` | bloco escrito na lição que não existe com essas palavras na paleta do Scratch |
 | `src/curriculum/index.test.ts` | trilha sem emblema ou sem fundo de certificado no repositório |
 | `src/curriculum/exemplosDaTeoria.test.ts` | seletor do exemplo de CSS que não acha ninguém na marcação do tópico |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |

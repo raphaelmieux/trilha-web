@@ -23,12 +23,12 @@
  *
  * A segunda é que os laboratórios não escrevem texto: montam uma árvore de
  * blocos. O modelo deles não é uma string, é `projetoDeBlocos` — os
- * personagens no palco, e nenhuma pilha montada.
+ * atores no palco, e nenhuma pilha montada.
  *
  * ── O percurso, e por que nesta ordem ────────────────────────────────────
  * Cada módulo acrescenta exatamente uma ideia, e o laboratório dele cobra
  * exatamente essa ideia. O último cobra a vereda inteira, porque é o requisito
- * 5 — o jogo com placar, condição de vitória e dois personagens que interajam.
+ * 5 — o jogo com placar, condição de vitória e dois atores que interajam.
  *
  * A ordem é a de quem monta um jogo de verdade: primeiro o que se vê, depois o
  * que se controla, depois o que se repete, o que se decide, o que se conta, e
@@ -41,7 +41,7 @@ import { QUESTOES_DE_BLOCOS } from './questoesDeBlocos';
 import { PROJETO_INICIAL } from '../labs/scratch/projetoInicial';
 
 /*
-  O palco de onde todo laboratório parte: dois personagens e nenhuma pilha.
+  O palco de onde todo laboratório parte: dois atores e nenhuma pilha.
 
   Os dois estão ali desde o primeiro módulo, e não só no último, porque quem
   monta um jogo escolhe o elenco antes do enredo — e porque o requisito 5 pede
@@ -52,7 +52,7 @@ import { PROJETO_INICIAL } from '../labs/scratch/projetoInicial';
   verificação passaria a medir só a segunda sem que nada na tela denunciasse.
   Quem cria é a pessoa, na paleta.
 
-  Nenhuma pilha, em nenhum personagem. É a regra da casa e `veredas.test.ts` a
+  Nenhuma pilha, em nenhum ator. É a regra da casa e `veredas.test.ts` a
   cobra: laboratório que abre com verificação verde não ensina nada, e o erro é
   invisível de dentro porque o painel mostra tarefa concluída — que é
   exatamente o que se espera de um laboratório funcionando.
@@ -134,7 +134,7 @@ Ordem certa:
 
 Em blocos, encaixado:
   [mova 100 passos]
-  [gire 90 graus]`,
+  [gire ↻ 90 graus]`,
         exemploComo: 'blocos',
         atencao: 'Blocos não são uma linguagem de brinquedo. Sequência, repetição, condição, variável e evento são exatamente os mesmos em Python, em Java e em C. O que muda é a escrita — e é por isso que esta vereda vem antes das outras.',
         marcas: ['Logo', 'Papert', 'Scratch', 'Resnick'],
@@ -160,7 +160,7 @@ Em blocos, encaixado:
 x: 0     y: 0     bem no centro
 x: 240   y: 180   canto de cima, à direita`,
         exemploComo: 'texto',
-        atencao: 'Vá para x: 0 y: 0 não é "voltar ao começo": é ir para o centro. Se o personagem começou em outro lugar, esse bloco o move para longe de onde ele estava.',
+        atencao: 'Vá para x: 0 y: 0 não é "voltar ao começo": é ir para o centro. Se o ator começou em outro lugar, esse bloco o move para longe de onde ele estava.',
         marcas: ['x', 'y', 'palco'],
       },
       {
@@ -169,14 +169,14 @@ x: 240   y: 180   canto de cima, à direita`,
         resumo: 'Sem ele, a pilha nunca roda.',
         explicacao: [
           'Os blocos de cima arredondado são os chapéus. Cada um responde a uma pergunta só: quando esta pilha começa?',
-          'Quando a bandeira verde for clicada. Quando a tecla direita for pressionada. Quando este personagem for clicado. Cada pilha começa com um deles, e é ele que a liga.',
+          'O primeiro é o da bandeira verde, e nele a bandeira é um desenho no meio do texto: o bloco se lê "quando (bandeira) for clicado". Os outros dois são "quando a tecla direita for pressionada" e "quando este ator for clicado". Cada pilha começa com um deles, e é ele que a liga.',
           'O chapéu não é um comando. Ele não move nada, não fala nada e não muda nada. Ele espera.',
         ],
-        exemplo: `[quando a bandeira verde for clicada]
+        exemplo: `[quando ⚑ for clicado]
   [vá para x: -120 y: 0]
-  [diga "vamos!"]`,
+  [diga vamos!]`,
         exemploComo: 'blocos',
-        atencao: 'Pilha sem chapéu não roda — nunca, de jeito nenhum. Ela fica bonita na tela, os blocos estão certos, e ao clicar em Começar não acontece nada. É o primeiro erro de todo mundo, e o mais difícil de enxergar justamente porque não há erro nenhum para ler.',
+        atencao: 'Pilha sem chapéu não roda — nunca, de jeito nenhum. Ela fica bonita na tela, os blocos estão certos, e ao clicar na bandeira verde não acontece nada. É o primeiro erro de todo mundo, e o mais difícil de enxergar justamente porque não há erro nenhum para ler.',
         marcas: ['chapéu', 'bandeira verde'],
       },
       {
@@ -186,21 +186,21 @@ x: 240   y: 180   canto de cima, à direita`,
         explicacao: [
           'Dentro de uma pilha, os blocos rodam de cima para baixo, um depois do outro. O desenho na tela é a ordem de execução — a sequência do módulo 1, virada na vertical.',
           'Mas pilhas diferentes rodam ao mesmo tempo. Se o gato e a maçã têm cada um a sua pilha de bandeira verde, as duas começam juntas: uma não espera a outra terminar.',
-          'É o que permite um jogo existir. Se o segundo personagem só se mexesse depois que o primeiro acabasse, não haveria jogo nenhum — haveria um desenho animado.',
+          'É o que permite um jogo existir. Se o segundo ator só se mexesse depois que o primeiro acabasse, não haveria jogo nenhum — haveria um desenho animado.',
         ],
         exemplo: `No Gato:
-[quando a bandeira verde for clicada]
+[quando ⚑ for clicado]
   [vá para x: -120 y: 0]
-  [diga "oi"]
+  [diga oi]
 
 Na Maçã:
-[quando a bandeira verde for clicada]
+[quando ⚑ for clicado]
   [vá para x: 120 y: 0]
-  [diga "me pegue"]
+  [diga me pegue]
 
 As duas começam juntas: os dois falam ao mesmo tempo.`,
         exemploComo: 'blocos',
-        atencao: 'Um mesmo personagem pode ter várias pilhas, e todas com o mesmo chapéu. Não há uma pilha "principal": clicar na bandeira verde dispara todas as pilhas de bandeira, de todos os personagens, de uma vez.',
+        atencao: 'Um mesmo ator pode ter várias pilhas, e todas com o mesmo chapéu. Não há uma pilha "principal": clicar na bandeira verde dispara todas as pilhas de bandeira, de todos os atores, de uma vez.',
         marcas: ['pilha', 'execução'],
       },
     ],
@@ -216,7 +216,7 @@ As duas começam juntas: os dois falam ao mesmo tempo.`,
         titulo: 'O que é um evento',
         resumo: 'Algo que vem de fora e faz o programa reagir.',
         explicacao: [
-          'Um evento é algo que acontece de fora do programa e faz ele reagir: uma tecla pressionada, um clique, dois personagens que se encostam, o tempo passando.',
+          'Um evento é algo que acontece de fora do programa e faz ele reagir: uma tecla pressionada, um clique, dois atores que se encostam, o tempo passando.',
           'Programar com eventos é escrever respostas. Você não diz "primeiro o jogador anda, depois pula": você diz "quando a seta for pressionada, ande" e "quando o espaço for pressionado, pule". Quem decide a ordem é quem está jogando.',
           'Todo aplicativo que você usa funciona assim. O teclado do celular não sabe que letra você vai apertar — ele fica esperando, e responde.',
         ],
@@ -239,14 +239,14 @@ As duas começam juntas: os dois falam ao mesmo tempo.`,
           'Na tela a diferença aparece em dois lugares: no chapéu que abre a pilha, e em haver ou não um laço "sempre" dentro dela.',
         ],
         exemplo: `Executa uma vez e acaba:
-[quando a bandeira verde for clicada]
+[quando ⚑ for clicado]
   [vá para x: -120 y: 0]
   [mude placar para 0]
 
 Fica de guarda:
-[quando a bandeira verde for clicada]
+[quando ⚑ for clicado]
   [sempre]
-    [se tocando em Maçã, então]
+    [se tocando em Maçã? então]
       [adicione 1 a placar]`,
         exemploComo: 'blocos',
         atencao: 'Os dois tipos convivem no mesmo projeto, e quase todo jogo usa os dois. Um não substitui o outro: um arruma as coisas, o outro vigia.',
@@ -257,14 +257,14 @@ Fica de guarda:
         titulo: 'Responder também é aparecer',
         resumo: 'Trocar de fantasia e tocar som, em resposta a um evento.',
         explicacao: [
-          'Um personagem tem fantasias: desenhos diferentes do mesmo personagem. O bloco "próxima fantasia" passa para o seguinte, e depois do último volta ao primeiro.',
-          'Trocando de fantasia depressa, dentro de um laço, o personagem parece andar. É assim que a animação funciona, no Scratch e no cinema.',
+          'Um ator tem fantasias: desenhos diferentes do mesmo ator. O bloco "próxima fantasia" passa para o seguinte, e depois do último volta ao primeiro.',
+          'Trocando de fantasia depressa, dentro de um laço, o ator parece andar. É assim que a animação funciona, no Scratch e no cinema.',
           'Som é o mesmo raciocínio: um evento acontece, e o programa responde com algo que se ouve. É o que faz um jogo parecer que reage, em vez de apenas mudar.',
         ],
         exemplo: `[quando a tecla direita for pressionada]
   [mova 10 passos]
   [próxima fantasia]
-  [toque o som]`,
+  [toque o som Miau]`,
         exemploComo: 'blocos',
         atencao: 'O requisito pede aparência ou som em resposta a um evento. "Próxima fantasia" solto numa pilha sem chapéu não responde a evento nenhum: ele nunca chega a acontecer.',
         marcas: ['fantasia', 'som'],
@@ -305,7 +305,7 @@ Com laço, um número:
         resumo: 'Quando cada um serve.',
         explicacao: [
           '"Repita 10 vezes" sabe quando parar: conta até dez e segue em frente. Use quando você souber o número de voltas — dar quatro passos, desenhar um quadrado, piscar três vezes.',
-          '"Sempre" não para nunca. Ele gira até alguém encerrar o programa: o bloco "pare tudo", a bandeira vermelha, ou sair do laboratório.',
+          '"Sempre" não para nunca. Ele gira até alguém encerrar o programa: o bloco "pare todos", o botão vermelho de parar, ou sair do laboratório.',
           'Use "sempre" para vigiar: perguntar, a cada instante, se algo aconteceu. É onde o "se" do próximo módulo vai morar.',
         ],
         exemplo: `Conta e sai:
@@ -314,7 +314,7 @@ Com laço, um número:
 
 Nunca sai sozinho:
 [sempre]
-  [se tocando em Maçã, então]
+  [se tocando em Maçã? então]
     [adicione 1 a placar]`,
         exemploComo: 'blocos',
         atencao: 'Blocos encaixados depois de um "sempre" nunca rodam. O laço não termina, então nada que venha abaixo dele chega a acontecer — e o bloco fica ali, visível e inútil.',
@@ -358,9 +358,9 @@ Isto é:
           'É a terceira estrutura, e a que faz o programa parecer que pensa. Sem ela, o programa faz sempre a mesma coisa, na mesma ordem, todas as vezes.',
           'A pergunta é feita no instante exato em que o bloco é executado. Nem antes, nem depois.',
         ],
-        exemplo: `[se tocando em Maçã, então]
-  [diga "peguei!"]
-  [toque o som]`,
+        exemplo: `[se tocando em Maçã? então]
+  [diga peguei!]
+  [toque o som Miau]`,
         exemploComo: 'blocos',
         atencao: 'O "se" pergunta uma vez, no momento em que roda. Ele não fica vigiando por conta própria: para isso ele precisa estar dentro de um laço, e é isso que o próximo tópico trata.',
         marcas: ['se', 'condição'],
@@ -370,19 +370,19 @@ Isto é:
         titulo: 'Por que o se mora dentro do sempre',
         resumo: 'O erro que produz um jogo que nunca marca ponto.',
         explicacao: [
-          'Ponha um "se tocando na maçã" solto, logo abaixo da bandeira verde. Clique em Começar. Os dois se encostam durante o jogo, e nada acontece.',
+          'Ponha um "se tocando em Maçã? então" solto, logo abaixo do chapéu da bandeira verde. Clique na bandeira verde. Os dois se encostam durante o jogo, e nada acontece.',
           'Não há erro nenhum. O "se" fez a pergunta uma vez, no primeiro instante, quando os dois estavam longe. A resposta foi não, ele seguiu em frente, e a pilha acabou.',
           'Para vigiar alguma coisa, a pergunta precisa ser refeita a cada instante — e é isso que o "sempre" faz. Laço por fora, condição por dentro: é o par mais usado em toda a programação de jogos.',
         ],
         exemplo: `Pergunta uma vez e desiste:
-[quando a bandeira verde for clicada]
-  [se tocando em Maçã, então]
+[quando ⚑ for clicado]
+  [se tocando em Maçã? então]
     [adicione 1 a placar]
 
 Vigia o tempo todo:
-[quando a bandeira verde for clicada]
+[quando ⚑ for clicado]
   [sempre]
-    [se tocando em Maçã, então]
+    [se tocando em Maçã? então]
       [adicione 1 a placar]`,
         exemploComo: 'blocos',
         atencao: 'Este é o defeito mais frustrante de quem começa, porque o programa está visivelmente certo: os blocos são os certos, na ordem certa. O que falta não é um bloco — é um bloco em volta.',
@@ -393,20 +393,20 @@ Vigia o tempo todo:
         titulo: 'O que se pode perguntar',
         resumo: 'Tocando em quem, tecla pressionada, e a comparação.',
         explicacao: [
-          '"Tocando em" pergunta se este personagem está encostando em alguém. Você escolhe em quem: outro personagem, ou a borda do palco.',
-          'A borda não é um personagem: é a beirada da tela. Perguntar por ela serve para saber que se chegou ao limite — e não serve para o requisito de dois personagens que interajam, que pede que um pergunte pelo outro.',
-          '"Variável maior que" compara o valor guardado com um número. É a pergunta que decide quando o jogo acabou, e por isso ela só aparece depois que você criar a primeira variável.',
+          '"Tocando em ___?" pergunta se este ator está encostando em alguém. Ele é um bloco de Sensores, tem forma de losango e termina em interrogação — é uma pergunta, e por isso encaixa no buraco do "se". Você escolhe em quem: outro ator, ou a borda do palco.',
+          'A borda não é um ator: é a beirada da tela. Perguntar por ela serve para saber que se chegou ao limite — e não serve para o requisito de dois atores que interajam, que pede que um pergunte pelo outro.',
+          'O bloco ">" compara dois valores. Ele mora em Operadores, e a variável entra arrastada para dentro dele: fica "placar > 5". É a pergunta que decide quando o jogo acabou, e por isso ela só faz sentido depois que você criar a primeira variável.',
         ],
-        exemplo: `Pergunta pelo outro personagem:
-[se tocando em Maçã, então]
+        exemplo: `Pergunta pelo outro ator:
+[se tocando em Maçã? então]
 
 Pergunta pela beirada do palco:
-[se tocando na borda, então]
+[se tocando em borda? então]
 
 Compara com um número:
-[se placar > 5, então]`,
+[se placar > 5 então]`,
         exemploComo: 'blocos',
-        atencao: 'Tocar a borda é tocar o palco, e não o outro personagem. Trocar um pelo outro deixa o programa rodando e o requisito por cumprir, sem que nada apareça errado na tela.',
+        atencao: 'Tocar a borda é tocar o palco, e não o outro ator. Trocar um pelo outro deixa o programa rodando e o requisito por cumprir, sem que nada apareça errado na tela.',
         marcas: ['tocando', 'borda', 'sensores'],
       },
     ],
@@ -434,18 +434,23 @@ tempo    guarda quantos segundos restam`,
         marcas: ['variável', 'placar'],
       },
       {
+        /* O id continua o antigo de propósito: quem percorreu a vereda antes
+           tem tópicos gravados por ele, e a regra velha de "abrir todos os
+           tópicos vence a teoria" ainda é lida. Renomear aqui tiraria de
+           alguém um progresso que ela já fez. */
         id: 'defina-e-mude',
-        titulo: 'Defina, e mude',
+        titulo: 'Mude, e adicione',
         resumo: 'Trocar o valor, ou somar ao que já havia.',
         explicacao: [
-          '"Defina placar para 0" troca o valor: seja lá o que houvesse antes, agora é zero.',
-          '"Mude placar em 1" soma ao que já havia: se o placar estava em 5, passa a 6. Somar 1 é o mais comum, mas dá para somar 10, ou -1 para tirar um ponto.',
+          '"Mude placar para 0" troca o valor: seja lá o que houvesse antes, agora é zero.',
+          '"Adicione 1 a placar" soma ao que já havia: se o placar estava em 5, passa a 6. Somar 1 é o mais comum, mas dá para somar 10, ou -1 para tirar um ponto.',
+          'Os dois nomes enganam, e é bom saber disso antes de errar: o que troca o valor se chama "mude", e o que soma se chama "adicione". Quem espera "defina" e "mude" pega o bloco errado — e o programa roda, sem reclamar de nada.',
           'Na prática, "mude ... para" vai na bandeira verde, para zerar tudo no começo, e "adicione ... a" vai dentro do jogo, marcando pontos. Recomeçar precisa recomeçar de verdade.',
         ],
-        exemplo: `[quando a bandeira verde for clicada]
+        exemplo: `[quando ⚑ for clicado]
   [mude placar para 0]
   [sempre]
-    [se tocando em Maçã, então]
+    [se tocando em Maçã? então]
       [adicione 1 a placar]`,
         exemploComo: 'blocos',
         atencao: 'Sem o "mude placar para 0" no começo, o segundo jogo continua do placar do primeiro. Ninguém nota na primeira partida — só na segunda, e aí parece que o jogo enlouqueceu.',
@@ -466,7 +471,7 @@ tempo    guarda quantos segundos restam`,
 
 Marca ponto por alguma coisa:
 [sempre]
-  [se tocando em Maçã, então]
+  [se tocando em Maçã? então]
     [adicione 1 a placar]`,
         exemploComo: 'blocos',
         atencao: 'Mesmo com o "se" no lugar, encostar por um segundo pode render vários pontos: enquanto o encosto durar, a pergunta continua dando sim. É um comportamento real, e resolvê-lo — afastando a maçã depois do ponto — é o que faz o jogo ficar bom.',
@@ -478,25 +483,25 @@ Marca ponto por alguma coisa:
   {
     id: 'jogo',
     titulo: 'O jogo',
-    resumo: 'Dois personagens que interagem, o fim de jogo, e explicar o que se fez.',
+    resumo: 'Dois atores que interagem, o fim de jogo, e explicar o que se fez.',
     topicos: [
       {
-        id: 'dois-personagens',
+        id: 'dois-atores',
         titulo: 'Dois que interagem',
         resumo: 'Existir junto não é interagir.',
         explicacao: [
-          'O requisito pede dois personagens que interajam entre si. Dois personagens no palco, cada um com a sua pilha rodando, não interagem: rodam lado a lado sem nunca se notarem.',
+          'O requisito pede dois atores que interajam entre si. Dois atores no palco, cada um com a sua pilha rodando, não interagem: rodam lado a lado sem nunca se notarem.',
           'A interação é a pergunta. Um "se tocando em", nomeando o outro, e alguma coisa acontecendo quando a resposta é sim.',
           'Basta um dos dois perguntar. Se o gato pergunta pela maçã, o encontro é percebido — não é preciso que a maçã também pergunte pelo gato.',
         ],
         exemplo: `Gato:
-[quando a bandeira verde for clicada]
+[quando ⚑ for clicado]
   [sempre]
-    [se tocando em Maçã, então]
+    [se tocando em Maçã? então]
       [adicione 1 a placar]
-      [toque o som]`,
+      [toque o som Miau]`,
         exemploComo: 'blocos',
-        atencao: 'Se os dois personagens começarem em alturas muito diferentes e a seta só mudar o x, eles nunca se encontram. O programa está certo e o placar nunca sai do zero — e o defeito está na geometria, não nos blocos.',
+        atencao: 'Se os dois atores começarem em alturas muito diferentes e a seta só mudar o x, eles nunca se encontram. O programa está certo e o placar nunca sai do zero — e o defeito está na geometria, não nos blocos.',
         marcas: ['interação', 'tocando'],
       },
       {
@@ -509,13 +514,13 @@ Marca ponto por alguma coisa:
           'A comparação precisa estar num lugar que a refaça sempre — dentro do mesmo "sempre" que vigia o resto. Perguntar uma vez, no começo, dá sempre a mesma resposta.',
         ],
         exemplo: `[sempre]
-  [se tocando em Maçã, então]
+  [se tocando em Maçã? então]
     [adicione 1 a placar]
-  [se placar > 5, então]
-    [diga "você venceu!"]
-    [pare tudo]`,
+  [se placar > 5 então]
+    [diga você venceu!]
+    [pare todos]`,
         exemploComo: 'blocos',
-        atencao: 'Fechar a bandeira vermelha não é condição de vitória: é desistir, e funciona em qualquer projeto. O requisito pede uma condição escrita no programa.',
+        atencao: 'Clicar no botão vermelho de parar não é condição de vitória: é desistir, e funciona em qualquer projeto. O requisito pede uma condição escrita no programa.',
         marcas: ['pare tudo', 'vitória'],
       },
       {
@@ -693,7 +698,7 @@ export const MODULOS_DE_BLOCOS: ModuloDeVereda[] = [
   {
     id: 'm7',
     titulo: 'O jogo',
-    resumo: 'Dois personagens que se encontram, uma condição de vitória, e a apresentação.',
+    resumo: 'Dois atores que se encontram, uma condição de vitória, e a apresentação.',
     licoes: [
       {
         id: 'm7-teoria', tipo: 'teoria',
@@ -706,7 +711,7 @@ export const MODULOS_DE_BLOCOS: ModuloDeVereda[] = [
         O último laboratório cobra a vereda inteira.
 
         É o requisito 5 — placar em variável, condição de vitória ou derrota, e
-        dois personagens que interajam —, e junto vem tudo o que os módulos
+        dois atores que interajam —, e junto vem tudo o que os módulos
         anteriores pediram, porque um jogo que perdeu o laço pelo caminho não é
         um jogo. Dez verificações, do chapéu ao fim de jogo.
       */

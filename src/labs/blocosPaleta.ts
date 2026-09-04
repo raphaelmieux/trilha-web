@@ -13,7 +13,7 @@ import type { Bloco, Categoria, TipoDeBloco } from './blocos';
 export const MODELOS: Record<Categoria, TipoDeBloco[]> = {
   eventos: ['quandoBandeira', 'quandoTecla', 'quandoClicado'],
   movimento: ['mover', 'subir', 'irPara'],
-  aparencia: ['proximoTraje', 'diga'],
+  aparencia: ['proximaFantasia', 'diga'],
   som: ['toqueSom'],
   controle: ['espere', 'repita', 'sempre', 'se', 'pareTudo'],
   sensores: [],

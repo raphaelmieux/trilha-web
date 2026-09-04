@@ -1,5 +1,6 @@
 import { realcarLinhas, realcarLinhasCss } from '../../labs/realce';
 import { lerExemploDeBlocos, COR_DA_CATEGORIA } from '../../labs/blocosDoScratch';
+import { TextoDeBloco } from './BandeiraVerde';
 import type { TopicoDeVereda } from '../../curriculum/veredas';
 
 /**
@@ -48,9 +49,17 @@ const CSS_EXEMPLO = `
   /* Cor dita à mão, e não pelo tema: a plataforma é escura e pinta o texto de
      quase branco, o que some sobre este fundo claro. É a regra que já valeu
      para os painéis brancos dos laboratórios. */
-  .ex-palco { padding: 12px 14px; background: #F9F9F9; display: flex; flex-direction: column; gap: 3px; }
+  /* Bloco do Scratch não quebra o próprio rótulo: ele fica comprido e o painel
+     rola de lado. Quebrar o texto do bloco inventa uma forma que não existe na
+     tela que o desbravador vai abrir. */
+  .ex-palco { padding: 12px 14px; background: #F9F9F9; display: flex; flex-direction: column;
+    gap: 3px; overflow-x: auto; align-items: flex-start; }
+  /* inline-block, e não inline-flex: dentro de uma fila flex cada pedaço do
+     rótulo vira um item, e "quando", a bandeira e "for clicado" quebravam em
+     linhas diferentes. Em fluxo normal o texto volta a ser texto, e a bandeira
+     se alinha como qualquer figura no meio de uma frase. */
   .ex-bloco {
-    display: inline-flex; align-items: center; align-self: flex-start;
+    display: inline-block; align-self: flex-start; white-space: nowrap;
     padding: 6px 12px; border-radius: 4px; color: #FFFFFF;
     font-family: 'Segoe UI', system-ui, Roboto, sans-serif;
     font-size: 12.5px; font-weight: 600; line-height: 1.3;
@@ -86,7 +95,7 @@ function Blocos({ exemplo }: { exemplo: string }) {
                  de um laço aparece deslocado para a direita. */
               marginLeft: linha.recuo * 18,
             }}>
-            {linha.texto}
+            <TextoDeBloco texto={linha.texto} />
           </span>
         );
       })}

@@ -1,4 +1,4 @@
-import { ehContainer, type Bloco, type Personagem, type Pilha } from './blocos';
+import { ehContainer, type Bloco, type Ator, type Pilha } from './blocos';
 
 /**
  * As operações sobre a árvore de blocos.
@@ -91,15 +91,15 @@ export function contem(blocos: Bloco[], id: string): boolean {
 }
 
 /* ────────────────────────────────────────────────────────────────────────
-   Sobre o personagem inteiro
+   Sobre o ator inteiro
    ──────────────────────────────────────────────────────────────────────── */
 
-/** A mesma operação, aplicada à pilha certa de um personagem. */
+/** A mesma operação, aplicada à pilha certa de um ator. */
 export function naPilha(
-  p: Personagem,
+  p: Ator,
   pilhaId: string,
   operacao: (blocos: Bloco[]) => Bloco[],
-): Personagem {
+): Ator {
   return {
     ...p,
     pilhas: p.pilhas.map(pl => (pl.id === pilhaId ? { ...pl, blocos: operacao(pl.blocos) } : pl)),

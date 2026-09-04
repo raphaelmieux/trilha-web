@@ -16,8 +16,8 @@
  * ── O que dá para resolver, e está resolvido ─────────────────────────────
  * A arte que a **lição** usa é nossa, desenhada aqui, e servida por nós. O
  * laboratório abre inteiro sem rede nenhuma para fora: o palco tem cenário e os
- * personagens têm corpo. O acervo do MIT continua alcançável para quem quiser
- * trocar de personagem e tiver rede.
+ * atores têm corpo. O acervo do MIT continua alcançável para quem quiser
+ * trocar de ator e tiver rede.
  *
  * Mas não basta acrescentar a nossa fonte à lista: ela entra no fim, e o
  * armazenamento tenta as anteriores primeiro. Medindo, os três desenhos da

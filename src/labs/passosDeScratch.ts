@@ -13,7 +13,7 @@
  * pior do que instrução nenhuma: ela ensina que a pessoa é que está errada.
  *
  * ── Os nomes são os que estão na tela ────────────────────────────────────
- * "próxima fantasia" e não "próximo traje"; "adicione 1 a placar" e não "mude
+ * "próxima fantasia" e não "próxima fantasia"; "adicione 1 a placar" e não "mude
  * placar em 1"; "Criar uma Variável" com maiúsculas, que é como o botão está
  * escrito. Foram lidos da paleta em português, e não traduzidos de memória —
  * passo que nomeia um bloco que não existe manda procurar o que não há.
@@ -29,7 +29,7 @@ export const PASSOS_DE_SCRATCH: Record<string, string[]> = {
     'Em Eventos, arraste "quando a tecla [espaço] for pressionada" para a área do meio.',
     'Clique na palavra "espaço" dentro do bloco e escolha "seta para direita" na lista.',
     'Em Movimento, arraste "adicione 10 a x" e encaixe embaixo do chapéu da tecla.',
-    'Clique na bandeira verde e segure a seta. O personagem anda enquanto a tecla estiver pressionada.',
+    'Clique na bandeira verde e segure a seta. O ator anda enquanto a tecla estiver pressionada.',
   ],
   laco: [
     'Em Controle, arraste "sempre" ou "repita 10 vezes" para a área do meio.',
@@ -49,7 +49,7 @@ export const PASSOS_DE_SCRATCH: Record<string, string[]> = {
     'Criar a variável não basta: o requisito pede que o valor mude enquanto o jogo acontece.',
   ],
   aparenciaOuSom: [
-    'Em Aparência, "próxima fantasia" troca o desenho do personagem.',
+    'Em Aparência, "próxima fantasia" troca o desenho do ator.',
     'Em Som, "toque o som ..." toca um som.',
     'Arraste um dos dois para dentro de uma pilha que um evento dispare — a bandeira, uma tecla, ou o clique no ator.',
   ],

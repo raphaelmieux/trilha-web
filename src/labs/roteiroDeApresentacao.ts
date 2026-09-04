@@ -1,6 +1,6 @@
 import {
   ehContainer, textoDaCondicao,
-  type Bloco, type Personagem, type Projeto,
+  type Bloco, type Ator, type Projeto,
 } from './blocos';
 
 /**
@@ -29,8 +29,8 @@ import {
  */
 
 export interface TrechoDoRoteiro {
-  /** O personagem de quem é a pilha. */
-  personagem: string;
+  /** O ator de quem é a pilha. */
+  ator: string;
   /** Quando esta pilha roda, em português. */
   quando: string;
   /** O que ela faz, uma frase por ideia. */
@@ -43,7 +43,7 @@ function quando(chapeu: Bloco | undefined): string | null {
   switch (chapeu.tipo) {
     case 'quandoBandeira': return 'quando eu clico na bandeira verde';
     case 'quandoTecla': return `quando eu aperto a tecla ${chapeu.tecla}`;
-    case 'quandoClicado': return 'quando eu clico neste personagem';
+    case 'quandoClicado': return 'quando eu clico neste ator';
     default: return null;
   }
 }
@@ -65,7 +65,7 @@ function frase(b: Bloco, nomes: Map<string, string>): string {
     case 'subir':
       return b.passos >= 0 ? `subo ${b.passos} passos` : `desço ${Math.abs(b.passos)} passos`;
     case 'irPara': return `vou para a posição x: ${b.x}, y: ${b.y}`;
-    case 'proximoTraje': return 'troco o desenho do personagem, o que dá a impressão de movimento';
+    case 'proximaFantasia': return 'troco o desenho do ator, o que dá a impressão de movimento';
     case 'diga': return `mostro o balão dizendo "${b.texto}"`;
     case 'toqueSom': return 'toco um som';
     case 'espere': return `espero ${b.segundos} segundo${b.segundos === 1 ? '' : 's'} antes de seguir`;
@@ -112,28 +112,28 @@ function descer(blocos: Bloco[], nomes: Map<string, string>, nivel = 0): string[
   return saida;
 }
 
-function doPersonagem(p: Personagem, nomes: Map<string, string>): TrechoDoRoteiro[] {
+function doAtor(p: Ator, nomes: Map<string, string>): TrechoDoRoteiro[] {
   return p.pilhas.flatMap(pilha => {
     const q = quando(pilha.blocos[0]);
     /* Pilha sem chapéu não roda nunca, e um roteiro que a explicasse mandaria
        a pessoa falar de um trecho que o examinador não verá acontecer. */
     if (!q) return [];
     return [{
-      personagem: p.nome,
+      ator: p.nome,
       quando: q,
       faz: descer(pilha.blocos.slice(1), nomes),
     }];
   });
 }
 
-/** O roteiro inteiro, na ordem dos personagens e das pilhas. */
+/** O roteiro inteiro, na ordem dos atores e das pilhas. */
 export function roteiroDeApresentacao(projeto: Projeto): TrechoDoRoteiro[] {
-  const nomes = new Map(projeto.personagens.map(p => [p.id, p.nome]));
-  return projeto.personagens.flatMap(p => doPersonagem(p, nomes));
+  const nomes = new Map(projeto.atores.map(p => [p.id, p.nome]));
+  return projeto.atores.flatMap(p => doAtor(p, nomes));
 }
 
 /** As pilhas que não rodam, para dizer à pessoa que elas existem. */
 export function pilhasSemChapeu(projeto: Projeto): number {
-  return projeto.personagens.reduce(
+  return projeto.atores.reduce(
     (n, p) => n + p.pilhas.filter(pilha => !quando(pilha.blocos[0])).length, 0);
 }

@@ -8,7 +8,7 @@ import {
 import { blocoNovo } from '../labs/blocosPaleta';
 import { palcoInicial } from '../labs/modeloDeBlocos';
 import {
-  ehChapeu, novoId, type Categoria, type Personagem, type Projeto, type Tecla, type TipoDeBloco,
+  ehChapeu, novoId, type Categoria, type Ator, type Projeto, type Tecla, type TipoDeBloco,
 } from '../labs/blocos';
 import { Palco, QUADROS_POR_SEGUNDO, estadoInicial, type EstadoDoPalco } from '../labs/blocosRuntime';
 import { inserirDentro, inserirDepois, alterar, remover, mover, naPilha, contem } from '../labs/blocosEdicao';
@@ -24,7 +24,7 @@ import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
  *
  * Imita o Scratch de propósito — ele é *aquele* programa, como o Word e o
  * Explorador —, e por isso a paleta por categoria, o palco no canto e a lista
- * de personagens embaixo dele estão onde a pessoa vai encontrá-los depois.
+ * de atores embaixo dele estão onde a pessoa vai encontrá-los depois.
  *
  * O que ele cobra sai de `verificacoes`, contra `blocosValidator`, que olha a
  * árvore de blocos e não a tela. E o palco roda de verdade: a bandeira verde
@@ -46,7 +46,7 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
   aoSair: () => void;
 }) {
   /* O tipo permite ausência porque a maioria dos laboratórios de vereda é de
-     texto. Sem projeto, o padrão é o palco de dois personagens — um palco vazio
+     texto. Sem projeto, o padrão é o palco de dois atores — um palco vazio
      abriria uma tela em que não há o que fazer, sem uma palavra dizendo por
      quê, que é o defeito que esta casa já pagou três vezes. */
   const inicial: Projeto = licao.projetoDeBlocos ?? palcoInicial();
@@ -80,7 +80,7 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
     setProjeto(proximo);
   }, []);
 
-  const [atual, setAtual] = useState(inicial.personagens[0]?.id ?? '');
+  const [atual, setAtual] = useState(inicial.atores[0]?.id ?? '');
   const [categoria, setCategoria] = useState<Categoria>('eventos');
   const [cursor, setCursorEstado] = useState<Cursor | null>(null);
   /*
@@ -148,7 +148,7 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
       if (!p || !p.estado.rodando) return;
       p.quadro({ teclas: new Set(teclas.current), clicado: clique.current });
       clique.current = undefined;
-      setEstado({ ...p.estado, personagens: p.estado.personagens.map(x => ({ ...x })) });
+      setEstado({ ...p.estado, atores: p.estado.atores.map(x => ({ ...x })) });
     }, 1000 / QUADROS_POR_SEGUNDO);
     return () => clearInterval(id);
   }, []);
@@ -164,8 +164,8 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
 
   /* ── A edição ───────────────────────────────────────────────────────── */
 
-  const personagem = projeto.personagens.find(p => p.id === atual);
-  const outros = projeto.personagens.filter(p => p.id !== atual).map(p => ({ id: p.id, nome: p.nome }));
+  const ator = projeto.atores.find(p => p.id === atual);
+  const outros = projeto.atores.filter(p => p.id !== atual).map(p => ({ id: p.id, nome: p.nome }));
   const variaveis = projeto.variaveis.map(v => v.nome);
 
   /*
@@ -186,10 +186,10 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
       : { ...agora, variaveis: [...agora.variaveis, { nome, valor: 0 }] }));
   }, [aplicar]);
 
-  const trocarPersonagem = useCallback((p: (x: Personagem) => Personagem) => {
+  const trocarPersonagem = useCallback((p: (x: Ator) => Ator) => {
     aplicar(agora => ({
       ...agora,
-      personagens: agora.personagens.map(x => (x.id === atual ? p(x) : x)),
+      atores: agora.atores.map(x => (x.id === atual ? p(x) : x)),
     }));
   }, [aplicar, atual]);
 
@@ -202,7 +202,7 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
    */
   const acrescentar = (tipo: TipoDeBloco) => {
     const projetoAgora = projetoRef.current;
-    const p = projetoAgora.personagens.find(x => x.id === atual);
+    const p = projetoAgora.atores.find(x => x.id === atual);
     if (!p) return;
 
     const novo = blocoNovo(tipo, novoId(), variaveis[0] ?? 'placar', outros[0]?.id ?? 'borda');
@@ -214,7 +214,7 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
       const pilha = { id: novoId('p'), blocos: [novo] };
       aplicar(agora => ({
         ...agora,
-        personagens: agora.personagens.map(x =>
+        atores: agora.atores.map(x =>
           (x.id === atual ? { ...x, pilhas: [...x.pilhas, pilha] } : x)),
       }));
       setCursor({ pilha: pilha.id, depois: novo.id });
@@ -245,7 +245,7 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
   /* ── A entrega ──────────────────────────────────────────────────────── */
 
   /*
-    O jogo é o laboratório que cobra a interação entre os dois personagens.
+    O jogo é o laboratório que cobra a interação entre os dois atores.
 
     É por essa verificação que se reconhece o último, e não pelo id da lição:
     id se renomeia sem que ninguém repare, e aí o roteiro de apresentação
@@ -302,7 +302,7 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
               <div key={i} className="mb-4 p-4 rounded-lg"
                 style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
                 <p className="text-sm font-semibold mb-2">
-                  {t.personagem}: “Esta pilha roda {t.quando}…”
+                  {t.ator}: “Esta pilha roda {t.quando}…”
                 </p>
                 <ul className="text-sm space-y-1" style={{ color: 'var(--color-text-dim)' }}>
                   {t.faz.map((f, j) => (
@@ -369,7 +369,7 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
 
       <div className="bl">
         <BarraDoPalco rodando={estado.rodando} aoRodar={comecar} aoParar={parar}
-          nome={`${licao.projeto} — ${personagem?.nome ?? ''}`} />
+          nome={`${licao.projeto} — ${ator?.nome ?? ''}`} />
 
         <div className="bl-corpo">
           <Paleta categoria={categoria} aoTrocarCategoria={setCategoria}
@@ -377,18 +377,18 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
             variaveis={variaveis} outro={outros[0]?.id ?? 'borda'} />
 
           <div className="bl-scripts">
-            {!personagem || personagem.pilhas.length === 0 ? (
+            {!ator || ator.pilhas.length === 0 ? (
               <p className="bl-vazio-scripts">
                 Nada aqui ainda. Comece por <b>Eventos</b>, na paleta: um bloco de
                 chapéu diz <i>quando</i> o programa roda, e sem ele nada acontece
                 ao clicar em Começar.
               </p>
-            ) : personagem.pilhas.map(pilha => (
+            ) : ator.pilhas.map(pilha => (
               <div key={pilha.id} className="bl-pilha">
                 {pilha.blocos.map((b, i) => (
                   <BlocoNaPilha key={b.id} bloco={b} cursor={cursor} pilha={pilha.id}
                     primeiro={i === 0} ultimo={i === pilha.blocos.length - 1}
-                    variaveis={variaveis} personagens={outros}
+                    variaveis={variaveis} atores={outros}
                     aoSelecionar={setCursor}
                     aoMudar={(id, m) => naPilhaAtual(pilha.id, bs => alterar(bs, id, m))}
                     aoRemover={id => {
@@ -403,7 +403,7 @@ export default function LaboratorioDeBlocos({ vereda, licao, userId, aoVencer, a
 
           <div className="bl-lado">
             <PalcoDeBlocos estado={estado} aoClicarNoAtor={id => { clique.current = id; }} />
-            <ListaDePersonagens personagens={projeto.personagens} atual={atual}
+            <ListaDePersonagens atores={projeto.atores} atual={atual}
               aoEscolher={id => { setAtual(id); setCursor(null); }} />
           </div>
         </div>

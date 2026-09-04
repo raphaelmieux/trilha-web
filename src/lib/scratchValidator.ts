@@ -96,8 +96,8 @@ interface Contexto {
   pilhas: Pilha[];
   /** Todos os blocos que rodam, de todos os alvos. */
   vivos: BlocoSb3[];
-  /** Nome dos personagens, sem o palco. */
-  personagens: string[];
+  /** Nome dos atores, sem o palco. */
+  atores: string[];
   temVariavel: boolean;
 }
 
@@ -184,7 +184,7 @@ export function contexto(projeto: ProjetoSb3): Contexto {
     projeto,
     pilhas,
     vivos: pilhas.flatMap(p => p.blocos),
-    personagens: (projeto.targets ?? []).filter(t => !t.isStage).map(t => t.name),
+    atores: (projeto.targets ?? []).filter(t => !t.isStage).map(t => t.name),
     temVariavel: (projeto.targets ?? [])
       .some(t => Object.keys(t.variables ?? {}).length > 0),
   };
@@ -219,14 +219,14 @@ const SPECS: Spec[] = [
   },
   {
     id: 'moverPorTecla',
-    label: 'Mover um personagem pelo teclado',
+    label: 'Mover um ator pelo teclado',
     hint: 'Um "quando a tecla ... for pressionada" com um bloco de Movimento embaixo.',
     run: ctx => {
       const teclas = ctx.pilhas.filter(p => p.chapeu.opcode === 'event_whenkeypressed');
       if (teclas.length === 0) return { passed: false, detail: 'Nenhuma pilha começa com um chapéu de tecla.' };
       return teclas.some(p => p.blocos.some(b => MOVIMENTO.has(b.opcode)))
         ? { passed: true }
-        : { passed: false, detail: 'A tecla dispara uma pilha, mas nada nela move o personagem. Falta um bloco de Movimento.' };
+        : { passed: false, detail: 'A tecla dispara uma pilha, mas nada nela move o ator. Falta um bloco de Movimento.' };
     },
   },
   {
@@ -286,7 +286,7 @@ const SPECS: Spec[] = [
   },
   {
     id: 'doisPersonagens',
-    label: 'Dois personagens com programa',
+    label: 'Dois atores com programa',
     hint: 'Os dois precisam ter pelo menos uma pilha que começa num chapéu.',
     run: ctx => {
       const comPrograma = new Set(
@@ -296,19 +296,19 @@ const SPECS: Spec[] = [
         : {
           passed: false,
           detail: comPrograma.size === 1
-            ? 'Só um personagem tem pilha que roda. O jogo precisa de dois que façam alguma coisa.'
-            : 'Nenhum personagem tem pilha começando por um chapéu.',
+            ? 'Só um ator tem pilha que roda. O jogo precisa de dois que façam alguma coisa.'
+            : 'Nenhum ator tem pilha começando por um chapéu.',
         };
     },
   },
   {
     id: 'interacao',
-    label: 'Os dois personagens interagem',
-    hint: 'Um "se tocando em ..." escolhendo o outro personagem.',
+    label: 'Os dois atores interagem',
+    hint: 'Um "se tocando em ..." escolhendo o outro ator.',
     run: ctx => {
       /* O menu do sensor guarda o alvo em `fields.TOUCHINGOBJECTMENU`. A borda
          e o ponteiro são `_edge_` e `_mouse_`: tocar a borda é tocar o palco, e
-         não o outro personagem — o requisito pede que os dois se encontrem. */
+         não o outro ator — o requisito pede que os dois se encontrem. */
       let naBorda = false;
       for (const p of ctx.pilhas) {
         for (const b of p.blocos) {
@@ -316,15 +316,15 @@ const SPECS: Spec[] = [
           const menu = encaixe(mapaDa(p), b, 'TOUCHINGOBJECTMENU');
           const campo = (menu?.fields?.TOUCHINGOBJECTMENU ?? b.fields?.TOUCHINGOBJECTMENU) as unknown[] | undefined;
           const quem = Array.isArray(campo) ? String(campo[0]) : '';
-          if (ctx.personagens.includes(quem)) return { passed: true };
+          if (ctx.atores.includes(quem)) return { passed: true };
           if (quem === '_edge_' || quem === '_mouse_') naBorda = true;
         }
       }
       return {
         passed: false,
         detail: naBorda
-          ? 'Há um "tocando", mas ele fala da borda ou do ponteiro. O requisito pede que os dois personagens se encontrem — escolha o outro personagem no menu.'
-          : 'Nenhuma condição pergunta se um personagem está tocando no outro.',
+          ? 'Há um "tocando", mas ele fala da borda ou do ponteiro. O requisito pede que os dois atores se encontrem — escolha o outro ator no menu.'
+          : 'Nenhuma condição pergunta se um ator está tocando no outro.',
       };
     },
   },

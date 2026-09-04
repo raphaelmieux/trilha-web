@@ -2,13 +2,13 @@
  * O projeto de onde o laboratório do Scratch parte.
  *
  * ── Ele abre com tudo por fazer ──────────────────────────────────────────
- * Palco, dois personagens, e **nenhum bloco**. É a regra da casa: laboratório
+ * Palco, dois atores, e **nenhum bloco**. É a regra da casa: laboratório
  * que abre resolvido não ensina nada, e o erro é invisível de dentro, porque o
  * painel mostra tarefa concluída — exatamente o que se espera de um laboratório
  * funcionando. Já aconteceu três vezes neste projeto.
  *
  * O elenco vem montado de propósito, e isso não é adiantar trabalho: escolher
- * personagem é o que se faz antes de programar, e o requisito 5 pede dois que
+ * ator é o que se faz antes de programar, e o requisito 5 pede dois que
  * interajam. O que se cobra é a lógica, e ela está toda por escrever.
  *
  * ── A arte é nossa ───────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ const fantasia = (nome: string, id: string, cx: number, cy: number) => ({
   bitmapResolution: 1, rotationCenterX: cx, rotationCenterY: cy,
 });
 
-const personagem = (nome: string, id: string, x: number, cx: number, cy: number, ordem: number) => ({
+const ator = (nome: string, id: string, x: number, cx: number, cy: number, ordem: number) => ({
   isStage: false, name: nome,
   variables: {}, lists: {}, broadcasts: {}, blocks: {}, comments: {},
   currentCostume: 0, costumes: [fantasia(nome, id, cx, cy)], sounds: [],
@@ -61,8 +61,8 @@ export const PROJETO_INICIAL = JSON.stringify({
       volume: 100, layerOrder: 0, tempo: 60,
       videoTransparency: 50, videoState: 'off', textToSpeechLanguage: null,
     },
-    personagem('Gato', GATO, -120, 48, 50, 1),
-    personagem('Maca', MACA, 120, 40, 46, 2),
+    ator('Gato', GATO, -120, 48, 50, 1),
+    ator('Maca', MACA, 120, 40, 46, 2),
   ],
   monitors: [],
   extensions: [],
