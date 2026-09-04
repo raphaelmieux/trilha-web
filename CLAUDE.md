@@ -511,6 +511,29 @@ existe. O molde tem buracos (`mova %1 passos`), então a comparação é por pad
 e o bloco de parar mostra que o item de menu é uma tradução à parte: o texto que
 se lê é "pare" mais "todos".
 
+**Em Python o resultado é o que sai escrito, e ele é conferido rodando.** O
+tópico traz o código e, ao lado, a saída que ele produz — `exemploSaida`, com
+`exemploEntrada` quando o exemplo pergunta alguma coisa. Escrever essa saída de
+cabeça erra por pouco e com frequência: `10 / 3` não é 3.33, é
+3.3333333333333335; `print("a", 1)` põe um espaço e `print("a" + "1")` não põe;
+`input()` escreve a pergunta e não ecoa a resposta. Nada disso estoura, e quem
+confere o próprio programa contra um exemplo errado conclui que o **seu**
+programa é que está errado. `exemplosDePython.test.ts` roda cada exemplo no
+Pyodide — o mesmo CPython do navegador — e compara linha por linha.
+
+**As cores do realce moram num lugar só.** Elas eram do editor e ninguém mais as
+tinha: o exemplo da teoria emitia as mesmas classes e nenhuma regra as pintava,
+então todo bloco de código das lições saía cinza do primeiro ao último
+caractere, em todas as veredas. `CORES_DO_REALCE` sai de `ide.tsx` e serve às
+duas telas — duas cópias divergiriam no primeiro ajuste, e a lição passaria a
+mostrar uma paleta que o editor não usa.
+
+**Vereda em construção pode ter conteúdo, e a trava disso mudou.** A antiga
+exigia que toda vereda `emConstrucao` estivesse vazia, o que deixou de ser
+verdade quando a teoria da CC002 chegou antes dos laboratórios. O que continua
+valendo são duas contas: vereda sem lição nenhuma nunca conta como concluída, e
+vereda em construção não conta nem com tudo o que ela já tem vencido.
+
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois
@@ -599,6 +622,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/falhasDePython.test.ts` | painel de falhas que abre respondido, ou recado de erro que entrega a resposta |
 | `src/labs/roteiroDePython.test.ts` | roteiro que julga o programa, ou que faz escada com a cadeia de elif |
 | `src/curriculum/blocosDaLicao.test.ts` | bloco escrito na lição que não existe com essas palavras na paleta do Scratch |
+| `src/curriculum/exemplosDePython.test.ts` | exemplo de Python cuja saída declarada não é a que o programa escreve |
 | `src/curriculum/index.test.ts` | trilha sem emblema ou sem fundo de certificado no repositório |
 | `src/curriculum/exemplosDaTeoria.test.ts` | seletor do exemplo de CSS que não acha ninguém na marcação do tópico |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |

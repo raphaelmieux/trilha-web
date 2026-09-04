@@ -1,4 +1,5 @@
-import { realcarLinhas, realcarLinhasCss } from '../../labs/realce';
+import { realcarLinhas, realcarLinhasCss, realcarLinhasPython } from '../../labs/realce';
+import { CORES_DO_REALCE } from '../../labs/ide';
 import { lerExemploDeBlocos, COR_DA_CATEGORIA } from '../../labs/blocosDoScratch';
 import { TextoDeBloco } from './BandeiraVerde';
 import type { TopicoDeVereda } from '../../curriculum/veredas';
@@ -40,6 +41,9 @@ const CSS_EXEMPLO = `
     font-family: 'Cascadia Code', Consolas, 'Courier New', monospace;
     font-size: 12.5px; line-height: 19px; white-space: pre;
   }
+  /* As mesmas do editor, e não uma cópia: o realce saía todo cinza aqui porque
+     as classes existiam e nenhuma regra as pintava. */
+  ${CORES_DO_REALCE}
   .ex-caixa iframe { display: block; width: 100%; height: 180px; border: none; background: #FFFFFF; }
 
   /* ── Os blocos do Scratch ──────────────────────────────────────────────
@@ -71,6 +75,14 @@ const CSS_EXEMPLO = `
   .ex-texto {
     font-family: 'Segoe UI', system-ui, Roboto, sans-serif; font-size: 12.5px;
     color: #5A5A5A; padding: 2px 0;
+  }
+  /* O painel de saída, com as cores do painel de saída do laboratório: o que a
+     pessoa vê aqui é o que ela vai ver lá. */
+  .ex-saida {
+    margin: 0; padding: 10px 12px; min-height: 60px; overflow: auto;
+    background: #10141C; color: #D7DCE6;
+    font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+    font-size: 12.5px; line-height: 19px; white-space: pre-wrap;
   }
   /* O exemplo em texto puro: papel claro, tinta escura, e nada de tema. */
   .ex-codigo.claro { background: #F9F9F9; color: #1B1B1B; }
@@ -168,6 +180,38 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
         <div className="ex-caixa">
           <p className="ex-caixa-topo">Exemplo</p>
           <pre className="ex-codigo claro">{topico.exemplo}</pre>
+        </div>
+      </>
+    );
+  }
+
+  if (como === 'python') {
+    /*
+      Em Python o resultado não é uma página: é o que o programa escreve. O
+      painel ao lado é o mesmo painel de saída do laboratório, com as mesmas
+      cores — o exemplo mostra a tela que a pessoa vai ver ao rodar o mesmo
+      programa lá.
+
+      Sem saída declarada não há painel: um quadro preto vazio rotulado "e o
+      programa mostra" é a mesma promessa não cumprida de sempre. Os tópicos que
+      falam de erro são assim de propósito — o que eles mostram é a mensagem, e
+      ela mora no texto da lição.
+    */
+    const comSaida = mostraResultado && topico.exemploSaida !== undefined;
+    return (
+      <>
+        <style>{CSS_EXEMPLO}</style>
+        <div className={comSaida ? 'ex-dupla' : ''}>
+          <div className="ex-caixa">
+            <p className="ex-caixa-topo">Você escreve, no .py</p>
+            <Codigo linhas={realcarLinhasPython(topico.exemplo)} />
+          </div>
+          {comSaida && (
+            <div className="ex-caixa">
+              <p className="ex-caixa-topo">E o programa mostra</p>
+              <pre className="ex-saida">{topico.exemploSaida || '(o programa não escreve nada)'}</pre>
+            </div>
+          )}
         </div>
       </>
     );

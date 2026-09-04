@@ -1,6 +1,7 @@
 import { MODULOS_DE_HTML } from './sintaxeHtml';
 import { MODULOS_DE_CSS } from './folhaDeEstilo';
 import { MODULOS_DE_BLOCOS } from './logicaComBlocos';
+import { MODULOS_DE_PYTHON } from './sintaxeDePython';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 
@@ -59,7 +60,7 @@ export interface TopicoDeVereda {
    * `'blocos'` desenha a pilha do Scratch, com a cor da categoria; `'texto'` é
    * um algoritmo ou uma tabela, e não tem resultado nenhum a mostrar.
    */
-  exemploComo?: 'html' | 'css' | 'blocos' | 'texto';
+  exemploComo?: 'html' | 'css' | 'blocos' | 'texto' | 'python';
   /**
    * Só para `'css'`: a marcação a que a folha se aplica.
    *
@@ -68,6 +69,18 @@ export interface TopicoDeVereda {
    * efeito dela.
    */
   exemploMarcacao?: string;
+  /**
+   * Só para `'python'`: o que o programa escreve ao rodar.
+   *
+   * Em CSS o resultado é uma página, e o quadro a desenha. Em Python o
+   * resultado é o que sai no painel de saída — e é ele que a pessoa vai
+   * comparar com o próprio programa depois. Escrever à mão erra em silêncio,
+   * então `exemplosDePython.test.ts` roda cada exemplo no Python de verdade e
+   * confere linha por linha.
+   */
+  exemploSaida?: string;
+  /** Só para `'python'`: as linhas que o `input()` do exemplo vai ler. */
+  exemploEntrada?: string[];
   /** O engano que este tópico costuma produzir. Aparece em destaque. */
   atencao?: string;
   /** As marcas que o tópico cobre — é por aqui que se procura. */
@@ -300,8 +313,24 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_BLOCOS,
   },
-  anunciada('CC002', 'Python', 'Base',
-    'A primeira linguagem escrita: variável, condição, laço e função, resolvendo problemas pequenos.'),
+  {
+    id: 'cc002',
+    code: 'CC002',
+    name: 'Python',
+    familia: 'Base',
+    description: 'A primeira linguagem escrita: variável, condição, laço e função, resolvendo problemas pequenos.',
+    /*
+      Ainda em construção, e já com conteúdo.
+
+      A teoria dos oito módulos está escrita e é conferida pelas travas —
+      `veredasComConteudo()` existe justamente para isto: uma vereda leva vários
+      dias para ficar pronta, e enquanto os laboratórios não chegam, o que já
+      existe não pode ficar sem vigia. Quando eles chegarem, `emConstrucao` sai.
+    */
+    emConstrucao: true,
+    mostraResultado: true,
+    modulos: MODULOS_DE_PYTHON,
+  },
   anunciada('CC003', 'Terminal e Git', 'Base',
     'Conversar com o computador por texto, e guardar o histórico do que se escreveu.'),
   anunciada('CC004', 'Python, Avançado', 'Base',

@@ -378,15 +378,39 @@ describe('a arte de cada vereda', () => {
   clube tirava a lista de veredas cumpridas.
 */
 describe('zero de zero não é tudo, em nenhuma das contas', () => {
-  it('nenhuma vereda em construção conta como concluída', () => {
-    const emConstrucao = VEREDAS.filter(v => v.emConstrucao);
-    expect(emConstrucao.length).toBeGreaterThan(0);
-    for (const v of emConstrucao) {
-      expect(licoesDaVereda(v).length, `${v.code} deveria estar vazia`).toBe(0);
+  /*
+    A trava dizia que vereda em construção está vazia, e isso deixou de ser
+    verdade: uma vereda leva vários dias para ficar pronta, e a teoria chega
+    antes dos laboratórios — foi por isso que `veredasComConteudo()` passou a
+    existir. O que continua tendo de valer não é o vazio, são as duas contas
+    abaixo.
+  */
+  it('vereda sem lição nenhuma nunca conta como concluída', () => {
+    const vazias = VEREDAS.filter(v => licoesDaVereda(v).length === 0);
+    expect(vazias.length).toBeGreaterThan(0);
+    for (const v of vazias) {
       /* A conta do hook: `total > 0 && vencidas === total`. Sem o `total > 0`,
          isto seria verdadeiro para todas elas. */
       const total = licoesDaVereda(v).length;
       expect(total > 0 && 0 === total, v.code).toBe(false);
+    }
+  });
+
+  /*
+    E a que ainda não abriu não conta, mesmo com tudo o que ela já tem vencido:
+    semear insígnia e certificado por um percurso que ninguém pode percorrer
+    inteiro é prometer prêmio por nada.
+  */
+  it('vereda em construção não conta como concluída nem com tudo feito', () => {
+    const emConstrucao = VEREDAS.filter(v => v.emConstrucao && licoesDaVereda(v).length > 0);
+    for (const v of emConstrucao) {
+      const tudo: EventoDeAtividade[] = licoesDaVereda(v).map((l, i) => ({
+        id: `e${i}`,
+        type: l.tipo === 'teoria' ? 'vereda_teoria' : 'vereda_laboratorio',
+        created_at: '2026-01-01T00:00:00Z',
+        metadata: { vereda: v.id, licao: l.id },
+      } as unknown as EventoDeAtividade));
+      expect(veredasConcluidas(tudo), v.code).not.toContain(v.id);
     }
   });
 });

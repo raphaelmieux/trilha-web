@@ -23,6 +23,26 @@ import { realcarLinhasCss, realcarLinhas, realcarLinhasPython } from './realce';
  * risco do CLAUDE.md: nada herda cor da plataforma, cada peça declara a sua.
  */
 
+/**
+ * As cores do realce, num pedaço só.
+ *
+ * Elas eram do editor e ninguém mais as tinha — e o exemplo da teoria emitia as
+ * mesmas classes sem nenhuma regra que as pintasse: todo bloco de código das
+ * lições saía cinza, do primeiro ao último caractere, em todas as veredas.
+ *
+ * Ficam aqui, exportadas, porque quem mostra código são duas telas. Duas cópias
+ * divergiriam no primeiro ajuste, e a lição passaria a mostrar uma paleta que o
+ * editor não usa — o mesmo defeito de dizer o nome do bloco de outro jeito.
+ */
+export const CORES_DO_REALCE = `
+  .ide-tag  { color: #569CD6; }
+  .ide-attr { color: #9CDCFE; }
+  .ide-val  { color: #CE9178; }
+  .ide-com  { color: #6A9955; }
+  .ide-pon  { color: #808080; }
+  .ide-txt  { color: #D4D4D4; }
+`;
+
 export const CSS_IDE = `
   .ide {
     flex: 1; min-height: 0; display: flex; flex-direction: column;
@@ -139,12 +159,7 @@ export const CSS_IDE = `
   .ide-texto:focus { outline: none; }
   .ide-texto::selection { background: #264F78; color: transparent; }
 
-  .ide-tag  { color: #569CD6; }
-  .ide-attr { color: #9CDCFE; }
-  .ide-val  { color: #CE9178; }
-  .ide-com  { color: #6A9955; }
-  .ide-pon  { color: #808080; }
-  .ide-txt  { color: #D4D4D4; }
+  ${CORES_DO_REALCE}
 
   /* ── A prévia: um navegadorzinho ao lado ── */
   .ide-lado-codigo { flex: 1; min-width: 0; display: flex; flex-direction: column; }
