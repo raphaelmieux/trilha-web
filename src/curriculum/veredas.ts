@@ -146,6 +146,33 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O computador simulado, e por que ele é um quarto tipo.
+
+      O requisito 4 da CC002 pede *demonstrar*: instalar o Python e executar um
+      programa a partir de arquivo. Isso tem verificação e tem modelo que não
+      pode abrir resolvido — até aí é laboratório. O que não tem é `modelo`
+      string nem `linguagem`: não há arquivo para validar, e o que se confere é
+      o estado de um computador. Enfiá-lo em `laboratorio` obrigaria a inventar
+      um `modelo: ''` e uma linguagem falsa, e a trava dos modelos passaria a
+      conferir uma string vazia com o validador de HTML — verde sem ter olhado
+      nada, que é a forma que o defeito silencioso toma aqui.
+
+      O ponto de partida não vem do currículo: é sempre o mesmo computador, sem
+      nada baixado e sem nada instalado, e ele mora em `estadoInicial()`. Um
+      currículo que pudesse descrever o computador poderia descrevê-lo já com o
+      Python instalado, que é justamente o laboratório que abre resolvido.
+
+      Para o progresso conta como lição de fazer: grava `vereda_laboratorio`.
+    */
+    id: string;
+    tipo: 'ambiente';
+    titulo: string;
+    resumo: string;
+    /** Os ids de verificação, no validador do ambiente. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não

@@ -11,6 +11,8 @@ import { validateHtml, CHECKS, TABLE_CHALLENGE_CHECKS, SITE_CHECKS } from './htm
 import { validateCss, IDS_DE_CSS } from './cssValidator';
 import { validarBlocos, IDS_DE_BLOCOS } from './blocosValidator';
 import { validarScratch, IDS_DE_SCRATCH, type ProjetoSb3 } from './scratchValidator';
+import { validarAmbiente, IDS_DO_AMBIENTE, estadoInicial } from '../labs/ambientePython';
+import { PASSOS_DO_AMBIENTE } from '../labs/passosDoAmbiente';
 import { validarPython, IDS_DE_PYTHON } from './pythonValidator';
 import { PASSOS } from '../labs/desafioDeHtml';
 import { PASSOS_DE_CSS } from '../labs/passosDeCss';
@@ -203,6 +205,28 @@ describe('os modelos dos laboratórios da vereda', () => {
     }
   }
 
+  /*
+    O computador simulado passa pelas mesmas travas, e por um caminho próprio:
+    o ponto de partida dele não vem da lição, vem de `estadoInicial()`. Não há
+    `modelo` a conferir — há um computador, e o que se cobra é que ele comece
+    sem nada baixado e sem nada instalado.
+  */
+  for (const vereda of veredasComConteudo()) {
+    for (const licao of licoesDaVereda(vereda)) {
+      if (licao.tipo !== 'ambiente') continue;
+
+      it(`${vereda.code} · ${licao.id} abre num computador sem nada feito`, () => {
+        const verdes = validarAmbiente(estadoInicial(), licao.verificacoes)
+          .filter(r => r.passed).map(r => r.id);
+        expect(verdes).toEqual([]);
+      });
+
+      it(`${vereda.code} · ${licao.id} cobra verificação que o validador conhece`, () => {
+        expect(licao.verificacoes.filter(id => !IDS_DO_AMBIENTE.includes(id))).toEqual([]);
+      });
+    }
+  }
+
   it('toda verificação cobrada tem passo a passo para quem travar', () => {
     const passosDe = (linguagem: string | undefined) =>
       (linguagem === 'python' ? PASSOS_DE_PYTHON
@@ -213,9 +237,15 @@ describe('os modelos dos laboratórios da vereda', () => {
           : linguagem === 'blocos' ? PASSOS_DE_BLOCOS
             : linguagem === 'css' ? PASSOS_DE_CSS : PASSOS);
     const sem = veredasComConteudo().flatMap(v => licoesDaVereda(v))
-      .flatMap(l => (l.tipo === 'laboratorio'
-        ? l.verificacoes.map(id => [passosDe(l.linguagem), id] as const)
-        : []))
+      .flatMap(l => {
+        /* O computador simulado não tem linguagem: o passo a passo dele é o
+           do ambiente, e a escolha se faz pelo tipo da lição. */
+        if (l.tipo === 'ambiente') {
+          return l.verificacoes.map(id => [PASSOS_DO_AMBIENTE, id] as const);
+        }
+        if (l.tipo !== 'laboratorio') return [];
+        return l.verificacoes.map(id => [passosDe(l.linguagem), id] as const);
+      })
       .filter(([mapa, id]) => !mapa[id]?.length)
       .map(([, id]) => id);
     expect([...new Set(sem)]).toEqual([]);

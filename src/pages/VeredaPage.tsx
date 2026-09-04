@@ -15,6 +15,7 @@ import TokenDaVereda from '../components/TokenDaVereda';
 import LaboratorioDeVereda from '../components/LaboratorioDeVereda';
 import LaboratorioDeBlocos from '../components/LaboratorioDeBlocos';
 import LaboratorioDeScratch from '../components/LaboratorioDeScratch';
+import LaboratorioDeAmbiente from '../components/LaboratorioDeAmbiente';
 import LaboratorioDePython from '../components/LaboratorioDePython';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -129,6 +130,21 @@ export default function VeredaPage() {
         userId={profile.id}
         aoVencer={async () => { await vencer(); await fechar(); }}
       />
+    );
+  }
+
+  /*
+    O computador simulado não passa pelo editor.
+
+    Ele não tem arquivo nem linguagem: o que se confere é um computador — o que
+    foi baixado, o que foi instalado, com que nome o arquivo foi salvo e se o
+    programa rodou pelo prompt. Por isso é um tipo de lição, e não uma linguagem
+    a mais do laboratório de texto.
+  */
+  if (licaoAberta?.tipo === 'ambiente' && profile?.id) {
+    return (
+      <LaboratorioDeAmbiente vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
     );
   }
 

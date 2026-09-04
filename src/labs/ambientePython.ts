@@ -136,8 +136,16 @@ export interface RespostaDoPrompt {
  * o desbravador vai reencontrar, e reconhecer uma mensagem é metade de sair
  * dela. Inventar um texto mais gentil pareceria ajuda e seria a única coisa
  * daqui que ele não veria de novo em lugar nenhum.
+ *
+ * O estado que volta já traz a transcrição atualizada — o comando digitado e a
+ * resposta. A primeira versão deixava isso para a tela, que tentava adivinhar
+ * pela identidade do array se o `cls` tinha limpado o histórico; como esta
+ * função sempre devolve array novo, a adivinhação nunca acertava e nada era
+ * escrito. O comando rodava, as tarefas ficavam verdes, e o prompt não
+ * respondia nada — o pior sintoma que há, porque de dentro parece que a tecla
+ * Enter não funciona.
  */
-export function rodarComando(linha: string, estado: EstadoDoAmbiente): RespostaDoPrompt {
+function responder(linha: string, estado: EstadoDoAmbiente): RespostaDoPrompt {
   const { programa, argumentos } = partes(linha);
   const antes = { ...estado, historico: [...estado.historico] };
 
@@ -233,6 +241,19 @@ export function rodarComando(linha: string, estado: EstadoDoAmbiente): RespostaD
   }
 
   return { saida: [`'${linha.trim().split(/\s+/)[0]}' ${NAO_RECONHECIDO}`], estado: antes };
+}
+
+export function rodarComando(linha: string, estado: EstadoDoAmbiente): RespostaDoPrompt {
+  const { saida, estado: depois } = responder(linha, estado);
+  /* `cls` é o único comando que apaga o que já estava: ele devolve o histórico
+     vazio, e escrever a linha dele por cima desfaria o que a pessoa pediu. */
+  const limpou = depois.historico.length === 0 && estado.historico.length > 0;
+  if (limpou) return { saida, estado: depois };
+  if (linha.trim() === '') return { saida, estado: depois };
+  return {
+    saida,
+    estado: { ...depois, historico: [...depois.historico, `${prompt(estado)}${linha}`, ...saida] },
+  };
 }
 
 /** O texto do prompt antes do cursor, como o Windows o escreve. */

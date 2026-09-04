@@ -141,6 +141,45 @@ describe('o prompt aguenta o que a lição não pediu', () => {
   });
 });
 
+/*
+  A transcrição é do modelo, e não da tela.
+
+  A primeira versão deixava a tela montar o histórico, adivinhando pela
+  identidade do array se o `cls` tinha limpado. Como `rodarComando` sempre
+  devolve array novo, a adivinhação nunca acertava: o comando rodava, as
+  tarefas ficavam verdes, e o prompt não escrevia nada. De dentro parece que a
+  tecla Enter parou de funcionar — e os testes de então estavam todos verdes,
+  porque nenhum olhava o histórico.
+*/
+describe('o prompt guarda o que foi digitado', () => {
+  it('escreve o comando e a resposta, na ordem', () => {
+    const { estado } = rodarComando('python --version', estadoInicial());
+    expect(estado.historico[0]).toContain('python --version');
+    expect(estado.historico[1]).toContain(NAO_RECONHECIDO);
+  });
+
+  it('vai acumulando de comando em comando', () => {
+    let e: EstadoDoAmbiente = instalado(estadoInicial(), true);
+    e = rodarComando('cd Documents', e).estado;
+    e = rodarComando('python --version', e).estado;
+    expect(e.historico.filter(l => l.includes('>')).length).toBe(2);
+    expect(e.historico.join('\n')).toContain(`Python ${VERSAO}`);
+  });
+
+  it('o cls apaga tudo, e não escreve a própria linha', () => {
+    let e: EstadoDoAmbiente = instalado(estadoInicial(), true);
+    e = rodarComando('python --version', e).estado;
+    expect(e.historico.length).toBeGreaterThan(0);
+    e = rodarComando('cls', e).estado;
+    expect(e.historico).toEqual([]);
+  });
+
+  it('linha vazia não deixa rastro', () => {
+    const { estado } = rodarComando('   ', estadoInicial());
+    expect(estado.historico).toEqual([]);
+  });
+});
+
 describe('as verificações medem o que aconteceu, e não o que se clicou', () => {
   it('baixar do agregador não conta, e diz por quê', () => {
     const e = { ...estadoInicial(), baixadoDe: 'agregador' as const };
@@ -163,7 +202,7 @@ describe('as verificações medem o que aconteceu, e não o que se clicou', () =
     um jeito que o mundo real aceita, e a lista fica verde.
   */
   it('sem PATH, pelo `py`, o requisito é cumprido do mesmo jeito', () => {
-    let e = emDocumentos(comArquivo(instalado(estadoInicial(), false, true), 'programa.py'));
+    let e: EstadoDoAmbiente = emDocumentos(comArquivo(instalado(estadoInicial(), false, true), 'programa.py'));
     e = rodarComando('py programa.py', e).estado;
     expect(validarAmbiente(e, ['rodouNoPrompt'])[0].passed).toBe(true);
   });
@@ -177,7 +216,7 @@ describe('as verificações medem o que aconteceu, e não o que se clicou', () =
 
 describe('o caminho inteiro, do zero ao verde', () => {
   it('baixar, instalar, salvar e rodar deixa as quatro verdes', () => {
-    let e = estadoInicial();
+    let e: EstadoDoAmbiente = estadoInicial();
     e = { ...e, baixadoDe: 'oficial' };
     e = { ...e, instalado: { noPath: true, comLancador: true } };
     e = { ...e, documentos: { 'programa.py': 'print("oi")' } };

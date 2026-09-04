@@ -347,10 +347,13 @@ export function JanelaNotas({ texto, aoEscrever, aoSalvar, aoMinimizar, aoFechar
     <>
       <BarraDeJanela icone={ICONE_DA_JANELA.notas} titulo={`${TITULO_DA_JANELA.notas} — programa`}
         aoMinimizar={aoMinimizar} aoFechar={aoFechar} />
+      {/* Os botões vão sem classe: quem os desenha é `.win-menus > button`.
+          `.win-menu`, no singular, é o menu suspenso — `position: fixed` —, e
+          usá-lo aqui empilhava os três por cima uns dos outros. */}
       <div className="win-menus">
-        <button className="win-menu" onClick={() => setSalvando(true)}>Arquivo</button>
-        <button className="win-menu">Editar</button>
-        <button className="win-menu">Exibir</button>
+        <button onClick={() => setSalvando(true)}>Arquivo</button>
+        <button>Editar</button>
+        <button>Exibir</button>
       </div>
       <div className="win-corpo" style={{ background: '#FFFFFF' }}>
         <textarea
@@ -420,14 +423,10 @@ export function JanelaPrompt({ estado, aoMudar, aoMinimizar, aoFechar }: Fechave
 
   useEffect(() => { fim.current?.scrollIntoView({ block: 'end' }); }, [estado.historico]);
 
+  /* A transcrição vem pronta de `rodarComando`: a tela não decide o que
+     aparece no prompt, só mostra. */
   const enviar = () => {
-    const { saida, estado: depois } = rodarComando(linha, estado);
-    aoMudar({
-      ...depois,
-      historico: depois.historico === estado.historico
-        ? [...estado.historico, `${prompt(estado)}${linha}`, ...saida]
-        : depois.historico,
-    });
+    aoMudar(rodarComando(linha, estado).estado);
     setLinha('');
   };
 
@@ -437,8 +436,15 @@ export function JanelaPrompt({ estado, aoMudar, aoMinimizar, aoFechar }: Fechave
         aoMinimizar={aoMinimizar} aoFechar={aoFechar} />
       {/* Preto, monoespaçado, e a linha de boas-vindas do Windows. Reconhecer a
           tela é parte do que a lição entrega. */}
-      <div className="win-corpo" onClick={e => (e.currentTarget.querySelector('input') as HTMLInputElement)?.focus()}
-        style={{ background: '#0C0C0C', color: '#CCCCCC', padding: 10, overflow: 'auto', cursor: 'text' }}>
+      {/* `.win-corpo` é flex em linha — é o que serve às janelas com painel
+          lateral. O prompt é uma coluna, e sem esta caixa de dentro o texto e o
+          cursor viravam duas colunas lado a lado no meio da tela. */}
+      <div className="win-corpo" style={{ background: '#0C0C0C' }}>
+        <div onClick={e => (e.currentTarget.querySelector('input') as HTMLInputElement)?.focus()}
+          style={{
+            flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column',
+            color: '#CCCCCC', padding: 10, overflow: 'auto', cursor: 'text',
+          }}>
         <pre style={{ margin: 0, fontFamily: 'Consolas, monospace', fontSize: 13, lineHeight: 1.45, whiteSpace: 'pre-wrap' }}>
 {`Microsoft Windows [versão 10.0.26100.2033]
 (c) Microsoft Corporation. Todos os direitos reservados.
@@ -460,7 +466,8 @@ export function JanelaPrompt({ estado, aoMudar, aoMinimizar, aoFechar }: Fechave
             }}
           />
         </div>
-        <div ref={fim} />
+          <div ref={fim} />
+        </div>
       </div>
     </>
   );
