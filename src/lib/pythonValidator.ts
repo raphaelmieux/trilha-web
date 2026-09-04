@@ -1,4 +1,7 @@
 import type { ResultadoDeExecucao } from '../labs/pythonRuntime';
+import {
+  resumoDaClassificacao, type Classificacao, type FalhaPlantada,
+} from '../labs/falhasDePython';
 
 /**
  * O que um programa de Python precisa ter, e como se confere.
@@ -42,6 +45,10 @@ export interface ContextoDePython {
   execucao: ResultadoDeExecucao | null;
   /** Só para os laboratórios que comparam a saída. */
   saidaEsperada?: string;
+  /** Só para o laboratório de consertar: as falhas plantadas no programa. */
+  falhas?: FalhaPlantada[];
+  /** O que a pessoa marcou para cada falha, até agora. */
+  classificacao?: Classificacao;
 }
 
 interface Spec {
@@ -120,6 +127,24 @@ const SPECS: Spec[] = [
         : { passed: false, detail: 'A saída saiu diferente da esperada. Confira o texto, os espaços e a ordem das linhas.' };
     },
   },
+  {
+    /*
+      O requisito 6 pede identificar, corrigir **e classificar**. Consertar sem
+      classificar é o que o depurador já faz por você; o que fica da lição é
+      saber que o erro que ninguém acusa existe, e é o pior dos três.
+
+      A verificação não diz qual falha está mal classificada — isso está no
+      painel, com o recado ao lado de cada uma. Se dissesse aqui também, as
+      duas diriam metade.
+    */
+    id: 'classificouAsFalhas',
+    label: 'Cada falha classificada na família certa',
+    hint: 'Três famílias, e o que as separa é quando o erro aparece: antes de rodar, no meio, ou nunca.',
+    run: ctx => {
+      const r = resumoDaClassificacao(ctx.falhas ?? [], ctx.classificacao ?? {});
+      return r.completa ? { passed: true } : { passed: false, detail: r.detalhe };
+    },
+  },
   daArvore('leEExibe', 'Lê um dado do usuário e mostra o resultado',
     'Use input() para ler e print() para escrever.',
     'Falta input(), print(), ou os dois. O requisito pede que o programa leia algo e mostre um resultado.'),
@@ -169,8 +194,18 @@ const POR_ID = new Map(SPECS.map(s => [s.id, s]));
 export const IDS_DE_PYTHON = SPECS.map(s => s.id);
 
 /** Os ids que precisam da árvore, e por isso de uma análise antes. */
-export const IDS_DA_ARVORE = SPECS.filter(s => s.id !== 'roda' && s.id !== 'saidaEsperada'
-  && s.id !== 'quarentaLinhas').map(s => s.id);
+const FORA_DA_ARVORE = ['roda', 'saidaEsperada', 'quarentaLinhas', 'classificouAsFalhas'];
+export const IDS_DA_ARVORE = SPECS.filter(s => !FORA_DA_ARVORE.includes(s.id)).map(s => s.id);
+
+/**
+ * As que respondem pela última execução, e não pelo texto de agora.
+ *
+ * A tela precisa saber a diferença. Quando o código muda depois de rodar, estas
+ * envelhecem e a lista tem de dizer isso; as outras — contar linhas,
+ * classificar as falhas — continuam valendo, e apagá-las junto diria que a
+ * pessoa desfez um trabalho que ela não desfez.
+ */
+export const IDS_DA_EXECUCAO = ['roda', 'saidaEsperada', ...IDS_DA_ARVORE];
 
 /**
  * Roda as verificações pedidas.

@@ -14,6 +14,7 @@ import { validarScratch, IDS_DE_SCRATCH, type ProjetoSb3 } from './scratchValida
 import { validarAmbiente, IDS_DO_AMBIENTE, estadoInicial } from '../labs/ambientePython';
 import { PASSOS_DO_AMBIENTE } from '../labs/passosDoAmbiente';
 import { validarPython, IDS_DE_PYTHON } from './pythonValidator';
+import { classificacaoInicial } from '../labs/falhasDePython';
 import { PASSOS } from '../labs/desafioDeHtml';
 import { PASSOS_DE_CSS } from '../labs/passosDeCss';
 import { PASSOS_DE_BLOCOS } from '../labs/passosDeBlocos';
@@ -175,6 +176,11 @@ describe('os modelos dos laboratórios da vereda', () => {
           ? validarPython({
             codigo: licao.modelo, achados: {}, erroDeAnalise: null,
             execucao: null, saidaEsperada: licao.saidaEsperada,
+            /* As falhas da própria lição, e o painel como ele abre: sem isto a
+               trava conferiria uma lição sem falha nenhuma, que é o contrário
+               do que ela existe para conferir. */
+            falhas: licao.falhas,
+            classificacao: classificacaoInicial(licao.falhas ?? []),
           }, licao.verificacoes)
           : licao.linguagem === 'scratch'
             ? validarScratch(
@@ -226,6 +232,47 @@ describe('os modelos dos laboratórios da vereda', () => {
       });
     }
   }
+
+  /*
+    Falha plantada e verificação são as duas metades da mesma coisa.
+
+    Uma lição que cobra `classificouAsFalhas` e não escreve falha nenhuma dá uma
+    tarefa que ninguém pode cumprir; uma que escreve as falhas e não cobra a
+    verificação põe um painel na tela que não conta para nada. Nos dois casos
+    nada estoura — a lista simplesmente diz uma coisa e a lição faz outra.
+  */
+  describe('as falhas plantadas e a verificação que as cobra', () => {
+    /* Um `it` que varre tudo, e não um por lição: enquanto nenhuma lição
+       plantar falha, um laço por lição não geraria teste nenhum — e suíte
+       vazia é o próprio "zero de zero" que estas travas existem para pegar. */
+    const laboratorios = veredasComConteudo().flatMap(v => licoesDaVereda(v)
+      .filter(l => l.tipo === 'laboratorio')
+      .map(l => [`${v.code}/${l.id}`, l] as const));
+
+    it('nenhuma cobra a classificação sem escrever falha nenhuma', () => {
+      const vazias = laboratorios
+        .filter(([, l]) => l.verificacoes.includes('classificouAsFalhas') && !(l.falhas ?? []).length)
+        .map(([nome]) => nome);
+      expect(vazias).toEqual([]);
+    });
+
+    it('nenhuma escreve falha que a lista de tarefas não cobra', () => {
+      const soltas = laboratorios
+        .filter(([, l]) => (l.falhas ?? []).length > 0 && !l.verificacoes.includes('classificouAsFalhas'))
+        .map(([nome]) => nome);
+      expect(soltas).toEqual([]);
+    });
+
+    it('nenhuma repete o id de uma falha', () => {
+      const repetidas = laboratorios
+        .filter(([, l]) => {
+          const ids = (l.falhas ?? []).map(f => f.id);
+          return new Set(ids).size !== ids.length;
+        })
+        .map(([nome]) => nome);
+      expect(repetidas).toEqual([]);
+    });
+  });
 
   it('toda verificação cobrada tem passo a passo para quem travar', () => {
     const passosDe = (linguagem: string | undefined) =>

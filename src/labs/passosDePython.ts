@@ -22,6 +22,13 @@ export const PASSOS_DE_PYTHON: Record<string, string[]> = {
     'Confira o texto exato, inclusive maiúsculas e acentos.',
     'Se a diferença for num número, o problema costuma estar na conta, e não no print.',
   ],
+  classificouAsFalhas: [
+    'A pergunta não é onde o erro está: é quando ele apareceu.',
+    'Erro de sintaxe aparece antes de qualquer coisa rodar — o Python recusa o arquivo e nenhuma linha sai.',
+    'Erro de execução aparece no meio: o programa escreve o que já tinha para escrever e para com uma mensagem.',
+    'Erro de lógica não aparece nunca. O programa vai até o fim, sem reclamar, e a resposta é que está errada.',
+    'Se ficou em dúvida entre dois, releia o sintoma e pergunte: o Python chegou a reclamar?',
+  ],
   leEExibe: [
     'Use input() para pedir um dado. O que estiver entre parênteses aparece antes do cursor.',
     'input() sempre devolve texto. Para fazer conta, converta: int(input(...)) ou float(input(...)).',

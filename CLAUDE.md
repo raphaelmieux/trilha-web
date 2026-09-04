@@ -436,6 +436,31 @@ quadro: `#topo { background-color: rgb(27, 77, 62); }` saía com o texto escuro
 padrão em cima do verde-escuro, e "a margem entre os dois cartões é a soma
 destas duas" estava errado — margens verticais vizinhas se fundem numa só.
 
+**Consertar é meia lição; a outra metade é dizer de que família era.** O
+requisito 6 da CC002 pede identificar, corrigir **e classificar**. As duas
+primeiras o computador já ajuda a fazer — o Python aponta a linha do erro de
+sintaxe e escreve o traceback do de execução. Sobre o de lógica ele não escreve
+nada, e é o de lógica que custa caro a vida inteira. Classificar é o que obriga
+a olhar **quando** o erro apareceu, e é por aí que se acha o terceiro: é o que
+sobra depois que o programa roda até o fim sem reclamar.
+
+As famílias moram em `falhasDePython.ts`; as falhas de cada lição, no currículo,
+em `falhas` — porque são conteúdo. O sintoma se escreve como quem vê a tela
+veria: "a média sai sempre zero" é sintoma, "falta um int() na linha 4" é
+gabarito, e gabarito faria o painel abrir resolvido.
+
+**A classificação acontece no painel de Problemas, e não num formulário da
+plataforma.** É a mesma regra do laboratório de IA, onde a avaliação crítica
+mora no polegar que o próprio aplicativo tem. Todo editor de código tem um
+painel de problemas embaixo — o que muda aqui é de quem é a resposta.
+
+E quem erra recebe o que **teria visto** se a família marcada fosse a certa, e
+nunca qual é a certa: com a resposta na tela, três botões viram três tentativas
+e a tarefa passa a medir paciência. O painel tem altura fixa justamente porque
+a moldura precisa desse número — a cápsula da plataforma sobe a altura do que o
+programa imitado tem colado no pé, e painel que muda de tamanho com a tela não
+dá número nenhum para subir.
+
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois
@@ -521,6 +546,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
+| `src/labs/falhasDePython.test.ts` | painel de falhas que abre respondido, ou recado de erro que entrega a resposta |
 | `src/curriculum/index.test.ts` | trilha sem emblema ou sem fundo de certificado no repositório |
 | `src/curriculum/exemplosDaTeoria.test.ts` | seletor do exemplo de CSS que não acha ninguém na marcação do tópico |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |

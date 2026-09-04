@@ -5,7 +5,11 @@ import { CSS_IDE, CabecalhoDaIde, EditorDeCodigo, StatusDaIde } from '../labs/id
 import { contarLinhas } from '../labs/realce';
 import { PASSOS_DE_PYTHON } from '../labs/passosDePython';
 import { Python, type ResultadoDeExecucao } from '../labs/pythonRuntime';
-import { validarPython, type CheckResult } from '../lib/pythonValidator';
+import { validarPython, IDS_DA_EXECUCAO, type CheckResult } from '../lib/pythonValidator';
+import {
+  CATEGORIAS, ORDEM_DAS_CATEGORIAS, classificacaoInicial, conferirClassificacao,
+  type CategoriaDeFalha, type Classificacao,
+} from '../labs/falhasDePython';
 import { lerRascunho, descartarRascunho } from '../lib/rascunho';
 import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
@@ -47,6 +51,17 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
     return typeof g?.conteudo === 'string' && g.conteudo !== licao.modelo;
   });
   const [entrada, setEntrada] = useState((licao.entradaPadrao ?? []).join('\n'));
+  const falhas = useMemo(() => licao.falhas ?? [], [licao.falhas]);
+  /* Numa chave própria: o rascunho do código é uma string, e é a mesma forma
+     nos outros laboratórios de Python. Misturar as duas coisas numa só
+     mudaria o que já está gravado no navegador de quem está no meio de um. */
+  const chaveDasFalhas = `${chave}-falhas`;
+  const [classificacao, setClassificacao] = useState<Classificacao>(() => {
+    const g = lerRascunho<Classificacao>(userId, chaveDasFalhas);
+    return g?.conteudo && typeof g.conteudo === 'object'
+      ? { ...classificacaoInicial(licao.falhas ?? []), ...g.conteudo }
+      : classificacaoInicial(licao.falhas ?? []);
+  });
   const [execucao, setExecucao] = useState<ResultadoDeExecucao | null>(null);
   const [achados, setAchados] = useState<Record<string, boolean>>({});
   const [erroDeAnalise, setErroDeAnalise] = useState<string | null>(null);
@@ -60,6 +75,7 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
   const [aviso, setAviso] = useState(voltou ? 'Seu código voltou como você deixou.' : '');
 
   useRascunhoLocal(userId, chave, codigo, !entregue);
+  useRascunhoLocal(userId, chaveDasFalhas, classificacao, !entregue && falhas.length > 0);
 
   /* Um Python por laboratório, e ele morre junto com a tela: o worker segura
      13 MB de Pyodide, e deixá-lo vivo depois de sair seria guardar isso por
@@ -104,8 +120,10 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
     () => validarPython({
       codigo, achados, erroDeAnalise, execucao,
       saidaEsperada: licao.saidaEsperada,
+      falhas, classificacao,
     }, licao.verificacoes),
-    [codigo, achados, erroDeAnalise, execucao, licao.saidaEsperada, licao.verificacoes]);
+    [codigo, achados, erroDeAnalise, execucao, licao.saidaEsperada, licao.verificacoes,
+      falhas, classificacao]);
 
   const passaram = resultados.filter(r => r.passed).length;
   /* Entregar exige que os resultados sejam do código que está na tela. Sem
@@ -116,6 +134,7 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
     setSalvando(true);
     await aoVencer();
     descartarRascunho(userId, chave);
+    descartarRascunho(userId, chaveDasFalhas);
     setSalvando(false);
     setEntregue(true);
   };
@@ -138,7 +157,10 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
     titulo: r.label,
     detalhe: r.passed ? undefined : (r.detail || r.hint),
     passos: PASSOS_DE_PYTHON[r.id],
-    feita: r.passed && !velha,
+    /* Contar linhas e classificar falhas respondem pelo texto de agora, e não
+       pela última execução: apagá-las junto com as outras diria que a pessoa
+       desfez um trabalho que ela não desfez. */
+    feita: r.passed && (!velha || !IDS_DA_EXECUCAO.includes(r.id)),
   }));
 
   const acoes = (
@@ -149,7 +171,10 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
           : velha ? 'Execute de novo'
             : podeEntregar ? 'Entregar' : `Faltam ${resultados.length - passaram}`}
       </button>
-      <button onClick={() => { setCodigo(licao.modelo); setExecucao(null); setCodigoRodado(null); }}
+      <button onClick={() => {
+        setCodigo(licao.modelo); setExecucao(null); setCodigoRodado(null);
+        setClassificacao(classificacaoInicial(falhas));
+      }}
         className="btn-ghost w-full text-sm inline-flex items-center justify-center gap-1.5">
         <RotateCcw className="w-3.5 h-3.5" /> Recomeçar do zero
       </button>
@@ -165,7 +190,9 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
       tarefas={tarefas}
       aviso={aviso}
       acoes={acoes}
-      rodape={26}
+      /* A régua de status, e o painel de problemas quando ele existe: os dois
+         são do editor e ficam colados no pé, e a cápsula sobe os dois. */
+      rodape={26 + (falhas.length > 0 ? ALTURA_DOS_PROBLEMAS : 0)}
     >
       <style>{CSS_IDE}</style>
       <style>{CSS_PY}</style>
@@ -220,10 +247,112 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
           </div>
         </div>
 
+        {falhas.length > 0 && (
+          <PainelDeProblemas
+            conferidas={conferirClassificacao(falhas, classificacao)}
+            aoMarcar={(id, cat) => setClassificacao(c => ({ ...c, [id]: cat }))}
+          />
+        )}
+
         <StatusDaIde problemas={resultados.length - passaram} linhas={contarLinhas(codigo)}
           aoAvisar={setAviso} linguagem="Python" />
       </div>
     </LaboratorioEmTelaCheia>
+  );
+}
+
+/**
+ * A altura do painel de problemas, em pixels.
+ *
+ * Fixa, e não um teto em vh, porque ela é a conta que a moldura precisa: a
+ * cápsula da plataforma sobe a altura do que o programa imitado tem colado no
+ * pé, e um painel que muda de tamanho com a tela não dá número nenhum para
+ * subir. Com altura fixa, a cápsula pousa acima dele — e a lista rola por
+ * dentro, como rola a de qualquer editor.
+ */
+const ALTURA_DOS_PROBLEMAS = 220;
+
+/**
+ * O painel de Problemas, onde as falhas se classificam.
+ *
+ * ── Por que aqui, e não num formulário da plataforma ─────────────────────
+ * Todo editor de código tem um painel de problemas embaixo, e é lá que se olha
+ * quando alguma coisa está errada. Pôr a classificação num cartão da plataforma
+ * abaixo do laboratório repetiria o erro que o laboratório de IA já corrigiu:
+ * a avaliação acontece dentro do programa, com as peças que ele tem.
+ *
+ * O que muda em relação a um editor de verdade é de quem é a resposta. Lá o
+ * editor classifica; aqui quem classifica é quem estuda — porque é isso que o
+ * requisito pede, e porque a família que mais importa, a de lógica, é a única
+ * que nenhum editor consegue apontar.
+ *
+ * O recado de quem erra diz o que ela **teria visto** se a família marcada
+ * fosse a certa, e não qual é a certa: com a resposta, três botões viram três
+ * tentativas.
+ */
+function PainelDeProblemas({ conferidas, aoMarcar }: {
+  conferidas: ReturnType<typeof conferirClassificacao>;
+  aoMarcar: (id: string, categoria: CategoriaDeFalha) => void;
+}) {
+  /*
+    Duas contas diferentes, e não uma.
+
+    A lista de tarefas conta primeiro o que não foi respondido e só depois o que
+    foi respondido errado — são dois estados, e o segundo só existe quando o
+    primeiro acabou. O painel dizia "2 por classificar" enquanto a tarefa dizia
+    "faltam 1 de 3", porque somava as duas coisas na mesma palavra. Duas
+    palavras, dois números, e as duas telas passam a dizer o mesmo.
+  */
+  const semResposta = conferidas.filter(c => c.marcada === null).length;
+  const erradas = conferidas.filter(c => c.marcada !== null && !c.certa).length;
+  const conta = semResposta > 0 ? `${semResposta} por classificar`
+    : erradas > 0 ? `${erradas} por rever`
+      : 'todas classificadas';
+  return (
+    <section className="py-problemas" aria-label="Problemas">
+      <header className="py-problemas-topo">
+        <span>Problemas</span>
+        <span className="py-problemas-conta">{conta}</span>
+      </header>
+
+      {/*
+        A legenda mora aqui, e não em cada botão.
+
+        O que separa as três famílias é uma frase por família, e ela vale para o
+        painel inteiro — repetida embaixo de cada um dos três botões de cada
+        falha, virava nove repetições da mesma coisa e empurrava as falhas para
+        fora da tela. Dita uma vez, no alto, ela se lê uma vez.
+      */}
+      <p className="py-legenda">
+        Quando o erro aparece:{' '}
+        {ORDEM_DAS_CATEGORIAS.map((cat, i) => (
+          <span key={cat}>
+            {i > 0 && ' · '}
+            <b>{CATEGORIAS[cat].nome.replace('Erro de ', '')}</b>, {CATEGORIAS[cat].quando.toLowerCase()}
+          </span>
+        ))}
+      </p>
+
+      <ul className="py-lista">
+        {conferidas.map(c => (
+          <li key={c.id} className={c.certa ? 'py-falha py-falha-ok' : 'py-falha'}>
+            <p className="py-sintoma">{c.sintoma}</p>
+            <div className="py-familias" role="group" aria-label={`Família da falha: ${c.sintoma}`}>
+              {ORDEM_DAS_CATEGORIAS.map(cat => (
+                <button key={cat} type="button"
+                  className={c.marcada === cat ? 'py-familia py-familia-viva' : 'py-familia'}
+                  aria-pressed={c.marcada === cat}
+                  title={CATEGORIAS[cat].comoSeVe}
+                  onClick={() => aoMarcar(c.id, cat)}>
+                  {CATEGORIAS[cat].nome}
+                </button>
+              ))}
+            </div>
+            {c.recado && <p className="py-recado">{c.recado}</p>}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -249,7 +378,49 @@ const CSS_PY = `
   font-family: ui-monospace, monospace; font-size: 12px; white-space: pre-wrap; }
 .py-velha { margin: 0; font-size: 11px; color: #E0A458; line-height: 1.5; }
 
+/* O painel de problemas, embaixo e da largura toda — a posição que ele tem em
+   todo editor. Altura com teto: ele não pode empurrar o editor para fora da
+   tela, então rola por dentro quando as falhas são muitas. */
+.py-problemas { flex: none; height: ${ALTURA_DOS_PROBLEMAS}px; overflow: auto;
+  border-top: 1px solid #2A2F3A; background: #16191F; }
+.py-problemas-topo { position: sticky; top: 0; display: flex; align-items: center;
+  justify-content: space-between; gap: 10px; padding: 5px 10px; background: #1B1F27;
+  border-bottom: 1px solid #2A2F3A; font-size: 11px; text-transform: uppercase;
+  letter-spacing: .06em; color: #8B93A7; }
+.py-problemas-conta { text-transform: none; letter-spacing: 0; }
+.py-legenda { margin: 0; padding: 6px 10px; border-bottom: 1px solid #21262F;
+  font-size: 11.5px; line-height: 1.5; color: #8B93A7; }
+.py-legenda b { color: #B7BECC; font-weight: 700; }
+.py-lista { list-style: none; margin: 0; padding: 0; }
+.py-falha { padding: 8px 10px; border-bottom: 1px solid #21262F;
+  display: flex; flex-direction: column; gap: 6px; }
+.py-falha:last-child { border-bottom: 0; }
+/* Verde na borda esquerda, e não no fundo: a lista continua legível, e a marca
+   fica onde o olho corre. */
+.py-falha-ok { border-left: 3px solid #4C9A5A; padding-left: 7px; }
+.py-sintoma { margin: 0; font-size: 12.5px; color: #D7DCE6; line-height: 1.45; }
+.py-familias { display: flex; flex-wrap: wrap; gap: 6px; }
+.py-familia { border: 1px solid #2A2F3A; border-radius: 4px; padding: 4px 10px;
+  cursor: pointer; background: #10141C; color: #B7BECC; font-size: 12px;
+  font-weight: 600; }
+.py-familia:hover { border-color: #3B424F; }
+.py-familia-viva { background: #1E2A3A; border-color: #4C7BB0; color: #E6EDF7; }
+.py-recado { margin: 0; font-size: 11.5px; line-height: 1.5; color: #E0A458; }
+
+/*
+  No celular o editor ficava com zero de largura.
+
+  O corpo da IDE é uma fila, e a coluna da direita passava a 100% aqui sem que
+  a fila virasse pilha: o editor, que divide o que sobra, não recebia nada. A
+  tela abria no campo de entrada, sem código à vista e sem nada dizendo que
+  havia um. Os outros laboratórios de código resolvem isso com o alternador de
+  abas; aqui a coluna da direita é curta, e empilhar as duas cabe — desde que o
+  editor tenha altura mínima e o corpo role.
+*/
 @media (max-width: 900px) {
-  .py-lado { width: 100%; border-left: 0; border-top: 1px solid #2A2F3A; }
+  .ide-corpo { flex-direction: column; overflow: auto; }
+  .ide-codigo { min-height: 240px; }
+  .py-lado { width: 100%; flex: none; border-left: 0; border-top: 1px solid #2A2F3A; }
+  .py-saida { min-height: 96px; }
 }
 `;

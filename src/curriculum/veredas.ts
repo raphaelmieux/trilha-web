@@ -2,6 +2,7 @@ import { MODULOS_DE_HTML } from './sintaxeHtml';
 import { MODULOS_DE_CSS } from './folhaDeEstilo';
 import { MODULOS_DE_BLOCOS } from './logicaComBlocos';
 import type { Question } from '../types';
+import type { FalhaPlantada } from '../labs/falhasDePython';
 
 /*
  * As veredas.
@@ -163,6 +164,15 @@ export type LicaoDeVereda =
      * aprovaria um programa que roda e responde errado.
      */
     saidaEsperada?: string;
+    /**
+     * Só para `'python'`: as falhas plantadas no modelo, para classificar.
+     *
+     * Elas ficam no currículo, e não no validador, porque são conteúdo: cada
+     * laboratório de consertar tem as suas. O sintoma é escrito como quem vê a
+     * tela veria — dizer a linha e a correção seria pôr o gabarito na lição, e
+     * o painel abriria resolvido.
+     */
+    falhas?: FalhaPlantada[];
   }
   | {
     /*
