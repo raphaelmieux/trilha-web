@@ -34,7 +34,12 @@ import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
 const CSS_TEORIA = `
   .teo-topico + .teo-topico { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--color-border); }
   .teo-topico h3 { font-size: 17px; font-weight: 700; color: var(--color-text); margin-bottom: 8px; }
-  .teo-topico p { font-size: 14.5px; line-height: 1.65; color: var(--color-text-muted); margin-bottom: 9px; max-width: 68ch; }
+  /* Sem limite de largura: o texto ocupa o bloco inteiro, como nas lições das
+     trilhas. Com um limite em ch, ele parava mais ou menos onde acaba a
+     primeira caixa do exemplo, e a página parecia ter uma coluna invisível que
+     nada explicava — pior justamente nos tópicos com exemplo, que é onde a
+     borda da caixa dá ao acaso a aparência de regra. */
+  .teo-topico p { font-size: 14.5px; line-height: 1.65; color: var(--color-text-muted); margin-bottom: 9px; }
   .teo-marcas { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
   .teo-marca {
     font-family: 'Cascadia Code', Consolas, monospace; font-size: 11.5px;
@@ -44,7 +49,7 @@ const CSS_TEORIA = `
   .teo-atencao {
     display: flex; gap: 9px; padding: 10px 12px; border-radius: 8px;
     background: var(--color-warning-a10); color: var(--color-secondary);
-    font-size: 13.5px; line-height: 1.55; margin: 4px 0 14px; max-width: 68ch;
+    font-size: 13.5px; line-height: 1.55; margin: 4px 0 14px;
   }
   .teo-dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
   .teo-caixa { border: 1px solid var(--color-border); border-radius: 8px; overflow: hidden; }

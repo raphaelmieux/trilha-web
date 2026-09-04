@@ -75,14 +75,14 @@ export const CSS_REFERENCIA = `
   /* A plataforma pinta h1..h4 de quase branco; aqui o fundo é escuro e isso
      serve, mas a cor vem escrita para não depender disso. */
   .ref-texto h3 { font-size: 19px; font-weight: 700; color: #FFFFFF; margin: 3px 0 10px; }
-  .ref-texto p { font-size: 13.5px; line-height: 1.65; margin: 0 0 10px; max-width: 62ch; }
+  .ref-texto p { font-size: 13.5px; line-height: 1.65; margin: 0 0 10px; }
   .ref-marcas { display: flex; flex-wrap: wrap; gap: 5px; margin: 0 0 14px; }
   .ref-marca { font-family: 'Cascadia Code', Consolas, monospace; font-size: 11.5px;
     padding: 1px 7px; border-radius: 10px; background: #2D2D2D; color: #9CDCFE; }
 
   .ref-atencao { display: flex; gap: 9px; padding: 10px 12px; border-radius: 6px;
     background: rgba(255, 196, 87, .08); border: 1px solid rgba(255, 196, 87, .3);
-    color: #FFD98A; font-size: 12.5px; line-height: 1.55; margin: 4px 0 16px; max-width: 62ch; }
+    color: #FFD98A; font-size: 12.5px; line-height: 1.55; margin: 4px 0 16px; }
 
   .ref-dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
   .ref-caixa { border: 1px solid #2D2D2D; border-radius: 6px; overflow: hidden; }
