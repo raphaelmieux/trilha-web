@@ -138,18 +138,212 @@ def analisar(fonte):
     achados['leEExibe'] = leu and escreveu
     return achados
 
+# ── O esboço, para o roteiro da apresentação ────────────────────────────
+#
+# O requisito 7 pede apresentar o programa explicando o que cada parte faz. O
+# que a plataforma pode fazer é preparar: ler a estrutura e dizer, em
+# português, o que cada pedaço do programa DAQUELA pessoa faz.
+#
+# Só a estrutura sai daqui. As frases são escritas em TypeScript, onde se
+# testam sem subir 12 MB de Pyodide — e onde vivem as outras palavras que a
+# plataforma diz.
+_FUNDO = 6
+
+def _texto(no):
+    if no is None:
+        return ''
+    try:
+        return ast.unparse(no)
+    except Exception:
+        return ''
+
+def _curto(t, limite=64):
+    t = ' '.join(t.split())
+    if len(t) <= limite:
+        return t
+    return t[:limite - 1] + '…'
+
+def _entrada(valor):
+    # input(...), e as duas conversões que a vereda ensina em volta dele.
+    converte = ''
+    chamada = valor
+    if isinstance(chamada, ast.Call) and isinstance(chamada.func, ast.Name):
+        if chamada.func.id in ('int', 'float', 'str') and len(chamada.args) == 1:
+            converte = chamada.func.id
+            chamada = chamada.args[0]
+    if not (isinstance(chamada, ast.Call) and isinstance(chamada.func, ast.Name)):
+        return None
+    if chamada.func.id != 'input':
+        return None
+    pergunta = ''
+    if chamada.args and isinstance(chamada.args[0], ast.Constant):
+        if isinstance(chamada.args[0].value, str):
+            pergunta = chamada.args[0].value
+    return {'pergunta': pergunta, 'converte': converte}
+
+def _vezes(iterador):
+    # range(N) com N escrito na mão é "repito N vezes", que é como se fala.
+    if not (isinstance(iterador, ast.Call) and isinstance(iterador.func, ast.Name)):
+        return None
+    if iterador.func.id != 'range' or len(iterador.args) != 1:
+        return None
+    arg = iterador.args[0]
+    if isinstance(arg, ast.Constant) and isinstance(arg.value, int):
+        return arg.value
+    return None
+
+def _no(st, nivel):
+    d = {'linha': getattr(st, 'lineno', 0)}
+    alvo_simples = (
+        isinstance(st, ast.Assign) and len(st.targets) == 1
+        and isinstance(st.targets[0], ast.Name)
+    )
+    if alvo_simples:
+        alvo = st.targets[0].id
+        lida = _entrada(st.value)
+        # A soma escrita por extenso, x = x + 1, e a curta, x += 1, são a
+        # mesma coisa dita de dois jeitos, e o roteiro tem de dizer a mesma
+        # frase para as duas: quem escreveu a forma longa vai apresentar
+        # "somo 1", e não "guardo x + 1 em x".
+        #
+        # (Sem crase em comentário nenhum daqui: este texto vive dentro de um
+        # template literal do TypeScript, e uma crase encerra a string.)
+        acumulou = (
+            isinstance(st.value, ast.BinOp)
+            and isinstance(st.value.left, ast.Name)
+            and st.value.left.id == alvo
+        )
+        if lida:
+            d['tipo'] = 'entrada'
+            d['nome'] = alvo
+            d['pergunta'] = lida['pergunta']
+            d['converte'] = lida['converte']
+        elif acumulou:
+            d['tipo'] = 'acumula'
+            d['nome'] = alvo
+            d['op'] = type(st.value.op).__name__
+            d['valor'] = _curto(_texto(st.value.right))
+        else:
+            d['tipo'] = 'atribuicao'
+            d['nome'] = alvo
+            d['valor'] = _curto(_texto(st.value))
+    elif isinstance(st, ast.AugAssign) and isinstance(st.target, ast.Name):
+        d['tipo'] = 'acumula'
+        d['nome'] = st.target.id
+        d['op'] = type(st.op).__name__
+        d['valor'] = _curto(_texto(st.value))
+    elif (
+        isinstance(st, ast.Expr) and isinstance(st.value, ast.Call)
+        and isinstance(st.value.func, ast.Name) and st.value.func.id == 'print'
+    ):
+        d['tipo'] = 'saida'
+        d['valor'] = _curto(', '.join(_texto(a) for a in st.value.args))
+    elif isinstance(st, ast.Expr) and isinstance(st.value, ast.Call):
+        d['tipo'] = 'chamada'
+        d['valor'] = _curto(_texto(st.value))
+    elif isinstance(st, ast.If):
+        d['tipo'] = 'se'
+        d['condicao'] = _curto(_texto(st.test))
+        d['corpo'] = _esbocar(st.body, nivel + 1)
+        d['senao'] = _esbocar(st.orelse, nivel + 1)
+    elif isinstance(st, ast.For):
+        d['tipo'] = 'para'
+        d['alvo'] = _curto(_texto(st.target))
+        d['sobre'] = _curto(_texto(st.iter))
+        d['vezes'] = _vezes(st.iter)
+        d['corpo'] = _esbocar(st.body, nivel + 1)
+    elif isinstance(st, ast.While):
+        d['tipo'] = 'enquanto'
+        d['condicao'] = _curto(_texto(st.test))
+        d['corpo'] = _esbocar(st.body, nivel + 1)
+    elif isinstance(st, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        d['tipo'] = 'funcao'
+        d['nome'] = st.name
+        d['parametros'] = [a.arg for a in st.args.args]
+        d['corpo'] = _esbocar(st.body, nivel + 1)
+    elif isinstance(st, ast.Return):
+        d['tipo'] = 'retorno'
+        d['valor'] = _curto(_texto(st.value))
+    elif isinstance(st, ast.Break):
+        d['tipo'] = 'sai'
+    elif isinstance(st, ast.Continue):
+        d['tipo'] = 'pula'
+    elif isinstance(st, (ast.Import, ast.ImportFrom)):
+        d['tipo'] = 'importa'
+        d['valor'] = _curto(_texto(st))
+    elif isinstance(st, ast.Pass):
+        d['tipo'] = 'nada'
+    else:
+        d['tipo'] = 'outro'
+        d['valor'] = _curto(_texto(st))
+    return d
+
+def _esbocar(corpo, nivel=0):
+    # Fundo: um programa aninhado a seis níveis não se explica em voz alta de
+    # qualquer jeito, e a marca é honesta — diz que há mais ali dentro.
+    if nivel >= _FUNDO:
+        return [{'tipo': 'fundo', 'linha': 0}] if corpo else []
+    return [_no(st, nivel) for st in corpo]
+
+def _chamadas(arvore):
+    # Função escrita e nunca chamada não roda, e o roteiro precisa dizer isso —
+    # é a mesma verdade da pilha sem chapéu na vereda de blocos.
+    nomes = set()
+    for no in ast.walk(arvore):
+        if isinstance(no, ast.Call) and isinstance(no.func, ast.Name):
+            nomes.add(no.func.id)
+    return sorted(nomes)
+
 def _tudo(fonte):
     try:
-        return {'ok': True, 'achados': analisar(fonte)}
+        arvore = ast.parse(fonte)
+        return {
+            'ok': True,
+            'achados': analisar(fonte),
+            'esboco': _esbocar(arvore.body),
+            'chamadas': _chamadas(arvore),
+        }
     except SyntaxError as e:
         return {'ok': False, 'erro': _erro_de_sintaxe(e)}
 
 json.dumps(_tudo(_fonte))
 `;
 
+/**
+ * Um pedaço do programa, como o `ast` o viu.
+ *
+ * É estrutura, e não texto: o roteiro é escrito a partir daqui, em português, e
+ * quem escreve as frases é `roteiroDePython.ts`. A divisão é a mesma de sempre
+ * — quem sabe o que o código tem é o analisador da linguagem; quem sabe como a
+ * plataforma fala é a plataforma.
+ */
+export interface NoDoEsboco {
+  tipo: 'atribuicao' | 'entrada' | 'acumula' | 'saida' | 'chamada' | 'se' | 'para'
+  | 'enquanto' | 'funcao' | 'retorno' | 'sai' | 'pula' | 'importa' | 'nada'
+  | 'outro' | 'fundo';
+  linha: number;
+  nome?: string;
+  valor?: string;
+  /** Só em `entrada`: o texto que o `input()` mostra, quando há um. */
+  pergunta?: string;
+  /** Só em `entrada`: `int`, `float`, `str`, ou vazio quando não converte. */
+  converte?: string;
+  /** Só em `acumula`: o nome da operação, como o `ast` a chama (`Add`, `Sub`…). */
+  op?: string;
+  condicao?: string;
+  alvo?: string;
+  sobre?: string;
+  /** Só em `para`: quantas voltas, quando o `range()` traz um número escrito. */
+  vezes?: number | null;
+  parametros?: string[];
+  corpo?: NoDoEsboco[];
+  senao?: NoDoEsboco[];
+}
+
 /** O que o analisador devolve: ou a árvore lida, ou o erro de sintaxe da pessoa. */
 export type SaidaDaAnalise =
-  | { ok: true; achados: Record<string, boolean> }
+  | { ok: true; achados: Record<string, boolean>; esboco: NoDoEsboco[];
+    /** Os nomes chamados em algum lugar do programa. */ chamadas: string[] }
   | { ok: false; erro: { linha: number; coluna: number; trecho: string; msg: string } };
 
 /**

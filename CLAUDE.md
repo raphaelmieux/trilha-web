@@ -461,6 +461,34 @@ a moldura precisa desse número — a cápsula da plataforma sobe a altura do qu
 programa imitado tem colado no pé, e painel que muda de tamanho com a tela não
 dá número nenhum para subir.
 
+**Escrever é meia lição; a outra metade é explicar o que se escreveu.** O
+requisito 7 da CC002 pede um programa livre de quarenta linhas **e** apresentá-lo
+dizendo o que cada parte faz — o mesmo requisito difícil da CC001, pela mesma
+razão: escrever copiando é possível, explicar copiando não é. A apresentação
+acontece fora do aplicativo e a plataforma não confere nada dela; o que ela faz
+é preparar, lendo a estrutura e escrevendo em português o que cada pedaço faz,
+para a pessoa treinar com o **próprio** programa na frente.
+
+Quem lê o programa é o `ast`, dentro do Pyodide, e o que ele devolve é
+estrutura — `esboco`, que vem junto dos achados porque as duas leituras são da
+mesma árvore. As frases moram em `roteiroDePython.ts`, em TypeScript, onde se
+testam sem subir doze megabytes de Pyodide. Primeira pessoa, porque é para
+falar: "este laço soma as notas" se lê, "eu somo as notas" se fala.
+
+Duas coisas que ele diz e que a árvore esconde: `x = x + 1` e `x += 1` viram a
+mesma frase, porque quem escreveu a forma longa vai apresentar "somo 1"; e a
+cadeia de `elif`, que na árvore é um `if` dentro do `else` do anterior, sai toda
+no mesmo nível — falada, ela não é encaixada, é a próxima pergunta da mesma
+série, e uma escada de degraus faria a pessoa dizer em voz alta a coisa errada
+sobre o próprio programa. Função escrita e nunca chamada diz que nunca roda: é
+a pilha sem chapéu da CC001, do outro lado da estante.
+
+**O que a trava mede é a palavra da plataforma, e não a linha.** O roteiro cita
+o código de quem escreveu, então uma variável chamada `faltaram` fazia a trava
+do "descreve, e não julga" acusar a plataforma de uma palavra que ela não
+disse. O esboço do teste é neutro por isso — um nó de cada tipo, com nomes que
+não dizem nada.
+
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois
@@ -547,6 +575,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/labs/falhasDePython.test.ts` | painel de falhas que abre respondido, ou recado de erro que entrega a resposta |
+| `src/labs/roteiroDePython.test.ts` | roteiro que julga o programa, ou que faz escada com a cadeia de elif |
 | `src/curriculum/index.test.ts` | trilha sem emblema ou sem fundo de certificado no repositório |
 | `src/curriculum/exemplosDaTeoria.test.ts` | seletor do exemplo de CSS que não acha ninguém na marcação do tópico |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |

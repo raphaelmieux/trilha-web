@@ -1,0 +1,300 @@
+{
+  "esboco": [
+    {
+      "linha": 2,
+      "tipo": "importa",
+      "valor": "import statistics"
+    },
+    {
+      "linha": 4,
+      "tipo": "atribuicao",
+      "nome": "MINIMO",
+      "valor": "6.0"
+    },
+    {
+      "linha": 5,
+      "tipo": "atribuicao",
+      "nome": "aprovados",
+      "valor": "0"
+    },
+    {
+      "linha": 6,
+      "tipo": "atribuicao",
+      "nome": "nomes",
+      "valor": "[]"
+    },
+    {
+      "linha": 8,
+      "tipo": "funcao",
+      "nome": "media",
+      "parametros": [
+        "notas"
+      ],
+      "corpo": [
+        {
+          "linha": 9,
+          "tipo": "atribuicao",
+          "nome": "soma",
+          "valor": "0"
+        },
+        {
+          "linha": 10,
+          "tipo": "para",
+          "alvo": "n",
+          "sobre": "notas",
+          "vezes": null,
+          "corpo": [
+            {
+              "linha": 11,
+              "tipo": "acumula",
+              "nome": "soma",
+              "op": "Add",
+              "valor": "n"
+            }
+          ]
+        },
+        {
+          "linha": 12,
+          "tipo": "retorno",
+          "valor": "soma / len(notas)"
+        }
+      ]
+    },
+    {
+      "linha": 14,
+      "tipo": "entrada",
+      "nome": "quantos",
+      "pergunta": "Quantos desbravadores? ",
+      "converte": "int"
+    },
+    {
+      "linha": 16,
+      "tipo": "para",
+      "alvo": "i",
+      "sobre": "range(3)",
+      "vezes": 3,
+      "corpo": [
+        {
+          "linha": 17,
+          "tipo": "entrada",
+          "nome": "nome",
+          "pergunta": "Nome: ",
+          "converte": ""
+        },
+        {
+          "linha": 18,
+          "tipo": "entrada",
+          "nome": "nota",
+          "pergunta": "Nota: ",
+          "converte": "float"
+        },
+        {
+          "linha": 19,
+          "tipo": "chamada",
+          "valor": "nomes.append(nome)"
+        },
+        {
+          "linha": 20,
+          "tipo": "se",
+          "condicao": "nota >= 8",
+          "corpo": [
+            {
+              "linha": 21,
+              "tipo": "saida",
+              "valor": "nome, 'passou com folga'"
+            },
+            {
+              "linha": 22,
+              "tipo": "acumula",
+              "nome": "aprovados",
+              "op": "Add",
+              "valor": "1"
+            }
+          ],
+          "senao": [
+            {
+              "linha": 23,
+              "tipo": "se",
+              "condicao": "nota >= MINIMO",
+              "corpo": [
+                {
+                  "linha": 24,
+                  "tipo": "saida",
+                  "valor": "nome, 'passou'"
+                },
+                {
+                  "linha": 25,
+                  "tipo": "acumula",
+                  "nome": "aprovados",
+                  "op": "Add",
+                  "valor": "1"
+                }
+              ],
+              "senao": [
+                {
+                  "linha": 27,
+                  "tipo": "saida",
+                  "valor": "nome, 'precisa de recuperação'"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linha": 29,
+      "tipo": "atribuicao",
+      "nome": "tentativas",
+      "valor": "0"
+    },
+    {
+      "linha": 30,
+      "tipo": "enquanto",
+      "condicao": "tentativas < quantos",
+      "corpo": [
+        {
+          "linha": 31,
+          "tipo": "acumula",
+          "nome": "tentativas",
+          "op": "Add",
+          "valor": "1"
+        },
+        {
+          "linha": 32,
+          "tipo": "se",
+          "condicao": "tentativas > 10",
+          "corpo": [
+            {
+              "linha": 33,
+              "tipo": "sai"
+            }
+          ],
+          "senao": []
+        }
+      ]
+    },
+    {
+      "linha": 35,
+      "tipo": "saida",
+      "valor": "'Aprovados:', aprovados"
+    },
+    {
+      "linha": 36,
+      "tipo": "saida",
+      "valor": "'Média da turma:', media([7, 8, 9])"
+    },
+    {
+      "linha": 38,
+      "tipo": "funcao",
+      "nome": "conceito",
+      "parametros": [
+        "nota"
+      ],
+      "corpo": [
+        {
+          "linha": 39,
+          "tipo": "se",
+          "condicao": "nota >= 9",
+          "corpo": [
+            {
+              "linha": 40,
+              "tipo": "retorno",
+              "valor": "'excelente'"
+            }
+          ],
+          "senao": [
+            {
+              "linha": 41,
+              "tipo": "se",
+              "condicao": "nota >= MINIMO",
+              "corpo": [
+                {
+                  "linha": 42,
+                  "tipo": "retorno",
+                  "valor": "'bom'"
+                }
+              ],
+              "senao": [
+                {
+                  "linha": 44,
+                  "tipo": "retorno",
+                  "valor": "'a recuperar'"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linha": 46,
+      "tipo": "funcao",
+      "nome": "resumo",
+      "parametros": [
+        "quantos",
+        "aprovados"
+      ],
+      "corpo": [
+        {
+          "linha": 47,
+          "tipo": "atribuicao",
+          "nome": "reprovados",
+          "valor": "quantos - aprovados"
+        },
+        {
+          "linha": 48,
+          "tipo": "saida",
+          "valor": "'Turma de', quantos, 'desbravadores'"
+        },
+        {
+          "linha": 49,
+          "tipo": "saida",
+          "valor": "'Aprovados:', aprovados"
+        },
+        {
+          "linha": 50,
+          "tipo": "saida",
+          "valor": "'A recuperar:', reprovados"
+        },
+        {
+          "linha": 51,
+          "tipo": "retorno",
+          "valor": "reprovados"
+        }
+      ]
+    },
+    {
+      "linha": 53,
+      "tipo": "atribuicao",
+      "nome": "faltaram",
+      "valor": "resumo(3, aprovados)"
+    },
+    {
+      "linha": 54,
+      "tipo": "saida",
+      "valor": "'Conceito de quem tirou 9:', conceito(9)"
+    },
+    {
+      "linha": 55,
+      "tipo": "saida",
+      "valor": "'Conceito de quem tirou 5:', conceito(5)"
+    },
+    {
+      "linha": 56,
+      "tipo": "saida",
+      "valor": "'Fim do boletim.'"
+    }
+  ],
+  "chamadas": [
+    "conceito",
+    "float",
+    "input",
+    "int",
+    "len",
+    "media",
+    "print",
+    "range",
+    "resumo"
+  ]
+}

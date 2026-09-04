@@ -10,6 +10,8 @@ import {
   CATEGORIAS, ORDEM_DAS_CATEGORIAS, classificacaoInicial, conferirClassificacao,
   type CategoriaDeFalha, type Classificacao,
 } from '../labs/falhasDePython';
+import { roteiroDePython, funcoesQueNaoRodam } from '../labs/roteiroDePython';
+import type { NoDoEsboco } from '../labs/pythonAnalise';
 import { lerRascunho, descartarRascunho } from '../lib/rascunho';
 import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
@@ -64,6 +66,10 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
   });
   const [execucao, setExecucao] = useState<ResultadoDeExecucao | null>(null);
   const [achados, setAchados] = useState<Record<string, boolean>>({});
+  /* A estrutura da última análise, para o roteiro da apresentação. Ela vem
+     junto dos achados — as duas leem a mesma árvore. */
+  const [esboco, setEsboco] = useState<NoDoEsboco[]>([]);
+  const [chamadas, setChamadas] = useState<string[]>([]);
   const [erroDeAnalise, setErroDeAnalise] = useState<string | null>(null);
   /* O texto que gerou os resultados de agora. Diferente do atual, a lista está
      velha — e a tela diz isso em vez de mostrar verde por um código que
@@ -100,6 +106,8 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
     const analise = await py.analisar(fonte);
     setAchados(analise.achados);
     setErroDeAnalise(analise.erro);
+    setEsboco(analise.esboco);
+    setChamadas(analise.chamadas);
 
     const r = analise.erro
       /* Sem árvore não há o que rodar: o Python recusaria com o mesmo erro, e
@@ -140,14 +148,81 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
   };
 
   if (entregue) {
+    /*
+      O roteiro da apresentação sai daqui, e só no laboratório do programa livre.
+
+      O requisito 7 pede o programa **e** apresentá-lo explicando o que cada
+      parte faz. A plataforma não tem como conferir a apresentação; o que ela
+      pode fazer é preparar — ler a estrutura do programa e dizer, em português,
+      o que cada pedaço faz, para a pessoa treinar com o próprio programa na
+      frente.
+
+      Reconhecido pela verificação, e não pelo id da lição: id se renomeia sem
+      que ninguém repare, e aí o roteiro sumiria em silêncio justamente do único
+      lugar onde ele serve. Nos laboratórios de treino não há o que apresentar —
+      um roteiro de quatro linhas no módulo 2 ensinaria a tratá-lo como enfeite
+      de fim de tela.
+    */
+    const ehOPrograma = licao.verificacoes.includes('quarentaLinhas');
+    const roteiro = ehOPrograma ? roteiroDePython(esboco, chamadas) : [];
+    const mudas = ehOPrograma ? funcoesQueNaoRodam(esboco, chamadas) : 0;
+
     return (
-      <div className="card p-8 text-center">
-        <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
-        <h1 className="text-2xl font-bold mb-2">{licao.titulo} — vencido!</h1>
-        <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
-          Seu programa passou nas {resultados.length} verificações.
-        </p>
-        <button onClick={aoSair} className="btn-primary">Voltar para a vereda</button>
+      <div className="card p-8">
+        <div className="text-center">
+          <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--color-success)' }} />
+          <h1 className="text-2xl font-bold mb-2">{licao.titulo} — vencido!</h1>
+          <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
+            {resultados.length === 1
+              ? 'Seu programa passou na verificação.'
+              : `Seu programa passou nas ${resultados.length} verificações.`}
+          </p>
+        </div>
+
+        {roteiro.length > 0 && (
+          <div className="mt-6 text-left">
+            <h2 className="text-lg font-bold mb-1">Para apresentar ao examinador</h2>
+            <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
+              O requisito 7 pede que você explique o que cada parte do programa faz.
+              Este é o roteiro do <b>seu</b> programa, escrito a partir do que você
+              escreveu. Treine em voz alta — por dentro parece fácil até a primeira
+              vez que se tenta na frente de alguém.
+            </p>
+
+            {roteiro.map((t, i) => (
+              <div key={i} className="mb-4 p-4 rounded-lg"
+                style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)' }}>
+                <p className="text-sm font-semibold mb-1">{t.titulo}</p>
+                <p className="text-xs mb-3" style={{ color: 'var(--color-text-dim)' }}>{t.quando}</p>
+                <ul className="text-sm space-y-1" style={{ color: 'var(--color-text-dim)' }}>
+                  {t.faz.map((f, j) => (
+                    /* O recuo é o aninhamento, e é a única marca de que uma
+                       linha está dentro de outra — marcador de lista antes
+                       dela competiria com isso e não diria nada a mais. */
+                    <li key={j} style={{ paddingLeft: `${(f.length - f.trimStart().length) / 2 * 16}px` }}>
+                      {f.trimStart()}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
+            {mudas > 0 && (
+              /* Função escrita e nunca chamada não roda, e o examinador não a
+                 verá acontecer. Dizer isso agora evita que a pessoa a explique
+                 como se rodasse. */
+              <p className="text-sm mb-4" style={{ color: 'var(--color-secondary)' }}>
+                {mudas === 1
+                  ? 'Há uma função no seu programa que nenhuma parte chama. Ela não roda — o roteiro dela diz isso.'
+                  : `Há ${mudas} funções no seu programa que nenhuma parte chama. Elas não rodam — o roteiro delas diz isso.`}
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="text-center mt-4">
+          <button onClick={aoSair} className="btn-primary">Voltar para a vereda</button>
+        </div>
       </div>
     );
   }

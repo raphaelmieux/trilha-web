@@ -25,7 +25,8 @@
  */
 
 import {
-  ANALISADOR, apararTraceback, erroDeSintaxeEmTexto, type SaidaDaAnalise,
+  ANALISADOR, apararTraceback, erroDeSintaxeEmTexto,
+  type NoDoEsboco, type SaidaDaAnalise,
 } from './pythonAnalise';
 
 interface Pyodide {
@@ -42,7 +43,8 @@ export type PedidoAoPython =
 export type RespostaDoPython =
   | { tipo: 'pronto' }
   | { tipo: 'resultado'; saida: string; erro: string | null }
-  | { tipo: 'analise'; achados: Record<string, boolean>; erro: string | null }
+  | { tipo: 'analise'; achados: Record<string, boolean>; erro: string | null;
+    esboco: NoDoEsboco[]; chamadas: string[] }
   | { tipo: 'falha'; mensagem: string };
 
 let pyodide: Pyodide | null = null;
@@ -84,8 +86,14 @@ async function analisar(codigo: string): Promise<RespostaDoPython> {
       diria "linha 73" num programa de duas linhas.
     */
     return saida.ok
-      ? { tipo: 'analise', achados: saida.achados, erro: null }
-      : { tipo: 'analise', achados: {}, erro: erroDeSintaxeEmTexto(saida.erro) };
+      ? {
+        tipo: 'analise', achados: saida.achados, erro: null,
+        esboco: saida.esboco, chamadas: saida.chamadas,
+      }
+      : {
+        tipo: 'analise', achados: {}, erro: erroDeSintaxeEmTexto(saida.erro),
+        esboco: [], chamadas: [],
+      };
   } catch (e) {
     /* Sobra o que o analisador não previu — e aí o traceback aparado é o
        melhor que se tem. */
@@ -93,6 +101,8 @@ async function analisar(codigo: string): Promise<RespostaDoPython> {
       tipo: 'analise',
       achados: {},
       erro: apararTraceback(String((e as Error)?.message ?? e)),
+      esboco: [],
+      chamadas: [],
     };
   }
 }

@@ -1,4 +1,5 @@
 import type { PedidoAoPython, RespostaDoPython } from './pythonWorker';
+import type { NoDoEsboco } from './pythonAnalise';
 
 /**
  * O lado da página: liga o worker, manda um pedido, e o mata quando ele não volta.
@@ -33,6 +34,15 @@ export interface ResultadoDeExecucao {
 export interface Analise {
   achados: Record<string, boolean>;
   erro: string | null;
+  /**
+   * A estrutura do programa, para o roteiro da apresentação.
+   *
+   * Vem junto da análise, e não numa segunda chamada: as duas leem a mesma
+   * árvore, e pedir de novo faria o Pyodide analisar duas vezes o mesmo texto.
+   */
+  esboco: NoDoEsboco[];
+  /** Os nomes chamados em algum lugar — é o que diz se uma função roda. */
+  chamadas: string[];
 }
 
 /*
@@ -154,11 +164,14 @@ export class Python {
   async analisar(codigo: string): Promise<Analise> {
     const prazo = this.prazo();
     const r = await this.pedir({ tipo: 'analisar', codigo }, prazo);
-    if (r.tipo === 'analise') return { achados: r.achados, erro: r.erro };
-    if (r.tipo === 'falha' && r.mensagem === 'prazo') {
-      return { achados: {}, erro: avisoSemFim(prazo) };
+    if (r.tipo === 'analise') {
+      return { achados: r.achados, erro: r.erro, esboco: r.esboco, chamadas: r.chamadas };
     }
-    return { achados: {}, erro: r.tipo === 'falha' ? r.mensagem : 'Resposta inesperada.' };
+    const vazia = { achados: {}, esboco: [], chamadas: [] };
+    if (r.tipo === 'falha' && r.mensagem === 'prazo') {
+      return { ...vazia, erro: avisoSemFim(prazo) };
+    }
+    return { ...vazia, erro: r.tipo === 'falha' ? r.mensagem : 'Resposta inesperada.' };
   }
 }
 
