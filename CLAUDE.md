@@ -597,6 +597,36 @@ construção" significa que não há o que fazer, e "conclua a CC001" significa 
 chave existe e é sua. Dois cartões cinzas sem essa diferença mandam alguém
 esperar por uma coisa que já está pronta.
 
+**A contabilidade do clube conta vereda também.** O painel administrativo
+listava uma linha por trilha aberta — e vereda não é `Specialty`, então ela
+sumia: a que já tinha emitido Token.Web() aparecia com o código cru no lugar do
+nome, e a que ainda não tinha emitido não aparecia de jeito nenhum. Vereda emite
+o mesmo documento, pela mesma tabela; a lista sai dos dois currículos, com uma
+coluna dizendo qual é qual.
+
+E **contagem que falhou não pode parecer contagem zero**. A RPC é
+`security definer` e reprova quem não for admin; num banco restaurado sem ela, a
+resposta é 404. Nos dois casos o `data` volta vazio e a tabela saía com zero em
+toda linha, igualzinha a um clube que ainda não certificou ninguém. O erro agora
+aparece escrito, dizendo que os números não valem.
+
+**O relatório fala das veredas, e não só das concluídas.** Ele citava vereda
+apenas quando ela estava inteira — e quem está no meio de uma, que é quase todo
+mundo, não aparecia: a seção sumia, e o documento entregue ao clube dizia por
+omissão que a pessoa não fez nada além das trilhas. Pior, no PDF nem a versão
+concluída entrava; a seção existia só na tela, e o papel é o que o clube
+arquiva.
+
+O texto mora em `relatorioDeVeredas.ts`, fora da tela, porque o texto é a
+entrega. Ele abre explicando **o que é uma vereda** — quem lê conhece a ficha
+das especialidades e nunca ouviu falar disto —, lista uma por uma com o ponto em
+que a pessoa está, e fecha com o que o percurso rendeu. Desempenho aqui é
+percurso, e não nota: a vereda não tem nota, os eventos gravam qual lição foi
+vencida e nada mais, e inventar um número seria pior do que não ter. O que se
+diz é quantas lições, de que metade — teoria ou prática —, e se saiu
+Token.Web(). Vereda com zero lições vencidas não vira linha: um relatório de
+aprendizagem fala do que foi feito.
+
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois

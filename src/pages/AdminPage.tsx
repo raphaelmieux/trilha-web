@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Shield, Users, Award, CalendarDays, AlertCircle, KeyRound, Copy, X } from 'lucide-react';
 import { getOpenSpecialties } from '../curriculum';
+import { veredasAbertas } from '../curriculum/veredas';
 import { nomeCompleto, type Tabela } from '../types';
 
 /* O que a contagem por trilha devolve. Só números e datas — ver a migration
@@ -46,6 +47,7 @@ export default function AdminPage() {
   const [resetTarget, setResetTarget] = useState<{ email: string; password?: string; error?: string; loading?: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
   const [certificados, setCertificados] = useState<ContagemDeCertificados[]>([]);
+  const [erroDosCertificados, setErroDosCertificados] = useState('');
 
   useEffect(() => {
     if (!profile?.is_admin) return;
@@ -61,7 +63,17 @@ export default function AdminPage() {
         .limit(50);
       setUsers(usersData || []);
 
-      const { data: contagem } = await supabase.rpc('admin_certificate_counts');
+      /*
+        O erro desta chamada não pode sumir.
+
+        Ela é `security definer` e reprova quem não for admin; num banco
+        restaurado sem ela, a resposta é 404. Nos dois casos o `data` volta
+        vazio, e a tabela abaixo saía com zero em toda linha — igualzinha a um
+        clube que ainda não certificou ninguém. Contagem que falhou e contagem
+        que é zero não podem ter a mesma aparência num painel contábil.
+      */
+      const { data: contagem, error: erroDaContagem } = await supabase.rpc('admin_certificate_counts');
+      setErroDosCertificados(erroDaContagem?.message ?? '');
       /*
         As seis colunas chegam anuláveis porque `returns table` do Postgres não
         sabe dizer NOT NULL — nenhuma delas é nula de verdade (`count` não é, e
@@ -167,19 +179,33 @@ export default function AdminPage() {
   );
 
   /*
-    Uma linha por trilha aberta, mais qualquer código que só exista no banco.
+    Uma linha por percurso aberto, mais qualquer código que só exista no banco.
 
-    A segunda parte cobre a trilha que saiu do ar depois de já ter certificado
+    ── As veredas faltavam ──────────────────────────────────────────────────
+    A regra escrita aqui — "percurso aberto que ainda não certificou ninguém
+    aparece com zero, porque é justamente a linha que diz alguma coisa" — valia
+    só para as trilhas: a lista saía de `getOpenSpecialties()`, e vereda não é
+    `Specialty`. Uma vereda que já tivesse emitido Token.Web() aparecia pela
+    segunda parte, com o código cru no lugar do nome; uma que ainda não tivesse
+    emitido não aparecia de jeito nenhum. Vereda emite o mesmo documento, pela
+    mesma tabela, e some da contabilidade do clube.
+
+    A segunda parte cobre o percurso que saiu do ar depois de já ter certificado
     alguém: o documento continua valendo, e sumir da contagem seria perder o
     registro contábil justamente do que não pode mais ser reemitido.
   */
   const contagemPorCodigo = new Map(certificados.map(c => [c.curriculum_code, c]));
-  const abertas = getOpenSpecialties();
+  const percursos = [
+    ...getOpenSpecialties().map(e => ({ code: e.code, nome: nomeCompleto(e), tipo: 'Trilha' })),
+    ...veredasAbertas().map(v => ({ code: v.code, nome: nomeCompleto(v), tipo: 'Vereda' })),
+  ];
   const porTrilha = [
-    ...abertas.map(e => ({ code: e.code, nome: nomeCompleto(e), contagem: contagemPorCodigo.get(e.code) })),
+    ...percursos.map(p => ({ ...p, contagem: contagemPorCodigo.get(p.code) })),
     ...certificados
-      .filter(c => !abertas.some(e => e.code === c.curriculum_code))
-      .map(c => ({ code: c.curriculum_code, nome: c.curriculum_code, contagem: c })),
+      .filter(c => !percursos.some(p => p.code === c.curriculum_code))
+      /* Sem nome no currículo: o percurso saiu do ar. O código é o que restou,
+         e é o suficiente para o registro contábil. */
+      .map(c => ({ code: c.curriculum_code, nome: c.curriculum_code, tipo: 'Fora do ar', contagem: c })),
   ];
   const totalEmitidos = certificados.reduce((soma, c) => soma + c.emitidos, 0);
 
@@ -220,17 +246,26 @@ export default function AdminPage() {
           <Award className="w-5 h-5" style={{ color: 'var(--color-secondary)' }} /> Certificados emitidos
         </h2>
         <p className="text-sm mb-3" style={{ color: 'var(--color-text-dim)' }}>
-          Total de {totalEmitidos} {totalEmitidos === 1 ? 'certificado' : 'certificados'} em todas as trilhas.
+          Total de {totalEmitidos} {totalEmitidos === 1 ? 'certificado' : 'certificados'} em trilhas e veredas.
         </p>
+
+        {/* Falhou é diferente de zero, e o painel diz qual dos dois. */}
+        {erroDosCertificados && (
+          <p className="text-sm mb-3" style={{ color: 'var(--color-error)' }}>
+            A contagem não pôde ser lida: {erroDosCertificados}. Os números abaixo
+            não valem — não são zero, são desconhecidos.
+          </p>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <Th>Trilha</Th><Th>Emitidos</Th><Th>Ativos</Th><Th>Revogados</Th><Th>Último</Th>
+              <Th>Percurso</Th><Th>Tipo</Th><Th>Emitidos</Th><Th>Ativos</Th><Th>Revogados</Th><Th>Último</Th>
             </tr></thead>
             <tbody>
-              {porTrilha.map(({ code, nome, contagem }) => (
+              {porTrilha.map(({ code, nome, tipo, contagem }) => (
                 <Tr key={code}>
                   <Td>{nome}</Td>
+                  <Td><span style={{ color: 'var(--color-text-dim)' }}>{tipo}</span></Td>
                   <Td>{contagem?.emitidos ?? 0}</Td>
                   <Td>{contagem?.ativos ?? 0}</Td>
                   <Td>

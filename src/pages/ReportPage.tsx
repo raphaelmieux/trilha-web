@@ -8,7 +8,9 @@ import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
 import { useVeredas } from '../hooks/useVeredas';
-import { veredasAbertas, textoDaOrigem } from '../curriculum/veredas';
+import { veredasAbertas, licoesDaVereda } from '../curriculum/veredas';
+import { licaoVencida } from '../lib/veredas';
+import { montarRelatorioDeVeredas } from '../lib/relatorioDeVeredas';
 import { buildSpecialtyNarrative, buildClosingParagraph, buildBadgeParagraph, type LabEvidence } from '../lib/reportNarrative';
 import { LoadingState } from '../components/ui/PageState';
 import CertificateCanvas from '../components/CertificateCanvas';
@@ -22,7 +24,7 @@ export default function ReportPage() {
   const { progress, loading: progressLoading } = useRequirementProgress(profile?.id);
   const { certifications, loading: certsLoading } = useCertifications(profile?.id);
   const { badges, loading: badgesLoading } = useBadges(profile?.id);
-  const { andamento } = useVeredas(profile?.id);
+  const { andamento, percursoDe } = useVeredas(profile?.id);
   const [lessonAttempts, setLessonAttempts] = useState<Pick<Tabela<'lesson_attempts'>, 'score' | 'total'>[]>([]);
   const [evidence, setEvidence] = useState<LabEvidence>({});
   /* Os relatórios escritos nos laboratórios de redação, por código de trilha.
@@ -158,10 +160,26 @@ export default function ReportPage() {
 
   const badgeIntro = buildBadgeParagraph(badges, studentName);
 
-  /* Bônus, e por isso fora de toda a contabilidade acima: nada aqui entra em
-     percentual de trilha, em requisito nem em nota. */
-  const veredasFeitas = veredasAbertas()
-    .filter(v => andamento.find(a => a.id === v.id)?.concluida);
+  /*
+    Bônus, e por isso fora de toda a contabilidade acima: nada aqui entra em
+    percentual de trilha, em requisito nem em nota.
+
+    Mas dentro do relatório. Ele só citava vereda **concluída**, e quem estava no
+    meio de uma — que é onde quase todo mundo está — não aparecia: a seção sumia
+    inteira, e o documento dizia por omissão que a pessoa não fez nada além das
+    trilhas.
+
+    Quais lições foram vencidas sai de `licaoVencida`, e não do contador: é ela
+    que conhece a regra antiga, de quando abrir todos os tópicos vencia a teoria.
+    Uma segunda conta aqui deixaria de fora quem percorreu a vereda antes.
+  */
+  const abertas = veredasAbertas();
+  const vencidasPorVereda = Object.fromEntries(abertas.map(v => {
+    const feito = percursoDe(v.id);
+    return [v.id, new Set(licoesDaVereda(v).filter(l => licaoVencida(l, feito)).map(l => l.id))];
+  }));
+  const relatorioDeVeredas = montarRelatorioDeVeredas(
+    abertas, andamento, vencidasPorVereda, certifications, studentName);
 
   const annexNote = attachedCerts.length === 0 ? undefined
     : attachedCerts.length === 1
@@ -186,6 +204,23 @@ export default function ReportPage() {
             ...(textos[n.code] ? ['Relatório escrito pelo desbravador:', textos[n.code]] : []),
           ],
         })),
+        /*
+          As veredas também no papel.
+
+          A seção existia só na tela: o PDF — que é o que o clube arquiva — não
+          dizia uma palavra sobre elas. Um relatório que prova na tela e não
+          prova no papel não serve a quem recebe o papel, que é a mesma razão
+          pela qual o texto escrito pelo desbravador vai inteiro acima.
+        */
+        ...(relatorioDeVeredas.percursos.length > 0 ? [{
+          heading: 'Veredas',
+          paragraphs: [
+            relatorioDeVeredas.introducao,
+            ...relatorioDeVeredas.percursos.map(p =>
+              `${p.nome} (${p.code}, vereda de ${p.familia}) — ${p.descricao} ${p.frase}`),
+            relatorioDeVeredas.conquistas,
+          ],
+        }] : []),
         { heading: 'Considerações finais', paragraphs: [closing] },
       ];
 
@@ -324,20 +359,17 @@ export default function ReportPage() {
             conta, e o relatório de aprendizagem existe para dizer o que a
             pessoa fez.
           */}
-          {veredasFeitas.length > 0 && (
+          {relatorioDeVeredas.percursos.length > 0 && (
             <div className="report-section">
-              <h2>Veredas concluídas</h2>
-              <p>
-                {veredasFeitas.length === 1
-                  ? 'Além do currículo das especialidades, percorreu por conta própria uma vereda — percurso curto, com teoria e laboratório, sem requisito oficial e sem nota, que existe para dar conta de um assunto que aparece na prática.'
-                  : `Além do currículo das especialidades, percorreu por conta própria ${veredasFeitas.length} veredas — percursos curtos, com teoria e laboratório, sem requisito oficial e sem nota, que existem para dar conta de assuntos que aparecem na prática.`}
-              </p>
-              {veredasFeitas.map(v => (
-                <p key={v.id} className="report-req">
-                  <strong>{v.name}</strong> ({v.code}) — {v.description}
-                  {v.origem && ` Nasceu ${textoDaOrigem(v.origem)}.`}
+              <h2>Veredas</h2>
+              <p>{relatorioDeVeredas.introducao}</p>
+              {relatorioDeVeredas.percursos.map(p => (
+                <p key={p.code} className="report-req">
+                  <strong>{p.nome}</strong> ({p.code}, vereda de {p.familia}) — {p.descricao}
+                  {' '}{p.frase}
                 </p>
               ))}
+              <p>{relatorioDeVeredas.conquistas}</p>
             </div>
           )}
 
