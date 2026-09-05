@@ -39,12 +39,12 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
     },
     {
       id: 'PY-M1-Q3', type: 'true_false',
-      prompt: 'Em Python, `Nome` e `nome` são a mesma variável.',
+      prompt: 'Em Python, Nome e nome são a mesma variável.',
       data: { options: [
         { id: 'v', text: 'Verdadeiro', porque: 'A linguagem distingue maiúscula de minúscula. As duas são variáveis diferentes, e usar uma esperando a outra dá NameError.' },
         { id: 'f', text: 'Falso', correct: true },
       ]},
-      explanation: 'Maiúscula conta. É por isso que `Print(...)` não funciona: o nome da função é `print`, tudo minúsculo.',
+      explanation: 'Maiúscula conta. É por isso que Print(...) não funciona: o nome da função é print, tudo minúsculo.',
     },
     {
       id: 'PY-M1-Q4', type: 'ordering',
@@ -62,10 +62,10 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
   'm2-teoria': [
     {
       id: 'PY-M2-Q1', type: 'multiple_choice',
-      prompt: 'O que faz a linha `placar = placar + 1`?',
+      prompt: 'O que faz a linha placar = placar + 1?',
       data: { options: [
         { id: 'a', text: 'Calcula o valor atual mais um e guarda o resultado de volta em placar.', correct: true },
-        { id: 'b', text: 'Pergunta se placar é igual a placar mais um.', porque: 'Um sinal de igual guarda; quem pergunta são dois. A pergunta seria `placar == placar + 1`, e a resposta seria sempre não.' },
+        { id: 'b', text: 'Pergunta se placar é igual a placar mais um.', porque: 'Um sinal de igual guarda; quem pergunta são dois. A pergunta seria placar == placar + 1, e a resposta seria sempre não.' },
         { id: 'c', text: 'Dá erro, porque a variável aparece dos dois lados.', porque: 'É uma linha comum e válida: o Python calcula a direita primeiro, e só depois guarda na esquerda.' },
         { id: 'd', text: 'Cria uma segunda variável chamada placar.', porque: 'O nome é o mesmo, então é a mesma variável. Ela apenas passa a guardar outro valor.' },
       ]},
@@ -73,7 +73,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
     },
     {
       id: 'PY-M2-Q2', type: 'multiple_choice',
-      prompt: 'Um programa faz `print("12" + "3")`. O que aparece na tela?',
+      prompt: 'Um programa faz print("12" + "3"). O que aparece na tela?',
       data: { options: [
         { id: 'a', text: '123', correct: true },
         { id: 'b', text: '15', porque: 'Seriam 15 se os dois fossem números. Entre aspas eles são texto, e somar texto junta em vez de somar.' },
@@ -109,7 +109,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
   'm3-teoria': [
     {
       id: 'PY-M3-Q1', type: 'multiple_choice',
-      prompt: 'Alguém digita 12 quando o programa executa `idade = input("Idade: ")`. O que fica guardado em idade?',
+      prompt: 'Alguém digita 12 quando o programa executa idade = input("Idade: "). O que fica guardado em idade?',
       data: { options: [
         { id: 'a', text: 'O texto "12".', correct: true },
         { id: 'b', text: 'O número 12.', porque: 'input() sempre devolve texto, mesmo quando o que se digitou parece número. Para virar número é preciso converter com int().' },
@@ -120,7 +120,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
     },
     {
       id: 'PY-M3-Q2', type: 'multiple_choice',
-      prompt: 'Por que `print("Pontos: " + 15)` dá erro e `print("Pontos:", 15)` funciona?',
+      prompt: 'Por que print("Pontos: " + 15) dá erro e print("Pontos:", 15) funciona?',
       data: { options: [
         { id: 'a', text: 'O mais exige que os dois lados sejam do mesmo tipo; a vírgula aceita tipos diferentes.', correct: true },
         { id: 'b', text: 'Porque print() não aceita números, só texto.', porque: 'print() aceita números sem problema. O erro está na soma entre texto e número, antes de o print receber qualquer coisa.' },
@@ -154,7 +154,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
   'm4-teoria': [
     {
       id: 'PY-M4-Q1', type: 'multiple_choice',
-      prompt: 'Qual é o resultado de `10 // 3`?',
+      prompt: 'Qual é o resultado de 10 // 3?',
       data: { options: [
         { id: 'a', text: '3', correct: true },
         { id: 'b', text: '3.3333333333333335', porque: 'Esse é o resultado de 10 / 3, com uma barra. Duas barras jogam fora a parte decimal.' },
@@ -165,7 +165,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
     },
     {
       id: 'PY-M4-Q2', type: 'multiple_choice',
-      prompt: 'Como se pergunta se um número guardado em `n` é par?',
+      prompt: 'Como se pergunta se um número guardado em n é par?',
       data: { options: [
         { id: 'a', text: 'n % 2 == 0', correct: true },
         { id: 'b', text: 'n / 2 == 0', porque: 'Isso pergunta se o número dividido por dois dá zero, o que só acontece quando n é zero.' },
@@ -176,7 +176,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
     },
     {
       id: 'PY-M4-Q3', type: 'multiple_choice',
-      prompt: 'Em Python, escrever `if nota = 7:` produz o quê?',
+      prompt: 'Em Python, escrever if nota = 7: produz o quê?',
       data: { options: [
         { id: 'a', text: 'Erro de sintaxe: o programa não chega a rodar.', correct: true },
         { id: 'b', text: 'Guarda 7 em nota e entra no if.', porque: 'É o que acontece em outras linguagens, e é exatamente o desastre que o Python evita ao recusar a linha.' },
@@ -187,7 +187,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
     },
     {
       id: 'PY-M4-Q4', type: 'true_false',
-      prompt: 'O resultado de uma comparação como `nota >= 6` é um valor que pode ser guardado numa variável.',
+      prompt: 'O resultado de uma comparação como nota >= 6 é um valor que pode ser guardado numa variável.',
       data: { options: [
         { id: 'v', text: 'Verdadeiro', correct: true },
         { id: 'f', text: 'Falso', porque: 'A comparação devolve True ou False, que são valores como qualquer outro: dá para guardar, imprimir e comparar de novo.' },
@@ -199,7 +199,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
   'm5-teoria': [
     {
       id: 'PY-M5-Q1', type: 'multiple_choice',
-      prompt: 'Qual a diferença entre usar `elif` e escrever vários `if` seguidos?',
+      prompt: 'Qual a diferença entre usar elif e escrever vários if seguidos?',
       data: { options: [
         { id: 'a', text: 'No elif, o primeiro que der sim encerra a série; com if separados, todos são perguntados.', correct: true },
         { id: 'b', text: 'Nenhuma: elif é só uma forma mais curta de escrever if.', porque: 'A diferença é de comportamento, e não de escrita. Com if separados, mais de um bloco pode rodar na mesma passada.' },
@@ -210,7 +210,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
     },
     {
       id: 'PY-M5-Q2', type: 'multiple_choice',
-      prompt: 'Um programa testa `if nota >= 6: "bom"` e depois `elif nota >= 9: "excelente"`. Quem tira 9 recebe o quê?',
+      prompt: 'Um programa testa if nota >= 6: "bom" e depois elif nota >= 9: "excelente". Quem tira 9 recebe o quê?',
       data: { options: [
         { id: 'a', text: 'Recebe "bom", e "excelente" nunca acontece.', correct: true },
         { id: 'b', text: 'Recebe "excelente", porque é a condição mais específica.', porque: 'O Python não escolhe a mais específica: ele pergunta na ordem e para no primeiro sim. 9 já satisfaz o primeiro teste.' },
@@ -232,7 +232,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
     },
     {
       id: 'PY-M5-Q4', type: 'true_false',
-      prompt: 'Um `if` cujo bloco contém apenas `pass` cumpre o requisito de usar uma estrutura condicional.',
+      prompt: 'Um if cujo bloco contém apenas pass cumpre o requisito de usar uma estrutura condicional.',
       data: { options: [
         { id: 'v', text: 'Verdadeiro', porque: 'A palavra-chave está na tela e nada é decidido: é o laço vazio da CC001 com outro nome. A verificação exige um corpo que faça alguma coisa.' },
         { id: 'f', text: 'Falso', correct: true },
@@ -244,7 +244,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
   'm6-teoria': [
     {
       id: 'PY-M6-Q1', type: 'multiple_choice',
-      prompt: 'Quantas voltas dá `for i in range(4):`, e quanto vale i na última?',
+      prompt: 'Quantas voltas dá for i in range(4):, e quanto vale i na última?',
       data: { options: [
         { id: 'a', text: 'Quatro voltas, e na última i vale 3.', correct: true },
         { id: 'b', text: 'Quatro voltas, e na última i vale 4.', porque: 'range para antes do número dado. O 4 nunca chega a ser usado — a última volta é com 3.' },
@@ -255,7 +255,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
     },
     {
       id: 'PY-M6-Q2', type: 'multiple_choice',
-      prompt: 'Em que situação o `while` é a escolha certa, e o `for` não serve bem?',
+      prompt: 'Em que situação o while é a escolha certa, e o for não serve bem?',
       data: { options: [
         { id: 'a', text: 'Quando não se sabe de antemão quantas voltas serão precisas.', correct: true },
         { id: 'b', text: 'Quando o número de voltas é grande.', porque: 'Tamanho não muda a escolha: for percorre um milhão de itens tão bem quanto três.' },
@@ -266,7 +266,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
     },
     {
       id: 'PY-M6-Q3', type: 'true_false',
-      prompt: 'Um `while` cuja condição nunca fica falsa continua rodando até alguém encerrar o programa.',
+      prompt: 'Um while cuja condição nunca fica falsa continua rodando até alguém encerrar o programa.',
       data: { options: [
         { id: 'v', text: 'Verdadeiro', correct: true },
         { id: 'f', text: 'Falso', porque: 'Nada faz o laço parar sozinho. No laboratório a plataforma encerra depois de alguns segundos; no computador do clube, a janela trava.' },
@@ -275,7 +275,7 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
     },
     {
       id: 'PY-M6-Q4', type: 'ordering',
-      prompt: 'Ordene o que o Python faz a cada volta de um `while`.',
+      prompt: 'Ordene o que o Python faz a cada volta de um while.',
       data: { items: [
         { id: 'a', text: 'Confere a condição', order: 1 },
         { id: 'b', text: 'Se a resposta for verdadeira, executa o bloco de dentro', order: 2 },

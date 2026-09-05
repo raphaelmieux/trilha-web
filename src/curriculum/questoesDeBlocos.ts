@@ -287,7 +287,7 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
         { id: 'v', text: 'Verdadeiro', porque: 'O requisito tem duas metades, e a segunda é a que importa: o valor precisa mudar enquanto o programa roda. Variável criada e nunca alterada não demonstra nada.' },
         { id: 'f', text: 'Falso', correct: true },
       ]},
-      explanation: 'Leia o requisito inteiro: criar **e** alterar. É a alteração que mostra para que a variável serve.',
+      explanation: 'Leia o requisito inteiro: criar e também alterar. É a alteração que mostra para que a variável serve.',
     },
   ],
 

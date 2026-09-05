@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { TextoDaLicao, CSS_TEXTO_DA_LICAO } from './ui/TextoDaLicao';
 import {
   CheckCircle2, CircleX, ArrowLeft, RefreshCw, AlertTriangle, BookOpen,
 } from 'lucide-react';
@@ -110,6 +111,7 @@ export default function TeoriaDaVereda({ vereda, licao, aoVencer, aoSair }: {
   return (
     <div className="space-y-4">
       <style>{CSS_TEORIA}</style>
+      <style>{CSS_TEXTO_DA_LICAO}</style>
 
       <button onClick={aoSair} className="flex items-center gap-1.5 text-sm"
         style={{ color: 'var(--color-text-muted)' }}>
@@ -131,11 +133,13 @@ export default function TeoriaDaVereda({ vereda, licao, aoVencer, aoSair }: {
             <div className="teo-marcas">
               {t.marcas.map(m => <span className="teo-marca" key={m}>{m}</span>)}
             </div>
-            {t.explicacao.map((paragrafo, i) => <p key={i}>{paragrafo}</p>)}
+            {t.explicacao.map((paragrafo, i) => (
+            <p key={i}><TextoDaLicao texto={paragrafo} /></p>
+          ))}
             {t.atencao && (
               <p className="teo-atencao">
                 <AlertTriangle className="w-4 h-4 flex-none" style={{ marginTop: 1 }} />
-                {t.atencao}
+                <TextoDaLicao texto={t.atencao} />
               </p>
             )}
             <ExemploDaTeoria topico={t} mostraResultado={vereda.mostraResultado} />

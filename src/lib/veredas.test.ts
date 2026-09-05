@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
-import { VEREDAS, veredasAbertas, veredasComConteudo, licoesDaVereda, topicosDaVereda } from '../curriculum/veredas';
+import { VEREDAS, veredasAbertas, veredasComConteudo, licoesDaVereda, topicosDaVereda,
+  textoDaOrigem } from '../curriculum/veredas';
+import { getAllSpecialties } from '../curriculum';
 import {
   EVENTO_TOPICO, EVENTO_TEORIA, EVENTO_LABORATORIO,
   percursoDosEventos, veredasConcluidas, licaoVencida, licoesVencidas,
@@ -360,6 +362,33 @@ describe('as veredas ainda em construção', () => {
   mostra o emblema, e é ele que faz o clube ver o que vem. Um código sem
   arquivo cai no ícone de reserva e some da lista do que está por vir.
 */
+/*
+  De onde a vereda saiu tem de existir, e ser chamado pelo nome certo.
+
+  `origem` é um código solto, e a tela o imprime sem conferir nada: um caractere
+  trocado vira "saiu da trilha CC0O1", que ninguém percebe relendo o currículo.
+  E a palavra importa — a de CSS sai da de HTML, e chamar uma vereda de trilha
+  ensina errado justamente sobre a distinção que a plataforma estabeleceu.
+*/
+describe('a origem de cada vereda', () => {
+  const codigos = () => new Set([
+    ...VEREDAS.map(v => v.code),
+    ...getAllSpecialties().map(e => e.code),
+  ]);
+
+  it('toda origem declarada existe', () => {
+    const orfas = VEREDAS
+      .filter(v => v.origem && !codigos().has(v.origem))
+      .map(v => `${v.code} → ${v.origem}`);
+    expect(orfas).toEqual([]);
+  });
+
+  it('vereda é chamada de vereda, e trilha de trilha', () => {
+    expect(textoDaOrigem('CC001')).toBe('da vereda CC001');
+    expect(textoDaOrigem('AP035')).toBe('da trilha AP035');
+  });
+});
+
 describe('a arte de cada vereda', () => {
   for (const v of VEREDAS) {
     it(`${v.code} tem emblema e certificado no repositório`, () => {

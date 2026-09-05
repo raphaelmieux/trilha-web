@@ -555,6 +555,28 @@ de consertar, cujo modelo não roda mesmo, e no programa livre, que não tem sa�
 fixa para comparar. O enunciado mora dentro do próprio modelo, em comentário, e
 não num cartão fora do editor: é onde ele fica à vista enquanto se escreve.
 
+**A lição escreve código no meio da frase, e a tela precisa saber disso.** A
+prosa das veredas nomeia código entre crases — `int`, `NameError`,
+`placar = placar + 1` — e destaca uma palavra entre asteriscos, e a tela imprimia
+tudo cru. Numa vereda de HTML isso aparecia três vezes e passava por descuido;
+numa de Python aparece em quase todo parágrafo, porque é assim que se escreve
+sobre código. `TextoDaLicao` entende as duas marcações, e só as duas — não é
+markdown, e não vai ser: a lição já tem lugar próprio para título, exemplo e
+aviso. Ele devolve um `span` só, porque a caixa de atenção é `display: flex` e
+uma lista de pedaços soltos sai partida em linhas.
+
+**Questão não desenha marcação nenhuma.** Ela vai para o mesmo
+`QuestionRenderer` das provas das trilhas, que imprime texto puro — escrever
+crase ali põe a crase na tela, e no arquivo ela parece certa.
+`qualidade.test.ts` cobra.
+
+**De onde a vereda saiu nem sempre é uma trilha.** A de CSS sai da de HTML, e a
+de Python sai da de blocos; a tela dizia "saiu da trilha CC-FE001" de uma
+vereda, e chamar de trilha o que não é ensina errado justamente sobre a
+distinção que a plataforma passou meses estabelecendo. `textoDaOrigem` escolhe a
+palavra procurando o código em `VEREDAS`, e `veredas.test.ts` cobra que toda
+origem declarada exista de verdade.
+
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois

@@ -2,8 +2,7 @@ import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, HardHat } from 'lucide-react';
 import {
-  VEREDAS, veredasAbertas, veredasPorFamilia, licoesDaVereda, type Vereda,
-} from '../curriculum/veredas';
+  VEREDAS, veredasAbertas, veredasPorFamilia, licoesDaVereda, type Vereda, textoDaOrigem } from '../curriculum/veredas';
 import { useVeredas, type AndamentoDeVereda } from '../hooks/useVeredas';
 import { nomeCompleto } from '../types';
 import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
@@ -81,7 +80,7 @@ function CardDaVereda({ v, andamento }: { v: Vereda; andamento?: AndamentoDeVere
       </div>
       <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
         {vencidas} de {total} {total === 1 ? 'lição vencida' : 'lições vencidas'}
-        {v.origem && ` · saiu da trilha ${v.origem}`}
+        {v.origem && ` · saiu ${textoDaOrigem(v.origem)}`}
       </p>
     </Link>
   );

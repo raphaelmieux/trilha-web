@@ -8,7 +8,7 @@ import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
 import { useVeredas } from '../hooks/useVeredas';
-import { veredasAbertas } from '../curriculum/veredas';
+import { veredasAbertas, textoDaOrigem } from '../curriculum/veredas';
 import { buildSpecialtyNarrative, buildClosingParagraph, buildBadgeParagraph, type LabEvidence } from '../lib/reportNarrative';
 import { LoadingState } from '../components/ui/PageState';
 import CertificateCanvas from '../components/CertificateCanvas';
@@ -335,7 +335,7 @@ export default function ReportPage() {
               {veredasFeitas.map(v => (
                 <p key={v.id} className="report-req">
                   <strong>{v.name}</strong> ({v.code}) — {v.description}
-                  {v.origem && ` Nasceu da trilha ${v.origem}.`}
+                  {v.origem && ` Nasceu ${textoDaOrigem(v.origem)}.`}
                 </p>
               ))}
             </div>

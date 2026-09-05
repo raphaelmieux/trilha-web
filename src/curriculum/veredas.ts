@@ -278,9 +278,12 @@ export interface Vereda {
   /** A trilha completa de onde ela saiu, quando saiu de uma. */
   origem?: string;
   /**
-   * O quadro do resultado roda o exemplo como HTML. Uma vereda cujos exemplos
-   * não sejam HTML — de Python, de linha de comando — desliga isto e mostra
-   * só o código, em vez de fingir que executa.
+   * A vereda mostra, ao lado do código, o que ele produz?
+   *
+   * O que aparece ali depende do assunto: em HTML e em CSS é a página, dentro
+   * de um quadro; em Python é o painel de saída, com o que o programa escreve.
+   * Desligado, fica só o código — que é o certo para uma vereda cujos exemplos
+   * não produzam nada visível, em vez de fingir que executa.
    */
   mostraResultado: boolean;
   modulos: ModuloDeVereda[];
@@ -320,14 +323,12 @@ export const VEREDAS: Vereda[] = [
     familia: 'Base',
     description: 'A primeira linguagem escrita: variável, condição, laço e função, resolvendo problemas pequenos.',
     /*
-      Ainda em construção, e já com conteúdo.
-
-      A teoria dos oito módulos está escrita e é conferida pelas travas —
-      `veredasComConteudo()` existe justamente para isto: uma vereda leva vários
-      dias para ficar pronta, e enquanto os laboratórios não chegam, o que já
-      existe não pode ficar sem vigia. Quando eles chegarem, `emConstrucao` sai.
+      Sai da CC001, e não de uma trilha: é a continuação direta dela. Quem
+      percorreu os blocos já sabe o que são sequência, repetição, condição,
+      variável e evento — aqui as mesmas cinco ideias voltam escritas, e a
+      teoria se apoia nisso o tempo todo.
     */
-    emConstrucao: true,
+    origem: 'CC001',
     mostraResultado: true,
     modulos: MODULOS_DE_PYTHON,
   },
@@ -431,6 +432,17 @@ export const FAMILIAS_DE_VEREDA = [
 ];
 
 /** As veredas agrupadas, na ordem das famílias. */
+/**
+ * De onde a vereda saiu, com a palavra certa.
+ *
+ * `origem` guarda um código, e nem todo código é de trilha: a de CSS sai da de
+ * HTML, e a de Python sai da de blocos. A tela dizia "saiu da trilha CC-FE001"
+ * de uma vereda — e chamar de trilha o que não é ensina errado justamente sobre
+ * a distinção que a plataforma passou meses estabelecendo.
+ */
+export const textoDaOrigem = (origem: string): string =>
+  (VEREDAS.some(v => v.code === origem) ? `da vereda ${origem}` : `da trilha ${origem}`);
+
 export function veredasPorFamilia() {
   return FAMILIAS_DE_VEREDA
     .map(nome => ({ nome, veredas: VEREDAS.filter(v => v.familia === nome) }))

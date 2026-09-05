@@ -91,6 +91,35 @@ const provas = getAllSpecialties()
   .filter(s => s.modules.some(m => m.lessons.some(l => l.labType === 'final_exam')))
   .flatMap(s => getFinalExamQuestions(s.code));
 
+/*
+  Questão não desenha marcação: o que se escreve ali sai como está.
+
+  A lição de teoria passou a entender crase como código e dois asteriscos como
+  ênfase, e as questões não — elas vão para o mesmo `QuestionRenderer` das provas
+  das trilhas, que imprime texto puro. Escrever "o resultado de `10 // 3`" numa
+  questão põe as crases na tela do desbravador, e ninguém revisando o currículo
+  repara nisso: no arquivo elas parecem certas.
+*/
+describe('as questões não trazem marcação crua', () => {
+  const textos = [...licoes, ...provas].flatMap(q => [
+    `${q.id} · enunciado: ${q.prompt}`,
+    ...(q.data.options ?? []).flatMap(o => [
+      `${q.id} · alternativa: ${o.text}`,
+      ...(o.porque ? [`${q.id} · porque: ${o.porque}`] : []),
+    ]),
+    ...(q.explanation ? [`${q.id} · explicação: ${q.explanation}`] : []),
+  ]);
+
+  it('há questões para conferir', () => {
+    expect(textos.length).toBeGreaterThan(100);
+  });
+
+  it('nenhuma traz crase nem asterisco duplo', () => {
+    const cruas = textos.filter(t => t.includes('`') || t.includes('**'));
+    expect(cruas).toEqual([]);
+  });
+});
+
 describe('as alternativas não entregam a resposta pelo tamanho', () => {
   /* Alguma variação de redação é inevitável; o que não pode é "marque a mais
      comprida" ser uma estratégia melhor do que estudar. */

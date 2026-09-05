@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { TextoDaLicao, CSS_TEXTO_DA_LICAO } from './ui/TextoDaLicao';
 import { BookOpen, Search, X, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { topicosDaVereda, type Vereda, type TopicoDeVereda } from '../curriculum/veredas';
 import { ExemploDaTeoria } from './ui/ExemploDaTeoria';
@@ -158,6 +159,7 @@ export default function LeitorDeVereda({ vereda, aoFechar }: {
   return (
     <div className="ref">
       <style>{CSS_REFERENCIA}</style>
+      <style>{CSS_TEXTO_DA_LICAO}</style>
 
       <div className="ref-topo">
         <BookOpen className="w-4 h-4" style={{ color: '#4EC9B0' }} />
@@ -201,12 +203,14 @@ export default function LeitorDeVereda({ vereda, aoFechar }: {
             {topico.marcas.map(m => <span className="ref-marca" key={m}>{m}</span>)}
           </div>
 
-          {topico.explicacao.map((paragrafo, i) => <p key={i}>{paragrafo}</p>)}
+          {topico.explicacao.map((paragrafo, i) => (
+            <p key={i}><TextoDaLicao texto={paragrafo} /></p>
+          ))}
 
           {topico.atencao && (
             <p className="ref-atencao">
               <AlertTriangle className="w-4 h-4 flex-none" style={{ marginTop: 1 }} />
-              {topico.atencao}
+              <TextoDaLicao texto={topico.atencao} />
             </p>
           )}
 
