@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronUp, HardHat } from 'lucide-react';
+import { ChevronDown, ChevronUp, HardHat, Lock } from 'lucide-react';
 import {
-  VEREDAS, veredasAbertas, veredasPorFamilia, licoesDaVereda, type Vereda, textoDaOrigem } from '../curriculum/veredas';
+  VEREDAS, veredasAbertas, veredasPorFamilia, licoesDaVereda,
+  preRequisitoDaVeredaCumprido, type Vereda, textoDaOrigem } from '../curriculum/veredas';
 import { useVeredas, type AndamentoDeVereda } from '../hooks/useVeredas';
 import { nomeCompleto } from '../types';
 import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
@@ -27,7 +28,12 @@ import ProgressBar from './ui/ProgressBar';
  * sem arte cai no ícone de reserva do `Emblema`, e não deixa buraco.
  */
 
-function CardDaVereda({ v, andamento }: { v: Vereda; andamento?: AndamentoDeVereda }) {
+function CardDaVereda({ v, andamento, liberada }: {
+  v: Vereda;
+  andamento?: AndamentoDeVereda;
+  /** O pré-requisito já foi cumprido? Sem ele, o cartão não leva a lugar nenhum. */
+  liberada: boolean;
+}) {
   const identificacao = (
     <div className="min-w-0">
       <h3 className="text-xl font-bold">{nomeCompleto(v)}</h3>
@@ -48,6 +54,32 @@ function CardDaVereda({ v, andamento }: { v: Vereda; andamento?: AndamentoDeVere
         <span className="text-xs px-2 py-1 rounded inline-flex items-center gap-1 mb-2"
           style={{ backgroundColor: 'var(--color-secondary-a08)', color: 'var(--color-secondary)' }}>
           <HardHat className="w-3.5 h-3.5" /> Em construção
+        </span>
+        <p className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{v.description}</p>
+      </div>
+    );
+  }
+
+  /*
+    Bloqueada: o mesmo cartão cinza da anunciada, com outro motivo escrito.
+
+    Tem de ser outro motivo, e não o mesmo: "em construção" diz que ninguém
+    pode entrar e não há o que fazer; "conclua a CC001" diz que a chave existe e
+    de quem ela é. Um cartão cinza sem dizer qual dos dois é manda a pessoa
+    esperar por algo que já está pronto.
+  */
+  if (!liberada) {
+    const anterior = VEREDAS.find(o => o.id === v.preRequisito);
+    return (
+      <div className="card p-6 opacity-60" style={{ border: '2px dashed var(--color-border)' }}>
+        <div className="flex items-center gap-4 mb-3">
+          <Emblema code={v.code} status="bloqueado" />
+          {identificacao}
+        </div>
+        <span className="text-xs px-2 py-1 rounded inline-flex items-center gap-1 mb-2"
+          style={{ backgroundColor: 'var(--color-secondary-a08)', color: 'var(--color-secondary)' }}>
+          <Lock className="w-3.5 h-3.5" />
+          Conclua {anterior ? nomeCompleto(anterior) : v.preRequisito}
         </span>
         <p className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{v.description}</p>
       </div>
@@ -95,7 +127,7 @@ function CardDaVereda({ v, andamento }: { v: Vereda; andamento?: AndamentoDeVere
 const NO_RESUMO = 4;
 
 export default function SecaoDeVeredas({ userId }: { userId?: string }) {
-  const { andamento } = useVeredas(userId);
+  const { andamento, concluida } = useVeredas(userId);
   /*
     ── Trinta e duas de uma vez é um muro, não um convite ───────────────────
 
@@ -127,7 +159,8 @@ export default function SecaoDeVeredas({ userId }: { userId?: string }) {
   const temMais = VEREDAS.length > resumo.length;
 
   const cartao = (v: Vereda) => (
-    <CardDaVereda key={v.id} v={v} andamento={andamento.find(a => a.id === v.id)} />
+    <CardDaVereda key={v.id} v={v} andamento={andamento.find(a => a.id === v.id)}
+      liberada={preRequisitoDaVeredaCumprido(v, concluida)} />
   );
 
   return (

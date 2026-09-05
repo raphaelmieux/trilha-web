@@ -577,6 +577,26 @@ distinção que a plataforma passou meses estabelecendo. `textoDaOrigem` escolhe
 palavra procurando o código em `VEREDAS`, e `veredas.test.ts` cobra que toda
 origem declarada exista de verdade.
 
+**Vereda pode exigir outra, e a exigência é por `id`.** A CC002 se apoia nos
+blocos em toda página — "o sempre é o `while`", "a boca do bloco é o recuo" —, e
+quem chega sem ter percorrido a CC001 lê comparações com uma coisa que não viu.
+`preRequisitoDaVeredaCumprido` é a irmã de `preRequisitoCumprido` das trilhas, e
+a diferença é o que ela recebe: o **id**, e não o código. Escrever
+`preRequisito: 'CC001'` compila, passa por qualquer revisão, e tranca a vereda
+seguinte para sempre — nenhum percurso é gravado com esse nome, então a resposta
+é sempre não. `veredas.test.ts` cobra isso, mais o pré-requisito que aponta para
+vereda em construção (que também nunca destrava) e o que aponta para si mesma.
+
+E, enquanto o percurso carrega, a resposta é **sim**: responder "não" faria a
+tela de quem já concluiu a CC001 piscar bloqueada, e ver "bloqueada" onde havia
+acesso é a forma mais rápida de alguém achar que perdeu o que fez. O outro lado
+do erro é inofensivo — quem não cumpriu vê a vereda um instante e ela se fecha.
+
+O cartão bloqueado diz **qual** é a chave, e não só que está trancado: "em
+construção" significa que não há o que fazer, e "conclua a CC001" significa que a
+chave existe e é sua. Dois cartões cinzas sem essa diferença mandam alguém
+esperar por uma coisa que já está pronta.
+
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois

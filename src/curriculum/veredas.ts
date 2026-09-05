@@ -278,6 +278,19 @@ export interface Vereda {
   /** A trilha completa de onde ela saiu, quando saiu de uma. */
   origem?: string;
   /**
+   * A vereda que precisa estar concluída antes desta, pelo **id**.
+   *
+   * Pelo id, e não pelo código: o código da tela pode ser renomeado — o da
+   * vereda de HTML já foi, de `VD01` para `CC-FE001` —, e um pré-requisito
+   * escrito em código travaria a vereda seguinte no dia da renomeação, sem que
+   * ninguém percebesse. O id é interno e nunca muda; é também por ele que o
+   * progresso é gravado, que é o que a trava consulta.
+   *
+   * `origem` é outra coisa: ela diz de onde a vereda nasceu, e é só texto na
+   * tela. Uma vereda pode sair de outra sem exigi-la.
+   */
+  preRequisito?: string;
+  /**
    * A vereda mostra, ao lado do código, o que ele produz?
    *
    * O que aparece ali depende do assunto: em HTML e em CSS é a página, dentro
@@ -329,6 +342,16 @@ export const VEREDAS: Vereda[] = [
       teoria se apoia nisso o tempo todo.
     */
     origem: 'CC001',
+    /*
+      E exige a CC001 concluída, e não só a cita.
+
+      A teoria daqui se apoia nos blocos em toda página — "o sempre é o while",
+      "a boca do bloco é o recuo" —, e quem chega sem ter percorrido a CC001 lê
+      comparações com uma coisa que não viu. É a mesma trava que a AP035 tem
+      sobre a AP034, e mora no mesmo lugar: na plataforma, e não num módulo
+      dentro da vereda pedindo que a pessoa se lembre de fazer a outra antes.
+    */
+    preRequisito: 'cc001',
     mostraResultado: true,
     modulos: MODULOS_DE_PYTHON,
   },
@@ -442,6 +465,21 @@ export const FAMILIAS_DE_VEREDA = [
  */
 export const textoDaOrigem = (origem: string): string =>
   (VEREDAS.some(v => v.code === origem) ? `da vereda ${origem}` : `da trilha ${origem}`);
+
+/**
+ * A vereda exigida antes desta já foi concluída?
+ *
+ * Sem pré-requisito, está sempre liberada. É esta função — e não um módulo
+ * dentro da vereda pedindo que a pessoa faça a outra antes — que cumpre a
+ * exigência: a plataforma já sabe a resposta. É a irmã de `preRequisitoCumprido`
+ * das trilhas, e a única diferença é que aqui se pergunta por id.
+ */
+export function preRequisitoDaVeredaCumprido(
+  vereda: Vereda,
+  concluida: (id: string) => boolean,
+): boolean {
+  return !vereda.preRequisito || concluida(vereda.preRequisito);
+}
 
 export function veredasPorFamilia() {
   return FAMILIAS_DE_VEREDA

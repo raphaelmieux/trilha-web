@@ -53,5 +53,17 @@ export function useVeredas(userId: string | undefined) {
 
   const percursoDe = (id: string): PercursoDeVereda | undefined => percurso[id];
 
-  return { andamento, percursoDe, carregando, recarregar };
+  /*
+    Enquanto carrega, a resposta é sim.
+
+    A trava de pré-requisito pergunta isto, e durante a consulta o percurso está
+    vazio: responder "não" faria a tela de quem já concluiu a CC001 piscar
+    bloqueada antes de abrir — e ver "bloqueada" onde havia acesso é a forma
+    mais rápida de alguém achar que perdeu o que fez. O outro lado do erro é
+    inofensivo: quem não cumpriu vê a vereda um instante e ela se fecha.
+  */
+  const concluida = (id: string): boolean =>
+    carregando || (andamento.find(a => a.id === id)?.concluida ?? false);
+
+  return { andamento, percursoDe, concluida, carregando, recarregar };
 }

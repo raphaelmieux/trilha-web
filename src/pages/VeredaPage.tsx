@@ -5,7 +5,8 @@ import { useFecharAoNavegar } from '../hooks/useFecharAoNavegar';
 import { useAuth } from '../context/AuthContext';
 import { NOME_DO_TIPO, nomeCompleto } from '../types';
 import {
-  getVereda, licoesDaVereda, type LicaoDeVereda, textoDaOrigem } from '../curriculum/veredas';
+  VEREDAS, getVereda, licoesDaVereda, preRequisitoDaVeredaCumprido,
+  type LicaoDeVereda, textoDaOrigem } from '../curriculum/veredas';
 import { licaoVencida, registrarLicaoVencida, percursoVazio } from '../lib/veredas';
 import { useVeredas } from '../hooks/useVeredas';
 import { useCertifications } from '../hooks/useCertifications';
@@ -39,7 +40,7 @@ export default function VeredaPage() {
   const { code } = useParams();
   const { profile } = useAuth();
   const vereda = getVereda(code);
-  const { percursoDe, recarregar, carregando } = useVeredas(profile?.id);
+  const { percursoDe, concluida, recarregar, carregando } = useVeredas(profile?.id);
   const { getByCurriculum, refresh: recarregarCertificados } = useCertifications(profile?.id);
   const [aberta, setAberta] = useState<string | null>(null);
 
@@ -89,6 +90,34 @@ export default function VeredaPage() {
           <BotaoDeRequisitos percurso={vereda} />
         </div>
         <Link to="/" className="btn-primary mt-6 inline-flex">Voltar ao Início</Link>
+      </div>
+    );
+  }
+
+  /*
+    A vereda com pré-requisito não abre antes dele, nem pelo endereço.
+
+    É a mesma guarda da trilha, e pela mesma razão: o cartão do painel já vem
+    bloqueado, mas o endereço é adivinhável. A arte fica à vista, apagada e com
+    o cadeado no aro — o prêmio continua sendo a razão de destravá-la.
+  */
+  if (!preRequisitoDaVeredaCumprido(vereda, concluida)) {
+    const anterior = VEREDAS.find(v => v.id === vereda.preRequisito);
+    return (
+      <div className="max-w-2xl mx-auto text-center py-12">
+        <div className="flex justify-center mb-4">
+          <Emblema code={vereda.code} status="bloqueado" size={96} />
+        </div>
+        <h1 className="text-2xl font-bold mb-2">{nomeCompleto(vereda)} está bloqueada</h1>
+        <p className="mb-6" style={{ color: 'var(--color-text-dim)' }}>
+          Conclua {anterior ? nomeCompleto(anterior) : vereda.preRequisito} para abrir esta vereda.
+          {anterior && ' Esta aqui continua de onde aquela parou.'}
+        </p>
+        {anterior && (
+          <Link to={`/vereda/${anterior.code}`} className="btn-primary">
+            Ir para {nomeCompleto(anterior)}
+          </Link>
+        )}
       </div>
     );
   }

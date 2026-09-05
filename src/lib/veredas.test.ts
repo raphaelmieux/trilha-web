@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { VEREDAS, veredasAbertas, veredasComConteudo, licoesDaVereda, topicosDaVereda,
-  textoDaOrigem } from '../curriculum/veredas';
+  textoDaOrigem, preRequisitoDaVeredaCumprido } from '../curriculum/veredas';
 import { getAllSpecialties } from '../curriculum';
 import {
   EVENTO_TOPICO, EVENTO_TEORIA, EVENTO_LABORATORIO,
@@ -386,6 +386,55 @@ describe('a origem de cada vereda', () => {
   it('vereda é chamada de vereda, e trilha de trilha', () => {
     expect(textoDaOrigem('CC001')).toBe('da vereda CC001');
     expect(textoDaOrigem('AP035')).toBe('da trilha AP035');
+  });
+});
+
+/*
+  O pré-requisito de uma vereda, e as três formas de escrevê-lo errado.
+
+  Ele é um **id**, e não um código: escrever `preRequisito: 'CC001'` compila,
+  passa por toda revisão de currículo, e tranca a vereda seguinte para sempre —
+  nenhum percurso é gravado com esse nome, então a resposta é sempre não. Apontar
+  para uma vereda em construção tranca do mesmo jeito, porque ela não pode ser
+  concluída. E apontar para si mesma tranca de vez.
+
+  Nada disso estoura: a tela mostra o cartão cinza dizendo "conclua", e quem lê
+  vai tentar concluir uma coisa que já concluiu.
+*/
+describe('o pré-requisito de cada vereda', () => {
+  const comPreRequisito = () => VEREDAS.filter(v => v.preRequisito);
+
+  it('todo pré-requisito é o id de uma vereda que existe', () => {
+    const ids = new Set(VEREDAS.map(v => v.id));
+    const perdidos = comPreRequisito()
+      .filter(v => !ids.has(v.preRequisito ?? ''))
+      .map(v => `${v.code} → ${v.preRequisito}`);
+    expect(perdidos).toEqual([]);
+  });
+
+  it('nenhum aponta para uma vereda que ainda não abriu', () => {
+    const abertas = new Set(veredasAbertas().map(v => v.id));
+    const impossiveis = comPreRequisito()
+      .filter(v => !abertas.has(v.preRequisito ?? ''))
+      .map(v => `${v.code} → ${v.preRequisito}`);
+    expect(impossiveis).toEqual([]);
+  });
+
+  it('nenhuma vereda exige a si mesma', () => {
+    const circulares = comPreRequisito().filter(v => v.preRequisito === v.id).map(v => v.code);
+    expect(circulares).toEqual([]);
+  });
+
+  it('sem pré-requisito, a vereda está sempre liberada', () => {
+    const livre = VEREDAS.find(v => !v.preRequisito)!;
+    expect(preRequisitoDaVeredaCumprido(livre, () => false)).toBe(true);
+  });
+
+  it('com pré-requisito, ela depende de a anterior estar concluída', () => {
+    const presa = comPreRequisito()[0];
+    expect(presa, 'nenhuma vereda declara pré-requisito').toBeDefined();
+    expect(preRequisitoDaVeredaCumprido(presa, () => false)).toBe(false);
+    expect(preRequisitoDaVeredaCumprido(presa, id => id === presa.preRequisito)).toBe(true);
   });
 });
 
