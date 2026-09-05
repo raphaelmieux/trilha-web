@@ -534,6 +534,27 @@ verdade quando a teoria da CC002 chegou antes dos laboratórios. O que continua
 valendo são duas contas: vereda sem lição nenhuma nunca conta como concluída, e
 vereda em construção não conta nem com tudo o que ela já tem vencido.
 
+**Laboratório que ninguém consegue vencer é pior do que um que abre
+resolvido.** Um abre com tarefa verde de graça; o outro deixa quem fez tudo
+certo olhando uma lista vermelha sem nada na tela que explique — uma saída
+esperada com um espaço a mais, um enunciado que pede o que a verificação não
+aceita. Por isso cada laboratório de Python tem uma solução de referência em
+`laboratoriosDePython.test.ts`, e ela precisa deixar a lista inteira verde. A
+solução mora no teste, e não no currículo: gabarito no currículo fica a um
+import de distância da tela.
+
+E a trava de "abre sem verificação verde" precisou de uma segunda versão aqui.
+A de `veredas.test.ts` não executa nada — em HTML e em CSS não há o que
+executar —, então ela aprova qualquer modelo de Python, inclusive um que já
+estivesse pronto. A daqui roda o modelo no Pyodide antes de conferir.
+
+**"O programa roda até o fim" é verdade num arquivo só de comentários**, e por
+isso `roda` quase não é cobrado: quem carrega o peso é `saidaEsperada`, que
+exige rodar **e** acertar. Ele fica onde significa alguma coisa — no laboratório
+de consertar, cujo modelo não roda mesmo, e no programa livre, que não tem saída
+fixa para comparar. O enunciado mora dentro do próprio modelo, em comentário, e
+não num cartão fora do editor: é onde ele fica à vista enquanto se escreve.
+
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois
@@ -623,6 +644,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/roteiroDePython.test.ts` | roteiro que julga o programa, ou que faz escada com a cadeia de elif |
 | `src/curriculum/blocosDaLicao.test.ts` | bloco escrito na lição que não existe com essas palavras na paleta do Scratch |
 | `src/curriculum/exemplosDePython.test.ts` | exemplo de Python cuja saída declarada não é a que o programa escreve |
+| `src/curriculum/laboratoriosDePython.test.ts` | laboratório de Python impossível de vencer, ou cujo modelo já abre resolvido |
 | `src/curriculum/index.test.ts` | trilha sem emblema ou sem fundo de certificado no repositório |
 | `src/curriculum/exemplosDaTeoria.test.ts` | seletor do exemplo de CSS que não acha ninguém na marcação do tópico |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |

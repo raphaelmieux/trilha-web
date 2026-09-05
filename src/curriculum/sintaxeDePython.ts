@@ -33,6 +33,43 @@
 
 import type { ModuloDeVereda, TopicoDeVereda } from './veredas';
 import { QUESTOES_DE_PYTHON } from './questoesDePython';
+import type { FalhaPlantada } from '../labs/falhasDePython';
+
+/*
+  O laboratório desta vereda: um arquivo .py, e o enunciado dentro dele.
+
+  O enunciado mora no próprio modelo, em comentário, e não num cartão fora do
+  editor — é onde ele fica à vista enquanto se escreve, e é assim que um exercício
+  de programação chega a quem programa.
+
+  ── Por que `roda` quase não aparece ─────────────────────────────────────
+  "O programa roda até o fim" é verdade num arquivo só de comentários: o
+  laboratório abriria com uma tarefa verde de graça, que é o defeito que esta
+  casa mais persegue. Quem carrega o peso é `saidaEsperada`, que exige rodar
+  **e** acertar. `roda` fica onde ele significa alguma coisa: no laboratório de
+  consertar, cujo modelo não roda mesmo, e no programa livre, que não tem saída
+  fixa para comparar.
+*/
+const laboratorio = (
+  id: string,
+  titulo: string,
+  resumo: string,
+  enunciado: string,
+  verificacoes: string[],
+  extra: {
+    saidaEsperada?: string;
+    entradaPadrao?: string[];
+    falhas?: FalhaPlantada[];
+  } = {},
+) => ({
+  id, tipo: 'laboratorio' as const, titulo, resumo,
+  linguagem: 'python' as const,
+  arquivo: 'programa.py',
+  projeto: 'python-do-clube',
+  modelo: enunciado,
+  verificacoes,
+  ...extra,
+});
 
 /* ────────────────────────────────────────────────────────────────────────
    Os capítulos de teoria
@@ -622,6 +659,20 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
         resumo: 'A linguagem, o que se ganha e o que se perde, e como um arquivo vira programa.',
         topicos: cap('a-linguagem').topicos,
       },
+      {
+        /*
+          O computador simulado, e não um editor.
+
+          O requisito 4 pede demonstrar um ambiente que funciona: baixar do site
+          certo, instalar, salvar um .py e executá-lo pelo prompt. Nada disso
+          acontece num editor onde o Python já está pronto — e é justamente o
+          que trava o desbravador no computador do clube.
+        */
+        id: 'm1-lab', tipo: 'ambiente',
+        titulo: 'Instalando o Python',
+        resumo: 'Baixe do site oficial, instale, salve um programa e rode pelo Prompt de Comando.',
+        verificacoes: ['baixouDoSiteOficial', 'instalouOPython', 'salvouOArquivoPy', 'rodouNoPrompt'],
+      },
     ],
   },
   {
@@ -636,6 +687,28 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
         resumo: 'Um nome para um valor, os quatro tipos da vereda, e a soma que vira emenda.',
         topicos: cap('variaveis').topicos,
       },
+      laboratorio(
+        'm2-lab',
+        'A ficha do desbravador',
+        'Uma variável de cada tipo, e as quatro mostradas na tela.',
+        `# A ficha do desbravador
+#
+# Crie quatro variáveis, uma de cada tipo:
+#   - o nome, em texto
+#   - a idade, em número inteiro
+#   - a altura, em número com casas decimais
+#   - se está inscrito no acampamento, em verdadeiro ou falso
+#
+# Depois mostre as quatro, uma por linha, exatamente assim:
+#
+#   Nome: Ana
+#   Idade: 12
+#   Altura: 1.58
+#   Inscrito: True
+`,
+        ['tipoTexto', 'tipoInteiro', 'tipoDecimal', 'tipoBooleano', 'saidaEsperada'],
+        { saidaEsperada: 'Nome: Ana\nIdade: 12\nAltura: 1.58\nInscrito: True' },
+      ),
     ],
   },
   {
@@ -650,6 +723,32 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
         resumo: 'print, input, a conversão que vem junto, e o espaço à esquerda.',
         topicos: cap('entrada-e-saida').topicos,
       },
+      laboratorio(
+        'm3-lab',
+        'Quantos anos você faz',
+        'Perguntar duas coisas, converter o que precisa ser número, e responder.',
+        `# Quantos anos você faz
+#
+# Pergunte o nome e a idade, e responda.
+#
+# As duas perguntas são exatamente estas, com o espaço depois dos dois-pontos:
+#   "Seu nome: "
+#   "Sua idade: "
+#
+# Depois mostre duas linhas:
+#   Olá, Ana
+#   Ano que vem você faz 13
+#
+# Repare no painel de saída: as perguntas aparecem grudadas, e o que foi
+# digitado não aparece. É assim mesmo — a entrada é decidida antes, no campo
+# ao lado, e por isso ela não é ecoada.
+`,
+        ['leEExibe', 'saidaEsperada'],
+        {
+          entradaPadrao: ['Ana', '12'],
+          saidaEsperada: 'Seu nome: Sua idade: Olá, Ana\nAno que vem você faz 13',
+        },
+      ),
     ],
   },
   {
@@ -664,6 +763,25 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
         resumo: 'Contas, perguntas de verdadeiro ou falso, e o erro que o Python recusa.',
         topicos: cap('operadores').topicos,
       },
+      laboratorio(
+        'm4-lab',
+        'O caixa do acampamento',
+        'Uma conta, uma comparação, e três linhas de resultado.',
+        `# O caixa do acampamento
+#
+# A unidade arrecadou 480 reais e gastou 375. São 12 desbravadores.
+#
+# Calcule e mostre, uma por linha:
+#
+#   Sobrou: 105                 (o que arrecadou menos o que gastou)
+#   Por desbravador: 8.75       (o que sobrou dividido pelos 12)
+#   Fechou no azul? True        (se o que sobrou é maior que zero)
+#
+# Escreva as contas, e não os resultados: quem calcula é o programa.
+`,
+        ['operadorAritmetico', 'operadorComparacao', 'saidaEsperada'],
+        { saidaEsperada: 'Sobrou: 105\nPor desbravador: 8.75\nFechou no azul? True' },
+      ),
     ],
   },
   {
@@ -678,6 +796,31 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
         resumo: 'Um caminho, dois, ou vários — e por que a ordem faz parte da lógica.',
         topicos: cap('condicao').topicos,
       },
+      laboratorio(
+        'm5-lab',
+        'O conceito da prova',
+        'Três caminhos, com if, elif e else.',
+        `# O conceito da prova
+#
+# A nota já está guardada abaixo. Mostre o conceito dela, numa linha só,
+# usando if, elif e else:
+#
+#   9 ou mais    -> excelente
+#   de 6 a 8     -> bom
+#   abaixo de 6  -> a recuperar
+#
+# Com a nota que está aí, a saída é uma linha:
+#
+#   bom
+#
+# Depois de acertar, troque o 7 por 10 e por 4 e execute de novo, para ver
+# os outros dois caminhos. Deixe o 7 no fim.
+
+nota = 7
+`,
+        ['condicionalCompleto', 'saidaEsperada'],
+        { saidaEsperada: 'bom' },
+      ),
     ],
   },
   {
@@ -692,6 +835,37 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
         resumo: 'range e contagem a partir de zero, o laço que não termina, e a escolha entre os dois.',
         topicos: cap('repeticao').topicos,
       },
+      laboratorio(
+        'm6-lab',
+        'A chamada e a vaquinha',
+        'Um for de quantidade conhecida, e um while de condição.',
+        `# A chamada e a vaquinha
+#
+# Duas partes, nesta ordem.
+#
+# 1. Com um for, escreva "Presente!" uma vez para cada um dos 4 desbravadores.
+#
+# 2. Com um while, some 25 reais de cada vez até juntar 100 ou mais, contando
+#    quantas contribuições foram precisas. Depois mostre:
+#
+#      Foram 4 contribuicoes
+#
+# A saída inteira fica assim:
+#
+#   Presente!
+#   Presente!
+#   Presente!
+#   Presente!
+#   Foram 4 contribuicoes
+#
+# Cuidado com o while: alguma coisa dentro dele precisa fazer a condição
+# virar falsa, senão o programa não para.
+`,
+        ['lacoFor', 'lacoWhile', 'saidaEsperada'],
+        {
+          saidaEsperada: 'Presente!\nPresente!\nPresente!\nPresente!\nForam 4 contribuicoes',
+        },
+      ),
     ],
   },
   {
@@ -706,6 +880,65 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
         resumo: 'Antes de rodar, no meio, ou nunca — e o que fazer em cada caso.',
         topicos: cap('erros').topicos,
       },
+      laboratorio(
+        'm7-lab',
+        'Três falhas para achar',
+        'Consertar as três, e dizer de que família era cada uma.',
+        `# A média da unidade
+#
+# Este programa deveria mostrar a soma das notas, a média e o conceito.
+# Ele tem três falhas, uma de cada família.
+#
+# Conserte as três, e classifique cada uma no painel de Problemas, embaixo.
+# Quando estiver certo, a saída é:
+#
+#   Soma: 24
+#   Media: 8.0
+#   Conceito: bom
+
+notas = [8, 6, 10]
+soma = 0
+
+for n in notas
+    soma = soma + n
+
+print("Soma:", soma)
+
+media = soma / 0
+print("Media:", media)
+
+if media >= 9:
+    print("Conceito: excelente")
+else:
+    print("Conceito: a recuperar")
+`,
+        ['roda', 'saidaEsperada', 'classificouAsFalhas'],
+        {
+          saidaEsperada: 'Soma: 24\nMedia: 8.0\nConceito: bom',
+          /*
+            O sintoma é o que se vê acontecer, e nunca onde está nem como se
+            conserta: "a média sai sempre zero" é sintoma, "falta um int() na
+            linha 4" é gabarito — e gabarito faria o painel abrir resolvido.
+          */
+          falhas: [
+            {
+              id: 'f1',
+              sintoma: 'Ao executar, o Python aponta uma linha e nada acontece: nem a soma chega a aparecer.',
+              categoria: 'sintaxe',
+            },
+            {
+              id: 'f2',
+              sintoma: 'A soma aparece, e logo depois o programa para com uma mensagem sobre divisão.',
+              categoria: 'execucao',
+            },
+            {
+              id: 'f3',
+              sintoma: 'O programa vai até o fim sem reclamar de nada, e uma média 8.0 sai como "a recuperar".',
+              categoria: 'logica',
+            },
+          ],
+        },
+      ),
     ],
   },
   {
@@ -720,6 +953,31 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
         resumo: 'Entrada, processamento e saída; nomes que se leem; e explicar em voz alta.',
         topicos: cap('programa').topicos,
       },
+      laboratorio(
+        'm8-lab',
+        'O programa, escrito',
+        'Quarenta linhas que resolvem alguma coisa do clube, do começo ao fim.',
+        `# Um programa seu
+#
+# Escreva um programa de pelo menos 40 linhas de código que resolva alguma
+# coisa do clube: a chamada da unidade, o caixa do acampamento, o placar de
+# um jogo, a conta do lanche.
+#
+# Ele precisa perguntar alguma coisa a quem usa, com input(), e mostrar um
+# resultado, com print(). O resto é escolha sua — e escolha um assunto que
+# você conheça, porque assim você sabe qual deveria ser a resposta.
+#
+# Use o campo Entrada, ao lado, para decidir o que será digitado: uma linha
+# para cada input() do seu programa.
+#
+# Linha em branco e linha só de comentário não contam para as 40: o requisito
+# é de programa.
+#
+# Ao entregar, a plataforma escreve um roteiro do SEU programa, parte por
+# parte, para você treinar a apresentação ao examinador.
+`,
+        ['roda', 'leEExibe', 'quarentaLinhas'],
+      ),
     ],
   },
 ];
