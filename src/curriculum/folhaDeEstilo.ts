@@ -372,12 +372,23 @@ texto longo confortável de ler até o fim.</p>`,
 }
 
 .cartao {
-  width: 50%;   /* agora 50% de verdade */
-  padding: 1rem;
+  width: 200px;
+  padding: 20px;
+  border: 2px solid #1B4D3E;
+}
+
+/* a régua antiga, aqui só para comparar */
+.antiga {
+  box-sizing: content-box;
 }`,
         exemploComo: 'css',
-        atencao: 'O asterisco pega todos os elementos da página. É a única situação em que ele se justifica: uma decisão que vale para a página inteira, escrita uma vez.',
-        marcas: ['box-sizing', 'border-box', 'width'],
+        /* Os dois cartões pedem a mesma largura e ocupam larguras diferentes: é a
+           conta do primeiro parágrafo, à vista. Um cartão sozinho não mostraria
+           nada — pareceria uma caixa comum, e a lição é a diferença. */
+        exemploMarcacao: `<p class="cartao antiga">content-box</p>
+<p class="cartao">border-box</p>`,
+        atencao: 'O asterisco pega todos os elementos da página. É a única situação em que ele se justifica: uma decisão que vale para a página inteira, escrita uma vez. A classe antiga aí em cima só existe para comparar as duas réguas.',
+        marcas: ['box-sizing', 'border-box', 'content-box'],
       },
     ],
   },
@@ -561,6 +572,16 @@ img {
   max-width: 100%;
 }`,
         exemploComo: 'css',
+        /* A foto é um SVG declarado com 1200 pixels de largura — o culpado do
+           terceiro parágrafo, e não uma ilustração qualquer. Vai embutida porque
+           o quadro não tem rede: um endereço externo abriria a caixinha de
+           imagem quebrada, e a lição passaria a mostrar um erro. */
+        exemploMarcacao: `<div class="cartao">
+  <h2>Acampamento</h2>
+  <img src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='220'><rect width='1200' height='220' fill='%23CFE0D7'/><path d='M600,40L860,175L340,175Z' fill='%231B4D3E'/><rect y='175' width='1200' height='45' fill='%23A8C4B5'/></svg>" alt="Barraca montada no campo">
+  <p>A foto tem 1200 pixels, e encolhe junto.</p>
+</div>`,
+        exemploLarguras: [680, 340],
         atencao: 'Antes de escrever a primeira consulta de mídia, procure a largura fixa. Consulta de mídia que remenda uma medida errada esconde o problema em vez de resolvê-lo.',
         marcas: ['max-width', 'width: 100%'],
       },
@@ -576,12 +597,25 @@ img {
         exemplo: `main {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
 @media (max-width: 600px) {
   main { grid-template-columns: 1fr; }
 }`,
         exemploComo: 'css',
+        exemploMarcacao: `<main>
+  <div class="cartao">Unidade Falcão · 12</div>
+  <div class="cartao">Unidade Águia · 9</div>
+  <div class="cartao">Unidade Tucano · 11</div>
+  <div class="cartao">Unidade Arara · 8</div>
+  <div class="cartao">Unidade Jaguar · 10</div>
+  <div class="cartao">Unidade Onça · 7</div>
+</main>`,
+        /* 680 está acima do teto de 600, e 340 abaixo: um quadro mostra as duas
+           colunas, o outro mostra a coluna única. Duas larguras do mesmo lado
+           desenhariam o mesmo quadro duas vezes, e a lição sumiria. */
+        exemploLarguras: [680, 340],
         atencao: 'São duas chaves a fechar: a da regra e a da consulta. Esquecer uma faz o navegador descartar o bloco inteiro, em silêncio, e nada muda em tela nenhuma.',
         marcas: ['@media', 'max-width', 'min-width'],
       },
@@ -595,13 +629,25 @@ img {
           'Na prática: o arquivo começa com as regras que valem para todo mundo, e as consultas de mídia com min-width acrescentam o que só faz sentido em tela larga.',
         ],
         exemplo: `/* vale para todos */
-main { display: grid; grid-template-columns: 1fr; }
+main { display: grid; grid-template-columns: 1fr; gap: 1rem; }
 
 /* a partir de tablet */
 @media (min-width: 700px) {
   main { grid-template-columns: 1fr 1fr; }
 }`,
         exemploComo: 'css',
+        exemploMarcacao: `<main>
+  <div class="cartao">Sábado · culto ao ar livre</div>
+  <div class="cartao">Sábado · caminhada</div>
+  <div class="cartao">Sábado · nós e amarras</div>
+  <div class="cartao">Domingo · fogo sem fósforo</div>
+  <div class="cartao">Domingo · ordem unida</div>
+  <div class="cartao">Domingo · desmontar tudo</div>
+</main>`,
+        /* 380 é a tela em que a lição começa a escrever, e é a regra de cima que
+           responde por ela; 760 passa do piso de 700 e recebe o acréscimo. Nesta
+           ordem, e não na inversa: a lição é começar pelo pequeno. */
+        exemploLarguras: [380, 760],
         atencao: 'Medida relativa resolve tamanho; consulta de mídia resolve arranjo. Três colunas que viram uma não são questão de encolher — é decisão de arranjo, e só a consulta de mídia toma.',
         marcas: ['min-width', 'mobile-first'],
       },
