@@ -70,6 +70,19 @@ export interface TopicoDeVereda {
    */
   exemploMarcacao?: string;
   /**
+   * Só para `'css'`: as larguras de tela em que desenhar o mesmo exemplo.
+   *
+   * Um quadro só mostra um estado, e há assunto em que o estado único ensina o
+   * contrário do que a lição diz: consulta de mídia num quadro de largura fixa
+   * parece uma regra que vale sempre. Aqui o mesmo CSS e a mesma marcação são
+   * desenhados em duas telas, e o que muda entre elas **é** a lição.
+   *
+   * As larguras precisam cair dos dois lados do limiar da consulta — duas do
+   * mesmo lado desenham o mesmo quadro duas vezes, em silêncio.
+   * `exemplosDaTeoria.test.ts` cobra.
+   */
+  exemploLarguras?: number[];
+  /**
    * Só para `'python'`: o que o programa escreve ao rodar.
    *
    * Em CSS o resultado é uma página, e o quadro a desenha. Em Python o

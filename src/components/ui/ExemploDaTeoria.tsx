@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { realcarLinhas, realcarLinhasCss, realcarLinhasPython } from '../../labs/realce';
 import { CORES_DO_REALCE } from '../../labs/ide';
 import { lerExemploDeBlocos, COR_DA_CATEGORIA } from '../../labs/blocosDoScratch';
@@ -88,6 +89,22 @@ const CSS_EXEMPLO = `
   .ex-codigo.claro { background: #F9F9F9; color: #1B1B1B; }
   .ex-vazia { height: 8px; }
 
+  /* ── O mesmo exemplo em duas telas ─────────────────────────────────────
+     Consulta de mídia não se vê num quadro só: um quadro de largura fixa
+     mostra um estado, e quem lê conclui que a regra vale sempre — que é o
+     contrário do que a lição diz. Por isso estes tópicos desenham o mesmo CSS
+     e a mesma marcação em duas larguras.
+
+     Empilhadas, e não lado a lado: uma tela de 680px ao lado de uma de 340px
+     pede mais de mil pixels, que a coluna da lição não tem em computador
+     nenhum. Lado a lado elas caberiam só encolhendo as duas. */
+  .ex-telas { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; margin-top: 12px; }
+  .ex-telas > .ex-caixa { max-width: 100%; }
+  /* A moldura recorta o que a escala deixou de fora — a caixa tem o tamanho já
+     reduzido, e o iframe continua com a largura declarada por baixo. */
+  .ex-moldura { overflow: hidden; }
+  .ex-moldura iframe { transform-origin: top left; }
+
   @media (max-width: 720px) { .ex-dupla { grid-template-columns: 1fr; } }
 `;
 
@@ -120,6 +137,85 @@ const Codigo = ({ linhas }: { linhas: string[] }) => (
     {linhas.map((l, i) => <div key={i} dangerouslySetInnerHTML={{ __html: l || '&nbsp;' }} />)}
   </pre>
 );
+
+/* Alta o bastante para a mais estreita das duas telas, que é sempre a que
+   ocupa mais linhas: a mesma página no celular desce o que na tela larga cabe
+   ao lado. Um quadro que corta o fim mostra meia página como página inteira. */
+const ALTURA_DA_TELA = 260;
+
+/**
+ * A mesma página desenhada numa tela de largura declarada.
+ *
+ * ── Por que ela encolhe ──────────────────────────────────────────────────
+ * Uma tela de 680px não cabe num celular de 420px, e deixar o excesso para
+ * fora é o pior dos dois mundos: o quadro passa a mostrar só a coluna da
+ * esquerda e fica **igual** ao quadro estreito ao lado. Quem lê conclui que a
+ * consulta de mídia não faz nada — o contrário exato da lição, e sem nada na
+ * tela dizendo que faltou pedaço.
+ *
+ * Então ela encolhe até caber, como encolhe a prévia de qualquer ferramenta de
+ * layout. O texto fica pequeno; o arranjo, que é a lição, continua inteiro.
+ *
+ * E encolhe por `transform`, e não mudando a largura: o iframe continua
+ * medindo os 680px declarados por baixo, e é a essa medida que a consulta de
+ * mídia responde. Reduzir a largura de verdade faria o quadro responder à
+ * pergunta errada e mostrar o outro estado com o rótulo do primeiro.
+ */
+function Telas({ larguras, pagina, titulo }: {
+  larguras: number[];
+  pagina: string;
+  titulo: string;
+}) {
+  const fila = useRef<HTMLDivElement>(null);
+  /* Zero até a primeira medição, e aí ninguém encolhe: no primeiro quadro
+     pintado a escala já é a certa, sem um salto de tamanho à vista. */
+  const [disponivel, setDisponivel] = useState(0);
+
+  useEffect(() => {
+    const el = fila.current;
+    if (!el) return;
+    const medir = () => setDisponivel(el.clientWidth);
+    medir();
+    const observador = new ResizeObserver(medir);
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, []);
+
+  /*
+    Uma escala só para as duas, ditada pela mais larga.
+
+    Cada uma encolhendo por conta própria dava o avesso da lição: no celular a
+    de 680px cabia reduzida a 60% e a de 340px cabia inteira, e a tela **menor**
+    aparecia maior na página. É o defeito do emblema espremido no quadrado, em
+    outro lugar — uma proporção que ninguém desenhou.
+
+    Com a escala compartilhada, a de 680 continua tendo o dobro da de 340 em
+    qualquer aparelho, que é a única coisa que estes dois quadros existem para
+    mostrar.
+
+    A moldura da caixa come um pixel de cada lado, e é ela que decide se o
+    quadro cabe: descontar depois deixaria dois pixels da direita para fora,
+    cortando justamente a borda da última coluna.
+  */
+  const util = Math.max(0, disponivel - 2);
+  const escala = util ? Math.min(1, util / Math.max(...larguras)) : 1;
+
+  return (
+    <div className="ex-telas" ref={fila}>
+      {larguras.map(largura => {
+        return (
+          <div className="ex-caixa" key={largura} style={{ width: Math.round(largura * escala) + 2 }}>
+            <p className="ex-caixa-topo">Numa tela de {largura}px</p>
+            <div className="ex-moldura" style={{ height: Math.round(ALTURA_DA_TELA * escala) }}>
+              <iframe srcDoc={pagina} sandbox="" title={`Resultado em ${largura}px: ${titulo}`}
+                style={{ width: largura, height: ALTURA_DA_TELA, transform: `scale(${escala})` }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 const ESTILO_DA_PAGINA = `
   body { font: 15px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif; color: #201F1E;
@@ -220,20 +316,42 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
   if (como === 'css') {
     /* Sem marcação, não há resultado a mostrar — e um quadro vazio rotulado
        "o navegador mostra" seria a mesma promessa não cumprida de antes. */
-    const comResultado = mostraResultado && !!topico.exemploMarcacao;
-    return (
-      <>
-        <style>{CSS_EXEMPLO}</style>
-        <div className={comResultado ? 'ex-dupla' : ''}>
+    const temPagina = mostraResultado && !!topico.exemploMarcacao;
+    const larguras = topico.exemploLarguras ?? [];
+    const pagina = paginaDeCss(topico.exemplo, topico.exemploMarcacao ?? '');
+
+    /*
+      Duas telas, e então o código vai por cima em vez de ao lado.
+
+      Cada quadro tem a largura da tela que representa, e dois deles ao lado de
+      meia coluna não caberiam em lugar nenhum. Por cima, os dois ficam à vista
+      juntos — que é a única forma de comparar um com o outro.
+    */
+    if (temPagina && larguras.length > 0) {
+      return (
+        <>
+          <style>{CSS_EXEMPLO}</style>
           <div className="ex-caixa">
             <p className="ex-caixa-topo">Você escreve, no .css</p>
             <Codigo linhas={realcarLinhasCss(topico.exemplo)} />
           </div>
-          {comResultado && (
+          <Telas larguras={larguras} pagina={pagina} titulo={topico.titulo} />
+        </>
+      );
+    }
+
+    return (
+      <>
+        <style>{CSS_EXEMPLO}</style>
+        <div className={temPagina ? 'ex-dupla' : ''}>
+          <div className="ex-caixa">
+            <p className="ex-caixa-topo">Você escreve, no .css</p>
+            <Codigo linhas={realcarLinhasCss(topico.exemplo)} />
+          </div>
+          {temPagina && (
             <div className="ex-caixa">
               <p className="ex-caixa-topo">E a página fica assim</p>
-              <iframe srcDoc={paginaDeCss(topico.exemplo, topico.exemploMarcacao ?? '')}
-                sandbox="" title={`Resultado: ${topico.titulo}`} />
+              <iframe srcDoc={pagina} sandbox="" title={`Resultado: ${topico.titulo}`} />
             </div>
           )}
         </div>
