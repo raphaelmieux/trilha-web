@@ -15,6 +15,9 @@ import { validarBlocos, IDS_DE_BLOCOS } from './blocosValidator';
 import { validarScratch, IDS_DE_SCRATCH, type ProjetoSb3 } from './scratchValidator';
 import { validarAmbiente, IDS_DO_AMBIENTE, estadoInicial } from '../labs/ambientePython';
 import { PASSOS_DO_AMBIENTE } from '../labs/passosDoAmbiente';
+import { PASSOS_DO_TERMINAL } from '../labs/passosDeTerminal';
+import { validarTerminal, IDS_DO_TERMINAL } from './terminalValidator';
+import { maquinaInicial } from '../labs/terminal';
 import { validarPython, IDS_DE_PYTHON } from './pythonValidator';
 import { classificacaoInicial } from '../labs/falhasDePython';
 import { PASSOS } from '../labs/desafioDeHtml';
@@ -236,6 +239,30 @@ describe('os modelos dos laboratórios da vereda', () => {
   }
 
   /*
+    O terminal, pela mesma razão do ambiente.
+
+    Ele também não tem `modelo`: o ponto de partida é um computador, e ele mora
+    em `maquinaInicial()`. O que se cobra é que ele comece sem repositório, sem
+    a pasta que a tarefa manda criar, e sem nenhum comando executado — porque a
+    forma que o defeito toma aqui é o disco de partida já ter o que a lição pede.
+  */
+  for (const vereda of veredasComConteudo()) {
+    for (const licao of licoesDaVereda(vereda)) {
+      if (licao.tipo !== 'terminal') continue;
+
+      it(`${vereda.code} · ${licao.id} abre num computador sem nada feito`, () => {
+        const verdes = validarTerminal({ maquina: maquinaInicial(), executados: [] }, licao.verificacoes)
+          .filter(r => r.passed).map(r => r.id);
+        expect(verdes).toEqual([]);
+      });
+
+      it(`${vereda.code} · ${licao.id} cobra verificação que o validador conhece`, () => {
+        expect(licao.verificacoes.filter(id => !IDS_DO_TERMINAL.includes(id))).toEqual([]);
+      });
+    }
+  }
+
+  /*
     Falha plantada e verificação são as duas metades da mesma coisa.
 
     Uma lição que cobra `classificouAsFalhas` e não escreve falha nenhuma dá uma
@@ -291,6 +318,9 @@ describe('os modelos dos laboratórios da vereda', () => {
            do ambiente, e a escolha se faz pelo tipo da lição. */
         if (l.tipo === 'ambiente') {
           return l.verificacoes.map(id => [PASSOS_DO_AMBIENTE, id] as const);
+        }
+        if (l.tipo === 'terminal') {
+          return l.verificacoes.map(id => [PASSOS_DO_TERMINAL, id] as const);
         }
         if (l.tipo !== 'laboratorio') return [];
         return l.verificacoes.map(id => [passosDe(l.linguagem), id] as const);
