@@ -249,6 +249,10 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTi
     }));
   };
 
+  /* Avisar fechando o menu: um menu aberto continuaria pendurado por cima da
+     faixa depois de o aviso aparecer. */
+  const avisarFechando = (recado: string) => { fecharMenu(); setAviso(recado); };
+
   const naoFazParte = (nome: string) => {
     fecharMenu();
     setAviso(`${nome} existe no Word de verdade, e está aqui para a faixa ficar igual — mas não faz parte deste exercício.`);
@@ -431,7 +435,7 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTi
 
       {/* ── A janela do Word ── */}
       <div className="wd-janela">
-        <BarraDeTituloDoWord documento="Relatório do acampamento" aoAvisar={setAviso} />
+        <BarraDeTituloDoWord documento="Relatório do acampamento" aoAvisar={avisarFechando} />
 
         {/* Guias — a fileira inteira do Word, vinda de word.tsx. Escrevê-la aqui
             à mão foi o que deixou este laboratório sem Correspondências e com
@@ -440,7 +444,7 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTi
         <GuiasDoWord
           atual={guia} usaveis={GUIAS_USAVEIS}
           aoTrocar={id => { setGuia(id as Guia); fecharMenu(); }}
-          aoAvisar={setAviso} />
+          aoAvisar={avisarFechando} />
 
         {/* Faixa de opções */}
         {/* Com menu aberto a faixa deixa de recortar: `overflow-x: auto` cria um

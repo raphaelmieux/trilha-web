@@ -14,8 +14,10 @@ import {
 import type { PropsDeLaboratorio as Props } from './tipos';
 import {
   PLANILHA_INICIAL, LARGURA_PADRAO, ALTURA_PADRAO, METAS_DA_PLANILHA as METAS,
-  vazia, nomeDaCelula, valorDe, refazerMesclagens,
-  type Planilha, type AlinhaH, type AlinhaV,
+  vazia, nomeDaCelula, valorDe, refazerMesclagens, alinhamentoDe, ehNumero,
+  normalizar, naFaixa, umaCelulaSo, nomeDaFaixa, larguraDaTabela, alturaDaTabela,
+  excluirColunaDe, inserirColunaEm,
+  type Planilha, type AlinhaH, type AlinhaV, type Faixa,
 } from './metasDaAp043';
 
 /*
@@ -64,7 +66,38 @@ export default function PlanilhaLab({
   specialtyCode, lessonCode, lessonTitle, requirementCodes, userId,
 }: Props) {
   const [p, setP] = useState<Planilha>(PLANILHA_INICIAL);
-  const [sel, setSel] = useState<{ l: number; c: number }>({ l: 0, c: 0 });
+  /* A seleção é uma faixa: `l1/c1` é a âncora, onde o clique começou, e
+     `l2/c2` é onde ele parou. Clique simples deixa as duas iguais, e aí a
+     faixa é uma célula só — que era tudo o que existia aqui antes. */
+  const [faixa, setFaixa] = useState<Faixa>({ l1: 0, c1: 0, l2: 0, c2: 0 });
+  const [arrastandoFaixa, setArrastandoFaixa] = useState(false);
+  const sel = { l: faixa.l1, c: faixa.c1 };
+  const area = normalizar(faixa);
+
+  /* Até onde a tabela vai. Formatar como tabela pinta o que está dentro deste
+     retângulo, e não a grade inteira: o estilo automático saía por cima das
+     doze colunas e das vinte e seis linhas, e a planilha inteira virava uma
+     tabela verde. Estilo é da tabela; a grade em volta continua grade. */
+  const colunasDaTabela = larguraDaTabela(p);
+  const linhasDaTabela = alturaDaTabela(p);
+
+  /* Média, contagem e soma da faixa — só quando ela tem mais de uma célula e
+     algum número dentro, que é quando a planilha de verdade os mostra. */
+  const resumoDaFaixa = (() => {
+    if (umaCelulaSo(faixa)) return null;
+    const numeros: number[] = [];
+    for (let l = area.topo; l <= area.base; l++) {
+      for (let c = area.esq; c <= area.dir; c++) {
+        const t = valorDe(p, l, c);
+        if (ehNumero(t)) numeros.push(Number(t.replace(',', '.')));
+      }
+    }
+    if (numeros.length === 0) return null;
+    const soma = numeros.reduce((a, b) => a + b, 0);
+    const media = soma / numeros.length;
+    const escrever = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace('.', ','));
+    return `Média: ${escrever(media)}    Contagem: ${numeros.length}    Soma: ${escrever(soma)}`;
+  })();
   const [barra, setBarra] = useState('');
   const [editando, setEditando] = useState(false);
   const [aviso, setAviso] = useState('');
@@ -84,7 +117,7 @@ export default function PlanilhaLab({
   /* ── Seleção e escrita ── */
 
   const selecionar = (l: number, c: number) => {
-    setSel({ l, c });
+    setFaixa({ l1: l, c1: c, l2: l, c2: c });
     setBarra(p.celulas[l][c].texto);
     setEditando(false);
   };
@@ -113,17 +146,26 @@ export default function PlanilhaLab({
   /* ── Mesclar ── */
 
   const mesclar = () => {
-    const linha = p.celulas[sel.l];
-    const restantes = linha.length - sel.c;
-    if (restantes < 2) { avisar('Não há colunas suficientes à direita para mesclar.'); return; }
-    const perdido = linha.slice(sel.c + 1).some(c => c.texto.trim() !== '');
+    const largura = area.dir - area.esq + 1;
+    if (largura < 2) {
+      avisar('Selecione mais de uma célula antes de mesclar: clique numa e arraste até a última.');
+      return;
+    }
+    /* Só o conteúdo da primeira célula sobrevive, como na planilha de verdade.
+       Avisar disso importa porque é irreversível: desfazer a mesclagem devolve
+       as células vazias, e não o que estava escrito nelas. */
+    const perdido = p.celulas
+      .slice(area.topo, area.base + 1)
+      .some(l => l.slice(area.esq + 1, area.dir + 1).some(c => c.texto.trim() !== ''));
     mudar(a => ({
       ...a,
-      celulas: a.celulas.map((l, i) => (i !== sel.l ? l : l.map((cel, j) => {
-        if (j === sel.c) return { ...cel, span: restantes, h: 'centro' as AlinhaH };
-        if (j > sel.c) return { ...cel, coberta: true, texto: '' };
-        return cel;
-      }))),
+      celulas: refazerMesclagens(a.celulas.map((l, i) => (
+        i < area.topo || i > area.base ? l : l.map((cel, j) => {
+          if (j === area.esq) return { ...cel, span: largura, h: 'centro' as AlinhaH };
+          if (j > area.esq && j <= area.dir) return { ...cel, coberta: true, texto: '' };
+          return cel;
+        })
+      ))),
     }));
     if (perdido) {
       avisar('Mesclar manteve só o conteúdo da primeira célula — o das outras foi apagado. É assim na planilha de verdade, e desfazer a mesclagem não o traz de volta.');
@@ -133,7 +175,8 @@ export default function PlanilhaLab({
   const desmesclar = () => {
     mudar(a => ({
       ...a,
-      celulas: a.celulas.map((l, i) => (i !== sel.l ? l : l.map(cel => ({ ...cel, span: 1, coberta: false })))),
+      celulas: a.celulas.map((l, i) => (
+        i < area.topo || i > area.base ? l : l.map(cel => ({ ...cel, span: 1, coberta: false })))),
     }));
   };
 
@@ -154,16 +197,12 @@ export default function PlanilhaLab({
       celulas: a.celulas.filter((_, i) => i !== sel.l),
       alturas: a.alturas.filter((_, i) => i !== sel.l),
     }));
-    setSel(s => ({ ...s, l: Math.max(0, s.l - 1) }));
+    setFaixa(f => { const l = Math.max(0, f.l1 - 1); return { l1: l, c1: f.c1, l2: l, c2: f.c1 }; });
   };
 
   const inserirColuna = () => mudar(a => ({
     ...a,
-    celulas: refazerMesclagens(a.celulas.map(l => {
-      const nova = [...l];
-      nova.splice(sel.c + 1, 0, vazia());
-      return nova;
-    })),
+    celulas: inserirColunaEm(a.celulas, sel.c + 1),
     larguras: (() => { const w = [...a.larguras]; w.splice(sel.c + 1, 0, LARGURA_PADRAO); return w; })(),
   }));
 
@@ -171,10 +210,10 @@ export default function PlanilhaLab({
     if (p.celulas[0].length <= 2) { avisar('A planilha ficaria quase sem colunas.'); return; }
     mudar(a => ({
       ...a,
-      celulas: refazerMesclagens(a.celulas.map(l => l.filter((_, i) => i !== sel.c))),
+      celulas: excluirColunaDe(a.celulas, sel.c),
       larguras: a.larguras.filter((_, i) => i !== sel.c),
     }));
-    setSel(s => ({ ...s, c: Math.max(0, s.c - 1) }));
+    setFaixa(f => { const c = Math.max(0, f.c1 - 1); return { l1: f.l1, c1: c, l2: f.l1, c2: c }; });
   };
 
   /* ── Arrastar o cabeçalho ── */
@@ -209,7 +248,7 @@ export default function PlanilhaLab({
 
   const recomecar = () => {
     setP(PLANILHA_INICIAL);
-    setSel({ l: 0, c: 0 });
+    setFaixa({ l1: 0, c1: 0, l2: 0, c2: 0 });
     setBarra('');
     setEditando(false);
     setAviso('');
@@ -453,7 +492,13 @@ export default function PlanilhaLab({
           <Grupo nome="Edição">
             <Bt dica="Soma automática"
               aoClicar={() => {
-                setBarra(`=SOMA(${String.fromCharCode(65 + sel.c)}1:${String.fromCharCode(65 + sel.c)}${sel.l})`);
+                /* Com faixa selecionada, soma a faixa — que é o que a planilha
+                   de verdade faz. Sem faixa, propõe a coluna acima do cursor,
+                   que é o palpite dela quando não há seleção. */
+                const alvo = umaCelulaSo(faixa)
+                  ? `${String.fromCharCode(65 + sel.c)}1:${String.fromCharCode(65 + sel.c)}${Math.max(1, sel.l)}`
+                  : `${nomeDaCelula(area.topo, area.esq)}:${nomeDaCelula(area.base, area.dir)}`;
+                setBarra(`=SOMA(${alvo})`);
                 setEditando(true);
               }}>
               <span className="flex flex-col items-center">
@@ -466,7 +511,7 @@ export default function PlanilhaLab({
 
         {/* Caixa de nome e barra de fórmulas */}
         <div className="pl-formula">
-          <span className="pl-nome">{nomeDaCelula(sel.l, sel.c)}</span>
+          <span className="pl-nome">{nomeDaFaixa(faixa)}</span>
           <span className="pl-fx">fx</span>
           <input
             className="pl-entrada"
@@ -479,7 +524,11 @@ export default function PlanilhaLab({
         </div>
 
         {/* A grade */}
-        <div className="pl-grade-caixa" onPointerMove={moverArrasto} onPointerUp={soltarArrasto}>
+        <div
+          className="pl-grade-caixa"
+          onPointerMove={moverArrasto}
+          onPointerUp={() => { soltarArrasto(); setArrastandoFaixa(false); }}
+          onPointerLeave={() => setArrastandoFaixa(false)}>
           <table className={`pl-grade pl-layout-${p.layout}`}>
             <thead>
               <tr>
@@ -508,19 +557,38 @@ export default function PlanilhaLab({
                   </th>
                   {linha.map((cel, c) => {
                     if (cel.coberta) return null;
-                    const ativa = sel.l === l && sel.c === c;
+                    const ancora = sel.l === l && sel.c === c;
+                    const dentro = naFaixa(faixa, l, c);
+                    const mostrado = valorDe(p, l, c);
+                    const h = alinhamentoDe(cel, mostrado);
                     return (
                       <td
                         key={c}
                         colSpan={cel.span}
-                        onClick={() => selecionar(l, c)}
-                        className={ativa ? 'pl-ativa' : ''}
+                        /* Apontar começa a faixa, arrastar a estende e soltar a
+                           fecha — o mesmo gesto da planilha de verdade. Sem ele
+                           não havia como dizer "de A1 até D1", e a tarefa de
+                           mesclar pedia uma coisa que a tela não fazia. */
+                        onPointerDown={e => {
+                          if (e.button !== 0) return;
+                          if (e.shiftKey) { setFaixa(f => ({ ...f, l2: l, c2: c })); return; }
+                          selecionar(l, c);
+                          setArrastandoFaixa(true);
+                        }}
+                        onPointerEnter={() => {
+                          if (arrastandoFaixa) setFaixa(f => ({ ...f, l2: l, c2: c }));
+                        }}
+                        className={[
+                          ancora ? 'pl-ativa' : '',
+                          dentro && !ancora ? 'pl-na-faixa' : '',
+                          l < linhasDaTabela && c < colunasDaTabela ? 'pl-na-tabela' : '',
+                        ].filter(Boolean).join(' ')}
                         style={{
-                          textAlign: cel.h === 'centro' ? 'center' : cel.h === 'direita' ? 'right' : 'left',
+                          textAlign: h === 'centro' ? 'center' : h === 'direita' ? 'right' : 'left',
                           verticalAlign: cel.v === 'meio' ? 'middle' : cel.v === 'acima' ? 'top' : 'bottom',
                           fontWeight: cel.negrito ? 700 : 400,
                         }}>
-                        {ativa && editando ? (
+                        {ancora && editando ? (
                           <input className="pl-celula-entrada" autoFocus value={barra}
                             onChange={e => setBarra(e.target.value)}
                             onKeyDown={e => { if (e.key === 'Enter') confirmar(barra); }}
@@ -529,7 +597,7 @@ export default function PlanilhaLab({
                           <span
                             onDoubleClick={() => { setBarra(cel.texto); setEditando(true); }}
                             className="pl-valor">
-                            {valorDe(p, l, c)}
+                            {mostrado}
                           </span>
                         )}
                       </td>
@@ -541,14 +609,31 @@ export default function PlanilhaLab({
           </table>
         </div>
 
-        {/* Barra de status */}
+        {/* As guias de planilha, e o + de acrescentar.
+
+            É a fileira que mais diz "isto é uma planilha", e ela não existia:
+            o nome da planilha aparecia solto na barra de status, onde ninguém
+            procura por ele. */}
+        <div className="pl-abas">
+          <button type="button" className="pl-aba" aria-current="true">Planilha1</button>
+          <button type="button" className="pl-aba-mais" title="Nova planilha"
+            onClick={() => avisar('Acrescentar planilhas existe no programa de verdade, e não faz parte deste exercício.')}>
+            +
+          </button>
+        </div>
+
+        {/* Barra de status.
+
+            Com faixa selecionada ela mostra média, contagem e soma — que é o
+            que a planilha de verdade põe aí, e é como muita gente soma uma
+            coluna sem escrever fórmula nenhuma. */}
         <div className="pl-status">
-          <span>Planilha1</span>
-          <span>{nomeDaCelula(sel.l, sel.c)}</span>
-          <span className="ml-auto">
+          <span>{resumoDaFaixa ?? 'Pronto'}</span>
+          <span className="ml-auto">{nomeDaFaixa(faixa)}</span>
+          <span>
             {p.celulas[sel.l][sel.c].texto.startsWith('=')
               ? `Fórmula — resultado ${valorDe(p, sel.l, sel.c)}`
-              : 'Pronto'}
+              : ''}
           </span>
         </div>
       </div>
@@ -627,7 +712,15 @@ const CSS_PLANILHA = `
   overflow: hidden; white-space: nowrap;
 }
 .pl-ativa { outline: 2px solid #217346; outline-offset: -2px; }
+/* A faixa selecionada: azulada, com a âncora branca por dentro. É assim que a
+   planilha mostra o que vai ser mesclado, somado ou formatado — sem isso, quem
+   arrasta não vê que arrastou. */
+.pl-na-faixa { background: #E3EFE8; }
 .pl-valor { display: block; min-height: 15px; cursor: cell; }
+/* A grade não é para selecionar texto com o ponteiro: arrastar seleciona
+   células, e o texto azul do navegador por cima disso confunde as duas coisas. */
+.pl-grade { user-select: none; }
+.pl-celula-entrada, .pl-entrada { user-select: text; }
 .pl-celula-entrada {
   width: 100%; border: none; outline: none; background: transparent;
   font: inherit; color: inherit;
@@ -640,14 +733,34 @@ const CSS_PLANILHA = `
    cabeçalho ficava verde-claro com a letra branca por cima, ilegível, e a
    tabela continuava parecendo formatada. É a armadilha de sempre: a superfície
    clara precisa dizer a própria cor. */
-.pl-layout-automatico td { border-color: #A9C7B1; }
-.pl-layout-automatico tr:nth-child(n+3):nth-child(even) td { background: #EAF3EC; }
-.pl-layout-automatico tr:nth-child(2) td { background: #217346; color: #FFFFFF; font-weight: 600; }
+/* O estilo pega só o que está dentro da tabela, marcado pela classe pl-na-tabela.
+   As listras começam na terceira linha porque a segunda é o cabeçalho, e as
+   duas regras casavam com ela: a última escrita ganhava o fundo, e o cabeçalho
+   saía branco sobre verde claro em vez de branco sobre verde escuro. */
+.pl-layout-automatico td.pl-na-tabela { border-color: #A9C7B1; }
+.pl-layout-automatico tr:nth-child(n+3):nth-child(even) td.pl-na-tabela { background: #EAF3EC; }
+.pl-layout-automatico tr:nth-child(2) td.pl-na-tabela { background: #217346; color: #FFFFFF; font-weight: 600; }
 /* Manual: bordas e preenchimento escolhidos, sem faixa alternada. */
-.pl-layout-manual td { border: 1px solid #605E5C; background: #FBFBF9; }
+.pl-layout-manual td.pl-na-tabela { border: 1px solid #605E5C; background: #FBFBF9; }
 
 .pl-status {
   display: flex; align-items: center; gap: 14px; padding: 4px 10px;
   background: #F3F2F1; border-top: 1px solid #E1DFDD; font-size: 11.5px; color: #605E5C;
 }
+.pl-abas {
+  display: flex; align-items: stretch; gap: 2px; padding: 0 8px;
+  background: #F3F2F1; border-top: 1px solid #E1DFDD;
+}
+.pl-aba {
+  padding: 5px 14px; font-size: 12px; color: #201F1E; background: transparent;
+  border: none; border-top: 2px solid transparent; cursor: pointer;
+}
+.pl-aba[aria-current="true"] {
+  background: #FFFFFF; color: #217346; font-weight: 600; border-top-color: #217346;
+}
+.pl-aba-mais {
+  padding: 5px 10px; font-size: 14px; color: #605E5C; background: transparent;
+  border: none; cursor: pointer;
+}
+.pl-aba-mais:hover { background: #EDEBE9; }
 `;

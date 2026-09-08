@@ -127,7 +127,14 @@ export const METAS_DA_INSERCAO: MetaDeInsercao[] = [
 
 /* ── A planilha ────────────────────────────────────────────────────────────── */
 
-export type AlinhaH = 'esquerda' | 'centro' | 'direita';
+/*
+  'padrao' é o alinhamento que a planilha dá sozinha, e ele não é 'esquerda':
+  número vai para a direita, texto para a esquerda. Essa diferença é como se
+  descobre que a planilha entendeu o que foi digitado — número que fica à
+  esquerda é número guardado como texto, e é o engano mais comum de quem faz
+  planilha. Nascendo tudo à esquerda, ninguém aprende a reparar nisso.
+*/
+export type AlinhaH = 'padrao' | 'esquerda' | 'centro' | 'direita';
 export type AlinhaV = 'acima' | 'meio' | 'abaixo';
 export type Layout = 'nenhum' | 'automatico' | 'manual';
 
@@ -151,36 +158,118 @@ export interface Planilha {
 }
 
 export const vazia = (texto = ''): Celula => ({
-  texto, h: 'esquerda', v: 'abaixo', span: 1, coberta: false, negrito: false,
+  texto, h: 'padrao', v: 'abaixo', span: 1, coberta: false, negrito: false,
 });
 
+/** É número o que a planilha consegue somar — e é ele que vai para a direita. */
+export const ehNumero = (texto: string) => {
+  const t = texto.trim();
+  return t !== '' && !Number.isNaN(Number(t.replace(',', '.')));
+};
+
+/** O alinhamento que a célula de fato usa, depois de aplicado o padrão. */
+export const alinhamentoDe = (cel: Celula, mostrado: string): Exclude<AlinhaH, 'padrao'> =>
+  cel.h !== 'padrao' ? cel.h : (ehNumero(mostrado) ? 'direita' : 'esquerda');
+
 /*
-  A quinta coluna nasce vazia de propósito: é ela que a tarefa manda excluir.
-  Sem ela, o enunciado pediria para tirar uma coluna que não existe — e o
-  laboratório seria impossível de vencer sem nada na tela explicando por quê.
+  A coluna vazia nasce no meio da tabela, entre Diárias e Total, e é ela que a
+  tarefa manda excluir.
+
+  Ela já esteve no fim, depois de Total, e ali só funcionava porque a grade
+  acabava na coluna E: era a última, e portanto a única vazia. Numa planilha de
+  verdade a grade não acaba — depois da tabela vêm F, G, H e o resto —, e
+  "exclua a coluna vazia depois de Total" passaria a nomear qualquer uma delas.
+  No meio da tabela ela volta a ser única, e é lá que esse erro acontece na
+  vida: alguém deixa uma coluna em branco separando os dados, e a soma para de
+  pegar a tabela inteira.
 */
 const CONTEUDO_INICIAL: string[][] = [
   ['Orçamento do acampamento', '', '', '', ''],
-  ['Unidade', 'Inscritos', 'Diárias', 'Total', ''],
-  ['Falcão', '12', '3', '1620', ''],
-  ['Águia', '9', '3', '1215', ''],
-  ['Tucano', '11', '3', '1485', ''],
-  ['', '', '', '', ''],
-  ['', '', '', '', ''],
+  ['Unidade', 'Inscritos', 'Diárias', '', 'Total'],
+  ['Falcão', '12', '3', '', '1620'],
+  ['Águia', '9', '3', '', '1215'],
+  ['Tucano', '11', '3', '', '1485'],
 ];
 
 export const LARGURA_PADRAO = 92;
 export const ALTURA_PADRAO = 24;
 
+/*
+  A grade é maior do que a tabela, e é isso que faz dela uma planilha.
+
+  Ela tinha exatamente o tamanho dos dados — cinco colunas e sete linhas — e o
+  resto da janela ficava branco: na tela aparecia uma tabelinha solta num vazio,
+  que não é o que ninguém encontra ao abrir Excel, Calc ou Planilhas. A grade do
+  programa de verdade vai até a borda da janela e continua rolando.
+*/
+export const COLUNAS_DA_GRADE = 12;
+export const LINHAS_DA_GRADE = 26;
+
 export const PLANILHA_INICIAL: Planilha = {
-  celulas: CONTEUDO_INICIAL.map(linha => linha.map(t => vazia(t))),
-  larguras: new Array(5).fill(LARGURA_PADRAO),
-  alturas: new Array(7).fill(ALTURA_PADRAO),
+  celulas: Array.from({ length: LINHAS_DA_GRADE }, (_, l) =>
+    Array.from({ length: COLUNAS_DA_GRADE }, (_, c) => vazia(CONTEUDO_INICIAL[l]?.[c] ?? ''))),
+  larguras: new Array(COLUNAS_DA_GRADE).fill(LARGURA_PADRAO),
+  alturas: new Array(LINHAS_DA_GRADE).fill(ALTURA_PADRAO),
   layout: 'nenhum',
+};
+
+/*
+  Onde a tabela acaba.
+
+  Com a grade maior do que os dados, "a tabela" deixou de ser "a planilha
+  inteira" — e as tarefas falam da tabela. Ela vai até a última coluna com
+  alguma coisa escrita; a coluna vazia do meio continua dentro, que é
+  justamente o defeito que a tarefa manda consertar.
+*/
+export const larguraDaTabela = (p: Planilha): number => {
+  let ultima = -1;
+  p.celulas.forEach(linha => linha.forEach((cel, c) => {
+    if (cel.texto.trim() !== '' && c > ultima) ultima = c;
+  }));
+  return ultima + 1;
+};
+
+export const alturaDaTabela = (p: Planilha): number => {
+  let ultima = -1;
+  p.celulas.forEach((linha, l) => {
+    if (linha.some(cel => cel.texto.trim() !== '') && l > ultima) ultima = l;
+  });
+  return ultima + 1;
 };
 
 /** A1, B3 — o nome que a caixa de nome mostra e que a fórmula usa. */
 export const nomeDaCelula = (l: number, c: number) => `${String.fromCharCode(65 + c)}${l + 1}`;
+
+/*
+  Uma faixa de células: da âncora, onde o clique começou, até onde ele parou.
+
+  A planilha não tinha faixa nenhuma — só a célula do cursor —, e tudo o que
+  precisa de faixa saiu torto por causa disso. Mesclar ia da célula escolhida
+  até o fim da linha, porque não havia como dizer "até D1"; a tarefa mandava
+  mesclar de A1 até D1, e isso era impossível de fazer na tela. Selecionar uma
+  faixa é o gesto mais básico de uma planilha: é assim que se mescla, que se
+  soma e que se formata.
+*/
+export interface Faixa { l1: number; c1: number; l2: number; c2: number }
+
+export const normalizar = (f: Faixa) => ({
+  topo: Math.min(f.l1, f.l2), base: Math.max(f.l1, f.l2),
+  esq: Math.min(f.c1, f.c2), dir: Math.max(f.c1, f.c2),
+});
+
+export const naFaixa = (f: Faixa, l: number, c: number) => {
+  const n = normalizar(f);
+  return l >= n.topo && l <= n.base && c >= n.esq && c <= n.dir;
+};
+
+export const umaCelulaSo = (f: Faixa) => f.l1 === f.l2 && f.c1 === f.c2;
+
+/** A1, ou A1:D1 quando a faixa tem mais de uma célula. */
+export const nomeDaFaixa = (f: Faixa) => {
+  const n = normalizar(f);
+  const inicio = nomeDaCelula(n.topo, n.esq);
+  return umaCelulaSo(f) ? inicio : `${inicio}:${nomeDaCelula(n.base, n.dir)}`;
+};
 
 /**
  * Resolve o que a célula mostra.
@@ -222,22 +311,54 @@ export function valorDe(p: Planilha, l: number, c: number): string {
 }
 
 /*
-  Uma mesclagem aqui vai sempre da célula escolhida até o fim da linha, e por
-  isso ela precisa ser refeita quando a linha muda de largura: excluir uma
-  coluna deixaria o `span` maior do que a linha, e o navegador desenharia uma
-  célula estourando a tabela. Refazer é ler o mesmo que já estava dito — "daqui
-  até o fim" —, agora com o fim no lugar novo.
+  Refaz `coberta` a partir dos `span` gravados, e apara o que não cabe mais.
+
+  Antes isto reescrevia toda mesclagem como "daqui até o fim da linha", porque
+  era só isso que dava para mesclar. Agora o span diz quantas colunas a
+  mesclagem tem de verdade, e refazer é redesenhar o que ele diz — cortando no
+  fim da linha quando a linha encurta, senão o navegador desenha uma célula
+  estourando a tabela.
 */
 export function refazerMesclagens(celulas: Celula[][]): Celula[][] {
   return celulas.map(linha => {
-    const inicio = linha.findIndex(c => c.span > 1);
-    if (inicio < 0) return linha.map(c => ({ ...c, span: 1, coberta: false }));
-    return linha.map((c, i) => ({
-      ...c,
-      span: i === inicio ? linha.length - inicio : 1,
-      coberta: i > inicio,
-    }));
+    const saida = linha.map(c => ({ ...c, coberta: false }));
+    for (let i = 0; i < saida.length; i++) {
+      saida[i].span = Math.max(1, Math.min(saida[i].span, saida.length - i));
+      for (let j = i + 1; j < i + saida[i].span; j++) {
+        saida[j].coberta = true;
+        saida[j].span = 1;
+      }
+      i += saida[i].span - 1;
+    }
+    return saida;
   });
+}
+
+/*
+  Excluir e inserir coluna, com a mesclagem acompanhando.
+
+  Moram aqui, e não na tela, porque o caso difícil não se vê clicando: tirar
+  uma coluna de dentro de um título mesclado tem de encolher a mesclagem em
+  um, e não deixá-la com o tamanho antigo sobrando para fora da tabela. É
+  exatamente a ordem que o exercício pede — mesclar o título e depois tirar a
+  coluna vazia que ficou debaixo dele.
+*/
+const ajustarSpans = (linha: Celula[], c: number, delta: number) =>
+  linha.map((cel, i) => (
+    cel.span > 1 && i < c && c < i + cel.span ? { ...cel, span: cel.span + delta } : cel
+  ));
+
+export function excluirColunaDe(celulas: Celula[][], c: number): Celula[][] {
+  return refazerMesclagens(celulas.map(linha =>
+    ajustarSpans(linha, c, -1).filter((_, i) => i !== c)));
+}
+
+export function inserirColunaEm(celulas: Celula[][], c: number): Celula[][] {
+  return refazerMesclagens(celulas.map(linha => {
+    const nova = [...ajustarSpans(linha, c, 1)];
+    nova.splice(c, 0, vazia());
+    return nova;
+  }));
 }
 
 /* ── As metas ──────────────────────────────────────────────────────────────── */
@@ -281,30 +402,43 @@ export const METAS_DA_PLANILHA: MetaDePlanilha[] = [
   {
     id: 'mesclar',
     titulo: 'Mesclar células e desfazer a mesclagem',
-    detalhe: 'O título deve ocupar a largura da tabela inteira. Mescle de A1 até D1 — e depois experimente desfazer, para ver o que a mesclagem faz.',
+    detalhe: 'O título deve ocupar a largura da tabela inteira. Selecione de A1 até a última coluna da tabela e mescle — depois experimente desfazer, para ver o que a mesclagem faz.',
     onde: 'Início › Mesclar e Centralizar',
     passos: [
-      'Clique na célula A1.',
-      'Clique em Mesclar — a célula passa a ocupar a linha inteira.',
-      'Clique em Desfazer Mesclagem para ver as quatro células de volta.',
+      'Clique na célula A1 e arraste até a última coluna que tem dados.',
+      'A caixa de nome, à esquerda da barra de fórmulas, mostra a faixa: A1:D1.',
+      'Clique em Mesclar — as células viram uma só, com o título centralizado.',
+      'Clique em Desfazer Mesclagem para ver as células de volta.',
       'Mescle de novo: a tarefa pede a planilha entregue com o título mesclado.',
     ],
-    feita: p => p.celulas[0][0].span === p.celulas[0].length && p.celulas[0].length >= 3,
+    /* Mede contra a largura da tabela, e não contra a da grade: a grade tem
+       doze colunas, e mesclar o título por cima das sete vazias do fim não é
+       o que ninguém faz nem o que a tarefa pede. */
+    feita: p => p.celulas[0][0].span === larguraDaTabela(p) && larguraDaTabela(p) >= 3,
   },
   {
     id: 'linhas',
     titulo: 'Inserir e excluir linha e coluna',
-    detalhe: 'Falta a unidade Arara na tabela: insira uma linha para ela e preencha inscritos e diárias. E a coluna vazia depois de Total precisa sair.',
+    detalhe: 'Falta a unidade Arara na tabela: insira uma linha para ela e preencha inscritos e diárias. E a coluna vazia que ficou no meio da tabela, entre Diárias e Total, precisa sair.',
     onde: 'Início › Células',
     passos: [
       'Clique numa célula da linha 5, a da unidade Tucano.',
       'Clique em Inserir Linha: uma linha vazia aparece abaixo.',
       'Escreva Arara, o número de inscritos e as diárias.',
-      'Para a coluna: clique numa célula da coluna vazia e use Excluir Coluna.',
+      'Para a coluna: clique numa célula da coluna vazia do meio e use Excluir Coluna.',
+      'Repare no que a coluna vazia fazia: ela separava a tabela em duas.',
     ],
-    feita: p => p.celulas[0].length === 4
-      && p.celulas.some(l => l[0].texto.trim().toLowerCase() === 'arara'
-        && Number(l[1].texto) > 0 && Number(l[2].texto) > 0),
+    /* Lê a linha de cabeçalho, e não a largura da grade: a grade continua com
+       doze colunas depois da exclusão, e o que a tarefa cobra é que os quatro
+       títulos tenham ficado encostados um no outro. */
+    feita: p => {
+      const cabecalho = p.celulas[1].map(c => c.texto.trim());
+      const emSequencia = ['Unidade', 'Inscritos', 'Diárias', 'Total']
+        .every((t, i) => cabecalho[i] === t);
+      return emSequencia
+        && p.celulas.some(l => l[0].texto.trim().toLowerCase() === 'arara'
+          && Number(l[1].texto) > 0 && Number(l[2].texto) > 0);
+    },
   },
   {
     id: 'layout',
@@ -326,6 +460,7 @@ export const METAS_DA_PLANILHA: MetaDePlanilha[] = [
     passos: [
       'Clique na célula da coluna Inscritos, na primeira linha vazia embaixo da tabela.',
       'Escreva =SOMA(B3:B5) e aperte Enter — ajuste as linhas se a sua tabela cresceu.',
+      'Se a coluna vazia ainda estiver lá, Total é a coluna E, e não D.',
       'Na coluna Total, na mesma linha, escreva =MÉDIA(D3:D5).',
       'Agora mude o número de inscritos de uma unidade: o resultado se refaz sozinho.',
     ],
