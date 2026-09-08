@@ -16,6 +16,7 @@ import LaboratorioDeVereda from '../components/LaboratorioDeVereda';
 import LaboratorioDeBlocos from '../components/LaboratorioDeBlocos';
 import LaboratorioDeScratch from '../components/LaboratorioDeScratch';
 import LaboratorioDeAmbiente from '../components/LaboratorioDeAmbiente';
+import LaboratorioDeTerminal from '../components/LaboratorioDeTerminal';
 import LaboratorioDePython from '../components/LaboratorioDePython';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -172,6 +173,19 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'ambiente' && profile?.id) {
     return (
       <LaboratorioDeAmbiente vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /*
+    O terminal também não passa pelo editor.
+
+    Não há arquivo para escrever nem linguagem para realçar: o que se confere é
+    onde a pessoa está, o que existe em disco e o que o repositório registrou.
+  */
+  if (licaoAberta?.tipo === 'terminal' && profile?.id) {
+    return (
+      <LaboratorioDeTerminal vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

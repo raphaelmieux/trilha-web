@@ -2,6 +2,7 @@ import { MODULOS_DE_HTML } from './sintaxeHtml';
 import { MODULOS_DE_CSS } from './folhaDeEstilo';
 import { MODULOS_DE_BLOCOS } from './logicaComBlocos';
 import { MODULOS_DE_PYTHON } from './sintaxeDePython';
+import { MODULOS_DE_TERMINAL } from './terminalEGit';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 
@@ -229,6 +230,34 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O terminal, e por que ele é mais um tipo.
+
+      A CC003 não escreve um arquivo para um validador ler: ela digita comandos
+      e o que se confere é o **estado do computador** depois deles — onde a
+      pessoa está, o que existe em disco, o que ficou no histórico do
+      repositório. Não há linguagem para realçar nem modelo para abrir.
+
+      É a mesma conta que fez `ambiente` virar um tipo próprio, e ela está
+      escrita lá: enfiá-lo em `laboratorio` obrigaria a inventar um `modelo: ''`
+      e uma linguagem falsa, e a trava dos modelos passaria a conferir uma
+      string vazia com o validador de HTML — verde sem ter olhado nada.
+
+      O disco de partida não vem do currículo: é sempre o mesmo computador, e
+      ele mora em `maquinaInicial()`. Um currículo que pudesse descrever o disco
+      poderia descrevê-lo com o repositório já iniciado, que é justamente o
+      laboratório que abre resolvido.
+
+      Para o progresso conta como lição de fazer: grava `vereda_laboratorio`.
+    */
+    id: string;
+    tipo: 'terminal';
+    titulo: string;
+    resumo: string;
+    /** Os ids de verificação, no validador do terminal. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
@@ -368,8 +397,29 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_PYTHON,
   },
-  anunciada('CC003', 'Terminal e Git', 'Base',
-    'Conversar com o computador por texto, e guardar o histórico do que se escreveu.'),
+  {
+    id: 'cc003',
+    code: 'CC003',
+    name: 'Terminal e Git',
+    familia: 'Base',
+    description: 'Conversar com o computador por texto, e guardar o histórico do que se escreveu.',
+    /*
+      Sai da CC002, e não de uma trilha. Quem escreveu programas já tem o que
+      versionar, e já sentiu a falta: `lista_v2_final_agora.py` é a forma
+      caseira do controle de versão, e é o problema que esta vereda resolve.
+    */
+    origem: 'CC002',
+    /*
+      E exige a CC002 concluída. O documento oficial abre com isso — o
+      requisito 1 é "ter concluído a vereda CC002 Python" —, e a trava mora
+      aqui, e não num módulo pedindo que a pessoa se lembre de fazer a outra
+      antes. Por `id`, e nunca por `code`: nenhum percurso é gravado com o
+      código, e a vereda ficaria trancada para sempre.
+    */
+    preRequisito: 'cc002',
+    mostraResultado: true,
+    modulos: MODULOS_DE_TERMINAL,
+  },
   anunciada('CC004', 'Python, Avançado', 'Base',
     'Listas, dicionários, arquivos e erros — o que separa um exercício de um programa que se usa.'),
   anunciada('CC005', 'SQL', 'Base',
