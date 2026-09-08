@@ -1105,6 +1105,235 @@ const rawAp042Final: Question[] = [
 ];
 
 /*
+  A prova da AP043.
+
+  Vinte questões, cobrindo os oito requisitos. Ela não repete os enunciados das
+  lições de propósito: quem só decorou a pergunta da lição não reconhece a
+  mesma matéria vestida de outro jeito, e é justamente essa diferença que a
+  prova precisa medir.
+
+  As definições do requisito 2 aparecem aqui pela consequência, e não pela
+  definição: a lição já perguntou o que é a fonte de alimentação, e a prova
+  pergunta qual peça o raio encontra primeiro.
+*/
+const rawAp043Final: Question[] = [
+  {
+    id: 'AP043-F-Q1', type: 'multiple_choice',
+    prompt: 'Um técnico diz que o computador do clube "não dá para atualizar". Qual peça costuma estar por trás dessa limitação?',
+    data: { options: [
+      { id: 'a', text: 'A placa mãe, cujos soquetes e fendas decidem o que encaixa.', correct: true },
+      { id: 'b', text: 'A fonte de alimentação, que não consegue converter energia para peças novas.', porque: 'Fonte fraca se troca por outra. O que trava a atualização é o que sequer encaixa.' },
+      { id: 'c', text: 'O monitor, que precisa ser trocado junto com qualquer peça interna.', porque: 'Monitor é aparelho à parte, e não limita o que entra dentro do gabinete.' },
+      { id: 'd', text: 'O sistema operacional, que impede a instalação de peças mais recentes.', porque: 'Sistema não impede encaixe. Ele pode faltar driver, e isso é outro problema.' },
+    ]},
+    explanation: 'É ela que decide o que cabe: processador novo não entra em soquete antigo.',
+  },
+  {
+    id: 'AP043-F-Q2', type: 'multiple_choice',
+    prompt: 'Um computador de escritório mostra imagem no monitor e não tem nenhuma placa de vídeo avulsa dentro dele. O que se conclui?',
+    data: { options: [
+      { id: 'a', text: 'Que o vídeo dele é integrado à placa mãe ou ao processador.', correct: true },
+      { id: 'b', text: 'Que o monitor está gerando a imagem por conta própria.', porque: 'Monitor só mostra o que recebe pronto. Quem calcula a imagem é sempre o computador.' },
+      { id: 'c', text: 'Que alguém retirou a placa e o computador ficou incompleto.', porque: 'Sem nada gerando imagem não haveria imagem. Se ela aparece, alguma coisa faz esse trabalho.' },
+      { id: 'd', text: 'Que aquele modelo só funciona ligado a uma televisão pela porta HDMI.', porque: 'A porta de vídeo sai da placa mãe e serve monitor e televisão igualmente.' },
+    ]},
+    explanation: 'Vídeo integrado é o normal. A placa avulsa existe para quem pede mais da imagem.',
+  },
+  {
+    id: 'AP043-F-Q3', type: 'multiple_choice',
+    prompt: 'Você liga o computador na televisão por um cabo VGA e a imagem aparece, mas não sai som nenhum. Qual é a explicação?',
+    data: { options: [
+      { id: 'a', text: 'A VGA leva só imagem: som pede outro cabo, ou a HDMI.', correct: true },
+      { id: 'b', text: 'O cabo VGA está com defeito e precisa ser trocado por outro igual.', porque: 'Um cabo bom faria o mesmo: a VGA não transporta áudio em nenhuma circunstância.' },
+      { id: 'c', text: 'A televisão precisa ser configurada para aceitar som vindo do computador.', porque: 'Não há som chegando para ser aceito. Nenhuma configuração cria o que o cabo não leva.' },
+      { id: 'd', text: 'A placa de som do computador está desligada e precisa ser ativada.', porque: 'Ela está funcionando: o som sairia normalmente por um fone ou caixa ligados ao computador.' },
+    ]},
+    explanation: 'Não é defeito de ninguém — é o que essa porta faz desde sempre.',
+  },
+  {
+    id: 'AP043-F-Q4', type: 'true_false',
+    prompt: 'A porta USB serve a aparelhos de tipos muito diferentes usando o mesmo formato de conector.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', correct: true },
+      { id: 'b', text: 'Falso', porque: 'É verdadeiro. Pen drive, mouse, teclado, impressora e carregador usam a mesma porta — daí o nome universal.' },
+    ]},
+    explanation: 'Antes dela, cada aparelho tinha uma porta própria. Era esse o problema que ela resolveu.',
+  },
+  {
+    id: 'AP043-F-Q5', type: 'multiple_choice',
+    prompt: 'Depois de um raio, o computador não liga mais. Qual peça recebeu o tranco antes de todas as outras?',
+    data: { options: [
+      { id: 'a', text: 'A fonte de alimentação.', correct: true },
+      { id: 'b', text: 'A placa de vídeo, por ser a peça que mais consome energia da máquina.', porque: 'Consumo não decide a ordem. Decide por onde a energia da rua entra — e ela entra pela fonte.' },
+      { id: 'c', text: 'O processador, por ser a peça mais cara e mais sensível do computador.', porque: 'Ele recebe energia já convertida. O tranco chega na fonte primeiro.' },
+      { id: 'd', text: 'O disco de armazenamento, onde ficam guardados todos os arquivos.', porque: 'O disco também recebe energia já convertida pela fonte.' },
+    ]},
+    explanation: 'É ela que está na porta de entrada. Estabilizador e nobreak existem para chegar antes dela.',
+  },
+  {
+    id: 'AP043-F-Q6', type: 'multiple_choice',
+    prompt: 'Duas pessoas precisam registrar informação no mesmo lugar, ao mesmo tempo, sem que uma apague o trabalho da outra. Que recurso foi feito para isso?',
+    data: { options: [
+      { id: 'a', text: 'Um banco de dados.', correct: true },
+      { id: 'b', text: 'Uma pasta compartilhada na rede, com o arquivo dentro dela.', porque: 'A pasta não coordena nada: cada um salva o arquivo inteiro, e o último salva por cima.' },
+      { id: 'c', text: 'Um pen drive passado de uma pessoa para a outra.', porque: 'Isso resolve o revezamento, e não o "ao mesmo tempo" que a pergunta descreve.' },
+      { id: 'd', text: 'Uma impressora de rede que registra tudo o que passa por ela.', porque: 'Impressora imprime. Ela não guarda nem organiza informação para consulta.' },
+    ]},
+    explanation: 'Controlar quem escreve o quê, e em que ordem, é exatamente o que ele existe para fazer.',
+  },
+  {
+    id: 'AP043-F-Q7', type: 'multiple_choice',
+    prompt: 'Qual destas situações é a única que conta como backup de verdade?',
+    data: { options: [
+      { id: 'a', text: 'O trabalho copiado para um pen drive guardado na gaveta.', correct: true },
+      { id: 'b', text: 'O trabalho salvo numa segunda pasta dentro do mesmo computador.', porque: 'Se o computador se perde, as duas cópias vão junto. O que protege é estar fora dele.' },
+      { id: 'c', text: 'O trabalho salvo duas vezes com nomes diferentes, na mesma pasta.', porque: 'São dois arquivos correndo exatamente o mesmo risco, lado a lado.' },
+      { id: 'd', text: 'O trabalho aberto no computador e deixado sem fechar, para não se perder.', porque: 'Arquivo aberto não é cópia nenhuma — e some igual se a máquina desligar.' },
+    ]},
+    explanation: 'A pergunta que decide: se este computador sumisse agora, a cópia sumiria junto?',
+  },
+  {
+    id: 'AP043-F-Q8', type: 'ordering',
+    prompt: 'Ponha as mídias de backup na ordem em que se tornaram comuns, da mais antiga para a mais recente.',
+    data: { items: [
+      { id: 'i1', text: 'Disquete', order: 1 },
+      { id: 'i2', text: 'CD gravável', order: 2 },
+      { id: 'i3', text: 'Pen drive', order: 3 },
+      { id: 'i4', text: 'Nuvem', order: 4 },
+    ]},
+    explanation: 'A ideia é a mesma desde o começo: pôr a cópia em outro lugar. O que mudou foi o lugar.',
+  },
+  {
+    id: 'AP043-F-Q9', type: 'true_false',
+    prompt: 'A maior vantagem do backup de hoje sobre o de antigamente é poder acontecer sozinho, sem depender de alguém lembrar.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', correct: true },
+      { id: 'b', text: 'Falso', porque: 'É verdadeiro. Backup dava trabalho e por isso quase ninguém fazia; a cópia automática mudou isso.' },
+    ]},
+    explanation: 'Quando deixou de pedir memória humana, ele passou a acontecer.',
+  },
+  {
+    id: 'AP043-F-Q10', type: 'multiple_choice',
+    prompt: 'Você inseriu uma tabela no documento e agora precisa acrescentar uma coluna. Onde procurar esse comando?',
+    data: { options: [
+      { id: 'a', text: 'Numa guia que só aparece quando o cursor está dentro da tabela.', correct: true },
+      { id: 'b', text: 'No mesmo botão da guia Inserir que criou a tabela.', porque: 'Aquele botão cria tabela nova. Cuidar da existente é papel das guias contextuais.' },
+      { id: 'c', text: 'Na guia Layout, junto das margens e da orientação do papel.', porque: 'Ali fica o layout da folha inteira, e não o da tabela.' },
+      { id: 'd', text: 'Em lugar nenhum: é preciso refazer a tabela com o tamanho certo.', porque: 'Acrescentar coluna é comando comum, e existe justamente para evitar isso.' },
+    ]},
+    explanation: 'Guia contextual: aparece com o contexto e some quando o cursor sai.',
+  },
+  {
+    id: 'AP043-F-Q11', type: 'multiple_choice',
+    prompt: 'A foto que você inseriu ocupou a linha inteira e empurrou o parágrafo para baixo. Qual ajuste faz o texto contorná-la?',
+    data: { options: [
+      { id: 'a', text: 'Trocar a quebra de texto para quadrada.', correct: true },
+      { id: 'b', text: 'Reduzir a foto até ela caber ao lado do parágrafo.', porque: 'Menor, ela continuaria alinhada com o texto e ocupando a própria linha.' },
+      { id: 'c', text: 'Centralizar o parágrafo para ele se ajustar ao redor da imagem.', porque: 'Alinhar move o texto dentro da linha dele; a imagem continua tomando a linha toda.' },
+      { id: 'd', text: 'Recortar a foto num programa de imagem antes de inseri-la de novo.', porque: 'O comportamento é da inserção, e não do arquivo: ela entraria igual.' },
+    ]},
+    explanation: 'Ela entra como se fosse uma letra gigante — a quebra de texto é o que muda isso.',
+  },
+  {
+    id: 'AP043-F-Q12', type: 'true_false',
+    prompt: 'Digitar o número 1 no rodapé produz o mesmo resultado que inserir a numeração de páginas.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'É falso. O rodapé se repete igual: a segunda página também mostraria 1.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'Numeração é campo, e campo se recalcula. Número digitado fica onde foi posto.',
+  },
+  {
+    id: 'AP043-F-Q13', type: 'multiple_choice',
+    prompt: 'Na planilha do clube, a coluna Total foi preenchida com números digitados à mão. Um desbravador desiste e o número de inscritos cai. O que acontece?',
+    data: { options: [
+      { id: 'a', text: 'O total continua o mesmo, errado, e nada avisa.', correct: true },
+      { id: 'b', text: 'A planilha marca a célula de vermelho, indicando que o valor ficou desatualizado.', porque: 'Ela não tem como saber que o número era um total: para ela é só um número.' },
+      { id: 'c', text: 'O total é recalculado, porque a planilha refaz todas as contas ao salvar.', porque: 'Ela refaz fórmulas. Número digitado não é fórmula, e não há conta guardada ali.' },
+      { id: 'd', text: 'A planilha pede confirmação antes de aceitar a mudança na coluna de inscritos.', porque: 'Nenhuma confirmação é pedida: mudar um número é a coisa mais comum que se faz numa planilha.' },
+    ]},
+    explanation: 'É a pior espécie de erro: continua parecendo certo. A fórmula é o que evita isso.',
+  },
+  {
+    id: 'AP043-F-Q14', type: 'multiple_choice',
+    prompt: 'O que a escrita B3:B7 significa dentro de uma fórmula?',
+    data: { options: [
+      { id: 'a', text: 'Todas as células de B3 até B7.', correct: true },
+      { id: 'b', text: 'As duas células B3 e B7, e nenhuma outra.', porque: 'Para somar só duas, escreve-se =B3+B7. Dois pontos querem dizer "até".' },
+      { id: 'c', text: 'A célula B3 dividida pelo valor guardado em B7.', porque: 'Divisão se escreve com barra. Os dois pontos formam intervalo.' },
+      { id: 'd', text: 'A coluna B inteira, da primeira à última linha da planilha.', porque: 'Os números limitam: só entra o que está entre as linhas 3 e 7.' },
+    ]},
+    explanation: 'É o intervalo. Sem ele seria preciso escrever célula por célula.',
+  },
+  {
+    id: 'AP043-F-Q15', type: 'multiple_choice',
+    prompt: 'Você mesclou quatro células que tinham texto em todas elas. Depois desfez a mesclagem. O que encontra?',
+    data: { options: [
+      { id: 'a', text: 'As quatro células de volta, com só o primeiro texto preenchido.', correct: true },
+      { id: 'b', text: 'As quatro células com os textos originais de cada uma.', porque: 'O que foi apagado na mesclagem não volta ao desfazer: só a primeira sobreviveu.' },
+      { id: 'c', text: 'Uma única célula, porque desfazer mesclagem não é possível.', porque: 'É possível, e é comando próprio. O que não volta é o conteúdo descartado.' },
+      { id: 'd', text: 'As quatro células todas vazias, porque a mesclagem apagou tudo.', porque: 'A primeira sempre sobrevive — é justamente a única que a mesclagem mantém.' },
+    ]},
+    explanation: 'O aviso que aparece antes de mesclar é a única chance de voltar atrás.',
+  },
+  {
+    id: 'AP043-F-Q16', type: 'multiple_choice',
+    prompt: 'Você mandou um documento para a secretaria do clube e ele chegou com a formatação toda embaralhada. Qual é a causa mais provável?',
+    data: { options: [
+      { id: 'a', text: 'O programa de lá é de uma versão mais antiga que a sua.', correct: true },
+      { id: 'b', text: 'O arquivo se corrompeu durante o envio pelo e-mail.', porque: 'Arquivo corrompido normalmente não abre, em vez de abrir desarrumado.' },
+      { id: 'c', text: 'O computador de lá tem menos memória do que o seu.', porque: 'Memória afeta velocidade, e não como o documento é interpretado.' },
+      { id: 'd', text: 'A impressora de lá não é compatível com o tipo de papel do documento.', porque: 'A formatação já sai errada na tela, antes de qualquer impressão.' },
+    ]},
+    explanation: 'Programa novo abre arquivo velho; o caminho inverso é o que costuma falhar. Em pdf, o problema não existe.',
+  },
+  {
+    id: 'AP043-F-Q17', type: 'matching',
+    prompt: 'Ligue cada tipo de rede ao alcance que ele cobre.',
+    data: { pairs: [
+      { left: 'PAN', right: 'Alguns metros, em volta de uma pessoa' },
+      { left: 'LAN', right: 'Um prédio ou uma casa' },
+      { left: 'MAN', right: 'Uma cidade' },
+      { left: 'WAN', right: 'Cidades, estados e países' },
+    ]},
+    explanation: 'Todas as siglas dizem a mesma coisa: o tamanho da área. A internet é a maior WAN.',
+  },
+  {
+    id: 'AP043-F-Q18', type: 'multiple_choice',
+    prompt: 'Num escritório com rede a cabo, qual aparelho recebe o cabo de cada máquina e encaminha o que chega para o destino certo?',
+    data: { options: [
+      { id: 'a', text: 'O switch.', correct: true },
+      { id: 'b', text: 'O servidor, que centraliza tudo o que passa pela rede.', porque: 'Servidor guarda arquivos e responde pedidos. Quem encaminha o tráfego é outro aparelho.' },
+      { id: 'c', text: 'O roteador sem fio, que distribui o sinal pelos andares.', porque: 'Ele cuida da parte sem fio. Na rede a cabo, quem faz esse papel é outro.' },
+      { id: 'd', text: 'A fonte de alimentação de cada computador.', porque: 'Ela cuida de energia, e não de informação: não sabe nada sobre a rede.' },
+    ]},
+    explanation: 'Todo cabo chega nele, e é ele que sabe para onde mandar cada coisa.',
+  },
+  {
+    id: 'AP043-F-Q19', type: 'multiple_choice',
+    prompt: 'Alguém pergunta quanta memória o computador do clube tem. Onde está essa resposta?',
+    data: { options: [
+      { id: 'a', text: 'Em Configurações, na página Sistema › Sobre.', correct: true },
+      { id: 'b', text: 'No Explorador, na tela que mostra o espaço livre dos discos.', porque: 'Ali aparece armazenamento. Memória e processador não estão nessa tela.' },
+      { id: 'c', text: 'Nas propriedades de qualquer arquivo guardado na máquina.', porque: 'Propriedades falam do arquivo — tamanho, local, datas —, e não das peças do computador.' },
+      { id: 'd', text: 'Na Ferramenta de Captura, junto das informações do sistema.', porque: 'Ela serve para capturar a tela, e não informa nada sobre a máquina.' },
+    ]},
+    explanation: 'É a tela que responde "esse computador aguenta?" — e ela não fica no Explorador.',
+  },
+  {
+    id: 'AP043-F-Q20', type: 'multiple_choice',
+    prompt: 'Você arrasta um documento da pasta compartilhada do clube para a área de trabalho. Qual é a consequência?',
+    data: { options: [
+      { id: 'a', text: 'O documento sai da pasta e some para quem a usa.', correct: true },
+      { id: 'b', text: 'Um atalho é criado, e o documento permanece na pasta.', porque: 'Atalho vem de Enviar para › Área de Trabalho (criar atalho). Arrastar não cria atalho.' },
+      { id: 'c', text: 'Uma cópia é feita, ficando um documento em cada lugar.', porque: 'Copiar acontece entre discos diferentes. Dentro do mesmo disco, arrastar move.' },
+      { id: 'd', text: 'Nada muda, porque a área de trabalho recusa documentos de outras pastas.', porque: 'Ela aceita qualquer arquivo — e é por isso que o engano passa despercebido.' },
+    ]},
+    explanation: 'Numa pasta compartilhada, mover é fazer o documento sumir para todo mundo.',
+  },
+];
+
+/*
   Qual prova vai para qual trilha.
 
   Era um ternário: a AP034 recebia a dela, e *qualquer outro código* recebia a
@@ -1119,6 +1348,7 @@ const PROVAS: Record<string, Question[]> = {
   AP035: rawAp035Final,
   AP041: rawAp041Final,
   AP042: rawAp042Final,
+  AP043: rawAp043Final,
 };
 
 export function getFinalExamQuestions(specialtyCode: string): Question[] {

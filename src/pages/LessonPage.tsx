@@ -32,6 +32,9 @@ import ComputerCareLab from '../labs/ComputerCareLab';
 import AILab from '../labs/AILab';
 import FormatacaoTextoLab from '../labs/FormatacaoTextoLab';
 import OperacoesArquivoLab from '../labs/OperacoesArquivoLab';
+import InsercaoTextoLab from '../labs/InsercaoTextoLab';
+import PlanilhaLab from '../labs/PlanilhaLab';
+import AreaDeTrabalhoLab from '../labs/AreaDeTrabalhoLab';
 import { CheckCircle2, CircleX, ArrowRight, BookOpen, RefreshCw, Loader2, HardHat } from 'lucide-react';
 
 export default function LessonPage() {
@@ -129,6 +132,9 @@ export default function LessonPage() {
         {lesson.labType === 'computer_care' && <ComputerCareLab {...labProps} />}
         {lesson.labType === 'formatacao_texto' && <FormatacaoTextoLab {...labProps} />}
         {lesson.labType === 'operacoes_arquivo' && <OperacoesArquivoLab {...labProps} />}
+        {lesson.labType === 'insercao_texto' && <InsercaoTextoLab {...labProps} />}
+        {lesson.labType === 'planilha' && <PlanilhaLab {...labProps} />}
+        {lesson.labType === 'area_de_trabalho' && <AreaDeTrabalhoLab {...labProps} />}
         {lesson.labType === 'ai_lab' && <AILab {...labProps} />}
       </div>
     );

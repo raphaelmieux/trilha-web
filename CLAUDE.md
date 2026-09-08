@@ -51,6 +51,13 @@ push seguinte o carrega em silêncio. O `ci.yml` reprova se ele voltar.
 
 ## Onde as coisas moram
 
+- `public/curriculum files/` — **os requisitos oficiais, em PDF, um por trilha e
+  um para as veredas**. É daqui que sai toda trilha e toda vereda, anunciada ou
+  não: os módulos, as lições e os laboratórios se constroem sobre esta lista, e
+  nada além dela. Trilha nova que ainda não esteja aqui vai ser posta aqui — não
+  se procura o documento em outro lugar, e muito menos se inventa a ementa: os
+  títulos gravados no banco são os que o relatório entregue ao clube cita como
+  oficiais, e `requisitosOficiais.test.ts` vigia essa coincidência.
 - `src/curriculum/` — **o conteúdo é código**. Módulos, lições e questões em TS.
   O banco guarda identidade e progresso, nunca o conteúdo.
 - `src/labs/` — os laboratórios, um arquivo por tipo (`LabType` em `src/types`).

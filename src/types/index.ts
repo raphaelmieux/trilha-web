@@ -104,6 +104,9 @@ export type LabType =
   | 'computer_care'
   | 'formatacao_texto'
   | 'operacoes_arquivo'
+  | 'insercao_texto'
+  | 'planilha'
+  | 'area_de_trabalho'
   | 'ai_lab'
   | 'final_exam';
 
