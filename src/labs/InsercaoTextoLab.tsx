@@ -3,10 +3,17 @@ import { Link } from 'react-router-dom';
 import {
   Table, Image as ImageIcon, Heading, PanelBottom, Hash, RotateCcw,
   Rows3, Columns3, Trash2, Plus, Grid2x2, Paintbrush,
-  AlignLeft, WrapText, Square, FileCheck2, X, Type, Shapes, Link2, Sigma,
+  AlignLeft, AlignCenter, AlignRight, AlignJustify, WrapText, Square,
+  FileCheck2, Shapes, Link2, Sigma, ClipboardPaste, Scissors, Copy,
+  Highlighter, Baseline, List, ListOrdered, IndentDecrease, IndentIncrease,
+  Pilcrow, Search, Replace, FileText, SeparatorHorizontal, Minus,
+  MoveVertical, LayoutGrid,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
-import { CSS_WORD } from './word';
+import {
+  CSS_WORD, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa, BotaoDaFaixa,
+  EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord,
+} from './word';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
@@ -63,12 +70,34 @@ import {
 
 /* ── O laboratório ─────────────────────────────────────────────────────────── */
 
+/*
+  As guias que este laboratório desenha, e as medidas da folha.
+
+  As três guias são as que o exercício usa; as outras oito do Word aparecem
+  na fileira assim mesmo, apagadas, e respondem que existem e não fazem parte.
+  Guia que sumisse ensinaria que o Word não a tem.
+
+  A4 em pé, margem normal de 2,5 cm — o padrão de todo documento novo do Word
+  em português, e o papel que sai da impressora do clube.
+*/
+const GUIAS_USAVEIS = ['Início', 'Inserir', 'Layout'];
+const LARGURA_CM = 21;
+const ALTURA_CM = 29.7;
+const MARGEM_CM = 2.5;
+
 export default function InsercaoTextoLab({
   specialtyCode, lessonCode, lessonTitle, requirementCodes, userId,
 }: Props) {
   const [doc, setDoc] = useState<Doc>(DOC_INICIAL);
-  const [guia, setGuia] = useState<'inicio' | 'inserir' | 'layout' | 'tabelaLayout' | 'tabelaDesign' | 'imagem'>('inserir');
+  /* A guia se identifica pelo nome que está escrito nela. As fixas vêm de
+     `GUIAS_DO_WORD`, e as contextuais têm nome próprio — assim a lição pode
+     dizer "Inserir › Tabela" e o código procurar exatamente isso. */
+  const [guia, setGuia] = useState<string>('Inserir');
   const [menu, setMenu] = useState<string | null>(null);
+  /* O zoom do rodapé. Com a folha em A4 de verdade, uma página não cabe na
+     altura da janela — e é aqui que se reduz para ver as duas, que é o que a
+     tarefa do cabeçalho pede para reparar. */
+  const [zoom, setZoom] = useState(1);
   /** Onde está o cursor: é isso que faz as guias contextuais existirem. */
   const [foco, setFoco] = useState<{ tipo: 'texto' | 'tabela' | 'imagem'; linha?: number; coluna?: number }>({ tipo: 'texto' });
   const [editandoCabecalho, setEditandoCabecalho] = useState(false);
@@ -172,15 +201,15 @@ export default function InsercaoTextoLab({
 
   /* Guia contextual que some com o cursor não pode continuar selecionada: a
      faixa ficaria mostrando comandos de uma tabela que ninguém está editando. */
-  const guiaValida = guiasContextuais.some(g => g.id === guia)
-    || guia === 'inicio' || guia === 'inserir' || guia === 'layout';
-  const guiaAtual = guiaValida ? guia : 'inserir';
+  const guiaValida = guiasContextuais.some(g => g.id === guia) || GUIAS_USAVEIS.includes(guia);
+  const guiaAtual = guiaValida ? guia : 'Inserir';
 
   const recomecar = () => {
     setDoc(DOC_INICIAL);
     setFoco({ tipo: 'texto' });
-    setGuia('inserir');
+    setGuia('Inserir');
     setEditandoCabecalho(false);
+    setZoom(1);
     setAviso('');
   };
 
@@ -233,34 +262,25 @@ export default function InsercaoTextoLab({
     );
   }
 
-  /* ── Peças da faixa ── */
+  /* ── Peças da faixa ──
+     Vêm de `word.tsx`, compartilhadas com o laboratório de formatação da
+     AP042. Redesenhá-las aqui foi o que deixou este Word com três guias e
+     nenhuma régua enquanto o outro tinha as onze. */
 
-  const Bt = ({ dica, ativo, aoClicar, children }: {
-    dica: string; ativo?: boolean; aoClicar: () => void; children: React.ReactNode;
+  const Bt = ({ dica, rotulo, ativo, aoClicar, children }: {
+    dica: string; rotulo?: string; ativo?: boolean; aoClicar: () => void; children: React.ReactNode;
   }) => (
-    <button type="button" title={dica} aria-label={dica} aria-pressed={ativo}
-      onClick={aoClicar} className="wd-bt"
-      style={{
-        backgroundColor: ativo ? '#D6E8F7' : 'transparent',
-        border: ativo ? '1px solid #9EC5E8' : '1px solid transparent',
-      }}>
+    <BotaoDaFaixa dica={dica} rotulo={rotulo} ativo={ativo} aoClicar={aoClicar} empilhado={!!rotulo}>
       {children}
-    </button>
+    </BotaoDaFaixa>
   );
 
-  const Grupo = ({ nome, children }: { nome: string; children: React.ReactNode }) => (
-    <div className="wd-grupo">
-      <div className="wd-grupo-corpo">{children}</div>
-      <div className="wd-grupo-nome">{nome}</div>
-    </div>
-  );
-
-  /* Botão desenhado que não faz parte do exercício. Tirá-lo deixaria a faixa
-     irreconhecível; fazê-lo funcionar seria escrever um editor de texto. */
-  const Enfeite = ({ dica, children }: { dica: string; children: React.ReactNode }) => (
-    <Bt dica={dica} aoClicar={() => avisar(`${dica} existe no Word de verdade, e não faz parte deste exercício.`)}>
+  const Enfeite = ({ dica, rotulo, children }: {
+    dica: string; rotulo?: string; children: React.ReactNode;
+  }) => (
+    <EnfeiteDaFaixa dica={dica} rotulo={rotulo} aoAvisar={avisar} empilhado={!!rotulo}>
       {children}
-    </Bt>
+    </EnfeiteDaFaixa>
   );
 
   const acoes = (
@@ -284,7 +304,7 @@ export default function InsercaoTextoLab({
       {/* Cabeçalho — cinza quando fechado, editável quando aberto */}
       <div
         onClick={() => { setEditandoCabecalho(true); setFoco({ tipo: 'texto' }); }}
-        className="ins-margem ins-cabecalho"
+        className="ins-cabecalho"
         style={{ opacity: editandoCabecalho ? 1 : 0.55, cursor: 'text' }}>
         {editandoCabecalho && numero === 1 ? (
           <input className="ins-campo" value={doc.cabecalho} autoFocus
@@ -357,7 +377,7 @@ export default function InsercaoTextoLab({
         )}
       </div>
 
-      <div className="ins-margem ins-rodape" style={{ opacity: editandoCabecalho ? 1 : 0.55 }}
+      <div className="ins-rodape" style={{ opacity: editandoCabecalho ? 1 : 0.55 }}
         onClick={() => { setEditandoCabecalho(true); setFoco({ tipo: 'texto' }); }}>
         {editandoCabecalho && numero === 1 ? (
           <input className="ins-campo" value={doc.rodape}
@@ -385,59 +405,82 @@ export default function InsercaoTextoLab({
       <style>{CSS_WORD}</style>
       <style>{CSS_INSERCAO}</style>
 
-      <div className="wd-janela">
-        <div className="wd-titulo">
-          <span style={{ color: '#2B579A', fontWeight: 700, fontSize: 13 }}>W</span>
-          <span style={{ fontWeight: 600 }}>Relatório do acampamento</span>
-          <span style={{ color: '#605E5C' }}>— Salvo</span>
-          <span className="ml-auto flex items-center gap-2" style={{ color: '#605E5C' }}>
-            <button type="button" onClick={() => avisar('Minimizar não faz parte deste exercício.')}
-              className="px-1">—</button>
-            <button type="button" onClick={() => avisar('Fechar o Word não faz parte deste exercício.')}
-              className="px-1"><X className="w-3 h-3" /></button>
-          </span>
-        </div>
+      <div className="wd-janela" style={{ ['--zoom' as string]: zoom }}>
+        <BarraDeTituloDoWord documento="Relatório do acampamento" aoAvisar={avisar} />
 
-        {/* Guias — as fixas e, quando o cursor pede, as contextuais */}
-        <div className="wd-guias" role="tablist">
-          {([
-            { id: 'inicio' as const, nome: 'Início' },
-            { id: 'inserir' as const, nome: 'Inserir' },
-            { id: 'layout' as const, nome: 'Layout' },
-          ]).map(g => (
-            <button key={g.id} role="tab" aria-selected={guiaAtual === g.id}
-              className="wd-guia" onClick={() => { setGuia(g.id); fecharMenu(); }}>
-              {g.nome}
-            </button>
-          ))}
-          {guiasContextuais.map(g => (
-            <button key={g.id} role="tab" aria-selected={guiaAtual === g.id}
-              className="wd-guia ins-guia-contextual" onClick={() => { setGuia(g.id); fecharMenu(); }}>
-              {g.nome}
-            </button>
-          ))}
-        </div>
+        {/* Guias — as fixas, as apagadas e, quando o cursor pede, as contextuais */}
+        <GuiasDoWord
+          atual={guiaAtual} usaveis={GUIAS_USAVEIS} contextuais={guiasContextuais}
+          aoTrocar={id => { setGuia(id); fecharMenu(); }} aoAvisar={avisar} />
 
-        {/* Faixa de opções */}
-        <div className="wd-faixa">
-          {guiaAtual === 'inicio' && (
+        {/* Faixa de opções.
+
+            Com menu aberto ela deixa de recortar: `overflow-x: auto` cria um
+            contexto de recorte, e seria ele a cortar a grade de tamanho da
+            tabela pela metade. Enquanto o menu está aberto ninguém precisa
+            rolar a faixa. */}
+        <div className="wd-faixa" style={{ overflowX: menu ? 'visible' : 'auto' }}>
+          {guiaAtual === 'Início' && (
             <>
-              <Grupo nome="Área de Transferência">
-                <Enfeite dica="Colar"><Square className="w-4 h-4" /></Enfeite>
-              </Grupo>
-              <Grupo nome="Fonte">
-                <Enfeite dica="Negrito"><Type className="w-4 h-4" /></Enfeite>
-                <Enfeite dica="Realce"><Paintbrush className="w-4 h-4" /></Enfeite>
-              </Grupo>
-              <Grupo nome="Parágrafo">
-                <Enfeite dica="Alinhar à esquerda"><AlignLeft className="w-4 h-4" /></Enfeite>
-              </Grupo>
+              <GrupoDaFaixa nome="Área de Transferência">
+                <Enfeite dica="Colar" rotulo="Colar"><ClipboardPaste className="w-5 h-5" /></Enfeite>
+                <div className="wd-linhas">
+                  <Enfeite dica="Recortar (Ctrl+X)"><Scissors className="w-3.5 h-3.5" /></Enfeite>
+                  <Enfeite dica="Copiar (Ctrl+C)"><Copy className="w-3.5 h-3.5" /></Enfeite>
+                  <Enfeite dica="Pincel de Formatação"><Paintbrush className="w-3.5 h-3.5" /></Enfeite>
+                </div>
+              </GrupoDaFaixa>
+              <GrupoDaFaixa nome="Fonte">
+                <div className="wd-linhas">
+                  <div className="flex items-center gap-1">
+                    <span className="wd-combo flex items-center" style={{ width: 108 }}>Aptos</span>
+                    <span className="wd-combo flex items-center" style={{ width: 40 }}>11</span>
+                    <Enfeite dica="Aumentar Tamanho da Fonte"><span style={{ fontSize: 13, fontWeight: 600 }}>A</span></Enfeite>
+                    <Enfeite dica="Diminuir Tamanho da Fonte"><span style={{ fontSize: 10 }}>A</span></Enfeite>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {/* N, I e S, e não B, I e U: é assim que o Word em português
+                        desenha estes três. Quem aprendeu por vídeo em inglês
+                        tropeça aqui. */}
+                    <Enfeite dica="Negrito (Ctrl+N)"><span style={{ fontFamily: 'Georgia, serif', fontWeight: 700, fontSize: 14 }}>N</span></Enfeite>
+                    <Enfeite dica="Itálico (Ctrl+I)"><span style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: 14 }}>I</span></Enfeite>
+                    <Enfeite dica="Sublinhado (Ctrl+S)"><span style={{ fontFamily: 'Georgia, serif', textDecoration: 'underline', fontSize: 14 }}>S</span></Enfeite>
+                    <Enfeite dica="Cor do Realce do Texto"><Highlighter className="w-3.5 h-3.5" /></Enfeite>
+                    <Enfeite dica="Cor da Fonte"><Baseline className="w-3.5 h-3.5" /></Enfeite>
+                  </div>
+                </div>
+              </GrupoDaFaixa>
+              <GrupoDaFaixa nome="Parágrafo">
+                <div className="wd-linhas">
+                  <div className="flex items-center gap-1">
+                    <Enfeite dica="Marcadores"><List className="w-3.5 h-3.5" /></Enfeite>
+                    <Enfeite dica="Numeração"><ListOrdered className="w-3.5 h-3.5" /></Enfeite>
+                    <Enfeite dica="Diminuir Recuo"><IndentDecrease className="w-3.5 h-3.5" /></Enfeite>
+                    <Enfeite dica="Aumentar Recuo"><IndentIncrease className="w-3.5 h-3.5" /></Enfeite>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Enfeite dica="Alinhar à Esquerda (Ctrl+Q)"><AlignLeft className="w-3.5 h-3.5" /></Enfeite>
+                    <Enfeite dica="Centralizar (Ctrl+E)"><AlignCenter className="w-3.5 h-3.5" /></Enfeite>
+                    <Enfeite dica="Alinhar à Direita (Ctrl+G)"><AlignRight className="w-3.5 h-3.5" /></Enfeite>
+                    <Enfeite dica="Justificar (Ctrl+J)"><AlignJustify className="w-3.5 h-3.5" /></Enfeite>
+                    <Enfeite dica="Mostrar Tudo (Ctrl+*)"><Pilcrow className="w-3.5 h-3.5" /></Enfeite>
+                  </div>
+                </div>
+              </GrupoDaFaixa>
+              <GrupoDaFaixa nome="Estilos">
+                <Enfeite dica="Estilo Normal" rotulo="Normal"><span style={{ fontSize: 13, fontWeight: 600 }}>AaBb</span></Enfeite>
+                <Enfeite dica="Estilo Título 1" rotulo="Título 1"><span style={{ fontSize: 13, fontWeight: 600, color: '#2B579A' }}>AaBb</span></Enfeite>
+              </GrupoDaFaixa>
+              <GrupoDaFaixa nome="Edição">
+                <Enfeite dica="Localizar (Ctrl+L)"><Search className="w-3.5 h-3.5" /></Enfeite>
+                <Enfeite dica="Substituir (Ctrl+U)"><Replace className="w-3.5 h-3.5" /></Enfeite>
+              </GrupoDaFaixa>
             </>
           )}
 
-          {guiaAtual === 'inserir' && (
+          {guiaAtual === 'Inserir' && (
             <>
-              <Grupo nome="Tabelas">
+              <GrupoDaFaixa nome="Tabelas">
                 <div style={{ position: 'relative' }}>
                   <Bt dica="Tabela" ativo={menu === 'tabela'}
                     aoClicar={() => setMenu(m => (m === 'tabela' ? null : 'tabela'))}>
@@ -465,9 +508,9 @@ export default function InsercaoTextoLab({
                     </div>
                   )}
                 </div>
-              </Grupo>
+              </GrupoDaFaixa>
 
-              <Grupo nome="Ilustrações">
+              <GrupoDaFaixa nome="Ilustrações">
                 <Bt dica="Imagens" aoClicar={() => {
                   if (doc.imagem.presente) { avisar('A foto já está no documento.'); return; }
                   mudar(d => ({ ...d, imagem: { presente: true, quebra: 'linha' } }));
@@ -481,13 +524,13 @@ export default function InsercaoTextoLab({
                   </span>
                 </Bt>
                 <Enfeite dica="Formas"><Shapes className="w-4 h-4" /></Enfeite>
-              </Grupo>
+              </GrupoDaFaixa>
 
-              <Grupo nome="Links">
+              <GrupoDaFaixa nome="Links">
                 <Enfeite dica="Link"><Link2 className="w-4 h-4" /></Enfeite>
-              </Grupo>
+              </GrupoDaFaixa>
 
-              <Grupo nome="Cabeçalho e Rodapé">
+              <GrupoDaFaixa nome="Cabeçalho e Rodapé">
                 <Bt dica="Cabeçalho" aoClicar={() => { setEditandoCabecalho(true); fecharMenu(); }}>
                   <span className="flex flex-col items-center">
                     <Heading className="w-4 h-4" />
@@ -521,24 +564,42 @@ export default function InsercaoTextoLab({
                     </div>
                   )}
                 </div>
-              </Grupo>
+              </GrupoDaFaixa>
 
-              <Grupo nome="Símbolos">
+              <GrupoDaFaixa nome="Símbolos">
                 <Enfeite dica="Equação"><Sigma className="w-4 h-4" /></Enfeite>
-              </Grupo>
+              </GrupoDaFaixa>
             </>
           )}
 
-          {guiaAtual === 'layout' && (
-            <Grupo nome="Configurar Página">
-              <Enfeite dica="Margens"><Square className="w-4 h-4" /></Enfeite>
-              <Enfeite dica="Orientação"><RotateCcw className="w-4 h-4" /></Enfeite>
-            </Grupo>
+          {guiaAtual === 'Layout' && (
+            <>
+              <GrupoDaFaixa nome="Configurar Página">
+                <Enfeite dica="Margens" rotulo="Margens"><Square className="w-4 h-4" /></Enfeite>
+                <Enfeite dica="Orientação" rotulo="Orientação"><RotateCcw className="w-4 h-4" /></Enfeite>
+                <Enfeite dica="Tamanho" rotulo="Tamanho"><FileText className="w-4 h-4" /></Enfeite>
+                <Enfeite dica="Colunas" rotulo="Colunas"><Columns3 className="w-4 h-4" /></Enfeite>
+                <div className="wd-linhas">
+                  <Enfeite dica="Quebras"><SeparatorHorizontal className="w-3.5 h-3.5" /></Enfeite>
+                  <Enfeite dica="Hifenização"><Minus className="w-3.5 h-3.5" /></Enfeite>
+                </div>
+              </GrupoDaFaixa>
+              <GrupoDaFaixa nome="Parágrafo">
+                <div className="wd-linhas">
+                  <Enfeite dica="Recuo à Esquerda"><IndentIncrease className="w-3.5 h-3.5" /></Enfeite>
+                  <Enfeite dica="Espaçamento Antes"><MoveVertical className="w-3.5 h-3.5" /></Enfeite>
+                </div>
+              </GrupoDaFaixa>
+              <GrupoDaFaixa nome="Organizar">
+                <Enfeite dica="Posição" rotulo="Posição"><LayoutGrid className="w-4 h-4" /></Enfeite>
+                <Enfeite dica="Quebra de Texto Automática" rotulo="Quebra"><WrapText className="w-4 h-4" /></Enfeite>
+              </GrupoDaFaixa>
+            </>
           )}
 
           {guiaAtual === 'tabelaLayout' && (
             <>
-              <Grupo nome="Linhas e Colunas">
+              <GrupoDaFaixa nome="Linhas e Colunas">
                 <Bt dica="Inserir Abaixo" aoClicar={inserirLinha}>
                   <span className="flex flex-col items-center">
                     <Rows3 className="w-4 h-4" />
@@ -563,15 +624,15 @@ export default function InsercaoTextoLab({
                     <span style={{ fontSize: 9 }}>Excl. coluna</span>
                   </span>
                 </Bt>
-              </Grupo>
-              <Grupo nome="Mesclar">
+              </GrupoDaFaixa>
+              <GrupoDaFaixa nome="Mesclar">
                 <Enfeite dica="Mesclar Células"><Plus className="w-4 h-4" /></Enfeite>
-              </Grupo>
+              </GrupoDaFaixa>
             </>
           )}
 
           {guiaAtual === 'tabelaDesign' && (
-            <Grupo nome="Estilos de Tabela">
+            <GrupoDaFaixa nome="Estilos de Tabela">
               <Bt dica="Tabela com Grade" ativo={doc.tabela?.estilo === 'grade'}
                 aoClicar={() => mudar(d => (d.tabela ? { ...d, tabela: { ...d.tabela, estilo: 'grade' } } : d))}>
                 <span className="flex flex-col items-center">
@@ -593,11 +654,11 @@ export default function InsercaoTextoLab({
                   <span style={{ fontSize: 9 }}>Sem estilo</span>
                 </span>
               </Bt>
-            </Grupo>
+            </GrupoDaFaixa>
           )}
 
           {guiaAtual === 'imagem' && (
-            <Grupo nome="Organizar">
+            <GrupoDaFaixa nome="Organizar">
               <Bt dica="Quebra de Texto: Alinhada com o Texto" ativo={doc.imagem.quebra === 'linha'}
                 aoClicar={() => mudar(d => ({ ...d, imagem: { ...d.imagem, quebra: 'linha' } }))}>
                 <span className="flex flex-col items-center">
@@ -619,7 +680,7 @@ export default function InsercaoTextoLab({
                   <span style={{ fontSize: 9 }}>Atrás</span>
                 </span>
               </Bt>
-            </Grupo>
+            </GrupoDaFaixa>
           )}
 
           {editandoCabecalho && (
@@ -632,16 +693,30 @@ export default function InsercaoTextoLab({
           )}
         </div>
 
-        {/* O documento, com duas páginas */}
-        <div className="wd-canvas" onClick={fecharMenu}>
+        <ReguaDoWord larguraCm={LARGURA_CM} margemCm={MARGEM_CM} />
+
+        {/* O documento, com duas páginas.
+
+            As medidas descem daqui para o CSS. Elas já foram esquecidas uma
+            vez: sem `--largura-cm` e `--margem-cm`, o `calc()` da folha fica
+            inválido, o navegador descarta largura e padding em silêncio, e as
+            duas páginas viram uma faixa branca da largura da janela. Hoje o
+            CSS tem valor de reserva e `word.test.ts` cobra que estas medidas
+            cheguem — mas o lugar certo delas continua sendo aqui. */}
+        <div className="wd-canvas" onClick={fecharMenu} style={{
+          ['--largura-cm' as string]: LARGURA_CM,
+          ['--altura-cm' as string]: ALTURA_CM,
+          ['--margem-cm' as string]: MARGEM_CM,
+        }}>
           {paginaConteudo(1)}
           {paginaConteudo(2)}
         </div>
 
         <div className="wd-status">
           <span>Página 1 de 2</span>
-          <span>{doc.tabela ? `Tabela de ${doc.tabela.linhas.length} linhas` : 'Sem tabela'}</span>
-          <span className="ml-auto">Português (Brasil)</span>
+          <span className="hidden sm:inline">{doc.tabela ? `Tabela de ${doc.tabela.linhas.length} linhas` : 'Sem tabela'}</span>
+          <span className="hidden md:inline">Português (Brasil)</span>
+          <ZoomDoWord zoom={zoom} aoMudar={setZoom} />
         </div>
       </div>
     </LaboratorioEmTelaCheia>
@@ -656,24 +731,40 @@ export default function InsercaoTextoLab({
   guias, faixa, régua, status — continua vindo de lá, compartilhado.
 */
 const CSS_INSERCAO = `
-.ins-guia-contextual { color: #C43E1C; }
-.ins-guia-contextual[aria-selected="true"] { color: #C43E1C; border-bottom-color: #C43E1C; }
-
-.ins-margem { font-size: 11px; color: #605E5C; padding: 0 calc(var(--px-cm) * 2px); }
-.ins-cabecalho { padding-top: calc(var(--px-cm) * 0.6px); border-bottom: 1px dashed #C8C6C4; padding-bottom: 3px; }
+/* Cabeçalho e rodapé moram na margem da folha, e não dentro dela: é por isso
+   que o Word os desenha acima e abaixo do texto, separados por um tracejado.
+   O recuo negativo os leva de volta à borda do papel, porque o padding da
+   folha é a margem — e cabeçalho impresso fica *na* margem. */
+.ins-cabecalho, .ins-rodape {
+  font-size: calc(9 * var(--px-cm) * 0.035277px); color: #605E5C;
+  /* O recuo negativo põe os dois *dentro* da margem da folha, que é onde o
+     Word os desenha — e é o que faz o desbravador entender que cabeçalho não
+     é a primeira linha do texto: ele mora fora da área de escrita. */
+  margin-left: calc(var(--margem-cm, 2.5) * var(--px-cm) * -0.5px);
+  margin-right: calc(var(--margem-cm, 2.5) * var(--px-cm) * -0.5px);
+}
+.ins-cabecalho {
+  border-bottom: 1px dashed #C8C6C4; padding-bottom: 3px;
+  margin-top: calc(var(--margem-cm, 2.5) * var(--px-cm) * -0.5px);
+  margin-bottom: calc(var(--margem-cm, 2.5) * var(--px-cm) * 0.3px);
+}
 .ins-rodape {
-  border-top: 1px dashed #C8C6C4; padding-top: 3px; margin-top: auto;
+  border-top: 1px dashed #C8C6C4; padding-top: 3px;
+  margin-top: auto; margin-bottom: calc(var(--margem-cm, 2.5) * var(--px-cm) * -0.5px);
   display: flex; align-items: center;
 }
 .ins-numero { margin-left: auto; font-weight: 600; color: #201F1E; }
 .ins-campo { border: none; outline: none; background: transparent; width: 100%; font-size: 11px; }
 .ins-campo:focus { outline: 1px solid #2B579A; }
 
+/* O corpo não tem padding próprio: quem afasta o texto da borda é a margem da
+   folha. Ter os dois somava margem em cima de margem, e o texto começava a
+   quatro centímetros e meio da borda num papel de margem 2,5. */
 .ins-corpo {
-  flex: 1; padding: calc(var(--px-cm) * 0.6px) calc(var(--px-cm) * 2px);
-  font-size: 13px; line-height: 1.5; color: #201F1E;
+  flex: 1; font-size: calc(11 * var(--px-cm) * 0.035277px);
+  line-height: 1.5; color: #201F1E;
 }
-.ins-titulo { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+.ins-titulo { font-size: calc(16 * var(--px-cm) * 0.035277px); font-weight: 700; margin-bottom: 8px; }
 .ins-par { margin-bottom: 8px; text-align: justify; }
 .ins-vazio { color: #A19F9D; font-style: italic; margin: 10px 0; }
 
