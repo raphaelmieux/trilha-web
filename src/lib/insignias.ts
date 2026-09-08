@@ -99,6 +99,9 @@ const LABORATORIOS: [LabType, string, string][] = [
   ['file_manager', 'Pastas em ordem', 'Concluiu o laboratório de pastas e arquivos.'],
   ['formatacao_texto', 'Documento apresentável', 'Formatou um documento inteiro, da folha às listas.'],
   ['operacoes_arquivo', 'Tarefas do dia', 'Compactou, exportou em pdf, instalou e imprimiu.'],
+  ['insercao_texto', 'Documento montado', 'Inseriu tabela, imagem, cabeçalho e numeração num documento.'],
+  ['planilha', 'Planilha que calcula', 'Montou uma planilha com alinhamento, mesclagem e fórmulas.'],
+  ['area_de_trabalho', 'Dono da máquina', 'Consultou, ajustou e capturou o que o sistema mostra.'],
 ];
 
 export const INSIGNIAS: Insignia[] = [

@@ -10,8 +10,9 @@ import type { Specialty } from '../types';
  *
  * Eram quatro, todas de Computação. A AP042 saiu daqui quando os requisitos
  * dela foram publicados e a trilha ganhou conteúdo — que é exatamente o
- * percurso previsto abaixo. Depois entraram outras quatro, de duas famílias
- * novas, cujo emblema e cujo fundo de certificado já estão no repositório.
+ * percurso previsto abaixo, e a AP043 saiu pelo mesmo caminho. Depois entraram
+ * outras quatro, de duas famílias novas, cujo emblema e cujo fundo de
+ * certificado já estão no repositório.
  *
  * Ficam neste arquivo, e não cada uma no seu, porque não há o que separar: são
  * declarações de existência. Quando os requisitos de uma chegarem, ela ganha o
@@ -45,9 +46,6 @@ function anunciada(
     modules: [],
   };
 }
-
-export const ap043 = anunciada('AP043', 'Computação 3', 'intermediario', 'Computação',
-  'A terceira da família, já no nível intermediário. Os requisitos serão publicados quando a trilha abrir.');
 
 export const ap044 = anunciada('AP044', 'Computação 4', 'intermediario', 'Computação',
   'A quarta da família, também intermediária. Os requisitos serão publicados quando a trilha abrir.');
@@ -85,4 +83,4 @@ export const ap064 = anunciada('AP064', 'Web Designer, Avançado', 'avancado', '
   'A continuação da Web Designer, no nível avançado. Os requisitos serão publicados quando a trilha abrir.',
   'AP063');
 
-export const anunciadas = [ap043, ap044, ap045, ap049, ap052, ap063, ap064];
+export const anunciadas = [ap044, ap045, ap049, ap052, ap063, ap064];
