@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   DOC_INICIAL, PLANILHA_INICIAL, ESTADO_INICIAL,
   METAS_DA_INSERCAO, METAS_DA_PLANILHA, METAS_DA_AREA,
-  valorDe, refazerMesclagens, vazia,
+  valorDe, refazerMesclagens, vazia, alinhamentoDe, larguraDaTabela,
+  excluirColunaDe, inserirColunaEm, nomeDaFaixa, naFaixa,
 } from './metasDaAp043';
 
 /*
@@ -76,22 +77,22 @@ describe('toda tarefa da AP043 tem como ser vencida', () => {
     p = { ...p, larguras: p.larguras.map((w, i) => (i === 0 ? w + 80 : w)) };
     p = { ...p, alturas: p.alturas.map((h, i) => (i === 0 ? h + 30 : h)) };
 
-    // linhas e colunas: a linha da Arara, e fora a coluna vazia
+    // linhas e colunas: a linha da Arara, e fora a coluna vazia do meio
     const arara = p.celulas[0].map(() => vazia());
-    arara[0] = vazia('Arara'); arara[1] = vazia('8'); arara[2] = vazia('3');
+    arara[0] = vazia('Arara'); arara[1] = vazia('8'); arara[2] = vazia('3'); arara[4] = vazia('1080');
     p = { ...p, celulas: [...p.celulas.slice(0, 5), arara, ...p.celulas.slice(5)] };
     p = {
       ...p,
-      celulas: refazerMesclagens(p.celulas.map(l => l.filter((_, i) => i !== 4))),
-      larguras: p.larguras.filter((_, i) => i !== 4),
+      celulas: excluirColunaDe(p.celulas, 3),
+      larguras: p.larguras.filter((_, i) => i !== 3),
     };
 
-    // alinhar e mesclar o título
+    // alinhar e mesclar o título por cima da tabela, que agora tem quatro colunas
     p = {
       ...p,
-      celulas: p.celulas.map((l, i) => (i !== 0 ? l : l.map((c, j) => (j === 0
-        ? { ...c, h: 'centro' as const, v: 'meio' as const, span: l.length }
-        : { ...c, coberta: true, texto: '' })))),
+      celulas: refazerMesclagens(p.celulas.map((l, i) => (i !== 0 ? l : l.map((c, j) => (j === 0
+        ? { ...c, h: 'centro' as const, v: 'meio' as const, span: larguraDaTabela(p) }
+        : { ...c, coberta: j <= 3, texto: j <= 3 ? '' : c.texto })))))
     };
 
     // layout e fórmulas
@@ -100,7 +101,7 @@ describe('toda tarefa da AP043 tem como ser vencida', () => {
       ...p,
       celulas: p.celulas.map((l, i) => (i !== 7 ? l : l.map((c, j) => {
         if (j === 1) return { ...c, texto: '=SOMA(B3:B6)' };
-        if (j === 3) return { ...c, texto: '=MÉDIA(D3:D5)' };
+        if (j === 3) return { ...c, texto: '=MÉDIA(D3:D6)' };
         return c;
       }))),
     };
@@ -125,23 +126,43 @@ describe('toda tarefa da AP043 tem como ser vencida', () => {
 });
 
 /*
-  O enunciado promete uma coluna vazia para excluir, e é preciso que ela exista.
+  O enunciado promete uma coluna vazia para excluir, e é preciso que ela exista
+  — e que seja *uma* só dentro da tabela.
 
-  Foi assim que o defeito apareceu: a tarefa mandava tirar "a coluna vazia
-  depois de Total", e a planilha tinha quatro colunas, todas usadas. A pessoa
-  procurava, não achava, e a lista continuava vermelha sem nada explicando.
+  Foi assim que o defeito apareceu da primeira vez: a tarefa mandava tirar "a
+  coluna vazia depois de Total", e a planilha tinha quatro colunas, todas
+  usadas. A pessoa procurava, não achava, e a lista continuava vermelha sem nada
+  explicando.
 
-  Montar o estado vencedor à mão não pega isso — o teste acima filtra a coluna 4
-  e, se ela não existir, o filtro simplesmente não faz nada e a meta passa. Quem
-  precisa ser conferida é a premissa do enunciado.
+  Da segunda vez o defeito seria o contrário: a grade cresceu para o tamanho de
+  uma planilha de verdade, e "a coluna vazia depois de Total" passou a nomear
+  sete colunas ao mesmo tempo. Por isso a coluna vazia mudou de lugar e foi para
+  o meio da tabela, onde volta a ser única — e é este teste que garante que ela
+  continua sendo.
+
+  Montar o estado vencedor à mão não pega nada disso: quem monta já sabe qual
+  coluna tirar. Quem precisa ser conferida é a premissa do enunciado.
 */
 describe('o enunciado da planilha descreve a planilha que existe', () => {
-  const colunas = PLANILHA_INICIAL.celulas[0].length;
+  const dentroDaTabela = Array.from(
+    { length: larguraDaTabela(PLANILHA_INICIAL) }, (_, c) => c);
 
-  it('há exatamente uma coluna inteiramente vazia, e ela é a última', () => {
-    const vazias = Array.from({ length: colunas }, (_, c) => c)
+  it('há exatamente uma coluna vazia dentro da tabela, e ela está no meio', () => {
+    const vazias = dentroDaTabela
       .filter(c => PLANILHA_INICIAL.celulas.every(l => l[c].texto.trim() === ''));
-    expect(vazias, 'a tarefa manda excluir a coluna vazia').toEqual([colunas - 1]);
+    expect(vazias, 'a tarefa manda excluir a coluna vazia do meio da tabela').toHaveLength(1);
+    const unica = vazias[0];
+    expect(unica, 'a coluna vazia não pode ser a primeira nem a última da tabela')
+      .toBeGreaterThan(0);
+    expect(unica).toBeLessThan(dentroDaTabela.length - 1);
+  });
+
+  it('ela separa Diárias de Total, que é o que o enunciado diz', () => {
+    const cabecalho = PLANILHA_INICIAL.celulas[1].map(c => c.texto.trim());
+    const diarias = cabecalho.indexOf('Diárias');
+    const total = cabecalho.indexOf('Total');
+    expect(total, 'Total não está logo depois da coluna vazia').toBe(diarias + 2);
+    expect(cabecalho[diarias + 1], 'a coluna do meio não está vazia').toBe('');
   });
 
   /* E a meta cobra o resultado da exclusão: sem isso, o enunciado pediria uma
@@ -158,8 +179,8 @@ describe('o enunciado da planilha descreve a planilha que existe', () => {
 
     const semAVazia = {
       ...comArara,
-      celulas: comArara.celulas.map(l => l.filter((_, i) => i !== colunas - 1)),
-      larguras: comArara.larguras.filter((_, i) => i !== colunas - 1),
+      celulas: excluirColunaDe(comArara.celulas, 3),
+      larguras: comArara.larguras.filter((_, i) => i !== 3),
     };
     expect(meta.feita(semAVazia)).toBe(true);
   });
@@ -198,5 +219,120 @@ describe('a planilha calcula de verdade', () => {
      funcionou. */
   it('função desconhecida vira erro à vista, e não zero', () => {
     expect(valorDe(com('=SOMATORIO(B3:B5)', 5, 1), 5, 1)).toBe('#NOME?');
+  });
+});
+
+
+/*
+  A faixa, a mesclagem e o alinhamento padrão.
+
+  Os três nasceram do mesmo buraco: a planilha não tinha seleção de faixa. Sem
+  ela, mesclar só sabia ir "daqui até o fim da linha" — e o enunciado, que
+  manda mesclar de A1 até a última coluna da tabela, pedia uma coisa que a tela
+  não fazia. Excluir uma coluna de dentro de um título mesclado é o caso que
+  não se vê clicando, e é o que o exercício pede na ordem em que pede.
+*/
+describe('a faixa de células', () => {
+  it('sabe dizer o próprio nome, de uma célula ou de um retângulo', () => {
+    expect(nomeDaFaixa({ l1: 0, c1: 0, l2: 0, c2: 0 })).toBe('A1');
+    expect(nomeDaFaixa({ l1: 0, c1: 0, l2: 0, c2: 3 })).toBe('A1:D1');
+    /* Arrastar da direita para a esquerda dá o mesmo retângulo: quem seleciona
+       de trás para a frente não pode ver um nome invertido. */
+    expect(nomeDaFaixa({ l1: 2, c1: 3, l2: 0, c2: 0 })).toBe('A1:D3');
+  });
+
+  it('sabe quem está dentro dela', () => {
+    const f = { l1: 0, c1: 0, l2: 0, c2: 3 };
+    expect(naFaixa(f, 0, 2)).toBe(true);
+    expect(naFaixa(f, 0, 4)).toBe(false);
+    expect(naFaixa(f, 1, 2)).toBe(false);
+  });
+});
+
+describe('a mesclagem tem o tamanho que foi pedido', () => {
+  const linhaDe = (n: number) => Array.from({ length: n }, () => vazia());
+
+  it('refazer preserva o span, e não estica até o fim da linha', () => {
+    /* Era isto que acontecia antes: qualquer mesclagem virava "até o fim", e
+       por isso a única mesclagem possível era essa. */
+    const linha = linhaDe(8);
+    linha[0] = { ...linha[0], span: 4 };
+    const [refeita] = refazerMesclagens([linha]);
+    expect(refeita[0].span, 'a mesclagem esticou sozinha').toBe(4);
+    expect(refeita.slice(1, 4).every(c => c.coberta)).toBe(true);
+    expect(refeita[4].coberta, 'cobriu uma célula fora da mesclagem').toBe(false);
+  });
+
+  it('apara a mesclagem que não cabe mais na linha', () => {
+    const linha = linhaDe(3);
+    linha[1] = { ...linha[1], span: 9 };
+    const [refeita] = refazerMesclagens([linha]);
+    expect(refeita[1].span).toBe(2);
+  });
+
+  it('excluir uma coluna de dentro do título encolhe o título em um', () => {
+    const linha = linhaDe(6);
+    linha[0] = { ...linha[0], texto: 'Orçamento', span: 5 };
+    const [depois] = excluirColunaDe(refazerMesclagens([linha]), 3);
+    expect(depois[0].span, 'o título ficou grande demais para a tabela').toBe(4);
+    expect(depois).toHaveLength(5);
+  });
+
+  it('inserir uma coluna dentro do título aumenta o título em um', () => {
+    const linha = linhaDe(6);
+    linha[0] = { ...linha[0], texto: 'Orçamento', span: 4 };
+    const [depois] = inserirColunaEm(refazerMesclagens([linha]), 2);
+    expect(depois[0].span).toBe(5);
+    expect(depois).toHaveLength(7);
+  });
+
+  it('coluna excluída fora do título não mexe nele', () => {
+    const linha = linhaDe(8);
+    linha[0] = { ...linha[0], span: 3 };
+    const [depois] = excluirColunaDe(refazerMesclagens([linha]), 6);
+    expect(depois[0].span).toBe(3);
+  });
+});
+
+describe('número vai para a direita e texto para a esquerda', () => {
+  /*
+    É a diferença que diz que a planilha entendeu o que foi digitado, e é como
+    se descobre número guardado como texto — o defeito mais comum de planilha.
+    Tudo nascia à esquerda, e essa informação não chegava a existir.
+  */
+  it('sem ninguém escolher, o padrão segue o conteúdo', () => {
+    expect(alinhamentoDe(vazia('Falcão'), 'Falcão')).toBe('esquerda');
+    expect(alinhamentoDe(vazia('12'), '12')).toBe('direita');
+    expect(alinhamentoDe(vazia('1.620,50'), '1620,50')).toBe('direita');
+    expect(alinhamentoDe(vazia(''), '')).toBe('esquerda');
+  });
+
+  it('a fórmula segue o resultado, e não o que está escrito', () => {
+    /* =SOMA(...) começa por "=" e não é número; o que se vê é o total, e é
+       ele que decide o lado — como na planilha de verdade. */
+    expect(alinhamentoDe(vazia('=SOMA(B3:B6)'), '40')).toBe('direita');
+    expect(alinhamentoDe(vazia('=SOMA(B3:B6)'), '#NOME?')).toBe('esquerda');
+  });
+
+  it('quem escolhe o alinhamento ganha do padrão', () => {
+    expect(alinhamentoDe({ ...vazia('12'), h: 'centro' }, '12')).toBe('centro');
+    expect(alinhamentoDe({ ...vazia('Falcão'), h: 'direita' }, 'Falcão')).toBe('direita');
+  });
+});
+
+describe('a grade é maior do que a tabela', () => {
+  /*
+    A grade tinha o tamanho exato dos dados, e na tela aparecia uma tabelinha
+    solta num vazio branco. Planilha de verdade tem grade até a borda da
+    janela — e é por isso que "a tabela" passou a ser uma medida à parte.
+  */
+  it('sobra grade à direita e embaixo da tabela', () => {
+    expect(PLANILHA_INICIAL.celulas[0].length)
+      .toBeGreaterThan(larguraDaTabela(PLANILHA_INICIAL) + 2);
+    expect(PLANILHA_INICIAL.celulas.length).toBeGreaterThan(12);
+  });
+
+  it('a largura da tabela ignora a grade vazia em volta', () => {
+    expect(larguraDaTabela(PLANILHA_INICIAL)).toBe(5);
   });
 });

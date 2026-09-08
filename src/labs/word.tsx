@@ -1,4 +1,7 @@
-import { ArrowLeft, Printer, Save, FileType2, FolderOpen, Cloud, Clock, HardDrive, Plus, Info, Share2, X } from 'lucide-react';
+import {
+  ArrowLeft, Printer, Save, FileType2, FolderOpen, Cloud, Clock, HardDrive,
+  Plus, Info, Share2, X, Search, Minus, Square as SquareIcon,
+} from 'lucide-react';
 
 /*
  * A moldura do Word 365, compartilhada.
@@ -29,11 +32,16 @@ export const CSS_WORD = `
      tamanho real numa tela de 96 dpi; num celular de 390 px isso
      deixaria metade do documento fora da tela, e o Word também reduz.
      Mora na janela, e não no canvas, porque a régua precisa da mesma
-     medida — foi o que a deixou sem largura na primeira tentativa. */
-  --px-cm: 34;
+     medida — foi o que a deixou sem largura na primeira tentativa.
+
+     A escala da tela é uma coisa e o zoom que a pessoa escolhe é outra:
+     separá-las deixa o controle do rodapé mexer só no segundo, sem
+     desfazer a redução que o celular precisa. */
+  --px-cm-tela: 34;
+  --px-cm: calc(var(--px-cm-tela) * var(--zoom, 1));
 }
-@media (max-width: 640px)  { .wd-janela { --px-cm: 17; } }
-@media (min-width: 641px) and (max-width: 1023px) { .wd-janela { --px-cm: 26; } }
+@media (max-width: 640px)  { .wd-janela { --px-cm-tela: 17; } }
+@media (min-width: 641px) and (max-width: 1023px) { .wd-janela { --px-cm-tela: 26; } }
 .wd-titulo {
   background: #F9F8F7; border-bottom: 1px solid #E1DFDD;
   display: flex; align-items: center; gap: 10px; padding: 6px 10px; font-size: 12px;
@@ -49,6 +57,12 @@ export const CSS_WORD = `
 }
 .wd-guia:hover { background: #EDEBE9; }
 .wd-guia[aria-selected="true"] { color: #2B579A; border-bottom-color: #2B579A; font-weight: 600; }
+/* A guia contextual — a que só existe enquanto o cursor está na tabela ou na
+   imagem — é laranja no Word, e não azul. A cor é o aviso de que ela vai
+   embora: quem a confunde com uma guia fixa procura por ela depois e não
+   acha. */
+.wd-guia-contextual { color: #C43E1C; }
+.wd-guia-contextual[aria-selected="true"] { color: #C43E1C; border-bottom-color: #C43E1C; }
 .wd-faixa {
   display: flex; align-items: stretch; gap: 0; padding: 4px 6px 2px;
   background: #F3F2F1; border-bottom: 1px solid #E1DFDD; overflow-x: auto;
@@ -89,22 +103,42 @@ export const CSS_WORD = `
 .wd-canvas {
   background: #E6E6E6; padding: 18px 12px 40px; flex: 1; min-height: 0; overflow: auto;
 }
+/* A folha.
+
+   As três medidas têm valor de reserva, e isso não é zelo: sem ele, uma folha
+   desenhada por um laboratório que esqueça de passar as medidas vira
+   um calc() sobre variável vazia — que é inválido, e o
+   navegador descarta a declaração inteira sem dizer nada. A largura cai em
+   auto, o padding em zero, e o que aparece na tela é uma faixa branca da
+   largura da janela, sem margem: exatamente o defeito que a folha da AP043
+   mostrou. É a mesma armadilha de escrever colr no lugar de color: o CSS erra calado.
+
+   A4 em pé é o padrão porque é o papel que sai de toda impressora de clube. */
 .wd-pagina {
-  background: #FFFFFF; margin: 0 auto; min-height: 260px;
+  background: #FFFFFF; margin: 0 auto;
   box-shadow: 0 1px 4px rgba(0,0,0,0.28);
-  width: calc(var(--largura-cm) * var(--px-cm) * 1px);
-  padding: calc(var(--margem-cm) * var(--px-cm) * 1px);
+  width: calc(var(--largura-cm, 21) * var(--px-cm) * 1px);
+  min-height: calc(var(--altura-cm, 29.7) * var(--px-cm) * 1px);
+  padding: calc(var(--margem-cm, 2.5) * var(--px-cm) * 1px);
+  display: flex; flex-direction: column;
 }
+/* O intervalo cinza entre uma folha e a seguinte. Sem ele as duas encostam e
+   viram um papel só comprido — e o exercício que existe para mostrar que o
+   cabeçalho se repete na página seguinte não tem página seguinte visível. */
+.wd-pagina + .wd-pagina { margin-top: 16px; }
 /* 1 pt = (96/72)/37,795 cm de pixel — a letra acompanha o zoom da folha. */
 .wd-par { font-size: calc(var(--pt) * var(--px-cm) * 0.035277px); }
 .wd-regua-barra {
-  width: calc(var(--largura-cm) * var(--px-cm) * 1px);
+  width: calc(var(--largura-cm, 21) * var(--px-cm) * 1px);
   height: 16px; position: relative; background: #C8C6C4; border-radius: 1px;
 }
 .wd-status {
   background: #F3F2F1; border-top: 1px solid #E1DFDD; color: #605E5C;
   font-size: 11.5px; padding: 4px 10px; display: flex; gap: 14px; align-items: center;
 }
+.wd-zoom { width: 74px; accent-color: #2B579A; cursor: pointer; }
+.wd-zoom-bt { color: #605E5C; padding: 2px; border-radius: 2px; cursor: pointer; }
+.wd-zoom-bt:hover { background: #EDEBE9; }
 .wd-par { cursor: text; padding: 0 2px; }
 .wd-par:hover { background: #F2F7FC; }
 
@@ -442,5 +476,229 @@ export function BastidoresDoWord({
         </div>
       )}
     </div>
+  );
+}
+
+/* ── A moldura da janela ───────────────────────────────────────────────────
+ *
+ * Barra de título, guias, faixa, régua, folha e barra de status moram aqui
+ * pela razão que `windows.tsx` já registrou sobre o Explorador: duas cópias
+ * divergem no primeiro ajuste, e a trilha passa a mostrar dois "Words"
+ * diferentes.
+ *
+ * E foi o que aconteceu. O laboratório de formatação da AP042 tinha as onze
+ * guias, a régua e o rodapé com zoom; o de inserção da AP043 redesenhou tudo
+ * à mão e ficou com três guias, nenhuma régua e uma folha sem medida. Quem
+ * chega na AP043 depois da AP042 vê um programa que não é mais o mesmo — e o
+ * que a trilha estava ensinando a reconhecer era justamente esta janela.
+ */
+
+/** As guias do Word em português, na ordem em que ele as põe. */
+export const GUIAS_DO_WORD = [
+  'Início', 'Inserir', 'Desenhar', 'Design', 'Layout',
+  'Referências', 'Correspondências', 'Revisão', 'Exibir', 'Ajuda',
+] as const;
+
+export function BarraDeTituloDoWord({ documento, estado = 'Salvo', aoAvisar }: {
+  documento: string;
+  estado?: string;
+  aoAvisar: (recado: string) => void;
+}) {
+  return (
+    <div className="wd-titulo">
+      <span style={{ color: '#2B579A', fontWeight: 700, fontSize: 13 }}>W</span>
+      <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full"
+        style={{ background: '#E6EEF7', color: '#2B579A', fontSize: 10.5, fontWeight: 600 }}>
+        AutoSalvamento
+      </span>
+      <span style={{ fontWeight: 600 }}>{documento}</span>
+      <span style={{ color: '#605E5C' }}>— {estado}</span>
+      <button type="button"
+        className="hidden sm:flex items-center gap-1 mx-auto px-3 py-1 rounded"
+        style={{ background: '#EFEDEB', color: '#605E5C', fontSize: 11.5 }}
+        onClick={() => aoAvisar('A caixa de pesquisa existe no Word de verdade, e está aqui para a barra ficar igual — mas não faz parte deste exercício.')}>
+        <Search className="w-3 h-3" /> Pesquisar
+      </button>
+      <span className="ml-auto sm:ml-0 flex items-center gap-3" style={{ color: '#605E5C' }}>
+        <button type="button" aria-label="Minimizar"
+          onClick={() => aoAvisar('Minimizar não faz parte deste exercício.')}>
+          <Minus className="w-3 h-3" />
+        </button>
+        <button type="button" aria-label="Maximizar"
+          onClick={() => aoAvisar('O Word já está ocupando a tela inteira.')}>
+          <SquareIcon className="w-2.5 h-2.5" />
+        </button>
+        <button type="button" aria-label="Fechar"
+          onClick={() => aoAvisar('Fechar o Word não faz parte deste exercício.')}>
+          <X className="w-3 h-3" />
+        </button>
+      </span>
+    </div>
+  );
+}
+
+/**
+ * A fileira de guias.
+ *
+ * `usaveis` são as que este laboratório desenha; toda outra guia do Word
+ * aparece assim mesmo, apagada, e responde que existe e não faz parte. Guia
+ * que sumisse da fileira ensinaria que o Word não a tem — é a mesma regra do
+ * comando de terminal que está fora do exercício.
+ *
+ * As contextuais entram no fim, na cor delas, porque é onde o Word as põe:
+ * depois de todas as fixas, e só enquanto o cursor está no que as convoca.
+ */
+export function GuiasDoWord({ atual, usaveis, contextuais = [], aoTrocar, aoAvisar }: {
+  atual: string;
+  usaveis: readonly string[];
+  contextuais?: readonly { id: string; nome: string }[];
+  aoTrocar: (id: string) => void;
+  aoAvisar: (recado: string) => void;
+}) {
+  return (
+    <div className="wd-guias" role="tablist">
+      <button type="button" className="wd-guia"
+        style={{ background: '#2B579A', color: '#FFFFFF', borderRadius: '3px 3px 0 0' }}
+        onClick={() => aoAvisar('A guia Arquivo existe no Word de verdade, e está aqui para a faixa ficar igual — mas não faz parte deste exercício.')}>
+        Arquivo
+      </button>
+      {GUIAS_DO_WORD.map(nome => (
+        usaveis.includes(nome) ? (
+          <button key={nome} type="button" role="tab" aria-selected={atual === nome}
+            className="wd-guia" onClick={() => aoTrocar(nome)}>{nome}</button>
+        ) : (
+          <button key={nome} type="button" className="wd-guia" style={{ color: '#8A8886' }}
+            onClick={() => aoAvisar(`A guia ${nome} existe no Word de verdade, e está aqui para a faixa ficar igual — mas não faz parte deste exercício.`)}>
+            {nome}
+          </button>
+        )
+      ))}
+      {contextuais.map(g => (
+        <button key={g.id} type="button" role="tab" aria-selected={atual === g.id}
+          className="wd-guia wd-guia-contextual" onClick={() => aoTrocar(g.id)}>
+          {g.nome}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Grupo da faixa: os botões e, embaixo, o nome — como no Word. */
+export function GrupoDaFaixa({ nome, children }: { nome: string; children: React.ReactNode }) {
+  return (
+    <div className="wd-grupo">
+      <div className="wd-grupo-corpo">{children}</div>
+      <div className="wd-grupo-nome">{nome}</div>
+    </div>
+  );
+}
+
+/**
+ * Botão da faixa. `empilhado` é o botão grande do Word — ícone em cima,
+ * palavra embaixo —, que é como Colar, Tabela e Imagens aparecem lá.
+ */
+export function BotaoDaFaixa({ dica, rotulo, ativo, aoClicar, children, empilhado }: {
+  dica: string;
+  rotulo?: string;
+  ativo?: boolean;
+  aoClicar: () => void;
+  children: React.ReactNode;
+  empilhado?: boolean;
+}) {
+  return (
+    <button
+      type="button" title={dica} aria-label={dica} aria-pressed={ativo}
+      onClick={aoClicar}
+      className="wd-bt"
+      style={{
+        backgroundColor: ativo ? '#D6E8F7' : 'transparent',
+        border: ativo ? '1px solid #9EC5E8' : '1px solid transparent',
+        minWidth: 24,
+        ...(empilhado
+          ? { flexDirection: 'column' as const, height: 'auto', padding: '2px 6px', gap: 1 }
+          : {}),
+      }}
+    >
+      {children}
+      {rotulo && <span style={{ fontSize: 10.5 }}>{rotulo}</span>}
+    </button>
+  );
+}
+
+/** Botão que está na faixa para ela ficar igual, e diz isso quando clicado. */
+export function EnfeiteDaFaixa({ dica, rotulo, children, aoAvisar, empilhado }: {
+  dica: string;
+  rotulo?: string;
+  children: React.ReactNode;
+  aoAvisar: (recado: string) => void;
+  empilhado?: boolean;
+}) {
+  return (
+    <BotaoDaFaixa dica={dica} rotulo={rotulo} empilhado={empilhado}
+      aoClicar={() => aoAvisar(`${dica} existe no Word de verdade, e está aqui para a faixa ficar igual — mas não faz parte deste exercício.`)}>
+      {children}
+    </BotaoDaFaixa>
+  );
+}
+
+/**
+ * A régua.
+ *
+ * O cinza é a margem, o branco é onde o texto cabe, e os números contam a
+ * partir da margem esquerda — como no Word. Ela existe em toda janela em
+ * Layout de Impressão: é por ela que se lê onde a folha começa e acaba, e uma
+ * janela sem régua não é a que o desbravador vai reencontrar.
+ */
+export function ReguaDoWord({ larguraCm, margemCm }: { larguraCm: number; margemCm: number }) {
+  const medidas = {
+    '--largura-cm': larguraCm,
+    '--margem-cm': margemCm,
+  } as React.CSSProperties;
+  return (
+    <div className="wd-regua" style={medidas} aria-hidden="true">
+      <div className="wd-regua-barra">
+        <div style={{
+          position: 'absolute', top: 0, bottom: 0,
+          left: 'calc(var(--margem-cm) * var(--px-cm) * 1px)',
+          right: 'calc(var(--margem-cm) * var(--px-cm) * 1px)',
+          background: '#FFFFFF', borderLeft: '1px solid #A19F9D', borderRight: '1px solid #A19F9D',
+        }} />
+        {Array.from({ length: Math.floor(larguraCm) }, (_, i) => i + 1).map(cm => (
+          <span key={cm} style={{
+            position: 'absolute', top: 1, transform: 'translateX(-50%)',
+            left: `calc(${cm} * var(--px-cm) * 1px)`,
+            fontSize: 8, color: '#605E5C', lineHeight: '14px',
+          }}>{Math.round(Math.abs(cm - margemCm)) || ''}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * O controle de zoom do rodapé, e ele funciona.
+ *
+ * Estava desenhado e morto nos dois laboratórios. Com a folha em A4 de
+ * verdade ele deixou de ser enfeite: uma página inteira não cabe na altura da
+ * janela, e reduzir para ver a folha toda — ou para comparar duas — é o que
+ * se faz no Word nessa hora. Botão desenhado que não faz nada ensina que o
+ * programa também não faz.
+ */
+export function ZoomDoWord({ zoom, aoMudar }: { zoom: number; aoMudar: (z: number) => void }) {
+  const passo = (d: number) => aoMudar(Math.min(1.5, Math.max(0.4, Number((zoom + d).toFixed(2)))));
+  return (
+    <span className="flex items-center gap-2" style={{ marginLeft: 'auto' }}>
+      <button type="button" aria-label="Reduzir o zoom" onClick={() => passo(-0.1)} className="wd-zoom-bt">
+        <Minus className="w-3 h-3" />
+      </button>
+      <input
+        type="range" min={40} max={150} step={10} value={Math.round(zoom * 100)}
+        aria-label="Zoom" className="wd-zoom"
+        onChange={e => aoMudar(Number(e.target.value) / 100)} />
+      <button type="button" aria-label="Aumentar o zoom" onClick={() => passo(0.1)} className="wd-zoom-bt">
+        <Plus className="w-3 h-3" />
+      </button>
+      <span style={{ minWidth: 34, textAlign: 'right' }}>{Math.round(zoom * 100)}%</span>
+    </span>
   );
 }

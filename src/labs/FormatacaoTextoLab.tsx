@@ -7,10 +7,10 @@ import {
   ArrowDownAZ, Pilcrow, ArrowUpDown, PaintBucket, Square,
   Copy, ClipboardPaste, Scissors, Paintbrush, Eraser, CaseSensitive, Columns,
   Highlighter, Baseline, Sparkles, Search, ChevronDown, Type,
-  FileCheck2, RotateCcw, Minus, X,
+  FileCheck2, RotateCcw, Minus,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
-import { CSS_WORD } from './word';
+import { CSS_WORD, BarraDeTituloDoWord, GuiasDoWord } from './word';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
@@ -70,7 +70,9 @@ type Lista = 'nenhuma' | 'marcadores' | 'numeracao';
 type Papel = 'A4' | 'Carta';
 type Orientacao = 'retrato' | 'paisagem';
 type Margem = 'estreita' | 'normal' | 'larga';
-type Guia = 'inicio' | 'layout';
+/* A guia se identifica pelo nome escrito nela — o mesmo que a lição usa
+   quando diz "Layout > Configurar Página". */
+type Guia = 'Início' | 'Layout';
 
 interface Bloco {
   id: string;
@@ -203,11 +205,17 @@ const METAS: Meta[] = [
 /* Medidas em centímetros, como o Word mostra em Margens. */
 const MARGENS_CM: Record<Margem, number> = { estreita: 1.27, normal: 2.5, larga: 5.08 };
 const LARGURA_CM: Record<Papel, number> = { A4: 21, Carta: 21.6 };
+/** As guias que este laboratório usa; as outras aparecem apagadas na fileira. */
+const GUIAS_USAVEIS = ['Início', 'Layout'];
+/* A altura faltava, e a folha era só uma largura: virar o papel de paisagem
+   para retrato o deixava mais estreito e não mais alto, que é metade do que
+   girar uma folha faz. A tarefa pede justamente para reparar na orientação. */
+const ALTURA_CM: Record<Papel, number> = { A4: 29.7, Carta: 27.9 };
 
 export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const [doc, setDoc] = useState<Bloco[]>(DOCUMENTO);
   const [folha, setFolha] = useState<Folha>({ papel: 'Carta', orientacao: 'paisagem', margem: 'estreita' });
-  const [guia, setGuia] = useState<Guia>('inicio');
+  const [guia, setGuia] = useState<Guia>('Início');
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [areaDeTransferencia, setAreaDeTransferencia] = useState<Bloco | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
@@ -240,6 +248,10 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTi
       return atinge ? { ...b, ...mudanca } : b;
     }));
   };
+
+  /* Avisar fechando o menu: um menu aberto continuaria pendurado por cima da
+     faixa depois de o aviso aparecer. */
+  const avisarFechando = (recado: string) => { fecharMenu(); setAviso(recado); };
 
   const naoFazParte = (nome: string) => {
     fecharMenu();
@@ -279,7 +291,7 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTi
     setFolha({ papel: 'Carta', orientacao: 'paisagem', margem: 'estreita' });
     setSelecionado(null);
     setAreaDeTransferencia(null);
-    setGuia('inicio');
+    setGuia('Início');
     fecharMenu();
     setAviso('');
   };
@@ -372,9 +384,9 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTi
   );
 
   const margemCm = MARGENS_CM[folha.margem];
-  const larguraCm = folha.orientacao === 'retrato'
-    ? LARGURA_CM[folha.papel]
-    : (folha.papel === 'A4' ? 29.7 : 27.9);
+  const retrato = folha.orientacao === 'retrato';
+  const larguraCm = retrato ? LARGURA_CM[folha.papel] : ALTURA_CM[folha.papel];
+  const alturaCm = retrato ? ALTURA_CM[folha.papel] : LARGURA_CM[folha.papel];
   /* A página na tela: pixels por centímetro fixos, para a folha mudar de forma
      de verdade quando o papel e a orientação mudam. 34 px/cm dá 90% do tamanho
      real numa tela de 96 dpi — é esse número que a barra de status mostra, como
@@ -384,6 +396,7 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTi
      media query, que é quem sabe o tamanho da tela. */
   const medidas = {
     '--largura-cm': larguraCm,
+    '--altura-cm': alturaCm,
     '--margem-cm': margemCm,
   } as React.CSSProperties;
 
@@ -422,43 +435,22 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTi
 
       {/* ── A janela do Word ── */}
       <div className="wd-janela">
-        {/* Barra de título */}
-        <div className="wd-titulo">
-          <span style={{ color: '#2B579A', fontWeight: 700, fontSize: 13 }}>W</span>
-          <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full"
-            style={{ background: '#E6EEF7', color: '#2B579A', fontSize: 10.5, fontWeight: 600 }}>
-            AutoSalvamento
-          </span>
-          <span style={{ fontWeight: 600 }}>Relatório do acampamento</span>
-          <span style={{ color: '#605E5C' }}>— Salvo</span>
-          <span className="hidden sm:flex items-center gap-1 mx-auto px-3 py-1 rounded"
-            style={{ background: '#EFEDEB', color: '#605E5C', fontSize: 11.5 }}>
-            <Search className="w-3 h-3" /> Pesquisar
-          </span>
-          <span className="ml-auto sm:ml-0 flex items-center gap-3" style={{ color: '#605E5C' }} aria-hidden="true">
-            <Minus className="w-3 h-3" /><Square className="w-2.5 h-2.5" /><X className="w-3 h-3" />
-          </span>
-        </div>
+        <BarraDeTituloDoWord documento="Relatório do acampamento" aoAvisar={avisarFechando} />
 
-        {/* Guias */}
-        <div className="wd-guias" role="tablist">
-          <button className="wd-guia" style={{ background: '#2B579A', color: '#fff', borderRadius: '3px 3px 0 0' }}
-            onClick={() => naoFazParte('A guia Arquivo')}>Arquivo</button>
-          {([['inicio', 'Início'], ['layout', 'Layout']] as const).map(([id, rotulo]) => (
-            <button key={id} role="tab" aria-selected={guia === id} className="wd-guia"
-              onClick={() => { setGuia(id); fecharMenu(); }}>{rotulo}</button>
-          ))}
-          {['Inserir', 'Desenhar', 'Design', 'Referências', 'Revisão', 'Exibir', 'Ajuda'].map(g => (
-            <button key={g} className="wd-guia" style={{ color: '#8A8886' }}
-              onClick={() => naoFazParte(`A guia ${g}`)}>{g}</button>
-          ))}
-        </div>
+        {/* Guias — a fileira inteira do Word, vinda de word.tsx. Escrevê-la aqui
+            à mão foi o que deixou este laboratório sem Correspondências e com
+            Layout fora de ordem, enquanto o da AP043 tinha outra fileira
+            ainda. */}
+        <GuiasDoWord
+          atual={guia} usaveis={GUIAS_USAVEIS}
+          aoTrocar={id => { setGuia(id as Guia); fecharMenu(); }}
+          aoAvisar={avisarFechando} />
 
         {/* Faixa de opções */}
         {/* Com menu aberto a faixa deixa de recortar: `overflow-x: auto` cria um
             contexto de recorte, e era ele que cortava o menu de Margens pela
             metade. Enquanto o menu está aberto, ninguém precisa rolar a faixa. */}
-        {guia === 'inicio' ? (
+        {guia === 'Início' ? (
           <div className="wd-faixa" style={{ overflowX: menu ? 'visible' : 'auto' }}>
             <Grupo nome="Área de Transferência">
               <div style={{ position: 'relative' }}>
