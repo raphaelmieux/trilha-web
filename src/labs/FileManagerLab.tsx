@@ -546,7 +546,11 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
         className="btn-primary text-sm w-full justify-center disabled:opacity-50">
         {tudoFeito ? 'Concluir o laboratório' : `Faltam ${TAREFAS.length - feitas.size}`}
       </button>
-      <p style={{ fontSize: 11, color: 'var(--color-text-dim)' }}>
+      {/* Herda a cor da superfície, em vez de fixar uma: este mesmo parágrafo é
+          desenhado no painel branco do computador e na bolha escura do celular,
+          e `--color-text-dim` só podia acertar num dos dois — no branco saía a
+          2.4:1. */}
+      <p style={{ fontSize: 11, opacity: 0.75 }}>
         Dois toques abrem uma pasta. Arraste até uma pasta para mover; com Ctrl, copia.
         No celular, use a barra de cima ou segure o item.
       </p>

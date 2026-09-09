@@ -766,7 +766,11 @@ const CSS_INSERCAO = `
 }
 .ins-titulo { font-size: calc(16 * var(--px-cm) * 0.035277px); font-weight: 700; margin-bottom: 8px; }
 .ins-par { margin-bottom: 8px; text-align: justify; }
-.ins-vazio { color: #A19F9D; font-style: italic; margin: 10px 0; }
+/* O lugar da tabela, dito dentro da folha. Era #A19F9D — o cinza de rótulo
+   desligado do Fluent, 2.6:1 no papel branco —, e isto não é decoração: é a
+   instrução que diz onde a tabela entra. Cinza secundário, e continua em
+   itálico, que é o que o separa do texto do documento. */
+.ins-vazio { color: #605E5C; font-style: italic; margin: 10px 0; }
 
 /* A foto entra como uma letra gigante — que é como ela entra no Word — até que
    a quebra de texto mude isso. */
