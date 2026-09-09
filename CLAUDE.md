@@ -750,13 +750,30 @@ os dois lados — reservatório de pelo menos `perguntas + 3`, e nunca menos de
 três perguntas, porque numa prova de duas questões cada acerto vale 50% e o
 `LIMIAR_DOMINIO` para de medir qualquer coisa.
 
-**Na prova final a margem é menor, em proporção, e é decisão.** Cada prova foi
-escrita para cobrir os requisitos da trilha, e nenhuma questão carrega o
-requisito que ela mede: a nota é uma porcentagem sobre o que foi sorteado, e não
-uma marcação requisito a requisito. Sorteando pouco, sobraria requisito sem
-pergunta nenhuma na tentativa de alguém. Quem quiser apertar isso um dia precisa
-antes ligar cada questão ao requisito — e aí o sorteio garante a cobertura em
-vez de torcer por ela.
+**Na prova final, o sorteio cobre antes de completar.** Cada prova foi escrita
+para cobrir os requisitos da trilha, e a nota é uma porcentagem sobre o que foi
+sorteado — não uma marcação requisito a requisito. Enquanto nenhuma questão
+dizia o que media, sortear era abrir buraco às cegas: requisito com uma questão
+só podia não cair.
+
+Hoje toda questão de prova declara em `requisitos` os códigos que ela mede — e
+uma pode medir vários, como a de ligar sete termos às definições. `sortearCobrindo`
+monta primeiro o conjunto que toca em todo requisito e só então completa ao
+acaso; `minimoParaCobrir` conta esse conjunto sem sortear, e é o piso que a
+trava confere. **As duas usam o mesmo laço**, de propósito: por uma hora foram
+dois parecidos, e aí a trava passaria a conferir uma conta que o sorteio não
+faz.
+
+A lição não declara requisito, e não é esquecimento: as questões dela são todas
+do mesmo assunto, que já está em `requirementCodes` — qualquer subconjunto
+cobre o que ela ensina.
+
+**Ligar as questões aos requisitos mostrou o que a prova não perguntava.** A da
+AP034 nunca mencionava website, site de busca nem filtros de conteúdo; a da
+AP042 nunca mencionava o tipo de monitor. Quatro requisitos de teoria que a
+trilha ensina e a prova não cobrava — e as duas diziam, no próprio comentário,
+que cobriam os requisitos. Ganharam questão, e a trava agora exige que todo
+requisito que não seja de prática tenha pelo menos uma.
 
 **Trava que lê o sorteio não é trava.** Ligar o sorteio na prova fez dois testes
 passarem a examinar uma amostra onde eles queriam examinar o que foi escrito: o
@@ -791,6 +808,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/exemplosDaTeoria.test.ts` | seletor do exemplo de CSS que não acha ninguém na marcação do tópico |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |
 | `src/curriculum/qualidade.test.ts` | lição ou prova que sorteia sem ter três questões de sobra |
+| `src/curriculum/qualidade.test.ts` | questão de prova sem requisito, requisito de teoria sem questão, ou sorteio que não cabe a cobertura |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 
