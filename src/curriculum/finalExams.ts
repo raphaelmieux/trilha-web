@@ -1014,13 +1014,28 @@ const rawAp041Final: Question[] = [
 /*
   A prova da AP042.
 
-  Dezoito questões, cobrindo os cinco requisitos que têm matéria — o primeiro é
-  cumprido pelo bloqueio da trilha, e não há o que perguntar sobre ele.
+  Trinta e seis questões, das quais quinze são sorteadas. Ela cobre todos os
+  requisitos da trilha menos o primeiro, que é cumprido pelo bloqueio e não tem
+  o que perguntar.
 
   Metade delas não pergunta a definição: pergunta a consequência. "O que é um
   estabilizador" mede memória; "a luz pisca quando ligam o chuveiro, o que
   resolve" mede se a pessoa sabe usar o que aprendeu. A trilha inteira foi
   escrita assim, e a prova que a fecha não podia ser mais fácil que as lições.
+
+  ── Por que ela cresceu ──────────────────────────────────────────────────
+  Eram dezenove questões para dezenove requisitos, e o sorteio pedia quinze:
+  quase toda vaga estava comprometida com a cobertura, e duas tentativas
+  voltavam quase iguais — trinta e um conjuntos distintos em quinhentos
+  sorteios. Com dezessete questões novas são quinhentos em quinhentos.
+
+  Quatro requisitos não tinham pergunta nenhuma: a folha (margens, papel e
+  orientação), o tamanho da fonte, o espaçamento do parágrafo e compactar. Duas
+  das novas resolvem os quatro de uma vez — uma liga cada ajuste ao que ele
+  muda no documento, a outra liga cada tarefa do último módulo ao programa onde
+  ela acontece, que é o que aquele laboratório de fato ensina. Questão que mede
+  vários requisitos cobre mais gastando uma vaga só: é por isso que o piso do
+  sorteio caiu de treze para onze enquanto a prova passou a cobrar mais.
 */
 const rawAp042Final: Question[] = [
   {
@@ -1241,6 +1256,208 @@ const rawAp042Final: Question[] = [
       { id: 'd', text: 'O brilho, medido em nits, que vence a luz da sala.', porque: 'O brilho resolve o reflexo da janela. Quem falha ao se olhar de lado é o painel.' },
     ]},
     explanation: 'Tamanho, resolução e painel são três coisas diferentes, e o painel é a que quase ninguém olha — até assistir a algo em três pessoas.',
+  },
+  {
+    id: 'AP042-F-Q20', type: 'matching',
+    requisitos: ['AP042-3.1', 'AP042-3.3', 'AP042-3.5', 'AP042-3.6'],
+    prompt: 'Ligue cada ajuste ao que ele muda no documento.',
+    data: { pairs: [
+      { left: 'Margens', right: 'A faixa em branco na volta do texto' },
+      { left: 'Orientação', right: 'A folha em pé, ou deitada para caber tabela larga' },
+      { left: 'Tamanho da fonte', right: 'A altura da letra, contada em pontos' },
+      { left: 'Alinhamento', right: 'O lado em que as linhas do parágrafo encostam' },
+      { left: 'Espaçamento', right: 'O ar entre uma linha e a de baixo' },
+    ]},
+    explanation: 'São cinco botões da mesma barra, e cada um mexe numa coisa diferente: a folha, a letra e o parágrafo.',
+  },
+  {
+    id: 'AP042-F-Q21', type: 'matching',
+    requisitos: ['AP042-6.1', 'AP042-6.2', 'AP042-6.3', 'AP042-6.4'],
+    prompt: 'Ligue cada tarefa ao lugar do Windows onde ela acontece.',
+    data: { pairs: [
+      { left: 'Compactar uma pasta', right: 'No Explorador, pelo botão direito em cima dela' },
+      { left: 'Transformar o relatório em pdf', right: 'No próprio editor de texto, em Salvar como' },
+      { left: 'Tirar um programa do computador', right: 'Nas Configurações do Windows' },
+      { left: 'Escolher quantas cópias sairão', right: 'Na caixa de impressão, antes de mandar imprimir' },
+    ]},
+    explanation: 'Boa parte do que há para aprender nestas quatro é justamente em qual programa cada uma mora — nenhuma delas está onde a intuição procura primeiro.',
+  },
+  {
+    id: 'AP042-F-Q22', type: 'scenario',
+    requisitos: ['AP042-6.1'],
+    prompt: 'Você compactou a pasta com as fotos do acampamento e o arquivo novo apareceu do lado. O que aconteceu com a pasta original?',
+    data: { scenarios: [
+      { id: 'a', text: 'Continua onde estava, inteira.', correct: true },
+      { id: 'b', text: 'Foi apagada, que é o objetivo de compactar.', porque: 'Apagar é escolha à parte, e a caixinha que faz isso vem desmarcada.' },
+      { id: 'c', text: 'Foi movida para dentro do arquivo compactado.', porque: 'O conteúdo foi copiado para dentro dele. A pasta de origem não saiu do lugar.' },
+      { id: 'd', text: 'Encolheu pela metade, junto com o arquivo novo.', porque: 'Quem encolhe é o arquivo novo. A pasta continua ocupando o que ocupava.' },
+    ]},
+    explanation: 'Compactar não é apagar: no fim existem os dois. Liberar espaço é um segundo passo, e é decisão de quem compactou.',
+  },
+  {
+    id: 'AP042-F-Q23', type: 'scenario',
+    requisitos: ['AP042-2.1'],
+    prompt: 'Sua tia quer um aparelho só para escrever e-mail e navegar, e pede o mais barato que preste. O que cabe melhor?',
+    data: { scenarios: [
+      { id: 'a', text: 'Um netbook, feito para esse tipo de tarefa.', correct: true },
+      { id: 'b', text: 'Um notebook potente, que dura mais tempo sem ficar velho.', porque: 'Ele dá conta, e ela pagaria por uma potência que as tarefas dela nunca vão pedir.' },
+      { id: 'c', text: 'Um microcomputador de mesa, que custa menos que os portáteis.', porque: 'Pode custar menos, mas fica preso a uma mesa — e ela não pediu isso.' },
+      { id: 'd', text: 'Um servidor usado, que costuma sair barato de segunda mão.', porque: 'Servidor é feito para atender outras máquinas, e nem tela costuma ter.' },
+    ]},
+    explanation: 'Escolher aparelho é casar a tarefa com a máquina. Potência que não se usa é dinheiro parado.',
+  },
+  {
+    id: 'AP042-F-Q24', type: 'multiple_choice',
+    requisitos: ['AP042-2.2'],
+    prompt: 'O que um notebook traz junto que um microcomputador de mesa não traz?',
+    data: { options: [
+      { id: 'a', text: 'Tela, teclado e bateria no mesmo corpo.', correct: true },
+      { id: 'b', text: 'A capacidade de rodar programas de escritório.', porque: 'Os dois rodam os mesmos programas. O que muda é o formato, e não o que cabe dentro.' },
+      { id: 'c', text: 'Acesso à internet sem fio, que o de mesa não tem.', porque: 'Computador de mesa também se liga ao Wi-Fi, e muitos já vêm preparados de fábrica.' },
+      { id: 'd', text: 'Um processador de família diferente da dos de mesa.', porque: 'As famílias são as mesmas: Core e Ryzen aparecem nos dois.' },
+    ]},
+    explanation: 'É a mesma máquina numa embalagem que anda junto — e é a bateria que a faz funcionar longe da tomada.',
+  },
+  {
+    id: 'AP042-F-Q25', type: 'true_false',
+    requisitos: ['AP042-2.4'],
+    prompt: 'Um tablet é um computador, mesmo não tendo teclado preso a ele.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', correct: true },
+      { id: 'b', text: 'Falso', porque: 'Ele calcula, guarda arquivo e roda programa como os outros. O teclado é acessório, e não a definição.' },
+    ]},
+    explanation: 'Todos os aparelhos deste requisito são computadores. O que muda entre eles é o tamanho, a potência e para que cada um foi feito.',
+  },
+  {
+    id: 'AP042-F-Q26', type: 'multiple_choice',
+    requisitos: ['AP042-2.5'],
+    prompt: 'O que separa um smartphone de um tablet pequeno?',
+    data: { options: [
+      { id: 'a', text: 'O chip, que o liga à rede da operadora.', correct: true },
+      { id: 'b', text: 'O tamanho da tela, que no smartphone é sempre menor.', porque: 'Há celular maior que tablet pequeno. O tamanho não separa os dois com segurança.' },
+      { id: 'c', text: 'A tela de tocar, que só o smartphone tem.', porque: 'Os dois são de tocar. Foi essa tela que aproximou as duas categorias.' },
+      { id: 'd', text: 'A capacidade de instalar aplicativos da loja.', porque: 'Tablet instala aplicativo da mesma loja, e muitas vezes o mesmo aplicativo.' },
+    ]},
+    explanation: 'Cabe na mão e tem chip de telefone: é isso que faz dele um smartphone, e não a tela nem os aplicativos.',
+  },
+  {
+    id: 'AP042-F-Q27', type: 'fill_blank',
+    requisitos: ['AP042-3.2'],
+    prompt: 'Complete os atalhos, escrevendo só a letra de cada um: copiar é Ctrl+___, colar é Ctrl+___, e o que leva o trecho embora do lugar de origem é Ctrl+___.',
+    data: {
+      blanks: [
+        { id: 'b1', answer: 'C', hint: 'Deixa o original onde está e guarda uma cópia' },
+        { id: 'b2', answer: 'V', hint: 'Põe no lugar novo o que foi guardado' },
+        { id: 'b3', answer: 'X', hint: 'Recortar — o trecho sai de onde estava' },
+      ],
+    },
+    explanation: 'Copiar e recortar terminam do mesmo jeito na tela: o trecho aparece no lugar novo. A diferença está em ele continuar, ou não, no lugar antigo.',
+  },
+  {
+    id: 'AP042-F-Q28', type: 'multiple_choice',
+    requisitos: ['AP042-3.4'],
+    prompt: 'Por que se recomenda usar pouco o sublinhado num texto que vai ser lido na tela?',
+    data: { options: [
+      { id: 'a', text: 'Porque texto sublinhado parece link, e a pessoa tenta clicar.', correct: true },
+      { id: 'b', text: 'Porque ele deixa o arquivo mais pesado que o negrito.', porque: 'Nenhum dos três muda o tamanho do arquivo de forma perceptível.' },
+      { id: 'c', text: 'Porque alguns programas não conseguem mostrar sublinhado.', porque: 'Todos mostram. O problema não é técnico: é o que o leitor entende ao ver.' },
+      { id: 'd', text: 'Porque ele só funciona quando o texto é impresso.', porque: 'Ele aparece na tela igual. É justamente ali que ele se confunde com link.' },
+    ]},
+    explanation: 'Negrito para o que precisa ser visto de longe, itálico para ênfase leve, e sublinhado com parcimônia — na tela ele carrega um significado que você não pediu.',
+  },
+  {
+    id: 'AP042-F-Q29', type: 'multiple_choice',
+    requisitos: ['AP042-3.5'],
+    prompt: 'Numa carta, que alinhamento se costuma dar à data e à assinatura?',
+    data: { options: [
+      { id: 'a', text: 'À direita.', correct: true },
+      { id: 'b', text: 'Justificado, como o corpo da carta.', porque: 'Justificar estica os espaços de uma linha cheia. Numa linha curta o resultado fica esquisito.' },
+      { id: 'c', text: 'Centralizado, para que fiquem em destaque.', porque: 'Centralizado é de título e de capa. Data e assinatura têm lugar próprio, na direita.' },
+      { id: 'd', text: 'À esquerda, que é o alinhamento normal do texto.', porque: 'É o normal do corpo do texto, e é justamente por isso que a data se destaca do outro lado.' },
+    ]},
+    explanation: 'Cada alinhamento tem o seu uso, e o da direita quase só aparece nesses dois lugares.',
+  },
+  {
+    id: 'AP042-F-Q30', type: 'true_false',
+    requisitos: ['AP042-3.7'],
+    prompt: 'Pôr bolinhas numa receita, em vez de números, esconde que o passo 3 vem depois do 2.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', correct: true },
+      { id: 'b', text: 'Falso', porque: 'A bolinha diz que a ordem não importa. Numa receita ela importa, e é o número que informa isso.' },
+    ]},
+    explanation: 'Escolher marcador ou numeração não é enfeite: é dizer ao leitor se a ordem faz parte do conteúdo.',
+  },
+  {
+    id: 'AP042-F-Q31', type: 'multiple_choice',
+    requisitos: ['AP042-4.3'],
+    prompt: 'Entre um Core i3 e um Core i7 da mesma geração, o que o número maior indica?',
+    data: { options: [
+      { id: 'a', text: 'Um processador mais forte, para trabalho mais pesado.', correct: true },
+      { id: 'b', text: 'Um processador mais novo, lançado depois do outro.', porque: 'Quem diz a idade é a geração, e não o número da família: existe i3 novo e i7 antigo.' },
+      { id: 'c', text: 'Uma quantidade maior de memória vindo junto com ele.', porque: 'Memória é outra peça, comprada à parte. O nome do processador não fala dela.' },
+      { id: 'd', text: 'Um consumo de energia menor, por ser mais eficiente.', porque: 'Costuma ser o contrário: mais potência costuma pedir mais energia.' },
+    ]},
+    explanation: 'A família diz a força: i3 e Ryzen 3 dão conta de escrever e navegar; i7 e Ryzen 7 são para edição e jogo pesado.',
+  },
+  {
+    id: 'AP042-F-Q32', type: 'multiple_choice',
+    requisitos: ['AP042-4.4'],
+    prompt: 'Por que comparar dois computadores só pelos gigahertz leva à escolha errada?',
+    data: { options: [
+      { id: 'a', text: 'Porque os núcleos e a geração também mudam o resultado.', correct: true },
+      { id: 'b', text: 'Porque o número de gigahertz muda conforme o programa aberto.', porque: 'Ele varia um pouco na prática, mas o anunciado é fixo. O que engana é ele não contar a história toda.' },
+      { id: 'c', text: 'Porque os fabricantes não medem os gigahertz do mesmo jeito.', porque: 'A medida é a mesma para todos. O que difere é quanto trabalho cada chip faz em cada ciclo.' },
+      { id: 'd', text: 'Porque gigahertz mede a memória, e não o processador.', porque: 'Mede o processador: são bilhões de operações por segundo. Memória se mede em gigabytes.' },
+    ]},
+    explanation: 'Um chip novo de 2,5 GHz pode ser mais rápido que um antigo de 3,5 GHz — e quatro núcleos são quatro pessoas trabalhando em vez de uma.',
+  },
+  {
+    id: 'AP042-F-Q33', type: 'multiple_choice',
+    requisitos: ['AP042-4.5'],
+    prompt: 'Duas telas custam o mesmo: uma de 27 polegadas em HD e uma de 24 em Full HD. Qual mostra mais coisa de uma vez?',
+    data: { options: [
+      { id: 'a', text: 'A de 24 polegadas, que tem mais pontos.', correct: true },
+      { id: 'b', text: 'A de 27 polegadas, porque tela maior cabe mais.', porque: 'Tela maior com menos pontos mostra a mesma coisa, só que maior e mais borrada.' },
+      { id: 'c', text: 'As duas mostram o mesmo, mudando só o tamanho.', porque: 'O que cabe na tela é decidido pelos pontos, e uma tem mais que a outra.' },
+      { id: 'd', text: 'Depende do tipo de painel de cada uma delas.', porque: 'O painel decide a cor e o ângulo de visão. Quanto cabe é a resolução.' },
+    ]},
+    explanation: 'Tamanho e resolução são dois números diferentes. Aumentar a tela sem aumentar os pontos só deixa a mesma imagem maior.',
+  },
+  {
+    id: 'AP042-F-Q34', type: 'scenario',
+    requisitos: ['AP042-6.3'],
+    prompt: 'Alguém arrastou o atalho do programa para a lixeira e disse que desinstalou. O que aconteceu de verdade?',
+    data: { scenarios: [
+      { id: 'a', text: 'O programa continua instalado, e só o atalho sumiu.', correct: true },
+      { id: 'b', text: 'O programa foi removido, e a lixeira guarda a cópia dele.', porque: 'A lixeira guardou um apontador de poucos bytes. O programa nunca esteve ali.' },
+      { id: 'c', text: 'O programa saiu do menu Iniciar, mas os arquivos ficaram.', porque: 'O menu Iniciar continua com ele. Nada além daquele ícone foi tocado.' },
+      { id: 'd', text: 'Nada: a lixeira recusa atalhos de programas instalados.', porque: 'Ela aceita, e é isso que faz o engano parecer que funcionou.' },
+    ]},
+    explanation: 'Atalho é um apontador, e apagá-lo apaga o apontador. É o engano que mais entope máquina de clube — o programa fica, ocupando disco, sem ninguém achar.',
+  },
+  {
+    id: 'AP042-F-Q35', type: 'multiple_choice',
+    requisitos: ['AP042-6.2'],
+    prompt: 'Você terminou o relatório e apertou Salvar. Ele virou pdf?',
+    data: { options: [
+      { id: 'a', text: 'Não: Salvar guarda no formato em que ele já estava.', correct: true },
+      { id: 'b', text: 'Sim, porque hoje os editores salvam em pdf por padrão.', porque: 'O padrão continua sendo o formato do próprio editor. Pdf é uma escolha, e ela se faz na hora de salvar.' },
+      { id: 'c', text: 'Sim, desde que o arquivo nunca tenha sido salvo antes.', porque: 'A primeira vez pergunta o nome e o lugar, e não troca o formato sozinha.' },
+      { id: 'd', text: 'Não, e para virar pdf é preciso um programa à parte.', porque: 'O próprio editor faz: é uma opção de formato em Salvar como, ou em Exportar.' },
+    ]},
+    explanation: 'Vira pdf quem troca o formato. Apertar Salvar depois de escrever mantém tudo como estava — e é o que faz muita gente jurar que exportou.',
+  },
+  {
+    id: 'AP042-F-Q36', type: 'multiple_choice',
+    requisitos: ['AP042-6.4'],
+    prompt: 'Na caixa de impressão você marcou duas páginas por folha. O que sai da impressora?',
+    data: { options: [
+      { id: 'a', text: 'Cada folha com duas páginas do documento, lado a lado.', correct: true },
+      { id: 'b', text: 'Somente as duas primeiras páginas do documento.', porque: 'Escolher quais páginas sair é outro campo. Este só muda quantas cabem em cada folha.' },
+      { id: 'c', text: 'Duas cópias do documento inteiro, uma após a outra.', porque: 'Quantidade de cópias é outro campo, ao lado do botão de imprimir.' },
+      { id: 'd', text: 'O documento impresso dos dois lados de cada folha.', porque: 'Isso é frente e verso, e é uma opção diferente — dá para usar as duas juntas.' },
+    ]},
+    explanation: 'É o ajuste que mais economiza papel, e o que mais confunde: ele não escolhe páginas nem cópias, só reparte a folha.',
   },
 ];
 
