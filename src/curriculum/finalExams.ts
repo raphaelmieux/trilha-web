@@ -1,5 +1,5 @@
 import type { Question } from '../types';
-import { embaralharQuestoes } from '../lib/questoes';
+import { sortearQuestoes } from '../lib/questoes';
 
 const rawAp034Final: Question[] = [
   {
@@ -1351,6 +1351,15 @@ const PROVAS: Record<string, Question[]> = {
   AP043: rawAp043Final,
 };
 
+/*
+  Quantas questões cada prova final sorteia do reservatório dela.
+
+  Fora daqui, a prova pergunta tudo o que está escrito — que é o que ela sempre
+  fez. Entra uma linha aqui quando a prova ganha as extras, e a partir daí duas
+  pessoas deixam de ver a mesma prova.
+*/
+const PERGUNTAS_POR_PROVA: Record<string, number | undefined> = {};
+
 export function getFinalExamQuestions(specialtyCode: string): Question[] {
-  return embaralharQuestoes(PROVAS[specialtyCode] ?? []);
+  return sortearQuestoes(PROVAS[specialtyCode] ?? [], PERGUNTAS_POR_PROVA[specialtyCode]);
 }

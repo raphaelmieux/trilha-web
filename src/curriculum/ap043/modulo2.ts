@@ -128,6 +128,7 @@ export const modulo2: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP043-3.1'],
+      perguntas: 5,
       questions: [
         {
           id: 'AP043.2-L1-Q1', type: 'multiple_choice',
@@ -194,6 +195,44 @@ export const modulo2: Module = {
           ]},
           explanation: 'Muita gente descobre que a mídia estava com defeito justamente no dia em que precisou dela.',
         },
+        {
+          id: 'AP043.2-L1-Q6', type: 'multiple_choice',
+          prompt: 'Um vírus embaralhou todos os arquivos do computador do clube e pede dinheiro para devolvê-los. Qual das cópias abaixo salvaria a secretaria?',
+          data: { options: [
+            { id: 'a', text: 'O HD externo que fica na gaveta e só é ligado uma vez por mês.', correct: true },
+            { id: 'b', text: 'A pasta "cópia" criada dentro de Documentos, no mesmo computador.',
+              porque: 'O vírus alcança tudo o que está na máquina, e essa pasta está nela.' },
+            { id: 'c', text: 'Os arquivos com nome terminado em _v2, salvos ao lado dos originais.',
+              porque: 'Estão no mesmo disco, e foram embaralhados junto com os outros.' },
+            { id: 'd', text: 'A lixeira do Windows, de onde dá para restaurar o que foi apagado.',
+              porque: 'O vírus não apagou: ele embaralhou os arquivos onde estavam. Não há nada na lixeira para restaurar.' },
+          ]},
+          explanation: 'A pergunta única resolve: se este computador sumisse agora, a cópia sumiria junto? Só a da gaveta sobrevive.',
+        },
+        {
+          id: 'AP043.2-L1-Q7', type: 'multiple_choice',
+          prompt: 'A secretária do clube diz que não aguenta refazer nem um dia de trabalho. O que isso decide?',
+          data: { options: [
+            { id: 'a', text: 'Que a cópia precisa acontecer todo dia, e de preferência sozinha.', correct: true },
+            { id: 'b', text: 'Que ela precisa de um pen drive maior do que o que tem hoje.',
+              porque: 'O tamanho da mídia responde quanto cabe, e não de quanto em quanto tempo copiar.' },
+            { id: 'c', text: 'Que os arquivos dela devem ser impressos em papel toda semana.',
+              porque: 'Papel era saída quando não havia outra. A pergunta aqui é de frequência, não de mídia.' },
+            { id: 'd', text: 'Que ela deve guardar tudo na nuvem e apagar do computador.',
+              porque: 'Apagar o original deixa a nuvem como cópia única — e cópia única não é backup, é o próprio arquivo noutro lugar.' },
+          ]},
+          explanation: 'Quanto trabalho você aguenta refazer é a pergunta que decide a frequência sozinha.',
+        },
+        {
+          id: 'AP043.2-L1-Q8', type: 'true_false',
+          prompt: 'Uma cópia guardada na mesma máquina protege contra apagar um arquivo sem querer, mas não contra o disco queimar.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'Ela protege sim do engano de apagar — o que ela não faz é sobreviver ao disco, ao roubo e ao raio, porque está no mesmo lugar.' },
+          ]},
+          explanation: 'Cópia no mesmo lugar protege de um erro só: o seu. Não protege do que acontece com a máquina.',
+        },
       ],
     },
     {
@@ -202,6 +241,7 @@ export const modulo2: Module = {
       type: 'theory',
       content: conteudo_L2,
       requirementCodes: ['AP043-3.1'],
+      perguntas: 5,
       questions: [
         {
           id: 'AP043.2-L2-Q1', type: 'ordering',
@@ -264,6 +304,44 @@ export const modulo2: Module = {
               porque: 'Enviar arquivo grande continua levando tempo, ainda mais pela internet.' },
           ]},
           explanation: 'Backup dava trabalho, e por isso quase ninguém fazia. Quando ele deixou de pedir memória humana, passou a acontecer.',
+        },
+        {
+          id: 'AP043.2-L2-Q6', type: 'multiple_choice',
+          prompt: 'Por que o backup em disquete dava tanto trabalho para um arquivo grande?',
+          data: { options: [
+            { id: 'a', text: 'Porque cabia pouco em cada um, e o arquivo ocupava vários numerados à mão.', correct: true },
+            { id: 'b', text: 'Porque o disquete precisava ser formatado a cada gravação nova.',
+              porque: 'Formatar era rápido e nem sempre preciso. O problema era o espaço: cerca de 1,4 MB por disquete.' },
+            { id: 'c', text: 'Porque só computadores de empresa tinham a entrada de disquete.',
+              porque: 'Computador doméstico daquela época vinha com entrada de disquete de fábrica.' },
+            { id: 'd', text: 'Porque o disquete só podia ser gravado uma única vez, como o CD.',
+              porque: 'O disquete regravava. Quem gravava uma vez só era boa parte dos CDs e DVDs.' },
+          ]},
+          explanation: 'Uma foto de celular de hoje não caberia em um disquete inteiro. Era esse o tamanho do problema.',
+        },
+        {
+          id: 'AP043.2-L2-Q7', type: 'multiple_choice',
+          prompt: 'O clube guarda o backup num HD externo na secretaria e também no Google Drive. Por que fazer os dois?',
+          data: { options: [
+            { id: 'a', text: 'Porque o HD é rápido de pegar e a nuvem sobrevive a incêndio e a roubo.', correct: true },
+            { id: 'b', text: 'Porque um backup só vale se estiver gravado em duas mídias diferentes.',
+              porque: 'Não há essa regra. O que se busca é uma cópia perto e uma longe, e não duas marcas de mídia.' },
+            { id: 'c', text: 'Porque a nuvem apaga arquivos antigos sozinha depois de um tempo.',
+              porque: 'Ela não apaga por conta própria. Guardar nos dois lugares é sobre incêndio e roubo, não sobre prazo.' },
+            { id: 'd', text: 'Porque o HD externo não consegue guardar arquivos de texto, só fotos.',
+              porque: 'Ele guarda qualquer arquivo. O que muda entre as duas famílias é onde a cópia fica, não o que cabe nela.' },
+          ]},
+          explanation: 'Uma perto para pegar rápido, uma longe para o dia ruim. As duas famílias têm ponto fraco, e um cobre o do outro.',
+        },
+        {
+          id: 'AP043.2-L2-Q8', type: 'true_false',
+          prompt: 'Imprimir um documento importante e arquivá-lo em pasta já foi uma forma legítima de backup.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'Parece piada e não é: papel não corrompe e não precisa de aparelho para ser lido, e por isso documento importante era impresso e guardado.' },
+          ]},
+          explanation: 'A ideia de backup nunca mudou — pôr uma cópia em outro lugar. O papel também era um outro lugar.',
         },
       ],
     },

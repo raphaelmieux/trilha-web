@@ -3,7 +3,7 @@ import { TextoDaLicao, CSS_TEXTO_DA_LICAO } from './ui/TextoDaLicao';
 import {
   CheckCircle2, CircleX, ArrowLeft, RefreshCw, AlertTriangle, BookOpen,
 } from 'lucide-react';
-import { embaralharQuestao } from '../lib/questoes';
+import { sortearQuestoes } from '../lib/questoes';
 import { checkAnswer } from '../lib/checkAnswer';
 import { porqueDaEscolha } from '../lib/porque';
 import { LIMIAR_DOMINIO } from '../lib/progress';
@@ -75,7 +75,7 @@ export default function TeoriaDaVereda({ vereda, licao, aoVencer, aoSair }: {
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
 }) {
-  const questoes = useMemo(() => licao.questoes.map(embaralharQuestao), [licao]);
+  const questoes = useMemo(() => sortearQuestoes(licao.questoes, licao.perguntas), [licao]);
   const [respostas, setRespostas] = useState<Record<string, RespostaDaQuestao>>({});
   const [mostrando, setMostrando] = useState<Record<string, boolean>>({});
   const [nota, setNota] = useState<{ certas: number; total: number } | null>(null);

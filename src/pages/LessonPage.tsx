@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSpecialty } from '../curriculum';
 import { nomeCompleto } from '../types';
-import { embaralharQuestao } from '../lib/questoes';
+import { sortearQuestoes } from '../lib/questoes';
 
 import type { RequirementStatus, RespostaDaQuestao } from '../types';
 import {
@@ -75,7 +75,14 @@ export default function LessonPage() {
   // "not found" early return below (it previously ran after it).
   /* Reembaralha a cada lição aberta: a dependência é a lição, então voltar a
      uma já vista devolve as alternativas e os itens em outra ordem. */
-  const questions = useMemo(() => (lesson?.questions || []).map(embaralharQuestao), [lesson]);
+  /* Sorteia uma vez por entrada na lição: o `useMemo` segura o resultado
+     enquanto a pessoa responde — reembaralhar a cada tecla trocaria as
+     alternativas debaixo do dedo dela. Sair e voltar é outra tentativa, e
+     outro sorteio. */
+  const questions = useMemo(
+    () => sortearQuestoes(lesson?.questions ?? [], lesson?.perguntas),
+    [lesson],
+  );
 
   if (specialty?.emConstrucao) return (
     <div className="max-w-lg mx-auto text-center py-12">

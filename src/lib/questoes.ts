@@ -73,3 +73,55 @@ export function embaralharQuestao(q: Question): Question {
 export function embaralharQuestoes(questions: Question[]): Question[] {
   return questions.map(embaralharQuestao);
 }
+
+/*
+ * ── O sorteio da tentativa ────────────────────────────────────────────────
+ *
+ * Embaralhar as alternativas já se fazia, e funciona. O que faltava era o
+ * resto: a ordem das questões era sempre a mesma, e o conjunto perguntado era
+ * sempre o conjunto inteiro. Duas pessoas que fizessem o mesmo módulo viam as
+ * mesmas perguntas, nas mesmas posições — e "a terceira é a certa da segunda"
+ * vira um recado que se passa adiante sem ninguém ler a lição.
+ *
+ * Três medidas, e as três se multiplicam:
+ *
+ *   as alternativas embaralham   — já existia, e o `porque` de cada errada
+ *                                  continua colado nela, porque o retorno é
+ *                                  por id e não por posição;
+ *   a ordem das questões         — quem decorou "a 5 é a do relógio" perde a
+ *                                  referência;
+ *   o reservatório maior         — com x+3 escritas e x perguntadas, duas
+ *                                  tentativas quase nunca trazem o mesmo
+ *                                  conjunto.
+ *
+ * Com quatro alternativas, seis questões sorteadas de nove e ordem livre, a
+ * chance de duas pessoas verem a mesma prova na mesma ordem é de uma em
+ * dezenas de milhares. Decorar deixa de compensar antes de estudar.
+ */
+
+/**
+ * Quantas questões a tentativa pede.
+ *
+ * Sem `perguntas` declarado, pergunta todas — que é o que a plataforma inteira
+ * fazia, e continua fazendo em toda lição que ainda não ganhou extras. A
+ * mudança de comportamento acompanha o conteúdo, e não a data do deploy.
+ */
+export function quantasPerguntar(pool: Question[], perguntas?: number): number {
+  if (!perguntas || perguntas >= pool.length) return pool.length;
+  return Math.max(1, perguntas);
+}
+
+/**
+ * Sorteia as questões de uma tentativa: quais, em que ordem, e embaralhadas
+ * por dentro.
+ *
+ * O sorteio de *quais* vem antes do de *ordem* de propósito. Fossem juntos —
+ * embaralhar tudo e cortar as primeiras x —, as questões do fim do currículo
+ * apareceriam com a mesma frequência das do começo, o que está certo, mas
+ * ficaria impossível ler no código qual das duas coisas está acontecendo.
+ */
+export function sortearQuestoes(pool: Question[], perguntas?: number): Question[] {
+  const quantas = quantasPerguntar(pool, perguntas);
+  const escolhidas = quantas >= pool.length ? [...pool] : shuffleArray(pool).slice(0, quantas);
+  return shuffleArray(escolhidas).map(embaralharQuestao);
+}

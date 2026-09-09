@@ -74,6 +74,7 @@ export const modulo6: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP043-8.1', 'AP043-8.2', 'AP043-8.3'],
+      perguntas: 6,
       questions: [
         {
           id: 'AP043.6-L1-Q1', type: 'multiple_choice',
@@ -128,11 +129,11 @@ export const modulo6: Module = {
         },
         {
           id: 'AP043.6-L1-Q5', type: 'multiple_choice',
-          prompt: 'Os campos de data e hora estão apagados e não aceitam mudança. Por quê?',
+          prompt: 'O relógio do computador do clube está uma hora adiantado. Você abre Configurações › Hora e idioma para acertar, e lá os campos de data e hora aparecem apagados: dá para ver, mas não dá para mudar. Por quê?',
           data: { options: [
-            { id: 'a', text: 'Porque a chave "definir horário automaticamente" está ligada.', correct: true },
-            { id: 'b', text: 'Porque só quem tem senha de administrador consegue ver esses campos.',
-              porque: 'Eles aparecem para qualquer um. O que os desliga é a chave logo acima deles.' },
+            { id: 'a', text: 'Porque a chave "definir horário automaticamente", logo acima deles, está ligada.', correct: true },
+            { id: 'b', text: 'Porque alterar a hora exige senha de administrador, e você entrou como usuário comum.',
+              porque: 'Os campos apagam para todo mundo, administrador incluído, enquanto a chave estiver ligada — e desligá-la não pede senha nenhuma.' },
             { id: 'c', text: 'Porque a data e a hora só podem ser mudadas com o computador reiniciando.',
               porque: 'Mudam com a máquina ligada e valem na hora. Não há reinício envolvido.' },
             { id: 'd', text: 'Porque o relógio do computador quebrou e precisa de peça nova.',
@@ -149,6 +150,44 @@ export const modulo6: Module = {
             { left: 'Por que a hora está errada?', right: 'Configurações › Hora e idioma' },
           ]},
           explanation: 'Três perguntas parecidas, três lugares. Saber onde procurar é metade do trabalho.',
+        },
+        {
+          id: 'AP043.6-L1-Q7', type: 'multiple_choice',
+          prompt: 'Você quer deixar um documento da pasta compartilhada do clube à mão na sua área de trabalho, sem tirá-lo de lá. Qual é o caminho certo?',
+          data: { options: [
+            { id: 'a', text: 'Botão direito no arquivo, e depois Enviar para › Área de Trabalho (criar atalho).', correct: true },
+            { id: 'b', text: 'Arrastar o arquivo da pasta até a área de trabalho, que é o jeito rápido.',
+              porque: 'Arrastar move: o documento sai da pasta compartilhada e some para todo mundo do clube.' },
+            { id: 'c', text: 'Abrir o arquivo e salvar uma cópia dele na área de trabalho.',
+              porque: 'Isso cria um segundo documento, que deixa de acompanhar as mudanças do original. Atalho aponta, cópia duplica.' },
+            { id: 'd', text: 'Renomear o arquivo começando o nome com "atalho de", que é o que o Windows reconhece.',
+              porque: 'O nome não muda a natureza do arquivo. Atalho é um tipo próprio, com a setinha no canto.' },
+          ]},
+          explanation: 'Atalho é um apontador. Arrastar não cria um: arrastar move o arquivo de lugar.',
+        },
+        {
+          id: 'AP043.6-L1-Q8', type: 'multiple_choice',
+          prompt: 'Você apertou Print Screen e capturou a tela do erro para mandar ao diretor. Duas horas depois, ao colar, aparece outra coisa. O que aconteceu?',
+          data: { options: [
+            { id: 'a', text: 'A captura ficou só na memória, e foi substituída quando alguém copiou outra coisa.', correct: true },
+            { id: 'b', text: 'A captura expirou: o Windows apaga prints com mais de uma hora.',
+              porque: 'Não há prazo. O que existe é um espaço só, que guarda a última coisa copiada.' },
+            { id: 'c', text: 'A tela do erro sumiu, e por isso a imagem dela também deixou de existir.',
+              porque: 'A imagem capturada não depende da janela continuar aberta.' },
+            { id: 'd', text: 'O print foi salvo em Imagens, e o que você colou foi um arquivo diferente.',
+              porque: 'Print Screen não salva sozinho em lugar nenhum: é justamente isso que precisa ser feito à mão.' },
+          ]},
+          explanation: 'Capturar põe na memória; salvar transforma em arquivo. O que fica só na memória se perde na próxima cópia.',
+        },
+        {
+          id: 'AP043.6-L1-Q9', type: 'true_false',
+          prompt: 'O ícone de um atalho se reconhece por uma setinha no canto inferior esquerdo dele.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'É por ela que se reconhece — e vale olhar antes de apagar, porque apagar o atalho não apaga nada além dele, mas apagar o arquivo apaga.' },
+          ]},
+          explanation: 'A setinha é o aviso de que aquilo aponta para outro lugar, e não é a coisa em si.',
         },
       ],
     },

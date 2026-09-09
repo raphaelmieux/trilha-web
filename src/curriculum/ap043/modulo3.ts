@@ -73,6 +73,7 @@ export const modulo3: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP043-4.1', 'AP043-4.3', 'AP043-4.4'],
+      perguntas: 6,
       questions: [
         {
           id: 'AP043.3-L1-Q1', type: 'multiple_choice',
@@ -149,6 +150,44 @@ export const modulo3: Module = {
             { id: 'i4', text: 'Clicar em Fechar Cabeçalho e Rodapé', order: 4 },
           ]},
           explanation: 'Sem fechar a área, o resto do documento continua apagado e não aceita edição.',
+        },
+        {
+          id: 'AP043.3-L1-Q7', type: 'multiple_choice',
+          prompt: 'Você quer pôr no documento uma tabela, uma foto e o número da página. Em que guia começa cada uma dessas três coisas?',
+          data: { options: [
+            { id: 'a', text: 'Nas três, em Inserir: é a guia de pôr coisas no documento.', correct: true },
+            { id: 'b', text: 'Tabela e foto em Inserir; o número da página em Layout, junto das margens.',
+              porque: 'Layout cuida do formato da folha. A numeração é uma coisa que se insere, e nasce em Inserir como as outras duas.' },
+            { id: 'c', text: 'A foto em Inserir; a tabela e o número da página na guia Início.',
+              porque: 'Início cuida da aparência do texto que já está escrito — fonte, alinhamento, parágrafo.' },
+            { id: 'd', text: 'Cada uma numa guia contextual, que aparece quando o cursor está no lugar certo.',
+              porque: 'Guia contextual só existe *depois* que a coisa está no documento. Para pôr, é Inserir.' },
+          ]},
+          explanation: 'Se você está procurando como pôr alguma coisa no documento, é em Inserir.',
+        },
+        {
+          id: 'AP043.3-L1-Q8', type: 'multiple_choice',
+          prompt: 'Alguém escreveu o nome do clube no alto da primeira página, digitando direto na folha. O documento tem seis páginas. O que acontece nas outras cinco?',
+          data: { options: [
+            { id: 'a', text: 'Nada aparece nelas: aquilo virou a primeira linha do texto, e não um cabeçalho.', correct: true },
+            { id: 'b', text: 'O nome aparece nas seis, porque o que está no alto da folha é sempre cabeçalho.',
+              porque: 'Cabeçalho é uma área própria, que se abre. O que se digita no corpo é texto, mesmo estando no alto.' },
+            { id: 'c', text: 'O nome aparece na primeira e na última, que são as páginas de capa e fecho.',
+              porque: 'O programa não trata primeira e última de forma especial por conta própria.' },
+            { id: 'd', text: 'O nome aparece nas outras cinco, mas some da primeira quando o documento é salvo.',
+              porque: 'Salvar não move texto de lugar. O que foi digitado no corpo continua onde foi digitado.' },
+          ]},
+          explanation: 'O cabeçalho se repete sozinho porque é uma área própria. Digitar no corpo é escrever uma linha comum.',
+        },
+        {
+          id: 'AP043.3-L1-Q9', type: 'true_false',
+          prompt: 'Quando você insere uma foto, o programa a trata como se fosse uma letra gigante, empurrando o parágrafo para baixo.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'É exatamente o que acontece, e é o padrão — alinhada com o texto. Fazer o texto contornar a foto é escolher outra quebra de texto depois.' },
+          ]},
+          explanation: 'Não é defeito, é o padrão. Ajustar ao texto é o passo seguinte, e mora em Formatar Imagem.',
         },
       ],
     },
