@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getFinalExamQuestions } from '../curriculum/finalExams';
+import { getFinalExamQuestions, quantasAProvaPergunta } from '../curriculum/finalExams';
 import { getSpecialty } from '../curriculum';
 import { logActivity, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, LIMIAR_DOMINIO } from '../lib/progress';
 import { checkAnswer } from '../lib/checkAnswer';
@@ -33,8 +33,14 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
 
   /* Contado do currículo, e não do estado: as questões só são sorteadas quando a
      prova começa, então na tela de abertura a lista ainda está vazia — e
-     prometer "0 questões" é pior do que o número fixo que havia antes. */
-  const totalDeQuestoes = useMemo(() => getFinalExamQuestions(specialtyCode).length, [specialtyCode]);
+     prometer "0 questões" é pior do que o número fixo que havia antes.
+
+     Pergunta-se o número, e não o tamanho de um sorteio: agora que a prova
+     sorteia, chamar o sorteio só para contar seria embaralhar o reservatório
+     inteiro para descartar tudo em seguida — e daria a impressão, lendo daqui,
+     de que estas são as questões que a pessoa vai receber. Não são: o sorteio
+     da vez acontece em startExam. */
+  const totalDeQuestoes = useMemo(() => quantasAProvaPergunta(specialtyCode), [specialtyCode]);
 
   const startExam = () => {
     setQuestions(getFinalExamQuestions(specialtyCode));
