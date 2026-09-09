@@ -1247,14 +1247,29 @@ const rawAp042Final: Question[] = [
 /*
   A prova da AP043.
 
-  Vinte questões, cobrindo os oito requisitos. Ela não repete os enunciados das
-  lições de propósito: quem só decorou a pergunta da lição não reconhece a
-  mesma matéria vestida de outro jeito, e é justamente essa diferença que a
-  prova precisa medir.
+  Trinta e quatro questões, das quais dezesseis são sorteadas. Ela não repete
+  os enunciados das lições de propósito: quem só decorou a pergunta da lição
+  não reconhece a mesma matéria vestida de outro jeito, e é justamente essa
+  diferença que a prova precisa medir.
 
   As definições do requisito 2 aparecem aqui pela consequência, e não pela
   definição: a lição já perguntou o que é a fonte de alimentação, e a prova
   pergunta qual peça o raio encontra primeiro.
+
+  ── Por que ela era o dobro do tamanho que precisava ─────────────────────
+  Eram vinte questões para dezenove requisitos, e o sorteio pedia dezesseis: a
+  cobertura consumia quase todas as vagas, e as poucas sobras eram os únicos
+  lugares onde duas tentativas podiam diferir. Na prática, quem refizesse a
+  prova reencontrava quase a mesma. Catorze questões novas resolvem isso pelo
+  lado certo — mais lugares de onde escolher, e não menos matéria cobrada: hoje
+  são quase quinhentos conjuntos distintos em quinhentos sorteios.
+
+  Três delas cobrem, de uma vez, o que a prova nunca tinha perguntado: largura
+  de coluna, alinhamento na célula e estilo de tabela numa; inserir coluna e o
+  intervalo da fórmula noutra; e as quatro perguntas do sistema — memória,
+  detalhes do arquivo, print da tela e relógio — na terceira. Questão que mede
+  vários requisitos cobre mais gastando uma vaga só, e é por isso que o piso do
+  sorteio caiu mesmo com a prova cobrindo mais coisa.
 */
 const rawAp043Final: Question[] = [
   {
@@ -1363,7 +1378,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q10', type: 'multiple_choice',
-    requisitos: ['AP043-4.1', 'AP043-5.4'],
+    requisitos: ['AP043-4.1'],
     prompt: 'Você inseriu uma tabela no documento e agora precisa acrescentar uma coluna. Onde procurar esse comando?',
     data: { options: [
       { id: 'a', text: 'Numa guia que só aparece quando o cursor está dentro da tabela.', correct: true },
@@ -1490,6 +1505,170 @@ const rawAp043Final: Question[] = [
       { id: 'd', text: 'Nada muda, porque a área de trabalho recusa documentos de outras pastas.', porque: 'Ela aceita qualquer arquivo — e é por isso que o engano passa despercebido.' },
     ]},
     explanation: 'Numa pasta compartilhada, mover é fazer o documento sumir para todo mundo.',
+  },
+  {
+    id: 'AP043-F-Q21', type: 'matching',
+    requisitos: ['AP043-5.1', 'AP043-5.2', 'AP043-5.3', 'AP043-5.5'],
+    prompt: 'Ligue cada acabamento da planilha ao que ele resolve.',
+    data: { pairs: [
+      { left: 'Largura da coluna', right: 'O texto que aparecia cortado passa a caber' },
+      { left: 'Alinhamento na célula', right: 'O conteúdo se posiciona no lado e na altura escolhidos' },
+      { left: 'Mesclar células', right: 'Várias viram uma, para o título ficar por cima de todas' },
+      { left: 'Estilo de tabela pronto', right: 'Cores e bordas de uma vez, sem formatar célula por célula' },
+    ]},
+    explanation: 'Acabamento se faz depois que os números estão certos — formatar antes é enfeitar uma conta que ainda vai mudar.',
+  },
+  {
+    id: 'AP043-F-Q22', type: 'scenario',
+    requisitos: ['AP043-5.4', 'AP043-5.6'],
+    prompt: 'A célula B9 da sua planilha soma B3:B7. Você insere uma coluna nova à esquerda de B, e os dados que estavam ali passam para C. O que acontece com a fórmula?',
+    data: { scenarios: [
+      { id: 'a', text: 'Ela se ajusta sozinha e continua somando as mesmas células.', correct: true },
+      { id: 'b', text: 'Ela continua escrita B3:B7, e passa a somar a coluna nova.', porque: 'O programa acompanha o deslocamento: quem foi empurrado leva a fórmula junto, e o intervalo é reescrito.' },
+      { id: 'c', text: 'Ela quebra, e a célula passa a mostrar um aviso de erro.', porque: 'Inserir coluna não quebra fórmula nenhuma. Erro apareceria se as células somadas fossem apagadas.' },
+      { id: 'd', text: 'Ela some, e é preciso escrevê-la de novo do zero.', porque: 'A fórmula continua onde estava. O que muda é o endereço a que ela se refere.' },
+    ]},
+    explanation: 'A fórmula guarda a conta, e não o resultado — e o endereço dentro dela acompanha as células quando elas mudam de lugar.',
+  },
+  {
+    id: 'AP043-F-Q23', type: 'matching',
+    requisitos: ['AP043-8.1', 'AP043-8.2', 'AP043-8.4', 'AP043-8.5'],
+    prompt: 'Ligue cada pergunta ao lugar onde o Windows guarda a resposta.',
+    data: { pairs: [
+      { left: 'Quanta memória a máquina tem', right: 'Configurações, em Sistema e depois Sobre' },
+      { left: 'O tamanho exato do arquivo em bytes', right: 'Propriedades, pelo botão direito no próprio arquivo' },
+      { left: 'A hora do computador está errada', right: 'Configurações, em Hora e idioma' },
+      { left: 'Capturar o que está aparecendo na tela', right: 'A tecla Print Screen, ou a Ferramenta de Captura' },
+    ]},
+    explanation: 'São lugares diferentes para perguntas parecidas: o que é da máquina, o que é do arquivo, o que é do relógio e o que é da tela. E capturar não é salvar — a imagem fica na memória até alguém colá-la em algum lugar.',
+  },
+  {
+    id: 'AP043-F-Q24', type: 'scenario',
+    requisitos: ['AP043-2.1', 'AP043-6.1'],
+    prompt: 'Você comprou um pente de memória e ele não entra na fenda da placa, por mais que empurre. O que isso indica?',
+    data: { scenarios: [
+      { id: 'a', text: 'Que o pente é de um tipo que aquela placa mãe não aceita.', correct: true },
+      { id: 'b', text: 'Que a fenda está suja e precisa de uma limpeza antes.', porque: 'Sujeira atrapalha o contato, e não o encaixe. Pente do tipo certo entra mesmo numa fenda empoeirada.' },
+      { id: 'c', text: 'Que falta instalar o driver do pente antes de encaixá-lo.', porque: 'Memória não tem driver, e nenhum programa muda o formato de um encaixe.' },
+      { id: 'd', text: 'Que o pente veio queimado, e por isso não entra.', porque: 'Peça queimada encaixa igual. Ela só deixa de funcionar depois de a máquina ser ligada.' },
+    ]},
+    explanation: 'Compatibilidade tem dois lados, e o primeiro é o encaixe físico. Quem decide o que cabe na máquina é a placa mãe, e nenhuma força resolve um soquete que não é aquele.',
+  },
+  {
+    id: 'AP043-F-Q25', type: 'multiple_choice',
+    requisitos: ['AP043-2.2'],
+    prompt: 'Para que serve a placa de vídeo dedicada, aquela grande e com ventoinhas?',
+    data: { options: [
+      { id: 'a', text: 'Para quem pede mais da imagem: jogo pesado, edição, três dimensões.', correct: true },
+      { id: 'b', text: 'Para que o computador consiga mostrar qualquer imagem no monitor.', porque: 'A integrada já faz isso, e é o que a maioria das máquinas de hoje tem.' },
+      { id: 'c', text: 'Para ligar mais de um monitor, coisa que a integrada não permite.', porque: 'Muitas integradas ligam dois monitores. O que a dedicada dá é potência, e não quantidade de saídas.' },
+      { id: 'd', text: 'Para substituir a placa mãe nos computadores mais antigos.', porque: 'Nada substitui a placa mãe: é nela que a própria placa de vídeo se encaixa.' },
+    ]},
+    explanation: 'Abrir um computador comum e não achar placa de vídeo não é falta de peça: é sinal de que aquela máquina não precisava de uma.',
+  },
+  {
+    id: 'AP043-F-Q26', type: 'multiple_choice',
+    requisitos: ['AP043-2.3'],
+    prompt: 'As entradas redondas coloridas, a verde do fone e a rosa do microfone, são de que peça?',
+    data: { options: [
+      { id: 'a', text: 'Da placa de som.', correct: true },
+      { id: 'b', text: 'Da placa mãe, já que hoje o som costuma vir integrado nela.', porque: 'Integrada é onde ela mora, e não o que ela é: a função continua sendo da placa de som.' },
+      { id: 'c', text: 'Da placa de vídeo, que leva imagem e som para a tela.', porque: 'Quando a imagem leva som junto, é pela HDMI. Entrada redonda de fone é outra coisa.' },
+      { id: 'd', text: 'Da fonte de alimentação, que é onde ficam os conectores.', porque: 'A fonte só lida com energia. Nada do que se ouve passa por ela.' },
+    ]},
+    explanation: 'Integrada ou separada, a função não muda: quem transforma o sinal do computador em som é a placa de som.',
+  },
+  {
+    id: 'AP043-F-Q27', type: 'fill_blank',
+    requisitos: ['AP043-2.4'],
+    prompt: 'Complete as lacunas sobre as duas portas que levam a imagem até a tela.',
+    data: {
+      blanks: [
+        { id: 'b1', answer: 'VGA', hint: 'Conector azul e trapezoidal, com dois parafusinhos — leva só imagem' },
+        { id: 'b2', answer: 'HDMI', hint: 'Conector chato e sem parafuso — leva imagem e som pelo mesmo cabo' },
+      ],
+    },
+    explanation: 'A diferença entre as duas é a idade, e é ela que explica o som: a VGA é analógica e nunca carregou áudio.',
+  },
+  {
+    id: 'AP043-F-Q28', type: 'multiple_choice',
+    requisitos: ['AP043-2.5'],
+    prompt: 'Por que um celular carrega quando está ligado ao computador por um cabo USB?',
+    data: { options: [
+      { id: 'a', text: 'Porque a USB leva energia junto com a informação.', correct: true },
+      { id: 'b', text: 'Porque o computador reconhece o celular e então libera a corrente.', porque: 'A energia sai da porta reconhecendo ou não o aparelho: um ventilador de USB gira sem ser reconhecido por nada.' },
+      { id: 'c', text: 'Porque o cabo do celular tem uma bateria pequena por dentro.', porque: 'O cabo apenas conduz. Quem fornece a energia é a porta do computador.' },
+      { id: 'd', text: 'Porque isso é coisa da USB-C, e as outras USB não fazem.', porque: 'Toda USB leva energia. A USB-C leva mais, e é essa a diferença entre elas.' },
+    ]},
+    explanation: 'Trocar informação e levar energia ao mesmo tempo é o que faz a USB servir ao pen drive, ao mouse e ao carregador com um formato só.',
+  },
+  {
+    id: 'AP043-F-Q29', type: 'fill_blank',
+    requisitos: ['AP043-2.6'],
+    prompt: 'Complete: a tomada da parede entrega corrente _____, e a fonte a converte em corrente _____, de baixa voltagem.',
+    data: {
+      blanks: [
+        { id: 'b1', answer: 'alternada', aceitas: ['alternada (AC)', 'AC'], hint: 'O tipo de corrente que vem da rua, em 127 ou 220 volts' },
+        { id: 'b2', answer: 'contínua', aceitas: ['continua', 'contínua (DC)', 'DC'], hint: 'O tipo que as peças usam, em 12, 5 e 3,3 volts' },
+      ],
+    },
+    explanation: 'Nenhuma peça do computador aguenta a voltagem da tomada. A fonte é a tradutora entre as duas, e a única peça que toca a energia da rua.',
+  },
+  {
+    id: 'AP043-F-Q30', type: 'true_false',
+    requisitos: ['AP043-2.7'],
+    prompt: 'Uma planilha guardada numa pasta compartilhada já é um banco de dados.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'Ela é um arquivo: quem abre primeiro trava, e duas pessoas escrevendo ao mesmo tempo uma apaga a outra. O banco de dados existe justamente para isso não acontecer.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'Compartilhar o arquivo resolve onde ele fica. Escrever ao mesmo tempo, sem uma pessoa atropelar a outra, é outro problema — e é o que o banco de dados resolve.',
+  },
+  {
+    id: 'AP043-F-Q31', type: 'scenario',
+    requisitos: ['AP043-4.1'],
+    prompt: 'Você vai pôr a escala dos sábados no relatório, em linhas e colunas. Por onde se começa?',
+    data: { scenarios: [
+      { id: 'a', text: 'Pela guia Inserir, onde nasce tudo o que não é parágrafo.', correct: true },
+      { id: 'b', text: 'Pela guia Layout da Tabela, que reúne os comandos de tabela.', porque: 'Ela só aparece depois que a tabela existe, e só com o cursor dentro dela.' },
+      { id: 'c', text: 'Digitando os dados e alinhando as colunas com a tecla Tab.', porque: 'Isso desalinha no primeiro texto mais comprido. Linha e coluna de verdade pedem uma tabela.' },
+      { id: 'd', text: 'Pela guia Página Inicial, onde ficam os comandos de formatar.', porque: 'Ali se muda a aparência do que já existe. Acrescentar uma peça nova é sempre em Inserir.' },
+    ]},
+    explanation: 'Tabela, imagem, cabeçalho e número de página são peças que não são parágrafo, e todas moram na mesma guia.',
+  },
+  {
+    id: 'AP043-F-Q32', type: 'true_false',
+    requisitos: ['AP043-4.2'],
+    prompt: 'Ao ser inserida, a foto entra alinhada com o texto, como se fosse uma letra gigante.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', correct: true },
+      { id: 'b', text: 'Falso', porque: 'É o padrão, e não defeito: por isso ela empurra o parágrafo para baixo até alguém trocar a quebra de texto.' },
+    ]},
+    explanation: 'O programa a trata como um caractere do parágrafo. Fazer o texto contornar a foto é escolher outra quebra de texto.',
+  },
+  {
+    id: 'AP043-F-Q33', type: 'multiple_choice',
+    requisitos: ['AP043-4.3', 'AP043-4.4'],
+    prompt: 'Você escreveu o nome do clube no cabeçalho da primeira página do relatório. Em quantas páginas ele vai aparecer?',
+    data: { options: [
+      { id: 'a', text: 'Em todas, sem ninguém repetir nada.', correct: true },
+      { id: 'b', text: 'Só na primeira, que é onde ele chegou a ser digitado.', porque: 'O cabeçalho não pertence à página: pertence ao documento, e é por isso que se repete.' },
+      { id: 'c', text: 'Em todas, desde que o documento tenha numeração de páginas.', porque: 'Uma coisa não depende da outra: cabeçalho e numeração se inserem separados.' },
+      { id: 'd', text: 'Em nenhuma, enquanto o documento não for impresso.', porque: 'Ele aparece na tela também, na área própria, no alto de cada página.' },
+    ]},
+    explanation: 'Escrever uma vez e valer para o documento inteiro é o que o cabeçalho e o rodapé oferecem — e a numeração se apoia nisso, contando as páginas sozinha.',
+  },
+  {
+    id: 'AP043-F-Q34', type: 'multiple_choice',
+    requisitos: ['AP043-8.3'],
+    prompt: 'Na área de trabalho, como se reconhece que um ícone é atalho, e não o arquivo em si?',
+    data: { options: [
+      { id: 'a', text: 'Pela setinha no canto inferior esquerdo do ícone.', correct: true },
+      { id: 'b', text: 'Pelo nome, que sempre termina com a palavra Atalho.', porque: 'O sistema sugere esse nome, e qualquer pessoa pode renomear. A setinha continua lá.' },
+      { id: 'c', text: 'Pelo tamanho: o ícone de atalho é menor que os outros.', porque: 'O tamanho é o mesmo. O que muda é a setinha desenhada por cima dele.' },
+      { id: 'd', text: 'Não dá para saber sem abrir as propriedades do ícone.', porque: 'Dá, e é para isso que a setinha existe: para se reconhecer de longe.' },
+    ]},
+    explanation: 'Apagar um atalho não apaga o arquivo. Confundir os dois é o que faz alguém achar que perdeu o trabalho — ou que não perdeu, quando perdeu.',
   },
 ];
 
