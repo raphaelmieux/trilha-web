@@ -57,6 +57,37 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
       ]},
       explanation: 'Salvar não executa nada. É o passo esquecido em "consertei e continua igual": o interpretador lê o disco, não a tela.',
     },
+    {
+      id: 'PY-M1-Q5', type: 'scenario',
+      prompt: 'Você achou o erro, corrigiu a linha no editor e pediu para rodar de novo. A mesma mensagem apareceu, apontando a mesma linha. O que aconteceu?',
+      data: { scenarios: [
+        { id: 'a', text: 'O arquivo não foi salvo: o interpretador leu o que está no disco.', correct: true },
+        { id: 'b', text: 'O Python guardou a versão antiga em memória e precisa ser reiniciado.', porque: 'Ele lê o arquivo do zero a cada execução. Não há versão guardada de antes.' },
+        { id: 'c', text: 'A correção estava certa, mas o erro só some depois de rodar duas vezes.', porque: 'Erro corrigido some na execução seguinte. Não existe atraso de uma rodada.' },
+        { id: 'd', text: 'O editor precisa fechar o arquivo para que a mudança valha.', porque: 'Basta salvar. Fechar o arquivo salva junto, e é por isso que às vezes parece que foi fechar que resolveu.' },
+      ]},
+      explanation: 'Escrever e executar são dois momentos. O interpretador lê o que está gravado, e não o que está na tela do editor — é a causa mais comum de "consertei e continua igual".',
+    },
+    {
+      id: 'PY-M1-Q6', type: 'multiple_choice',
+      prompt: 'Um programa em Python é, no disco, o quê?',
+      data: { options: [
+        { id: 'a', text: 'Um arquivo de texto terminado em .py.', correct: true },
+        { id: 'b', text: 'Um programa executável, pronto para abrir com dois cliques.', porque: 'Executável é o resultado de outras linguagens. O arquivo .py continua sendo texto, e quem o executa é o interpretador.' },
+        { id: 'c', text: 'Um arquivo que só o editor de código consegue abrir.', porque: 'Ele abre até no Bloco de Notas: é texto puro, sem formato próprio.' },
+        { id: 'd', text: 'Um projeto com várias pastas, criadas na instalação.', porque: 'Um programa pequeno cabe num arquivo só. Pastas aparecem quando o projeto cresce, e não por exigência da linguagem.' },
+      ]},
+      explanation: 'Nada de especial: texto, gravado em disco. É o interpretador que lhe dá vida, lendo-o de cima para baixo, uma linha por vez.',
+    },
+    {
+      id: 'PY-M1-Q7', type: 'true_false',
+      prompt: 'A linha que começa com # é lida pelo Python e muda o que o programa faz.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'O que vem depois do # é comentário: o Python pula a linha inteira. Ela existe para quem lê o código.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Comentário serve para explicar por que algo está ali. Repetir o que o código já diz só faz o arquivo crescer.',
+    },
   ],
 
   'm2-teoria': [
@@ -104,6 +135,37 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
       ]},
       explanation: 'Quatro tipos bastam para a vereda inteira. O que decide não é como o valor aparece na tela, é como ele foi escrito.',
     },
+    {
+      id: 'PY-M2-Q5', type: 'scenario',
+      prompt: 'O programa para na primeira linha que usa total e mostra NameError. A linha parece certa. O que procurar?',
+      data: { scenarios: [
+        { id: 'a', text: 'Um lugar antes dela guardando algo em total — que não existe.', correct: true },
+        { id: 'b', text: 'Um erro de conta na expressão, que o Python não conseguiu calcular.', porque: 'Conta impossível dá outra mensagem. NameError fala de nome, e diz que aquele nome nunca foi definido.' },
+        { id: 'c', text: 'O tipo de total, que precisa ser declarado antes do primeiro uso.', porque: 'Python não pede declaração de tipo. O que falta é guardar um valor, e não anunciar qual será.' },
+        { id: 'd', text: 'Um recuo a mais na linha, que a tirou do bloco certo.', porque: 'Recuo errado dá erro de sintaxe ou muda o que roda. Aqui o Python chegou a executar e não encontrou o nome.' },
+      ]},
+      explanation: 'O Python não supõe zero para o que não existe: ele avisa. E o aviso quase sempre aponta para uma linha de atribuição esquecida, ou para o nome escrito de dois jeitos diferentes.',
+    },
+    {
+      id: 'PY-M2-Q6', type: 'multiple_choice',
+      prompt: 'O programa guardou altura = 1,58 e não deu erro nenhum, mas as contas com altura saem estranhas. O que foi guardado ali?',
+      data: { options: [
+        { id: 'a', text: 'Dois valores separados por vírgula, e não um número decimal.', correct: true },
+        { id: 'b', text: 'O número 158, porque a vírgula foi descartada na leitura.', porque: 'Nada é descartado. A vírgula separa valores em Python, e o resultado deixa de ser um número só.' },
+        { id: 'c', text: 'O texto "1,58", que depois falha em qualquer conta.', porque: 'Texto exigiria aspas. Sem elas, a vírgula continua sendo separador.' },
+        { id: 'd', text: 'O número 1.58, porque o Python aceita as duas escritas.', porque: 'Ele aceita só o ponto como casa decimal. A vírgula tem outro papel na linguagem.' },
+      ]},
+      explanation: 'A casa decimal é ponto. Escrever com vírgula não estoura na hora — estoura numa conta mais adiante, que é bem pior de achar.',
+    },
+    {
+      id: 'PY-M2-Q7', type: 'true_false',
+      prompt: 'Somar "12" e "3", com aspas nos dois, dá erro e o programa para.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'Somar textos junta os dois: sai "123", sem mensagem nenhuma, e o programa segue com um número errado.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'É o defeito silencioso desta vereda: nada acusa. Quando um número sair estranho, a primeira pergunta é se aquilo é número mesmo.',
+    },
   ],
 
   'm3-teoria': [
@@ -148,6 +210,37 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
         { id: 'd', text: 'int(idade) = input("Idade: ")', porque: 'O lado esquerdo do igual tem de ser um nome. Uma conversão ali é erro de sintaxe.' },
       ]},
       explanation: 'Lê-se de dentro para fora: primeiro input pergunta, depois int converte o que voltou.',
+    },
+    {
+      id: 'PY-M3-Q5', type: 'multiple_choice',
+      prompt: 'Alguém digitou "doze" onde o programa esperava um número, e ele parou com ValueError. Como se deve entender isso?',
+      data: { options: [
+        { id: 'a', text: 'O programa recusou um dado que não serve, em vez de calcular errado.', correct: true },
+        { id: 'b', text: 'É um defeito do programa: ele deveria aceitar o número por extenso.', porque: 'Converter palavra em número é outro trabalho, e ninguém o pediu. Parar ali é o comportamento correto.' },
+        { id: 'c', text: 'É um erro de sintaxe, e o programa nem chegou a rodar.', porque: 'Ele rodou até a linha da conversão. Erro de sintaxe apareceria antes de qualquer linha executar.' },
+        { id: 'd', text: 'A conversão falhou porque o texto estava entre aspas.', porque: 'Tudo o que vem do teclado é texto. O que a conversão recusa é o conteúdo, e não as aspas.' },
+      ]},
+      explanation: 'Recusar é melhor do que seguir com um valor sem sentido. Um programa que continua com dado ruim erra silenciosamente, mais adiante e longe da causa.',
+    },
+    {
+      id: 'PY-M3-Q6', type: 'scenario',
+      prompt: 'Dentro de um for você escreveu duas linhas: a primeira com quatro espaços à esquerda e a segunda com dois. O que o Python faz?',
+      data: { scenarios: [
+        { id: 'a', text: 'Recusa o arquivo com IndentationError, antes de rodar qualquer coisa.', correct: true },
+        { id: 'b', text: 'Roda as duas, porque qualquer recuo indica que estão dentro do laço.', porque: 'O que decide não é haver recuo: é as linhas do mesmo bloco terem o mesmo recuo.' },
+        { id: 'c', text: 'Roda só a primeira, e a segunda fica fora do laço.', porque: 'Fosse assim, o programa rodaria com um comportamento diferente do escrito. Ele nem chega a começar.' },
+        { id: 'd', text: 'Ajusta a segunda linha ao recuo da primeira e segue.', porque: 'O Python não corrige recuo. Ele recusa o arquivo e diz onde a conta não fechou.' },
+      ]},
+      explanation: 'Em Python o recuo é a estrutura, e não a aparência. Ser chato aqui é o que garante que o desenho na tela seja a estrutura de verdade.',
+    },
+    {
+      id: 'PY-M3-Q7', type: 'true_false',
+      prompt: 'Escrever idade = input("Idade: ") e logo depois idade + 1 funciona quando a pessoa digita um número.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'O input devolve texto mesmo quando se digita 12. Somar 1 a um texto para o programa: é preciso converter antes, com int().' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'O input sempre devolve texto. Quando o que se pede é número, a conversão vem junto: int(input("Idade: ")), lido de dentro para fora.',
     },
   ],
 
@@ -194,6 +287,37 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
       ]},
       explanation: 'É o tipo bool. Comparação não é uma construção especial: é uma conta cujo resultado é verdadeiro ou falso.',
     },
+    {
+      id: 'PY-M4-Q5', type: 'scenario',
+      prompt: 'O programa divide 10 por 2 para dizer quantas barracas serão montadas e escreve na tela "5.0 barracas". Como corrigir?',
+      data: { scenarios: [
+        { id: 'a', text: 'Usar a divisão que descarta a parte decimal, com duas barras.', correct: true },
+        { id: 'b', text: 'Nada: 5.0 e 5 são o mesmo número, e a tela pode mostrar assim.', porque: 'São o mesmo valor e não a mesma leitura. Ninguém monta 5.0 barracas, e o número na tela é o que se lê.' },
+        { id: 'c', text: 'Multiplicar por 1 depois da divisão, para voltar a inteiro.', porque: 'Multiplicar por um não muda o tipo: continua decimal, agora com uma conta a mais.' },
+        { id: 'd', text: 'Trocar a divisão pelo resto, que devolve inteiro.', porque: 'O resto devolve o que sobra da divisão, e não o resultado dela. Aqui daria zero.' },
+      ]},
+      explanation: 'A divisão com uma barra devolve decimal mesmo quando a conta é exata. Para contagem de coisas, é a de duas barras que se quer.',
+    },
+    {
+      id: 'PY-M4-Q6', type: 'multiple_choice',
+      prompt: 'Por que comparar decimais com dois sinais de igual costuma dar resposta inesperada?',
+      data: { options: [
+        { id: 'a', text: 'Porque o computador guarda decimais por aproximação.', correct: true },
+        { id: 'b', text: 'Porque a comparação de igualdade só funciona com números inteiros.', porque: 'Ela funciona com decimais também. O problema é o valor guardado não ser exatamente o que se escreveu.' },
+        { id: 'c', text: 'Porque decimais são guardados como texto e comparados letra por letra.', porque: 'Texto e decimal são tipos diferentes. Comparação de texto é outra coisa, e essa sim é letra por letra.' },
+        { id: 'd', text: 'Porque o Python arredonda os dois lados antes de comparar.', porque: 'Ele não arredonda nada. Compara os valores como estão guardados, aproximação e tudo.' },
+      ]},
+      explanation: 'Somar um décimo com dois décimos não dá exatamente três décimos para a máquina. Com decimal, prefira maior-ou-igual e menor-ou-igual.',
+    },
+    {
+      id: 'PY-M4-Q7', type: 'true_false',
+      prompt: 'Comparar "ana" com "Ana" usando dois sinais de igual responde que são iguais.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'A comparação é caractere por caractere, e maiúscula e minúscula são caracteres diferentes.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'É a mesma sensibilidade a maiúsculas do nome das variáveis. Quem compara nome digitado precisa acertar isso antes, ou aceitar as duas formas de propósito.',
+    },
   ],
 
   'm5-teoria': [
@@ -239,6 +363,37 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
       ]},
       explanation: 'O que se cobra é sempre o que a estrutura faz, e nunca que ela esteja escrita.',
     },
+    {
+      id: 'PY-M5-Q5', type: 'scenario',
+      prompt: 'Você quis aceitar idades de 10 a 15 e escreveu if idade >= 10 or 15. Todo mundo passou, inclusive quem tem 40. Por quê?',
+      data: { scenarios: [
+        { id: 'a', text: 'O Python lê o 15 sozinho, e um número solto vale como verdadeiro.', correct: true },
+        { id: 'b', text: 'O or aceita qualquer idade porque basta um lado ser verdadeiro.', porque: 'Essa é a regra do or, e ela está certa. O defeito é o segundo lado não ser uma comparação: ele é sempre verdadeiro.' },
+        { id: 'c', text: 'Faltou converter a idade para número antes de comparar.', porque: 'Sem conversão a comparação daria erro de tipo. Aqui ela roda e sempre responde sim.' },
+        { id: 'd', text: 'O and é que serve para faixas, e o or nunca funciona com números.', porque: 'O or funciona bem quando os dois lados são comparações. Trocar por and sem escrever a segunda comparação repetiria o erro.' },
+      ]},
+      explanation: 'Cada lado precisa ser uma comparação inteira. O que se queria escrever é 10 <= idade <= 15 — que lê como se escreveria à mão.',
+    },
+    {
+      id: 'PY-M5-Q6', type: 'multiple_choice',
+      prompt: 'Por que a pergunta mais restritiva vem primeiro numa série de elif?',
+      data: { options: [
+        { id: 'a', text: 'Porque o primeiro que der sim encerra a série, e os de baixo nem são olhados.', correct: true },
+        { id: 'b', text: 'Porque o Python exige que as condições estejam em ordem decrescente.', porque: 'Ele aceita qualquer ordem, e é justamente por isso que a ordem errada não estoura.' },
+        { id: 'c', text: 'Porque a última condição da série é a que sempre vence.', porque: 'É o contrário: quem vence é a primeira que der sim. As seguintes nem chegam a ser perguntadas.' },
+        { id: 'd', text: 'Porque o else precisa vir logo depois da condição mais larga.', porque: 'O else fecha a série de qualquer jeito. O que decide o resultado é a ordem das perguntas antes dele.' },
+      ]},
+      explanation: 'Com a faixa larga em cima, a estreita nunca acontece: quem tirou nove entra no "bom" e "excelente" some. O programa roda, sem erro nenhum, e a nota mais alta desaparece.',
+    },
+    {
+      id: 'PY-M5-Q7', type: 'true_false',
+      prompt: 'Trocar uma série de elif por vários if seguidos dá sempre o mesmo resultado.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'Com if independentes, todos são perguntados e mais de um pode rodar. A série de elif para no primeiro sim.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Numa série de faixas que se sobrepõem, os if soltos imprimem duas respostas para a mesma nota. É a diferença entre caminhos alternativos e perguntas independentes.',
+    },
   ],
 
   'm6-teoria': [
@@ -283,6 +438,37 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
         { id: 'd', text: 'Quando a condição responde falso, segue na primeira linha depois do laço', order: 4 },
       ]},
       explanation: 'A condição é conferida antes de cada volta. Se já começar falsa, o bloco não roda nenhuma vez.',
+    },
+    {
+      id: 'PY-M6-Q5', type: 'scenario',
+      prompt: 'Você escreveu um while com um contador e o laboratório encerrou o programa dizendo que ele não parava. O contador está declarado antes do laço. O que faltou?',
+      data: { scenarios: [
+        { id: 'a', text: 'Somar ao contador dentro do bloco, para a condição virar falsa.', correct: true },
+        { id: 'b', text: 'Declarar o contador dentro do laço, em vez de antes de ele começar.', porque: 'Declarado dentro, ele voltaria ao valor inicial a cada volta — e o laço nunca terminaria do mesmo jeito.' },
+        { id: 'c', text: 'Um break no fim do bloco, que todo while exige.', porque: 'O break serve para sair antes da hora. Um while bem escrito termina pela própria condição.' },
+        { id: 'd', text: 'Trocar a comparação por uma de igualdade exata.', porque: 'Igualdade exata é mais frágil ainda: se o contador passar do valor sem tocá-lo, o laço nunca para.' },
+      ]},
+      explanation: 'É a responsabilidade que o while tem e o for não: alguma coisa dentro do bloco precisa aproximar a condição do falso. Esquecer de somar o contador é o modo mais comum de não fazer isso.',
+    },
+    {
+      id: 'PY-M6-Q6', type: 'multiple_choice',
+      prompt: 'Um for percorre range(1, 5). Quantas voltas dá, e qual é o último valor?',
+      data: { options: [
+        { id: 'a', text: 'Quatro voltas, terminando em 4.', correct: true },
+        { id: 'b', text: 'Cinco voltas, terminando em 5.', porque: 'O segundo número é onde a contagem para, e ele não entra. A série vai de 1 a 4.' },
+        { id: 'c', text: 'Quatro voltas, terminando em 3.', porque: 'Terminaria em 3 se a contagem começasse em zero. Aqui o primeiro número diz onde começar: em 1.' },
+        { id: 'd', text: 'Cinco voltas, terminando em 4.', porque: 'De 1 a 4 são quatro números, e o laço dá uma volta por número.' },
+      ]},
+      explanation: 'Com dois números, o primeiro entra e o segundo não. Com um número só, a contagem começa em zero — e é aí que mora o erro de contagem mais comum que existe.',
+    },
+    {
+      id: 'PY-M6-Q7', type: 'true_false',
+      prompt: 'Um while cuja condição já começa falsa roda o bloco uma vez antes de conferir.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'Ele confere antes de cada volta, inclusive a primeira. Começando falsa, o bloco não roda nenhuma vez.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'A pergunta vem antes do bloco. É por isso que um while pode terminar sem nunca ter executado nada — e às vezes é exatamente o que se quer.',
     },
   ],
 
@@ -331,6 +517,37 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
       ]},
       explanation: 'Sem mensagem, a pista se fabrica. O erro está no primeiro ponto em que o valor mostrado diverge do esperado.',
     },
+    {
+      id: 'PY-M7-Q5', type: 'scenario',
+      prompt: 'O programa lê três notas e mostra a média. Ele roda até o fim, sem mensagem nenhuma, e a média sai sempre maior do que deveria. Qual é a primeira coisa a fazer?',
+      data: { scenarios: [
+        { id: 'a', text: 'Pôr um print no meio, mostrando a soma e a quantidade antes da divisão.', correct: true },
+        { id: 'b', text: 'Reescrever o programa do começo, com outro jeito de calcular.', porque: 'Reescrever costuma reproduzir o mesmo engano, agora escondido em outro lugar. Primeiro se descobre onde o valor desanda.' },
+        { id: 'c', text: 'Procurar o nome do erro na última linha da mensagem.', porque: 'Não há mensagem: o programa rodou até o fim. É isso que caracteriza o erro de lógica.' },
+        { id: 'd', text: 'Conferir o recuo do bloco, que pode ter tirado uma linha do laço.', porque: 'Vale olhar depois, mas às cegas. O print diz em que ponto o valor deixou de bater, e é ele que aponta onde olhar.' },
+      ]},
+      explanation: 'Sem pista, a pista se fabrica. O primeiro ponto em que o mostrado diverge do esperado é onde o erro está — e não onde o resultado errado apareceu.',
+    },
+    {
+      id: 'PY-M7-Q6', type: 'multiple_choice',
+      prompt: 'O programa escreveu três linhas e parou com uma mensagem. Que família de erro é essa, e como se sabe?',
+      data: { options: [
+        { id: 'a', text: 'De execução: ele chegou a rodar, e parou no meio.', correct: true },
+        { id: 'b', text: 'De sintaxe: o Python encontrou algo que não entendeu.', porque: 'Erro de sintaxe é recusa do arquivo inteiro: nenhuma linha teria saído, nem a primeira.' },
+        { id: 'c', text: 'De lógica: o resultado não é o esperado.', porque: 'O erro de lógica não para o programa nem mostra mensagem. É justamente por isso que ele é o perigoso.' },
+        { id: 'd', text: 'Não dá para saber sem ler o nome do erro na mensagem.', porque: 'O nome diz qual erro é. A família já se sabe pelo momento: rodou um pouco e parou.' },
+      ]},
+      explanation: 'A família se descobre pelo quando: antes de qualquer linha sair é sintaxe; no meio é execução; nunca é lógica. É o que a classificação do painel de Problemas cobra.',
+    },
+    {
+      id: 'PY-M7-Q7', type: 'true_false',
+      prompt: 'Numa mensagem de erro do Python, a primeira linha é a que nomeia o erro.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'A mensagem se lê de baixo para cima: o nome do erro está na última linha, e o caminho até ele vem acima.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Última linha diz o quê; a de cima diz onde, com o arquivo e o número da linha. Ler o fim primeiro é o hábito que resolve a maior parte dos problemas sozinho.',
+    },
   ],
 
   'm8-teoria': [
@@ -375,6 +592,37 @@ export const QUESTOES_DE_PYTHON: Record<string, Question[]> = {
         { id: 'd', text: 'Quanto tempo você levou para escrever.', porque: 'O tempo não diz nada sobre o programa nem sobre o que você aprendeu escrevendo-o.' },
       ]},
       explanation: 'É o requisito mais difícil e o mais honesto: escrever copiando é possível, explicar copiando não é.',
+    },
+    {
+      id: 'PY-M8-Q5', type: 'scenario',
+      prompt: 'Você descreveu o programa em três linhas de português e a segunda ficou assim: "calcula a média, monta a escala do mês e envia o aviso". O que isso indica?',
+      data: { scenarios: [
+        { id: 'a', text: 'Que ele faz mais de uma coisa, e vale separá-lo.', correct: true },
+        { id: 'b', text: 'Que o programa está bem planejado, por já prever tudo o que precisa.', porque: 'Prever muito não é planejar bem. Três assuntos numa parte só ficam difíceis de escrever, de conferir e de explicar.' },
+        { id: 'c', text: 'Que faltou detalhar mais, escrevendo cada passo da conta.', porque: 'O plano é curto de propósito. O problema aqui não é falta de detalhe: são assuntos demais.' },
+        { id: 'd', text: 'Que a descrição deveria estar em Python, e não em português.', porque: 'O plano existe justamente para vir antes do código, em palavras que se pensam mais rápido.' },
+      ]},
+      explanation: 'Entrada, processamento e saída em três linhas é a medida. Quando o meio não cabe numa linha, ele costuma ser dois programas esperando para nascer.',
+    },
+    {
+      id: 'PY-M8-Q6', type: 'multiple_choice',
+      prompt: 'Qual destes comentários acrescenta alguma coisa ao programa?',
+      data: { options: [
+        { id: 'a', text: 'Dizer por que o desconto só vale acima de dez inscritos.', correct: true },
+        { id: 'b', text: 'Dizer que a linha seguinte soma um ao contador.', porque: 'O código já diz isso, e com mais precisão. Repetir o que está escrito só faz o arquivo crescer.' },
+        { id: 'c', text: 'Dizer o nome da variável que está sendo criada ali.', porque: 'O nome está na própria linha. Se ele não bastar, o que falta é um nome melhor, e não um comentário.' },
+        { id: 'd', text: 'Dizer que o bloco abaixo é um laço que repete.', porque: 'A palavra que abre o bloco já diz isso. Comentário que traduz a sintaxe ensina menos do que a sintaxe.' },
+      ]},
+      explanation: 'Comentário explica o porquê, e não o quê. A regra que sobra é essa: se o código já responde, o comentário está ocupando espaço.',
+    },
+    {
+      id: 'PY-M8-Q7', type: 'true_false',
+      prompt: 'Escolher um assunto que você conhece torna o programa mais fácil de conferir.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', correct: true },
+        { id: 'f', text: 'Falso', porque: 'Quem conhece o assunto sabe qual deveria ser a resposta — e é assim que se percebe um erro de lógica, que nenhuma ferramenta aponta.' },
+      ]},
+      explanation: 'A chamada da unidade, o placar do jogo do clube, quanto falta para o acampamento: em qualquer deles você reconhece um resultado errado de imediato.',
     },
   ],
 };

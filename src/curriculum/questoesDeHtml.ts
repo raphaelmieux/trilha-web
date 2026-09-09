@@ -78,7 +78,7 @@ export const QUESTOES_DE_HTML: Record<string, Question[]> = {
       id: 'VD01-M1-Q6', type: 'multiple_choice',
       prompt: 'Onde aparece o que se escreve dentro de <title>?',
       data: { options: [
-        { id: 'a', text: 'Na aba do navegador, e no resultado da busca — nunca no meio da página.', correct: true },
+        { id: 'a', text: 'Na aba do navegador e no resultado da busca.', correct: true },
         { id: 'b', text: 'No alto da página, como primeiro título do conteúdo.', porque: 'Esse é o <h1>, dentro do corpo. Os dois costumam dizer coisas parecidas, mas moram em lugares diferentes.' },
         { id: 'c', text: 'Em lugar nenhum: ele serve só para organizar o arquivo.', porque: 'Aparece sim, e em dois lugares que importam: a aba e a lista de resultados de quem procura o site.' },
         { id: 'd', text: 'No rodapé da página, junto do nome de quem a escreveu.', porque: 'Rodapé é conteúdo, e conteúdo fica no corpo. O <title> está no cabeçalho do documento.' },

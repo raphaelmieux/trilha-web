@@ -462,7 +462,7 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
         { id: 'a', text: 'Porque o valor guardado pode ser lido e mudado de qualquer lugar do projeto.', correct: true },
         { id: 'b', text: 'Porque número escrito dentro do bloco não aparece no palco.', porque: 'Ele aparece se algum bloco o mostrar. O que ele não faz é mudar enquanto o jogo acontece.' },
         { id: 'c', text: 'Porque a variável faz a conta sozinha a cada volta do laço.', porque: 'Ela não calcula nada. Quem soma é o bloco que você encaixa; ela apenas guarda o resultado.' },
-        { id: 'd', text: 'Porque o Scratch não aceita números soltos dentro dos blocos.', porque: 'Aceita, e eles são usados o tempo todo — em "mova 10 passos", por exemplo.' },
+        { id: 'd', text: 'Porque o Scratch não aceita números digitados soltos dentro dos blocos de comando.', porque: 'Aceita, e eles são usados o tempo todo — em "mova 10 passos", por exemplo.' },
       ]},
       explanation: 'Um número digitado dentro de um bloco fica preso ali. Guardado com nome, ele pode subir num canto do projeto e ser comparado noutro — que é o que um placar precisa.',
     },

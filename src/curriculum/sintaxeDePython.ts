@@ -655,6 +655,7 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
       {
         id: 'm1-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_PYTHON['m1-teoria'],
+        perguntas: 4,
         titulo: 'Do bloco para a linha',
         resumo: 'A linguagem, o que se ganha e o que se perde, e como um arquivo vira programa.',
         topicos: cap('a-linguagem').topicos,
@@ -683,6 +684,7 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
       {
         id: 'm2-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_PYTHON['m2-teoria'],
+        perguntas: 4,
         titulo: 'Variáveis e tipos',
         resumo: 'Um nome para um valor, os quatro tipos da vereda, e a soma que vira emenda.',
         topicos: cap('variaveis').topicos,
@@ -719,6 +721,7 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
       {
         id: 'm3-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_PYTHON['m3-teoria'],
+        perguntas: 4,
         titulo: 'Entrada e saída',
         resumo: 'print, input, a conversão que vem junto, e o espaço à esquerda.',
         topicos: cap('entrada-e-saida').topicos,
@@ -759,6 +762,7 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
       {
         id: 'm4-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_PYTHON['m4-teoria'],
+        perguntas: 4,
         titulo: 'Operadores',
         resumo: 'Contas, perguntas de verdadeiro ou falso, e o erro que o Python recusa.',
         topicos: cap('operadores').topicos,
@@ -792,6 +796,7 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
       {
         id: 'm5-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_PYTHON['m5-teoria'],
+        perguntas: 4,
         titulo: 'A condição',
         resumo: 'Um caminho, dois, ou vários — e por que a ordem faz parte da lógica.',
         topicos: cap('condicao').topicos,
@@ -831,6 +836,7 @@ nota = 7
       {
         id: 'm6-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_PYTHON['m6-teoria'],
+        perguntas: 4,
         titulo: 'Os dois laços',
         resumo: 'range e contagem a partir de zero, o laço que não termina, e a escolha entre os dois.',
         topicos: cap('repeticao').topicos,
@@ -876,6 +882,7 @@ nota = 7
       {
         id: 'm7-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_PYTHON['m7-teoria'],
+        perguntas: 4,
         titulo: 'Os três tipos de erro',
         resumo: 'Antes de rodar, no meio, ou nunca — e o que fazer em cada caso.',
         topicos: cap('erros').topicos,
@@ -949,6 +956,7 @@ else:
       {
         id: 'm8-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_PYTHON['m8-teoria'],
+        perguntas: 4,
         titulo: 'Do plano à apresentação',
         resumo: 'Entrada, processamento e saída; nomes que se leem; e explicar em voz alta.',
         topicos: cap('programa').topicos,
