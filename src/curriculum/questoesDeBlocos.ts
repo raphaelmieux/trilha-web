@@ -64,6 +64,37 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
       ]},
       explanation: 'O computador é um executor possível, não o único. Algoritmos existem há milhares de anos.',
     },
+    {
+      id: 'BLK-M1-Q5', type: 'scenario',
+      prompt: 'Você escreveu o passo a passo para chegar do portão do clube até a secretaria e passou a folha para outra pessoa seguir. Ela chegou num lugar errado. O que isso mostra?',
+      data: { scenarios: [
+        { id: 'a', text: 'Algum passo faltou ou ficou fora de ordem no que você escreveu.', correct: true },
+        { id: 'b', text: 'Que a pessoa não entendeu, e o algoritmo estava certo.', porque: 'Quem executa segue o que está escrito. Passo que só existia na sua cabeça não chegou até ela.' },
+        { id: 'c', text: 'Que caminho de prédio não pode ser escrito como algoritmo.', porque: 'Pode, e é um dos exemplos clássicos: passos finitos, em ordem, levando a um resultado.' },
+        { id: 'd', text: 'Que faltou um computador para executar direito o passo a passo.', porque: 'Algoritmo não depende de máquina. A definição não fala de computador nenhum.' },
+      ]},
+      explanation: 'Testar um algoritmo é entregá-lo a quem não sabe o que você quis dizer. O que estiver implícito some no caminho — e é exatamente o que acontece com a máquina.',
+    },
+    {
+      id: 'BLK-M1-Q6', type: 'multiple_choice',
+      prompt: 'Qual é a diferença entre um algoritmo e um programa?',
+      data: { options: [
+        { id: 'a', text: 'O algoritmo é o plano; o programa é o plano escrito para a máquina.', correct: true },
+        { id: 'b', text: 'O algoritmo é curto e o programa é longo, com muitos passos.', porque: 'O tamanho não separa os dois. Há algoritmos longos e programas de três linhas.' },
+        { id: 'c', text: 'O algoritmo é feito de blocos e o programa é digitado em texto.', porque: 'Blocos e texto são duas formas de escrever programa. O algoritmo existe antes de escolher qual delas usar.' },
+        { id: 'd', text: 'São a mesma coisa, com nomes diferentes conforme quem fala.', porque: 'O mesmo algoritmo vira programa em Scratch, em Python ou em nenhum dos dois — e continua existindo.' },
+      ]},
+      explanation: 'A receita da sua avó é um algoritmo e nunca virou programa. É por isso que os dois nomes existem: um é a ideia dos passos, o outro é a ideia entregue à máquina.',
+    },
+    {
+      id: 'BLK-M1-Q7', type: 'true_false',
+      prompt: 'Programar em blocos evita o erro de sintaxe porque o bloco só encaixa onde faz sentido.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', correct: true },
+        { id: 'f', text: 'Falso', porque: 'É essa a diferença que os blocos trouxeram: não há ponto e vírgula para esquecer nem palavra para escrever errado. O erro de lógica, esse continua possível.' },
+      ]},
+      explanation: 'Encaixe errado não acontece; ordem errada acontece o tempo todo. Os blocos tiram um tipo de erro do caminho para deixar o outro à vista.',
+    },
   ],
 
   'm2-teoria': [
@@ -108,6 +139,37 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
         { id: 'f', text: 'Falso', porque: 'A pilha é lida na ordem em que foi montada, do chapéu para baixo. É a sequência desenhada na vertical.' },
       ]},
       explanation: 'A pilha é a sequência: o desenho na tela é a ordem de execução.',
+    },
+    {
+      id: 'BLK-M2-Q5', type: 'scenario',
+      prompt: 'O ator começa o jogo no canto esquerdo. Você encaixou "vá para x: 0 y: 0" logo abaixo do chapéu para reiniciar a posição, e ele passou a nascer no meio do palco. Por quê?',
+      data: { scenarios: [
+        { id: 'a', text: 'x: 0 y: 0 é o centro do palco, e não o lugar onde o ator estava.', correct: true },
+        { id: 'b', text: 'O bloco só funciona com números positivos, e zerou tudo.', porque: 'Ele aceita negativos: metade do palco tem coordenada negativa. O ponto pedido é que era o centro.' },
+        { id: 'c', text: 'O palco mudou de tamanho ao rodar e levou o ator junto.', porque: 'O palco tem sempre 480 por 360. Quem mudou de lugar foi o ator, obedecendo ao bloco.' },
+        { id: 'd', text: 'O chapéu apaga a posição anterior antes de qualquer bloco rodar.', porque: 'O chapéu não muda nada: ele só espera o momento de começar.' },
+      ]},
+      explanation: 'Para nascer no canto esquerdo, o bloco precisa dizer aquele canto — algo como x: -180 y: 0. O centro é um lugar como outro qualquer, e não o começo.',
+    },
+    {
+      id: 'BLK-M2-Q6', type: 'multiple_choice',
+      prompt: 'O gato e a maçã têm, cada um, uma pilha começando por "quando ⚑ for clicado". O que acontece ao clicar na bandeira?',
+      data: { options: [
+        { id: 'a', text: 'As duas pilhas começam juntas, sem uma esperar a outra.', correct: true },
+        { id: 'b', text: 'Roda a pilha do gato, e a da maçã só depois que ela terminar.', porque: 'Uma pilha esperando a outra faria um desenho animado, e não um jogo: nada poderia acontecer ao mesmo tempo.' },
+        { id: 'c', text: 'Roda apenas a pilha do ator selecionado na lista de baixo.', porque: 'A seleção decide o que você edita, e não o que roda. A bandeira dispara todas as pilhas de bandeira.' },
+        { id: 'd', text: 'O Scratch avisa que há duas pilhas com o mesmo chapéu.', porque: 'Repetir o chapéu é normal e não é erro. Um mesmo ator pode ter várias pilhas de bandeira.' },
+      ]},
+      explanation: 'Dentro de uma pilha, um bloco depois do outro; entre pilhas, todas ao mesmo tempo. É essa simultaneidade que permite dois personagens agirem no mesmo instante.',
+    },
+    {
+      id: 'BLK-M2-Q7', type: 'true_false',
+      prompt: 'Um bloco de chapéu também executa alguma ação — ele move o ator para a posição inicial antes de a pilha começar.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'O chapéu só espera o momento de disparar. Nada se move sem um bloco embaixo dele pedindo.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Quem posiciona é o bloco de movimento que você encaixa. O chapéu responde a uma pergunta só: quando esta pilha começa?',
     },
   ],
 
@@ -154,6 +216,37 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
       ]},
       explanation: 'Os dois tipos convivem, e quase todo jogo usa os dois.',
     },
+    {
+      id: 'BLK-M3-Q5', type: 'multiple_choice',
+      prompt: 'Você quer que o ator ande para a esquerda quando a seta esquerda for pressionada. Qual bloco encaixar embaixo desse chapéu?',
+      data: { options: [
+        { id: 'a', text: '"mova -10 passos": o sinal negativo é a direção.', correct: true },
+        { id: 'b', text: 'Um bloco de andar para trás, na gaveta de Movimento.', porque: 'Esse bloco não existe. O mesmo "mova" serve para os dois lados, conforme o sinal do número.' },
+        { id: 'c', text: '"mova 10 passos", que anda para o lado do chapéu escolhido.', porque: 'O bloco não olha o chapéu. Com um número positivo ele anda para a direita, seja qual for a tecla.' },
+        { id: 'd', text: '"vá para x: -10 y: 0", que leva o ator para a esquerda.', porque: 'Esse bloco leva a um ponto fixo do palco, e não dez passos adiante. Segurar a tecla não moveria mais nada.' },
+      ]},
+      explanation: 'É o mesmo raciocínio das coordenadas negativas do palco: o sinal diz o sentido. Um bloco só, e dois caminhos.',
+    },
+    {
+      id: 'BLK-M3-Q6', type: 'scenario',
+      prompt: 'Duas pilhas do seu projeto: uma arruma o cenário quando a bandeira é clicada e acaba; a outra fica vigiando o encontro dos atores. O examinador pergunta se isso é um erro.',
+      data: { scenarios: [
+        { id: 'a', text: 'Não é: quase todo jogo tem os dois tipos, e um não substitui o outro.', correct: true },
+        { id: 'b', text: 'É: um projeto deve ter só um tipo de pilha, para não confundir.', porque: 'Se houvesse um tipo só, ou nada ficaria de guarda ou nada seria arrumado no começo.' },
+        { id: 'c', text: 'É: a pilha que acaba deveria ter um "sempre" para não parar.', porque: 'Arrumar o cenário é trabalho de uma vez. Um laço ali refaria a arrumação sem fim.' },
+        { id: 'd', text: 'Não é, porque a segunda pilha na verdade também termina sozinha.', porque: 'Uma pilha com "sempre" não termina: ela fica viva esperando, e é o que faz dela vigia.' },
+      ]},
+      explanation: 'Uma arruma, a outra vigia. A diferença aparece em dois lugares na tela: o chapéu que abre a pilha, e haver ou não um "sempre" dentro dela.',
+    },
+    {
+      id: 'BLK-M3-Q7', type: 'true_false',
+      prompt: 'Um bloco "próxima fantasia" solto na área de scripts, sem chapéu acima, cumpre o requisito de responder a um evento.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'Pilha sem chapéu nunca executa. O requisito pede resposta a um evento, e ali não há evento nem resposta.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'O requisito tem duas partes ligadas: algo acontece, e o ator responde. Sem o chapéu, a segunda parte nunca chega a rodar.',
+    },
   ],
 
   'm4-teoria': [
@@ -199,6 +292,37 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
       ]},
       explanation: 'É a diferença entre os dois laços: "repita" tem conta para terminar, "sempre" não tem.',
     },
+    {
+      id: 'BLK-M4-Q5', type: 'scenario',
+      prompt: 'Você quis que o ator desse quatro passos e depois dissesse "cheguei". Ele deu os quatro passos e disse "cheguei" quatro vezes. O que houve?',
+      data: { scenarios: [
+        { id: 'a', text: 'O bloco de falar ficou dentro da boca do laço, e não embaixo dele.', correct: true },
+        { id: 'b', text: 'O laço repete tudo o que vier depois dele até o fim da pilha.', porque: 'Ele repete só o que está dentro da boca. O que fica encaixado abaixo roda uma vez, depois que o laço termina.' },
+        { id: 'c', text: 'O bloco de falar precisa de um "espere" para não repetir.', porque: 'Sem repetição não haveria o que esperar. O bloco repetiu porque estava dentro do laço.' },
+        { id: 'd', text: 'O laço rodou quatro vezes por engano; o certo seria uma.', porque: 'Quatro voltas é o que você pediu, e os quatro passos saíram certos. O que estava no lugar errado era a fala.' },
+      ]},
+      explanation: 'Dentro da boca e embaixo do laço são dois lugares diferentes, e na tela eles ficam quase colados. Quando algo acontece vezes demais, olhe onde o bloco encaixou.',
+    },
+    {
+      id: 'BLK-M4-Q6', type: 'multiple_choice',
+      prompt: 'Você encaixou um bloco logo abaixo de um "sempre" e ele nunca acontece. Por quê?',
+      data: { options: [
+        { id: 'a', text: 'O "sempre" não termina, então nada depois dele chega a rodar.', correct: true },
+        { id: 'b', text: 'Blocos abaixo de um laço só rodam se houver um chapéu novo.', porque: 'Chapéu abre pilha. O problema aqui é o laço anterior nunca devolver a vez.' },
+        { id: 'c', text: 'O bloco precisa estar dentro da boca do "sempre" para existir.', porque: 'Dentro da boca ele rodaria a cada volta, que é outro comportamento. Abaixo ele é válido — só inalcançável.' },
+        { id: 'd', text: 'O Scratch descarta blocos soltos no fim de uma pilha.', porque: 'Ele não descarta nada. O bloco está lá, visível, e nunca é alcançado.' },
+      ]},
+      explanation: 'O "sempre" gira até alguém encerrar o programa. Quem escreve um encerramento para depois dele precisa pôr a decisão dentro do laço.',
+    },
+    {
+      id: 'BLK-M4-Q7', type: 'true_false',
+      prompt: 'A verificação do laboratório aceita um laço vazio, porque a estrutura está montada na tela.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'Ela pergunta se existe laço com alguma coisa dentro. Arrastar o bloco é a parte fácil; usar a estrutura é o que se cobra.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Um laço vazio roda, conta e não faz nada — sem aviso nenhum. A mesma armadilha vale para o "se" e para a variável dos módulos seguintes.',
+    },
   ],
 
   'm5-teoria': [
@@ -226,7 +350,7 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
     },
     {
       id: 'BLK-M5-Q3', type: 'multiple_choice',
-      prompt: 'Qual é a diferença entre "tocando na borda" e "tocando na maçã"?',
+      prompt: 'Qual é a diferença entre "tocando em borda?" e "tocando em Maçã?"?',
       data: { options: [
         { id: 'a', text: 'A borda é a beirada do palco; a maçã é outro ator.', correct: true },
         { id: 'b', text: 'A borda vale para qualquer ator e a maçã só para o que a criou.', porque: 'Qualquer ator pode perguntar por qualquer outro. Não há dono da pergunta.' },
@@ -244,6 +368,37 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
       ]},
       explanation: 'O bloco na tela não é a estrutura funcionando. O que se cobra é o que ele faz, e não que ele esteja lá.',
     },
+    {
+      id: 'BLK-M5-Q5', type: 'multiple_choice',
+      prompt: 'Por que o bloco "tocando em Maçã?" tem forma de losango e termina em interrogação?',
+      data: { options: [
+        { id: 'a', text: 'Porque é uma pergunta, e só o que é pergunta encaixa no buraco do "se".', correct: true },
+        { id: 'b', text: 'Porque ele pertence à categoria de Sensores, que usa essa forma.', porque: 'A categoria explica a cor, e não o formato. O losango existe para dizer que aquilo responde sim ou não.' },
+        { id: 'c', text: 'Porque ele é o único bloco que pode aparecer dentro de um laço.', porque: 'Qualquer bloco entra num laço. O que o losango decide é onde ele encaixa: no buraco de uma condição.' },
+        { id: 'd', text: 'Porque a forma indica que ele executa mais devagar que os outros.', porque: 'Formato não tem relação com velocidade. Ele diz que tipo de coisa o bloco devolve.' },
+      ]},
+      explanation: 'A forma do bloco é a gramática dos blocos: encaixe redondo é valor, losango é sim ou não, e é por isso que não dá para escrever a condição no lugar errado.',
+    },
+    {
+      id: 'BLK-M5-Q6', type: 'scenario',
+      prompt: 'O requisito pede dois atores que interajam. Você montou "se tocando em borda? então" dentro de um "sempre", e o programa roda direitinho. O requisito foi cumprido?',
+      data: { scenarios: [
+        { id: 'a', text: 'Não: a borda é a beirada do palco, e não o outro ator.', correct: true },
+        { id: 'b', text: 'Sim, porque o ator está encostando em alguma coisa do palco.', porque: 'Encostar na beirada não é encontrar ninguém. O requisito pede que um ator perceba o outro.' },
+        { id: 'c', text: 'Sim, desde que o segundo ator também tenha uma pilha rodando.', porque: 'Os dois podem ter pilhas e nunca se perceberem. A interação exige que um pergunte pelo outro.' },
+        { id: 'd', text: 'Não, porque a condição precisa estar fora do laço para valer.', porque: 'Dentro do laço é o lugar certo. O que está errado é por quem a pergunta pergunta.' },
+      ]},
+      explanation: 'É o defeito que não aparece: o programa roda, a condição funciona, e o requisito continua por cumprir. Trocar "borda" pelo nome do outro ator é a correção inteira.',
+    },
+    {
+      id: 'BLK-M5-Q7', type: 'true_false',
+      prompt: 'Um "se" dentro de um "sempre" refaz a pergunta a cada volta do laço.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', correct: true },
+        { id: 'f', text: 'Falso', porque: 'É exatamente o que o par faz: o laço devolve a vez ao "se" continuamente, e é assim que o programa vigia alguma coisa.' },
+      ]},
+      explanation: 'O "se" pergunta no instante em que roda, e mais nada. Quem o faz perguntar de novo é o laço em volta — laço por fora, condição por dentro.',
+    },
   ],
 
   'm6-teoria': [
@@ -260,18 +415,18 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
     },
     {
       id: 'BLK-M6-Q2', type: 'multiple_choice',
-      prompt: 'Qual é a diferença entre "defina placar para 0" e "mude placar em 1"?',
+      prompt: 'Qual é a diferença entre "mude placar para 0" e "adicione 1 a placar"?',
       data: { options: [
         { id: 'a', text: 'O primeiro troca o valor; o segundo soma ao que já havia.', correct: true },
         { id: 'b', text: 'O primeiro cria a variável e o segundo apenas a utiliza depois.', porque: 'Criar é outra coisa, feita fora da pilha. Os dois blocos supõem a variável já existindo.' },
         { id: 'c', text: 'O primeiro vale para números e o segundo para qualquer tipo de valor.', porque: 'É quase o contrário: somar só faz sentido com número. Trocar aceita qualquer valor.' },
-        { id: 'd', text: 'Não há diferença: os dois escrevem um valor novo na variável.', porque: 'Com o placar em 5, "defina para 1" deixa 1 e "mude em 1" deixa 6. A diferença aparece na primeira vez que se usa.' },
+        { id: 'd', text: 'Não há diferença: os dois escrevem um valor novo na variável.', porque: 'Com o placar em 5, "mude para 1" deixa 1 e "adicione 1" deixa 6. A diferença aparece na primeira vez que se usa.' },
       ]},
-      explanation: '"Defina" é usado no começo, para zerar. "Mude" é o que faz o placar subir durante o jogo.',
+      explanation: '"Mude ... para" é usado no começo, para zerar. "Adicione ... a" é o que faz o placar subir durante o jogo. Os nomes quase se invertem em relação ao que a intuição sugere, e é por isso que vale ler o bloco na paleta antes de arrastar.',
     },
     {
       id: 'BLK-M6-Q3', type: 'multiple_choice',
-      prompt: 'O "mude placar em 1" está dentro de um "sempre", mas fora de qualquer "se". O que se vê no jogo?',
+      prompt: 'O "adicione 1 a placar" está dentro de um "sempre", mas fora de qualquer "se". O que se vê no jogo?',
       data: { options: [
         { id: 'a', text: 'O placar sobe sem parar, sem que ninguém tenha feito nada.', correct: true },
         { id: 'b', text: 'O placar sobe uma vez e depois fica parado no mesmo número.', porque: 'Dentro do "sempre" ele roda a cada volta. Subir uma vez só é o que aconteceria fora do laço.' },
@@ -288,6 +443,37 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
         { id: 'f', text: 'Falso', correct: true },
       ]},
       explanation: 'Leia o requisito inteiro: criar e também alterar. É a alteração que mostra para que a variável serve.',
+    },
+    {
+      id: 'BLK-M6-Q5', type: 'scenario',
+      prompt: 'Na primeira partida o placar terminou em 8. Na segunda, o jogo começou marcando 8 e foi subindo dali. O que falta na pilha da bandeira?',
+      data: { scenarios: [
+        { id: 'a', text: 'Um "mude placar para 0" antes do laço, para zerar no começo.', correct: true },
+        { id: 'b', text: 'Um "adicione 0 a placar", que devolve a contagem ao início.', porque: 'Somar zero deixa tudo como estava. Quem apaga o valor anterior é o bloco que troca, não o que soma.' },
+        { id: 'c', text: 'Nada: a variável se apaga sozinha ao clicar de novo na bandeira.', porque: 'Ela guarda o valor até alguém trocá-lo. É por isso que o segundo jogo herda o placar do primeiro.' },
+        { id: 'd', text: 'Apagar a variável no fim da partida e criá-la de novo depois.', porque: 'Criar e apagar variável é coisa da paleta, e não do programa rodando. O que se faz durante o jogo é trocar o valor.' },
+      ]},
+      explanation: 'Ninguém percebe na primeira partida — só na segunda, e aí parece que o jogo enlouqueceu. Recomeçar precisa recomeçar de verdade.',
+    },
+    {
+      id: 'BLK-M6-Q6', type: 'multiple_choice',
+      prompt: 'Por que guardar os pontos numa variável, em vez de escrever o número direto dentro do bloco?',
+      data: { options: [
+        { id: 'a', text: 'Porque o valor guardado pode ser lido e mudado de qualquer lugar do projeto.', correct: true },
+        { id: 'b', text: 'Porque número escrito dentro do bloco não aparece no palco.', porque: 'Ele aparece se algum bloco o mostrar. O que ele não faz é mudar enquanto o jogo acontece.' },
+        { id: 'c', text: 'Porque a variável faz a conta sozinha a cada volta do laço.', porque: 'Ela não calcula nada. Quem soma é o bloco que você encaixa; ela apenas guarda o resultado.' },
+        { id: 'd', text: 'Porque o Scratch não aceita números digitados soltos dentro dos blocos de comando.', porque: 'Aceita, e eles são usados o tempo todo — em "mova 10 passos", por exemplo.' },
+      ]},
+      explanation: 'Um número digitado dentro de um bloco fica preso ali. Guardado com nome, ele pode subir num canto do projeto e ser comparado noutro — que é o que um placar precisa.',
+    },
+    {
+      id: 'BLK-M6-Q7', type: 'true_false',
+      prompt: 'Com o "adicione 1 a placar" dentro do "se", encostar por um segundo rende sempre exatamente um ponto.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'Enquanto o encosto durar, a pergunta continua dando sim a cada volta — e o ponto é somado de novo em cada uma delas.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'É comportamento real, e não defeito da plataforma. Resolvê-lo — afastando a maçã logo depois do ponto — é o que faz o jogo ficar bom.',
     },
   ],
 
@@ -334,6 +520,37 @@ export const QUESTOES_DE_BLOCOS: Record<string, Question[]> = {
         { id: 'f', text: 'Falso', correct: true },
       ]},
       explanation: 'A interação é a pergunta: um "se tocando" que nomeia o outro ator, e faz algo quando a resposta é sim.',
+    },
+    {
+      id: 'BLK-M7-Q5', type: 'scenario',
+      prompt: 'O gato pergunta "tocando em Maçã?" dentro de um "sempre", o programa roda, e o placar nunca sai do zero. A maçã está no alto do palco e a seta só muda o x do gato.',
+      data: { scenarios: [
+        { id: 'a', text: 'Eles nunca se encostam: o defeito está na geometria, não nos blocos.', correct: true },
+        { id: 'b', text: 'Falta a maçã perguntar pelo gato para o encontro ser percebido.', porque: 'Basta um dos dois perguntar. Aqui a pergunta existe e está no lugar certo — o encontro é que não acontece.' },
+        { id: 'c', text: 'O "tocando em" não funciona entre atores de tamanhos diferentes.', porque: 'O tamanho não influi: ele responde quando os desenhos se sobrepõem, quaisquer que sejam.' },
+        { id: 'd', text: 'O placar precisa ser zerado depois da soma, e não antes.', porque: 'Zerar depois apagaria o ponto recém-marcado. O placar aqui não chega a subir nenhuma vez.' },
+      ]},
+      explanation: 'Programa certo e jogo que não funciona é quase sempre isto: a condição nunca chega a ser verdadeira. Antes de refazer os blocos, arraste os atores para perto e veja se o placar reage.',
+    },
+    {
+      id: 'BLK-M7-Q6', type: 'multiple_choice',
+      prompt: 'Onde a comparação "placar > 5" precisa ficar para decidir o fim do jogo?',
+      data: { options: [
+        { id: 'a', text: 'Dentro do mesmo "sempre" que vigia o resto do jogo.', correct: true },
+        { id: 'b', text: 'Logo abaixo do chapéu, antes do laço começar.', porque: 'Ali ela pergunta uma vez, com o placar ainda em zero, e a resposta é sempre não.' },
+        { id: 'c', text: 'Encaixada depois do "sempre", no fim da pilha.', porque: 'Nada depois de um "sempre" chega a rodar: o laço não termina.' },
+        { id: 'd', text: 'Numa pilha própria, sem chapéu, ao lado das outras.', porque: 'Pilha sem chapéu nunca executa. A comparação ficaria na tela sem nunca ser feita.' },
+      ]},
+      explanation: 'O placar muda o tempo todo, então a pergunta precisa ser refeita o tempo todo. É o mesmo motivo pelo qual o "se" do encontro mora dentro do laço.',
+    },
+    {
+      id: 'BLK-M7-Q7', type: 'true_false',
+      prompt: 'Parar o projeto pelo botão vermelho conta como a condição de vitória que o requisito pede.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'O botão vermelho funciona em qualquer projeto, até no que não tem jogo nenhum. O requisito pede uma condição escrita no programa.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Desistir não é ganhar. O que transforma o brinquedo em jogo é haver, dentro do programa, um jeito de vencer ou de perder.',
     },
   ],
 };

@@ -3,6 +3,9 @@ import blocosMsgs from 'scratch-l10n/locales/blocks-msgs';
 import { VEREDAS } from './veredas';
 import { lerExemploDeBlocos } from '../labs/blocosDoScratch';
 import { textoDoBloco, textoDaCondicao, type Bloco, type Condicao } from '../labs/blocos';
+import { PASSOS_DE_BLOCOS } from '../labs/passosDeBlocos';
+import { PASSOS_DE_SCRATCH } from '../labs/passosDeScratch';
+import { QUESTOES_DE_BLOCOS } from './questoesDeBlocos';
 
 /*
   Todo bloco escrito na lição existe, com essas palavras, na paleta do Scratch.
@@ -185,5 +188,63 @@ describe('o vocabulário da tela', () => {
       .filter(([r]) => r.test(texto))
       .map(([r, porque]) => `${r} — ${porque}`);
     expect(erradas).toEqual([]);
+  });
+});
+
+/*
+  E o nome errado também não entra pela questão nem pelo passo a passo.
+
+  A trava de cima lê a prosa dos tópicos, que foi onde os nomes inventados
+  apareceram primeiro. Eles sobreviveram nos outros dois lugares em que a
+  plataforma escreve nome de bloco: o enunciado da questão — "qual é a
+  diferença entre 'defina placar para 0' e 'mude placar em 1'?" — e o passo a
+  passo que a moldura oferece a quem trava, que mandava tocar em "mude ... em
+  ...". O passo é pior que a lição: ele é lido com a paleta aberta na frente,
+  para achar aquele botão agora.
+
+  O passo a passo do editor de reserva é o caso mais direto de todos, porque o
+  próprio editor desenha os rótulos certos: o passo dizia um nome e o botão ao
+  lado dele dizia outro.
+
+  A lista é de nomes que já foram escritos aqui, e não de tudo o que se pode
+  errar — uma trava por padrão geral acusaria a prosa que cita um bloco pela
+  metade ("o 'se' mora dentro do 'sempre'"), que é como se escreve sobre eles.
+*/
+describe('os nomes inventados não voltam pelas questões nem pelos passos', () => {
+  const INVENTADAS: [RegExp, string][] = [
+    [/\bdefina\s+\S+\s+para\b/i, 'quem troca o valor é "mude ... para"'],
+    [/\bdefina\s*\.\.\.\s*para\b/i, 'quem troca o valor é "mude ... para"'],
+    [/\bmude\s+\S+\s+em\s+\d/i, 'quem soma é "adicione ... a"'],
+    [/\bmude\s*\.\.\.\s*em\b/i, 'quem soma é "adicione ... a"'],
+    [/\bpare tudo\b/i, 'o bloco é "pare todos"'],
+    [/\bpróximo traje\b/i, 'o bloco é "próxima fantasia"'],
+    [/\bsuba \d+ passos\b/i, 'subir é somar em y: "adicione 10 a y"'],
+    [/bandeira verde for clicada/i, 'o bloco é "quando ⚑ for clicado"'],
+    [/\btoque um som\b/i, 'o bloco é "toque o som"'],
+  ];
+
+  const achar = (texto: string) => INVENTADAS
+    .filter(([r]) => r.test(texto))
+    .map(([r, porque]) => `${r} — ${porque}`);
+
+  it('nenhuma questão da CC001 escreve um bloco que a paleta não tem', () => {
+    const texto = Object.values(QUESTOES_DE_BLOCOS).flat()
+      .flatMap(q => [
+        q.prompt,
+        q.explanation ?? '',
+        ...(q.data.options ?? []).flatMap(o => [o.text, o.porque ?? '']),
+        ...(q.data.scenarios ?? []).flatMap(o => [o.text, o.porque ?? '']),
+        ...(q.data.items ?? []).map(i => i.text),
+      ])
+      .join('\n');
+    expect(achar(texto)).toEqual([]);
+  });
+
+  it('nenhum passo a passo manda tocar num bloco que a paleta não tem', () => {
+    const texto = [
+      ...Object.values(PASSOS_DE_BLOCOS).flat(),
+      ...Object.values(PASSOS_DE_SCRATCH).flat(),
+    ].join('\n');
+    expect(achar(texto)).toEqual([]);
   });
 });

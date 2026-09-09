@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getAllSpecialties } from './index';
-import { getFinalExamQuestions } from './finalExams';
+import { todasAsQuestoesDaProva, quantasAProvaPergunta } from './finalExams';
 import { veredasComConteudo, questoesDaVereda } from './veredas';
 import type { Question } from '../types';
 
@@ -89,7 +89,7 @@ const licoes = [
 */
 const provas = getAllSpecialties()
   .filter(s => s.modules.some(m => m.lessons.some(l => l.labType === 'final_exam')))
-  .flatMap(s => getFinalExamQuestions(s.code));
+  .flatMap(s => todasAsQuestoesDaProva(s.code));
 
 /*
   Questão não desenha marcação: o que se escreve ali sai como está.
@@ -292,7 +292,7 @@ describe('nenhuma prova cobra a mesma coisa duas vezes', () => {
   const provasPorTrilha = [
     ...getAllSpecialties()
       .filter(s => s.modules.some(m => m.lessons.some(l => l.labType === 'final_exam')))
-      .map(s => [s.code, getFinalExamQuestions(s.code)] as const),
+      .map(s => [s.code, todasAsQuestoesDaProva(s.code)] as const),
     /* A vereda inteira é um conjunto só: repetir a pergunta entre dois módulos
        dela é o mesmo defeito que repeti-la dentro de uma prova. */
     ...veredasComConteudo().map(v => [v.code, questoesDaVereda(v)] as const),
@@ -345,7 +345,7 @@ describe('nenhuma prova cobra a mesma coisa duas vezes', () => {
   lição encolheria em silêncio, perguntando menos do que foi escrito para ela
   e cobrando menos do que o requisito pede.
 */
-describe('a lição que sorteia tem de onde sortear', () => {
+describe('quem sorteia tem de onde sortear', () => {
   const MARGEM = 3;
 
   const licoesQueSorteiam = () => {
@@ -362,17 +362,27 @@ describe('a lição que sorteia tem de onde sortear', () => {
         achadas.push({ onde: `${v.code} ${l.id}`, pool: l.questoes.length, perguntas: l.perguntas });
       }
     }
+    /* A prova final entra aqui pela mesma razão, e só passou a entrar quando
+       ganhou o sorteio: enquanto ela perguntava tudo, não havia margem que
+       conferir. Ela sorteia por uma tabela em vez de um campo na lição, e é a
+       única diferença. */
+    for (const e of getAllSpecialties()) {
+      const pool = todasAsQuestoesDaProva(e.code).length;
+      const perguntas = quantasAProvaPergunta(e.code);
+      if (!pool || perguntas >= pool) continue;
+      achadas.push({ onde: `${e.code} prova final`, pool, perguntas });
+    }
     return achadas;
   };
 
-  it('o reservatório tem pelo menos três a mais do que a lição pergunta', () => {
+  it('o reservatório tem pelo menos três a mais do que se pergunta', () => {
     for (const { onde, pool, perguntas } of licoesQueSorteiam()) {
       expect(pool, `${onde} sorteia ${perguntas} de um reservatório de ${pool}`)
         .toBeGreaterThanOrEqual(perguntas + MARGEM);
     }
   });
 
-  it('nenhuma lição pergunta menos de três', () => {
+  it('ninguém pergunta menos de três', () => {
     /* Uma prova de duas questões passa a valer 50% por acerto, e o limiar de
        domínio deixa de medir qualquer coisa. */
     for (const { onde, perguntas } of licoesQueSorteiam()) {

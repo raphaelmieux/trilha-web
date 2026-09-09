@@ -560,6 +560,7 @@ export const MODULOS_DE_BLOCOS: ModuloDeVereda[] = [
       {
         id: 'm1-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_BLOCOS['m1-teoria'],
+        perguntas: 4,
         titulo: 'Passos, em ordem',
         resumo: 'A definição, o que ela não exige, e a história que levou aos blocos.',
         topicos: cap('algoritmo').topicos,
@@ -593,6 +594,7 @@ export const MODULOS_DE_BLOCOS: ModuloDeVereda[] = [
       {
         id: 'm2-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_BLOCOS['m2-teoria'],
+        perguntas: 4,
         titulo: 'Onde as coisas ficam, e quando elas rodam',
         resumo: 'Coordenadas negativas, o bloco de chapéu, e pilhas que rodam juntas.',
         topicos: cap('pilha').topicos,
@@ -614,6 +616,7 @@ export const MODULOS_DE_BLOCOS: ModuloDeVereda[] = [
       {
         id: 'm3-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_BLOCOS['m3-teoria'],
+        perguntas: 4,
         titulo: 'O programa que espera',
         resumo: 'O que dispara uma pilha, os dois tipos de programa, e a fantasia que troca.',
         topicos: cap('eventos').topicos,
@@ -637,6 +640,7 @@ export const MODULOS_DE_BLOCOS: ModuloDeVereda[] = [
       {
         id: 'm4-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_BLOCOS['m4-teoria'],
+        perguntas: 4,
         titulo: 'Os dois laços',
         resumo: 'O que conta até parar, o que nunca para, e por que o laço vazio engana.',
         topicos: cap('repeticao').topicos,
@@ -658,6 +662,7 @@ export const MODULOS_DE_BLOCOS: ModuloDeVereda[] = [
       {
         id: 'm5-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_BLOCOS['m5-teoria'],
+        perguntas: 4,
         titulo: 'A pergunta que decide',
         resumo: 'O bloco se, o par sempre-mais-se, e o que dá para perguntar.',
         topicos: cap('condicao').topicos,
@@ -679,6 +684,7 @@ export const MODULOS_DE_BLOCOS: ModuloDeVereda[] = [
       {
         id: 'm6-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_BLOCOS['m6-teoria'],
+        perguntas: 4,
         titulo: 'Guardar um valor que muda',
         resumo: 'Defina contra mude, e o contador que sobe sem que ninguém faça nada.',
         topicos: cap('variavel').topicos,
@@ -703,6 +709,7 @@ export const MODULOS_DE_BLOCOS: ModuloDeVereda[] = [
       {
         id: 'm7-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_BLOCOS['m7-teoria'],
+        perguntas: 4,
         titulo: 'Do projeto ao jogo',
         resumo: 'A interação entre os dois, o que encerra a partida, e como se explica o que se fez.',
         topicos: cap('jogo').topicos,

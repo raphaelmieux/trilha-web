@@ -1,5 +1,5 @@
 import type { Question } from '../types';
-import { sortearQuestoes } from '../lib/questoes';
+import { sortearQuestoes, quantasPerguntar } from '../lib/questoes';
 
 const rawAp034Final: Question[] = [
   {
@@ -1358,8 +1358,49 @@ const PROVAS: Record<string, Question[]> = {
   fez. Entra uma linha aqui quando a prova ganha as extras, e a partir daí duas
   pessoas deixam de ver a mesma prova.
 */
-const PERGUNTAS_POR_PROVA: Record<string, number | undefined> = {};
+const PERGUNTAS_POR_PROVA: Record<string, number | undefined> = {
+  AP034: 21,   /* de 25 */
+  AP035: 18,   /* de 22 */
+  AP041: 23,   /* de 27 */
+  AP042: 15,   /* de 18 */
+  AP043: 16,   /* de 20 */
+};
+
+/*
+  A margem aqui é menor, em proporção, do que a das lições, e é decisão.
+
+  Cada prova foi escrita para cobrir os requisitos da trilha — os comentários
+  de cada uma dizem quantos —, e nenhuma questão carrega o requisito que ela
+  mede: a nota é uma porcentagem sobre o que foi sorteado, e não uma marcação
+  requisito a requisito. Sorteando pouco, sobrariam requisitos sem nenhuma
+  pergunta na tentativa de alguém, e a prova deixaria de ser o que ela diz ser.
+  Deixar de fora quatro de vinte e cinco muda o conjunto entre duas tentativas
+  sem abrir buraco desse tamanho.
+
+  Quem quiser apertar isto um dia precisa antes ligar cada questão ao requisito
+  que ela cobra — e aí o sorteio pode garantir a cobertura em vez de torcer
+  por ela.
+*/
 
 export function getFinalExamQuestions(specialtyCode: string): Question[] {
   return sortearQuestoes(PROVAS[specialtyCode] ?? [], PERGUNTAS_POR_PROVA[specialtyCode]);
+}
+
+/*
+  O reservatório inteiro, sem sorteio — para os testes, e só para eles.
+
+  `qualidade.test.ts` procura enunciado repetido e resposta certa repetida
+  dentro da mesma prova. Lendo pelo sorteio, ele passaria a examinar um
+  subconjunto diferente a cada execução: duas questões iguais escapariam
+  enquanto o sorteio não trouxesse as duas juntas, e a build ficaria vermelha
+  num dia qualquer, sem ninguém ter mexido em nada. Trava que reprova por sorte
+  não é trava.
+*/
+export function todasAsQuestoesDaProva(specialtyCode: string): Question[] {
+  return PROVAS[specialtyCode] ?? [];
+}
+
+/** Quantas questões a prova sorteia — o reservatório inteiro, quando não há linha. */
+export function quantasAProvaPergunta(specialtyCode: string): number {
+  return quantasPerguntar(PROVAS[specialtyCode] ?? [], PERGUNTAS_POR_PROVA[specialtyCode]);
 }

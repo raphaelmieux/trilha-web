@@ -114,6 +114,39 @@ const rawQ_1L1: Question[] = [
     },
     explanation: 'Cada conceito tem um papel na comunicação segura da Web.',
   },
+  {
+    id: 'AP035.1-L1-Q8', type: 'scenario',
+    prompt: 'Uma página que pede a senha do banco mostra o cadeado na barra, mas o endereço é banc0-alfa.com.br, com zero no lugar do "o". O que o cadeado garante ali?',
+    data: { scenarios: [
+      { id: 'a', text: 'Só que a conversa vai cifrada — não que o site seja o do banco.', correct: true },
+      { id: 'b', text: 'Que o site é o do banco, porque o cadeado só é dado a sites legítimos.', porque: 'O certificado se obtém para qualquer domínio, inclusive o falso. Ele prova o endereço, e não a honestidade de quem está nele.' },
+      { id: 'c', text: 'Que a senha digitada será conferida antes de sair do computador.', porque: 'O cadeado não examina o que você digita. Ele embaralha o que sai, para que ninguém no caminho leia.' },
+      { id: 'd', text: 'Que o navegador vai avisar caso a página seja uma cópia falsa.', porque: 'O navegador avisa sobre certificado inválido ou site já denunciado. Endereço parecido com outro ele não julga.' },
+    ]},
+    explanation: 'O cadeado responde "ninguém no caminho está lendo". Quem é o dono da página é outra pergunta, e ela se responde lendo o endereço letra por letra.',
+  },
+  {
+    id: 'AP035.1-L1-Q9', type: 'multiple_choice',
+    prompt: 'Por que um site precisa de cookies para lembrar que você já fez login?',
+    data: { options: [
+      { id: 'a', text: 'Porque cada pedido ao servidor chega sem lembrança do anterior.', correct: true },
+      { id: 'b', text: 'Porque a senha teria de ser reenviada em cada página aberta.', porque: 'Reenviar a senha a cada página é o que o cookie evita — e seria pior para a segurança, não melhor.' },
+      { id: 'c', text: 'Porque o navegador apaga a sessão sempre que a página muda.', porque: 'O navegador não apaga nada a cada página. Quem não guarda memória entre um pedido e outro é o protocolo.' },
+      { id: 'd', text: 'Porque o servidor não tem espaço para guardar quem está conectado.', porque: 'Espaço não é o problema. Sem algo que identifique o pedido, o servidor não saberia a quem associar o que guardou.' },
+    ]},
+    explanation: 'O HTTP é stateless: o segundo pedido não sabe do primeiro. O cookie viaja junto de cada pedido e é o que devolve essa memória.',
+  },
+  {
+    id: 'AP035.1-L1-Q10', type: 'multiple_choice',
+    prompt: 'No menu do site do clube, um link aponta para contato.html, sem nada escrito antes do nome do arquivo. Que tipo de link é esse?',
+    data: { options: [
+      { id: 'a', text: 'Interno: leva a outra página do mesmo site.', correct: true },
+      { id: 'b', text: 'Externo: leva para fora, a um domínio diferente.', porque: 'Link externo traz o endereço completo do outro site. Aqui há apenas o nome de um arquivo.' },
+      { id: 'c', text: 'Quebrado: falta o endereço para o navegador achar a página.', porque: 'Não falta. O navegador completa com o endereço da página atual — é assim que todo site liga as próprias páginas.' },
+      { id: 'd', text: 'De ancoragem: leva a um trecho mais abaixo da mesma página.', porque: 'Esse traz um # antes do nome do trecho. Aqui o destino é outro arquivo.' },
+    ]},
+    explanation: 'Endereço sem domínio é caminho relativo: o navegador resolve a partir de onde você já está, e por isso o link é interno.',
+  },
 ];
 
 const content_1L2 = `
@@ -213,6 +246,37 @@ const rawQ_1L2: Question[] = [
       ],
     },
     explanation: 'O navegador recebe apenas HTML. O PHP é processado no servidor antes.',
+  },
+  {
+    id: 'AP035.1-L2-Q7', type: 'scenario',
+    prompt: 'Numa loja on-line você abriu "Exibir código-fonte" e encontrou só HTML, com os preços já escritos linha por linha. Nenhuma linha de PHP apareceu. Por quê?',
+    data: { scenarios: [
+      { id: 'a', text: 'O PHP já rodou no servidor, e o que chegou foi o resultado dele.', correct: true },
+      { id: 'b', text: 'A loja não usa PHP: os preços foram digitados à mão no arquivo.', porque: 'Loja com muitos produtos não é escrita à mão. Os preços vieram do banco e foram escritos no HTML na hora do pedido.' },
+      { id: 'c', text: 'O navegador esconde o PHP para proteger o segredo da loja.', porque: 'O navegador mostra tudo o que recebeu. Ele não recebeu PHP nenhum para esconder.' },
+      { id: 'd', text: 'O código-fonte mostra só o começo da página, e o PHP fica no fim.', porque: 'O código-fonte mostra a página inteira. Em nenhuma parte dela haveria PHP.' },
+    ]},
+    explanation: 'O PHP é executado antes do envio, e o que viaja pela rede é o HTML que ele produziu. É por isso que o código do servidor nunca aparece no código-fonte.',
+  },
+  {
+    id: 'AP035.1-L2-Q8', type: 'multiple_choice',
+    prompt: 'A página de inscrições do clube mostra quantas vagas restam, e o número muda a cada visita sem que ninguém edite o arquivo. Como isso acontece?',
+    data: { options: [
+      { id: 'a', text: 'O servidor monta a página no momento do pedido, com o número do banco.', correct: true },
+      { id: 'b', text: 'O HTML recalcula o número sozinho toda vez que a página abre.', porque: 'O HTML não calcula nada: ele descreve o que já está escrito nele. Quem conta as vagas é o servidor.' },
+      { id: 'c', text: 'O navegador guarda o número da última visita e desconta um.', porque: 'O navegador não sabe quantas pessoas se inscreveram. Esse número só existe onde os dados estão.' },
+      { id: 'd', text: 'Alguém do clube atualiza o arquivo a cada nova inscrição.', porque: 'Seria trabalho sem fim, e o número atrasaria. Página dinâmica existe justamente para dispensar isso.' },
+    ]},
+    explanation: 'Página dinâmica não é arquivo pronto: o servidor consulta o banco e escreve o HTML a cada pedido — por isso o número chega sempre atual.',
+  },
+  {
+    id: 'AP035.1-L2-Q9', type: 'true_false',
+    prompt: 'Quem visita a página pode desligar o PHP pelas configurações do navegador, como faz com o JavaScript.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'O navegador só desliga o que roda dentro dele. O PHP roda no servidor, longe do alcance de quem visita.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'O navegador manda no que executa na máquina de quem acessa. O que acontece no servidor é decisão de quem o mantém.',
   },
 ];
 
@@ -323,6 +387,37 @@ const rawQ_1L3: Question[] = [
     ]},
     explanation: 'Azul puro = #0000FF (00 vermelho, 00 verde, FF azul).',
   },
+  {
+    id: 'AP035.1-L3-Q7', type: 'multiple_choice',
+    prompt: 'Não existe par para o amarelo em #RRGGBB. Por que, então, #FFFF00 aparece amarelo na tela?',
+    data: { options: [
+      { id: 'a', text: 'Porque vermelho e verde acesos juntos são vistos como amarelo.', correct: true },
+      { id: 'b', text: 'Porque FF é o código que a web reservou para o amarelo.', porque: 'FF é apenas o valor máximo de um canal. Ele aparece no branco, no vermelho puro e em muitas outras cores.' },
+      { id: 'c', text: 'Porque o navegador troca o código por amarelo ao desenhar.', porque: 'O navegador não substitui cor nenhuma. Ele acende os três canais nos valores pedidos.' },
+      { id: 'd', text: 'Porque o amarelo fica entre o vermelho e o verde no arco-íris.', porque: 'A vizinhança no arco-íris não explica a mistura. O que vale aqui é somar as luzes dos canais.' },
+    ]},
+    explanation: 'A tela mistura luz, e não tinta: vermelho e verde no máximo, somados, chegam ao olho como amarelo. É por isso que bastam três canais para todas as cores.',
+  },
+  {
+    id: 'AP035.1-L3-Q8', type: 'scenario',
+    prompt: 'Você quer um cinza médio para a borda dos cartões do site. Qual código escolher?',
+    data: { scenarios: [
+      { id: 'a', text: '#808080 — os três canais no mesmo valor, na metade do caminho.', correct: true },
+      { id: 'b', text: '#FF8000 — um valor médio no meio do código resolve.', porque: 'Aqui o vermelho está no máximo e o azul, em zero. Canais em valores diferentes dão cor, e não cinza.' },
+      { id: 'c', text: '#000080 — metade do azul já dá o tom acinzentado.', porque: 'Só o azul aceso, e pela metade, dá um azul escuro. Cinza precisa dos três iguais.' },
+      { id: 'd', text: '#88FF88 — os três canais presentes, com o verde mais forte.', porque: 'Dois iguais e um maior puxam a cor para o lado do maior: isso é um verde claro.' },
+    ]},
+    explanation: 'Sem cor dominante não há cor: com R, G e B no mesmo valor sai cinza — mais escuro perto de 00, mais claro perto de FF.',
+  },
+  {
+    id: 'AP035.1-L3-Q9', type: 'true_false',
+    prompt: 'Numa página que avisa "Conexão não segura", dá para digitar a senha com tranquilidade desde que o site seja conhecido.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'Conhecer o site não protege o caminho. Sem cifra, a senha atravessa a rede legível para quem estiver no meio.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'O aviso fala do trajeto, não da reputação: o que sai do seu computador vai em texto claro, e o Wi-Fi da praça é um bom lugar para alguém ler.',
+  },
 ];
 
 const content_1L4 = `
@@ -404,6 +499,37 @@ const rawQ_1L4: Question[] = [
       { id: 'b', text: 'Falso', porque: 'É verdadeiro. O que vem antes de :// é sempre o protocolo — https, http, ftp, mailto.' },
     ]},
     explanation: 'Sim — o protocolo (http ou https) é a primeira parte da URL.',
+  },
+  {
+    id: 'AP035.1-L4-Q6', type: 'scenario',
+    prompt: 'Quatro endereços chegaram dizendo ser do banco, cujo site é alfa.com.br. Lendo só a URL, qual é mesmo dele?',
+    data: { scenarios: [
+      { id: 'a', text: 'https://alfa.com.br/login', correct: true },
+      { id: 'b', text: 'https://alfa.com.br.seguro-login.net/entrar', porque: 'O domínio é o que vem logo antes da primeira barra: aqui, seguro-login.net. O nome do banco virou só um pedaço à esquerda.' },
+      { id: 'c', text: 'https://login.alfa-com-br.net/acesso', porque: 'Os pontos viraram traços, e o domínio é alfa-com-br.net — outro registro, de outro dono.' },
+      { id: 'd', text: 'https://contas.seguranca.com/alfa.com.br', porque: 'O nome do banco está depois da barra, no caminho. Caminho é escolha de quem hospeda o site, e o site é seguranca.com.' },
+    ]},
+    explanation: 'O domínio termina na primeira barra. Tudo o que vem depois dela é caminho, e caminho quem escolhe é o dono do site — por isso a leitura começa pelo que está à esquerda da barra.',
+  },
+  {
+    id: 'AP035.1-L4-Q7', type: 'multiple_choice',
+    prompt: 'Você pesquisou "acampamento" no site do clube e o endereço terminou com ?busca=acampamento. O que é essa parte final?',
+    data: { options: [
+      { id: 'a', text: 'A query: um valor que a página recebe junto com o pedido.', correct: true },
+      { id: 'b', text: 'O caminho até o arquivo da busca dentro do servidor.', porque: 'O caminho vem antes da interrogação. Depois dela vêm os valores enviados àquela página.' },
+      { id: 'c', text: 'Um subdomínio criado na hora para guardar o resultado.', porque: 'Subdomínio fica antes do domínio, à esquerda. Nada depois da barra é subdomínio.' },
+      { id: 'd', text: 'O protocolo que o site usa para fazer a pesquisa.', porque: 'O protocolo abre a URL, antes das duas barras. É o https do começo.' },
+    ]},
+    explanation: 'Tudo depois da interrogação são parâmetros: nome, sinal de igual e valor. É assim que a mesma página serve a buscas diferentes.',
+  },
+  {
+    id: 'AP035.1-L4-Q8', type: 'true_false',
+    prompt: 'O subdomínio é obrigatório: sem o "www." antes do domínio, o endereço não funciona.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'Não é obrigatório. Muitos sites hoje abrem sem o www, e alguns só existem sem ele.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'O subdomínio é opcional, e www é apenas o mais tradicional deles. Quem decide quais existem é quem administra o domínio.',
   },
 ];
 
@@ -517,6 +643,37 @@ const rawQ_1L5: Question[] = [
       ],
     },
     explanation: 'JPEG = com perda (menor arquivo, menos qualidade). PNG = sem perda (maior arquivo, qualidade total).',
+  },
+  {
+    id: 'AP035.1-L5-Q7', type: 'scenario',
+    prompt: 'Você abriu a foto do acampamento, cortou uma borda, salvou em JPEG; no dia seguinte abriu de novo, girou e salvou outra vez. Depois de algumas rodadas a foto ficou borrada. Por quê?',
+    data: { scenarios: [
+      { id: 'a', text: 'Cada gravação em JPEG comprime de novo o que já tinha sido comprimido.', correct: true },
+      { id: 'b', text: 'Cortar e girar apagam pedaços da imagem a cada operação feita.', porque: 'Cortar tira a borda escolhida e girar não descarta nada. O estrago veio de gravar em JPEG outra vez.' },
+      { id: 'c', text: 'O arquivo foi ficando grande demais e o computador reduziu a qualidade.', porque: 'O arquivo até encolheu a cada volta. Nenhum computador reduz qualidade por conta própria.' },
+      { id: 'd', text: 'A tela mostra menos cores a cada vez que a mesma imagem é aberta.', porque: 'A tela mostra sempre o mesmo. O que mudou foi o arquivo gravado, e não a exibição.' },
+    ]},
+    explanation: 'A perda do JPEG é definitiva e se acumula: cada gravação joga fora detalhe do que já era aproximação. Para editar em várias sessões, guarde o original sem perda e exporte em JPEG só no fim.',
+  },
+  {
+    id: 'AP035.1-L5-Q8', type: 'multiple_choice',
+    prompt: 'O desenho da bandeira do clube tem quatro cores chapadas. Depois de salvo, apareceram manchinhas sujas em volta das bordas. O que aconteceu?',
+    data: { options: [
+      { id: 'a', text: 'Foi salvo em JPEG, que embaralha os contornos duros do desenho.', correct: true },
+      { id: 'b', text: 'Foi salvo em PNG, que não dá conta de tão poucas cores.', porque: 'O PNG grava sem perda e é justamente o indicado para cores chapadas — ele não sujaria borda nenhuma.' },
+      { id: 'c', text: 'O desenho tem cores demais para qualquer formato guardar.', porque: 'Quatro cores é pouquíssimo. Até o GIF, com suas 256, daria conta com folga.' },
+      { id: 'd', text: 'A tela do computador não consegue mostrar bordas retas.', porque: 'A tela mostra o que o arquivo tem. As manchinhas foram gravadas no arquivo.' },
+    ]},
+    explanation: 'A compressão com perda foi feita para fotografia, onde a vizinhança de cores é suave. Em contorno duro ela deixa sujeira — e é por isso que desenho e logo pedem PNG.',
+  },
+  {
+    id: 'AP035.1-L5-Q9', type: 'true_false',
+    prompt: 'Como o GIF comprime sem perda, ele guarda uma fotografia com a mesma fidelidade do PNG.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'Comprimir sem perda não ajuda se as cores já foram jogadas fora antes: o GIF guarda no máximo 256, e uma foto tem milhões.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'A perda do GIF acontece antes de comprimir, na redução para 256 cores. O céu de um pôr do sol vira faixas — a compressão depois é fiel a uma imagem que já foi estragada.',
   },
 ];
 
@@ -639,6 +796,37 @@ const rawQ_6L1: Question[] = [
     },
     explanation: 'Treinamento → Padrões → Previsão/Geração.',
   },
+  {
+    id: 'AP035.6-L1-Q8', type: 'multiple_choice',
+    prompt: 'Você pediu à IA a página de um livro sobre o assunto e ela deu título, autor e ano — mas o livro não existe. Por que ela responde assim, com tanta firmeza?',
+    data: { options: [
+      { id: 'a', text: 'Ela completa com o que costuma vir a seguir, sem conferir se existe.', correct: true },
+      { id: 'b', text: 'Ela buscou na Internet e caiu num site que publicou a informação errada.', porque: 'Não é preciso haver fonte errada: o modelo monta a resposta a partir de padrões, e pode produzir uma que nunca existiu.' },
+      { id: 'c', text: 'Ela quis agradar e escolheu inventar em vez de dizer que não sabia.', porque: 'Não há intenção. O modelo não distingue "sei" de "não sei" — ele escreve a continuação mais provável.' },
+      { id: 'd', text: 'Alguém alterou o treinamento dela para incluir livros falsos.', porque: 'Isso acontece sem qualquer adulteração. É um efeito de como o modelo gera texto.' },
+    ]},
+    explanation: 'Uma alucinação não é mentira nem defeito de fonte: é o modelo montando a sequência mais provável. Firmeza no tom não é sinal de que a informação existe — por isso se confere fora dela.',
+  },
+  {
+    id: 'AP035.6-L1-Q9', type: 'scenario',
+    prompt: 'Uma empresa treinou uma IA para separar currículos usando dez anos de contratações próprias, em que quase só homens foram contratados. O que tende a acontecer?',
+    data: { scenarios: [
+      { id: 'a', text: 'Ela repete o padrão que encontrou e passa a preterir as mulheres.', correct: true },
+      { id: 'b', text: 'Ela corrige o desequilíbrio, por ser um programa sem preferências.', porque: 'A máquina não tem opinião, e é justamente por isso: sem opinião, ela só reproduz o que estava nos dados.' },
+      { id: 'c', text: 'Ela ignora o campo do nome e escolhe apenas pela experiência.', porque: 'O padrão sobrevive sem o nome: cursos, esportes e trajetos frequentes no grupo antigo entregam o mesmo recorte.' },
+      { id: 'd', text: 'Ela avisa a empresa de que os dados de treinamento estão enviesados.', porque: 'O modelo não examina a própria base. Quem precisa olhar os dados antes é quem vai treiná-lo.' },
+    ]},
+    explanation: 'O modelo aprende o padrão que lhe deram, inclusive o injusto. Viés nos dados vira viés nas respostas — e a decisão passa a ter aparência de técnica.',
+  },
+  {
+    id: 'AP035.6-L1-Q10', type: 'true_false',
+    prompt: 'A IA geral (AGI), capaz de qualquer tarefa intelectual humana, é a que já roda nos assistentes de celular.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'O assistente do celular é IA estreita: ele faz bem as tarefas para as quais foi feito. A IA geral segue hipotética.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'Assistentes, tradutores e recomendações são IA estreita — cada um bom numa faixa. A IA geral não existe: é ideia, e não produto.',
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -709,6 +897,37 @@ const rawQ_graficos: Question[] = [
     ]},
     explanation: '150 KB no total contra 200 KB, e o navegador baixa várias em paralelo. O que decide o tempo é a soma dos bytes.',
   },
+  {
+    id: 'AP035.4-L0-Q4', type: 'scenario',
+    prompt: 'A foto do acampamento tem 3000 px de largura. Você baixou a qualidade do JPEG para 60% e ela ainda pesa 800 KB. O que faltou fazer?',
+    data: { scenarios: [
+      { id: 'a', text: 'Reduzir a largura para o tamanho em que a foto aparece na página.', correct: true },
+      { id: 'b', text: 'Baixar a qualidade ainda mais, até o arquivo chegar ao peso desejado.', porque: 'A partir daí as manchas aparecem, e os pixels de sobra continuam lá. Comprimir mais é insistir no passo errado.' },
+      { id: 'c', text: 'Trocar o formato para PNG, que costuma gerar arquivos menores.', porque: 'Para fotografia o PNG costuma sair maior que o JPEG. E os 3000 px continuariam sendo baixados.' },
+      { id: 'd', text: 'Dividir a foto em pedaços menores e remontá-la na página.', porque: 'Os mesmos pixels seriam baixados, agora em vários arquivos. O total não muda.' },
+    ]},
+    explanation: 'Comprimir uma imagem grande demais é otimizar o desperdício. Os pixels que não aparecem na tela precisam sair antes — é o passo que sozinho corta mais de 90%.',
+  },
+  {
+    id: 'AP035.4-L0-Q5', type: 'multiple_choice',
+    prompt: 'Como se percebe que a compressão passou do ponto?',
+    data: { options: [
+      { id: 'a', text: 'Aparecem manchas em volta do texto e das bordas da imagem.', correct: true },
+      { id: 'b', text: 'A imagem passa a demorar mais para aparecer na página.', porque: 'Comprimir mais deixa o arquivo menor, e menor carrega antes. O estrago é na aparência, não no tempo.' },
+      { id: 'c', text: 'O navegador mostra um aviso de imagem comprimida demais.', porque: 'Não há aviso nenhum. Quem julga se ficou aceitável é quem publica, olhando o resultado.' },
+      { id: 'd', text: 'A imagem encolhe e passa a ocupar menos espaço na tela.', porque: 'Comprimir não muda quantos pixels a imagem tem, e ela continua ocupando o mesmo espaço.' },
+    ]},
+    explanation: 'O JPEG estraga primeiro onde a cor muda de repente. Por isso o defeito começa a aparecer justamente ao redor de letras e contornos.',
+  },
+  {
+    id: 'AP035.4-L0-Q6', type: 'true_false',
+    prompt: 'Uma foto de 3000 px exibida num espaço de 600 px carrega tão rápido quanto uma já reduzida, porque o navegador a encolhe ao mostrar.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'O navegador só encolhe depois de baixar o arquivo inteiro. Os pixels de sobra atravessaram a rede antes de serem descartados.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'Encolher na exibição resolve a aparência e não o download: quem paga o plano de dados baixou os 3000 px do mesmo jeito.',
+  },
 ];
 
 export const ap035: Specialty = {
@@ -755,11 +974,11 @@ export const ap035: Specialty = {
     {
       code: 'AP035.1', title: 'Como a página chega até você', description: 'Endereços, protocolos e o que acontece entre o clique e a tela.',
       lessons: [
-        { code: 'AP035.1-L1', title: 'HTTP, HTTPS e hyperlinks', type: 'theory', content: content_1L1, requirementCodes: ['AP035-2.1', 'AP035-2.2'], questions: rawQ_1L1 },
-        { code: 'AP035.1-L2', title: 'HTML, PHP, cliente e servidor', type: 'theory', content: content_1L2, requirementCodes: ['AP035-2.3'], questions: rawQ_1L2 },
-        { code: 'AP035.1-L3', title: 'Navegador seguro e cores em hexadecimal', type: 'theory', content: content_1L3, requirementCodes: ['AP035-2.4'], questions: rawQ_1L3 },
-        { code: 'AP035.1-L4', title: 'A URL por dentro: as partes de um endereço', type: 'theory', content: content_1L4, requirementCodes: ['AP035-2.5'], questions: rawQ_1L4 },
-        { code: 'AP035.1-L5', title: 'Escolher o formato: GIF, PNG e JPEG', type: 'theory', content: content_1L5, requirementCodes: ['AP035-2.6', 'AP035-2.7'], questions: rawQ_1L5 },
+        { code: 'AP035.1-L1', title: 'HTTP, HTTPS e hyperlinks', type: 'theory', content: content_1L1, requirementCodes: ['AP035-2.1', 'AP035-2.2'], perguntas: 7, questions: rawQ_1L1 },
+        { code: 'AP035.1-L2', title: 'HTML, PHP, cliente e servidor', type: 'theory', content: content_1L2, requirementCodes: ['AP035-2.3'], perguntas: 6, questions: rawQ_1L2 },
+        { code: 'AP035.1-L3', title: 'Navegador seguro e cores em hexadecimal', type: 'theory', content: content_1L3, requirementCodes: ['AP035-2.4'], perguntas: 6, questions: rawQ_1L3 },
+        { code: 'AP035.1-L4', title: 'A URL por dentro: as partes de um endereço', type: 'theory', content: content_1L4, requirementCodes: ['AP035-2.5'], perguntas: 5, questions: rawQ_1L4 },
+        { code: 'AP035.1-L5', title: 'Escolher o formato: GIF, PNG e JPEG', type: 'theory', content: content_1L5, requirementCodes: ['AP035-2.6', 'AP035-2.7'], perguntas: 6, questions: rawQ_1L5 },
       ],
     },
     {
@@ -777,7 +996,7 @@ export const ap035: Specialty = {
     {
       code: 'AP035.4', title: 'Imagens que carregam rápido', description: 'Escolher o formato certo e o tamanho que não faz ninguém esperar.',
       lessons: [
-        { code: 'AP035.4-L0', title: 'Gráficos que carregam rápido', type: 'theory', content: content_graficos, requirementCodes: ['AP035-5.1'], questions: rawQ_graficos },
+        { code: 'AP035.4-L0', title: 'Gráficos que carregam rápido', type: 'theory', content: content_graficos, requirementCodes: ['AP035-5.1'], perguntas: 3, questions: rawQ_graficos },
         /*
           O requisito 5.2 tem dois lados — espremer uma foto e desenhar as
           peças do site —, e por muito tempo eles dividiram um laboratório só.
@@ -799,7 +1018,7 @@ export const ap035: Specialty = {
     {
       code: 'AP035.6', title: 'O que a IA faz, e o que não faz', description: 'Como essas ferramentas funcionam por dentro, e onde elas erram.',
       lessons: [
-        { code: 'AP035.6-L1', title: 'O que a IA é, e como ela responde', type: 'theory', content: content_6L1, requirementCodes: ['AP035-7.1'], questions: rawQ_6L1 },
+        { code: 'AP035.6-L1', title: 'O que a IA é, e como ela responde', type: 'theory', content: content_6L1, requirementCodes: ['AP035-7.1'], perguntas: 7, questions: rawQ_6L1 },
       ],
     },
     {

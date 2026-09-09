@@ -63,6 +63,37 @@ export const QUESTOES_DE_HTML: Record<string, Question[]> = {
       ]},
       explanation: 'É sempre essa ordem, em toda página e em todo site. Copiar esse esqueleto de um arquivo para outro é o que se faz na vida real.',
     },
+    {
+      id: 'VD01-M1-Q5', type: 'multiple_choice',
+      prompt: 'A página abre em branco. No arquivo há <html>, <head>, <title> e todo o texto escrito logo depois de </head>, antes de <body>. O que explica a tela vazia?',
+      data: { options: [
+        { id: 'a', text: 'O texto ficou fora do <body>, e só o que está lá dentro é desenhado.', correct: true },
+        { id: 'b', text: 'O <title> consumiu o texto seguinte, por não ter sido fechado direito.', porque: 'Um <title> mal fechado engoliria o texto para o nome da página. Aqui ele está fechado, e o texto está fora do corpo.' },
+        { id: 'c', text: 'Falta a marca de acentuação, e o navegador parou ao encontrar as letras com acento.', porque: 'Sem essa marca os acentos saem trocados, e não somem. O navegador nunca para de desenhar por causa deles.' },
+        { id: 'd', text: 'O arquivo precisa terminar em .htm para o texto aparecer.', porque: 'As duas extensões abrem igual. O que decide o que aparece é estar dentro do corpo.' },
+      ]},
+      explanation: 'O corpo é a parte visível do documento. Texto entre </head> e <body> está em terra de ninguém: o navegador não erra, ele só não desenha.',
+    },
+    {
+      id: 'VD01-M1-Q6', type: 'multiple_choice',
+      prompt: 'Onde aparece o que se escreve dentro de <title>?',
+      data: { options: [
+        { id: 'a', text: 'Na aba do navegador e no resultado da busca.', correct: true },
+        { id: 'b', text: 'No alto da página, como primeiro título do conteúdo.', porque: 'Esse é o <h1>, dentro do corpo. Os dois costumam dizer coisas parecidas, mas moram em lugares diferentes.' },
+        { id: 'c', text: 'Em lugar nenhum: ele serve só para organizar o arquivo.', porque: 'Aparece sim, e em dois lugares que importam: a aba e a lista de resultados de quem procura o site.' },
+        { id: 'd', text: 'No rodapé da página, junto do nome de quem a escreveu.', porque: 'Rodapé é conteúdo, e conteúdo fica no corpo. O <title> está no cabeçalho do documento.' },
+      ]},
+      explanation: 'O <title> é sobre a página, e não dela: é o nome que aparece na aba, no favorito e no buscador — por isso ele mora no <head>.',
+    },
+    {
+      id: 'VD01-M1-Q7', type: 'true_false',
+      prompt: 'Recuar as marcas com espaços muda o modo como o navegador desenha a página.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'O navegador ignora o espaço em branco entre as marcas. O recuo é para quem lê o código — e é o que deixa ver qual marca fecha qual.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'O recuo não é enfeite nem obrigação: ele não muda a página e muda tudo na hora de achar a marca que ficou aberta.',
+    },
   ],
 
   'm2-teoria': [
@@ -108,6 +139,37 @@ export const QUESTOES_DE_HTML: Record<string, Question[]> = {
       ]},
       explanation: 'O <hr> é conteúdo: ele afirma uma divisão. Espaço em branco no código não afirma nada.',
     },
+    {
+      id: 'VD01-M2-Q5', type: 'multiple_choice',
+      prompt: 'Os laboratórios aceitam <b> e <strong> igualmente. Por que preferir <strong> fora daqui?',
+      data: { options: [
+        { id: 'a', text: 'Porque ele diz que o trecho é importante, e não só que ficará escuro.', correct: true },
+        { id: 'b', text: 'Porque o <b> deixou de existir e some das páginas mais novas.', porque: 'O <b> continua valendo e funcionando. O que ele não faz é explicar por que aquele trecho está marcado.' },
+        { id: 'c', text: 'Porque o <strong> deixa a letra mais escura que o <b> deixa.', porque: 'Na tela os dois saem iguais. A diferença está no que cada um significa, e não na tinta.' },
+        { id: 'd', text: 'Porque o <b> só funciona dentro de títulos, e o <strong> em qualquer lugar.', porque: 'Os dois valem em qualquer texto. O critério é o sentido, não o lugar.' },
+      ]},
+      explanation: 'Quem ouve a página percebe a diferença: o leitor de tela pode mudar a voz num <strong>, porque ali há importância declarada. Num <b> há só aparência.',
+    },
+    {
+      id: 'VD01-M2-Q6', type: 'scenario',
+      prompt: 'O endereço do clube tem rua numa linha e cidade na outra, mas é um endereço só. Como escrever?',
+      data: { scenarios: [
+        { id: 'a', text: 'Um <p> só, com <br> entre a rua e a cidade.', correct: true },
+        { id: 'b', text: 'Dois <p>, um para a rua e outro para a cidade.', porque: 'Dois parágrafos dizem dois assuntos. O endereço é um, e a quebra ali é só uma quebra.' },
+        { id: 'c', text: 'Um <p> só, com <hr> entre a rua e a cidade.', porque: 'O <hr> desenha uma linha separando partes do documento. Ficaria um traço no meio do endereço.' },
+        { id: 'd', text: 'Um <p> só, apertando Enter entre a rua e a cidade.', porque: 'O navegador ignora a quebra escrita no código: as duas linhas sairiam grudadas.' },
+      ]},
+      explanation: 'O <br> é para quando a quebra faz parte do texto — endereço, verso de poesia. Assunto novo continua pedindo <p> novo.',
+    },
+    {
+      id: 'VD01-M2-Q7', type: 'true_false',
+      prompt: 'Depois de um <br> é preciso escrever </br>, como se faz com as outras marcas.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'O </br> não existe. Fechamento serve para dizer onde o conteúdo acaba, e o <br> não tem conteúdo dentro.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Quem envolve alguma coisa fecha; quem só marca um ponto, não. Vale para <br>, para <hr> e para <img>.',
+    },
   ],
 
   'm3-teoria': [
@@ -141,6 +203,37 @@ export const QUESTOES_DE_HTML: Record<string, Question[]> = {
         { id: 'v', text: 'Verdadeiro', porque: 'Ele até aparece, mas fora do lugar: sem marcador e desalinhado dos outros. Tudo o que está na lista vai dentro de um <li>.' },
       ]},
       explanation: 'Quem é item da lista é o <li>. O que fica solto entre eles sai do arranjo.',
+    },
+    {
+      id: 'VD01-M3-Q4', type: 'multiple_choice',
+      prompt: 'A lista do material do acampamento estava em <ul> e você trocou por <ol>. O que muda?',
+      data: { options: [
+        { id: 'a', text: 'Os itens passam a ser numerados, afirmando uma ordem que ali não existe.', correct: true },
+        { id: 'b', text: 'Nada muda: os dois desenham a lista do mesmo jeito.', porque: 'A <ul> traz bolinhas e a <ol> traz números. E o número não é enfeite: ele diz que a sequência importa.' },
+        { id: 'c', text: 'A lista deixa de aparecer, porque <ol> exige um atributo a mais.', porque: 'A <ol> funciona igual, com os mesmos <li>. Ela só troca o marcador.' },
+        { id: 'd', text: 'Os itens passam a aparecer em ordem alfabética.', porque: 'Nenhuma das duas ordena nada. A ordem é a que você escreveu.' },
+      ]},
+      explanation: 'Cantil, lanterna e lenço não têm primeiro nem último. Numerar o que não tem ordem faz o leitor procurar uma sequência que ninguém quis dizer.',
+    },
+    {
+      id: 'VD01-M3-Q5', type: 'true_false',
+      prompt: 'A bolinha que aparece antes de cada item da <ul> é escrita por você, dentro do <li>.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'Quem desenha o marcador é o navegador. Escrevê-lo à mão faria aparecer duas marcas na frente do mesmo item.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Dentro do <li> vai só o conteúdo do item. O marcador é decisão do navegador — e por isso ele muda de forma quando você muda o tipo de lista.',
+    },
+    {
+      id: 'VD01-M3-Q6', type: 'multiple_choice',
+      prompt: 'Numa <ol>, o que decide qual passo vem primeiro?',
+      data: { options: [
+        { id: 'a', text: 'A ordem em que os <li> estão escritos no arquivo.', correct: true },
+        { id: 'b', text: 'O número que você escreve no começo do texto de cada item.', porque: 'Esse número seria mais um texto dentro do item, e sairia ao lado do que o navegador já numera.' },
+        { id: 'c', text: 'A ordem alfabética do texto de cada item da lista.', porque: 'A <ol> não ordena o conteúdo: ela numera na ordem em que os itens aparecem.' },
+        { id: 'd', text: 'O tamanho do texto: itens mais curtos aparecem antes.', porque: 'O tamanho do texto não influi em nada. O que vale é a posição do <li> no arquivo.' },
+      ]},
+      explanation: 'O número é desenhado a partir da posição. Mover um <li> três linhas acima renumera a lista inteira sem que você toque em número nenhum.',
     },
   ],
 
@@ -187,6 +280,37 @@ export const QUESTOES_DE_HTML: Record<string, Question[]> = {
       ]},
       explanation: 'HTML é texto. A foto é outro arquivo, e precisa viajar junto.',
     },
+    {
+      id: 'VD01-M4-Q5', type: 'multiple_choice',
+      prompt: 'Você escreveu <a>site do clube</a>, sem href. O que aparece na página?',
+      data: { options: [
+        { id: 'a', text: 'O texto aparece, mas não leva a lugar nenhum: não é link.', correct: true },
+        { id: 'b', text: 'Nada aparece, porque o navegador descarta a marca incompleta.', porque: 'O navegador não descarta nada. O texto entre as duas marcas é desenhado normalmente.' },
+        { id: 'c', text: 'Aparece uma mensagem de erro no lugar do texto do link.', porque: 'HTML não põe recado de erro na página. Ele desenha o que dá e segue em silêncio.' },
+        { id: 'd', text: 'O texto vira link para a própria página em que ele está.', porque: 'Sem destino não há para onde ir, nem para a página atual. O <a> vira só um texto.' },
+      ]},
+      explanation: 'O link precisa das duas metades: o destino, no href, e o texto que se lê e se clica. Sem o href, sobra a metade que ninguém consegue seguir.',
+    },
+    {
+      id: 'VD01-M4-Q6', type: 'scenario',
+      prompt: 'A foto está na mesma pasta da página e o navegador mostra o ícone de imagem quebrada. O src diz "fotos/fogueira.jpg". O que houve?',
+      data: { scenarios: [
+        { id: 'a', text: 'O caminho aponta para uma pasta fotos que não existe ali.', correct: true },
+        { id: 'b', text: 'A imagem é grande demais e o navegador desistiu de carregá-la.', porque: 'Imagem grande demora, mas aparece. O ícone quebrado diz que o arquivo não foi encontrado.' },
+        { id: 'c', text: 'Falta fechar a <img> com </img> para o navegador entender.', porque: 'A <img> não fecha, e um fechamento a mais não impediria a foto de carregar.' },
+        { id: 'd', text: 'O alt está ocupando o lugar da imagem e a escondeu.', porque: 'O alt só aparece quando a imagem falha. Ele é a consequência aqui, não a causa.' },
+      ]},
+      explanation: 'O caminho relativo vale a partir da pasta da página: com a foto ao lado, o src é só "fogueira.jpg". Uma pasta a mais no caminho leva o navegador a procurar onde não há nada.',
+    },
+    {
+      id: 'VD01-M4-Q7', type: 'true_false',
+      prompt: 'Escrever href="https://adventistas.org" e href="sobre.html" é a mesma coisa: os dois são endereços completos.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'O primeiro é completo e sai do seu site; o segundo é relativo e vale a partir da pasta onde a página está.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Para fora do site, o endereço vai inteiro. Dentro dele, basta o nome do arquivo — e é o que permite mudar o site de endereço sem reescrever link nenhum.',
+    },
   ],
 
   'm5-teoria': [
@@ -231,6 +355,37 @@ export const QUESTOES_DE_HTML: Record<string, Question[]> = {
         { id: 'v', text: 'Verdadeiro', porque: 'Já se fez assim, e o resultado é uma página que o leitor de tela anuncia como tabela de dados e lê célula por célula. Tabela é para dado que tem linha e coluna.' },
       ]},
       explanation: 'A marca informa o que a coisa é. Usar tabela para posicionar mente sobre o conteúdo.',
+    },
+    {
+      id: 'VD01-M5-Q5', type: 'multiple_choice',
+      prompt: 'Você procurou uma marca de coluna para pintar a segunda coluna inteira e não achou nenhuma. Por quê?',
+      data: { options: [
+        { id: 'a', text: 'Não existe marca de coluna: a coluna nasce da posição da célula em cada linha.', correct: true },
+        { id: 'b', text: 'Existe, mas só funciona em tabelas com cabeçalho declarado em <th>.', porque: 'Nenhuma condição destrava uma marca que não existe. A tabela se escreve linha a linha.' },
+        { id: 'c', text: 'A marca de coluna foi substituída pelo <caption> nas versões novas do HTML.', porque: 'O <caption> é a legenda da tabela inteira. Ele nunca teve relação com colunas.' },
+        { id: 'd', text: 'Só quem escreve a tabela em ordem invertida consegue declarar colunas.', porque: 'A ordem não muda a estrutura: a tabela é sempre um conjunto de linhas com células dentro.' },
+      ]},
+      explanation: 'A tabela se escreve por linhas, e a coluna é o alinhamento que aparece quando todas têm o mesmo número de células. É por isso que uma célula a menos desalinha da linha para baixo.',
+    },
+    {
+      id: 'VD01-M5-Q6', type: 'scenario',
+      prompt: 'Na escala do mês, a primeira linha diz "Sábado" e "Responsável", e você a escreveu com <td>. Depois deixou em negrito pelo estilo. O que ainda falta?',
+      data: { scenarios: [
+        { id: 'a', text: 'Trocar por <th>, para que a célula seja anunciada como nome da coluna.', correct: true },
+        { id: 'b', text: 'Nada: em negrito, a primeira linha já cumpre o papel de cabeçalho.', porque: 'O negrito resolve para quem enxerga. Quem ouve a tabela continua recebendo aquilo como mais um dado.' },
+        { id: 'c', text: 'Pôr a primeira linha dentro de um <caption>, junto com a legenda.', porque: 'O <caption> diz do que trata a tabela inteira. Os nomes das colunas são células.' },
+        { id: 'd', text: 'Repetir os nomes das colunas na última linha da tabela.', porque: 'Repetir o texto não diz ao programa o que aquelas células são. Quem diz isso é a marca escolhida.' },
+      ]},
+      explanation: 'O <th> não é o negrito: é a informação de que aquela célula nomeia a coluna. É com ela que o leitor de tela consegue dizer "Responsável: Ana" ao chegar na célula.',
+    },
+    {
+      id: 'VD01-M5-Q7', type: 'true_false',
+      prompt: 'A legenda escrita em <caption> aparece dentro da primeira célula da tabela.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'Ela aparece acima da tabela, fora das linhas. O <caption> não é célula: é a frase que apresenta o conjunto.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'A legenda fica por cima e vale para a tabela toda — é a resposta a "tabela de quê?" para quem chegou agora.',
     },
   ],
 
@@ -277,6 +432,37 @@ export const QUESTOES_DE_HTML: Record<string, Question[]> = {
       ]},
       explanation: 'Abrir configura; fechar apenas encerra.',
     },
+    {
+      id: 'VD01-M6-Q5', type: 'scenario',
+      prompt: 'A etiqueta diz for="nome" e o campo tem id="Nome". Clicar no texto não põe o cursor na caixa. O que houve?',
+      data: { scenarios: [
+        { id: 'a', text: 'A ligação é letra por letra, e o N maiúsculo separou os dois.', correct: true },
+        { id: 'b', text: 'O <label> precisa vir depois do <input> para a ligação funcionar.', porque: 'A ordem não decide nada. Quem liga um ao outro são o for e o id, e eles precisam ser idênticos.' },
+        { id: 'c', text: 'Falta o atributo type no campo para que ele aceite o clique.', porque: 'Sem type o campo ainda é de texto, e continuaria recebendo o cursor se a ligação existisse.' },
+        { id: 'd', text: 'O <label> só liga a campos que estejam dentro do mesmo <form>.', porque: 'Os dois já estão no mesmo formulário. O que não bate é o nome usado na ligação.' },
+      ]},
+      explanation: 'For e id diferentes é o mesmo que não ter etiqueta: o clique não leva ao campo, e o leitor de tela chega numa caixa sem nome.',
+    },
+    {
+      id: 'VD01-M6-Q6', type: 'multiple_choice',
+      prompt: 'Você quer um azul-escuro. Qual código pedir?',
+      data: { options: [
+        { id: 'a', text: '#003366 — pouco vermelho, um pouco de verde e mais azul.', correct: true },
+        { id: 'b', text: '#FF0000 — o vermelho no máximo escurece o azul.', porque: 'Vermelho no máximo dá vermelho. Nenhum canal escurece outro: cada par acende a sua luz.' },
+        { id: 'c', text: '#FFFFFF — os três no máximo, que é o tom mais forte.', porque: 'Os três no máximo dão branco. Forte não quer dizer escuro.' },
+        { id: 'd', text: '#000000 — a ausência das três luzes já é o azul mais escuro.', porque: 'A ausência das três é preto. Para haver azul, o terceiro par precisa estar aceso.' },
+      ]},
+      explanation: 'Cada par vai de 00 a FF, e a cor é a mistura das três luzes. Azul-escuro é o terceiro par razoavelmente aceso com os outros dois baixos.',
+    },
+    {
+      id: 'VD01-M6-Q7', type: 'true_false',
+      prompt: 'Uma mesma tag pode levar vários atributos, separados por espaço.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', correct: true },
+        { id: 'f', text: 'Falso', porque: 'Pode, e é o comum: a <img> costuma levar src, alt e mais o que for preciso, todos na marca de abrir.' },
+      ]},
+      explanation: 'Vários atributos convivem na mesma marca de abrir, cada um no formato nome="valor", separados por espaço.',
+    },
   ],
 
   'm7-teoria': [
@@ -321,6 +507,37 @@ export const QUESTOES_DE_HTML: Record<string, Question[]> = {
         { id: 'f', text: 'Falso', porque: 'Deixar o menu de fora justamente da página aberta é o erro mais comum — e aí não há como sair dela sem o botão voltar do navegador.' },
       ]},
       explanation: 'O menu é o mesmo bloco, repetido igual em todas as páginas. É isso que faz o site ser percorrível.',
+    },
+    {
+      id: 'VD01-M7-Q5', type: 'multiple_choice',
+      prompt: 'Você acrescentou a página de eventos ao site. Além de criar o arquivo, o que mais precisa ser feito nas outras três páginas?',
+      data: { options: [
+        { id: 'a', text: 'Acrescentar o link para ela no menu de cada uma das outras páginas.', correct: true },
+        { id: 'b', text: 'Nada: o menu é um só, e basta mudá-lo numa página.', porque: 'Não há menu compartilhado em HTML puro: cada arquivo tem a sua cópia, e mudar uma não muda as outras.' },
+        { id: 'c', text: 'Avisar o servidor de que existe um arquivo novo na pasta.', porque: 'O servidor entrega o que estiver na pasta. Ele não precisa de cadastro nenhum.' },
+        { id: 'd', text: 'Renomear index.html, para que a página nova entre na ordem.', porque: 'O index.html é a página inicial e continua sendo. Nada nele muda ao surgir uma página nova.' },
+      ]},
+      explanation: 'O menu é o que faz de vários arquivos um site — e ele é repetido, e não compartilhado. Página nova exige tocar em todas as outras, e é justamente aí que uma fica de fora.',
+    },
+    {
+      id: 'VD01-M7-Q6', type: 'scenario',
+      prompt: 'No servidor a página inicial está salva como Index.html, com I maiúsculo, e o endereço do site abre uma lista de arquivos em vez da página. Por quê?',
+      data: { scenarios: [
+        { id: 'a', text: 'O servidor procura index.html exatamente assim, e não encontrou.', correct: true },
+        { id: 'b', text: 'A página tem algum erro de HTML que impediu o servidor de abri-la.', porque: 'Erro de HTML não impede a página de ser entregue: o navegador desenha o que dá. Aqui o arquivo nem foi procurado com esse nome.' },
+        { id: 'c', text: 'Falta pedir a página pelo nome no fim do endereço.', porque: 'É justamente o que não deveria ser preciso: a página inicial existe para abrir sem nome nenhum.' },
+        { id: 'd', text: 'O servidor mostra a lista sempre que há mais de quatro arquivos na pasta.', porque: 'A quantidade não importa. A lista aparece quando não há uma página inicial com o nome esperado.' },
+      ]},
+      explanation: 'É o mesmo cuidado do href: no servidor, maiúscula e minúscula são letras diferentes. Index.html e index.html são dois nomes, e só um deles abre sozinho.',
+    },
+    {
+      id: 'VD01-M7-Q7', type: 'true_false',
+      prompt: 'Um site de quatro páginas é um arquivo .html com quatro partes dentro.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'São quatro arquivos .html na mesma pasta, cada um completo, ligados pelo menu.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Cada página é um arquivo, e é por isso que o endereço muda ao clicar no menu: você saiu de um documento e entrou em outro.',
     },
   ],
 };

@@ -116,6 +116,7 @@ export const modulo2: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP042-3.1', 'AP042-3.3', 'AP042-3.5', 'AP042-3.7'],
+      perguntas: 7,
       questions: [
         {
           id: 'AP042.2-L1-Q1', type: 'multiple_choice',
@@ -197,6 +198,44 @@ export const modulo2: Module = {
             { left: 'Marcadores', right: 'Lista em que a ordem não importa' },
           ]},
           explanation: 'Cada recurso resolve um problema. Usar todos ao mesmo tempo não destaca nada.',
+        },
+        {
+          id: 'AP042.2-L1-Q8', type: 'multiple_choice',
+          prompt: 'Você quer levar um parágrafo do fim do documento para o começo, sem deixar cópia no lugar de origem. Qual é a sequência?',
+          data: { options: [
+            { id: 'a', text: 'Selecionar, recortar com Ctrl+X, ir ao começo e colar com Ctrl+V.', correct: true },
+            { id: 'b', text: 'Selecionar, copiar com Ctrl+C, colar no começo e apagar o de baixo.',
+              porque: 'Funciona, mas faz em quatro passos o que o recortar faz em três — e deixa espaço para esquecer de apagar.' },
+            { id: 'c', text: 'Ir ao começo, colar com Ctrl+V e depois selecionar o parágrafo antigo.',
+              porque: 'Não há o que colar antes de copiar ou recortar. A ordem começa pela seleção.' },
+            { id: 'd', text: 'Selecionar e arrastar com o mouse é a única forma de mover sem deixar cópia.',
+              porque: 'Arrastar move sim, mas não é a única forma — e em documento longo é justamente a mais difícil de acertar.' },
+          ]},
+          explanation: 'Copiar deixa o original; recortar leva embora. Mesmo colar, outra intenção.',
+        },
+        {
+          id: 'AP042.2-L1-Q9', type: 'multiple_choice',
+          prompt: 'Um trabalho precisa de uma tabela larga, com muitas colunas, que não cabe na largura da folha. O que ajusta isso?',
+          data: { options: [
+            { id: 'a', text: 'Mudar a orientação da folha para paisagem, deixando-a deitada.', correct: true },
+            { id: 'b', text: 'Trocar o tamanho do papel de A4 para Carta, que é mais largo.',
+              porque: 'O Carta é um pouco mais largo mesmo, mas a diferença é pequena. Quem ganha largura de verdade é a orientação.' },
+            { id: 'c', text: 'Diminuir a fonte da tabela até que ela caiba, mantendo a folha em pé.',
+              porque: 'Resolve na marra e custa a leitura. A folha deitada existe justamente para conteúdo largo.' },
+            { id: 'd', text: 'Aumentar as margens da folha para abrir espaço nas laterais.',
+              porque: 'Margem maior tira espaço do texto, e não dá. Para ganhar espaço lateral, diminui-se a margem — ou gira-se a folha.' },
+          ]},
+          explanation: 'Retrato é a folha em pé, do trabalho de escola. Paisagem é deitada, boa para tabela larga e cartaz.',
+        },
+        {
+          id: 'AP042.2-L1-Q10', type: 'true_false',
+          prompt: 'Se nada estiver selecionado, apertar o botão de negrito mostra uma mensagem de erro na tela.',
+          data: { options: [
+            { id: 'a', text: 'Falso', correct: true },
+            { id: 'b', text: 'Verdadeiro',
+              porque: 'Não acontece nada — e é justamente esse silêncio que faz quem está começando achar que o programa quebrou. Ele só não recebeu onde aplicar.' },
+          ]},
+          explanation: 'É o engano número um de quem começa. O programa não erra: ele espera uma seleção que não veio.',
         },
       ],
     },

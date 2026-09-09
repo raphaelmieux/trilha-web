@@ -42,6 +42,7 @@ const M1: ModuloDeVereda = {
     {
       id: 'm1-teoria',
       tipo: 'teoria',
+      perguntas: 5,
       titulo: 'Conversar com o computador por escrito',
       resumo: 'Terminal, diretório e caminho — os três termos que sustentam todo o resto.',
       topicos: [
@@ -154,6 +155,37 @@ desbravador@clube:~/projeto-do-clube$ pwd
           ]},
           explanation: 'Os dois aparecem em quase todo caminho relativo que se escreve.',
         },
+        {
+          id: 'cc003-m1-q6', type: 'multiple_choice',
+          prompt: 'Você abriu o terminal do computador do clube e não sabe em que pasta ele começou. Qual comando responde isso?',
+          data: { options: [
+            { id: 'a', text: 'pwd, que escreve o caminho do diretório de trabalho.', correct: true },
+            { id: 'b', text: 'ls, que mostra o conteúdo e assim revela onde você está.', porque: 'Ele lista o que há ali, e não o caminho. Duas pastas com os mesmos nomes dentro pareceriam iguais.' },
+            { id: 'c', text: 'cd, que leva até o diretório atual e o imprime na tela.', porque: 'O cd muda de lugar, e sozinho volta para a pasta pessoal. Ele não responde onde você estava.' },
+            { id: 'd', text: 'touch, que cria um arquivo no lugar onde você está.', porque: 'Criar um arquivo não diz o caminho, e ainda deixa lixo na pasta de alguém.' },
+          ]},
+          explanation: 'É a primeira pergunta de quem abre um terminal, e ela tem um comando só. O prompt também costuma mostrar o lugar, mas abreviado.',
+        },
+        {
+          id: 'cc003-m1-q7', type: 'scenario',
+          prompt: 'Estando em /home/desbravador/projeto-do-clube, você quer entrar em /home/desbravador/documentos. Qual comando faz isso em um passo, sem escrever o caminho inteiro?',
+          data: { scenarios: [
+            { id: 'a', text: 'cd ../documentos', correct: true },
+            { id: 'b', text: 'cd documentos', porque: 'Isso procura uma pasta documentos dentro de projeto-do-clube, que é onde você está agora.' },
+            { id: 'c', text: 'cd ./documentos', porque: 'O ponto sozinho é o diretório atual, então isso é o mesmo que a opção anterior: procura aqui dentro.' },
+            { id: 'd', text: 'cd /documentos', porque: 'A barra no começo parte da raiz do disco, e ali não existe uma pasta documentos.' },
+          ]},
+          explanation: 'Dois pontos sobem um nível, e a partir dali o caminho continua. É o atalho que evita reescrever a parte do endereço que os dois lugares têm em comum.',
+        },
+        {
+          id: 'cc003-m1-q8', type: 'true_false',
+          prompt: 'Um caminho absoluto leva ao mesmo lugar seja qual for o diretório em que você está.',
+          data: { options: [
+            { id: 'v', text: 'Verdadeiro', correct: true },
+            { id: 'f', text: 'Falso', porque: 'Ele começa na raiz do disco e diz o percurso inteiro. Quem depende de onde você está é o relativo.' },
+          ]},
+          explanation: 'É a diferença entre dar o endereço completo e dizer "a segunda porta à direita". O segundo é mais curto, e só serve para quem está no mesmo corredor.',
+        },
       ],
     },
     {
@@ -176,6 +208,7 @@ const M2: ModuloDeVereda = {
     {
       id: 'm2-teoria',
       tipo: 'teoria',
+      perguntas: 5,
       titulo: 'Cinco comandos que fazem o trabalho',
       resumo: 'mkdir, touch, cp, mv e rm — o que cada um faz, e o que nenhum deles pergunta.',
       topicos: [
@@ -288,6 +321,37 @@ desbravador@clube:~/projeto-do-clube$ rm -r provas`,
           ]},
           explanation: 'Conferir antes e depois é o que separa quem trabalha no terminal de quem o teme.',
         },
+        {
+          id: 'cc003-m2-q6', type: 'scenario',
+          prompt: 'Você rodou mkdir fotos do acampamento e apareceram três pastas na listagem. Por quê?',
+          data: { scenarios: [
+            { id: 'a', text: 'O espaço separa argumentos: ele leu três nomes de pasta.', correct: true },
+            { id: 'b', text: 'O mkdir cria uma pasta para cada palavra por padrão.', porque: 'Ele cria uma pasta por nome recebido. Quem transformou a frase em três nomes foi o espaço.' },
+            { id: 'c', text: 'O terminal repetiu o comando três vezes por engano.', porque: 'Ele executa uma vez o que você escreveu. As três pastas vieram de três nomes na mesma linha.' },
+            { id: 'd', text: 'Faltou a opção que permite nome comprido em uma pasta só.', porque: 'Não existe essa opção. O que resolve é aspas em volta do nome, ou trocar o espaço por hífen.' },
+          ]},
+          explanation: 'É por isso que quase todo mundo usa hífen ou sublinhado no lugar do espaço: no terminal o espaço já tem um trabalho, e ele é separar.',
+        },
+        {
+          id: 'cc003-m2-q7', type: 'multiple_choice',
+          prompt: 'O rm recusou apagar a pasta provas e explicou que ela é um diretório. Como se deve entender essa recusa?',
+          data: { options: [
+            { id: 'a', text: 'Como a última chance de notar que o nome digitado está errado.', correct: true },
+            { id: 'b', text: 'Como uma falha do comando, que deveria apagar o que se pede.', porque: 'Ele faz exatamente o que foi feito para fazer. Apagar pasta é outra ordem, e ela se escreve por extenso.' },
+            { id: 'c', text: 'Como sinal de que a pasta está protegida contra remoção.', porque: 'Não há proteção nenhuma ali. Com a opção certa, a mesma pasta é apagada na hora.' },
+            { id: 'd', text: 'Como aviso de que a pasta ainda tem arquivos dentro dela.', porque: 'A recusa vale mesmo para pasta vazia: o que ele recusa é o tipo, e não o conteúdo.' },
+          ]},
+          explanation: 'Quem acrescenta a opção no automático perde essa chance. E o rm não tem lixeira: depois dele, o que havia ali não volta.',
+        },
+        {
+          id: 'cc003-m2-q8', type: 'true_false',
+          prompt: 'Depois de mv leiame.txt provas/, o arquivo continua existindo onde estava antes.',
+          data: { options: [
+            { id: 'v', text: 'Verdadeiro', porque: 'Quem deixa os dois é o cp. O mv leva o arquivo: no fim existe um só, no lugar novo.' },
+            { id: 'f', text: 'Falso', correct: true },
+          ]},
+          explanation: 'As duas terminam igual na tela — o arquivo aparece onde você mandou. Só que numa delas ele também sumiu de onde estava.',
+        },
       ],
     },
     {
@@ -310,6 +374,7 @@ const M3: ModuloDeVereda = {
     {
       id: 'm3-teoria',
       tipo: 'teoria',
+      perguntas: 5,
       titulo: 'O problema que o Git resolve',
       resumo: 'A pasta cheia de "final_2_agora", e o que ela custa quando alguém precisa voltar atrás.',
       topicos: [
@@ -435,6 +500,37 @@ c1 Cria o programa da lista de presença`,
           ]},
           explanation: 'A mensagem é lida por quem não estava lá — e às vezes esse alguém é você.',
         },
+        {
+          id: 'cc003-m3-q6', type: 'scenario',
+          prompt: 'Você rodou git init, mas o Git não vê nenhum dos arquivos do projeto — a pasta parece vazia para ele. O comando não deu erro nenhum. O que houve?',
+          data: { scenarios: [
+            { id: 'a', text: 'O repositório foi criado numa pasta acima ou ao lado do projeto.', correct: true },
+            { id: 'b', text: 'Os arquivos precisam ser criados depois do git init para serem vistos.', porque: 'Ele passa a olhar tudo o que está ali, inclusive o que já existia antes.' },
+            { id: 'c', text: 'Faltou uma opção no comando para incluir os arquivos existentes.', porque: 'O git init não recebe lista de arquivos: ele prepara a pasta inteira.' },
+            { id: 'd', text: 'O Git ignora arquivos até que alguém os abra pelo menos uma vez.', porque: 'Ele não depende de ninguém abrir nada. O que ele olha é o diretório onde foi iniciado.' },
+          ]},
+          explanation: 'O git init funciona em qualquer lugar, e é isso que torna o engano silencioso. Rodar pwd antes é a linha que evita a tarde perdida.',
+        },
+        {
+          id: 'cc003-m3-q7', type: 'multiple_choice',
+          prompt: 'Você mudou dois arquivos e quer registrar só um deles agora. O que os dois passos do Git permitem?',
+          data: { options: [
+            { id: 'a', text: 'Preparar apenas esse arquivo e registrar só o que foi preparado.', correct: true },
+            { id: 'b', text: 'Registrar tudo e depois apagar do histórico o que não devia entrar.', porque: 'Mexer no histórico depois é trabalhoso e arriscado. Escolher antes é o que os dois passos oferecem.' },
+            { id: 'c', text: 'Registrar os dois, já que o commit sempre guarda a pasta inteira.', porque: 'Ele guarda o que foi preparado, e não tudo o que mudou. É essa a diferença entre os dois passos.' },
+            { id: 'd', text: 'Guardar o segundo arquivo numa pasta à parte até a hora certa.', porque: 'Tirar o arquivo do lugar é a saída caseira que o controle de versão veio substituir.' },
+          ]},
+          explanation: 'Os dois passos existem para separar o que se guarda do que se deixa para depois. Sem eles, todo registro seria a pasta inteira do jeito que ela estivesse.',
+        },
+        {
+          id: 'cc003-m3-q8', type: 'true_false',
+          prompt: 'O maior prejuízo de não guardar versões é perder o arquivo.',
+          data: { options: [
+            { id: 'v', text: 'Verdadeiro', porque: 'Arquivo raramente se perde. O que se perde é a explicação: seis meses depois ninguém lembra por que aquela linha está ali.' },
+            { id: 'f', text: 'Falso', correct: true },
+          ]},
+          explanation: 'Sem a mensagem do commit não há a quem perguntar. É por isso que a frase escrita na hora vale tanto quanto a cópia guardada.',
+        },
       ],
     },
     {
@@ -457,6 +553,7 @@ const M4: ModuloDeVereda = {
     {
       id: 'm4-teoria',
       tipo: 'teoria',
+      perguntas: 5,
       titulo: 'Errar sem medo',
       resumo: 'O que o histórico devolve, e por que existe mais de uma linha do tempo.',
       topicos: [
@@ -584,6 +681,37 @@ Merge feito por 'recursive'.
           ]},
           explanation: 'Quando as mudanças não se atropelam, ele junta sozinho. Quando se atropelam, alguém precisa decidir.',
         },
+        {
+          id: 'cc003-m4-q6', type: 'scenario',
+          prompt: 'Você trocou para o ramo main e os arquivos na tela voltaram ao estado antigo. O trabalho da tarde sumiu?',
+          data: { scenarios: [
+            { id: 'a', text: 'Não: ele está no outro ramo, e volta quando você voltar para lá.', correct: true },
+            { id: 'b', text: 'Sim, porque trocar de ramo descarta o que não foi mesclado.', porque: 'Trocar de ramo não descarta nada que tenha sido registrado. Cada ramo guarda a sua linha do tempo.' },
+            { id: 'c', text: 'Sim, e a saída é refazer o trabalho direto no main.', porque: 'Refazer seria jogar fora o que já existe. O trabalho está guardado, e basta voltar ao ramo dele.' },
+            { id: 'd', text: 'Não, mas ele só volta depois de mesclar os dois ramos.', porque: 'Mesclar traz o trabalho para o main. Para vê-lo de novo como estava, basta voltar ao ramo em que ele foi feito.' },
+          ]},
+          explanation: 'Ao trocar de ramo os arquivos na tela mudam junto, e é isso que assusta. O que estava registrado continua onde foi registrado.',
+        },
+        {
+          id: 'cc003-m4-q7', type: 'multiple_choice',
+          prompt: 'Antes de mesclar, você roda git branch e vê o asterisco ao lado de experimento. O que isso significa para o merge que você ia fazer?',
+          data: { options: [
+            { id: 'a', text: 'Que quem receberia o trabalho é o experimento, e não o main.', correct: true },
+            { id: 'b', text: 'Que o experimento já foi mesclado e não há mais o que trazer.', porque: 'O asterisco diz onde você está agora. Ele não conta nada sobre mesclagens anteriores.' },
+            { id: 'c', text: 'Que o experimento é o ramo principal deste repositório.', porque: 'O principal costuma se chamar main, e o asterisco não o aponta: ele aponta o ramo atual.' },
+            { id: 'd', text: 'Que faltam commits no experimento antes de poder mesclar.', porque: 'O asterisco nada diz sobre commits pendentes. Quem mostra isso é o git status.' },
+          ]},
+          explanation: 'Quem recebe é o ramo em que você está. Mesclar do lado errado leva o principal para dentro do experimento — o contrário do que se queria.',
+        },
+        {
+          id: 'cc003-m4-q8', type: 'true_false',
+          prompt: 'O git restore pede confirmação antes de descartar o que você escreveu desde o último commit.',
+          data: { options: [
+            { id: 'v', text: 'Verdadeiro', porque: 'Ele devolve o arquivo ao estado registrado sem perguntar nada. O que estava escrito e não foi commitado se perde.' },
+            { id: 'f', text: 'Falso', correct: true },
+          ]},
+          explanation: 'Ele é a rede de segurança e a serra elétrica ao mesmo tempo. Conferir com git status antes é a linha que separa uma coisa da outra.',
+        },
       ],
     },
     {
@@ -606,6 +734,7 @@ const M5: ModuloDeVereda = {
     {
       id: 'm5-teoria',
       tipo: 'teoria',
+      perguntas: 4,
       titulo: 'Trabalhar com outras pessoas',
       resumo: 'O que é um remoto, e por que enviar e receber são dois comandos.',
       topicos: [
@@ -693,6 +822,37 @@ Atualizando arquivos: 1 alterado`,
           ]},
           explanation: 'A recusa não é erro: é o Git protegendo o trabalho de quem chegou antes.',
         },
+        {
+          id: 'cc003-m5-q5', type: 'multiple_choice',
+          prompt: 'Por que enviar e receber são dois comandos, em vez de um só que sincroniza tudo?',
+          data: { options: [
+            { id: 'a', text: 'Porque são duas decisões: quando publicar, e quando trazer.', correct: true },
+            { id: 'b', text: 'Porque o Git precisa de um comando para cada direção da rede.', porque: 'Não é limitação técnica: outros programas sincronizam nos dois sentidos de uma vez. Aqui a escolha é sua de propósito.' },
+            { id: 'c', text: 'Porque enviar exige senha e receber não, e por isso se separam.', porque: 'Os dois podem exigir credencial. O que os separa é quem decide a hora de cada um.' },
+            { id: 'd', text: 'Porque o comando único existe e é o recomendado hoje.', porque: 'O trabalho continua sendo enviado e recebido por dois comandos, e é assim que se acompanha o que entra.' },
+          ]},
+          explanation: 'Nada acontece sozinho: você publica quando o seu trabalho está pronto para ser visto, e traz o dos outros quando está pronto para recebê-lo.',
+        },
+        {
+          id: 'cc003-m5-q6', type: 'scenario',
+          prompt: 'O computador do clube foi formatado. Você tinha commitado tudo, mas não deu push desde ontem. O que sobrou no remoto?',
+          data: { scenarios: [
+            { id: 'a', text: 'Só o que foi enviado até o último push — o de hoje se perdeu.', correct: true },
+            { id: 'b', text: 'Tudo, porque o commit já grava a cópia no repositório remoto.', porque: 'O commit grava na sua máquina. O remoto só recebe quando alguém envia.' },
+            { id: 'c', text: 'Nada, porque o remoto é apagado quando a máquina de origem some.', porque: 'Ele é independente e continua lá, com tudo o que recebeu antes.' },
+            { id: 'd', text: 'Tudo, desde que o remoto tenha sido configurado com origin.', porque: 'Configurar diz para onde enviar. Enviar continua sendo um passo à parte.' },
+          ]},
+          explanation: 'Repositório remoto não é backup do trabalho de hoje: ele tem o que você já mandou. Entre o commit e o push, o trabalho existe num lugar só.',
+        },
+        {
+          id: 'cc003-m5-q7', type: 'true_false',
+          prompt: 'O push recusado por causa de commits que você não tem é sinal de que algo quebrou no repositório.',
+          data: { options: [
+            { id: 'v', text: 'Verdadeiro', porque: 'Nada quebrou: é o Git avisando que outra pessoa enviou antes. Traga o que ela fez e mande o seu depois.' },
+            { id: 'f', text: 'Falso', correct: true },
+          ]},
+          explanation: 'A recusa protege o trabalho do outro. Sem ela, o envio de um apagaria o do outro sem ninguém perceber.',
+        },
       ],
     },
     {
@@ -715,6 +875,7 @@ const M6: ModuloDeVereda = {
     {
       id: 'm6-teoria',
       tipo: 'teoria',
+      perguntas: 4,
       titulo: 'Escrever para quem vai chegar depois',
       resumo: 'O que é Markdown, as quatro marcações que importam, e o que um README precisa dizer.',
       topicos: [
@@ -808,6 +969,37 @@ Rode com \`python3 lista.py\` no terminal.
           ]},
           explanation: 'É essa a diferença em relação a um formato binário — e a razão de ele ter vencido.',
         },
+        {
+          id: 'cc003-m6-q5', type: 'scenario',
+          prompt: 'No README publicado, o link do seu projeto apareceu escrito cru, com os colchetes e os parênteses à mostra. No arquivo ele parece certo. O que procurar?',
+          data: { scenarios: [
+            { id: 'a', text: 'Um espaço entre o colchete que fecha e o parêntese que abre.', correct: true },
+            { id: 'b', text: 'O endereço, que precisa começar com https para ser reconhecido.', porque: 'Markdown aceita endereço de qualquer forma, inclusive caminho de arquivo do próprio projeto.' },
+            { id: 'c', text: 'A ordem das partes: o endereço vem antes do texto.', porque: 'A ordem é texto e depois endereço, e foi assim que você escreveu. O que quebra é o espaço no meio.' },
+            { id: 'd', text: 'O nome do arquivo, que precisa terminar em .md para valer.', porque: 'Se a extensão estivesse errada, nenhuma marcação da página funcionaria — e os títulos apareceram.' },
+          ]},
+          explanation: 'Esse erro passa despercebido porque o texto continua lá, legível. Só o clique é que não existe mais.',
+        },
+        {
+          id: 'cc003-m6-q6', type: 'multiple_choice',
+          prompt: 'Por que o nome do arquivo é README.md, em maiúsculas?',
+          data: { options: [
+            { id: 'a', text: 'Por convenção: assim ele sobe no topo da lista e os serviços o exibem.', correct: true },
+            { id: 'b', text: 'Porque o Markdown só é interpretado em arquivos com nome em maiúsculas.', porque: 'A marcação funciona em qualquer arquivo .md, com qualquer nome.' },
+            { id: 'c', text: 'Porque o Git recusa versionar arquivos de documentação em minúsculas.', porque: 'O Git guarda qualquer arquivo, com qualquer nome. Ele não trata documentação de forma especial.' },
+            { id: 'd', text: 'Porque o terminal precisa disso para diferenciá-lo dos arquivos de código.', porque: 'O terminal não separa nada por maiúscula. Quem separa é a extensão, e mesmo assim só para quem lê.' },
+          ]},
+          explanation: 'Convenção antiga, e ainda útil: é o primeiro arquivo que aparece, e é o que a página do projeto mostra sozinha para quem chega.',
+        },
+        {
+          id: 'cc003-m6-q7', type: 'true_false',
+          prompt: 'Um documento de editor de texto serviria igualmente bem como README de um projeto.',
+          data: { options: [
+            { id: 'v', text: 'Verdadeiro', porque: 'O Git não consegue mostrar o que mudou linha por linha nele, e ele não abre em qualquer lugar. O texto puro faz as duas coisas.' },
+            { id: 'f', text: 'Falso', correct: true },
+          ]},
+          explanation: 'Markdown não centraliza, não muda cor e não escolhe fonte — e é por isso que ele funciona em qualquer editor e cabe bem no histórico.',
+        },
       ],
     },
     {
@@ -830,6 +1022,7 @@ const M7: ModuloDeVereda = {
     {
       id: 'm7-teoria',
       tipo: 'teoria',
+      perguntas: 3,
       titulo: 'Apresentando o histórico ao examinador',
       resumo: 'O que dizer sobre cada commit, e por que essa é a parte que ninguém treina.',
       topicos: [
@@ -906,6 +1099,37 @@ const M7: ModuloDeVereda = {
             { id: 'b', text: 'Falso', porque: 'É verdadeiro: o log mostra do mais novo primeiro, e a história aconteceu ao contrário disso.' },
           ]},
           explanation: 'O log é uma pilha; a história é uma linha. Conte-a na ordem em que ela aconteceu.',
+        },
+        {
+          id: 'cc003-m7-q4', type: 'scenario',
+          prompt: 'Ensaiando a apresentação, você chega a um commit chamado "teste 3" e não lembra o que ele mudou. O que isso ensina?',
+          data: { scenarios: [
+            { id: 'a', text: 'Que a mensagem é escrita para depois, e essa não foi.', correct: true },
+            { id: 'b', text: 'Que o commit deveria ser apagado do histórico antes de apresentar.', porque: 'Apagar esconde o que aconteceu. O histórico serve justamente para mostrar o percurso, inclusive os tropeços.' },
+            { id: 'c', text: 'Que faltou registrar commits menores naquele trecho do trabalho.', porque: 'O tamanho não é o problema aqui. Um commit pequeno com mensagem vazia continua não dizendo nada.' },
+            { id: 'd', text: 'Que a apresentação deve começar pelos commits mais recentes.', porque: 'A ordem da fala não recupera o que a mensagem não guardou.' },
+          ]},
+          explanation: 'A mensagem é lida por quem não estava lá — e às vezes esse alguém é você, três semanas depois. Perceber isso na hora de contar vale mais do que a apresentação.',
+        },
+        {
+          id: 'cc003-m7-q5', type: 'multiple_choice',
+          prompt: 'Das três coisas a dizer sobre cada commit, qual já está escrita no próprio histórico?',
+          data: { options: [
+            { id: 'a', text: 'O que mudou, que é o que a mensagem registra.', correct: true },
+            { id: 'b', text: 'Por que mudou, já que a mensagem explica o motivo.', porque: 'Uma boa mensagem diz o que mudou. O motivo costuma ficar na sua memória, e é por isso que se prepara.' },
+            { id: 'c', text: 'Como você percebeu, porque o histórico guarda o erro anterior.', porque: 'O histórico guarda estados, e não como você chegou a suspeitar de um deles.' },
+            { id: 'd', text: 'Nenhuma: as três dependem inteiramente da sua memória.', porque: 'Uma delas está registrada e se lê na hora — é justamente por isso que se apresenta com o log aberto.' },
+          ]},
+          explanation: 'Por isso não se decora a apresentação: roda-se o log na frente do examinador e lê-se dali, acrescentando as duas frases que a tela não tem.',
+        },
+        {
+          id: 'cc003-m7-q6', type: 'true_false',
+          prompt: 'Convém decorar a apresentação antes de encontrar o examinador.',
+          data: { options: [
+            { id: 'v', text: 'Verdadeiro', porque: 'O histórico está na tela e se lê dali. Decorar é o que faz alguém travar quando o examinador pergunta fora da ordem.' },
+            { id: 'f', text: 'Falso', correct: true },
+          ]},
+          explanation: 'É assim que se faz numa reunião de equipe de verdade: o log aberto, e a explicação por cima do que está ali.',
         },
       ],
     },

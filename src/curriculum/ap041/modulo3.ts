@@ -171,6 +171,7 @@ export const modulo3: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP041-4.1', 'AP041-4.2', 'AP041-4.5'],
+      perguntas: 8,
       questions: [
         {
           id: 'AP041.3-L1-Q1', type: 'multiple_choice',
@@ -272,6 +273,44 @@ export const modulo3: Module = {
           ]},
           explanation: 'Muita gente troca os dois porque vivem na mesma caixa. Scanner lê o papel; impressora escreve nele.',
         },
+        {
+          id: 'AP041.3-L1-Q9', type: 'multiple_choice',
+          prompt: 'O que o mouse trouxe de novo, comparado com o jeito de usar computador que existia antes dele?',
+          data: { options: [
+            { id: 'a', text: 'Apontar para o que se quer, em vez de digitar o nome de cada comando.', correct: true },
+            { id: 'b', text: 'Escrever mais rápido, porque substituiu boa parte do que o teclado fazia.',
+              porque: 'O mouse não escreve nada: ele aponta, escolhe, arrasta e abre. Escrever continua sendo do teclado.' },
+            { id: 'c', text: 'Guardar arquivos, que antes só ficavam na memória enquanto a máquina estava ligada.',
+              porque: 'Guardar é trabalho do armazenamento. O mouse é peça de entrada, e só leva informação para dentro.' },
+            { id: 'd', text: 'Ligar o computador à internet sem precisar de cabo.',
+              porque: 'Quem traz a internet é o modem, e quem reparte é o roteador. O mouse não tem nada com isso.' },
+          ]},
+          explanation: 'Foi o que deixou o computador fácil o bastante para qualquer pessoa usar.',
+        },
+        {
+          id: 'AP041.3-L1-Q10', type: 'multiple_choice',
+          prompt: 'Depois de passar uma foto de papel no scanner, o que acontece com a foto original?',
+          data: { options: [
+            { id: 'a', text: 'Nada: ela continua na sua mão, do mesmo jeito.', correct: true },
+            { id: 'b', text: 'Ela é apagada, porque a imagem foi transferida para o computador.',
+              porque: 'Transferir daria a ideia de que sai de um lugar e vai para outro. O scanner faz uma cópia digital, e não uma mudança.' },
+            { id: 'c', text: 'Ela sai marcada pelo aparelho, que precisa registrar o que já foi digitalizado.',
+              porque: 'O scanner só olha para a folha. Ele não escreve nem marca nada nela.' },
+            { id: 'd', text: 'Ela precisa ser impressa de novo, porque o original perde qualidade ao ser lido.',
+              porque: 'A leitura não desgasta o papel. O original continua servindo para o que servia antes.' },
+          ]},
+          explanation: 'É uma máquina de fotocópia que, em vez de cuspir outra folha, devolve um arquivo.',
+        },
+        {
+          id: 'AP041.3-L1-Q11', type: 'true_false',
+          prompt: 'Apertar Enter e apertar Esc são ordens dadas ao computador pelo teclado, mesmo sem escrever nenhuma letra.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'O teclado manda letras e também comandos: Enter confirma, Esc cancela, e Ctrl+C copia o que está selecionado.' },
+          ]},
+          explanation: 'Digitar não é a única coisa que o teclado faz. Ele também comanda.',
+        },
       ],
     },
 
@@ -281,6 +320,7 @@ export const modulo3: Module = {
       type: 'theory',
       content: conteudo_L2,
       requirementCodes: ['AP041-4.3', 'AP041-4.4'],
+      perguntas: 7,
       questions: [
         {
           id: 'AP041.3-L2-Q1', type: 'multiple_choice',
@@ -373,6 +413,44 @@ export const modulo3: Module = {
           ]},
           explanation: 'Dois pares que se espelham: scanner e impressora fazem o mesmo trajeto em sentidos opostos.',
         },
+        {
+          id: 'AP041.3-L2-Q8', type: 'multiple_choice',
+          prompt: 'Por que se diz que o scanner e a impressora são opostos?',
+          data: { options: [
+            { id: 'a', text: 'Porque o scanner vai do papel para o arquivo, e a impressora vai do arquivo para o papel.', correct: true },
+            { id: 'b', text: 'Porque um usa tinta e o outro usa luz para funcionar.',
+              porque: 'A diferença que importa é o sentido do caminho, e não a tecnologia de cada um.' },
+            { id: 'c', text: 'Porque um é peça de entrada e o outro faz parte do processamento.',
+              porque: 'A impressora é saída, e não processamento. Quem processa é a CPU.' },
+            { id: 'd', text: 'Porque nunca podem estar ligados ao mesmo computador ao mesmo tempo.',
+              porque: 'Podem, e há aparelhos que juntam os dois numa caixa só — as multifuncionais.' },
+          ]},
+          explanation: 'Um é a volta do outro. É por isso que existem multifuncionais.',
+        },
+        {
+          id: 'AP041.3-L2-Q9', type: 'multiple_choice',
+          prompt: 'Você mandou imprimir um trabalho e o nome do clube saiu com erro de digitação no papel. De quem é a falha?',
+          data: { options: [
+            { id: 'a', text: 'Do arquivo: a impressora imprime exatamente o que recebe.', correct: true },
+            { id: 'b', text: 'Da impressora, que trocou letras ao converter o texto para tinta.',
+              porque: 'Ela não interpreta nem reescreve nada. O que chega é o que sai.' },
+            { id: 'c', text: 'Do monitor, que mostrou o texto certo e enviou outro para impressão.',
+              porque: 'O monitor só mostra. Ele não participa do envio para a impressora.' },
+            { id: 'd', text: 'Do papel, que pode borrar a tinta e deformar as letras ao secar.',
+              porque: 'Borrão deforma a letra, e não troca uma letra por outra. O erro estava no arquivo.' },
+          ]},
+          explanation: 'Conferir antes economiza papel e tinta — e é a única etapa em que ainda dá para consertar.',
+        },
+        {
+          id: 'AP041.3-L2-Q10', type: 'true_false',
+          prompt: 'Num computador de mesa, o monitor é só a tela: o computador propriamente dito está no gabinete, ao lado.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'É uma confusão comum, e ela aparece na hora de comprar: quem acha que o monitor é o computador acaba levando só a tela para casa.' },
+          ]},
+          explanation: 'O monitor é peça de saída. Desligá-lo não desliga o computador — só tira a imagem.',
+        },
       ],
     },
 
@@ -382,6 +460,7 @@ export const modulo3: Module = {
       type: 'theory',
       content: conteudo_L3,
       requirementCodes: ['AP041-4.6', 'AP041-4.7'],
+      perguntas: 7,
       questions: [
         {
           id: 'AP041.3-L3-Q1', type: 'multiple_choice',
@@ -474,6 +553,44 @@ export const modulo3: Module = {
           ]},
           explanation: 'Há cabo de energia e cabo de sinal. Os dois ligam peças, mas um leva força e o outro leva conversa.',
         },
+        {
+          id: 'AP041.3-L3-Q8', type: 'multiple_choice',
+          prompt: 'Você aperta a tecla A e a letra aparece na tela num piscar de olhos. Quantas peças participaram desse caminho?',
+          data: { options: [
+            { id: 'a', text: 'Três: o teclado enviou, a CPU descobriu que letra era, e o monitor desenhou.', correct: true },
+            { id: 'b', text: 'Duas: o teclado enviou a letra pronta e o monitor a mostrou.',
+              porque: 'A tecla não manda a letra pronta: manda um sinal. Alguém precisa descobrir o que ele significa, e esse alguém é a CPU.' },
+            { id: 'c', text: 'Uma: o teclado tem a letra impressa e a envia direto para a tela.',
+              porque: 'O que está impresso é a tampa da tecla, para você. A máquina recebe sinal, não letra.' },
+            { id: 'd', text: 'Quatro: entra também a impressora, que prepara o formato da letra.',
+              porque: 'A impressora é saída em papel, e não participa do que aparece na tela.' },
+          ]},
+          explanation: 'Isso acontece bilhões de vezes por segundo, e é por isso que parece instantâneo.',
+        },
+        {
+          id: 'AP041.3-L3-Q9', type: 'multiple_choice',
+          prompt: 'Por que um computador não funciona só com as peças encaixadas, sem os cabos ligados?',
+          data: { options: [
+            { id: 'a', text: 'Porque são eles que levam energia e sinal de uma peça à outra.', correct: true },
+            { id: 'b', text: 'Porque os cabos guardam as instruções que as peças precisam seguir.',
+              porque: 'Instrução é software, e mora no armazenamento. O cabo transporta, e não guarda.' },
+            { id: 'c', text: 'Porque sem cabo a CPU não consegue fazer contas.',
+              porque: 'Ela faz as contas dela. O que falta é o resultado chegar a alguém.' },
+            { id: 'd', text: 'Porque os cabos servem só para energia, e sem energia nada liga.',
+              porque: 'Levar energia é metade do trabalho deles: a outra metade é levar sinal, que é a informação indo de uma peça a outra.' },
+          ]},
+          explanation: 'Peça sozinha não faz nada — é a ligação entre elas que faz o computador existir.',
+        },
+        {
+          id: 'AP041.3-L3-Q10', type: 'true_false',
+          prompt: 'A CPU decide o que acontece em seguida na máquina, e é por isso que ela é chamada de cérebro.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'Tudo passa por ela: abrir a janela, somar os números, desenhar o próximo quadro do jogo. Ela faz as contas e decide o passo seguinte.' },
+          ]},
+          explanation: 'Unidade central de processamento: central porque tudo passa por ela.',
+        },
       ],
     },
 
@@ -483,6 +600,7 @@ export const modulo3: Module = {
       type: 'theory',
       content: conteudo_L4,
       requirementCodes: ['AP041-4.8', 'AP041-4.9'],
+      perguntas: 8,
       questions: [
         {
           id: 'AP041.3-L4-Q1', type: 'multiple_choice',
@@ -587,6 +705,44 @@ export const modulo3: Module = {
             { left: 'CPU', right: 'Faz as contas dentro do computador' },
           ]},
           explanation: 'Os três primeiros levam a informação até a máquina; o quarto é quem trabalha com ela depois que chega.',
+        },
+        {
+          id: 'AP041.3-L4-Q9', type: 'multiple_choice',
+          prompt: 'Cinco pessoas da casa começam a assistir vídeo ao mesmo tempo e todos ficam travando. O roteador está com defeito?',
+          data: { options: [
+            { id: 'a', text: 'Não: ele reparte a velocidade contratada, e repartir não é multiplicar.', correct: true },
+            { id: 'b', text: 'Sim: repartir para mais de quatro aparelhos exige um roteador mais potente.',
+              porque: 'Não há esse limite. Cada um fica com um pedaço menor da mesma velocidade, e é isso que se sente.' },
+            { id: 'c', text: 'Sim: quando trava para todos ao mesmo tempo, o problema é sempre do aparelho.',
+              porque: 'Travar para todos ao mesmo tempo é justamente o sintoma de banda dividida, e não de defeito.' },
+            { id: 'd', text: 'Não: o problema é do modem, que precisa ser trocado por um mais rápido.',
+              porque: 'O modem entrega o que a operadora manda. Trocá-lo não aumenta a velocidade contratada.' },
+          ]},
+          explanation: 'A velocidade continua sendo a contratada. Com muita gente baixando, cada um fica com um pedaço menor.',
+        },
+        {
+          id: 'AP041.3-L4-Q10', type: 'multiple_choice',
+          prompt: 'A operadora instalou uma caixinha só na casa, que traz a internet e ainda cria o Wi-Fi. Isso quer dizer que modem e roteador são a mesma coisa?',
+          data: { options: [
+            { id: 'a', text: 'Não: são duas tarefas diferentes acontecendo dentro do mesmo aparelho.', correct: true },
+            { id: 'b', text: 'Sim: quando vêm na mesma caixa, as duas funções viram uma só.',
+              porque: 'Estar na mesma caixa não junta as funções. Uma conversa com a operadora, a outra com os aparelhos da casa.' },
+            { id: 'c', text: 'Sim: o roteador deixou de existir, e hoje o modem também reparte o sinal.',
+              porque: 'Repartir continua sendo trabalho de roteador — ele só passou a morar dentro da mesma caixa.' },
+            { id: 'd', text: 'Não: nesse caso a caixinha é só um roteador, e o modem fica na rua, no poste.',
+              porque: 'O modem está na caixinha. É ele que recebe o sinal da operadora ali dentro.' },
+          ]},
+          explanation: 'O modem conversa com a operadora; o roteador conversa com os aparelhos da casa. Duas conversas, um gabinete.',
+        },
+        {
+          id: 'AP041.3-L4-Q11', type: 'true_false',
+          prompt: 'Sem o modem, o cabo da rua chega até a parede da casa e para ali.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'É como a carta que chega ao portão e não tem quem leve para dentro: o sinal existe, e falta quem o traduza para o que os aparelhos entendem.' },
+          ]},
+          explanation: 'O modem é a porta de entrada — e também por onde sai tudo o que você envia.',
         },
       ],
     },

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { ap034, ap035, ap041, ap042, getAllSpecialties } from './index';
-import { getFinalExamQuestions } from './finalExams';
+import { getFinalExamQuestions, todasAsQuestoesDaProva, quantasAProvaPergunta } from './finalExams';
 
 describe('AP034 curriculum', () => {
   it('has the 35 requirements of the official AP034 sheet', () => {
@@ -179,18 +179,30 @@ describe('laboratórios', () => {
 });
 
 describe('Final exam questions', () => {
+  /*
+    Estas leem o reservatório, e não uma tentativa.
+
+    A prova passou a sortear um subconjunto, e daí em diante `getFinalExamQuestions`
+    devolve amostra: perguntar a ela se existe questão de ligar respondia sim ou
+    não conforme o sorteio do dia — a AP041 tem uma só, e num terço das execuções
+    ela ficava de fora. O mesmo valia para a trava das explicações, que passaria a
+    aprovar uma questão sem explicação enquanto o sorteio não a trouxesse.
+
+    O que estas travas medem é a prova escrita, e ela não muda entre tentativas.
+    O sorteio tem trava própria, logo abaixo.
+  */
   it('AP034 final has at least 15 questions', () => {
-    const qs = getFinalExamQuestions('AP034');
+    const qs = todasAsQuestoesDaProva('AP034');
     expect(qs.length).toBeGreaterThanOrEqual(15);
   });
 
   it('AP035 final has at least 12 questions', () => {
-    const qs = getFinalExamQuestions('AP035');
+    const qs = todasAsQuestoesDaProva('AP035');
     expect(qs.length).toBeGreaterThanOrEqual(12);
   });
 
   it('AP034 final has diverse question types', () => {
-    const qs = getFinalExamQuestions('AP034');
+    const qs = todasAsQuestoesDaProva('AP034');
     const types = new Set(qs.map(q => q.type));
     expect(types.has('multiple_choice')).toBe(true);
     expect(types.has('true_false')).toBe(true);
@@ -201,7 +213,7 @@ describe('Final exam questions', () => {
   });
 
   it('AP035 final has diverse question types', () => {
-    const qs = getFinalExamQuestions('AP035');
+    const qs = todasAsQuestoesDaProva('AP035');
     const types = new Set(qs.map(q => q.type));
     expect(types.has('multiple_choice')).toBe(true);
     expect(types.has('ordering')).toBe(true);
@@ -211,11 +223,11 @@ describe('Final exam questions', () => {
   });
 
   it('AP041 final has at least 15 questions', () => {
-    expect(getFinalExamQuestions('AP041').length).toBeGreaterThanOrEqual(15);
+    expect(todasAsQuestoesDaProva('AP041').length).toBeGreaterThanOrEqual(15);
   });
 
   it('AP041 final has diverse question types', () => {
-    const types = new Set(getFinalExamQuestions('AP041').map(q => q.type));
+    const types = new Set(todasAsQuestoesDaProva('AP041').map(q => q.type));
     for (const t of ['multiple_choice', 'true_false', 'ordering', 'matching', 'fill_blank', 'scenario']) {
       expect(types.has(t as never), t).toBe(true);
     }
@@ -230,11 +242,11 @@ describe('Final exam questions', () => {
     toda trilha que tem módulo de avaliação final precisa ter questões.
   */
   it('AP042 final has at least 15 questions', () => {
-    expect(getFinalExamQuestions('AP042').length).toBeGreaterThanOrEqual(15);
+    expect(todasAsQuestoesDaProva('AP042').length).toBeGreaterThanOrEqual(15);
   });
 
   it('AP042 final has diverse question types', () => {
-    const types = new Set(getFinalExamQuestions('AP042').map(q => q.type));
+    const types = new Set(todasAsQuestoesDaProva('AP042').map(q => q.type));
     for (const t of ['multiple_choice', 'true_false', 'ordering', 'matching', 'fill_blank', 'scenario']) {
       expect(types.has(t as never), t).toBe(true);
     }
@@ -243,7 +255,7 @@ describe('Final exam questions', () => {
   it('gives every trail with a final module its own exam', () => {
     const semProva = getAllSpecialties()
       .filter(s => s.modules.some(m => m.lessons.some(l => l.labType === 'final_exam')))
-      .filter(s => getFinalExamQuestions(s.code).length === 0)
+      .filter(s => todasAsQuestoesDaProva(s.code).length === 0)
       .map(s => s.code);
     expect(semProva).toEqual([]);
   });
@@ -252,20 +264,48 @@ describe('Final exam questions', () => {
      fazia, e nada no sistema de tipos denunciava. */
   it('never hands two trails the same questions', () => {
     const ids = ['AP034', 'AP035', 'AP041', 'AP042']
-      .map(c => getFinalExamQuestions(c).map(q => q.id).sort().join('|'));
+      .map(c => todasAsQuestoesDaProva(c).map(q => q.id).sort().join('|'));
     expect(new Set(ids).size).toBe(ids.length);
   });
 
   it('all final exam questions have explanations', () => {
-    const qs034 = getFinalExamQuestions('AP034');
+    const qs034 = todasAsQuestoesDaProva('AP034');
     for (const q of qs034) {
       expect(q.explanation).toBeDefined();
       expect(q.explanation!.length).toBeGreaterThan(10);
     }
-    const qs035 = getFinalExamQuestions('AP035');
+    const qs035 = todasAsQuestoesDaProva('AP035');
     for (const q of qs035) {
       expect(q.explanation).toBeDefined();
       expect(q.explanation!.length).toBeGreaterThan(10);
+    }
+  });
+});
+
+
+describe('o sorteio da prova final', () => {
+  it('entrega a quantidade declarada, e não o reservatório inteiro', () => {
+    for (const code of ['AP034', 'AP035', 'AP041', 'AP042', 'AP043']) {
+      const pool = todasAsQuestoesDaProva(code).length;
+      const sorteadas = getFinalExamQuestions(code).length;
+      expect(sorteadas, code).toBe(quantasAProvaPergunta(code));
+      expect(sorteadas, code).toBeLessThan(pool);
+    }
+  });
+
+  /* Duas tentativas iguais seriam o estado anterior de volta — e ele não
+     estourava nada, que é justamente por que precisa de trava. Com 21 de 25,
+     a chance de coincidirem por acaso é de uma em milhares. */
+  it('duas tentativas não trazem o mesmo conjunto na mesma ordem', () => {
+    const a = getFinalExamQuestions('AP034').map(q => q.id).join('|');
+    const b = getFinalExamQuestions('AP034').map(q => q.id).join('|');
+    expect(a).not.toBe(b);
+  });
+
+  it('não repete questão dentro da mesma tentativa', () => {
+    for (const code of ['AP034', 'AP035', 'AP041', 'AP042', 'AP043']) {
+      const ids = getFinalExamQuestions(code).map(q => q.id);
+      expect(new Set(ids).size, code).toBe(ids.length);
     }
   });
 });

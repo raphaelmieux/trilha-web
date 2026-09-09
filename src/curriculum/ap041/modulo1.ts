@@ -86,6 +86,7 @@ export const modulo1: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP041-1.1'],
+      perguntas: 10,
       questions: [
         {
           id: 'AP041.1-L1-Q1', type: 'multiple_choice',
@@ -219,6 +220,44 @@ export const modulo1: Module = {
             { left: 'Transistor', right: 'Faz o serviço da válvula ocupando quase nada' },
           ]},
           explanation: 'Primeiro a pessoa calculava, depois a máquina calculou, depois passou a obedecer instruções — e então encolheu.',
+        },
+        {
+          id: 'AP041.1-L1-Q11', type: 'multiple_choice',
+          prompt: 'O que a máquina analítica de Babbage tinha que a Pascalina de Pascal não tinha?',
+          data: { options: [
+            { id: 'a', text: 'A capacidade de seguir instruções, fazendo a conta que mandassem.', correct: true },
+            { id: 'b', text: 'Engrenagens capazes de somar e subtrair sem ajuda de ninguém.',
+              porque: 'A Pascalina já fazia isso — foi ela que tirou a conta da cabeça da pessoa e a pôs dentro da máquina.' },
+            { id: 'c', text: 'Eletricidade, que permitia trabalhar sem manivela.',
+              porque: 'Nenhuma das duas usava eletricidade. Ela só chegou com os gigantes de válvula, quase um século depois.' },
+            { id: 'd', text: 'Tamanho pequeno o bastante para caber numa mesa comum.',
+              porque: 'A analítica era enorme, e nem chegou a ser construída. O que ela trouxe foi a ideia, não o tamanho.' },
+          ]},
+          explanation: 'Primeiro a máquina passou a calcular. Depois passou a seguir instruções — e é aí que nasce a ideia de computador.',
+        },
+        {
+          id: 'AP041.1-L1-Q12', type: 'multiple_choice',
+          prompt: 'Por que Ada Lovelace é chamada de primeira programadora?',
+          data: { options: [
+            { id: 'a', text: 'Porque escreveu as instruções para uma máquina que ainda não existia.', correct: true },
+            { id: 'b', text: 'Porque construiu sozinha a primeira máquina capaz de seguir instruções.',
+              porque: 'A máquina era projeto de Babbage, e nem ele conseguiu construí-la. O trabalho dela foi outro: as instruções.' },
+            { id: 'c', text: 'Porque foi a primeira pessoa a operar o ENIAC, em 1946.',
+              porque: 'Ela escreveu em 1843, um século antes do ENIAC.' },
+            { id: 'd', text: 'Porque inventou os cartões perfurados que guardavam os programas.',
+              porque: 'Os cartões já eram usados antes, em teares. O que foi dela é o programa escrito para eles.' },
+          ]},
+          explanation: 'O primeiro programa da história foi escrito para um computador que nunca foi construído.',
+        },
+        {
+          id: 'AP041.1-L1-Q13', type: 'true_false',
+          prompt: 'O ábaco calcula sozinho: basta mover as contas e ele entrega o resultado.',
+          data: { options: [
+            { id: 'a', text: 'Falso', correct: true },
+            { id: 'b', text: 'Verdadeiro',
+              porque: 'Quem calcula é a pessoa. O ábaco só guarda o número enquanto ela pensa no passo seguinte — e é essa a diferença dele para a Pascalina.' },
+          ]},
+          explanation: 'Primeiro a pessoa calculava e a máquina só guardava. É o começo do fio da história.',
         },
       ],
     },

@@ -684,6 +684,7 @@ export const MODULOS_DE_CSS: ModuloDeVereda[] = [
       {
         id: 'm1-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_CSS['m1-teoria'],
+        perguntas: 4,
         titulo: 'Seletor, propriedade e valor',
         resumo: 'As três partes de uma regra, e onde a folha de estilo mora.',
         topicos: cap('regra').topicos,
@@ -706,6 +707,7 @@ export const MODULOS_DE_CSS: ModuloDeVereda[] = [
       {
         id: 'm2-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_CSS['m2-teoria'],
+        perguntas: 4,
         titulo: 'Os três seletores, e quem vence',
         resumo: 'Como apontar para o elemento certo, e o que acontece quando duas regras discordam.',
         topicos: cap('seletores').topicos,
@@ -728,6 +730,7 @@ export const MODULOS_DE_CSS: ModuloDeVereda[] = [
       {
         id: 'm3-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_CSS['m3-teoria'],
+        perguntas: 4,
         titulo: 'A aparência do texto',
         resumo: 'Escrever cor, escolher fonte com reserva, e decidir entre px, %, em e rem.',
         topicos: cap('aparencia').topicos,
@@ -750,6 +753,7 @@ export const MODULOS_DE_CSS: ModuloDeVereda[] = [
       {
         id: 'm4-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_CSS['m4-teoria'],
+        perguntas: 4,
         titulo: 'Dentro, fora e a linha entre os dois',
         resumo: 'Conteúdo, padding, borda e margem — e por que 200px viram 240px.',
         topicos: cap('caixa').topicos,
@@ -772,6 +776,7 @@ export const MODULOS_DE_CSS: ModuloDeVereda[] = [
       {
         id: 'm5-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_CSS['m5-teoria'],
+        perguntas: 4,
         titulo: 'O contêiner manda',
         resumo: 'Os dois eixos, o espaço entre as peças, e a permissão para descer.',
         topicos: cap('flex').topicos,
@@ -794,6 +799,7 @@ export const MODULOS_DE_CSS: ModuloDeVereda[] = [
       {
         id: 'm6-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_CSS['m6-teoria'],
+        perguntas: 4,
         titulo: 'A grade e a fração',
         resumo: 'Quantas colunas, de que tamanho, e quando grid é melhor que flex.',
         topicos: cap('grid').topicos,
@@ -816,6 +822,7 @@ export const MODULOS_DE_CSS: ModuloDeVereda[] = [
       {
         id: 'm7-teoria', tipo: 'teoria',
         questoes: QUESTOES_DE_CSS['m7-teoria'],
+        perguntas: 4,
         titulo: 'Consulta de mídia',
         resumo: 'A largura fixa que estoura, o bloco que só vale às vezes, e por onde começar.',
         topicos: cap('telas').topicos,
