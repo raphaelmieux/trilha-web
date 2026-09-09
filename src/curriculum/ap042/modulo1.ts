@@ -118,6 +118,7 @@ export const modulo1: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP042-2.1', 'AP042-2.2', 'AP042-2.4', 'AP042-2.5'],
+      perguntas: 6,
       questions: [
         {
           id: 'AP042.1-L1-Q1', type: 'multiple_choice',
@@ -195,6 +196,44 @@ export const modulo1: Module = {
           ]},
           explanation: 'Os quatro são computadores. O que muda é o tamanho, a potência e para que foram feitos.',
         },
+        {
+          id: 'AP042.1-L1-Q7', type: 'multiple_choice',
+          prompt: 'A tia comprou um aparelho leve, de tela pequena, teclado preso e bateria que dura o dia todo, para escrever e navegar. Ela quer usá-lo para editar os vídeos do acampamento e reclama que trava. O que aconteceu?',
+          data: { options: [
+            { id: 'a', text: 'Ela comprou um netbook, que foi feito para tarefa leve e não tem potência para vídeo.', correct: true },
+            { id: 'b', text: 'O aparelho está com defeito de fábrica e precisa ser trocado na loja.',
+              porque: 'Ele está fazendo o que foi feito para fazer. Pedir edição de vídeo a um netbook é pedir o que ele não tem.' },
+            { id: 'c', text: 'Falta instalar o programa certo: com o programa leve, qualquer máquina edita vídeo.',
+              porque: 'O programa ajuda, mas quem trava é a máquina. Editar vídeo pede potência, e é justamente ela que falta.' },
+            { id: 'd', text: 'Tela pequena não permite edição de vídeo, e é isso que causa o travamento.',
+              porque: 'Tamanho de tela atrapalha o conforto, não o processamento. O travamento vem da potência.' },
+          ]},
+          explanation: 'Netbook e notebook se parecem e fecham igual. A diferença que importa não é o tamanho: é a potência.',
+        },
+        {
+          id: 'AP042.1-L1-Q8', type: 'multiple_choice',
+          prompt: 'Um desbravador vai passar o ano escrevendo relatórios longos e quer um aparelho só. Entre um tablet e um notebook, o que decide?',
+          data: { options: [
+            { id: 'a', text: 'O notebook, porque escrever muito pede teclado de verdade.', correct: true },
+            { id: 'b', text: 'O tablet, porque a tela de toque é mais moderna e faz tudo o que o notebook faz.',
+              porque: 'Para ler, desenhar e assistir ele é ótimo. Para escrever muito, perde para qualquer teclado de verdade.' },
+            { id: 'c', text: 'Qualquer um dos dois: com teclado ligado por fora, os dois ficam iguais.',
+              porque: 'O teclado externo ajuda, mas o tablet continua sendo outro tipo de máquina, feito para outro uso.' },
+            { id: 'd', text: 'O tablet, porque relatórios se escrevem melhor com o dedo na tela do que com teclado.',
+              porque: 'É o contrário: o dedo na tela é bom para tocar e arrastar, e ruim para texto longo.' },
+          ]},
+          explanation: 'É por isso que o tablet não substituiu o notebook na hora do trabalho escolar.',
+        },
+        {
+          id: 'AP042.1-L1-Q9', type: 'true_false',
+          prompt: 'A diferença principal entre um smartphone e um tablet é o tamanho e o chip de telefone.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'Os dois são tela de tocar e rodam os mesmos tipos de aplicativo. O que os separa é caber na mão e fazer ligação.' },
+          ]},
+          explanation: 'Notebook e netbook: teclado preso, e a diferença é potência. Tablet e smartphone: tela de tocar, e a diferença é tamanho e chip.',
+        },
       ],
     },
     {
@@ -203,6 +242,7 @@ export const modulo1: Module = {
       type: 'theory',
       content: conteudo_L2,
       requirementCodes: ['AP042-2.3', 'AP042-2.6'],
+      perguntas: 5,
       questions: [
         {
           id: 'AP042.1-L2-Q1', type: 'multiple_choice',
@@ -268,6 +308,44 @@ export const modulo1: Module = {
               porque: 'Servidor atende outras máquinas pela rede. Aqui há uma pessoa sentada, usando a máquina diretamente.' },
           ]},
           explanation: 'Máquina que não anda ganha em potência, preço e facilidade de consertar.',
+        },
+        {
+          id: 'AP042.1-L2-Q6', type: 'multiple_choice',
+          prompt: 'O que faz um computador ser chamado de servidor?',
+          data: { options: [
+            { id: 'a', text: 'O trabalho que ele faz: ficar ligado atendendo pedidos de outras máquinas.', correct: true },
+            { id: 'b', text: 'O tamanho da caixa: servidor é sempre uma máquina grande, de armário.',
+              porque: 'Há servidor pequeno e servidor de armário. O que define é o papel, e não o gabinete.' },
+            { id: 'c', text: 'A marca do processador, que precisa ser de uma linha própria para servidores.',
+              porque: 'Processador de servidor existe, mas um computador comum também pode servir. O papel é que decide.' },
+            { id: 'd', text: 'Não ter monitor nem teclado ligados nele.',
+              porque: 'Muitos ficam mesmo sem monitor, por não precisarem. Isso é consequência do papel, e não a definição dele.' },
+          ]},
+          explanation: 'Servidor é papel, e não formato. A máquina fica ligada esperando pedido, e responde.',
+        },
+        {
+          id: 'AP042.1-L2-Q7', type: 'multiple_choice',
+          prompt: 'Por que um servidor de empresa costuma ter duas fontes de energia?',
+          data: { options: [
+            { id: 'a', text: 'Para continuar ligado se uma delas queimar.', correct: true },
+            { id: 'b', text: 'Para dobrar a potência disponível e rodar programas mais pesados.',
+              porque: 'A segunda fonte não soma potência: ela espera. É reserva, e não reforço.' },
+            { id: 'c', text: 'Para alimentar separadamente o processador e o armazenamento.',
+              porque: 'Uma fonte só alimenta a máquina inteira. A segunda existe para o caso de a primeira falhar.' },
+            { id: 'd', text: 'Porque servidores usam duas tomadas de voltagens diferentes ao mesmo tempo.',
+              porque: 'A voltagem é a mesma. O que muda é haver um caminho de energia sobrando.' },
+          ]},
+          explanation: 'Peça repetida é peça de reserva. Servidor existe para não parar, e parar é o que a peça única garante um dia.',
+        },
+        {
+          id: 'AP042.1-L2-Q8', type: 'true_false',
+          prompt: 'Um microcomputador é um tipo de computador tão pequeno que cabe na palma da mão.',
+          data: { options: [
+            { id: 'a', text: 'Falso', correct: true },
+            { id: 'b', text: 'Verdadeiro',
+              porque: 'O "micro" do nome é histórico: veio da comparação com os computadores de sala inteira que existiam antes. O computador de mesa do clube é um microcomputador.' },
+          ]},
+          explanation: 'A palavra nasceu para separá-lo dos computadores gigantes da época, e não para descrever algo de bolso.',
         },
       ],
     },

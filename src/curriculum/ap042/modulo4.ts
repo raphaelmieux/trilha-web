@@ -98,6 +98,7 @@ export const modulo4: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP042-5.1'],
+      perguntas: 6,
       questions: [
         {
           id: 'AP042.4-L1-Q1', type: 'multiple_choice',
@@ -169,6 +170,44 @@ export const modulo4: Module = {
             { left: 'Tirar da tomada', right: 'Proteger de raio na tempestade' },
           ]},
           explanation: 'Eles ficam na mesma prateleira e resolvem problemas diferentes. Comprar o errado é gastar sem proteger.',
+        },
+        {
+          id: 'AP042.4-L1-Q7', type: 'multiple_choice',
+          prompt: 'A energia do bairro acabou no meio da tarde e o relatório do clube não estava salvo. Qual dos três aparelhos teria dado tempo de salvar?',
+          data: { options: [
+            { id: 'a', text: 'O nobreak, que tem bateria e segura a máquina por alguns minutos.', correct: true },
+            { id: 'b', text: 'O estabilizador, que mantém a energia estável mesmo quando ela falta.',
+              porque: 'Ele estabiliza o que chega. Se não chega nada, ele apaga junto com o computador.' },
+            { id: 'c', text: 'O filtro de linha com protetor contra surtos, que segura a queda de energia.',
+              porque: 'Protetor contra surto aguenta pico. Contra a falta de energia, nenhum filtro faz nada.' },
+            { id: 'd', text: 'Qualquer um dos três, já que todos guardam energia para emergências.',
+              porque: 'Só um deles tem bateria dentro, e é ele que muda o resultado quando a energia acaba.' },
+          ]},
+          explanation: 'O nobreak não é para continuar trabalhando: é para salvar o arquivo e desligar direito.',
+        },
+        {
+          id: 'AP042.4-L1-Q8', type: 'multiple_choice',
+          prompt: 'A energia voltou depois de um apagão e o computador de um vizinho queimou na hora. Que tipo de problema foi esse?',
+          data: { options: [
+            { id: 'a', text: 'Um pico: chegou muito mais energia de uma vez.', correct: true },
+            { id: 'b', text: 'Uma queda: chegou menos energia do que a máquina precisava.',
+              porque: 'A queda desgasta aos poucos, como a piscada do chuveiro. O que queima na hora é o excesso.' },
+            { id: 'c', text: 'Um corte: a energia acabou e a máquina desligou no meio do trabalho.',
+              porque: 'O corte é a falta. Aqui o estrago aconteceu no instante em que a energia voltou.' },
+            { id: 'd', text: 'Desgaste normal da fonte, que coincidiu com o horário do apagão.',
+              porque: 'A volta da energia é um momento clássico de pico, e é por isso que se recomenda desligar da tomada durante o apagão.' },
+          ]},
+          explanation: 'Queda desgasta, pico queima, corte apaga. Os três são coisas diferentes, e pedem aparelhos diferentes.',
+        },
+        {
+          id: 'AP042.4-L1-Q9', type: 'true_false',
+          prompt: 'Num temporal com raios, tirar o cabo de força da tomada já basta: o cabo de internet pode ficar ligado.',
+          data: { options: [
+            { id: 'a', text: 'Falso', correct: true },
+            { id: 'b', text: 'Verdadeiro',
+              porque: 'O raio não entra só pela tomada: entra também pelo cabo de internet e pelo da antena. Tira-se os dois.' },
+          ]},
+          explanation: 'É a única proteção que funciona de verdade contra raio — e ela é de graça.',
         },
       ],
     },

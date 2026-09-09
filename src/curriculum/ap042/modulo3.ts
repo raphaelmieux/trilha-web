@@ -140,6 +140,7 @@ export const modulo3: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP042-4.1', 'AP042-4.2'],
+      perguntas: 5,
       questions: [
         {
           id: 'AP042.3-L1-Q1', type: 'multiple_choice',
@@ -200,6 +201,44 @@ export const modulo3: Module = {
           ]},
           explanation: 'Quanto maior a mesa, mais cadernos abertos cabem ao mesmo tempo.',
         },
+        {
+          id: 'AP042.3-L1-Q6', type: 'multiple_choice',
+          prompt: 'Dois números em GB aparecem no anúncio, um do lado do outro. Qual pergunta separa a memória do armazenamento?',
+          data: { options: [
+            { id: 'a', text: 'O número some quando a máquina desliga? Se some, é memória.', correct: true },
+            { id: 'b', text: 'Qual dos dois é maior? O maior é sempre o armazenamento.',
+              porque: 'Costuma ser, mas não sempre — e regra que "costuma" valer é a que falha na hora da compra.' },
+            { id: 'c', text: 'Qual vem escrito primeiro no anúncio? O primeiro é sempre a memória.',
+              porque: 'A ordem é escolha da loja, e muda de anúncio para anúncio.' },
+            { id: 'd', text: 'Qual dos dois é mais caro por GB? O mais caro é o armazenamento.',
+              porque: 'É o contrário: a memória custa mais caro por GB. E preço não é o que distingue a função das duas.' },
+          ]},
+          explanation: 'A RAM esvazia ao desligar; o armazenamento continua cheio. É a pergunta que resolve sem decorar número.',
+        },
+        {
+          id: 'AP042.3-L1-Q7', type: 'multiple_choice',
+          prompt: 'Um notebook com HD caiu da mesa enquanto estava ligado e parou de funcionar. Por que isso é mais provável com HD do que com SSD?',
+          data: { options: [
+            { id: 'a', text: 'Porque o HD tem disco girando e agulha lendo, e o tranco atinge as duas peças.', correct: true },
+            { id: 'b', text: 'Porque o HD é mais pesado e por isso bate com mais força no chão.',
+              porque: 'O peso não é o ponto: é haver peça em movimento no momento do impacto.' },
+            { id: 'c', text: 'Porque o SSD desliga sozinho ao detectar queda, e o HD não tem esse recurso.',
+              porque: 'O SSD aguenta melhor por não ter peça que se mexe, e não por perceber a queda.' },
+            { id: 'd', text: 'Porque o HD esquenta mais e o calor deixa as peças quebradiças.',
+              porque: 'Calor é outro assunto. O que quebra na queda é a mecânica que está girando.' },
+          ]},
+          explanation: 'O SSD guarda tudo em chips, sem peça que se mexe. É por isso que ele aguenta melhor um esbarrão.',
+        },
+        {
+          id: 'AP042.3-L1-Q8', type: 'true_false',
+          prompt: 'Quando a memória RAM enche, o computador para de funcionar e mostra um aviso pedindo para fechar programas.',
+          data: { options: [
+            { id: 'a', text: 'Falso', correct: true },
+            { id: 'b', text: 'Verdadeiro',
+              porque: 'Ele não desiste nem avisa: começa a guardar coisa no disco, que é muito mais lento, e tudo fica arrastado. É esse o travamento de quem abre vinte abas.' },
+          ]},
+          explanation: 'A RAM cheia não dá erro — dá lentidão. E lentidão sem aviso é o que faz culparem a máquina inteira.',
+        },
       ],
     },
     {
@@ -208,6 +247,7 @@ export const modulo3: Module = {
       type: 'theory',
       content: conteudo_L2,
       requirementCodes: ['AP042-4.3', 'AP042-4.4', 'AP042-4.5'],
+      perguntas: 5,
       questions: [
         {
           id: 'AP042.3-L2-Q1', type: 'multiple_choice',
@@ -270,6 +310,44 @@ export const modulo3: Module = {
             { left: 'Painel IPS ou TN', right: 'Se a cor some ao olhar de lado' },
           ]},
           explanation: 'Nenhum número decide sozinho: avaliar é olhar o conjunto e comparar com o uso pretendido.',
+        },
+        {
+          id: 'AP042.3-L2-Q6', type: 'multiple_choice',
+          prompt: 'Dois notebooks têm o mesmo Core i5. Um é de 4ª geração e custa metade do outro, de 12ª. Por que a diferença de preço é justa?',
+          data: { options: [
+            { id: 'a', text: 'Porque o de 12ª geração faz mais trabalho a cada ciclo, mesmo com o mesmo nome.', correct: true },
+            { id: 'b', text: 'Porque o mais caro vem com mais memória e mais armazenamento de fábrica.',
+              porque: 'Pode vir, mas não é o que a geração diz. O nome i5 sozinho não conta nem memória nem disco.' },
+            { id: 'c', text: 'Porque a garantia do modelo novo é maior, e é isso que encarece.',
+              porque: 'Garantia não é o que separa 4ª de 12ª geração. O que separa é quanto o chip faz por ciclo.' },
+            { id: 'd', text: 'Não é justa: sendo os dois i5, eles entregam o mesmo desempenho.',
+              porque: 'Essa é justamente a conclusão que a loja espera de quem não olha a geração.' },
+          ]},
+          explanation: 'Loja que anuncia só "i5", sem dizer a geração, costuma estar vendendo máquina antiga.',
+        },
+        {
+          id: 'AP042.3-L2-Q7', type: 'multiple_choice',
+          prompt: 'O que um processador de quatro núcleos faz melhor do que um de um núcleo com o mesmo GHz?',
+          data: { options: [
+            { id: 'a', text: 'Toca mais tarefas ao mesmo tempo, como quatro pessoas em vez de uma.', correct: true },
+            { id: 'b', text: 'Faz cada conta individual quatro vezes mais rápido.',
+              porque: 'Uma conta sozinha continua no ritmo do GHz. O ganho está em fazer várias coisas em paralelo.' },
+            { id: 'c', text: 'Guarda quatro vezes mais informação enquanto trabalha.',
+              porque: 'Guardar o que está em uso é trabalho da memória RAM, e não dos núcleos.' },
+            { id: 'd', text: 'Gasta menos energia, porque divide o trabalho entre as partes.',
+              porque: 'Mais núcleos costumam gastar mais, e não menos. O ganho é de trabalho simultâneo.' },
+          ]},
+          explanation: 'Núcleo e geração são o que fazem o GHz sozinho enganar na hora de comparar duas máquinas.',
+        },
+        {
+          id: 'AP042.3-L2-Q8', type: 'true_false',
+          prompt: 'Um painel IPS continua com as cores certas quando você olha o monitor de lado, e é isso que o diferencia do TN.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'É a diferença que se vê primeiro: o IPS mostra cores fiéis e aguenta o olhar de lado, e é por isso que ele é o escolhido de quem trabalha com imagem.' },
+          ]},
+          explanation: 'Tamanho, resolução e tipo de painel: três coisas que se avaliam num monitor, e o painel é a que quase ninguém olha.',
         },
       ],
     },
