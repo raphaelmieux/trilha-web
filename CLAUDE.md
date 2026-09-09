@@ -25,6 +25,22 @@ cumprir a licença.
 E cobra uma coisa de cada dependência nova: ela precisa ser compatível com
 AGPL. MIT, BSD e Apache-2.0 entram; licença proprietária, não.
 
+## Como o trabalho fecha
+
+**PR verde entra sozinho.** O dono da plataforma autorizou de forma permanente:
+não se pergunta se pode dar merge, dá-se. Isso vale para todo PR aberto aqui,
+sempre, e não uma vez.
+
+Verde é a condição, e não uma formalidade a contornar: merge só depois de o
+`ci.yml` fechar em sucesso no commit que está no topo do PR, e só com o PR
+sem conflito. PR vermelho ou conflitado é trabalho, não é decisão a tomar —
+conserta-se e então entra. Autorização para dar merge não é autorização para
+dar merge no que está quebrado.
+
+Depois do merge: acompanhar o `deploy.yml` e, quando a mudança mexeu em
+`supabase/`, o `supabase.yml`. Publicar e não olhar o resultado é entregar
+pela metade.
+
 ## Comandos
 
 ```bash
