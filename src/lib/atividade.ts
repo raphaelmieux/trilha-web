@@ -191,7 +191,10 @@ export function descreverAtividade(e: EventoDeAtividade): AtividadeDescrita {
   const trilha = trilhaDoEvento(e);
 
   if (e.event_type === 'certification_issued') {
-    return { trilha, texto: 'Certificado emitido', detalhe: texto(m.certCode) };
+    /* `code` é como o servidor escreve, `certCode` como o aplicativo escrevia.
+       O aplicativo parou — as duas linhas iguais no mural eram esta e a do
+       servidor —, e o registro antigo continua sendo lido. */
+    return { trilha, texto: 'Certificado emitido', detalhe: texto(m.code ?? m.certCode) };
   }
 
   if (e.event_type === 'final_exam_completed') {

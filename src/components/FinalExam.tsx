@@ -235,7 +235,9 @@ async function requestCertification(userId: string, specialtyCode: string): Prom
     const data = await response.json();
     if (!response.ok) return { error: data.error };
 
-    await logActivity(userId, 'certification_issued', { certCode: data.code, specialtyCode }, undefined, 'certification');
+    /* O mural quem escreve é o servidor, na mesma transação da emissão. Escrever
+       daqui também punha duas linhas de "Certificado emitido" em Atividade
+       Recente por certificado — uma com o código, outra sem. */
     return { code: data.code };
   } catch {
     return { error: 'Erro de conexão ao emitir certificado.' };

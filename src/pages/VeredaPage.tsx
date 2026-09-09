@@ -42,7 +42,10 @@ export default function VeredaPage() {
   const { profile } = useAuth();
   const vereda = getVereda(code);
   const { percursoDe, concluida, recarregar, carregando } = useVeredas(profile?.id);
-  const { getByCurriculum, refresh: recarregarCertificados } = useCertifications(profile?.id);
+  const {
+    certifications, getByCurriculum,
+    loading: carregandoTokens, refresh: recarregarCertificados,
+  } = useCertifications(profile?.id);
   const [aberta, setAberta] = useState<string | null>(null);
 
   const fechar = async () => { setAberta(null); await recarregar(); };
@@ -355,11 +358,20 @@ export default function VeredaPage() {
 
       {/* Concluída: o certificado. Depois do progresso e antes dos módulos, que
           é onde a conquista fica à vista sem empurrar a lista para baixo. */}
-      {profile?.id && licoes.length > 0 && vencidas === licoes.length && (
+      {profile?.id && licoes.length > 0 && vencidas === licoes.length && !carregandoTokens && (
+        /*
+          Só depois de saber o que a pessoa já tem.
+
+          O cartão emite sozinho ao aparecer, e enquanto a lista de certificados
+          carrega ela está vazia — montá-lo antes disso pediria um Token.Web()
+          para quem já tem o dela. Aqui o cartão só existe quando a resposta
+          sobre o que existe já chegou.
+        */
         <TokenDaVereda
           vereda={vereda}
           userId={profile.id}
-          certificado={getByCurriculum(vereda.code)}
+          /* De qualquer estado, e não só o ativo: ver `TokenDaVereda`. */
+          tokens={certifications.filter(c => c.curriculum_code === vereda.code)}
           aoEmitir={recarregarCertificados}
         />
       )}
