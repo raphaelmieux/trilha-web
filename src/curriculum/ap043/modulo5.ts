@@ -139,6 +139,7 @@ export const modulo5: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP043-6.1'],
+      perguntas: 5,
       questions: [
         {
           id: 'AP043.5-L1-Q1', type: 'multiple_choice',
@@ -205,6 +206,44 @@ export const modulo5: Module = {
           ]},
           explanation: 'Salvar em pdf você já aprendeu na Computação 2. Aqui aparece o motivo de isso ser útil.',
         },
+        {
+          id: 'AP043.5-L1-Q6', type: 'multiple_choice',
+          prompt: 'Você salvou o relatório no editor mais novo e mandou para a secretária, que abriu tudo desconfigurado no editor antigo dela. Por que o contrário — ela mandar um arquivo velho para você — quase nunca dá problema?',
+          data: { options: [
+            { id: 'a', text: 'Porque o programa novo foi feito para abrir o que o antigo produzia.', correct: true },
+            { id: 'b', text: 'Porque arquivos antigos são menores e por isso mais fáceis de abrir.',
+              porque: 'O tamanho não decide nada aqui. O que decide é a versão saber ou não os recursos que o arquivo usa.' },
+            { id: 'c', text: 'Porque quem recebe sempre pode converter o arquivo para a versão dele.',
+              porque: 'Converter é um remendo depois do problema. A retrocompatibilidade evita o problema antes.' },
+            { id: 'd', text: 'Porque os dois editores gravam no mesmo formato desde que foram criados.',
+              porque: 'Cada versão nova aprende coisas que a anterior não sabia — e é isso que muda o formato.' },
+          ]},
+          explanation: 'Retrocompatibilidade: o novo abre o velho porque ninguém quer perder o que já escreveu. O caminho de volta é o que falha.',
+        },
+        {
+          id: 'AP043.5-L1-Q7', type: 'multiple_choice',
+          prompt: 'A memória que você comprou não entra na fenda da placa mãe, por mais que você force. Qual dos dois lados da compatibilidade falhou?',
+          data: { options: [
+            { id: 'a', text: 'O encaixe físico: nenhuma força resolve, e driver nenhum ajudaria.', correct: true },
+            { id: 'b', text: 'O reconhecimento: falta instalar o driver da memória antes de encaixá-la.',
+              porque: 'Driver é para peça que encaixou e não foi reconhecida. O que não entra na fenda não chega a essa etapa.' },
+            { id: 'c', text: 'A versão do sistema, que precisa ser atualizada para aceitar memória nova.',
+              porque: 'Versão de sistema decide se um programa roda, e não se uma peça cabe fisicamente.' },
+            { id: 'd', text: 'Nenhum: memória é universal, e o que falhou foi a peça ter vindo com defeito.',
+              porque: 'Memória tem tipos e formatos diferentes, e a fenda da placa mãe aceita um só.' },
+          ]},
+          explanation: 'São dois lados, e os dois precisam dar certo: encaixar e ser reconhecida. Este parou no primeiro.',
+        },
+        {
+          id: 'AP043.5-L1-Q8', type: 'true_false',
+          prompt: 'Ao procurar o driver de uma impressora que não foi reconhecida, o melhor caminho é baixar um "driver universal" que sirva para vários modelos.',
+          data: { options: [
+            { id: 'a', text: 'Falso', correct: true },
+            { id: 'b', text: 'Verdadeiro',
+              porque: 'O driver ensina o sistema a usar aquele modelo exato. O caminho é o site do fabricante, procurando pelo modelo que está escrito na impressora.' },
+          ]},
+          explanation: 'Driver é do modelo, não da categoria. Procure o exato, no site de quem fabricou.',
+        },
       ],
     },
     {
@@ -213,6 +252,7 @@ export const modulo5: Module = {
       type: 'theory',
       content: conteudo_L2,
       requirementCodes: ['AP043-7.1'],
+      perguntas: 6,
       questions: [
         {
           id: 'AP043.5-L2-Q1', type: 'multiple_choice',
@@ -289,6 +329,44 @@ export const modulo5: Module = {
               porque: 'Wi-Fi é padrão aberto: aparelhos de marcas diferentes se conectam à mesma rede sem problema.' },
           ]},
           explanation: 'Por isso escritório sério continua passando cabo, mesmo tendo Wi-Fi para os notebooks.',
+        },
+        {
+          id: 'AP043.5-L2-Q7', type: 'multiple_choice',
+          prompt: 'Seu fone Bluetooth conversa com o celular, o celular conversa com o roteador da casa, e o roteador alcança um site do outro lado do mundo. Quantos tipos de rede diferentes estão em uso?',
+          data: { options: [
+            { id: 'a', text: 'Três: uma PAN, uma WLAN e uma WAN, uma dentro da outra.', correct: true },
+            { id: 'b', text: 'Um só: tudo isso é internet, que é a maior rede que existe.',
+              porque: 'A internet é a WAN do fim do caminho. O fone e o roteador falam em redes menores antes de chegar lá.' },
+            { id: 'c', text: 'Dois: a rede da casa e a internet, porque Bluetooth não é rede.',
+              porque: 'Bluetooth é rede sim — a PAN, pessoal, de alguns metros em volta de você.' },
+            { id: 'd', text: 'Três: uma LAN, uma MAN e uma WAN, do menor para o maior.',
+              porque: 'MAN é metropolitana, e liga prédios de uma organização pela cidade. Não há nenhuma no caminho descrito.' },
+          ]},
+          explanation: 'As redes vivem uma dentro da outra, e os nomes dizem só uma coisa: o tamanho da área coberta.',
+        },
+        {
+          id: 'AP043.5-L2-Q8', type: 'multiple_choice',
+          prompt: 'Cada conselheiro guarda a lista da própria unidade no seu computador, e ninguém sabe qual versão é a certa. O que resolve isso?',
+          data: { options: [
+            { id: 'a', text: 'Pôr as listas num servidor, para que todos abram a mesma.', correct: true },
+            { id: 'b', text: 'Trocar o Wi-Fi por cabo, porque a ligação com fio é mais estável.',
+              porque: 'Cabo melhora a estabilidade da ligação. Não muda o fato de cada arquivo estar numa máquina diferente.' },
+            { id: 'c', text: 'Instalar um switch, para que os computadores se enxerguem entre si.',
+              porque: 'O switch encaminha o que passa. Ele não decide onde os arquivos moram.' },
+            { id: 'd', text: 'Mandar as listas por mensagem toda vez que alguém alterar alguma coisa.',
+              porque: 'É exatamente assim que se criam cinco versões diferentes, que é o problema a resolver.' },
+          ]},
+          explanation: 'Ligar máquinas serve para chegar em algum lugar, e esse lugar costuma ser um servidor. Uma versão só, no mesmo lugar.',
+        },
+        {
+          id: 'AP043.5-L2-Q9', type: 'true_false',
+          prompt: 'Escritórios que levam a sério a estabilidade da rede continuam usando cabo, mesmo tendo Wi-Fi disponível.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'O cabo dá trabalho para instalar e ninguém o vê, mas é estável, rápido e não sofre com parede no caminho — e é por isso que continua ali.' },
+          ]},
+          explanation: 'Wi-Fi ganha em liberdade e perde em estabilidade. Parede, distância e vizinho no mesmo canal atrapalham.',
         },
       ],
     },

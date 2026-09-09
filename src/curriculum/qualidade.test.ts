@@ -332,3 +332,51 @@ describe('nenhuma prova cobra a mesma coisa duas vezes', () => {
     expect(repetidas).toEqual([]);
   });
 });
+
+/*
+  A regra do x+3.
+
+  Uma lição que declara quantas perguntas sorteia está dizendo que tem um
+  reservatório maior do que a prova. A regra pedida é três a mais: com seis
+  sorteadas de nove, duas tentativas quase nunca trazem o mesmo conjunto, e o
+  padrão de resposta que se passa de um desbravador para outro deixa de valer.
+
+  Declarar `perguntas` sem ter as extras seria pior do que não declarar: a
+  lição encolheria em silêncio, perguntando menos do que foi escrito para ela
+  e cobrando menos do que o requisito pede.
+*/
+describe('a lição que sorteia tem de onde sortear', () => {
+  const MARGEM = 3;
+
+  const licoesQueSorteiam = () => {
+    const achadas: { onde: string; pool: number; perguntas: number }[] = [];
+    for (const e of getAllSpecialties()) {
+      for (const m of e.modules) for (const l of m.lessons) {
+        if (l.perguntas === undefined) continue;
+        achadas.push({ onde: `${e.code} ${l.code}`, pool: l.questions?.length ?? 0, perguntas: l.perguntas });
+      }
+    }
+    for (const v of veredasComConteudo()) {
+      for (const mod of v.modulos ?? []) for (const l of mod.licoes) {
+        if (l.tipo !== 'teoria' || l.perguntas === undefined) continue;
+        achadas.push({ onde: `${v.code} ${l.id}`, pool: l.questoes.length, perguntas: l.perguntas });
+      }
+    }
+    return achadas;
+  };
+
+  it('o reservatório tem pelo menos três a mais do que a lição pergunta', () => {
+    for (const { onde, pool, perguntas } of licoesQueSorteiam()) {
+      expect(pool, `${onde} sorteia ${perguntas} de um reservatório de ${pool}`)
+        .toBeGreaterThanOrEqual(perguntas + MARGEM);
+    }
+  });
+
+  it('nenhuma lição pergunta menos de três', () => {
+    /* Uma prova de duas questões passa a valer 50% por acerto, e o limiar de
+       domínio deixa de medir qualquer coisa. */
+    for (const { onde, perguntas } of licoesQueSorteiam()) {
+      expect(perguntas, `${onde} pergunta ${perguntas}`).toBeGreaterThanOrEqual(3);
+    }
+  });
+});

@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { sequenciaCorreta, embaralharQuestao, embaralharQuestoes } from './questoes';
+import {
+  sequenciaCorreta, embaralharQuestao, embaralharQuestoes,
+  sortearQuestoes, quantasPerguntar,
+} from './questoes';
 import { checkAnswer } from './checkAnswer';
 import type { Question } from '../types';
 
@@ -160,5 +163,73 @@ describe('as outras formas continuam embaralhadas', () => {
     const saida = embaralharQuestoes([comOpcoes, ordenar(itensNaOrdem)]);
     expect(saida).toHaveLength(2);
     expect(saida[1].data.items!.map(x => x.id).join('')).not.toBe('abcde');
+  });
+});
+
+/*
+  O sorteio da tentativa.
+
+  A queixa que trouxe isto: "as alternativas continuam no mesmo lugar em todas
+  as questões, e os usuários podem ensinar uns aos outros os padrões de
+  resposta sem ler os módulos". As alternativas já embaralhavam — a ordem das
+  *questões* e o conjunto perguntado é que eram sempre os mesmos, e são eles
+  que criam o padrão que se decora: "a quinta é a do relógio".
+*/
+describe('o sorteio da tentativa', () => {
+  const pool = (n: number): Question[] =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `Q${i}`, type: 'multiple_choice' as const, prompt: `pergunta ${i}`,
+      data: { options: [
+        { id: 'a', text: 'certa', correct: true },
+        { id: 'b', text: 'errada', porque: 'não' },
+        { id: 'c', text: 'errada', porque: 'não' },
+        { id: 'd', text: 'errada', porque: 'não' },
+      ] },
+    }));
+
+  it('sem número declarado, pergunta o reservatório inteiro', () => {
+    /* É o que toda lição que ainda não ganhou extras precisa continuar
+       fazendo: a mudança acompanha o conteúdo, e não o deploy. */
+    expect(sortearQuestoes(pool(6))).toHaveLength(6);
+    expect(quantasPerguntar(pool(6))).toBe(6);
+  });
+
+  it('com número declarado, sorteia essa quantidade', () => {
+    const tirada = sortearQuestoes(pool(9), 6);
+    expect(tirada).toHaveLength(6);
+    /* Sem repetir: seis vezes a mesma questão seria uma prova de uma pergunta. */
+    expect(new Set(tirada.map(q => q.id)).size).toBe(6);
+  });
+
+  it('número maior do que o reservatório não inventa questão', () => {
+    expect(sortearQuestoes(pool(4), 10)).toHaveLength(4);
+  });
+
+  it('a ordem das questões muda entre tentativas', () => {
+    /* A medida que sozinha já quebra o padrão decorado, mesmo sem extras. */
+    const vistas = new Set<string>();
+    for (let i = 0; i < 30; i++) vistas.add(sortearQuestoes(pool(6)).map(q => q.id).join('|'));
+    expect(vistas.size, 'a ordem das questões não muda').toBeGreaterThan(1);
+  });
+
+  it('o conjunto sorteado muda entre tentativas', () => {
+    const vistos = new Set<string>();
+    for (let i = 0; i < 30; i++) {
+      vistos.add([...sortearQuestoes(pool(9), 6)].map(q => q.id).sort().join('|'));
+    }
+    expect(vistos.size, 'o reservatório maior não está sendo sorteado').toBeGreaterThan(1);
+  });
+
+  it('as alternativas continuam embaralhadas dentro de cada questão', () => {
+    const vistas = new Set<string>();
+    for (let i = 0; i < 30; i++) {
+      for (const q of sortearQuestoes(pool(3))) vistas.add(q.data.options!.map(o => o.id).join(''));
+    }
+    expect(vistas.size, 'as alternativas pararam de embaralhar').toBeGreaterThan(1);
+  });
+
+  it('não perde nem duplica questão ao sortear tudo', () => {
+    const ids = sortearQuestoes(pool(7)).map(q => q.id).sort();
+    expect(ids).toEqual(pool(7).map(q => q.id).sort());
   });
 });

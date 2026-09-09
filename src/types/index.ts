@@ -240,7 +240,17 @@ export interface Lesson {
   type: LessonType;
   content: string;
   requirementCodes: string[];
+  /*
+    O reservatório de questões, e não a prova.
+
+    `questions` é tudo o que está escrito para esta lição; `perguntas` é quantas
+    a tentativa sorteia dele. Sem `perguntas`, pergunta todas — que é o que a
+    plataforma sempre fez, e o que continua acontecendo em toda lição que ainda
+    não ganhou as extras. Assim o comportamento novo acompanha o conteúdo, e
+    não a data em que o código subiu.
+  */
   questions?: Question[];
+  perguntas?: number;
   labType?: LabType;
 }
 

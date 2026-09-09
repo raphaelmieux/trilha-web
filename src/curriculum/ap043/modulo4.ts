@@ -78,6 +78,7 @@ export const modulo4: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP043-5.6'],
+      perguntas: 6,
       questions: [
         {
           id: 'AP043.4-L1-Q1', type: 'multiple_choice',
@@ -152,6 +153,44 @@ export const modulo4: Module = {
               porque: 'Ela acontece: o programa avisa antes, e quem confirma perde o conteúdo.' },
           ]},
           explanation: 'O aviso que aparece antes não é formalidade — é a única chance de voltar atrás.',
+        },
+        {
+          id: 'AP043.4-L1-Q7', type: 'multiple_choice',
+          prompt: 'A planilha do acampamento mostra 1620 no total de uma unidade. Um desbravador desiste e os inscritos caem de 12 para 11, mas o total continua 1620. O que isso revela?',
+          data: { options: [
+            { id: 'a', text: 'Que aquele total foi digitado à mão, e não é uma fórmula.', correct: true },
+            { id: 'b', text: 'Que a fórmula precisa ser atualizada apertando um botão de recalcular.',
+              porque: 'Fórmula não espera botão: ela se refaz assim que a célula de origem muda. Se não mudou, não é fórmula.' },
+            { id: 'c', text: 'Que a célula do total está mesclada, e mesclagem congela o valor.',
+              porque: 'Mesclar muda a aparência da célula, e não o cálculo do que está dentro dela.' },
+            { id: 'd', text: 'Que o número de inscritos foi escrito como texto, e por isso não entra na conta.',
+              porque: 'Se fosse esse o caso, o total teria mudado para menos ao perder um valor — e não teria ficado parado.' },
+          ]},
+          explanation: 'Na tela os dois mostram 1620. A diferença só aparece quando algo muda — e é aí que o número digitado mente calado.',
+        },
+        {
+          id: 'AP043.4-L1-Q8', type: 'multiple_choice',
+          prompt: 'Numa coluna de sete células há cinco números, uma vazia e uma com a palavra "faltou". O que =MÉDIA daquele intervalo faz?',
+          data: { options: [
+            { id: 'a', text: 'Soma os cinco números e divide por cinco, ignorando as outras duas.', correct: true },
+            { id: 'b', text: 'Soma os cinco números e divide por sete, contando as duas como zero.',
+              porque: 'Se virassem zero, a média despencaria e ninguém entenderia por quê. Por isso elas ficam de fora.' },
+            { id: 'c', text: 'Devolve erro, porque não se calcula média de um intervalo com texto dentro.',
+              porque: 'Ela não reclama: simplesmente não conta o que não é número.' },
+            { id: 'd', text: 'Ignora a célula vazia mas conta a palavra como zero, porque foi escrita.',
+              porque: 'As duas recebem o mesmo tratamento: o que não é número não entra na conta.' },
+          ]},
+          explanation: 'Célula vazia e célula com texto não viram zero — elas ficam de fora, e a média divide pelo que existe.',
+        },
+        {
+          id: 'AP043.4-L1-Q9', type: 'true_false',
+          prompt: 'Vale a pena mesclar o título e pôr as bordas antes de conferir se os números da planilha estão certos.',
+          data: { options: [
+            { id: 'a', text: 'Falso', correct: true },
+            { id: 'b', text: 'Verdadeiro',
+              porque: 'Aparência é acabamento, e vem depois: formatar antes é enfeitar uma conta que ainda vai mudar — e mesclar cedo ainda apaga conteúdo das células vizinhas.' },
+          ]},
+          explanation: 'Primeiro os números certos, depois a aparência. Mesclar apaga o que estava nas outras células.',
         },
       ],
     },

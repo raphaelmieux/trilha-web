@@ -177,6 +177,7 @@ export const modulo1: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP043-2.1', 'AP043-2.2', 'AP043-2.3'],
+      perguntas: 6,
       questions: [
         {
           id: 'AP043.1-L1-Q1', type: 'multiple_choice',
@@ -253,6 +254,44 @@ export const modulo1: Module = {
           ]},
           explanation: 'Uma liga, uma faz ver, uma faz ouvir.',
         },
+        {
+          id: 'AP043.1-L1-Q7', type: 'multiple_choice',
+          prompt: 'Um desbravador quer trocar a placa de vídeo do computador do clube por uma dedicada, para editar os vídeos do acampamento. Qual pergunta ele precisa responder antes de comprar?',
+          data: { options: [
+            { id: 'a', text: 'Se a placa mãe daquele computador tem a fenda onde essa placa encaixa.', correct: true },
+            { id: 'b', text: 'Se o monitor do clube é grande o bastante para a placa valer a pena.',
+              porque: 'O monitor mostra o que chegar nele. Quem decide se a peça entra na máquina é a placa mãe.' },
+            { id: 'c', text: 'Se o computador já tem placa de som separada, porque as duas vêm sempre juntas.',
+              porque: 'São peças independentes. Uma máquina pode ter vídeo dedicado e som integrado, e o contrário também.' },
+            { id: 'd', text: 'Se alguém do clube sabe programar, porque a placa precisa ser configurada por código.',
+              porque: 'A placa é reconhecida pelo sistema. Programar não tem nada a ver com encaixá-la.' },
+          ]},
+          explanation: 'A placa mãe é quem decide o que cabe na máquina — vale para o processador, para a memória e para as placas.',
+        },
+        {
+          id: 'AP043.1-L1-Q8', type: 'multiple_choice',
+          prompt: 'O computador liga, os ventiladores giram, mas o monitor fica preto. Pelo que você estudou, por onde começar a procurar?',
+          data: { options: [
+            { id: 'a', text: 'Pelo cabo do monitor, conferindo se ele está na saída de vídeo da máquina.', correct: true },
+            { id: 'b', text: 'Pela placa de som, porque ela e a de vídeo dividem o mesmo circuito.',
+              porque: 'Não dividem. Som e imagem são caminhos separados, mesmo quando os dois são integrados.' },
+            { id: 'c', text: 'Pelo banco de dados do computador, que guarda a configuração da tela.',
+              porque: 'Banco de dados não é peça e não guarda configuração de vídeo — é o estranho desta lista.' },
+            { id: 'd', text: 'Pela fonte, já que se ela estivesse boa a tela acenderia sozinha.',
+              porque: 'A fonte está entregando energia: os ventiladores estão girando por causa dela.' },
+          ]},
+          explanation: 'A imagem sai da placa de vídeo e chega pelo cabo. Máquina ligada com tela apagada é, quase sempre, o caminho da imagem.',
+        },
+        {
+          id: 'AP043.1-L1-Q9', type: 'true_false',
+          prompt: 'Um computador com placa de vídeo integrada e outro com placa dedicada fazem a mesma coisa: transformar o que foi calculado na imagem da tela.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'A função é a mesma nos dois; o que muda é o quanto cada uma aguenta. Integrada ou separada, quem faz a imagem é a placa de vídeo.' },
+          ]},
+          explanation: 'Integrada ou dedicada, o trabalho é o mesmo. A dedicada existe para quem pede mais da imagem.',
+        },
       ],
     },
     {
@@ -261,6 +300,7 @@ export const modulo1: Module = {
       type: 'theory',
       content: conteudo_L2,
       requirementCodes: ['AP043-2.4', 'AP043-2.5', 'AP043-2.6'],
+      perguntas: 6,
       questions: [
         {
           id: 'AP043.1-L2-Q1', type: 'multiple_choice',
@@ -336,6 +376,44 @@ export const modulo1: Module = {
           ]},
           explanation: 'A antiga leva uma coisa; a de hoje leva as duas.',
         },
+        {
+          id: 'AP043.1-L2-Q7', type: 'multiple_choice',
+          prompt: 'Você ligou o computador na televisão com um cabo VGA. A imagem aparece, mas o som continua saindo da caixinha do computador. O que está acontecendo?',
+          data: { options: [
+            { id: 'a', text: 'Nada de errado: a VGA leva só imagem, e nunca levou som.', correct: true },
+            { id: 'b', text: 'O cabo VGA está com um dos quinze pinos entortado, e é o pino do som.',
+              porque: 'Nenhum dos pinos da VGA carrega som. Não há pino de áudio para entortar.' },
+            { id: 'c', text: 'A televisão precisa ser configurada para aceitar o som de um computador.',
+              porque: 'A televisão aceitaria o som se ele chegasse. Pelo cabo VGA, ele não chega.' },
+            { id: 'd', text: 'A placa de som do computador está desligada enquanto há monitor externo.',
+              porque: 'A placa de som está funcionando: é dela que sai o som da caixinha que você está ouvindo.' },
+          ]},
+          explanation: 'Imagem e som pelo mesmo cabo é o que a HDMI faz. A VGA leva imagem, e só.',
+        },
+        {
+          id: 'AP043.1-L2-Q8', type: 'multiple_choice',
+          prompt: 'O pen drive entra numa porta USB de plástico preto e noutra de plástico azul. O que a cor indica?',
+          data: { options: [
+            { id: 'a', text: 'A geração da porta: a azul é mais rápida do que a preta.', correct: true },
+            { id: 'b', text: 'Quanta energia cada uma entrega, sendo a azul só para carregar celular.',
+              porque: 'As duas entregam energia e trocam informação. A cor fala de velocidade, não de função.' },
+            { id: 'c', text: 'Se a porta aceita pen drive ou apenas mouse e teclado.',
+              porque: 'A USB é universal justamente por isso: o mesmo formato serve para aparelhos de todo tipo.' },
+            { id: 'd', text: 'Qual delas está ligada direto na fonte de alimentação da máquina.',
+              porque: 'Todas as portas recebem energia pela placa mãe, e a fonte alimenta a placa mãe inteira.' },
+          ]},
+          explanation: 'Preta ou branca é a mais antiga; azul é mais rápida. A função é a mesma nas duas.',
+        },
+        {
+          id: 'AP043.1-L2-Q9', type: 'true_false',
+          prompt: 'A fonte de alimentação entrega às peças do computador a mesma voltagem que sai da tomada da parede.',
+          data: { options: [
+            { id: 'a', text: 'Falso', correct: true },
+            { id: 'b', text: 'Verdadeiro',
+              porque: 'Nenhuma peça aguentaria os 127 ou 220 volts da tomada. O trabalho da fonte é justamente converter isso em 12, 5 e 3,3 volts de corrente contínua.' },
+          ]},
+          explanation: 'Ela é a tradutora da tomada: recebe corrente alternada alta e entrega corrente contínua baixa.',
+        },
       ],
     },
     {
@@ -344,6 +422,7 @@ export const modulo1: Module = {
       type: 'theory',
       content: conteudo_L3,
       requirementCodes: ['AP043-2.7'],
+      perguntas: 4,
       questions: [
         {
           id: 'AP043.1-L3-Q1', type: 'multiple_choice',
@@ -395,6 +474,44 @@ export const modulo1: Module = {
               porque: 'Isso se resolve na configuração de cada máquina, e não é motivo para ligá-las entre si.' },
           ]},
           explanation: 'Esse lugar só costuma ser um banco de dados, num servidor — e é aí que a palavra encaixa nesta lista.',
+        },
+        {
+          id: 'AP043.1-L3-Q5', type: 'multiple_choice',
+          prompt: 'Qual destes é o exemplo mais direto de um banco de dados no seu dia a dia?',
+          data: { options: [
+            { id: 'a', text: 'A lista de contatos do celular, que o telefone consulta a cada ligação.', correct: true },
+            { id: 'b', text: 'A pasta Downloads do computador, com os arquivos que você baixou.',
+              porque: 'É uma pasta com arquivos soltos. Falta o que define um banco: organização que um programa consulta e controle de quem escreve.' },
+            { id: 'c', text: 'O cabo de rede que liga o computador ao roteador do clube.',
+              porque: 'É o caminho por onde a informação passa, e não o lugar onde ela mora.' },
+            { id: 'd', text: 'A memória RAM, que guarda o que está aberto enquanto a máquina está ligada.',
+              porque: 'Ela guarda só o que está em uso, e esquece tudo ao desligar. Banco de dados existe para não esquecer.' },
+          ]},
+          explanation: 'Pequenininho e dentro do aparelho, mas é um: informação organizada que um programa consulta.',
+        },
+        {
+          id: 'AP043.1-L3-Q6', type: 'multiple_choice',
+          prompt: 'O que um banco de dados faz que uma planilha num pen drive não faz?',
+          data: { options: [
+            { id: 'a', text: 'Controla a ordem das gravações, para que duas pessoas escrevam ao mesmo tempo sem se atropelar.', correct: true },
+            { id: 'b', text: 'Guarda mais informação, porque não depende do tamanho do pen drive.',
+              porque: 'Tamanho não é a diferença: um banco também ocupa espaço em disco. A diferença é o acesso ao mesmo tempo.' },
+            { id: 'c', text: 'Faz contas com os números guardados, o que a planilha não sabe fazer.',
+              porque: 'Fazer contas é exatamente o que a planilha faz melhor. O banco cuida de guardar e servir a informação.' },
+            { id: 'd', text: 'Funciona sem energia elétrica, porque a informação fica gravada no papel do servidor.',
+              porque: 'Servidor é um computador, e precisa de energia como qualquer outro.' },
+          ]},
+          explanation: 'A palavra-chave é ao mesmo tempo. É por isso que a chamada de um conselheiro não apaga a do outro.',
+        },
+        {
+          id: 'AP043.1-L3-Q7', type: 'true_false',
+          prompt: 'Quando você entra nesta plataforma, quem confere sua senha e guarda seu progresso é um banco de dados.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'É um sim, e você usa vários por dia sem perceber: o do clube que sabe suas especialidades, o do mercado que sabe os preços, o do celular que guarda os contatos.' },
+          ]},
+          explanation: 'Não é peça, é forma de guardar. E está em quase tudo o que você usa conectado.',
         },
       ],
     },

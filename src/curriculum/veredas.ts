@@ -122,6 +122,10 @@ export type LicaoDeVereda =
      * entendimento.
      */
     questoes: Question[];
+    /* Quantas do reservatório acima a tentativa sorteia. Sem isto, pergunta
+       todas — como sempre foi, e como continua sendo enquanto a lição não
+       ganha as extras. */
+    perguntas?: number;
   }
   | {
     id: string;
