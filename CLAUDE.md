@@ -721,6 +721,53 @@ duas, e a nota deixava de dizer o que dizia. O teste compara enunciados depois
 de normalizar as siglas, e compara também a alternativa correta, que é o que a
 repetição de fato entrega.
 
+## Ninguém faz a mesma prova duas vezes
+
+A ordem das questões era a mesma para todo mundo, e o conjunto perguntado era
+o conjunto inteiro. "A terceira é a certa da segunda" é um recado que se passa
+adiante em dez segundos e vale para sempre — e quem o recebe atravessa o módulo
+sem ler uma linha. São três medidas, e as três se multiplicam:
+
+- **as alternativas embaralham** — isto já existia, e o `porque` de cada errada
+  continua colado nela porque o retorno é por id, e não por posição;
+- **a ordem das questões embaralha** — quem decorou "a 5 é a do relógio" perde
+  a referência;
+- **o reservatório é maior do que a prova** — com x+3 escritas e x perguntadas,
+  duas tentativas quase nunca trazem o mesmo conjunto.
+
+Tudo isso mora em `sortearQuestoes`, em `src/lib/questoes.ts`, e vale para
+lição de trilha, teoria de vereda e prova final — as três passam por ela.
+
+**A lição diz quanto pergunta, e a prova diz numa tabela.** `perguntas` é um
+campo da lição; a prova usa `PERGUNTAS_POR_PROVA`, em `finalExams.ts`. Sem
+declarar nada, pergunta-se tudo — que é o que a plataforma sempre fez, e o que
+continua acontecendo em lição que ainda não ganhou extras. **A mudança de
+comportamento acompanha o conteúdo, e não a data do deploy.**
+
+Declarar sem ter as extras seria pior do que não declarar: a lição encolheria
+em silêncio, cobrando menos do que o requisito pede. `qualidade.test.ts` cobra
+os dois lados — reservatório de pelo menos `perguntas + 3`, e nunca menos de
+três perguntas, porque numa prova de duas questões cada acerto vale 50% e o
+`LIMIAR_DOMINIO` para de medir qualquer coisa.
+
+**Na prova final a margem é menor, em proporção, e é decisão.** Cada prova foi
+escrita para cobrir os requisitos da trilha, e nenhuma questão carrega o
+requisito que ela mede: a nota é uma porcentagem sobre o que foi sorteado, e não
+uma marcação requisito a requisito. Sorteando pouco, sobraria requisito sem
+pergunta nenhuma na tentativa de alguém. Quem quiser apertar isso um dia precisa
+antes ligar cada questão ao requisito — e aí o sorteio garante a cobertura em
+vez de torcer por ela.
+
+**Trava que lê o sorteio não é trava.** Ligar o sorteio na prova fez dois testes
+passarem a examinar uma amostra onde eles queriam examinar o que foi escrito: o
+de enunciado repetido compararia o subconjunto do dia, e duas questões iguais
+escapariam até o sorteio trazer as duas juntas; e o de variedade de tipos
+perguntava se a prova da AP041 tem questão de ligar, que é uma só — a resposta
+passou a depender do embaralhamento, e a build ficou vermelha sem ninguém ter
+mexido em nada. Os dois leem `todasAsQuestoesDaProva`, que devolve o
+reservatório sem sortear e existe para isso. O sorteio tem travas próprias, em
+`index.test.ts`.
+
 ## As outras travas
 
 Quase todas nasceram de um erro que já aconteceu. Se uma delas reprovar, ela
@@ -743,6 +790,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/index.test.ts` | trilha sem emblema ou sem fundo de certificado no repositório |
 | `src/curriculum/exemplosDaTeoria.test.ts` | seletor do exemplo de CSS que não acha ninguém na marcação do tópico |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |
+| `src/curriculum/qualidade.test.ts` | lição ou prova que sorteia sem ter três questões de sobra |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 
