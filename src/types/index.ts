@@ -136,6 +136,21 @@ export interface Question {
   prompt: string;
   data: QuestionData;
   explanation?: string;
+  /**
+   * Os requisitos oficiais que esta questão mede — os códigos de
+   * `Specialty.requirements`, como 'AP034-2.1'.
+   *
+   * Só as questões de prova final o declaram, e por um motivo mecânico: a prova
+   * sorteia um subconjunto do que foi escrito, e sem isto o sorteio não tinha
+   * como saber o que estava deixando de fora. A lição não precisa — ela já diz
+   * em `requirementCodes` a que requisitos serve, e as questões dela são todas
+   * daquele mesmo assunto.
+   *
+   * Uma questão pode medir mais de um: a que liga sete termos às definições
+   * mede os sete requisitos que os definem, e é assim que ela conta na
+   * cobertura.
+   */
+  requisitos?: string[];
 }
 
 /*

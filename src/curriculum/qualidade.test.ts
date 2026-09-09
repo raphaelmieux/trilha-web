@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getAllSpecialties } from './index';
-import { todasAsQuestoesDaProva, quantasAProvaPergunta } from './finalExams';
+import { todasAsQuestoesDaProva, quantasAProvaPergunta, getFinalExamQuestions } from './finalExams';
+import { minimoParaCobrir } from '../lib/questoes';
 import { veredasComConteudo, questoesDaVereda } from './veredas';
 import type { Question } from '../types';
 
@@ -388,5 +389,110 @@ describe('quem sorteia tem de onde sortear', () => {
     for (const { onde, perguntas } of licoesQueSorteiam()) {
       expect(perguntas, `${onde} pergunta ${perguntas}`).toBeGreaterThanOrEqual(3);
     }
+  });
+});
+
+/*
+  A prova cobre os requisitos, e o sorteio não desfaz isso.
+
+  A prova final sempre foi escrita para cobrir os requisitos da trilha — os
+  comentários de cada uma dizem quantos —, e enquanto ela perguntava tudo isso
+  se cumpria sozinho. Ao passar a sortear, deixou de se cumprir: alguns
+  requisitos têm uma questão só, e o desbravador podia fazer a prova inteira sem
+  que a placa de som fosse mencionada. Não estourava nada, e a prova deixava de
+  ser o que ela diz ser.
+
+  Agora cada questão declara em `requisitos` o que mede, e o sorteio cobre antes
+  de completar. Estas travas são o outro lado disso: sem elas, um código
+  digitado errado ou uma questão sem declaração tiraria da cobertura justamente
+  o que ela devia garantir — em silêncio, porque um requisito que ninguém
+  declara é um requisito que o sorteio não sabe que existe.
+*/
+describe('a prova final cobre os requisitos que ela mede', () => {
+  const provas = () => getAllSpecialties()
+    .map(e => ({ e, pool: todasAsQuestoesDaProva(e.code) }))
+    .filter(({ pool }) => pool.length);
+
+  it('toda questão de prova diz que requisitos mede', () => {
+    const mudas: string[] = [];
+    for (const { pool } of provas()) {
+      for (const q of pool) if (!q.requisitos?.length) mudas.push(q.id);
+    }
+    expect(mudas).toEqual([]);
+  });
+
+  it('todo requisito declarado existe na trilha', () => {
+    const fantasmas: string[] = [];
+    for (const { e, pool } of provas()) {
+      const existentes = new Set(e.requirements.map(r => r.code));
+      for (const q of pool) {
+        for (const r of q.requisitos ?? []) {
+          if (!existentes.has(r)) fantasmas.push(`${q.id} → ${r}`);
+        }
+      }
+    }
+    expect(fantasmas).toEqual([]);
+  });
+
+  /*
+    E a prova pergunta sobre todo requisito que tem matéria.
+
+    Esta é a trava que faltava, e o buraco que ela fecha estava aberto: ligar as
+    questões aos requisitos mostrou que a prova da AP034 nunca mencionava
+    website, site de busca nem filtros de conteúdo, e a da AP042 nunca
+    mencionava o tipo de monitor — quatro requisitos de teoria que a trilha
+    ensina e a prova não cobrava. Cada uma dessas trilhas dizia, no comentário
+    da própria prova, que cobria os requisitos.
+
+    Requisito de prática fica de fora de propósito: quem demonstra é o
+    laboratório, e não uma alternativa. O cumprido pelo bloqueio da trilha
+    também — não há o que perguntar sobre ter concluído a especialidade
+    anterior.
+  */
+  it('todo requisito com matéria tem pelo menos uma questão', () => {
+    const descobertos: string[] = [];
+    for (const { e, pool } of provas()) {
+      const medidos = new Set(pool.flatMap(q => q.requisitos ?? []));
+      for (const r of e.requirements) {
+        if (r.type === 'practice' || r.peloPreRequisito) continue;
+        if (!medidos.has(r.code)) descobertos.push(`${r.code} (${r.title})`);
+      }
+    }
+    expect(descobertos).toEqual([]);
+  });
+
+  /*
+    O dimensionamento, conferido sem sorteio.
+
+    `minimoParaCobrir` responde de quantas questões a prova precisa para tocar
+    em todo requisito que ela cobre. Sortear menos que isso é pedir uma
+    cobertura que não cabe — e o sorteio, que não estoura na cara de quem está
+    fazendo a prova, entregaria um subconjunto incompleto sem dizer nada.
+  */
+  it('o sorteio pede questões suficientes para cobrir tudo', () => {
+    for (const { e, pool } of provas()) {
+      const minimo = minimoParaCobrir(pool);
+      expect(quantasAProvaPergunta(e.code), `${e.code} sorteia ${quantasAProvaPergunta(e.code)} e precisa de ${minimo}`)
+        .toBeGreaterThanOrEqual(minimo);
+    }
+  });
+
+  /*
+    E a garantia, medida onde ela vale: no sorteio de verdade, repetido.
+
+    Uma execução só passaria por sorte — é justamente o defeito que estas
+    travas existem para pegar. Trinta tentativas por prova erram junto com uma
+    probabilidade que não chega perto de uma build por ano.
+  */
+  it('nenhuma tentativa deixa um requisito de fora', () => {
+    const buracos: string[] = [];
+    for (const { e, pool } of provas()) {
+      const todos = new Set(pool.flatMap(q => q.requisitos ?? []));
+      for (let i = 0; i < 30; i++) {
+        const sorteadas = new Set(getFinalExamQuestions(e.code).flatMap(q => q.requisitos ?? []));
+        for (const r of todos) if (!sorteadas.has(r)) buracos.push(`${e.code} tentativa ${i}: ${r}`);
+      }
+    }
+    expect([...new Set(buracos)]).toEqual([]);
   });
 });

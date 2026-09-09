@@ -125,3 +125,90 @@ export function sortearQuestoes(pool: Question[], perguntas?: number): Question[
   const escolhidas = quantas >= pool.length ? [...pool] : shuffleArray(pool).slice(0, quantas);
   return shuffleArray(escolhidas).map(embaralharQuestao);
 }
+
+/*
+ * ── O sorteio que não deixa requisito de fora ─────────────────────────────
+ *
+ * `sortearQuestoes` escolhe ao acaso, e para uma lição isso basta: as questões
+ * dela são todas do mesmo assunto, então qualquer subconjunto cobre o que a
+ * lição ensina.
+ *
+ * A prova final é outra coisa. Ela foi escrita para cobrir os requisitos da
+ * trilha, e alguns têm uma questão só — sorteando ao acaso, o desbravador
+ * podia fazer a prova inteira sem que a placa de som fosse mencionada, e a
+ * prova deixava de ser o que ela diz ser. Era por isso que a margem do sorteio
+ * dela era pequena: sem saber o que estava deixando de fora, a única defesa era
+ * deixar pouco de fora.
+ *
+ * Agora cada questão diz em `requisitos` o que ela mede, e o sorteio pode
+ * garantir em vez de torcer: primeiro uma questão para cada requisito, depois o
+ * resto ao acaso. A garantia é o teto da margem — dá para sortear tão pouco
+ * quanto o número de requisitos, e nem uma questão menos.
+ */
+
+/** Os requisitos que uma questão mede. Sem declaração, nenhum. */
+const requisitosDe = (q: Question): string[] => q.requisitos ?? [];
+
+/*
+  O conjunto mínimo de questões que toca em todo requisito do reservatório.
+
+  A cada passo escolhe a questão que cobre mais requisitos ainda descobertos:
+  a de ligar, que mede sete de uma vez, vale sete vagas, e preferi-la é o que
+  deixa sobrar espaço para o sorteio livre.
+
+  `aoAcaso` embaralha antes de escolher, e é a única diferença entre as duas
+  chamadas. Sem ele o resultado é sempre o mesmo, e é assim que a trava mede o
+  dimensionamento; com ele, empates se desfazem de um jeito diferente a cada
+  tentativa — e o **tamanho** do conjunto é o mesmo nos dois casos, que é o que
+  torna o número da trava o número de que o sorteio precisa. Foram duas funções
+  com dois laços parecidos por uma hora, e aí a trava passaria a conferir uma
+  conta que o sorteio não faz.
+*/
+function conjuntoQueCobre(pool: Question[], aoAcaso: boolean): Question[] {
+  const faltando = new Set(pool.flatMap(requisitosDe));
+  const disponiveis = aoAcaso ? shuffleArray(pool) : [...pool];
+  const escolhidas: Question[] = [];
+
+  while (faltando.size && disponiveis.length) {
+    const quanto = (q: Question) => requisitosDe(q).filter(r => faltando.has(r)).length;
+    const melhor = disponiveis.reduce((a, b) => (quanto(b) > quanto(a) ? b : a));
+    /* Nenhuma das que sobraram ajuda: o resto do reservatório não mede nada que
+       ainda falte. Sair aqui evita o laço sem fim. */
+    if (!quanto(melhor)) break;
+    for (const r of requisitosDe(melhor)) faltando.delete(r);
+    disponiveis.splice(disponiveis.indexOf(melhor), 1);
+    escolhidas.push(melhor);
+  }
+  return escolhidas;
+}
+
+/**
+ * Sorteia cobrindo todo requisito que o reservatório cobre.
+ *
+ * Primeiro o conjunto que cobre, depois o resto ao acaso até completar as
+ * vagas. Quando as vagas acabam antes da cobertura, o que sair de fora sai: é
+ * uma prova mal dimensionada, e quem reprova por isso é `qualidade.test.ts`,
+ * antes de a build passar. Aqui não se estoura na cara de quem está fazendo a
+ * prova.
+ */
+export function sortearCobrindo(pool: Question[], perguntas?: number): Question[] {
+  const quantas = quantasPerguntar(pool, perguntas);
+  if (quantas >= pool.length) return shuffleArray(pool).map(embaralharQuestao);
+
+  const cobertura = conjuntoQueCobre(pool, true).slice(0, quantas);
+  const escolhidos = new Set(cobertura.map(q => q.id));
+  const resto = shuffleArray(pool.filter(q => !escolhidos.has(q.id)));
+
+  const escolhidas = [...cobertura, ...resto.slice(0, quantas - cobertura.length)];
+  return shuffleArray(escolhidas).map(embaralharQuestao);
+}
+
+/**
+ * Quantas questões, no mínimo, uma prova precisa perguntar para cobrir tudo.
+ *
+ * Não é o número de requisitos: uma questão que mede sete resolve sete de uma
+ * vez. É o mesmo conjunto que o sorteio monta, contado sem sorteio nenhum.
+ */
+export function minimoParaCobrir(pool: Question[]): number {
+  return conjuntoQueCobre(pool, false).length;
+}

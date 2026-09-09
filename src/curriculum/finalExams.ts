@@ -1,9 +1,10 @@
 import type { Question } from '../types';
-import { sortearQuestoes, quantasPerguntar } from '../lib/questoes';
+import { sortearCobrindo, quantasPerguntar } from '../lib/questoes';
 
 const rawAp034Final: Question[] = [
   {
     id: 'AP034-F-Q1', type: 'multiple_choice',
+    requisitos: ['AP034-1.1'],
     prompt: 'A Internet é melhor definida como:',
     data: { options: [
       { id: 'a', text: 'Uma rede global de computadores interconectados que trocam dados por protocolos padronizados.', correct: true },
@@ -15,6 +16,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q2', type: 'multiple_choice',
+    requisitos: ['AP034-1.2'],
     prompt: 'A World Wide Web (WWW) é:',
     data: { options: [
       { id: 'a', text: 'Um serviço que funciona sobre a Internet, permitindo acessar páginas por navegadores.', correct: true },
@@ -26,6 +28,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q3', type: 'multiple_choice',
+    requisitos: ['AP034-1.3'],
     prompt: 'Fazer um "download" significa:',
     data: { options: [
       { id: 'a', text: 'Transferir um arquivo de um servidor remoto para o seu computador.', correct: true },
@@ -37,6 +40,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q4', type: 'true_false',
+    requisitos: ['AP034-1.6'],
     prompt: 'O e-mail é um sistema de troca de mensagens digitais que funciona sobre a Internet.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro', correct: true },
@@ -46,6 +50,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q5', type: 'multiple_choice',
+    requisitos: ['AP034-1.7'],
     prompt: 'Vírus de computador e malware são:',
     data: { options: [
       { id: 'a', text: 'Vírus é um tipo de malware; malware é o termo genérico para qualquer software malicioso.', correct: true },
@@ -57,6 +62,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q6', type: 'multiple_choice',
+    requisitos: ['AP034-2.1'],
     prompt: 'Qual protocolo baixa e-mails removendo-os do servidor?',
     data: { options: [
       { id: 'a', text: 'POP3', correct: true },
@@ -68,6 +74,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q7', type: 'multiple_choice',
+    requisitos: ['AP034-2.1'],
     prompt: 'Qual é a principal vantagem do IMAP sobre o POP3?',
     data: { options: [
       { id: 'a', text: 'Mantém as mesmas mensagens e pastas sincronizadas em todos os dispositivos usados.', correct: true },
@@ -79,6 +86,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q8', type: 'multiple_choice',
+    requisitos: ['AP034-2.3'],
     prompt: 'O que é streaming de mídia?',
     data: { options: [
       { id: 'a', text: 'Transmissão contínua de áudio/vídeo pela Internet, permitindo assistir enquanto carrega.', correct: true },
@@ -90,6 +98,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q9', type: 'ordering',
+    requisitos: ['AP034-4.1', 'AP034-4.3', 'AP034-4.4'],
     prompt: 'Ordene as fases da infecção por vírus de computador, da entrada à consequência.',
     data: {
       items: [
@@ -103,6 +112,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q9b', type: 'ordering',
+    requisitos: ['AP034-7.1'],
     prompt: 'Ordene os passos para enviar um e-mail com anexo.',
     data: {
       items: [
@@ -117,6 +127,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q10', type: 'matching',
+    requisitos: ['AP034-1.1', 'AP034-1.2', 'AP034-1.3', 'AP034-1.4', 'AP034-1.6', 'AP034-1.7', 'AP034-2.5'],
     prompt: 'Associe cada termo à sua definição correta.',
     data: {
       pairs: [
@@ -133,6 +144,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q11', type: 'fill_blank',
+    requisitos: ['AP034-1.3', 'AP034-2.5', 'AP034-4.1'],
     /* O enunciado era o mesmo da Q19, palavra por palavra. As lacunas sempre
        foram outras; quem fazia a prova é que via a mesma pergunta duas vezes. */
     prompt: 'Complete as lacunas sobre as ameaças e a defesa.',
@@ -147,6 +159,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q11b', type: 'fill_blank',
+    requisitos: ['AP034-2.1'],
     prompt: 'Complete as lacunas sobre protocolos de e-mail.',
     data: {
       blanks: [
@@ -159,6 +172,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q12', type: 'scenario',
+    requisitos: ['AP034-4.1', 'AP034-7.4'],
     prompt: 'Você recebe um e-mail de um remetente desconhecido com o assunto "URGENTE: Sua conta será bloqueada!" e um link para clicar. O que você deve fazer?',
     data: {
       scenarios: [
@@ -172,6 +186,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q13', type: 'scenario',
+    requisitos: ['AP034-5.1', 'AP034-5.2'],
     prompt: 'Um amigo virtual pede seu endereço e telefone para te enviar um presente. O que você faz?',
     data: {
       scenarios: [
@@ -185,6 +200,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q13b', type: 'scenario',
+    requisitos: ['AP034-4.1'],
     prompt: 'Você está navegando na Internet e um pop-up aparece dizendo que seu computador está infectado e você precisa baixar um "antivírus" urgente. O que você faz?',
     data: {
       scenarios: [
@@ -198,6 +214,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q14', type: 'multiple_choice',
+    requisitos: ['AP034-8.1'],
     prompt: 'Segundo Filipenses 4:8, devemos pensar em tudo o que é:',
     data: { options: [
       { id: 'a', text: 'Verdadeiro, honesto, justo, puro, amável e de boa fama.', correct: true },
@@ -209,6 +226,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q15', type: 'multiple_choice',
+    requisitos: ['AP034-4.2'],
     prompt: 'Por que é importante atualizar o antivírus regularmente?',
     data: { options: [
       { id: 'a', text: 'Novos vírus surgem diariamente; sem atualização, o antivírus não os reconhece.', correct: true },
@@ -220,6 +238,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q16', type: 'multiple_choice',
+    requisitos: ['AP034-2.1'],
     prompt: 'Qual protocolo é usado para enviar e-mails?',
     data: { options: [
       { id: 'a', text: 'SMTP', correct: true },
@@ -231,6 +250,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q17', type: 'true_false',
+    requisitos: ['AP034-2.1'],
     prompt: 'O webmail permite acessar e-mails pelo navegador sem instalar nenhum programa.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro', correct: true },
@@ -240,6 +260,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q18', type: 'scenario',
+    requisitos: ['AP034-4.1'],
     prompt: 'Você está navegando e um pop-up aparece dizendo: "Seu computador está infectado! Baixe este antivírus agora!" O que você faz?',
     data: { scenarios: [
       { id: 'a', text: 'Fechar o pop-up, não baixar nada e verificar com o antivírus já instalado.', correct: true },
@@ -251,6 +272,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q19', type: 'fill_blank',
+    requisitos: ['AP034-2.2'],
     prompt: 'Complete as lacunas sobre o que mostra que a conexão é segura.',
     data: {
       blanks: [
@@ -262,6 +284,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q20', type: 'matching',
+    requisitos: ['AP034-3.1'],
     prompt: 'Associe cada figura histórica à sua contribuição.',
     data: {
       pairs: [
@@ -275,6 +298,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q21', type: 'multiple_choice',
+    requisitos: ['AP034-5.8'],
     prompt: 'Segundo o Pacto de Uso Consciente, quantas redes sociais devemos selecionar no máximo?',
     data: { options: [
       { id: 'a', text: 'Duas', correct: true },
@@ -286,6 +310,7 @@ const rawAp034Final: Question[] = [
   },
   {
     id: 'AP034-F-Q22', type: 'true_false',
+    requisitos: ['AP034-1.7'],
     prompt: 'Um worm se espalha pela rede sem precisar de um arquivo hospedeiro, ao contrário do vírus.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro', correct: true },
@@ -293,11 +318,48 @@ const rawAp034Final: Question[] = [
     ]},
     explanation: 'Worms se replicam automaticamente pela rede. Vírus precisam de um arquivo hospedeiro.',
   },
+  {
+    id: 'AP034-F-Q23', type: 'multiple_choice',
+    requisitos: ['AP034-1.5'],
+    prompt: 'O clube trocou a empresa que hospeda o site, e o endereço continuou o mesmo. O que mudou?',
+    data: { options: [
+      { id: 'a', text: 'O servidor onde as páginas ficam guardadas.', correct: true },
+      { id: 'b', text: 'O site inteiro, porque cada empresa hospeda um site diferente.', porque: 'Os arquivos são os mesmos, copiados para outra máquina. Um site não deixa de ser ele por mudar de casa.' },
+      { id: 'c', text: 'O endereço, que passou a apontar para outro lugar da web.', porque: 'O endereço continuou o mesmo. O que mudou foi a máquina para a qual ele aponta.' },
+      { id: 'd', text: 'Nada: hospedagem é outro nome para o endereço do site.', porque: 'São coisas separadas. O endereço é o nome; a hospedagem é a máquina que guarda as páginas e as entrega.' },
+    ]},
+    explanation: 'O site é o conjunto de páginas; o servidor é a máquina que as guarda. Trocar de servidor sem trocar de endereço é como mudar de casa sem mudar de nome.',
+  },
+  {
+    id: 'AP034-F-Q24', type: 'multiple_choice',
+    requisitos: ['AP034-2.4'],
+    prompt: 'Um site saiu do ar ontem e o buscador ainda o mostra na lista de resultados. Por quê?',
+    data: { options: [
+      { id: 'a', text: 'O buscador responde pelo índice que montou antes.', correct: true },
+      { id: 'b', text: 'O buscador visita cada site no instante em que alguém pesquisa.', porque: 'A resposta levaria minutos se fosse assim. Ele consulta um índice já pronto, montado com antecedência.' },
+      { id: 'c', text: 'O navegador guardou a página e a mostra no lugar do buscador.', porque: 'O navegador guarda o que você já visitou. A lista de resultados veio do buscador, e não dele.' },
+      { id: 'd', text: 'O site continua no ar, e quem está sem acesso é quem pesquisou.', porque: 'O enunciado diz que ele saiu do ar. O resultado que sobrou é do índice, e não do site.' },
+    ]},
+    explanation: 'O buscador não procura na hora: ele responde a partir do que indexou antes. É por isso que um resultado pode levar a uma página que já não existe.',
+  },
+  {
+    id: 'AP034-F-Q25', type: 'multiple_choice',
+    requisitos: ['AP034-5.0'],
+    prompt: 'Entre os recursos que uma família pode ligar, qual protege sem olhar o conteúdo de nada?',
+    data: { options: [
+      { id: 'a', text: 'O limite de horário, que desliga a internet na hora combinada.', correct: true },
+      { id: 'b', text: 'A busca segura, que esconde os resultados impróprios.', porque: 'Ela decide pelo conteúdo de cada resultado — e é justamente por isso que erra nos dois sentidos.' },
+      { id: 'c', text: 'O bloqueio de páginas adultas, ligado no roteador da casa.', porque: 'Ele examina o endereço e a categoria de cada página. É conteúdo que ele está olhando.' },
+      { id: 'd', text: 'O controle da loja, que barra a instalação de aplicativos.', porque: 'Ele olha a classificação do aplicativo, que também é conteúdo. O que ele não olha é o relógio.' },
+    ]},
+    explanation: 'O filtro por horário é o mais simples e um dos mais eficazes justamente por não depender de julgar nada: ele conta o tempo, e tempo não tem como ser interpretado errado.',
+  },
 ];
 
 const rawAp035Final: Question[] = [
   {
     id: 'AP035-F-Q1', type: 'multiple_choice',
+    requisitos: ['AP035-2.1'],
     prompt: 'Qual é a função do protocolo HTTP?',
     data: { options: [
       { id: 'a', text: 'Transferir dados entre cliente e servidor na World Wide Web.', correct: true },
@@ -309,6 +371,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q2', type: 'multiple_choice',
+    requisitos: ['AP035-2.1', 'AP035-2.4'],
     prompt: 'O que o HTTPS adiciona ao HTTP?',
     data: { options: [
       { id: 'a', text: 'Criptografia TLS/SSL para proteger os dados em trânsito.', correct: true },
@@ -320,6 +383,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q3', type: 'multiple_choice',
+    requisitos: ['AP035-2.3'],
     prompt: 'Qual é a diferença entre HTML e PHP?',
     data: { options: [
       { id: 'a', text: 'HTML é marcação executada no cliente; PHP é programação executada no servidor.', correct: true },
@@ -331,6 +395,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q4', type: 'multiple_choice',
+    requisitos: ['AP035-2.4'],
     prompt: 'Qual é o formato hexadecimal da cor preta?',
     data: { options: [
       { id: 'a', text: '#000000', correct: true },
@@ -342,6 +407,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q5', type: 'multiple_choice',
+    requisitos: ['AP035-2.6'],
     prompt: 'Qual é a diferença entre GIF e PNG?',
     data: { options: [
       { id: 'a', text: 'GIF suporta animação e 256 cores; PNG suporta transparência e mais cores, sem animação.', correct: true },
@@ -353,6 +419,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q6', type: 'ordering',
+    requisitos: ['AP035-2.1', 'AP035-2.5'],
     prompt: 'Ordene as etapas de carregamento de uma página web.',
     data: {
       items: [
@@ -367,6 +434,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q7', type: 'matching',
+    requisitos: ['AP035-3.1', 'AP035-3.2', 'AP035-3.3', 'AP035-3.6', 'AP035-3.9', 'AP035-3.11'],
     prompt: 'Associe cada elemento HTML à sua função.',
     data: {
       pairs: [
@@ -382,6 +450,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q8', type: 'fill_blank',
+    requisitos: ['AP035-2.5'],
     prompt: 'Complete as lacunas sobre estrutura de URL.',
     data: {
       blanks: [
@@ -394,6 +463,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q9', type: 'multiple_choice',
+    requisitos: ['AP035-2.7'],
     prompt: 'Qual é a principal característica do JPEG?',
     data: { options: [
       { id: 'a', text: 'Compressão com perda, ideal para fotografias.', correct: true },
@@ -405,6 +475,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q10', type: 'multiple_choice',
+    requisitos: ['AP035-7.1'],
     prompt: 'O que é Inteligência Artificial generativa?',
     data: { options: [
       { id: 'a', text: 'Sistemas que criam novo conteúdo (texto, imagem, código) a partir de instruções.', correct: true },
@@ -416,6 +487,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q11', type: 'scenario',
+    requisitos: ['AP035-6.1'],
     prompt: 'Você precisa criar um site com 4 páginas interligadas. Qual é a melhor abordagem?',
     data: {
       scenarios: [
@@ -429,6 +501,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q12', type: 'multiple_choice',
+    requisitos: ['AP035-3.9'],
     prompt: 'Como você exibe uma imagem em HTML?',
     data: { options: [
       { id: 'a', text: '<img src="foto.jpg" alt="descrição">', correct: true },
@@ -440,6 +513,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q13', type: 'multiple_choice',
+    requisitos: ['AP035-2.3'],
     prompt: 'Qual é a diferença entre cliente e servidor?',
     data: { options: [
       { id: 'a', text: 'Cliente é o navegador do usuário; servidor é o computador que hospeda e processa o site.', correct: true },
@@ -451,6 +525,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q14', type: 'true_false',
+    requisitos: ['AP035-2.3'],
     prompt: 'O PHP é executado no navegador do usuário.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro', porque: 'É falso. O PHP roda no servidor e o navegador recebe apenas o HTML que ele produziu — nunca o código.' },
@@ -460,6 +535,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q15', type: 'scenario',
+    requisitos: ['AP035-2.6', 'AP035-5.1'],
     prompt: 'Você quer criar um logo com fundo transparente para um site. Qual formato de imagem escolher?',
     data: { scenarios: [
       { id: 'a', text: 'PNG — suporta transparência e mantém qualidade sem perda.', correct: true },
@@ -471,6 +547,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q16', type: 'fill_blank',
+    requisitos: ['AP035-2.4'],
     prompt: 'Complete: Na cor #FF0000, FF é vermelho _____, 00 é verde _____, e 00 é azul _____.',
     data: {
       blanks: [
@@ -483,6 +560,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q17', type: 'matching',
+    requisitos: ['AP035-2.6', 'AP035-2.7'],
     prompt: 'Associe cada formato de imagem à sua característica.',
     data: {
       pairs: [
@@ -500,6 +578,7 @@ const rawAp035Final: Question[] = [
        engano que mais custa caro: achar que o assistente procura a resposta
        em algum lugar, em vez de montá-la. */
     id: 'AP035-F-Q18', type: 'multiple_choice',
+    requisitos: ['AP035-7.1'],
     prompt: 'Você faz a mesma pergunta duas vezes ao assistente de IA e recebe duas respostas diferentes. Por quê?',
     data: { options: [
       { id: 'a', text: 'Ele monta a resposta pedaço por pedaço, escolhendo entre continuações prováveis, em vez de buscar uma resposta guardada.', correct: true },
@@ -511,6 +590,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q19', type: 'true_false',
+    requisitos: ['AP035-7.1'],
     prompt: 'A IA pode produzir informações incorretas, conhecidas como alucinações.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro', correct: true },
@@ -520,6 +600,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q20', type: 'ordering',
+    requisitos: ['AP035-7.1'],
     prompt: 'Ordene as etapas de aprendizado de um modelo de IA.',
     data: {
       items: [
@@ -532,6 +613,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q21', type: 'scenario',
+    requisitos: ['AP035-8.1'],
     prompt: 'Você usa IA para gerar um texto para um trabalho. O que deve fazer antes de entregar?',
     data: { scenarios: [
       { id: 'a', text: 'Revisar todo o conteúdo, verificar as informações e adicionar sua própria análise.', correct: true },
@@ -543,6 +625,7 @@ const rawAp035Final: Question[] = [
   },
   {
     id: 'AP035-F-Q22', type: 'multiple_choice',
+    requisitos: ['AP035-2.2', 'AP035-3.6'],
     prompt: 'Qual elemento HTML cria um hyperlink?',
     data: { options: [
       { id: 'a', text: '<a href="url">texto</a>', correct: true },
@@ -565,6 +648,7 @@ const rawAp035Final: Question[] = [
 const rawAp041Final: Question[] = [
   {
     id: 'AP041-F-Q1', type: 'multiple_choice',
+    requisitos: ['AP041-1.1'],
     prompt: 'O ábaco serve para:',
     data: { options: [
       { id: 'a', text: 'Ajudar a pessoa a guardar números enquanto ela mesma calcula.', correct: true },
@@ -579,6 +663,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q2', type: 'multiple_choice',
+    requisitos: ['AP041-1.1'],
     prompt: 'A máquina analítica de Charles Babbage é importante porque:',
     data: { options: [
       { id: 'a', text: 'Foi o primeiro computador a ser vendido para o público em geral, nas lojas.',
@@ -593,6 +678,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q3', type: 'ordering',
+    requisitos: ['AP041-1.1'],
     prompt: 'Ordene as invenções, da mais antiga para a mais nova.',
     data: {
       items: [
@@ -607,6 +693,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q4', type: 'multiple_choice',
+    requisitos: ['AP041-2.1'],
     prompt: 'Hardware é:',
     data: { options: [
       { id: 'a', text: 'A parte física do computador, que dá para pegar com a mão.', correct: true },
@@ -621,6 +708,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q5', type: 'multiple_choice',
+    requisitos: ['AP041-2.2'],
     prompt: 'Software é:',
     data: { options: [
       { id: 'a', text: 'As peças de dentro do gabinete, escondidas atrás da tampa.',
@@ -635,6 +723,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q6', type: 'multiple_choice',
+    requisitos: ['AP041-2.3'],
     prompt: 'O sistema operacional é:',
     data: { options: [
       { id: 'a', text: 'O programa principal, que organiza memória, arquivos e peças.', correct: true },
@@ -649,6 +738,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q7', type: 'multiple_choice',
+    requisitos: ['AP041-2.4'],
     prompt: 'Para que serve um driver?',
     data: { options: [
       { id: 'a', text: 'Para deixar a máquina mais rápida, liberando memória parada.',
@@ -663,6 +753,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q8', type: 'fill_blank',
+    requisitos: ['AP041-2.6', 'AP041-2.7'],
     prompt: 'Complete: a memória que esvazia ao desligar é a _____, e a que já vem gravada de fábrica com as instruções para ligar é a _____.',
     data: {
       blanks: [
@@ -674,6 +765,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q9', type: 'multiple_choice',
+    requisitos: ['AP041-2.5'],
     prompt: 'A principal diferença entre o HD e o SSD é que:',
     data: { options: [
       { id: 'a', text: 'O HD tem discos que giram, e o SSD não tem peça que se mexa.', correct: true },
@@ -688,6 +780,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q10', type: 'true_false',
+    requisitos: ['AP041-2.6'],
     prompt: 'Tudo o que está na memória RAM continua guardado depois de o computador ser desligado.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro',
@@ -698,6 +791,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q11', type: 'matching',
+    requisitos: ['AP041-2.5', 'AP041-2.6', 'AP041-2.7'],
     prompt: 'Ligue cada memória ao que ela guarda.',
     data: { pairs: [
       { left: 'HD ou SSD', right: 'Seus arquivos e programas, mesmo desligado' },
@@ -708,6 +802,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q12', type: 'multiple_choice',
+    requisitos: ['AP041-4.1', 'AP041-4.2', 'AP041-4.5'],
     prompt: 'Teclado, mouse e scanner têm em comum que:',
     data: { options: [
       { id: 'a', text: 'Levam informação de fora para dentro do computador.', correct: true },
@@ -722,6 +817,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q13', type: 'multiple_choice',
+    requisitos: ['AP041-4.4', 'AP041-4.5'],
     prompt: 'A impressora e o scanner:',
     data: { options: [
       { id: 'a', text: 'Fazem o mesmo trabalho, apenas com nomes diferentes.',
@@ -736,6 +832,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q14', type: 'multiple_choice',
+    requisitos: ['AP041-4.6'],
     prompt: 'A CPU é responsável por:',
     data: { options: [
       { id: 'a', text: 'Guardar de forma permanente os arquivos e os programas.',
@@ -750,6 +847,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q15', type: 'scenario',
+    requisitos: ['AP041-4.8'],
     prompt: 'A internet caiu em casa. O técnico diz que o aparelho que traz o sinal da rua queimou. O que precisa ser trocado?',
     data: { scenarios: [
       { id: 'a', text: 'O roteador, que é quem busca o sinal lá na rua e o traz para dentro.',
@@ -764,6 +862,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q16', type: 'multiple_choice',
+    requisitos: ['AP041-3.2'],
     prompt: 'Manutenção preventiva quer dizer:',
     data: { options: [
       { id: 'a', text: 'Cuidar da máquina antes que ela apresente problema.', correct: true },
@@ -778,6 +877,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q17', type: 'true_false',
+    requisitos: ['AP041-3.1'],
     prompt: 'Antes de limpar o computador, ele deve estar desligado.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro', correct: true },
@@ -788,6 +888,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q18', type: 'scenario',
+    requisitos: ['AP041-5.6'],
     prompt: 'A Bia baixou trinta fotos do acampamento e elas estão todas soltas na área de trabalho. O que resolve melhor?',
     data: { scenarios: [
       { id: 'a', text: 'Criar uma pasta chamada Acampamento e mover as fotos para dentro.', correct: true },
@@ -802,6 +903,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q19', type: 'fill_blank',
+    requisitos: ['AP041-2.1', 'AP041-2.2'],
     prompt: 'Complete: o que dá para pegar com a mão é o _____; os programas, que não se pegam, são o _____.',
     data: {
       blanks: [
@@ -813,6 +915,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q20', type: 'multiple_choice',
+    requisitos: ['AP041-4.3'],
     prompt: 'Qual é a função do monitor?',
     data: { options: [
       { id: 'a', text: 'Mostrar o que o computador está fazendo naquele momento.', correct: true },
@@ -824,6 +927,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q21', type: 'multiple_choice',
+    requisitos: ['AP041-4.7'],
     prompt: 'Para que servem os cabos de um computador?',
     data: { options: [
       { id: 'a', text: 'Levar energia e também sinal de uma peça até a outra.', correct: true },
@@ -835,6 +939,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q22', type: 'multiple_choice',
+    requisitos: ['AP041-4.9'],
     prompt: 'O que faz o roteador?',
     data: { options: [
       { id: 'a', text: 'Reparte a internet entre os aparelhos da casa.', correct: true },
@@ -846,6 +951,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q23', type: 'ordering',
+    requisitos: ['AP041-3.3'],
     prompt: 'Ordene os passos de desligar o computador do jeito certo.',
     data: {
       items: [
@@ -859,6 +965,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q24', type: 'multiple_choice',
+    requisitos: ['AP041-3.3'],
     prompt: 'Por que se desliga o computador pelo menu, e não segurando o botão?',
     data: { options: [
       { id: 'a', text: 'Para o sistema fechar os arquivos e gravar o que faltava.', correct: true },
@@ -870,6 +977,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q25', type: 'scenario',
+    requisitos: ['AP041-3.1'],
     prompt: 'O Davi usa o notebook em cima do edredom e reclama que ele esquenta. Qual é o motivo?',
     data: { scenarios: [
       { id: 'a', text: 'As saídas de ar ficam embaixo, e o tecido tapa todas elas.', correct: true },
@@ -881,6 +989,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q26', type: 'scenario',
+    requisitos: ['AP041-5.2'],
     prompt: 'O Téo quer a mesma pasta em dois lugares: na área de trabalho e no pen drive. O que ele faz?',
     data: { scenarios: [
       { id: 'a', text: 'Copia a pasta, porque copiar deixa uma em cada lugar.', correct: true },
@@ -892,6 +1001,7 @@ const rawAp041Final: Question[] = [
   },
   {
     id: 'AP041-F-Q27', type: 'true_false',
+    requisitos: ['AP041-5.5'],
     prompt: 'Esvaziar a lixeira apaga os arquivos de vez, e depois não dá mais para arrastá-los de volta.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro', correct: true },
@@ -915,6 +1025,7 @@ const rawAp041Final: Question[] = [
 const rawAp042Final: Question[] = [
   {
     id: 'AP042-F-Q1', type: 'multiple_choice',
+    requisitos: ['AP042-2.1', 'AP042-2.2'],
     prompt: 'Qual é a diferença que mais importa entre um netbook e um notebook?',
     data: { options: [
       { id: 'a', text: 'O netbook tem menos potência e foi feito para tarefas leves.', correct: true },
@@ -926,6 +1037,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q2', type: 'multiple_choice',
+    requisitos: ['AP042-2.6'],
     prompt: 'O que faz de um computador um servidor?',
     data: { options: [
       { id: 'a', text: 'Ele fica ligado atendendo pedidos de outras máquinas pela rede.', correct: true },
@@ -937,6 +1049,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q3', type: 'matching',
+    requisitos: ['AP042-2.3', 'AP042-2.4', 'AP042-2.5', 'AP042-2.6'],
     prompt: 'Ligue cada aparelho à descrição que cabe nele.',
     data: { pairs: [
       { left: 'Microcomputador', right: 'Computador de mesa, com gabinete separado' },
@@ -948,6 +1061,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q4', type: 'true_false',
+    requisitos: ['AP042-2.3'],
     prompt: 'O "micro" de microcomputador quer dizer que ele é do tamanho de uma caixa de fósforos.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro', porque: 'É falso. O "micro" compara com os computadores que ocupavam salas inteiras.' },
@@ -957,6 +1071,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q5', type: 'multiple_choice',
+    requisitos: ['AP042-3.5'],
     prompt: 'Você selecionou um parágrafo e apertou o botão de justificar. O que acontece com ele?',
     data: { options: [
       { id: 'a', text: 'As linhas passam a encostar nos dois lados da margem.', correct: true },
@@ -968,6 +1083,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q6', type: 'multiple_choice',
+    requisitos: ['AP042-3.4'],
     prompt: 'Você apertou o botão de negrito e o texto não mudou. Qual é a primeira coisa a conferir?',
     data: { options: [
       { id: 'a', text: 'Se havia algum trecho selecionado na hora do clique.', correct: true },
@@ -979,6 +1095,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q7', type: 'ordering',
+    requisitos: ['AP042-3.2'],
     prompt: 'Ponha na ordem os passos para levar um trecho para outro lugar do documento, mantendo o original onde está.',
     data: { items: [
       { id: 'i1', text: 'Selecionar o trecho', order: 1 },
@@ -990,6 +1107,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q8', type: 'fill_blank',
+    requisitos: ['AP042-3.7'],
     prompt: 'Numa lista em que a ordem dos itens importa, como um passo a passo, usam-se ___ em vez de marcadores.',
     data: { blanks: [
       { id: 'b1', answer: 'números', hint: 'É o outro botão de lista, ao lado do de bolinhas.', aceitas: ['numeração', 'numeros', 'numeracao', 'lista numerada'] },
@@ -998,6 +1116,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q9', type: 'multiple_choice',
+    requisitos: ['AP042-4.1'],
     prompt: 'Um computador trava quando muitos programas ficam abertos ao mesmo tempo. O que precisa aumentar?',
     data: { options: [
       { id: 'a', text: 'A memória RAM.', correct: true },
@@ -1009,6 +1128,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q10', type: 'true_false',
+    requisitos: ['AP042-4.2'],
     prompt: 'Trocar um HD por um SSD costuma mudar mais o dia a dia do que dobrar a capacidade do disco.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro', correct: true },
@@ -1018,6 +1138,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q11', type: 'multiple_choice',
+    requisitos: ['AP042-4.3', 'AP042-4.4'],
     prompt: 'Num anúncio aparece só "Intel Core i5". Que informação importante está faltando?',
     data: { options: [
       { id: 'a', text: 'A geração do processador.', correct: true },
@@ -1029,6 +1150,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q12', type: 'scenario',
+    requisitos: ['AP042-4.1', 'AP042-4.2'],
     prompt: 'A Ana vai comprar um notebook para estudar e assistir aula. Dois modelos custam igual: um tem 4 GB de RAM com SSD, o outro tem 16 GB de RAM com HD. Qual é o problema de olhar só o número maior?',
     data: { scenarios: [
       { id: 'a', text: 'Os 4 GB vão apertar, mas o HD deixa a máquina lenta o tempo todo.', correct: true },
@@ -1040,6 +1162,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q13', type: 'multiple_choice',
+    requisitos: ['AP042-5.1'],
     prompt: 'A energia da casa oscila e a lâmpada pisca sempre que ligam o chuveiro. O que resolve isso para o computador?',
     data: { options: [
       { id: 'a', text: 'Um estabilizador, que entrega energia constante à máquina.', correct: true },
@@ -1051,6 +1174,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q14', type: 'multiple_choice',
+    requisitos: ['AP042-5.1'],
     prompt: 'O que um nobreak faz e um estabilizador não faz?',
     data: { options: [
       { id: 'a', text: 'Mantém a máquina ligada por alguns minutos quando a energia acaba.', correct: true },
@@ -1062,6 +1186,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q15', type: 'true_false',
+    requisitos: ['AP042-5.1'],
     prompt: 'Durante uma tempestade com raios, desligar o computador no botão já basta para protegê-lo.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro', porque: 'É falso. Espetado na tomada ele continua ligado à fiação, que é por onde o raio chega.' },
@@ -1071,6 +1196,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q16', type: 'multiple_choice',
+    requisitos: ['AP042-6.3'],
     prompt: 'Qual é o jeito certo de tirar um programa do computador?',
     data: { options: [
       { id: 'a', text: 'Abrir as configurações do sistema e mandar desinstalar o programa.', correct: true },
@@ -1082,6 +1208,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q17', type: 'multiple_choice',
+    requisitos: ['AP042-6.2'],
     prompt: 'Por que exportar um relatório em pdf antes de mandar para outra pessoa?',
     data: { options: [
       { id: 'a', text: 'Porque ele chega com a formatação que você deixou, em qualquer computador.', correct: true },
@@ -1093,6 +1220,7 @@ const rawAp042Final: Question[] = [
   },
   {
     id: 'AP042-F-Q18', type: 'scenario',
+    requisitos: ['AP042-6.4'],
     prompt: 'Você vai imprimir 3 cópias de um relatório de 4 páginas para entregar a três pessoas. Esqueceu de marcar "agrupado". O que sai da impressora?',
     data: { scenarios: [
       { id: 'a', text: 'As três páginas 1 juntas, depois as três páginas 2, e assim por diante.', correct: true },
@@ -1101,6 +1229,18 @@ const rawAp042Final: Question[] = [
       { id: 'd', text: 'Uma cópia em ordem e as outras duas embaralhadas, misturando as páginas de cada uma.', porque: 'Não é aleatório: sem agrupar, a impressora vai página por página, do começo ao fim.' },
     ]},
     explanation: 'Dá o mesmo papel e a mesma tinta — mas alguém vai separar tudo à mão depois.',
+  },
+  {
+    id: 'AP042-F-Q19', type: 'multiple_choice',
+    requisitos: ['AP042-4.5'],
+    prompt: 'Três desbravadores vão assistir a um vídeo no mesmo monitor, sentados lado a lado. Que característica da tela mais pesa aqui?',
+    data: { options: [
+      { id: 'a', text: 'O tipo de painel, porque de lado o IPS mantém a cor.', correct: true },
+      { id: 'b', text: 'O tamanho em polegadas, para que todos enxerguem de longe.', porque: 'Ajuda a enxergar, e não resolve o ângulo: numa tela TN grande as cores continuam desbotando para quem está de lado.' },
+      { id: 'c', text: 'A resolução, que define quantos pontos formam a imagem.', porque: 'Ela decide o detalhe da imagem, e é a mesma vista de qualquer ângulo.' },
+      { id: 'd', text: 'O brilho, medido em nits, que vence a luz da sala.', porque: 'O brilho resolve o reflexo da janela. Quem falha ao se olhar de lado é o painel.' },
+    ]},
+    explanation: 'Tamanho, resolução e painel são três coisas diferentes, e o painel é a que quase ninguém olha — até assistir a algo em três pessoas.',
   },
 ];
 
@@ -1119,6 +1259,7 @@ const rawAp042Final: Question[] = [
 const rawAp043Final: Question[] = [
   {
     id: 'AP043-F-Q1', type: 'multiple_choice',
+    requisitos: ['AP043-2.1'],
     prompt: 'Um técnico diz que o computador do clube "não dá para atualizar". Qual peça costuma estar por trás dessa limitação?',
     data: { options: [
       { id: 'a', text: 'A placa mãe, cujos soquetes e fendas decidem o que encaixa.', correct: true },
@@ -1130,6 +1271,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q2', type: 'multiple_choice',
+    requisitos: ['AP043-2.2'],
     prompt: 'Um computador de escritório mostra imagem no monitor e não tem nenhuma placa de vídeo avulsa dentro dele. O que se conclui?',
     data: { options: [
       { id: 'a', text: 'Que o vídeo dele é integrado à placa mãe ou ao processador.', correct: true },
@@ -1141,6 +1283,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q3', type: 'multiple_choice',
+    requisitos: ['AP043-2.3', 'AP043-2.4'],
     prompt: 'Você liga o computador na televisão por um cabo VGA e a imagem aparece, mas não sai som nenhum. Qual é a explicação?',
     data: { options: [
       { id: 'a', text: 'A VGA leva só imagem: som pede outro cabo, ou a HDMI.', correct: true },
@@ -1152,6 +1295,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q4', type: 'true_false',
+    requisitos: ['AP043-2.5'],
     prompt: 'A porta USB serve a aparelhos de tipos muito diferentes usando o mesmo formato de conector.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro', correct: true },
@@ -1161,6 +1305,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q5', type: 'multiple_choice',
+    requisitos: ['AP043-2.6'],
     prompt: 'Depois de um raio, o computador não liga mais. Qual peça recebeu o tranco antes de todas as outras?',
     data: { options: [
       { id: 'a', text: 'A fonte de alimentação.', correct: true },
@@ -1172,6 +1317,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q6', type: 'multiple_choice',
+    requisitos: ['AP043-2.7'],
     prompt: 'Duas pessoas precisam registrar informação no mesmo lugar, ao mesmo tempo, sem que uma apague o trabalho da outra. Que recurso foi feito para isso?',
     data: { options: [
       { id: 'a', text: 'Um banco de dados.', correct: true },
@@ -1183,6 +1329,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q7', type: 'multiple_choice',
+    requisitos: ['AP043-3.1'],
     prompt: 'Qual destas situações é a única que conta como backup de verdade?',
     data: { options: [
       { id: 'a', text: 'O trabalho copiado para um pen drive guardado na gaveta.', correct: true },
@@ -1194,6 +1341,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q8', type: 'ordering',
+    requisitos: ['AP043-3.1'],
     prompt: 'Ponha as mídias de backup na ordem em que se tornaram comuns, da mais antiga para a mais recente.',
     data: { items: [
       { id: 'i1', text: 'Disquete', order: 1 },
@@ -1205,6 +1353,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q9', type: 'true_false',
+    requisitos: ['AP043-3.1'],
     prompt: 'A maior vantagem do backup de hoje sobre o de antigamente é poder acontecer sozinho, sem depender de alguém lembrar.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro', correct: true },
@@ -1214,6 +1363,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q10', type: 'multiple_choice',
+    requisitos: ['AP043-4.1', 'AP043-5.4'],
     prompt: 'Você inseriu uma tabela no documento e agora precisa acrescentar uma coluna. Onde procurar esse comando?',
     data: { options: [
       { id: 'a', text: 'Numa guia que só aparece quando o cursor está dentro da tabela.', correct: true },
@@ -1225,6 +1375,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q11', type: 'multiple_choice',
+    requisitos: ['AP043-4.2'],
     prompt: 'A foto que você inseriu ocupou a linha inteira e empurrou o parágrafo para baixo. Qual ajuste faz o texto contorná-la?',
     data: { options: [
       { id: 'a', text: 'Trocar a quebra de texto para quadrada.', correct: true },
@@ -1236,6 +1387,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q12', type: 'true_false',
+    requisitos: ['AP043-4.3', 'AP043-4.4'],
     prompt: 'Digitar o número 1 no rodapé produz o mesmo resultado que inserir a numeração de páginas.',
     data: { options: [
       { id: 'a', text: 'Verdadeiro', porque: 'É falso. O rodapé se repete igual: a segunda página também mostraria 1.' },
@@ -1245,6 +1397,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q13', type: 'multiple_choice',
+    requisitos: ['AP043-5.6'],
     prompt: 'Na planilha do clube, a coluna Total foi preenchida com números digitados à mão. Um desbravador desiste e o número de inscritos cai. O que acontece?',
     data: { options: [
       { id: 'a', text: 'O total continua o mesmo, errado, e nada avisa.', correct: true },
@@ -1256,6 +1409,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q14', type: 'multiple_choice',
+    requisitos: ['AP043-5.6'],
     prompt: 'O que a escrita B3:B7 significa dentro de uma fórmula?',
     data: { options: [
       { id: 'a', text: 'Todas as células de B3 até B7.', correct: true },
@@ -1267,6 +1421,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q15', type: 'multiple_choice',
+    requisitos: ['AP043-5.3'],
     prompt: 'Você mesclou quatro células que tinham texto em todas elas. Depois desfez a mesclagem. O que encontra?',
     data: { options: [
       { id: 'a', text: 'As quatro células de volta, com só o primeiro texto preenchido.', correct: true },
@@ -1278,6 +1433,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q16', type: 'multiple_choice',
+    requisitos: ['AP043-6.1'],
     prompt: 'Você mandou um documento para a secretaria do clube e ele chegou com a formatação toda embaralhada. Qual é a causa mais provável?',
     data: { options: [
       { id: 'a', text: 'O programa de lá é de uma versão mais antiga que a sua.', correct: true },
@@ -1289,6 +1445,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q17', type: 'matching',
+    requisitos: ['AP043-7.1'],
     prompt: 'Ligue cada tipo de rede ao alcance que ele cobre.',
     data: { pairs: [
       { left: 'PAN', right: 'Alguns metros, em volta de uma pessoa' },
@@ -1300,6 +1457,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q18', type: 'multiple_choice',
+    requisitos: ['AP043-7.1'],
     prompt: 'Num escritório com rede a cabo, qual aparelho recebe o cabo de cada máquina e encaminha o que chega para o destino certo?',
     data: { options: [
       { id: 'a', text: 'O switch.', correct: true },
@@ -1311,6 +1469,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q19', type: 'multiple_choice',
+    requisitos: ['AP043-8.1'],
     prompt: 'Alguém pergunta quanta memória o computador do clube tem. Onde está essa resposta?',
     data: { options: [
       { id: 'a', text: 'Em Configurações, na página Sistema › Sobre.', correct: true },
@@ -1322,6 +1481,7 @@ const rawAp043Final: Question[] = [
   },
   {
     id: 'AP043-F-Q20', type: 'multiple_choice',
+    requisitos: ['AP043-8.3'],
     prompt: 'Você arrasta um documento da pasta compartilhada do clube para a área de trabalho. Qual é a consequência?',
     data: { options: [
       { id: 'a', text: 'O documento sai da pasta e some para quem a usa.', correct: true },
@@ -1367,23 +1527,33 @@ const PERGUNTAS_POR_PROVA: Record<string, number | undefined> = {
 };
 
 /*
-  A margem aqui é menor, em proporção, do que a das lições, e é decisão.
+  A margem já foi pequena por precaução, e não é mais.
 
-  Cada prova foi escrita para cobrir os requisitos da trilha — os comentários
-  de cada uma dizem quantos —, e nenhuma questão carrega o requisito que ela
-  mede: a nota é uma porcentagem sobre o que foi sorteado, e não uma marcação
-  requisito a requisito. Sorteando pouco, sobrariam requisitos sem nenhuma
-  pergunta na tentativa de alguém, e a prova deixaria de ser o que ela diz ser.
-  Deixar de fora quatro de vinte e cinco muda o conjunto entre duas tentativas
-  sem abrir buraco desse tamanho.
+  Enquanto nenhuma questão dizia que requisito media, sortear pouco era abrir
+  buraco às cegas: alguns requisitos têm uma questão só, e a prova podia sair
+  sem tocar neles. A defesa possível era deixar pouco de fora.
 
-  Quem quiser apertar isto um dia precisa antes ligar cada questão ao requisito
-  que ela cobra — e aí o sorteio pode garantir a cobertura em vez de torcer
-  por ela.
+  Agora cada questão declara os seus em `requisitos`, e `sortearCobrindo` monta
+  primeiro o conjunto que cobre tudo, depois completa ao acaso. O piso deixou
+  de ser um palpite e passou a ser um número: `minimoParaCobrir` diz quantas
+  questões a prova precisa perguntar, e `qualidade.test.ts` reprova quem
+  sortear menos que isso.
+
+  Os números abaixo continuam onde estavam, com a folga que cada um tem sobre
+  esse piso — AP034 6, AP035 8, AP041 5, AP042 2, AP043 nenhuma. Encolhê-los é
+  decisão de quem cuida da trilha, e não consequência automática desta
+  mudança: menos questões é cada acerto valendo mais, e o limiar de 75% mede
+  outra coisa numa prova de doze e numa de vinte e uma.
+
+  A AP043 é o caso a olhar primeiro: ela tem vinte questões para dezenove
+  requisitos, então as dezesseis que ela sorteia já estão todas comprometidas
+  com a cobertura, e duas tentativas só diferem onde há mais de uma questão
+  para o mesmo requisito. Quem quiser variedade ali escreve questão nova, e
+  não mexe neste número.
 */
 
 export function getFinalExamQuestions(specialtyCode: string): Question[] {
-  return sortearQuestoes(PROVAS[specialtyCode] ?? [], PERGUNTAS_POR_PROVA[specialtyCode]);
+  return sortearCobrindo(PROVAS[specialtyCode] ?? [], PERGUNTAS_POR_PROVA[specialtyCode]);
 }
 
 /*
