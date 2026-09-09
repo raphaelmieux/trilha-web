@@ -173,6 +173,31 @@
     z-index: 1;
   }
 
+  /*
+    O seletor de cores do Scratch fica **acima** da casca do aplicativo.
+
+    A regra logo acima é o que exige esta. `#root` é posicionado e leva
+    `z-index: 1` para ficar por cima da textura do globo — e com isso ele vira
+    um contexto de empilhamento, pintado depois de todo irmão que não tenha
+    z-index próprio.
+
+    O editor de pintura do Scratch abre o seletor de cores num popover
+    pendurado direto no `<body>`, irmão do `#root`, e o `react-popover` não põe
+    z-index nenhum nele. O resultado era o pior que há: o popover existia, na
+    posição certa e do tamanho certo, e era desenhado **debaixo** do aplicativo
+    inteiro. Clicar em "Preencher" não mudava nada na tela, nada aparecia no
+    console, e trocar a cor de um ator — metade do que se faz num editor de
+    desenho — ficou impossível na vereda de lógica.
+
+    Todo o resto que o Scratch pendura no `<body>` traz o próprio z-index: as
+    janelas em 510, os menus e balões do Blockly em 1000 e acima. Por isso só o
+    seletor de cores sofria, e por isso 2 basta — `#root` é contexto de
+    empilhamento, e o que está dentro dele não escapa do 1.
+  */
+  body > .Popover {
+    z-index: 2;
+  }
+
   h1, h2, h3, h4 {
     @apply text-neutral-100;
   }

@@ -687,6 +687,20 @@ As questões da vereda passam pelas mesmas travas das provas: `qualidade.test.ts
 as inclui, então alternativa errada sem `porque`, correta sistematicamente mais
 comprida e pergunta repetida reprovam ali também.
 
+**O que o Scratch pendura no `<body>` precisa passar por cima do `#root`.**
+`#root` leva `position: relative; z-index: 1` para ficar acima da textura do
+globo, e isso o torna um contexto de empilhamento pintado depois de todo irmão
+sem z-index próprio. O `scratch-gui` põe várias coisas ali fora — janelas em
+510, menus e balões do Blockly em 1000 e acima —, e todas trazem o próprio
+número. **Uma não traz**: o popover do `react-popover`, que é o seletor de
+cores do editor de pintura. Ele existia, na posição certa e do tamanho certo, e
+era desenhado debaixo do aplicativo inteiro: clicar em "Preencher" não mudava
+nada na tela, o console ficava limpo, e trocar a cor de um ator — metade do que
+se faz num editor de desenho — era impossível. `body > .Popover` sobe para 2 no
+`index.css`, e `seletorDeCores.test.ts` compara os dois números na folha
+publicada, não no arquivo de origem: quem um dia levantar o `#root` mexeria só
+nele, e o seletor voltaria a sumir calado.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que
@@ -841,6 +855,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
+| `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
 | `src/components/TokenDaVereda.test.tsx` | Token.Web() de vereda que espera clique, que pede duas vezes, ou que reemite um revogado |
 | `src/labs/falhasDePython.test.ts` | painel de falhas que abre respondido, ou recado de erro que entrega a resposta |
 | `src/labs/roteiroDePython.test.ts` | roteiro que julga o programa, ou que faz escada com a cadeia de elif |
