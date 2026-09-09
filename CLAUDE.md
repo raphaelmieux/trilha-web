@@ -775,6 +775,24 @@ trilha ensina e a prova não cobrava — e as duas diziam, no próprio comentár
 que cobriam os requisitos. Ganharam questão, e a trava agora exige que todo
 requisito que não seja de prática tenha pelo menos uma.
 
+**E a prova cobra requisito de prática medindo o que governa o gesto.** As cinco
+provas cobrem hoje todos os requisitos das suas trilhas, os de fazer inclusive —
+o pacto de uso, as marcas de HTML escritas à mão, copiar e mover pasta, produzir
+imagem com IA. Quem mede o gesto é o laboratório, que observa cada um acontecer;
+a prova mede a decisão que está por trás dele. Não "você assinou o pacto", e sim
+o que cada cláusula evita; não "você copiou uma pasta", e sim o que copiar e
+mover deixam no lugar de origem; não "você baixou um arquivo", e sim o que um
+nome terminado em .pdf.exe faz com quem lê só o começo. Escrever a pergunta como
+autodeclaração — "você fez?" — seria devolver à prova exatamente o que a
+plataforma inteira evita.
+
+**Questão que mede vários requisitos é o que mantém a prova curta.** O piso do
+sorteio não é o número de requisitos: é quantas questões bastam para tocar em
+todos. Uma de associar que liga sete marcas ao que cada uma produz cobre sete
+gastando uma vaga — e foi assim que as cinco provas passaram a cobrir tudo com o
+piso **caindo**, e não subindo. É o que `minimoParaCobrir` conta, e a trava
+confere.
+
 **Trava que lê o sorteio não é trava.** Ligar o sorteio na prova fez dois testes
 passarem a examinar uma amostra onde eles queriam examinar o que foi escrito: o
 de enunciado repetido compararia o subconjunto do dia, e duas questões iguais
