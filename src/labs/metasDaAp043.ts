@@ -390,7 +390,7 @@ export const METAS_DA_PLANILHA: MetaDePlanilha[] = [
     id: 'alinhar',
     titulo: 'Alinhar o texto dentro da célula',
     detalhe: 'Centralize o título na horizontal e no meio na vertical. O alinhamento vertical só aparece porque você já deixou a linha alta.',
-    onde: 'Início › Alinhamento',
+    onde: 'Página Inicial › Alinhamento',
     passos: [
       'Clique na célula A1, a do título.',
       'Nos botões de alinhamento, escolha Centralizar.',
@@ -403,7 +403,7 @@ export const METAS_DA_PLANILHA: MetaDePlanilha[] = [
     id: 'mesclar',
     titulo: 'Mesclar células e desfazer a mesclagem',
     detalhe: 'O título deve ocupar a largura da tabela inteira. Selecione de A1 até a última coluna da tabela e mescle — depois experimente desfazer, para ver o que a mesclagem faz.',
-    onde: 'Início › Mesclar e Centralizar',
+    onde: 'Página Inicial › Mesclar e Centralizar',
     passos: [
       'Clique na célula A1 e arraste até a última coluna que tem dados.',
       'A caixa de nome, à esquerda da barra de fórmulas, mostra a faixa: A1:D1.',
@@ -420,7 +420,7 @@ export const METAS_DA_PLANILHA: MetaDePlanilha[] = [
     id: 'linhas',
     titulo: 'Inserir e excluir linha e coluna',
     detalhe: 'Falta a unidade Arara na tabela: insira uma linha para ela e preencha inscritos e diárias. E a coluna vazia que ficou no meio da tabela, entre Diárias e Total, precisa sair.',
-    onde: 'Início › Células',
+    onde: 'Página Inicial › Células',
     passos: [
       'Clique numa célula da linha 5, a da unidade Tucano.',
       'Clique em Inserir Linha: uma linha vazia aparece abaixo.',
@@ -444,7 +444,7 @@ export const METAS_DA_PLANILHA: MetaDePlanilha[] = [
     id: 'layout',
     titulo: 'Formatar o layout da tabela',
     detalhe: 'Dê aparência à tabela — pelo estilo pronto ou escolhendo borda e cor você mesmo. O documento pede as duas formas: experimente as duas e deixe a que preferir.',
-    onde: 'Início › Estilos',
+    onde: 'Página Inicial › Estilos',
     passos: [
       'Clique em Formatar como Tabela para a forma automática: o estilo vem pronto.',
       'Clique em Bordas e Preenchimento para a forma manual: você escolhe as linhas e a cor.',
