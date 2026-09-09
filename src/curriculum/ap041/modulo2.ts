@@ -131,6 +131,7 @@ export const modulo2: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP041-2.1', 'AP041-2.2'],
+      perguntas: 7,
       questions: [
         {
           id: 'AP041.2-L1-Q1', type: 'multiple_choice',
@@ -222,6 +223,44 @@ export const modulo2: Module = {
           ]},
           explanation: 'É como um violão e uma música: o instrumento sem música fica em silêncio, e a música sem instrumento não toca.',
         },
+        {
+          id: 'AP041.2-L1-Q8', type: 'multiple_choice',
+          prompt: 'O aplicativo de mensagens do celular travou e você o desinstalou e instalou de novo. Você mexeu em quê?',
+          data: { options: [
+            { id: 'a', text: 'No software: instruções, que se apagam e se põem de volta sem trocar peça.', correct: true },
+            { id: 'b', text: 'No hardware, porque o aplicativo ocupa espaço físico na memória do aparelho.',
+              porque: 'Ele ocupa espaço, mas o que você apagou e repôs foram instruções. Nenhuma peça saiu do celular.' },
+            { id: 'c', text: 'Nos dois ao mesmo tempo, porque instalar exige que o hardware seja reconfigurado.',
+              porque: 'O hardware continua exatamente o mesmo antes e depois. Só o conteúdo mudou.' },
+            { id: 'd', text: 'Em nenhum dos dois: reinstalar é uma operação do sistema, e não das duas partes.',
+              porque: 'O sistema operacional também é software, e o aplicativo também. Você mexeu em software o tempo todo.' },
+          ]},
+          explanation: 'Se cai no seu pé e dói, é hardware. Se você só apaga e instala de novo, é software.',
+        },
+        {
+          id: 'AP041.2-L1-Q9', type: 'multiple_choice',
+          prompt: 'Por que um computador sem nenhum software instalado não serve para nada?',
+          data: { options: [
+            { id: 'a', text: 'Porque as peças existem, mas não há instrução dizendo o que elas devem fazer.', correct: true },
+            { id: 'b', text: 'Porque sem software as peças não recebem energia e ficam desligadas.',
+              porque: 'A energia chega às peças normalmente. O que falta é alguém dizendo a elas o que fazer com ela.' },
+            { id: 'c', text: 'Porque o hardware se estraga quando fica muito tempo sem uso.',
+              porque: 'Não é sobre estragar. É sobre não haver instrução nenhuma para executar.' },
+            { id: 'd', text: 'Isso não é verdade: um computador sem software ainda escreve e faz contas.',
+              porque: 'Escrever e fazer contas são programas. Sem eles, não há o que executar.' },
+          ]},
+          explanation: 'Como um violão que ninguém toca: está tudo lá, e não sai música.',
+        },
+        {
+          id: 'AP041.2-L1-Q10', type: 'true_false',
+          prompt: 'A palavra hardware vem de "hard", duro, e software de "soft", mole — e a segunda é a parte que muda fácil.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'É exatamente a origem das duas palavras, e ela descreve bem a diferença: o duro ocupa lugar, e o mole se instala, se apaga e se atualiza sem trocar peça nenhuma.' },
+          ]},
+          explanation: 'Os nomes não foram escolhidos por acaso: eles dizem o que cada parte é.',
+        },
       ],
     },
 
@@ -231,6 +270,7 @@ export const modulo2: Module = {
       type: 'theory',
       content: conteudo_L2,
       requirementCodes: ['AP041-2.3', 'AP041-2.4'],
+      perguntas: 7,
       questions: [
         {
           id: 'AP041.2-L2-Q1', type: 'multiple_choice',
@@ -319,6 +359,44 @@ export const modulo2: Module = {
           ]},
           explanation: 'O driver é o tradutor; o sistema é o gerente; o programa é o trabalhador; o hardware é a ferramenta.',
         },
+        {
+          id: 'AP041.2-L2-Q8', type: 'multiple_choice',
+          prompt: 'Por que o sistema operacional não já vem sabendo conversar com toda impressora que existe?',
+          data: { options: [
+            { id: 'a', text: 'Porque são milhares de modelos, cada um funcionando de um jeito.', correct: true },
+            { id: 'b', text: 'Porque as fabricantes cobram para liberar o funcionamento das impressoras.',
+              porque: 'O driver costuma ser gratuito no site do fabricante. O problema é a quantidade de modelos, não o preço.' },
+            { id: 'c', text: 'Porque impressora é hardware, e sistema operacional só entende de software.',
+              porque: 'O sistema conversa com hardware o tempo todo — com a tela, o teclado e o disco. Ele só precisa de tradutor para o que não conhece.' },
+            { id: 'd', text: 'Porque cada impressora precisa ser configurada à mão antes do primeiro uso.',
+              porque: 'Com o driver certo, muitas funcionam sozinhas ao serem espetadas. É o tradutor que faltava, e não a configuração.' },
+          ]},
+          explanation: 'O sistema é um só e cuida da máquina inteira. O driver é um por peça, e só entende daquela.',
+        },
+        {
+          id: 'AP041.2-L2-Q9', type: 'multiple_choice',
+          prompt: 'Por que o sistema operacional é comparado a um maestro de orquestra?',
+          data: { options: [
+            { id: 'a', text: 'Porque não toca nada, mas decide quem toca, quando e por quanto tempo.', correct: true },
+            { id: 'b', text: 'Porque é a parte mais importante e mais cara do computador.',
+              porque: 'Há sistemas gratuitos, como o Linux. A comparação é sobre coordenar, e não sobre valor.' },
+            { id: 'c', text: 'Porque precisa ser estudado por muitos anos antes de ser usado.',
+              porque: 'Justamente o contrário: ele existe para que a pessoa não precise saber o que acontece por baixo.' },
+            { id: 'd', text: 'Porque fica na frente de todos os programas, aparecendo na tela o tempo inteiro.',
+              porque: 'Ele quase não aparece. O trabalho dele é organizar por trás, e não ocupar a tela.' },
+          ]},
+          explanation: 'Sem ele, cada músico começaria na hora que quisesse — e a memória, o teclado e o disco disputariam a máquina.',
+        },
+        {
+          id: 'AP041.2-L2-Q10', type: 'true_false',
+          prompt: 'O sistema operacional começa a funcionar assim que a máquina liga, antes de qualquer programa que você escolha abrir.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'Ele é o programa principal e o primeiro a assumir: quando você clica no ícone de alguma coisa, quem abre esse alguma coisa é ele.' },
+          ]},
+          explanation: 'Por isso a máquina já sabe mostrar a tela e ouvir o teclado antes de você pedir qualquer coisa.',
+        },
       ],
     },
 
@@ -328,6 +406,7 @@ export const modulo2: Module = {
       type: 'theory',
       content: conteudo_L3,
       requirementCodes: ['AP041-2.5', 'AP041-2.6', 'AP041-2.7'],
+      perguntas: 10,
       questions: [
         {
           id: 'AP041.2-L3-Q1', type: 'multiple_choice',
@@ -459,6 +538,44 @@ export const modulo2: Module = {
               porque: 'Os dois precisam de RAM. Disco e memória fazem trabalhos diferentes.' },
           ]},
           explanation: 'O HD tem um disco que gira e uma agulha que procura; o SSD não tem peça que se mexe, e por isso responde na hora.',
+        },
+        {
+          id: 'AP041.2-L3-Q11', type: 'multiple_choice',
+          prompt: 'Por que salvar um trabalho antes de desligar o computador é indispensável?',
+          data: { options: [
+            { id: 'a', text: 'Porque salvar leva o texto da mesa para o armário, e a mesa esvazia ao desligar.', correct: true },
+            { id: 'b', text: 'Porque o sistema operacional apaga arquivos abertos ao ser fechado.',
+              porque: 'Ele não apaga nada: o que some é o conteúdo da RAM, que perde tudo quando a energia acaba.' },
+            { id: 'c', text: 'Porque desligar sem salvar danifica o HD por interromper a gravação.',
+              porque: 'Não há gravação em andamento se você nunca salvou. É por isso mesmo que não há o que recuperar.' },
+            { id: 'd', text: 'Porque a memória ROM precisa ser liberada antes de o computador desligar.',
+              porque: 'A ROM vem gravada de fábrica e não se apaga. Ela não guarda seu trabalho.' },
+          ]},
+          explanation: 'Salvar é exatamente isso: guardar da mesa para o armário, antes que a luz apague.',
+        },
+        {
+          id: 'AP041.2-L3-Q12', type: 'multiple_choice',
+          prompt: 'O que a memória ROM tem de diferente da RAM?',
+          data: { options: [
+            { id: 'a', text: 'Ela não se apaga quando a energia acaba, e guarda o que a máquina lê ao ligar.', correct: true },
+            { id: 'b', text: 'Ela é muito maior, e por isso guarda o sistema operacional inteiro.',
+              porque: 'É bem pequena. O sistema operacional mora no HD ou no SSD, e não nela.' },
+            { id: 'c', text: 'Ela guarda os arquivos que você usa com mais frequência, para abrirem mais rápido.',
+              porque: 'Isso é trabalho do armazenamento e da RAM. A ROM guarda as instruções de acordar a máquina.' },
+            { id: 'd', text: 'Ela é a memória onde os programas rodam, e a RAM é onde eles ficam guardados.',
+              porque: 'É o contrário em ambas as metades: os programas rodam na RAM, e ficam guardados no HD ou SSD.' },
+          ]},
+          explanation: 'É o bilhete colado na porta, com o passo a passo de como acordar. Vem de fábrica, e continua lá sem energia.',
+        },
+        {
+          id: 'AP041.2-L3-Q13', type: 'true_false',
+          prompt: 'Trocar o HD por um SSD deixa o computador mais rápido para ligar e para abrir programas.',
+          data: { options: [
+            { id: 'a', text: 'Verdadeiro', correct: true },
+            { id: 'b', text: 'Falso',
+              porque: 'O SSD não tem peça que se mexe, e por isso lê muito mais rápido — é a troca que mais se sente no dia a dia, mais até do que dobrar outros números.' },
+          ]},
+          explanation: 'Ligar e abrir são as duas coisas que dependem de ler do armário. É onde o SSD ganha.',
         },
       ],
     },

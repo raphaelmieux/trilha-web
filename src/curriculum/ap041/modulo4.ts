@@ -82,6 +82,7 @@ export const modulo4: Module = {
       type: 'theory',
       content: conteudo_L1,
       requirementCodes: ['AP041-3.1', 'AP041-3.2', 'AP041-3.3'],
+      perguntas: 10,
       questions: [
         {
           id: 'AP041.4-L1-Q1', type: 'multiple_choice',
@@ -214,6 +215,44 @@ export const modulo4: Module = {
               porque: 'A cópia salva os arquivos, não a peça queimada. A máquina continua precisando de conserto.' },
           ]},
           explanation: 'Peça quebrada se compra outra; três meses de trabalho de escola, não. É por isso que a cópia é o cuidado que mais salva.',
+        },
+        {
+          id: 'AP041.4-L1-Q11', type: 'multiple_choice',
+          prompt: 'Um desbravador usa o notebook em cima da cama todo dia, e ele vive esquentando e desligando sozinho. Por que a cama é pior do que a mesa?',
+          data: { options: [
+            { id: 'a', text: 'Porque as saídas de ar do notebook ficam embaixo, e o tecido tapa todas de uma vez.', correct: true },
+            { id: 'b', text: 'Porque a cama acumula mais poeira do que a mesa, e a poeira entra na máquina.',
+              porque: 'Poeira é problema em qualquer lugar. O que a cama faz de específico é bloquear a saída do ar quente.' },
+            { id: 'c', text: 'Porque deitado o notebook fica inclinado, e o cooler não gira direito nessa posição.',
+              porque: 'O ventilador gira igual em qualquer inclinação. O que muda é o ar ter ou não por onde sair.' },
+            { id: 'd', text: 'Porque a estática do tecido interfere no funcionamento das peças internas.',
+              porque: 'O problema é térmico, e não elétrico: o calor fica preso, e calor é o que mais estraga peça eletrônica.' },
+          ]},
+          explanation: 'Mesa, ou qualquer superfície dura e plana. É o erro mais comum de todos.',
+        },
+        {
+          id: 'AP041.4-L1-Q12', type: 'multiple_choice',
+          prompt: 'A máquina travou de vez e não responde a nada. Segurar o botão de ligar até apagar é aceitável nesse caso?',
+          data: { options: [
+            { id: 'a', text: 'Sim, mas só aí: é recurso de emergência, e não o jeito de desligar todo dia.', correct: true },
+            { id: 'b', text: 'Não: segurar o botão nunca deve ser feito, em situação nenhuma.',
+              porque: 'Quando a máquina não responde a mais nada, não sobra outro caminho. O erro é usar isso como hábito.' },
+            { id: 'c', text: 'Sim, e pode ser usado sempre que a pessoa tiver pressa para desligar.',
+              porque: 'Aí vira hábito, e o sistema deixa de ter tempo de gravar o que estava na RAM. É assim que arquivo corrompe.' },
+            { id: 'd', text: 'Não: o correto nesse caso é tirar da tomada, que é mais seguro para as peças.',
+              porque: 'Cortar a energia é ainda mais bruto do que o botão, e não protege nada.' },
+          ]},
+          explanation: 'Desligar pelo menu dá ao sistema tempo de fechar os arquivos e gravar o que estava na memória.',
+        },
+        {
+          id: 'AP041.4-L1-Q13', type: 'true_false',
+          prompt: 'Manutenção preventiva é o conserto feito logo depois de a máquina apresentar o primeiro defeito.',
+          data: { options: [
+            { id: 'a', text: 'Falso', correct: true },
+            { id: 'b', text: 'Verdadeiro',
+              porque: 'Consertar o que já parou é manutenção corretiva. A preventiva é o que se faz enquanto está tudo bem — como escovar os dentes para não doer.' },
+          ]},
+          explanation: 'Tirar poeira, atualizar, apagar o que não usa e fazer cópia de segurança. A cópia é a que mais salva.',
         },
       ],
     },
