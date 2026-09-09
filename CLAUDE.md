@@ -701,6 +701,23 @@ se faz num editor de desenho — era impossível. `body > .Popover` sobe para 2 
 publicada, não no arquivo de origem: quem um dia levantar o `#root` mexeria só
 nele, e o seletor voltaria a sumir calado.
 
+**O painel de tarefas é branco, e o que cai nele vem da plataforma.** `acoes`
+é escrito pelo laboratório e desenhado pela moldura em **duas** superfícies: o
+painel lateral do computador, branco como o do Word, e a bolha do celular, que é
+escura. As classes de botão da plataforma foram medidas contra o aplicativo
+escuro — `--color-text-soft` é 8.9:1 lá e **1.7:1** no branco, e
+`--color-bg-hover` é branco a 9%, que sobre branco não é nada. "Recomeçar" saía
+quase invisível em cinco laboratórios, sem erro em lugar nenhum, e "Recomeçar" é
+a saída de quem estragou o exercício. Quem veste a superfície clara é a moldura,
+em `CSS_DA_MOLDURA`, e só ela: na bolha escura as mesmas classes estão certas,
+então a regra é escopada em `.lab-painel-claro` e não trocada em geral.
+
+Pelo mesmo caminho apareceu `.btn-ghost`, que três laboratórios usavam e **não
+existia em folha nenhuma** — saía como texto solto, sem área de clique. E o
+parágrafo de ajuda do Explorador fixava `--color-text-dim`, que só podia acertar
+numa das duas superfícies: hoje herda a cor de quem o desenha.
+`painelDoLaboratorio.test.ts` refaz a conta sobre as folhas de verdade.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que
@@ -856,6 +873,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
+| `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
 | `src/components/TokenDaVereda.test.tsx` | Token.Web() de vereda que espera clique, que pede duas vezes, ou que reemite um revogado |
 | `src/labs/falhasDePython.test.ts` | painel de falhas que abre respondido, ou recado de erro que entrega a resposta |
 | `src/labs/roteiroDePython.test.ts` | roteiro que julga o programa, ou que faz escada com a cadeia de elif |

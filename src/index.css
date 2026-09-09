@@ -273,6 +273,21 @@
     border-color: var(--color-border-hover);
   }
 
+  /* O terceiro botão: o que se oferece sem convidar. "Recomeçar do zero" fica
+     ao lado de "Entregar", e não pode competir com ele. Existia como classe nos
+     três laboratórios que a usam e não existia em folha nenhuma — o botão saía
+     como texto solto, sem área de clique visível. */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition;
+    background-color: transparent;
+    color: var(--color-text-dim);
+    border: 1px solid transparent;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text);
+  }
+
   .btn-accent {
     @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-bold transition shadow-md;
     background-color: var(--color-tertiary);

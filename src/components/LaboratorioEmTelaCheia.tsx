@@ -154,6 +154,34 @@ function marcarAvisado(programa: string): void {
 */
 const CAMADA_DA_PLATAFORMA = 600;
 
+/*
+  O painel de tarefas é branco, e o que cai dentro dele vem da plataforma.
+
+  `acoes` é escrito pelo laboratório, com as classes de botão da plataforma —
+  que foram medidas contra o fundo escuro do aplicativo: `--color-text-soft` é
+  #C6C6CC, 8.9:1 ali e **1.7:1** aqui, e `--color-bg-hover` é branco a 9%, que
+  sobre branco não é nada. O resultado era "Recomeçar" quase invisível em cinco
+  laboratórios — e "Recomeçar" é a saída de quem estragou o exercício.
+
+  A moldura é dona desta superfície, então é ela que diz a cor. Só o painel: a
+  bolha do celular é escura, e ali as mesmas classes estão certas — por isso a
+  regra é escopada, e não uma troca global.
+
+  É a mesma lição já escrita para os `h1..h4` quase brancos: superfície clara
+  dentro desta moldura precisa dizer a própria cor.
+*/
+export const CSS_DA_MOLDURA = `
+.lab-painel-claro { color: #201F1E; }
+.lab-painel-claro .btn-secondary {
+  background: #F3F2F1; color: #201F1E; border-color: #C8C6C4;
+}
+.lab-painel-claro .btn-secondary:hover:not(:disabled) {
+  background: #EDEBE9; color: #201F1E; border-color: #B3B0AD;
+}
+.lab-painel-claro .btn-ghost { color: #2B579A; }
+.lab-painel-claro .btn-ghost:hover:not(:disabled) { background: #EDEBE9; color: #1F3F70; }
+`;
+
 export default function LaboratorioEmTelaCheia({
   trilha, voltarPara, titulo, programa, tarefas, aviso, children, acoes, rodape = 0,
 }: Props) {
@@ -236,6 +264,7 @@ export default function LaboratorioEmTelaCheia({
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: '#E6E6E6' }}>
+      <style>{CSS_DA_MOLDURA}</style>
       <div className="flex-1 flex min-h-0">
         {/* O programa imitado */}
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">{children}</div>
@@ -284,7 +313,7 @@ export default function LaboratorioEmTelaCheia({
             </div>
 
             {(acoes || aviso) && (
-              <div className="px-3 py-3 shrink-0" style={{ borderTop: '1px solid #E1DFDD' }}>
+              <div className="lab-painel-claro px-3 py-3 shrink-0" style={{ borderTop: '1px solid #E1DFDD' }}>
                 {aviso && (
                   <p className="mb-2" style={{ fontSize: 11.5, color: '#8A5700', background: '#FFF4CE', padding: '8px 10px', borderRadius: 4 }}>
                     {aviso}
