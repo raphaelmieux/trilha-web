@@ -402,9 +402,33 @@ coluna, então ela passou a aceitar nulo.
 A emissão confere **o evento**, e não requisitos: a trilha guarda os requisitos
 no banco, a vereda não guarda nada — o conteúdo é código. A confiança é a
 mesma dos dois lados, porque `requirement_progress` também é escrito pelo
-aplicativo de quem estuda; quem protege é a RLS. E é botão, não automático ao
-vencer a última lição: o pedido atravessa a rede, e falhar em silêncio bem na
-hora da vitória é a pior hora.
+aplicativo de quem estuda; quem protege é a RLS.
+
+**E sai sozinho, como o da trilha.** Era botão, e a razão de então era boa: o
+pedido atravessa a rede, e falhar em silêncio na hora da vitória é a pior hora.
+Só que silêncio não era a única saída, e o que o botão produzia era uma vereda
+concluída com o prêmio parado atrás de um clique que quem terminou não tinha
+razão nenhuma para saber que existia. Hoje `TokenDaVereda` emite ao aparecer, e
+o que se temia continua coberto: a falha aparece escrita, com o botão de tentar
+de novo ao lado, e voltar à vereda tenta outra vez sozinho.
+
+Emitir sozinho cobra duas guardas que o clique não cobrava. Uma tentativa por
+montagem, num `ref` — o `StrictMode` monta duas vezes de propósito, e duas
+emissões simultâneas passariam as duas pela conferência de "já existe?" do
+servidor, que é uma leitura seguida de uma escrita. E **revogado não se emite
+de novo**: a conferência do servidor só enxerga os ativos, então olhar apenas
+para o ativo devolveria um documento novo a cada visita — abrir a vereda
+desfaria a revogação da liderança, e ninguém saberia. Por isso o cartão recebe
+os certificados daquele percurso em **qualquer** estado, e só monta depois que
+essa lista chegou.
+
+**Quem escreve o mural é o servidor.** A emissão gravava `certification_issued`
+dos dois lados — na Edge Function e no aplicativo —, e toda "Atividade Recente"
+saía com duas linhas de "Certificado emitido" por certificado, uma com o código
+e outra sem, porque os dois lados chamavam o campo por nomes diferentes. Com a
+emissão tentando de novo sozinha isso viraria uma linha por tentativa. Só o
+servidor escreve; `descreverAtividade` lê `code`, e continua lendo o `certCode`
+antigo de quem já tem o registro gravado.
 
 Vereda não tem nível, tem tamanho. Grava `'basico'` — o lado que reivindica
 menos — e a tela pública não imprime grau nenhum para ela: escreve que é
@@ -817,6 +841,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
+| `src/components/TokenDaVereda.test.tsx` | Token.Web() de vereda que espera clique, que pede duas vezes, ou que reemite um revogado |
 | `src/labs/falhasDePython.test.ts` | painel de falhas que abre respondido, ou recado de erro que entrega a resposta |
 | `src/labs/roteiroDePython.test.ts` | roteiro que julga o programa, ou que faz escada com a cadeia de elif |
 | `src/curriculum/blocosDaLicao.test.ts` | bloco escrito na lição que não existe com essas palavras na paleta do Scratch |
