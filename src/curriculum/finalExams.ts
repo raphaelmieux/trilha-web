@@ -640,10 +640,25 @@ const rawAp035Final: Question[] = [
 /*
   A prova final da AP041.
 
-  Cobre os cinco blocos do documento oficial na proporção em que eles pesam na
-  trilha: história, as sete definições, os cuidados, as nove peças e o trabalho
-  com pastas. Nada aqui pede data decorada — o requisito 1 pede pesquisar e
+  Quarenta e três questões, das quais vinte e três são sorteadas. Cobre os cinco
+  blocos do documento oficial na proporção em que eles pesam na trilha:
+  história, as sete definições, os cuidados, as nove peças e o trabalho com
+  pastas. Nada aqui pede data decorada — o requisito 1 pede pesquisar e
   escrever, e isso é avaliado na redação guiada, não numa alternativa.
+
+  ── E é a única que pergunta sobre todos os requisitos ───────────────────
+  Eram vinte e sete questões, e três operações de pasta — criar e renomear,
+  mover e criar atalho — não tinham pergunta nenhuma: elas se demonstram no
+  laboratório, e a prova nunca as tinha cobrado. Uma questão de ligar resolve as
+  cinco de uma vez, pelo que cada operação deixa no fim, que é justamente onde
+  copiar e mover se separam.
+
+  As dezesseis novas também desfazem a pouca variedade que a prova tinha: eram
+  duzentos e setenta e dois conjuntos distintos em quinhentos sorteios, e agora
+  são quinhentos em quinhentos. Duas delas medem cinco requisitos cada — as
+  operações de pasta e o sentido em que a informação anda em cada periférico —,
+  e é por isso que o piso do sorteio caiu de dezoito para catorze enquanto a
+  cobertura passou de vinte e três requisitos para os vinte e seis.
 */
 const rawAp041Final: Question[] = [
   {
@@ -1008,6 +1023,196 @@ const rawAp041Final: Question[] = [
       { id: 'b', text: 'Falso', porque: 'É verdadeiro. Enquanto está na lixeira dá para restaurar; depois de esvaziada, não.' },
     ]},
     explanation: 'A lixeira é a última chance de mudar de ideia. Por isso vale conferir o que há nela antes de esvaziar.',
+  },
+  {
+    id: 'AP041-F-Q28', type: 'matching',
+    requisitos: ['AP041-5.1', 'AP041-5.2', 'AP041-5.3', 'AP041-5.4', 'AP041-5.5'],
+    prompt: 'Ligue cada operação ao que ela deixa no fim.',
+    data: { pairs: [
+      { left: 'Criar e renomear', right: 'Uma pasta nova, com o nome que você escolheu' },
+      { left: 'Copiar', right: 'A pasta existindo nos dois lugares ao mesmo tempo' },
+      { left: 'Mover', right: 'A pasta só no lugar novo, e não mais no antigo' },
+      { left: 'Criar atalho', right: 'Um apontador, com a pasta continuando onde estava' },
+      { left: 'Excluir e esvaziar a lixeira', right: 'Nada: o arquivo sai da lixeira e não volta' },
+    ]},
+    explanation: 'As cinco terminam com o arquivo aparecendo em algum lugar novo. O que as separa é o que sobra no lugar de origem.',
+  },
+  {
+    id: 'AP041-F-Q29', type: 'scenario',
+    requisitos: ['AP041-5.4'],
+    prompt: 'Você quer abrir a pasta do acampamento com um clique na área de trabalho, mas ela precisa continuar guardada em Documentos. O que resolve?',
+    data: { scenarios: [
+      { id: 'a', text: 'Criar um atalho para ela na área de trabalho.', correct: true },
+      { id: 'b', text: 'Copiar a pasta para a área de trabalho.', porque: 'Ficariam duas pastas de verdade, e o que você salvasse numa não apareceria na outra.' },
+      { id: 'c', text: 'Mover a pasta para a área de trabalho.', porque: 'Ela sairia de Documentos, que é justamente onde o enunciado pede que ela fique.' },
+      { id: 'd', text: 'Renomear a pasta com um nome mais curto.', porque: 'O nome não muda o lugar. A pasta continuaria só em Documentos.' },
+    ]},
+    explanation: 'O atalho é um apontador de poucos bytes: ele leva você até lá sem tirar nada do lugar, e apagá-lo não apaga a pasta.',
+  },
+  {
+    id: 'AP041-F-Q30', type: 'scenario',
+    requisitos: ['AP041-5.3'],
+    prompt: 'A pasta das fotos apareceu no pen drive e sumiu do computador. Que operação foi feita?',
+    data: { scenarios: [
+      { id: 'a', text: 'Mover, que leva a pasta de um lugar para o outro.', correct: true },
+      { id: 'b', text: 'Copiar, que é a operação usada para pen drive.', porque: 'Copiar deixaria as duas: uma no computador e outra no pen drive.' },
+      { id: 'c', text: 'Criar atalho, que aponta para o lugar novo.', porque: 'O atalho não tira nada do lugar, e o original continuaria visível no computador.' },
+      { id: 'd', text: 'Excluir, e o pen drive guardou uma cópia de segurança.', porque: 'Excluir manda para a lixeira e não escreve nada em pen drive nenhum.' },
+    ]},
+    explanation: 'Copiar e mover terminam do mesmo jeito no destino. A diferença aparece no lugar de origem, e é ela que decide qual das duas usar.',
+  },
+  {
+    id: 'AP041-F-Q31', type: 'multiple_choice',
+    requisitos: ['AP041-5.1'],
+    prompt: 'A pasta que você acabou de criar nasceu chamada "Nova pasta". Como se troca esse nome?',
+    data: { options: [
+      { id: 'a', text: 'Pelo menu do botão direito, na opção Renomear.', correct: true },
+      { id: 'b', text: 'Apagando a pasta e criando outra já com o nome certo.', porque: 'Funciona numa pasta vazia e joga fora o que estiver dentro. Renomear existe justamente para não precisar disso.' },
+      { id: 'c', text: 'Não dá: o nome é escolhido só no momento da criação.', porque: 'Dá a qualquer momento, e é uma das seis operações que o requisito pede.' },
+      { id: 'd', text: 'Movendo a pasta para outro lugar, o que pede um nome novo.', porque: 'Mover não pergunta nome nenhum: a pasta chega no destino com o nome que já tinha.' },
+    ]},
+    explanation: 'Dar nome que diga o que tem dentro é o que faz a pasta servir para alguma coisa três meses depois.',
+  },
+  {
+    id: 'AP041-F-Q32', type: 'multiple_choice',
+    requisitos: ['AP041-5.6'],
+    prompt: 'Numa janela de arquivos, o que acontece ao clicar no cabeçalho da coluna Tamanho?',
+    data: { options: [
+      { id: 'a', text: 'A lista se reordena pelo tamanho dos arquivos.', correct: true },
+      { id: 'b', text: 'A coluna fica mais larga, para caber o número inteiro.', porque: 'Alargar coluna é arrastar a divisória entre dois cabeçalhos, e não clicar nele.' },
+      { id: 'c', text: 'Os arquivos maiores são selecionados de uma vez.', porque: 'Clicar no cabeçalho não seleciona arquivo nenhum: ele ordena a lista.' },
+      { id: 'd', text: 'O tamanho passa a aparecer em bytes, e não em KB.', porque: 'A unidade não muda com o clique. O tamanho exato em bytes está nas propriedades.' },
+    ]},
+    explanation: 'Clicar de novo inverte a ordem. É assim que se acha o arquivo mais pesado de uma pasta cheia, sem abrir nenhum.',
+  },
+  {
+    id: 'AP041-F-Q33', type: 'true_false',
+    requisitos: ['AP041-5.5'],
+    prompt: 'Arrastar um arquivo para a lixeira já o apaga do disco.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'Ele fica na lixeira, ocupando o mesmo espaço, e dá para arrastá-lo de volta. Some de vez só quando a lixeira é esvaziada.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'A lixeira é a última chance de mudar de ideia. Por isso vale conferir o que há nela antes de esvaziar.',
+  },
+  {
+    id: 'AP041-F-Q34', type: 'multiple_choice',
+    requisitos: ['AP041-1.1'],
+    prompt: 'Por que Ada Lovelace é chamada de primeira programadora?',
+    data: { options: [
+      { id: 'a', text: 'Escreveu as instruções de uma máquina que ainda não existia.', correct: true },
+      { id: 'b', text: 'Construiu o primeiro computador que chegou a funcionar.', porque: 'A máquina analítica nunca foi construída. O que ela fez foi escrever o que a máquina seguiria.' },
+      { id: 'c', text: 'Inventou a primeira máquina de somar com engrenagens.', porque: 'Isso foi Pascal, em 1642, quase duzentos anos antes dela.' },
+      { id: 'd', text: 'Foi a primeira pessoa a usar um computador pessoal em casa.', porque: 'Computador em casa é dos anos 1970. Ela viveu no século XIX.' },
+    ]},
+    explanation: 'Programar é escrever o que a máquina vai seguir, e isso ela fez em 1843 — para uma máquina que Babbage morreu sem conseguir construir.',
+  },
+  {
+    id: 'AP041-F-Q35', type: 'multiple_choice',
+    requisitos: ['AP041-2.3'],
+    prompt: 'Um computador com todas as peças no lugar, mas sem sistema operacional, consegue fazer o quê?',
+    data: { options: [
+      { id: 'a', text: 'Quase nada: falta quem organize as peças e abra os programas.', correct: true },
+      { id: 'b', text: 'Tudo, desde que os programas estejam instalados nele.', porque: 'Programa nenhum abre sozinho: quem os põe para rodar é o sistema operacional.' },
+      { id: 'c', text: 'Tudo, mas devagar, porque falta a parte que acelera.', porque: 'Não é questão de velocidade. Sem sistema, não há quem entregue memória e arquivo a cada programa.' },
+      { id: 'd', text: 'Só acessar a internet, que não depende de sistema.', porque: 'O navegador é um programa como outro qualquer, e precisa de alguém para abri-lo.' },
+    ]},
+    explanation: 'Ele é o programa principal: organiza memória, arquivos e peças, e é sobre ele que todos os outros rodam.',
+  },
+  {
+    id: 'AP041-F-Q36', type: 'scenario',
+    requisitos: ['AP041-2.4'],
+    prompt: 'A impressora nova está ligada, o cabo está firme, e o computador não a reconhece. O que costuma faltar?',
+    data: { scenarios: [
+      { id: 'a', text: 'O driver daquele modelo de impressora.', correct: true },
+      { id: 'b', text: 'Mais memória RAM para o computador dar conta dela.', porque: 'Reconhecer uma impressora não pesa na memória. O que falta é o sistema saber conversar com aquele modelo.' },
+      { id: 'c', text: 'Um cabo mais novo, porque os antigos não são reconhecidos.', porque: 'O enunciado diz que o cabo está firme. Cabo transporta; quem apresenta a peça ao sistema é outro.' },
+      { id: 'd', text: 'Trocar o sistema operacional por um mais recente.', porque: 'Seria trocar a casa por causa de uma tomada. O programinha daquele modelo resolve.' },
+    ]},
+    explanation: 'Driver é o programa que ensina o sistema a conversar com um modelo de peça. Sem ele, os dois funcionam e não se falam.',
+  },
+  {
+    id: 'AP041-F-Q37', type: 'multiple_choice',
+    requisitos: ['AP041-2.5'],
+    prompt: 'Onde ficam guardados os seus arquivos e o próprio sistema operacional?',
+    data: { options: [
+      { id: 'a', text: 'No HD ou no SSD.', correct: true },
+      { id: 'b', text: 'Na memória RAM, que é onde o computador trabalha.', porque: 'A RAM esvazia ao desligar. O que fosse guardado ali não estaria lá no dia seguinte.' },
+      { id: 'c', text: 'Na memória ROM, que já vem gravada de fábrica.', porque: 'A ROM guarda as instruções de ligar, e não se escreve nela no dia a dia.' },
+      { id: 'd', text: 'Na CPU, que é o cérebro e guarda tudo o que decide.', porque: 'A CPU calcula e decide; ela não guarda arquivo nenhum de um dia para o outro.' },
+    ]},
+    explanation: 'É o armário: o que está ali continua ali com a máquina desligada. A RAM é a mesa de trabalho, e ela é esvaziada toda vez que a luz apaga.',
+  },
+  {
+    id: 'AP041-F-Q38', type: 'matching',
+    requisitos: ['AP041-4.1', 'AP041-4.2', 'AP041-4.3', 'AP041-4.4', 'AP041-4.5'],
+    prompt: 'Ligue cada peça ao sentido em que a informação anda.',
+    data: { pairs: [
+      { left: 'Teclado', right: 'Entra: leva para dentro o que você digitou' },
+      { left: 'Mouse', right: 'Entra: leva para dentro o movimento da mão' },
+      { left: 'Scanner', right: 'Entra: traz para dentro o que estava no papel' },
+      { left: 'Monitor', right: 'Sai: mostra o que o computador está fazendo' },
+      { left: 'Impressora', right: 'Sai: leva para o papel o que estava na tela' },
+    ]},
+    explanation: 'Entrada e saída se contam sempre do ponto de vista do computador — e o par impressora e scanner é o mesmo caminho, nos dois sentidos.',
+  },
+  {
+    id: 'AP041-F-Q39', type: 'multiple_choice',
+    requisitos: ['AP041-4.6'],
+    prompt: 'Muita gente chama de CPU a caixa inteira do computador. Onde está a CPU de verdade?',
+    data: { options: [
+      { id: 'a', text: 'Numa pastilha do tamanho de um selo, encaixada na placa.', correct: true },
+      { id: 'b', text: 'É a caixa inteira mesmo, com tudo o que há dentro dela.', porque: 'A caixa se chama gabinete, e guarda muitas peças. A CPU é uma delas.' },
+      { id: 'c', text: 'Na fonte, que é a peça maior lá dentro.', porque: 'A fonte cuida da energia. Quem faz as contas é outra peça, bem menor.' },
+      { id: 'd', text: 'Espalhada por todas as peças, um pedaço em cada.', porque: 'Ela é uma peça só, e é justamente por isso que tudo passa por ela.' },
+    ]},
+    explanation: 'É ela que faz as contas e decide o que vem em seguida, bilhões de vezes por segundo — e cabe embaixo do dedo.',
+  },
+  {
+    id: 'AP041-F-Q40', type: 'scenario',
+    requisitos: ['AP041-4.7'],
+    prompt: 'O monitor apagou de repente e o computador continua ligado, com a luz acesa. Qual é a primeira coisa a conferir?',
+    data: { scenarios: [
+      { id: 'a', text: 'Se o cabo entre os dois está solto.', correct: true },
+      { id: 'b', text: 'Se o sistema operacional precisa ser reinstalado.', porque: 'Reinstalar o sistema é a última coisa a tentar, e nem apagaria a tela desse jeito.' },
+      { id: 'c', text: 'Se falta memória RAM para desenhar a imagem.', porque: 'Pouca memória deixa a máquina lenta e travada, com a imagem na tela.' },
+      { id: 'd', text: 'Se o monitor precisa de um driver que não foi instalado.', porque: 'Sem driver a imagem sai com qualidade pior, e não apaga de uma vez com tudo ligado.' },
+    ]},
+    explanation: 'Quando alguma coisa para sem motivo aparente, o cabo solto é a primeira suspeita — e a mais fácil de resolver.',
+  },
+  {
+    id: 'AP041-F-Q41', type: 'multiple_choice',
+    requisitos: ['AP041-4.8', 'AP041-4.9'],
+    prompt: 'Qual é a diferença entre o que o modem faz e o que o roteador faz?',
+    data: { options: [
+      { id: 'a', text: 'O modem traz a internet da rua; o roteador a reparte na casa.', correct: true },
+      { id: 'b', text: 'O modem é sem fio, e o roteador funciona só por cabo.', porque: 'É quase o contrário: quem cria a rede Wi-Fi é o roteador.' },
+      { id: 'c', text: 'O modem é o aparelho novo que substituiu o roteador.', porque: 'Os dois existem ao mesmo tempo, e muitas vezes vêm dentro da mesma caixinha.' },
+      { id: 'd', text: 'O roteador aumenta a velocidade que o modem recebeu.', porque: 'Repartir não é multiplicar: a velocidade continua sendo a contratada.' },
+    ]},
+    explanation: 'Sem modem, o cabo da rua chega à parede e para ali. Sem roteador, só um aparelho usaria o que entrou.',
+  },
+  {
+    id: 'AP041-F-Q42', type: 'true_false',
+    requisitos: ['AP041-4.9'],
+    prompt: 'O roteador é o aparelho que traz a internet da rua até dentro da casa.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'Quem faz isso é o modem. O roteador entra depois, repartindo entre os aparelhos o sinal que já chegou.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'Os dois costumam vir na mesma caixinha, e é por isso que se confundem. Os trabalhos, porém, são diferentes: um recebe, o outro distribui.',
+  },
+  {
+    id: 'AP041-F-Q43', type: 'multiple_choice',
+    requisitos: ['AP041-3.2'],
+    prompt: 'Qual destes é um exemplo de manutenção preventiva?',
+    data: { options: [
+      { id: 'a', text: 'Limpar a poeira antes de a máquina começar a desligar sozinha.', correct: true },
+      { id: 'b', text: 'Levar o computador ao técnico depois que ele parou de ligar.', porque: 'Aí o problema já aconteceu. Isso é conserto, que é o contrário de prevenir.' },
+      { id: 'c', text: 'Trocar a peça queimada assim que se descobre qual é.', porque: 'Continua sendo conserto: a peça já queimou.' },
+      { id: 'd', text: 'Formatar o computador quando ele fica lento demais.', porque: 'Também é reação a um problema que já apareceu, e das mais drásticas.' },
+    ]},
+    explanation: 'Preventiva é o cuidado que se faz enquanto está tudo bem — e é o único tipo de manutenção que evita o prejuízo em vez de remediá-lo.',
   },
 ];
 
