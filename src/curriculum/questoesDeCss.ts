@@ -57,6 +57,37 @@ export const QUESTOES_DE_CSS: Record<string, Question[]> = {
       ]},
       explanation: 'Escrever CSS certo não basta: ele precisa chegar em algum elemento. Confira o nome no class= da página.',
     },
+    {
+      id: 'CSS-M1-Q5', type: 'scenario',
+      prompt: 'A página abriu com o texto todo preto, sem nenhum estilo. O <link> diz href="css/estilo.css" e o arquivo está na mesma pasta da página. O que houve?',
+      data: { scenarios: [
+        { id: 'a', text: 'O caminho procura uma pasta css que não existe, e nada avisa.', correct: true },
+        { id: 'b', text: 'A folha tem algum erro que fez o navegador descartá-la inteira.', porque: 'Uma linha errada é descartada sozinha, e o resto continua valendo. Aqui nenhuma regra chegou.' },
+        { id: 'c', text: 'Faltou repetir o <link> no fim da página, depois do conteúdo.', porque: 'Um <link> no cabeçalho basta. O problema é ele apontar para onde o arquivo não está.' },
+        { id: 'd', text: 'O navegador só aceita folha de estilo escrita dentro de <style>.', porque: 'O arquivo à parte é justamente o jeito recomendado, e funciona em todos os navegadores.' },
+      ]},
+      explanation: 'Arquivo não encontrado é o sintoma mais silencioso do CSS: a página abre inteira, só que crua. Antes de duvidar das regras, confira o caminho do <link>.',
+    },
+    {
+      id: 'CSS-M1-Q6', type: 'multiple_choice',
+      prompt: 'O site do clube tem quatro páginas com o mesmo visual. Por que vale a pena pôr o estilo num arquivo à parte?',
+      data: { options: [
+        { id: 'a', text: 'Trocar a cor do título uma vez muda as quatro páginas juntas.', correct: true },
+        { id: 'b', text: 'Porque estilo escrito dentro do elemento não funciona em celular.', porque: 'Funciona nos dois. O que ele custa é achar todos os lugares onde a cor foi escrita quando ela precisar mudar.' },
+        { id: 'c', text: 'Porque o navegador desenha mais rápido quando não há <link>.', porque: 'A conta aqui não é de velocidade: é de quantos lugares precisam ser tocados para mudar uma decisão.' },
+        { id: 'd', text: 'Porque só o arquivo à parte aceita mais de uma regra.', porque: 'Qualquer um dos três lugares aceita quantas regras você quiser. A diferença é o alcance de cada mudança.' },
+      ]},
+      explanation: 'Uma decisão escrita num lugar só é uma decisão que dá para mudar. Repetida em quatro arquivos, ela vira quatro decisões que se perdem uma da outra.',
+    },
+    {
+      id: 'CSS-M1-Q7', type: 'true_false',
+      prompt: 'Para dar cor e tamanho ao mesmo <h1>, é preciso escrever o seletor h1 duas vezes, uma para cada propriedade.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'Dentro das chaves cabem quantos pares você quiser, um por linha, cada um terminado em ponto e vírgula.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'O seletor diz a quem a regra fala; as chaves guardam tudo o que se tem a dizer àquele alguém.',
+    },
   ],
 
   'm2-teoria': [
@@ -104,6 +135,37 @@ export const QUESTOES_DE_CSS: Record<string, Question[]> = {
       ]},
       explanation: 'Quanto mais restrito o alcance do seletor, mais ele pesa. O estilo colado no elemento é o mais restrito de todos — e por isso o mais difícil de corrigir depois.',
     },
+    {
+      id: 'CSS-M2-Q5', type: 'multiple_choice',
+      prompt: 'Duas regras de mesmo peso pedem cores diferentes para o mesmo parágrafo. O que o navegador desenha?',
+      data: { options: [
+        { id: 'a', text: 'A cor da regra escrita por último no arquivo.', correct: true },
+        { id: 'b', text: 'A cor da primeira, porque foi ela quem chegou antes.', porque: 'É o contrário: em caso de empate, a de baixo cobre a de cima. Daí o nome cascata.' },
+        { id: 'c', text: 'Nenhuma das duas: a disputa cancela as regras.', porque: 'O navegador sempre escolhe uma. Ele não deixa o elemento sem valor por causa de um conflito.' },
+        { id: 'd', text: 'A mistura das duas cores, na média entre elas.', porque: 'Cores não se misturam por conflito. Uma regra vence e a outra é descartada.' },
+      ]},
+      explanation: 'A ordem só resolve o empate, e só ele: peso vem antes de posição, e uma regra de classe no começo do arquivo ainda vence uma de elemento no fim.',
+    },
+    {
+      id: 'CSS-M2-Q6', type: 'scenario',
+      prompt: 'Você pôs uma borda no body esperando que cada parágrafo ganhasse a sua moldura. Só apareceu uma borda, em volta de tudo. Por quê?',
+      data: { scenarios: [
+        { id: 'a', text: 'Borda não é herdada: descem as coisas do texto, não as da caixa.', correct: true },
+        { id: 'b', text: 'A borda só desce para os filhos quando é declarada em px.', porque: 'A unidade não muda quem herda o quê. Nenhuma medida faz a borda descer.' },
+        { id: 'c', text: 'Os parágrafos ganharam a borda, mas ela ficou escondida atrás do fundo.', porque: 'A borda é desenhada por fora do conteúdo, e apareceria. Ela simplesmente não foi aplicada a eles.' },
+        { id: 'd', text: 'Faltou declarar a borda antes das outras propriedades do body.', porque: 'A ordem dentro da regra não decide herança nenhuma.' },
+      ]},
+      explanation: 'Fonte, cor e altura de linha descem; margem, borda, espaçamento e fundo não. Se descessem, uma borda no body desenharia molduras dentro de molduras até o último elemento.',
+    },
+    {
+      id: 'CSS-M2-Q7', type: 'true_false',
+      prompt: 'O mesmo identificador pode ser usado em vários elementos da página, desde que a regra seja a mesma para todos.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'O identificador é de um elemento só. O que se repete usa classe — foi para isso que a classe existe.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Um id aparece uma vez na página. Repetido, ele deixa de identificar coisa alguma — e é a classe que o substitui, sem limite de quantos elementos a carregam.',
+    },
   ],
 
   'm3-teoria': [
@@ -148,6 +210,37 @@ export const QUESTOES_DE_CSS: Record<string, Question[]> = {
         { id: 'f', text: 'Falso', correct: true },
       ]},
       explanation: 'Cor decide quem consegue ler. É a primeira pergunta a fazer, antes de qual tom fica mais bonito.',
+    },
+    {
+      id: 'CSS-M3-Q5', type: 'multiple_choice',
+      prompt: 'Você quer um fundo escuro que deixe ver a foto por trás. Qual forma de escrever a cor serve?',
+      data: { options: [
+        { id: 'a', text: 'rgba(), que recebe um quarto número: a opacidade.', correct: true },
+        { id: 'b', text: 'O nome da cor, escolhendo um dos mais escuros da lista.', porque: 'Os nomes dão cores sólidas. Nenhum deles carrega opacidade.' },
+        { id: 'c', text: 'O código de seis dígitos, baixando os valores até quase zero.', porque: 'Baixar os valores escurece a cor, e ela continua sólida: o que está atrás segue coberto.' },
+        { id: 'd', text: 'rgb(), que já deixa passar o que está atrás por padrão.', porque: 'O rgb() é sólido como os outros. Quem deixa passar é o quarto número, e ele só existe no rgba().' },
+      ]},
+      explanation: 'Nome, código de seis dígitos e rgb() escrevem a mesma cor sólida. O rgba() acrescenta a única coisa que os outros não têm: quanto do que está atrás continua aparecendo.',
+    },
+    {
+      id: 'CSS-M3-Q6', type: 'scenario',
+      prompt: 'O texto do site ficou grudado, difícil de acompanhar até o fim do parágrafo. Qual ajuste resolve?',
+      data: { scenarios: [
+        { id: 'a', text: 'line-height entre 1.4 e 1.7, escrito sem unidade.', correct: true },
+        { id: 'b', text: 'Aumentar font-size até as linhas se afastarem.', porque: 'A letra maior afasta um pouco, e o texto todo cresce junto. O ar entre as linhas se pede direto.' },
+        { id: 'c', text: 'Pôr uma margem embaixo de cada parágrafo.', porque: 'Isso afasta um parágrafo do outro. As linhas dentro dele continuam grudadas.' },
+        { id: 'd', text: 'Trocar a fonte por uma sem serifa.', porque: 'A escolha da fonte muda o desenho da letra, e não o espaço vertical entre as linhas.' },
+      ]},
+      explanation: 'Sem unidade, o valor é um multiplicador do tamanho da letra: se alguém aumentar a fonte, o ar entre as linhas cresce junto e a proporção se mantém.',
+    },
+    {
+      id: 'CSS-M3-Q7', type: 'true_false',
+      prompt: 'Escrever font-family: Times New Roman, serif sem aspas dá o mesmo resultado que com aspas.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'Sem aspas o navegador lê um nome de fonte com mais de uma palavra como se fossem fontes diferentes, e nenhuma delas existe.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Nome de fonte com espaço vai entre aspas. Sem elas o navegador cai na próxima da lista, e a página abre com a fonte de reserva sem avisar nada.',
     },
   ],
 
@@ -196,6 +289,37 @@ export const QUESTOES_DE_CSS: Record<string, Question[]> = {
       ]},
       explanation: 'Conteúdo, padding, borda, margem. Saber a ordem é saber onde mexer quando o espaço está no lugar errado.',
     },
+    {
+      id: 'CSS-M4-Q5', type: 'scenario',
+      prompt: 'O texto do cartão está encostado na linha da borda. Você aumentou a margem e o texto continuou grudado. O que resolve?',
+      data: { scenarios: [
+        { id: 'a', text: 'padding, que é o espaço entre o conteúdo e a borda.', correct: true },
+        { id: 'b', text: 'Mais margem ainda, até o texto se afastar da linha.', porque: 'A margem afasta a caixa inteira das vizinhas, e leva a borda junto com o texto. A distância entre os dois não muda.' },
+        { id: 'c', text: 'Uma borda mais grossa, que empurra o texto para dentro.', porque: 'A borda cresce para fora do conteúdo. O texto continua encostado nela, agora numa linha mais larga.' },
+        { id: 'd', text: 'Diminuir a largura da caixa, para sobrar espaço interno.', porque: 'Menos largura aperta o conteúdo. O ar entre o texto e a borda continua sendo zero.' },
+      ]},
+      explanation: 'A pergunta é sempre de dentro ou de fora: de dentro é padding, de fora é margem. Margem move a caixa, e a borda vai junto.',
+    },
+    {
+      id: 'CSS-M4-Q6', type: 'multiple_choice',
+      prompt: 'Três cartões de width: 25% com padding ficaram largos demais e a quarta coluna desceu. Qual declaração conserta a conta?',
+      data: { options: [
+        { id: 'a', text: 'box-sizing: border-box, para a largura incluir padding e borda.', correct: true },
+        { id: 'b', text: 'Reduzir a largura para 24%, deixando folga para o padding.', porque: 'Um chute que muda a cada padding e a cada borda. A régua da largura é que precisa mudar.' },
+        { id: 'c', text: 'Trocar o padding por margem, que não entra na largura.', porque: 'A margem também ocupa espaço na linha, e as colunas continuariam estourando.' },
+        { id: 'd', text: 'Declarar box-sizing: content-box em todos os cartões.', porque: 'Essa é a régua antiga, a que já está valendo — e é justamente ela que soma o padding por fora.' },
+      ]},
+      explanation: 'Por padrão a largura vale só para o conteúdo e o resto soma por fora. Com border-box, 25% são 25% na tela, com padding e borda cabendo dentro.',
+    },
+    {
+      id: 'CSS-M4-Q7', type: 'true_false',
+      prompt: 'Declarar border: 2px #1B4D3E, sem o estilo do traço, desenha uma borda sólida por padrão.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'O padrão do estilo é none: sem ele, a borda tem espessura e cor e não é desenhada — e nada avisa.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'O estilo é a parte obrigatória da forma curta. Sem ele a regra é válida, o navegador aceita, e a borda não aparece.',
+    },
   ],
 
   'm5-teoria': [
@@ -240,6 +364,37 @@ export const QUESTOES_DE_CSS: Record<string, Question[]> = {
         { id: 'f', text: 'Falso', porque: 'gap só entra entre as peças. É por isso que ele resolve o que margem resolvia mal: com margem sempre sobrava espaço numa das pontas.' },
       ]},
       explanation: 'gap é espaço entre, e só entre. Foi feito exatamente para o problema da margem na ponta.',
+    },
+    {
+      id: 'CSS-M5-Q5', type: 'scenario',
+      prompt: 'Você declarou display: flex em cada um dos três cartões e nada se moveu: eles continuam um embaixo do outro. O que houve?',
+      data: { scenarios: [
+        { id: 'a', text: 'A declaração precisa ir na caixa que envolve os cartões.', correct: true },
+        { id: 'b', text: 'Falta declarar flex-direction: row junto, para valer.', porque: 'Linha já é o padrão. O modo não ligou porque foi pedido nas peças, e não em quem as envolve.' },
+        { id: 'c', text: 'Os cartões precisam ter largura declarada para entrar em linha.', porque: 'Sem largura eles se ajustam ao conteúdo e entram em linha do mesmo jeito.' },
+        { id: 'd', text: 'Só três peças é pouco: o modo começa a valer a partir de quatro.', porque: 'Não há mínimo de peças. Duas já se dispõem lado a lado.' },
+      ]},
+      explanation: 'Quem recebe o modo é o contêiner, porque é ele que decide como dispor o que tem dentro. Nas peças, a declaração vale para os filhos delas — que aqui não existem.',
+    },
+    {
+      id: 'CSS-M5-Q6', type: 'multiple_choice',
+      prompt: 'No cabeçalho em linha, o nome do clube e o lema estão desencontrados na altura: um no topo, outro mais abaixo. O que acerta os dois na mesma altura?',
+      data: { options: [
+        { id: 'a', text: 'align-items: center, que trata do sentido vertical.', correct: true },
+        { id: 'b', text: 'justify-content: center, que centraliza o conteúdo.', porque: 'Essa distribui ao longo da linha, na horizontal. Ela junta os dois no meio, e a altura continua desencontrada.' },
+        { id: 'c', text: 'text-align: center dentro de cada peça.', porque: 'Isso centraliza o texto dentro da caixa dele, sem mover a caixa na altura.' },
+        { id: 'd', text: 'gap, que reparte o espaço igualmente entre as peças.', porque: 'O gap afasta as peças uma da outra. Ele não mexe no alinhamento vertical.' },
+      ]},
+      explanation: 'Numa linha, justify-content é o eixo da esquerda para a direita e align-items é o outro. Os nomes não dizem horizontal e vertical porque qual é qual depende de flex-direction.',
+    },
+    {
+      id: 'CSS-M5-Q7', type: 'true_false',
+      prompt: 'Sem flex-wrap, as peças que não cabem na linha descem sozinhas para a linha de baixo.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'Sem a permissão, o flex espreme as peças até caberem — no celular, cinco cartões viram cinco tirinhas.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'O padrão é não quebrar. Quando as peças aparecem espremidas em vez de descerem, o que falta é o wrap — e não uma consulta de mídia.',
     },
   ],
 
@@ -288,6 +443,37 @@ export const QUESTOES_DE_CSS: Record<string, Question[]> = {
       ]},
       explanation: 'Sempre o contêiner, nunca as peças. É a caixa de fora que sabe como dispor o que tem dentro.',
     },
+    {
+      id: 'CSS-M6-Q5', type: 'multiple_choice',
+      prompt: 'Você quer três colunas iguais na galeria de fotos. O que escrever em grid-template-columns?',
+      data: { options: [
+        { id: 'a', text: '1fr 1fr 1fr — um valor para cada coluna.', correct: true },
+        { id: 'b', text: '3fr — o número diz quantas colunas serão criadas.', porque: 'Isso cria uma coluna só, que vale três frações. Quem conta as colunas é a quantidade de valores.' },
+        { id: 'c', text: '3 — o total de colunas, escrito direto.', porque: 'A propriedade espera tamanhos, e não uma contagem. Um número solto não é tamanho válido.' },
+        { id: 'd', text: '100% 100% 100% — cada coluna ocupando a largura toda.', porque: 'A soma daria três telas de largura. Porcentagem aqui é justamente o que fr veio evitar.' },
+      ]},
+      explanation: 'Cada valor é uma coluna, e o valor diz o tamanho dela. Três colunas iguais são três frações iguais — e acrescentar uma quarta é escrever mais um 1fr.',
+    },
+    {
+      id: 'CSS-M6-Q6', type: 'scenario',
+      prompt: 'Duas colunas de 50% com gap de 1rem estouraram a largura e a segunda desceu. Como escrever isso sem a sobra?',
+      data: { scenarios: [
+        { id: 'a', text: '1fr 1fr, porque a fração divide o que sobra depois do gap.', correct: true },
+        { id: 'b', text: '49% e 49%, deixando folga para o espaço do meio.', porque: 'Funciona por acaso e só com esse gap. Mudar o espaço entre as colunas obriga a refazer a conta.' },
+        { id: 'c', text: '50% e 50%, tirando o gap e usando margem nas colunas.', porque: 'A margem também soma na largura, e ainda sobra espaço na ponta. O estouro se repete.' },
+        { id: 'd', text: '600px e 600px, medida fixa que não depende de conta.', porque: 'Largura fixa não cabe em tela estreita, e é a causa mais comum de página saindo pela lateral.' },
+      ]},
+      explanation: 'A porcentagem se calcula sobre a largura inteira e ignora o gap; a fração recebe o que sobrou depois dele. É por isso que a grade fecha a conta sozinha.',
+    },
+    {
+      id: 'CSS-M6-Q7', type: 'true_false',
+      prompt: 'Como o Grid faz mais coisas, ele veio para substituir o Flexbox nas telas novas.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'São ferramentas para perguntas diferentes: uma direção é flex, duas direções são grid. O comum é usar os dois na mesma página.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Grid arruma o layout geral, e dentro de cada peça o flex arruma a fila. Escolher grid para três botões em linha dá mais trabalho e não devolve nada.',
+    },
   ],
 
   'm7-teoria': [
@@ -332,6 +518,37 @@ export const QUESTOES_DE_CSS: Record<string, Question[]> = {
         { id: 'f', text: 'Falso', correct: true },
       ]},
       explanation: 'Medida relativa resolve tamanho; consulta de mídia resolve arranjo. São dois problemas, e o segundo continua existindo.',
+    },
+    {
+      id: 'CSS-M7-Q5', type: 'multiple_choice',
+      prompt: 'O que (min-width: 900px) faz num bloco @media?',
+      data: { options: [
+        { id: 'a', text: 'Põe um piso: as regras valem de 900 pixels de largura para cima.', correct: true },
+        { id: 'b', text: 'Põe um teto: as regras valem de 900 pixels para baixo.', porque: 'Esse é o max-width. O min é o mínimo que a tela precisa ter para o bloco valer.' },
+        { id: 'c', text: 'Fixa a página em 900 pixels, sem deixá-la passar disso.', porque: 'A consulta não muda tamanho de nada. Ela só decide quando um conjunto de regras entra em vigor.' },
+        { id: 'd', text: 'Vale só na tela de exatamente 900 pixels de largura.', porque: 'Não é um valor exato, é uma faixa: de 900 em diante.' },
+      ]},
+      explanation: 'min é piso e max é teto. Escrever primeiro o que vale para todos e acrescentar com min-width é o caminho de começar pelo pequeno.',
+    },
+    {
+      id: 'CSS-M7-Q6', type: 'scenario',
+      prompt: 'Você escreveu uma consulta de mídia e nada mudou em tela nenhuma — nem na larga, nem na estreita. Antes de duvidar da condição, o que conferir?',
+      data: { scenarios: [
+        { id: 'a', text: 'Se as duas chaves foram fechadas: a da regra e a da consulta.', correct: true },
+        { id: 'b', text: 'Se o arquivo foi salvo em UTF-8, que o @media exige.', porque: 'A codificação do arquivo não tem relação com a consulta funcionar.' },
+        { id: 'c', text: 'Se o @media está no fim do arquivo, único lugar onde vale.', porque: 'Ele vale em qualquer ponto do arquivo. A posição só importa para desempatar regras de mesmo peso.' },
+        { id: 'd', text: 'Se o navegador é recente o bastante para entender consultas.', porque: 'Consulta de mídia é antiga e funciona em qualquer navegador em uso hoje.' },
+      ]},
+      explanation: 'Faltando uma chave, o navegador descarta o bloco inteiro em silêncio — e o sintoma é justamente nenhum estilo novo aparecer, em largura nenhuma.',
+    },
+    {
+      id: 'CSS-M7-Q7', type: 'true_false',
+      prompt: 'Trocar três colunas por uma no celular é problema de tamanho, e medida relativa resolve sem consulta de mídia.',
+      data: { options: [
+        { id: 'v', text: 'Verdadeiro', porque: 'Medida relativa encolhe as colunas, e três colunas espremidas continuam sendo três. Mudar quantas existem é decisão de arranjo.' },
+        { id: 'f', text: 'Falso', correct: true },
+      ]},
+      explanation: 'Medida relativa resolve tamanho; consulta de mídia resolve arranjo. São perguntas diferentes, e é por isso que as duas coisas existem.',
     },
   ],
 };
