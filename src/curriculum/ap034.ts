@@ -139,6 +139,37 @@ const rawQuestions_L1: Question[] = [
     },
     explanation: 'Dispositivo → roteador → ISP → backbone. Dados viajam em pacotes que se reagrupam no destino.',
   },
+  {
+    id: 'AP034.1-L1-Q9', type: 'multiple_choice',
+    prompt: 'Um cabo submarino se rompe no meio do oceano e mesmo assim a maior parte da Internet continua funcionando. Por quê?',
+    data: { options: [
+      { id: 'a', text: 'Porque ela é descentralizada: a informação encontra outro caminho até o destino.', correct: true },
+      { id: 'b', text: 'Porque existe um computador central de reserva que assume quando algo falha.', porque: 'Não há computador central nenhum, nem principal nem reserva. É justamente essa ausência que a torna resistente.' },
+      { id: 'c', text: 'Porque os dados ficam guardados no seu aparelho e não precisam trafegar.', porque: 'O que você acessa está em servidores, e precisa viajar até você. O que muda é o caminho, não a viagem.' },
+      { id: 'd', text: 'Porque os cabos submarinos só levam sinal de televisão, e não de Internet.', porque: 'Eles levam a maior parte do tráfego entre continentes. A rede sobrevive por ter rotas alternativas.' },
+    ]},
+    explanation: 'Não haver um centro é o que impede que um ponto de falha derrube tudo.',
+  },
+  {
+    id: 'AP034.1-L1-Q10', type: 'multiple_choice',
+    prompt: 'Você usa um aplicativo de mensagens que não abre nenhuma página web. Ele está usando a Internet?',
+    data: { options: [
+      { id: 'a', text: 'Sim: a Internet é a rede, e a Web é apenas um dos serviços que correm por ela.', correct: true },
+      { id: 'b', text: 'Não: sem páginas web não há Internet, apenas conexão local entre aparelhos.', porque: 'A Web é um serviço da Internet, e não a Internet inteira. Mensagem, e-mail e chamada de vídeo também correm por ela.' },
+      { id: 'c', text: 'Só se o aplicativo tiver um navegador embutido para carregar as mensagens.', porque: 'Ele não precisa de navegador: fala direto com o servidor, sem passar por página nenhuma.' },
+      { id: 'd', text: 'Sim, mas apenas quando envia arquivos; o texto puro não usa a rede.', porque: 'Texto também viaja pela rede. Toda mensagem sai do seu aparelho e chega ao de outra pessoa por ela.' },
+    ]},
+    explanation: 'A Internet é a estrada; a Web é um dos veículos que andam nela.',
+  },
+  {
+    id: 'AP034.1-L1-Q11', type: 'true_false',
+    prompt: 'O TCP/IP existe para que aparelhos de fabricantes e sistemas diferentes consigam se entender na mesma rede.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', correct: true },
+      { id: 'b', text: 'Falso', porque: 'É exatamente o papel de um protocolo: o conjunto de regras comum que faz um celular Android e um servidor Linux conversarem sem terem sido feitos um para o outro.' },
+    ]},
+    explanation: 'Sem uma regra comum, cada fabricante falaria uma língua e nada se comunicaria.',
+  },
 ];
 
 const content_L2 = `
@@ -249,6 +280,37 @@ const rawQuestions_L2: Question[] = [
       ],
     },
     explanation: 'Download: servidor → computador. Upload: computador → servidor.',
+  },
+  {
+    id: 'AP034.1-L2-Q7', type: 'multiple_choice',
+    prompt: 'Numa videochamada, você fala e também vê a outra pessoa. Que transferências estão acontecendo?',
+    data: { options: [
+      { id: 'a', text: 'As duas ao mesmo tempo: upload do que você envia, download do que você recebe.', correct: true },
+      { id: 'b', text: 'Só download, porque o que importa é a imagem que chega até você.', porque: 'A sua imagem e a sua voz precisam sair daqui para chegar lá. Isso é upload, e acontece o tempo todo.' },
+      { id: 'c', text: 'Só upload, porque é você quem está transmitindo para a outra pessoa.', porque: 'Você também está recebendo. Numa chamada os dois lados fazem as duas coisas.' },
+      { id: 'd', text: 'Nenhuma das duas: chamada de vídeo usa conexão direta, sem transferir dados.', porque: 'Não há arquivo, mas há dados trafegando nos dois sentidos o tempo inteiro.' },
+    ]},
+    explanation: 'Download é o que desce até você; upload é o que sobe daqui. Numa chamada, os dois ocorrem juntos.',
+  },
+  {
+    id: 'AP034.1-L2-Q8', type: 'multiple_choice',
+    prompt: 'Um plano de internet promete 300 Mb de download e 30 Mb de upload. Para quem faz transmissões ao vivo, qual número pesa mais?',
+    data: { options: [
+      { id: 'a', text: 'O de upload, porque a transmissão sai do computador para a Internet.', correct: true },
+      { id: 'b', text: 'O de download, porque a transmissão precisa carregar o vídeo antes de enviar.', porque: 'Quem transmite está enviando, e não recebendo. O download serve a quem assiste.' },
+      { id: 'c', text: 'Os dois igualmente, porque numa transmissão eles são sempre o mesmo número.', porque: 'Quase nunca são iguais — e é justamente por isso que reparar no de upload importa.' },
+      { id: 'd', text: 'Nenhum dos dois: o que decide a qualidade é a memória do computador.', porque: 'A memória ajuda a máquina a dar conta, mas o vídeo chega ao público pela banda de subida.' },
+    ]},
+    explanation: 'Planos costumam ter upload bem menor, e é ele que sustenta quem publica em vez de só consumir.',
+  },
+  {
+    id: 'AP034.1-L2-Q9', type: 'true_false',
+    prompt: 'Salvar uma foto do celular numa nuvem como o Google Drive é um upload.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', correct: true },
+      { id: 'b', text: 'Falso', porque: 'A foto sai do seu aparelho e sobe para o servidor da empresa. Quando você a busca de volta noutro dia, aí sim é download.' },
+    ]},
+    explanation: 'O sentido é o que define: sai daqui é upload, chega aqui é download.',
   },
 ];
 
@@ -368,6 +430,37 @@ const rawQuestions_L3: Question[] = [
       { id: 'd', text: 'Não é malware, é um antivírus legítimo.', porque: 'Antivírus legítimo não cobra para devolver seus próprios arquivos. Parecer um é justamente o disfarce.' },
     ]},
     explanation: 'Ransomware sequestra dados por criptografia e exige pagamento para liberá-los.',
+  },
+  {
+    id: 'AP034.1-L3-Q8', type: 'scenario',
+    prompt: 'Na sala do clube, seis computadores da mesma rede ficaram lentos no mesmo dia. Ninguém abriu anexo, ninguém instalou programa nenhum e nenhum arquivo foi trancado. Que tipo de malware explica melhor isso?',
+    data: { scenarios: [
+      { id: 'a', text: 'Worm, que se espalha sozinho pela rede sem precisar de arquivo hospedeiro.', correct: true },
+      { id: 'b', text: 'Vírus, porque ele se copia para dentro dos arquivos das máquinas vizinhas.', porque: 'O vírus só age quando alguém executa o arquivo em que ele se escondeu — e aqui ninguém abriu nada.' },
+      { id: 'c', text: 'Trojan, que entra disfarçado de programa útil.', porque: 'O trojan depende de alguém instalá-lo achando que é outra coisa. Ninguém instalou nada.' },
+      { id: 'd', text: 'Ransomware, que já deve ter começado a agir nas seis máquinas.', porque: 'O ransomware tranca os arquivos e mostra um pedido de resgate. Nada foi trancado e ninguém cobrou nada.' },
+    ]},
+    explanation: 'Espalhar-se sozinho pela rede, sem hospedeiro e sem ninguém abrir nada, é a marca do worm.',
+  },
+  {
+    id: 'AP034.1-L3-Q9', type: 'multiple_choice',
+    prompt: 'O clube publicou desbravadores-alfa.com.br com três páginas — início, eventos e fotos — ligadas por um menu. Como se descreve isso?',
+    data: { options: [
+      { id: 'a', text: 'Um site com três páginas.', correct: true },
+      { id: 'b', text: 'Três sites, porque cada página tem a própria URL.', porque: 'Ter URL própria é o normal de toda página. O que reúne as três num site é o mesmo domínio e as ligações entre elas.' },
+      { id: 'c', text: 'Um site com três servidores, um por página.', porque: 'As três moram no mesmo servidor. Servidor é a máquina que guarda e entrega, e não uma cópia por página.' },
+      { id: 'd', text: 'Uma página com três sites dentro dela.', porque: 'Está de cabeça para baixo: o site é o conjunto, e a página é uma parte dele.' },
+    ]},
+    explanation: 'Páginas interligadas sob o mesmo domínio formam um site — o servidor é a máquina que hospeda o conjunto.',
+  },
+  {
+    id: 'AP034.1-L3-Q10', type: 'true_false',
+    prompt: 'Para receber um e-mail, quem envia e quem recebe precisam estar conectados ao mesmo tempo.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'A mensagem fica guardada no servidor até você entrar. É por isso que se acorda com e-mail enviado de madrugada.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'O e-mail é assíncrono: o servidor guarda a mensagem e a entrega quando quem recebe se conectar.',
   },
 ];
 
@@ -492,6 +585,37 @@ const rawQuestions_2L1: Question[] = [
       ],
     },
     explanation: 'POP3 remove as mensagens do servidor após baixar. IMAP as mantém para sincronização.',
+  },
+  {
+    id: 'AP034.2-L1-Q8', type: 'scenario',
+    prompt: 'Você configurou o programa de e-mail do computador do clube com POP3. Uma semana depois, seu celular não mostra mais nenhuma mensagem que chegou nesse período. O que aconteceu?',
+    data: { scenarios: [
+      { id: 'a', text: 'O computador do clube baixou as mensagens e as retirou do servidor.', correct: true },
+      { id: 'b', text: 'O celular perdeu a senha da conta e parou de buscar mensagens novas.', porque: 'Senha errada aparece como aviso de erro na tela, e não como caixa de entrada vazia em silêncio.' },
+      { id: 'c', text: 'O servidor apagou as mensagens porque a conta ficou sem espaço.', porque: 'Conta cheia recusa o que chega depois e avisa quem enviou; ela não esvazia sozinha o que já estava lá.' },
+      { id: 'd', text: 'O celular guarda apenas sete dias de mensagens e as mais antigas saíram.', porque: 'Esse limite não existe. Quem tirou as mensagens do servidor foi o POP3 do computador.' },
+    ]},
+    explanation: 'O POP3 baixa e, por padrão, remove do servidor — o aparelho que buscou primeiro fica com tudo, e o outro não encontra mais nada.',
+  },
+  {
+    id: 'AP034.2-L1-Q9', type: 'multiple_choice',
+    prompt: 'No ônibus a caminho do acampamento, sem sinal de Internet, qual forma de acesso ainda deixa ler as mensagens que já chegaram?',
+    data: { options: [
+      { id: 'a', text: 'POP3, que guardou as mensagens no próprio aparelho.', correct: true },
+      { id: 'b', text: 'Webmail, que abre a caixa de entrada no navegador.', porque: 'O webmail busca tudo no servidor na hora de abrir — sem sinal, a página nem carrega.' },
+      { id: 'c', text: 'SMTP, que guarda uma cópia de tudo o que passou por ele.', porque: 'O SMTP é o caminho de saída das mensagens, e não guarda caixa de entrada nenhuma.' },
+      { id: 'd', text: 'Nenhuma: ler e-mail exige conexão sempre.', porque: 'Exige para receber. Depois de baixada, a mensagem já está no aparelho e abre sem sinal.' },
+    ]},
+    explanation: 'Depois de baixar por POP3, a mensagem está no aparelho — é a vantagem que ele oferece em troca de não sincronizar.',
+  },
+  {
+    id: 'AP034.2-L1-Q10', type: 'true_false',
+    prompt: 'Quem configura a mesma conta com POP3 no celular e no computador vê as mesmas mensagens nos dois aparelhos.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'Não vê: o POP3 leva a mensagem para o aparelho que baixou primeiro e a retira do servidor, deixando o outro sem ela.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'O POP3 não sincroniza. Para ter a mesma caixa nos dois aparelhos, o protocolo é o IMAP.',
   },
 ];
 
@@ -621,6 +745,37 @@ const rawQuestions_2L2: Question[] = [
     },
     explanation: 'O antivírus usa assinaturas para reconhecer ameaças e proteção em tempo real para monitorar continuamente.',
   },
+  {
+    id: 'AP034.2-L2-Q9', type: 'scenario',
+    prompt: 'Você digitou "previsão do tempo em Brasília" na barra de cima do Chrome e apareceu uma lista de resultados. Quem montou essa lista?',
+    data: { scenarios: [
+      { id: 'a', text: 'O motor de busca, que já tinha indexado essas páginas.', correct: true },
+      { id: 'b', text: 'O navegador, que procurou as páginas por conta própria.', porque: 'O navegador levou a pergunta e desenhou a resposta na tela — procurar em toda a web é trabalho do buscador.' },
+      { id: 'c', text: 'O provedor de Internet, que sabe tudo o que passa pela casa.', porque: 'O provedor transporta os dados. Ele não organiza nem ordena página nenhuma.' },
+      { id: 'd', text: 'O servidor do site de meteorologia, que respondeu à pergunta.', porque: 'Esse servidor entrega a página dele quando pedida. A lista com vários sites veio de antes, do índice do buscador.' },
+    ]},
+    explanation: 'A barra de endereços aceita busca por comodidade, mas quem indexa e ordena os resultados é o motor de busca.',
+  },
+  {
+    id: 'AP034.2-L2-Q10', type: 'multiple_choice',
+    prompt: 'A transmissão do culto do clube travou e voltou várias vezes, sempre por alguns segundos. Qual é a explicação mais provável?',
+    data: { options: [
+      { id: 'a', text: 'A conexão ficou mais lenta do que o vídeo consome, e acabaram os pedaços adiantados.', correct: true },
+      { id: 'b', text: 'O arquivo do vídeo veio corrompido e precisa ser baixado de novo desde o começo.', porque: 'No streaming não há arquivo baixado inteiro. Se fosse defeito no vídeo, ele falharia sempre no mesmo ponto.' },
+      { id: 'c', text: 'A memória do aparelho encheu e apagou parte do vídeo que já tinha chegado.', porque: 'Memória cheia fecha o aplicativo ou avisa. Parar e voltar em pedaços é sinal de conexão irregular.' },
+      { id: 'd', text: 'O antivírus está examinando cada pedaço do vídeo antes de deixar tocar.', porque: 'O antivírus não fica no meio da transmissão. Travadas curtas e repetidas são a rede não acompanhando.' },
+    ]},
+    explanation: 'O streaming toca enquanto recebe e guarda alguns segundos adiantados. Quando a rede cai abaixo do que o vídeo consome, esse adiantamento acaba e a imagem para.',
+  },
+  {
+    id: 'AP034.2-L2-Q11', type: 'true_false',
+    prompt: 'Com um antivírus atualizado instalado, não é preciso ter cuidado com o que se baixa nem com os anexos que se abre.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'O antivírus reconhece o que já é conhecido. Ameaça recém-criada passa por ele, e é aí que o cuidado de quem usa faz falta.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'O antivírus é uma camada de proteção, não uma garantia: ele reconhece ameaças conhecidas, e as novas chegam antes da atualização.',
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -740,6 +895,37 @@ const rawQuestions_3L1: Question[] = [
       { id: 'd', text: 'As duas foram criadas pela mesma empresa que hoje mantém o buscador.', porque: 'O Google é de 1998 e não criou nenhuma das duas. A ARPANET nasceu de pesquisa militar e acadêmica; a Web, no CERN.' },
     ]},
     explanation: 'Internet (1969, ARPANET) → TCP/IP (1983) → WWW (1989). A Web é um serviço da Internet.',
+  },
+  {
+    id: 'AP034.3-L1-Q8', type: 'multiple_choice',
+    prompt: 'Por que 1983 é chamado de nascimento da Internet moderna, se a ARPANET já funcionava desde 1969?',
+    data: { options: [
+      { id: 'a', text: 'Porque o TCP/IP deixou redes diferentes conversarem entre si.', correct: true },
+      { id: 'b', text: 'Porque foi quando a ARPANET ligou as quatro primeiras universidades.', porque: 'Isso foi em 1969, no começo da ARPANET. O que mudou em 1983 foi o protocolo que ela passou a usar.' },
+      { id: 'c', text: 'Porque foi o ano em que o primeiro site da Web entrou no ar.', porque: 'O primeiro site é de 1991, e é marco da Web — que roda sobre a Internet, e não o contrário.' },
+      { id: 'd', text: 'Porque a partir dali qualquer pessoa pôde se conectar de casa.', porque: 'A conexão doméstica veio bem depois. Em 1983 a rede ainda era de universidades e centros de pesquisa.' },
+    ]},
+    explanation: 'Uma rede só já existia. O TCP/IP fez com que redes distintas se interligassem — é essa interligação que a palavra Internet nomeia.',
+  },
+  {
+    id: 'AP034.3-L1-Q9', type: 'scenario',
+    prompt: 'Em 1993 a Internet já tinha mais de vinte anos, mas quase ninguém fora das universidades a usava. O que o Mosaic mudou nesse quadro?',
+    data: { scenarios: [
+      { id: 'a', text: 'Mostrou a Web com imagens e ligações clicáveis, alcançando quem não era cientista.', correct: true },
+      { id: 'b', text: 'Criou a World Wide Web, que até aquele momento não existia.', porque: 'A Web é de 1989, de Tim Berners-Lee. O Mosaic veio quatro anos depois, para exibi-la.' },
+      { id: 'c', text: 'Ligou as universidades entre si pela primeira vez, formando a rede.', porque: 'Ligar universidades foi a ARPANET, em 1969 — mais de vinte anos antes do Mosaic.' },
+      { id: 'd', text: 'Passou a ordenar as páginas por relevância, facilitando encontrá-las.', porque: 'Ordenar resultados por relevância é do Google, em 1998. O Mosaic não buscava nada: ele exibia.' },
+    ]},
+    explanation: 'O Mosaic foi o primeiro navegador gráfico popular. Ele não criou a Web nem a rede — tornou visual o que antes era texto para especialistas.',
+  },
+  {
+    id: 'AP034.3-L1-Q10', type: 'true_false',
+    prompt: 'A ARPANET adotou o TCP/IP no mesmo ano em que o primeiro site da Web foi publicado.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'Oito anos separam os dois: o TCP/IP entrou em 1983, e o primeiro site foi ao ar em 1991.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'TCP/IP em 1983, primeiro site em 1991. A rede precisou existir e se padronizar antes de a Web nascer sobre ela.',
   },
 ];
 
@@ -891,6 +1077,37 @@ const rawQuestions_4L1: Question[] = [
       { id: 'b', text: 'Falso', porque: 'Pode sim, e é um caminho comum. O vírus se copia para o pendrive e entra no próximo computador em que ele for espetado.' },
     ]},
     explanation: 'Mídias removíveis são uma das vias mais comuns de propagação de vírus entre computadores.',
+  },
+  {
+    id: 'AP034.4-L1-Q10', type: 'scenario',
+    prompt: 'Enquanto você lia uma página, abriu uma janela piscando: "Seu computador está com 37 vírus! Clique para limpar agora." O que fazer?',
+    data: { scenarios: [
+      { id: 'a', text: 'Fechar a janela: aviso de vírus vem do antivírus instalado, e não de uma página.', correct: true },
+      { id: 'b', text: 'Clicar em limpar, porque trinta e sete ameaças precisam de providência imediata.', porque: 'O número existe para assustar. Clicar ali é justamente o que instala o que ainda não estava lá.' },
+      { id: 'c', text: 'Clicar em fechar dentro da janela, no X desenhado ao lado do aviso.', porque: 'Nessas janelas o X desenhado costuma ser parte da propaganda. O que fecha é a aba, ou o X do navegador.' },
+      { id: 'd', text: 'Desligar o computador na tomada para interromper a limpeza antes que ela comece.', porque: 'Nada está acontecendo com a máquina — é uma página mostrando um texto. Desligar assim só arrisca perder o que estava aberto.' },
+    ]},
+    explanation: 'Esse é um pop-up malicioso: o site não tem como examinar seu computador. O antivírus de verdade avisa pelo próprio programa, fora do navegador.',
+  },
+  {
+    id: 'AP034.4-L1-Q11', type: 'multiple_choice',
+    prompt: 'O que significa dizer que um computador infectado virou um "zumbi"?',
+    data: { options: [
+      { id: 'a', text: 'Ele obedece a comandos de fora e participa de ataques sem o dono saber.', correct: true },
+      { id: 'b', text: 'Ele ficou velho e lento demais para os programas de hoje.', porque: 'Isso é hardware envelhecendo, e não infecção. O zumbi pode até parecer normal em uso.' },
+      { id: 'c', text: 'Ele desliga sozinho e não volta a ligar sem assistência técnica.', porque: 'Máquina que não liga não serve a quem invadiu. O zumbi interessa justamente por continuar funcionando.' },
+      { id: 'd', text: 'Ele perdeu todos os arquivos e voltou ao estado de fábrica.', porque: 'Apagar tudo chama atenção. O zumbi é discreto de propósito, para durar.' },
+    ]},
+    explanation: 'A máquina passa a ser comandada de fora e entra em ataques coordenados — e continua parecendo normal, que é o que a mantém útil para quem a controla.',
+  },
+  {
+    id: 'AP034.4-L1-Q12', type: 'true_false',
+    prompt: 'Quem não guarda nada importante no computador não é alvo interessante para quem espalha malware.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'A máquina é o prêmio, mesmo vazia: ela serve para disparar mensagens, atacar outros e alcançar seus contatos.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'Nem todo ataque quer seus arquivos. Muitos querem a máquina — para enviar spam, participar de ataques ou chegar aos seus contatos.',
   },
 ];
 
@@ -1088,6 +1305,39 @@ const rawQuestions_5L0: Question[] = [
     ]},
     explanation: 'Filtro sozinho vira gato e rato; regra sozinha depende de lembrar dela na hora errada. O requisito pede os dois na mesma frase.',
   },
+  {
+    id: 'AP034.5-L0-Q4', type: 'true_false',
+    prompt: 'O filtro consegue distinguir uma pesquisa escolar sobre drogas de uma busca por drogas.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'Ele lê as palavras, e não a intenção de quem as escreveu. Por isso erra dos dois lados: barra o trabalho da escola e deixa passar o que estava disfarçado.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'Filtro não lê intenção. É justamente por isso que ele barra o que era legítimo e deixa passar o que não era — e por isso não substitui a conversa.',
+  },
+  {
+    id: 'AP034.5-L0-Q5', type: 'matching',
+    prompt: 'Associe cada lugar onde o filtro pode viver ao alcance que ele tem.',
+    data: {
+      pairs: [
+        { left: 'No roteador', right: 'Todos os aparelhos ligados naquele Wi-Fi' },
+        { left: 'No aparelho', right: 'Aquele celular, onde quer que ele vá' },
+        { left: 'Na conta', right: 'Onde aquela conta estiver logada' },
+        { left: 'No horário', right: 'Limita o tempo de uso, não o conteúdo' },
+      ],
+    },
+    explanation: 'Cada lugar cobre uma fatia diferente. É por isso que as famílias combinam mais de um, em vez de escolher só um.',
+  },
+  {
+    id: 'AP034.5-L0-Q6', type: 'scenario',
+    prompt: 'No acampamento, o desbravador entra no Wi-Fi do clube, onde ninguém configurou filtro nenhum. O que continua protegendo?',
+    data: { scenarios: [
+      { id: 'a', text: 'O combinado da família, que anda junto com a pessoa.', correct: true },
+      { id: 'b', text: 'O filtro do roteador de casa, que segue a conta do desbravador.', porque: 'O filtro do roteador vale para quem passa por aquele aparelho. Ele fica em casa.' },
+      { id: 'c', text: 'O antivírus do celular, que barra as páginas impróprias.', porque: 'O antivírus cuida de programa malicioso. Conteúdo impróprio não é vírus, e ele não o reconhece.' },
+      { id: 'd', text: 'Nada: fora de casa não há proteção possível.', porque: 'Há a que não depende de aparelho. O acordo combinado em casa é exatamente o que continua valendo em qualquer rede.' },
+    ]},
+    explanation: 'Nenhum filtro sobrevive à rede do amigo, da escola ou do clube. O que atravessa todas elas é o pacto — e é por isso que ele não é opcional.',
+  },
 ];
 
 export const ap034: Specialty = {
@@ -1138,24 +1388,24 @@ export const ap034: Specialty = {
       code: 'AP034.1', title: 'O que é a internet, afinal',
       description: 'As palavras que todo mundo usa e quase ninguém sabe explicar.',
       lessons: [
-        { code: 'AP034.1-L1', title: 'O que é a Internet', type: 'theory', content: content_L1, requirementCodes: ['AP034-1.1', 'AP034-1.2'], questions: rawQuestions_L1 },
-        { code: 'AP034.1-L2', title: 'Download e Upload', type: 'theory', content: content_L2, requirementCodes: ['AP034-1.3', 'AP034-1.4'], questions: rawQuestions_L2 },
-        { code: 'AP034.1-L3', title: 'Website, e-mail e vírus', type: 'theory', content: content_L3, requirementCodes: ['AP034-1.5', 'AP034-1.6', 'AP034-1.7'], questions: rawQuestions_L3 },
+        { code: 'AP034.1-L1', title: 'O que é a Internet', type: 'theory', content: content_L1, requirementCodes: ['AP034-1.1', 'AP034-1.2'], perguntas: 8, questions: rawQuestions_L1 },
+        { code: 'AP034.1-L2', title: 'Download e Upload', type: 'theory', content: content_L2, requirementCodes: ['AP034-1.3', 'AP034-1.4'], perguntas: 6, questions: rawQuestions_L2 },
+        { code: 'AP034.1-L3', title: 'Website, e-mail e vírus', type: 'theory', content: content_L3, requirementCodes: ['AP034-1.5', 'AP034-1.6', 'AP034-1.7'], perguntas: 7, questions: rawQuestions_L3 },
       ],
     },
     {
       code: 'AP034.2', title: 'As ferramentas do dia a dia',
       description: 'Correio, navegador, buscador e streaming — quem faz o quê.',
       lessons: [
-        { code: 'AP034.2-L1', title: 'Webmail, POP3 e IMAP', type: 'theory', content: content_2L1, requirementCodes: ['AP034-2.1'], questions: rawQuestions_2L1 },
-        { code: 'AP034.2-L2', title: 'Navegador, streaming, busca e antivírus', type: 'theory', content: content_2L2, requirementCodes: ['AP034-2.2', 'AP034-2.3', 'AP034-2.4', 'AP034-2.5'], questions: rawQuestions_2L2 },
+        { code: 'AP034.2-L1', title: 'Webmail, POP3 e IMAP', type: 'theory', content: content_2L1, requirementCodes: ['AP034-2.1'], perguntas: 7, questions: rawQuestions_2L1 },
+        { code: 'AP034.2-L2', title: 'Navegador, streaming, busca e antivírus', type: 'theory', content: content_2L2, requirementCodes: ['AP034-2.2', 'AP034-2.3', 'AP034-2.4', 'AP034-2.5'], perguntas: 8, questions: rawQuestions_2L2 },
       ],
     },
     {
       code: 'AP034.3', title: 'De onde veio a internet',
       description: 'A linha do tempo da rede, e o seu texto contando essa história.',
       lessons: [
-        { code: 'AP034.3-L1', title: 'A linha do tempo da Internet', type: 'theory', content: content_3L1, requirementCodes: ['AP034-3.1'], questions: rawQuestions_3L1 },
+        { code: 'AP034.3-L1', title: 'A linha do tempo da Internet', type: 'theory', content: content_3L1, requirementCodes: ['AP034-3.1'], perguntas: 7, questions: rawQuestions_3L1 },
         { code: 'AP034.3-L2', title: 'Escrevendo a história da Internet', type: 'lab', content: '', requirementCodes: ['AP034-3.1'], labType: 'redacao_guiada' },
       ],
     },
@@ -1163,7 +1413,7 @@ export const ap034: Specialty = {
       code: 'AP034.4', title: 'O que pode dar errado',
       description: 'Vírus, golpes, o estrago que fazem e como não cair neles.',
       lessons: [
-        { code: 'AP034.4-L1', title: 'Ameaças e proteção', type: 'theory', content: content_4L1, requirementCodes: ['AP034-4.1', 'AP034-4.2', 'AP034-4.3', 'AP034-4.4'], questions: rawQuestions_4L1 },
+        { code: 'AP034.4-L1', title: 'Ameaças e proteção', type: 'theory', content: content_4L1, requirementCodes: ['AP034-4.1', 'AP034-4.2', 'AP034-4.3', 'AP034-4.4'], perguntas: 9, questions: rawQuestions_4L1 },
         { code: 'AP034.4-L2', title: 'Reconhecendo ameaças e escolhendo a proteção', type: 'lab', content: '', requirementCodes: ['AP034-4.1', 'AP034-4.2', 'AP034-4.3', 'AP034-4.4'], labType: 'threat_lab' },
       ],
     },
@@ -1171,7 +1421,7 @@ export const ap034: Specialty = {
       code: 'AP034.5', title: 'Combinar as regras de casa',
       description: 'O acordo de uso da internet, escrito por você, cláusula por cláusula.',
       lessons: [
-        { code: 'AP034.5-L0', title: 'Filtros de conteúdo', type: 'theory', content: content_5L0, requirementCodes: ['AP034-5.0'], questions: rawQuestions_5L0 },
+        { code: 'AP034.5-L0', title: 'Filtros de conteúdo', type: 'theory', content: content_5L0, requirementCodes: ['AP034-5.0'], perguntas: 3, questions: rawQuestions_5L0 },
         { code: 'AP034.5-L1', title: 'Montando o seu compromisso digital', type: 'lab', content: content_5L1, requirementCodes: ['AP034-5.1', 'AP034-5.2', 'AP034-5.3', 'AP034-5.4', 'AP034-5.5', 'AP034-5.6', 'AP034-5.7', 'AP034-5.8', 'AP034-5.9'], labType: 'pact_builder' },
       ],
     },
