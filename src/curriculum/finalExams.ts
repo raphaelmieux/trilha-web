@@ -1,6 +1,25 @@
 import type { Question } from '../types';
 import { sortearCobrindo, quantasPerguntar } from '../lib/questoes';
 
+/*
+  A prova da AP034.
+
+  Quarenta questões, das quais vinte e uma são sorteadas. É a primeira trilha, e
+  a única cuja prova pergunta sobre **todos** os trinta e cinco requisitos —
+  nenhum deles é cumprido pelo bloqueio, porque não há trilha antes desta.
+
+  ── Como se cobra um requisito de prática numa alternativa ───────────────
+  Onze requisitos ficaram sem pergunta até tarde, e são os de fazer: as
+  cláusulas do pacto, visitar três sites, achar o versículo em três versões,
+  baixar um arquivo, abrir a mensagem e o anexo. A prova não mede o gesto — quem
+  mede é o laboratório, que observa cada um acontecer.
+
+  O que a prova mede é o que governa o gesto. Não "você assinou o pacto", e sim
+  o que cada cláusula evita; não "você baixou um arquivo", e sim o que um nome
+  terminado em .pdf.exe está tentando fazer com quem lê só o começo. É o mesmo
+  caminho que a prova da AP041 já seguia ao perguntar o que copiar e mover
+  deixam no fim, em vez de pedir que alguém copiasse uma pasta.
+*/
 const rawAp034Final: Question[] = [
   {
     id: 'AP034-F-Q1', type: 'multiple_choice',
@@ -354,8 +373,169 @@ const rawAp034Final: Question[] = [
     ]},
     explanation: 'O filtro por horário é o mais simples e um dos mais eficazes justamente por não depender de julgar nada: ele conta o tempo, e tempo não tem como ser interpretado errado.',
   },
+  {
+    id: 'AP034-F-Q26', type: 'matching',
+    requisitos: ['AP034-5.3', 'AP034-5.4', 'AP034-5.5', 'AP034-5.6', 'AP034-5.7', 'AP034-5.9'],
+    prompt: 'Ligue cada combinado do pacto ao que ele evita.',
+    data: {
+      pairs: [
+        { left: 'Não encontrar sozinho quem conheci na internet', right: 'Que alguém que mentiu sobre quem é te encontre a sós' },
+        { left: 'Não responder a contato suspeito', right: 'Que a conversa siga e o golpe tenha por onde crescer' },
+        { left: 'Parar e chamar um adulto ao estranhar algo', right: 'Ter de resolver sozinho o que não é do seu tamanho' },
+        { left: 'Combinar o tempo de uso da semana', right: 'Que os dias passem sem ninguém notar quanto foi' },
+        { left: 'Combinar quais sites valem e quais não', right: 'Ter de decidir isso na hora da curiosidade' },
+        { left: 'Combinar o limite diário nas redes sociais', right: 'Que a rolagem sem fim decida quando você para' },
+      ],
+    },
+    explanation: 'Cada cláusula do pacto existe porque alguém já se machucou naquele ponto. Combinar antes é decidir com a cabeça fria o que seria decidido no susto.',
+  },
+  {
+    id: 'AP034-F-Q27', type: 'matching',
+    requisitos: ['AP034-6.1', 'AP034-6.2', 'AP034-6.3'],
+    prompt: 'Ligue cada tarefa de navegação ao que ela produz no fim.',
+    data: {
+      pairs: [
+        { left: 'Visitar três sites e registrar', right: 'O endereço da primeira página de cada um deles' },
+        { left: 'Procurar um texto bíblico', right: 'O mesmo versículo em três traduções diferentes' },
+        { left: 'Fazer o download de um arquivo', right: 'Um documento guardado na pasta de downloads' },
+      ],
+    },
+    explanation: 'As três tarefas do requisito 6 terminam em coisas diferentes: um endereço anotado, um texto comparado e um arquivo no disco.',
+  },
+  {
+    id: 'AP034-F-Q28', type: 'multiple_choice',
+    requisitos: ['AP034-6.1'],
+    prompt: 'O que é a "primeira página" de um site?',
+    data: { options: [
+      { id: 'a', text: 'A que abre ao entrar no endereço, sem pedir página nenhuma.', correct: true },
+      { id: 'b', text: 'A primeira que você visitou naquele site, seja qual for.', porque: 'Essa é a sua primeira visita, e muda de pessoa para pessoa. A do site é sempre a mesma.' },
+      { id: 'c', text: 'A que aparece em primeiro lugar na lista do buscador.', porque: 'O buscador pode levar direto a uma página interna. A inicial é a que responde ao endereço puro.' },
+      { id: 'd', text: 'A primeira que foi escrita, quando o site nasceu.', porque: 'A ordem de criação não decide nada: a página inicial pode ter sido refeita ontem.' },
+    ]},
+    explanation: 'É a porta de entrada — o que o servidor entrega quando alguém digita só o domínio. Registrar a de três sites é o que o requisito 6 pede.',
+  },
+  {
+    id: 'AP034-F-Q29', type: 'scenario',
+    requisitos: ['AP034-6.2'],
+    prompt: 'Você achou Filipenses 4:8 num site de Bíblia e precisa do mesmo versículo em outras duas traduções. O que faz?',
+    data: { scenarios: [
+      { id: 'a', text: 'Troca a versão no próprio site, no seletor de tradução.', correct: true },
+      { id: 'b', text: 'Procura no buscador por "Filipenses 4:8 versão diferente".', porque: 'Levaria a páginas soltas. O site de Bíblia já traz as traduções lado a lado, e é para isso que ele serve.' },
+      { id: 'c', text: 'Copia o texto e reescreve com outras palavras.', porque: 'Isso seria inventar uma tradução. As versões são trabalhos de tradutores, e o requisito pede comparar as deles.' },
+      { id: 'd', text: 'Procura o mesmo versículo em três sites diferentes.', porque: 'Sites diferentes podem usar a mesma versão. O que muda o texto é a tradução escolhida, e não o endereço.' },
+    ]},
+    explanation: 'Comparar traduções é o ponto do requisito: ver as escolhas de palavra que cada uma fez no mesmo versículo.',
+  },
+  {
+    id: 'AP034-F-Q30', type: 'scenario',
+    requisitos: ['AP034-6.3', 'AP034-4.1'],
+    prompt: 'Você procurou uma Bíblia para baixar e a lista traz "biblia-completa.pdf.exe". O que esse nome indica?',
+    data: { scenarios: [
+      { id: 'a', text: 'Que é um programa disfarçado de documento.', correct: true },
+      { id: 'b', text: 'Que é um pdf que abre num programa próprio de leitura.', porque: 'O que vale é a última extensão, e ela diz programa. O ".pdf" ali é parte do nome, posto para enganar.' },
+      { id: 'c', text: 'Que é um pdf compactado, e por isso tem dois finais.', porque: 'Arquivo compactado termina em .zip ou .rar. Esse termina em .exe, que é programa executável.' },
+      { id: 'd', text: 'Que é a versão completa, e a simples seria só .pdf.', porque: 'A palavra "completa" é do nome escolhido por quem publicou. Quem diz o que o arquivo é são as letras do fim.' },
+    ]},
+    explanation: 'A extensão que conta é a última. Dois finais empilhados é um dos disfarces mais antigos que existem, e ele mira justamente quem lê só o começo do nome.',
+  },
+  {
+    id: 'AP034-F-Q31', type: 'multiple_choice',
+    requisitos: ['AP034-7.2', 'AP034-7.3'],
+    prompt: 'Chegou um e-mail do seu conselheiro com a ficha de inscrição anexada. O que precisa acontecer para você ler a ficha?',
+    data: { options: [
+      { id: 'a', text: 'Abrir a mensagem e depois baixar ou abrir o anexo.', correct: true },
+      { id: 'b', text: 'Nada: o anexo já veio aberto junto com a mensagem.', porque: 'A lista mostra que existe um anexo e o nome dele. Ver o conteúdo é um segundo passo.' },
+      { id: 'c', text: 'Responder a mensagem pedindo que ele reenvie o arquivo.', porque: 'O arquivo já chegou. Reenviar não muda nada além de dar trabalho aos dois.' },
+      { id: 'd', text: 'Encaminhar a mensagem para você mesmo, para o anexo soltar.', porque: 'Encaminhar leva o anexo junto e não o abre. O anexo se abre onde ele já está.' },
+    ]},
+    explanation: 'São dois gestos, e o segundo é o que o requisito 7 cobra: a mensagem se lê na caixa de entrada, e o anexo é um arquivo à parte que precisa ser aberto ou baixado.',
+  },
+  {
+    id: 'AP034-F-Q32', type: 'true_false',
+    requisitos: ['AP034-7.2'],
+    prompt: 'Numa caixa de entrada, a mensagem que aparece em negrito é a que ainda não foi aberta.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', correct: true },
+      { id: 'b', text: 'Falso', porque: 'É o que o negrito marca em qualquer webmail: não lida. Ao abrir, ela perde o destaque.' },
+    ]},
+    explanation: 'É a marca de "ainda não li" — e é por isso que dá para marcar uma mensagem como não lida de novo, quando se quer voltar a ela depois.',
+  },
+  {
+    id: 'AP034-F-Q33', type: 'multiple_choice',
+    requisitos: ['AP034-2.3'],
+    prompt: 'Por que um vídeo em streaming começa a tocar antes de ter chegado inteiro?',
+    data: { options: [
+      { id: 'a', text: 'Porque ele é entregue em pedaços, e o primeiro já basta.', correct: true },
+      { id: 'b', text: 'Porque o aparelho adivinha o resto enquanto mostra o começo.', porque: 'Nada é adivinhado: cada pedaço chega de verdade, um pouco antes da hora de aparecer.' },
+      { id: 'c', text: 'Porque o vídeo foi baixado antes, enquanto você escolhia.', porque: 'Se tivesse sido baixado inteiro, ele ocuparia espaço no aparelho — e não ocupa.' },
+      { id: 'd', text: 'Porque a qualidade é reduzida até o arquivo caber de uma vez.', porque: 'A qualidade até se ajusta à conexão, e o vídeo continua chegando aos poucos, do começo ao fim.' },
+    ]},
+    explanation: 'É a diferença entre streaming e download: um entrega aos pedaços para você assistir agora, o outro entrega tudo para você guardar.',
+  },
+  {
+    id: 'AP034-F-Q34', type: 'scenario',
+    requisitos: ['AP034-2.4'],
+    prompt: 'Você pesquisou "acampamento" e vieram milhões de resultados, quase nenhum sobre desbravadores. O que melhora a busca?',
+    data: { scenarios: [
+      { id: 'a', text: 'Acrescentar palavras que estreitem: "acampamento desbravadores".', correct: true },
+      { id: 'b', text: 'Repetir a palavra várias vezes para o buscador dar mais peso a ela.', porque: 'Repetir não muda o resultado. O que estreita é acrescentar palavra nova, e não a mesma de novo.' },
+      { id: 'c', text: 'Escrever a palavra em maiúsculas, para o buscador dar prioridade.', porque: 'Buscadores ignoram maiúsculas. "ACAMPAMENTO" e "acampamento" dão a mesma lista.' },
+      { id: 'd', text: 'Trocar de buscador, porque cada um cobre uma parte da web.', porque: 'Os grandes indexam quase a mesma web. Com a mesma pergunta larga, a resposta continua larga.' },
+    ]},
+    explanation: 'O buscador devolve o que a pergunta pediu. Pergunta larga, resposta larga — e a palavra a mais é o que separa o seu assunto de todos os outros.',
+  },
+  {
+    id: 'AP034-F-Q35', type: 'true_false',
+    requisitos: ['AP034-4.2'],
+    prompt: 'Um antivírus que nunca é atualizado continua reconhecendo as ameaças que surgiram depois dele.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'Ele reconhece o que está na lista que tem. Ameaça criada depois não está lá, e passa sem ser notada.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'Novos vírus surgem todo dia. A atualização é o que renova a lista do que ele sabe reconhecer — sem ela, ele fica preso ao ano em que parou.',
+  },
+  {
+    id: 'AP034-F-Q36', type: 'multiple_choice',
+    requisitos: ['AP034-5.8'],
+    prompt: 'Por que o pacto pede escolher no máximo duas redes sociais, em vez de deixar livre?',
+    data: { options: [
+      { id: 'a', text: 'Porque cada rede a mais é mais tempo e mais gente para acompanhar.', correct: true },
+      { id: 'b', text: 'Porque as outras redes são perigosas, e essas duas não são.', porque: 'Nenhuma é segura por natureza. O limite é sobre quantas, e não sobre quais serem boas.' },
+      { id: 'c', text: 'Porque duas contas é o máximo que um aparelho consegue manter.', porque: 'O aparelho aguenta muitas. Quem não aguenta é o dia.' },
+      { id: 'd', text: 'Porque é preciso pagar a partir da terceira rede social.', porque: 'Elas são gratuitas. O preço que se paga é em atenção, e é esse que o pacto administra.' },
+    ]},
+    explanation: 'O combinado não julga as redes: administra o quanto elas cabem na semana de alguém que também estuda, treina e vai ao clube.',
+  },
+  {
+    id: 'AP034-F-Q37', type: 'scenario',
+    requisitos: ['AP034-8.1'],
+    prompt: 'Filipenses 4:8 lista o que merece o nosso pensamento. Como esse texto ajuda a decidir o que ver na internet?',
+    data: { scenarios: [
+      { id: 'a', text: 'Dá um critério para escolher: é verdadeiro, honesto, puro, de boa fama?', correct: true },
+      { id: 'b', text: 'Proíbe o uso da internet, que não existia quando foi escrito.', porque: 'Ele não fala de meio nenhum: fala do que se põe na cabeça, seja por onde for.' },
+      { id: 'c', text: 'Manda ver só conteúdo religioso, e nada além disso.', porque: 'A lista é de qualidades — verdadeiro, justo, amável —, e elas cabem em muito além do religioso.' },
+      { id: 'd', text: 'Serve para o mundo antigo, e não para escolhas de hoje.', porque: 'A pergunta que ele faz continua funcionando: vale a pena pôr isto na cabeça?' },
+    ]},
+    explanation: 'É um filtro que anda com a pessoa, e não um bloqueio no roteador: funciona no computador do clube, na casa do amigo e no celular emprestado.',
+  },
 ];
 
+/*
+  A prova da AP035.
+
+  Trinta e duas questões, das quais dezoito são sorteadas. Cobre todos os
+  requisitos da trilha menos o primeiro, cumprido pelo bloqueio: quem chega aqui
+  já concluiu a AP034.
+
+  Os treze que faltavam eram de prática, e quase todos do requisito 3 — as
+  marcas escritas à mão, uma por requisito. Uma questão de associar as cobre de
+  uma vez, pelo que cada uma produz na página, que é o que separa copiar um
+  exemplo de escrever a própria. As de laboratório seguem a mesma regra do resto
+  da plataforma: a prova pergunta o que decide o resultado, e não se a pessoa
+  fez — o pedido montado peça por peça, a foto de câmera que precisa encolher
+  antes de qualquer compressão, o nome do arquivo que bate letra por letra no
+  servidor e não batia no computador de casa.
+*/
 const rawAp035Final: Question[] = [
   {
     id: 'AP035-F-Q1', type: 'multiple_choice',
@@ -634,6 +814,133 @@ const rawAp035Final: Question[] = [
       { id: 'd', text: '<url>texto</url>', porque: 'Não existe tag url em HTML. O endereço vai num atributo, não no nome da tag.' },
     ]},
     explanation: 'A tag <a> com atributo href cria links entre páginas.',
+  },
+  {
+    id: 'AP035-F-Q23', type: 'matching',
+    requisitos: ['AP035-3.4', 'AP035-3.5', 'AP035-3.7', 'AP035-3.8', 'AP035-3.10', 'AP035-3.12', 'AP035-3.13'],
+    prompt: 'Associe cada marca ao que ela produz na página.',
+    data: {
+      pairs: [
+        { left: '<p>', right: 'Um parágrafo inteiro de texto' },
+        { left: '<b>', right: 'O trecho em negrito' },
+        { left: '<i>', right: 'O trecho em itálico' },
+        { left: '<li>', right: 'Um item dentro de uma lista' },
+        { left: '<br>', right: 'A quebra de linha ali mesmo' },
+        { left: '<hr>', right: 'Uma linha separando duas partes' },
+        { left: '<tr>', right: 'Uma linha da tabela' },
+        { left: '<td>', right: 'Uma célula dentro da linha' },
+      ],
+    },
+    explanation: 'São as marcas que o requisito 3 pede escritas à mão. Reconhecer o que cada uma faz é o que separa copiar um exemplo de escrever a página.',
+  },
+  {
+    id: 'AP035-F-Q24', type: 'multiple_choice',
+    requisitos: ['AP035-4.1', 'AP035-3.11'],
+    prompt: 'O que uma tabela precisa ter para estar completa, e não só existir?',
+    data: { options: [
+      { id: 'a', text: 'Linhas, células e a primeira linha nomeando as colunas.', correct: true },
+      { id: 'b', text: 'A marca de abrir e a de fechar a tabela, e nada mais.', porque: 'Uma tabela vazia é válida e não mostra nada. Ela precisa das linhas e do que vai dentro delas.' },
+      { id: 'c', text: 'Uma borda declarada, para que as divisões apareçam.', porque: 'A borda é aparência, e se resolve com estilo. A tabela existe e funciona sem ela.' },
+      { id: 'd', text: 'O mesmo número de linhas e de colunas, para ficar quadrada.', porque: 'Tabela não precisa ser quadrada. O que precisa bater é o número de células em cada linha.' },
+    ]},
+    explanation: 'Sem a linha de cabeçalho, quem lê — e quem ouve a página num leitor de tela — recebe uma grade de números sem saber o que cada coluna significa.',
+  },
+  {
+    id: 'AP035-F-Q25', type: 'fill_blank',
+    requisitos: ['AP035-3.1', 'AP035-3.2', 'AP035-3.3'],
+    prompt: 'Complete o esqueleto: a marca que envolve o documento inteiro é _____, a que guarda o título e as informações da página é _____, e a que guarda o que aparece na tela é _____.',
+    data: {
+      blanks: [
+        { id: 'b1', answer: 'html', aceitas: ['<html>', 'html>'], hint: 'Envolve tudo, do começo ao fim do arquivo' },
+        { id: 'b2', answer: 'head', aceitas: ['<head>', 'head>'], hint: 'Fica no alto e não desenha nada na página' },
+        { id: 'b3', answer: 'body', aceitas: ['<body>', 'body>'], hint: 'É onde vai tudo o que a pessoa vê' },
+      ],
+    },
+    explanation: 'É o mesmo esqueleto em toda página de todo site, e escrever texto fora do corpo é o motivo mais comum de uma página abrir em branco.',
+  },
+  {
+    id: 'AP035-F-Q26', type: 'scenario',
+    requisitos: ['AP035-5.2'],
+    prompt: 'Você desenhou os cinco botões do menu e cada um saiu de um tamanho e de uma cor. O que isso custa à página?',
+    data: { scenarios: [
+      { id: 'a', text: 'Eles deixam de parecer um conjunto, e o menu vira cinco coisas soltas.', correct: true },
+      { id: 'b', text: 'Nada: a variedade deixa o menu mais bonito e mais fácil de ver.', porque: 'Variedade sem regra vira ruído. Num menu, é a repetição que diz que aqueles cinco pertencem ao mesmo grupo.' },
+      { id: 'c', text: 'A página fica mais pesada, porque cores diferentes ocupam mais espaço.', porque: 'A cor não muda o tamanho do arquivo desse jeito. O prejuízo aqui é de leitura, e não de peso.' },
+      { id: 'd', text: 'Os botões param de funcionar como links, por não serem iguais.', porque: 'A aparência não interfere no link. O que se perde é a pessoa reconhecer o menu de relance.' },
+    ]},
+    explanation: 'Botão de navegação é peça de um conjunto: mesmo tamanho, mesma cor e mesma letra nos cinco é o que faz o olho entender que ali é o menu.',
+  },
+  {
+    id: 'AP035-F-Q27', type: 'multiple_choice',
+    requisitos: ['AP035-6.2', 'AP035-6.3'],
+    prompt: 'No site de quatro páginas, o que a galeria e a página de contato precisam ter, cada uma?',
+    data: { options: [
+      { id: 'a', text: 'A galeria, ao menos uma imagem; o contato, um formulário.', correct: true },
+      { id: 'b', text: 'As duas precisam de uma tabela organizando o conteúdo.', porque: 'Tabela é para dado em linha e coluna. Foto e formulário não são isso.' },
+      { id: 'c', text: 'A galeria, um formulário de envio; o contato, uma imagem.', porque: 'Está trocado: quem recebe o que a pessoa escreve é o contato, e quem mostra fotos é a galeria.' },
+      { id: 'd', text: 'As duas precisam apenas do menu, como as outras páginas.', porque: 'O menu todas têm. O que faz cada uma existir é o conteúdo próprio dela.' },
+    ]},
+    explanation: 'Cada página do site tem um trabalho. A imagem precisa do src e do alt; o formulário, de um campo e de um botão — sem os dois, ele não recebe nada.',
+  },
+  {
+    id: 'AP035-F-Q28', type: 'multiple_choice',
+    requisitos: ['AP035-8.2', 'AP035-8.3'],
+    prompt: 'Ao pedir uma imagem e um logotipo à IA, o que faz o pedido render mais?',
+    data: { options: [
+      { id: 'a', text: 'Dizer as partes: cena, hora e estilo; forma, símbolo e cores.', correct: true },
+      { id: 'b', text: 'Escrever o pedido mais curto possível, para não confundir.', porque: 'Pedido curto devolve o lugar-comum: ela preenche sozinha o que você não disse.' },
+      { id: 'c', text: 'Pedir a mesma coisa várias vezes até vir o resultado certo.', porque: 'Repetir sem mudar o pedido devolve variações do mesmo. Quem muda o resultado é o que se acrescenta.' },
+      { id: 'd', text: 'Pedir em inglês, língua em que essas ferramentas funcionam.', porque: 'Elas entendem português. O que decide o resultado é o quanto o pedido descreve.' },
+    ]},
+    explanation: 'O pedido é montado peça por peça, e cada peça que falta é uma escolha que a ferramenta faz por você — quase sempre a mais óbvia.',
+  },
+  {
+    id: 'AP035-F-Q29', type: 'multiple_choice',
+    requisitos: ['AP035-8.1'],
+    prompt: 'A IA escreveu o texto do seu site sobre o clube. Por que ele não pode ir para a página do jeito que veio?',
+    data: { options: [
+      { id: 'a', text: 'Porque ela não conhece o seu clube: os fatos precisam ser conferidos.', correct: true },
+      { id: 'b', text: 'Porque texto de IA não pode ser publicado em site nenhum.', porque: 'Pode, e muita gente publica. O que não se pode é publicar sem ler e sem conferir.' },
+      { id: 'c', text: 'Porque ele vem sempre com erros de português a corrigir.', porque: 'O português costuma vir certo, e é isso que engana: o texto soa bem e pode dizer o que não é.' },
+      { id: 'd', text: 'Porque o texto dela é grande demais para caber numa página.', porque: 'O tamanho se pede junto. O problema é o conteúdo, e não a quantidade de linhas.' },
+    ]},
+    explanation: 'Ela monta a continuação mais provável a partir do que já leu. O nome do seu clube, o horário da reunião e o que a unidade fez no ano ela não tem como saber.',
+  },
+  {
+    id: 'AP035-F-Q30', type: 'multiple_choice',
+    requisitos: ['AP035-2.2'],
+    prompt: 'Além do endereço de destino, o que todo link precisa ter para servir a quem lê?',
+    data: { options: [
+      { id: 'a', text: 'Um texto que diga para onde ele vai.', correct: true },
+      { id: 'b', text: 'Uma cor diferente do resto do texto da página.', porque: 'O navegador já pinta e sublinha por padrão. O que ele não inventa é o texto.' },
+      { id: 'c', text: 'A palavra "aqui", que é o que a pessoa procura para clicar.', porque: 'É o pior texto possível: quem ouve a lista de links da página escuta "aqui" e não sabe o destino de nenhum.' },
+      { id: 'd', text: 'Uma imagem ao lado, indicando que aquilo é clicável.', porque: 'Imagem ajuda em alguns casos e não é obrigatória. O que não pode faltar é o texto do próprio link.' },
+    ]},
+    explanation: 'Link sem endereço não leva a lugar nenhum; link sem texto ninguém encontra para clicar. As duas metades são obrigatórias.',
+  },
+  {
+    id: 'AP035-F-Q31', type: 'scenario',
+    requisitos: ['AP035-5.1'],
+    prompt: 'A página do clube demora a aparecer no celular. Ela tem oito fotos de acampamento, cada uma direto da câmera. Por onde começar?',
+    data: { scenarios: [
+      { id: 'a', text: 'Reduzir cada foto para o tamanho em que ela aparece na tela.', correct: true },
+      { id: 'b', text: 'Trocar as oito fotos por uma só, para carregar menos coisa.', porque: 'Resolve tirando o conteúdo. As oito podem ficar, desde que pesem o que precisam pesar.' },
+      { id: 'c', text: 'Publicar as fotos em outro site e ligar para lá.', porque: 'Elas continuariam sendo baixadas do mesmo jeito, agora de outro endereço.' },
+      { id: 'd', text: 'Passar as oito para PNG, que comprime sem perder nada.', porque: 'Para fotografia o PNG costuma sair maior que o JPEG. E os pixels de sobra continuariam lá.' },
+    ]},
+    explanation: 'Foto de câmera chega com milhares de pixels de largura. Reduzir para o tamanho de exibição costuma cortar mais de 90% antes de qualquer compressão.',
+  },
+  {
+    id: 'AP035-F-Q32', type: 'scenario',
+    requisitos: ['AP035-6.1'],
+    prompt: 'Você terminou as quatro páginas e o menu de cada uma. Ao clicar em Galeria, o navegador diz que a página não foi encontrada. O que conferir primeiro?',
+    data: { scenarios: [
+      { id: 'a', text: 'Se o nome no link bate letra por letra com o do arquivo.', correct: true },
+      { id: 'b', text: 'Se a página da galeria tem conteúdo suficiente para abrir.', porque: 'Página vazia abre normalmente, em branco. Esse aviso é de arquivo não encontrado.' },
+      { id: 'c', text: 'Se o site foi publicado num servidor que aceita quatro páginas.', porque: 'Não existe limite de páginas. O aviso aponta para um endereço que não achou arquivo.' },
+      { id: 'd', text: 'Se as quatro páginas estão em pastas separadas, uma para cada.', porque: 'Elas ficam na mesma pasta, e é isso que faz o nome do arquivo bastar no link.' },
+    ]},
+    explanation: 'No servidor, maiúscula e minúscula são letras diferentes: galeria.html e Galeria.html são dois arquivos. É o erro que funciona no seu computador e quebra depois de publicado.',
   },
 ];
 
