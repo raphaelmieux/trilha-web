@@ -755,6 +755,37 @@ parágrafo de ajuda do Explorador fixava `--color-text-dim`, que só podia acert
 numa das duas superfícies: hoje herda a cor de quem o desenha.
 `painelDoLaboratorio.test.ts` refaz a conta sobre as folhas de verdade.
 
+**Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
+AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
+nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
+anterior avalia como concluído: quem já entregou aquele documento veria tarefas
+novas aparecerem num exercício que ele fechou. `EstilosTextoLab` é outro
+laboratório, na **mesma janela** de `word.tsx` — o desbravador reencontra a
+faixa que já conhece, com grupos novos onde eles de fato estão: Estilos em
+Início, Colunas em Layout, Sumário e Nota de Rodapé em Referências, que é uma
+guia que ele nunca teve motivo de abrir.
+
+E o documento dele chega **escrito por inteiro**, o que é o contrário da regra
+de sempre e é o ponto: título, três seções, oito itens, versículo. Na tela
+parece um manual acabado, e é por isso que o painel abre com nove tarefas
+vermelhas sem que se veja o que falta. O que falta aparece num clique — mandar
+gerar o sumário, que sai vazio porque não há um único parágrafo marcado como
+título.
+
+**O sumário guarda o que leu, e é essa a metade da lição que ninguém conta.** No
+Word ele não se refaz sozinho: trocar um título depois de gerar deixa o sumário
+mostrando o texto velho, e nada na tela avisa. Se a tarefa apenas conferisse
+"existe sumário", o desbravador entregaria um manual cujo sumário diz MANUAL DO
+ACAMPAMENTO DE INVERNO em caixa alta — o título que ele consertou — e a
+plataforma daria por bom. A trava confere que ele está em dia, e o botão
+Atualizar Sumário existe porque é o que o alcança.
+
+**Estilo de parágrafo e estilo de caractere não são a mesma coisa**, e não é
+detalhe de implementação: é a razão de Ênfase não entrar no sumário e Título 2
+entrar. Os dois moram lado a lado na mesma galeria, que é onde o Word os põe.
+Realce entra pela mesma porta: ele pinta e não diz nada ao programa, então o
+sumário não fica sabendo dele.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que
@@ -908,6 +939,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/insignias.test.ts` | insígnia com critério no código e sem linha no catálogo |
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
+| `src/labs/metasDaAp044.test.ts` | tarefa do laboratório de estilos que nasce verde, ou que ninguém consegue vencer |
+| `src/labs/EstilosTextoLab.test.tsx` | botão do laboratório de estilos que não chega ao documento, ou sumário velho valendo por novo |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
