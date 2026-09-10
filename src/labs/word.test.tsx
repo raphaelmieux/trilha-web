@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { CSS_WORD, GUIAS_DO_WORD } from './word';
 import InsercaoTextoLab from './InsercaoTextoLab';
 import FormatacaoTextoLab from './FormatacaoTextoLab';
+import EstilosTextoLab from './EstilosTextoLab';
 
 /*
   O que a janela do Word não pode perder.
@@ -70,6 +71,16 @@ const LABORATORIOS = [
         specialtyCode="AP042" lessonCode="AP042.2-L2"
         lessonTitle="Formatando um documento inteiro"
         requirementCodes={['AP042-3.1']}
+        userId="00000000-0000-0000-0000-000000000000" />
+    ),
+  },
+  {
+    nome: 'estilos (AP044)',
+    elemento: (
+      <EstilosTextoLab
+        specialtyCode="AP044" lessonCode="AP044.4-L2"
+        lessonTitle="Formatando o boletim do clube"
+        requirementCodes={['AP044-7.1']}
         userId="00000000-0000-0000-0000-000000000000" />
     ),
   },
