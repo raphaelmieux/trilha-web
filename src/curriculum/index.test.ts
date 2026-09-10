@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
-import { ap034, ap035, ap041, ap042, getAllSpecialties } from './index';
+import { ap034, ap035, ap041, ap042, getAllSpecialties, getOpenSpecialties } from './index';
 import { getFinalExamQuestions, todasAsQuestoesDaProva, quantasAProvaPergunta } from './finalExams';
 
 describe('AP034 curriculum', () => {
@@ -284,8 +284,25 @@ describe('Final exam questions', () => {
 
 
 describe('o sorteio da prova final', () => {
+  /*
+    A lista era escrita à mão, e ficou para trás duas vezes: a AP043 entrou
+    nela, a AP044 não, e nenhuma das duas omissões estoura nada — o teste
+    continua verde examinando as trilhas velhas. Hoje ela sai de
+    `getOpenSpecialties()`, filtrada pelas que têm prova: trilha aberta é
+    conferida no dia em que abre, sem ninguém precisar lembrar.
+  */
+  const comProva = getOpenSpecialties()
+    .filter(s => todasAsQuestoesDaProva(s.code).length > 0)
+    .map(s => s.code);
+
+  /* Filtro que esvaziasse a lista deixaria a build verde por não ter
+     conferido nada — a armadilha do "zero link não é zero link quebrado". */
+  it('há prova para o sorteio conferir', () => {
+    expect(comProva.length).toBeGreaterThan(0);
+  });
+
   it('entrega a quantidade declarada, e não o reservatório inteiro', () => {
-    for (const code of ['AP034', 'AP035', 'AP041', 'AP042', 'AP043']) {
+    for (const code of comProva) {
       const pool = todasAsQuestoesDaProva(code).length;
       const sorteadas = getFinalExamQuestions(code).length;
       expect(sorteadas, code).toBe(quantasAProvaPergunta(code));
@@ -303,7 +320,7 @@ describe('o sorteio da prova final', () => {
   });
 
   it('não repete questão dentro da mesma tentativa', () => {
-    for (const code of ['AP034', 'AP035', 'AP041', 'AP042', 'AP043']) {
+    for (const code of comProva) {
       const ids = getFinalExamQuestions(code).map(q => q.id);
       expect(new Set(ids).size, code).toBe(ids.length);
     }
@@ -311,7 +328,7 @@ describe('o sorteio da prova final', () => {
 });
 
 /**
- * Structural invariants, checked for both specialties.
+ * Structural invariants, checked for every open trail.
  *
  * These exist because two separate lessons were found pointing at the same lab
  * component: AP034's "Laboratório de Cenários de Segurança" rendered the pact
@@ -319,13 +336,22 @@ describe('o sorteio da prova final', () => {
  * In both cases a student met an identical screen twice and the second visit
  * assessed nothing, while a requirement went uncovered in practice. Nothing in
  * the type system prevents that — it is a data mistake — so it is checked here.
+ *
+ * A lista era escrita à mão, e parou nas quatro primeiras: a AP043 abriu sem
+ * entrar nela e a AP044 também, e nenhuma das duas omissões reprova coisa
+ * alguma — a trava segue verde conferindo as trilhas velhas, que é a pior
+ * forma de falhar. Ela sai de `getOpenSpecialties()` agora, e trilha aberta é
+ * conferida no dia em que abre.
  */
-describe.each([
-  ['AP034', ap034],
-  ['AP035', ap035],
-  ['AP041', ap041],
-  ['AP042', ap042],
-])('%s structure', (code, specialty) => {
+describe('há trilha aberta para as travas estruturais conferirem', () => {
+  /* Filtro que esvaziasse a lista deixaria a build verde por não ter conferido
+     nada — a armadilha do "zero link não é zero link quebrado". */
+  it('a lista não está vazia', () => {
+    expect(getOpenSpecialties().length).toBeGreaterThan(0);
+  });
+});
+
+describe.each(getOpenSpecialties().map(s => [s.code, s] as const))('%s structure', (code, specialty) => {
   const lessons = specialty.modules.flatMap(m => m.lessons);
 
   it('gives every lesson a unique code', () => {

@@ -1046,6 +1046,17 @@ mexido em nada. Os dois leem `todasAsQuestoesDaProva`, que devolve o
 reservatório sem sortear e existe para isso. O sorteio tem travas próprias, em
 `index.test.ts`.
 
+**Trava com lista de trilhas escrita à mão para de conferir sozinha.** As travas
+estruturais do `index.test.ts` — código de lição repetido, requisito citado que
+não existe, requisito sem lição, dois módulos apontando para o mesmo
+laboratório — enumeravam quatro trilhas num `describe.each`. A AP043 abriu e não
+entrou na lista; a AP044 também não. Nenhuma das duas omissões reprova coisa
+alguma: a build segue verde conferindo as trilhas velhas, que é a pior forma de
+falhar, porque é indistinguível de estar tudo certo. As listas saem de
+`getOpenSpecialties()` hoje, e trilha aberta é conferida no dia em que abre. Com
+a guarda contra o vazio junto, que é o de sempre — lista que esvaziasse deixaria
+a build verde por não ter conferido nada.
+
 ## As outras travas
 
 Quase todas nasceram de um erro que já aconteceu. Se uma delas reprovar, ela
@@ -1080,6 +1091,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/exemplosDePython.test.ts` | exemplo de Python cuja saída declarada não é a que o programa escreve |
 | `src/curriculum/laboratoriosDePython.test.ts` | laboratório de Python impossível de vencer, ou cujo modelo já abre resolvido |
 | `src/curriculum/index.test.ts` | trilha sem emblema ou sem fundo de certificado no repositório |
+| `src/curriculum/index.test.ts` | trilha aberta com lição, módulo ou laboratório repetido, ou requisito sem lição |
 | `src/curriculum/exemplosDaTeoria.test.ts` | seletor do exemplo de CSS que não acha ninguém na marcação do tópico |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |
 | `src/curriculum/qualidade.test.ts` | lição ou prova que sorteia sem ter três questões de sobra |
