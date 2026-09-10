@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { ROTULO_DO_NIVEL, type CertificadoVerificado } from '../types';
 import { Award, Search, CheckCircle2 } from 'lucide-react';
+import { MarcaEmTexto } from '../components/ui/BrandMark';
 import { ErrorState } from '../components/ui/PageState';
 import { comoCertificadoVerificado, percursoDoCertificado } from '../lib/certificados';
 
@@ -49,7 +50,7 @@ export default function VerifyPage() {
     <div className="space-y-6">
       <div className="card p-6">
         <h1 className="text-2xl font-bold mb-2 flex items-center gap-2">
-          <Award className="w-6 h-6" style={{ color: 'var(--color-secondary)' }} /> Verificar Token.Web()
+          <Award className="w-6 h-6" style={{ color: 'var(--color-secondary)' }} /> Verificar <MarcaEmTexto marca="token" />
         </h1>
         <div className="flex gap-2">
           <input
@@ -75,7 +76,7 @@ export default function VerifyPage() {
         <div className="card p-8" style={{ borderColor: 'var(--color-secondary-a30)', backgroundColor: 'var(--color-secondary-a03)' }}>
           <div className="text-center mb-6">
             <Award className="w-16 h-16 mx-auto mb-3" style={{ color: 'var(--color-secondary)' }} />
-            <h2 className="text-2xl font-bold">Token.Web() Válido</h2>
+            <h2 className="text-2xl font-bold"><MarcaEmTexto marca="token" /> Válido</h2>
           </div>
           <div className="space-y-3 text-sm">
             {[
