@@ -2411,12 +2411,607 @@ const rawAp043Final: Question[] = [
   ramo calado: código sem prova devolve vazio, e há teste exigindo que toda
   trilha com módulo final tenha a sua.
 */
+/*
+  A prova da AP044.
+
+  ── O que ela mede, e o que o laboratório já mediu ───────────────────────
+  Onze dos treze itens da trilha são de prática, e quem mede o gesto é o
+  laboratório, que observa cada um acontecer. A prova mede a **decisão que está
+  por trás dele** — não "você usou o Cco", e sim de quem é o endereço que se
+  está prestes a mostrar; não "você inseriu um vídeo", e sim o que o quadro
+  preto no computador do clube quer dizer.
+
+  Escrever a pergunta como autodeclaração — "você fez?" — seria devolver à prova
+  exatamente o que a plataforma inteira evita.
+
+  ── As questões que medem vários requisitos ──────────────────────────────
+  Cinquenta e seis requisitos com matéria, e é uma questão de associar que os
+  mantém numa prova curta: a dos programas por função liga seis de uma vez, a
+  das unidades de medida liga cinco, a dos recursos do editor liga cinco.
+  Questão que cobre mais gastando uma vaga só é o que faz o piso do sorteio
+  caber.
+*/
+const rawAp044Final: Question[] = [
+  {
+    id: 'AP044-F-Q1', type: 'matching',
+    requisitos: ['AP044-2.1', 'AP044-2.2', 'AP044-2.3', 'AP044-2.4', 'AP044-2.5'],
+    prompt: 'Ligue cada unidade a uma coisa que costuma ter esse tamanho.',
+    data: { pairs: [
+      { left: 'Bit', right: 'Uma resposta de sim ou não' },
+      { left: 'Kilobyte', right: 'Uma página de texto simples' },
+      { left: 'Megabyte', right: 'Uma foto do celular' },
+      { left: 'Gigabyte', right: 'Um filme inteiro' },
+      { left: 'Terabyte', right: 'O disco de um computador novo' },
+    ]},
+    explanation: 'Cada degrau da escala multiplica o anterior por cerca de mil.',
+  },
+  {
+    id: 'AP044-F-Q2', type: 'multiple_choice',
+    requisitos: ['AP044-2.3', 'AP044-2.5'],
+    prompt: 'A internet do clube é de 40 megabits por segundo. Um arquivo de 40 megabytes leva quanto tempo, mais ou menos?',
+    data: { options: [
+      { id: 'a', text: 'Uns oito segundos, porque um byte tem oito bits.', correct: true },
+      { id: 'b', text: 'Um segundo, porque os dois números são iguais.',
+        porque: 'Os nomes se parecem e as unidades não são as mesmas: megabit não é megabyte.' },
+      { id: 'c', text: 'Uns quarenta segundos, um por megabyte do arquivo.',
+        porque: 'Isso seria um megabyte por segundo, que é bem menos do que 40 Mb/s entrega.' },
+      { id: 'd', text: 'Menos de um segundo, porque a velocidade é maior que o arquivo.',
+        porque: 'Só pareceria maior se as duas unidades fossem a mesma — e não são.' },
+    ]},
+    explanation: 'Divida por oito para passar de megabits para megabytes: 40 Mb/s são 5 MB por segundo.',
+  },
+  {
+    id: 'AP044-F-Q3', type: 'multiple_choice',
+    requisitos: ['AP044-3.1'],
+    prompt: 'O antivírus do computador do clube está atualizado, e mesmo assim o sistema pede uma atualização. Por que ela também importa?',
+    data: { options: [
+      { id: 'a', text: 'Porque ela fecha a falha por onde o programa entraria.', correct: true },
+      { id: 'b', text: 'Porque sem ela o antivírus para de funcionar depois de um tempo.',
+        porque: 'O antivírus continua funcionando. O que ele não faz é consertar falha do sistema.' },
+      { id: 'c', text: 'Porque a atualização do sistema serve para deixar as telas mais bonitas.',
+        porque: 'Boa parte de cada atualização é justamente conserto de falha de segurança.' },
+      { id: 'd', text: 'Porque ela apaga os vírus que o antivírus não conseguiu remover.',
+        porque: 'Remover é trabalho do antivírus. A atualização fecha a porta, e não limpa a casa.' },
+    ]},
+    explanation: 'Uma fecha a porta, a outra reconhece quem bateu. Faltando qualquer uma, sobra caminho.',
+  },
+  {
+    id: 'AP044-F-Q4', type: 'ordering',
+    requisitos: ['AP044-4.1'],
+    prompt: 'Ordene o que acontece quando você abre uma página da internet.',
+    data: { items: [
+      { id: 'a', text: 'Seu aparelho pergunta o endereço a um computador da rede', order: 1 },
+      { id: 'b', text: 'O pedido viaja por cabos até o computador onde a página está guardada', order: 2 },
+      { id: 'c', text: 'Esse computador devolve os arquivos da página', order: 3 },
+      { id: 'd', text: 'O navegador monta a página com o que chegou', order: 4 },
+    ]},
+    explanation: 'Nada paira no ar: o arquivo está num computador de alguém, num prédio que existe.',
+  },
+  {
+    id: 'AP044-F-Q5', type: 'multiple_choice',
+    requisitos: ['AP044-4.1'],
+    prompt: 'Por que dizer que a foto publicada "fica na nuvem" atrapalha quem está aprendendo?',
+    data: { options: [
+      { id: 'a', text: 'Porque ela está guardada num computador de alguém, e isso muda o que se espera.', correct: true },
+      { id: 'b', text: 'Porque a palavra nuvem é usada só por empresas grandes, e confunde os pequenos.',
+        porque: 'Não é quem usa a palavra: é a ideia de que o arquivo não está em lugar nenhum.' },
+      { id: 'c', text: 'Porque a foto na verdade continua apenas no aparelho de quem publicou.',
+        porque: 'Ao publicar, ela é copiada para o servidor — passa a existir também lá.' },
+      { id: 'd', text: 'Porque nuvem é um termo técnico que quer dizer outra coisa bem diferente.',
+        porque: 'O termo existe e é usado assim; o que engana é a imagem de algo pairando no ar.' },
+    ]},
+    explanation: 'Se está num computador de alguém, apagar do seu aparelho não apaga de lá.',
+  },
+  {
+    id: 'AP044-F-Q6', type: 'matching',
+    requisitos: ['AP044-10.1', 'AP044-10.2', 'AP044-10.3', 'AP044-10.4', 'AP044-10.5', 'AP044-10.6'],
+    prompt: 'Ligue cada tarefa ao tipo de programa que a resolve.',
+    data: { pairs: [
+      { left: 'Escrever o relatório do acampamento', right: 'Editor de texto' },
+      { left: 'Somar as diárias por unidade', right: 'Planilha eletrônica' },
+      { left: 'Guardar 25 fichas com estrutura', right: 'Banco de dados' },
+      { left: 'Dar instruções ao computador', right: 'Linguagem de programação' },
+      { left: 'Tirar o fundo de uma foto', right: 'Editor de imagens' },
+      { left: 'Cortar e montar as filmagens', right: 'Editor de vídeo' },
+    ]},
+    explanation: 'A categoria é o que se aprende; o nome de cada época se procura por ela.',
+  },
+  {
+    id: 'AP044-F-Q7', type: 'multiple_choice',
+    requisitos: ['AP044-10.4', 'AP044-10.1'],
+    prompt: 'Alguém diz que "usa VS Code para programar" e outra pessoa que "usa Python". As duas falam da mesma categoria de coisa?',
+    data: { options: [
+      { id: 'a', text: 'Não: uma é o editor onde se digita, a outra é a linguagem.', correct: true },
+      { id: 'b', text: 'Sim: os dois são linguagens de programação atuais.',
+        porque: 'O VS Code não é linguagem nenhuma — é onde se escreve.' },
+      { id: 'c', text: 'Sim: os dois são editores, e Python é o mais novo dos dois.',
+        porque: 'Python é a linguagem. Dá para escrevê-la até no Bloco de Notas.' },
+      { id: 'd', text: 'Não: uma serve para a internet e a outra para programas de computador.',
+        porque: 'Os dois servem aos dois. A diferença é de categoria, e não de destino.' },
+    ]},
+    explanation: 'O editor sozinho não executa nada, e a linguagem não precisa daquele editor.',
+  },
+  {
+    id: 'AP044-F-Q8', type: 'scenario',
+    requisitos: ['AP044-12.1'],
+    prompt: 'Você precisa avisar as sessenta famílias do clube sobre o acampamento e já tem a lista de endereços. O que faz?',
+    data: { scenarios: [
+      { id: 'a', text: 'Ponho a lista no Cco, porque as famílias não combinaram trocar endereço.', correct: true },
+      { id: 'b', text: 'Ponho a lista no Para: é a elas que a mensagem se destina.',
+        porque: 'No Para, cada família recebe o endereço das outras cinquenta e nove — e não há como desfazer.' },
+      { id: 'c', text: 'Ponho a lista no Cc, que é o campo próprio para muita gente.',
+        porque: 'O Cc também mostra a lista a todos. Quem esconde é o Cco.' },
+      { id: 'd', text: 'Divido entre Para e Cc para a lista não ficar comprida demais.',
+        porque: 'O tamanho não é o problema: é a lista ficar visível, e nos dois campos fica.' },
+    ]},
+    explanation: 'Endereço dos outros não é seu para mostrar. A pergunta é sempre: estas pessoas combinaram trocar endereço?',
+  },
+  {
+    id: 'AP044-F-Q9', type: 'true_false',
+    requisitos: ['AP044-12.1'],
+    prompt: 'Mandar a senha do Wi-Fi do clube por e-mail é seguro, desde que só para uma pessoa.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'É falso: a mensagem fica guardada nos dois lados, por tempo indefinido, em texto que qualquer um que abra a conta lê.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'Senha não anda por e-mail. O que sai não volta, e fica guardado.',
+  },
+  {
+    id: 'AP044-F-Q10', type: 'multiple_choice',
+    requisitos: ['AP044-5.1'],
+    prompt: 'Você achou um site que explica o assunto da escola. O que mais ajuda a decidir se dá para confiar nele?',
+    data: { options: [
+      { id: 'a', text: 'Saber quem o escreveu e de quando é o texto.', correct: true },
+      { id: 'b', text: 'Ele aparecer na primeira posição da busca.',
+        porque: 'A posição fala de popularidade e de anúncio, e não de quem respondeu por aquilo.' },
+      { id: 'c', text: 'Ter muitas imagens e um desenho bonito de página.',
+        porque: 'Aparência se contrata. O que sustenta o conteúdo é a autoria.' },
+      { id: 'd', text: 'Não pedir nenhum cadastro para ler o conteúdo.',
+        porque: 'Site bom e site ruim podem ser abertos do mesmo jeito.' },
+    ]},
+    explanation: 'Autoria e data são o que separa uma fonte de um texto solto na internet.',
+  },
+  {
+    id: 'AP044-F-Q11', type: 'multiple_choice',
+    requisitos: ['AP044-6.1'],
+    prompt: 'Na agenda do clube, uma pessoa digitou o telefone na coluna do endereço. O que acontece?',
+    data: { options: [
+      { id: 'a', text: 'Nada dá erro, e a busca por telefone deixa de encontrar aquela pessoa.', correct: true },
+      { id: 'b', text: 'O programa avisa na hora que o dado está na coluna errada.',
+        porque: 'Ele não sabe o que é um telefone: só sabe em que coluna foi escrito.' },
+      { id: 'c', text: 'A linha inteira é recusada e some da tabela até ser corrigida.',
+        porque: 'A linha continua lá, com a informação no lugar errado — e é isso que a torna perigosa.' },
+      { id: 'd', text: 'O telefone é movido sozinho para a coluna certa pelo programa.',
+        porque: 'Nenhum programa adivinha intenção: ele guarda o que foi escrito onde foi escrito.' },
+    ]},
+    explanation: 'Erro que não estoura é o pior tipo: a agenda parece certa e responde errado.',
+  },
+  {
+    id: 'AP044-F-Q12', type: 'fill_blank',
+    requisitos: ['AP044-6.1'],
+    prompt: 'Complete as lacunas sobre a estrutura de um banco de dados.',
+    data: { blanks: [
+      { id: 'b1', answer: 'campo', hint: 'O tipo de informação — vira uma coluna da tabela' },
+      { id: 'b2', answer: 'registro', hint: 'Uma pessoa inteira — vira uma linha da tabela' },
+      { id: 'b3', answer: 'validação', hint: 'A regra que recusa o e-mail sem arroba na digitação' },
+    ]},
+    explanation: 'Coluna é campo, linha é registro, e a regra de validação confere antes de aceitar.',
+  },
+  {
+    id: 'AP044-F-Q13', type: 'matching',
+    requisitos: ['AP044-7.1', 'AP044-7.4', 'AP044-7.5', 'AP044-7.7', 'AP044-7.8'],
+    prompt: 'Ligue cada recurso do editor de texto ao que ele produz.',
+    data: { pairs: [
+      { left: 'Estilo "Título 1"', right: 'Parágrafo que o sumário enxerga' },
+      { left: 'Sobrescrito', right: 'O 2 pequeno e no alto de m²' },
+      { left: 'Realce', right: 'Cor pintada atrás do texto' },
+      { left: 'Colunas', right: 'A lista repartida em duas faixas' },
+      { left: 'Nota de rodapé', right: 'Explicação numerada no pé da página' },
+    ]},
+    explanation: 'Só o estilo diz ao programa o que aquele parágrafo é. Os outros mudam a aparência.',
+  },
+  {
+    id: 'AP044-F-Q14', type: 'multiple_choice',
+    requisitos: ['AP044-7.2', 'AP044-7.3'],
+    prompt: 'Você copia um trecho de um site e cola no documento. Ele chega com fundo cinza e outra fonte. O que aconteceu?',
+    data: { options: [
+      { id: 'a', text: 'A colagem manteve a formatação de origem, que era a escolha padrão.', correct: true },
+      { id: 'b', text: 'O editor de texto se confundiu e vai estragar o resto do documento.',
+        porque: 'Ele fez o que se pediu: trouxe tudo. Nada mais no documento foi tocado.' },
+      { id: 'c', text: 'O site protegeu o texto para que ninguém o use em outro lugar.',
+        porque: 'Não há proteção nenhuma aí: o que veio junto foi a aparência.' },
+      { id: 'd', text: 'O trecho colado virou imagem, e por isso não segue a fonte do documento.',
+        porque: 'Continua sendo texto: dá para editar letra por letra.' },
+    ]},
+    explanation: 'A outra opção estava no mesmo menu: colar mantendo somente o texto usa a formatação do destino.',
+  },
+  {
+    id: 'AP044-F-Q15', type: 'multiple_choice',
+    requisitos: ['AP044-7.6'],
+    prompt: 'Um título inteiro foi digitado com o Caps Lock ligado. Qual é o jeito certo de consertar?',
+    data: { options: [
+      { id: 'a', text: 'Usar o botão de alternar maiúsculas e minúsculas.', correct: true },
+      { id: 'b', text: 'Apagar e digitar de novo, com atenção nas maiúsculas.',
+        porque: 'Funciona e é o caminho longo — num documento com dezoito títulos, custa a tarde.' },
+      { id: 'c', text: 'Diminuir o tamanho da letra até as maiúsculas ficarem discretas.',
+        porque: 'O texto guardado continua em caixa alta: só a aparência mudaria.' },
+      { id: 'd', text: 'Aplicar um estilo de título, que arruma a caixa junto.',
+        porque: 'O estilo muda tamanho, cor e peso — o texto continua em maiúsculas.' },
+    ]},
+    explanation: 'O botão troca o texto guardado, e não a aparência dele.',
+  },
+  {
+    id: 'AP044-F-Q16', type: 'multiple_choice',
+    requisitos: ['AP044-7.9', 'AP044-7.1'],
+    prompt: 'Você mandou gerar o sumário e ele saiu vazio. Qual é a causa?',
+    data: { options: [
+      { id: 'a', text: 'Nenhum parágrafo foi marcado com estilo de título.', correct: true },
+      { id: 'b', text: 'O documento é curto demais para o recurso funcionar.',
+        porque: 'Não há tamanho mínimo: com um título marcado, o sumário já lista um.' },
+      { id: 'c', text: 'O sumário precisa ser digitado antes, para o programa saber o que listar.',
+        porque: 'Digitar à mão é justamente o que o recurso existe para evitar.' },
+      { id: 'd', text: 'Faltou numerar as páginas antes de mandar gerar.',
+        porque: 'A numeração é outra coisa, e o sumário sai mesmo sem ela.' },
+    ]},
+    explanation: 'Ele lista o que está marcado como título. Negrito 16 não diz nada ao programa.',
+  },
+  {
+    id: 'AP044-F-Q17', type: 'multiple_choice',
+    requisitos: ['AP044-8.1'],
+    prompt: 'Com um filtro aplicado, a célula do total mostra um número maior do que a soma do que está na tela. Por quê?',
+    data: { options: [
+      { id: 'a', text: 'Porque a soma continua contando as linhas escondidas pelo filtro.', correct: true },
+      { id: 'b', text: 'Porque a fórmula ficou errada e precisa ser reescrita a cada filtro.',
+        porque: 'A fórmula está certa: soma o intervalo que lhe foi dado, filtro ou não.' },
+      { id: 'c', text: 'Porque o programa arredonda o total quando há filtro aplicado.',
+        porque: 'Não há arredondamento: a diferença é exatamente o que está escondido.' },
+      { id: 'd', text: 'Porque as linhas escondidas passam a valer o dobro no cálculo.',
+        porque: 'Elas valem o que valiam. O que muda é apenas o que se vê.' },
+    ]},
+    explanation: 'É a armadilha do filtro: o que se vê e o que se soma podem ser conjuntos diferentes.',
+  },
+  {
+    id: 'AP044-F-Q18', type: 'true_false',
+    requisitos: ['AP044-8.2'],
+    prompt: 'Congelar a primeira linha da planilha impede que alguém altere o conteúdo do cabeçalho.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', porque: 'É falso: congelar é coisa de tela. Quem trava a célula contra edição é a proteção, que é outro recurso.' },
+      { id: 'b', text: 'Falso', correct: true },
+    ]},
+    explanation: 'Congelar só decide o que fica parado enquanto o resto rola.',
+  },
+  {
+    id: 'AP044-F-Q19', type: 'multiple_choice',
+    requisitos: ['AP044-8.3'],
+    prompt: 'Você quer mostrar como a inscrição do acampamento cresceu de janeiro a junho. Que gráfico usar?',
+    data: { options: [
+      { id: 'a', text: 'Linhas, porque o eixo tem ordem no tempo.', correct: true },
+      { id: 'b', text: 'Pizza, porque cada mês é uma parte do total do semestre.',
+        porque: 'Pizza responde composição. Ela não mostra que março veio depois de fevereiro.' },
+      { id: 'c', text: 'Colunas, porque servem para qualquer tipo de dado numérico.',
+        porque: 'Colunas comparam bem, mas não mostram a subida entre um mês e o seguinte.' },
+      { id: 'd', text: 'Dispersão, porque há dois valores relacionados em cada ponto.',
+        porque: 'Dispersão relaciona duas medidas, e não uma série no tempo.' },
+    ]},
+    explanation: 'Composição, comparação ou evolução: a pergunta escolhe o tipo.',
+  },
+  {
+    id: 'AP044-F-Q20', type: 'matching',
+    requisitos: ['AP044-9.1', 'AP044-9.2', 'AP044-9.3', 'AP044-9.4'],
+    prompt: 'Ligue cada recurso da apresentação ao que ele decide.',
+    data: { pairs: [
+      { left: 'Modelo', right: 'A aparência de todos os slides' },
+      { left: 'Layout', right: 'Onde ficam as caixas de um slide' },
+      { left: 'Duplicar slide', right: 'Uma cópia com conteúdo e formato' },
+      { left: 'Alinhar imagens', right: 'Fotos na mesma altura, por comando' },
+    ]},
+    explanation: 'Modelo é para todos, layout é para um, e alinhar é comando, não olho.',
+  },
+  {
+    id: 'AP044-F-Q21', type: 'scenario',
+    requisitos: ['AP044-9.5', 'AP044-9.6'],
+    prompt: 'Você inseriu vídeo e áudio, levou a apresentação no pen drive, e no computador do clube o quadro do vídeo está preto. O que houve?',
+    data: { scenarios: [
+      { id: 'a', text: 'O vídeo foi vinculado, e só o endereço dele viajou no arquivo.', correct: true },
+      { id: 'b', text: 'O pen drive corrompeu o vídeo ao copiar a apresentação.',
+        porque: 'Cópia com defeito costuma impedir o arquivo inteiro de abrir, e não só o vídeo.' },
+      { id: 'c', text: 'Vídeo em apresentação só toca no computador em que foi inserido.',
+        porque: 'Toca em qualquer um — desde que o arquivo esteja incorporado.' },
+      { id: 'd', text: 'O computador do clube precisaria estar conectado à internet.',
+        porque: 'Vídeo incorporado toca sem internet nenhuma.' },
+    ]},
+    explanation: 'Incorporar põe o arquivo dentro; vincular guarda um caminho que não existe na outra máquina.',
+  },
+  {
+    id: 'AP044-F-Q22', type: 'multiple_choice',
+    requisitos: ['AP044-9.7'],
+    prompt: 'Por que não basta levar o PDF da apresentação no dia de apresentar?',
+    data: { options: [
+      { id: 'a', text: 'Porque nele o vídeo não toca, o áudio não toca e a transição não acontece.', correct: true },
+      { id: 'b', text: 'Porque o PDF muda as letras quando abre em outro computador.',
+        porque: 'É justamente o contrário: ele congela a aparência, e as letras vão junto.' },
+      { id: 'c', text: 'Porque o PDF não pode ser exibido em tela cheia num projetor.',
+        porque: 'Qualquer leitor de PDF abre em tela cheia.' },
+      { id: 'd', text: 'Porque o PDF só abre em computador que tenha o programa instalado.',
+        porque: 'Ele abre em quase todo aparelho, mesmo sem o programa da apresentação.' },
+    ]},
+    explanation: 'O PDF é o que se entrega. Para apresentar, leve a apresentação.',
+  },
+  {
+    id: 'AP044-F-Q23', type: 'matching',
+    requisitos: ['AP044-11.1', 'AP044-11.2', 'AP044-11.3', 'AP044-11.7'],
+    prompt: 'Ligue cada situação ao campo ou gesto certo do correio.',
+    data: { pairs: [
+      { left: 'Quem precisa tomar a providência', right: 'Para' },
+      { left: 'O diretor, que só acompanha', right: 'Cc' },
+      { left: 'Sessenta famílias que não se conhecem', right: 'Cco' },
+      { left: 'Mensagem resolvida, e sem lixo', right: 'Arquivar' },
+    ]},
+    explanation: 'Cada campo diz um papel. Errar o campo é dizer a coisa errada sobre quem está ali.',
+  },
+  {
+    id: 'AP044-F-Q24', type: 'multiple_choice',
+    requisitos: ['AP044-11.4', 'AP044-11.5'],
+    prompt: 'Qual é a diferença entre o anexo e a assinatura numa mensagem?',
+    data: { options: [
+      { id: 'a', text: 'O anexo é um arquivo que viaja junto; a assinatura é texto que entra sozinho.', correct: true },
+      { id: 'b', text: 'O anexo aparece no fim da mensagem e a assinatura aparece no começo.',
+        porque: 'Posição não é a diferença: um é arquivo, o outro é texto que o programa repete.' },
+      { id: 'c', text: 'A assinatura comprova quem escreveu, e o anexo não comprova nada.',
+        porque: 'Comprovar é assinatura digital, que é outra coisa: qualquer um digita o mesmo texto.' },
+      { id: 'd', text: 'O anexo só pode ser imagem, e a assinatura só pode ser nome e telefone.',
+        porque: 'Anexa-se qualquer arquivo, e a assinatura leva o que se quiser escrever.' },
+    ]},
+    explanation: 'Um é conteúdo que se carrega; o outro é digitação que o programa faz por você.',
+  },
+  {
+    id: 'AP044-F-Q25', type: 'multiple_choice',
+    requisitos: ['AP044-11.8', 'AP044-11.9'],
+    prompt: 'Por que encaminhar uma conversa longa exige mais cuidado do que responder?',
+    data: { options: [
+      { id: 'a', text: 'Porque vai junto tudo o que está embaixo, para alguém que não estava ali.', correct: true },
+      { id: 'b', text: 'Porque encaminhar avisa o autor original de que a mensagem foi repassada.',
+        porque: 'Ninguém é avisado, e é por isso que o descuido não aparece.' },
+      { id: 'c', text: 'Porque a mensagem encaminhada perde os anexos que vieram com ela.',
+        porque: 'Os anexos costumam seguir junto — e às vezes esse é o problema.' },
+      { id: 'd', text: 'Porque só se pode encaminhar para uma pessoa de cada vez.',
+        porque: 'Dá para encaminhar para quantas quiser, o que aumenta o risco.' },
+    ]},
+    explanation: 'Responder volta para quem escreveu; encaminhar leva a história inteira para gente nova.',
+  },
+  {
+    id: 'AP044-F-Q26', type: 'multiple_choice',
+    requisitos: ['AP044-11.6'],
+    prompt: 'O que se confere antes de clicar em Enviar?',
+    data: { options: [
+      { id: 'a', text: 'Os campos, o que vai embaixo do encaminhado e qual arquivo foi anexado.', correct: true },
+      { id: 'b', text: 'Se o destinatário está com o computador ligado naquele momento.',
+        porque: 'A mensagem espera na caixa dele. Não é preciso que ele esteja online.' },
+      { id: 'c', text: 'Se a mensagem tem menos de mil caracteres, que é o limite comum.',
+        porque: 'Não há esse limite: o que existe é limite de tamanho para anexo.' },
+      { id: 'd', text: 'Se o assunto começa com uma letra maiúscula, senão ela é recusada.',
+        porque: 'Nenhum correio recusa por causa disso.' },
+    ]},
+    explanation: 'Reler antes de enviar é a única correção que existe: o que sai não volta.',
+  },
+  {
+    id: 'AP044-F-Q27', type: 'matching',
+    requisitos: ['AP044-13.2', 'AP044-13.3', 'AP044-13.4', 'AP044-13.5'],
+    prompt: 'Ligue cada ajuste do sistema ao que ele muda.',
+    data: { pairs: [
+      { left: 'Abrir com', right: 'Aquele arquivo, só desta vez' },
+      { left: 'Definir programa padrão', right: 'Todos os arquivos daquele tipo' },
+      { left: 'Definir impressora padrão', right: 'A que já vem escolhida ao imprimir' },
+      { left: 'Criar um usuário', right: 'Área de trabalho e arquivos próprios' },
+    ]},
+    explanation: 'Um vale para a vez; o outro muda a regra da máquina daí em diante.',
+  },
+  {
+    id: 'AP044-F-Q28', type: 'multiple_choice',
+    requisitos: ['AP044-13.1'],
+    prompt: 'A janela de otimizar unidades mostra "Unidade de estado sólido" na coluna do tipo de mídia. O que isso muda?',
+    data: { options: [
+      { id: 'a', text: 'Não há prato girando, então desfragmentar não acelera nada ali.', correct: true },
+      { id: 'b', text: 'Que aquela unidade não pode ser limpa, só a de disco rígido pode.',
+        porque: 'Limpeza de disco vale nos dois tipos: ela apaga temporário, e não reorganiza nada.' },
+      { id: 'c', text: 'Que a unidade está com defeito e precisa ser trocada em breve.',
+        porque: 'É só o tipo de mídia. Nada ali diz que a unidade tem problema.' },
+      { id: 'd', text: 'Que o Windows vai desfragmentar aquela unidade com mais frequência.',
+        porque: 'Ele faz o contrário: no SSD o botão passa a se chamar Otimizar.' },
+    ]},
+    explanation: 'A ferramenta é a mesma; o disco é que responde por si.',
+  },
+  {
+    id: 'AP044-F-Q29', type: 'ordering',
+    requisitos: ['AP044-7.9'],
+    prompt: 'Ordene os passos de montar um relatório com sumário automático.',
+    data: { items: [
+      { id: 'a', text: 'Escrever o texto do relatório', order: 1 },
+      { id: 'b', text: 'Aplicar estilo de título nos capítulos e nas seções', order: 2 },
+      { id: 'c', text: 'Mandar gerar o sumário', order: 3 },
+      { id: 'd', text: 'Atualizar o sumário depois de mexer nos títulos', order: 4 },
+    ]},
+    explanation: 'O sumário é a consequência dos estilos, e não um recurso à parte.',
+  },
+  {
+    id: 'AP044-F-Q30', type: 'multiple_choice',
+    requisitos: ['AP044-6.1', 'AP044-10.3'],
+    prompt: 'Uma lista de vinte e cinco nomes digitada no editor de texto não é um banco de dados. O que falta nela?',
+    data: { options: [
+      { id: 'a', text: 'A estrutura: cada informação sempre na mesma coluna.', correct: true },
+      { id: 'b', text: 'A quantidade: acima de cinquenta nomes ela passaria a ser.',
+        porque: 'Quantidade não muda nada: dez registros bem estruturados já são um banco.' },
+      { id: 'c', text: 'A ordem alfabética, que é o que define um banco de dados.',
+        porque: 'Ordenar é consequência da estrutura, e não a estrutura.' },
+      { id: 'd', text: 'O programa certo: no editor de texto isso é impossível.',
+        porque: 'Dá para montar banco de dados numa planilha. O que decide é a estrutura.' },
+    ]},
+    explanation: 'É a estrutura que permite ordenar, buscar e gerar relatório sem redigitar nada.',
+  },
+  {
+    id: 'AP044-F-Q31', type: 'multiple_choice',
+    requisitos: ['AP044-3.1', 'AP044-10.5'],
+    prompt: 'O computador do clube não tem o editor de imagens pago, e é preciso tratar uma foto. Qual é o caminho certo?',
+    data: { options: [
+      { id: 'a', text: 'Usar um programa gratuito da mesma categoria.', correct: true },
+      { id: 'b', text: 'Baixar uma cópia ativada num site que ofereça o download.',
+        porque: 'É de onde vem boa parte dos vírus: o instalador pirata é o disfarce mais antigo que existe.' },
+      { id: 'c', text: 'Esperar até ter acesso a um computador com o programa pago.',
+        porque: 'Há programa equivalente disponível agora, e de graça.' },
+      { id: 'd', text: 'Tratar a foto no editor de texto, que também abre imagens.',
+        porque: 'Ele insere a imagem na página; tratar a foto é outra coisa.' },
+    ]},
+    explanation: 'Quem conhece a categoria acha o equivalente; quem só conhece a marca acha que não dá.',
+  },
+  {
+    id: 'AP044-F-Q32', type: 'multiple_choice',
+    requisitos: ['AP044-9.2', 'AP044-9.3'],
+    prompt: 'Numa apresentação de vinte slides, os títulos foram desenhados à mão em caixas de texto. O que se percebe ao apresentar?',
+    data: { options: [
+      { id: 'a', text: 'O título pula de lugar a cada troca de slide.', correct: true },
+      { id: 'b', text: 'O programa recusa a exibição em tela cheia até que se use um layout.',
+        porque: 'Ele apresenta normalmente, e nada denuncia o problema na tela de edição.' },
+      { id: 'c', text: 'Os títulos somem quando o arquivo é aberto em outro computador.',
+        porque: 'Caixa de texto é conteúdo do slide e viaja com ele.' },
+      { id: 'd', text: 'Nada muda: a diferença entre os dois caminhos é só de trabalho.',
+        porque: 'A diferença aparece na sequência — cada slide parece certo, e o conjunto não fica.' },
+    ]},
+    explanation: 'É um defeito invisível de dentro: só existe quando os slides passam em sequência.',
+  },
+  /*
+    As oito de baixo não trazem matéria nova: elas dão ao sorteio **onde
+    escolher**.
+
+    Era o defeito que a AP043 já teve — o conjunto que cobre consumia quase
+    todas as vagas, e as poucas sobras eram os únicos lugares onde duas
+    tentativas podiam diferir. Na prática, quem refizesse a prova reencontrava
+    quase a mesma. Com dois caminhos para cada requisito que só tinha um, o
+    sorteio passa a escolher de verdade.
+  */
+  {
+    id: 'AP044-F-Q33', type: 'multiple_choice',
+    requisitos: ['AP044-5.1'],
+    prompt: 'Dois sites explicam o mesmo assunto e discordam entre si. O que fazer antes de usar um deles no trabalho?',
+    data: { options: [
+      { id: 'a', text: 'Procurar uma terceira fonte que confirme uma das duas.', correct: true },
+      { id: 'b', text: 'Ficar com o que apareceu primeiro na busca.',
+        porque: 'A posição fala de popularidade e de anúncio, e não de quem está certo.' },
+      { id: 'c', text: 'Ficar com o que tem o texto mais longo sobre o assunto.',
+        porque: 'Tamanho não é sinal de acerto — e às vezes é sinal de enrolação.' },
+      { id: 'd', text: 'Escrever os dois no trabalho, sem dizer qual é qual.',
+        porque: 'Entregar informação contraditória sem avisar deixa o problema para quem lê.' },
+    ]},
+    explanation: 'Duas fontes que discordam pedem uma terceira, e não uma escolha por aparência.',
+  },
+  {
+    id: 'AP044-F-Q34', type: 'multiple_choice',
+    requisitos: ['AP044-7.2', 'AP044-7.3'],
+    prompt: 'Você quer que o trecho copiado do site fique com a letra do seu documento. Qual opção de colagem usar?',
+    data: { options: [
+      { id: 'a', text: 'Manter somente o texto.', correct: true },
+      { id: 'b', text: 'Manter a formatação original.',
+        porque: 'É a que traz a letra, o tamanho e a cor do site — o contrário do pedido.' },
+      { id: 'c', text: 'Colar como imagem, para o texto não mudar de forma.',
+        porque: 'Vira figura: não dá para editar, corrigir nem buscar dentro dele.' },
+      { id: 'd', text: 'Colar e depois apagar o fundo colorido à mão.',
+        porque: 'Resolve o fundo e deixa a fonte e o tamanho errados — e é trabalho repetido.' },
+    ]},
+    explanation: 'As duas opções estão no mesmo menu, e a diferença é de onde vem a aparência.',
+  },
+  {
+    id: 'AP044-F-Q35', type: 'true_false',
+    requisitos: ['AP044-7.6'],
+    prompt: 'O botão de alternar maiúsculas e minúsculas muda o texto guardado, e não apenas a aparência dele.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', correct: true },
+      { id: 'b', text: 'Falso', porque: 'É verdadeiro: o texto passa a estar escrito assim no arquivo — por isso ele conserta o Caps Lock sem redigitar nada.' },
+    ]},
+    explanation: 'Ele reescreve, e é isso que o separa de um efeito de aparência.',
+  },
+  {
+    id: 'AP044-F-Q36', type: 'multiple_choice',
+    requisitos: ['AP044-8.1', 'AP044-8.2'],
+    prompt: 'Você filtrou a planilha e mandou o arquivo por e-mail. Quem recebeu diz que há cento e vinte linhas. Como isso é possível?',
+    data: { options: [
+      { id: 'a', text: 'O filtro esconde, e não apaga: elas foram junto.', correct: true },
+      { id: 'b', text: 'O e-mail desfez o filtro ao anexar a planilha.',
+        porque: 'O anexo vai como está. O filtro nem precisa ser desfeito para as linhas existirem.' },
+      { id: 'c', text: 'A pessoa abriu uma versão antiga do arquivo.',
+        porque: 'Mesmo na versão nova as linhas estão lá — escondidas, e não removidas.' },
+      { id: 'd', text: 'O congelamento de painéis restaurou as linhas escondidas.',
+        porque: 'Congelar é coisa de tela e não mexe em filtro nenhum.' },
+    ]},
+    explanation: 'Para mandar só uma parte, copia-se o que está à vista para outra planilha.',
+  },
+  {
+    id: 'AP044-F-Q37', type: 'multiple_choice',
+    requisitos: ['AP044-8.3'],
+    prompt: 'Por que uma pizza com quinze fatias é um gráfico ruim?',
+    data: { options: [
+      { id: 'a', text: 'Porque não se distingue o tamanho de uma fatia para a outra.', correct: true },
+      { id: 'b', text: 'Porque o programa não desenha mais de dez fatias por vez.',
+        porque: 'Ele desenha quantas houver. O limite é do olho de quem lê.' },
+      { id: 'c', text: 'Porque pizza só vale quando os valores somam exatamente cem.',
+        porque: 'O programa calcula a proporção sozinho, qualquer que seja o total.' },
+      { id: 'd', text: 'Porque quinze cores deixam o arquivo pesado demais.',
+        porque: 'Peso não tem nada a ver: o problema é a leitura ficar impossível.' },
+    ]},
+    explanation: 'Pizza serve para poucas partes. Com quinze, colunas mostram melhor.',
+  },
+  {
+    id: 'AP044-F-Q38', type: 'multiple_choice',
+    requisitos: ['AP044-9.7', 'AP044-9.1'],
+    prompt: 'Para que serve levar também o PDF no dia da apresentação?',
+    data: { options: [
+      { id: 'a', text: 'Para deixar com quem pediu, já que ele abre em qualquer aparelho.', correct: true },
+      { id: 'b', text: 'Para apresentar, caso o computador não tenha o programa.',
+        porque: 'No PDF o vídeo não toca e a transição não acontece: dá para mostrar, não para apresentar.' },
+      { id: 'c', text: 'Para que o modelo escolhido continue valendo em outra máquina.',
+        porque: 'O modelo já viaja dentro do arquivo da apresentação.' },
+      { id: 'd', text: 'Para poder editar os slides num computador sem o programa.',
+        porque: 'PDF é justamente o formato que não se edita com facilidade.' },
+    ]},
+    explanation: 'A apresentação é para apresentar; o PDF é para entregar.',
+  },
+  {
+    id: 'AP044-F-Q39', type: 'multiple_choice',
+    requisitos: ['AP044-11.6', 'AP044-11.4'],
+    prompt: 'Você percebeu, um minuto depois de enviar, que anexou o arquivo errado. O que dá para fazer?',
+    data: { options: [
+      { id: 'a', text: 'Enviar outra mensagem avisando e com o arquivo certo.', correct: true },
+      { id: 'b', text: 'Apagar a mensagem em Enviados, e ela some da caixa de quem recebeu.',
+        porque: 'Apagar a sua cópia não alcança a cópia que já chegou do outro lado.' },
+      { id: 'c', text: 'Trocar o anexo na mensagem já enviada, pela pasta de Enviados.',
+        porque: 'A mensagem enviada não se edita: ela já saiu do seu computador.' },
+      { id: 'd', text: 'Esperar: mensagens com anexo errado voltam sozinhas em 24 horas.',
+        porque: 'Nada disso acontece. O que volta é mensagem que não pôde ser entregue.' },
+    ]},
+    explanation: 'O que sai não volta. Reler antes de enviar é a única correção que existe.',
+  },
+  {
+    id: 'AP044-F-Q40', type: 'multiple_choice',
+    requisitos: ['AP044-13.1'],
+    prompt: 'A limpeza de disco liberou 12 GB. O que foi apagado?',
+    data: { options: [
+      { id: 'a', text: 'Arquivos temporários, lixeira e restos de atualização.', correct: true },
+      { id: 'b', text: 'Os programas que não eram abertos havia mais de um ano.',
+        porque: 'Ela não desinstala nada: programa sai pela desinstalação, e só se você mandar.' },
+      { id: 'c', text: 'Os arquivos pessoais mais antigos das pastas do usuário.',
+        porque: 'Documento e foto seus não são tocados — seria o que ninguém quer.' },
+      { id: 'd', text: 'As partes duplicadas de arquivos espalhados pelo disco.',
+        porque: 'Isso descreve a desfragmentação, que reorganiza e não apaga.' },
+    ]},
+    explanation: 'Limpeza devolve espaço tirando o que o computador guardou e não precisa mais.',
+  },
+];
+
 const PROVAS: Record<string, Question[]> = {
   AP034: rawAp034Final,
   AP035: rawAp035Final,
   AP041: rawAp041Final,
   AP042: rawAp042Final,
   AP043: rawAp043Final,
+  AP044: rawAp044Final,
 };
 
 /*
@@ -2432,6 +3027,7 @@ const PERGUNTAS_POR_PROVA: Record<string, number | undefined> = {
   AP041: 23,   /* de 27 */
   AP042: 15,   /* de 18 */
   AP043: 16,   /* de 20 */
+  AP044: 24,   /* de 40 */
 };
 
 /*
