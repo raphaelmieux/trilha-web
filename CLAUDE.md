@@ -864,6 +864,34 @@ sem erro nenhum: se a tarefa aceitasse qualquer tipo, ela mediria ter clicado em
 Inserir. O programa explica por que a escolha errada não responde, em vez de só
 deixar a tarefa vermelha.
 
+**Cco não é "o terceiro campo".** Uma mensagem com uma família no Cco e as
+outras cinquenta e nove no Para tem o campo preenchido e vazou tudo. O que a
+tarefa mede é o **vazamento não ter acontecido** — quantos endereços ficam
+visíveis —, e não o Cco estar vazio ou não.
+
+E enviar errado não é bloqueado: a prévia diz, antes do clique, quantos
+endereços cada pessoa vai ver; depois do clique a mensagem está enviada, a
+tarefa continua vermelha, e o jeito de consertar é escrever de novo. Simulação
+que vira muro no primeiro desvio ensina a andar no trilho, e "o que sai não
+volta" é a lição.
+
+**A assinatura configurada e nunca usada não demonstra nada** — é a família do
+"zero link não é zero link quebrado", e a tarefa exige que ela tenha saído numa
+mensagem.
+
+**A ferramenta é a mesma; o disco responde por si.** A máquina do laboratório de
+Configurações tem um SSD e um HD, e é isso que faz a lição do requisito 13
+existir: na janela de otimizar, a coluna "Tipo de mídia" diz qual é qual, e o
+botão troca de nome sozinho — Otimizar no SSD, Desfragmentar no HD. Ensinar a
+desfragmentar SSD é ensinar a gastar a vida útil do disco à toa, e o Windows de
+verdade já mostra isso escrito ali. A tarefa exige passar pelos dois: com um
+disco só, a diferença não é vista.
+
+**E "abrir com" não é "definir padrão".** Um vale para aquele arquivo, desta
+vez; o outro muda a regra para todos os arquivos daquele tipo. A tarefa do
+"abrir com" só fecha se o padrão **não** tiver mudado junto — é a diferença que
+faz alguém abrir uma foto no editor uma vez e passar a abrir todas ali.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que
@@ -1024,6 +1052,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/ApresentacaoLab.test.tsx` | operação de slide que age no slide errado, ou PDF velho valendo por novo |
 | `src/labs/planilhaDoAcampamento.test.ts` | planilha pequena demais para o filtro fazer falta, ou SUBTOTAL escrito sem filtro nenhum |
 | `src/labs/PlanilhaAvancadaLab.test.tsx` | os dois laboratórios de planilha mostrando janelas de Excel diferentes |
+| `src/labs/correioDoClube.test.ts` | Cco preenchido com a lista grande vazando pelo Para, ou assinatura configurada e nunca usada |
+| `src/labs/maquinaDoClube.test.ts` | "abrir com" que mudou o padrão junto, ou usuário novo criado administrador |
+| `src/labs/ConfiguracoesLab.test.tsx` | caminho de Configurações que não leva à tarefa, ou botão de otimizar com o nome errado para o disco |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
