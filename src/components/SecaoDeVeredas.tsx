@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, HardHat, Lock } from 'lucide-react';
 import {
   VEREDAS, veredasAbertas, veredasPorFamilia, licoesDaVereda,
-  preRequisitoDaVeredaCumprido, type Vereda, textoDaOrigem } from '../curriculum/veredas';
+  veredasQueFaltamAntes, type Vereda, textoDaOrigem } from '../curriculum/veredas';
 import { useVeredas, type AndamentoDeVereda } from '../hooks/useVeredas';
 import { nomeCompleto } from '../types';
 import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
@@ -28,11 +28,14 @@ import ProgressBar from './ui/ProgressBar';
  * sem arte cai no ícone de reserva do `Emblema`, e não deixa buraco.
  */
 
-function CardDaVereda({ v, andamento, liberada }: {
+function CardDaVereda({ v, andamento, faltam }: {
   v: Vereda;
   andamento?: AndamentoDeVereda;
   /** O pré-requisito já foi cumprido? Sem ele, o cartão não leva a lugar nenhum. */
-  liberada: boolean;
+  /* As exigidas que ainda faltam. Vazia quer dizer liberada — e é a mesma
+     lista que o cartão bloqueado nomeia, em vez de um booleano que obrigaria a
+     tela a redescobrir quais são. */
+  faltam: Vereda[];
 }) {
   const identificacao = (
     <div className="min-w-0">
@@ -68,8 +71,9 @@ function CardDaVereda({ v, andamento, liberada }: {
     de quem ela é. Um cartão cinza sem dizer qual dos dois é manda a pessoa
     esperar por algo que já está pronto.
   */
-  if (!liberada) {
-    const anterior = VEREDAS.find(o => o.id === v.preRequisito);
+  /* Todas as que faltam, e não a primeira: com três exigências, nomear uma só
+     manda a pessoa concluir aquela e voltar para descobrir que falta outra. */
+  if (faltam.length > 0) {
     return (
       <div className="card p-6 opacity-60" style={{ border: '2px dashed var(--color-border)' }}>
         <div className="flex items-center gap-4 mb-3">
@@ -79,7 +83,7 @@ function CardDaVereda({ v, andamento, liberada }: {
         <span className="text-xs px-2 py-1 rounded inline-flex items-center gap-1 mb-2"
           style={{ backgroundColor: 'var(--color-secondary-a08)', color: 'var(--color-secondary)' }}>
           <Lock className="w-3.5 h-3.5" />
-          Conclua {anterior ? nomeCompleto(anterior) : v.preRequisito}
+          Conclua {faltam.map(o => nomeCompleto(o)).join(' e ')}
         </span>
         <p className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{v.description}</p>
       </div>
@@ -160,7 +164,7 @@ export default function SecaoDeVeredas({ userId }: { userId?: string }) {
 
   const cartao = (v: Vereda) => (
     <CardDaVereda key={v.id} v={v} andamento={andamento.find(a => a.id === v.id)}
-      liberada={preRequisitoDaVeredaCumprido(v, concluida)} />
+      faltam={veredasQueFaltamAntes(v, concluida)} />
   );
 
   return (
