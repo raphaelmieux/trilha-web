@@ -341,3 +341,278 @@ export const METAS_DOS_ESTILOS: MetaDeEstilos[] = [
     feita: d => !!d.sumario && d.sumario.length >= 4 && sumarioAtualizado(d),
   },
 ];
+
+/* ══ O laboratório de banco de dados ═══════════════════════════════════════
+ *
+ * AP044 requisito 6: uma agenda com nome, endereço, telefone e e-mail de, no
+ * mínimo, vinte e cinco pessoas.
+ *
+ * ── Por que ninguém digita vinte e cinco fichas aqui ─────────────────────
+ * Digitar cem campos numa tela simulada ensina a digitar. O que o requisito
+ * mede é **montar** o banco: declarar os campos, dizer o tipo de cada um, e
+ * então pôr os dados lá dentro.
+ *
+ * E há um jeito de pôr vinte e cinco pessoas lá dentro que é o de verdade e é
+ * exatamente a lição: **importar**. A lista do clube já existe, escrita em
+ * outro lugar, e o assistente de importação pergunta coluna por coluna a que
+ * campo ela corresponde e de que tipo é. É a teoria inteira virando gesto — e
+ * é onde o erro aparece, porque o assistente adivinha errado e chega com o
+ * mapeamento trocado.
+ *
+ * ── O telefone é a armadilha, e ela é real ───────────────────────────────
+ * Telefone parece número e é texto: ninguém soma dois telefones, e como número
+ * ele perde os parênteses, o traço e o zero da frente. O assistente adivinha
+ * "Número" para ele — que é o que os assistentes de verdade fazem —, e a
+ * importação mostra o estrago em vez de explicá-lo.
+ */
+
+export type TipoDeCampo = 'texto' | 'numero' | 'data';
+
+export interface Campo {
+  id: string;
+  /** O nome escrito na coluna de cima, que é o que o relatório vai imprimir. */
+  nome: string;
+  tipo: TipoDeCampo;
+  /**
+   * A regra de validação, escrita como o programa a escreve.
+   *
+   * Não é o tipo: o tipo diz o que cabe, a regra diz o que vale. É com ela que
+   * um campo de e-mail recusa "joana" sem arroba — e é por isso que ela é uma
+   * tarefa separada de declarar o campo.
+   */
+  regra?: string;
+}
+
+export interface Registro {
+  id: string;
+  valores: Record<string, string>;
+}
+
+export type Ordem = { campo: string; crescente: boolean } | null;
+
+export interface Agenda {
+  /** Os campos declarados. Vazio é o que abre: não há tabela nenhuma ainda. */
+  campos: Campo[];
+  registros: Registro[];
+  ordem: Ordem;
+  /** O bairro escolhido no filtro, ou vazio para "todos". */
+  filtroDeBairro: string;
+  /** O relatório foi gerado — e com que campos, na ordem em que ele os leu. */
+  relatorio: string[] | null;
+}
+
+/** A regra que o assistente oferece pronta, e que só o e-mail precisa. */
+export const REGRA_DE_EMAIL = 'Como "*@*.*"';
+
+/**
+ * A lista que o clube já tem, escrita fora do programa.
+ *
+ * Vinte e cinco pessoas, e as colunas com os nomes que o clube de fato usa —
+ * "Zap", "Onde mora", "Contato". É por isso que o assistente de importação não
+ * acerta o mapeamento sozinho: ele não tem como saber que "Zap" é telefone, e
+ * cai no palpite por posição, que troca duas.
+ *
+ * O endereço traz o bairro junto, de propósito: é assim que essas listas chegam
+ * na vida, e é o que torna o filtro por bairro uma leitura, e não um campo a
+ * mais. E uma das fichas tem e-mail sem arroba, que é o que a regra de
+ * validação vai recusar.
+ */
+export const COLUNAS_DA_LISTA = ['Nome completo', 'Zap', 'Onde mora', 'Contato'] as const;
+
+/** A que campo da agenda cada coluna da lista corresponde de verdade. */
+export const CAMPO_DA_COLUNA: Record<string, string> = {
+  'Nome completo': 'Nome',
+  'Zap': 'Telefone',
+  'Onde mora': 'Endereço',
+  'Contato': 'E-mail',
+};
+
+/* A ordem é a da lista do clube — nome, telefone, endereço, e-mail —, e não a
+   dos campos da agenda. É essa diferença que o assistente erra. */
+const pessoa = (nome: string, rua: string, bairro: string, fone: string, email: string) =>
+  [nome, fone, `${rua} — ${bairro}`, email];
+
+export const LISTA_DO_CLUBE: string[][] = [
+  pessoa('Ana Beatriz Rocha', 'Rua das Flores, 120', 'Centro', '(61) 99612-4410', 'ana.rocha@exemplo.com'),
+  pessoa('Bruno Carvalho', 'Av. das Palmeiras, 88', 'Centro', '(61) 99871-2033', 'bruno.c@exemplo.com'),
+  pessoa('Camila Duarte', 'Rua do Sol, 45', 'Jardim Novo', '(61) 99204-7781', 'camila.d@exemplo.com'),
+  pessoa('Daniel Freitas', 'Rua São João, 9', 'Vila Verde', '(61) 99333-1201', 'daniel.f@exemplo.com'),
+  /* A ficha com o e-mail sem arroba. Ela existe para a regra de validação ter o
+     que recusar — sem uma linha errada, declarar a regra seria um clique que
+     não muda nada na tela. */
+  pessoa('Elisa Nogueira', 'Rua das Acácias, 302', 'Centro', '(61) 99145-6690', 'elisa.nogueira'),
+  pessoa('Felipe Andrade', 'Rua Bela Vista, 77', 'Jardim Novo', '(61) 99422-8815', 'felipe.a@exemplo.com'),
+  pessoa('Gabriela Pinto', 'Av. Brasil, 1500', 'Centro', '(61) 99788-3320', 'gabi.pinto@exemplo.com'),
+  pessoa('Heitor Barbosa', 'Rua do Campo, 16', 'Vila Verde', '(61) 99017-4456', 'heitor.b@exemplo.com'),
+  pessoa('Isabela Correia', 'Rua Nova, 210', 'Jardim Novo', '(61) 99630-9902', 'isa.correia@exemplo.com'),
+  pessoa('João Pedro Lima', 'Rua da Mata, 33', 'Vila Verde', '(61) 99255-6674', 'joao.lima@exemplo.com'),
+  pessoa('Karina Souza', 'Av. Central, 402', 'Centro', '(61) 99908-1123', 'karina.s@exemplo.com'),
+  pessoa('Lucas Teixeira', 'Rua do Lago, 58', 'Jardim Novo', '(61) 99544-7708', 'lucas.t@exemplo.com'),
+  pessoa('Mariana Alves', 'Rua Primavera, 91', 'Centro', '(61) 99361-2287', 'mari.alves@exemplo.com'),
+  pessoa('Nicolas Ribeiro', 'Rua do Moinho, 7', 'Vila Verde', '(61) 99082-5540', 'nicolas.r@exemplo.com'),
+  pessoa('Olívia Martins', 'Av. das Águas, 660', 'Jardim Novo', '(61) 99719-3364', 'olivia.m@exemplo.com'),
+  pessoa('Pedro Henrique Sá', 'Rua Aurora, 128', 'Centro', '(61) 99476-8891', 'pedro.sa@exemplo.com'),
+  pessoa('Quésia Ferreira', 'Rua do Cedro, 24', 'Vila Verde', '(61) 99190-4417', 'quesia.f@exemplo.com'),
+  pessoa('Rafael Moreira', 'Rua Boa Esperança, 310', 'Jardim Novo', '(61) 99823-6605', 'rafa.moreira@exemplo.com'),
+  pessoa('Sara Vasconcelos', 'Av. Guanabara, 15', 'Centro', '(61) 99567-2248', 'sara.v@exemplo.com'),
+  pessoa('Thiago Medeiros', 'Rua das Palmas, 402', 'Vila Verde', '(61) 99934-7719', 'thiago.m@exemplo.com'),
+  pessoa('Ursula Campos', 'Rua Ipê, 66', 'Jardim Novo', '(61) 99306-5583', 'ursula.c@exemplo.com'),
+  pessoa('Vinícius Prado', 'Av. dos Pinheiros, 820', 'Centro', '(61) 99641-9930', 'vini.prado@exemplo.com'),
+  pessoa('Wesley Tavares', 'Rua do Horto, 41', 'Vila Verde', '(61) 99228-3376', 'wesley.t@exemplo.com'),
+  pessoa('Yasmin Coelho', 'Rua Girassol, 173', 'Jardim Novo', '(61) 99855-1162', 'yasmin.c@exemplo.com'),
+  pessoa('Zeca Nascimento', 'Av. do Contorno, 9', 'Centro', '(61) 99413-4408', 'zeca.n@exemplo.com'),
+];
+
+/** Os quatro campos que o requisito nomeia, e o tipo certo de cada um. */
+export const CAMPOS_PEDIDOS: { nome: string; tipo: TipoDeCampo }[] = [
+  { nome: 'Nome', tipo: 'texto' },
+  { nome: 'Endereço', tipo: 'texto' },
+  /* Telefone é texto, e é a armadilha inteira desta lição. */
+  { nome: 'Telefone', tipo: 'texto' },
+  { nome: 'E-mail', tipo: 'texto' },
+];
+
+/** A agenda como ela abre: nenhuma tabela, nenhum registro, nada. */
+export const AGENDA_INICIAL: Agenda = {
+  campos: [],
+  registros: [],
+  ordem: null,
+  filtroDeBairro: '',
+  relatorio: null,
+};
+
+export const temArroba = (email: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+
+/** O bairro sai do endereço, que é onde ele foi escrito na lista de origem. */
+export const bairroDe = (endereco: string) => endereco.split('—').slice(-1)[0].trim();
+
+/** Os registros como a tela os mostra: filtrados e ordenados. */
+export function registrosNaTela(a: Agenda): Registro[] {
+  let r = a.registros;
+  if (a.filtroDeBairro) r = r.filter(x => bairroDe(x.valores['Endereço'] ?? '') === a.filtroDeBairro);
+  if (a.ordem) {
+    const { campo, crescente } = a.ordem;
+    r = [...r].sort((p, q) =>
+      (p.valores[campo] ?? '').localeCompare(q.valores[campo] ?? '', 'pt-BR') * (crescente ? 1 : -1));
+  }
+  return r;
+}
+
+export interface MetaDaAgenda {
+  id: string;
+  titulo: string;
+  detalhe: string;
+  onde: string;
+  passos: string[];
+  feita: (a: Agenda) => boolean;
+}
+
+const campo = (a: Agenda, nome: string) => a.campos.find(c => c.nome === nome);
+
+export const METAS_DA_AGENDA: MetaDaAgenda[] = [
+  {
+    id: 'campos',
+    titulo: 'Declarar os quatro campos',
+    detalhe: 'A agenda pede nome, endereço, telefone e e-mail. Crie os quatro no modo de estrutura, cada um com o tipo dele — e repare que telefone não é número.',
+    onde: 'Criar › Tabela › Modo Estrutura',
+    passos: [
+      'Clique em Nova Tabela para abrir o modo de estrutura.',
+      'Escreva o nome do primeiro campo e escolha o tipo ao lado.',
+      'Repita para os quatro: Nome, Endereço, Telefone e E-mail.',
+      'Telefone é Texto: ele tem parêntese e traço, e ninguém soma dois telefones.',
+    ],
+    feita: a => CAMPOS_PEDIDOS.every(p => campo(a, p.nome)?.tipo === p.tipo),
+  },
+  {
+    id: 'regra',
+    titulo: 'Escrever a regra de validação do e-mail',
+    detalhe: 'O tipo diz o que cabe; a regra diz o que vale. Sem ela, "joana" sem arroba entra na agenda e só se descobre quando a mensagem voltar.',
+    onde: 'Modo Estrutura › Propriedades do campo › Regra de Validação',
+    passos: [
+      'Clique na linha do campo E-mail, no modo de estrutura.',
+      'No painel de propriedades, ache Regra de Validação.',
+      `Escolha a regra ${REGRA_DE_EMAIL}: ela exige arroba e ponto.`,
+    ],
+    feita: a => campo(a, 'E-mail')?.regra === REGRA_DE_EMAIL,
+  },
+  {
+    id: 'importar',
+    titulo: 'Importar as 25 pessoas da lista do clube',
+    detalhe: 'A lista já existe, escrita fora do programa. O assistente pergunta a que campo cada coluna corresponde — e ele chega com o palpite dele, que não é o certo.',
+    onde: 'Dados Externos › Importar Lista',
+    passos: [
+      'Clique em Importar Lista, na guia Dados Externos.',
+      'Confira, coluna por coluna, a que campo ela vai. O palpite do assistente troca duas.',
+      'Confirme. As linhas que a regra recusar aparecem separadas, e não entram.',
+    ],
+    /*
+      Vinte e quatro, e não vinte e cinco.
+
+      A ficha da Elisa tem e-mail sem arroba, e a regra a recusa — que é a
+      lição da tarefa anterior acontecendo. Exigir vinte e cinco aqui faria a
+      tarefa depender de consertar a ficha, que é a tarefa seguinte, e o painel
+      mostraria duas vermelhas por um motivo só.
+    */
+    feita: a => a.registros.length >= LISTA_DO_CLUBE.length - 1
+      && a.registros.every(r => CAMPOS_PEDIDOS.every(p => (r.valores[p.nome] ?? '').trim() !== '')),
+  },
+  {
+    id: 'recusada',
+    titulo: 'Consertar a ficha que a regra recusou',
+    detalhe: 'Uma pessoa ficou de fora: o e-mail dela foi escrito sem arroba. Corrija e inclua — a agenda precisa das 25.',
+    onde: 'Na caixa de fichas recusadas, depois da importação',
+    passos: [
+      'Olhe a lista de recusadas: ela diz qual campo reprovou.',
+      'Escreva o e-mail completo, com arroba e com ponto.',
+      'Clique em Incluir. Agora a regra deixa passar.',
+    ],
+    feita: a => a.registros.length >= LISTA_DO_CLUBE.length
+      && a.registros.every(r => temArroba(r.valores['E-mail'] ?? '')),
+  },
+  {
+    id: 'ordenar',
+    titulo: 'Pôr a agenda em ordem alfabética',
+    detalhe: 'É a primeira das três coisas que um caderno cobra recomeçar e a estrutura dá de graça.',
+    onde: 'Página Inicial › Classificar › Crescente',
+    passos: [
+      'Clique no cabeçalho da coluna Nome.',
+      'Escolha Classificar Crescente (A → Z).',
+      'Repare que nada foi redigitado: a ordem é uma leitura, e não uma cópia.',
+    ],
+    feita: a => a.ordem?.campo === 'Nome' && a.ordem.crescente === true,
+  },
+  {
+    id: 'filtrar',
+    titulo: 'Filtrar quem mora num bairro',
+    detalhe: 'Mostre só as pessoas de um bairro. É a segunda coisa que o caderno não faz — e, como na planilha, filtrar esconde e não apaga.',
+    onde: 'Página Inicial › Filtro',
+    passos: [
+      'Clique no cabeçalho da coluna Endereço.',
+      'Escolha um bairro na lista do filtro.',
+      'Confira o rodapé: ele conta quantas fichas estão sendo mostradas de quantas existem.',
+    ],
+    feita: a => a.filtroDeBairro !== '' && registrosNaTela(a).length > 0,
+  },
+  {
+    id: 'relatorio',
+    titulo: 'Gerar o relatório da agenda',
+    detalhe: 'A terceira: a lista pronta para imprimir, com os quatro campos, montada a partir do que já está guardado.',
+    onde: 'Criar › Relatório',
+    passos: [
+      'Vá na guia Criar e clique em Relatório.',
+      'Escolha os quatro campos que devem sair impressos.',
+      'Ele se monta a partir da tabela — nada é redigitado.',
+    ],
+    /*
+      Quatro campos, e não "existe relatório".
+
+      Relatório de uma coluna só sai sem erro nenhum e não serve para nada: é a
+      armadilha do "zero link não é zero link quebrado" aplicada aqui. O
+      requisito nomeia os quatro campos, e é isso que o papel entregue ao clube
+      precisa mostrar.
+    */
+    feita: a => !!a.relatorio
+      && CAMPOS_PEDIDOS.every(p => a.relatorio!.includes(p.nome))
+      && a.registros.length >= LISTA_DO_CLUBE.length,
+  },
+];

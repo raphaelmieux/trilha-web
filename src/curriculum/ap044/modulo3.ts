@@ -50,15 +50,23 @@ coluna do endereço.</p>
 o computador obedece ao que está escrito, e não ao que se quis dizer.</p>
 
 <h3 class="font-bold mt-4 mb-2">Por que declarar o tipo do campo importa</h3>
-<p class="mb-3">Um campo pode ser texto, número, data ou e-mail. Dizer qual é
-serve para duas coisas:</p>
+<p class="mb-3">Um campo é <strong>texto</strong>, <strong>número</strong> ou
+<strong>data</strong>. Dizer qual é serve para duas coisas:</p>
 <ul class="list-disc pl-5 mb-3 space-y-1">
 <li><strong>Ordenar direito.</strong> Como texto, "10" vem antes de "9" —
 porque o 1 vem antes do 9 na primeira letra. Como número, não.</li>
-<li><strong>Recusar o que não serve.</strong> Um campo de e-mail declarado
-recusa "joana" sem arroba, na hora de digitar — e não seis meses depois,
-quando a mensagem voltar.</li>
+<li><strong>Recusar o que não cabe.</strong> Num campo de número não entra
+letra, e o programa avisa na hora da digitação.</li>
 </ul>
+<p class="mb-3">E cuidado com a armadilha do telefone: ele parece número e
+<strong>é texto</strong>. Ninguém soma dois telefones, e como número ele perderia
+os parênteses, o traço e o zero da frente.</p>
+
+<h3 class="font-bold mt-4 mb-2">A regra de validação, que é outra coisa</h3>
+<p class="mb-3">O tipo diz o que cabe. A <strong>regra de validação</strong> diz
+o que <em>vale</em>: uma condição que o programa confere antes de aceitar a
+digitação. É com ela que um campo de e-mail recusa "joana" sem arroba na hora —
+e não seis meses depois, quando a mensagem voltar.</p>
 
 <div class="p-3 rounded-lg mt-4" style="background: rgba(59,130,246,.12)">
 <p class="text-sm"><strong>A regra de ouro:</strong> um campo guarda uma coisa
@@ -124,17 +132,17 @@ export const modulo3: Module = {
         },
         {
           id: 'AP044.3-L1-Q4', type: 'multiple_choice',
-          prompt: 'Por que declarar que um campo é número, e não texto?',
+          prompt: 'Por que o campo de telefone deve ser declarado como texto, e não como número?',
           data: { options: [
-            { id: 'a', text: 'Porque como texto a ordenação põe "10" antes de "9", comparando letra por letra.', correct: true },
-            { id: 'b', text: 'Porque campos de texto ocupam muito mais espaço em disco do que os de número.',
-              porque: 'A diferença de espaço é irrelevante nessa escala. O que muda é o comportamento.' },
-            { id: 'c', text: 'Porque só campos de número podem ser mostrados num relatório impresso.',
-              porque: 'Relatório imprime texto o tempo todo — nome e endereço são texto.' },
-            { id: 'd', text: 'Porque campos de texto não permitem que se faça busca dentro deles.',
-              porque: 'Busca em texto é justamente o que mais se usa. O tipo muda ordenação e validação.' },
+            { id: 'a', text: 'Porque como número ele perde os parênteses, o traço e o zero da frente.', correct: true },
+            { id: 'b', text: 'Porque campos de número não aceitam mais do que oito algarismos.',
+              porque: 'O limite não é esse. O problema é que parêntese e traço não são algarismos.' },
+            { id: 'c', text: 'Porque campos de número não podem ser mostrados num relatório impresso.',
+              porque: 'Relatório imprime número o tempo todo — inscritos e diárias são número.' },
+            { id: 'd', text: 'Porque não se consegue procurar dentro de um campo de número.',
+              porque: 'Procurar dá certo nos dois. O que se perde é a forma em que o telefone foi escrito.' },
           ]},
-          explanation: '"10" antes de "9" é a surpresa clássica de quem guardou número como texto.',
+          explanation: 'Número é o que se soma. Ninguém soma dois telefones — telefone é texto.',
         },
         {
           id: 'AP044.3-L1-Q5', type: 'true_false',
@@ -147,15 +155,15 @@ export const modulo3: Module = {
         },
         {
           id: 'AP044.3-L1-Q6', type: 'multiple_choice',
-          prompt: 'Qual é a vantagem prática de declarar um campo como e-mail?',
+          prompt: 'Qual é a vantagem prática de escrever uma regra de validação no campo de e-mail?',
           data: { options: [
-            { id: 'a', text: 'Ele recusa "joana" sem arroba na hora de digitar, e não meses depois.', correct: true },
-            { id: 'b', text: 'Ele envia a mensagem automaticamente para o endereço cadastrado.',
-              porque: 'Declarar o tipo não envia nada: ele apenas confere a forma do que foi escrito.' },
-            { id: 'c', text: 'Ele descobre sozinho o e-mail da pessoa a partir do nome dela.',
-              porque: 'Nenhum campo adivinha dado que ninguém digitou.' },
-            { id: 'd', text: 'Ele impede que o mesmo e-mail seja cadastrado para duas pessoas.',
-              porque: 'Isso é uma regra de chave única, e é outra configuração — não vem do tipo do campo.' },
+            { id: 'a', text: 'Ela recusa "joana" sem arroba na hora de digitar, e não meses depois.', correct: true },
+            { id: 'b', text: 'Ela envia a mensagem automaticamente para o endereço cadastrado.',
+              porque: 'Uma regra não envia nada: ela apenas confere a forma do que foi escrito.' },
+            { id: 'c', text: 'Ela descobre sozinha o e-mail da pessoa a partir do nome dela.',
+              porque: 'Nenhuma regra adivinha dado que ninguém digitou.' },
+            { id: 'd', text: 'Ela impede que o mesmo e-mail seja cadastrado para duas pessoas.',
+              porque: 'Isso é uma regra de chave única, e é outra configuração — a de validação olha o formato.' },
           ]},
           explanation: 'Validação é o erro pego na porta de entrada, e não na hora do estrago.',
         },
@@ -165,10 +173,10 @@ export const modulo3: Module = {
           data: { pairs: [
             { left: 'Nome da pessoa', right: 'Texto' },
             { left: 'Data de nascimento', right: 'Data' },
-            { left: 'Endereço eletrônico', right: 'E-mail' },
+            { left: 'Telefone com DDD', right: 'Texto, apesar da aparência' },
             { left: 'Quantidade de acampamentos', right: 'Número' },
           ]},
-          explanation: 'O tipo declarado decide como se ordena e o que é recusado na digitação.',
+          explanation: 'Número é o que se soma. Telefone tem parêntese e traço, e ninguém soma dois.',
         },
         {
           id: 'AP044.3-L1-Q8', type: 'multiple_choice',
