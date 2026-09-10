@@ -126,6 +126,20 @@ dispara em `main` —, e é a única janela em que a migration é lida sem nada
 correndo para aplicá-la: escreva no branch, deixe conferir, leve para `main`
 depois.
 
+**`ON CONFLICT` cita a restrição que existe, e não a que faria sentido.**
+`modules` tem `UNIQUE(specialty_id, code)`; `requirements` tem `UNIQUE` só em
+`code`. Escrever `ON CONFLICT (specialty_id, code)` para requirements parece
+simétrico, compila em lugar nenhum — SQL não compila — e o Postgres recusa com
+"there is no unique or exclusion constraint matching the ON CONFLICT
+specification". Como o corpo do seed é um bloco DO inteiro, que é uma instrução
+só, nada entra: a trilha inteira fica de fora e o `db push` para ali.
+
+É irmã do delimitador errado, e pior pelo mesmo motivo: o `ci.yml` não fala com
+banco nenhum, então o erro só aparece quando o `supabase.yml` corre — depois do
+merge, em `main`. `migrations.test.ts` passou a ler as restrições UNIQUE
+declaradas nas próprias migrations e a conferir toda cláusula contra elas, sem
+subir Postgres.
+
 **Publicação em paralelo, não em ordem.** O frontend e o Supabase saem do mesmo
 push e correm ao mesmo tempo. Quando a mudança precisa do schema primeiro —
 trilha nova, coluna nova que a tela já lê — separe em dois pushes: o de
@@ -1041,6 +1055,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | Onde | O que reprova |
 | --- | --- |
 | `supabase/migrations/migrations.test.ts` | migration que não fecha um bloco que abre; timestamp repetido |
+| `supabase/migrations/migrations.test.ts` | `ON CONFLICT` citando coluna sem restrição UNIQUE, que derruba o arquivo inteiro |
 | `src/lib/certificados.test.ts` | o padrão de um certificado ilegível — inverter para `'active'` reprova |
 | `src/lib/insignias.test.ts` | insígnia com critério no código e sem linha no catálogo |
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |

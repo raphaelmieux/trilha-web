@@ -1,4 +1,26 @@
 /*
+  ATENÇÃO: esta migration foi editada depois de ter ido para `main`, o que este
+  repositório proíbe. A exceção está explicada aqui para não virar precedente.
+
+  Ela nunca chegou a aplicar coisa nenhuma. O `ON CONFLICT` dos requisitos
+  citava `(specialty_id, code)`, e `requirements` tem UNIQUE só em `code` — o
+  Postgres recusa com "there is no unique or exclusion constraint matching the
+  ON CONFLICT specification". O corpo inteiro é um bloco DO, que é uma
+  instrução só: ou tudo entra, ou nada entra. Nada entrou, e o `db push` parou
+  aqui.
+
+  É o mesmo caso da 20260821230000: arquivo que não executa não tem conserto
+  adiante. Escrever outra migration por cima resolveria o banco de produção e
+  deixaria todo banco novo — restauração, staging — parando neste arquivo, com
+  as migrations seguintes nem sendo lidas.
+
+  Corrigir a cláusula não muda estado de banco nenhum: onde ela não consta
+  aplicada, roda agora do jeito certo; onde constasse, não rodaria de qualquer
+  forma. `migrations.test.ts` passou a conferir toda cláusula `ON CONFLICT`
+  contra as restrições UNIQUE do schema, que é o que teria pego isto antes do
+  deploy.
+
+  ── O que ela faz ───────────────────────────────────────────────────────
   Registra a especialidade AP044 — Computação 4 no banco.
 
   O currículo em TypeScript descreve a trilha para a tela; o banco guarda o
@@ -101,7 +123,10 @@ BEGIN
   (v_ap044, 'AP044-13.3', 'Programa padrão', 'Definir um software padrão para abrir tipos de arquivo.', 'practice', 48),
   (v_ap044, 'AP044-13.4', 'Impressora padrão', 'Definir uma impressora padrão.', 'practice', 49),
   (v_ap044, 'AP044-13.5', 'Criar um usuário', 'Criar um usuário.', 'practice', 50)
-  ON CONFLICT (specialty_id, code) DO UPDATE SET title = EXCLUDED.title, description = EXCLUDED.description, type = EXCLUDED.type;
+  /* `requirements` tem UNIQUE em `code`, e não em (specialty_id, code) — quem
+     tem a composta é `modules`. Citar a coluna errada aqui derruba o arquivo
+     inteiro, porque o corpo é um bloco DO só. */
+  ON CONFLICT (code) DO UPDATE SET title = EXCLUDED.title, description = EXCLUDED.description, type = EXCLUDED.type;
 
   -- ── Módulos ───────────────────────────────────────────────────────────
   INSERT INTO modules (specialty_id, code, title, description, sort_order) VALUES
