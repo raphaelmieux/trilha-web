@@ -400,9 +400,9 @@ export default function ReportPage() {
 
         {attachedCerts.length > 0 && (
           <p className="report-annex-note">
-            {attachedCerts.length === 1
+            {comMarca(attachedCerts.length === 1
               ? 'Segue anexo o certificado Token.Web() referente à trilha concluída.'
-              : `Seguem anexos os ${attachedCerts.length} certificados Token.Web() referentes às trilhas concluídas.`}
+              : `Seguem anexos os ${attachedCerts.length} certificados Token.Web() referentes às trilhas concluídas.`)}
           </p>
         )}
       </article>

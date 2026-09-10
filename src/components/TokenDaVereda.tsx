@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Award, Loader2, RotateCw, ShieldOff } from 'lucide-react';
+import { MarcaEmTexto } from './ui/BrandMark';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import type { Vereda } from '../curriculum/veredas';
@@ -110,7 +111,7 @@ export default function TokenDaVereda({ vereda, userId, tokens, aoEmitir }: {
         style={{ borderColor: 'var(--color-secondary-a30)', backgroundColor: 'var(--color-secondary-a03)' }}>
         <Award className="w-8 h-8 flex-none" style={{ color: 'var(--color-secondary)' }} />
         <div className="min-w-0 flex-1">
-          <p className="font-bold" style={{ color: 'var(--color-secondary)' }}>Token.Web() emitido</p>
+          <p className="font-bold" style={{ color: 'var(--color-secondary)' }}><MarcaEmTexto marca="token" /> emitido</p>
           <p className="text-xs font-mono" style={{ color: 'var(--color-text-dim)' }}>{ativo.code}</p>
         </div>
         <Link to={`/certificado/${ativo.code}`} className="btn-primary">Ver certificado</Link>
@@ -126,7 +127,7 @@ export default function TokenDaVereda({ vereda, userId, tokens, aoEmitir }: {
         <div className="min-w-0 flex-1">
           <p className="font-bold">Vereda concluída</p>
           <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>
-            O Token.Web() desta vereda foi revogado. Fale com a liderança do seu
+            O <MarcaEmTexto marca="token" /> desta vereda foi revogado. Fale com a liderança do seu
             clube — a plataforma não emite outro sozinha.
           </p>
         </div>
@@ -140,7 +141,7 @@ export default function TokenDaVereda({ vereda, userId, tokens, aoEmitir }: {
         <div className="flex items-center gap-3">
           <Award className="w-8 h-8 flex-none" style={{ color: 'var(--color-text-dim)' }} />
           <div className="min-w-0">
-            <p className="font-bold">Vereda concluída — o Token.Web() ainda não saiu</p>
+            <p className="font-bold">Vereda concluída — o <MarcaEmTexto marca="token" /> ainda não saiu</p>
             <p className="text-sm" style={{ color: 'var(--color-error)' }}>{erro}</p>
             <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>
               O que você fez está guardado. Abrir esta vereda de novo tenta
@@ -165,9 +166,9 @@ export default function TokenDaVereda({ vereda, userId, tokens, aoEmitir }: {
     <div className="card p-4 flex items-center gap-3" style={{ borderColor: 'var(--color-success-a20)' }}>
       <Loader2 className="w-8 h-8 flex-none animate-spin" style={{ color: 'var(--color-success)' }} />
       <div className="min-w-0">
-        <p className="font-bold">Vereda concluída — emitindo seu Token.Web()…</p>
+        <p className="font-bold">Vereda concluída — emitindo seu <MarcaEmTexto marca="token" />…</p>
         <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>
-          Todas as lições vencidas. O Token.Web() desta vereda se verifica em
+          Todas as lições vencidas. O <MarcaEmTexto marca="token" /> desta vereda se verifica em
           público e sai em PDF, como o de uma trilha.
         </p>
       </div>

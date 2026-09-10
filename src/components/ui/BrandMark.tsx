@@ -1,4 +1,4 @@
-import { NOME, MIOLO, PARENTESES } from '../../lib/marca';
+import { MARCAS, NOME, MIOLO, PARENTESES, type QualMarca } from '../../lib/marca';
 
 /**
  * A marca, escrita do jeito que ela é: uma chamada de função.
@@ -30,20 +30,30 @@ import { NOME, MIOLO, PARENTESES } from '../../lib/marca';
  * glifo pela metade, e sem medir nada em JavaScript.
  */
 
-/* O nome e os seus pedaços moram em `lib/marca`, sem React, porque o PDF
+/* Os nomes e os seus pedaços moram em `lib/marca`, sem React, porque o PDF
    também precisa deles — lá quem desenha é o jsPDF, que não lê folha de
    estilo. Reexportados aqui para quem já importava daqui. */
-export { NOME, MIOLO, PARENTESES };
+export { MARCAS, NOME, MIOLO, PARENTESES };
 
 /**
- * A marca dentro de texto corrido — mesma fonte e mesmos parênteses vermelhos,
- * sem a digitação. Parágrafo não é lugar de animação: o nome citado no meio de
- * uma frase que se está lendo não deveria se mexer.
+ * Uma das duas marcas dentro de texto corrido — mesma fonte e mesmos parênteses
+ * vermelhos, sem a digitação. Parágrafo não é lugar de animação: o nome citado
+ * no meio de uma frase que se está lendo não deveria se mexer.
+ *
+ * `marca` escolhe entre a plataforma e o certificado. O padrão é a plataforma
+ * porque é a que aparece em mais lugares; `<MarcaEmTexto marca="token" />` é o
+ * Token.Web().
  */
-export function MarcaEmTexto({ className = '' }: { className?: string }) {
+export function MarcaEmTexto({
+  marca = 'plataforma',
+  className = '',
+}: {
+  marca?: QualMarca;
+  className?: string;
+}) {
   return (
     <span className={`marca-inline ${className}`}>
-      {MIOLO}<span className="marca-parenteses">{PARENTESES}</span>
+      {MARCAS[marca].miolo}<span className="marca-parenteses">{PARENTESES}</span>
     </span>
   );
 }

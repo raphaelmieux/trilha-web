@@ -918,27 +918,44 @@ Vale para laboratório que imita um programa. Os que não imitam nada — ordena
 classificar, escrever — continuam sendo tela da plataforma, e moldura de
 aplicativo neles seria fantasia sem ganho.
 
-**A marca é `Trilha.Web()`, e os parênteses são vermelhos.** Space Mono Bold,
-`#C13516` — que é o `--color-primary` da plataforma, e não um hexadecimal
-escrito à parte. Os parênteses são o que diz que o nome é uma chamada de
-função, e não uma frase com pontuação sobrando; sem eles pintados a marca lê
-como um nome com um par de parênteses vazios esquecido no fim. Vale **em toda
-parte**: a digitação da tela de entrada, a barra fixa, o nome citado no meio de
-um parágrafo e os rodapés das fichas em PDF. O cursor da digitação é do mesmo
-vermelho — era `currentColor`, que na barra fixa é branco.
+**São duas marcas, e a regra é a mesma.** `Trilha.Web()` é a plataforma;
+`Token.Web()` é o certificado que ela emite, de trilha e de vereda. As duas em
+Space Mono Bold, e nas duas os parênteses em `#C13516` — que é o
+`--color-primary` da plataforma, e não um hexadecimal escrito à parte. Os
+parênteses são o que diz que o nome é uma chamada de função, e não uma frase
+com pontuação sobrando; sem eles pintados a marca lê como um nome com um par de
+parênteses vazios esquecido no fim.
 
-**Nenhuma tela escreve `Trilha.Web()` à mão.** O nome mora partido em
-`src/lib/marca.ts` — TypeScript puro, sem React, porque quem desenha no papel é
-o jsPDF, que não lê folha de estilo. Na tela vem `<MarcaEmTexto />`, ou
-`comMarca(frase)` quando o nome chega no meio de um texto já montado por
-interpolação: a frase continua sendo `string`, que é o que vai para o PDF, e
-quem veste a marca é a tela na hora de desenhar.
+A regra é uma só de propósito. O clube encontra os dois nomes na **mesma tela** —
+a de entrada traz a plataforma no alto e "Recebeu um Token.Web()?" logo abaixo —,
+e vestir um e não o outro ensinaria que um deles é nome próprio e o outro é
+texto comum, quando os dois são a mesma ideia.
+
+Vale **em toda parte**: a digitação da tela de entrada, a barra fixa, o nome
+citado no meio de um parágrafo e os rodapés das fichas em PDF. O cursor da
+digitação é do mesmo vermelho — era `currentColor`, que na barra fixa é branco.
+
+**Nenhuma tela escreve nenhum dos dois à mão.** Eles moram partidos em
+`src/lib/marca.ts`, em `MARCAS` — TypeScript puro, sem React, porque quem
+desenha no papel é o jsPDF, que não lê folha de estilo. Na tela vem
+`<MarcaEmTexto />` para a plataforma e `<MarcaEmTexto marca="token" />` para o
+certificado, ou `comMarca(frase)` quando o nome chega no meio de um texto já
+montado por interpolação: a frase continua sendo `string`, que é o que vai para
+o PDF, e quem veste a marca é a tela na hora de desenhar. `partirNaMarca`
+procura as duas numa alternação só, e não uma de cada vez — partir duas vezes
+devolveria os pedaços fora de ordem na frase que cita as duas, e há uma dessas
+na tela de entrada.
 
 A trava de `marca.test.tsx` olha para o **texto do JSX**, e não para toda
-ocorrência do nome — `pdf.ts`, `reportNarrative.ts` e o `ReportPage` guardam o
-nome em literal de propósito. Ela apaga comentários e literais antes de
-procurar, e confere que ainda enxerga um nome plantado no meio do JSX: um
-apagador que engolisse o arquivo inteiro aprovaria qualquer coisa, calado.
+ocorrência dos nomes — `pdf.ts`, `reportNarrative.ts`, `relatorioDeVeredas.ts` e
+o `ReportPage` guardam o nome em literal de propósito. Atributo também é
+literal, e é onde os dois seguem crus com razão: o `title` do selo do `Emblema`
+e o `aria-label` da estante de insígnias são texto que o navegador **lê**, e não
+texto que ele pinta — é também por isso que os nomes de insígnia no catálogo
+(`Primeiro Token.Web()`) não pedem migration nova. Ela apaga comentários e
+literais antes de procurar, e confere que ainda enxerga um nome plantado no meio
+do JSX: um apagador que engolisse o arquivo inteiro aprovaria qualquer coisa,
+calado.
 
 No PDF vem a cor e não vem a fonte. O jsPDF desenha em Helvetica, uma das 14 do
 padrão, e pôr Space Mono ali exigiria embutir um TTF que iria dentro do pacote
@@ -1115,7 +1132,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
-| `src/components/ui/marca.test.tsx` | marca escrita à mão no JSX, parênteses sem o vermelho da plataforma, ou o vermelho do PDF divergindo do token |
+| `src/components/ui/marca.test.tsx` | `Trilha.Web()` ou `Token.Web()` escrito à mão no JSX, parênteses sem o vermelho da plataforma, ou o vermelho do PDF divergindo do token |
 | `src/components/TokenDaVereda.test.tsx` | Token.Web() de vereda que espera clique, que pede duas vezes, ou que reemite um revogado |
 | `src/labs/falhasDePython.test.ts` | painel de falhas que abre respondido, ou recado de erro que entrega a resposta |
 | `src/labs/roteiroDePython.test.ts` | roteiro que julga o programa, ou que faz escada com a cadeia de elif |

@@ -6,6 +6,7 @@ import { getSpecialty } from '../curriculum';
 import { logActivity, ensureEnrollment, updateEnrollmentActivity, getSpecialtyId, LIMIAR_DOMINIO } from '../lib/progress';
 import { checkAnswer } from '../lib/checkAnswer';
 import { porqueDaEscolha } from '../lib/porque';
+import { MarcaEmTexto } from './ui/BrandMark';
 import { supabase } from '../lib/supabase';
 import { useCertifications } from '../hooks/useCertifications';
 import type { Question, RespostaDaQuestao } from '../types';
@@ -86,8 +87,8 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
         </div>
         <div className="card p-8 text-center">
           <Award className="w-20 h-20 mx-auto mb-4" style={{ color: 'var(--color-secondary)' }} />
-          <h1 className="text-2xl font-bold mb-2">Token.Web() Emitido!</h1>
-          <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>Você já concluiu esta avaliação e recebeu seu Token.Web().</p>
+          <h1 className="text-2xl font-bold mb-2"><MarcaEmTexto marca="token" /> Emitido!</h1>
+          <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>Você já concluiu esta avaliação e recebeu seu <MarcaEmTexto marca="token" />.</p>
           <Link to={`/especialidade/${specialtyCode}`} className="btn-primary">Voltar para a Trilha</Link>
           {certified && <Link to={`/certificado/${certified}`} className="btn-secondary ml-2">Ver Certificado</Link>}
         </div>
@@ -110,7 +111,7 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
                 da AP041 tem 19, e a tela prometia 22. */}
             Esta avaliação contém {totalDeQuestoes} questões de diversos tipos:
             múltipla escolha, verdadeiro/falso, ordenação, associação, lacunas e cenários.
-            Você precisa acertar pelo menos {LIMIAR_DOMINIO}% para ser aprovado e receber seu Token.Web().
+            Você precisa acertar pelo menos {LIMIAR_DOMINIO}% para ser aprovado e receber seu <MarcaEmTexto marca="token" />.
           </p>
           <div className="rounded-lg p-4 mb-6 text-sm text-left" style={{ backgroundColor: 'var(--color-primary-a08)', border: '1px solid var(--color-primary-a20)' }}>
             <p className="flex items-start gap-2">
@@ -132,7 +133,7 @@ export default function FinalExam({ specialtyCode, specialtyName, userId: _userI
           {passed ? <CheckCircle2 className="w-20 h-20 mx-auto mb-4" style={{ color: 'var(--color-success)' }} /> : <CircleX className="w-20 h-20 mx-auto mb-4" style={{ color: 'var(--color-primary)' }} />}
           <h1 className="text-2xl font-bold mb-2">{passed ? 'Parabéns! Você foi aprovado!' : 'Não foi dessa vez'}</h1>
           <p className="mb-2" style={{ color: 'var(--color-text-muted)' }}>Você acertou {score.correct} de {score.total} questões ({Math.round((score.correct / score.total) * 100)}%)</p>
-          {passed && certified && <p className="font-medium mb-4" style={{ color: 'var(--color-secondary)' }}>Seu Token.Web() foi emitido!</p>}
+          {passed && certified && <p className="font-medium mb-4" style={{ color: 'var(--color-secondary)' }}>Seu <MarcaEmTexto marca="token" /> foi emitido!</p>}
           {passed && !certified && certifyError && (
             <p className="mb-4 text-sm" style={{ color: 'var(--color-error)' }}>{certifyError}</p>
           )}
