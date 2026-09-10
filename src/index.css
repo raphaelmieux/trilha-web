@@ -509,10 +509,38 @@
   white-space: nowrap;
 }
 
-/* Branca e não vermelha: a barra fixa acompanha a tela de entrada, que usa este
-   mesmo token, então a marca é literalmente a mesma nos dois lugares. A cor fica
-   aqui e não no link em volta porque `currentColor` também desenha o cursor —
-   uma declaração acerta o texto e o traço piscando de uma vez. */
+/* O miolo do nome é branco, e não vermelho: a barra fixa acompanha a tela de
+   entrada, que usa este mesmo token, então a marca é literalmente a mesma nos
+   dois lugares. Quem é vermelho são os parênteses e o cursor, e os dois dizem a
+   própria cor logo abaixo — esta declaração já não os alcança. Alcançava,
+   quando o cursor era `currentColor`. */
+/*
+  Os parênteses são vermelhos, e é decisão de marca: são eles que dizem que o
+  nome é uma chamada de função, e não uma frase com pontuação sobrando. Vale em
+  toda parte — a animação, a barra fixa e o nome citado no meio de um parágrafo
+  usam esta mesma classe, que é por onde a regra continua sendo uma só.
+
+  A cor sai do token da marca, e não do hexadecimal escrito à mão: quem um dia
+  mudar o vermelho da plataforma mexeria num lugar e deixaria os parênteses
+  para trás.
+*/
+.marca-parenteses { color: var(--color-primary); }
+
+/*
+  A marca dentro de texto corrido: mesma fonte e mesmos parênteses, sem a
+  digitação. O `nowrap` existe porque o nome é uma coisa só — partido no fim de
+  uma linha ele deixa de ser lido como nome.
+
+  O miolo herda a cor do parágrafo em volta de propósito. O rodapé da licença
+  escreve em `--color-text-faint`, e uma marca que ali chegasse branca
+  chamaria mais atenção do que o texto que ela acompanha.
+*/
+.marca-inline {
+  font-family: 'Space Mono', ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .marca-nav  { font-size: 1.25rem; color: var(--color-text); }
 .marca-hero { font-size: 1.9rem; }
 /* A tela de entrada não tem mais bússola nem subtítulo: a marca carrega a tela
@@ -531,7 +559,10 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  border-right: 0.09em solid currentColor;
+  /* O cursor acompanha os parênteses, e não o texto: é o mesmo vermelho, e é
+     o que faz a digitação parecer um editor de código em vez de um texto que
+     se escreve sozinho. */
+  border-right: 0.09em solid var(--color-primary);
   width: calc(var(--marca-chars) * 1ch);
   animation:
     marca-digitando var(--marca-ciclo) steps(var(--marca-chars)) var(--marca-repeticoes) both,
@@ -547,7 +578,7 @@
 }
 
 @keyframes marca-cursor {
-  0%, 100% { border-right-color: currentColor; }
+  0%, 100% { border-right-color: var(--color-primary); }
   50%      { border-right-color: transparent; }
 }
 
