@@ -1,5 +1,6 @@
 import { ExternalLink } from 'lucide-react';
 import LinkExterno from './LinkExterno';
+import { MarcaEmTexto } from './BrandMark';
 
 /**
  * O link para o código-fonte, no rodapé de toda tela.
@@ -22,7 +23,7 @@ export default function CodigoFonte() {
   return (
     <div className="no-print text-center py-6 px-4">
       <p className="text-xs" style={{ color: 'var(--color-text-faint)' }}>
-        Trilha.Web() é software livre, sob a licença{' '}
+        <MarcaEmTexto /> é software livre, sob a licença{' '}
         <LinkExterno href={`${REPOSITORIO}/blob/main/LICENSE`} className="underline">
           AGPL-3.0
         </LinkExterno>
