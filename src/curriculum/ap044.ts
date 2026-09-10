@@ -39,6 +39,23 @@ import { modulo8 } from './ap044/modulo8';
  * Por isso seis dos oito módulos terminam em laboratório. "Saber gerar um
  * sumário" não se prova em múltipla escolha — e nenhuma alternativa separa quem
  * aplicou um estilo de quem leu sobre estilos.
+ *
+ * ── A abertura ──────────────────────────────────────────────────────────
+ * A trilha foi escrita em vários pushes e ficou `emConstrucao` em todos eles:
+ * cinza no painel, sem link e sem permitir início. Não era a arte que faltava
+ * — o emblema e o fundo do certificado estão no repositório desde 02/09/2026.
+ * Era a ordem de publicação: o frontend e o Supabase saem do mesmo push e
+ * correm ao mesmo tempo, e as linhas de `requirements` e `lessons` desta
+ * trilha entram por migration. Abrir no mesmo push que as cria deixaria os
+ * seis laboratórios comemorando sem ter gravado nada, que é o defeito que a
+ * AP041 já mostrou.
+ *
+ * O flag sai agora, em 10/09/2026, porque as duas migrations aplicaram em
+ * `main` — `supabase db push` escreveu "Applying migration
+ * 20260910100000_seed_ap044_computacao_4.sql" e a das insígnias em seguida.
+ * Esperar o verde não bastava: a execução anterior tinha fechado vermelha com
+ * o `ON CONFLICT` errado, e ali nenhuma linha entrou. Verde é a condição, e
+ * ler o log é o que diz o que ele significa.
  */
 
 export const ap044: Specialty = {
@@ -48,26 +65,6 @@ export const ap044: Specialty = {
   familia: 'Computação',
   preRequisito: 'AP043',
   description: 'Parar de fazer à mão o que o programa faz sozinho: estilo, sumário, filtro, gráfico, slide mestre e banco de dados.',
-
-  /*
-    Continua anunciada até o schema chegar.
-
-    A trilha entrou em vários pushes, e enquanto `emConstrucao` for verdadeiro o
-    cartão fica cinza no painel e a trilha não abre — então cada push pôde
-    fechar verde sem que ninguém entrasse num percurso pela metade. É a mesma
-    regra que a vereda já segue: conteúdo escrito é conferido, publicado ou não.
-
-    O que falta agora não é conteúdo nem arte: o emblema e o fundo do
-    certificado já estão no repositório. É a **ordem de publicação**. O
-    frontend e o Supabase saem do mesmo push e correm ao mesmo tempo, e as
-    linhas de `requirements` e `lessons` desta trilha entram por migration —
-    abrir a trilha no mesmo push que as cria deixaria os seis laboratórios
-    comemorando sem ter gravado nada, que é o defeito que a AP041 já mostrou.
-
-    Então isto sai no push seguinte, depois de o `supabase.yml` fechar verde
-    em `main`.
-  */
-  emConstrucao: true,
 
   requirements: [
     // 1 — A especialidade anterior
