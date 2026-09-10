@@ -839,6 +839,31 @@ de um slide que já existia, e existe um slide que ninguém tinha.
 leu. Exportar cedo e continuar mexendo é o que se faz sem pensar, e o PDF
 entregue fica sem os slides que vieram depois, sem nada na tela dizendo isso.
 
+**A janela do Excel saiu do laboratório e virou `excel.tsx`.** Ela morava
+dentro de `PlanilhaLab.tsx`, e saiu no dia em que a AP044 precisou de um segundo
+laboratório de planilha — antes de a cópia existir, e não depois. É a mesma
+decisão de `word.tsx`, e pelo mesmo motivo escrito lá: duas cópias divergem no
+primeiro ajuste, e a plataforma passa a mostrar dois "Excel" diferentes. O
+`PlanilhaAvancadaLab.test.tsx` monta os dois laboratórios e compara a fileira de
+guias, a barra de título, as abas do pé e a barra de status.
+
+**Os dois números da planilha filtrada.** A tela mostra ao mesmo tempo a célula
+do total, que é a `SOMA`, e a barra de status, que soma o que está à vista —
+como o Excel de verdade faz. Com filtro aplicado eles **não batem**, e é aí que
+a lição acontece: quem não sabe disso lê o número da célula e o manda para a
+liderança. `SUBTOTAL` é a fórmula que respeita o filtro.
+
+A tarefa exige as duas coisas — a fórmula trocada **e** um filtro aplicado.
+Escrever `SUBTOTAL` numa planilha sem filtro é trocar uma coisa que não estava
+errada, e a lição inteira é a diferença entre os dois números, que só existe com
+linha escondida.
+
+**E o tipo do gráfico sai da pergunta.** A pergunta aqui é de evolução — como a
+inscrição cresceu mês a mês —, e só a linha responde. Pizza e colunas desenham
+sem erro nenhum: se a tarefa aceitasse qualquer tipo, ela mediria ter clicado em
+Inserir. O programa explica por que a escolha errada não responde, em vez de só
+deixar a tarefa vermelha.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que
@@ -997,6 +1022,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/BancoDeDadosLab.test.tsx` | assistente de importação que já chega com o mapeamento certo, ou relatório sem os quatro campos |
 | `src/labs/apresentacaoDoClube.test.ts` | apresentação que abre sem os defeitos que as tarefas consertam, ou mídia vinculada valendo por incorporada |
 | `src/labs/ApresentacaoLab.test.tsx` | operação de slide que age no slide errado, ou PDF velho valendo por novo |
+| `src/labs/planilhaDoAcampamento.test.ts` | planilha pequena demais para o filtro fazer falta, ou SUBTOTAL escrito sem filtro nenhum |
+| `src/labs/PlanilhaAvancadaLab.test.tsx` | os dois laboratórios de planilha mostrando janelas de Excel diferentes |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
