@@ -4,7 +4,8 @@ import { ap035 } from './ap035';
 import { ap041 } from './ap041';
 import { ap042 } from './ap042';
 import { ap043 } from './ap043';
-import { ap044, ap045, ap049, ap052, ap063, ap064, hm079, hm090 } from './anunciadas';
+import { ap044 } from './ap044';
+import { ap045, ap049, ap052, ap063, ap064, hm079, hm090 } from './anunciadas';
 
 const specialties: Record<string, Specialty> = {
   AP034: ap034,
