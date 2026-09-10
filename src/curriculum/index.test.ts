@@ -396,11 +396,22 @@ describe.each([
   cartão segue de pé, com um buraco onde deveria estar a insígnia que a pessoa
   vai costurar na faixa.
 
-  Vale para as em construção também. A arte chega antes do conteúdo justamente
-  para que o cartão anunciado mostre o que vem.
+  Valia para as em construção também, "porque a arte chega antes do conteúdo
+  para que o cartão anunciado mostre o que vem" — e essa ordem se inverteu
+  quando HM079 e HM090 chegaram com os requisitos publicados e a arte ainda
+  por desenhar. Hoje a arte é condição para **abrir**: sem ela o `Emblema` cai
+  no espaço reservado com o selo de estado, que anuncia sem prometer um desenho
+  que não existe; o certificado, esse, não pode sair em branco. A razão inteira
+  está em `src/lib/veredas.test.ts`.
 */
 describe('a arte de cada trilha', () => {
-  for (const s of getAllSpecialties()) {
+  /* Filtro que esvaziasse a lista deixaria a build verde por não ter conferido
+     nada — a armadilha do "zero link não é zero link quebrado". */
+  it('há trilha aberta para a trava conferir', () => {
+    expect(getAllSpecialties().filter(t => !t.emConstrucao).length).toBeGreaterThan(0);
+  });
+
+  for (const s of getAllSpecialties().filter(t => !t.emConstrucao)) {
     it(`${s.code} tem emblema e certificado no repositório`, () => {
       expect(existsSync(`public/assets/specialties/${s.code}.png`), 'emblema').toBe(true);
       expect(existsSync(`public/assets/certificates/${s.code}.png`), 'certificado').toBe(true);

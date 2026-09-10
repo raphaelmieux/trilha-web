@@ -12,7 +12,9 @@ import type { Specialty } from '../types';
  * dela foram publicados e a trilha ganhou conteúdo — que é exatamente o
  * percurso previsto abaixo, e a AP043 saiu pelo mesmo caminho. Depois entraram
  * outras quatro, de duas famílias novas, cujo emblema e cujo fundo de
- * certificado já estão no repositório.
+ * certificado já estão no repositório. E depois HM079 e HM090, que inverteram
+ * essa ordem: os requisitos chegaram primeiro e a arte vem depois — ver
+ * "A arte é condição para abrir, e não para anunciar", no CLAUDE.md.
  *
  * Ficam neste arquivo, e não cada uma no seu, porque não há o que separar: são
  * declarações de existência. Quando os requisitos de uma chegarem, ela ganha o
@@ -83,4 +85,25 @@ export const ap064 = anunciada('AP064', 'Web Designer, Avançado', 'avancado', '
   'A continuação da Web Designer, no nível avançado. Os requisitos serão publicados quando a trilha abrir.',
   'AP063');
 
-export const anunciadas = [ap044, ap045, ap049, ap052, ap063, ap064];
+/*
+  Artes e Habilidades Manuais: a primeira família que não é de computação.
+
+  HM079 e HM090 são especialidades do clube, com ficha oficial própria, e o
+  assunto delas é desenho e arte feitos no computador — não a máquina, e não o
+  programa que se escreve. Entram aqui porque o desbravador as cumpre com as
+  mesmas ferramentas que esta plataforma ensina, e porque a família de veredas
+  de Design existe justamente para preparar quem vai enfrentá-las: quem
+  percorre CC-DG001 e CC-DG002 chega na ficha da HM079 sabendo o que é nó,
+  alça e curva de Bézier.
+
+  O nível é o do meio nas duas. Nenhuma traz "Avançado" no nome, não formam par
+  entre si, e a ficha oficial não gradua — então é ordenação de vitrine, e nada
+  mais, como diz a regra escrita no topo deste arquivo.
+*/
+export const hm079 = anunciada('HM079', 'Desenho Vetorial', 'intermediario', 'Artes e Habilidades Manuais',
+  'Desenho que se amplia sem perder qualidade, feito em programa vetorial. Os requisitos serão publicados quando a trilha abrir.');
+
+export const hm090 = anunciada('HM090', 'Arte Digital', 'intermediario', 'Artes e Habilidades Manuais',
+  'As formas da arte feita por computador, e dois projetos de autoria própria. Os requisitos serão publicados quando a trilha abrir.');
+
+export const anunciadas = [ap044, ap045, ap049, ap052, ap063, ap064, hm079, hm090];

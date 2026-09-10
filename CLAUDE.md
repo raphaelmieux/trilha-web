@@ -624,6 +624,22 @@ distinção que a plataforma passou meses estabelecendo. `textoDaOrigem` escolhe
 palavra procurando o código em `VEREDAS`, e `veredas.test.ts` cobra que toda
 origem declarada exista de verdade.
 
+**A exigência de uma vereda é uma lista, mesmo quando é uma só.** Era um campo
+único, e bastava enquanto nenhuma vereda dependia de mais de uma. As de
+escritório não são assim: Trabalho Compartilhado pede Editor de Texto **e**
+Contas e Segurança, Dados e Formulários pede duas, Projeto Documental pede
+três. Guardar só a primeira abriria a vereda para quem não fez as outras. É
+lista sempre, e não "ou um ou vários": união de escalar e lista dá duas formas
+para a mesma coisa e todo leitor precisa lembrar qual veio. `veredasQueFaltamAntes`
+devolve **quais** faltam, porque com três exigências dizer "conclua a anterior"
+manda a pessoa concluir uma e voltar para descobrir que falta outra — a tela
+nomeia todas, e põe um botão para cada.
+
+E o grafo não pode ter ciclo. A exigência de si mesma era o único caso
+cobrado — o ciclo de tamanho um. Com dezenove veredas em grafo, um laço de três
+passa por qualquer revisão e tranca todas as veredas dele para sempre, cada uma
+esperando a seguinte. `veredas.test.ts` percorre e nomeia o caminho inteiro.
+
 **Vereda pode exigir outra, e a exigência é por `id`.** A CC002 se apoia nos
 blocos em toda página — "o sempre é o `while`", "a boca do bloco é o recuo" —, e
 quem chega sem ter percorrido a CC001 lê comparações com uma coisa que não viu.
@@ -673,6 +689,27 @@ vencida e nada mais, e inventar um número seria pior do que não ter. O que se
 diz é quantas lições, de que metade — teoria ou prática —, e se saiu
 Token.Web(). Vereda com zero lições vencidas não vira linha: um relatório de
 aprendizagem fala do que foi feito.
+
+**A arte é condição para abrir, e não para anunciar.** A regra era a outra —
+toda trilha e toda vereda registrada tinha de ter emblema e fundo de
+certificado, inclusive as anunciadas, "porque a arte chega antes do conteúdo
+para que o cartão anunciado mostre o que vem". Valeu enquanto a arte de fato
+vinha primeiro. As dezenove veredas de escritório e de design, e as duas
+especialidades de Artes e Habilidades Manuais, inverteram a ordem: os
+requisitos oficiais foram publicados e a arte ainda está sendo desenhada.
+
+Cobrar arte para anunciar deixava duas saídas, as duas ruins: segurar o
+registro do percurso inteiro até o último desenho ficar pronto, ou pôr no
+repositório vinte e uma imagens de mentira que alguém teria de lembrar de
+trocar. Sem arte o `Emblema` já faz a coisa certa — o `onError` esconde a
+imagem e fica o espaço reservado com o selo de estado, no tamanho que a medalha
+vai ocupar. Abrir é outra história: quem percorre até o fim recebe certificado,
+e certificado sem fundo é papel em branco.
+
+As duas travas passaram a filtrar por `emConstrucao`, e as duas ganharam junto
+a guarda contra o vazio: filtro que esvaziasse a lista deixaria a build verde
+por não ter conferido nada, que é a armadilha do "zero link não é zero link
+quebrado" aplicada à própria trava.
 
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
