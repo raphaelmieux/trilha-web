@@ -49,9 +49,6 @@ function anunciada(
   };
 }
 
-export const ap044 = anunciada('AP044', 'Computação 4', 'intermediario', 'Computação',
-  'A quarta da família, também intermediária. Os requisitos serão publicados quando a trilha abrir.');
-
 export const ap045 = anunciada('AP045', 'Computação 5', 'avancado', 'Computação',
   'A que fecha a família Computação, no nível avançado. Os requisitos serão publicados quando a trilha abrir.');
 
@@ -106,4 +103,4 @@ export const hm079 = anunciada('HM079', 'Desenho Vetorial', 'intermediario', 'Ar
 export const hm090 = anunciada('HM090', 'Arte Digital', 'intermediario', 'Artes e Habilidades Manuais',
   'As formas da arte feita por computador, e dois projetos de autoria própria. Os requisitos serão publicados quando a trilha abrir.');
 
-export const anunciadas = [ap044, ap045, ap049, ap052, ap063, ap064, hm079, hm090];
+export const anunciadas = [ap045, ap049, ap052, ap063, ap064, hm079, hm090];
