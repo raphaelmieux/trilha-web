@@ -102,6 +102,12 @@ const LABORATORIOS: [LabType, string, string][] = [
   ['insercao_texto', 'Documento montado', 'Inseriu tabela, imagem, cabeçalho e numeração num documento.'],
   ['planilha', 'Planilha que calcula', 'Montou uma planilha com alinhamento, mesclagem e fórmulas.'],
   ['area_de_trabalho', 'Dono da máquina', 'Consultou, ajustou e capturou o que o sistema mostra.'],
+  ['estilos_texto', 'Documento que se monta sozinho', 'Aplicou estilos e deixou o sumário se montar a partir deles.'],
+  ['planilha_avancada', 'Planilha que responde', 'Filtrou, congelou o cabeçalho e desenhou o gráfico certo.'],
+  ['banco_de_dados', 'Agenda com estrutura', 'Montou um banco de dados com vinte e cinco fichas.'],
+  ['apresentacao', 'Apresentação pronta', 'Montou uma apresentação com modelo, mídia e PDF.'],
+  ['correio_completo', 'Correio do clube', 'Escreveu, anexou, arquivou, respondeu e encaminhou.'],
+  ['configuracoes_sistema', 'Máquina ajustada', 'Limpou o disco, escolheu os programas padrão e criou um usuário.'],
 ];
 
 export const INSIGNIAS: Insignia[] = [

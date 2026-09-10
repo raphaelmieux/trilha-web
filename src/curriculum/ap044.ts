@@ -50,15 +50,22 @@ export const ap044: Specialty = {
   description: 'Parar de fazer à mão o que o programa faz sozinho: estilo, sumário, filtro, gráfico, slide mestre e banco de dados.',
 
   /*
-    Continua anunciada enquanto se escreve.
+    Continua anunciada até o schema chegar.
 
-    A trilha é grande — dois laboratórios novos e quatro extensões — e vai
-    entrar em vários pushes. Enquanto `emConstrucao` for verdadeiro o cartão
-    fica cinza no painel e a trilha não abre, então cada push pode fechar verde
-    sem que ninguém entre num percurso pela metade. É a mesma regra que a
-    vereda já segue: conteúdo escrito é conferido, publicado ou não.
+    A trilha entrou em vários pushes, e enquanto `emConstrucao` for verdadeiro o
+    cartão fica cinza no painel e a trilha não abre — então cada push pôde
+    fechar verde sem que ninguém entrasse num percurso pela metade. É a mesma
+    regra que a vereda já segue: conteúdo escrito é conferido, publicado ou não.
 
-    Sai daqui junto com a arte, no push que abre a trilha.
+    O que falta agora não é conteúdo nem arte: o emblema e o fundo do
+    certificado já estão no repositório. É a **ordem de publicação**. O
+    frontend e o Supabase saem do mesmo push e correm ao mesmo tempo, e as
+    linhas de `requirements` e `lessons` desta trilha entram por migration —
+    abrir a trilha no mesmo push que as cria deixaria os seis laboratórios
+    comemorando sem ter gravado nada, que é o defeito que a AP041 já mostrou.
+
+    Então isto sai no push seguinte, depois de o `supabase.yml` fechar verde
+    em `main`.
   */
   emConstrucao: true,
 
@@ -154,15 +161,12 @@ export const ap044: Specialty = {
    *
    * Cada um no seu arquivo, em ap044/, como nas três anteriores.
    *
-   * ── Onde está a avaliação final ─────────────────────────────────────────
-   * Não está aqui ainda, e a ausência é deliberada. A trava
-   * `index.test.ts > gives every trail with a final module its own exam` existe
-   * porque uma trilha já apontou para um módulo de prova vazio e, calada,
-   * aplicou a prova de outra especialidade. Declarar `AP044.F` antes de
-   * escrever as questões seria abrir exatamente esse buraco durante os pushes
-   * em que a trilha ainda se escreve.
-   *
-   * O módulo entra junto com as questões, no push da prova.
+   * ── A avaliação final entrou junto com as questões ──────────────────────
+   * Ela ficou de fora enquanto a trilha se escrevia, e não por esquecimento: a
+   * trava `index.test.ts > gives every trail with a final module its own exam`
+   * existe porque uma trilha já apontou para um módulo de prova vazio e,
+   * calada, aplicou a prova de outra especialidade. Declarar `AP044.F` antes
+   * das questões abriria exatamente esse buraco.
    */
   modules: [
     modulo1,
@@ -173,5 +177,20 @@ export const ap044: Specialty = {
     modulo6,
     modulo7,
     modulo8,
+    {
+      code: 'AP044.F',
+      title: 'Avaliação Final',
+      description: 'A prova que fecha a trilha, com questões de todos os requisitos.',
+      lessons: [
+        {
+          code: 'AP044.F-L1',
+          title: 'Avaliação Final de Computação 4',
+          type: 'final',
+          content: '',
+          requirementCodes: [],
+          labType: 'final_exam',
+        },
+      ],
+    },
   ],
 };
