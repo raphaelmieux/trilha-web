@@ -816,6 +816,29 @@ nenhuma. Uma ficha da lista tem e-mail sem arroba justamente para a regra ter o
 que recusar; sem ela, escrever a regra seria um clique que não muda nada na
 tela.
 
+**O que não viaja dentro do arquivo não conta.** Inserir vídeo tem dois
+caminhos que se parecem na hora de clicar: incorporar põe o arquivo dentro da
+apresentação, vincular guarda só o endereço. Os dois se chamam "inserir", e a
+diferença aparece longe de casa — no computador do clube, com o quadro preto e
+ninguém entendendo por quê. Se a tarefa aceitasse os dois, o desbravador
+entregaria uma apresentação que abre quebrada e a plataforma daria por boa.
+
+A diferença é mostrada onde o PowerPoint de verdade a mostra: o vinculado
+escreve o caminho do arquivo embaixo do quadro, que é o que o painel de
+informações relata. Inventar um "prévia no pen drive" dentro do programa imitado
+seria pôr coisa da plataforma dentro dele — o contrário do que a moldura existe
+para fazer.
+
+**Quatro gestos são quatro condições, e não um número de slides.** O item c) do
+requisito 9 pede criar, duplicar, reorganizar e excluir. Contar slides deixaria
+passar quem excluiu dois e criou dois: o total fecha e nada foi aprendido. Cada
+gesto tem a marca dele — o vazio sumiu, o encerramento está no fim, existe cópia
+de um slide que já existia, e existe um slide que ninguém tinha.
+
+**E o PDF congela o que existir na hora**, como o sumário do Word guarda o que
+leu. Exportar cedo e continuar mexendo é o que se faz sem pensar, e o PDF
+entregue fica sem os slides que vieram depois, sem nada na tela dizendo isso.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que
@@ -972,6 +995,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaAp044.test.ts` | tarefa do laboratório de estilos que nasce verde, ou que ninguém consegue vencer |
 | `src/labs/EstilosTextoLab.test.tsx` | botão do laboratório de estilos que não chega ao documento, ou sumário velho valendo por novo |
 | `src/labs/BancoDeDadosLab.test.tsx` | assistente de importação que já chega com o mapeamento certo, ou relatório sem os quatro campos |
+| `src/labs/apresentacaoDoClube.test.ts` | apresentação que abre sem os defeitos que as tarefas consertam, ou mídia vinculada valendo por incorporada |
+| `src/labs/ApresentacaoLab.test.tsx` | operação de slide que age no slide errado, ou PDF velho valendo por novo |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
