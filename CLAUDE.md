@@ -786,6 +786,36 @@ entrar. Os dois moram lado a lado na mesma galeria, que é onde o Word os põe.
 Realce entra pela mesma porta: ele pinta e não diz nada ao programa, então o
 sumário não fica sabendo dele.
 
+**Ninguém digita vinte e cinco fichas para provar que sabe montar um banco.**
+O requisito 6 da AP044 pede uma agenda com nome, endereço, telefone e e-mail de
+vinte e cinco pessoas, e digitar cem campos numa tela simulada ensina a digitar.
+O que se mede é **montar**: declarar os campos, dizer o tipo de cada um, e então
+pôr os dados lá dentro — e o jeito de verdade de pôr vinte e cinco pessoas num
+banco é **importar**.
+
+O assistente de importação é a teoria inteira virando gesto: ele pergunta,
+coluna por coluna, a que campo ela corresponde. E ele **erra**, porque as
+colunas do clube se chamam "Zap" e "Onde mora" — sem nome para casar, ele cai no
+palpite por posição e troca duas. Assistente que chegasse certo seria uma tarefa
+que abre resolvida; aceitar o palpite põe endereço no telefone e nada estoura,
+que é exatamente o que a lição de teoria diz sobre o dado na coluna errada.
+
+**Telefone parece número e é texto**, e escolher Número não estoura: a coluna
+aceita, e o que se perde são os parênteses, o traço e o zero da frente. Aqui o
+programa diz isso em vez de deixar acontecer calado — é a mesma decisão do
+"selecione primeiro" do laboratório de Word. Por isso todo telefone da lista de
+origem vem escrito `(61) 99999-0000`: sem parêntese e sem traço, a armadilha não
+teria o que destruir, e `metasDaAp044.test.ts` cobra a forma.
+
+**O tipo diz o que cabe; a regra de validação diz o que vale.** São tarefas
+separadas porque são coisas separadas, e a teoria da CC-AP044 dizia que existia
+um "tipo e-mail" — o que nem o Access nem o LibreOffice Base têm. Foi o
+laboratório que expôs a divergência, e ela se corrige no lado da lição:
+referência que diverge do que o laboratório mostra é pior do que referência
+nenhuma. Uma ficha da lista tem e-mail sem arroba justamente para a regra ter o
+que recusar; sem ela, escrever a regra seria um clique que não muda nada na
+tela.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que
@@ -941,6 +971,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `src/labs/metasDaAp044.test.ts` | tarefa do laboratório de estilos que nasce verde, ou que ninguém consegue vencer |
 | `src/labs/EstilosTextoLab.test.tsx` | botão do laboratório de estilos que não chega ao documento, ou sumário velho valendo por novo |
+| `src/labs/BancoDeDadosLab.test.tsx` | assistente de importação que já chega com o mapeamento certo, ou relatório sem os quatro campos |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |

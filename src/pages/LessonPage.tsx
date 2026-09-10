@@ -34,6 +34,7 @@ import FormatacaoTextoLab from '../labs/FormatacaoTextoLab';
 import OperacoesArquivoLab from '../labs/OperacoesArquivoLab';
 import InsercaoTextoLab from '../labs/InsercaoTextoLab';
 import EstilosTextoLab from '../labs/EstilosTextoLab';
+import BancoDeDadosLab from '../labs/BancoDeDadosLab';
 import PlanilhaLab from '../labs/PlanilhaLab';
 import AreaDeTrabalhoLab from '../labs/AreaDeTrabalhoLab';
 import { CheckCircle2, CircleX, ArrowRight, BookOpen, RefreshCw, Loader2, HardHat } from 'lucide-react';
@@ -142,6 +143,7 @@ export default function LessonPage() {
         {lesson.labType === 'operacoes_arquivo' && <OperacoesArquivoLab {...labProps} />}
         {lesson.labType === 'insercao_texto' && <InsercaoTextoLab {...labProps} />}
         {lesson.labType === 'estilos_texto' && <EstilosTextoLab {...labProps} />}
+        {lesson.labType === 'banco_de_dados' && <BancoDeDadosLab {...labProps} />}
         {lesson.labType === 'planilha' && <PlanilhaLab {...labProps} />}
         {lesson.labType === 'area_de_trabalho' && <AreaDeTrabalhoLab {...labProps} />}
         {lesson.labType === 'ai_lab' && <AILab {...labProps} />}
