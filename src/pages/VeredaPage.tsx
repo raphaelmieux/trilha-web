@@ -5,7 +5,7 @@ import { useFecharAoNavegar } from '../hooks/useFecharAoNavegar';
 import { useAuth } from '../context/AuthContext';
 import { NOME_DO_TIPO, nomeCompleto } from '../types';
 import {
-  VEREDAS, getVereda, licoesDaVereda, preRequisitoDaVeredaCumprido,
+  getVereda, licoesDaVereda, veredasQueFaltamAntes,
   type LicaoDeVereda, textoDaOrigem } from '../curriculum/veredas';
 import { licaoVencida, registrarLicaoVencida, percursoVazio } from '../lib/veredas';
 import { useVeredas } from '../hooks/useVeredas';
@@ -105,8 +105,8 @@ export default function VeredaPage() {
     bloqueado, mas o endereço é adivinhável. A arte fica à vista, apagada e com
     o cadeado no aro — o prêmio continua sendo a razão de destravá-la.
   */
-  if (!preRequisitoDaVeredaCumprido(vereda, concluida)) {
-    const anterior = VEREDAS.find(v => v.id === vereda.preRequisito);
+  const faltamAntes = veredasQueFaltamAntes(vereda, concluida);
+  if (faltamAntes.length > 0) {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
         <div className="flex justify-center mb-4">
@@ -114,14 +114,18 @@ export default function VeredaPage() {
         </div>
         <h1 className="text-2xl font-bold mb-2">{nomeCompleto(vereda)} está bloqueada</h1>
         <p className="mb-6" style={{ color: 'var(--color-text-dim)' }}>
-          Conclua {anterior ? nomeCompleto(anterior) : vereda.preRequisito} para abrir esta vereda.
-          {anterior && ' Esta aqui continua de onde aquela parou.'}
+          Conclua {faltamAntes.map(v => nomeCompleto(v)).join(' e ')} para abrir esta vereda.
+          {faltamAntes.length === 1 && ' Esta aqui continua de onde aquela parou.'}
         </p>
-        {anterior && (
-          <Link to={`/vereda/${anterior.code}`} className="btn-primary">
-            Ir para {nomeCompleto(anterior)}
-          </Link>
-        )}
+        {/* Um botão por vereda que falta: com três exigências, um botão só
+            esconderia duas delas atrás do nome da primeira. */}
+        <div className="flex flex-wrap gap-2 justify-center">
+          {faltamAntes.map(v => (
+            <Link key={v.id} to={`/vereda/${v.code}`} className="btn-primary">
+              Ir para {nomeCompleto(v)}
+            </Link>
+          ))}
+        </div>
       </div>
     );
   }

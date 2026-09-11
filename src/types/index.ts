@@ -107,6 +107,17 @@ export type LabType =
   | 'insercao_texto'
   | 'planilha'
   | 'area_de_trabalho'
+  /* A AP044 é a trilha do "descrever uma vez": cada um destes cinco imita um
+     programa que a AP043 já apresentou, e cobra dele o que só se faz depois de
+     saber usá-lo. Por isso são tipos próprios, e não os mesmos da AP043 com
+     mais tarefas: o laboratório antigo continua sendo o que a trilha anterior
+     avalia, e mexer nele mudaria o que já foi concluído. */
+  | 'estilos_texto'
+  | 'planilha_avancada'
+  | 'banco_de_dados'
+  | 'apresentacao'
+  | 'correio_completo'
+  | 'configuracoes_sistema'
   | 'ai_lab'
   | 'final_exam';
 

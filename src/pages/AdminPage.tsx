@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Shield, Users, Award, CalendarDays, AlertCircle, KeyRound, Copy, X } from 'lucide-react';
+import { MarcaEmTexto } from '../components/ui/BrandMark';
 import { getOpenSpecialties } from '../curriculum';
 import { veredasAbertas } from '../curriculum/veredas';
 import { nomeCompleto, type Tabela } from '../types';
@@ -313,9 +314,9 @@ export default function AdminPage() {
       </div>
 
       <div className="card p-6">
-        <h2 className="font-bold mb-1">Revogar um Token.Web()</h2>
+        <h2 className="font-bold mb-1">Revogar um <MarcaEmTexto marca="token" /></h2>
         <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
-          Os certificados emitidos não são listados aqui: cada Token.Web() é documento
+          Os certificados emitidos não são listados aqui: cada <MarcaEmTexto marca="token" /> é documento
           pessoal de quem o conquistou. Para invalidar um, informe o código —
           apenas em caso de fraude técnica comprovada ou erro sistêmico.
         </p>

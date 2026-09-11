@@ -19,6 +19,7 @@ import SecaoDeVeredas from '../components/SecaoDeVeredas';
 import { INSIGNIAS } from '../lib/insignias';
 import type { ProgressMap } from '../lib/progress';
 import { Lock, Award, Flame, Star, Clock, FileText, ArrowRight, Medal, HardHat } from 'lucide-react';
+import { MarcaEmTexto } from '../components/ui/BrandMark';
 
 /**
  * O card de uma trilha, em qualquer um dos seus três estados.
@@ -111,7 +112,7 @@ function CardDaTrilha({ e, progress, cert, liberada }: {
       </p>
       {cert && (
         <div className="mt-3 p-2 rounded-lg text-sm" style={{ backgroundColor: 'var(--color-secondary-a08)', border: '1px solid var(--color-secondary-a20)' }}>
-          <span className="font-semibold" style={{ color: 'var(--color-secondary)' }}>Token.Web() emitido!</span><br />
+          <span className="font-semibold" style={{ color: 'var(--color-secondary)' }}><MarcaEmTexto marca="token" /> emitido!</span><br />
           <span className="text-xs font-mono" style={{ color: 'var(--color-text-dim)' }}>{cert.code.substring(0, 16)}...</span>
         </div>
       )}
@@ -301,7 +302,7 @@ export default function DashboardPage() {
 
       <div className="flex gap-3 flex-wrap">
         <Link to="/relatorio" className="btn-secondary"><FileText className="w-4 h-4 mr-1" /> Ver Relatório de Aprendizagem</Link>
-        <Link to="/verificar" className="btn-secondary"><Award className="w-4 h-4 mr-1" /> Verificar Token.Web()</Link>
+        <Link to="/verificar" className="btn-secondary"><Award className="w-4 h-4 mr-1" /> Verificar <MarcaEmTexto marca="token" /></Link>
       </div>
 
     </div>

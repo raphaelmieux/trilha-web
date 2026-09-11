@@ -3,6 +3,7 @@ import type { Badge, Certification, CertificadoImprimivel } from '../types';
 import { CERT_WIDTH } from '../components/CertificateCanvas';
 import { codigoDaArte } from './certificados';
 import { renderBadgeIconPng, TIER_LABELS } from './badgeIcons';
+import { partirNaMarca, VERMELHO_DA_MARCA } from './marca';
 
 /**
  * Native PDF export.
@@ -32,6 +33,41 @@ const PX_TO_MM = A4_LANDSCAPE.width / CERT_WIDTH;
 const pxToMm = (px: number) => px * PX_TO_MM;
 /** jsPDF sets type size in points regardless of the document unit. */
 const pxToPt = (px: number) => pxToMm(px) / MM_PER_PT;
+
+/**
+ * Escreve uma linha centralizada com os parênteses da marca em vermelho.
+ *
+ * A regra da marca vale em toda parte, e estas fichas são entregues impressas —
+ * é onde a marca mais aparece fora da tela. O que o papel não recebe é a fonte:
+ * o jsPDF desenha em Helvetica, uma das 14 do padrão PDF, e pôr Space Mono aqui
+ * exigiria embutir um TTF que iria dentro do pacote de todo visitante para
+ * servir a três rodapés. A cor vem; a fonte, não.
+ *
+ * Centralizar obriga a desenhar à mão: `align: 'center'` centraliza cada
+ * chamada de `text` separadamente, então três pedaços de cores diferentes
+ * sairiam empilhados no mesmo ponto. Mede-se a linha inteira, começa-se na
+ * metade dela à esquerda do centro, e cada pedaço anda a própria largura.
+ */
+function linhaCentralizadaComMarca(
+  doc: jsPDF,
+  texto: string,
+  centroX: number,
+  y: number,
+  corDoTexto: [number, number, number],
+) {
+  const pedacos = partirNaMarca(texto);
+  let x = centroX - doc.getTextWidth(texto) / 2;
+
+  for (const pedaco of pedacos) {
+    const [r, g, b] = pedaco.daMarca ? VERMELHO_DA_MARCA : corDoTexto;
+    doc.setTextColor(r, g, b);
+    doc.text(pedaco.texto, x, y);
+    x += doc.getTextWidth(pedaco.texto);
+  }
+
+  /* Devolve a cor de quem chamou: as linhas seguintes contam com ela. */
+  doc.setTextColor(corDoTexto[0], corDoTexto[1], corDoTexto[2]);
+}
 
 async function loadImageAsDataUrl(url: string): Promise<string> {
   const response = await fetch(url);
@@ -145,7 +181,7 @@ export function exportStudySheetPdf(input: {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
   doc.setTextColor(70, 70, 70);
-  doc.text('Trilha.Web() — WebLab · AP034, requisitos 6.1 a 6.3', width / 2, y, { align: 'center' });
+  linhaCentralizadaComMarca(doc, 'Trilha.Web() — WebLab · AP034, requisitos 6.1 a 6.3', width / 2, y, [70, 70, 70]);
   y += 5;
   doc.setDrawColor(193, 53, 22);
   doc.setLineWidth(0.6);
@@ -227,7 +263,7 @@ export function exportPactPdf(input: {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
   doc.setTextColor(70, 70, 70);
-  doc.text('Trilha.Web() — AP034, requisitos 5.1 a 5.9', width / 2, y, { align: 'center' });
+  linhaCentralizadaComMarca(doc, 'Trilha.Web() — AP034, requisitos 5.1 a 5.9', width / 2, y, [70, 70, 70]);
   y += 5;
   doc.setDrawColor(193, 53, 22);
   doc.setLineWidth(0.6);
@@ -283,7 +319,7 @@ export function exportAttachmentPdf(studentName: string): void {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
   doc.setTextColor(70, 70, 70);
-  doc.text('Anexo recebido no MailLab — Trilha.Web()', width / 2, y, { align: 'center' });
+  linhaCentralizadaComMarca(doc, 'Anexo recebido no MailLab — Trilha.Web()', width / 2, y, [70, 70, 70]);
   y += 5;
   doc.setDrawColor(193, 53, 22);
   doc.setLineWidth(0.6);

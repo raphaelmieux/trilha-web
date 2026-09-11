@@ -18,6 +18,7 @@ import MarcaDaLicao from '../components/ui/MarcaDaLicao';
 import Emblema from '../components/ui/Emblema';
 import BotaoDeRequisitos from '../components/ui/BotaoDeRequisitos';
 import { CheckCircle2, Award, HardHat, Signpost } from 'lucide-react';
+import { MarcaEmTexto } from '../components/ui/BrandMark';
 
 export default function SpecialtyPage() {
   const { code } = useParams<{ code: string }>();
@@ -232,7 +233,7 @@ export default function SpecialtyPage() {
             onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-secondary-a40)')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-secondary-a20)')}>
             <Award className="w-5 h-5 group-hover:scale-110 transition" style={{ color: 'var(--color-secondary)' }} />
-            <span className="font-semibold" style={{ color: 'var(--color-secondary)' }}>Token.Web() emitido — Ver Certificado</span>
+            <span className="font-semibold" style={{ color: 'var(--color-secondary)' }}><MarcaEmTexto marca="token" /> emitido — Ver Certificado</span>
           </Link>
         )}
         </div>
@@ -280,7 +281,7 @@ export default function SpecialtyPage() {
             </h2>
           </div>
           <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
-            São percursos curtos e de bônus: rendem insígnia e Token.Web(), e não
+            São percursos curtos e de bônus: rendem insígnia e <MarcaEmTexto marca="token" />, e não
             entram no percentual desta trilha nem são cobrados na avaliação.
           </p>
           <div className="space-y-3">

@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { VEREDAS, veredasAbertas, veredasComConteudo, licoesDaVereda, topicosDaVereda,
-  textoDaOrigem, preRequisitoDaVeredaCumprido } from '../curriculum/veredas';
+  textoDaOrigem, preRequisitoDaVeredaCumprido, veredasQueFaltamAntes } from '../curriculum/veredas';
 import { getAllSpecialties } from '../curriculum';
 import {
   EVENTO_TOPICO, EVENTO_TEORIA, EVENTO_LABORATORIO,
@@ -432,49 +432,125 @@ describe('a origem de cada vereda', () => {
   vai tentar concluir uma coisa que já concluiu.
 */
 describe('o pré-requisito de cada vereda', () => {
-  const comPreRequisito = () => VEREDAS.filter(v => v.preRequisito);
+  const exigencias = () => VEREDAS.flatMap(v => (v.preRequisitos ?? []).map(id => ({ v, id })));
 
   it('todo pré-requisito é o id de uma vereda que existe', () => {
     const ids = new Set(VEREDAS.map(v => v.id));
-    const perdidos = comPreRequisito()
-      .filter(v => !ids.has(v.preRequisito ?? ''))
-      .map(v => `${v.code} → ${v.preRequisito}`);
+    const perdidos = exigencias().filter(e => !ids.has(e.id)).map(e => `${e.v.code} → ${e.id}`);
     expect(perdidos).toEqual([]);
   });
 
-  it('nenhum aponta para uma vereda que ainda não abriu', () => {
+  /*
+    A trava mudou de forma quando as veredas de escritório e de design
+    chegaram.
+
+    A antiga dizia "nenhum pré-requisito aponta para vereda que ainda não
+    abriu", e estava certa enquanto toda vereda anunciada era solta. As de
+    escritório vêm em grafo: a de Editor de Texto exige a de Arquivos, e as
+    duas estão em construção. Cobrar a regra antiga reprovaria dezenove
+    veredas por um bloqueio que não bloqueia ninguém — quem não pode entrar em
+    nenhuma das duas não fica preso em nenhuma delas.
+
+    O defeito real é outro, e continua cobrado: vereda **aberta** cuja chave
+    está numa que não abriu. Aí sim a pessoa entra no catálogo, encontra o
+    cartão cinza dizendo "conclua", e vai tentar concluir uma coisa que não
+    existe.
+  */
+  it('nenhuma vereda aberta exige uma que ainda não abriu', () => {
     const abertas = new Set(veredasAbertas().map(v => v.id));
-    const impossiveis = comPreRequisito()
-      .filter(v => !abertas.has(v.preRequisito ?? ''))
-      .map(v => `${v.code} → ${v.preRequisito}`);
+    const impossiveis = exigencias()
+      .filter(e => !e.v.emConstrucao && !abertas.has(e.id))
+      .map(e => `${e.v.code} → ${e.id}`);
     expect(impossiveis).toEqual([]);
   });
 
   it('nenhuma vereda exige a si mesma', () => {
-    const circulares = comPreRequisito().filter(v => v.preRequisito === v.id).map(v => v.code);
+    const circulares = exigencias().filter(e => e.id === e.v.id).map(e => e.v.code);
     expect(circulares).toEqual([]);
   });
 
+  /*
+    E nenhum ciclo, nem com três no meio.
+
+    A exigência de si mesma é o ciclo de tamanho um, e era a única cobrada. Com
+    dezenove veredas em grafo — cinco delas com duas ou três exigências — um
+    ciclo maior passa despercebido em qualquer revisão e tranca todas as
+    veredas do laço para sempre, cada uma esperando a seguinte.
+  */
+  it('o grafo de exigências não tem ciclo', () => {
+    const porId = new Map(VEREDAS.map(v => [v.id, v]));
+    const estado = new Map<string, 'visitando' | 'pronto'>();
+    const ciclos: string[] = [];
+
+    const descer = (id: string, caminho: string[]): void => {
+      if (estado.get(id) === 'pronto') return;
+      if (estado.get(id) === 'visitando') {
+        ciclos.push([...caminho.slice(caminho.indexOf(id)), id].join(' → '));
+        return;
+      }
+      estado.set(id, 'visitando');
+      for (const proximo of porId.get(id)?.preRequisitos ?? []) descer(proximo, [...caminho, id]);
+      estado.set(id, 'pronto');
+    };
+
+    for (const v of VEREDAS) descer(v.id, []);
+    expect(ciclos).toEqual([]);
+  });
+
   it('sem pré-requisito, a vereda está sempre liberada', () => {
-    const livre = VEREDAS.find(v => !v.preRequisito)!;
+    const livre = VEREDAS.find(v => !v.preRequisitos?.length)!;
     expect(preRequisitoDaVeredaCumprido(livre, () => false)).toBe(true);
   });
 
-  it('com pré-requisito, ela depende de a anterior estar concluída', () => {
-    const presa = comPreRequisito()[0];
-    expect(presa, 'nenhuma vereda declara pré-requisito').toBeDefined();
-    expect(preRequisitoDaVeredaCumprido(presa, () => false)).toBe(false);
-    expect(preRequisitoDaVeredaCumprido(presa, id => id === presa.preRequisito)).toBe(true);
+  it('com pré-requisito, ela depende de todas as anteriores', () => {
+    /* Uma que exija duas: é aí que "cumpriu a primeira" deixa de bastar, e era
+       o que o campo único não sabia representar. */
+    const presa = VEREDAS.find(v => (v.preRequisitos ?? []).length > 1);
+    expect(presa, 'nenhuma vereda declara duas exigências').toBeDefined();
+    const [primeira, ...resto] = presa!.preRequisitos!;
+    expect(preRequisitoDaVeredaCumprido(presa!, () => false)).toBe(false);
+    expect(preRequisitoDaVeredaCumprido(presa!, id => id === primeira)).toBe(false);
+    expect(veredasQueFaltamAntes(presa!, id => id === primeira).map(v => v.id)).toEqual(resto);
+    expect(preRequisitoDaVeredaCumprido(presa!, () => true)).toBe(true);
   });
 });
 
+/*
+  A arte é condição para abrir, e não para anunciar.
+
+  A regra era a outra: toda vereda registrada tinha de ter emblema e fundo de
+  certificado, inclusive as anunciadas, "porque a arte chega antes do conteúdo
+  para que o cartão anunciado mostre o que vem". Ela valeu enquanto a arte de
+  fato vinha primeiro.
+
+  As dezenove veredas de escritório e de design inverteram a ordem: os
+  requisitos oficiais foram publicados e a arte ainda está sendo desenhada.
+  Cobrar arte para anunciar deixaria duas saídas, e as duas ruins — segurar o
+  registro do percurso inteiro até o último desenho ficar pronto, ou pôr no
+  repositório dezenove imagens de mentira que alguém teria de lembrar de
+  trocar.
+
+  Sem arte o `Emblema` já faz a coisa certa: o `onError` esconde a imagem e
+  fica o espaço reservado com o selo de estado, que é o mesmo lugar que a
+  medalha vai ocupar. O cartão anuncia sem prometer um desenho que não existe.
+
+  Aberta é outra história: quem percorre até o fim recebe um certificado, e
+  certificado sem fundo é papel em branco.
+*/
 describe('a arte de cada vereda', () => {
-  for (const v of VEREDAS) {
+  for (const v of veredasAbertas()) {
     it(`${v.code} tem emblema e certificado no repositório`, () => {
       expect(existsSync(`public/assets/specialties/${v.code}.png`), 'emblema').toBe(true);
       expect(existsSync(`public/assets/certificates/${v.code}.png`), 'certificado').toBe(true);
     });
   }
+
+  /* Filtro que esvaziasse a lista não seria trava nenhuma: seria a mesma
+     armadilha do "zero link não é zero link quebrado", com a build verde
+     porque não conferiu nada. */
+  it('e há vereda aberta para a trava conferir', () => {
+    expect(veredasAbertas().length).toBeGreaterThan(0);
+  });
 });
 
 /*

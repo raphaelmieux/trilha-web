@@ -126,6 +126,20 @@ dispara em `main` —, e é a única janela em que a migration é lida sem nada
 correndo para aplicá-la: escreva no branch, deixe conferir, leve para `main`
 depois.
 
+**`ON CONFLICT` cita a restrição que existe, e não a que faria sentido.**
+`modules` tem `UNIQUE(specialty_id, code)`; `requirements` tem `UNIQUE` só em
+`code`. Escrever `ON CONFLICT (specialty_id, code)` para requirements parece
+simétrico, compila em lugar nenhum — SQL não compila — e o Postgres recusa com
+"there is no unique or exclusion constraint matching the ON CONFLICT
+specification". Como o corpo do seed é um bloco DO inteiro, que é uma instrução
+só, nada entra: a trilha inteira fica de fora e o `db push` para ali.
+
+É irmã do delimitador errado, e pior pelo mesmo motivo: o `ci.yml` não fala com
+banco nenhum, então o erro só aparece quando o `supabase.yml` corre — depois do
+merge, em `main`. `migrations.test.ts` passou a ler as restrições UNIQUE
+declaradas nas próprias migrations e a conferir toda cláusula contra elas, sem
+subir Postgres.
+
 **Publicação em paralelo, não em ordem.** O frontend e o Supabase saem do mesmo
 push e correm ao mesmo tempo. Quando a mudança precisa do schema primeiro —
 trilha nova, coluna nova que a tela já lê — separe em dois pushes: o de
@@ -624,6 +638,22 @@ distinção que a plataforma passou meses estabelecendo. `textoDaOrigem` escolhe
 palavra procurando o código em `VEREDAS`, e `veredas.test.ts` cobra que toda
 origem declarada exista de verdade.
 
+**A exigência de uma vereda é uma lista, mesmo quando é uma só.** Era um campo
+único, e bastava enquanto nenhuma vereda dependia de mais de uma. As de
+escritório não são assim: Trabalho Compartilhado pede Editor de Texto **e**
+Contas e Segurança, Dados e Formulários pede duas, Projeto Documental pede
+três. Guardar só a primeira abriria a vereda para quem não fez as outras. É
+lista sempre, e não "ou um ou vários": união de escalar e lista dá duas formas
+para a mesma coisa e todo leitor precisa lembrar qual veio. `veredasQueFaltamAntes`
+devolve **quais** faltam, porque com três exigências dizer "conclua a anterior"
+manda a pessoa concluir uma e voltar para descobrir que falta outra — a tela
+nomeia todas, e põe um botão para cada.
+
+E o grafo não pode ter ciclo. A exigência de si mesma era o único caso
+cobrado — o ciclo de tamanho um. Com dezenove veredas em grafo, um laço de três
+passa por qualquer revisão e tranca todas as veredas dele para sempre, cada uma
+esperando a seguinte. `veredas.test.ts` percorre e nomeia o caminho inteiro.
+
 **Vereda pode exigir outra, e a exigência é por `id`.** A CC002 se apoia nos
 blocos em toda página — "o sempre é o `while`", "a boca do bloco é o recuo" —, e
 quem chega sem ter percorrido a CC001 lê comparações com uma coisa que não viu.
@@ -674,6 +704,27 @@ diz é quantas lições, de que metade — teoria ou prática —, e se saiu
 Token.Web(). Vereda com zero lições vencidas não vira linha: um relatório de
 aprendizagem fala do que foi feito.
 
+**A arte é condição para abrir, e não para anunciar.** A regra era a outra —
+toda trilha e toda vereda registrada tinha de ter emblema e fundo de
+certificado, inclusive as anunciadas, "porque a arte chega antes do conteúdo
+para que o cartão anunciado mostre o que vem". Valeu enquanto a arte de fato
+vinha primeiro. As dezenove veredas de escritório e de design, e as duas
+especialidades de Artes e Habilidades Manuais, inverteram a ordem: os
+requisitos oficiais foram publicados e a arte ainda está sendo desenhada.
+
+Cobrar arte para anunciar deixava duas saídas, as duas ruins: segurar o
+registro do percurso inteiro até o último desenho ficar pronto, ou pôr no
+repositório vinte e uma imagens de mentira que alguém teria de lembrar de
+trocar. Sem arte o `Emblema` já faz a coisa certa — o `onError` esconde a
+imagem e fica o espaço reservado com o selo de estado, no tamanho que a medalha
+vai ocupar. Abrir é outra história: quem percorre até o fim recebe certificado,
+e certificado sem fundo é papel em branco.
+
+As duas travas passaram a filtrar por `emConstrucao`, e as duas ganharam junto
+a guarda contra o vazio: filtro que esvaziasse a lista deixaria a build verde
+por não ter conferido nada, que é a armadilha do "zero link não é zero link
+quebrado" aplicada à própria trava.
+
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois
@@ -718,6 +769,143 @@ parágrafo de ajuda do Explorador fixava `--color-text-dim`, que só podia acert
 numa das duas superfícies: hoje herda a cor de quem o desenha.
 `painelDoLaboratorio.test.ts` refaz a conta sobre as folhas de verdade.
 
+**Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
+AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
+nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
+anterior avalia como concluído: quem já entregou aquele documento veria tarefas
+novas aparecerem num exercício que ele fechou. `EstilosTextoLab` é outro
+laboratório, na **mesma janela** de `word.tsx` — o desbravador reencontra a
+faixa que já conhece, com grupos novos onde eles de fato estão: Estilos em
+Início, Colunas em Layout, Sumário e Nota de Rodapé em Referências, que é uma
+guia que ele nunca teve motivo de abrir.
+
+E o documento dele chega **escrito por inteiro**, o que é o contrário da regra
+de sempre e é o ponto: título, três seções, oito itens, versículo. Na tela
+parece um manual acabado, e é por isso que o painel abre com nove tarefas
+vermelhas sem que se veja o que falta. O que falta aparece num clique — mandar
+gerar o sumário, que sai vazio porque não há um único parágrafo marcado como
+título.
+
+**O sumário guarda o que leu, e é essa a metade da lição que ninguém conta.** No
+Word ele não se refaz sozinho: trocar um título depois de gerar deixa o sumário
+mostrando o texto velho, e nada na tela avisa. Se a tarefa apenas conferisse
+"existe sumário", o desbravador entregaria um manual cujo sumário diz MANUAL DO
+ACAMPAMENTO DE INVERNO em caixa alta — o título que ele consertou — e a
+plataforma daria por bom. A trava confere que ele está em dia, e o botão
+Atualizar Sumário existe porque é o que o alcança.
+
+**Estilo de parágrafo e estilo de caractere não são a mesma coisa**, e não é
+detalhe de implementação: é a razão de Ênfase não entrar no sumário e Título 2
+entrar. Os dois moram lado a lado na mesma galeria, que é onde o Word os põe.
+Realce entra pela mesma porta: ele pinta e não diz nada ao programa, então o
+sumário não fica sabendo dele.
+
+**Ninguém digita vinte e cinco fichas para provar que sabe montar um banco.**
+O requisito 6 da AP044 pede uma agenda com nome, endereço, telefone e e-mail de
+vinte e cinco pessoas, e digitar cem campos numa tela simulada ensina a digitar.
+O que se mede é **montar**: declarar os campos, dizer o tipo de cada um, e então
+pôr os dados lá dentro — e o jeito de verdade de pôr vinte e cinco pessoas num
+banco é **importar**.
+
+O assistente de importação é a teoria inteira virando gesto: ele pergunta,
+coluna por coluna, a que campo ela corresponde. E ele **erra**, porque as
+colunas do clube se chamam "Zap" e "Onde mora" — sem nome para casar, ele cai no
+palpite por posição e troca duas. Assistente que chegasse certo seria uma tarefa
+que abre resolvida; aceitar o palpite põe endereço no telefone e nada estoura,
+que é exatamente o que a lição de teoria diz sobre o dado na coluna errada.
+
+**Telefone parece número e é texto**, e escolher Número não estoura: a coluna
+aceita, e o que se perde são os parênteses, o traço e o zero da frente. Aqui o
+programa diz isso em vez de deixar acontecer calado — é a mesma decisão do
+"selecione primeiro" do laboratório de Word. Por isso todo telefone da lista de
+origem vem escrito `(61) 99999-0000`: sem parêntese e sem traço, a armadilha não
+teria o que destruir, e `metasDaAp044.test.ts` cobra a forma.
+
+**O tipo diz o que cabe; a regra de validação diz o que vale.** São tarefas
+separadas porque são coisas separadas, e a teoria da CC-AP044 dizia que existia
+um "tipo e-mail" — o que nem o Access nem o LibreOffice Base têm. Foi o
+laboratório que expôs a divergência, e ela se corrige no lado da lição:
+referência que diverge do que o laboratório mostra é pior do que referência
+nenhuma. Uma ficha da lista tem e-mail sem arroba justamente para a regra ter o
+que recusar; sem ela, escrever a regra seria um clique que não muda nada na
+tela.
+
+**O que não viaja dentro do arquivo não conta.** Inserir vídeo tem dois
+caminhos que se parecem na hora de clicar: incorporar põe o arquivo dentro da
+apresentação, vincular guarda só o endereço. Os dois se chamam "inserir", e a
+diferença aparece longe de casa — no computador do clube, com o quadro preto e
+ninguém entendendo por quê. Se a tarefa aceitasse os dois, o desbravador
+entregaria uma apresentação que abre quebrada e a plataforma daria por boa.
+
+A diferença é mostrada onde o PowerPoint de verdade a mostra: o vinculado
+escreve o caminho do arquivo embaixo do quadro, que é o que o painel de
+informações relata. Inventar um "prévia no pen drive" dentro do programa imitado
+seria pôr coisa da plataforma dentro dele — o contrário do que a moldura existe
+para fazer.
+
+**Quatro gestos são quatro condições, e não um número de slides.** O item c) do
+requisito 9 pede criar, duplicar, reorganizar e excluir. Contar slides deixaria
+passar quem excluiu dois e criou dois: o total fecha e nada foi aprendido. Cada
+gesto tem a marca dele — o vazio sumiu, o encerramento está no fim, existe cópia
+de um slide que já existia, e existe um slide que ninguém tinha.
+
+**E o PDF congela o que existir na hora**, como o sumário do Word guarda o que
+leu. Exportar cedo e continuar mexendo é o que se faz sem pensar, e o PDF
+entregue fica sem os slides que vieram depois, sem nada na tela dizendo isso.
+
+**A janela do Excel saiu do laboratório e virou `excel.tsx`.** Ela morava
+dentro de `PlanilhaLab.tsx`, e saiu no dia em que a AP044 precisou de um segundo
+laboratório de planilha — antes de a cópia existir, e não depois. É a mesma
+decisão de `word.tsx`, e pelo mesmo motivo escrito lá: duas cópias divergem no
+primeiro ajuste, e a plataforma passa a mostrar dois "Excel" diferentes. O
+`PlanilhaAvancadaLab.test.tsx` monta os dois laboratórios e compara a fileira de
+guias, a barra de título, as abas do pé e a barra de status.
+
+**Os dois números da planilha filtrada.** A tela mostra ao mesmo tempo a célula
+do total, que é a `SOMA`, e a barra de status, que soma o que está à vista —
+como o Excel de verdade faz. Com filtro aplicado eles **não batem**, e é aí que
+a lição acontece: quem não sabe disso lê o número da célula e o manda para a
+liderança. `SUBTOTAL` é a fórmula que respeita o filtro.
+
+A tarefa exige as duas coisas — a fórmula trocada **e** um filtro aplicado.
+Escrever `SUBTOTAL` numa planilha sem filtro é trocar uma coisa que não estava
+errada, e a lição inteira é a diferença entre os dois números, que só existe com
+linha escondida.
+
+**E o tipo do gráfico sai da pergunta.** A pergunta aqui é de evolução — como a
+inscrição cresceu mês a mês —, e só a linha responde. Pizza e colunas desenham
+sem erro nenhum: se a tarefa aceitasse qualquer tipo, ela mediria ter clicado em
+Inserir. O programa explica por que a escolha errada não responde, em vez de só
+deixar a tarefa vermelha.
+
+**Cco não é "o terceiro campo".** Uma mensagem com uma família no Cco e as
+outras cinquenta e nove no Para tem o campo preenchido e vazou tudo. O que a
+tarefa mede é o **vazamento não ter acontecido** — quantos endereços ficam
+visíveis —, e não o Cco estar vazio ou não.
+
+E enviar errado não é bloqueado: a prévia diz, antes do clique, quantos
+endereços cada pessoa vai ver; depois do clique a mensagem está enviada, a
+tarefa continua vermelha, e o jeito de consertar é escrever de novo. Simulação
+que vira muro no primeiro desvio ensina a andar no trilho, e "o que sai não
+volta" é a lição.
+
+**A assinatura configurada e nunca usada não demonstra nada** — é a família do
+"zero link não é zero link quebrado", e a tarefa exige que ela tenha saído numa
+mensagem.
+
+**A ferramenta é a mesma; o disco responde por si.** A máquina do laboratório de
+Configurações tem um SSD e um HD, e é isso que faz a lição do requisito 13
+existir: na janela de otimizar, a coluna "Tipo de mídia" diz qual é qual, e o
+botão troca de nome sozinho — Otimizar no SSD, Desfragmentar no HD. Ensinar a
+desfragmentar SSD é ensinar a gastar a vida útil do disco à toa, e o Windows de
+verdade já mostra isso escrito ali. A tarefa exige passar pelos dois: com um
+disco só, a diferença não é vista.
+
+**E "abrir com" não é "definir padrão".** Um vale para aquele arquivo, desta
+vez; o outro muda a regra para todos os arquivos daquele tipo. A tarefa do
+"abrir com" só fecha se o padrão **não** tiver mudado junto — é a diferença que
+faz alguém abrir uma foto no editor uma vez e passar a abrir todas ali.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que
@@ -729,6 +917,54 @@ isso **todo texto passa por `escapar` antes de sair**, sem exceção.
 Vale para laboratório que imita um programa. Os que não imitam nada — ordenar,
 classificar, escrever — continuam sendo tela da plataforma, e moldura de
 aplicativo neles seria fantasia sem ganho.
+
+**São duas marcas, e a regra é a mesma.** `Trilha.Web()` é a plataforma;
+`Token.Web()` é o certificado que ela emite, de trilha e de vereda. As duas em
+Space Mono Bold, e nas duas os parênteses em `#C13516` — que é o
+`--color-primary` da plataforma, e não um hexadecimal escrito à parte. Os
+parênteses são o que diz que o nome é uma chamada de função, e não uma frase
+com pontuação sobrando; sem eles pintados a marca lê como um nome com um par de
+parênteses vazios esquecido no fim.
+
+A regra é uma só de propósito. O clube encontra os dois nomes na **mesma tela** —
+a de entrada traz a plataforma no alto e "Recebeu um Token.Web()?" logo abaixo —,
+e vestir um e não o outro ensinaria que um deles é nome próprio e o outro é
+texto comum, quando os dois são a mesma ideia.
+
+Vale **em toda parte**: a digitação da tela de entrada, a barra fixa, o nome
+citado no meio de um parágrafo e os rodapés das fichas em PDF. O cursor da
+digitação é do mesmo vermelho — era `currentColor`, que na barra fixa é branco.
+
+**Nenhuma tela escreve nenhum dos dois à mão.** Eles moram partidos em
+`src/lib/marca.ts`, em `MARCAS` — TypeScript puro, sem React, porque quem
+desenha no papel é o jsPDF, que não lê folha de estilo. Na tela vem
+`<MarcaEmTexto />` para a plataforma e `<MarcaEmTexto marca="token" />` para o
+certificado, ou `comMarca(frase)` quando o nome chega no meio de um texto já
+montado por interpolação: a frase continua sendo `string`, que é o que vai para
+o PDF, e quem veste a marca é a tela na hora de desenhar. `partirNaMarca`
+procura as duas numa alternação só, e não uma de cada vez — partir duas vezes
+devolveria os pedaços fora de ordem na frase que cita as duas, e há uma dessas
+na tela de entrada.
+
+A trava de `marca.test.tsx` olha para o **texto do JSX**, e não para toda
+ocorrência dos nomes — `pdf.ts`, `reportNarrative.ts`, `relatorioDeVeredas.ts` e
+o `ReportPage` guardam o nome em literal de propósito. Atributo também é
+literal, e é onde os dois seguem crus com razão: o `title` do selo do `Emblema`
+e o `aria-label` da estante de insígnias são texto que o navegador **lê**, e não
+texto que ele pinta — é também por isso que os nomes de insígnia no catálogo
+(`Primeiro Token.Web()`) não pedem migration nova. Ela apaga comentários e
+literais antes de procurar, e confere que ainda enxerga um nome plantado no meio
+do JSX: um apagador que engolisse o arquivo inteiro aprovaria qualquer coisa,
+calado.
+
+No PDF vem a cor e não vem a fonte. O jsPDF desenha em Helvetica, uma das 14 do
+padrão, e pôr Space Mono ali exigiria embutir um TTF que iria dentro do pacote
+de todo visitante para servir a três rodapés. Centralizar cobra desenhar à mão:
+`align: 'center'` centraliza cada chamada de `text` separadamente, então três
+pedaços de cores diferentes sairiam empilhados no mesmo ponto — mede-se a linha
+inteira e cada pedaço anda a própria largura. O corpo do relatório em PDF fica
+de fora: lá o nome cai no meio de parágrafo quebrado em linhas, e colorir dentro
+da quebra pediria reimplementar a quebra.
 
 **Link externo é sempre `<a target="_blank">`**, pelo componente `LinkExterno`.
 `window.open` funciona no computador e falha no celular.
@@ -858,6 +1094,17 @@ mexido em nada. Os dois leem `todasAsQuestoesDaProva`, que devolve o
 reservatório sem sortear e existe para isso. O sorteio tem travas próprias, em
 `index.test.ts`.
 
+**Trava com lista de trilhas escrita à mão para de conferir sozinha.** As travas
+estruturais do `index.test.ts` — código de lição repetido, requisito citado que
+não existe, requisito sem lição, dois módulos apontando para o mesmo
+laboratório — enumeravam quatro trilhas num `describe.each`. A AP043 abriu e não
+entrou na lista; a AP044 também não. Nenhuma das duas omissões reprova coisa
+alguma: a build segue verde conferindo as trilhas velhas, que é a pior forma de
+falhar, porque é indistinguível de estar tudo certo. As listas saem de
+`getOpenSpecialties()` hoje, e trilha aberta é conferida no dia em que abre. Com
+a guarda contra o vazio junto, que é o de sempre — lista que esvaziasse deixaria
+a build verde por não ter conferido nada.
+
 ## As outras travas
 
 Quase todas nasceram de um erro que já aconteceu. Se uma delas reprovar, ela
@@ -867,13 +1114,25 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | Onde | O que reprova |
 | --- | --- |
 | `supabase/migrations/migrations.test.ts` | migration que não fecha um bloco que abre; timestamp repetido |
+| `supabase/migrations/migrations.test.ts` | `ON CONFLICT` citando coluna sem restrição UNIQUE, que derruba o arquivo inteiro |
 | `src/lib/certificados.test.ts` | o padrão de um certificado ilegível — inverter para `'active'` reprova |
 | `src/lib/insignias.test.ts` | insígnia com critério no código e sem linha no catálogo |
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
+| `src/labs/metasDaAp044.test.ts` | tarefa do laboratório de estilos que nasce verde, ou que ninguém consegue vencer |
+| `src/labs/EstilosTextoLab.test.tsx` | botão do laboratório de estilos que não chega ao documento, ou sumário velho valendo por novo |
+| `src/labs/BancoDeDadosLab.test.tsx` | assistente de importação que já chega com o mapeamento certo, ou relatório sem os quatro campos |
+| `src/labs/apresentacaoDoClube.test.ts` | apresentação que abre sem os defeitos que as tarefas consertam, ou mídia vinculada valendo por incorporada |
+| `src/labs/ApresentacaoLab.test.tsx` | operação de slide que age no slide errado, ou PDF velho valendo por novo |
+| `src/labs/planilhaDoAcampamento.test.ts` | planilha pequena demais para o filtro fazer falta, ou SUBTOTAL escrito sem filtro nenhum |
+| `src/labs/PlanilhaAvancadaLab.test.tsx` | os dois laboratórios de planilha mostrando janelas de Excel diferentes |
+| `src/labs/correioDoClube.test.ts` | Cco preenchido com a lista grande vazando pelo Para, ou assinatura configurada e nunca usada |
+| `src/labs/maquinaDoClube.test.ts` | "abrir com" que mudou o padrão junto, ou usuário novo criado administrador |
+| `src/labs/ConfiguracoesLab.test.tsx` | caminho de Configurações que não leva à tarefa, ou botão de otimizar com o nome errado para o disco |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
+| `src/components/ui/marca.test.tsx` | `Trilha.Web()` ou `Token.Web()` escrito à mão no JSX, parênteses sem o vermelho da plataforma, ou o vermelho do PDF divergindo do token |
 | `src/components/TokenDaVereda.test.tsx` | Token.Web() de vereda que espera clique, que pede duas vezes, ou que reemite um revogado |
 | `src/labs/falhasDePython.test.ts` | painel de falhas que abre respondido, ou recado de erro que entrega a resposta |
 | `src/labs/roteiroDePython.test.ts` | roteiro que julga o programa, ou que faz escada com a cadeia de elif |
@@ -881,6 +1140,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/exemplosDePython.test.ts` | exemplo de Python cuja saída declarada não é a que o programa escreve |
 | `src/curriculum/laboratoriosDePython.test.ts` | laboratório de Python impossível de vencer, ou cujo modelo já abre resolvido |
 | `src/curriculum/index.test.ts` | trilha sem emblema ou sem fundo de certificado no repositório |
+| `src/curriculum/index.test.ts` | trilha aberta com lição, módulo ou laboratório repetido, ou requisito sem lição |
 | `src/curriculum/exemplosDaTeoria.test.ts` | seletor do exemplo de CSS que não acha ninguém na marcação do tópico |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |
 | `src/curriculum/qualidade.test.ts` | lição ou prova que sorteia sem ter três questões de sobra |

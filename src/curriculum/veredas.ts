@@ -334,8 +334,19 @@ export interface Vereda {
    *
    * `origem` é outra coisa: ela diz de onde a vereda nasceu, e é só texto na
    * tela. Uma vereda pode sair de outra sem exigi-la.
+   *
+   * ── Por que é uma lista, mesmo quando é uma só ──────────────────────────
+   * Era um campo único, e dava conta enquanto toda vereda dependia de no
+   * máximo uma. As veredas de escritório e de design não são assim: a de
+   * Trabalho Compartilhado pede Editor de Texto **e** Contas e Segurança, e a
+   * de Projeto Documental pede três. Guardar só a primeira e cobrar só ela
+   * abriria a vereda para quem não fez as outras — e o documento oficial
+   * exige as três.
+   *
+   * Lista sempre, e não "ou um ou vários": união de escalar e lista dá duas
+   * formas para a mesma coisa, e todo leitor precisa lembrar qual delas veio.
    */
-  preRequisito?: string;
+  preRequisitos?: string[];
   /**
    * A vereda mostra, ao lado do código, o que ele produz?
    *
@@ -351,9 +362,11 @@ export interface Vereda {
 /** Uma vereda ainda por escrever: só o cartão, para o clube saber o que vem. */
 const anunciada = (
   code: string, name: string, familia: string, description: string,
+  preRequisitos?: string[],
 ): Vereda => ({
   id: code.toLowerCase(),
   code, name, familia, description,
+  ...(preRequisitos ? { preRequisitos } : {}),
   emConstrucao: true,
   mostraResultado: false,
   modulos: [],
@@ -397,7 +410,7 @@ export const VEREDAS: Vereda[] = [
       sobre a AP034, e mora no mesmo lugar: na plataforma, e não num módulo
       dentro da vereda pedindo que a pessoa se lembre de fazer a outra antes.
     */
-    preRequisito: 'cc001',
+    preRequisitos: ['cc001'],
     mostraResultado: true,
     modulos: MODULOS_DE_PYTHON,
   },
@@ -420,7 +433,7 @@ export const VEREDAS: Vereda[] = [
       antes. Por `id`, e nunca por `code`: nenhum percurso é gravado com o
       código, e a vereda ficaria trancada para sempre.
     */
-    preRequisito: 'cc002',
+    preRequisitos: ['cc002'],
     mostraResultado: true,
     modulos: MODULOS_DE_TERMINAL,
   },
@@ -430,6 +443,82 @@ export const VEREDAS: Vereda[] = [
     'Guardar e procurar informação numa base de dados, que é onde quase todo programa a guarda.'),
   anunciada('CC006', 'Projeto de Programa', 'Base',
     'Juntar tudo num programa que resolve uma coisa do clube, do começo ao fim.'),
+
+  /* ── Escritório ──────────────────────────────────────────────────────────
+     Treze veredas, e a família com o grafo mais fechado que existe aqui: o
+     documento oficial de cada uma abre dizendo quais outras exigem antes. É
+     por isso que `preRequisitos` virou lista — três delas pedem duas veredas,
+     e a de Projeto Documental pede três.
+
+     O assunto é o computador do clube: onde ficam os arquivos, quem tem acesso
+     a quê, e como sai de lá um documento que alguém vai arquivar. A AP043 já
+     ensina Word e Excel como programas; aqui a pergunta é outra — o que se faz
+     com eles quando o trabalho é de verdade e é de mais de uma pessoa. */
+  anunciada('CC-ES001', 'Arquivos e Armazenamento', 'Escritório',
+    'Onde cada coisa fica, com que nome, e como voltar atrás quando some.'),
+  anunciada('CC-ES002', 'Editor de Texto', 'Escritório',
+    'Estilo em vez de negrito à mão: mudar um e o documento inteiro muda junto.',
+    ['cc-es001']),
+  anunciada('CC-ES003', 'Planilhas', 'Escritório',
+    'Fórmula que calcula sozinha, e a diferença entre dado, conta e apresentação.',
+    ['cc-es001']),
+  anunciada('CC-ES004', 'Documentos Portáteis', 'Escritório',
+    'PDF de verdade: juntar, dividir, digitalizar, assinar e achar palavra dentro.',
+    ['cc-es002']),
+  anunciada('CC-ES005', 'Contas e Segurança Digital', 'Escritório',
+    'Senha, duas etapas e o plano de contas do clube — inclusive na troca de diretoria.',
+    ['cc-es001']),
+  anunciada('CC-ES006', 'Trabalho Compartilhado', 'Escritório',
+    'Um arquivo só, várias pessoas: permissão, sugestão, histórico e conflito.',
+    ['cc-es002', 'cc-es005']),
+  anunciada('CC-ES007', 'Comunicação e Agenda', 'Escritório',
+    'Mensagem que se entende, cópia oculta que protege, e um calendário que o clube usa.',
+    ['cc-es005']),
+  anunciada('CC-ES008', 'Dados e Formulários', 'Escritório',
+    'Formulário que coleta, planilha que guarda, e por que as duas não são a mesma coisa.',
+    ['cc-es003', 'cc-es006']),
+  anunciada('CC-ES009', 'Análise de Dados', 'Escritório',
+    'O que os números dizem, o que não dizem, e como um gráfico engana sem mentir.',
+    ['cc-es008']),
+  anunciada('CC-ES010', 'Análise Estatística', 'Escritório',
+    'Correlação não é causa: amostra, tendência e o tamanho da própria incerteza.',
+    ['cc-es009']),
+  anunciada('CC-ES011', 'Apresentações', 'Escritório',
+    'Slide mestre, hierarquia e cinco minutos: menos slide e mais gente entendendo.',
+    ['cc-es002']),
+  anunciada('CC-ES012', 'Projeto Documental', 'Escritório',
+    'O conjunto inteiro de uma atividade real, e um dado que se propaga por todas as peças.',
+    ['cc-es004', 'cc-es007', 'cc-es011']),
+  anunciada('CC-ES013', 'Projeto de Dados', 'Escritório',
+    'Uma pergunta, uma base, uma resposta — apresentada a quem vai decidir com ela.',
+    ['cc-es010', 'cc-es011']),
+
+  /* ── Design ──────────────────────────────────────────────────────────────
+     Seis veredas, e a família que a plataforma ainda não sabe ensinar: quatro
+     delas pedem um editor vetorial, um editor de imagem por pontos e uma tela
+     de diagramação — três programas que nenhum laboratório daqui imita hoje.
+
+     Nasce das duas especialidades de Artes e Habilidades Manuais que chegaram
+     junto, HM079 e HM090, e é o caminho preparatório delas: quem percorre
+     Fundamentos Visuais e Desenho Vetorial chega na ficha oficial sabendo o
+     que ela cobra. */
+  anunciada('CC-DG001', 'Fundamentos Visuais', 'Design',
+    'Hierarquia, contraste, alinhamento, cor e tipografia — antes de abrir programa nenhum.'),
+  anunciada('CC-DG002', 'Desenho Vetorial', 'Design',
+    'Nó, alça e curva de Bézier: desenho que não perde qualidade em tamanho nenhum.',
+    ['cc-dg001']),
+  anunciada('CC-DG003', 'Imagem Digital', 'Design',
+    'Pixel, resolução e camada: tratar foto e saber o que cada formato joga fora.',
+    ['cc-dg001']),
+  anunciada('CC-DG004', 'Identidade Visual', 'Design',
+    'Uma marca que funciona numa cor só e do tamanho de uma unha, com manual escrito.',
+    ['cc-dg002', 'cc-dg003']),
+  anunciada('CC-DG005', 'Diagramação e Impressão', 'Design',
+    'Malha, sangria e marca de corte: o que a gráfica exige e o que a tela não mostra.',
+    ['cc-dg004']),
+  anunciada('CC-DG006', 'Projeto de Design', 'Design',
+    'Uma demanda real do clube, no papel e na tela, com o retorno de cinco pessoas do público.',
+    ['cc-dg005']),
 
   /* ── Front-end ── */
   {
@@ -518,7 +607,8 @@ export const VEREDAS: Vereda[] = [
  * alfabética poria Infraestrutura antes de Base.
  */
 export const FAMILIAS_DE_VEREDA = [
-  'Base', 'Front-end', 'Mobile', 'Back-end', 'Sistemas', 'Infraestrutura',
+  'Base', 'Escritório', 'Design',
+  'Front-end', 'Mobile', 'Back-end', 'Sistemas', 'Infraestrutura',
 ];
 
 /** As veredas agrupadas, na ordem das famílias. */
@@ -545,7 +635,27 @@ export function preRequisitoDaVeredaCumprido(
   vereda: Vereda,
   concluida: (id: string) => boolean,
 ): boolean {
-  return !vereda.preRequisito || concluida(vereda.preRequisito);
+  return veredasQueFaltamAntes(vereda, concluida).length === 0;
+}
+
+/**
+ * Quais das exigidas ainda não foram concluídas.
+ *
+ * A tela precisa disto, e não de um sim ou não: o cartão bloqueado diz **qual**
+ * é a chave, e com três exigências dizer "conclua a anterior" seria mandar
+ * alguém procurar qual das três falta.
+ */
+export function veredasQueFaltamAntes(
+  vereda: Vereda,
+  concluida: (id: string) => boolean,
+): Vereda[] {
+  return (vereda.preRequisitos ?? [])
+    .filter(id => !concluida(id))
+    /* Pelo id, que é o que nunca muda — e o que não existir some da lista em
+       vez de virar um cartão sem nome. `veredas.test.ts` cobra que toda
+       exigência aponte para vereda de verdade, então some é hipótese. */
+    .map(id => VEREDAS.find(v => v.id === id))
+    .filter((v): v is Vereda => v !== undefined);
 }
 
 export function veredasPorFamilia() {

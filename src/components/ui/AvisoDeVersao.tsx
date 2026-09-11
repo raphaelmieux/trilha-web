@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw, X } from 'lucide-react';
 import { haVersaoNova } from '../../lib/versao';
+import { MarcaEmTexto } from './BrandMark';
 
 /* De quanto em quanto tempo perguntar, com a aba à vista. Quinze minutos é
    barato — a pergunta é um HTML de dois quilobytes — e não deixa ninguém preso
@@ -67,7 +68,7 @@ export default function AvisoDeVersao() {
       role="status"
     >
       <span className="text-sm" style={{ color: 'var(--color-text-soft)' }}>
-        Há uma versão nova do Trilha.Web().
+        Há uma versão nova do <MarcaEmTexto />.
       </span>
       <button
         onClick={() => window.location.reload()}

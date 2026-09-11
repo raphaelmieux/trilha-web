@@ -4,7 +4,8 @@ import { ap035 } from './ap035';
 import { ap041 } from './ap041';
 import { ap042 } from './ap042';
 import { ap043 } from './ap043';
-import { ap044, ap045, ap049, ap052, ap063, ap064 } from './anunciadas';
+import { ap044 } from './ap044';
+import { ap045, ap049, ap052, ap063, ap064, hm079, hm090 } from './anunciadas';
 
 const specialties: Record<string, Specialty> = {
   AP034: ap034,
@@ -18,6 +19,8 @@ const specialties: Record<string, Specialty> = {
   AP052: ap052,
   AP063: ap063,
   AP064: ap064,
+  HM079: hm079,
+  HM090: hm090,
 };
 
 export function getSpecialty(code: string): Specialty | undefined {
@@ -28,7 +31,7 @@ export function getAllSpecialties(): Specialty[] {
   return Object.values(specialties);
 }
 
-export { ap034, ap035, ap041, ap042, ap043, ap044, ap045, ap049, ap052, ap063, ap064 };
+export { ap034, ap035, ap041, ap042, ap043, ap044, ap045, ap049, ap052, ap063, ap064, hm079, hm090 };
 
 /** As trilhas que já dá para percorrer — as em construção ficam de fora. */
 export function getOpenSpecialties(): Specialty[] {

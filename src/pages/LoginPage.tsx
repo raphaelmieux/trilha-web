@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import BrandMark from '../components/ui/BrandMark';
+import { MarcaEmTexto } from '../components/ui/BrandMark';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { traduzirErroDeAuth } from '../lib/authErrors';
@@ -72,7 +73,7 @@ export default function LoginPage() {
         */}
         <div className="card mt-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-medium" style={{ color: 'var(--color-text-soft)' }}>Recebeu um Token.Web()?</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--color-text-soft)' }}>Recebeu um <MarcaEmTexto marca="token" />?</p>
             <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>Confira a autenticidade sem precisar de conta.</p>
           </div>
           <Link to="/verificar" className="btn-secondary whitespace-nowrap flex items-center gap-1.5">

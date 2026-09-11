@@ -10,6 +10,7 @@ import { useBadges } from '../hooks/useBadges';
 import { useVeredas } from '../hooks/useVeredas';
 import { veredasAbertas, licoesDaVereda } from '../curriculum/veredas';
 import { licaoVencida } from '../lib/veredas';
+import { comMarca } from '../components/ui/comMarca';
 import { montarRelatorioDeVeredas } from '../lib/relatorioDeVeredas';
 import { buildSpecialtyNarrative, buildClosingParagraph, buildBadgeParagraph, type LabEvidence } from '../lib/reportNarrative';
 import { LoadingState } from '../components/ui/PageState';
@@ -315,7 +316,7 @@ export default function ReportPage() {
         <header className="report-head">
           <h1>Relatório de Competências</h1>
           <p className="report-sub">
-            {subtitle}
+            {comMarca(subtitle)}
           </p>
         </header>
 
@@ -327,7 +328,7 @@ export default function ReportPage() {
         </section>
 
         <section className="report-body">
-          <p>{intro}</p>
+          <p>{comMarca(intro)}</p>
 
           {narratives.map(n => (
             <div key={n.code} className="report-section">
@@ -399,9 +400,9 @@ export default function ReportPage() {
 
         {attachedCerts.length > 0 && (
           <p className="report-annex-note">
-            {attachedCerts.length === 1
+            {comMarca(attachedCerts.length === 1
               ? 'Segue anexo o certificado Token.Web() referente à trilha concluída.'
-              : `Seguem anexos os ${attachedCerts.length} certificados Token.Web() referentes às trilhas concluídas.`}
+              : `Seguem anexos os ${attachedCerts.length} certificados Token.Web() referentes às trilhas concluídas.`)}
           </p>
         )}
       </article>

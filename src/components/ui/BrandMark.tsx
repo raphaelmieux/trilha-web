@@ -1,23 +1,62 @@
+import { MARCAS, NOME, MIOLO, PARENTESES, type QualMarca } from '../../lib/marca';
+
 /**
- * The brand, typed out the way it would be written in an editor.
+ * A marca, escrita do jeito que ela é: uma chamada de função.
  *
- * The name is a function call — Trilha.Web() — so watching it appear character by
- * character behind a caret says what the platform is about before any text does.
+ * O nome é `Trilha.Web()` — e os parênteses são vermelhos, na cor da marca.
+ * Não é enfeite: são eles que dizem que o nome é uma chamada de função, e não
+ * uma frase com pontuação sobrando. É uma decisão de marca, e vale **em toda
+ * parte** — na animação, na barra fixa e no meio de um parágrafo.
  *
- * Done entirely in CSS rather than with a timer in React. A JS typewriter would
- * re-render this component a dozen times per second on every screen it appears
- * on, including the navigation bar that is mounted for the whole session; the
- * animation below runs on the compositor and costs nothing after the first
- * paint. It also means the effect cannot desynchronise from React's render
- * cycle, and `prefers-reduced-motion` disables it with one rule instead of a
- * branch in the component.
+ * Por isso nenhuma tela escreve `Trilha.Web()` à mão: o nome vem partido de
+ * `lib/marca`, nos dois pedaços que a regra distingue. Duas cópias divergem no
+ * primeiro ajuste, e aí a plataforma passa a mostrar duas marcas diferentes —
+ * `marca.test.tsx` cobra.
  *
- * The width is expressed in `ch`. In a monospaced face one character is exactly
- * 1ch, so `steps(12)` lands precisely on a character boundary every time — no
- * half-drawn glyphs, and no measuring in JavaScript.
+ * ── A digitação ──────────────────────────────────────────────────────────
+ * Ver o nome aparecer caractere a caractere atrás de um cursor diz o que a
+ * plataforma é antes de qualquer texto dizer.
+ *
+ * Feita inteira em CSS, e não com um timer em React. Um typewriter em JS
+ * re-renderizaria este componente uma dezena de vezes por segundo em toda tela
+ * em que ele aparece, inclusive a barra de navegação, que fica montada a sessão
+ * toda; a animação abaixo roda no compositor e não custa nada depois da
+ * primeira pintura. Também quer dizer que o efeito não pode dessincronizar do
+ * ciclo de render do React, e que `prefers-reduced-motion` a desliga com uma
+ * regra em vez de um desvio no componente.
+ *
+ * A largura é dada em `ch`. Numa fonte monoespaçada um caractere mede
+ * exatamente 1ch, então `steps(12)` cai sempre no limite de um caractere — sem
+ * glifo pela metade, e sem medir nada em JavaScript.
  */
 
-const NOME = 'Trilha.Web()';
+/* Os nomes e os seus pedaços moram em `lib/marca`, sem React, porque o PDF
+   também precisa deles — lá quem desenha é o jsPDF, que não lê folha de
+   estilo. Reexportados aqui para quem já importava daqui. */
+export { MARCAS, NOME, MIOLO, PARENTESES };
+
+/**
+ * Uma das duas marcas dentro de texto corrido — mesma fonte e mesmos parênteses
+ * vermelhos, sem a digitação. Parágrafo não é lugar de animação: o nome citado
+ * no meio de uma frase que se está lendo não deveria se mexer.
+ *
+ * `marca` escolhe entre a plataforma e o certificado. O padrão é a plataforma
+ * porque é a que aparece em mais lugares; `<MarcaEmTexto marca="token" />` é o
+ * Token.Web().
+ */
+export function MarcaEmTexto({
+  marca = 'plataforma',
+  className = '',
+}: {
+  marca?: QualMarca;
+  className?: string;
+}) {
+  return (
+    <span className={`marca-inline ${className}`}>
+      {MARCAS[marca].miolo}<span className="marca-parenteses">{PARENTESES}</span>
+    </span>
+  );
+}
 
 export default function BrandMark({
   tamanho = 'nav',
@@ -33,12 +72,20 @@ export default function BrandMark({
       aria-label={NOME}
     >
       {/*
-        Reserves the final width so nothing around the logo moves while it types.
-        Without this the navigation items would slide left and settle, which is
-        the usual tell of a typewriter effect done carelessly.
+        Reserva a largura final para que nada em volta do logotipo se mexa
+        enquanto ele digita. Sem isto os itens de navegação deslizariam para a
+        esquerda e assentariam, que é o sinal de sempre de um typewriter
+        malfeito.
       */}
       <span className="marca-espaco" aria-hidden="true">{NOME}</span>
-      <span className="marca-texto" aria-hidden="true">{NOME}</span>
+      {/*
+        Os parênteses são um elemento à parte só para receberem a cor. O recorte
+        que produz a digitação é do contêiner, e não deste texto, então partir o
+        nome em dois não muda em nada o que aparece a cada passo.
+      */}
+      <span className="marca-texto" aria-hidden="true">
+        {MIOLO}<span className="marca-parenteses">{PARENTESES}</span>
+      </span>
     </span>
   );
 }
