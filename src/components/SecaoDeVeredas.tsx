@@ -5,10 +5,13 @@ import {
   VEREDAS, veredasAbertas, veredasPorFamilia, licoesDaVereda,
   veredasQueFaltamAntes, type Vereda, textoDaOrigem } from '../curriculum/veredas';
 import { useVeredas, type AndamentoDeVereda } from '../hooks/useVeredas';
+import { useCertifications } from '../hooks/useCertifications';
 import { nomeCompleto } from '../types';
 import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
 import Emblema from './ui/Emblema';
 import ProgressBar from './ui/ProgressBar';
+import TokenNoCartao from './ui/TokenNoCartao';
+import type { Certification } from '../types';
 
 /*
  * As veredas no painel.
@@ -28,9 +31,20 @@ import ProgressBar from './ui/ProgressBar';
  * sem arte cai no ícone de reserva do `Emblema`, e não deixa buraco.
  */
 
-function CardDaVereda({ v, andamento, faltam }: {
+function CardDaVereda({ v, andamento, faltam, cert }: {
   v: Vereda;
   andamento?: AndamentoDeVereda;
+  /*
+    O Token.Web() desta vereda, quando já saiu.
+
+    O cartão não recebia nada disso, então a vereda concluída ficava sem o
+    único caminho de um clique até o documento — e sem o selo de certificado no
+    emblema, que a trilha tem. Quem terminava via um cartão de 100% igual ao de
+    quem ainda não tinha recebido nada, e o certificado só aparecia entrando na
+    vereda. A vereda emite o mesmo documento da trilha; o cartão dela mostra a
+    mesma coisa.
+  */
+  cert?: Certification;
   /** O pré-requisito já foi cumprido? Sem ele, o cartão não leva a lugar nenhum. */
   /* As exigidas que ainda faltam. Vazia quer dizer liberada — e é a mesma
      lista que o cartão bloqueado nomeia, em vez de um booleano que obrigaria a
@@ -95,30 +109,37 @@ function CardDaVereda({ v, andamento, faltam }: {
   const percent = total ? Math.round((vencidas / total) * 100) : 0;
   const cores = coresDoProgresso(percent);
 
+  /* Caixa com dois links irmãos, e não um `<Link>` em volta de tudo: o
+     certificado é um destino próprio, e âncora dentro de âncora é inválida.
+     Igual ao cartão da trilha, que é o que este cartão sempre imitou. */
   return (
-    <Link to={`/vereda/${v.code}`} className="card p-6 block transition"
+    <div className="card p-6 transition"
       style={{
         borderColor: percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)',
         transition: 'border-color 0.2s',
       }}
       onMouseEnter={ev => (ev.currentTarget.style.borderColor = cores.bordaAoPassar)}
       onMouseLeave={ev => (ev.currentTarget.style.borderColor = percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)')}>
-      <div className="flex items-center gap-4 mb-4">
-        <Emblema code={v.code} status={percent === 100 ? 'concluido' : 'em-andamento'} />
-        {identificacao}
-      </div>
-      <div className="mb-3">
-        <div className="flex justify-between text-sm mb-1">
-          <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
-          <span className="font-semibold" style={{ color: corDoPercentual(percent) }}>{percent}%</span>
+      <Link to={`/vereda/${v.code}`} className="block">
+        <div className="flex items-center gap-4 mb-4">
+          <Emblema code={v.code}
+            status={cert ? 'certificado' : percent === 100 ? 'concluido' : 'em-andamento'} />
+          {identificacao}
         </div>
-        <ProgressBar percent={percent} color={cores.gradiente} />
-      </div>
-      <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
-        {vencidas} de {total} {total === 1 ? 'lição vencida' : 'lições vencidas'}
-        {v.origem && ` · saiu ${textoDaOrigem(v.origem)}`}
-      </p>
-    </Link>
+        <div className="mb-3">
+          <div className="flex justify-between text-sm mb-1">
+            <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
+            <span className="font-semibold" style={{ color: corDoPercentual(percent) }}>{percent}%</span>
+          </div>
+          <ProgressBar percent={percent} color={cores.gradiente} />
+        </div>
+        <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
+          {vencidas} de {total} {total === 1 ? 'lição vencida' : 'lições vencidas'}
+          {v.origem && ` · saiu ${textoDaOrigem(v.origem)}`}
+        </p>
+      </Link>
+      {cert && <TokenNoCartao cert={cert} />}
+    </div>
   );
 }
 
@@ -132,6 +153,9 @@ const NO_RESUMO = 4;
 
 export default function SecaoDeVeredas({ userId }: { userId?: string }) {
   const { andamento, concluida } = useVeredas(userId);
+  /* O mesmo gancho do painel: a vereda emite Token.Web() pela mesma tabela, e
+     `getByCurriculum` acha o dela pelo `code`, que é o que a emissão grava. */
+  const { getByCurriculum } = useCertifications(userId);
   /*
     ── Trinta e duas de uma vez é um muro, não um convite ───────────────────
 
@@ -164,7 +188,7 @@ export default function SecaoDeVeredas({ userId }: { userId?: string }) {
 
   const cartao = (v: Vereda) => (
     <CardDaVereda key={v.id} v={v} andamento={andamento.find(a => a.id === v.id)}
-      faltam={veredasQueFaltamAntes(v, concluida)} />
+      faltam={veredasQueFaltamAntes(v, concluida)} cert={getByCurriculum(v.code)} />
   );
 
   return (

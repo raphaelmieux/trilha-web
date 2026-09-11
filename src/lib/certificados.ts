@@ -1,6 +1,6 @@
 import { getSpecialty } from '../curriculum';
 import { getVereda } from '../curriculum/veredas';
-import { umDe, ORDEM_DOS_NIVEIS, STATUS_DO_CERTIFICADO } from '../types';
+import { nomeCompleto, umDe, ORDEM_DOS_NIVEIS, STATUS_DO_CERTIFICADO } from '../types';
 import type { CertificadoVerificado, RetornoDe } from '../types';
 
 /**
@@ -36,13 +36,22 @@ export function codigoDaArte(curriculumCode: string): string {
  * imprimiria o código cru — "CC-FE001" — no único lugar que dá validade ao
  * documento fora do aplicativo. E a linha de baixo dizia "Nível: Básico", que
  * ninguém decidiu: vereda não tem nível, tem tamanho.
+ *
+ * O painel de certificações tinha a mesma falta, e por muito mais tempo: ele
+ * chamava `getSpecialty` direto, então a linha de uma vereda concluída saía
+ * escrita "CC001", só o código, ao lado de "AP034 Internet". Quem passa por
+ * aqui responde pelos dois currículos, e é por isso que existe.
+ *
+ * O par sai de `nomeCompleto`, e não montado à mão: era `${code} — ${name}`,
+ * com travessão, e nenhuma outra tela escreve assim. Isso deixava o painel com
+ * dois formatos na mesma grade quando a vereda finalmente ganhasse nome.
  */
 export function percursoDoCertificado(curriculumCode: string):
   { nome: string; tipo: 'trilha' } | { nome: string; tipo: 'vereda' } | { nome: string; tipo: 'desconhecido' } {
   const trilha = getSpecialty(curriculumCode);
-  if (trilha) return { nome: `${trilha.code} — ${trilha.name}`, tipo: 'trilha' };
+  if (trilha) return { nome: nomeCompleto(trilha), tipo: 'trilha' };
   const vereda = getVereda(curriculumCode);
-  if (vereda) return { nome: `${vereda.code} — ${vereda.name}`, tipo: 'vereda' };
+  if (vereda) return { nome: nomeCompleto(vereda), tipo: 'vereda' };
   return { nome: curriculumCode, tipo: 'desconhecido' };
 }
 
