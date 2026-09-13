@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { INSIGNIAS, insigniasConquistadas, codigoDaInsigniaDaTrilha, type ResumoDoDesbravador } from './insignias';
+import { ESCADAS } from './escadasDeInsignia';
 import { getOpenSpecialties } from '../curriculum';
 import { veredasAbertas, codigoDaInsigniaDaVereda } from '../curriculum/veredas';
 import { hasIcon, RAIO_DA_TINTA, iconeCanonico } from './badgeIcons';
@@ -23,22 +24,38 @@ const EVENTO_DA_LICAO: Record<string, string> = Object.fromEntries(
 */
 const DIR_MIGRATIONS = 'supabase/migrations';
 
+interface LinhaSemeada { name: string; description: string; icon: string; tier: string }
+
 /**
- * Cada insígnia semeada com o ícone e o tier que o banco vai guardar.
+ * Cada insígnia semeada como o banco vai guardá-la: nome, descrição, ícone e
+ * classe.
  *
  * Lê a tupla inteira, e não só o código: é a diferença entre saber que a linha
  * existe e saber que ela diz a mesma coisa que o catálogo.
+ *
+ * Os arquivos são lidos **em ordem de nome**, e o último a falar vence — que é
+ * o que o Postgres faz com o `ON CONFLICT (code) DO UPDATE` com que cada seed
+ * termina. Uma migration de correção que repita a linha corrigida é lida aqui
+ * sem nada de especial; uma escrita como `UPDATE badges SET name = ...` seria
+ * invisível para esta leitura, e está dito no cabeçalho da que corrigiu os
+ * nomes por extenso.
  */
-function tuplasSemeadas(): Map<string, { icon: string; tier: string }> {
-  const linhas = new Map<string, { icon: string; tier: string }>();
+function tuplasSemeadas(): Map<string, LinhaSemeada> {
+  const linhas = new Map<string, LinhaSemeada>();
   for (const arquivo of readdirSync(DIR_MIGRATIONS).filter(f => f.endsWith('.sql')).sort()) {
     const sql = readFileSync(join(DIR_MIGRATIONS, arquivo), 'utf8');
     for (const bloco of sql.split(/INSERT INTO badges/i).slice(1)) {
       const valores = bloco.split(';')[0];
       /* A tupla ocupa uma ou três linhas conforme o arquivo, então a captura
          atravessa quebra de linha; as aspas dobradas do SQL viram uma só. */
-      const tupla = /\( *'([a-z0-9_]+)' *,\s*'(?:[^']|'')*' *,\s*'(?:[^']|'')*' *,\s*'([a-z_]+)' *,\s*'([a-z_]+)'/g;
-      for (const m of valores.matchAll(tupla)) linhas.set(m[1], { icon: m[2], tier: m[3] });
+      const tupla = /\( *'([a-z0-9_]+)' *,\s*'((?:[^']|'')*)' *,\s*'((?:[^']|'')*)' *,\s*'([a-z_]+)' *,\s*'([a-z_]+)'/g;
+      for (const m of valores.matchAll(tupla)) {
+        linhas.set(m[1], {
+          name: m[2].replace(/''/g, "'"),
+          description: m[3].replace(/''/g, "'"),
+          icon: m[4], tier: m[5],
+        });
+      }
     }
   }
   return linhas;
@@ -112,6 +129,35 @@ describe('o catálogo', () => {
     ).toEqual([]);
   });
 
+  /*
+    E o nome e a descrição também.
+
+    Esta trava conferia ícone e tier e parava ali, e a falta deixou quinze
+    linhas divergirem — onze com "avaliações finals", que não é plural de nada
+    em português, e quatro degraus de XP escritos em algarismo no meio de
+    irmãos por extenso.
+
+    Aqui os dois lados **são lidos na tela**, e não é o caso de "campo escrito
+    e nunca lido" que motivou a conferência de ícone e tier: a estante mostra o
+    nome do **banco** no degrau já conquistado e o do **catálogo** no degrau que
+    falta. Divergir é a mesma insígnia se chamando uma coisa antes de ser
+    conquistada e outra depois — e quem vê as duas é justamente quem está no
+    meio da escada.
+  */
+  it('o nome e a descrição semeados são os do catálogo', () => {
+    const semeado = tuplasSemeadas();
+    const divergentes = INSIGNIAS
+      .filter(i => semeado.has(i.code))
+      .map(i => ({ code: i.code, banco: semeado.get(i.code)!, catalogo: { name: i.nome, description: i.descricao } }))
+      .filter(x => x.banco.name !== x.catalogo.name || x.banco.description !== x.catalogo.description)
+      .map(x => ({ code: x.code, banco: [x.banco.name, x.banco.description], catalogo: [x.catalogo.name, x.catalogo.description] }));
+    expect(divergentes,
+      'o nome no banco e o nome no catálogo discordam — a estante mostra um '
+      + 'no degrau conquistado e o outro no degrau que falta, e quem está no '
+      + 'meio da escada vê os dois.',
+    ).toEqual([]);
+  });
+
   /* Um apagador que não achasse nada aprovaria qualquer divergência, calado. */
   it('acha as tuplas semeadas para comparar', () => {
     expect(tuplasSemeadas().size).toBeGreaterThan(100);
@@ -137,6 +183,71 @@ describe('o catálogo', () => {
     for (const e of getOpenSpecialties()) {
       expect(semeados, e.code).toContain(codigoDaInsigniaDaTrilha(e.code));
     }
+  });
+});
+
+/*
+  Os sete degraus de uma escada se leem juntos, e por isso precisam soar iguais.
+
+  Nenhum defeito daqui estoura: a insígnia abre, o desenho aparece, o nome está
+  escrito embaixo. Só quem vê os sete lado a lado percebe que um deles destoa —
+  e eles chegam com meses de diferença, um por conquista.
+
+  As duas travas abaixo nasceram do mesmo gerador. Ele montava o plural com
+  `palavra + 's'`, o que escreveu "avaliações finals" onze vezes; e buscava o
+  número por extenso numa tabela que caía para o algarismo quando não achava,
+  o que deixou "9 Notas Máximas" entre Três e Treze e quatro degraus de XP em
+  algarismo entre Cem e Mil. Uma tabela que erra calada é pior do que uma que
+  falta.
+*/
+describe('a escrita dos degraus', () => {
+  /* Guarda contra o vazio: uma lista que esvaziasse deixaria as duas travas
+     abaixo verdes por não terem conferido nada. */
+  it('tem as treze escadas para conferir', () => {
+    expect(ESCADAS.length).toBeGreaterThanOrEqual(13);
+    for (const e of ESCADAS) expect(e.degraus, e.chave).toHaveLength(7);
+  });
+
+  /*
+    Ou todos os sete usam algarismo, ou nenhum usa.
+
+    A escada de Ofensiva é a que mostra que a regra não é "nunca use algarismo":
+    ali os sete dizem "Sequência de 30 Dias", e nenhum destoa. O que não pode é
+    a mistura, porque é ela que se lê como descuido.
+  */
+  it('nenhuma escada mistura algarismo com número por extenso', () => {
+    const misturadas = ESCADAS
+      .map(e => ({
+        chave: e.chave,
+        /* O `100%` de "Acertou 100% em..." é porcentagem, e não a contagem do
+           degrau — o nome é onde a contagem aparece, e é só ele que se olha. */
+        comAlgarismo: e.degraus.filter(d => /\d/.test(d.nome)).map(d => d.nome),
+        semAlgarismo: e.degraus.filter(d => !/\d/.test(d.nome)).map(d => d.nome),
+      }))
+      .filter(x => x.comAlgarismo.length > 0 && x.semAlgarismo.length > 0);
+    expect(misturadas,
+      'uma escada escreve parte dos degraus em algarismo e parte por extenso; '
+      + 'os sete aparecem na mesma fileira da estante, e a mistura se lê como '
+      + 'descuido.',
+    ).toEqual([]);
+  });
+
+  /*
+    Palavra terminada em -al faz plural em -ais.
+
+    É a única classe de plural que a regra ingênua do `+ 's'` erra no
+    vocabulário destas insígnias, e ela errou: "final" virou "finals" em onze
+    descrições. Conferir a forma errada diretamente é mais honesto do que
+    tentar conjugar português num teste.
+  */
+  it('não escreve plural de palavra em -al com s', () => {
+    const errados = ESCADAS
+      .flatMap(e => e.degraus)
+      .filter(d => /\b\w+als\b/i.test(`${d.nome} ${d.descricao}`))
+      .map(d => ({ code: d.code, texto: `${d.nome} — ${d.descricao}` }));
+    expect(errados,
+      'plural de palavra terminada em -al é -ais: "finais", e não "finals".',
+    ).toEqual([]);
   });
 });
 
