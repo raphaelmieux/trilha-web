@@ -300,13 +300,61 @@ describe('classificar age na coluna escolhida', () => {
      escolha é invisível e o botão age sobre uma decisão que ninguém lembra. */
   it('mostra na tela qual coluna está escolhida', () => {
     ateAFolhaDeDados();
-    const marcada = () => [...container.querySelectorAll('.ac-grade th [aria-pressed="true"]')]
-      .map(e => e.textContent?.trim());
+    const marcada = () => [...container.querySelectorAll('.ac-grade th[aria-pressed="true"]')]
+      .map(e => e.getAttribute('aria-label'));
 
     expect(marcada(), 'a folha abriu com uma coluna já marcada').toEqual([]);
     clicar(porRotulo('Coluna Endereço'), 'cabeçalho Endereço');
-    expect(marcada()).toEqual(['Endereço']);
+    expect(marcada()).toEqual(['Coluna Endereço']);
     clicar(porRotulo('Coluna Nome'), 'cabeçalho Nome');
-    expect(marcada(), 'duas colunas marcadas ao mesmo tempo').toEqual(['Nome']);
+    expect(marcada(), 'duas colunas marcadas ao mesmo tempo').toEqual(['Coluna Nome']);
+  });
+
+  /*
+    ── E há três caminhos até a coluna, porque o Access tem três ──────────
+
+    A primeira versão disto exigia clicar no cabeçalho, e o alvo do clique era
+    o **texto** do cabeçalho: quarenta por dezenove pixels, sem cursor de mão,
+    sem realce ao passar o mouse, dentro de um cabeçalho cinza que parece um
+    cabeçalho de tabela. O clique funcionava e ninguém conseguia dar: quem
+    tentava recebia o aviso de "escolha antes a coluna" e não tinha como
+    escolher. Pior do que a tarefa que abre resolvida é a que não fecha.
+
+    Regra que o programa imitado não tem é muro: no Access o cursor entra na
+    célula, e Classificar age sobre o campo do cursor. Os três caminhos abaixo
+    são os três que ele oferece.
+  */
+  it('a célula também escolhe a coluna dela, como no Access', () => {
+    ateAFolhaDeDados();
+    const primeiraCelula = container.querySelector('.ac-grade tbody td');
+    clicar(primeiraCelula, 'primeira célula');
+
+    const marcada = [...container.querySelectorAll('.ac-grade th[aria-pressed="true"]')]
+      .map(e => e.getAttribute('aria-label'));
+    expect(marcada, 'clicar numa célula não escolheu a coluna dela').toEqual(['Coluna Nome']);
+
+    clicar(porRotulo('Crescente'), 'Crescente');
+    expect(feitas()).toContain('ordenar');
+  });
+
+  /* A seta do cabeçalho é onde o Access põe a classificação, e é para onde o
+     passo a passo manda. Ela escolhe e classifica num gesto só. */
+  it('a seta do cabeçalho classifica sem passar pela faixa', () => {
+    ateAFolhaDeDados();
+    clicar(porRotulo('Opções da coluna Nome'), 'seta do cabeçalho Nome');
+    clicar(itemDeMenu('Classificar de A a Z'), 'Classificar de A a Z');
+
+    expect(container.textContent).toContain('Ordenado por Nome, de A a Z');
+    expect(feitas()).toContain('ordenar');
+  });
+
+  /* O cabeçalho inteiro é o alvo, e não o texto dentro dele: era esse o
+     tamanho de quarenta pixels que ninguém acertava. */
+  it('o alvo do clique é a célula do cabeçalho inteira', () => {
+    ateAFolhaDeDados();
+    const cabecalho = porRotulo('Coluna Nome');
+    expect(cabecalho?.tagName, 'o cabeçalho voltou a ser um botão dentro do th')
+      .toBe('TH');
+    expect(cabecalho?.getAttribute('role')).toBe('button');
   });
 });
