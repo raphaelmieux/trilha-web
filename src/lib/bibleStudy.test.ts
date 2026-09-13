@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  parseReference, sameReference, countDistinctReferences, countDistinctVersions,
+  parseReference, sameReference, countDistinctReferences, countDistinctVersions, BIBLE_VERSIONS,
 } from './bibleStudy';
 
 describe('parseReference', () => {
@@ -95,5 +95,54 @@ describe('countDistinctVersions', () => {
 
   it('ignores blanks', () => {
     expect(countDistinctVersions(['NVI', '', '  '])).toBe(1);
+  });
+});
+
+/*
+  A caixa de versões é uma porta, e não uma sugestão.
+
+  O laboratório oferece um `<select>` fechado — não há campo livre. Versão que
+  falta na lista é versão que o desbravador **não consegue registrar**: quem
+  pesquisou na NVT chegava à tela sem a própria Bíblia na caixa, e a saída
+  honesta era não concluir a tarefa. A outra saída, a que a tela convidava, era
+  marcar uma versão que ele não usou — o contrário do que o requisito mede.
+
+  As travas abaixo não cobram quais versões existem, que é conteúdo e muda: elas
+  cobram que a lista continue servindo à contagem que decide o requisito.
+*/
+describe('a lista de versões', () => {
+  it('não está vazia, e a trava tem o que conferir', () => {
+    expect(BIBLE_VERSIONS.length).toBeGreaterThan(3);
+  });
+
+  /*
+    Id repetido deixaria o desbravador escolher duas linhas da caixa achando
+    que escolheu duas versões — passaria na tela e contaria como uma só, sem
+    nada explicando por quê.
+  */
+  it('não repete nenhum código', () => {
+    const ids = BIBLE_VERSIONS.map(v => v.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  /*
+    O acoplamento que importa: `countDistinctVersions` normaliza por
+    `trim().toUpperCase()`. Um id escrito ' nvt' ou 'Nvt' na lista não estoura
+    nada — ele some dentro de outro na contagem, e duas versões de verdade
+    passam a valer uma.
+  */
+  it.each(BIBLE_VERSIONS.map(v => v.id))('%s já está na forma que a contagem usa', id => {
+    expect(id).toBe(id.trim().toUpperCase());
+  });
+
+  it('conta cada versão da lista como uma versão distinta', () => {
+    const ids = BIBLE_VERSIONS.map(v => v.id);
+    expect(countDistinctVersions([...ids])).toBe(ids.length);
+  });
+
+  /* O rótulo abre pelo código, que é como o site de Bíblia identifica a versão
+     e é o que a pessoa procura na caixa. */
+  it.each(BIBLE_VERSIONS.map(v => [v.id, v.label]))('o rótulo de %s começa pelo código', (id, label) => {
+    expect(label.startsWith(`${id} — `)).toBe(true);
   });
 });
