@@ -155,17 +155,54 @@ export function countDistinctReferences(inputs: string[]): number {
 }
 
 /**
- * Translations a Brazilian club is likely to meet. Offered as a list rather than
- * a free field so that "NVI" and "nvi " cannot be counted as two versions.
+ * As traduções que um clube brasileiro encontra.
+ *
+ * Lista fechada, e não campo livre, para que "NVI" e "nvi " não contem como
+ * duas versões — a tarefa pede **três diferentes**, e é a contagem que decide
+ * se o requisito foi cumprido.
+ *
+ * Mas lista fechada é **porta**, e não sugestão: versão que falta aqui é versão
+ * que o desbravador não consegue registrar. A NVT ficou de fora, e ela é das
+ * mais lidas no Brasil hoje — quem tivesse feito a pesquisa nela chegava a esta
+ * tela sem a própria versão na caixa, e a saída honesta era não concluir a
+ * tarefa. A outra saída, a que a tela convidava, era escolher uma versão que a
+ * pessoa não usou, que é o contrário do que o requisito mede.
+ *
+ * Por isso a lista se completou de uma vez, e não só com a que faltou:
+ *
+ *  - **NVT**, Mundo Cristão, 2016 — a irmã em português da NLT americana;
+ *  - **A21**, Almeida Século 21, 2008 — revisão da Almeida de 1967, feita em
+ *    conjunto por Vida Nova, Hagnos, Atos e a Imprensa Bíblica Brasileira;
+ *  - **NBV**, Nova Bíblia Viva — paráfrase, e não tradução literal: conta como
+ *    versão distinta porque é isso que ela é, e a diferença de método é
+ *    justamente o que a comparação entre versões ensina;
+ *  - **AVM**, Ave-Maria — a mais distribuída do país, e a que o desbravador
+ *    acha na casa da avó. O clube é adventista; a tarefa é comparar traduções,
+ *    e comparar pede que a outra exista na caixa.
+ *
+ * A King James fica só na KJA. Existe também a "King James Fiel", e pôr as duas
+ * numa caixa lida por gente de dez anos convida a escolher as duas achando que
+ * são versões diferentes — o que passaria na contagem e não seria comparação
+ * nenhuma.
+ *
+ * Agrupadas por família, e não em ordem alfabética: quem procura a própria
+ * Bíblia procura pelo nome que está na capa, e as Almeidas estão todas juntas.
  */
 export const BIBLE_VERSIONS = [
+  /* A família Almeida — o tronco mais comum nas igrejas brasileiras. */
   { id: 'ACF', label: 'ACF — Almeida Corrigida Fiel' },
   { id: 'ARA', label: 'ARA — Almeida Revista e Atualizada' },
   { id: 'ARC', label: 'ARC — Almeida Revista e Corrigida' },
-  { id: 'NVI', label: 'NVI — Nova Versão Internacional' },
-  { id: 'NTLH', label: 'NTLH — Nova Tradução na Linguagem de Hoje' },
   { id: 'NAA', label: 'NAA — Nova Almeida Atualizada' },
+  { id: 'A21', label: 'A21 — Almeida Século 21' },
+  /* As traduções modernas, da mais formal para a mais livre. */
+  { id: 'NVI', label: 'NVI — Nova Versão Internacional' },
+  { id: 'NVT', label: 'NVT — Nova Versão Transformadora' },
+  { id: 'NTLH', label: 'NTLH — Nova Tradução na Linguagem de Hoje' },
+  { id: 'NBV', label: 'NBV — Nova Bíblia Viva' },
+  /* E as duas de fora dessas duas famílias. */
   { id: 'KJA', label: 'KJA — King James Atualizada' },
+  { id: 'AVM', label: 'AVM — Ave-Maria' },
 ] as const;
 
 export function countDistinctVersions(versions: string[]): number {
