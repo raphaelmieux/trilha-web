@@ -80,6 +80,19 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
   const [guia, setGuia] = useState('Criar');
   const [modo, setModo] = useState<Modo>('nada');
   const [campoAtivo, setCampoAtivo] = useState<string | null>(null);
+  /*
+    A coluna selecionada na folha de dados, separada do campo selecionado na
+    estrutura — e é separada porque já foi a mesma variável, e aí a seleção
+    vazava de uma tela para a outra.
+
+    Escrever a regra de validação seleciona a linha do E-mail no modo de
+    estrutura. Duas tarefas depois, na folha de dados, clicar em Crescente
+    ordenava por **E-mail**: a tabela reordenava, o cabeçalho ganhava a seta, a
+    tela dizia "Ordenado", e a tarefa de pôr em ordem alfabética continuava
+    vermelha sem nada explicando. No Access de verdade também são duas coisas:
+    a linha escolhida no modo de estrutura não é a coluna escolhida na folha.
+  */
+  const [colunaAtiva, setColunaAtiva] = useState<string | null>(null);
   const [assistente, setAssistente] = useState<Record<string, string> | null>(null);
   /** As fichas que a regra recusou na importação, à espera de conserto. */
   const [recusadas, setRecusadas] = useState<{ linha: string[]; email: string }[]>([]);
@@ -199,11 +212,30 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
 
   // ── Folha de dados ─────────────────────────────────────────────────────
 
+  /*
+    Ordenar age na coluna selecionada, e diz **qual** foi.
+
+    Sem coluna escolhida não se adivinha uma: o Access deixa os dois botões
+    apagados até haver seleção, e aqui vale o "selecione primeiro" do
+    laboratório de Word. Adivinhar o Nome escondia o erro do outro lado —
+    quem quisesse ordenar por bairro recebia a agenda ordenada por nome, com
+    a mesma mensagem de sucesso.
+
+    E o aviso nomeia a coluna porque a alternativa é a tela dizer "Ordenado"
+    para um resultado que não é o que a pessoa pediu. Quem ordenou por E-mail
+    sem querer precisa ler que foi por E-mail; sem isso o único sinal é uma
+    seta no cabeçalho, do outro lado da tela.
+  */
   const ordenar = (crescente: boolean) => {
     fecharMenu();
     if (!agenda.registros.length) { setAviso('Não há fichas para ordenar ainda.'); return; }
-    setAgenda(a => ({ ...a, ordem: { campo: campoAtivo ? nomeDoCampo(campoAtivo) : 'Nome', crescente } }));
-    setAviso('Ordenado. Nada foi redigitado: a ordem é uma leitura do que já estava guardado.');
+    if (!colunaAtiva) {
+      setAviso('Escolha antes a coluna: clique no cabeçalho dela. Classificar sem coluna selecionada não faz nada — no Access também não.');
+      return;
+    }
+    const campo = nomeDoCampo(colunaAtiva);
+    setAgenda(a => ({ ...a, ordem: { campo, crescente } }));
+    setAviso(`Ordenado por ${campo}, de ${crescente ? 'A a Z' : 'Z a A'}. Nada foi redigitado: a ordem é uma leitura do que já estava guardado.`);
   };
 
   const nomeDoCampo = (id: string) => agenda.campos.find(c => c.id === id)?.nome ?? 'Nome';
@@ -232,6 +264,7 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
     setModo('nada');
     setGuia('Criar');
     setCampoAtivo(null);
+    setColunaAtiva(null);
     setAssistente(null);
     setRecusadas([]);
     setCamposDoRelatorio([]);
@@ -715,11 +748,17 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
                     <table className="ac-grade">
                       <thead>
                         <tr>
+                          {/* A coluna escolhida se vê, como a linha escolhida na
+                              estrutura já se via. Sem isso o botão Crescente
+                              agia sobre uma escolha invisível: a tabela
+                              reordenava e nada dizia por qual campo. */}
                           {agenda.campos.filter(c => c.nome).map(c => (
-                            <th key={c.id}>
+                            <th key={c.id}
+                              style={{ background: colunaAtiva === c.id ? '#F2DEDE' : undefined }}>
                               <button type="button" style={{ font: 'inherit', color: 'inherit' }}
                                 aria-label={`Coluna ${c.nome}`}
-                                onClick={ev => { ev.stopPropagation(); setCampoAtivo(c.id); }}>
+                                aria-pressed={colunaAtiva === c.id}
+                                onClick={ev => { ev.stopPropagation(); setColunaAtiva(c.id); }}>
                                 {c.nome}{agenda.ordem?.campo === c.nome ? (agenda.ordem.crescente ? ' ▲' : ' ▼') : ''}
                               </button>
                             </th>
