@@ -235,7 +235,7 @@ export default function InsercaoTextoLab({
       await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: METAS.length, total_questions: METAS.length,
-      });
+      }, specialtyCode);
       gravados++;
     }
     setGravando(false);

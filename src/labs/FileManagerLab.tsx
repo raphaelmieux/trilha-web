@@ -451,7 +451,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
       await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: TAREFAS.length, total_questions: TAREFAS.length,
-      });
+      }, specialtyCode);
       gravados++;
     }
     if (gravados < requirementCodes.length) {

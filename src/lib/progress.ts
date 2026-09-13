@@ -322,7 +322,23 @@ export async function fetchRequirementProgress(userId: string): Promise<Progress
 export async function upsertRequirementProgress(
   userId: string,
   requirementId: string,
-  data: Partial<RequirementProgress>
+  data: Partial<RequirementProgress>,
+  /*
+    O percurso em que este requisito foi cumprido.
+
+    Ele existe para a insígnia que cair aqui saber **onde** caiu. Esta função
+    recebe o id do requisito, que é um uuid do banco e não diz nada sobre a
+    trilha; resolver a trilha a partir dele custaria uma ida à rede a cada
+    requisito cumprido, e a trilha está bem ali, em quem chama — todo
+    laboratório tem `specialtyCode`, e as duas páginas têm a especialidade
+    aberta na tela.
+
+    É opcional no tipo e obrigatório na prática: `percursoDoRequisito.test.ts`
+    lê toda chamada do repositório e reprova a que não passa. Opcional para a
+    assinatura não quebrar quem chamar de fora; travado para a lacuna não
+    reabrir em silêncio, que é como ela existiu até agora.
+  */
+  percurso?: string,
 ): Promise<void> {
   const { error } = await supabase
     .from('requirement_progress')
@@ -340,7 +356,7 @@ export async function upsertRequirementProgress(
     }, { onConflict: 'user_id,requirement_id' });
 
   if (error) console.error('upsertRequirementProgress error:', error);
-  else evaluateBadges(userId, { evento: 'requirement_progress' }).catch(() => {});
+  else evaluateBadges(userId, { evento: 'requirement_progress', percurso }).catch(() => {});
 }
 
 export async function logActivity(

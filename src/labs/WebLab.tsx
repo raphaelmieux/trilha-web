@@ -387,7 +387,7 @@ export default function WebLab({ specialtyCode, lessonCode, lessonTitle, require
         attempts: 1,
         correct_count: suspectFirstCorrect + filesFirstCorrect,
         total_questions: SUSPECTS.length + FILES.length,
-      });
+      }, specialtyCode);
     }
     /* The evidence goes into the event, not just the tick.
        Requirements 6.1 and 6.2 are demonstrations the sheet asks the instructor

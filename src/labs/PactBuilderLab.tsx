@@ -106,7 +106,7 @@ export default function PactBuilderLab({ specialtyCode, lessonCode, lessonTitle,
       if (reqId) await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: clausesDone, total_questions: clauseVerdicts.length,
-      });
+      }, specialtyCode);
     }
     await logActivity(userId, 'pact_completed', { specialtyCode, lessonCode, redes: networks.length, baixouPdf: downloaded });
     setCompleted(true);

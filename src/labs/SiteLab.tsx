@@ -108,7 +108,7 @@ export default function SiteLab({ specialtyCode, lessonCode, lessonTitle, requir
       if (reqId) await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: passedCount, total_questions: allChecks.length,
-      });
+      }, specialtyCode);
     }
     await logActivity(userId, 'site_lab_completed', { specialtyCode, lessonCode, checksPassed: passedCount, total: allChecks.length });
     /* Entregue, o rascunho não protege mais nada — e o navegador do clube

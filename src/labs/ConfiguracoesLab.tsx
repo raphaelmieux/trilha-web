@@ -156,7 +156,7 @@ export default function ConfiguracoesLab({ specialtyCode, lessonCode, lessonTitl
       await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: METAS_DA_MAQUINA.length, total_questions: METAS_DA_MAQUINA.length,
-      });
+      }, specialtyCode);
       gravados++;
     }
     setGravando(false);

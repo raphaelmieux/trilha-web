@@ -456,7 +456,7 @@ export default function ImageCreateLab({ specialtyCode, lessonCode, lessonTitle,
       if (idRequisito) await upsertRequirementProgress(userId, idRequisito, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: tarefas.length, total_questions: tarefas.length,
-      });
+      }, specialtyCode);
     }
     await logActivity(userId, 'image_create_completed', {
       specialtyCode, lessonCode, logoBytes: bytesDoLogo, botoes: rotulosPreenchidos,

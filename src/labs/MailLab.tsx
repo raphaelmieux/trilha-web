@@ -206,7 +206,7 @@ export default function MailLab({ specialtyCode, lessonCode, lessonTitle, requir
       if (reqId) await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: firstCorrect, total_questions: INBOX.length,
-      });
+      }, specialtyCode);
     }
     await logActivity(userId, 'mail_lab_completed', { specialtyCode, lessonCode,
       golpesDePrimeira: firstCorrect, enviadas: sent.length,

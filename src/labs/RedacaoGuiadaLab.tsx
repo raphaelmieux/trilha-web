@@ -249,7 +249,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
           mastery_score: Math.round((prontas / etapas.length) * 100),
           checkpoint_passed: true, attempts: 1,
           correct_count: prontas, total_questions: etapas.length,
-        });
+        }, specialtyCode);
         gravados++;
       }
       if (gravados < requirementCodes.length) {

@@ -137,7 +137,7 @@ export default function ComputerCareLab({ specialtyCode, lessonCode, requirement
       await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: 3, total_questions: 3,
-      });
+      }, specialtyCode);
       gravados++;
     }
     if (gravados < requirementCodes.length) {

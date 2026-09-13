@@ -257,7 +257,7 @@ export default function EstilosTextoLab({ specialtyCode, lessonCode, lessonTitle
       await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: METAS_DOS_ESTILOS.length, total_questions: METAS_DOS_ESTILOS.length,
-      });
+      }, specialtyCode);
       gravados++;
     }
     setGravando(false);

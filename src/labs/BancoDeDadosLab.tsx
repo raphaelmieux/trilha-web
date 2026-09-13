@@ -298,7 +298,7 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
       await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: METAS_DA_AGENDA.length, total_questions: METAS_DA_AGENDA.length,
-      });
+      }, specialtyCode);
       gravados++;
     }
     setGravando(false);

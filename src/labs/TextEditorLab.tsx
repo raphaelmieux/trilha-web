@@ -143,7 +143,7 @@ export default function TextEditorLab({ specialtyCode, lessonCode, lessonTitle, 
         mastery_score: Math.round((metCount / criteria.length) * 100),
         checkpoint_passed: true, attempts: 1,
         correct_count: metCount, total_questions: criteria.length,
-      });
+      }, specialtyCode);
       gravados++;
     }
     if (gravados < requirementCodes.length) {
