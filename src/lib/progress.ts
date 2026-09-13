@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { evaluateBadges } from './gamification';
+import { diaEmBrasilia, diaAnterior } from './ofensiva';
 import { umDe, STATUS_DO_REQUISITO } from '../types';
 import type { Json, RequirementStatus } from '../types';
 
@@ -355,7 +356,7 @@ export async function ensureEnrollment(userId: string, specialtyId: string): Pro
       user_id: userId,
       specialty_id: specialtyId,
       status: 'active',
-      last_activity_date: new Date().toISOString().split('T')[0],
+      last_activity_date: diaEmBrasilia(),
     });
   }
 }
@@ -363,8 +364,20 @@ export async function ensureEnrollment(userId: string, specialtyId: string): Pro
 /* Uma atividade concluída vale isto, no total corrente e no evento datado. */
 const XP_POR_ATIVIDADE = 10;
 
+/*
+  A ofensiva que a tela mostra **não** sai mais daqui — ver `lib/ofensiva.ts`.
+
+  Esta coluna é a sequência dentro de **uma trilha**, porque `enrollments` tem
+  uma linha por trilha, e era ela que a tela lia como se fosse da pessoa: quem
+  estudasse AP034 na segunda e AP042 na terça tinha duas matrículas com
+  sequência 1, e via 1. Continua sendo escrita porque o ranking do clube ainda
+  a lê, e porque a data da última atividade da trilha diz coisa que a soma de
+  todas não diz.
+
+  O que mudou aqui é o dia: era o dia em **UTC**, que vira às 21h de Brasília.
+*/
 export async function updateEnrollmentActivity(userId: string, specialtyId: string): Promise<void> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = diaEmBrasilia();
   const { data: existing } = await supabase
     .from('enrollments')
     .select('*')
@@ -375,8 +388,11 @@ export async function updateEnrollmentActivity(userId: string, specialtyId: stri
     const lastDate = existing.last_activity_date;
     let streak = existing.streak_days || 0;
     if (lastDate !== today) {
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-      if (lastDate === yesterday) streak += 1;
+      /* "Ontem" é o dia civil anterior, e não "agora menos 24 horas": as duas
+         contas dão o mesmo resultado quase sempre, e discordam justamente na
+         virada — quem venceu algo às 23h de ontem e volta às 10h de hoje está
+         a 11 horas de distância, não a 24. */
+      if (lastDate === diaAnterior(today)) streak += 1;
       else streak = 1;
     }
     await supabase

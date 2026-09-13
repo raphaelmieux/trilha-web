@@ -9,6 +9,7 @@ import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
 import { useMinhasPosicoes } from '../hooks/useMinhasPosicoes';
+import { useOfensiva } from '../hooks/useOfensiva';
 import { getPublicName, nomeCompleto, ROTULO_DO_NIVEL, type Specialty, type Certification, type Tabela } from '../types';
 import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
 import { descreverAtividade } from '../lib/atividade';
@@ -143,6 +144,7 @@ export default function DashboardPage() {
   const [noRanking, setNoRanking] = useState(false);
   const [loading, setLoading] = useState(true);
   const { posicoes } = useMinhasPosicoes(profile?.id, noRanking);
+  const { ofensiva } = useOfensiva(profile?.id);
 
   useEffect(() => {
     if (!profile) return;
@@ -176,7 +178,6 @@ export default function DashboardPage() {
   };
 
   const xp = enrollments.reduce((sum, e) => sum + (e.xp || 0), 0);
-  const streak = enrollments.reduce((max, e) => Math.max(max, e.streak_days || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -191,7 +192,7 @@ export default function DashboardPage() {
           </div>
           <div className="card px-4 py-2 flex items-center gap-2">
             <Flame className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
-            <div><span className="font-bold">{streak}</span> <span className="text-sm" style={{ color: 'var(--color-text-dim)' }}>dias</span></div>
+            <div><span className="font-bold">{ofensiva}</span> <span className="text-sm" style={{ color: 'var(--color-text-dim)' }}>dias</span></div>
           </div>
           <Link to="/perfil" className="card px-4 py-2 flex items-center gap-2 transition hover:opacity-80">
             <Medal className="w-5 h-5" style={{ color: 'var(--color-tertiary-light)' }} />

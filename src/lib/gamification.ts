@@ -3,6 +3,10 @@ import { getOpenSpecialties } from '../curriculum';
 import { laboratorioDoEvento } from './atividade';
 import { insigniasConquistadas, type ResumoDoDesbravador } from './insignias';
 import { veredasConcluidas } from './veredas';
+import {
+  diaEmBrasilia, horaEmBrasilia, diaDaSemanaEmBrasilia,
+  diasDeAtividade, melhorOfensiva,
+} from './ofensiva';
 import type { LabType } from '../types';
 
 // Deliberately does not import from progress.ts (which will call evaluateBadges
@@ -60,10 +64,22 @@ export async function montarResumo(userId: string): Promise<ResumoDoDesbravador>
     if (lab) laboratorios.add(lab);
     if (e.event_type === 'final_exam_completed') provas++;
     if (e.created_at) {
-      const d = new Date(e.created_at as string);
-      dias.add(d.toDateString());
-      horas.add(d.getHours());
-      diasDaSemana.add(d.getDay());
+      /*
+        O dia, a hora e o dia da semana são os de **Brasília**, e não os do
+        relógio do aparelho.
+
+        Eram `toDateString()`, `getHours()` e `getDay()`, que leem o fuso de
+        quem está olhando. Quem abrisse a plataforma viajando, ou num
+        computador com o fuso errado — coisa comum no computador do clube —,
+        via a própria madrugada virar tarde e o domingo virar sábado, e as
+        insígnias de horário premiavam a configuração do aparelho em vez do
+        hábito da pessoa. Era também a terceira definição de "dia" na mesma
+        base: aqui era o local, na ofensiva era UTC, e nenhuma das duas era
+        esta.
+      */
+      dias.add(diaEmBrasilia(e.created_at as string));
+      horas.add(horaEmBrasilia(e.created_at as string));
+      diasDaSemana.add(diaDaSemanaEmBrasilia(e.created_at as string));
     }
   }
 
@@ -101,7 +117,15 @@ export async function montarResumo(userId: string): Promise<ResumoDoDesbravador>
     laboratorios,
     provas,
     provasPerfeitas,
-    melhorSequencia: (matriculas.data ?? []).reduce((max, e) => Math.max(max, e.streak_days || 0), 0),
+    /*
+      A maior sequência de sempre, derivada dos eventos.
+
+      Saía de `max(enrollments.streak_days)`, que não é a maior de sempre:
+      é a **corrente**, da trilha que estiver mais adiantada. Quem fizesse
+      sete dias seguidos alternando duas trilhas nunca chegava a sete em
+      nenhuma das duas matrículas, e a insígnia de sete dias não vinha.
+    */
+    melhorSequencia: melhorOfensiva(diasDeAtividade(eventos.data ?? [])),
     diasAtivos: dias.size,
     horas,
     diasDaSemana,
