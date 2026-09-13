@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useBadges } from '../hooks/useBadges';
 import { useCertifications } from '../hooks/useCertifications';
 import BadgeIcon from '../components/ui/BadgeIcon';
+import ExplicacaoDaInsignia from '../components/ui/ExplicacaoDaInsignia';
 import Emblema from '../components/ui/Emblema';
 import { MarcaEmTexto } from '../components/ui/BrandMark';
 import { LoadingState } from '../components/ui/PageState';
@@ -11,7 +13,7 @@ import { CLASSES } from '../lib/nivelDaInsignia';
 import { ALTURA, LARGURA, formaDaClasse } from '../lib/formaDaInsignia';
 import { percursoDoCertificado } from '../lib/certificados';
 import { Trophy } from 'lucide-react';
-import type { Badge } from '../types';
+import type { InsigniaConquistada } from '../lib/conquista';
 
 /*
  * A estante: as cento e trinta e duas insígnias e os Token.Web(), num lugar só.
@@ -47,6 +49,9 @@ export default function EstantePage() {
   const { certifications, loading: carregandoCerts } = useCertifications(profile?.id);
 
   const porCodigo = new Map(badges.map(b => [b.code, b]));
+  /* Qual insígnia está aberta. Guardada por código, e não pelo objeto: a
+     lista se refaz a cada `useBadges`, e um objeto guardado ficaria velho. */
+  const [aberta, setAberta] = useState<string | null>(null);
   const fileiras = fileirasDaEstante();
   const total = fileiras.reduce((soma, f) => soma + f.lugares.length, 0);
 
@@ -93,7 +98,11 @@ export default function EstantePage() {
             <ol className="flex flex-wrap gap-x-2 gap-y-4 list-none p-0 m-0">
               {fileira.lugares.map(lugar => (
                 <li key={lugar.code}>
-                  <Lugar lugar={lugar} conquistada={porCodigo.get(lugar.code)} />
+                  <Lugar
+                    lugar={lugar}
+                    conquistada={porCodigo.get(lugar.code)}
+                    aoAbrir={() => setAberta(lugar.code)}
+                  />
                 </li>
               ))}
             </ol>
@@ -136,6 +145,13 @@ export default function EstantePage() {
           </div>
         )}
       </section>
+
+      {aberta && porCodigo.has(aberta) && (
+        <ExplicacaoDaInsignia
+          insignia={porCodigo.get(aberta)!}
+          aoFechar={() => setAberta(null)}
+        />
+      )}
     </div>
   );
 }
@@ -149,7 +165,11 @@ export default function EstantePage() {
  * e funciona nos dois temas sem duas versões — que é onde uma delas acabaria
  * errada.
  */
-function Lugar({ lugar, conquistada }: { lugar: LugarNaEstante; conquistada?: Badge }) {
+function Lugar({ lugar, conquistada, aoAbrir }: {
+  lugar: LugarNaEstante;
+  conquistada?: InsigniaConquistada;
+  aoAbrir: () => void;
+}) {
   const classe = CLASSES[lugar.classe];
   const rotulo = conquistada
     ? `${lugar.nome} — conquistada`
@@ -157,9 +177,19 @@ function Lugar({ lugar, conquistada }: { lugar: LugarNaEstante; conquistada?: Ba
 
   return (
     <div className="flex flex-col items-center gap-1" style={{ width: 78 }}>
-      {conquistada
-        ? <BadgeIcon badge={conquistada} size="md" rotulo={rotulo} />
-        : <Contorno lugar={lugar} rotulo={rotulo} />}
+      {/* Só a conquistada abre: o lugar vazio não tem feito, percurso nem
+          data para contar, e um botão que abre um cartão vazio ensina que o
+          caminho não funciona. */}
+      {conquistada ? (
+        <button
+          type="button"
+          onClick={aoAbrir}
+          className="transition hover:opacity-80 rounded"
+          aria-label={`${rotulo}. Ver o que rendeu esta insígnia`}
+        >
+          <BadgeIcon badge={conquistada} size="md" rotulo={rotulo} />
+        </button>
+      ) : <Contorno lugar={lugar} rotulo={rotulo} />}
       <span
         className="text-[10px] leading-tight text-center"
         style={{ color: conquistada ? 'var(--color-text-soft)' : 'var(--color-text-faint)' }}
