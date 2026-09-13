@@ -226,16 +226,25 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
     sem querer precisa ler que foi por E-mail; sem isso o único sinal é uma
     seta no cabeçalho, do outro lado da tela.
   */
+  /** Classifica por uma coluna dita, que é o que a seta do cabeçalho faz. */
+  const ordenarPor = (idDaColuna: string, crescente: boolean) => {
+    fecharMenu();
+    if (!agenda.registros.length) { setAviso('Não há fichas para ordenar ainda.'); return; }
+    setColunaAtiva(idDaColuna);
+    const campo = nomeDoCampo(idDaColuna);
+    setAgenda(a => ({ ...a, ordem: { campo, crescente } }));
+    setAviso(`Ordenado por ${campo}, de ${crescente ? 'A a Z' : 'Z a A'}. Nada foi redigitado: a ordem é uma leitura do que já estava guardado.`);
+  };
+
+  /** Os botões da faixa: agem na coluna escolhida, como no Access. */
   const ordenar = (crescente: boolean) => {
     fecharMenu();
     if (!agenda.registros.length) { setAviso('Não há fichas para ordenar ainda.'); return; }
     if (!colunaAtiva) {
-      setAviso('Escolha antes a coluna: clique no cabeçalho dela. Classificar sem coluna selecionada não faz nada — no Access também não.');
+      setAviso('Escolha antes a coluna: clique no cabeçalho ou em qualquer célula dela. Classificar sem coluna escolhida não faz nada — no Access também não.');
       return;
     }
-    const campo = nomeDoCampo(colunaAtiva);
-    setAgenda(a => ({ ...a, ordem: { campo, crescente } }));
-    setAviso(`Ordenado por ${campo}, de ${crescente ? 'A a Z' : 'Z a A'}. Nada foi redigitado: a ordem é uma leitura do que já estava guardado.`);
+    ordenarPor(colunaAtiva, crescente);
   };
 
   const nomeDoCampo = (id: string) => agenda.campos.find(c => c.id === id)?.nome ?? 'Nome';
@@ -462,6 +471,27 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
           text-align: left; font-weight: 600; color: #201F1E; white-space: nowrap;
         }
         .ac-grade td { border: 1px solid #E1DFDD; padding: 3px 8px; color: #201F1E; }
+        /*
+          O cabeçalho precisa parecer clicável, senão ele não é.
+
+          Ele já escolhia a coluna, e mesmo assim ninguém conseguia escolher
+          coluna nenhuma: o alvo era o texto — quarenta por dezenove pixels —,
+          sem cursor de mão e sem realce, num cabeçalho cinza de tabela. A
+          célula inteira passou a ser o alvo, e o hover diz que ela responde.
+        */
+        .ac-cabecalho { cursor: pointer; user-select: none; padding: 0 !important; }
+        .ac-cabecalho:hover { background: #DEDBDA; }
+        .ac-cabecalho:focus-visible { outline: 2px solid #A4373A; outline-offset: -2px; }
+        .ac-cabecalho-ativo, .ac-cabecalho-ativo:hover { background: #F2DEDE; }
+        .ac-cabecalho-linha {
+          display: flex; align-items: center; justify-content: space-between;
+          gap: 6px; padding: 4px 6px 4px 8px;
+        }
+        .ac-cabecalho-seta {
+          display: flex; align-items: center; padding: 1px; border-radius: 2px;
+          color: #605E5C; flex: none;
+        }
+        .ac-cabecalho-seta:hover { background: #C8C6C4; color: #201F1E; }
         .ac-grade tr:nth-child(even) td { background: #F7F6F5; }
         .ac-campo {
           border: 1px solid transparent; background: transparent; width: 100%;
@@ -748,19 +778,55 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
                     <table className="ac-grade">
                       <thead>
                         <tr>
-                          {/* A coluna escolhida se vê, como a linha escolhida na
-                              estrutura já se via. Sem isso o botão Crescente
-                              agia sobre uma escolha invisível: a tabela
-                              reordenava e nada dizia por qual campo. */}
+                          {/*
+                            O cabeçalho inteiro é o alvo, e traz a seta do Access.
+
+                            Ele já escolhia a coluna, e mesmo assim não dava para
+                            escolher coluna nenhuma: o alvo era o texto, quarenta
+                            por dezenove pixels, sem cursor de mão, sem realce ao
+                            passar o mouse e sem nada que dissesse que aquilo se
+                            clica. Cabeçalho de tabela parecendo cabeçalho de
+                            tabela — e o passo a passo mandava para a faixa, do
+                            outro lado da tela.
+
+                            A seta é a do Access de verdade, e com ela a
+                            classificação fica onde a pessoa vai procurar. Quem
+                            clica no nome escolhe a coluna; quem clica na seta
+                            escolhe e já classifica.
+                          */}
                           {agenda.campos.filter(c => c.nome).map(c => (
                             <th key={c.id}
-                              style={{ background: colunaAtiva === c.id ? '#F2DEDE' : undefined }}>
-                              <button type="button" style={{ font: 'inherit', color: 'inherit' }}
-                                aria-label={`Coluna ${c.nome}`}
-                                aria-pressed={colunaAtiva === c.id}
-                                onClick={ev => { ev.stopPropagation(); setColunaAtiva(c.id); }}>
-                                {c.nome}{agenda.ordem?.campo === c.nome ? (agenda.ordem.crescente ? ' ▲' : ' ▼') : ''}
-                              </button>
+                              className={`ac-cabecalho${colunaAtiva === c.id ? ' ac-cabecalho-ativo' : ''}`}
+                              aria-label={`Coluna ${c.nome}`}
+                              aria-pressed={colunaAtiva === c.id}
+                              role="button"
+                              tabIndex={0}
+                              onClick={ev => { ev.stopPropagation(); fecharMenu(); setColunaAtiva(c.id); }}
+                              onKeyDown={ev => {
+                                if (ev.key === 'Enter' || ev.key === ' ') {
+                                  ev.preventDefault(); setColunaAtiva(c.id);
+                                }
+                              }}>
+                              <span className="ac-cabecalho-linha">
+                                <span>
+                                  {c.nome}{agenda.ordem?.campo === c.nome ? (agenda.ordem.crescente ? ' ▲' : ' ▼') : ''}
+                                </span>
+                                <button type="button" className="ac-cabecalho-seta"
+                                  aria-label={`Opções da coluna ${c.nome}`}
+                                  onClick={ev => { ev.stopPropagation(); setColunaAtiva(c.id); abrir(`coluna-${c.id}`); }}>
+                                  <ChevronDown className="w-3 h-3" />
+                                </button>
+                              </span>
+                              <div style={{ position: 'relative' }}>
+                                <Menu id={`coluna-${c.id}`}>
+                                  <ItemMenu aoClicar={() => ordenarPor(c.id, true)}>
+                                    Classificar de A a Z
+                                  </ItemMenu>
+                                  <ItemMenu aoClicar={() => ordenarPor(c.id, false)}>
+                                    Classificar de Z a A
+                                  </ItemMenu>
+                                </Menu>
+                              </div>
                             </th>
                           ))}
                         </tr>
@@ -768,8 +834,17 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
                       <tbody>
                         {naTela.map(r => (
                           <tr key={r.id}>
+                            {/* Clicar numa célula escolhe a coluna dela, como no
+                                Access: lá o cursor entra no campo, e é sobre o
+                                campo do cursor que Classificar age. Obrigar o
+                                cabeçalho seria uma regra que o programa imitado
+                                não tem. */}
                             {agenda.campos.filter(c => c.nome).map(c => (
-                              <td key={c.id}>{r.valores[c.nome] ?? ''}</td>
+                              <td key={c.id}
+                                style={{ cursor: 'cell', background: colunaAtiva === c.id ? '#FBF2F2' : undefined }}
+                                onClick={ev => { ev.stopPropagation(); fecharMenu(); setColunaAtiva(c.id); }}>
+                                {r.valores[c.nome] ?? ''}
+                              </td>
                             ))}
                           </tr>
                         ))}
