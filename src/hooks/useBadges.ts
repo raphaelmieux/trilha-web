@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { umDe, NIVEIS_DA_INSIGNIA } from '../types';
+import { classeCanonica, NIVEIS_DA_INSIGNIA } from '../lib/nivelDaInsignia';
+import { umDe } from '../types';
 import type { Badge } from '../types';
 
 export function useBadges(userId: string | undefined) {
@@ -21,7 +22,12 @@ export function useBadges(userId: string | undefined) {
          impede. O que o banco realmente não garante no tipo é o `tier`. */
       setBadges((data ?? []).map(row => ({
         ...row.badges,
-        tier: umDe(NIVEIS_DA_INSIGNIA, row.badges.tier, 'bronze'),
+        /* `classeCanonica` traduz o vocabulário antigo antes de `umDe` olhar:
+           o banco ainda pode responder 'bronze' durante a janela em que o
+           `supabase.yml` e o frontend correm em paralelo, e sem isso toda
+           insígnia de todo mundo viraria Amigo por alguns minutos. O padrão
+           continua caindo para a classe que reivindica menos. */
+        tier: umDe(NIVEIS_DA_INSIGNIA, classeCanonica(row.badges.tier) ?? '', 'amigo'),
       })));
       setLoading(false);
     })();

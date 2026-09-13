@@ -47,10 +47,15 @@ export const FORMAS_DE_NOME = ['full', 'first', 'initials', 'anonymous'] as cons
 
 export type FormaDeNome = (typeof FORMAS_DE_NOME)[number];
 
-/** Os níveis de insígnia, como no CHECK de `badges`. */
-export const NIVEIS_DA_INSIGNIA = ['bronze', 'silver', 'gold'] as const;
-
-export type NivelDaInsignia = (typeof NIVEIS_DA_INSIGNIA)[number];
+/*
+  Os níveis de insígnia moram em `lib/nivelDaInsignia.ts`, com a forma e a cor
+  de cada classe, e são reexportados daqui porque é daqui que o domínio inteiro
+  os importa. Eram três — bronze, prata e ouro —; hoje são as sete classes
+  regulares dos Desbravadores, e o CHECK de `badges` acompanha.
+*/
+import type { NivelDaInsignia } from '../lib/nivelDaInsignia';
+export { NIVEIS_DA_INSIGNIA } from '../lib/nivelDaInsignia';
+export type { NivelDaInsignia };
 
 /*
   A fronteira onde o texto do banco vira união do domínio.

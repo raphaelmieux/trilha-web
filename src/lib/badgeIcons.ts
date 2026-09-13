@@ -1,4 +1,8 @@
 import type { Badge } from '../types';
+import { CLASSES, NIVEIS_DA_INSIGNIA } from './nivelDaInsignia';
+import {
+  ALTURA, LARGURA, formaDaClasse, encaixeDoGlifo, corDoGlifo,
+} from './formaDaInsignia';
 
 /**
  * Badge icons as drawable artwork.
@@ -14,7 +18,7 @@ import type { Badge } from '../types';
  */
 
 /** SVG child elements for each icon, in a 24×24 viewBox. */
-const ICON_SHAPES: Record<string, string> = {
+export const ICON_SHAPES: Record<string, string> = {
   footprints: [
     '<path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"/>',
     '<path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"/>',
@@ -67,28 +71,75 @@ const ICON_SHAPES: Record<string, string> = {
   clock: ['<circle cx="12" cy="12" r="10"/>','<polyline points="12 6 12 12 16 14"/>'].join(''),
   zap: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
   calendar: ['<path d="M8 2v4"/>','<path d="M16 2v4"/>','<rect width="18" height="18" x="3" y="4" rx="2"/>','<path d="M3 10h18"/>'].join(''),
+  /*
+    Os três últimos chegaram com as sete classes: cada família de conquista
+    passou a ter escada própria, e Avaliações, Nota máxima e Veredas estavam
+    pegando emprestado o troféu, a estrela e as pegadas — duas colisões na
+    mesma estante. Saíram do mesmo lucide que os outros onze, e não de desenho
+    novo: um traço de outra mão ao lado de onze do mesmo autor destoa, e
+    destoa de um jeito que só se percebe com a estante montada.
+  */
+  exam: [
+    '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>',
+    '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+    '<path d="m9 14 2 2 4-4"/>',
+  ].join(''),
+  bullseye: [
+    '<circle cx="12" cy="12" r="10"/>',
+    '<circle cx="12" cy="12" r="6"/>',
+    '<circle cx="12" cy="12" r="2"/>',
+  ].join(''),
+  route: [
+    '<circle cx="6" cy="19" r="3"/>',
+    '<path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>',
+    '<circle cx="18" cy="5" r="3"/>',
+  ].join(''),
 };
 
-/**
- * Tier colours as literals.
- *
- * The app's rule is to read colours from CSS custom properties, and the on-screen
- * badge does. Canvas and PDF have no access to the cascade, so the value has to
- * exist as a number somewhere; keeping the single copy here — and having the
- * component import it — is better than letting a hex in a PDF drift away from a
- * variable in a stylesheet. Gold is --color-secondary.
- */
-export const TIER_COLORS: Record<Badge['tier'], string> = {
-  bronze: '#c17f45',
-  silver: '#b0b0b4',
-  gold: '#F5A623',
+/*
+  Quanto de raio a tinta de cada desenho de fato ocupa, na caixa de 24.
+
+  Os catorze variam de 10,00 a 12,81 — 28% —, então escalar todos pelo mesmo
+  fator os deixa com tamanhos visivelmente diferentes dentro da insígnia. Cada
+  um é normalizado por este número até o raio comum, e é isso que faz "o mesmo
+  tamanho em cada insígnia" ser verdade na tela e não só na fórmula.
+
+  Os valores saem de amostrar cada traçado ponto a ponto e medir o mais
+  distante do centro — `formaDaInsignia.test.ts` refaz a conta e reprova se um
+  ícone for trocado sem o número acompanhar.
+*/
+export const RAIO_DA_TINTA: Record<string, number> = {
+  award: 11.01,
+  bullseye: 10.00,
+  calendar: 12.63,
+  clock: 10.00,
+  exam: 12.00,
+  flame: 10.00,
+  footprints: 12.00,
+  lab: 12.00,
+  layers: 11.49,
+  route: 12.22,
+  star: 10.93,
+  theory: 12.63,
+  trophy: 12.81,
+  zap: 10.11,
 };
 
-export const TIER_LABELS: Record<Badge['tier'], string> = {
-  bronze: 'bronze',
-  silver: 'prata',
-  gold: 'ouro',
-};
+/*
+  A cor e o nome de cada classe moram em `nivelDaInsignia.ts`, que não sabe
+  desenhar nada — é TypeScript puro, como `marca.ts`, porque quem desenha no
+  papel é o jsPDF e ele não lê folha de estilo. Reexportados aqui para quem já
+  importava daqui.
+*/
+export const TIER_COLORS: Record<Badge['tier'], string> =
+  Object.fromEntries(
+    NIVEIS_DA_INSIGNIA.map(n => [n, CLASSES[n].cor]),
+  ) as Record<Badge['tier'], string>;
+
+export const TIER_LABELS: Record<Badge['tier'], string> =
+  Object.fromEntries(
+    NIVEIS_DA_INSIGNIA.map(n => [n, CLASSES[n].nome]),
+  ) as Record<Badge['tier'], string>;
 
 /*
   Os nomes que o banco ainda pode trazer, e o que eles querem dizer hoje.
@@ -124,12 +175,15 @@ export function hasIcon(name: string): boolean {
  * the on-screen badge uses.
  */
 export function badgeIconSvg(icon: string, tier: Badge['tier']): string {
-  const colour = TIER_COLORS[tier];
+  const cor = CLASSES[tier].cor;
+  const forma = formaDaClasse(tier);
+  const encaixe = encaixeDoGlifo(forma, RAIO_DA_TINTA[iconeCanonico(icon)] ?? 12);
   return [
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="96" height="96">',
-    `<circle cx="12" cy="12" r="11.4" fill="${colour}" fill-opacity="0.16" stroke="${colour}" stroke-opacity="0.45" stroke-width="0.8"/>`,
-    `<g transform="translate(12 12) scale(0.62) translate(-12 -12)"`,
-    ` fill="none" stroke="${colour}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LARGURA} ${ALTURA}"`,
+    ` width="${Math.round((96 * LARGURA) / ALTURA)}" height="96">`,
+    `<polygon points="${forma.pontos}" fill="${cor}"/>`,
+    `<g transform="${encaixe.transform}" fill="none" stroke="${corDoGlifo(cor)}"`,
+    ` stroke-width="${encaixe.traco.toFixed(2)}" stroke-linecap="round" stroke-linejoin="round">`,
     iconShape(icon),
     '</g></svg>',
   ].join('');
