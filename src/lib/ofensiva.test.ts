@@ -294,24 +294,53 @@ describe('a lista de eventos da ofensiva', () => {
   conferir uma contra a outra.
 */
 describe('a lista do banco e a do navegador', () => {
+  /*
+    A lista mora dentro do `leaderboard`, e não numa função à parte.
+
+    Ela chegou a ser `public.eventos_da_ofensiva()`, ao lado de
+    `melhor_ofensiva(uuid)` — e essa segunda era `security definer` com
+    `grant` para `anon`, lendo `activity_events` de um id qualquer sem
+    perguntar nada a `privacy_preferences`. O `leaderboard` pergunta: ele só
+    lista quem marcou `show_on_leaderboard`. Quem desmarcasse a caixa sumia da
+    lista e continuava respondendo por RPC direta. As duas saíram, e a conta
+    voltou para dentro da junção que a protege.
+  */
   const SQL = resolve(
-    __dirname, '../../supabase/migrations/20260913130000_ofensiva_em_brasilia.sql',
+    __dirname,
+    '../../supabase/migrations/20260913140000_ofensiva_so_dentro_do_ranking.sql',
   );
+  const fonte = readFileSync(SQL, 'utf8');
 
   const doBanco = (() => {
-    const fonte = readFileSync(SQL, 'utf8');
-    const corpo = fonte.match(
-      /create or replace function public\.eventos_da_ofensiva\(\)[\s\S]*?select array\[([\s\S]*?)\]::text\[\]/,
-    );
+    const corpo = fonte.match(/and a\.event_type in \(([\s\S]*?)\)/);
     if (!corpo) return null;
     return corpo[1].split(',').map(s => s.trim().replace(/'/g, '')).filter(Boolean);
   })();
 
-  /* Se o apagador deixasse de achar a função, a comparação abaixo passaria a
+  /* Se o apagador deixasse de achar a lista, a comparação abaixo passaria a
      comparar nada com nada e aprovaria qualquer divergência, calada. */
   it('acha a lista dentro da migration', () => {
-    expect(doBanco, `não achei eventos_da_ofensiva() em ${SQL}`).not.toBeNull();
+    expect(doBanco, `não achei a lista de eventos em ${SQL}`).not.toBeNull();
     expect(doBanco!.length).toBeGreaterThan(20);
+  });
+
+  /*
+    E as duas funções soltas não voltam.
+
+    Uma função `security definer` sobre `activity_events`, concedida a `anon` e
+    sem a junção de consentimento, é uma segunda porta para o mesmo dado — e
+    foi assim que a primeira versão desta trava chegou à produção. Cada função
+    nova em `public` também entra em `database.ts`, que é gerado: as duas
+    fizeram o `supabase.yml` reprovar por divergência de tipo.
+  */
+  it('não reabre a porta que não pergunta pelo consentimento', () => {
+    expect(fonte).toContain('drop function if exists public.melhor_ofensiva(uuid)');
+    expect(fonte).toContain('drop function if exists public.eventos_da_ofensiva()');
+  });
+
+  /* A junção do consentimento continua sendo o que decide quem aparece. */
+  it('a ofensiva só é contada para quem optou por aparecer', () => {
+    expect(fonte).toMatch(/join privacy_preferences pp[\s\S]*?pp\.show_on_leaderboard/);
   });
 
   it('as duas listas são a mesma lista', () => {
