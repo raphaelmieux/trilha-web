@@ -218,3 +218,47 @@ describe('ON CONFLICT cita restrição que existe', () => {
     ).toEqual([]);
   });
 });
+
+/*
+  Apagar linha de `badges` tira insígnia da estante de alguém, e não avisa.
+
+  `user_badges.badge_id` é `REFERENCES badges(id) ON DELETE CASCADE`. Um DELETE
+  na linha do catálogo leva junto toda conquista pendurada nela: quem
+  conquistou aquilo abre o perfil com uma insígnia a menos e nada na tela diz
+  por quê. A regra da casa é a oposta — insígnia não se perde, e uma decisão
+  nossa não se cobra de quem já andou.
+
+  Apagar é legítimo quando a insígnia foi renomeada ou dividida, que é o caso
+  de `mini_html` e `lab_image_lab`. O que não é legítimo é apagar **sem**
+  antes dar a de hoje a quem tem a de ontem. Esta trava cobra os dois no mesmo
+  arquivo: quem escrever o DELETE sem o INSERT vai ler aqui o motivo.
+*/
+describe('apagar insígnia não apaga o que alguém conquistou', () => {
+  const comDelete = migrations.filter(
+    f => /DELETE\s+FROM\s+(public\.)?badges\b/i.test(readFileSync(join(DIR, f), 'utf8')),
+  );
+
+  it.each(comDelete)('%s migra as conquistas antes de apagar', arquivo => {
+    const sql = readFileSync(join(DIR, arquivo), 'utf8');
+    const posicaoDoInsert = sql.search(/INSERT\s+INTO\s+(public\.)?user_badges\b/i);
+    const posicaoDoDelete = sql.search(/DELETE\s+FROM\s+(public\.)?badges\b/i);
+
+    expect(posicaoDoInsert,
+      `${arquivo} apaga linha de badges sem antes reconceder a conquista em `
+      + 'user_badges. O ON DELETE CASCADE vai levar junto o que as pessoas '
+      + 'ganharam, sem erro e sem aviso.',
+    ).toBeGreaterThanOrEqual(0);
+
+    expect(posicaoDoInsert,
+      `${arquivo} apaga antes de migrar — depois do DELETE não há mais o que `
+      + 'ler para saber quem tinha o quê.',
+    ).toBeLessThan(posicaoDoDelete);
+  });
+
+  /* Um filtro que esvaziasse a lista deixaria a build verde por não ter
+     conferido nada — e este arquivo é justamente o que introduz o primeiro
+     DELETE. Se ele sumir da lista, alguém mexeu no apagador. */
+  it('acha o arquivo que apaga insígnia', () => {
+    expect(comDelete.length).toBeGreaterThan(0);
+  });
+});

@@ -324,6 +324,24 @@ divergiram em silêncio por meses: `primeira_licao` era `theory` aqui e
 antiga só conferia que o **código** existia nos dois lados.
 `insignias.test.ts` passou a comparar ícone e classe também.
 
+**Apagar linha de `badges` tira insígnia da estante de alguém, e não avisa.**
+`user_badges.badge_id` é `REFERENCES badges(id) ON DELETE CASCADE`: o DELETE no
+catálogo leva junto toda conquista pendurada nele, sem erro e sem sinal — a
+pessoa abre o perfil com uma insígnia a menos e nada explica.
+
+Apagar é legítimo quando a insígnia foi renomeada ou dividida, que foi o caso
+de `mini_html` (a vereda de HTML de quando ela se chamava mini-trilha) e
+`lab_image_lab` (o laboratório de imagens antes de virar dois). O que não é
+legítimo é apagar **sem antes dar a de hoje a quem tem a de ontem**, com o
+`awarded_at` original — reescrever a data faria o perfil dizer que a pessoa
+conquistou hoje o que conquistou no ano passado.
+
+O destino de cada uma não foi escolha nova: `veredasConcluidas` já lê os
+eventos de mini-trilha, e `LABORATORIO_DO_EVENTO` já traduz
+`image_lab_completed` para `image_compress`. A migration só alcança quem não
+voltou desde a mudança — `evaluateBadges` roda quando a pessoa faz alguma
+coisa, e quem parou antes nunca foi reavaliado.
+
 **Ordem de inicialização não avisa, quebra.** `INSIGNIAS` é um literal
 avaliado quando o módulo carrega, e chama `classeDoLaboratorio` para cada
 laboratório. Com as tabelas de classe declaradas **abaixo** dele, a chamada cai
@@ -1350,6 +1368,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | --- | --- |
 | `supabase/migrations/migrations.test.ts` | migration que não fecha um bloco que abre; timestamp repetido |
 | `supabase/migrations/migrations.test.ts` | `ON CONFLICT` citando coluna sem restrição UNIQUE, que derruba o arquivo inteiro |
+| `supabase/migrations/migrations.test.ts` | `DELETE FROM badges` sem reconceder a conquista antes, que apaga insígnia de quem a tinha |
 | `src/lib/certificados.test.ts` | o padrão de um certificado ilegível — inverter para `'active'` reprova |
 | `src/lib/insignias.test.ts` | insígnia com critério no código e sem linha no catálogo |
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
