@@ -175,10 +175,13 @@ export function countDistinctReferences(inputs: string[]): number {
  *    conjunto por Vida Nova, Hagnos, Atos e a Imprensa Bíblica Brasileira;
  *  - **NBV**, Nova Bíblia Viva — paráfrase, e não tradução literal: conta como
  *    versão distinta porque é isso que ela é, e a diferença de método é
- *    justamente o que a comparação entre versões ensina;
- *  - **AVM**, Ave-Maria — a mais distribuída do país, e a que o desbravador
- *    acha na casa da avó. O clube é adventista; a tarefa é comparar traduções,
- *    e comparar pede que a outra exista na caixa.
+ *    justamente o que a comparação entre versões ensina.
+ *
+ * A Ave-Maria entrou por uma hora e saiu por decisão do dono da plataforma. O
+ * argumento para pô-la era que ela é a mais distribuída do país e a caixa não
+ * deveria divergir do que o site de Bíblia oferece; o que decide é que o clube
+ * é adventista, e a lista de versões de uma plataforma diz de quem ela é. Fica
+ * escrito para que ninguém a proponha de novo achando que foi esquecimento.
  *
  * A King James fica só na KJA. Existe também a "King James Fiel", e pôr as duas
  * numa caixa lida por gente de dez anos convida a escolher as duas achando que
@@ -200,9 +203,8 @@ export const BIBLE_VERSIONS = [
   { id: 'NVT', label: 'NVT — Nova Versão Transformadora' },
   { id: 'NTLH', label: 'NTLH — Nova Tradução na Linguagem de Hoje' },
   { id: 'NBV', label: 'NBV — Nova Bíblia Viva' },
-  /* E as duas de fora dessas duas famílias. */
+  /* E a que não é de nenhuma das duas famílias. */
   { id: 'KJA', label: 'KJA — King James Atualizada' },
-  { id: 'AVM', label: 'AVM — Ave-Maria' },
 ] as const;
 
 export function countDistinctVersions(versions: string[]): number {
