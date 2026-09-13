@@ -4,10 +4,8 @@ import ClubPicker, { type ClubeEscolhido } from '../components/ui/ClubPicker';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useBadges } from '../hooks/useBadges';
-import BadgeIcon from '../components/ui/BadgeIcon';
-import { LoadingState, EmptyState } from '../components/ui/PageState';
 import { SECURITY_QUESTIONS, hashSecurityAnswer } from '../lib/securityQuestions';
-import { User, Lock, Eye, EyeOff, Camera, Shield, Save, CheckCircle2, AlertCircle, Medal, Trophy, KeyRound } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Camera, Shield, Save, CheckCircle2, AlertCircle, Medal, KeyRound } from 'lucide-react';
 import { mensagemDoErro } from '../lib/authErrors';
 import AdminPage from './AdminPage';
 import type { FormaDeNome } from '../types';
@@ -467,33 +465,34 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Badges */}
-      <div className="card p-6">
-        <h2 className="font-bold mb-4 flex items-center gap-2">
+      {/*
+        As conquistas ficam na Estante, e aqui só o caminho até ela.
+
+        Esta seção listava as insígnias em tamanho grande, e virou a terceira
+        cópia da mesma coisa no dia em que a Estante nasceu — painel, perfil e
+        estante desenhando as mesmas medalhas. Três cópias divergem no primeiro
+        ajuste, e ninguém procura troféu dentro de um formulário de conta: o
+        perfil é onde se troca a senha e se escolhe como o nome sai no
+        certificado.
+
+        O que fica é o número e a porta. Some o número de quem ainda não tem
+        nenhuma seria esconder justamente de quem a estante deveria alcançar.
+      */}
+      <Link
+        to="/estante"
+        className="card p-6 flex items-center justify-between gap-3 transition hover:opacity-80"
+      >
+        <span className="font-bold flex items-center gap-2">
           <Medal className="w-5 h-5" style={{ color: 'var(--color-secondary)' }} /> Minhas Conquistas
-        </h2>
-        {badgesLoading ? (
-          <LoadingState />
-        ) : badges.length === 0 ? (
-          <EmptyState
-            icon={<Trophy className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-border-hover)' }} />}
-            title="Nenhuma conquista ainda"
-            description="Complete lições, laboratórios e mantenha sua sequência para ganhar badges."
-          />
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {badges.map(badge => (
-              <div key={badge.id} className="flex flex-col items-center text-center gap-2">
-                <BadgeIcon badge={badge} size="lg" />
-                <div>
-                  <p className="text-xs font-semibold" style={{ color: 'var(--color-text)' }}>{badge.name}</p>
-                  <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>{badge.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        </span>
+        <span className="text-sm" style={{ color: 'var(--color-text-dim)' }}>
+          {badgesLoading
+            ? 'contando...'
+            : badges.length === 0
+              ? 'ver a estante'
+              : `${badges.length} na estante`}
+        </span>
+      </Link>
 
       {/* Session info */}
       <div className="card p-4" style={{ backgroundColor: 'var(--color-bg-input)' }}>
