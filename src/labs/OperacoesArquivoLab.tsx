@@ -488,7 +488,7 @@ export default function OperacoesArquivoLab({ specialtyCode, lessonCode, lessonT
       await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: 4, total_questions: 4,
-      });
+      }, specialtyCode);
       gravados++;
     }
     setGravando(false);

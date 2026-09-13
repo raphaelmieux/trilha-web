@@ -220,7 +220,7 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
       await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: METAS_DA_APRESENTACAO.length, total_questions: METAS_DA_APRESENTACAO.length,
-      });
+      }, specialtyCode);
       gravados++;
     }
     setGravando(false);

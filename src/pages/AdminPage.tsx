@@ -52,9 +52,25 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!profile?.is_admin) return;
+    /*
+      Quatro consultas em sequência, e a tela pode sair antes da última.
+
+      Cada `await` aqui é seguido de um `setX`, e o painel vive numa guia de
+      Meu Perfil: trocar para a guia do perfil, ou sair da página, desmonta o
+      componente com as consultas ainda no ar. As escritas seguintes caem num
+      componente morto — desperdício no navegador, e **erro** onde o ambiente
+      já foi desmontado: o React procura o `window` para decidir a prioridade
+      da atualização e não acha.
+
+      Foi assim que o CI reprovou uma vez com os 1909 testes passando: a falha
+      não era de asserção nenhuma, era uma rejeição não tratada depois do fim
+      do teste. Localmente a corrida se ganhava; numa máquina mais lenta, não.
+    */
+    let vivo = true;
     (async () => {
       const { count: userCount } = await supabase.from('user_profiles').select('*', { count: 'exact', head: true });
       const { count: eventCount } = await supabase.from('activity_events').select('*', { count: 'exact', head: true });
+      if (!vivo) return;
       setStats({ users: userCount || 0, events: eventCount || 0 });
 
       const { data: usersData } = await supabase
@@ -62,6 +78,7 @@ export default function AdminPage() {
         .select(COLUNAS_DO_USUARIO)
         .order('created_at', { ascending: false })
         .limit(50);
+      if (!vivo) return;
       setUsers(usersData || []);
 
       /*
@@ -74,6 +91,7 @@ export default function AdminPage() {
         que é zero não podem ter a mesma aparência num painel contábil.
       */
       const { data: contagem, error: erroDaContagem } = await supabase.rpc('admin_certificate_counts');
+      if (!vivo) return;
       setErroDosCertificados(erroDaContagem?.message ?? '');
       /*
         As seis colunas chegam anuláveis porque `returns table` do Postgres não
@@ -92,6 +110,7 @@ export default function AdminPage() {
       })));
 
     })();
+    return () => { vivo = false; };
   }, [profile]);
 
   if (!profile?.is_admin) {

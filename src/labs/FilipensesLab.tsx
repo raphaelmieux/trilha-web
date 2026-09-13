@@ -218,7 +218,7 @@ export default function FilipensesLab({ specialtyCode, lessonCode, lessonTitle, 
         mastery_score: Math.round((firstCorrect / SITUATIONS.length) * 100),
         checkpoint_passed: true, retention_passed: true,
         attempts: 1, correct_count: firstCorrect, total_questions: SITUATIONS.length,
-      });
+      }, specialtyCode);
     }
     await logActivity(userId, 'filipenses_completed', { specialtyCode, lessonCode,
       dicasUsadas: hintsUsed, situacoesDePrimeira: firstCorrect,

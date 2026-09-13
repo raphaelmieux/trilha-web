@@ -205,7 +205,7 @@ export default function ThreatLab({ specialtyCode, lessonCode, lessonTitle, requ
         attempts: 1,
         correct_count: firstCorrect + realPicked,
         total_questions: SITUATIONS.length + DAMAGES.filter(d => d.real).length,
-      });
+      }, specialtyCode);
     }
     await logActivity(userId, 'threat_lab_completed', { specialtyCode, lessonCode,
       situacoesDePrimeira: firstCorrect, simulacoes: runs.length,

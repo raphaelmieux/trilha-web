@@ -175,7 +175,7 @@ export default function CorreioLab({ specialtyCode, lessonCode, lessonTitle, req
       await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: METAS_DO_CORREIO.length, total_questions: METAS_DO_CORREIO.length,
-      });
+      }, specialtyCode);
       gravados++;
     }
     setGravando(false);

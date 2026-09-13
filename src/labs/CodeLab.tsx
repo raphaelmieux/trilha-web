@@ -96,7 +96,7 @@ export default function CodeLab({ specialtyCode, lessonCode, lessonTitle, requir
       if (reqId) await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: passedCount, total_questions: results.length,
-      });
+      }, specialtyCode);
     }
     await logActivity(userId, 'code_lab_completed', { specialtyCode, lessonCode, variant, checksPassed: passedCount, total: results.length });
     /* Entregue, o rascunho não protege mais nada — e deixá-lo no navegador

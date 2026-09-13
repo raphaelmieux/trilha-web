@@ -189,7 +189,7 @@ export default function AILab({ specialtyCode, lessonCode, lessonTitle, requirem
       if (reqId) await upsertRequirementProgress(userId, reqId, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: 3, total_questions: 3,
-      });
+      }, specialtyCode);
     }
     await logActivity(userId, 'ai_lab_completed', { specialtyCode, lessonCode,
       critiquePositive: critique.good.slice(0, 200),

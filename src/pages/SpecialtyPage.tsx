@@ -82,7 +82,7 @@ export default function SpecialtyPage() {
         await upsertRequirementProgress(profile.id, reqId, {
           status: 'completed', mastery_score: 100, checkpoint_passed: true,
           attempts: 1, correct_count: 1, total_questions: 1,
-        });
+        }, specialty.code);
       }
     })();
   }, [profile, specialty, liberada, progress]);

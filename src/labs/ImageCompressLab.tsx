@@ -273,7 +273,7 @@ export default function ImageCompressLab({ specialtyCode, lessonCode, lessonTitl
       if (idRequisito) await upsertRequirementProgress(userId, idRequisito, {
         status: 'completed', mastery_score: 100, checkpoint_passed: true,
         attempts: 1, correct_count: tarefas.length, total_questions: tarefas.length,
-      });
+      }, specialtyCode);
     }
     await logActivity(userId, 'image_compress_completed', {
       specialtyCode, lessonCode, bytes: saida?.bytes, largura: saida?.w, formato,

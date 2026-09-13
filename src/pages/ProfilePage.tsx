@@ -74,15 +74,22 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!profile) return;
+    /* A consulta pode voltar depois de a página sair — trocar de guia ou de
+       tela desmonta com ela no ar, e escrever estado em componente morto é
+       desperdício no navegador e erro onde o ambiente já foi desmontado. É a
+       mesma guarda do painel de administração, que vive na guia ao lado. */
+    let vivo = true;
     (async () => {
       const { data } = await supabase
         .from('privacy_preferences')
         .select('show_on_leaderboard, show_club_publicly')
         .eq('user_id', profile.id)
         .maybeSingle();
+      if (!vivo) return;
       setShowOnLeaderboard(data?.show_on_leaderboard || false);
       setShowClub(data?.show_club_publicly || false);
     })();
+    return () => { vivo = false; };
   }, [profile]);
 
   if (!profile) return null;

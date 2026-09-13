@@ -228,7 +228,7 @@ export default function LessonPage() {
           status, mastery_score: masteryScore,
           attempts: (reqProgress?.attempts || 0) + 1,
           correct_count: melhor.correct, total_questions: melhor.total,
-        });
+        }, specialty.code);
       }
       await logActivity(profile.id, 'lesson_completed', {
         lessonCode: lesson.code, score: correct, total, requirementCode: reqCode,
