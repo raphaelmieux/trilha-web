@@ -19,13 +19,16 @@ import { VEREDAS } from '../curriculum/veredas';
   elipse e se disfarça de especialidade. Os dois erros são invisíveis de
   dentro, que é a definição do que precisa de trava aqui.
 
-  Com quarenta e três desenhos no repositório e mais por vir, conferir isso a
-  olho é conferir a primeira leva e confiar no resto.
+  São sessenta e quatro desenhos — treze trilhas e cinquenta e uma veredas —, e
+  conferir isso a olho é conferir a primeira leva e confiar no resto.
 
-  A trava lê só o que já chegou: a arte é condição para **abrir**, e não para
-  anunciar — percurso anunciado sem desenho continua caindo no espaço reservado
-  do `Emblema`, que é o comportamento certo. Quem cobra a existência do arquivo
-  é `index.test.ts`, para as trilhas, e `veredas.test.ts`, para as veredas.
+  Quem cobra que o arquivo **exista** é `index.test.ts`, para as trilhas, e
+  `veredas.test.ts`, para as veredas; aqui se cobra a forma dele. A divisão
+  importa: enquanto faltava arte, esta trava lia só o que já tinha chegado, e
+  essa tolerância virou um buraco no dia em que as duas outras passaram a
+  cobrar de todo mundo — arte que sumisse encolheria a lista daqui em silêncio.
+  Por isso a lista é conferida contra o registro inteiro antes de qualquer
+  medida ser tomada.
 */
 
 /** Largura e altura de um PNG, lidas do cabeçalho IHDR. */
@@ -49,8 +52,10 @@ const emblemaDe = (code: string) => `public/assets/specialties/${code}.png`;
 /** Os percursos registrados que já têm desenho, de cada tipo. */
 const comArte = (codigos: string[]) => codigos.filter(c => existsSync(emblemaDe(c)));
 
-const TRILHAS = comArte(getAllSpecialties().map(s => s.code));
-const VEREDAS_COM_ARTE = comArte(VEREDAS.map(v => v.code));
+const TODAS_AS_TRILHAS = getAllSpecialties().map(s => s.code);
+const TODAS_AS_VEREDAS = VEREDAS.map(v => v.code);
+const TRILHAS = comArte(TODAS_AS_TRILHAS);
+const VEREDAS_COM_ARTE = comArte(TODAS_AS_VEREDAS);
 
 describe('a forma do emblema diz de que tipo é o percurso', () => {
   /*
@@ -62,6 +67,21 @@ describe('a forma do emblema diz de que tipo é o percurso', () => {
   it('há arte das duas espécies para a trava conferir', () => {
     expect(TRILHAS.length, 'nenhuma trilha com emblema no repositório').toBeGreaterThan(0);
     expect(VEREDAS_COM_ARTE.length, 'nenhuma vereda com emblema no repositório').toBeGreaterThan(0);
+  });
+
+  /*
+    E o filtro não descarta ninguém.
+
+    Ele existia para a época em que faltava arte: conferia a forma do que já
+    tinha chegado e deixava o resto passar. Hoje as sessenta e quatro têm
+    desenho, e `index.test.ts` e `veredas.test.ts` cobram a existência de cada
+    uma — então um percurso caindo fora daqui só pode significar que a arte
+    dele sumiu, e a trava de forma passaria a examinar uma lista menor sem
+    dizer nada. É o filtro que esvazia, aplicado a um percurso de cada vez.
+  */
+  it('nenhum percurso registrado fica de fora por falta de arte', () => {
+    expect(TRILHAS).toEqual(TODAS_AS_TRILHAS);
+    expect(VEREDAS_COM_ARTE).toEqual(TODAS_AS_VEREDAS);
   });
 
   /* A arte da especialidade é o patch que se costura na faixa: 710×558
