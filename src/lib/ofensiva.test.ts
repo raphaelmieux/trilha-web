@@ -7,6 +7,7 @@ import {
   ofensivaCorrente, melhorOfensiva, EVENTOS_DA_OFENSIVA,
 } from './ofensiva';
 import type { EventoDeAtividade } from './atividade';
+import { LIMIAR_DOMINIO } from './limiarDeDominio';
 
 /*
   A ofensiva, e as três formas de ela mentir sem estourar.
@@ -194,6 +195,62 @@ describe('que atividade faz a ofensiva andar', () => {
 
   it('ignora evento sem data', () => {
     expect(diasDeAtividade([{ event_type: 'lesson_completed' }])).toEqual([]);
+  });
+});
+
+/*
+  Tentativa reprovada não é módulo vencido.
+
+  O laboratório grava depois do `setCompleted`, e a teoria da vereda só chama o
+  registro acima do limiar — os dois só existem vencidos. A lição de trilha e a
+  prova final, não: elas gravam **toda** tentativa, com a nota junto. Sem o
+  corte, errar tudo numa lição valia um dia de ofensiva, e "completou um
+  módulo" passava a querer dizer "abriu e respondeu qualquer coisa" — que é
+  exatamente a autodeclaração que a plataforma inteira evita.
+
+  A nota sai da metadata que já era gravada, então o corte vale para o
+  histórico também.
+*/
+describe('a tentativa precisa passar do limiar', () => {
+  const tentativa = (score: number, total: number, dia = '2026-09-13'): EventoDeAtividade =>
+    ({ event_type: 'lesson_completed', created_at: `${dia}T14:00:00-03:00`, metadata: { score, total } });
+
+  it('75% passa, que é o limiar da plataforma', () => {
+    expect(LIMIAR_DOMINIO).toBe(75);
+    expect(diasDeAtividade([tentativa(6, 8)])).toEqual(['2026-09-13']);
+  });
+
+  it('abaixo do limiar não conta', () => {
+    expect(diasDeAtividade([tentativa(5, 8)])).toEqual([]);
+    expect(diasDeAtividade([tentativa(0, 10)])).toEqual([]);
+  });
+
+  it('vale para a prova final, que também grava tentativa reprovada', () => {
+    expect(diasDeAtividade([
+      { event_type: 'final_exam_completed', created_at: '2026-09-13T14:00:00-03:00', metadata: { score: 3, total: 10 } },
+    ])).toEqual([]);
+  });
+
+  /* Refazer e passar no mesmo dia vale o dia: o que conta é ter vencido, e
+     não ter vencido de primeira — quem erra, estuda e volta é justamente
+     quem a ofensiva existe para segurar. */
+  it('a aprovada do mesmo dia salva o dia', () => {
+    expect(diasDeAtividade([tentativa(2, 10), tentativa(9, 10)])).toEqual(['2026-09-13']);
+  });
+
+  /* Prova de zero questão não é aprovação por vacuidade — é a família do
+     "zero link não é zero link quebrado". */
+  it('total zero não passa de graça', () => {
+    expect(diasDeAtividade([tentativa(0, 0)])).toEqual([]);
+  });
+
+  /* O laboratório não grava nota nenhuma, e só grava ao vencer: exigir nota
+     dele apagaria da ofensiva todo laboratório da plataforma. */
+  it('evento sem nota continua contando', () => {
+    expect(diasDeAtividade([
+      { event_type: 'code_lab_completed', created_at: '2026-09-13T14:00:00-03:00', metadata: { specialtyCode: 'AP035' } },
+      { event_type: 'vereda_teoria', created_at: '2026-09-12T14:00:00-03:00', metadata: { vereda: 'html' } },
+    ])).toEqual(['2026-09-12', '2026-09-13']);
   });
 });
 
