@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getProgressPercent, getProgressDetail } from '../lib/progress';
-import { getSpecialty, getFamilias, preRequisitoCumprido } from '../curriculum';
+import { getFamilias, preRequisitoCumprido } from '../curriculum';
+import { percursoDoCertificado } from '../lib/certificados';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
@@ -20,6 +21,7 @@ import { INSIGNIAS } from '../lib/insignias';
 import type { ProgressMap } from '../lib/progress';
 import { Lock, Award, Flame, Star, Clock, FileText, ArrowRight, Medal, HardHat } from 'lucide-react';
 import { MarcaEmTexto } from '../components/ui/BrandMark';
+import TokenNoCartao from '../components/ui/TokenNoCartao';
 
 /**
  * O card de uma trilha, em qualquer um dos seus três estados.
@@ -88,35 +90,41 @@ function CardDaTrilha({ e, progress, cert, liberada }: {
     );
   }
 
+  /*
+    A caixa é um `<div>`, e não o `<Link>` que ela já foi.
+
+    O certificado emitido virou um link próprio — e âncora dentro de âncora é
+    HTML inválido: o navegador desmancha o encaixe e decide sozinho o que o
+    clique de dentro faz. Então o cartão passou a ter dois links irmãos, um
+    para a trilha e outro para o documento, e a moldura em volta deles não
+    navega para lugar nenhum.
+  */
   return (
-    <Link to={`/especialidade/${e.code}`} className="card p-6 block transition"
+    <div className="card p-6 transition"
       style={{ borderColor: percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)', transition: 'border-color 0.2s' }}
       onMouseEnter={ev => (ev.currentTarget.style.borderColor = cores.bordaAoPassar)}
       onMouseLeave={ev => (ev.currentTarget.style.borderColor = percent === 100 ? 'var(--color-success-a20)' : 'var(--color-border)')}>
-      <div className="flex items-center gap-4 mb-4">
-        <Emblema
-          code={e.code}
-          status={cert ? 'certificado' : percent === 100 ? 'concluido' : 'em-andamento'}
-        />
-        {identificacao}
-      </div>
-      <div className="mb-3">
-        <div className="flex justify-between text-sm mb-1">
-          <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
-          <span className="font-semibold" style={{ color: corDoPercentual(percent) }}>{percent}%</span>
+      <Link to={`/especialidade/${e.code}`} className="block">
+        <div className="flex items-center gap-4 mb-4">
+          <Emblema
+            code={e.code}
+            status={cert ? 'certificado' : percent === 100 ? 'concluido' : 'em-andamento'}
+          />
+          {identificacao}
         </div>
-        <ProgressBar percent={percent} partial={detalhe.parcial} color={cores.gradiente} />
-      </div>
-      <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
-        {feitos} de {e.requirements.length} requisitos concluídos
-      </p>
-      {cert && (
-        <div className="mt-3 p-2 rounded-lg text-sm" style={{ backgroundColor: 'var(--color-secondary-a08)', border: '1px solid var(--color-secondary-a20)' }}>
-          <span className="font-semibold" style={{ color: 'var(--color-secondary)' }}><MarcaEmTexto marca="token" /> emitido!</span><br />
-          <span className="text-xs font-mono" style={{ color: 'var(--color-text-dim)' }}>{cert.code.substring(0, 16)}...</span>
+        <div className="mb-3">
+          <div className="flex justify-between text-sm mb-1">
+            <span style={{ color: 'var(--color-text-muted)' }}>Progresso</span>
+            <span className="font-semibold" style={{ color: corDoPercentual(percent) }}>{percent}%</span>
+          </div>
+          <ProgressBar percent={percent} partial={detalhe.parcial} color={cores.gradiente} />
         </div>
-      )}
-    </Link>
+        <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>
+          {feitos} de {e.requirements.length} requisitos concluídos
+        </p>
+      </Link>
+      {cert && <TokenNoCartao cert={cert} />}
+    </div>
   );
 }
 
@@ -238,7 +246,9 @@ export default function DashboardPage() {
             <Award className="w-5 h-5" style={{ color: 'var(--color-secondary)' }} /> Suas Certificações
           </h2>
           <div className="grid md:grid-cols-2 gap-4">
-            {certifications.map(cert => (
+            {certifications.map(cert => {
+              const percurso = percursoDoCertificado(cert.curriculum_code);
+              return (
               <Link key={cert.id} to={`/certificado/${cert.code}`}
                 className="block p-4 rounded-lg transition group"
                 style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)', transition: 'border-color 0.2s' }}
@@ -246,22 +256,28 @@ export default function DashboardPage() {
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}>
                 <div className="flex items-center gap-3">
                   <Award className="w-8 h-8 group-hover:scale-110 transition" style={{ color: 'var(--color-secondary)' }} />
+                  {/*
+                    Pelo código do percurso, e pelos **dois** currículos.
+
+                    Era `getSpecialty(code)`, que só conhece trilha: o
+                    certificado de uma vereda caía no `??` e a linha saía
+                    escrita "CC001", só o código, ao lado de "AP034 Internet".
+                    Quem percorreu a vereda inteira via o documento dela sem
+                    nome próprio, na única tela que lista os certificados.
+
+                    `percursoDoCertificado` já respondia pelos dois — é ela que
+                    a página pública usa — e agora escreve o par por
+                    `nomeCompleto`, então as duas linhas saem no mesmo formato.
+                  */}
                   <div className="flex-1 min-w-0">
-                    {/* Pelo código da trilha: com três especialidades, "fundamental"
-                        deixou de identificar uma delas, e um certificado da AP041
-                        apareceria escrito como se fosse de Internet. */}
-                    <p className="font-semibold">
-                      {(() => {
-                        const e = getSpecialty(cert.curriculum_code);
-                        return e ? nomeCompleto(e) : cert.curriculum_code;
-                      })()}
-                    </p>
+                    <p className="font-semibold">{percurso.nome}</p>
                     <p className="text-xs font-mono" style={{ color: 'var(--color-text-dim)' }}>{cert.code}</p>
                   </div>
                   <ArrowRight className="w-4 h-4 group-hover:transition" style={{ color: 'var(--color-text-faint)' }} />
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

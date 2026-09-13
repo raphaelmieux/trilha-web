@@ -2,6 +2,9 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { existsSync } from 'node:fs';
 import { getOpenSpecialties } from '../curriculum';
 import { comoCertificadoVerificado, codigoDaArte, percursoDoCertificado } from './certificados';
+import { getSpecialty } from '../curriculum';
+import { getVereda } from '../curriculum/veredas';
+import { nomeCompleto } from '../types';
 import { VEREDAS } from '../curriculum/veredas';
 import type { RetornoDe } from '../types';
 
@@ -93,16 +96,29 @@ describe('codigoDaArte', () => {
 describe('percursoDoCertificado', () => {
   it('nomeia a trilha e diz que é trilha', () => {
     expect(percursoDoCertificado('AP041')).toEqual({
-      nome: 'AP041 — Computação 1', tipo: 'trilha',
+      nome: 'AP041 Computação 1', tipo: 'trilha',
     });
   });
 
   /* A tela pública imprimia o código cru para uma vereda, e logo abaixo
-     "Nível: Básico" — grau que vereda não tem. */
+     "Nível: Básico" — grau que vereda não tem. O painel de certificações tinha
+     a mesma falta: "CC001" ao lado de "AP034 Internet". */
   it('nomeia a vereda e diz que é vereda', () => {
     expect(percursoDoCertificado('CC-FE001')).toEqual({
-      nome: 'CC-FE001 — HTML', tipo: 'vereda',
+      nome: 'CC-FE001 HTML', tipo: 'vereda',
     });
+  });
+
+  /*
+    O par é o de `nomeCompleto`, e não um montado aqui. Era `código — nome`,
+    com travessão, e nenhuma outra tela escreve assim: no painel de
+    certificações a linha da vereda sairia com um formato e a da trilha com
+    outro, na mesma grade.
+  */
+  it.each(['AP041', 'CC-FE001'])('escreve %s como toda tela escreve', codigo => {
+    const percurso = getSpecialty(codigo) ?? getVereda(codigo);
+    expect(percurso, `${codigo} sumiu do currículo`).toBeDefined();
+    expect(percursoDoCertificado(codigo).nome).toBe(nomeCompleto(percurso!));
   });
 
   it('devolve o código cru para o que não reconhece, e assume nada', () => {

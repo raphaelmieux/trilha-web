@@ -369,9 +369,45 @@ proporção sai da própria imagem no `onLoad` e a moldura toma a forma dela:
 `border-radius: 50%` numa caixa 1.27:1 é elipse, numa caixa 1:1 é círculo. Sem
 lista de códigos por forma — arte nova, em qualquer proporção, chega certa.
 
+O outro lado dessa decisão é que a **forma passou a ser responsabilidade do
+arquivo**, e não do código. Emblema de trilha entregue quadrado não estoura
+nada: é desenhado como um círculo perfeito, e o que o desbravador lê no painel é
+"isto é uma vereda". O contrário também. Com quarenta e três desenhos no
+repositório e mais por vir, conferir isso a olho é conferir a primeira leva e
+confiar no resto — `formaDaArte.test.ts` lê o cabeçalho de cada PNG e compara a
+proporção com o tipo do percurso. Ela olha só o que já chegou, porque arte é
+condição para abrir e não para anunciar; quem cobra a existência do arquivo são
+as travas de `index.test.ts` e `veredas.test.ts`.
+
 O espaço reservado continua quadrado, para que as duas formas se alinhem na
 mesma coluna. E o selo de estado pousa **sobre a curva, a 45°**, e não no canto
 da caixa: no círculo o canto quase encosta na borda, na elipse fica longe dela.
+
+**Cartão que anuncia um prêmio leva até ele, num clique.** O cartão da trilha
+concluída mostrava "Token.Web() emitido!" num `<div>` dentro do `<Link>` do
+cartão: um aviso com cara de botão, que fazia o que todo o resto do cartão faz —
+abrir a trilha. Quem via o aviso clicava ali esperando o documento, chegava na
+trilha, e só então achava o botão de verdade no cabeçalho. Dois cliques para o
+certificado, e o primeiro deles parecendo o certo, que é pior do que não ter
+botão nenhum: ensina que aquele caminho não funciona.
+
+Por isso o cartão **deixou de ser um `<Link>` só**. Âncora dentro de âncora é
+HTML inválido — o navegador desmancha o encaixe e decide sozinho o que o clique
+de dentro faz —, então a caixa virou um `<div>` com dois links irmãos: um para o
+percurso e outro para o documento. É o mesmo defeito do `<button>` dentro de
+`<button>` que o laboratório de Configurações já teve.
+
+O bloco é um só, em `TokenNoCartao`, e serve à trilha e à vereda: as duas emitem
+o mesmo documento, e duas cópias divergem no primeiro ajuste — foi por serem
+duas telas diferentes que a vereda ficou anos sem ele.
+
+**E a vereda concluída mostrava um cartão de 100% sem prêmio nenhum à vista.**
+Ela nem recebia a certificação: sem `cert`, o emblema nunca chegava a
+`'certificado'` e o bloco não existia. Quem terminava via um cartão igual ao de
+quem não tinha recebido nada, e o Token.Web() só aparecia entrando na vereda. A
+seção passou a ler `useCertifications`, o mesmo gancho do painel — a emissão
+grava o `code` da vereda em `curriculum_code`, então `getByCurriculum` acha o
+dela sem nada novo.
 
 **E o cabeçalho da página usa o `Emblema`, não um `<img>`.** O defeito voltou por
 ali depois de corrigido no cartão: a tela da trilha desenhava a arte por conta
@@ -673,6 +709,18 @@ O cartão bloqueado diz **qual** é a chave, e não só que está trancado: "em
 construção" significa que não há o que fazer, e "conclua a CC001" significa que a
 chave existe e é sua. Dois cartões cinzas sem essa diferença mandam alguém
 esperar por uma coisa que já está pronta.
+
+**O painel de certificações nomeia os dois currículos.** Ele chamava
+`getSpecialty(cert.curriculum_code)` direto, que só conhece trilha: a linha de
+uma vereda caía no `??` e saía escrita "CC001", só o código, ao lado de "AP034
+Internet". Quem percorreu a vereda inteira via o documento dela sem nome
+próprio, na única tela que lista os certificados. É a mesma falta que o painel
+administrativo já teve, consertada lá e não aqui.
+
+`percursoDoCertificado` já respondia pelos dois — é ela que a página pública
+usa — e passou a escrever o par por `nomeCompleto`, e não montado à mão com
+travessão. Sem isso, a vereda ganharia nome e o painel ficaria com dois
+formatos na mesma grade.
 
 **A contabilidade do clube conta vereda também.** O painel administrativo
 listava uma linha por trilha aberta — e vereda não é `Specialty`, então ela
@@ -1132,6 +1180,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
+| `src/components/ui/TokenNoCartao.test.tsx` | cartão que anuncia certificado e não leva a ele, ou que volta a ser uma âncora em volta de tudo |
+| `src/lib/formaDaArte.test.ts` | emblema de trilha quadrado ou de vereda deitado, que troca no painel o tipo do percurso |
 | `src/components/ui/marca.test.tsx` | `Trilha.Web()` ou `Token.Web()` escrito à mão no JSX, parênteses sem o vermelho da plataforma, ou o vermelho do PDF divergindo do token |
 | `src/components/TokenDaVereda.test.tsx` | Token.Web() de vereda que espera clique, que pede duas vezes, ou que reemite um revogado |
 | `src/labs/falhasDePython.test.ts` | painel de falhas que abre respondido, ou recado de erro que entrega a resposta |
