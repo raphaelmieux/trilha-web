@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import BrandMark from './components/ui/BrandMark';
 import AvisoDeVersao from './components/ui/AvisoDeVersao';
+import AvisoDeConquista from './components/AvisoDeConquista';
 import CodigoFonte from './components/ui/CodigoFonte';
 import { AuthProvider } from './context/AuthProvider';
 import { useAuth } from './context/AuthContext';
@@ -305,6 +306,8 @@ export default function App() {
             at this level would hide the ambient globe texture behind the app. */}
         <div className="min-h-screen">
           <NavBar />
+          {/* Fora das rotas: a conquista pode cair em qualquer tela. */}
+          <AvisoDeConquista />
           <AppRoutes />
           {/* Fora das rotas, e por obrigação: a AGPL §13 pede que quem usa o
               programa pela rede tenha como obter a fonte. Uma tela sem o link

@@ -7,7 +7,14 @@ import {
   diaEmBrasilia, horaEmBrasilia, diaDaSemanaEmBrasilia,
   diasDeAtividade, melhorOfensiva,
 } from './ofensiva';
+import {
+  anunciarConquistas,
+  type ContextoDaConquista, type GatilhoDaConquista, type InsigniaConquistada,
+} from './conquista';
+import { classeCanonica, NIVEIS_DA_INSIGNIA } from './nivelDaInsignia';
+import { umDe } from '../types';
 import type { LabType } from '../types';
+import type { Json } from '../types/database';
 
 // Deliberately does not import from progress.ts (which will call evaluateBadges
 // after every completion) to avoid a circular module dependency — this fetches its
@@ -143,10 +150,24 @@ export async function montarResumo(userId: string): Promise<ResumoDoDesbravador>
 // anything newly earned. Safe to call redundantly — already-earned badges are
 // skipped, so calling this from two places per user action just means a couple of
 // extra reads, never a duplicate award.
-export async function evaluateBadges(userId: string): Promise<void> {
-  const { data: catalog } = await supabase.from('badges').select('id, code');
-  if (!catalog || catalog.length === 0) return;
-  const codeToId = new Map(catalog.map(b => [b.code as string, b.id as string]));
+export async function evaluateBadges(
+  userId: string,
+  /*
+    O que estava acontecendo quando esta avaliação foi disparada.
+
+    Esta função pergunta "o que está verdadeiro agora?", e não "o que acabou
+    de acontecer" — então ela não teria como saber, sozinha, qual ação fez a
+    insígnia cair nem em que percurso a pessoa estava. Quem sabe isso é quem
+    chama, e é por isso que o gatilho desce por parâmetro em vez de ser
+    adivinhado depois.
+  */
+  gatilho?: GatilhoDaConquista,
+): Promise<InsigniaConquistada[]> {
+  const { data: catalog } = await supabase
+    .from('badges')
+    .select('id, code, name, description, icon, tier');
+  if (!catalog || catalog.length === 0) return [];
+  const porCodigo = new Map(catalog.map(b => [b.code as string, b]));
 
   const { data: earned } = await supabase.from('user_badges').select('badge_id').eq('user_id', userId);
   const earnedIds = new Set((earned || []).map(e => e.badge_id as string));
@@ -155,11 +176,40 @@ export async function evaluateBadges(userId: string): Promise<void> {
 
   /* Um código sem linha na tabela é ignorado sem erro: é o que permite escrever
      a insígnia no catálogo antes de a migration que a semeia ser aplicada. */
-  const newRows = insigniasConquistadas(resumo)
-    .map(code => codeToId.get(code))
-    .filter((id): id is string => !!id && !earnedIds.has(id))
-    .map(badge_id => ({ user_id: userId, badge_id }));
+  const novas = insigniasConquistadas(resumo)
+    .map(code => porCodigo.get(code))
+    .filter((b): b is NonNullable<typeof b> => !!b && !earnedIds.has(b.id as string));
 
-  if (newRows.length === 0) return;
-  await supabase.from('user_badges').insert(newRows);
+  if (novas.length === 0) return [];
+
+  /* Só o que tem valor vai para o jsonb: um objeto com três chaves nulas
+     ocuparia espaço para dizer exatamente o que `{}` já diz. */
+  const contexto: ContextoDaConquista = Object.fromEntries(
+    Object.entries(gatilho ?? {}).filter(([, v]) => !!v),
+  );
+
+  const { error } = await supabase.from('user_badges').insert(
+    novas.map(b => ({ user_id: userId, badge_id: b.id as string, context: contexto as Json })),
+  );
+  /* Gravou? Então anuncia. Anunciar antes de gravar mostraria na tela uma
+     conquista que o banco recusou — e ela sumiria no recarregar seguinte,
+     sem nada explicando. */
+  if (error) {
+    console.error('evaluateBadges insert error:', error);
+    return [];
+  }
+
+  const conquistadas: InsigniaConquistada[] = novas.map(b => ({
+    id: b.id as string,
+    code: b.code as string,
+    name: b.name as string,
+    description: b.description as string,
+    icon: b.icon as string,
+    tier: umDe(NIVEIS_DA_INSIGNIA, classeCanonica(b.tier as string) ?? '', 'amigo'),
+    conquistadaEm: new Date().toISOString(),
+    contexto,
+  }));
+
+  anunciarConquistas(conquistadas);
+  return conquistadas;
 }

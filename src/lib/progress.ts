@@ -153,6 +153,30 @@ export async function registrarConclusaoDeLicao(
     answers: [],
     completed_at: new Date().toISOString(),
   });
+  /*
+    Daqui sai o gatilho mais rico que a plataforma tem: o código da lição diz
+    a lição **e** o percurso, porque o código é `AP044.3-L2` — o percurso é o
+    que vem antes do ponto. Sem isto a insígnia saberia o dia e não saberia o
+    lugar, que é metade do que a pessoa quer ler depois.
+  */
+  evaluateBadges(userId, {
+    evento: 'lesson_completed',
+    licao: lessonCode,
+    percurso: percursoDoCodigoDaLicao(lessonCode),
+  }).catch(() => {});
+}
+
+/*
+  O percurso que um código de lição nomeia.
+
+  Os códigos são `AP044.3-L2` nas trilhas e `CC002-M1-L1` nas veredas — o
+  percurso é o primeiro pedaço nos dois, separado por ponto ou por traço. Não
+  há tabela a consultar para isto, e inventar uma consulta para reler o que o
+  próprio código já diz seria ida à rede por nada.
+*/
+export function percursoDoCodigoDaLicao(lessonCode: string): string | undefined {
+  const primeiro = lessonCode.split(/[.-]/)[0]?.trim();
+  return primeiro || undefined;
 }
 
 /** Os códigos das lições que a pessoa concluiu de fato. */
@@ -316,7 +340,7 @@ export async function upsertRequirementProgress(
     }, { onConflict: 'user_id,requirement_id' });
 
   if (error) console.error('upsertRequirementProgress error:', error);
-  else evaluateBadges(userId).catch(() => {});
+  else evaluateBadges(userId, { evento: 'requirement_progress' }).catch(() => {});
 }
 
 export async function logActivity(
