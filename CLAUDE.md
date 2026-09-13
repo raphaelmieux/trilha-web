@@ -208,6 +208,21 @@ E a conta de dia é `Date.UTC`, nunca `Date.now() - 86400000`: 1º de março
 menos um dia é 28 ou 29 de fevereiro, e nenhuma subtração de milissegundos
 sabe disso.
 
+**Tentativa reprovada não é módulo vencido.** O laboratório grava o evento
+depois do `setCompleted`, e a teoria da vereda só chama o registro acima do
+`LIMIAR_DOMINIO` — os dois só existem vencidos. A lição de trilha e a prova
+final, não: elas gravam **toda** tentativa, com a nota junto. Sem o corte,
+errar tudo numa lição valia um dia de ofensiva, e "completou um módulo"
+passava a querer dizer "abriu e respondeu qualquer coisa", que é a
+autodeclaração que a plataforma inteira evita. A nota sai da metadata que já
+era gravada, então nada novo é escrito e o corte vale para o histórico.
+
+Por causa disso o `LIMIAR_DOMINIO` saiu de `progress.ts` para
+`limiarDeDominio.ts`, e continua sendo reexportado de lá. `progress.ts` importa
+a conta de dia de `ofensiva.ts`, e `gamification.ts` também lê a ofensiva: as
+três se fechariam em laço. Ciclo de ESM não estoura — devolve `undefined` no
+meio da inicialização, e limiar `undefined` reprovaria toda lição em silêncio.
+
 **A lista de eventos que contam existe duas vezes, e é conferida.** O painel
 calcula no navegador e o ranking do clube calcula no Postgres — `leaderboard`
 cruza dados de todo mundo e roda `security definer`, então a conta dele tem de

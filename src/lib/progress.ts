@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { evaluateBadges } from './gamification';
 import { diaEmBrasilia, diaAnterior } from './ofensiva';
+import { LIMIAR_DOMINIO } from './limiarDeDominio';
 import { umDe, STATUS_DO_REQUISITO } from '../types';
 import type { Json, RequirementStatus } from '../types';
 
@@ -17,19 +18,13 @@ export interface RequirementProgress {
 
 export type ProgressMap = Record<string, RequirementProgress>;
 
-/**
- * Acerto mínimo para um requisito contar como cumprido.
- *
- * Era 80%, e uma lição de 8 questões exigia 7 acertos — 6 de 8 reprovava por
- * uma questão. Nas primeiras 42 conclusões registradas, 17 caíram em "a
- * recuperar", a maioria exatamente nessa borda. A 75%, 6 de 8 passa e 5 de 8
- * continua pendente.
- *
- * A prova final usa o mesmo número (ver FinalExam), para não haver duas réguas
- * no mesmo percurso: seria estranho concluir todos os requisitos a 75% e depois
- * esbarrar num corte mais alto na última etapa.
- */
-export const LIMIAR_DOMINIO = 75;
+/*
+  O limiar mora em `limiarDeDominio.ts` e é reexportado daqui, que é de onde
+  todo mundo sempre o importou. Ele saiu porque a ofensiva passou a precisar
+  dele e este arquivo importa a conta de dia dela — os dois se importariam em
+  círculo. O motivo inteiro está escrito lá.
+*/
+export { LIMIAR_DOMINIO } from './limiarDeDominio';
 
 export function calculateMastery(
   correct: number,

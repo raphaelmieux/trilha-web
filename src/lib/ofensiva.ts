@@ -32,7 +32,8 @@
  * histórico de quem já percorreu.
  */
 
-import type { EventoDeAtividade } from './atividade';
+import { objeto, type EventoDeAtividade } from './atividade';
+import { LIMIAR_DOMINIO } from './limiarDeDominio';
 
 /*
   O fuso é o de Brasília, e ele é dito pelo nome — não por "-3".
@@ -185,6 +186,33 @@ export const EVENTOS_DA_OFENSIVA: readonly string[] = [
 const CONTA_PARA_A_OFENSIVA = new Set(EVENTOS_DA_OFENSIVA);
 
 /**
+ * Este evento é um módulo **vencido**?
+ *
+ * Não basta o tipo. O laboratório e a lição de vereda só gravam ao vencer — o
+ * laboratório escreve depois do `setCompleted`, e a teoria da vereda só chama
+ * o registro acima do `LIMIAR_DOMINIO` —, mas a lição de trilha e a prova
+ * final gravam **toda tentativa**, reprovada inclusive. Sem este corte, errar
+ * tudo numa lição valia um dia de ofensiva, e "completou um módulo" passava a
+ * significar "abriu e respondeu qualquer coisa".
+ *
+ * A nota sai da própria metadata, que sempre trouxe `score` e `total`: nada
+ * novo é gravado, e o corte vale para trás, para o histórico que já existe.
+ * Quem não traz os dois é evento que só existe quando foi vencido — passa.
+ */
+function moduloVencido(e: EventoDeAtividade): boolean {
+  const m = objeto(e.metadata);
+  const { score, total } = m;
+  if (typeof score !== 'number' || typeof total !== 'number') return true;
+  /*
+    Prova de zero questão não é aprovação: a divisão daria `NaN`, e `NaN >= x`
+    é falso — mas a conta só é feita depois de o total ser positivo, para não
+    depender de como o `NaN` se compara.
+  */
+  if (total <= 0) return false;
+  return (score / total) * 100 >= LIMIAR_DOMINIO;
+}
+
+/**
  * Os dias distintos, em Brasília, em que houve atividade que conta.
  *
  * Distintos porque a ofensiva conta **dias**, e não exercícios: uma lição com
@@ -195,6 +223,7 @@ export function diasDeAtividade(eventos: readonly EventoDeAtividade[]): string[]
   const dias = new Set<string>();
   for (const e of eventos) {
     if (!e.created_at || !CONTA_PARA_A_OFENSIVA.has(e.event_type)) continue;
+    if (!moduloVencido(e)) continue;
     const dia = diaEmBrasilia(e.created_at);
     if (dia) dias.add(dia);
   }
