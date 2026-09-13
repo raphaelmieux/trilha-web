@@ -7,6 +7,7 @@ import { getOpenSpecialties } from '../curriculum';
 import { veredasAbertas, codigoDaInsigniaDaVereda } from '../curriculum/veredas';
 import { hasIcon, RAIO_DA_TINTA, iconeCanonico } from './badgeIcons';
 import { laboratorioDoEvento, LABORATORIO_DO_EVENTO } from './atividade';
+import { catalogoSemeado } from '../../supabase/migrations/catalogoSemeado';
 
 /* O evento que cada laboratório grava ao concluir, invertido do mapa. */
 const EVENTO_DA_LICAO: Record<string, string> = Object.fromEntries(
@@ -23,43 +24,6 @@ const EVENTO_DA_LICAO: Record<string, string> = Object.fromEntries(
   trilha, que é justamente o que este repositório proíbe.
 */
 const DIR_MIGRATIONS = 'supabase/migrations';
-
-interface LinhaSemeada { name: string; description: string; icon: string; tier: string }
-
-/**
- * Cada insígnia semeada como o banco vai guardá-la: nome, descrição, ícone e
- * classe.
- *
- * Lê a tupla inteira, e não só o código: é a diferença entre saber que a linha
- * existe e saber que ela diz a mesma coisa que o catálogo.
- *
- * Os arquivos são lidos **em ordem de nome**, e o último a falar vence — que é
- * o que o Postgres faz com o `ON CONFLICT (code) DO UPDATE` com que cada seed
- * termina. Uma migration de correção que repita a linha corrigida é lida aqui
- * sem nada de especial; uma escrita como `UPDATE badges SET name = ...` seria
- * invisível para esta leitura, e está dito no cabeçalho da que corrigiu os
- * nomes por extenso.
- */
-function tuplasSemeadas(): Map<string, LinhaSemeada> {
-  const linhas = new Map<string, LinhaSemeada>();
-  for (const arquivo of readdirSync(DIR_MIGRATIONS).filter(f => f.endsWith('.sql')).sort()) {
-    const sql = readFileSync(join(DIR_MIGRATIONS, arquivo), 'utf8');
-    for (const bloco of sql.split(/INSERT INTO badges/i).slice(1)) {
-      const valores = bloco.split(';')[0];
-      /* A tupla ocupa uma ou três linhas conforme o arquivo, então a captura
-         atravessa quebra de linha; as aspas dobradas do SQL viram uma só. */
-      const tupla = /\( *'([a-z0-9_]+)' *,\s*'((?:[^']|'')*)' *,\s*'((?:[^']|'')*)' *,\s*'([a-z_]+)' *,\s*'([a-z_]+)'/g;
-      for (const m of valores.matchAll(tupla)) {
-        linhas.set(m[1], {
-          name: m[2].replace(/''/g, "'"),
-          description: m[3].replace(/''/g, "'"),
-          icon: m[4], tier: m[5],
-        });
-      }
-    }
-  }
-  return linhas;
-}
 
 function insigniasSemeadas(): Set<string> {
   const codigos = new Set<string>();
@@ -117,7 +81,7 @@ describe('o catálogo', () => {
     nos dois lados.
   */
   it('o tier e o ícone semeados são os do catálogo', () => {
-    const semeado = tuplasSemeadas();
+    const semeado = catalogoSemeado();
     const divergentes = INSIGNIAS
       .filter(i => semeado.has(i.code))
       .map(i => ({ code: i.code, banco: semeado.get(i.code)!, catalogo: { icon: i.icone, tier: i.tier } }))
@@ -145,7 +109,7 @@ describe('o catálogo', () => {
     meio da escada.
   */
   it('o nome e a descrição semeados são os do catálogo', () => {
-    const semeado = tuplasSemeadas();
+    const semeado = catalogoSemeado();
     const divergentes = INSIGNIAS
       .filter(i => semeado.has(i.code))
       .map(i => ({ code: i.code, banco: semeado.get(i.code)!, catalogo: { name: i.nome, description: i.descricao } }))
@@ -160,7 +124,7 @@ describe('o catálogo', () => {
 
   /* Um apagador que não achasse nada aprovaria qualquer divergência, calado. */
   it('acha as tuplas semeadas para comparar', () => {
-    expect(tuplasSemeadas().size).toBeGreaterThan(100);
+    expect(catalogoSemeado().size).toBeGreaterThan(100);
   });
 
   it('todo ícone tem o raio da tinta medido', () => {

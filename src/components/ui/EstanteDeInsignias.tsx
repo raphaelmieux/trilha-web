@@ -58,11 +58,20 @@ export default function EstanteDeInsignias({ badges, total, posicoes }: {
         <h2 className="text-sm font-bold" style={{ color: 'var(--color-text-soft)' }}>
           {badges.length > 0 ? `Suas insígnias (${badges.length})` : 'Suas insígnias'}
         </h2>
-        {faltam > 0 && badges.length > 0 && (
-          <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-            faltam {faltam} para completar a estante
-          </span>
-        )}
+        {/*
+          O que falta continua sendo número aqui, e vira porta.
+
+          Desenhar as cento e vinte que faltam neste cartão transformaria o
+          painel numa lista de pendências em cima de quem só queria estudar —
+          é a mesma decisão de mostrar o topo de cada família e não as noventa
+          e uma. O lugar de ver os vazios é a Estante, onde quem entrou foi ver
+          exatamente isso.
+        */}
+        <Link to="/estante" className="text-xs transition hover:opacity-80" style={{ color: 'var(--color-text-muted)' }}>
+          {faltam > 0 && badges.length > 0
+            ? `faltam ${faltam} — ver a estante`
+            : 'ver a estante'}
+        </Link>
       </div>
 
       {badges.length === 0 ? (

@@ -35,7 +35,20 @@ const MEDIDAS = { sm: 30, md: 44, lg: 64 } as const;
  * no preenchimento e o glifo em branco ou quase-preto — o que medir mais —,
  * nenhuma classe fica abaixo de 5,2:1.
  */
-export default function BadgeIcon({ badge, size = 'md' }: { badge: Badge; size?: 'sm' | 'md' | 'lg' }) {
+export default function BadgeIcon({ badge, size = 'md', rotulo }: {
+  badge: Badge;
+  size?: 'sm' | 'md' | 'lg';
+  /*
+    O nome acessível, quando o nome da insígnia não basta.
+
+    Em quase toda tela só aparece o que foi conquistado, e aí o nome diz tudo.
+    Na Estante não: lá o conquistado e o que falta ficam lado a lado, e "Primeiro
+    Passo" sozinho não distingue os dois para quem navega por leitor de tela —
+    a diferença está só no preenchimento, que é informação visual pura. O
+    `title` continua sendo o nome, porque a dica de ferramenta é para quem vê.
+  */
+  rotulo?: string;
+}) {
   const nomeDoIcone = iconeCanonico(badge.icon);
   const altura = MEDIDAS[size];
 
@@ -59,7 +72,7 @@ export default function BadgeIcon({ badge, size = 'md' }: { badge: Badge; size?:
       height={altura}
       className="flex-shrink-0"
       role="img"
-      aria-label={badge.name}
+      aria-label={rotulo ?? badge.name}
     >
       <title>{badge.name}</title>
       {semClasse

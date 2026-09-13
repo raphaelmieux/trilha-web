@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { catalogoSemeado, deletesDeInsignia } from './catalogoSemeado';
 
 /*
   Trava contra migration que o Postgres recusa antes de executar.
@@ -260,5 +261,38 @@ describe('apagar insígnia não apaga o que alguém conquistou', () => {
      DELETE. Se ele sumir da lista, alguém mexeu no apagador. */
   it('acha o arquivo que apaga insígnia', () => {
     expect(comDelete.length).toBeGreaterThan(0);
+  });
+});
+
+
+/*
+  Todo `DELETE FROM badges` é entendido pelo leitor do catálogo.
+
+  `catalogoSemeado()` reproduz, sem subir Postgres, o que a tabela `badges`
+  contém depois de todas as migrations — e a estante desenha um lugar vazio
+  para cada linha que ele devolve. Um DELETE escrito noutra forma
+  (`WHERE code = 'x'`, um subselect) passaria batido por ele, e a insígnia
+  aposentada ganharia prateleira para sempre: um lugar vazio que ninguém pode
+  preencher, numa página que existe justamente para dizer o que falta.
+
+  Nada disso estoura. A estante fica bonita, completa, com um buraco a mais.
+*/
+describe('o leitor do catálogo acompanha as migrations', () => {
+  it('entende todo DELETE FROM badges que existe', () => {
+    const { total, entendidos } = deletesDeInsignia();
+    expect(entendidos,
+      'existe um DELETE FROM badges numa forma que catalogoSemeado() não lê — '
+      + "ele só entende `WHERE code IN ('a', 'b')`. A insígnia apagada "
+      + 'continuaria com lugar reservado na estante.',
+    ).toBe(total);
+  });
+
+  /* E o leitor de fato apaga: sem isso a trava acima passaria num leitor que
+     reconhecesse o DELETE e não fizesse nada com ele. */
+  it('e as duas aposentadas não estão mais no catálogo', () => {
+    const catalogo = catalogoSemeado();
+    expect(catalogo.has('mini_html')).toBe(false);
+    expect(catalogo.has('lab_image_lab')).toBe(false);
+    expect(catalogo.has('vereda_html'), 'apagou demais').toBe(true);
   });
 });
