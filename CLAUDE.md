@@ -163,6 +163,64 @@ critério mora em `src/lib/insignias.ts`; a linha, na migration do catálogo. Ao
 abrir trilha nova, o código nasce sozinho (`codigoDaInsigniaDaTrilha`), mas a
 linha ainda é à mão — `src/lib/insignias.test.ts` cobra.
 
+**Número guardado não responde por "hoje".** A ofensiva — dias seguidos de
+atividade — ficou meses parada em "2 dias", e não era conta errada: era conta
+que ninguém refazia. `enrollments.streak_days` era escrita na hora da
+atividade e lida na tela, e número guardado só muda quando alguém o muda, então
+quem parava de estudar continuava vendo a ofensiva do último dia em que
+estudou, para sempre. Nada disso estoura: o contador mostra um número
+plausível, que é o que se espera de um contador funcionando.
+
+Zerar pedia alguém rodando à meia-noite, e não há onde — o frontend é estático
+no Pages e não existe agendador neste Supabase. Hoje ela se **deriva na
+leitura**, em `src/lib/ofensiva.ts`, dos eventos datados que já existem.
+Parar de estudar zera sozinho, sem nada rodando enquanto ninguém olha.
+
+**A ofensiva é da pessoa, e a matrícula é da trilha.** `enrollments` tem uma
+linha por trilha (`UNIQUE(user_id, specialty_id)`), então `streak_days` era a
+sequência *dentro de uma trilha*, e a tela mostrava a maior entre elas. Quem
+estudasse AP034 na segunda e AP042 na terça tinha duas matrículas com
+sequência 1 e via **1** — dois dias seguidos contados como um. A regra é
+"qualquer módulo na plataforma", e quem responde por "qualquer" é
+`activity_events`, que é da pessoa.
+
+Por tabela nenhuma nova: é a mesma decisão de "lição vencida é um evento". De
+lambuja, a **vereda passou a contar** — ela não tem linha em `specialties`,
+logo nunca teve matrícula onde marcar dia, e vencer a teoria de uma vereda não
+mexia na ofensiva. E o histórico de quem já percorreu entra junto, porque os
+eventos sempre estiveram lá.
+
+**A virada do dia é meia-noite em Brasília, e o fuso se diz pelo nome.**
+`new Date().toISOString().split('T')[0]` é o dia em **UTC**, que vira às 21h
+daqui: quem estudava às 20h e voltava às 22h da mesma noite ganhava dois dias
+por uma noite só, e quem estuda à noite — que é quando o clube se reúne —
+vivia um dia à frente do calendário, com toda comparação a "ontem" caindo no
+lugar errado. O fuso é `America/Sao_Paulo` por `Intl`, e não `-3` escrito à
+mão: o Brasil acabou com o horário de verão em 2019, mas propostas de trazê-lo
+de volta aparecem, e um `-3` erraria calado quatro meses por ano.
+
+Eram **três** definições de dia na mesma base: UTC na ofensiva, o fuso do
+aparelho em `diasAtivos`/`horas`/`diasDaSemana`, e nenhuma delas Brasília — as
+insígnias de horário premiavam a configuração da máquina do clube. Hoje é uma
+só, e `ofensiva.ts` é dona dela.
+
+E a conta de dia é `Date.UTC`, nunca `Date.now() - 86400000`: 1º de março
+menos um dia é 28 ou 29 de fevereiro, e nenhuma subtração de milissegundos
+sabe disso.
+
+**A lista de eventos que contam existe duas vezes, e é conferida.** O painel
+calcula no navegador e o ranking do clube calcula no Postgres — `leaderboard`
+cruza dados de todo mundo e roda `security definer`, então a conta dele tem de
+acontecer lá. `EVENTOS_DA_OFENSIVA` e `public.eventos_da_ofensiva()` são a
+mesma lista em dois lugares, e duas cópias divergem no primeiro ajuste: o
+clube veria dois números para a mesma pessoa na mesma tarde, nenhum com cara
+de errado. `ofensiva.test.ts` lê o SQL publicado e compara nome por nome — e
+lê também toda chamada de `logActivity` do repositório, cobrando que cada
+evento esteja classificado como módulo vencido ou como passo do meio do
+caminho (`text_saved`, `mail_sent`). Laboratório novo reprova ali até alguém
+decidir de que lado ele fica; sem isso a ofensiva não andaria na lição dele e
+nada mais reprovaria.
+
 **Laboratório que abre resolvido não ensina nada.** Já aconteceu duas vezes, e
 das duas o erro é invisível de dentro: o painel mostra tarefas concluídas, que é
 exatamente o que se espera de um laboratório funcionando.
@@ -1201,6 +1259,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
 | `src/components/ui/TokenNoCartao.test.tsx` | cartão que anuncia certificado e não leva a ele, ou que volta a ser uma âncora em volta de tudo |
 | `src/lib/formaDaArte.test.ts` | emblema de trilha quadrado ou de vereda deitado, que troca no painel o tipo do percurso |
+| `src/lib/ofensiva.test.ts` | evento de laboratório que ninguém classificou, e que por isso não faria a ofensiva andar |
+| `src/lib/ofensiva.test.ts` | a lista de eventos do banco divergindo da do navegador, que daria duas ofensivas à mesma pessoa |
 | `src/components/ui/marca.test.tsx` | `Trilha.Web()` ou `Token.Web()` escrito à mão no JSX, parênteses sem o vermelho da plataforma, ou o vermelho do PDF divergindo do token |
 | `src/components/TokenDaVereda.test.tsx` | Token.Web() de vereda que espera clique, que pede duas vezes, ou que reemite um revogado |
 | `src/labs/falhasDePython.test.ts` | painel de falhas que abre respondido, ou recado de erro que entrega a resposta |
