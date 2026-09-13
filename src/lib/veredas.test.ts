@@ -516,40 +516,41 @@ describe('o pré-requisito de cada vereda', () => {
 });
 
 /*
-  A arte é condição para abrir, e não para anunciar.
+  Toda vereda registrada tem emblema e fundo de certificado.
 
-  A regra era a outra: toda vereda registrada tinha de ter emblema e fundo de
-  certificado, inclusive as anunciadas, "porque a arte chega antes do conteúdo
-  para que o cartão anunciado mostre o que vem". Ela valeu enquanto a arte de
-  fato vinha primeiro.
+  A regra foi esta, virou outra, e voltou — e o vaivém é o registro de uma
+  circunstância, não de uma indecisão.
 
-  As dezenove veredas de escritório e de design inverteram a ordem: os
-  requisitos oficiais foram publicados e a arte ainda está sendo desenhada.
-  Cobrar arte para anunciar deixaria duas saídas, e as duas ruins — segurar o
-  registro do percurso inteiro até o último desenho ficar pronto, ou pôr no
-  repositório dezenove imagens de mentira que alguém teria de lembrar de
-  trocar.
-
-  Sem arte o `Emblema` já faz a coisa certa: o `onError` esconde a imagem e
-  fica o espaço reservado com o selo de estado, que é o mesmo lugar que a
-  medalha vai ocupar. O cartão anuncia sem prometer um desenho que não existe.
-
-  Aberta é outra história: quem percorre até o fim recebe um certificado, e
+  Ela valia para as anunciadas também, "porque a arte chega antes do conteúdo
+  para que o cartão anunciado mostre o que vem". As dezenove veredas de
+  escritório e de design inverteram a ordem: os requisitos oficiais saíram e a
+  arte ainda estava sendo desenhada. Cobrar arte para anunciar deixava duas
+  saídas ruins — segurar o registro do percurso até o último desenho ficar
+  pronto, ou pôr no repositório dezenove imagens de mentira que alguém teria de
+  lembrar de trocar. Então a trava passou a valer só para as abertas, onde o
+  que está em jogo é outro: quem percorre até o fim recebe certificado, e
   certificado sem fundo é papel em branco.
+
+  A arte definitiva chegou inteira — as sessenta e quatro, treze trilhas e
+  cinquenta e uma veredas. A exceção acabou junto com o motivo dela.
+
+  O que se ganha voltando é o dia em que alguém registrar a próxima vereda: com
+  o filtro, ela entraria sem arte e ninguém saberia até o dia de abrir, que é
+  quando o desbravador já está dentro. Sem ele, a falta aparece no primeiro
+  `ci.yml`.
 */
 describe('a arte de cada vereda', () => {
-  for (const v of veredasAbertas()) {
+  for (const v of VEREDAS) {
     it(`${v.code} tem emblema e certificado no repositório`, () => {
       expect(existsSync(`public/assets/specialties/${v.code}.png`), 'emblema').toBe(true);
       expect(existsSync(`public/assets/certificates/${v.code}.png`), 'certificado').toBe(true);
     });
   }
 
-  /* Filtro que esvaziasse a lista não seria trava nenhuma: seria a mesma
-     armadilha do "zero link não é zero link quebrado", com a build verde
-     porque não conferiu nada. */
-  it('e há vereda aberta para a trava conferir', () => {
-    expect(veredasAbertas().length).toBeGreaterThan(0);
+  /* Lista vazia não seria trava nenhuma: seria a mesma armadilha do "zero link
+     não é zero link quebrado", com a build verde porque não conferiu nada. */
+  it('e há vereda para a trava conferir', () => {
+    expect(VEREDAS.length).toBeGreaterThan(0);
   });
 });
 

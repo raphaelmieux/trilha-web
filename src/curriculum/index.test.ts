@@ -422,22 +422,31 @@ describe.each(getOpenSpecialties().map(s => [s.code, s] as const))('%s structure
   cartão segue de pé, com um buraco onde deveria estar a insígnia que a pessoa
   vai costurar na faixa.
 
-  Valia para as em construção também, "porque a arte chega antes do conteúdo
-  para que o cartão anunciado mostre o que vem" — e essa ordem se inverteu
-  quando HM079 e HM090 chegaram com os requisitos publicados e a arte ainda
-  por desenhar. Hoje a arte é condição para **abrir**: sem ela o `Emblema` cai
-  no espaço reservado com o selo de estado, que anuncia sem prometer um desenho
-  que não existe; o certificado, esse, não pode sair em branco. A razão inteira
-  está em `src/lib/veredas.test.ts`.
+  A regra já foi esta, virou a outra, e voltou.
+
+  Ela valia para as em construção também, "porque a arte chega antes do
+  conteúdo para que o cartão anunciado mostre o que vem". Essa ordem se
+  inverteu quando HM079 e HM090 chegaram com os requisitos publicados e a arte
+  ainda por desenhar, e passou a valer só para as abertas: cobrar arte para
+  anunciar deixaria duas saídas ruins — segurar o registro do percurso até o
+  último desenho ficar pronto, ou pôr no repositório imagens de mentira que
+  alguém teria de lembrar de trocar.
+
+  A arte definitiva chegou inteira: **as sessenta e quatro** — treze trilhas e
+  cinquenta e uma veredas — têm emblema e fundo de certificado. A exceção
+  acabou junto com o motivo dela, e a regra volta a alcançar toda trilha
+  registrada, anunciada inclusive. O que se ganha é o dia em que alguém
+  registrar a próxima: com o filtro, ela entraria sem arte e ninguém saberia
+  até o dia de abrir.
 */
 describe('a arte de cada trilha', () => {
-  /* Filtro que esvaziasse a lista deixaria a build verde por não ter conferido
-     nada — a armadilha do "zero link não é zero link quebrado". */
-  it('há trilha aberta para a trava conferir', () => {
-    expect(getAllSpecialties().filter(t => !t.emConstrucao).length).toBeGreaterThan(0);
+  /* Lista vazia deixaria a build verde por não ter conferido nada — a
+     armadilha do "zero link não é zero link quebrado". */
+  it('há trilha para a trava conferir', () => {
+    expect(getAllSpecialties().length).toBeGreaterThan(0);
   });
 
-  for (const s of getAllSpecialties().filter(t => !t.emConstrucao)) {
+  for (const s of getAllSpecialties()) {
     it(`${s.code} tem emblema e certificado no repositório`, () => {
       expect(existsSync(`public/assets/specialties/${s.code}.png`), 'emblema').toBe(true);
       expect(existsSync(`public/assets/certificates/${s.code}.png`), 'certificado').toBe(true);

@@ -82,6 +82,18 @@ push seguinte o carrega em silêncio. O `ci.yml` reprova se ele voltar.
 - `public/assets/specialties/<CODIGO>.png` — o emblema, de trilha **e** de
   vereda, na mesma pasta e pelo mesmo componente (`Emblema`).
 - `public/assets/certificates/<CODIGO>.png` — o fundo do certificado.
+
+  **Estas duas pastas são a fonte da verdade da arte.** Quando alguém disser
+  que a arte foi acrescentada, atualizada ou retirada, é aqui que se olha — e
+  só aqui. Repare no nome: `specialties`, sem o "i" de *specialities*, que é o
+  erro de digitação que manda procurar numa pasta que não existe.
+
+  **Não há dicionário ligando código a arquivo, e é decisão.** O caminho é
+  montado a partir do `code` em três lugares — `Emblema`, `CertificateCanvas`
+  e `pdf.ts` —, então arte nova não pede alteração de código nenhuma: basta o
+  arquivo estar na pasta com o nome do percurso. O que se confere depois de uma
+  leva nova é outra coisa: se todo percurso registrado tem as duas imagens, se
+  a forma de cada uma bate com o tipo, e se não sobrou arte sem percurso.
 - `src/lib/` — regras puras, testáveis sem servidor.
 - `src/types/index.ts` — os tipos do domínio, escritos à mão.
 - `src/types/database.ts` — **gerado**, espelha o schema. Não edite: o
@@ -752,26 +764,33 @@ diz é quantas lições, de que metade — teoria ou prática —, e se saiu
 Token.Web(). Vereda com zero lições vencidas não vira linha: um relatório de
 aprendizagem fala do que foi feito.
 
-**A arte é condição para abrir, e não para anunciar.** A regra era a outra —
-toda trilha e toda vereda registrada tinha de ter emblema e fundo de
-certificado, inclusive as anunciadas, "porque a arte chega antes do conteúdo
-para que o cartão anunciado mostre o que vem". Valeu enquanto a arte de fato
-vinha primeiro. As dezenove veredas de escritório e de design, e as duas
-especialidades de Artes e Habilidades Manuais, inverteram a ordem: os
-requisitos oficiais foram publicados e a arte ainda está sendo desenhada.
+**Toda trilha e toda vereda registrada tem emblema e fundo de certificado.** A
+regra foi esta, virou "arte é condição para abrir e não para anunciar", e
+voltou — e o vaivém é o registro de uma circunstância, não de uma indecisão.
 
-Cobrar arte para anunciar deixava duas saídas, as duas ruins: segurar o
-registro do percurso inteiro até o último desenho ficar pronto, ou pôr no
-repositório vinte e uma imagens de mentira que alguém teria de lembrar de
-trocar. Sem arte o `Emblema` já faz a coisa certa — o `onError` esconde a
-imagem e fica o espaço reservado com o selo de estado, no tamanho que a medalha
-vai ocupar. Abrir é outra história: quem percorre até o fim recebe certificado,
-e certificado sem fundo é papel em branco.
+Ela valia para as anunciadas também, "porque a arte chega antes do conteúdo
+para que o cartão anunciado mostre o que vem". As dezenove veredas de
+escritório e de design, e as duas especialidades de Artes e Habilidades
+Manuais, inverteram a ordem: os requisitos oficiais saíram e a arte ainda
+estava sendo desenhada. Cobrar arte para anunciar deixava duas saídas ruins —
+segurar o registro do percurso inteiro até o último desenho ficar pronto, ou
+pôr no repositório vinte e uma imagens de mentira que alguém teria de lembrar
+de trocar. Então as travas passaram a filtrar por `emConstrucao`.
 
-As duas travas passaram a filtrar por `emConstrucao`, e as duas ganharam junto
-a guarda contra o vazio: filtro que esvaziasse a lista deixaria a build verde
-por não ter conferido nada, que é a armadilha do "zero link não é zero link
-quebrado" aplicada à própria trava.
+A arte definitiva chegou inteira: **as sessenta e quatro** — treze trilhas e
+cinquenta e uma veredas — têm as duas imagens. A exceção acabou junto com o
+motivo dela, e o que se ganha voltando é o dia em que alguém registrar o
+próximo percurso: com o filtro, ele entraria sem arte e ninguém saberia até o
+dia de abrir, que é quando o desbravador já está dentro. Sem ele, a falta
+aparece no primeiro `ci.yml`.
+
+As duas travas continuam com a guarda contra o vazio: lista vazia deixaria a
+build verde por não ter conferido nada, que é a armadilha do "zero link não é
+zero link quebrado" aplicada à própria trava. E `formaDaArte.test.ts` ganhou a
+dela na mesma volta — ela lia só o que existia, tolerância que virou buraco no
+dia em que as outras duas passaram a cobrar de todo mundo: arte que sumisse
+encolheria a lista de formas em silêncio. Hoje ela confere a lista contra o
+registro inteiro antes de medir qualquer coisa.
 
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
