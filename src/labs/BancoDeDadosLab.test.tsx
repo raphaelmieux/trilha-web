@@ -229,3 +229,84 @@ describe('a agenda do clube se monta clicando', () => {
     expect(feitas()).not.toContain('relatorio');
   });
 });
+
+/*
+  A classificação age na coluna escolhida, e diz qual foi.
+
+  Este bloco existe por um defeito que passou por toda a bateria acima. O teste
+  do percurso feliz clica no cabeçalho do Nome antes de Crescente, então nunca
+  viu o que acontecia sem esse clique — e sem ele a faixa ordenava pela linha
+  que ficara selecionada **no modo de estrutura**, duas tarefas antes, ao
+  escrever a regra de validação do E-mail.
+
+  O resultado era a pior forma de falhar: a tabela reordenava, o cabeçalho
+  ganhava a seta, a tela escrevia "Ordenado. Nada foi redigitado…" — e a tarefa
+  de pôr a agenda em ordem alfabética continuava vermelha, sem nada na tela
+  dizendo por quê. Laboratório que ninguém consegue vencer é pior do que um que
+  abre resolvido.
+*/
+describe('classificar age na coluna escolhida', () => {
+  /** Deixa a agenda importada e consertada, na guia Página Inicial. */
+  const ateAFolhaDeDados = () => {
+    declararOsCampos();
+    escreverARegra();   // seleciona a linha do E-mail no modo de estrutura
+    importarCerto();
+    const recusada = LISTA_DO_CLUBE.find(l =>
+      !temArroba(l[COLUNAS_DA_LISTA.findIndex(c => CAMPO_DA_COLUNA[c] === 'E-mail')]))!;
+    escrever(porRotulo(`E-mail de ${recusada[0]}`), 'elisa.nogueira@exemplo.com', 'e-mail recusado');
+    clicar(porTexto('button', 'Incluir'), 'Incluir');
+    clicar(guia('Página Inicial'), 'guia Página Inicial');
+  };
+
+  /* A seleção do modo de estrutura não atravessa para a folha de dados: são
+     duas escolhas diferentes no Access, e eram uma variável só aqui. */
+  it('não herda a coluna da linha selecionada na estrutura', () => {
+    ateAFolhaDeDados();
+    clicar(porRotulo('Crescente'), 'Crescente');
+
+    expect(container.textContent, 'ordenou sozinho por um campo que ninguém escolheu')
+      .toContain('Escolha antes a coluna');
+    expect(container.textContent).not.toContain('Ordenado por');
+    /* E nada foi ordenado: sem seta em cabeçalho nenhum. */
+    const cabecalhos = [...container.querySelectorAll('.ac-grade th')].map(e => e.textContent ?? '');
+    expect(cabecalhos.some(t => t.includes('▲') || t.includes('▼'))).toBe(false);
+  });
+
+  it('escolhendo o Nome, ordena por Nome e fecha a tarefa', () => {
+    ateAFolhaDeDados();
+    clicar(porRotulo('Coluna Nome'), 'cabeçalho Nome');
+    clicar(porRotulo('Crescente'), 'Crescente');
+
+    expect(container.textContent).toContain('Ordenado por Nome, de A a Z');
+    expect(feitas()).toContain('ordenar');
+  });
+
+  /*
+    Ordenar por outra coluna é uma coisa que o Access faz, então acontece — o
+    que não pode é acontecer calado. O aviso nomeia a coluna, e é por ele que
+    quem esperava ordem alfabética de nomes descobre que ordenou por e-mail.
+  */
+  it('escolhendo outra coluna, ordena por ela e diz qual foi', () => {
+    ateAFolhaDeDados();
+    clicar(porRotulo('Coluna E-mail'), 'cabeçalho E-mail');
+    clicar(porRotulo('Crescente'), 'Crescente');
+
+    expect(container.textContent, 'a tela não disse por qual coluna ordenou')
+      .toContain('Ordenado por E-mail');
+    expect(feitas()).not.toContain('ordenar');
+  });
+
+  /* E a coluna escolhida se vê antes de clicar em Crescente — sem isso a
+     escolha é invisível e o botão age sobre uma decisão que ninguém lembra. */
+  it('mostra na tela qual coluna está escolhida', () => {
+    ateAFolhaDeDados();
+    const marcada = () => [...container.querySelectorAll('.ac-grade th [aria-pressed="true"]')]
+      .map(e => e.textContent?.trim());
+
+    expect(marcada(), 'a folha abriu com uma coluna já marcada').toEqual([]);
+    clicar(porRotulo('Coluna Endereço'), 'cabeçalho Endereço');
+    expect(marcada()).toEqual(['Endereço']);
+    clicar(porRotulo('Coluna Nome'), 'cabeçalho Nome');
+    expect(marcada(), 'duas colunas marcadas ao mesmo tempo').toEqual(['Nome']);
+  });
+});

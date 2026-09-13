@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Shield, Users, Award, CalendarDays, AlertCircle, KeyRound, Copy, X } from 'lucide-react';
+import { Users, Award, CalendarDays, AlertCircle, KeyRound, Copy, X } from 'lucide-react';
 import { MarcaEmTexto } from '../components/ui/BrandMark';
 import { getOpenSpecialties } from '../curriculum';
 import { veredasAbertas } from '../curriculum/veredas';
@@ -98,7 +98,7 @@ export default function AdminPage() {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
         <AlertCircle className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--color-border-hover)' }} />
-        <h1 className="text-xl font-bold mb-2">Acesso Restrito</h1>
+        <h2 className="text-xl font-bold mb-2">Acesso Restrito</h2>
         <p style={{ color: 'var(--color-text-dim)' }}>Esta área é exclusiva para administradores.</p>
         <div className="mt-6 card p-4 text-left text-sm" style={{ backgroundColor: 'var(--color-bg-input)', borderColor: 'var(--color-tertiary-a20)' }}>
           <p className="font-semibold mb-1" style={{ color: 'var(--color-tertiary-light)' }}>Como definir o primeiro administrador:</p>
@@ -212,12 +212,9 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Shield className="w-6 h-6" style={{ color: 'var(--color-primary)' }} /> Painel Administrativo
-        </h1>
-      </div>
-
+      {/* Sem `h1` próprio: este painel é uma guia dentro de Meu Perfil, e a
+          página já tem o dela. Dois `h1` na mesma tela dizem ao leitor de tela
+          que começou outra página, e repetem na tela o que a guia acesa já diz. */}
       <div className="grid md:grid-cols-2 gap-4">
         <div className="card p-4">
           <Users className="w-6 h-6 mb-2" style={{ color: 'var(--color-primary)' }} />

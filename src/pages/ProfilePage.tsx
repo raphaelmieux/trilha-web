@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import ClubPicker, { type ClubeEscolhido } from '../components/ui/ClubPicker';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -9,14 +9,33 @@ import { LoadingState, EmptyState } from '../components/ui/PageState';
 import { SECURITY_QUESTIONS, hashSecurityAnswer } from '../lib/securityQuestions';
 import { User, Lock, Eye, EyeOff, Camera, Shield, Save, CheckCircle2, AlertCircle, Medal, Trophy, KeyRound } from 'lucide-react';
 import { mensagemDoErro } from '../lib/authErrors';
+import AdminPage from './AdminPage';
 import type { FormaDeNome } from '../types';
 
 /* A união mora em types/index.ts, ao lado do CHECK que a sustenta. */
 type PrivacyForm = FormaDeNome;
 
+/*
+  As guias da página, e por que a administração virou uma delas.
+
+  A barra de menu tem largura, e cada item novo tira espaço de outro. Perfil e
+  Admin eram dois itens da barra para duas telas que a mesma pessoa abre pelo
+  mesmo motivo — cuidar da própria conta —, e a de Admin só existia para uma
+  pessoa no clube inteiro. Juntando as duas numa página com guias, a barra
+  ficou com espaço para o que é de todo mundo.
+
+  A guia mora no **endereço**, e não só no estado: `/perfil` e `/perfil/admin`
+  são dois endereços, então o botão voltar do navegador funciona, o link se
+  compartilha, e quem tinha `/admin` nos favoritos continua chegando (a rota
+  antiga redireciona). Guia guardada só em `useState` perde tudo isso sem
+  avisar.
+*/
+const GUIA_DA_ADMINISTRACAO = 'admin';
+
 export default function ProfilePage() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { badges, loading: badgesLoading } = useBadges(profile?.id);
 
@@ -199,6 +218,17 @@ export default function ProfilePage() {
     { value: 'anonymous', label: 'Anônimo', desc: 'Não mostra o nome — apenas "Anônimo"' },
   ];
 
+  const naAdministracao = location.pathname.endsWith(`/${GUIA_DA_ADMINISTRACAO}`);
+  /* A guia só existe para quem é administrador. Quem não é e digitar o
+     endereço continua caindo no aviso de acesso restrito do próprio painel —
+     a guia sumir da tela não é o que protege nada; quem protege é a RLS. */
+  const guias = [
+    { para: '/perfil', rotulo: 'Perfil', icone: User, ativa: !naAdministracao },
+    ...(profile?.is_admin
+      ? [{ para: `/perfil/${GUIA_DA_ADMINISTRACAO}`, rotulo: 'Administração', icone: Shield, ativa: naAdministracao }]
+      : []),
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -206,6 +236,32 @@ export default function ProfilePage() {
           <User className="w-6 h-6" style={{ color: 'var(--color-primary)' }} /> Meu Perfil
         </h1>
       </div>
+
+      {/* Uma guia só não é guia: com uma opção, a fileira vira enfeite que
+          ocupa altura e não decide nada. Ela aparece quando há para onde ir. */}
+      {guias.length > 1 && (
+        <div className="flex gap-1 flex-wrap" role="tablist" aria-label="Seções do perfil"
+          style={{ borderBottom: '1px solid var(--color-border)' }}>
+          {guias.map(({ para, rotulo, icone: Icone, ativa }) => (
+            <Link
+              key={para}
+              to={para}
+              role="tab"
+              aria-selected={ativa}
+              className="text-sm font-medium flex items-center gap-1.5 px-3 py-2 transition-colors"
+              style={{
+                color: ativa ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                borderBottom: `2px solid ${ativa ? 'var(--color-primary)' : 'transparent'}`,
+                marginBottom: -1,
+              }}
+            >
+              <Icone className="w-4 h-4" /> {rotulo}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {naAdministracao ? <AdminPage /> : <>
 
       {error && (
         <div className="card p-4 flex items-center gap-2" style={{ borderColor: 'var(--color-error-a20)', backgroundColor: 'var(--color-error-a10)' }}>
@@ -452,6 +508,8 @@ export default function ProfilePage() {
           Encerrar sessão e sair
         </button>
       </div>
+
+      </>}
     </div>
   );
 }
