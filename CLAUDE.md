@@ -236,6 +236,101 @@ caminho (`text_saved`, `mail_sent`). Laboratório novo reprova ali até alguém
 decidir de que lado ele fica; sem isso a ofensiva não andaria na lição dele e
 nada mais reprovaria.
 
+**A insígnia tem sete classes, e elas são as dos Desbravadores.** Eram bronze,
+prata e ouro — escala de pódio, que não diz nada sobre percurso e não tem
+degrau nenhum entre "comecei" e "terminei". Hoje são Amigo, Companheiro,
+Pesquisador, Pioneiro, Excursionista, Guia e Líder: a única escala de sete que
+o clube não precisa aprender, porque já sabe ordenar de cor.
+
+**Forma e cor, e não só cor.** Cada classe tem um polígono — triângulo para
+cima, triângulo para baixo, losango, pentágono, hexágono, heptágono, octógono
+—, e o número de lados cresce com a classe. Cor sozinha não se lê: quem não
+distingue vermelho de verde via duas insígnias idênticas, e numa estante
+impressa em preto e branco ninguém via nenhuma. É o mesmo motivo de
+`MarcaDaLicao` ter ícone **e** disco.
+
+**A cor preenche a forma; o glifo vai por cima.** A composição era disco
+translúcido com o glifo traçado na cor do nível, e medida contra o cartão da
+plataforma — que é escuro — cinco das sete cores ficavam entre 1,1:1 e 3,0:1.
+O marinho do topo media **1,10:1**, que é invisível. Com a cor no
+preenchimento e o glifo em branco ou quase-preto, nenhuma classe fica abaixo
+de 5,2:1. Qual dos dois se usa sai de comparar as duas contas, e não de um
+limiar de luminosidade: o cinza do Pioneiro fica logo abaixo de qualquer corte
+plausível e receberia branco a 2,7:1.
+
+**O triângulo é quem manda na geometria.** As sete formas têm a mesma altura,
+então o círculo inscrito do triângulo — altura sobre três — é o menor dos
+sete, e é ele que decide o glifo máximo. A 61,8% da altura em diâmetro sobram
+7,9%; acima de 66,7% o desenho sai pelos lados do Amigo e do Companheiro, **e
+só nesses dois** — nas outras cinco continua bonito, que é o que faria ninguém
+perceber. E o glifo se centra no **centro do polígono**, que no triângulo é o
+centroide e não o meio da caixa: centrar na caixa o empurra para fora pela
+ponta.
+
+**"Mesmo tamanho" é o disco que a tinta ocupa, e não o fator de escala.** Os
+catorze desenhos preenchem a caixa de 24 de maneiras muito diferentes — de
+10,00 a 12,81 de raio, 28%. Com um fator único a chama sai visivelmente menor
+que o troféu e a fileira parece desalinhada sem nenhuma conta estar errada.
+Cada glifo é normalizado por `RAIO_DA_TINTA`, e o traço desfaz a escala para
+os catorze saírem com a mesma espessura. Esses números são medidos fora do
+repositório; trocar um ícone por outro de tamanho parecido passa pela trava, e
+aí o número tem de ser remedido à mão.
+
+**O glifo tem uma fonte só, e é a do PDF.** Havia um mapa de componentes do
+lucide na tela e os traçados crus em `badgeIcons.ts` — os mesmos desenhos
+escritos duas vezes. Pior: um componente do lucide renderiza um `<svg>`
+inteiro, e aninhado dentro do `<g>` que escala o glifo ele abriria viewport
+próprio, ignoraria a escala e jogaria o ícone no canto em tamanho fixo. Hoje
+os dois lados desenham de `iconShape`.
+
+**Toda família de conquista vai de ponta a ponta da escala.** São treze
+escadas de sete degraus — requisitos, lições, módulos, laboratórios, ofensiva,
+constância, sem erro, avaliações, nota máxima, trilhas, veredas, Token.Web() e
+XP. Antes cada família tinha o número de marcas que coubesse, e "quinze
+módulos" e "cinquenta lições" eram as duas de ouro sem custar nem de longe o
+mesmo.
+
+As escadas foram montadas **em volta dos limiares que já existiam**: 5, 10, 25
+e 50 lições continuam sendo 5, 10, 25 e 50, com os mesmos códigos e os mesmos
+nomes. Nenhum dos 79 códigos antigos foi aposentado — 36 degraus herdam o que
+havia, 55 são novos. E o topo mira a plataforma **escrita**, e não a de hoje:
+os degraus altos existem antes de serem alcançáveis de propósito, porque é o
+conteúdo que vai subir até eles.
+
+**A classe da insígnia de identidade vem da dificuldade do que ela marca.** A
+trilha pelo nível dela, o laboratório pelo nível da trilha a que pertence — um
+patamar abaixo, porque um laboratório é uma lição dentro dela e não pode valer
+o mesmo que fechá-la —, e a vereda pelo tamanho, que é a única medida honesta
+dela: vereda não tem nível, grava `'basico'` justamente para não reivindicar
+grau nenhum.
+
+**As de horário ficam fora da escala.** Coruja, Madrugador, Fim de Semana e
+Semana Inteira medem **quando** se estuda, e não quanto — não são acúmulo e
+não formam escada. Dar a elas uma das sete fingiria uma ordem que não existe;
+inventar cinco degraus para completar a série seria inventar conquista que
+ninguém pediu. Vão em círculo off-white, a forma que nenhuma classe usa.
+
+**A estante mostra o topo de cada família, e a escada abre no clique.** Com
+treze escadas, quem está adiantado tem dezenas de insígnias, e despejar todas
+daria noventa e uma numa tela — o muro que os trinta e dois cartões de vereda
+já foram uma vez. Na escada aberta o degrau por vencer aparece em contorno
+**com a forma da classe dele**, e não como silhueta genérica: ver que o
+próximo é um pentágono é o que o degrau por vencer tem a dizer.
+
+**O catálogo em TypeScript e o banco são conferidos tupla a tupla.** O `tier`
+de `insignias.ts` **nunca era lido** — a tela lê o do banco —, então os dois
+divergiram em silêncio por meses: `primeira_licao` era `theory` aqui e
+`footprints` na migration; `licoes_5` era `theory` aqui e `layers` lá. A trava
+antiga só conferia que o **código** existia nos dois lados.
+`insignias.test.ts` passou a comparar ícone e classe também.
+
+**Ordem de inicialização não avisa, quebra.** `INSIGNIAS` é um literal
+avaliado quando o módulo carrega, e chama `classeDoLaboratorio` para cada
+laboratório. Com as tabelas de classe declaradas **abaixo** dele, a chamada cai
+na zona morta do `const` e o módulo inteiro estoura com "Cannot access before
+initialization" — em toda tela que mostra insígnia. É a irmã do ciclo de ESM
+que tirou o `LIMIAR_DOMINIO` de `progress.ts`.
+
 **Laboratório que abre resolvido não ensina nada.** Já aconteceu duas vezes, e
 das duas o erro é invisível de dentro: o painel mostra tarefas concluídas, que é
 exatamente o que se espera de um laboratório funcionando.
@@ -1274,6 +1369,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
 | `src/components/ui/TokenNoCartao.test.tsx` | cartão que anuncia certificado e não leva a ele, ou que volta a ser uma âncora em volta de tudo |
 | `src/lib/formaDaArte.test.ts` | emblema de trilha quadrado ou de vereda deitado, que troca no painel o tipo do percurso |
+| `src/lib/formaDaInsignia.test.ts` | glifo maior que o círculo inscrito do triângulo, que vaza só no Amigo e no Companheiro |
+| `src/lib/formaDaInsignia.test.ts` | classe cujo glifo não se lê sobre a própria cor, ou ícone sem raio de tinta medido |
+| `src/lib/insignias.test.ts` | ícone ou classe do catálogo divergindo do que a migration semeia |
 | `src/lib/ofensiva.test.ts` | evento de laboratório que ninguém classificou, e que por isso não faria a ofensiva andar |
 | `src/lib/ofensiva.test.ts` | a lista de eventos do banco divergindo da do navegador, que daria duas ofensivas à mesma pessoa |
 | `src/components/ui/marca.test.tsx` | `Trilha.Web()` ou `Token.Web()` escrito à mão no JSX, parênteses sem o vermelho da plataforma, ou o vermelho do PDF divergindo do token |

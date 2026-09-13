@@ -1,5 +1,8 @@
-import type { LabType } from '../types';
-import { codigoDaInsigniaDaVereda } from '../curriculum/veredas';
+import type { LabType, Specialty } from '../types';
+import { codigoDaInsigniaDaVereda, VEREDAS, licoesDaVereda } from '../curriculum/veredas';
+import { getAllSpecialties } from '../curriculum';
+import { TODOS_OS_DEGRAUS } from './escadasDeInsignia';
+import type { NivelDaInsignia } from './nivelDaInsignia';
 
 /*
  * O catálogo de insígnias, e o que cada uma exige.
@@ -58,7 +61,7 @@ export interface ResumoDoDesbravador {
   veredas: string[];
 }
 
-export type Tier = 'bronze' | 'silver' | 'gold';
+export type Tier = NivelDaInsignia;
 
 export interface Insignia {
   code: string;
@@ -66,15 +69,21 @@ export interface Insignia {
   descricao: string;
   icone: string;
   tier: Tier;
+  /** A família a que ela pertence, ou nada se ela não pertence a escada nenhuma. */
+  familia?: string;
+  /*
+    Fora da escala das sete classes.
+
+    Só as de horário: elas medem **quando** se estuda, não quanto, e não têm
+    ordem interna que justifique classe. A tela as desenha em círculo
+    off-white, que é a forma que nenhuma classe usa — é assim que se lê que
+    elas são de outra natureza. O `tier` delas existe só porque a coluna é
+    NOT NULL, e nada o desenha.
+  */
+  semClasse?: boolean;
   /** Cumpriu? Recebe o resumo já pronto. */
   conquistou: (r: ResumoDoDesbravador) => boolean;
 }
-
-/** Atalho para as insígnias que são só "chegou a N". */
-const marco = (
-  code: string, nome: string, descricao: string, icone: string, tier: Tier,
-  medir: (r: ResumoDoDesbravador) => number, alvo: number,
-): Insignia => ({ code, nome, descricao, icone, tier, conquistou: r => medir(r) >= alvo });
 
 /*
   Um laboratório é uma tarefa inteira, com tela própria e retorno próprio — a
@@ -110,91 +119,136 @@ const LABORATORIOS: [LabType, string, string][] = [
   ['configuracoes_sistema', 'Máquina ajustada', 'Limpou o disco, escolheu os programas padrão e criou um usuário.'],
 ];
 
+/*
+  Estas ficam **acima** de `INSIGNIAS`, e não por estilo.
+
+  O array logo abaixo é um literal avaliado quando o módulo carrega, e ele
+  chama `classeDoLaboratorio` para cada laboratório. Se as tabelas morassem
+  depois dele, a chamada cairia na zona morta do `const` e o módulo inteiro
+  estouraria com "Cannot access before initialization" — em toda tela que
+  mostra insígnia, e só em produção, porque em teste unitário o módulo às
+  vezes carrega por outro caminho. É a irmã do ciclo de ESM que tirou o
+  `LIMIAR_DOMINIO` de `progress.ts`: ordem de inicialização não avisa, quebra.
+*/
+/*
+  A classe de um percurso, e de quem o marca.
+
+  Um sistema de sete classes que desse a mesma a toda trilha diria "você
+  concluiu uma especialidade" e calaria sobre qual — e a AP035 avançada custa
+  muito mais que a AP034 básica. Com três níveis isso nunca coube; com sete,
+  cabe, e é o que faz a estante dizer o que a pessoa fez **e** quão difícil
+  era.
+*/
+const CLASSE_DA_TRILHA: Record<Specialty['level'], NivelDaInsignia> = {
+  basico: 'pesquisador',
+  intermediario: 'excursionista',
+  avancado: 'lider',
+};
+
+/* O laboratório fica um patamar abaixo da trilha dele, pelo mesmo motivo. */
+const CLASSE_DO_LABORATORIO: Record<Specialty['level'], NivelDaInsignia> = {
+  basico: 'companheiro',
+  intermediario: 'pesquisador',
+  avancado: 'pioneiro',
+};
+
+/** A classe da insígnia de uma trilha concluída. */
+export function classeDaTrilha(codigo: string): NivelDaInsignia {
+  const trilha = getAllSpecialties().find(e => e.code === codigo);
+  /* Sem trilha, a classe que reivindica menos: uma insígnia de percurso que o
+     currículo não conhece não deveria se anunciar como a mais alta. */
+  return trilha ? CLASSE_DA_TRILHA[trilha.level] : 'amigo';
+}
+
+/** A classe da insígnia de um laboratório, pela trilha em que ele aparece. */
+export function classeDoLaboratorio(lab: LabType): NivelDaInsignia {
+  for (const e of getAllSpecialties())
+    for (const m of e.modules)
+      for (const l of m.lessons)
+        if (l.labType === lab) return CLASSE_DO_LABORATORIO[e.level];
+  return 'amigo';
+}
+
+/*
+  A vereda não tem nível — tem tamanho, e grava `'basico'` justamente para não
+  reivindicar grau nenhum. Então a classe dela sai de quantas lições ela tem,
+  que é a única medida honesta de quanto ela custa.
+
+  Uma vereda que ganhe lição sobe de classe para quem ainda não a concluiu;
+  quem já concluiu fica com a que recebeu, porque insígnia não se perde.
+*/
+const TAMANHO_DA_VEREDA: [number, NivelDaInsignia][] = [
+  [2, 'amigo'], [5, 'companheiro'], [9, 'pesquisador'],
+  [13, 'pioneiro'], [18, 'excursionista'], [25, 'guia'],
+];
+
+/** A classe da insígnia de uma vereda percorrida até o fim. */
+export function classeDaVereda(id: string): NivelDaInsignia {
+  const vereda = VEREDAS.find(v => v.id === id);
+  if (!vereda) return 'amigo';
+  const licoes = licoesDaVereda(vereda).length;
+  return TAMANHO_DA_VEREDA.find(([teto]) => licoes <= teto)?.[1] ?? 'lider';
+}
+
 export const INSIGNIAS: Insignia[] = [
-  // ── Primeiros passos ───────────────────────────────────────────────────
-  marco('first_step', 'Primeiro Passo', 'Cumpriu o primeiro requisito de uma trilha.', 'footprints', 'bronze', r => r.requisitos, 1),
-  marco('primeira_licao', 'Primeira Lição', 'Concluiu a primeira lição.', 'theory', 'bronze', r => r.licoes, 1),
-  marco('primeiro_laboratorio', 'Primeiro Laboratório', 'Concluiu o primeiro laboratório.', 'lab', 'bronze', r => r.laboratorios.size, 1),
-  marco('primeira_prova', 'Primeira Avaliação', 'Concluiu a primeira avaliação final.', 'star', 'bronze', r => r.provas, 1),
+  /*
+    As treze escadas, achatadas: cada degrau é uma insígnia, e a classe dela é
+    a posição na escada. Eram trinta e nove marcas escritas uma a uma, com o
+    `tier` decidido a olho — e o `tier` daqui nunca era lido, porque a tela lê
+    o do banco: as duas fontes divergiram em silêncio por meses. Agora existe
+    uma só, e `insignias.test.ts` confere o banco contra ela.
+  */
+  ...TODOS_OS_DEGRAUS.map(({ escada, ...d }): Insignia => ({
+    code: d.code, nome: d.nome, descricao: d.descricao, icone: escada.icone,
+    tier: d.classe, familia: escada.familia,
+    conquistou: r => escada.medir(r) >= d.alvo,
+  })),
 
-  // ── Lições ─────────────────────────────────────────────────────────────
-  marco('licoes_5', 'Cinco Lições', 'Concluiu cinco lições.', 'theory', 'bronze', r => r.licoes, 5),
-  marco('licoes_10', 'Dez Lições', 'Concluiu dez lições.', 'theory', 'bronze', r => r.licoes, 10),
-  marco('licoes_25', 'Vinte e Cinco Lições', 'Concluiu vinte e cinco lições.', 'theory', 'silver', r => r.licoes, 25),
-  marco('licoes_50', 'Cinquenta Lições', 'Concluiu cinquenta lições.', 'theory', 'gold', r => r.licoes, 50),
-
-  // ── Requisitos ─────────────────────────────────────────────────────────
-  marco('requisitos_10', 'Dez Requisitos', 'Cumpriu dez requisitos oficiais.', 'footprints', 'bronze', r => r.requisitos, 10),
-  marco('requisitos_25', 'Vinte e Cinco Requisitos', 'Cumpriu vinte e cinco requisitos oficiais.', 'footprints', 'silver', r => r.requisitos, 25),
-  marco('requisitos_50', 'Cinquenta Requisitos', 'Cumpriu cinquenta requisitos oficiais.', 'footprints', 'silver', r => r.requisitos, 50),
-  marco('requisitos_100', 'Cem Requisitos', 'Cumpriu cem requisitos oficiais.', 'footprints', 'gold', r => r.requisitos, 100),
-
-  // ── Módulos ────────────────────────────────────────────────────────────
-  marco('module_complete', 'Módulo Concluído', 'Concluiu todos os requisitos de um módulo.', 'layers', 'bronze', r => r.modulos, 1),
-  marco('modulos_5', 'Cinco Módulos', 'Concluiu cinco módulos.', 'layers', 'silver', r => r.modulos, 5),
-  marco('modulos_15', 'Quinze Módulos', 'Concluiu quinze módulos.', 'layers', 'gold', r => r.modulos, 15),
-
-  // ── Sequência ──────────────────────────────────────────────────────────
-  marco('streak_3', 'Sequência de 3 Dias', 'Praticou a trilha 3 dias seguidos.', 'flame', 'bronze', r => r.melhorSequencia, 3),
-  marco('streak_7', 'Sequência de 7 Dias', 'Praticou a trilha 7 dias seguidos.', 'flame', 'silver', r => r.melhorSequencia, 7),
-  marco('streak_14', 'Sequência de 14 Dias', 'Praticou a trilha 14 dias seguidos.', 'flame', 'silver', r => r.melhorSequencia, 14),
-  marco('streak_30', 'Sequência de 30 Dias', 'Praticou a trilha 30 dias seguidos.', 'flame', 'gold', r => r.melhorSequencia, 30),
-
-  // ── Constância ─────────────────────────────────────────────────────────
-  marco('dias_5', 'Cinco Dias de Estudo', 'Estudou em cinco dias diferentes.', 'calendar', 'bronze', r => r.diasAtivos, 5),
-  marco('dias_15', 'Quinze Dias de Estudo', 'Estudou em quinze dias diferentes.', 'calendar', 'silver', r => r.diasAtivos, 15),
-  marco('dias_30', 'Trinta Dias de Estudo', 'Estudou em trinta dias diferentes.', 'calendar', 'gold', r => r.diasAtivos, 30),
-
-  // ── Acertos ────────────────────────────────────────────────────────────
-  marco('licao_perfeita', 'Lição sem Erro', 'Acertou todas as questões de uma lição.', 'star', 'bronze', r => r.licoesPerfeitas, 1),
-  marco('licoes_perfeitas_10', 'Dez Lições sem Erro', 'Acertou tudo em dez lições.', 'star', 'silver', r => r.licoesPerfeitas, 10),
-  marco('licoes_perfeitas_25', 'Vinte e Cinco Lições sem Erro', 'Acertou tudo em vinte e cinco lições.', 'star', 'gold', r => r.licoesPerfeitas, 25),
-  marco('perfect_exam', 'Nota Máxima', 'Acertou 100% em uma avaliação final.', 'star', 'gold', r => r.provasPerfeitas, 1),
-  marco('provas_perfeitas_2', 'Duas Notas Máximas', 'Acertou 100% em duas avaliações finais.', 'star', 'gold', r => r.provasPerfeitas, 2),
-
-  // ── Trilhas ────────────────────────────────────────────────────────────
-  marco('duas_trilhas', 'Duas Trilhas', 'Concluiu duas especialidades.', 'trophy', 'silver', r => r.trilhas.length, 2),
-  marco('tres_trilhas', 'Três Trilhas', 'Concluiu três especialidades.', 'trophy', 'gold', r => r.trilhas.length, 3),
-  marco('cinco_trilhas', 'Cinco Trilhas', 'Concluiu cinco especialidades.', 'trophy', 'gold', r => r.trilhas.length, 5),
-
-  // ── Certificados ───────────────────────────────────────────────────────
-  marco('primeiro_token', 'Primeiro Token.Web()', 'Recebeu o primeiro certificado.', 'award', 'silver', r => r.certificados.length, 1),
-  marco('tokens_2', 'Dois Token.Web()', 'Recebeu dois certificados.', 'award', 'gold', r => r.certificados.length, 2),
-  marco('tokens_3', 'Três Token.Web()', 'Recebeu três certificados.', 'award', 'gold', r => r.certificados.length, 3),
-
-  // ── XP ─────────────────────────────────────────────────────────────────
-  marco('xp_100', 'Cem de XP', 'Somou cem pontos de experiência.', 'zap', 'bronze', r => r.xp, 100),
-  marco('xp_500', 'Quinhentos de XP', 'Somou quinhentos pontos de experiência.', 'zap', 'silver', r => r.xp, 500),
-  marco('xp_1000', 'Mil de XP', 'Somou mil pontos de experiência.', 'zap', 'gold', r => r.xp, 1000),
-
-  // ── Quando se estuda ───────────────────────────────────────────────────
+  /*
+    ── Fora das escadas ───────────────────────────────────────────────────
+    Estas quatro medem **quando** se estuda, e não quanto. Não são acúmulo e
+    não formam escada: dar a elas uma das sete classes fingiria uma ordem que
+    não existe, e inventar cinco degraus para completar a série seria inventar
+    conquista que ninguém pediu. Ficam sem família, e a tela as desenha em
+    círculo off-white — a forma que nenhuma classe usa.
+  */
   {
     code: 'coruja', nome: 'Coruja', descricao: 'Estudou entre a meia-noite e as cinco da manhã.',
-    icone: 'clock', tier: 'bronze',
+    icone: 'clock', tier: 'companheiro', semClasse: true,
     conquistou: r => [...r.horas].some(h => h >= 0 && h < 5),
   },
   {
     code: 'madrugador', nome: 'Madrugador', descricao: 'Estudou antes das sete da manhã.',
-    icone: 'clock', tier: 'bronze',
+    icone: 'clock', tier: 'companheiro', semClasse: true,
     conquistou: r => [...r.horas].some(h => h >= 5 && h < 7),
   },
   {
     code: 'fim_de_semana', nome: 'Fim de Semana', descricao: 'Estudou num sábado ou domingo.',
-    icone: 'calendar', tier: 'bronze',
+    icone: 'calendar', tier: 'companheiro', semClasse: true,
     conquistou: r => r.diasDaSemana.has(0) || r.diasDaSemana.has(6),
   },
   {
     code: 'semana_inteira', nome: 'Semana Inteira', descricao: 'Estudou em todos os sete dias da semana, em algum momento.',
-    icone: 'calendar', tier: 'gold',
+    icone: 'calendar', tier: 'companheiro', semClasse: true,
     conquistou: r => r.diasDaSemana.size === 7,
   },
 
-  // ── Um por laboratório ─────────────────────────────────────────────────
+  /*
+    ── Uma por laboratório ────────────────────────────────────────────────
+    Não são acúmulo tampouco: cada uma diz que **aquele** laboratório foi
+    vencido. A classe vem da dificuldade do que ela marca — o nível da trilha
+    a que o laboratório pertence, um patamar abaixo da trilha inteira, porque
+    um laboratório é uma lição dentro dela e não pode valer o mesmo que
+    fechá-la.
+  */
   ...LABORATORIOS.map(([lab, nome, descricao]): Insignia => ({
-    code: `lab_${lab}`, nome, descricao, icone: 'lab', tier: 'bronze',
+    code: `lab_${lab}`, nome, descricao, icone: 'lab',
+    tier: classeDoLaboratorio(lab),
     conquistou: r => r.laboratorios.has(lab),
   })),
 ];
+
+
 
 /**
  * As insígnias por trilha concluída.
@@ -216,3 +270,14 @@ export function insigniasConquistadas(r: ResumoDoDesbravador): string[] {
     ...r.veredas.map(codigoDaInsigniaDaVereda),
   ];
 }
+
+/**
+ * Os códigos que a tela desenha sem classe, em círculo.
+ *
+ * Sai do próprio catálogo em vez de ser uma segunda lista: duas cópias
+ * divergem no primeiro ajuste, e uma insígnia que saísse daqui e ficasse lá
+ * viraria triângulo azul sem nada reprovar.
+ */
+export const SEM_CLASSE: ReadonlySet<string> = new Set(
+  INSIGNIAS.filter(i => i.semClasse).map(i => i.code),
+);

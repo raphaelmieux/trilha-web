@@ -1,6 +1,7 @@
 import { ROTULO_DO_NIVEL, type Specialty, type Certification, type Badge } from '../types';
 import type { ProgressMap } from './progress';
 import { TIER_LABELS } from './badgeIcons';
+import { NIVEIS_DA_INSIGNIA } from './nivelDaInsignia';
 
 // Turns curriculum data + a user's progress into plain Portuguese prose. This lives
 // apart from the page component so the wording can be unit-tested and adjusted
@@ -249,9 +250,13 @@ export function buildSpecialtyNarrative(
 export function buildBadgeParagraph(badges: Badge[], studentName: string): string {
   if (badges.length === 0) return '';
 
-  const byTier = (tier: Badge['tier']) => badges.filter(b => b.tier === tier).length;
-  const counts = (['gold', 'silver', 'bronze'] as const)
-    .map(tier => ({ tier, n: byTier(tier) }))
+  /* Da classe mais alta para a mais baixa, e a lista sai de
+     `NIVEIS_DA_INSIGNIA` em vez de ser escrita aqui: eram três nomes à mão, e
+     no dia em que viraram sete o relatório entregue ao clube continuaria
+     contando três e somando doze insígnias como se fossem cinco. */
+  const quantas = (tier: Badge['tier']) => badges.filter(b => b.tier === tier).length;
+  const counts = [...NIVEIS_DA_INSIGNIA].reverse()
+    .map(tier => ({ tier, n: quantas(tier) }))
     .filter(({ n }) => n > 0)
     .map(({ tier, n }) => `${n} de ${TIER_LABELS[tier]}`);
 

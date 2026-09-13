@@ -4,6 +4,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import EstanteDeInsignias from './EstanteDeInsignias';
+import { ESCADAS } from '../../lib/escadasDeInsignia';
 import type { Badge } from '../../types';
 import type { PosicaoNoRanking } from '../../hooks/useMinhasPosicoes';
 
@@ -23,7 +24,7 @@ declare global {
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const insignia = (id: string, name: string): Badge => ({
-  id, code: id, name, description: `Descrição de ${name}`, icon: 'star', tier: 'bronze',
+  id, code: id, name, description: `Descrição de ${name}`, icon: 'star', tier: 'companheiro',
 });
 
 let container: HTMLDivElement;
@@ -47,18 +48,18 @@ afterEach(() => {
 });
 
 describe('as insígnias', () => {
-  it('mostra uma por insígnia conquistada, e diz o nome ao passar o mouse', () => {
-    desenhar({ badges: [insignia('a', 'Primeiro Passo'), insignia('b', 'Coruja')], total: 57, posicoes: [] });
+  it('mostra uma por insígnia avulsa, e diz o nome ao passar o mouse', () => {
+    desenhar({ badges: [insignia('a', 'Primeiro Passo'), insignia('b', 'Coruja')], total: 132, posicoes: [] });
 
     /*
       Um `title` só por insígnia.
 
       Havia dois, aninhados: o do link, com nome e descrição, e o do ícone, com
       o nome. O navegador mostra o mais interno, então a descrição prometida
-      pelo de fora nunca aparecia — e este teste passava assim, porque olhava o
-      atributo no DOM em vez de olhar qual deles chega à pessoa.
+      pelo de fora nunca aparecia. Hoje o `title` é elemento do SVG, e não
+      atributo — é o que dá dica de ferramenta em imagem, e é o único.
     */
-    const titulos = [...container.querySelectorAll('[title]')].map(e => e.getAttribute('title'));
+    const titulos = [...container.querySelectorAll('svg > title')].map(e => e.textContent);
     expect(titulos).toEqual(['Primeiro Passo', 'Coruja']);
 
     /* A descrição não se perde: vai no nome acessível do link, que é onde ela
@@ -67,7 +68,42 @@ describe('as insígnias', () => {
     expect(rotulos).toContain('Primeiro Passo. Descrição de Primeiro Passo');
 
     expect(container.textContent).toContain('Suas insígnias (2)');
-    expect(container.textContent).toContain('faltam 55');
+    expect(container.textContent).toContain('faltam 130');
+  });
+
+  /*
+    A estante mostra o topo de cada família, e não uma por conquista.
+
+    Com treze escadas de sete degraus, quem está adiantado tem dezenas de
+    insígnias: despejar todas daria noventa e uma numa tela só, que é o muro
+    que os trinta e dois cartões de vereda já foram uma vez.
+  */
+  it('resume a escada num ícone só, o mais alto alcançado', () => {
+    const requisitos = ESCADAS.find(e => e.chave === 'requisitos')!;
+    const tres = requisitos.degraus.slice(0, 3)
+      .map(d => ({ ...insignia(d.code, d.nome), tier: d.classe }));
+    desenhar({ badges: tres, total: 132, posicoes: [] });
+
+    const titulos = [...container.querySelectorAll('svg > title')].map(e => e.textContent);
+    expect(titulos, 'três degraus da mesma escada deveriam render um ícone só')
+      .toEqual([requisitos.degraus[2].nome]);
+  });
+
+  /* E a escada inteira abre no clique, com o que falta em contorno — ali o
+     apagado vale a pena, porque são sete de uma família e o que falta é o
+     próximo passo, e não a lista do que ainda não foi feito. */
+  it('abre a escada no clique, com os sete degraus', () => {
+    const requisitos = ESCADAS.find(e => e.chave === 'requisitos')!;
+    const um = [{ ...insignia(requisitos.degraus[0].code, requisitos.degraus[0].nome), tier: requisitos.degraus[0].classe }];
+    desenhar({ badges: um, total: 132, posicoes: [] });
+
+    expect(container.textContent).not.toContain('Requisitos —');
+    const botao = container.querySelector('button[aria-expanded]') as HTMLButtonElement;
+    act(() => botao.click());
+
+    expect(container.textContent).toContain('Requisitos');
+    expect(container.querySelectorAll('ol li')).toHaveLength(7);
+    expect(container.textContent).toContain('Você está em');
   });
 
   /* Quem ainda não tem nenhuma é justamente quem a estante deveria alcançar —

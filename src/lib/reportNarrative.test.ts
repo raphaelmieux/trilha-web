@@ -174,7 +174,7 @@ describe('buildClosingParagraph', () => {
 describe('buildBadgeParagraph', () => {
   const badge = (over: Partial<Badge> = {}): Badge => ({
     id: 'b', code: 'c', name: 'Primeira Pegada',
-    description: 'Concluiu o primeiro requisito.', icon: 'footprints', tier: 'bronze',
+    description: 'Concluiu o primeiro requisito.', icon: 'footprints', tier: 'companheiro',
     ...over,
   });
 
@@ -187,31 +187,31 @@ describe('buildBadgeParagraph', () => {
   it('uses the singular for a single badge and does not tally tiers', () => {
     const text = buildBadgeParagraph([badge()], 'Ana');
     expect(text).toContain('Ana conquistou uma insígnia');
-    expect(text).not.toContain('1 de bronze');
+    expect(text).not.toContain('1 de Companheiro');
   });
 
   it('counts the badges and breaks them down by tier', () => {
     const text = buildBadgeParagraph(
-      [badge(), badge({ id: 'b2' }), badge({ id: 'b3', tier: 'gold' })],
+      [badge(), badge({ id: 'b2' }), badge({ id: 'b3', tier: 'excursionista' })],
       'Ana',
     );
     expect(text).toContain('Ana conquistou 3 insígnias');
-    expect(text).toContain('1 de ouro');
-    expect(text).toContain('2 de bronze');
+    expect(text).toContain('1 de Excursionista');
+    expect(text).toContain('2 de Companheiro');
   });
 
   it('lists the tiers from gold down, so the strongest is read first', () => {
     const text = buildBadgeParagraph(
-      [badge({ tier: 'bronze' }), badge({ id: 'b2', tier: 'gold' }), badge({ id: 'b3', tier: 'silver' })],
+      [badge({ tier: 'companheiro' }), badge({ id: 'b2', tier: 'excursionista' }), badge({ id: 'b3', tier: 'pioneiro' })],
       'Ana',
     );
-    expect(text.indexOf('de ouro')).toBeLessThan(text.indexOf('de prata'));
-    expect(text.indexOf('de prata')).toBeLessThan(text.indexOf('de bronze'));
+    expect(text.indexOf('de Excursionista')).toBeLessThan(text.indexOf('de Pioneiro'));
+    expect(text.indexOf('de Pioneiro')).toBeLessThan(text.indexOf('de Companheiro'));
   });
 
   it('joins two tiers with "e" rather than a comma', () => {
-    const text = buildBadgeParagraph([badge(), badge({ id: 'b2', tier: 'gold' })], 'Ana');
-    expect(text).toContain('1 de ouro e 1 de bronze');
+    const text = buildBadgeParagraph([badge(), badge({ id: 'b2', tier: 'excursionista' })], 'Ana');
+    expect(text).toContain('1 de Excursionista e 1 de Companheiro');
   });
 
   it('explains that badges are not handed out for finishing', () => {

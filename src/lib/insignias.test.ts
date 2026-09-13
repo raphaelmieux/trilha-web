@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { INSIGNIAS, insigniasConquistadas, codigoDaInsigniaDaTrilha, type ResumoDoDesbravador } from './insignias';
 import { getOpenSpecialties } from '../curriculum';
 import { veredasAbertas, codigoDaInsigniaDaVereda } from '../curriculum/veredas';
-import { hasIcon } from './badgeIcons';
+import { hasIcon, RAIO_DA_TINTA, iconeCanonico } from './badgeIcons';
 import { laboratorioDoEvento, LABORATORIO_DO_EVENTO } from './atividade';
 
 /* O evento que cada laboratório grava ao concluir, invertido do mapa. */
@@ -22,6 +22,27 @@ const EVENTO_DA_LICAO: Record<string, string> = Object.fromEntries(
   trilha, que é justamente o que este repositório proíbe.
 */
 const DIR_MIGRATIONS = 'supabase/migrations';
+
+/**
+ * Cada insígnia semeada com o ícone e o tier que o banco vai guardar.
+ *
+ * Lê a tupla inteira, e não só o código: é a diferença entre saber que a linha
+ * existe e saber que ela diz a mesma coisa que o catálogo.
+ */
+function tuplasSemeadas(): Map<string, { icon: string; tier: string }> {
+  const linhas = new Map<string, { icon: string; tier: string }>();
+  for (const arquivo of readdirSync(DIR_MIGRATIONS).filter(f => f.endsWith('.sql')).sort()) {
+    const sql = readFileSync(join(DIR_MIGRATIONS, arquivo), 'utf8');
+    for (const bloco of sql.split(/INSERT INTO badges/i).slice(1)) {
+      const valores = bloco.split(';')[0];
+      /* A tupla ocupa uma ou três linhas conforme o arquivo, então a captura
+         atravessa quebra de linha; as aspas dobradas do SQL viram uma só. */
+      const tupla = /\( *'([a-z0-9_]+)' *,\s*'(?:[^']|'')*' *,\s*'(?:[^']|'')*' *,\s*'([a-z_]+)' *,\s*'([a-z_]+)'/g;
+      for (const m of valores.matchAll(tupla)) linhas.set(m[1], { icon: m[2], tier: m[3] });
+    }
+  }
+  return linhas;
+}
 
 function insigniasSemeadas(): Set<string> {
   const codigos = new Set<string>();
@@ -54,15 +75,52 @@ describe('o catálogo', () => {
   });
 
   /*
-    Ícone que não existe no mapa não quebra nada: as duas pontas caem no
-    troféu genérico. É esse o problema — cinquenta insígnias iguais, e nenhum
-    sinal de que alguma coisa deu errado.
+    Ícone que não existe não quebra nada: as duas pontas caem no troféu
+    genérico. É esse o problema — cinquenta insígnias iguais, e nenhum sinal
+    de que alguma coisa deu errado.
+
+    A tela e o PDF desenham do mesmo `iconShape` desde as sete classes, então
+    não há mais dois lados para comparar. O que restou para conferir é o que
+    a unificação não cobre: um ícone sem raio de tinta medido sai com o
+    tamanho de outro desenho, e é o tamanho que faz a fileira parecer
+    desalinhada.
   */
-  it('só usa ícones que a tela e o PDF sabem desenhar', () => {
-    const naTela = readFileSync('src/components/ui/BadgeIcon.tsx', 'utf8');
+  it('só usa ícones que a plataforma sabe desenhar', () => {
+    for (const i of INSIGNIAS) expect(hasIcon(i.icone), i.code).toBe(true);
+  });
+
+  /*
+    O `tier` e o ícone do banco batem com os do catálogo.
+
+    Esta faltava, e a falta custou meses de divergência calada: `primeira_licao`
+    era `theory` aqui e `footprints` na migration; `licoes_5` era `theory` aqui
+    e `layers` lá. A tela lê o do banco, então quem mandava era sempre a
+    migration — e o campo daqui era escrito, revisado e nunca lido. Duas fontes
+    para a mesma coisa, e a trava antiga só conferia que o **código** existia
+    nos dois lados.
+  */
+  it('o tier e o ícone semeados são os do catálogo', () => {
+    const semeado = tuplasSemeadas();
+    const divergentes = INSIGNIAS
+      .filter(i => semeado.has(i.code))
+      .map(i => ({ code: i.code, banco: semeado.get(i.code)!, catalogo: { icon: i.icone, tier: i.tier } }))
+      .filter(x => x.banco.icon !== x.catalogo.icon || x.banco.tier !== x.catalogo.tier);
+    expect(divergentes,
+      'o catálogo em TypeScript e a migration discordam — a tela lê o banco, '
+      + 'então o que estiver escrito aqui em lib/insignias.ts não chega à '
+      + 'estante e ninguém percebe.',
+    ).toEqual([]);
+  });
+
+  /* Um apagador que não achasse nada aprovaria qualquer divergência, calado. */
+  it('acha as tuplas semeadas para comparar', () => {
+    expect(tuplasSemeadas().size).toBeGreaterThan(100);
+  });
+
+  it('todo ícone tem o raio da tinta medido', () => {
     for (const i of INSIGNIAS) {
-      expect(hasIcon(i.icone), `${i.code} no PDF`).toBe(true);
-      expect(naTela, `${i.code} na tela`).toContain(`  ${i.icone}: `);
+      expect(RAIO_DA_TINTA[iconeCanonico(i.icone)], `${i.code} usa ${i.icone}`)
+        .toBeGreaterThan(0);
     }
   });
 
