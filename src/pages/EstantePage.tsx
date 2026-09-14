@@ -1,17 +1,15 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useBadges } from '../hooks/useBadges';
 import { useCertifications } from '../hooks/useCertifications';
 import BadgeIcon from '../components/ui/BadgeIcon';
 import ExplicacaoDaInsignia from '../components/ui/ExplicacaoDaInsignia';
-import Emblema from '../components/ui/Emblema';
 import { MarcaEmTexto } from '../components/ui/BrandMark';
+import PainelDeTokens from '../components/ui/PainelDeTokens';
 import { LoadingState } from '../components/ui/PageState';
 import { fileirasDaEstante, type LugarNaEstante } from '../lib/estante';
 import { CLASSES } from '../lib/nivelDaInsignia';
 import { ALTURA, LARGURA, formaDaClasse } from '../lib/formaDaInsignia';
-import { percursoDoCertificado } from '../lib/certificados';
 import { Trophy } from 'lucide-react';
 import type { InsigniaConquistada } from '../lib/conquista';
 
@@ -110,41 +108,9 @@ export default function EstantePage() {
         );
       })}
 
-      {/* O prêmio maior fecha a página. */}
-      <section className="card p-4 space-y-3">
-        <h2 className="font-bold text-sm flex items-center gap-1.5">
-          Seus <MarcaEmTexto marca="token" />
-        </h2>
-        {carregandoCerts ? (
-          <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>Procurando...</p>
-        ) : tokens.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>
-            O primeiro sai sozinho quando você concluir uma trilha ou uma vereda inteira.
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-3">
-            {tokens.map(cert => {
-              const percurso = percursoDoCertificado(cert.curriculum_code);
-              return (
-                <Link
-                  key={cert.id}
-                  to={`/certificado/${cert.code}`}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-lg transition hover:opacity-80"
-                  style={{ backgroundColor: 'var(--color-bg-input)', width: 132 }}
-                >
-                  <Emblema code={cert.curriculum_code} status="certificado" size={56} />
-                  <span className="text-xs font-medium text-center leading-tight">
-                    {percurso.nome}
-                  </span>
-                  <span className="text-[10px] font-mono" style={{ color: 'var(--color-text-faint)' }}>
-                    {cert.code}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      {/* O prêmio maior fecha a página, e é o mesmo painel do painel inicial —
+          ver PainelDeTokens. */}
+      <PainelDeTokens certifications={certifications} carregando={carregandoCerts} />
 
       {aberta && porCodigo.has(aberta) && (
         <ExplicacaoDaInsignia

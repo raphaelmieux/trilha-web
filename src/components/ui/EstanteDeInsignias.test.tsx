@@ -62,10 +62,11 @@ describe('as insígnias', () => {
     const titulos = [...container.querySelectorAll('svg > title')].map(e => e.textContent);
     expect(titulos).toEqual(['Primeiro Passo', 'Coruja']);
 
-    /* A descrição não se perde: vai no nome acessível do link, que é onde ela
-       serve a quem navega por leitor de tela. */
+    /* A descrição não se perde: vai no nome acessível do botão, que é onde ela
+       serve a quem navega por leitor de tela — e junto dela o que o clique faz,
+       que mudou de "ir para o perfil" para "ver o que rendeu". */
     const rotulos = [...container.querySelectorAll('[aria-label]')].map(e => e.getAttribute('aria-label'));
-    expect(rotulos).toContain('Primeiro Passo. Descrição de Primeiro Passo');
+    expect(rotulos).toContain('Primeiro Passo. Descrição de Primeiro Passo. Ver o que rendeu esta insígnia');
 
     expect(container.textContent).toContain('Suas insígnias (2)');
     expect(container.textContent).toContain('faltam 130');
@@ -104,6 +105,74 @@ describe('as insígnias', () => {
     expect(container.textContent).toContain('Requisitos');
     expect(container.querySelectorAll('ol li')).toHaveLength(7);
     expect(container.textContent).toContain('Você está em');
+  });
+
+  /*
+    O clique conta o que a insígnia rendeu — e é o que ele faz na Estante.
+
+    Ele levava para `/perfil`, que é o formulário de nome de usuário e não
+    mostra insígnia nenhuma desde que a estante virou página. Quem clicava numa
+    medalha para saber o que tinha feito por ela caía num campo de texto, e
+    aprendia que aquele caminho não leva a lugar nenhum.
+  */
+  it('abre a explicação da insígnia avulsa, em vez de ir para o perfil', () => {
+    desenhar({ badges: [insignia('a', 'Coruja')], total: 132, posicoes: [] });
+
+    expect(container.querySelector('a[href="/perfil"]'), 'a insígnia ainda leva ao formulário do perfil')
+      .toBeNull();
+
+    const botao = container.querySelector('button[aria-label^="Coruja"]') as HTMLButtonElement;
+    act(() => botao.click());
+
+    const cartao = document.body.querySelector('[role="dialog"]');
+    expect(cartao, 'o clique na insígnia não abriu o cartão de explicação').not.toBeNull();
+    expect(cartao!.getAttribute('aria-label')).toBe('Sobre a insígnia Coruja');
+    expect(cartao!.textContent).toContain('O que rendeu');
+    expect(cartao!.textContent).toContain('Descrição de Coruja');
+  });
+
+  /*
+    Dentro da escada aberta, cada degrau abre o cartão **dele**.
+
+    O topo continua fazendo outra coisa — abrir e fechar a família —, e é por
+    isso que o degrau precisa do próprio botão: sem ele, a única insígnia
+    explicável de uma família de sete seria a mais alta.
+  */
+  it('abre a explicação do degrau clicado, e não a do topo da família', () => {
+    const requisitos = ESCADAS.find(e => e.chave === 'requisitos')!;
+    const dois = requisitos.degraus.slice(0, 2)
+      .map(d => ({ ...insignia(d.code, d.nome), tier: d.classe }));
+    desenhar({ badges: dois, total: 132, posicoes: [] });
+
+    /* O topo abre a escada e não abre cartão nenhum: ali o clique já tem
+       trabalho, e roubá-lo esconderia os outros seis degraus. */
+    const topo = container.querySelector('button[aria-expanded]') as HTMLButtonElement;
+    act(() => topo.click());
+    expect(document.body.querySelector('[role="dialog"]'), 'o topo da família abriu cartão em vez de abrir a escada')
+      .toBeNull();
+
+    const primeiro = container.querySelector(
+      `button[aria-label*="${requisitos.degraus[0].nome}"]`,
+    ) as HTMLButtonElement;
+    act(() => primeiro.click());
+
+    const cartao = document.body.querySelector('[role="dialog"]');
+    expect(cartao!.getAttribute('aria-label')).toBe(`Sobre a insígnia ${requisitos.degraus[0].nome}`);
+  });
+
+  /* O degrau que falta não abre nada: ele não tem feito, percurso nem data
+     para contar, e um botão que abre um cartão vazio ensina que o caminho não
+     funciona. */
+  it('não oferece explicação do degrau que ainda não veio', () => {
+    const requisitos = ESCADAS.find(e => e.chave === 'requisitos')!;
+    const um = [{ ...insignia(requisitos.degraus[0].code, requisitos.degraus[0].nome), tier: requisitos.degraus[0].classe }];
+    desenhar({ badges: um, total: 132, posicoes: [] });
+    act(() => (container.querySelector('button[aria-expanded]') as HTMLButtonElement).click());
+
+    const porVencer = requisitos.degraus[6].nome;
+    expect(container.textContent).toContain(String(requisitos.degraus[6].alvo.toLocaleString('pt-BR')));
+    expect(container.querySelector(`button[aria-label*="${porVencer}"]`), 'o degrau por vencer virou botão')
+      .toBeNull();
   });
 
   /* Quem ainda não tem nenhuma é justamente quem a estante deveria alcançar —
