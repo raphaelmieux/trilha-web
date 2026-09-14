@@ -3,6 +3,7 @@ import { MODULOS_DE_CSS } from './folhaDeEstilo';
 import { MODULOS_DE_BLOCOS } from './logicaComBlocos';
 import { MODULOS_DE_PYTHON } from './sintaxeDePython';
 import { MODULOS_DE_TERMINAL } from './terminalEGit';
+import { MODULOS_DE_PYTHON_AVANCADO } from './pythonAvancado';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 
@@ -437,8 +438,41 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_TERMINAL,
   },
-  anunciada('CC004', 'Python, Avançado', 'Base',
-    'Listas, dicionários, arquivos e erros — o que separa um exercício de um programa que se usa.'),
+  {
+    id: 'cc004',
+    code: 'CC004',
+    name: 'Python, Avançado',
+    familia: 'Base',
+    description: 'Listas, dicionários, arquivos e erros — o que separa um exercício de um programa que se usa.',
+    /*
+      Ainda em construção: a teoria está escrita, os laboratórios não.
+
+      É o que "vereda em construção pode ter conteúdo" permite, e é a razão de
+      as travas de qualidade olharem para `veredasComConteudo()` e não só para
+      as abertas — uma vereda leva vários dias para ficar pronta, e questão
+      repetida que só reprovasse no dia da abertura reprovaria com tudo já
+      escrito. Insígnia e certificado continuam saindo das abertas: prometer
+      prêmio por vereda que ninguém pode percorrer é outra coisa.
+    */
+    emConstrucao: true,
+    /*
+      Sai da CC002, e não de uma trilha. Lá o programa é um arquivo que se lê
+      de cima para baixo, e isso resolve exercício — para de resolver na hora
+      em que o programa cresce, e é aí que esta começa.
+    */
+    origem: 'CC002',
+    /*
+      E exige só a CC002, que é o que o requisito 1 do documento oficial pede.
+
+      O requisito 8 fala em versionar com Git, que é a CC003, e mesmo assim ela
+      não entra aqui: acrescentar uma tranca que o documento não pediu é
+      decidir por ele. A lição do módulo 7 diz onde o Git mora, e quem já
+      percorreu a CC003 segue direto.
+    */
+    preRequisitos: ['cc002'],
+    mostraResultado: true,
+    modulos: MODULOS_DE_PYTHON_AVANCADO,
+  },
   anunciada('CC005', 'SQL', 'Base',
     'Guardar e procurar informação numa base de dados, que é onde quase todo programa a guarda.'),
   anunciada('CC006', 'Projeto de Programa', 'Base',
