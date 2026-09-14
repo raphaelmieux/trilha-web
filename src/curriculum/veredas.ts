@@ -5,6 +5,7 @@ import { MODULOS_DE_PYTHON } from './sintaxeDePython';
 import { MODULOS_DE_TERMINAL } from './terminalEGit';
 import { MODULOS_DE_PYTHON_AVANCADO } from './pythonAvancado';
 import { MODULOS_DE_ARQUIVOS } from './arquivosEArmazenamento';
+import { MODULOS_DO_EDITOR } from './editorDeTexto';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -539,9 +540,36 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_ARQUIVOS,
   },
-  anunciada('CC-ES002', 'Editor de Texto', 'Escritório',
-    'Estilo em vez de negrito à mão: mudar um e o documento inteiro muda junto.',
-    ['cc-es001']),
+  {
+    id: 'cc-es002',
+    code: 'CC-ES002',
+    name: 'Editor de Texto',
+    familia: 'Escritório',
+    description: 'Estilo em vez de negrito à mão: mudar um e o documento inteiro muda junto.',
+    /*
+      Ainda em construção: a teoria está escrita, os laboratórios não. É o que
+      "vereda em construção pode ter conteúdo" permite, e é o que mantém cada
+      PR pequeno — o que já está escrito passa pelas travas de qualidade desde
+      agora, em vez de tudo passar de uma vez no fim.
+    */
+    emConstrucao: true,
+    /*
+      Sai da AP044, e não da AP042: as duas ensinam o Word, e é a AP044 que
+      chega nos estilos, no sumário e na nota de rodapé. Aqui a pergunta muda —
+      não é onde fica o botão, é por que o documento está formatado assim e o
+      que acontece quando ele precisa mudar.
+
+      `preRequisitos` é a CC-ES001, e está escrito no requisito 1 do documento
+      oficial. A razão é a de sempre: quem escreve um ofício e não sabe achá-lo
+      no sábado seguinte escreve o ofício duas vezes — e o requisito 7 pede a
+      entrega em dois formatos, que é conversa de quem já sabe o que é
+      extensão.
+    */
+    origem: 'AP044',
+    preRequisitos: ['cc-es001'],
+    mostraResultado: true,
+    modulos: MODULOS_DO_EDITOR,
+  },
   anunciada('CC-ES003', 'Planilhas', 'Escritório',
     'Fórmula que calcula sozinha, e a diferença entre dado, conta e apresentação.',
     ['cc-es001']),
