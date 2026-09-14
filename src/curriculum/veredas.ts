@@ -4,6 +4,7 @@ import { MODULOS_DE_BLOCOS } from './logicaComBlocos';
 import { MODULOS_DE_PYTHON } from './sintaxeDePython';
 import { MODULOS_DE_TERMINAL } from './terminalEGit';
 import { MODULOS_DE_PYTHON_AVANCADO } from './pythonAvancado';
+import { MODULOS_DE_ARQUIVOS } from './arquivosEArmazenamento';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -493,8 +494,32 @@ export const VEREDAS: Vereda[] = [
      a quê, e como sai de lá um documento que alguém vai arquivar. A AP043 já
      ensina Word e Excel como programas; aqui a pergunta é outra — o que se faz
      com eles quando o trabalho é de verdade e é de mais de uma pessoa. */
-  anunciada('CC-ES001', 'Arquivos e Armazenamento', 'Escritório',
-    'Onde cada coisa fica, com que nome, e como voltar atrás quando some.'),
+  {
+    id: 'cc-es001',
+    code: 'CC-ES001',
+    name: 'Arquivos e Armazenamento',
+    familia: 'Escritório',
+    description: 'Onde cada coisa fica, com que nome, e como voltar atrás quando some.',
+    /*
+      Ainda em construção: a teoria está escrita, os laboratórios não. É o que
+      "vereda em construção pode ter conteúdo" permite, e é o que mantém cada
+      PR pequeno — o que já está escrito passa pelas travas de qualidade desde
+      agora, em vez de tudo passar de uma vez no fim.
+    */
+    emConstrucao: true,
+    /*
+      Sai da AP043, e não de outra vereda: é lá que o desbravador vê o
+      Explorador pela primeira vez, como programa. Aqui a pergunta muda —
+      não é como copiar um arquivo, é por que ele está onde está.
+
+      Sem `preRequisitos`: ela é a raiz da família de Escritório, e o
+      documento oficial dela não exige nada antes. Oito das outras doze
+      exigem esta, direta ou indiretamente.
+    */
+    origem: 'AP043',
+    mostraResultado: true,
+    modulos: MODULOS_DE_ARQUIVOS,
+  },
   anunciada('CC-ES002', 'Editor de Texto', 'Escritório',
     'Estilo em vez de negrito à mão: mudar um e o documento inteiro muda junto.',
     ['cc-es001']),
