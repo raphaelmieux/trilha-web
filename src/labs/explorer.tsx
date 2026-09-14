@@ -222,7 +222,10 @@ export function BarraDeEndereco({
       </div>
 
       {aoBuscar ? (
-        <button className="win-busca" onClick={aoBuscar} title="Pesquisar"
+        /* `ativa` é o que a mantém na tela estreita — o motivo está em
+           `CSS_WINDOWS`, junto da regra. */
+        <button className="win-busca ativa" onClick={aoBuscar} title="Pesquisar"
+          aria-label="Pesquisar"
           style={{ cursor: 'pointer', color: termoDaBusca ? '#1B1B1B' : undefined }}>
           <Search className="w-3.5 h-3.5" />
           <span className="truncate">

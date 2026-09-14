@@ -4,6 +4,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import FileManagerLab from './FileManagerLab';
+import { CSS_WINDOWS } from './windows';
 
 /*
   A janela do Explorador, depois de ela sair de dentro do laboratório.
@@ -81,10 +82,53 @@ describe('a janela do Explorador', () => {
     expect(textos('.win-caminho button')).toContain('Área de Trabalho');
   });
 
-  it('mostra a caixa de pesquisa', () => {
+  it('mostra a caixa de pesquisa, e aqui ela é enfeite', () => {
     /* Na AP043 ela é enfeite — a janela sem ela não seria a janela. Na
-       CC-ES001 ela é o exercício do módulo 4, e é a mesma peça. */
+       CC-ES001 ela é o exercício do módulo 4, e é a mesma peça. A diferença
+       é `ativa`, e é ela que decide o que acontece na tela estreita. */
     expect(container.querySelector('.win-busca')).toBeTruthy();
+    expect(container.querySelector('.win-busca.ativa'),
+      'a pesquisa da AP043 não faz nada, e não devia se anunciar como botão').toBeNull();
+  });
+
+  it('a pesquisa que funciona continua na tela quando ela encolhe', () => {
+    /*
+      `.win-busca` some abaixo de 768 px, e é o certo para a da AP043. A da
+      CC-ES001 é o requisito 4.3 inteiro: sumir junto tiraria o único caminho
+      até a tarefa no celular, que é onde boa parte dos desbravadores estuda.
+
+      A conferência é na folha publicada, e não no JSX, porque o defeito mora
+      na folha: quem um dia mexer no bloco da tela estreita apagaria a regra
+      sem que nenhum teste de componente percebesse — a busca continuaria
+      montada, e invisível.
+    */
+    const some = CSS_WINDOWS.indexOf('.win-busca { display: none; }');
+    expect(some, 'a regra que esconde a pesquisa saiu da folha').toBeGreaterThan(-1);
+
+    /* Dentro do **mesmo** bloco de consulta de mídia: a regra que a devolve
+       escrita num bloco de outra largura valeria numa faixa de tela e não na
+       outra, e o buraco apareceria só no celular certo. */
+    const fimDoBloco = CSS_WINDOWS.indexOf('\n  }', some);
+    const bloco = CSS_WINDOWS.slice(some, fimDoBloco);
+    expect(bloco, 'a busca ativa perdeu a regra que a mantém visível')
+      .toContain('.win-busca.ativa { display: flex;');
+  });
+
+  it('o diálogo sobe no celular, e a regra que o sobe vem depois da que o centra', () => {
+    /*
+      A cápsula de tarefas da plataforma mora no canto de baixo do celular, e um
+      diálogo centrado punha Cancelar e Confirmar justamente ali.
+
+      As duas regras têm a mesma especificidade, então o que decide é a ordem no
+      arquivo: escrita antes da base, a que sobe o diálogo não vale nada — e
+      nada estoura. É esse silêncio que esta linha existe para quebrar.
+    */
+    const centra = CSS_WINDOWS.indexOf('.win-modal-fundo {');
+    const sobe = CSS_WINDOWS.indexOf('.win-modal-fundo { place-items: start center;');
+    expect(centra, 'a regra que centra o diálogo saiu da folha').toBeGreaterThan(-1);
+    expect(sobe, 'a regra que sobe o diálogo no celular saiu da folha').toBeGreaterThan(-1);
+    expect(sobe, 'a regra que sobe o diálogo foi escrita antes da que o centra, e perdeu')
+      .toBeGreaterThan(centra);
   });
 
   it('lista as raízes no painel de navegação', () => {

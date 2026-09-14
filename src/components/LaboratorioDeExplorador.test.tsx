@@ -314,7 +314,9 @@ describe('cada lição da CC-ES001 pode ser vencida clicando', () => {
     clicar(cabecalho('Tamanho'), 'Tamanho');
 
     /* A pesquisa: tipo e período juntos, e com resultado. */
-    clicar(container.querySelector('.win-busca'), 'Pesquisar');
+    /* `.ativa` é o que a mantém na tela estreita: procurá-la por essa classe
+       é o que faz esta trava reprovar se alguém a devolver ao enfeite. */
+    clicar(container.querySelector('.win-busca.ativa'), 'Pesquisar');
     escrever(container.querySelector('#busca-tipo'), 'imagem', 'Tipo');
     escrever(container.querySelector('#busca-periodo'), 'trimestre', 'Data de modificação');
     clicar([...container.querySelectorAll('.win-modal-pe button')]
