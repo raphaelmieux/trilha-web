@@ -950,6 +950,35 @@ diz é quantas lições, de que metade — teoria ou prática —, e se saiu
 Token.Web(). Vereda com zero lições vencidas não vira linha: um relatório de
 aprendizagem fala do que foi feito.
 
+**O relatório tem capa, sumário e páginas numeradas.** Ele é entregue impresso
+à liderança e arquivado junto da ficha do desbravador, e começava no meio de um
+bloco de identificação — a única linha que dizia de longe do que ele tratava
+era `Trilha.Web() — Especialidades A, B e C`, escrita com um `doc.text` sem
+quebra nenhuma: com três especialidades ela já saía pelas margens.
+
+A capa responde ao que se pergunta **antes** de ler: de quem é, de que clube,
+de quando, sobre quais percursos — um por linha, que é o que conserta a linha
+estourada — e o que vem anexado. O que ela não tem é emblema: eles são a arte
+dos certificados e chegam inteiros, sangrados, nas folhas de anexo.
+
+O sumário se escreve em folhas **reservadas antes** do corpo, porque só se sabe
+em que página uma seção caiu depois de compor, e inserir folhas depois
+empurraria todas as seguintes — todo número apontaria para a anterior à certa.
+A reserva e a quebra contam **entradas**, e não milímetros, pelo mesmo motivo
+que `sortearCobrindo` e `minimoParaCobrir` dividem o laço: duas contas
+parecidas discordam um dia, e aí a última entrada cai numa folha que não existe.
+
+A capa não se numera, que é a convenção de todo impresso, e as folhas de anexo
+também não — carimbar número por cima da arte seria escrever no documento que
+a pessoa vai emoldurar. Elas contam no total, porque quem recebe um documento
+de nove folhas precisa saber que recebeu as nove.
+
+E as conquistas saem **da mais antiga para a mais nova, com a data ao lado**.
+`useBadges` traz decrescente, que é o certo na estante — lá a pergunta é "o que
+eu ganhei agora?" —, mas o documento conta um percurso, e percurso se lê do
+começo. A que não tiver data vai para o fim: pô-la no começo afirmaria que foi
+a primeira, que é justamente o que não se sabe.
+
 **Toda trilha e toda vereda registrada tem emblema e fundo de certificado.** A
 regra foi esta, virou "arte é condição para abrir e não para anunciar", e
 voltou — e o vaivém é o registro de uma circunstância, não de uma indecisão.
@@ -1424,6 +1453,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/ui/PainelDeTokens.test.tsx` | uma das duas telas montando a própria lista de Token.Web(), ou o revogado contando como conquista |
 | `src/components/ui/EstanteDeInsignias.test.tsx` | insígnia do painel que leva ao formulário do perfil em vez de contar o que rendeu |
 | `src/components/ui/ExplicacaoDaInsignia.test.tsx` | cartão de explicação desenhado dentro de quem o chamou, onde o `backdrop-filter` prende o `fixed` |
+| `src/lib/relatorioEmPdf.test.ts` | conquista sem data dizendo-se a primeira, ou sumário reservando menos folhas do que tem entradas |
 | `src/lib/formaDaArte.test.ts` | emblema de trilha quadrado ou de vereda deitado, que troca no painel o tipo do percurso |
 | `src/lib/formaDaInsignia.test.ts` | glifo maior que o círculo inscrito do triângulo, que vaza só no Amigo e no Companheiro |
 | `src/lib/formaDaInsignia.test.ts` | classe cujo glifo não se lê sobre a própria cor, ou ícone sem raio de tinta medido |

@@ -93,3 +93,38 @@ export function anunciarConquistas(conquistas: InsigniaConquistada[]): void {
     }
   }
 }
+
+/**
+ * As insígnias na ordem em que foram conquistadas, da mais antiga para a mais
+ * nova.
+ *
+ * ── Por que crescente, e não decrescente ──────────────────────────────────
+ * `useBadges` traz por `awarded_at` **descendente**, que é o certo na estante:
+ * lá a pergunta é "o que eu ganhei agora?". No relatório entregue ao clube a
+ * pergunta é outra — "por onde esta pessoa passou?" —, e um percurso se lê do
+ * começo para o fim. Decrescente, o documento abre pelo fim da história.
+ *
+ * ── Quem não tem data vai para o fim ──────────────────────────────────────
+ * `awarded_at` é `NOT NULL`, então isso não deveria acontecer; mas se um dia
+ * acontecer — dump antigo, linha remendada à mão —, pôr a insígnia sem data no
+ * começo afirmaria que ela foi a primeira, que é exatamente o que não se sabe.
+ * É a mesma assimetria do `umDe`: na dúvida, o lado que reivindica menos.
+ *
+ * O `sort` do JavaScript é estável desde o ES2019, então as empatadas e as sem
+ * data mantêm a ordem em que chegaram.
+ */
+export function emOrdemDeConquista<T extends InsigniaConquistada>(insignias: T[]): T[] {
+  const instante = (i: T): number | undefined => {
+    if (!i.conquistadaEm) return undefined;
+    const t = Date.parse(i.conquistadaEm);
+    return Number.isNaN(t) ? undefined : t;
+  };
+  return [...insignias].sort((a, b) => {
+    const ta = instante(a);
+    const tb = instante(b);
+    if (ta === undefined && tb === undefined) return 0;
+    if (ta === undefined) return 1;
+    if (tb === undefined) return -1;
+    return ta - tb;
+  });
+}

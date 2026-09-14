@@ -17,6 +17,8 @@ import { LoadingState } from '../components/ui/PageState';
 import CertificateCanvas from '../components/CertificateCanvas';
 import BadgeIcon from '../components/ui/BadgeIcon';
 import { exportReportPdf, type ReportSection } from '../lib/pdf';
+import { emOrdemDeConquista } from '../lib/conquista';
+import { dataPorExtenso } from '../lib/explicacaoDaInsignia';
 import { Download, ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function ReportPage() {
@@ -162,8 +164,8 @@ export default function ReportPage() {
     itens.length <= 1 ? (itens[0] ?? '')
       : `${itens.slice(0, -1).join(', ')} e ${itens[itens.length - 1]}`;
 
-  const nomeExtenso = enumerar(narratives.map(n => nomeCompleto(n)));
-  const subtitle = `Trilha.Web() — ${narratives.length === 1 ? 'Especialidade' : 'Especialidades'} ${nomeExtenso}`;
+  const percursos = narratives.map(n => nomeCompleto(n));
+  const nomeExtenso = enumerar(percursos);
 
   const intro = `Este documento descreve, em linguagem corrente, as competências efetivamente demonstradas por ${studentName} ao longo da Trilha.Web(), plataforma de estudo autônomo de especialidades do Clube de Desbravadores. Abrange ${narratives.length === 1 ? 'a especialidade' : 'as especialidades'} ${nomeExtenso}. Destina-se à apresentação à liderança do Clube, para subsidiar o reconhecimento e o registro ${narratives.length === 1 ? 'da especialidade' : 'das especialidades'} pelos canais oficiais do clube.`;
 
@@ -238,7 +240,10 @@ export default function ReportPage() {
         club: profile.club || '',
         unit: profile.unit || '',
         issuedOn: today,
-        subtitle,
+        /* Um por linha na capa. A frase única estourava a margem com três
+           especialidades, e era justamente a linha que diz do que o documento
+           trata. */
+        percursos,
         intro,
         sections,
         badgeIntro,
@@ -323,9 +328,13 @@ export default function ReportPage() {
       <article className="report-doc card">
         <header className="report-head">
           <h1>Relatório de Competências</h1>
-          <p className="report-sub">
-            {comMarca(subtitle)}
-          </p>
+          <p className="report-sub">{comMarca('Trilha.Web()')}</p>
+          {/* Um por linha, como na capa do PDF. Era uma frase só — "Especialidades
+              A, B e C" —, e no papel ela estourava a margem justamente na linha
+              que diz do que o documento trata. */}
+          <ul className="report-percursos">
+            {percursos.map(p => <li key={p}>{p}</li>)}
+          </ul>
         </header>
 
         <section className="report-id">
@@ -386,16 +395,23 @@ export default function ReportPage() {
             <div className="report-section">
               <h2>Conquistas</h2>
               <p>{badgeIntro}</p>
+              {/* Na mesma ordem e com a mesma data do PDF: a tela é a prévia
+                  do documento, e prévia que diverge do que sai impresso é pior
+                  do que prévia nenhuma. */}
               <ul className="report-badges">
-                {badges.map(b => (
-                  <li key={b.id}>
-                    <BadgeIcon badge={b} size="sm" />
-                    <div>
-                      <strong>{b.name}</strong>
-                      <span> — {b.description}</span>
-                    </div>
-                  </li>
-                ))}
+                {emOrdemDeConquista(badges).map(b => {
+                  const quando = b.conquistadaEm ? dataPorExtenso(b.conquistadaEm) : undefined;
+                  return (
+                    <li key={b.id}>
+                      <BadgeIcon badge={b} size="sm" />
+                      <div>
+                        <strong>{b.name}</strong>
+                        {quando && <span className="report-badge-data"> · {quando}</span>}
+                        <span> — {b.description}</span>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
