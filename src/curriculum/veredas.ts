@@ -527,13 +527,6 @@ export const VEREDAS: Vereda[] = [
     familia: 'Escritório',
     description: 'Onde cada coisa fica, com que nome, e como voltar atrás quando some.',
     /*
-      Ainda em construção: a teoria está escrita, os laboratórios não. É o que
-      "vereda em construção pode ter conteúdo" permite, e é o que mantém cada
-      PR pequeno — o que já está escrito passa pelas travas de qualidade desde
-      agora, em vez de tudo passar de uma vez no fim.
-    */
-    emConstrucao: true,
-    /*
       Sai da AP043, e não de outra vereda: é lá que o desbravador vê o
       Explorador pela primeira vez, como programa. Aqui a pergunta muda —
       não é como copiar um arquivo, é por que ele está onde está.
