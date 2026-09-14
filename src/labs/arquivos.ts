@@ -31,6 +31,41 @@ export interface No {
   voltaPara?: string | null;
   /** O alvo de um atalho — é o que o faz ocupar quase nada. */
   apontaPara?: string;
+  /**
+   * Só para o pacote compactado: o que ele leva dentro.
+   *
+   * O zip aparece na lista como arquivo, com um tamanho só, e é assim que ele
+   * é no Explorador — abrir é outra ação. Guardar os nós empacotados aqui, e
+   * não como filhos, é o que faz `filhosDe` continuar contando o que está na
+   * pasta, e não o que está dentro do pacote.
+   */
+  empacotado?: No[];
+  /**
+   * Só para arquivo: o que há dentro dele, numa linha.
+   *
+   * A lista de versões precisa dizer o que cada uma tinha, senão ela é uma
+   * coluna de datas e escolher uma vira sorteio. Como não há conteúdo de
+   * verdade nesta simulação, o rótulo é ele — e ele acompanha o arquivo quando
+   * uma versão vira histórico.
+   */
+  rotulo?: string;
+  /**
+   * Só para arquivo: as versões anteriores, da mais nova para a mais antiga.
+   *
+   * O requisito 8 pede recuperar versão anterior, e isso não é restaurar de
+   * cópia de segurança: o arquivo está lá e está errado. Sem guardar o que ele
+   * era, não há de onde voltar — e é essa a diferença que o módulo 7 ensina.
+   */
+  versoes?: VersaoAnterior[];
+}
+
+/** Um retrato de um arquivo antes de alguém salvar por cima. */
+export interface VersaoAnterior {
+  /** Quando aquela versão foi gravada. */
+  em: number;
+  /** O que ela tinha, em uma linha, para a lista de versões poder dizer. */
+  rotulo: string;
+  tamanhoKb: number;
 }
 
 export const AREA = 'area';
@@ -249,6 +284,224 @@ export function esvaziarLixeira(arvore: No[]): No[] {
   };
   marcar(LIXEIRA);
   return arvore.filter(n => !condenados.has(n.id));
+}
+
+/* ── Busca (requisito 4.3) ────────────────────────────────────────────────── */
+
+/** Sem acento e em minúsculas, para "autorização" achar "autorizacao". */
+const achatar = (t: string) =>
+  t.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/\p{Diacritic}/gu, '');
+
+export interface FiltroDaBusca {
+  /** Um pedaço do nome. Vazio não filtra nada — quem filtra são os outros. */
+  termo?: string;
+  /** A família do arquivo, de `tiposDeArquivo`, ou a palavra pasta. */
+  tipo?: string;
+  /** Modificado a partir de, e até. Em milissegundos. */
+  de?: number;
+  ate?: number;
+}
+
+/**
+ * Procura na pasta e em tudo o que está abaixo dela.
+ *
+ * ── Por que os filtros e não só o nome ───────────────────────────────────
+ * A busca por nome só serve a quem lembra o nome, e o requisito 4.3 pede
+ * justamente o contrário: achar filtrando por tipo e por data. É o caso de
+ * quem lembra que era um documento, do começo do ano, e mais nada.
+ *
+ * Os critérios se somam, e não se alternam: cada um que se acrescenta reduz a
+ * lista. Um filtro que alargasse o resultado não filtraria coisa nenhuma.
+ *
+ * A Lixeira fica de fora quando a busca começa de uma raiz: o que foi excluído
+ * não é resultado de busca em nenhum gerenciador de arquivos, e mostrá-lo faria
+ * a pessoa abrir um arquivo que ela acabou de mandar embora.
+ */
+export function buscar(
+  arvore: No[],
+  raizId: string,
+  filtro: FiltroDaBusca,
+  familiaDe: (nome: string) => string | null,
+): No[] {
+  const dentro: No[] = [];
+  const descer = (paiId: string) => {
+    for (const f of filhosDe(arvore, paiId)) {
+      if (f.id === LIXEIRA) continue;
+      dentro.push(f);
+      if (f.tipo === 'pasta') descer(f.id);
+    }
+  };
+  descer(raizId);
+
+  const termo = achatar(filtro.termo ?? '').trim();
+  return dentro.filter(n => {
+    if (termo && !achatar(n.nome).includes(termo)) return false;
+    if (filtro.tipo) {
+      const familia = n.tipo === 'pasta' ? 'pasta' : familiaDe(n.nome);
+      if (familia !== filtro.tipo) return false;
+    }
+    if (filtro.de !== undefined && n.modificadoEm < filtro.de) return false;
+    if (filtro.ate !== undefined && n.modificadoEm > filtro.ate) return false;
+    return true;
+  });
+}
+
+/* ── Compactar e descompactar (requisitos 1.6 e 4.5) ──────────────────────── */
+
+/**
+ * O quanto um pacote encolhe o que ele leva.
+ *
+ * Um número só, e é honesto que seja: o que decide a taxa de verdade é o
+ * conteúdo — texto encolhe muito, foto já compactada não encolhe quase nada.
+ * Fingir uma taxa por tipo daria a impressão de precisão que a simulação não
+ * tem. O que a lição precisa mostrar é que encolhe, e que o original continua
+ * lá.
+ */
+export const TAXA_DO_PACOTE = 0.6;
+
+/** Todos os nós de um ramo, o próprio incluído. */
+function ramo(arvore: No[], id: string): No[] {
+  const no = acharNo(arvore, id);
+  if (!no) return [];
+  return [no, ...filhosDe(arvore, id).flatMap(f => ramo(arvore, f.id))];
+}
+
+/**
+ * Faz um pacote com os itens dados, na pasta em que eles estão.
+ *
+ * O pacote é uma **cópia**: os originais continuam onde estavam. É a armadilha
+ * que a lição nomeia — quem compacta para liberar espaço e não apaga o original
+ * acabou de ocupar mais espaço do que antes —, e ela só existe porque aqui o
+ * comportamento é o do Windows, e não o que seria conveniente.
+ */
+export function compactar(
+  arvore: No[],
+  ids: string[],
+  nomeDoPacote: string,
+  novoId: () => string,
+  agora: number,
+): { arvore: No[]; pacoteId: string | null } {
+  const alvos = ids.map(id => acharNo(arvore, id)).filter((n): n is No => !!n);
+  if (!alvos.length) return { arvore, pacoteId: null };
+
+  const paiId = alvos[0].paiId;
+  if (!paiId) return { arvore, pacoteId: null };
+
+  const dentro = alvos.flatMap(a => ramo(arvore, a.id));
+  const bruto = dentro.reduce((s, n) => s + n.tamanhoKb, 0);
+  const pacoteId = novoId();
+
+  const pacote: No = {
+    id: pacoteId,
+    nome: nomeDisponivel(arvore, paiId, nomeDoPacote),
+    tipo: 'arquivo',
+    paiId,
+    tamanhoKb: Math.max(1, Math.round(bruto * TAXA_DO_PACOTE)),
+    modificadoEm: agora,
+    /* Os nós vão com o pai original: é o que permite descompactar recriando a
+       mesma estrutura, e não uma pilha achatada de arquivos soltos. */
+    empacotado: dentro.map(n => ({ ...n })),
+  };
+  return { arvore: [...arvore, pacote], pacoteId };
+}
+
+/**
+ * Tira o conteúdo do pacote e o põe na pasta em que o pacote está.
+ *
+ * O que sai é igual ao que entrou, e é o ponto da lição: zip é compactação sem
+ * perda. Os ids são novos porque os antigos podem ainda estar em uso — quem
+ * compactou e não apagou tem os dois.
+ */
+export function descompactar(
+  arvore: No[],
+  pacoteId: string,
+  novoId: () => string,
+  agora: number,
+): No[] {
+  const pacote = acharNo(arvore, pacoteId);
+  if (!pacote?.empacotado?.length || !pacote.paiId) return arvore;
+
+  /* De id antigo para id novo, para os pais de dentro do pacote continuarem
+     apontando uns para os outros depois de recriados. */
+  const traduzir = new Map<string, string>();
+  for (const n of pacote.empacotado) traduzir.set(n.id, novoId());
+
+  const raizes = new Set(
+    pacote.empacotado.filter(n => !traduzir.has(n.paiId ?? '')).map(n => n.id),
+  );
+
+  const novos = pacote.empacotado.map(n => ({
+    ...n,
+    id: traduzir.get(n.id)!,
+    /* O que estava no topo do pacote cai na pasta; o resto mantém o pai. */
+    paiId: raizes.has(n.id) ? pacote.paiId! : traduzir.get(n.paiId ?? '')!,
+    nome: raizes.has(n.id) ? nomeDisponivel(arvore, pacote.paiId!, n.nome) : n.nome,
+    modificadoEm: agora,
+    empacotado: undefined,
+  }));
+
+  return [...arvore, ...novos];
+}
+
+/* ── Versão anterior (requisito 8) ────────────────────────────────────────── */
+
+/**
+ * Grava por cima, guardando o que havia antes.
+ *
+ * É o que acontece quando alguém salva: o arquivo continua lá, com outro
+ * conteúdo. A versão de antes só existe depois porque alguém a guardou — e é
+ * essa a diferença entre um arquivo que dá para voltar e um que não dá.
+ */
+export function salvarPorCima(
+  arvore: No[], id: string, conteudoNovo: { rotulo: string; tamanhoKb: number }, agora: number,
+): No[] {
+  const no = acharNo(arvore, id);
+  if (!no || no.tipo !== 'arquivo') return arvore;
+  /* O que sai vira histórico com o rótulo que ele tinha — e não com o que
+     está entrando. Copiar o rótulo novo para a versão antiga faria a lista de
+     versões descrever todas elas como a de agora, que é a única que não
+     interessa recuperar. */
+  const anterior: VersaoAnterior = {
+    em: no.modificadoEm,
+    rotulo: no.rotulo ?? no.nome,
+    tamanhoKb: no.tamanhoKb,
+  };
+  return arvore.map(n => (n.id === id
+    ? {
+      ...n,
+      rotulo: conteudoNovo.rotulo,
+      tamanhoKb: conteudoNovo.tamanhoKb,
+      modificadoEm: agora,
+      versoes: [anterior, ...(n.versoes ?? [])],
+    }
+    : n));
+}
+
+/**
+ * Volta o arquivo para uma das versões guardadas.
+ *
+ * A versão atual entra no histórico antes, e não depois: restaurar sem guardar
+ * o de agora trocaria uma perda por outra, e quem restaurou a versão errada
+ * ficaria sem as duas.
+ */
+export function restaurarVersao(arvore: No[], id: string, indice: number, agora: number): No[] {
+  const no = acharNo(arvore, id);
+  const alvo = no?.versoes?.[indice];
+  if (!no || !alvo) return arvore;
+
+  const atual: VersaoAnterior = {
+    em: no.modificadoEm, rotulo: no.rotulo ?? no.nome, tamanhoKb: no.tamanhoKb,
+  };
+  const resto = (no.versoes ?? []).filter((_, i) => i !== indice);
+  return arvore.map(n => (n.id === id
+    ? {
+      ...n,
+      rotulo: alvo.rotulo,
+      tamanhoKb: alvo.tamanhoKb,
+      modificadoEm: agora,
+      versoes: [atual, ...resto],
+    }
+    : n));
 }
 
 /* ── Apresentação ─────────────────────────────────────────────────────────── */
