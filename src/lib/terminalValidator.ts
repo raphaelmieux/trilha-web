@@ -389,9 +389,105 @@ const README: Spec[] = [
   },
 ];
 
+/* ── O gerenciador de pacotes (requisito 7 da CC004) ───────────────────────── */
+
+/*
+  Este bloco não é da CC003.
+
+  O requisito 7 da CC004 pede demonstrar a instalação de uma biblioteca de
+  terceiros pelo gerenciador de pacotes, e isso acontece no terminal — não
+  dentro do programa. Em vez de inventar um segundo terminal para a vereda
+  seguinte, a lição dela usa este, que é o mesmo que o desbravador já
+  aprendeu a operar na CC003: duas telas de terminal diferentes ensinariam
+  que cada vereda tem o seu, e ele tem um só.
+*/
+const instalado = (c: ContextoDoTerminal, nome: string) =>
+  c.maquina.instalados.some(e => e.split('==')[0] === nome);
+
+const PACOTES: Spec[] = [
+  {
+    id: 'viu-o-que-tem',
+    label: 'Ver o que já está instalado',
+    hint: 'pip list mostra o que existe antes de você instalar qualquer coisa.',
+    run: c => ({ passed: rodou(c, p => p[0] === 'pip' && p[1] === 'list') }),
+  },
+  {
+    /*
+      Conferir **antes** de instalar, e é por isso que esta tarefa existe
+      separada da de instalar.
+
+      O `reqeusts` do catálogo é o `requests` com duas letras trocadas, e ele
+      instala sem reclamar — como o de verdade instalaria. O que denuncia está
+      no `pip show`: autor desconhecido, publicado há quatro dias, trinta e um
+      downloads. Uma tarefa que só pedisse "instale requests" ensinaria que o
+      pip protege, e ele não protege.
+    */
+    id: 'conferiu-antes',
+    label: 'Conferir o pacote antes de instalar',
+    hint: 'pip show <nome> diz quem publicou, quando, e quantos usam.',
+    run: c => {
+      const viu = c.executados.filter(l => {
+        const p = palavras(l);
+        return p[0] === 'pip' && p[1] === 'show';
+      });
+      return {
+        passed: viu.length > 0,
+        detail: viu.length ? undefined
+          : 'Instalar é rodar código de outra pessoa no seu computador. Olhe quem publicou antes.',
+      };
+    },
+  },
+  {
+    id: 'instalou',
+    label: 'Instalar a biblioteca certa',
+    hint: 'pip install requests — copiado da página oficial, e não digitado de memória.',
+    run: c => {
+      if (instalado(c, 'requests')) return { passed: true };
+      /* O nome trocado instala e não reclama: quem caiu nele precisa saber que
+         caiu, e ler no `pip show` o que havia para ver. */
+      if (instalado(c, 'reqeusts')) {
+        return {
+          passed: false,
+          detail: 'Você instalou "reqeusts", com as duas letras trocadas — um pacote de autor '
+            + 'desconhecido, publicado há quatro dias. Veja o pip show dele, desinstale, e '
+            + 'instale o nome certo.',
+        };
+      }
+      return { passed: false };
+    },
+  },
+  {
+    /*
+      E a lista tem de ter sido gravada **com** alguma coisa dentro.
+
+      `pip freeze > requirements.txt` sem nada instalado grava um arquivo
+      vazio, e o arquivo existe — que é a armadilha do "zero link não é zero
+      link quebrado" com um arquivo por cima. O que se confere é o conteúdo.
+    */
+    id: 'gravou-a-lista',
+    label: 'Gravar o requirements.txt pelo pip',
+    hint: 'pip freeze > requirements.txt — a lista é o retrato do que está instalado, e não algo que se digita.',
+    run: c => {
+      const alvo = achar(c.maquina.disco, `${RAIZ}/requirements.txt`)
+        ?? achar(c.maquina.disco, '/home/desbravador/requirements.txt');
+      const conteudo = alvo?.tipo === 'arquivo' ? (alvo.conteudo ?? '') : null;
+      if (conteudo === null) return { passed: false };
+      if (!/requests==/.test(conteudo)) {
+        return {
+          passed: false,
+          detail: conteudo.trim()
+            ? 'O arquivo existe e não traz a biblioteca certa.'
+            : 'O arquivo foi gravado vazio: nada estava instalado na hora do freeze.',
+        };
+      }
+      return { passed: true };
+    },
+  },
+];
+
 /* ── O catálogo ────────────────────────────────────────────────────────────── */
 
-const TODAS: Spec[] = [...ANDAR, ...MEXER, ...REPOSITORIO, ...RAMOS, ...REMOTO, ...README];
+const TODAS: Spec[] = [...ANDAR, ...MEXER, ...REPOSITORIO, ...RAMOS, ...REMOTO, ...README, ...PACOTES];
 
 /** Os ids que existem, para o teste da vereda conferir o que a lição pede. */
 export const IDS_DO_TERMINAL = TODAS.map(s => s.id);

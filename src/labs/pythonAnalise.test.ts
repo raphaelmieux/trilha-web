@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createRequire } from 'node:module';
 import {
-  apararTraceback, erroDeSintaxeEmTexto, ANALISADOR, type SaidaDaAnalise,
+  apararTraceback, erroDeSintaxeEmTexto, preparoDaAnalise, ANALISADOR, type SaidaDaAnalise,
 } from './pythonAnalise';
 
 /*
@@ -24,7 +24,7 @@ beforeAll(async () => {
 }, 120_000);
 
 const rodarAnalise = (fonte: string): SaidaDaAnalise => {
-  py.runPython(`_fonte = ${JSON.stringify(fonte)}`);
+  py.runPython(preparoDaAnalise(fonte));
   return JSON.parse(py.runPython(ANALISADOR) as string);
 };
 

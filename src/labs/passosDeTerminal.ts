@@ -175,4 +175,28 @@ export const PASSOS_DO_TERMINAL: Record<string, string[]> = {
     'Depois: git commit -m "Acrescenta o README explicando o programa"',
     'Confira com git log que ele está no histórico.',
   ],
+
+  'viu-o-que-tem': [
+    'Digite: pip list',
+    'Ele mostra tudo o que está instalado, com a versão de cada um ao lado.',
+    'O pip e o setuptools vêm com o Python — eles aparecem aqui e não no freeze.',
+  ],
+  'conferiu-antes': [
+    'Antes de instalar, olhe quem publicou: pip show requests',
+    'Repare em três coisas — o autor, quando foi publicado, e quantos usam.',
+    'Experimente também pip show reqeusts, com as duas letras trocadas.',
+    'Ele existe, e o que o denuncia está escrito ali: autor desconhecido, quatro dias, trinta e um downloads.',
+  ],
+  instalou: [
+    'Digite: pip install requests',
+    'Copie o nome da página oficial em vez de digitar de memória — é onde a armadilha mora.',
+    'Se instalou o errado, desfaça com pip uninstall e instale o certo.',
+    'Confira com pip list que ele entrou.',
+  ],
+  'gravou-a-lista': [
+    'Digite: pip freeze > requirements.txt',
+    'O freeze escreve a lista do que está instalado; o > manda essa lista para o arquivo.',
+    'Confira com cat requirements.txt.',
+    'Grave depois de instalar: com nada instalado, o arquivo sai vazio.',
+  ],
 };

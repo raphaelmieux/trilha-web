@@ -1036,6 +1036,24 @@ Tiago, quantos anos? Soma das idades: 25`,
         resumo: 'import, pip, PyPI, requirements.txt e o critério de escolha.',
         topicos: cap('bibliotecas').topicos,
       },
+      {
+        /*
+          Terminal, e não laboratório de Python — porque instalar não acontece
+          dentro do programa.
+
+          O requisito 7 pede demonstrar a instalação **pelo gerenciador de
+          pacotes**, e o gerenciador mora na linha de comando. Um laboratório
+          que fizesse o `pip install` virar um botão da plataforma ensinaria o
+          gesto errado: na vida não há botão, há um comando digitado.
+
+          E é o terminal da CC003, e não um segundo: duas telas de terminal
+          diferentes ensinariam que cada vereda tem o seu, e ele é um só.
+        */
+        id: 'm6-lab', tipo: 'terminal',
+        titulo: 'Instalar uma biblioteca de terceiros',
+        resumo: 'Ver o que há, conferir quem publicou, instalar, e registrar a lista.',
+        verificacoes: ['viu-o-que-tem', 'conferiu-antes', 'instalou', 'gravou-a-lista'],
+      },
     ],
   },
   {
@@ -1050,6 +1068,77 @@ Tiago, quantos anos? Soma das idades: 25`,
         titulo: 'Dividir para conseguir mexer',
         resumo: 'O módulo, a divisão entre ler, decidir e mostrar, e o commit do primeiro dia.',
         topicos: cap('programa-em-partes').topicos,
+      },
+      {
+        id: 'm7-lab', tipo: 'laboratorio', linguagem: 'python',
+        titulo: 'O caixa do acampamento, em duas partes',
+        resumo: 'Três funções com papéis distintos, em dois arquivos que se enxergam.',
+        arquivo: 'programa.py',
+        projeto: 'caixa-do-acampamento',
+        /*
+          O segundo arquivo-fonte chega **editável e vazio**, e é a diferença
+          entre este laboratório e todos os outros: nos demais o que vem ao lado
+          é dado para ler, aqui é código para escrever. Entregá-lo com as
+          funções prontas seria entregar resolvido justamente o requisito 8 —
+          é a mesma decisão do site de quatro páginas, cujas três páginas vazias
+          são a lição.
+        */
+        arquivosDoProjeto: [
+          {
+            nome: 'inscritos.csv',
+            modelo: 'nome,unidade,pago\nAna,Falcão,135\nTiago,Pantera,0\nBia,Falcão,60\nDavi,Águia,135\n',
+          },
+          {
+            nome: 'caixa.py',
+            editavel: true,
+            modelo: `# As funções do caixa moram aqui, e o programa.py as chama.
+#
+# O nome do módulo é o nome deste arquivo sem o .py — então lá se escreve
+# "from caixa import ...".
+`,
+          },
+        ],
+        verificacoes: [
+          'tresFuncoes', 'importaDoProjeto', 'funcaoReaproveitada',
+          'leCsv', 'roda', 'saidaEsperada',
+        ],
+        saidaEsperada: `Ana: inscrito
+Tiago: não pagou
+Bia: falta 75
+Davi: inscrito
+Ainda faltam: 2`,
+        modelo: `# O caixa do acampamento, em duas partes
+#
+# Este é o programa que se executa. Ao lado dele, na mesma pasta, há dois
+# arquivos: o inscritos.csv, que a secretaria exportou e é só de leitura, e o
+# caixa.py, que está vazio e é seu para escrever.
+#
+# A diária é 45 e o acampamento tem 3 dias, então cada inscrito deve 135.
+#
+# Escreva PELO MENOS TRÊS funções, e ponha as que fazem o trabalho no
+# caixa.py. A divisão mais útil é sempre a mesma:
+#
+#   - uma que LÊ o inscritos.csv e devolve os registros;
+#   - uma que DECIDE a situação de quem pagou um valor — e esta não imprime
+#     nada, que é a prova de que a divisão ficou boa;
+#   - uma que MONTA as linhas do resumo a partir dos registros.
+#
+# Aqui no programa.py, importe do caixa e produza exatamente esta saída:
+#
+#     Ana: inscrito
+#     Tiago: não pagou
+#     Bia: falta 75
+#     Davi: inscrito
+#     Ainda faltam: 2
+#
+# Quem pagou tudo é "inscrito"; quem pagou alguma coisa é "falta <quanto>";
+# quem não pagou nada é "não pagou". E "ainda faltam" conta quem não está
+# inscrito.
+#
+# Uma das suas funções tem de ser usada em dois pontos distintos — é o que o
+# requisito 4.3 pede, e é a razão de a função existir. A que decide a situação
+# serve ao resumo e à contagem: são os dois pontos.
+`,
       },
     ],
   },

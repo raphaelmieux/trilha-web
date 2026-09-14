@@ -131,7 +131,15 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
 
     /* A análise primeiro: código que não compila não tem árvore, e é o erro de
        sintaxe que a pessoa precisa ler antes de qualquer outra coisa. */
-    const analise = await py.analisar(fonte);
+    /* Os outros arquivos-fonte vão junto: sem eles a análise não vê a função
+       que o principal importa, e o requisito 8 nunca fecharia. */
+    const outrasFontes: Record<string, string> = {};
+    for (const a of doProjeto) {
+      if (!a.nome.endsWith('.py')) continue;
+      outrasFontes[a.nome] = a.editavel ? extras[a.nome] ?? a.modelo : a.modelo;
+    }
+
+    const analise = await py.analisar(fonte, licao.arquivo, outrasFontes);
     setAchados(analise.achados);
     setErroDeAnalise(analise.erro);
     setEsboco(analise.esboco);
@@ -152,7 +160,7 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
     setCodigoRodado(fonte);
     setExtrasRodados(extras);
     setRodando(false);
-  }, [codigo, entrada, rodando, doProjeto, extras]);
+  }, [codigo, entrada, rodando, doProjeto, extras, licao.arquivo]);
 
   const parar = () => { python.current?.encerrar(); setRodando(false); };
 
