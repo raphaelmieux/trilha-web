@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import BadgeIcon from './BadgeIcon';
+import ExplicacaoDaInsignia from './ExplicacaoDaInsignia';
 import { ESCADAS } from '../../lib/escadasDeInsignia';
 import { CLASSES, type NivelDaInsignia } from '../../lib/nivelDaInsignia';
 import { ALTURA, LARGURA, formaDaClasse } from '../../lib/formaDaInsignia';
-import type { Badge } from '../../types';
+import type { InsigniaConquistada } from '../../lib/conquista';
 import type { PosicaoNoRanking } from '../../hooks/useMinhasPosicoes';
 
 /**
@@ -25,15 +26,30 @@ import type { PosicaoNoRanking } from '../../hooks/useMinhasPosicoes';
  * O que falta continua aparecendo como número, e não como fileira de cadeados:
  * desenhar cento e vinte silhuetas apagadas transforma a conquista em lista de
  * pendências.
+ *
+ * ── O clique numa insígnia conta o que ela rendeu ────────────────────────
+ * Aqui ele levava para a edição do perfil — uma tela de formulário, que não
+ * mostra insígnia nenhuma desde que a estante virou página. Quem clicava numa
+ * medalha para saber o que tinha feito por ela caía num campo de nome de
+ * usuário, e aprendia que aquele caminho não leva a lugar nenhum.
+ *
+ * É o mesmo cartão da Estante, pelo mesmo componente: a insígnia é a mesma nas
+ * duas telas, e clicar nela tem de querer dizer a mesma coisa. O topo de cada
+ * família continua abrindo a escada, porque ali o clique tem outro trabalho —
+ * e cada degrau vencido dentro dela abre o cartão dele.
  */
 export default function EstanteDeInsignias({ badges, total, posicoes }: {
-  badges: Badge[];
+  badges: InsigniaConquistada[];
   /** Quantas existem no catálogo, para dizer quantas ainda faltam. */
   total: number;
   /** Vazio para quem não entrou no ranking — e então nada de ranking aparece. */
   posicoes: PosicaoNoRanking[];
 }) {
   const [aberta, setAberta] = useState<string | null>(null);
+  /* Qual insígnia está explicada, por código: a lista se refaz a cada
+     `useBadges`, e um objeto guardado ficaria velho. É o mesmo que a Estante
+     faz, pela mesma razão. */
+  const [explicando, setExplicando] = useState<string | null>(null);
   const faltam = Math.max(0, total - badges.length);
   const porCodigo = new Map(badges.map(b => [b.code, b]));
 
@@ -99,18 +115,19 @@ export default function EstanteDeInsignias({ badges, total, posicoes }: {
               );
             })}
             {avulsas.map(badge => (
-              <Link
+              <button
                 key={badge.id}
-                to="/perfil"
+                type="button"
+                onClick={() => setExplicando(badge.code)}
                 /* Sem `title` aqui. O BadgeIcon já põe um, e o navegador mostra
                    só o mais interno — a descrição que este prometia nunca
                    chegava à tela. O `aria-label` fica, porque esse o leitor de
                    tela usa, e é onde a descrição faz falta de verdade. */
-                aria-label={`${badge.name}. ${badge.description}`}
-                className="transition hover:opacity-80"
+                aria-label={`${badge.name}. ${badge.description}. Ver o que rendeu esta insígnia`}
+                className="transition hover:opacity-80 rounded"
               >
                 <BadgeIcon badge={badge} size="sm" />
-              </Link>
+              </button>
             ))}
           </div>
 
@@ -129,9 +146,19 @@ export default function EstanteDeInsignias({ badges, total, posicoes }: {
                   const vencido = porCodigo.get(d.code);
                   return (
                     <li key={d.code} className="flex flex-col items-center gap-1" style={{ width: 56 }}>
-                      {vencido
-                        ? <BadgeIcon badge={vencido} size="sm" />
-                        : <DegrauPorVencer classe={d.classe} nome={`${CLASSES[d.classe].nome}: ${d.nome}`} />}
+                      {/* Só o degrau vencido abre: o que falta não tem feito,
+                          percurso nem data para contar, e um botão que abre um
+                          cartão vazio ensina que o caminho não funciona. */}
+                      {vencido ? (
+                        <button
+                          type="button"
+                          onClick={() => setExplicando(vencido.code)}
+                          aria-label={`${CLASSES[d.classe].nome}: ${d.nome} — conquistada. Ver o que rendeu esta insígnia`}
+                          className="transition hover:opacity-80 rounded"
+                        >
+                          <BadgeIcon badge={vencido} size="sm" />
+                        </button>
+                      ) : <DegrauPorVencer classe={d.classe} nome={`${CLASSES[d.classe].nome}: ${d.nome}`} />}
                       <span
                         className="text-[10px] font-mono tabular-nums"
                         style={{ color: vencido ? 'var(--color-text-soft)' : 'var(--color-text-faint)' }}
@@ -148,6 +175,13 @@ export default function EstanteDeInsignias({ badges, total, posicoes }: {
             </div>
           ))}
         </div>
+      )}
+
+      {explicando && porCodigo.has(explicando) && (
+        <ExplicacaoDaInsignia
+          insignia={porCodigo.get(explicando)!}
+          aoFechar={() => setExplicando(null)}
+        />
       )}
 
       {posicoes.length > 0 && (

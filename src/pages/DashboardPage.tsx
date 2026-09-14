@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getProgressPercent, getProgressDetail } from '../lib/progress';
 import { getFamilias, preRequisitoCumprido } from '../curriculum';
-import { percursoDoCertificado } from '../lib/certificados';
 import { useRequirementProgress } from '../hooks/useRequirementProgress';
 import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
@@ -20,9 +19,10 @@ import EstanteDeInsignias from '../components/ui/EstanteDeInsignias';
 import SecaoDeVeredas from '../components/SecaoDeVeredas';
 import { INSIGNIAS } from '../lib/insignias';
 import type { ProgressMap } from '../lib/progress';
-import { Lock, Award, Flame, Star, Clock, FileText, ArrowRight, Medal, HardHat } from 'lucide-react';
+import { Lock, Award, Flame, Star, Clock, FileText, Medal, HardHat } from 'lucide-react';
 import { MarcaEmTexto } from '../components/ui/BrandMark';
 import TokenNoCartao from '../components/ui/TokenNoCartao';
+import PainelDeTokens from '../components/ui/PainelDeTokens';
 
 /**
  * O card de uma trilha, em qualquer um dos seus três estados.
@@ -202,7 +202,10 @@ export default function DashboardPage() {
             <Flame className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
             <div><span className="font-bold">{ofensiva}</span> <span className="text-sm" style={{ color: 'var(--color-text-dim)' }}>dias</span></div>
           </div>
-          <Link to="/perfil" className="card px-4 py-2 flex items-center gap-2 transition hover:opacity-80">
+          {/* Para a estante, e não para o perfil: o contador prometia insígnias
+              e levava ao formulário de nome de usuário, que é onde elas
+              deixaram de morar no dia em que a estante virou página. */}
+          <Link to="/estante" className="card px-4 py-2 flex items-center gap-2 transition hover:opacity-80">
             <Medal className="w-5 h-5" style={{ color: 'var(--color-tertiary-light)' }} />
             <div><span className="font-bold">{badges.length}</span> <span className="text-sm" style={{ color: 'var(--color-text-dim)' }}>badges</span></div>
           </Link>
@@ -249,47 +252,8 @@ export default function DashboardPage() {
           onde ninguém procura um curso. */}
       <SecaoDeVeredas userId={profile?.id} />
 
-      {certifications.length > 0 && (
-        <div className="card p-6" style={{ borderColor: 'var(--color-secondary-a20)' }}>
-          <h2 className="font-bold mb-4 flex items-center gap-2">
-            <Award className="w-5 h-5" style={{ color: 'var(--color-secondary)' }} /> Suas Certificações
-          </h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            {certifications.map(cert => {
-              const percurso = percursoDoCertificado(cert.curriculum_code);
-              return (
-              <Link key={cert.id} to={`/certificado/${cert.code}`}
-                className="block p-4 rounded-lg transition group"
-                style={{ backgroundColor: 'var(--color-bg-input)', border: '1px solid var(--color-border)', transition: 'border-color 0.2s' }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-secondary-a40)')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}>
-                <div className="flex items-center gap-3">
-                  <Award className="w-8 h-8 group-hover:scale-110 transition" style={{ color: 'var(--color-secondary)' }} />
-                  {/*
-                    Pelo código do percurso, e pelos **dois** currículos.
-
-                    Era `getSpecialty(code)`, que só conhece trilha: o
-                    certificado de uma vereda caía no `??` e a linha saía
-                    escrita "CC001", só o código, ao lado de "AP034 Internet".
-                    Quem percorreu a vereda inteira via o documento dela sem
-                    nome próprio, na única tela que lista os certificados.
-
-                    `percursoDoCertificado` já respondia pelos dois — é ela que
-                    a página pública usa — e agora escreve o par por
-                    `nomeCompleto`, então as duas linhas saem no mesmo formato.
-                  */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold">{percurso.nome}</p>
-                    <p className="text-xs font-mono" style={{ color: 'var(--color-text-dim)' }}>{cert.code}</p>
-                  </div>
-                  <ArrowRight className="w-4 h-4 group-hover:transition" style={{ color: 'var(--color-text-faint)' }} />
-                </div>
-              </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* O mesmo painel da Estante, pelo mesmo componente — ver PainelDeTokens. */}
+      <PainelDeTokens certifications={certifications} />
 
       <div className="card p-6">
         <h2 className="font-bold mb-3 flex items-center gap-2">

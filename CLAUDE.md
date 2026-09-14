@@ -1240,6 +1240,19 @@ deixaria o gancho morto pelo resto da sessão, sem nada dizendo por quê.
 E `setX(await f())` não tem onde receber guarda — a espera acontece dentro do
 setter. Parte-se em duas linhas.
 
+**`position: fixed` só mede a janela enquanto nenhum ancestral filtrar.**
+`transform`, `filter` e `backdrop-filter` viram bloco de contenção, e aí o
+`inset: 0` de um modal passa a ser o retângulo daquele ancestral, e não a tela.
+O `.card` da plataforma tem `backdrop-filter` — é o vidro fosco dele —, então o
+cartão de explicação da insígnia, chamado de dentro de um cartão, escurecia só
+a área daquele cartão e se centrava dentro dela: metade do cabeçalho saía por
+cima da borda, levando junto o nome da insígnia e o botão de fechar.
+
+Quem vê isso é navegador; o jsdom não calcula bloco de contenção nenhum, então
+nenhum teste de unidade pega o sintoma. O que se testa é a promessa —
+`ExplicacaoDaInsignia` se desenha no `body`, por `createPortal`, e não onde o
+JSX o põe. Assim "ocupa a tela" é verdade seja de onde for que alguém o chame.
+
 **Link externo é sempre `<a target="_blank">`**, pelo componente `LinkExterno`.
 `window.open` funciona no computador e falha no celular.
 
@@ -1408,6 +1421,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
 | `src/components/ui/TokenNoCartao.test.tsx` | cartão que anuncia certificado e não leva a ele, ou que volta a ser uma âncora em volta de tudo |
+| `src/components/ui/PainelDeTokens.test.tsx` | uma das duas telas montando a própria lista de Token.Web(), ou o revogado contando como conquista |
+| `src/components/ui/EstanteDeInsignias.test.tsx` | insígnia do painel que leva ao formulário do perfil em vez de contar o que rendeu |
+| `src/components/ui/ExplicacaoDaInsignia.test.tsx` | cartão de explicação desenhado dentro de quem o chamou, onde o `backdrop-filter` prende o `fixed` |
 | `src/lib/formaDaArte.test.ts` | emblema de trilha quadrado ou de vereda deitado, que troca no painel o tipo do percurso |
 | `src/lib/formaDaInsignia.test.ts` | glifo maior que o círculo inscrito do triângulo, que vaza só no Amigo e no Companheiro |
 | `src/lib/formaDaInsignia.test.ts` | classe cujo glifo não se lê sobre a própria cor, ou ícone sem raio de tinta medido |

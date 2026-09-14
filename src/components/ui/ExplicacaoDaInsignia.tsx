@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Calendar, MapPin, Target, Layers } from 'lucide-react';
 import BadgeIcon from './BadgeIcon';
 import { CLASSES } from '../../lib/nivelDaInsignia';
@@ -18,6 +19,20 @@ import type { InsigniaConquistada } from '../../lib/conquista';
  *
  * O cartão fecha no Esc, no botão e no clique fora — três saídas, porque a
  * pessoa veio ver uma medalha, não abrir um formulário.
+ *
+ * ── Por que ele sai do lugar onde foi chamado ────────────────────────────
+ * Ele se desenha no `body`, e não onde o JSX o põe. `position: fixed` só
+ * mede a janela enquanto nenhum ancestral tiver `transform`, `filter` ou
+ * `backdrop-filter` — qualquer um dos três vira bloco de contenção, e o
+ * `inset: 0` passa a ser o retângulo daquele ancestral.
+ *
+ * O `.card` da plataforma tem `backdrop-filter`, que é o vidro fosco dele.
+ * Chamado de dentro de um cartão, o cartão de explicação escurecia só a área
+ * daquele cartão e se centrava dentro dela, saindo por cima da borda: metade
+ * do cabeçalho ficava fora da tela, com o nome da insígnia e o botão de
+ * fechar. Nada estoura, e nenhum teste de jsdom vê — o jsdom não calcula
+ * bloco de contenção nenhum. O portal é o que faz "ocupa a tela" ser verdade
+ * seja de onde for que alguém o chame.
  */
 export default function ExplicacaoDaInsignia({ insignia, aoFechar }: {
   insignia: InsigniaConquistada;
@@ -33,7 +48,7 @@ export default function ExplicacaoDaInsignia({ insignia, aoFechar }: {
     return () => document.removeEventListener('keydown', comEsc);
   }, [aoFechar]);
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.62)' }}
@@ -95,7 +110,8 @@ export default function ExplicacaoDaInsignia({ insignia, aoFechar }: {
           )}
         </dl>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
