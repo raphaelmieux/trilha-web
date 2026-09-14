@@ -72,11 +72,6 @@ export const AREA = 'area';
 export const DOCUMENTOS = 'documentos';
 export const LIXEIRA = 'lixeira';
 
-/** As três raízes, que não podem ser movidas, renomeadas nem excluídas. */
-export const RAIZES = [AREA, DOCUMENTOS, LIXEIRA];
-
-export const ehRaiz = (id: string) => RAIZES.includes(id);
-
 /* ── Consultas ────────────────────────────────────────────────────────────── */
 
 export const acharNo = (arvore: No[], id: string | null): No | undefined =>
@@ -84,6 +79,18 @@ export const acharNo = (arvore: No[], id: string | null): No | undefined =>
 
 export const filhosDe = (arvore: No[], paiId: string): No[] =>
   arvore.filter(n => n.paiId === paiId);
+
+/**
+ * Raiz é o nó que não tem pai — e a conta se faz na árvore, não numa lista.
+ *
+ * Eram três nomes escritos aqui, e bastavam enquanto só a AP043 desenhava esta
+ * janela. A CC-ES001 acrescenta duas — o pen drive e o disco da cópia de
+ * segurança —, e uma lista fixa diria que elas têm pai: seriam arrastáveis,
+ * renomeáveis e excluíveis, e arrastar o pen drive para dentro de Documentos
+ * não estoura nada. Some o dispositivo, aparece uma pasta, e nada explica.
+ */
+export const ehRaiz = (arvore: No[], id: string) =>
+  acharNo(arvore, id)?.paiId === null;
 
 /**
  * O caminho da raiz até o nó, para a barra de endereço.
@@ -262,7 +269,7 @@ export function moverPara(arvore: No[], id: string, destinoId: string, agora: nu
 /** Para a Lixeira, lembrando de onde veio. */
 export function mandarParaLixeira(arvore: No[], id: string): No[] {
   const no = acharNo(arvore, id);
-  if (!no || ehRaiz(id)) return arvore;
+  if (!no || ehRaiz(arvore, id)) return arvore;
   const nome = nomeDisponivel(arvore, LIXEIRA, no.nome, id);
   return arvore.map(n =>
     n.id === id ? { ...n, paiId: LIXEIRA, nome, voltaPara: no.paiId } : n);
