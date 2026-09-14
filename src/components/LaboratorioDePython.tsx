@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, Play, RotateCcw, Square } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
-import { CSS_IDE, CabecalhoDaIde, EditorDeCodigo, StatusDaIde } from '../labs/ide';
+import { CSS_IDE, CabecalhoDaIde, LateralDaIde, EditorDeCodigo, StatusDaIde } from '../labs/ide';
 import { contarLinhas } from '../labs/realce';
 import { PASSOS_DE_PYTHON } from '../labs/passosDePython';
 import { Python, type ResultadoDeExecucao } from '../labs/pythonRuntime';
@@ -12,6 +12,7 @@ import {
 } from '../labs/falhasDePython';
 import { roteiroDePython, funcoesQueNaoRodam } from '../labs/roteiroDePython';
 import type { NoDoEsboco } from '../labs/pythonAnalise';
+import { arquivosEditaveis } from '../labs/projetoDePython';
 import { lerRascunho, descartarRascunho } from '../lib/rascunho';
 import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
@@ -53,6 +54,30 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
     return typeof g?.conteudo === 'string' && g.conteudo !== licao.modelo;
   });
   const [entrada, setEntrada] = useState((licao.entradaPadrao ?? []).join('\n'));
+
+  /*
+    Os outros arquivos da pasta.
+
+    Só a CC004 os tem — a CC002 inteira é de um arquivo só, e quando a lista é
+    vazia a tela é a de sempre, sem lateral e sem guias. Os que a pessoa escreve
+    vão para o rascunho junto com o principal: perder o segundo arquivo-fonte
+    numa recarga é perder metade do trabalho, e quem perde meia hora desiste.
+  */
+  const doProjeto = useMemo(() => licao.arquivosDoProjeto ?? [], [licao.arquivosDoProjeto]);
+  const modelosDosExtras = useMemo(
+    () => Object.fromEntries(arquivosEditaveis(doProjeto).map(a => [a.nome, a.modelo])),
+    [doProjeto]);
+  const chaveDosExtras = `${chave}-arquivos`;
+  const [extras, setExtras] = useState<Record<string, string>>(() => {
+    const g = lerRascunho<Record<string, string>>(userId, chaveDosExtras);
+    /* Os modelos por baixo do que foi gravado: um arquivo acrescentado à lição
+       depois de alguém começar chega com o conteúdo dele, e não em branco. */
+    return g?.conteudo && typeof g.conteudo === 'object'
+      ? { ...modelosDosExtras, ...g.conteudo }
+      : modelosDosExtras;
+  });
+  /* Qual está aberto no editor. O principal é o de sempre, e é onde se começa. */
+  const [aberto, setAberto] = useState(licao.arquivo);
   const falhas = useMemo(() => licao.falhas ?? [], [licao.falhas]);
   /* Numa chave própria: o rascunho do código é uma string, e é a mesma forma
      nos outros laboratórios de Python. Misturar as duas coisas numa só
@@ -75,6 +100,8 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
      velha — e a tela diz isso em vez de mostrar verde por um código que
      ninguém rodou. */
   const [codigoRodado, setCodigoRodado] = useState<string | null>(null);
+  /* E o que os outros arquivos diziam naquela execução, pelo mesmo motivo. */
+  const [extrasRodados, setExtrasRodados] = useState<Record<string, string>>({});
   const [rodando, setRodando] = useState(false);
   const [entregue, setEntregue] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -82,6 +109,7 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
 
   useRascunhoLocal(userId, chave, codigo, !entregue);
   useRascunhoLocal(userId, chaveDasFalhas, classificacao, !entregue && falhas.length > 0);
+  useRascunhoLocal(userId, chaveDosExtras, extras, !entregue && Object.keys(extras).length > 0);
 
   /* Um Python por laboratório, e ele morre junto com a tela: o worker segura
      13 MB de Pyodide, e deixá-lo vivo depois de sair seria guardar isso por
@@ -109,20 +137,35 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
     setEsboco(analise.esboco);
     setChamadas(analise.chamadas);
 
+    /* O dado só de leitura e o que a pessoa escreveu nos outros arquivos: os
+       dois vão para o disco antes de executar, e a pasta é refeita a cada vez. */
+    const naPasta: Record<string, string> = {};
+    for (const a of doProjeto) naPasta[a.nome] = a.editavel ? extras[a.nome] ?? a.modelo : a.modelo;
+
     const r = analise.erro
       /* Sem árvore não há o que rodar: o Python recusaria com o mesmo erro, e
          mostrá-lo duas vezes só faria a pessoa acreditar que são dois. */
       ? { saida: '', erro: analise.erro, semFim: false }
-      : await py.rodar(fonte, linhas);
+      : await py.rodar(fonte, linhas, doProjeto.length ? naPasta : undefined);
 
     setExecucao(r);
     setCodigoRodado(fonte);
+    setExtrasRodados(extras);
     setRodando(false);
-  }, [codigo, entrada, rodando]);
+  }, [codigo, entrada, rodando, doProjeto, extras]);
 
   const parar = () => { python.current?.encerrar(); setRodando(false); };
 
-  const velha = codigoRodado !== null && codigoRodado !== codigo;
+  /*
+    Editar o segundo arquivo-fonte também envelhece a lista.
+
+    Era só o principal, e com dois arquivos isso vira uma mentira: a pessoa
+    conserta o `chamada.py`, a lista continua verde do que rodou antes, e o
+    botão Entregar continua aceso. É a mesma razão de `velha` existir.
+  */
+  const velha = codigoRodado !== null
+    && (codigoRodado !== codigo
+      || JSON.stringify(extrasRodados) !== JSON.stringify(extras));
 
   const resultados: CheckResult[] = useMemo(
     () => validarPython({
@@ -143,6 +186,7 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
     await aoVencer();
     descartarRascunho(userId, chave);
     descartarRascunho(userId, chaveDasFalhas);
+    descartarRascunho(userId, chaveDosExtras);
     setSalvando(false);
     setEntregue(true);
   };
@@ -248,6 +292,9 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
       </button>
       <button onClick={() => {
         setCodigo(licao.modelo); setExecucao(null); setCodigoRodado(null);
+        /* Os outros arquivos voltam junto: recomeçar com o `chamada.py` de
+           meia hora atrás não é recomeçar do zero. */
+        setExtras(modelosDosExtras); setExtrasRodados({}); setAberto(licao.arquivo);
         setClassificacao(classificacaoInicial(falhas));
       }}
         className="btn-ghost w-full text-sm inline-flex items-center justify-center gap-1.5">
@@ -255,6 +302,30 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
       </button>
     </div>
   );
+
+  /*
+    O principal na frente, e os outros na ordem em que a lição os declarou.
+
+    Quem escreve a lição decide a ordem, e ela é a mesma na lateral e nas guias:
+    duas ordens diferentes para a mesma lista fazem a pessoa procurar duas
+    vezes.
+  */
+  const todosOsArquivos = [
+    { nome: licao.arquivo, editavel: true },
+    ...doProjeto.map(a => ({ nome: a.nome, editavel: !!a.editavel })),
+  ];
+  const ehOPrincipal = aberto === licao.arquivo;
+  const doProjetoAberto = doProjeto.find(a => a.nome === aberto);
+  const podeEscreverNoAberto = ehOPrincipal || !!doProjetoAberto?.editavel;
+  const conteudoAberto = ehOPrincipal
+    ? codigo
+    : doProjetoAberto?.editavel
+      ? extras[aberto] ?? doProjetoAberto.modelo
+      : doProjetoAberto?.modelo ?? '';
+  const escreverNoAberto = (texto: string) => {
+    if (ehOPrincipal) setCodigo(texto);
+    else if (doProjetoAberto?.editavel) setExtras(e => ({ ...e, [aberto]: texto }));
+  };
 
   return (
     <LaboratorioEmTelaCheia
@@ -273,14 +344,37 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
       <style>{CSS_PY}</style>
 
       <div className="ide">
-        <CabecalhoDaIde arquivo={licao.arquivo} projeto={licao.projeto} aoAvisar={setAviso} />
+        <CabecalhoDaIde arquivo={aberto} projeto={licao.projeto} aoAvisar={setAviso} />
 
         <div className="ide-corpo">
+          {/*
+            A lateral e as guias só existem quando há mais de um arquivo.
+
+            A CC002 inteira é de um arquivo só, e uma lateral com um item nela
+            não informa nada — ocupa espaço de editor, que no celular é o que
+            falta. Com dois ou mais, ela é o que permite trocar entre eles, e é
+            a mesma peça que os laboratórios de HTML já usam.
+          */}
+          {doProjeto.length > 0 && (
+            <LateralDaIde
+              projeto={licao.projeto}
+              arquivos={todosOsArquivos.map(a => ({ nome: a.nome, problemas: 0 }))}
+              atual={aberto}
+              aoAbrir={setAberto}
+              aoAvisar={setAviso}
+            />
+          )}
+
           {/* Direto no corpo, sem invólucro: `.ide-codigo` já traz `flex: 1`,
               e um `div` a mais no meio faz esse flex valer dentro dele em vez
               de dentro do corpo — o editor encolhe e sobra faixa morta. */}
-          <EditorDeCodigo codigo={codigo} aoMudar={setCodigo}
-            rotulo={licao.arquivo} linguagem="python" />
+          <EditorDeCodigo
+            codigo={conteudoAberto}
+            aoMudar={escreverNoAberto}
+            rotulo={aberto}
+            linguagem={aberto.endsWith('.py') ? 'python' : 'html'}
+            somenteLeitura={!podeEscreverNoAberto}
+          />
 
           <div className="py-lado">
             <div className="py-barra">
@@ -329,8 +423,12 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
           />
         )}
 
-        <StatusDaIde problemas={resultados.length - passaram} linhas={contarLinhas(codigo)}
-          aoAvisar={setAviso} linguagem="Python" />
+        {/* A régua nomeia o arquivo aberto, e não o laboratório: com o
+            unidades.txt na tela, "Python" no canto seria a régua dizendo o que
+            o arquivo não é. */}
+        <StatusDaIde problemas={resultados.length - passaram} linhas={contarLinhas(conteudoAberto)}
+          aoAvisar={setAviso} linguagem={aberto.endsWith('.py') ? 'Python' : 'Texto sem formatação'}
+          somenteLeitura={!podeEscreverNoAberto} />
       </div>
     </LaboratorioEmTelaCheia>
   );

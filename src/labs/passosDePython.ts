@@ -80,4 +80,23 @@ export const PASSOS_DE_PYTHON: Record<string, string[]> = {
     'Linha em branco e linha só de comentário não contam: o requisito é de programa.',
     'Se está curto, o caminho não é encher — é o programa fazer mais: pedir mais dados, tratar mais casos, mostrar um resumo no fim.',
   ],
+
+  abreParaEscrever: [
+    'Escreva with open("nome.txt", "w", encoding="utf-8") as arquivo:',
+    'O "w" começa do zero: ele apaga o que houver no arquivo no instante em que abre.',
+    'Para acrescentar no fim sem apagar nada, troque o "w" por "a".',
+    'Dentro do bloco, use arquivo.write("texto\\n") — o write não põe a quebra de linha sozinho.',
+  ],
+  abreParaLer: [
+    'Escreva with open("nome.txt", encoding="utf-8") as arquivo:',
+    'Ler é o modo padrão: não precisa de letra nenhuma depois do nome.',
+    'arquivo.read() traz tudo de uma vez; percorrer o arquivo num for traz uma linha por vez.',
+    'Cada linha vem com a quebra grudada nela — .strip() tira ela e os espaços das pontas.',
+  ],
+  abreComWith: [
+    'Ponha o open dentro de um with: with open(...) as arquivo:',
+    'O que for usar o arquivo fica recuado dentro do bloco.',
+    'Ao sair do bloco, o arquivo é fechado sozinho — inclusive se der erro no meio.',
+    'Sem o with seria preciso lembrar do arquivo.close(), e o arquivo esquecido aberto pode acabar sem a última linha.',
+  ],
 };

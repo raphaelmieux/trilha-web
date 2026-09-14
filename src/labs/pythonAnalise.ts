@@ -74,6 +74,7 @@ def analisar(fonte):
         'tipoBooleano': False, 'operadorAritmetico': False,
         'operadorComparacao': False, 'condicionalCompleto': False,
         'lacoFor': False, 'lacoWhile': False, 'leEExibe': False,
+        'abreParaEscrever': False, 'abreParaLer': False, 'abreComWith': False,
     }
     arvore = ast.parse(fonte)
 
@@ -134,6 +135,31 @@ def analisar(fonte):
                 leu = True
             elif no.func.id == 'print':
                 escreveu = True
+            elif no.func.id == 'open':
+                # O modo é o segundo argumento posicional, ou o nomeado "mode".
+                # Ausente, é leitura: "r" e o padrão do open() são a mesma coisa,
+                # e a lição ensina justamente que o modo de ler não precisa de
+                # letra nenhuma.
+                modo = ''
+                if len(no.args) > 1 and isinstance(no.args[1], ast.Constant):
+                    modo = str(no.args[1].value or '')
+                for palavra in no.keywords:
+                    if palavra.arg == 'mode' and isinstance(palavra.value, ast.Constant):
+                        modo = str(palavra.value.value or '')
+                if 'w' in modo or 'a' in modo or 'x' in modo:
+                    achados['abreParaEscrever'] = True
+                else:
+                    achados['abreParaLer'] = True
+
+        # O with que abre arquivo, e não qualquer with: o que a lição cobra é
+        # fechar o arquivo sozinho, e um with em volta de outra coisa não faz
+        # isso. Vale o "with A as a, B as b" também, que é um nó só com dois
+        # itens.
+        if isinstance(no, ast.With) and _corpo_util(no.body):
+            for item in no.items:
+                alvo = item.context_expr
+                if isinstance(alvo, ast.Call) and isinstance(alvo.func, ast.Name) and alvo.func.id == 'open':
+                    achados['abreComWith'] = True
 
     achados['leEExibe'] = leu and escreveu
     return achados

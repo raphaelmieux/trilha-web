@@ -755,6 +755,51 @@ export const MODULOS_DE_PYTHON_AVANCADO: ModuloDeVereda[] = [
         resumo: 'open, os modos, o with, e o caminho relativo.',
         topicos: cap('arquivos').topicos,
       },
+      {
+        id: 'm3-lab', tipo: 'laboratorio', linguagem: 'python',
+        titulo: 'O caderno de presença',
+        resumo: 'Ler o que a secretaria exportou, gravar o resultado, e reler para conferir.',
+        arquivo: 'presenca.py',
+        projeto: 'caderno-de-presenca',
+        /*
+          O dado chega pronto, e é só de leitura.
+
+          Mandar a pessoa gravar primeiro para ler depois mediria gravar duas
+          vezes. O que existe na vida é o arquivo que já estava lá — e ele chega
+          como arquivo de verdade chega: com um espaço sobrando numa linha e uma
+          linha em branco no meio. Sem isso, o `.strip()` da lição seria um
+          detalhe sem consequência, e o programa passaria sem ele.
+        */
+        arquivosDoProjeto: [
+          { nome: 'unidades.txt', modelo: 'Falcão\nPantera   \n\nÁguia\n' },
+        ],
+        verificacoes: ['abreParaLer', 'abreParaEscrever', 'abreComWith', 'roda', 'saidaEsperada'],
+        saidaEsperada: `Unidade: Falcão
+Unidade: Pantera
+Unidade: Águia`,
+        modelo: `# O caderno de presença do clube
+#
+# Na pasta, ao lado deste arquivo, está o unidades.txt — uma unidade por linha,
+# como a secretaria exportou. Ele é só de leitura: é o dado que chegou, e dado
+# que chega não se conserta na fonte.
+#
+# Escreva um programa que:
+#
+#   1. leia o unidades.txt;
+#   2. grave um presenca.txt com uma linha "Unidade: <nome>" para cada unidade;
+#   3. abra o presenca.txt e mostre na tela o que ficou gravado.
+#
+# O passo 3 não é enfeite. Programa que grava e nunca relê é programa que você
+# acredita que funcionou — reler é como se confere.
+#
+# Duas coisas que o arquivo de verdade traz e o exercício limpo não traz: uma
+# linha tem espaço sobrando no fim, e há uma linha em branco no meio. As duas
+# aparecem na saída se ninguém cuidar delas.
+#
+# Use o with nas três aberturas, e encoding="utf-8" em todas — sem ele o
+# "Falcão" volta certo num computador e errado no outro.
+`,
+      },
     ],
   },
   {

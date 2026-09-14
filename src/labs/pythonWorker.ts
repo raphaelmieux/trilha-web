@@ -28,6 +28,7 @@ import {
   ANALISADOR, apararTraceback, erroDeSintaxeEmTexto,
   type NoDoEsboco, type SaidaDaAnalise,
 } from './pythonAnalise';
+import { preambuloDoProjeto } from './projetoDePython';
 
 interface Pyodide {
   runPython: (codigo: string) => unknown;
@@ -37,7 +38,10 @@ interface Pyodide {
 }
 
 export type PedidoAoPython =
-  | { tipo: 'rodar'; codigo: string; entrada: string[] }
+  /* `arquivos` é o que já existe na pasta do programa: o CSV que a lição
+     entrega para ser lido, e o segundo arquivo-fonte que ele importa. Ausente
+     nos laboratórios de um arquivo só, que é como a CC002 inteira funciona. */
+  | { tipo: 'rodar'; codigo: string; entrada: string[]; arquivos?: Record<string, string> }
   | { tipo: 'analisar'; codigo: string };
 
 export type RespostaDoPython =
@@ -57,7 +61,9 @@ async function carregar(): Promise<Pyodide> {
   return pyodide;
 }
 
-async function rodar(codigo: string, entrada: string[]): Promise<RespostaDoPython> {
+async function rodar(
+  codigo: string, entrada: string[], arquivos?: Record<string, string>,
+): Promise<RespostaDoPython> {
   const py = await carregar();
   let saida = '';
   let i = 0;
@@ -65,6 +71,15 @@ async function rodar(codigo: string, entrada: string[]): Promise<RespostaDoPytho
   py.setStdout({ batched: t => { saida += `${t}\n`; } });
   py.setStderr({ batched: t => { saida += `${t}\n`; } });
   try {
+    /*
+      A pasta é preparada dentro do mesmo `try`, e não antes dele.
+
+      Um preâmbulo que estourasse fora daqui viraria falha do worker, e a tela
+      diria "o ambiente Python não pôde ser carregado" — que é mentira, e manda
+      procurar no lugar errado. Dentro, o erro chega como erro de execução,
+      escrito no painel de saída onde a pessoa está olhando.
+    */
+    if (arquivos) py.runPython(preambuloDoProjeto(arquivos));
     py.runPython(codigo);
     return { tipo: 'resultado', saida, erro: null };
   } catch (e) {
@@ -111,7 +126,7 @@ self.onmessage = async (ev: MessageEvent<PedidoAoPython>) => {
   const pedido = ev.data;
   try {
     const r = pedido.tipo === 'rodar'
-      ? await rodar(pedido.codigo, pedido.entrada)
+      ? await rodar(pedido.codigo, pedido.entrada, pedido.arquivos)
       : await analisar(pedido.codigo);
     (self as unknown as Worker).postMessage(r);
   } catch (e) {
