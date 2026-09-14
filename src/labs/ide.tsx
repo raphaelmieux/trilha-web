@@ -244,8 +244,14 @@ export function LateralDaIde({ projeto, arquivos, atual, aoAbrir, aoAvisar, aoCo
   atual: string;
   aoAbrir: (nome: string) => void;
   aoAvisar: (o: string) => void;
-  /** Abre a referência de sintaxe. É o único ícone da barra que faz algo. */
-  aoConsultar: () => void;
+  /**
+   * Abre a referência de sintaxe. É o único ícone da barra que faz algo.
+   *
+   * Ausente, o ícone não aparece. Ele diz "Sintaxe do HTML" — e num editor de
+   * Python isso é pior do que não ter botão: manda procurar a referência
+   * errada, com o nome da linguagem errada escrito no próprio botão.
+   */
+  aoConsultar?: () => void;
 }) {
   return (
     <>
@@ -266,9 +272,11 @@ export function LateralDaIde({ projeto, arquivos, atual, aoAbrir, aoAvisar, aoCo
             extensão. Aqui é a mini-trilha de sintaxe, e é o motivo de ela
             existir: quem está escrevendo não deveria ter de sair da tela para
             lembrar como se escreve uma tabela. */}
-        <button title="Sintaxe do HTML" aria-label="Sintaxe do HTML" onClick={aoConsultar}>
-          <BookOpen className="w-5 h-5" />
-        </button>
+        {aoConsultar && (
+          <button title="Sintaxe do HTML" aria-label="Sintaxe do HTML" onClick={aoConsultar}>
+            <BookOpen className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       <div className="ide-lateral">
@@ -477,10 +485,19 @@ export function PreviaDaIde({ html, arquivo, aoAvisar }: {
 }
 
 /** A régua de status, com a contagem de problemas à esquerda. */
-export function StatusDaIde({ problemas, linhas, aoAvisar, linguagem = 'HTML' }: {
+export function StatusDaIde({ problemas, linhas, aoAvisar, linguagem = 'HTML', somenteLeitura = false }: {
   problemas: number; linhas: number; aoAvisar: (o: string) => void;
   /** O que a régua diz à direita. Editor de verdade nomeia o arquivo aberto. */
   linguagem?: string;
+  /**
+   * Se o arquivo aberto não aceita escrita.
+   *
+   * Sem dizer isso, o campo simplesmente não responde: a pessoa vai consertar
+   * o espaço sobrando no dado que a lição entregou, digita, e nada acontece.
+   * Campo que ignora o que se digita sem explicar é a forma mais rápida de
+   * alguém achar que a página travou — e o editor de verdade marca isso.
+   */
+  somenteLeitura?: boolean;
 }) {
   return (
     <div className="ide-status">
@@ -495,6 +512,7 @@ export function StatusDaIde({ problemas, linhas, aoAvisar, linguagem = 'HTML' }:
       <span>Espaços: 2</span>
       <span className="hidden sm:inline">Tab recua · Esc sai</span>
       <span>UTF-8</span>
+      {somenteLeitura && <span style={{ color: '#E8A33D' }}>Somente leitura</span>}
       <span>{linguagem}</span>
     </div>
   );

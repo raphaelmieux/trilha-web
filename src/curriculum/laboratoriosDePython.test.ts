@@ -4,6 +4,7 @@ import { VEREDAS } from './veredas';
 import { ANALISADOR, type SaidaDaAnalise } from '../labs/pythonAnalise';
 import { validarPython } from '../lib/pythonValidator';
 import { classificacaoInicial, type Classificacao } from '../labs/falhasDePython';
+import { preambuloDoProjeto } from '../labs/projetoDePython';
 import type { LicaoDeVereda } from './veredas';
 
 /*
@@ -59,6 +60,20 @@ function conferir(licao: Extract<LicaoDeVereda, { tipo: 'laboratorio' }>, codigo
     py.setStdout({ batched: t => { saida += `${t}\n`; } });
     py.setStderr({ batched: t => { saida += `${t}\n`; } });
     try {
+      /*
+        A pasta do projeto, do mesmo jeito que o worker a prepara.
+
+        Sem isto, o laboratório que lê um arquivo reprovaria aqui com
+        FileNotFoundError e passaria no navegador — uma trava dizendo o
+        contrário do que o desbravador vê é pior do que trava nenhuma. É
+        também o que garante que o disco comece igual a cada solução
+        conferida: uma instância só do Pyodide serve a todas.
+      */
+      const naPasta = licao.arquivosDoProjeto ?? [];
+      if (naPasta.length) {
+        py.runPython(preambuloDoProjeto(
+          Object.fromEntries(naPasta.map(a => [a.nome, a.modelo]))));
+      }
       py.runPython(codigo);
     } catch (e) {
       erro = String((e as Error)?.message ?? e);
@@ -76,9 +91,19 @@ function conferir(licao: Extract<LicaoDeVereda, { tipo: 'laboratorio' }>, codigo
   }, licao.verificacoes);
 }
 
-const laboratorios = () => (VEREDAS.find(v => v.code === 'CC002')?.modulos ?? [])
-  .flatMap(m => m.licoes)
-  .filter((l): l is Extract<LicaoDeVereda, { tipo: 'laboratorio' }> => l.tipo === 'laboratorio');
+/*
+  Toda vereda com laboratório de Python, e não uma lista escrita à mão.
+
+  Estava fixa em CC002, que era a única que havia. A CC004 chegou e não entraria
+  — e uma omissão dessas não reprova nada: a build segue verde conferindo os
+  laboratórios velhos, que é a pior forma de falhar, porque é indistinguível de
+  estar tudo certo. É a mesma correção que `index.test.ts` já fez quando a AP043
+  abriu fora do `describe.each`.
+*/
+const laboratorios = () => VEREDAS
+  .flatMap(v => (v.modulos ?? []).flatMap(m => m.licoes).map(l => [v.code, l] as const))
+  .filter((par): par is [string, Extract<LicaoDeVereda, { tipo: 'laboratorio' }>] =>
+    par[1].tipo === 'laboratorio' && par[1].linguagem === 'python');
 
 /*
   As soluções de referência: um programa por laboratório, escrito como quem
@@ -86,7 +111,7 @@ const laboratorios = () => (VEREDAS.find(v => v.code === 'CC002')?.modulos ?? []
   gabarito no currículo é gabarito a um import de distância da tela.
 */
 const SOLUCOES: Record<string, string> = {
-  'm2-lab': `nome = "Ana"
+  'CC002/m2-lab': `nome = "Ana"
 idade = 12
 altura = 1.58
 inscrito = True
@@ -97,14 +122,14 @@ print("Altura:", altura)
 print("Inscrito:", inscrito)
 `,
 
-  'm3-lab': `nome = input("Seu nome: ")
+  'CC002/m3-lab': `nome = input("Seu nome: ")
 idade = int(input("Sua idade: "))
 
 print("Olá,", nome)
 print("Ano que vem você faz", idade + 1)
 `,
 
-  'm4-lab': `arrecadado = 480
+  'CC002/m4-lab': `arrecadado = 480
 gasto = 375
 desbravadores = 12
 
@@ -116,7 +141,7 @@ print("Por desbravador:", por_desbravador)
 print("Fechou no azul?", sobrou > 0)
 `,
 
-  'm5-lab': `nota = 7
+  'CC002/m5-lab': `nota = 7
 
 if nota >= 9:
     print("excelente")
@@ -126,7 +151,7 @@ else:
     print("a recuperar")
 `,
 
-  'm6-lab': `for desbravador in range(4):
+  'CC002/m6-lab': `for desbravador in range(4):
     print("Presente!")
 
 total = 0
@@ -139,7 +164,7 @@ while total < 100:
 print("Foram", contribuicoes, "contribuicoes")
 `,
 
-  'm7-lab': `notas = [8, 6, 10]
+  'CC002/m7-lab': `notas = [8, 6, 10]
 soma = 0
 
 for n in notas:
@@ -160,7 +185,7 @@ else:
 
   /* Quarenta linhas de programa, com entrada e saída — como o requisito 7 pede.
      A entrada vem do campo ao lado, e por isso ela é declarada abaixo. */
-  'm8-lab': `# Caixa do acampamento da unidade Falcão
+  'CC002/m8-lab': `# Caixa do acampamento da unidade Falcão
 nome_da_unidade = "Falcão"
 valor_da_diaria = 45.0
 dias = 3
@@ -212,17 +237,36 @@ else:
 
 print("Fim do relatorio da unidade", nome_da_unidade)
 `,
+
+  /* Ler o que chegou, gravar o resultado, e reler para conferir. O `if nome:`
+     e o `.strip()` não são zelo: o unidades.txt vem com espaço sobrando numa
+     linha e uma linha em branco no meio, como arquivo de verdade vem. */
+  'CC004/m3-lab': `unidades = []
+with open("unidades.txt", encoding="utf-8") as arquivo:
+    for linha in arquivo:
+        nome = linha.strip()
+        if nome:
+            unidades.append(nome)
+
+with open("presenca.txt", "w", encoding="utf-8") as arquivo:
+    for nome in unidades:
+        arquivo.write("Unidade: " + nome + "\\n")
+
+with open("presenca.txt", encoding="utf-8") as arquivo:
+    for linha in arquivo:
+        print(linha.strip())
+`,
 };
 
 const ENTRADA_DA_SOLUCAO: Record<string, string[]> = {
-  'm8-lab': ['2', '135', '50'],
+  'CC002/m8-lab': ['2', '135', '50'],
 };
 
 const CLASSIFICACAO_CERTA: Record<string, Classificacao> = {
-  'm7-lab': { f1: 'sintaxe', f2: 'execucao', f3: 'logica' },
+  'CC002/m7-lab': { f1: 'sintaxe', f2: 'execucao', f3: 'logica' },
 };
 
-describe('os laboratórios de Python da CC002', () => {
+describe('os laboratórios de Python das veredas', () => {
   it('há laboratórios para conferir', () => {
     expect(laboratorios().length).toBeGreaterThan(4);
   });
@@ -238,11 +282,11 @@ describe('os laboratórios de Python da CC002', () => {
   */
   it('nenhum modelo abre com verificação verde, tirando o "roda" declarado', () => {
     const indevidas: string[] = [];
-    for (const l of laboratorios()) {
+    for (const [code, l] of laboratorios()) {
       const verdes = conferir(l, l.modelo, classificacaoInicial(l.falhas ?? []))
         .filter(r => r.passed).map(r => r.id);
-      for (const id of verdes.filter(id => id !== 'roda')) indevidas.push(`${l.id}: ${id}`);
-      expect(verdes.length, `${l.id} abre com tudo verde`).toBeLessThan(l.verificacoes.length);
+      for (const id of verdes.filter(id => id !== 'roda')) indevidas.push(`${code}/${l.id}: ${id}`);
+      expect(verdes.length, `${code}/${l.id} abre com tudo verde`).toBeLessThan(l.verificacoes.length);
     }
     expect(indevidas).toEqual([]);
   });
@@ -255,16 +299,20 @@ describe('os laboratórios de Python da CC002', () => {
   */
   it('toda solução de referência passa em todas as verificações', () => {
     const reprovadas: string[] = [];
-    for (const l of laboratorios()) {
-      const solucao = SOLUCOES[l.id];
-      expect(solucao, `${l.id} não tem solução de referência`).toBeDefined();
+    for (const [code, l] of laboratorios()) {
+      /* Pela vereda e pelo id: `m3-lab` existe na CC002 e na CC004, e uma
+         chave só daria a solução de uma ao laboratório da outra — que
+         reprovaria com uma mensagem falando de outro exercício. */
+      const chave = `${code}/${l.id}`;
+      const solucao = SOLUCOES[chave];
+      expect(solucao, `${chave} não tem solução de referência`).toBeDefined();
 
-      const licao = ENTRADA_DA_SOLUCAO[l.id]
-        ? { ...l, entradaPadrao: ENTRADA_DA_SOLUCAO[l.id] }
+      const licao = ENTRADA_DA_SOLUCAO[chave]
+        ? { ...l, entradaPadrao: ENTRADA_DA_SOLUCAO[chave] }
         : l;
-      const resultados = conferir(licao, solucao, CLASSIFICACAO_CERTA[l.id] ?? {});
+      const resultados = conferir(licao, solucao, CLASSIFICACAO_CERTA[chave] ?? {});
       for (const r of resultados.filter(r => !r.passed)) {
-        reprovadas.push(`${l.id} · ${r.id}: ${r.detail ?? r.hint}`);
+        reprovadas.push(`${chave} · ${r.id}: ${r.detail ?? r.hint}`);
       }
     }
     expect(reprovadas).toEqual([]);
@@ -274,8 +322,8 @@ describe('os laboratórios de Python da CC002', () => {
      com uma lista de tarefas ao lado. */
   it('todo modelo traz o enunciado escrito nele', () => {
     const mudos = laboratorios()
-      .filter(l => !l.modelo.trimStart().startsWith('#') || l.modelo.length < 120)
-      .map(l => l.id);
+      .filter(([, l]) => !l.modelo.trimStart().startsWith('#') || l.modelo.length < 120)
+      .map(([code, l]) => `${code}/${l.id}`);
     expect(mudos).toEqual([]);
   });
 });

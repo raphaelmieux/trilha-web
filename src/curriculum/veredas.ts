@@ -6,6 +6,7 @@ import { MODULOS_DE_TERMINAL } from './terminalEGit';
 import { MODULOS_DE_PYTHON_AVANCADO } from './pythonAvancado';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
+import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
 
 /*
  * As veredas.
@@ -196,6 +197,21 @@ export type LicaoDeVereda =
      * aprovaria um programa que roda e responde errado.
      */
     saidaEsperada?: string;
+    /**
+     * Só para `'python'`: o que mais existe na pasta do programa.
+     *
+     * Dois usos, e a mesma peça. O requisito 5 pede ler um arquivo, um CSV e um
+     * JSON — e quem lê precisa de algo gravado para ler; mandar a pessoa gravar
+     * primeiro para ler depois mediria gravar duas vezes, e o que existe na
+     * vida é o arquivo que a secretaria do clube já exportou. O requisito 8
+     * pede duas fontes, e o `import` entre elas só acha a segunda se ela
+     * existir em disco.
+     *
+     * `editavel` separa os dois: o dado chega só de leitura na lateral, como a
+     * `marcacao` faz no CSS; o segundo arquivo-fonte chega editável, porque
+     * escrevê-lo é o exercício.
+     */
+    arquivosDoProjeto?: ArquivoDoProjetoPython[];
     /**
      * Só para `'python'`: as falhas plantadas no modelo, para classificar.
      *

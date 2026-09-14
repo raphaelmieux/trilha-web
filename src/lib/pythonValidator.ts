@@ -175,6 +175,24 @@ const SPECS: Spec[] = [
   daArvore('lacoWhile', 'Um laço while',
     'while condição:, com blocos dentro e algo que faça a condição virar falsa.',
     'Nenhum laço while com corpo. Um while cujo corpo é só "pass" não repete nada.'),
+  /*
+    As três do arquivo em disco.
+
+    `abreParaLer` e `abreParaEscrever` olham o modo passado ao `open`, e não a
+    existência da chamada: o requisito 5 pede ler **e** gravar, e um programa
+    que só grava tem uma chamada de `open` como um que só lê. O modo é o que
+    separa os dois, e é a lição do tópico — o "w" apaga o arquivo ao abrir, o
+    "a" acrescenta, e ler não precisa de letra nenhuma.
+  */
+  daArvore('abreParaEscrever', 'Grava num arquivo',
+    'open(nome, "w") para começar do zero, ou "a" para acrescentar no fim.',
+    'Nenhuma chamada de open com modo de escrita. Sem o modo, open() abre para ler.'),
+  daArvore('abreParaLer', 'Lê um arquivo',
+    'open(nome) já abre para leitura: o modo de ler é o padrão.',
+    'Nenhuma chamada de open para leitura. Ler é o que traz de volta o que foi gravado.'),
+  daArvore('abreComWith', 'Abre com with',
+    'with open(...) as arquivo: — o bloco fecha o arquivo sozinho ao terminar.',
+    'Nenhum with em volta de um open. Arquivo que ninguém fecha pode acabar sem a última linha.'),
   {
     id: 'quarentaLinhas',
     label: 'Pelo menos 40 linhas de programa',

@@ -143,10 +143,16 @@ export class Python {
    *
    * O prazo cobre a primeira carga do Pyodide junto — são uns 12 MB e alguns
    * segundos na primeira vez —, por isso ele é generoso na estreia.
+   *
+   * `arquivos` é o que existe na pasta ao lado do programa: o CSV que a lição
+   * entrega para ser lido, o segundo arquivo-fonte que ele importa. A pasta é
+   * refeita a cada execução — o porquê está em `projetoDePython.ts`.
    */
-  async rodar(codigo: string, entrada: string[]): Promise<ResultadoDeExecucao> {
+  async rodar(
+    codigo: string, entrada: string[], arquivos?: Record<string, string>,
+  ): Promise<ResultadoDeExecucao> {
     const prazo = this.prazo();
-    const r = await this.pedir({ tipo: 'rodar', codigo, entrada }, prazo);
+    const r = await this.pedir({ tipo: 'rodar', codigo, entrada, arquivos }, prazo);
     if (r.tipo === 'resultado') {
       return { saida: cortar(r.saida), erro: r.erro, semFim: false };
     }
