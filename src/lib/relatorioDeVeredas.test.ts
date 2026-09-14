@@ -61,7 +61,7 @@ describe('quem está no meio de uma vereda', () => {
   it('a frase diz onde ela está, e não que concluiu', () => {
     const [p] = meio().percursos;
     expect(p.concluida).toBe(false);
-    expect(p.frase).toContain('Está em percurso');
+    expect(p.frase).toContain('Está em andamento');
     expect(p.frase).not.toContain('inteira');
   });
 
@@ -72,8 +72,8 @@ describe('quem está no meio de uma vereda', () => {
     expect(p.frase).toMatch(/teoria/);
   });
 
-  it('o fechamento diz que ela está em percurso', () => {
-    expect(meio().conquistas).toContain('em percurso');
+  it('o fechamento diz que ela está em andamento', () => {
+    expect(meio().conquistas).toContain('em andamento');
     expect(meio().conquistas).toContain('CC001');
   });
 });
@@ -138,7 +138,7 @@ describe('a explicação do que é uma vereda', () => {
 
   it('conta as concluídas e as em curso, separadas', () => {
     expect(r().conquistas).toContain('concluiu 1 vereda');
-    expect(r().conquistas).toContain('está em percurso em 1 outra');
+    expect(r().conquistas).toContain('está em andamento em 1 outra');
   });
 
   it('lista as duas, na ordem em que vieram', () => {

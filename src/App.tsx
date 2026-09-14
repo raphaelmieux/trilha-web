@@ -61,9 +61,11 @@ export function RotaDeVisitante({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-/* A marca do item de percurso. O destino e o rótulo saem do endereço, e ele
-   some quando não há percurso aberto. Ver `percursoAtual`. */
-const PERCURSO = '@percurso';
+/* A marca do item que aponta para a trilha ou a vereda aberta. O destino e o
+   rótulo saem do endereço, e ele some quando não há nenhuma das duas aberta —
+   ver `percursoAtual`. O valor nunca chega à tela: o rótulo que o desbravador
+   lê é "Trilha Atual" ou "Vereda Atual", conforme o que estiver aberto. */
+const PERCURSO = '@atual';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Início', icon: Home, exact: true },

@@ -196,7 +196,7 @@ export default function SecaoDeVeredas({ userId }: { userId?: string }) {
       <div>
         <h2 className="text-lg font-bold" style={{ color: 'var(--color-text-soft)' }}>Veredas</h2>
         <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>
-          Vereda é o caminho estreito que sai da trilha. Percurso curto, com
+          Vereda é o caminho estreito que sai da trilha: um estudo curto, com
           módulos de teoria e laboratórios a vencer, que vale sozinho — não conta
           no percentual de especialidade nenhuma, e rende insígnia.
         </p>

@@ -105,7 +105,7 @@ export default function ExplicacaoDaInsignia({ insignia, aoFechar }: {
           {!onde && (
             <p className="text-xs m-0 pt-1" style={{ color: 'var(--color-text-faint)' }}>
               <Layers className="w-3 h-3 inline mr-1" />
-              O percurso desta não ficou registrado — ela é anterior a esta tela.
+              Não ficou registrado onde esta foi conquistada — ela é anterior a esta tela.
             </p>
           )}
         </dl>

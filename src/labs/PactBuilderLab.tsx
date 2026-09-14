@@ -92,7 +92,7 @@ export default function PactBuilderLab({ specialtyCode, lessonCode, lessonTitle,
   ];
 
   const handleDownload = () => {
-    exportPactPdf({ studentName, club: profile?.club ?? '', clauses: pactClauses() });
+    void exportPactPdf({ studentName, club: profile?.club ?? '', clauses: pactClauses() });
     setDownloaded(true);
   };
 

@@ -42,12 +42,20 @@ describe('os pedaços da marca', () => {
     expect(MIOLO).toBe(MARCAS.plataforma.miolo);
   });
 
-  it('parte uma frase deixando só os parênteses vermelhos', () => {
+  /*
+    Três partes, e não duas.
+
+    A cor pinta só os parênteses, e por isso bastavam dois estados enquanto a
+    cor era a única coisa que mudava. A fonte veste o **nome inteiro**, e o
+    miolo vinha marcado como prosa comum — indistinguível do texto em volta,
+    e portanto escrito em Helvetica bem no meio da marca.
+  */
+  it('parte uma frase separando o miolo dos parênteses', () => {
     expect(partirNaMarca(`Há uma versão nova do ${NOME}.`)).toEqual([
-      { texto: 'Há uma versão nova do ', daMarca: false },
-      { texto: MIOLO, daMarca: false },
-      { texto: PARENTESES, daMarca: true },
-      { texto: '.', daMarca: false },
+      { texto: 'Há uma versão nova do ', parte: 'fora' },
+      { texto: MIOLO, parte: 'miolo' },
+      { texto: PARENTESES, parte: 'parenteses' },
+      { texto: '.', parte: 'fora' },
     ]);
   });
 
@@ -55,12 +63,12 @@ describe('os pedaços da marca', () => {
      interpolação, e nem toda frase que passa por aqui cita o nome. */
   it('devolve intacta a frase que não cita a marca', () => {
     expect(partirNaMarca('Uma frase qualquer.')).toEqual([
-      { texto: 'Uma frase qualquer.', daMarca: false },
+      { texto: 'Uma frase qualquer.', parte: 'fora' },
     ]);
   });
 
   it('veste as duas ocorrências quando o nome aparece duas vezes', () => {
-    const vermelhos = partirNaMarca(`${NOME} e ${NOME}`).filter(p => p.daMarca);
+    const vermelhos = partirNaMarca(`${NOME} e ${NOME}`).filter(p => p.parte === 'parenteses');
     expect(vermelhos).toHaveLength(2);
   });
 
@@ -71,17 +79,17 @@ describe('os pedaços da marca', () => {
       `Quem termina a ${NOME} recebe um ${MARCAS.token.nome} para conferir.`);
     expect(pedacos.map(p => p.texto).join('')).toBe(
       `Quem termina a ${NOME} recebe um ${MARCAS.token.nome} para conferir.`);
-    expect(pedacos.filter(p => p.daMarca)).toHaveLength(2);
+    expect(pedacos.filter(p => p.parte === 'parenteses')).toHaveLength(2);
     expect(pedacos.findIndex(p => p.texto === MIOLO))
       .toBeLessThan(pedacos.findIndex(p => p.texto === MARCAS.token.miolo));
   });
 
   it('veste o certificado citado sozinho', () => {
     expect(partirNaMarca(`Recebeu um ${MARCAS.token.nome}?`)).toEqual([
-      { texto: 'Recebeu um ', daMarca: false },
-      { texto: MARCAS.token.miolo, daMarca: false },
-      { texto: PARENTESES, daMarca: true },
-      { texto: '?', daMarca: false },
+      { texto: 'Recebeu um ', parte: 'fora' },
+      { texto: MARCAS.token.miolo, parte: 'miolo' },
+      { texto: PARENTESES, parte: 'parenteses' },
+      { texto: '?', parte: 'fora' },
     ]);
   });
 });

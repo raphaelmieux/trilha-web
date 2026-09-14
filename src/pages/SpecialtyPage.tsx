@@ -281,8 +281,8 @@ export default function SpecialtyPage() {
             </h2>
           </div>
           <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>
-            São percursos curtos e de bônus: rendem insígnia e <MarcaEmTexto marca="token" />, e não
-            entram no percentual desta trilha nem são cobrados na avaliação.
+            São curtas e de bônus: rendem insígnia e <MarcaEmTexto marca="token" />, e não
+            entram no percentual desta trilha nem são cobradas na avaliação.
           </p>
           <div className="space-y-3">
             {recomendadas.map(r => {

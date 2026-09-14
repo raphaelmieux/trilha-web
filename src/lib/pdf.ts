@@ -3,7 +3,10 @@ import type { Certification, CertificadoImprimivel } from '../types';
 import { CERT_WIDTH } from '../components/CertificateCanvas';
 import { codigoDaArte } from './certificados';
 import { renderBadgeIconPng, TIER_LABELS } from './badgeIcons';
-import { partirNaMarca, VERMELHO_DA_MARCA } from './marca';
+import { VERMELHO_DA_MARCA } from './marca';
+import {
+  vestirAMarca, linhaComMarca, linhaCentralizadaComMarca, larguraComMarca,
+} from './marcaEmPdf';
 import { dataPorExtenso } from './explicacaoDaInsignia';
 import { emOrdemDeConquista, type InsigniaConquistada } from './conquista';
 
@@ -22,8 +25,9 @@ import { emOrdemDeConquista, type InsigniaConquistada } from './conquista';
  * size and orientation per page, full-bleed artwork, no browser furniture, and
  * an identical file on any machine.
  *
- * Helvetica is one of the 14 standard PDF fonts, so the type used here is the
- * real thing rather than a substitute — and it matches the app's identity.
+ * Helvetica is one of the 14 standard PDF fonts, so the body type used here is
+ * the real thing rather than a substitute. A marca é a exceção, e vai na fonte
+ * dela: ver `marcaEmPdf.ts`.
  */
 
 const A4_LANDSCAPE = { width: 297, height: 210 };
@@ -35,49 +39,6 @@ const PX_TO_MM = A4_LANDSCAPE.width / CERT_WIDTH;
 const pxToMm = (px: number) => px * PX_TO_MM;
 /** jsPDF sets type size in points regardless of the document unit. */
 const pxToPt = (px: number) => pxToMm(px) / MM_PER_PT;
-
-/**
- * Escreve uma linha centralizada com os parênteses da marca em vermelho.
- *
- * A regra da marca vale em toda parte, e estas fichas são entregues impressas —
- * é onde a marca mais aparece fora da tela. O que o papel não recebe é a fonte:
- * o jsPDF desenha em Helvetica, uma das 14 do padrão PDF, e pôr Space Mono aqui
- * exigiria embutir um TTF que iria dentro do pacote de todo visitante para
- * servir a três rodapés. A cor vem; a fonte, não.
- *
- * Centralizar obriga a desenhar à mão: `align: 'center'` centraliza cada
- * chamada de `text` separadamente, então três pedaços de cores diferentes
- * sairiam empilhados no mesmo ponto. Mede-se a linha inteira, começa-se na
- * metade dela à esquerda do centro, e cada pedaço anda a própria largura.
- */
-function linhaComMarca(
-  doc: jsPDF,
-  texto: string,
-  x: number,
-  y: number,
-  corDoTexto: [number, number, number],
-) {
-  let cursor = x;
-  for (const pedaco of partirNaMarca(texto)) {
-    const [r, g, b] = pedaco.daMarca ? VERMELHO_DA_MARCA : corDoTexto;
-    doc.setTextColor(r, g, b);
-    doc.text(pedaco.texto, cursor, y);
-    cursor += doc.getTextWidth(pedaco.texto);
-  }
-
-  /* Devolve a cor de quem chamou: as linhas seguintes contam com ela. */
-  doc.setTextColor(corDoTexto[0], corDoTexto[1], corDoTexto[2]);
-}
-
-function linhaCentralizadaComMarca(
-  doc: jsPDF,
-  texto: string,
-  centroX: number,
-  y: number,
-  corDoTexto: [number, number, number],
-) {
-  linhaComMarca(doc, texto, centroX - doc.getTextWidth(texto) / 2, y, corDoTexto);
-}
 
 async function loadImageAsDataUrl(url: string): Promise<string> {
   const response = await fetch(url);
@@ -136,6 +97,7 @@ async function drawCertificate(doc: jsPDF, cert: CertificadoImprimivel, studentN
 /** A single certificate: one A4 landscape page, artwork only. */
 export async function exportCertificatePdf(cert: CertificadoImprimivel, studentName: string): Promise<void> {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+  await vestirAMarca(doc);
   await drawCertificate(doc, cert, studentName);
   doc.save(`Token.Web ${cert.curriculum_code} - ${studentName}.pdf`);
 }
@@ -151,7 +113,7 @@ export async function exportCertificatePdf(cert: CertificadoImprimivel, studentN
  * are in-person checks; carrying the evidence here is what lets a leader confirm
  * them by reading, which is how this club chose to run it.
  */
-export function exportStudySheetPdf(input: {
+export async function exportStudySheetPdf(input: {
   studentName: string;
   subject: string;
   query: string;
@@ -163,8 +125,9 @@ export function exportStudySheetPdf(input: {
   passages: { reference: string; version: string; text: string }[];
   addresses: { url: string; verdict: string }[];
   downloads: { name: string; verdict: string }[];
-}): void {
+}): Promise<void> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  await vestirAMarca(doc);
   const width = A4_PORTRAIT.width;
   const left = 18;
   const textWidth = width - left * 2;
@@ -241,12 +204,13 @@ export function exportStudySheetPdf(input: {
  * This is the artefact the requirement is really about: something the student
  * and a guardian can put on the wall next to the computer.
  */
-export function exportPactPdf(input: {
+export async function exportPactPdf(input: {
   studentName: string;
   club: string;
   clauses: { title: string; text: string }[];
-}): void {
+}): Promise<void> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  await vestirAMarca(doc);
   const width = A4_PORTRAIT.width;
   const left = 20;
   const textWidth = width - left * 2;
@@ -315,8 +279,9 @@ export function exportPactPdf(input: {
  * so the student downloads a real PDF and opens it in a real reader, which is
  * what the requirement describes.
  */
-export function exportAttachmentPdf(studentName: string): void {
+export async function exportAttachmentPdf(studentName: string): Promise<void> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  await vestirAMarca(doc);
   const width = A4_PORTRAIT.width;
   const left = 20;
   let y = 26;
@@ -382,7 +347,7 @@ export interface ReportPdfInput {
   unit: string;
   issuedOn: string;
   /**
-   * Os percursos que este relatório descreve, um por linha na capa.
+   * As trilhas que este relatório descreve, uma por linha na capa.
    *
    * Era uma frase só — "Trilha.Web() — Especialidades A, B e C" — escrita com
    * um `doc.text` sem quebra nenhuma: com três especialidades ela já saía
@@ -390,8 +355,12 @@ export interface ReportPdfInput {
    * de uma palavra. Lista não tem esse problema, cresce com a plataforma, e
    * responde de relance a pergunta que a liderança faz primeiro — "este
    * relatório fala da AP044?" —, que numa linha comprida se lê varrendo.
+   *
+   * São trilhas, e o campo se chama assim: o relatório cobre as especialidades
+   * escolhidas na tela, e as veredas entram numa seção própria mais adiante.
+   * Um nome guarda-chuva aqui faria a capa prometer o que ela não lista.
    */
-  percursos: string[];
+  trilhas: string[];
   intro: string;
   sections: ReportSection[];
   /** Introductory sentence for the achievements section; omitted when there are none. */
@@ -424,9 +393,9 @@ const CINZA_CLARO: [number, number, number] = [140, 140, 140];
   anexado. É a folha que se olha com o documento fechado em cima da mesa.
 
   ── O que ela não tem ─────────────────────────────────────────────────────
-  Os emblemas dos percursos. Eles são a arte dos certificados e chegam
-  inteiros, sangrados, nas folhas de anexo — repetir miniaturas na capa
-  acrescentaria decoração e nenhuma informação.
+  Os emblemas das trilhas. Eles são a arte dos certificados e chegam inteiros,
+  sangrados, nas folhas de anexo — repetir miniaturas na capa acrescentaria
+  decoração e nenhuma informação.
 */
 function desenharCapa(doc: jsPDF, input: ReportPdfInput): void {
   const largura = A4_PORTRAIT.width;
@@ -495,7 +464,7 @@ function desenharCapa(doc: jsPDF, input: ReportPdfInput): void {
   rotulo(doc, 'UNIDADE', meio, topoDoBloco + 30);
   valor(doc, input.unit || '—', meio, topoDoBloco + 36, direita - meio - 8);
 
-  // ── Os percursos, um por linha ──
+  // ── As trilhas, uma por linha ──
   /*
     Uma coluna enquanto couber, duas quando não couber.
 
@@ -508,16 +477,16 @@ function desenharCapa(doc: jsPDF, input: ReportPdfInput): void {
   const inicioDoEspaco = topoDoBloco + alturaDoBloco + 14;
   const alturaDoEspaco = rodapeDaCapa - inicioDoEspaco;
   const espacoDasLinhas = alturaDoEspaco - 8;
-  const quantos = Math.max(1, input.percursos.length);
+  const quantos = Math.max(1, input.trilhas.length);
 
   /*
     Colunas primeiro, e só então a linha encolhe.
 
     A conta antiga era "mais do que cabe numa coluna? então duas", e duas
-    colunas não bastam para qualquer lista: com trinta e quatro percursos ela
+    colunas não bastam para qualquer lista: com trinta e quatro trilhas ela
     passava do rodapé e escrevia por cima da data de emissão e do aviso de
-    anexo, sem erro nenhum. O número de percursos que a plataforma vai ter é
-    justamente o que ninguém sabe — a capa precisa continuar legível quando ele
+    anexo, sem erro nenhum. Quantas trilhas a plataforma vai ter é justamente o
+    que ninguém sabe — a capa precisa continuar legível quando esse número
     dobrar.
   */
   const cabemPorColuna = Math.max(1, Math.floor(espacoDasLinhas / ALTURA_CONFORTAVEL));
@@ -535,11 +504,11 @@ function desenharCapa(doc: jsPDF, input: ReportPdfInput): void {
      fecha nos dois casos. */
   const alturaDaLista = 8 + porColuna * alturaDaLinha;
   const topoDaLista = inicioDoEspaco + Math.max(0, (alturaDoEspaco - alturaDaLista) / 2);
-  rotulo(doc, 'PERCURSOS DESCRITOS NESTE RELATÓRIO', MARGIN.left, topoDaLista);
+  rotulo(doc, 'TRILHAS DESCRITAS NESTE RELATÓRIO', MARGIN.left, topoDaLista);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(corpoDaLista);
-  input.percursos.forEach((percurso, i) => {
+  input.trilhas.forEach((trilha, i) => {
     const coluna = Math.floor(i / porColuna);
     const x = MARGIN.left + coluna * larguraDaColuna;
     const y = topoDaLista + 8 + (i % porColuna) * alturaDaLinha;
@@ -548,7 +517,7 @@ function desenharCapa(doc: jsPDF, input: ReportPdfInput): void {
     doc.rect(x, y - 2.4, 2.2, 2.2, 'F');
 
     doc.setTextColor(...TINTA);
-    const [primeira] = doc.splitTextToSize(percurso, larguraDaColuna - 8) as string[];
+    const [primeira] = doc.splitTextToSize(trilha, larguraDaColuna - 8) as string[];
     doc.text(primeira, x + 5.5, y);
   });
 
@@ -677,7 +646,10 @@ function desenharSumario(doc: jsPDF, entradas: EntradaDoSumario[], primeiraFolha
 
     /* A régua entre o título e o número, no lugar do pontilhado: ela liga os
        dois lados da linha sem depender de uma fonte que meça o ponto. */
-    const fimDoTitulo = MARGIN.left + doc.getTextWidth(titulo) + 2.5;
+    /* `larguraComMarca` e não `getTextWidth`: "Anexos — 2 certificados
+       Token.Web()" sai em duas fontes, e a medida em Helvetica poria a régua
+       por cima do que já foi escrito. */
+    const fimDoTitulo = MARGIN.left + larguraComMarca(doc, titulo) + 2.5;
     const inicioDoNumero = direita - larguraDoNumero - 2.5;
     if (inicioDoNumero > fimDoTitulo) {
       doc.setDrawColor(205, 205, 205);
@@ -730,6 +702,9 @@ function carimbarRodape(doc: jsPDF, studentName: string, folhasDeAnexo: number):
  */
 export async function exportReportPdf(input: ReportPdfInput): Promise<void> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  /* Antes de qualquer traço: a capa abre com a marca, e medir a linha dela em
+     Helvetica para depois desenhá-la em Space Mono a tiraria do meio. */
+  await vestirAMarca(doc);
   const textWidth = A4_PORTRAIT.width - MARGIN.left - MARGIN.right;
 
   // ── Capa, folha 1 ──

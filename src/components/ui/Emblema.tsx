@@ -157,7 +157,7 @@ export default function Emblema({
           title={
             status === 'certificado' ? 'Token.Web() emitido'
               : status === 'concluido' ? 'Requisitos concluídos'
-              : status === 'bloqueado' ? 'Percurso bloqueado'
+              : status === 'bloqueado' ? 'Bloqueado'
               : 'Em andamento'
           }
         >

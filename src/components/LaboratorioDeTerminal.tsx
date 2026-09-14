@@ -213,7 +213,7 @@ export default function LaboratorioDeTerminal({ vereda, licao, aoVencer, aoSair 
         <CheckCircle2 className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--color-success)' }} />
         <h2 className="text-xl font-bold mb-2">{licao.titulo}</h2>
         <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
-          Lição vencida. O que você fez aqui fica registrado no seu percurso.
+          Lição vencida. O que você fez aqui fica registrado na sua vereda.
         </p>
         <button onClick={aoSair} className="btn-primary">Voltar para a vereda</button>
       </div>
