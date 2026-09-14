@@ -184,6 +184,10 @@ function tipoPelaExtensao(nome: string): string {
     jpg: 'Imagem JPEG', jpeg: 'Imagem JPEG', png: 'Imagem PNG',
     txt: 'Documento de texto', pdf: 'Documento PDF', doc: 'Documento', docx: 'Documento',
     mp3: 'Áudio MP3', mp4: 'Vídeo MP4',
+    /* O Explorer chama o zip de "Pasta compactada", e não de "Arquivo ZIP".
+       É o nome que o desbravador vai procurar depois, e vale a mesma regra do
+       bloco do Scratch: o rótulo é o que está na tela do programa. */
+    zip: 'Pasta compactada',
   };
   return conhecidos[ext] ?? 'Arquivo';
 }
