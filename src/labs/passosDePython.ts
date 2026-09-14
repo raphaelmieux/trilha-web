@@ -99,4 +99,69 @@ export const PASSOS_DE_PYTHON: Record<string, string[]> = {
     'Ao sair do bloco, o arquivo é fechado sozinho — inclusive se der erro no meio.',
     'Sem o with seria preciso lembrar do arquivo.close(), e o arquivo esquecido aberto pode acabar sem a última linha.',
   ],
+
+  funcaoComParametroERetorno: [
+    'Escreva def nome_da_funcao(parametro): e recue o corpo dela.',
+    'O parâmetro é um nome que só existe ali dentro, esperando ser preenchido pela chamada.',
+    'Termine com return seguido do valor — devolver não é imprimir.',
+    'Se você trocar o return por print, o número aparece na tela e a função devolve None.',
+  ],
+  funcaoComPadrao: [
+    'Escolha o parâmetro que quase sempre vale a mesma coisa.',
+    'Dê valor a ele na definição: def saudar(nome, saudacao="Boa noite").',
+    'Os parâmetros com padrão vêm depois dos sem padrão, sempre — o contrário é erro de sintaxe.',
+    'Chame sem passar esse valor para ver o padrão valer, e passando outro para ver ele ceder.',
+  ],
+  funcaoReaproveitada: [
+    'Procure no seu programa as linhas que se repetem quase iguais.',
+    'O que muda entre elas vira parâmetro; o que se repete vira o corpo da função.',
+    'Troque as duas cópias por duas chamadas da mesma função.',
+    'Chamar dentro de um laço conta como um ponto só: são duas chamadas escritas que contam.',
+  ],
+  usaLista: [
+    'Escreva os valores entre colchetes: unidades = ["Falcão", "Pantera"].',
+    'Use lista quando a ordem importa ou quando a quantidade vai variar.',
+    'unidades.append("Águia") acrescenta no fim; unidades[0] é a primeira e unidades[-1] a última.',
+  ],
+  usaTupla: [
+    'Escreva os valores entre parênteses: acampamento = ("Serra Azul", 2026).',
+    'Use tupla para o que é um conjunto fechado de partes, em que acrescentar um item não faria sentido.',
+    'Tupla de um item só precisa da vírgula: (4,) é tupla, e (4) é o número quatro.',
+  ],
+  usaDicionario: [
+    'Escreva os pares entre chaves: ficha = {"nome": "Ana", "unidade": "Falcão"}.',
+    'Use dicionário quando cada valor tem um rótulo — e ache pelo rótulo, com ficha["nome"].',
+    'Quando a chave pode faltar, prefira ficha.get("cidade", "não informada") aos colchetes.',
+  ],
+  usaConjunto: [
+    'set(uma_lista) devolve a mesma coisa sem repetidos.',
+    'Use conjunto quando a pergunta é "quem apareceu?" e não "em que ordem?".',
+    'Chaves vazias fazem um dicionário: conjunto vazio se escreve set().',
+    'Ao imprimir, ordene com sorted() — conjunto não tem ordem, e a que aparece não é promessa.',
+  ],
+
+  leCsv: [
+    'Escreva import csv no alto do programa.',
+    'Abra o arquivo com with open(nome, encoding="utf-8", newline="") as arquivo:',
+    'Percorra com for linha in csv.DictReader(arquivo): — cada linha vem como dicionário.',
+    'Aí o programa lê linha["nome"], e não partes[0]: as chaves saem do cabeçalho do arquivo.',
+    'Lembre que tudo o que sai do CSV é texto, inclusive a idade — converta com int() antes de somar.',
+  ],
+  gravaJson: [
+    'Escreva import json no alto do programa.',
+    'Monte um dicionário com o que você quer guardar.',
+    'Abra o arquivo para escrita e chame json.dump(dados, arquivo, ensure_ascii=False, indent=2).',
+    'O ensure_ascii=False faz o acento sair como acento; o indent=2 deixa o arquivo legível.',
+  ],
+  leJson: [
+    'Abra o arquivo para leitura e chame json.load(arquivo).',
+    'O que volta já é dicionário e lista de verdade, com os números como números.',
+    'Não confunda: load lê de um arquivo e loads lê de um texto que você já tem na mão.',
+  ],
+  tratouOErroCerto: [
+    'Ponha dentro do try só a linha que pode falhar.',
+    'Escreva o nome do erro no except: except ValueError: para a conversão que não deu.',
+    'Para mais de um, ponha-os entre parênteses: except (ValueError, TypeError):',
+    'Nunca deixe um except sem nome: ele apanha também o erro de digitação do seu próprio código.',
+  ],
 };

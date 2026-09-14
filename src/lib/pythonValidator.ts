@@ -176,6 +176,46 @@ const SPECS: Spec[] = [
     'while condição:, com blocos dentro e algo que faça a condição virar falsa.',
     'Nenhum laço while com corpo. Um while cujo corpo é só "pass" não repete nada.'),
   /*
+    As três da função, que são os três itens do requisito 4.
+
+    `funcaoReaproveitada` é o 4.3, e ela conta **pontos de chamada**, não
+    passagens: chamar dentro de um laço é um ponto só. O requisito fala de
+    reaproveitar o código escrito, e quem pôs uma chamada num laço escreveu uma
+    chamada — contar as voltas aprovaria o programa que a função existe para
+    desfazer.
+  */
+  daArvore('funcaoComParametroERetorno', 'Uma função que recebe e devolve',
+    'def nome(parametro): com um return que devolve valor — devolver não é imprimir.',
+    'Nenhuma função com parâmetro e return de valor. Função que só imprime serve para uma coisa; a que devolve serve para qualquer uma.'),
+  daArvore('funcaoComPadrao', 'Um parâmetro com valor padrão',
+    'def saudar(nome, saudacao="Boa noite"): — o padrão vale quando a chamada cala.',
+    'Nenhum parâmetro com valor padrão. Os com padrão vêm depois dos sem padrão, sempre.'),
+  daArvore('funcaoReaproveitada', 'Uma função usada em dois pontos',
+    'Chame a mesma função de dois lugares diferentes do programa.',
+    'Nenhuma função sua é chamada de dois pontos distintos. Chamada dentro de um laço conta como um ponto só.'),
+
+  /*
+    As quatro coleções, uma verificação cada.
+
+    Elas olham para o que uma variável **guarda**, e não para qualquer nó
+    daquele tipo: a tupla de `a, b = 1, 2` é a forma de desempacotar dois
+    valores, não uma coisa guardada. Sem esse corte, a de tupla ficaria verde em
+    quase todo programa e pararia de medir o que diz medir.
+  */
+  daArvore('usaLista', 'Guarda uma lista',
+    'unidades = ["Falcão", "Pantera"] — vários valores em ordem, e a ordem pode mudar.',
+    'Nenhuma variável guardando uma lista.'),
+  daArvore('usaTupla', 'Guarda uma tupla',
+    'acampamento = ("Serra Azul", 2026) — as partes fechadas de uma coisa só.',
+    'Nenhuma variável guardando uma tupla. Desempacotar dois valores numa linha não é guardar uma tupla.'),
+  daArvore('usaDicionario', 'Guarda um dicionário',
+    'ficha = {"nome": "Ana"} — cada valor achado pelo rótulo dele.',
+    'Nenhuma variável guardando um dicionário.'),
+  daArvore('usaConjunto', 'Guarda um conjunto',
+    'presentes = set(chamada) — sem repetição, e sem ordem nenhuma.',
+    'Nenhuma variável guardando um conjunto. Chaves vazias fazem um dicionário: conjunto vazio é set().'),
+
+  /*
     As três do arquivo em disco.
 
     `abreParaLer` e `abreParaEscrever` olham o modo passado ao `open`, e não a
@@ -193,6 +233,34 @@ const SPECS: Spec[] = [
   daArvore('abreComWith', 'Abre com with',
     'with open(...) as arquivo: — o bloco fecha o arquivo sozinho ao terminar.',
     'Nenhum with em volta de um open. Arquivo que ninguém fecha pode acabar sem a última linha.'),
+  /*
+    O CSV e o JSON, que são os itens 5.3 e 5.4.
+
+    As três olham a **chamada**, e não o import: `import csv` sozinho é uma
+    linha que o programa não usa, e aprovar por ela seria a mesma trava vazia
+    do "zero link não é zero link quebrado".
+  */
+  daArvore('leCsv', 'Lê o CSV pelo módulo csv',
+    'csv.DictReader(arquivo) devolve cada linha como um dicionário, com as chaves saindo do cabeçalho.',
+    'Nenhuma leitura pelo módulo csv. Separar a linha por vírgula quebra no primeiro campo que tem vírgula dentro.'),
+  daArvore('gravaJson', 'Grava um JSON',
+    'json.dump(dados, arquivo) escreve a estrutura num arquivo.',
+    'Nenhuma gravação em JSON. O dump escreve num arquivo; o dumps devolve um texto.'),
+  daArvore('leJson', 'Lê um JSON de volta',
+    'json.load(arquivo) traz dicionário e lista de verdade, com os números já como números.',
+    'Nenhuma leitura de JSON. Gravar e nunca reler é acreditar que a gravação deu certo.'),
+
+  /*
+    O requisito 6, e ele exige o nome do erro.
+
+    Um `except` sem tipo apanha tudo — inclusive o NameError de quem digitou um
+    nome errado, que era o erro que precisava aparecer. Por isso a verificação
+    pede que **todos** os ramos nomeiem: um try com um ramo nomeado e outro
+    pelado esconde exatamente do mesmo jeito.
+  */
+  daArvore('tratouOErroCerto', 'Prevê o erro, dizendo qual',
+    'except ValueError: apanha só a conversão que falhou — except sozinho apanha tudo.',
+    'Nenhum try cujos ramos digam de que erro tratam. Um except sem nome apanha também o que você precisava ver.'),
   {
     id: 'quarentaLinhas',
     label: 'Pelo menos 40 linhas de programa',
