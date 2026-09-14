@@ -14,7 +14,7 @@ import {
 } from './word';
 import {
   DOC_INICIAL, METAS_DOS_ESTILOS, TEXTO_DO_SITE, NOMES_DA_CAIXA,
-  aplicarCaixa, titulosDoDoc, textoDoBloco,
+  aplicarCaixa, titulosDoDoc, textoDoBloco, APARENCIA_DO_ESTILO,
   type Doc, type Bloco, type Trecho, type Estilo, type Realce, type ModoDeCaixa,
 } from './metasDaAp044';
 import {
@@ -48,32 +48,6 @@ import type { PropsDeLaboratorio as Props } from './tipos';
  * O modelo, o critério e o passo a passo moram em `metasDaAp044.ts`, fora
  * daqui, para que a trava os alcance sem montar tela nenhuma.
  */
-
-/* ── Aparência de cada estilo, com os números do Word ───────────────────────
-   Título 1 é 16 pt azul #2F5496, Título 2 é 13 pt no mesmo azul, Citação é
-   itálico recuado. Não são escolhas nossas: é o que a galeria de Estilos do
-   Word aplica, e o desbravador precisa reconhecer o resultado lá. */
-/* Nenhuma entrada usa a forma curta `margin`: misturar `margin` com
-   `marginLeft` no mesmo objeto faz o React reclamar e, pior, deixa a ordem de
-   aplicação decidir quem vence. Cada lado é escrito por extenso. */
-const APARENCIA: Record<Estilo, React.CSSProperties> = {
-  'Normal': {
-    fontSize: 11, color: '#201F1E',
-    marginTop: 0, marginBottom: 5, marginLeft: 0, marginRight: 0,
-  },
-  'Título 1': {
-    fontSize: 16, color: '#2F5496', fontWeight: 400,
-    marginTop: 10, marginBottom: 4, marginLeft: 0, marginRight: 0,
-  },
-  'Título 2': {
-    fontSize: 13, color: '#2F5496', fontWeight: 600,
-    marginTop: 8, marginBottom: 3, marginLeft: 0, marginRight: 0,
-  },
-  'Citação': {
-    fontSize: 11, color: '#404040', fontStyle: 'italic',
-    marginTop: 6, marginBottom: 6, marginLeft: 26, marginRight: 26,
-  },
-};
 
 const CORES_DO_REALCE: Record<Realce, string> = {
   nenhum: 'transparent',
@@ -336,7 +310,7 @@ export default function EstilosTextoLab({ specialtyCode, lessonCode, lessonTitle
   };
 
   const desenharBloco = (b: Bloco) => (
-    <p key={b.id} className="wd-par" style={{ ...APARENCIA[b.estilo], lineHeight: 1.45 }}>
+    <p key={b.id} className="wd-par" style={{ ...APARENCIA_DO_ESTILO[b.estilo], lineHeight: 1.45 }}>
       {b.trechos.map(desenharTrecho)}
       {b.nota !== undefined && (
         <sup style={{ color: '#2B579A', fontWeight: 700, marginLeft: 1 }}>
