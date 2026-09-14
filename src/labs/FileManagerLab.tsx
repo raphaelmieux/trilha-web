@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Folder, FolderOpen, File as FileIcon, Link2, Trash2, Monitor,
+  Folder, FolderOpen, File as FileIcon, Link2, Trash2,
   FolderPlus, Pencil, Copy, Scissors, ClipboardPaste, X,
-  ChevronRight, ChevronDown, ArrowLeft, ArrowRight, ArrowUp, RotateCw,
-  CheckCircle2, RotateCcw, ArrowUpNarrowWide, ArrowDownWideNarrow,
-  Search, ArrowUpDown, LayoutGrid, Grid2x2, Music, FileType2, Image as IconeImagem,
+  CheckCircle2, RotateCcw,
+  ArrowUpDown, LayoutGrid, Music, FileType2, Image as IconeImagem,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import { CSS_WINDOWS, BarraDeTitulo } from './windows';
+import {
+  PainelDeNavegacao, BarraDeEndereco, CabecalhosDaLista, LinhaDeArquivo,
+  MenuFlutuante, MenuClassificar, BarraDeTarefasDoWindows,
+} from './explorer';
 import { VisualizadorDe } from './visualizadores';
 import { familiaDe, PROGRAMA_DA_FAMILIA } from './tiposDeArquivo';
 import {
@@ -20,7 +23,7 @@ import {
   AREA, DOCUMENTOS, LIXEIRA, ehRaiz, type No, type Coluna,
   acharNo, filhosDe, caminhoDe, podeSoltarEm, nomeDisponivel, ordenar,
   copiarPara, moverPara, mandarParaLixeira, restaurar, esvaziarLixeira,
-  criarGerador, formatarTamanho, formatarData, rotuloDoTipo,
+  criarGerador,
 } from './arquivos';
 import type { PropsDeLaboratorio as Props } from './tipos';
 
@@ -49,14 +52,6 @@ import type { PropsDeLaboratorio as Props } from './tipos';
  */
 
 const DIA = 86_400_000;
-
-/** As colunas, na ordem em que o Explorer as oferece no menu Classificar. */
-const ORDENS: [Coluna, string][] = [
-  ['nome', 'Nome'],
-  ['modificado', 'Data de modificação'],
-  ['tipo', 'Tipo'],
-  ['tamanho', 'Tamanho'],
-];
 
 function arvoreInicial(agora: number): No[] {
   const pasta = (id: string, nome: string, paiId: string | null, dias: number): No =>
@@ -94,110 +89,6 @@ type TarefaId = (typeof TAREFAS)[number]['id'];
 
 /** As três ordens que o requisito 5.6 nomeia. */
 const ORDENS_EXIGIDAS: Coluna[] = ['nome', 'modificado', 'tamanho'];
-
-const ICONE_RAIZ: Record<string, typeof Monitor> = {
-  [AREA]: Monitor, [DOCUMENTOS]: FolderOpen, [LIXEIRA]: Trash2,
-};
-
-/* ── Pedaços da tela ────────────────────────────────────────────────────────
- *
- * Estes componentes vivem aqui fora, e não dentro de FileManagerLab, por um
- * motivo que só aparece ao arrastar: um componente declarado no corpo de outro
- * é uma função nova a cada render, e para o React função nova é *tipo* novo —
- * ele desmonta a subárvore inteira e monta outra no lugar.
- *
- * Quem arrasta paga a conta. O nó sobre o qual se está soltando é substituído no
- * meio do gesto, e o soltar acontece sobre um elemento que já saiu da página:
- * nada se move, e não há erro nenhum para explicar por quê. Do lado de fora, a
- * identidade é estável e o que muda chega por props.
- */
-
-/* As cores são as do Explorer, e não as da plataforma: pasta âmbar, atalho
-   azul, arquivo cinza. Dentro da janela clara, um ícone com a cor da
-   plataforma seria a única peça fora do lugar. */
-function IconeDe({ n, tamanho = 'w-4 h-4' }: { n: No; tamanho?: string }) {
-  if (ehRaiz(n.id)) {
-    const Ico = ICONE_RAIZ[n.id];
-    return <Ico className={tamanho} style={{ color: '#5B5B5B' }} />;
-  }
-  if (n.tipo === 'pasta') return <Folder className={tamanho} style={{ color: '#E6B14C' }} />;
-  if (n.tipo === 'atalho') return <Link2 className={tamanho} style={{ color: '#0F6CBD' }} />;
-  return <FileIcon className={tamanho} style={{ color: '#6E6E6E' }} />;
-}
-
-interface GalhoProps {
-  n: No;
-  nivel: number;
-  arvore: No[];
-  expandidas: Set<string>;
-  pastaAtual: string;
-  alvoSolto: string | null;
-  arrastando: string | null;
-  aoIr: (id: string) => void;
-  aoAlternar: (id: string) => void;
-  aoPassarArrastando: (id: string | null) => void;
-  aoSoltar: (id: string, copiando: boolean) => void;
-}
-
-/** Um galho da árvore, com os filhos abaixo quando aberto. */
-function Galho(p: GalhoProps) {
-  const { n, nivel, arvore, expandidas, pastaAtual, alvoSolto, arrastando } = p;
-  const subpastas = filhosDe(arvore, n.id).filter(f => f.tipo === 'pasta');
-  const aberta = expandidas.has(n.id);
-  const aqui = pastaAtual === n.id;
-  const recebendo = alvoSolto === n.id;
-
-  return (
-    <div>
-      <div
-        className="flex items-center gap-1 px-1 py-1 rounded cursor-pointer text-sm"
-        style={{
-          paddingLeft: 4 + nivel * 14,
-          backgroundColor: recebendo ? '#E3F0FB' : aqui ? '#EAEAEA' : 'transparent',
-          outline: recebendo ? '1px dashed #0F6CBD' : 'none',
-          color: '#1B1B1B', fontSize: 12.5,
-        }}
-        onClick={() => p.aoIr(n.id)}
-        onDragOver={e => {
-          if (arrastando && podeSoltarEm(arvore, arrastando, n.id)) { e.preventDefault(); p.aoPassarArrastando(n.id); }
-        }}
-        onDragLeave={() => p.aoPassarArrastando(null)}
-        onDrop={e => { e.preventDefault(); p.aoSoltar(n.id, e.ctrlKey || e.metaKey); }}
-      >
-        <button
-          onClick={e => { e.stopPropagation(); p.aoAlternar(n.id); }}
-          className="flex-shrink-0"
-          style={{ visibility: subpastas.length ? 'visible' : 'hidden' }}
-          aria-label={aberta ? 'Recolher' : 'Expandir'}
-        >
-          {aberta ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        </button>
-        <IconeDe n={n} />
-        <span className="truncate">{n.nome}</span>
-      </div>
-      {aberta && subpastas.map(f => <Galho key={f.id} {...p} n={f} nivel={nivel + 1} />)}
-    </div>
-  );
-}
-
-function Cabecalho({ c, rotulo, classe, coluna, crescente, aoOrdenar }: {
-  c: Coluna; rotulo: string; classe: string;
-  coluna: Coluna; crescente: boolean; aoOrdenar: (c: Coluna) => void;
-}) {
-  return (
-    <button
-      onClick={() => aoOrdenar(c)}
-      className={classe}
-      style={{ color: coluna === c ? '#0F6CBD' : '#444' }}
-      title={`Ordenar por ${rotulo.toLowerCase()}`}
-    >
-      {rotulo}
-      {coluna === c && (crescente
-        ? <ArrowUpNarrowWide className="w-3 h-3" />
-        : <ArrowDownWideNarrow className="w-3 h-3" />)}
-    </button>
-  );
-}
 
 /** Um botão da barra de comandos do Explorer. */
 function Cmd({ onClick, desabilitado, Ico, dica, children }: {
@@ -367,7 +258,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
   };
 
   const excluir = () => {
-    if (!item || ehRaiz(item.id)) return;
+    if (!item || ehRaiz(arvore, item.id)) return;
     setArvore(a => mandarParaLixeira(a, item.id));
     setSelecionado(null);
     setAviso('Foi para a Lixeira. Enquanto estiver lá, ainda dá para recuperar.');
@@ -589,20 +480,20 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
             Novo
           </Cmd>
           <div className="win-sep" />
-          <Cmd dica="Recortar (Ctrl+X)" Ico={Scissors} desabilitado={!item || ehRaiz(item.id)}
+          <Cmd dica="Recortar (Ctrl+X)" Ico={Scissors} desabilitado={!item || ehRaiz(arvore, item.id)}
             onClick={() => { setTransferencia({ id: item!.id, recortar: true }); setAviso('Recortado. Vá até o destino e cole.'); }} />
-          <Cmd dica="Copiar (Ctrl+C)" Ico={Copy} desabilitado={!item || ehRaiz(item.id)}
+          <Cmd dica="Copiar (Ctrl+C)" Ico={Copy} desabilitado={!item || ehRaiz(arvore, item.id)}
             onClick={() => { setTransferencia({ id: item!.id, recortar: false }); setAviso('Copiado. Vá até o destino e cole.'); }} />
           <Cmd dica="Colar (Ctrl+V)" Ico={ClipboardPaste} desabilitado={!transferencia}
             onClick={() => colar(pastaAtual)} />
-          <Cmd dica="Renomear (F2)" Ico={Pencil} desabilitado={!item || ehRaiz(item.id)}
+          <Cmd dica="Renomear (F2)" Ico={Pencil} desabilitado={!item || ehRaiz(arvore, item.id)}
             onClick={() => { setRenomeando(item!.id); setRascunho(item!.nome); }} />
           {naLixeira
             ? <Cmd dica="Restaurar" Ico={RotateCcw} desabilitado={!item} onClick={devolver} />
-            : <Cmd dica="Excluir (Del)" Ico={Trash2} desabilitado={!item || ehRaiz(item.id)} onClick={excluir} />}
+            : <Cmd dica="Excluir (Del)" Ico={Trash2} desabilitado={!item || ehRaiz(arvore, item.id)} onClick={excluir} />}
           <div className="win-sep" />
           <Cmd onClick={criarAtalho} Ico={Link2} dica="Criar atalho"
-            desabilitado={!item || ehRaiz(item.id) || naLixeira}>
+            desabilitado={!item || ehRaiz(arvore, item.id) || naLixeira}>
             Criar atalho
           </Cmd>
           {pastaAtual === LIXEIRA && (
@@ -628,123 +519,59 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
           </Cmd>
         </div>
 
-        {/* ── Barra de endereço ── */}
-        <div className="win-endereco">
-          <button className="win-nav" aria-label="Voltar" disabled={posicao === 0}
-            onClick={() => { setPosicao(p => Math.max(0, p - 1)); setSelecionado(null); }}>
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <button className="win-nav" aria-label="Avançar" disabled={posicao >= historico.length - 1}
-            onClick={() => { setPosicao(p => Math.min(historico.length - 1, p + 1)); setSelecionado(null); }}>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-          <button className="win-nav" aria-label="Acima" disabled={!noAtual?.paiId}
-            onClick={() => noAtual?.paiId && irPara(noAtual.paiId)}>
-            <ArrowUp className="w-4 h-4" />
-          </button>
-          <button className="win-nav" aria-label="Atualizar" onClick={() => naoFazParte('Atualizar')}>
-            <RotateCw className="w-4 h-4" />
-          </button>
+        <BarraDeEndereco
+          caminho={caminho}
+          podeVoltar={posicao > 0}
+          podeAvancar={posicao < historico.length - 1}
+          paiId={noAtual?.paiId}
+          aoVoltar={() => { setPosicao(p => Math.max(0, p - 1)); setSelecionado(null); }}
+          aoAvancar={() => { setPosicao(p => Math.min(historico.length - 1, p + 1)); setSelecionado(null); }}
+          aoIr={irPara}
+          aoAvisar={naoFazParte}
+        />
 
-          <div className="win-caminho">
-            {caminho.map((n, i) => (
-              <span key={n.id} className="flex items-center flex-shrink-0">
-                {i > 0 && <ChevronRight className="w-3 h-3" style={{ color: '#767676' }} />}
-                <button onClick={() => irPara(n.id)}>{n.nome}</button>
-              </span>
-            ))}
-          </div>
-
-          <div className="win-busca">
-            <Search className="w-3.5 h-3.5" />
-            <span className="truncate">Pesquisar em {noAtual?.nome ?? ''}</span>
-          </div>
-        </div>
-
-        {/* ── Corpo: painel de navegação e lista ── */}
         <div className="win-corpo">
-          <div className="win-painel">
-            {arvore.filter(n => n.paiId === null).map(r => (
-              <Galho
-                key={r.id} n={r} nivel={0}
-                arvore={arvore} expandidas={expandidas} pastaAtual={pastaAtual}
-                alvoSolto={alvoSolto} arrastando={arrastando}
-                aoIr={irPara}
-                aoAlternar={id => setExpandidas(x => {
-                  const c = new Set(x);
-                  if (c.has(id)) c.delete(id); else c.add(id);
-                  return c;
-                })}
-                aoPassarArrastando={setAlvoSolto}
-                aoSoltar={soltarEm}
-              />
-            ))}
-          </div>
+          <PainelDeNavegacao
+            arvore={arvore} expandidas={expandidas} pastaAtual={pastaAtual}
+            alvoSolto={alvoSolto} arrastando={arrastando}
+            aoIr={irPara}
+            aoAlternar={id => setExpandidas(x => {
+              const c = new Set(x);
+              if (c.has(id)) c.delete(id); else c.add(id);
+              return c;
+            })}
+            aoPassarArrastando={setAlvoSolto}
+            aoSoltar={soltarEm}
+          />
 
           <div className="win-lista">
-            <div className="win-cabecalhos">
-              <Cabecalho c="nome" rotulo="Nome" classe="win-c-nome" coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
-              <Cabecalho c="modificado" rotulo="Data de modificação" classe="win-c-data" coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
-              <Cabecalho c="tipo" rotulo="Tipo" classe="win-c-tipo" coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
-              <Cabecalho c="tamanho" rotulo="Tamanho" classe="win-c-tam" coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
-            </div>
+            <CabecalhosDaLista coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
 
             <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
               {visiveis.length === 0 && (
                 <p style={{ padding: 16, fontSize: 12.5, color: '#767676' }}>Esta pasta está vazia.</p>
               )}
 
-              {visiveis.map(n => {
-                const escolhido = selecionado === n.id;
-                const recebendo = alvoSolto === n.id;
-                return (
-                  <div
-                    key={n.id}
-                    className={`win-linha${escolhido ? ' escolhida' : ''}${recebendo ? ' recebendo' : ''}`}
-                    draggable={!ehRaiz(n.id) && renomeando !== n.id}
-                    onDragStart={() => { setArrastando(n.id); setSelecionado(n.id); }}
-                    onDragEnd={() => { setArrastando(null); setAlvoSolto(null); }}
-                    onDragOver={e => { if (arrastando && podeSoltarEm(arvore, arrastando, n.id)) { e.preventDefault(); setAlvoSolto(n.id); } }}
-                    onDragLeave={() => setAlvoSolto(a => (a === n.id ? null : a))}
-                    onDrop={e => { e.preventDefault(); soltarEm(n.id, e.ctrlKey || e.metaKey); }}
-                    onClick={() => { setSelecionado(n.id); setAviso(''); }}
-                    onDoubleClick={() => abrir(n)}
-                    onContextMenu={e => { e.preventDefault(); setSelecionado(n.id); setMenu({ x: e.clientX, y: e.clientY, id: n.id }); }}
-                  >
-                    <div className="win-c-nome flex items-center gap-2 px-2">
-                      <IconeDe n={n} />
-                      {renomeando === n.id ? (
-                        <input
-                          autoFocus
-                          value={rascunho}
-                          onChange={e => setRascunho(e.target.value)}
-                          onBlur={confirmarNome}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') confirmarNome();
-                            if (e.key === 'Escape') setRenomeando(null);
-                          }}
-                          aria-label="Novo nome"
-                          style={{
-                            font: 'inherit', padding: '1px 4px', width: '100%',
-                            background: '#FFFFFF', border: '1px solid #0F6CBD', color: '#1B1B1B',
-                          }}
-                        />
-                      ) : (
-                        <span className="truncate">{n.nome}</span>
-                      )}
-                    </div>
-                    <span className="win-c-data px-2 truncate" style={{ color: '#5B5B5B' }}>
-                      {formatarData(n.modificadoEm)}
-                    </span>
-                    <span className="win-c-tipo px-2 truncate" style={{ color: '#5B5B5B' }}>
-                      {rotuloDoTipo(n)}
-                    </span>
-                    <span className="win-c-tam px-2" style={{ color: '#5B5B5B' }}>
-                      {formatarTamanho(n)}
-                    </span>
-                  </div>
-                );
-              })}
+              {visiveis.map(n => (
+                <LinhaDeArquivo
+                  key={n.id} n={n} arvore={arvore}
+                  escolhido={selecionado === n.id}
+                  recebendo={alvoSolto === n.id}
+                  arrastando={arrastando}
+                  renomeando={renomeando === n.id ? {
+                    rascunho,
+                    aoMudar: setRascunho,
+                    aoConfirmar: confirmarNome,
+                    aoDesistir: () => setRenomeando(null),
+                  } : undefined}
+                  aoSelecionar={() => { setSelecionado(n.id); setAviso(''); }}
+                  aoAbrir={() => abrir(n)}
+                  aoMenu={e => { e.preventDefault(); setSelecionado(n.id); setMenu({ x: e.clientX, y: e.clientY, id: n.id }); }}
+                  aoArrastar={setArrastando}
+                  aoPassarArrastando={setAlvoSolto}
+                  aoSoltar={soltarEm}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -778,15 +605,10 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
 
       </div>
 
-      {/* ── A barra de tarefas ── */}
-      <div className="win-tarefas">
-        <button aria-label="Iniciar" title="Iniciar" onClick={() => naoFazParte('O menu Iniciar')}>
-          <Grid2x2 className="w-5 h-5" style={{ color: '#0F6CBD' }} />
-        </button>
-        <button aria-label="Explorador de Arquivos" title="Explorador de Arquivos" className="aberta"
-          onClick={() => setMinimizados(new Set(abertos.map(a => a.id)))}>
-          <Folder className="w-5 h-5" style={{ color: '#E6B14C' }} />
-        </button>
+      <BarraDeTarefasDoWindows
+        aoAvisar={naoFazParte}
+        aoMinimizarTudo={() => setMinimizados(new Set(abertos.map(a => a.id)))}
+      >
         {abertos.map(a => {
           const familia = familiaDe(a.nome);
           if (!familia) return null;
@@ -804,36 +626,21 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
             </button>
           );
         })}
-      </div>
+      </BarraDeTarefasDoWindows>
       </div>
 
-      {/* ── Menu Classificar, o mesmo do Explorer ── */}
       {menuOrdem && (
-        <div
-          className="win-menu"
-          style={{ left: Math.min(menuOrdem.x, window.innerWidth - 220), top: menuOrdem.y }}
-          onClick={e => e.stopPropagation()}
-        >
-          {ORDENS.map(([c, rotulo]) => (
-            <button key={c} onClick={() => { ordenarPor(c); setMenuOrdem(null); }}>
-              <span style={{ width: 14, flex: 'none' }}>{coluna === c ? '•' : ''}</span> {rotulo}
-            </button>
-          ))}
-          <div style={{ height: 1, background: '#E0E0E0', margin: '4px 6px' }} />
-          <button onClick={() => { setCrescente(true); setMenuOrdem(null); }}>
-            <span style={{ width: 14, flex: 'none' }}>{crescente ? '•' : ''}</span> Crescente
-          </button>
-          <button onClick={() => { setCrescente(false); setMenuOrdem(null); }}>
-            <span style={{ width: 14, flex: 'none' }}>{crescente ? '' : '•'}</span> Decrescente
-          </button>
-        </div>
+        <MenuClassificar
+          x={menuOrdem.x} y={menuOrdem.y} coluna={coluna} crescente={crescente}
+          aoOrdenar={ordenarPor} aoSentido={setCrescente} aoFechar={() => setMenuOrdem(null)}
+        />
       )}
 
       {/* ── Menu de contexto ── */}
       {menu && (() => {
         const n = acharNo(arvore, menu.id);
         if (!n) return null;
-        const naoRaiz = !ehRaiz(n.id);
+        const naoRaiz = !ehRaiz(arvore, n.id);
         const opcoes: [string, typeof Folder, () => void, boolean][] = [
           ['Abrir', FolderOpen, () => abrir(n), true],
           ['Recortar', Scissors, () => setTransferencia({ id: n.id, recortar: true }), naoRaiz],
@@ -844,20 +651,13 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
           [naLixeira ? 'Restaurar' : 'Excluir', naLixeira ? RotateCcw : Trash2, naLixeira ? devolver : excluir, naoRaiz],
         ];
         return (
-          <div
-            className="win-menu"
-            style={{
-              left: Math.min(menu.x, window.innerWidth - 220),
-              top: Math.min(menu.y, window.innerHeight - 280),
-            }}
-            onClick={e => e.stopPropagation()}
-          >
+          <MenuFlutuante x={menu.x} y={menu.y}>
             {opcoes.filter(([, , , mostrar]) => mostrar).map(([rotulo, Ico, acao]) => (
               <button key={rotulo} onClick={() => { acao(); setMenu(null); }}>
                 <Ico className="w-3.5 h-3.5" /> {rotulo}
               </button>
             ))}
-          </div>
+          </MenuFlutuante>
         );
       })()}
     </LaboratorioEmTelaCheia>
