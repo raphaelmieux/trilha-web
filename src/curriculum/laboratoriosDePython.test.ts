@@ -238,6 +238,82 @@ else:
 print("Fim do relatorio da unidade", nome_da_unidade)
 `,
 
+  /* Uma função só, com os três itens do requisito 4 dentro dela: recebe e
+     devolve, tem um parâmetro com padrão, e é chamada de três pontos. */
+  'CC004/m1-lab': `def ficha(nome, unidade, saudacao="Boa noite"):
+    return saudacao + ", " + nome + " - unidade " + unidade
+
+print(ficha("Ana", "Falcão"))
+print(ficha("Tiago", "Pantera"))
+print(ficha("Bia", "Águia", "Bom dia"))
+`,
+
+  /* Cada coleção no trabalho em que ela é a certa. Os dois primeiros números
+     saem dos mesmos nomes: o que os separa é a coleção escolhida. */
+  'CC004/m2-lab': `chamada = ["Ana", "Tiago", "Ana", "Bia", "Tiago"]
+acampamento = ("Serra Azul", 2026)
+ficha = {"nome": "Ana", "unidade": "Falcão"}
+presentes = set(chamada)
+
+print("Anotados:", len(chamada))
+print("Pessoas diferentes:", len(presentes))
+print("Acampamento: " + acampamento[0] + ", " + str(acampamento[1]))
+print(ficha["nome"], "é da unidade", ficha["unidade"])
+`,
+
+  /* O csv lê o nome com vírgula dentro sem deslocar nada; o int() é o que faz
+     a média ser média. As duas armadilhas do módulo 4 numa solução só. */
+  'CC004/m4-lab': `import csv, json
+
+inscritos = []
+with open("inscritos.csv", encoding="utf-8", newline="") as arquivo:
+    for linha in csv.DictReader(arquivo):
+        inscritos.append(linha)
+
+por_unidade = {}
+soma = 0
+for inscrito in inscritos:
+    unidade = inscrito["unidade"]
+    por_unidade[unidade] = por_unidade.get(unidade, 0) + 1
+    soma = soma + int(inscrito["idade"])
+
+resumo = {
+    "total": len(inscritos),
+    "por_unidade": por_unidade,
+    "idade_media": soma / len(inscritos),
+}
+
+with open("resumo.json", "w", encoding="utf-8") as arquivo:
+    json.dump(resumo, arquivo, ensure_ascii=False, indent=2)
+
+with open("resumo.json", encoding="utf-8") as arquivo:
+    lido = json.load(arquivo)
+
+print("Total:", lido["total"])
+for unidade in sorted(lido["por_unidade"]):
+    print(unidade + ":", lido["por_unidade"][unidade])
+print("Idade média:", lido["idade_media"])
+`,
+
+  /* O try apanha o que nem vira número; o if apanha o que vira e não vale. E o
+     laço é o que transforma os dois em segunda chance, em vez de em fim. */
+  'CC004/m5-lab': `def pedir_idade(quem):
+    while True:
+        try:
+            idade = int(input(quem + ", quantos anos? "))
+        except ValueError:
+            print("Isso não é um número. Tente de novo.")
+            continue
+        if idade < 0:
+            print("Idade não é negativa. Tente de novo.")
+            continue
+        return idade
+
+primeira = pedir_idade("Ana")
+segunda = pedir_idade("Tiago")
+print("Soma das idades:", primeira + segunda)
+`,
+
   /* Ler o que chegou, gravar o resultado, e reler para conferir. O `if nome:`
      e o `.strip()` não são zelo: o unidades.txt vem com espaço sobrando numa
      linha e uma linha em branco no meio, como arquivo de verdade vem. */

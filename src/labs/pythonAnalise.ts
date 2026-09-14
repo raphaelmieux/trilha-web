@@ -53,6 +53,22 @@ import ast, json
 def _corpo_util(corpo):
     return any(not isinstance(no, ast.Pass) for no in corpo)
 
+def _devolve_valor(funcao):
+    # Um return com valor DESTA função. Um ast.walk simples desceria para as
+    # funções de dentro, e o return de uma função aninhada seria creditado à
+    # de fora — que é o contrário do que a verificação diz medir.
+    pilha = list(funcao.body)
+    while pilha:
+        no = pilha.pop()
+        if isinstance(no, ast.Return):
+            if no.value is not None:
+                return True
+            continue
+        if isinstance(no, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+            continue
+        pilha.extend(ast.iter_child_nodes(no))
+    return False
+
 def _erro_de_sintaxe(e):
     # A linha, a coluna e o trecho são os do programa da pessoa. O traceback
     # que o Python monta aqui é do NOSSO script, e apontá-lo diria "linha 73"
@@ -75,6 +91,11 @@ def analisar(fonte):
         'operadorComparacao': False, 'condicionalCompleto': False,
         'lacoFor': False, 'lacoWhile': False, 'leEExibe': False,
         'abreParaEscrever': False, 'abreParaLer': False, 'abreComWith': False,
+        'funcaoComParametroERetorno': False, 'funcaoComPadrao': False,
+        'funcaoReaproveitada': False,
+        'usaLista': False, 'usaTupla': False, 'usaDicionario': False, 'usaConjunto': False,
+        'leCsv': False, 'gravaJson': False, 'leJson': False,
+        'tratouOErroCerto': False,
     }
     arvore = ast.parse(fonte)
 
@@ -160,6 +181,93 @@ def analisar(fonte):
                 alvo = item.context_expr
                 if isinstance(alvo, ast.Call) and isinstance(alvo.func, ast.Name) and alvo.func.id == 'open':
                     achados['abreComWith'] = True
+
+    # ── As quatro coleções ──────────────────────────────────────────────
+    #
+    # Só conta o que uma variável guarda: "unidades = [...]" é a lista da
+    # lição, e a tupla de "a, b = 1, 2" não é — ali ela é a forma de
+    # desempacotar dois valores, e não uma coisa que alguém guardou. Sem esse
+    # corte, "usaTupla" ficaria verdadeiro em quase todo programa, por causa de
+    # desempacotamentos e de "for chave, valor in ...", e a verificação pararia
+    # de medir o que diz medir.
+    _DE_LITERAL = (
+        (ast.List, 'usaLista'), (ast.Tuple, 'usaTupla'),
+        (ast.Dict, 'usaDicionario'), (ast.Set, 'usaConjunto'),
+    )
+    _DE_CHAMADA = {
+        'list': 'usaLista', 'tuple': 'usaTupla',
+        'dict': 'usaDicionario', 'set': 'usaConjunto',
+    }
+    for no in ast.walk(arvore):
+        if not (isinstance(no, ast.Assign) and len(no.targets) == 1):
+            continue
+        if not isinstance(no.targets[0], ast.Name):
+            continue
+        for tipo, chave in _DE_LITERAL:
+            if isinstance(no.value, tipo):
+                achados[chave] = True
+        if isinstance(no.value, ast.Call) and isinstance(no.value.func, ast.Name):
+            nome_da_chave = _DE_CHAMADA.get(no.value.func.id)
+            if nome_da_chave:
+                achados[nome_da_chave] = True
+
+    # ── As funções ──────────────────────────────────────────────────────
+    definidas = set()
+    for no in ast.walk(arvore):
+        if not isinstance(no, ast.FunctionDef) or not _corpo_util(no.body):
+            continue
+        definidas.add(no.name)
+
+        tem_parametro = bool(no.args.args or no.args.posonlyargs or no.args.kwonlyargs)
+        if tem_parametro and _devolve_valor(no):
+            achados['funcaoComParametroERetorno'] = True
+
+        # O valor padrão vale nos dois lugares em que ele pode aparecer, e o
+        # kw_defaults traz None para o parâmetro que não tem nenhum.
+        if no.args.defaults or any(d is not None for d in no.args.kw_defaults):
+            achados['funcaoComPadrao'] = True
+
+    # Reaproveitada é chamada de dois pontos distintos do programa — dois nós
+    # de chamada, e não duas passagens pelo mesmo. Chamar dentro de um laço é
+    # um ponto só: o requisito 4.3 fala de reaproveitar o código, e quem
+    # escreveu uma chamada num laço escreveu uma.
+    usos = {}
+    for no in ast.walk(arvore):
+        if isinstance(no, ast.Call) and isinstance(no.func, ast.Name):
+            usos[no.func.id] = usos.get(no.func.id, 0) + 1
+    achados['funcaoReaproveitada'] = any(usos.get(nome, 0) >= 2 for nome in definidas)
+
+    # ── O CSV e o JSON ──────────────────────────────────────────────────
+    #
+    # A chamada, e não o import. "import csv" sozinho é um import que não faz
+    # nada — é a família do "zero link não é zero link quebrado": a verificação
+    # ficaria verde por uma linha que o programa não usa.
+    _DO_MODULO = {
+        ('csv', 'reader'): 'leCsv', ('csv', 'DictReader'): 'leCsv',
+        ('json', 'dump'): 'gravaJson', ('json', 'dumps'): 'gravaJson',
+        ('json', 'load'): 'leJson', ('json', 'loads'): 'leJson',
+    }
+    for no in ast.walk(arvore):
+        if not (isinstance(no, ast.Call) and isinstance(no.func, ast.Attribute)):
+            continue
+        dono = no.func.value
+        if not isinstance(dono, ast.Name):
+            continue
+        chave_do_modulo = _DO_MODULO.get((dono.id, no.func.attr))
+        if chave_do_modulo:
+            achados[chave_do_modulo] = True
+
+    # ── O erro previsto, e previsto pelo nome ───────────────────────────
+    #
+    # Um except sem tipo nenhum apanha tudo, inclusive o NameError de quem
+    # digitou um nome errado — e o requisito 6 pede prever a entrada inválida,
+    # que é outra coisa. Por isso a verificação exige que TODOS os ramos
+    # nomeiem: um try com um ramo nomeado e outro pelado esconde do mesmo jeito.
+    for no in ast.walk(arvore):
+        if not isinstance(no, ast.Try) or not no.handlers:
+            continue
+        if all(h.type is not None and _corpo_util(h.body) for h in no.handlers):
+            achados['tratouOErroCerto'] = True
 
     achados['leEExibe'] = leu and escreveu
     return achados

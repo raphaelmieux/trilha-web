@@ -725,6 +725,48 @@ export const MODULOS_DE_PYTHON_AVANCADO: ModuloDeVereda[] = [
         resumo: 'Parâmetro e argumento, retorno, valor padrão e escopo.',
         topicos: cap('funcao').topicos,
       },
+      {
+        id: 'm1-lab', tipo: 'laboratorio', linguagem: 'python',
+        titulo: 'A ficha do desbravador',
+        resumo: 'Uma função que recebe, devolve, tem padrão, e serve a três fichas.',
+        arquivo: 'fichas.py',
+        projeto: 'secretaria-do-clube',
+        /* Os três itens do requisito 4 numa função só, e é assim que eles
+           aparecem na vida: a função nasce com parâmetro, ganha um padrão
+           quando um dos valores quase nunca muda, e prova que valeu a pena na
+           segunda vez que é chamada. */
+        verificacoes: [
+          'funcaoComParametroERetorno', 'funcaoComPadrao', 'funcaoReaproveitada',
+          'roda', 'saidaEsperada',
+        ],
+        saidaEsperada: `Boa noite, Ana - unidade Falcão
+Boa noite, Tiago - unidade Pantera
+Bom dia, Bia - unidade Águia`,
+        modelo: `# A ficha do desbravador
+#
+# Escreva uma função que monte a linha da ficha e devolva ela pronta:
+#
+#     ficha(nome, unidade, saudacao="Boa noite")
+#
+# Três coisas ao mesmo tempo, e são os três itens do requisito 4:
+#
+#   - ela recebe valores e devolve um (devolve, e não imprime);
+#   - a saudação tem valor padrão, porque quase toda reunião do clube é à
+#     noite — e quem precisar de outra passa a que quiser;
+#   - ela é chamada de mais de um lugar, que é a razão de a função existir.
+#
+# Use a função para produzir exatamente esta saída:
+#
+#     Boa noite, Ana - unidade Falcão
+#     Boa noite, Tiago - unidade Pantera
+#     Bom dia, Bia - unidade Águia
+#
+# Repare que a terceira linha é a única que passa a saudação. As outras duas
+# calam, e é aí que o padrão vale.
+#
+# Quem imprime é o programa, e não a função: print(ficha("Ana", "Falcão")).
+`,
+      },
     ],
   },
   {
@@ -739,6 +781,52 @@ export const MODULOS_DE_PYTHON_AVANCADO: ModuloDeVereda[] = [
         titulo: 'Guardar vários valores',
         resumo: 'O que cada uma das quatro garante, e o caso de uso de cada uma.',
         topicos: cap('colecoes').topicos,
+      },
+      {
+        id: 'm2-lab', tipo: 'laboratorio', linguagem: 'python',
+        titulo: 'A chamada de sábado',
+        resumo: 'Cada uma das quatro coleções no trabalho em que ela é a certa.',
+        arquivo: 'chamada.py',
+        projeto: 'secretaria-do-clube',
+        /* O requisito 3 pede a diferença entre as quatro **com caso de uso para
+           cada**. Um laboratório que só pedisse "use as quatro" mediria escrever
+           quatro literais; o que ele pede é que cada uma faça o trabalho que só
+           ela faz bem — e a saída denuncia quem trocou. */
+        verificacoes: [
+          'usaLista', 'usaTupla', 'usaDicionario', 'usaConjunto',
+          'roda', 'saidaEsperada',
+        ],
+        saidaEsperada: `Anotados: 5
+Pessoas diferentes: 3
+Acampamento: Serra Azul, 2026
+Ana é da unidade Falcão`,
+        modelo: `# A chamada de sábado
+#
+# Quatro coleções, cada uma no trabalho em que ela é a certa:
+#
+#   - a chamada do dia, com os nomes na ordem em que foram anotados e com
+#     repetição, porque duas pessoas anotaram a mesma pessoa: LISTA
+#   - o lugar e o ano do acampamento, que não mudam: TUPLA
+#   - a ficha de uma pessoa, com um rótulo em cada valor: DICIONÁRIO
+#   - quem apareceu, sem repetir: CONJUNTO
+#
+# Os dados são estes, e não mude nenhum:
+#
+#     a chamada tem Ana, Tiago, Ana, Bia e Tiago, nessa ordem
+#     o acampamento é Serra Azul, 2026
+#     a ficha é de Ana, da unidade Falcão
+#
+# Produza exatamente esta saída:
+#
+#     Anotados: 5
+#     Pessoas diferentes: 3
+#     Acampamento: Serra Azul, 2026
+#     Ana é da unidade Falcão
+#
+# "Anotados" é o tamanho da chamada; "pessoas diferentes" é o tamanho do
+# conjunto. Os dois números saem dos mesmos nomes, e o que os separa é a
+# coleção escolhida — que é a lição inteira deste módulo.
+`,
       },
     ],
   },
@@ -815,6 +903,59 @@ Unidade: Águia`,
         resumo: 'O módulo csv, o módulo json, e a pergunta que decide entre os dois.',
         topicos: cap('csv-e-json').topicos,
       },
+      {
+        id: 'm4-lab', tipo: 'laboratorio', linguagem: 'python',
+        titulo: 'Do CSV da secretaria ao resumo em JSON',
+        resumo: 'Ler a tabela que chegou, apurar, e guardar o resultado na forma que ele tem.',
+        arquivo: 'resumo.py',
+        projeto: 'secretaria-do-clube',
+        /*
+          Um nome com vírgula dentro, entre aspas, e é ele que faz o módulo csv
+          valer a pena: a mesma linha lida com .split(",") devolve quatro campos
+          onde há três, e desloca tudo dali para a frente sem avisar. Sem esse
+          registro na lista, o laboratório aprovaria o atalho que a lição pede
+          para não usar.
+        */
+        arquivosDoProjeto: [
+          {
+            nome: 'inscritos.csv',
+            modelo: 'nome,unidade,idade\nAna,Falcão,12\n"Silva, Tiago",Pantera,13\nBia,Falcão,11\n',
+          },
+        ],
+        verificacoes: ['leCsv', 'gravaJson', 'leJson', 'roda', 'saidaEsperada'],
+        saidaEsperada: `Total: 3
+Falcão: 2
+Pantera: 1
+Idade média: 12.0`,
+        modelo: `# Do CSV da secretaria ao resumo em JSON
+#
+# Ao lado deste arquivo está o inscritos.csv, exportado pela secretaria, com
+# as colunas nome, unidade e idade. Ele é só de leitura.
+#
+# Escreva um programa que:
+#
+#   1. leia o inscritos.csv com o módulo csv;
+#   2. apure quantos inscritos há, quantos por unidade, e a idade média;
+#   3. grave essas três coisas num resumo.json;
+#   4. leia o resumo.json de volta e mostre na tela, a partir do que foi lido.
+#
+# A saída tem de ser exatamente esta, com as unidades em ordem alfabética:
+#
+#     Total: 3
+#     Falcão: 2
+#     Pantera: 1
+#     Idade média: 12.0
+#
+# Duas armadilhas moram aqui, e as duas são silenciosas.
+#
+# Um dos inscritos se chama "Silva, Tiago" — com vírgula dentro do nome, entre
+# aspas. Partir a linha por vírgula na mão devolve quatro campos onde há três,
+# e a partir dali tudo sai deslocado. O módulo csv já sabe disso.
+#
+# E a idade sai do CSV como texto, inclusive parecendo número. Somar sem
+# converter não dá a média: dá erro, ou dá outra coisa.
+`,
+      },
     ],
   },
   {
@@ -829,6 +970,56 @@ Unidade: Águia`,
         titulo: 'O programa que não morre',
         resumo: 'Prever o erro que vem de fora, e pegar só ele.',
         topicos: cap('erros-tratados').topicos,
+      },
+      {
+        id: 'm5-lab', tipo: 'laboratorio', linguagem: 'python',
+        titulo: 'A idade que veio errada',
+        resumo: 'Perguntar de novo, em vez de morrer — e dizer de que erro se trata.',
+        arquivo: 'idades.py',
+        projeto: 'secretaria-do-clube',
+        /*
+          A entrada traz as duas formas de inválido que o requisito 6 cobre: o
+          que nem vira número, e o que vira e não vale. A segunda é a que mostra
+          que tratar o erro não basta — o `if` depois do `try` é que cuida dela.
+
+          E é a saída, e não o `try`, que prova que o laço insistiu: sem ela um
+          programa que tratasse o erro e seguisse em frente com um valor
+          inválido passaria igual.
+        */
+        entradaPadrao: ['doze', '-3', '12', 'x', '13'],
+        verificacoes: ['tratouOErroCerto', 'lacoWhile', 'roda', 'saidaEsperada'],
+        saidaEsperada: `Ana, quantos anos? Isso não é um número. Tente de novo.
+Ana, quantos anos? Idade não é negativa. Tente de novo.
+Ana, quantos anos? Tiago, quantos anos? Isso não é um número. Tente de novo.
+Tiago, quantos anos? Soma das idades: 25`,
+        modelo: `# A idade que veio errada
+#
+# Escreva um programa que pergunte a idade de duas pessoas — Ana e Tiago,
+# nessa ordem — e some as duas. O que o requisito 6 pede é que entrada
+# inválida NÃO encerre o programa: ele pergunta de novo, quantas vezes for
+# preciso.
+#
+# A pergunta se escreve exatamente assim, com o nome na frente:
+#
+#     Ana, quantos anos?
+#
+# E há dois tipos de resposta inválida, que pedem recados diferentes:
+#
+#   - o que nem vira número ("doze"):    Isso não é um número. Tente de novo.
+#   - o que vira número e não vale (-3): Idade não é negativa. Tente de novo.
+#
+# O segundo passou pelo int() sem reclamar — nenhum try apanha esse. Quem
+# cuida dele é um if depois da conversão.
+#
+# No fim, com as duas idades na mão:
+#
+#     Soma das idades: 25
+#
+# O campo Entrada, ao lado, já traz o que vai ser digitado: doze, -3, 12, x e
+# 13. No painel de saída as perguntas aparecem grudadas no que veio depois, e
+# o que foi digitado não aparece — é assim que todo juiz de código funciona, e
+# a lição explica por quê.
+`,
       },
     ],
   },
