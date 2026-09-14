@@ -1,9 +1,11 @@
 import { jsPDF } from 'jspdf';
-import type { Badge, Certification, CertificadoImprimivel } from '../types';
+import type { Certification, CertificadoImprimivel } from '../types';
 import { CERT_WIDTH } from '../components/CertificateCanvas';
 import { codigoDaArte } from './certificados';
 import { renderBadgeIconPng, TIER_LABELS } from './badgeIcons';
 import { partirNaMarca, VERMELHO_DA_MARCA } from './marca';
+import { dataPorExtenso } from './explicacaoDaInsignia';
+import { emOrdemDeConquista, type InsigniaConquistada } from './conquista';
 
 /**
  * Native PDF export.
@@ -48,6 +50,25 @@ const pxToPt = (px: number) => pxToMm(px) / MM_PER_PT;
  * sairiam empilhados no mesmo ponto. Mede-se a linha inteira, começa-se na
  * metade dela à esquerda do centro, e cada pedaço anda a própria largura.
  */
+function linhaComMarca(
+  doc: jsPDF,
+  texto: string,
+  x: number,
+  y: number,
+  corDoTexto: [number, number, number],
+) {
+  let cursor = x;
+  for (const pedaco of partirNaMarca(texto)) {
+    const [r, g, b] = pedaco.daMarca ? VERMELHO_DA_MARCA : corDoTexto;
+    doc.setTextColor(r, g, b);
+    doc.text(pedaco.texto, cursor, y);
+    cursor += doc.getTextWidth(pedaco.texto);
+  }
+
+  /* Devolve a cor de quem chamou: as linhas seguintes contam com ela. */
+  doc.setTextColor(corDoTexto[0], corDoTexto[1], corDoTexto[2]);
+}
+
 function linhaCentralizadaComMarca(
   doc: jsPDF,
   texto: string,
@@ -55,18 +76,7 @@ function linhaCentralizadaComMarca(
   y: number,
   corDoTexto: [number, number, number],
 ) {
-  const pedacos = partirNaMarca(texto);
-  let x = centroX - doc.getTextWidth(texto) / 2;
-
-  for (const pedaco of pedacos) {
-    const [r, g, b] = pedaco.daMarca ? VERMELHO_DA_MARCA : corDoTexto;
-    doc.setTextColor(r, g, b);
-    doc.text(pedaco.texto, x, y);
-    x += doc.getTextWidth(pedaco.texto);
-  }
-
-  /* Devolve a cor de quem chamou: as linhas seguintes contam com ela. */
-  doc.setTextColor(corDoTexto[0], corDoTexto[1], corDoTexto[2]);
+  linhaComMarca(doc, texto, centroX - doc.getTextWidth(texto) / 2, y, corDoTexto);
 }
 
 async function loadImageAsDataUrl(url: string): Promise<string> {
@@ -371,29 +381,380 @@ export interface ReportPdfInput {
   club: string;
   unit: string;
   issuedOn: string;
-  /** Quais especialidades este relatório cobre — o conjunto é escolhido na tela, então o subtítulo não pode ser fixo. */
-  subtitle: string;
+  /**
+   * Os percursos que este relatório descreve, um por linha na capa.
+   *
+   * Era uma frase só — "Trilha.Web() — Especialidades A, B e C" — escrita com
+   * um `doc.text` sem quebra nenhuma: com três especialidades ela já saía
+   * pelas margens, e o documento abria com o próprio assunto cortado no meio
+   * de uma palavra. Lista não tem esse problema, cresce com a plataforma, e
+   * responde de relance a pergunta que a liderança faz primeiro — "este
+   * relatório fala da AP044?" —, que numa linha comprida se lê varrendo.
+   */
+  percursos: string[];
   intro: string;
   sections: ReportSection[];
   /** Introductory sentence for the achievements section; omitted when there are none. */
   badgeIntro?: string;
-  badges: Badge[];
+  badges: InsigniaConquistada[];
   annexNote?: string;
   certificates: Certification[];
 }
 
-const MARGIN = { top: 20, right: 18, bottom: 20, left: 18 };
+const MARGIN = { top: 20, right: 18, bottom: 22, left: 18 };
 const BODY_SIZE = 10.5;
 const LINE_HEIGHT = 5.1;
 
+const PRETO: [number, number, number] = [0, 0, 0];
+const TINTA: [number, number, number] = [26, 26, 26];
+const CINZA: [number, number, number] = [90, 90, 90];
+const CINZA_CLARO: [number, number, number] = [140, 140, 140];
+
+/*
+  A capa.
+
+  ── Por que ela existe, e por que não é só enfeite ────────────────────────
+  O documento é entregue impresso à liderança e arquivado com a ficha do
+  desbravador. Sem capa ele começava no meio de um parágrafo de identificação,
+  e a única coisa que dizia de longe o que era — o assunto — estava numa linha
+  que estourava a margem.
+
+  Tudo o que está aqui responde a uma pergunta que alguém faz **antes** de ler:
+  de quem é, de que clube, de quando, sobre quais percursos, e o que vem
+  anexado. É a folha que se olha com o documento fechado em cima da mesa.
+
+  ── O que ela não tem ─────────────────────────────────────────────────────
+  Os emblemas dos percursos. Eles são a arte dos certificados e chegam
+  inteiros, sangrados, nas folhas de anexo — repetir miniaturas na capa
+  acrescentaria decoração e nenhuma informação.
+*/
+function desenharCapa(doc: jsPDF, input: ReportPdfInput): void {
+  const largura = A4_PORTRAIT.width;
+  const centro = largura / 2;
+  const direita = largura - MARGIN.right;
+  const util = direita - MARGIN.left;
+
+  /* A faixa do topo é a cor da plataforma, e é a mesma dos parênteses da
+     marca: um hexadecimal escrito à parte aqui divergiria no primeiro ajuste
+     de tema. */
+  doc.setFillColor(...VERMELHO_DA_MARCA);
+  doc.rect(0, 0, largura, 9, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(26);
+  linhaCentralizadaComMarca(doc, 'Trilha.Web()', centro, 36, TINTA);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...CINZA);
+  doc.text('Trilhas de especialidades do Clube de Desbravadores', centro, 43, { align: 'center' });
+
+  doc.setDrawColor(...VERMELHO_DA_MARCA);
+  doc.setLineWidth(0.6);
+  doc.line(MARGIN.left, 52, direita, 52);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(30);
+  doc.setTextColor(...PRETO);
+  doc.text('Relatório de', centro, 74, { align: 'center' });
+  doc.text('Competências', centro, 87, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10.5);
+  doc.setTextColor(...CINZA);
+  doc.text('Registro de aprendizagem para apresentação à liderança do Clube',
+    centro, 97, { align: 'center' });
+
+  // ── O bloco de identificação ──
+  const topoDoBloco = 110;
+  const alturaDoBloco = 44;
+  doc.setFillColor(246, 246, 246);
+  doc.setDrawColor(215, 215, 215);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(MARGIN.left, topoDoBloco, util, alturaDoBloco, 2, 2, 'FD');
+
+  const dentro = MARGIN.left + 8;
+  rotulo(doc, 'DESBRAVADOR(A)', dentro, topoDoBloco + 10);
+
+  /* O nome encolhe para caber, como no certificado: cortar o nome de alguém
+     na capa do documento sobre ela é o pior lugar para cortar. */
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...PRETO);
+  let corpoDoNome = 18;
+  doc.setFontSize(corpoDoNome);
+  const larguraMaxima = util - 16;
+  if (doc.getTextWidth(input.studentName) > larguraMaxima) {
+    corpoDoNome = corpoDoNome * (larguraMaxima / doc.getTextWidth(input.studentName));
+    doc.setFontSize(corpoDoNome);
+  }
+  doc.text(input.studentName, dentro, topoDoBloco + 20);
+
+  const meio = MARGIN.left + util / 2;
+  rotulo(doc, 'CLUBE', dentro, topoDoBloco + 30);
+  valor(doc, input.club || '—', dentro, topoDoBloco + 36, meio - dentro - 6);
+  rotulo(doc, 'UNIDADE', meio, topoDoBloco + 30);
+  valor(doc, input.unit || '—', meio, topoDoBloco + 36, direita - meio - 8);
+
+  // ── Os percursos, um por linha ──
+  /*
+    Uma coluna enquanto couber, duas quando não couber.
+
+    Treze trilhas cabem numa coluna hoje; a plataforma cresce, e uma lista que
+    passasse do rodapé escreveria por cima dele sem erro nenhum. A segunda
+    coluna é a saída barata, e ela só aparece quando faz falta.
+  */
+  const rodapeDaCapa = 252;
+  const ALTURA_CONFORTAVEL = 6;
+  const inicioDoEspaco = topoDoBloco + alturaDoBloco + 14;
+  const alturaDoEspaco = rodapeDaCapa - inicioDoEspaco;
+  const espacoDasLinhas = alturaDoEspaco - 8;
+  const quantos = Math.max(1, input.percursos.length);
+
+  /*
+    Colunas primeiro, e só então a linha encolhe.
+
+    A conta antiga era "mais do que cabe numa coluna? então duas", e duas
+    colunas não bastam para qualquer lista: com trinta e quatro percursos ela
+    passava do rodapé e escrevia por cima da data de emissão e do aviso de
+    anexo, sem erro nenhum. O número de percursos que a plataforma vai ter é
+    justamente o que ninguém sabe — a capa precisa continuar legível quando ele
+    dobrar.
+  */
+  const cabemPorColuna = Math.max(1, Math.floor(espacoDasLinhas / ALTURA_CONFORTAVEL));
+  const colunas = Math.min(3, Math.max(1, Math.ceil(quantos / cabemPorColuna)));
+  const porColuna = Math.ceil(quantos / colunas);
+  const larguraDaColuna = util / colunas;
+  const alturaDaLinha = Math.min(ALTURA_CONFORTAVEL, espacoDasLinhas / porColuna);
+  /* O corpo acompanha a linha, com piso: letra que encolhe sem limite vira
+     uma capa que ninguém lê de longe, que é para o que a capa serve. */
+  const corpoDaLista = Math.min(11, Math.max(7, alturaDaLinha * 1.55));
+
+  /* O bloco se centra no que sobra entre o bloco de identificação e o rodapé:
+     com três percursos, ancorá-lo no topo abre um buraco de dez centímetros no
+     meio da capa, e com treze ele encosta no rodapé. Centrado, a composição
+     fecha nos dois casos. */
+  const alturaDaLista = 8 + porColuna * alturaDaLinha;
+  const topoDaLista = inicioDoEspaco + Math.max(0, (alturaDoEspaco - alturaDaLista) / 2);
+  rotulo(doc, 'PERCURSOS DESCRITOS NESTE RELATÓRIO', MARGIN.left, topoDaLista);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(corpoDaLista);
+  input.percursos.forEach((percurso, i) => {
+    const coluna = Math.floor(i / porColuna);
+    const x = MARGIN.left + coluna * larguraDaColuna;
+    const y = topoDaLista + 8 + (i % porColuna) * alturaDaLinha;
+
+    doc.setFillColor(...VERMELHO_DA_MARCA);
+    doc.rect(x, y - 2.4, 2.2, 2.2, 'F');
+
+    doc.setTextColor(...TINTA);
+    const [primeira] = doc.splitTextToSize(percurso, larguraDaColuna - 8) as string[];
+    doc.text(primeira, x + 5.5, y);
+  });
+
+  // ── O pé da capa ──
+  doc.setDrawColor(215, 215, 215);
+  doc.setLineWidth(0.3);
+  doc.line(MARGIN.left, rodapeDaCapa + 8, direita, rodapeDaCapa + 8);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...CINZA);
+  doc.text(`Emitido em ${input.issuedOn}`, MARGIN.left, rodapeDaCapa + 15);
+  if (input.annexNote) {
+    /* Com os parênteses vermelhos: é uma linha só, e a exceção que deixa o
+       corpo do relatório sem a marca existe porque lá o nome cai no meio de um
+       parágrafo quebrado em linhas. Aqui não cai. */
+    const [primeira] = doc.splitTextToSize(input.annexNote, util) as string[];
+    linhaComMarca(doc, primeira, MARGIN.left, rodapeDaCapa + 20.5, CINZA);
+  }
+
+  doc.setFontSize(8.5);
+  linhaComMarca(doc, 'Documento gerado pela Trilha.Web()', MARGIN.left, rodapeDaCapa + 30, CINZA_CLARO);
+}
+
+/** O rótulo pequeno, em caixa alta, que nomeia um campo da capa. */
+function rotulo(doc: jsPDF, texto: string, x: number, y: number): void {
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...CINZA_CLARO);
+  doc.text(texto, x, y);
+}
+
+/** O valor de um campo da capa, encurtado ao que couber na coluna dele. */
+function valor(doc: jsPDF, texto: string, x: number, y: number, largura: number): void {
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(...TINTA);
+  const [primeira] = doc.splitTextToSize(texto, largura) as string[];
+  doc.text(primeira, x, y);
+}
+
+/*
+  O sumário.
+
+  ── Por que ele precisa de páginas reservadas ─────────────────────────────
+  Só se sabe em que página uma seção caiu **depois** de compor o corpo, e
+  inserir o sumário depois empurraria todas as páginas seguintes — os números
+  recém-apurados passariam a apontar para a página anterior à certa. Um erro
+  de um, em toda linha, que ninguém confere lendo.
+
+  A saída é reservar as folhas antes e escrevê-las no fim, e ela só é honesta
+  porque o número de entradas é conhecido de antemão: são as seções, mais a
+  apresentação, mais as conquistas e o anexo quando existem. `paginasDoSumario`
+  faz essa conta, e é ela — e não um palpite — que decide quantas folhas ficam
+  em branco esperando.
+*/
+const ENTRADAS_POR_PAGINA_DO_SUMARIO = 30;
+const ALTURA_DA_ENTRADA = 7;
+const ALTURA_DO_CABECALHO_DO_SUMARIO = 14;
+
 /**
- * The competency report: flowing portrait pages, then one landscape sheet per
- * earned certificate. Mixing orientations is the part CSS could not do.
+ * A geometria do sumário, exportada para a trava refazer a conta.
+ *
+ * Reservar menos folhas do que as entradas pedem não estoura: a última entrada
+ * simplesmente não é desenhada, ou é desenhada por cima do rodapé. Um sumário
+ * a que falta a última linha é indistinguível de um sumário completo para quem
+ * não conhece o documento.
+ */
+export const GEOMETRIA_DO_SUMARIO = {
+  entradasPorPagina: ENTRADAS_POR_PAGINA_DO_SUMARIO,
+  alturaDaEntrada: ALTURA_DA_ENTRADA,
+  alturaDoCabecalho: ALTURA_DO_CABECALHO_DO_SUMARIO,
+  alturaUtil: A4_PORTRAIT.height - MARGIN.top - MARGIN.bottom,
+};
+
+/** Quantas folhas o sumário vai ocupar, sabendo quantas entradas terá. */
+export function paginasDoSumario(entradas: number): number {
+  return Math.max(1, Math.ceil(entradas / ENTRADAS_POR_PAGINA_DO_SUMARIO));
+}
+
+interface EntradaDoSumario {
+  titulo: string;
+  pagina: number;
+}
+
+function desenharSumario(doc: jsPDF, entradas: EntradaDoSumario[], primeiraFolha: number): void {
+  const direita = A4_PORTRAIT.width - MARGIN.right;
+
+  doc.setPage(primeiraFolha);
+  let y = MARGIN.top + 4;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.setTextColor(...PRETO);
+  doc.text('Sumário', MARGIN.left, y);
+  y += 4;
+  doc.setDrawColor(...VERMELHO_DA_MARCA);
+  doc.setLineWidth(0.6);
+  doc.line(MARGIN.left, y, direita, y);
+  y += ALTURA_DO_CABECALHO_DO_SUMARIO - 4;
+
+  entradas.forEach((entrada, i) => {
+    /*
+      A quebra conta entradas, e não milímetros — de propósito.
+
+      `paginasDoSumario` reservou as folhas contando entradas; se aqui a
+      quebra fosse por altura, as duas contas seriam parecidas e não iguais, e
+      no dia em que discordassem a última entrada cairia numa folha que não
+      foi reservada. É a mesma razão pela qual `sortearCobrindo` e
+      `minimoParaCobrir` compartilham o laço.
+    */
+    if (i > 0 && i % ENTRADAS_POR_PAGINA_DO_SUMARIO === 0) {
+      doc.setPage(primeiraFolha + i / ENTRADAS_POR_PAGINA_DO_SUMARIO);
+      y = MARGIN.top;
+    }
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10.5);
+    doc.setTextColor(...TINTA);
+    const numero = String(entrada.pagina);
+    const larguraDoNumero = doc.getTextWidth(numero);
+    const [titulo] = doc.splitTextToSize(entrada.titulo, direita - MARGIN.left - larguraDoNumero - 10) as string[];
+    /* "Anexos — 2 certificados Token.Web()" é entrada de sumário, não corpo de
+       parágrafo: a marca vem vestida aqui. */
+    linhaComMarca(doc, titulo, MARGIN.left, y, TINTA);
+
+    /* A régua entre o título e o número, no lugar do pontilhado: ela liga os
+       dois lados da linha sem depender de uma fonte que meça o ponto. */
+    const fimDoTitulo = MARGIN.left + doc.getTextWidth(titulo) + 2.5;
+    const inicioDoNumero = direita - larguraDoNumero - 2.5;
+    if (inicioDoNumero > fimDoTitulo) {
+      doc.setDrawColor(205, 205, 205);
+      doc.setLineWidth(0.2);
+      doc.line(fimDoTitulo, y - 1.1, inicioDoNumero, y - 1.1);
+    }
+
+    doc.setTextColor(...CINZA);
+    doc.text(numero, direita, y, { align: 'right' });
+    y += ALTURA_DA_ENTRADA;
+  });
+}
+
+/*
+  O rodapé, com a numeração.
+
+  A capa não se numera — é a convenção de todo documento impresso, e um "1"
+  embaixo do título estragaria a folha. As folhas de anexo também não: elas são
+  a arte do certificado sangrada até a borda, e carimbar um número por cima
+  seria escrever no documento que a pessoa vai emoldurar.
+
+  Elas continuam contando no total, porque contam mesmo: quem recebe um
+  documento de nove folhas precisa saber que recebeu as nove.
+*/
+function carimbarRodape(doc: jsPDF, studentName: string, folhasDeAnexo: number): void {
+  const total = doc.getNumberOfPages();
+  const direita = A4_PORTRAIT.width - MARGIN.right;
+  const base = A4_PORTRAIT.height - 10;
+
+  for (let pagina = 2; pagina <= total - folhasDeAnexo; pagina++) {
+    doc.setPage(pagina);
+
+    doc.setDrawColor(225, 225, 225);
+    doc.setLineWidth(0.2);
+    doc.line(MARGIN.left, base - 4, direita, base - 4);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    linhaComMarca(doc, `Trilha.Web() · ${studentName}`, MARGIN.left, base, CINZA_CLARO);
+
+    doc.setTextColor(...CINZA_CLARO);
+    doc.text(`página ${pagina} de ${total}`, direita, base, { align: 'right' });
+  }
+}
+
+/**
+ * The competency report: a cover, a table of contents, flowing portrait pages,
+ * then one landscape sheet per earned certificate. Mixing orientations is the
+ * part CSS could not do.
  */
 export async function exportReportPdf(input: ReportPdfInput): Promise<void> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
   const textWidth = A4_PORTRAIT.width - MARGIN.left - MARGIN.right;
+
+  // ── Capa, folha 1 ──
+  desenharCapa(doc, input);
+
+  /*
+    As folhas do sumário, em branco por enquanto.
+
+    A conta é feita antes de compor o corpo porque as entradas são conhecidas
+    antes: a apresentação, cada seção, e — quando existem — as conquistas e o
+    anexo. O que não se sabe ainda é o número de cada uma, e é só isso que o
+    fim preenche.
+  */
+  const entradasPrevistas = 1
+    + input.sections.length
+    + (input.badges.length > 0 ? 1 : 0)
+    + (input.certificates.length > 0 ? 1 : 0);
+  const folhasDeSumario = paginasDoSumario(entradasPrevistas);
+  const primeiraDoSumario = 2;
+  for (let i = 0; i < folhasDeSumario; i++) doc.addPage('a4', 'portrait');
+
+  // ── Corpo ──
+  doc.addPage('a4', 'portrait');
   let y = MARGIN.top;
+  const entradas: EntradaDoSumario[] = [];
 
   /** Starts a new page when the next block would cross the bottom margin. */
   const ensureSpace = (needed: number) => {
@@ -419,78 +780,34 @@ export async function exportReportPdf(input: ReportPdfInput): Promise<void> {
     y += gap;
   };
 
-  // ── Title block ──
-  doc.setTextColor(0, 0, 0);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(17);
-  doc.text('Relatório de Competências', A4_PORTRAIT.width / 2, y, { align: 'center' });
-  y += 7;
+  /** Abre uma seção e anota em que folha ela caiu, para o sumário. */
+  const abrirSecao = (titulo: string) => {
+    // Keep a heading with at least the first two lines of its section.
+    ensureSpace(LINE_HEIGHT * 3 + 6);
+    entradas.push({ titulo, pagina: doc.getNumberOfPages() });
+    y += 2;
+    doc.setTextColor(...VERMELHO_DA_MARCA);
+    writeParagraph(titulo, { size: 12, style: 'bold', gap: 1.5 });
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.2);
+    doc.line(MARGIN.left, y - 2.5, A4_PORTRAIT.width - MARGIN.right, y - 2.5);
+    y += 1.5;
+    doc.setTextColor(...TINTA);
+  };
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(70, 70, 70);
-  doc.text(
-    input.subtitle,
-    A4_PORTRAIT.width / 2, y, { align: 'center' }
-  );
-  y += 5;
-
-  doc.setDrawColor(193, 53, 22);
-  doc.setLineWidth(0.6);
-  doc.line(MARGIN.left, y, A4_PORTRAIT.width - MARGIN.right, y);
-  y += 7;
-
-  // ── Identification ──
-  doc.setTextColor(20, 20, 20);
-  doc.setFontSize(10);
-  const idRows: [string, string][] = [
-    ['Desbravador(a):', input.studentName],
-    ['Clube:', input.club || '—'],
-    ['Unidade:', input.unit || '—'],
-    ['Emitido em:', input.issuedOn],
-  ];
-  for (const [label, value] of idRows) {
-    ensureSpace(LINE_HEIGHT);
-    doc.setFont('helvetica', 'bold');
-    doc.text(label, MARGIN.left, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(value, MARGIN.left + 32, y);
-    y += LINE_HEIGHT;
-  }
-  y += 2;
-
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.2);
-  doc.line(MARGIN.left, y, A4_PORTRAIT.width - MARGIN.right, y);
-  y += 7;
-
-  // ── Body ──
-  doc.setTextColor(26, 26, 26);
+  /* A introdução ganhou título porque o sumário precisa de um: seção sem nome
+     é linha que não dá para citar. */
+  abrirSecao('Apresentação');
   writeParagraph(input.intro);
 
   for (const section of input.sections) {
-    // Keep a heading with at least the first two lines of its section.
-    ensureSpace(LINE_HEIGHT * 3 + 6);
-    y += 2;
-    doc.setTextColor(193, 53, 22);
-    writeParagraph(section.heading, { size: 12, style: 'bold', gap: 1.5 });
-    doc.setDrawColor(200, 200, 200);
-    doc.line(MARGIN.left, y - 2.5, A4_PORTRAIT.width - MARGIN.right, y - 2.5);
-    y += 1.5;
-    doc.setTextColor(26, 26, 26);
+    abrirSecao(section.heading);
     for (const p of section.paragraphs) writeParagraph(p);
   }
 
   // ── Conquistas ──
   if (input.badges.length > 0) {
-    ensureSpace(LINE_HEIGHT * 4 + 8);
-    y += 2;
-    doc.setTextColor(193, 53, 22);
-    writeParagraph('Conquistas', { size: 12, style: 'bold', gap: 1.5 });
-    doc.setDrawColor(200, 200, 200);
-    doc.line(MARGIN.left, y - 2.5, A4_PORTRAIT.width - MARGIN.right, y - 2.5);
-    y += 1.5;
-    doc.setTextColor(26, 26, 26);
+    abrirSecao('Conquistas');
     if (input.badgeIntro) writeParagraph(input.badgeIntro);
 
     // The icons are rasterised once each: a student who earned the same tier
@@ -498,9 +815,48 @@ export async function exportReportPdf(input: ReportPdfInput): Promise<void> {
     const iconCache = new Map<string, string>();
     const ICON_MM = 9;
 
-    for (const badge of input.badges) {
-      const rowHeight = Math.max(ICON_MM, LINE_HEIGHT * 2) + 2.5;
-      ensureSpace(rowHeight);
+    /* Da mais antiga para a mais nova: o relatório conta um percurso, e
+       percurso se lê do começo. Ver `emOrdemDeConquista`. */
+    const textLeft = MARGIN.left + ICON_MM + 4;
+    const textRight = A4_PORTRAIT.width - MARGIN.right;
+
+    for (const badge of emOrdemDeConquista(input.badges)) {
+      /*
+        A data da conquista, à direita e na linha do nome.
+
+        Ela sempre esteve em `awarded_at` e o relatório não a imprimia: a seção
+        dizia o que a pessoa conquistou e não dizia **quando**, que é metade do
+        que a liderança lê num histórico. Sai por `dataPorExtenso`, a mesma do
+        cartão da estante — em Brasília pelo nome do fuso, porque quem estuda
+        às 22h não pode ter a conquista datada do dia seguinte.
+      */
+      const quando = badge.conquistadaEm ? dataPorExtenso(badge.conquistadaEm) : undefined;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      const larguraDaData = quando ? doc.getTextWidth(quando) + 4 : 0;
+
+      /*
+        As linhas se medem antes de desenhar, e a altura da fileira sai delas.
+
+        Com uma altura fixa, o nome comprido era cortado na primeira linha — e
+        o que se perdia calado era a classe, que vai no fim: "Primeiro
+        Token.Web() de uma vereda inteira" saía sem o "(Amigo)". Nome de
+        insígnia é curto hoje, então isso quase nunca acontecia, que é
+        exatamente o tipo de corte que passa despercebido até o dia em que
+        passa a acontecer sempre.
+      */
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      const linhasDoNome = doc.splitTextToSize(
+        `${badge.name} (${TIER_LABELS[badge.tier]})`,
+        textRight - textLeft - larguraDaData,
+      ) as string[];
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      const linhasDaDescricao = doc.splitTextToSize(badge.description, textRight - textLeft) as string[];
+      const alturaDoTexto = linhasDoNome.length * 4.4 + linhasDaDescricao.length * 4.2;
+
+      ensureSpace(Math.max(ICON_MM, alturaDoTexto) + 2.5);
       const rowTop = y - 3.6;
 
       const cacheKey = `${badge.icon}|${badge.tier}`;
@@ -511,23 +867,30 @@ export async function exportReportPdf(input: ReportPdfInput): Promise<void> {
       }
       doc.addImage(png, 'PNG', MARGIN.left, rowTop, ICON_MM, ICON_MM);
 
-      const textLeft = MARGIN.left + ICON_MM + 4;
-      const textRight = A4_PORTRAIT.width - MARGIN.right;
+      if (quando) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(...CINZA_CLARO);
+        doc.text(quando, textRight, y, { align: 'right' });
+      }
+
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
-      doc.setTextColor(26, 26, 26);
-      doc.text(`${badge.name} (${TIER_LABELS[badge.tier]})`, textLeft, y);
+      doc.setTextColor(...TINTA);
+      let cursor = y;
+      for (const linha of linhasDoNome) {
+        doc.text(linha, textLeft, cursor);
+        cursor += 4.4;
+      }
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
-      doc.setTextColor(90, 90, 90);
-      const lines = doc.splitTextToSize(badge.description, textRight - textLeft) as string[];
-      let descY = y + 4.4;
-      for (const line of lines) {
-        doc.text(line, textLeft, descY);
-        descY += 4.2;
+      doc.setTextColor(...CINZA);
+      for (const linha of linhasDaDescricao) {
+        doc.text(linha, textLeft, cursor);
+        cursor += 4.2;
       }
-      y = Math.max(rowTop + ICON_MM, descY - 4.2) + 4.5;
+      y = Math.max(rowTop + ICON_MM, cursor - 4.2) + 4.5;
     }
     y += 1;
   }
@@ -536,17 +899,29 @@ export async function exportReportPdf(input: ReportPdfInput): Promise<void> {
     ensureSpace(LINE_HEIGHT * 2 + 6);
     y += 3;
     doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.2);
     doc.line(MARGIN.left, y, A4_PORTRAIT.width - MARGIN.right, y);
     y += 5;
-    doc.setTextColor(90, 90, 90);
+    doc.setTextColor(...CINZA);
     writeParagraph(input.annexNote, { size: 9 });
   }
 
   // ── Attached certificates, landscape ──
+  if (input.certificates.length > 0) {
+    entradas.push({
+      titulo: input.certificates.length === 1
+        ? 'Anexo — certificado Token.Web()'
+        : `Anexos — ${input.certificates.length} certificados Token.Web()`,
+      pagina: doc.getNumberOfPages() + 1,
+    });
+  }
   for (const cert of input.certificates) {
     doc.addPage('a4', 'landscape');
     await drawCertificate(doc, cert, input.studentName);
   }
+
+  desenharSumario(doc, entradas, primeiraDoSumario);
+  carimbarRodape(doc, input.studentName, input.certificates.length);
 
   doc.save(`Relatorio de Competencias - ${input.studentName}.pdf`);
 }
