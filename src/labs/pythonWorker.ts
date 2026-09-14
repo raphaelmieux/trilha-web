@@ -25,7 +25,7 @@
  */
 
 import {
-  ANALISADOR, apararTraceback, erroDeSintaxeEmTexto,
+  ANALISADOR, apararTraceback, erroDeSintaxeEmTexto, preparoDaAnalise,
   type NoDoEsboco, type SaidaDaAnalise,
 } from './pythonAnalise';
 import { preambuloDoProjeto } from './projetoDePython';
@@ -42,7 +42,10 @@ export type PedidoAoPython =
      entrega para ser lido, e o segundo arquivo-fonte que ele importa. Ausente
      nos laboratórios de um arquivo só, que é como a CC002 inteira funciona. */
   | { tipo: 'rodar'; codigo: string; entrada: string[]; arquivos?: Record<string, string> }
-  | { tipo: 'analisar'; codigo: string };
+  /* A análise vê o projeto inteiro: duas contas do requisito 8 — a função
+     reaproveitada e as três funções — têm a definição num arquivo e as
+     chamadas no outro, e cada metade sozinha responde "não". */
+  | { tipo: 'analisar'; codigo: string; arquivo?: string; fontes?: Record<string, string> };
 
 export type RespostaDoPython =
   | { tipo: 'pronto' }
@@ -87,10 +90,12 @@ async function rodar(
   }
 }
 
-async function analisar(codigo: string): Promise<RespostaDoPython> {
+async function analisar(
+  codigo: string, arquivo = 'programa.py', fontes: Record<string, string> = {},
+): Promise<RespostaDoPython> {
   const py = await carregar();
   try {
-    py.runPython(`_fonte = ${JSON.stringify(codigo)}`);
+    py.runPython(preparoDaAnalise(codigo, arquivo, fontes));
     const bruto = py.runPython(ANALISADOR) as string;
     const saida = JSON.parse(bruto) as SaidaDaAnalise;
     /*
@@ -127,7 +132,7 @@ self.onmessage = async (ev: MessageEvent<PedidoAoPython>) => {
   try {
     const r = pedido.tipo === 'rodar'
       ? await rodar(pedido.codigo, pedido.entrada, pedido.arquivos)
-      : await analisar(pedido.codigo);
+      : await analisar(pedido.codigo, pedido.arquivo, pedido.fontes);
     (self as unknown as Worker).postMessage(r);
   } catch (e) {
     (self as unknown as Worker).postMessage({

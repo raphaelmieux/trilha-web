@@ -47,6 +47,34 @@ export function apararTraceback(bruto: string): string {
   E toda estrutura precisa ter corpo de verdade: um `while` cujo corpo é só
   `pass` não repete coisa nenhuma, do mesmo modo que o laço vazio dos blocos.
 */
+/**
+ * O que se define antes de rodar o `ANALISADOR`.
+ *
+ * Sai daqui, e não escrito à mão em cada chamador, porque são três nomes que
+ * precisam combinar — e três cópias divergem na primeira vez que um deles
+ * mudar. Foi o que aconteceu: o analisador passou a ler o projeto inteiro e os
+ * testes continuaram definindo só o arquivo aberto.
+ *
+ * `fontes` traz os **outros** arquivos-fonte; o principal entra por `codigo`.
+ * `_modulos` é o que o principal pode importar — os outros `.py` do projeto,
+ * sem a terminação, que é o que o Python enxergaria na pasta.
+ */
+export function preparoDaAnalise(
+  codigo: string, arquivo = 'programa.py', fontes: Record<string, string> = {},
+): string {
+  const todas = { ...fontes, [arquivo]: codigo };
+  const modulos = Object.keys(todas)
+    .filter(nome => nome !== arquivo && nome.endsWith('.py'))
+    .map(nome => nome.slice(0, -3));
+  return [
+    `import json as _j`,
+    `_fontes = _j.loads(${JSON.stringify(JSON.stringify(todas))})`,
+    `_principal = ${JSON.stringify(arquivo)}`,
+    `_modulos = _j.loads(${JSON.stringify(JSON.stringify(modulos))})`,
+    `del _j`,
+  ].join('\n');
+}
+
 export const ANALISADOR = `
 import ast, json
 
@@ -96,6 +124,15 @@ def analisar(fonte):
         'usaLista': False, 'usaTupla': False, 'usaDicionario': False, 'usaConjunto': False,
         'leCsv': False, 'gravaJson': False, 'leJson': False,
         'tratouOErroCerto': False,
+        # Estas três são do projeto, e não do arquivo: quem as recalcula, depois
+        # de ler todos, é _cruzado. Ficam aqui para o dicionário ter sempre a
+        # mesma forma — um achado que só existisse às vezes chegaria à tela como
+        # undefined, e undefined não é falso: é "não sei", que a verificação
+        # leria como reprovado sem saber por quê.
+        #
+        # (E sem crase nenhuma aqui: este texto vive dentro de um template
+        # literal do TypeScript, e uma crase encerra a string.)
+        'funcaoReaproveitada': False, 'tresFuncoes': False, 'importaDoProjeto': False,
     }
     arvore = ast.parse(fonte)
 
@@ -212,12 +249,12 @@ def analisar(fonte):
                 achados[nome_da_chave] = True
 
     # ── As funções ──────────────────────────────────────────────────────
-    definidas = set()
+    #
+    # Reaproveitada e "três funções" não moram aqui: elas são do projeto
+    # inteiro, e quem as responde, depois de ler todos os arquivos, é _cruzado.
     for no in ast.walk(arvore):
         if not isinstance(no, ast.FunctionDef) or not _corpo_util(no.body):
             continue
-        definidas.add(no.name)
-
         tem_parametro = bool(no.args.args or no.args.posonlyargs or no.args.kwonlyargs)
         if tem_parametro and _devolve_valor(no):
             achados['funcaoComParametroERetorno'] = True
@@ -226,16 +263,6 @@ def analisar(fonte):
         # kw_defaults traz None para o parâmetro que não tem nenhum.
         if no.args.defaults or any(d is not None for d in no.args.kw_defaults):
             achados['funcaoComPadrao'] = True
-
-    # Reaproveitada é chamada de dois pontos distintos do programa — dois nós
-    # de chamada, e não duas passagens pelo mesmo. Chamar dentro de um laço é
-    # um ponto só: o requisito 4.3 fala de reaproveitar o código, e quem
-    # escreveu uma chamada num laço escreveu uma.
-    usos = {}
-    for no in ast.walk(arvore):
-        if isinstance(no, ast.Call) and isinstance(no.func, ast.Name):
-            usos[no.func.id] = usos.get(no.func.id, 0) + 1
-    achados['funcaoReaproveitada'] = any(usos.get(nome, 0) >= 2 for nome in definidas)
 
     # ── O CSV e o JSON ──────────────────────────────────────────────────
     #
@@ -428,19 +455,66 @@ def _chamadas(arvore):
             nomes.add(no.func.id)
     return sorted(nomes)
 
-def _tudo(fonte):
-    try:
-        arvore = ast.parse(fonte)
-        return {
-            'ok': True,
-            'achados': analisar(fonte),
-            'esboco': _esbocar(arvore.body),
-            'chamadas': _chamadas(arvore),
-        }
-    except SyntaxError as e:
-        return {'ok': False, 'erro': _erro_de_sintaxe(e)}
+# ── O projeto inteiro, e não só o arquivo aberto ────────────────────────
+#
+# O requisito 8 pede um programa em dois arquivos-fonte, e duas das contas
+# deixam de se responder arquivo a arquivo: a definição da função mora num e as
+# chamadas moram no outro, então cada metade sozinha diz "não". Quantas funções
+# o programa tem é a mesma coisa — somam-se, não se comparam.
+#
+# O esboço e a lista de chamadas continuam saindo só do arquivo principal: eles
+# servem ao roteiro da apresentação, que é sobre o programa que se executa.
 
-json.dumps(_tudo(_fonte))
+def _cruzado(achados, arvores, principal, modulos):
+    definidas = set()
+    usos = {}
+    for arvore in arvores:
+        for no in ast.walk(arvore):
+            if isinstance(no, ast.FunctionDef) and _corpo_util(no.body):
+                definidas.add(no.name)
+            if isinstance(no, ast.Call) and isinstance(no.func, ast.Name):
+                usos[no.func.id] = usos.get(no.func.id, 0) + 1
+
+    achados['funcaoReaproveitada'] = any(usos.get(n, 0) >= 2 for n in definidas)
+    achados['tresFuncoes'] = len(definidas) >= 3
+
+    # E o programa precisa estar de fato dividido: um segundo arquivo que
+    # ninguém importa é um arquivo ao lado, e não um programa em partes.
+    importa = False
+    for no in ast.walk(principal):
+        if isinstance(no, ast.ImportFrom) and no.module in modulos:
+            importa = True
+        if isinstance(no, ast.Import):
+            for nome in no.names:
+                if nome.name in modulos:
+                    importa = True
+    achados['importaDoProjeto'] = importa
+    return achados
+
+def _tudo(fontes, nome_principal, modulos):
+    arvores = []
+    achados = {}
+    for nome, fonte in fontes.items():
+        try:
+            arvores.append((nome, ast.parse(fonte)))
+        except SyntaxError as e:
+            erro = _erro_de_sintaxe(e)
+            # De que arquivo, quando há mais de um: apontar "linha 4" sem dizer
+            # onde manda procurar no arquivo errado.
+            erro['arquivo'] = nome if len(fontes) > 1 else ''
+            return {'ok': False, 'erro': erro}
+        for chave, valor in analisar(fonte).items():
+            achados[chave] = achados.get(chave, False) or valor
+
+    principal = dict(arvores)[nome_principal]
+    return {
+        'ok': True,
+        'achados': _cruzado(achados, [a for _, a in arvores], principal, set(modulos)),
+        'esboco': _esbocar(principal.body),
+        'chamadas': _chamadas(principal),
+    }
+
+json.dumps(_tudo(_fontes, _principal, _modulos))
 `;
 
 /**
@@ -478,7 +552,21 @@ export interface NoDoEsboco {
 export type SaidaDaAnalise =
   | { ok: true; achados: Record<string, boolean>; esboco: NoDoEsboco[];
     /** Os nomes chamados em algum lugar do programa. */ chamadas: string[] }
-  | { ok: false; erro: { linha: number; coluna: number; trecho: string; msg: string } };
+  | {
+    ok: false;
+    erro: {
+      linha: number; coluna: number; trecho: string; msg: string;
+      /**
+       * Em qual arquivo, quando o projeto tem mais de um.
+       *
+       * Vazio no projeto de um arquivo só, que é como toda a CC002 funciona —
+       * ali dizer o nome seria repetir o que já está escrito na guia aberta.
+       * Com dois, apontar "linha 4" sem dizer onde manda procurar no arquivo
+       * errado, que é a pior forma de indicar um erro de sintaxe.
+       */
+      arquivo?: string;
+    };
+  };
 
 /**
  * Escreve o erro de sintaxe como o Python o escreveria, com a linha certa.
@@ -490,9 +578,13 @@ export type SaidaDaAnalise =
  * mensagem.
  */
 export function erroDeSintaxeEmTexto(
-  e: { linha: number; coluna: number; trecho: string; msg: string },
+  e: { linha: number; coluna: number; trecho: string; msg: string; arquivo?: string },
 ): string {
-  const linhas = [`  File "programa.py", line ${e.linha}`];
+  /* O nome do arquivo é o do projeto quando há mais de um. Escrever sempre
+     "programa.py" num projeto de dois arquivos manda procurar no arquivo
+     errado — e num erro de sintaxe, que é o que o requisito 6 pede para ler,
+     apontar o lugar errado é pior do que não apontar. */
+  const linhas = [`  File "${e.arquivo || 'programa.py'}", line ${e.linha}`];
   if (e.trecho) {
     linhas.push(`    ${e.trecho.trim()}`);
     /* O circunflexo aponta a coluna, contada a partir de 1 pelo Python. O

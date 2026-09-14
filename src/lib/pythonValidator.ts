@@ -261,6 +261,20 @@ const SPECS: Spec[] = [
   daArvore('tratouOErroCerto', 'Prevê o erro, dizendo qual',
     'except ValueError: apanha só a conversão que falhou — except sozinho apanha tudo.',
     'Nenhum try cujos ramos digam de que erro tratam. Um except sem nome apanha também o que você precisava ver.'),
+  /*
+    As duas do requisito 8, e as duas só se respondem com o projeto inteiro.
+
+    `tresFuncoes` soma as dos dois arquivos, e `funcaoReaproveitada` tem a
+    definição num e as chamadas no outro — cada metade sozinha diz "não". É por
+    isso que a análise passou a receber todas as fontes, e não só a que está
+    aberta no editor.
+  */
+  daArvore('tresFuncoes', 'Três funções com trabalho próprio',
+    'Separe o que lê, o que decide e o que mostra — a do meio não tem print nem input.',
+    'O programa tem menos de três funções com corpo. Função vazia, só com pass, não conta.'),
+  daArvore('importaDoProjeto', 'O programa dividido em dois arquivos',
+    'from chamada import contar — o nome do módulo é o do arquivo, sem o .py.',
+    'O arquivo principal não importa nada do outro. Um segundo arquivo que ninguém importa é um arquivo ao lado, e não um programa em partes.'),
   {
     id: 'quarentaLinhas',
     label: 'Pelo menos 40 linhas de programa',

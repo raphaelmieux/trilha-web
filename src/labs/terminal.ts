@@ -91,6 +91,15 @@ export interface Maquina {
   repo: Repositorio | null;
   /** O que a pessoa já digitou, para a seta para cima. */
   historico: string[];
+  /**
+   * As bibliotecas de terceiros instaladas, na forma `nome==versão`.
+   *
+   * Só as de terceiros. O `pip` e o `setuptools` vêm com o Python e aparecem
+   * no `pip list` — mas não no `pip freeze`, que é a lista que viaja com o
+   * programa. Misturá-los faria o `requirements.txt` mandar quem recebe
+   * instalar o próprio instalador.
+   */
+  instalados: string[];
 }
 
 const HOME = '/home/desbravador';
@@ -126,6 +135,7 @@ export function maquinaInicial(): Maquina {
     cwd: HOME,
     repo: null,
     historico: [],
+    instalados: [],
   };
 }
 
@@ -653,6 +663,166 @@ export function escreverArquivo(m: Maquina, caminho: string, conteudo: string): 
   return { ...m, disco: escrever(m.disco, alvo, arquivo(conteudo)) };
 }
 
+/* ── O gerenciador de pacotes ──────────────────────────────────────────────── */
+
+/*
+  O PyPI de mentira.
+
+  O requisito 7 da CC004 pede demonstrar a instalação de uma biblioteca de
+  terceiros **pelo gerenciador de pacotes**, e isso acontece no terminal — não
+  dentro do programa. Como o laboratório não fala com a rede, o repositório é
+  esta lista.
+
+  Ela tem quatro entradas e três decisões dentro:
+
+  A primeira é que os nomes são os de verdade, com as versões e os resumos que
+  eles têm. Inventar uma biblioteca faria o desbravador procurar depois uma
+  coisa que não existe.
+
+  A segunda é o `reqeusts`, que é o `requests` com as duas letras trocadas —
+  e ele **existe** aqui. É assim que a armadilha de verdade funciona: quem
+  publica pacote falso não escolhe um nome que ninguém digitaria, escolhe o
+  erro de digitação comum, e o `pip install` apressado instala sem reclamar.
+  Se todo nome errado respondesse "não encontrado", a lição seria a de que o
+  pip protege — e ele não protege.
+
+  A terceira é que o que denuncia o falso está no `pip show`, e não numa
+  mensagem de alerta que a plataforma escreveria por cima: autor desconhecido,
+  publicado há poucos dias, quase sem downloads. É o que se olha na página do
+  pacote, e é isso que a lição manda olhar.
+*/
+interface Pacote {
+  versao: string;
+  resumo: string;
+  autor: string;
+  publicado: string;
+  downloads: string;
+  /** O falso. Só o `pip show` conta, porque é lá que se olharia. */
+  suspeito?: boolean;
+}
+
+export const PYPI: Record<string, Pacote> = {
+  requests: {
+    versao: '2.32.3', resumo: 'HTTP for Humans — falar com a internet a partir do programa.',
+    autor: 'Kenneth Reitz', publicado: 'maio de 2024', downloads: '600 milhões por mês',
+  },
+  pillow: {
+    versao: '10.4.0', resumo: 'Abrir, mexer e salvar imagens.',
+    autor: 'Jeffrey A. Clark', publicado: 'julho de 2024', downloads: '150 milhões por mês',
+  },
+  pandas: {
+    versao: '2.2.2', resumo: 'Ler e analisar tabelas grandes por programa.',
+    autor: 'The pandas development team', publicado: 'abril de 2024', downloads: '250 milhões por mês',
+  },
+  reqeusts: {
+    versao: '9.9.9', resumo: 'HTTP for Humans',
+    autor: 'desconhecido', publicado: 'há 4 dias', downloads: '31 no total',
+    suspeito: true,
+  },
+};
+
+const semVersao = (entrada: string) => entrada.split('==')[0];
+
+function pip(m: Maquina, args: string[]): Resposta {
+  const [sub, ...resto] = args;
+
+  if (sub === 'list') {
+    /* O pip e o setuptools vêm com o Python: eles aparecem aqui e não no
+       freeze, que é como o pip de verdade se comporta. */
+    const linhas = [
+      'Package    Version', '---------- -------',
+      'pip        24.2', 'setuptools 72.1.0',
+      ...m.instalados.map(e => {
+        const [nome, versao] = e.split('==');
+        return `${nome.padEnd(10)} ${versao}`;
+      }),
+    ];
+    return ok(m, linhas.join('\n'));
+  }
+
+  if (sub === 'install') {
+    const nome = resto.find(a => !a.startsWith('-'));
+    if (!nome) return erro(m, 'ERROR: You must give at least one requirement to install.');
+    if (nome === '-r' || resto[0] === '-r') {
+      return erro(m, 'pip install -r existe no pip de verdade — instala tudo o que está escrito num arquivo — e não faz parte deste exercício.');
+    }
+    const pacote = PYPI[nome];
+    if (!pacote) {
+      return erro(m, [
+        `ERROR: Could not find a version that satisfies the requirement ${nome}`,
+        `ERROR: No matching distribution found for ${nome}`,
+      ].join('\n'));
+    }
+    if (m.instalados.some(e => semVersao(e) === nome)) {
+      return ok(m, `Requirement already satisfied: ${nome} in /usr/lib/python3/site-packages`);
+    }
+    return ok(
+      { ...m, instalados: [...m.instalados, `${nome}==${pacote.versao}`] },
+      [
+        `Collecting ${nome}`,
+        `  Downloading ${nome}-${pacote.versao}-py3-none-any.whl (64 kB)`,
+        `Installing collected packages: ${nome}`,
+        `Successfully installed ${nome}-${pacote.versao}`,
+      ].join('\n'),
+    );
+  }
+
+  if (sub === 'show') {
+    const nome = resto[0];
+    const pacote = nome ? PYPI[nome] : undefined;
+    if (!pacote) return erro(m, `WARNING: Package(s) not found: ${nome ?? ''}`);
+    return ok(m, [
+      `Name: ${nome}`,
+      `Version: ${pacote.versao}`,
+      `Summary: ${pacote.resumo}`,
+      `Author: ${pacote.autor}`,
+      `Publicado: ${pacote.publicado}`,
+      `Downloads: ${pacote.downloads}`,
+    ].join('\n'));
+  }
+
+  if (sub === 'uninstall') {
+    const nome = resto.find(a => !a.startsWith('-'));
+    if (!nome || !m.instalados.some(e => semVersao(e) === nome)) {
+      return erro(m, `WARNING: Skipping ${nome ?? ''} as it is not installed.`);
+    }
+    return ok(
+      { ...m, instalados: m.instalados.filter(e => semVersao(e) !== nome) },
+      `Successfully uninstalled ${nome}`,
+    );
+  }
+
+  if (sub === 'freeze') {
+    const lista = m.instalados.join('\n');
+    /*
+      O `>` só existe aqui, e não no shell inteiro.
+
+      Redirecionamento geral é uma promessa que a simulação não cumpriria — o
+      comentário no alto deste arquivo diz isso, e continua valendo. Mas é
+      **por** `pip freeze > requirements.txt` que o arquivo nasce na vida real,
+      e escrever esse arquivo à mão no editor ensinaria o contrário: que a
+      lista é uma coisa que alguém digita, e não o retrato do que está
+      instalado.
+    */
+    const seta = resto.indexOf('>');
+    if (seta === -1) return ok(m, lista);
+
+    const destino = resto[seta + 1];
+    if (!destino) return erro(m, 'bash: erro de sintaxe perto de `>`: falta o nome do arquivo.');
+    if (!m.instalados.length) {
+      /* Gravar uma lista vazia não é gravar a lista: é a armadilha do "zero
+         link não é zero link quebrado" com o arquivo por cima. O pip de
+         verdade grava vazio mesmo — o que se diz aqui é o que aconteceu. */
+      return ok(escreverArquivo(m, resolver(m.cwd, destino), ''),
+        'Nada instalado: o arquivo foi gravado vazio.');
+    }
+    return ok(escreverArquivo(m, resolver(m.cwd, destino), `${lista}\n`));
+  }
+
+  if (!sub) return erro(m, 'ERROR: You must give at least one command. Try "pip list".');
+  return erro(m, `ERROR: unknown command "${sub}". Neste laboratório: list, install, show, uninstall, freeze.`);
+}
+
 /* ── O despachante ─────────────────────────────────────────────────────────── */
 
 export function rodar(m: Maquina, linha: string): Resposta {
@@ -673,6 +843,7 @@ export function rodar(m: Maquina, linha: string): Resposta {
     case 'mv': return mover(registrada, args);
     case 'rm': return remover(registrada, args);
     case 'git': return git(registrada, args);
+    case 'pip': return pip(registrada, args);
     case 'clear': return ok(registrada, '\x00limpar');
     case 'echo': return ok(registrada, args.join(' '));
     case 'help':
@@ -689,6 +860,8 @@ export function rodar(m: Maquina, linha: string): Resposta {
         '  rm <arquivo>           remover  ( -r para pasta )',
         '  git <comando>          init, status, add, commit, log, restore,',
         '                         branch, checkout, merge, remote, push, pull',
+        '  pip <comando>          list, install, show, uninstall, freeze',
+        '  pip freeze > <arquivo> gravar a lista do que está instalado',
         '  editar <arquivo>       abrir o arquivo no painel ao lado',
       ].join('\n'));
   }

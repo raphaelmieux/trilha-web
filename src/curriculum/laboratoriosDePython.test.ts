@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createRequire } from 'node:module';
 import { VEREDAS } from './veredas';
-import { ANALISADOR, type SaidaDaAnalise } from '../labs/pythonAnalise';
+import { preparoDaAnalise, ANALISADOR, type SaidaDaAnalise } from '../labs/pythonAnalise';
 import { validarPython } from '../lib/pythonValidator';
 import { classificacaoInicial, type Classificacao } from '../labs/falhasDePython';
 import { preambuloDoProjeto } from '../labs/projetoDePython';
@@ -43,9 +43,30 @@ beforeAll(async () => {
   py = await loadPyodide({ indexURL: dir }) as Py;
 }, 120000);
 
-/** O mesmo par que o laboratório faz: analisar primeiro, depois executar. */
-function conferir(licao: Extract<LicaoDeVereda, { tipo: 'laboratorio' }>, codigo: string, classificacao: Classificacao) {
-  py.runPython(`_fonte = ${JSON.stringify(codigo)}`);
+/**
+ * O mesmo par que o laboratório faz: analisar primeiro, depois executar.
+ *
+ * `escritos` é o que a pessoa digitou nos outros arquivos-fonte — no programa
+ * em partes do requisito 8, o segundo arquivo chega vazio e é ela quem o
+ * escreve. Sem esse parâmetro a solução de referência seria conferida contra
+ * um caixa.py em branco, e a trava reprovaria a resposta certa.
+ */
+function conferir(
+  licao: Extract<LicaoDeVereda, { tipo: 'laboratorio' }>,
+  codigo: string,
+  classificacao: Classificacao,
+  escritos: Record<string, string> = {},
+) {
+  /* O disco como a tela o monta: o dado da lição vem do modelo, e o que é
+     editável vem do que a pessoa escreveu. */
+  const naPasta = Object.fromEntries((licao.arquivosDoProjeto ?? []).map(a =>
+    [a.nome, a.editavel ? escritos[a.nome] ?? a.modelo : a.modelo]));
+
+  py.runPython(preparoDaAnalise(
+    codigo,
+    licao.arquivo,
+    Object.fromEntries(Object.entries(naPasta).filter(([nome]) => nome.endsWith('.py'))),
+  ));
   const analise = JSON.parse(py.runPython(ANALISADOR) as string) as SaidaDaAnalise;
 
   let saida = '';
@@ -69,11 +90,7 @@ function conferir(licao: Extract<LicaoDeVereda, { tipo: 'laboratorio' }>, codigo
         também o que garante que o disco comece igual a cada solução
         conferida: uma instância só do Pyodide serve a todas.
       */
-      const naPasta = licao.arquivosDoProjeto ?? [];
-      if (naPasta.length) {
-        py.runPython(preambuloDoProjeto(
-          Object.fromEntries(naPasta.map(a => [a.nome, a.modelo]))));
-      }
+      if (Object.keys(naPasta).length) py.runPython(preambuloDoProjeto(naPasta));
       py.runPython(codigo);
     } catch (e) {
       erro = String((e as Error)?.message ?? e);
@@ -314,6 +331,23 @@ segunda = pedir_idade("Tiago")
 print("Soma das idades:", primeira + segunda)
 `,
 
+  /* O programa que se executa: importa do caixa e usa `situacao` num segundo
+     ponto, para contar quem ainda não está inscrito. */
+  'CC004/m7-lab': `from caixa import ler, resumir, situacao
+
+inscritos = ler("inscritos.csv")
+
+for linha in resumir(inscritos):
+    print(linha)
+
+faltando = 0
+for inscrito in inscritos:
+    if situacao(int(inscrito["pago"])) != "inscrito":
+        faltando = faltando + 1
+
+print("Ainda faltam:", faltando)
+`,
+
   /* Ler o que chegou, gravar o resultado, e reler para conferir. O `if nome:`
      e o `.strip()` não são zelo: o unidades.txt vem com espaço sobrando numa
      linha e uma linha em branco no meio, como arquivo de verdade vem. */
@@ -332,6 +366,43 @@ with open("presenca.txt", encoding="utf-8") as arquivo:
     for linha in arquivo:
         print(linha.strip())
 `,
+};
+
+/*
+  O que a solução de referência escreve nos OUTROS arquivos-fonte.
+
+  Só o programa em partes tem um: nos demais, o que vem ao lado é dado para
+  ler, e o modelo dele já é o conteúdo final.
+*/
+const FONTES_DA_SOLUCAO: Record<string, Record<string, string>> = {
+  'CC004/m7-lab': {
+    'caixa.py': `import csv
+
+DIARIA = 45
+DIAS = 3
+
+
+def ler(caminho):
+    with open(caminho, encoding="utf-8", newline="") as arquivo:
+        return [linha for linha in csv.DictReader(arquivo)]
+
+
+def situacao(pago):
+    devido = DIARIA * DIAS
+    if pago >= devido:
+        return "inscrito"
+    if pago > 0:
+        return "falta " + str(devido - pago)
+    return "não pagou"
+
+
+def resumir(inscritos):
+    linhas = []
+    for inscrito in inscritos:
+        linhas.append(inscrito["nome"] + ": " + situacao(int(inscrito["pago"])))
+    return linhas
+`,
+  },
 };
 
 const ENTRADA_DA_SOLUCAO: Record<string, string[]> = {
@@ -386,7 +457,7 @@ describe('os laboratórios de Python das veredas', () => {
       const licao = ENTRADA_DA_SOLUCAO[chave]
         ? { ...l, entradaPadrao: ENTRADA_DA_SOLUCAO[chave] }
         : l;
-      const resultados = conferir(licao, solucao, CLASSIFICACAO_CERTA[chave] ?? {});
+      const resultados = conferir(licao, solucao, CLASSIFICACAO_CERTA[chave] ?? {}, FONTES_DA_SOLUCAO[chave] ?? {});
       for (const r of resultados.filter(r => !r.passed)) {
         reprovadas.push(`${chave} · ${r.id}: ${r.detail ?? r.hint}`);
       }

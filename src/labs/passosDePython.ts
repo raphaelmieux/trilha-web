@@ -164,4 +164,18 @@ export const PASSOS_DE_PYTHON: Record<string, string[]> = {
     'Para mais de um, ponha-os entre parênteses: except (ValueError, TypeError):',
     'Nunca deixe um except sem nome: ele apanha também o erro de digitação do seu próprio código.',
   ],
+
+  tresFuncoes: [
+    'Separe pelo que o programa faz, e não em três pedaços do mesmo tamanho.',
+    'Uma que LÊ: pega o dado, de onde quer que ele venha, e devolve lista ou dicionário.',
+    'Uma que DECIDE: recebe esses dados e devolve o resultado, sem imprimir nada.',
+    'Uma que MOSTRA: recebe o resultado e escreve na tela.',
+    'A prova de que ficou boa é a do meio não ter print nem input nenhum.',
+  ],
+  importaDoProjeto: [
+    'O nome do módulo é o nome do arquivo, sem o .py.',
+    'No arquivo principal, escreva: from chamada import contar',
+    'Dá para trazer mais de uma de uma vez: from chamada import ler, contar',
+    'Os dois arquivos precisam estar na mesma pasta — um numa pasta acima não é encontrado.',
+  ],
 };

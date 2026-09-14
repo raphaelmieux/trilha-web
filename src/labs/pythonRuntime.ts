@@ -166,10 +166,18 @@ export class Python {
     };
   }
 
-  /** Lê a estrutura do programa pelo `ast` do próprio Python. */
-  async analisar(codigo: string): Promise<Analise> {
+  /**
+   * Lê a estrutura do programa pelo `ast` do próprio Python.
+   *
+   * `fontes` são os outros arquivos-fonte do projeto. Duas contas do requisito
+   * 8 só se respondem com todos na mão: a função reaproveitada tem a definição
+   * num arquivo e as chamadas no outro, e cada metade sozinha diz "não".
+   */
+  async analisar(
+    codigo: string, arquivo?: string, fontes?: Record<string, string>,
+  ): Promise<Analise> {
     const prazo = this.prazo();
-    const r = await this.pedir({ tipo: 'analisar', codigo }, prazo);
+    const r = await this.pedir({ tipo: 'analisar', codigo, arquivo, fontes }, prazo);
     if (r.tipo === 'analise') {
       return { achados: r.achados, erro: r.erro, esboco: r.esboco, chamadas: r.chamadas };
     }
