@@ -38,11 +38,16 @@ export default function ReportPage() {
 
   useEffect(() => {
     if (!profile) return;
+    /* A consulta pode voltar depois de a tela sair. Escrever estado em
+       componente desmontado é desperdício no navegador e erro num ambiente já
+       desmontado — ver `useMontado`, que conta a história inteira. */
+    let vivo = true;
     (async () => {
       const { data: attempts } = await supabase
         .from('lesson_attempts')
         .select('score, total')
         .eq('user_id', profile.id);
+      if (!vivo) return;
       setLessonAttempts(attempts || []);
 
       /* The most recent WebLab completion carries what the student registered
@@ -55,6 +60,7 @@ export default function ReportPage() {
         .eq('event_type', 'web_lab_completed')
         .order('created_at', { ascending: false })
         .limit(1);
+      if (!vivo) return;
       const latest = events?.[0]?.metadata as LabEvidence | undefined;
       if (latest) setEvidence(latest);
 
@@ -71,6 +77,7 @@ export default function ReportPage() {
         .select('specialty_code, body, status')
         .eq('user_id', profile.id)
         .eq('status', 'submitted');
+      if (!vivo) return;
       setTextos(Object.fromEntries(
         (projetos ?? [])
           .filter(p => p.specialty_code && (p.body ?? '').trim())
@@ -79,6 +86,7 @@ export default function ReportPage() {
 
       setAttemptsLoading(false);
     })();
+    return () => { vivo = false; };
   }, [profile]);
 
   /*

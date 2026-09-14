@@ -1219,6 +1219,27 @@ inteira e cada pedaço anda a própria largura. O corpo do relatório em PDF fic
 de fora: lá o nome cai no meio de parágrafo quebrado em linhas, e colorir dentro
 da quebra pediria reimplementar a quebra.
 
+**Consulta que volta para tela que já saiu não avisa, e depois avisa errado.**
+Efeito busca, a pessoa sai, a resposta chega e o `setX` cai num componente que
+não existe mais. No navegador o React ignora e segue — é desperdício e nada
+mais. Num ambiente já desmontado é **erro**: ele procura o `window` para
+decidir a prioridade da atualização e não acha. O `ci.yml` reprovou duas vezes
+assim, com todos os testes passando e nenhuma asserção quebrada — a execução
+saía vermelha por uma rejeição não tratada depois do fim de um arquivo de
+teste. É a pior forma de reprovar, porque tem cara de flake: ganha-se a corrida
+numa máquina e perde-se noutra, e ninguém desconfia do código.
+
+São duas guardas, e qual usar depende de onde o `setX` mora. Dentro do próprio
+efeito, `let vivo = true` com `return () => { vivo = false; }` ao lado. Quando a
+função que escreve é **devolvida** ao chamador — o `refresh` de um gancho, que a
+tela também chama —, a variável do efeito não a alcança, e aí é o ref de
+`useMontado`. Ele nasce `true` e volta a `true` ao montar, porque o `StrictMode`
+desmonta e remonta de propósito no mesmo fiber: guarda que só sabe descer
+deixaria o gancho morto pelo resto da sessão, sem nada dizendo por quê.
+
+E `setX(await f())` não tem onde receber guarda — a espera acontece dentro do
+setter. Parte-se em duas linhas.
+
 **Link externo é sempre `<a target="_blank">`**, pelo componente `LinkExterno`.
 `window.open` funciona no computador e falha no celular.
 
@@ -1391,6 +1412,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/formaDaInsignia.test.ts` | glifo maior que o círculo inscrito do triângulo, que vaza só no Amigo e no Companheiro |
 | `src/lib/formaDaInsignia.test.ts` | classe cujo glifo não se lê sobre a própria cor, ou ícone sem raio de tinta medido |
 | `src/lib/insignias.test.ts` | ícone ou classe do catálogo divergindo do que a migration semeia |
+| `src/hooks/escritaDepoisDoDesmonte.test.ts` | efeito que escreve estado depois de esperar sem saber se a tela ainda está lá |
 | `src/lib/ofensiva.test.ts` | evento de laboratório que ninguém classificou, e que por isso não faria a ofensiva andar |
 | `src/lib/ofensiva.test.ts` | a lista de eventos do banco divergindo da do navegador, que daria duas ofensivas à mesma pessoa |
 | `src/components/ui/marca.test.tsx` | `Trilha.Web()` ou `Token.Web()` escrito à mão no JSX, parênteses sem o vermelho da plataforma, ou o vermelho do PDF divergindo do token |

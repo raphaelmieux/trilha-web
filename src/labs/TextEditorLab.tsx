@@ -64,6 +64,10 @@ export default function TextEditorLab({ specialtyCode, lessonCode, lessonTitle, 
   const podeEnviar = metCount >= minimoParaEnviar;
 
   useEffect(() => {
+    /* A consulta pode voltar depois de a tela sair. Escrever estado em
+       componente desmontado é desperdício no navegador e erro num ambiente já
+       desmontado — ver `useMontado`, que conta a história inteira. */
+    let vivo = true;
     (async () => {
       const { data } = await supabase
         .from('text_projects')
@@ -71,6 +75,7 @@ export default function TextEditorLab({ specialtyCode, lessonCode, lessonTitle, 
         .eq('user_id', userId)
         .eq('specialty_code', specialtyCode)
         .maybeSingle();
+      if (!vivo) return;
       if (data) {
         setText(data.body || '');
         if (data.status === 'submitted') setSubmitted(true);
@@ -90,6 +95,7 @@ export default function TextEditorLab({ specialtyCode, lessonCode, lessonTitle, 
       }
       setCarregando(false);
     })();
+    return () => { vivo = false; };
   }, [userId, specialtyCode, lessonCode]);
 
   /* A rede embaixo do salvamento: grava no navegador a cada pausa. */

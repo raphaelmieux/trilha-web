@@ -47,6 +47,10 @@ export function useOfensiva(userId: string | undefined) {
   useEffect(() => {
     if (!userId) { setLoading(false); return; }
     setLoading(true);
+    /* A consulta pode voltar depois de a tela sair. Escrever estado em
+       componente desmontado é desperdício no navegador e erro num ambiente já
+       desmontado — ver `useMontado`, que conta a história inteira. */
+    let vivo = true;
     (async () => {
       const desde = new Date(Date.now() - DIAS_DE_JANELA * 86_400_000).toISOString();
       /* Só `created_at` e `event_type`: o que a conta precisa é a data, e o
@@ -59,12 +63,14 @@ export function useOfensiva(userId: string | undefined) {
         .gte('created_at', desde)
         .order('created_at', { ascending: false })
         .limit(TETO_DE_EVENTOS);
+      if (!vivo) return;
 
       const dias = diasDeAtividade(data ?? []);
       setOfensiva(ofensivaCorrente(dias));
       setMelhor(melhorOfensiva(dias));
       setLoading(false);
     })();
+    return () => { vivo = false; };
   }, [userId]);
 
   return { ofensiva, melhor, loading };
