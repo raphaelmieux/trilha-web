@@ -1,3 +1,9 @@
+import {
+  trechoDe, blocoDe, linhaDe, textoDoBloco, sumarioAtualizado,
+  type Doc as DocDoWord, type Bloco as BlocoDoWord,
+  type Trecho, type Estilo,
+} from './documento';
+
 /**
  * O que o laboratório de estilos da AP044 cobra, e de onde ele parte.
  *
@@ -26,76 +32,37 @@
 
 /* ── O documento ───────────────────────────────────────────────────────────── */
 
-/** Estilo de parágrafo. Ênfase não está aqui: ela é de caractere. */
-export type Estilo = 'Normal' | 'Título 1' | 'Título 2' | 'Citação';
-export type Posicao = 'normal' | 'sobrescrito' | 'subscrito';
-export type Realce = 'nenhum' | 'amarelo' | 'verde' | 'ciano' | 'rosa';
+/*
+  O modelo mora em `documento.ts`, e saiu daqui no dia em que a CC-ES002
+  precisou do mesmo documento. O que continua aqui é o que é **deste**
+  exercício: as seções deste manual, o texto que se cola do site, o documento
+  de partida e as nove metas.
+
+  `Doc` e `Bloco` continuam se chamando assim, agora presos às seções daqui.
+  Sem isso os dois seriam `Doc<string>`, e digitar uma seção que não existe
+  passaria pelo compilador — que é justamente o que o parâmetro evita.
+*/
 export type Secao = 'capa' | 'abertura' | 'levar' | 'programacao' | 'culto' | 'fim';
 
-export interface Trecho {
-  id: string;
-  texto: string;
-  posicao: Posicao;
-  realce: Realce;
-  /** Estilo de caractere — o único é Ênfase, e é de propósito. */
-  enfase: boolean;
-  /**
-   * Formatação direta que veio de fora e foi mantida na colagem.
-   *
-   * É o que "Manter Formatação Original" preserva e o que "Manter Somente
-   * Texto" descarta: a fonte, o tamanho e a cor do lugar de origem, que não
-   * são os do documento.
-   */
-  deFora?: boolean;
-}
+export type Doc = DocDoWord<Secao>;
+export type Bloco = BlocoDoWord<Secao>;
 
-export interface Bloco {
-  id: string;
-  trechos: Trecho[];
-  estilo: Estilo;
-  secao: Secao;
-  /** Nota de rodapé pendurada neste parágrafo. */
-  nota?: string;
-}
+export type {
+  Estilo, Posicao, Realce, Trecho, ItemDeSumario, ModoDeCaixa,
+} from './documento';
+export {
+  NOMES_DA_CAIXA, aplicarCaixa, textoDoBloco, titulosDoDoc, sumarioAtualizado,
+  APARENCIA_DO_ESTILO,
+} from './documento';
 
-/** Uma linha do sumário, como ela foi lida no momento em que ele foi gerado. */
-export interface ItemDeSumario {
-  texto: string;
-  nivel: 1 | 2;
-}
-
-export interface Doc {
-  blocos: Bloco[];
-  /** Quantas colunas cada seção usa. Uma é o padrão do Word. */
-  colunas: Record<Secao, number>;
-  /**
-   * O sumário, ou `null` enquanto ninguém mandou gerar.
-   *
-   * Ele guarda o que leu **na hora em que foi gerado** — e não é preguiça de
-   * modelagem: é o comportamento do Word, e é a metade da lição que ninguém
-   * conta. Trocar um título depois deixa o sumário mostrando o texto antigo, e
-   * nada na tela avisa. Só "Atualizar Sumário" o alcança.
-   */
-  sumario: ItemDeSumario[] | null;
-}
-
-const t = (id: string, texto: string): Trecho =>
-  ({ id, texto, posicao: 'normal', realce: 'nenhum', enfase: false });
+const t = (id: string, texto: string): Trecho => trechoDe(id, texto);
 
 const bloco = (id: string, secao: Secao, trechos: Trecho[]): Bloco =>
-  ({ id, secao, trechos, estilo: 'Normal' });
+  blocoDe(id, secao, trechos);
 
 const linha = (id: string, secao: Secao, texto: string): Bloco =>
-  bloco(id, secao, [t(`${id}-a`, texto)]);
+  linhaDe(id, secao, texto);
 
-/**
- * O texto que está aberto no site do clube, fora do Word.
- *
- * Ele existe para os itens b) e c): colar mantendo a formatação da origem e
- * colar com a do destino. O desbravador cola do site e o texto chega com fundo
- * cinza, outra fonte e outro tamanho — e conclui que "o Word estragou". Não
- * estragou: fez o que se pediu. A outra opção estava no mesmo menu.
- */
 export const TEXTO_DO_SITE = 'O ônibus sai da igreja às 6h da sexta-feira e volta no domingo à noite.';
 
 /**
@@ -144,55 +111,6 @@ export const DOC_INICIAL: Doc = {
 };
 
 /* ── Operações que o teste também usa ──────────────────────────────────────── */
-
-export const textoDoBloco = (b: Bloco) => b.trechos.map(x => x.texto).join('');
-
-/** Os títulos do documento, na ordem, como o sumário os leria agora. */
-export function titulosDoDoc(d: Doc): ItemDeSumario[] {
-  return d.blocos
-    .filter(b => b.estilo === 'Título 1' || b.estilo === 'Título 2')
-    .map(b => ({ texto: textoDoBloco(b), nivel: b.estilo === 'Título 1' ? 1 : 2 } as ItemDeSumario));
-}
-
-/** O sumário existe e diz o que os títulos dizem hoje. */
-export function sumarioAtualizado(d: Doc): boolean {
-  if (!d.sumario) return false;
-  const agora = titulosDoDoc(d);
-  if (agora.length !== d.sumario.length) return false;
-  return agora.every((x, i) => x.texto === d.sumario![i].texto && x.nivel === d.sumario![i].nivel);
-}
-
-/** Os cinco modos do botão Aa do Word, com os nomes que ele usa. */
-export type ModoDeCaixa = 'frase' | 'minusculas' | 'maiusculas' | 'palavras' | 'alternar';
-
-export const NOMES_DA_CAIXA: Record<ModoDeCaixa, string> = {
-  frase: 'Primeira letra da frase em maiúscula.',
-  minusculas: 'minúsculas',
-  maiusculas: 'MAIÚSCULAS',
-  palavras: 'Colocar Cada Palavra Em Maiúscula',
-  alternar: 'aLTERNAR mAIÚSCULAS/mINÚSCULAS',
-};
-
-export function aplicarCaixa(texto: string, modo: ModoDeCaixa): string {
-  switch (modo) {
-    case 'minusculas': return texto.toLocaleLowerCase('pt-BR');
-    case 'maiusculas': return texto.toLocaleUpperCase('pt-BR');
-    case 'palavras':
-      return texto.toLocaleLowerCase('pt-BR')
-        .replace(/(^|\s)(\p{L})/gu, (_m, antes: string, letra: string) => antes + letra.toLocaleUpperCase('pt-BR'));
-    case 'alternar':
-      return [...texto].map(c => {
-        const alto = c.toLocaleUpperCase('pt-BR');
-        return c === alto ? c.toLocaleLowerCase('pt-BR') : alto;
-      }).join('');
-    case 'frase':
-    default: {
-      const baixo = texto.toLocaleLowerCase('pt-BR');
-      return baixo.replace(/(^\s*|[.!?]\s+)(\p{L})/gu,
-        (_m, antes: string, letra: string) => antes + letra.toLocaleUpperCase('pt-BR'));
-    }
-  }
-}
 
 /* ── As metas ──────────────────────────────────────────────────────────────── */
 
