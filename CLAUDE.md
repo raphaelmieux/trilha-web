@@ -1022,6 +1022,58 @@ As questões da vereda passam pelas mesmas travas das provas: `qualidade.test.ts
 as inclui, então alternativa errada sem `porque`, correta sistematicamente mais
 comprida e pergunta repetida reprovam ali também.
 
+**A insígnia e a abertura saem no mesmo push, e é exceção consciente.** O
+normal é `supabase/` antes e a tela depois. Aqui não dá: `estante.test.ts`
+cobra que toda insígnia semeada no banco tenha lugar na estante, e o lugar da
+vereda sai de `veredasAbertas()` — semear a linha com a vereda ainda
+`emConstrucao` reprova ali, e com razão. O que sobra de risco é a janela de
+alguns minutos em que o `deploy.yml` termina antes do `supabase.yml`, e ela não
+alcança ninguém: a vereda leva catorze lições para ser concluída, e
+`evaluateBadges` roda de novo na atividade seguinte de quem quer que seja.
+
+**O programa da lição pode ter mais de um arquivo.** `arquivosDoProjeto`, na
+lição de laboratório de Python, é o que existe na pasta ao lado do que se
+digita: o CSV que a lição entrega para ser lido (só de leitura, como a
+`marcacao` do CSS) e o segundo arquivo-fonte do requisito 8 (`editavel`, porque
+escrevê-lo é o exercício). Quem os escreve em disco antes de executar é
+`preambuloDoProjeto`, e quatro coisas ali erram calado — todas porque o worker
+é um só e o Pyodide vive entre execuções.
+
+A pasta é apagada e refeita a cada execução: arquivo gravado numa execução
+sobreviveria à seguinte, e um programa que grava errado, é corrigido para não
+gravar mais nada e roda de novo passaria pela sobra. É o "laboratório que abre
+resolvido" em outra roupa. Os módulos carregados de lá saem do `sys.modules`
+antes: sem isso, editar o segundo arquivo-fonte e rodar de novo executa a
+versão anterior dele, e quem está aprendendo a dividir um programa conclui que
+dividir não funciona. O preâmbulo roda dentro de uma função, para os `import`
+dele não valerem para quem estuda — um programa que esquecesse o `import json`
+funcionaria aqui e estouraria no computador do clube. E ele sai da pasta antes
+de apagá-la: o sistema de arquivos do Pyodide recusa remover o diretório de
+trabalho atual, então a primeira execução funcionava e a **segunda** morria com
+"Resource busy".
+
+**A análise lê o projeto, e não o arquivo aberto.** Duas contas do requisito 8
+não se respondem arquivo a arquivo — a definição da função mora num e as
+chamadas moram no outro, e cada metade sozinha diz "não". O `ANALISADOR` recebe
+todas as fontes por `preparoDaAnalise`, une os achados, e recalcula essas duas
+sobre todas as árvores; o esboço e a lista de chamadas continuam saindo do
+principal, porque servem ao roteiro da apresentação. E o erro de sintaxe passou
+a dizer **em que arquivo**: num projeto de dois, apontar "programa.py, linha 4"
+para um erro do `caixa.py` manda ler o arquivo errado.
+
+**O `pip` mora no terminal da CC003, e não num segundo.** O requisito 7 da
+CC004 pede demonstrar a instalação pelo gerenciador de pacotes, e ele vive na
+linha de comando: um botão da plataforma ensinaria o gesto errado. Duas telas
+de terminal diferentes ensinariam que cada vereda tem a sua, e ele é um só.
+
+O `reqeusts` do catálogo é o `requests` com duas letras trocadas, e ele
+**instala**, sem reclamar — porque é assim que a armadilha funciona: quem
+publica pacote falso escolhe o erro de digitação comum. Se todo nome errado
+respondesse "não encontrado", a lição seria a de que o pip protege, e ele não
+protege. O que o denuncia está no `pip show` — autor desconhecido, quatro dias,
+trinta e um downloads —, que é o que se leria na página do pacote, e não num
+alerta escrito por cima.
+
 **O que o Scratch pendura no `<body>` precisa passar por cima do `#root`.**
 `#root` leva `position: relative; z-index: 1` para ficar acima da textura do
 globo, e isso o torna um contexto de empilhamento pintado depois de todo irmão
@@ -1508,6 +1560,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/TokenDaVereda.test.tsx` | Token.Web() de vereda que espera clique, que pede duas vezes, ou que reemite um revogado |
 | `src/labs/falhasDePython.test.ts` | painel de falhas que abre respondido, ou recado de erro que entrega a resposta |
 | `src/labs/roteiroDePython.test.ts` | roteiro que julga o programa, ou que faz escada com a cadeia de elif |
+| `src/labs/projetoDePython.test.ts` | pasta do projeto que guarda a sobra da execução anterior, ou que não relê o arquivo importado |
+| `src/labs/pip.test.ts` | laboratório de instalar biblioteca que abre resolvido, ou requirements.txt gravado vazio valendo por lista |
+| `src/components/LaboratorioDePython.test.tsx` | dado da lição que chega editável, ou segundo arquivo-fonte que muda sem envelhecer a lista |
 | `src/curriculum/blocosDaLicao.test.ts` | bloco escrito na lição que não existe com essas palavras na paleta do Scratch |
 | `src/curriculum/exemplosDePython.test.ts` | exemplo de Python cuja saída declarada não é a que o programa escreve |
 | `src/curriculum/laboratoriosDePython.test.ts` | laboratório de Python impossível de vencer, ou cujo modelo já abre resolvido |
