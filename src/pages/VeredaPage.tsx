@@ -17,6 +17,7 @@ import LaboratorioDeBlocos from '../components/LaboratorioDeBlocos';
 import LaboratorioDeScratch from '../components/LaboratorioDeScratch';
 import LaboratorioDeAmbiente from '../components/LaboratorioDeAmbiente';
 import LaboratorioDeTerminal from '../components/LaboratorioDeTerminal';
+import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
 import LaboratorioDePython from '../components/LaboratorioDePython';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -193,6 +194,20 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'terminal' && profile?.id) {
     return (
       <LaboratorioDeTerminal vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /*
+    O Explorador também não passa pelo editor.
+
+    Não há arquivo para escrever nem linguagem para realçar: o que se confere é
+    o disco — que pastas existem, o que está dentro delas, o que foi para a
+    Lixeira e voltou, o que chegou inteiro no pen drive.
+  */
+  if (licaoAberta?.tipo === 'explorador' && profile?.id) {
+    return (
+      <LaboratorioDeExplorador vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

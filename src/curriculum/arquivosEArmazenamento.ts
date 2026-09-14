@@ -524,10 +524,32 @@ Salvamento automático: o programa fechou às 14:05.
 /* ────────────────────────────────────────────────────────────────────────
    Os módulos
 
-   Só teoria por enquanto: os laboratórios vêm na etapa seguinte, e a vereda
-   fica `emConstrucao` até eles chegarem. É o que "vereda em construção pode ter
-   conteúdo" permite, e é o que mantém cada PR pequeno — o que já está escrito
-   passa pelas travas de qualidade desde agora.
+   Cada um com uma lição de teoria e um laboratório, que é a forma de toda
+   vereda. Os sete laboratórios são o mesmo Explorador — um computador, sete
+   sessões com ele —, e o que muda de um para o outro é a lista de
+   verificações: é o arranjo do terminal da CC003, e o motivo está escrito lá.
+
+   ── Onde cada requisito demonstrável cai ─────────────────────────────────
+   O documento oficial pede demonstração em 4.1 a 4.6, em 5 e em 8. O
+   laboratório de cada módulo cobra o que a teoria dele acabou de explicar:
+
+     m1 → 4.1   a hierarquia de três níveis, com o material dentro
+     m2 → 4.5   compactar e descompactar
+     m3 → 2 e 3 salvar, salvar como, excluir e restaurar
+     m4 → 4.2, 4.3 e 4.4   ordenar, buscar com filtro, e a extensão
+     m5 → 5     o padrão de nomeação nos dez arquivos
+     m6 → 4.6   o dispositivo externo e a remoção segura
+     m7 → 8     restaurar da cópia e voltar à versão anterior
+
+   Os requisitos 2 e 3 são de explicar, e a teoria os explica. O laboratório do
+   m3 existe mesmo assim porque a Lixeira é a única coisa desta vereda que só
+   se entende fazendo: a ida, a volta, e o que não volta mais.
+
+   ── E o requisito 9 não é tarefa ─────────────────────────────────────────
+   Apresentar a estrutura ao examinador é conversa com uma pessoa, e a
+   plataforma não confere nada dela — como já vale para o requisito 7 da CC002
+   e o 8 da CC003. O laboratório do m1 **prepara**: assim que a hierarquia
+   existe, ele lê a árvore que a pessoa montou e escreve o que ela vai dizer.
    ──────────────────────────────────────────────────────────────────────── */
 
 export const MODULOS_DE_ARQUIVOS: ModuloDeVereda[] = [
@@ -544,6 +566,12 @@ export const MODULOS_DE_ARQUIVOS: ModuloDeVereda[] = [
         resumo: 'Arquivo, pasta, extensão, caminho e atalho.',
         topicos: ARQUIVO_E_PASTA,
       },
+      {
+        id: 'm1-lab', tipo: 'explorador',
+        titulo: 'Montando a pasta do projeto',
+        resumo: 'Três níveis com nomes seus, e o material do acampamento dentro deles.',
+        verificacoes: ['tresNiveis', 'guardouOProjeto'],
+      },
     ],
   },
   {
@@ -558,6 +586,12 @@ export const MODULOS_DE_ARQUIVOS: ModuloDeVereda[] = [
         titulo: 'Formato e compactação',
         resumo: 'Aberto e proprietário, zip e jpg, e o que não volta.',
         topicos: FORMATOS,
+      },
+      {
+        id: 'm2-lab', tipo: 'explorador',
+        titulo: 'Juntando as fotos num pacote só',
+        resumo: 'Compactar, extrair, e ver que o original não saiu do lugar.',
+        verificacoes: ['compactou', 'extraiu'],
       },
     ],
   },
@@ -574,6 +608,12 @@ export const MODULOS_DE_ARQUIVOS: ModuloDeVereda[] = [
         resumo: 'Salvar contra salvar como, a Lixeira, e o que sobra depois de esvaziar.',
         topicos: SALVAR_E_EXCLUIR,
       },
+      {
+        id: 'm3-lab', tipo: 'explorador',
+        titulo: 'Salvando por cima, e desfazendo a exclusão',
+        resumo: 'Salvar, salvar como, e a ida e a volta pela Lixeira.',
+        verificacoes: ['salvou', 'salvouComo', 'restaurouDaLixeira', 'esvaziou'],
+      },
     ],
   },
   {
@@ -588,6 +628,12 @@ export const MODULOS_DE_ARQUIVOS: ModuloDeVereda[] = [
         titulo: 'O gerenciador responde perguntas',
         resumo: 'Cada coluna, cada filtro, e por que a extensão escondida é um risco.',
         topicos: ACHAR,
+      },
+      {
+        id: 'm4-lab', tipo: 'explorador',
+        titulo: 'Fazendo o Explorador responder',
+        resumo: 'Ordenar pelas três colunas, buscar com dois filtros, e ligar a extensão ao programa.',
+        verificacoes: ['ordenou', 'buscouComFiltro', 'extensoes', 'programas'],
       },
     ],
   },
@@ -604,6 +650,12 @@ export const MODULOS_DE_ARQUIVOS: ModuloDeVereda[] = [
         resumo: 'AAAA-MM-DD, vNN, e por que "final" nunca é o final.',
         topicos: NOMEAR,
       },
+      {
+        id: 'm5-lab', tipo: 'explorador',
+        titulo: 'Renomeando os dez no seu padrão',
+        resumo: 'Um padrão só, com data e versão, aplicado à Área de Trabalho inteira.',
+        verificacoes: ['padrao'],
+      },
     ],
   },
   {
@@ -619,6 +671,12 @@ export const MODULOS_DE_ARQUIVOS: ModuloDeVereda[] = [
         resumo: 'Uma vantagem e um risco de cada, e a remoção segura.',
         topicos: ONDE_MORA,
       },
+      {
+        id: 'm6-lab', tipo: 'explorador',
+        titulo: 'Levando os arquivos no pen drive',
+        resumo: 'Copiar, ejetar com segurança, e descobrir o que acontece quando não se ejeta.',
+        verificacoes: ['copiouParaOPendrive', 'removeuComSeguranca'],
+      },
     ],
   },
   {
@@ -633,6 +691,12 @@ export const MODULOS_DE_ARQUIVOS: ModuloDeVereda[] = [
         titulo: 'O dia em que o arquivo some',
         resumo: 'Cópia de segurança, 3-2-1, restauração testada e histórico de versões.',
         topicos: COPIA,
+      },
+      {
+        id: 'm7-lab', tipo: 'explorador',
+        titulo: 'Trazendo de volta o que se perdeu',
+        resumo: 'Restaurar da cópia de segurança e voltar o relatório à versão de antes.',
+        verificacoes: ['restaurouDoBackup', 'voltouAVersao'],
       },
     ],
   },
