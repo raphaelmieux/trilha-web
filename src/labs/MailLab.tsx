@@ -456,7 +456,7 @@ function MessageView({ message, verdict, attachmentAction, studentName, onJudge,
                   obviously not produced, and the .jpg would need a photo. */}
               <button
                 onClick={() => {
-                  if (message.attachment?.name.endsWith('.pdf')) exportAttachmentPdf(studentName);
+                  if (message.attachment?.name.endsWith('.pdf')) void exportAttachmentPdf(studentName);
                   onAttachment('abriu');
                 }}
                 className="btn-secondary text-xs"

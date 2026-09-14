@@ -356,7 +356,7 @@ export default function WebLab({ specialtyCode, lessonCode, lessonTitle, require
   );
 
   const downloadSheet = () => {
-    exportStudySheetPdf({
+    void exportStudySheetPdf({
       studentName,
       subject: SUBJECT,
       query,

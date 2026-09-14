@@ -5,7 +5,8 @@
  * função**. `Trilha.Web()` é a plataforma; `Token.Web()` é o certificado que
  * ela emite. As duas em Space Mono Bold, e nas duas **os parênteses são
  * vermelhos** — são eles que dizem que o nome é uma chamada, e não uma frase
- * com pontuação sobrando.
+ * com pontuação sobrando. As duas coisas valem na tela **e no papel**: quem
+ * veste a marca no PDF é `marcaEmPdf.ts`.
  *
  * A regra é uma só de propósito. O clube encontra os dois nomes na mesma tela —
  * a de entrada traz a marca no alto e o "Recebeu um Token.Web()?" logo abaixo —,
@@ -54,8 +55,20 @@ export const MIOLO = MARCAS.plataforma.miolo;
  */
 export const VERMELHO_DA_MARCA: [number, number, number] = [193, 53, 22];
 
-/** Um pedaço de texto, e se ele é ou não parte vermelha de uma marca. */
-export type PedacoDaMarca = { texto: string; daMarca: boolean };
+/**
+ * De que parte da marca um pedaço de texto é.
+ *
+ * Eram dois estados — vermelho ou não —, e bastavam enquanto a única coisa que
+ * a marca mudava era a cor dos parênteses. A fonte mudou isso: ela veste o
+ * **nome inteiro**, miolo e parênteses, e o miolo vinha marcado como prosa
+ * comum, indistinguível do texto em volta. Com três estados, quem desenha
+ * pergunta o que precisa: a cor olha para `parenteses`, a fonte olha para tudo
+ * o que não é `fora`.
+ */
+export type ParteDaMarca = 'fora' | 'miolo' | 'parenteses';
+
+/** Um pedaço de texto, e de que parte da marca ele é. */
+export type PedacoDaMarca = { texto: string; parte: ParteDaMarca };
 
 const escapar = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -71,8 +84,8 @@ const PADRAO = new RegExp(
  * Parte uma frase nos pedaços que a marca colore.
  *
  * Devolve a frase inteira num pedaço só quando nenhuma marca aparece nela,
- * então é seguro passar qualquer texto. Quem chama desenha cada pedaço com a
- * cor que o `daMarca` pede.
+ * então é seguro passar qualquer texto. Quem chama veste cada pedaço conforme
+ * a `parte` dele.
  */
 export function partirNaMarca(texto: string): PedacoDaMarca[] {
   const pedacos: PedacoDaMarca[] = [];
@@ -83,15 +96,15 @@ export function partirNaMarca(texto: string): PedacoDaMarca[] {
     const inicio = achado.index ?? 0;
 
     const antes = texto.slice(lido, inicio);
-    if (antes) pedacos.push({ texto: antes, daMarca: false });
+    if (antes) pedacos.push({ texto: antes, parte: 'fora' });
 
-    pedacos.push({ texto: nome.slice(0, -PARENTESES.length), daMarca: false });
-    pedacos.push({ texto: PARENTESES, daMarca: true });
+    pedacos.push({ texto: nome.slice(0, -PARENTESES.length), parte: 'miolo' });
+    pedacos.push({ texto: PARENTESES, parte: 'parenteses' });
     lido = inicio + nome.length;
   }
 
   const resto = texto.slice(lido);
-  if (resto) pedacos.push({ texto: resto, daMarca: false });
+  if (resto) pedacos.push({ texto: resto, parte: 'fora' });
 
   return pedacos;
 }

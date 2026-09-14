@@ -276,7 +276,7 @@ export default function AdminPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <Th>Percurso</Th><Th>Tipo</Th><Th>Emitidos</Th><Th>Ativos</Th><Th>Revogados</Th><Th>Último</Th>
+              <Th>Trilha ou vereda</Th><Th>Tipo</Th><Th>Emitidos</Th><Th>Ativos</Th><Th>Revogados</Th><Th>Último</Th>
             </tr></thead>
             <tbody>
               {porTrilha.map(({ code, nome, tipo, contagem }) => (

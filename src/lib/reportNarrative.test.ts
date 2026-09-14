@@ -143,7 +143,7 @@ describe('buildClosingParagraph', () => {
     const n = buildSpecialtyNarrative(specialty, {}, [], 'Ana');
     const text = buildClosingParagraph([n], 'Ana', 0, 0);
     expect(text).not.toContain('aproveitamento médio');
-    expect(text).toContain('em percurso');
+    expect(text).toContain('em estudo');
   });
 
   it('uses the singular form for a single graded activity', () => {

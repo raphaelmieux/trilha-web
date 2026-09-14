@@ -97,12 +97,12 @@ export default function VerifyPage() {
                 A vereda também emite Token.Web(), e ela não é especialidade —
                 então o rótulo diz qual das duas coisas é, e a linha seguinte
                 deixa de afirmar um nível que vereda não tem. Dizer "Nível:
-                Básico" ali seria inventar grau para um percurso que se mede
-                em lições.
+                Básico" ali seria inventar grau para uma vereda, que se mede
+                em lições e não em grau.
               */
               [percurso.tipo === 'vereda' ? 'Vereda:' : 'Especialidade:', percurso.nome],
               ...(percurso.tipo === 'vereda'
-                ? [['Percurso:', 'Vereda — percurso curto, fora do currículo oficial']]
+                ? [['O que é:', 'Vereda — estudo curto, fora do currículo oficial das especialidades']]
                 : [['Nível:', ROTULO_DO_NIVEL[result.level] ?? result.level]]),
               ['Currículo:', `${result.curriculum_code} v${result.curriculum_version}`],
               ['Emitido em:', new Date(result.issued_at).toLocaleDateString('pt-BR')],

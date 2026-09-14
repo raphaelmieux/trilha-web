@@ -957,9 +957,11 @@ era `Trilha.Web() — Especialidades A, B e C`, escrita com um `doc.text` sem
 quebra nenhuma: com três especialidades ela já saía pelas margens.
 
 A capa responde ao que se pergunta **antes** de ler: de quem é, de que clube,
-de quando, sobre quais percursos — um por linha, que é o que conserta a linha
-estourada — e o que vem anexado. O que ela não tem é emblema: eles são a arte
-dos certificados e chegam inteiros, sangrados, nas folhas de anexo.
+de quando, sobre quais trilhas — uma por linha, que é o que conserta a linha
+estourada — e o que vem anexado. São trilhas e o rótulo diz trilhas: o
+relatório cobre as especialidades escolhidas na tela, e as veredas entram numa
+seção própria mais adiante. O que a capa não tem é emblema: eles são a arte dos
+certificados e chegam inteiros, sangrados, nas folhas de anexo.
 
 O sumário se escreve em folhas **reservadas antes** do corpo, porque só se sabe
 em que página uma seção caiu depois de compor, e inserir folhas depois
@@ -1239,14 +1241,32 @@ literais antes de procurar, e confere que ainda enxerga um nome plantado no meio
 do JSX: um apagador que engolisse o arquivo inteiro aprovaria qualquer coisa,
 calado.
 
-No PDF vem a cor e não vem a fonte. O jsPDF desenha em Helvetica, uma das 14 do
-padrão, e pôr Space Mono ali exigiria embutir um TTF que iria dentro do pacote
-de todo visitante para servir a três rodapés. Centralizar cobra desenhar à mão:
-`align: 'center'` centraliza cada chamada de `text` separadamente, então três
-pedaços de cores diferentes sairiam empilhados no mesmo ponto — mede-se a linha
-inteira e cada pedaço anda a própria largura. O corpo do relatório em PDF fica
-de fora: lá o nome cai no meio de parágrafo quebrado em linhas, e colorir dentro
-da quebra pediria reimplementar a quebra.
+**No PDF vem a cor e vem a fonte — e antes não vinha.** A decisão anterior era
+"a cor vem, a fonte não": o jsPDF desenha em Helvetica, uma das 14 do padrão, e
+embutir a Space Mono parecia caro para servir a três rodapés. A conta mudou
+quando o relatório ganhou capa: a marca deixou de ser rodapé e passou a abrir o
+documento que o clube arquiva, que é onde ela mais é vista fora da tela — e uma
+marca em Helvetica no papel e em Space Mono na tela são duas marcas.
+
+O custo também acabou. O TTF **não** entra no pacote: ele fica em
+`public/assets/fonts/`, ao lado do woff2 que a folha de estilo já carrega, e
+`marcaEmPdf.ts` o busca na hora de gerar o PDF — o mesmo caminho pelo qual a
+arte do certificado já vem. Quem nunca gera um PDF nunca baixa a fonte. Se ela
+não chegar, o documento sai em Helvetica com a cor certa: derrubar a emissão de
+um certificado porque uma fonte não carregou é trocar defeito de estilo por
+defeito de função, na hora da vitória de alguém.
+
+A fonte veste o **nome inteiro**, e por isso `partirNaMarca` devolve três
+partes e não duas: `fora`, `miolo` e `parenteses`. Com dois estados o miolo
+vinha marcado como prosa comum e saía em Helvetica bem no meio da marca. E
+medir passou a ser trabalho: a Space Mono é mais larga, então centralizar pela
+largura em Helvetica tira a linha do meio da página — quem mede é
+`larguraComMarca`, somando pedaço a pedaço com a fonte certa em cada um.
+
+Centralizar já cobrava desenhar à mão: `align: 'center'` centraliza cada chamada
+de `text` separadamente, então os pedaços sairiam empilhados no mesmo ponto. O
+corpo do relatório em PDF continua de fora: lá o nome cai no meio de parágrafo
+quebrado em linhas, e colorir dentro da quebra pediria reimplementar a quebra.
 
 **Consulta que volta para tela que já saiu não avisa, e depois avisa errado.**
 Efeito busca, a pessoa sai, a resposta chega e o `setX` cai num componente que
@@ -1281,6 +1301,28 @@ Quem vê isso é navegador; o jsdom não calcula bloco de contenção nenhum, en
 nenhum teste de unidade pega o sintoma. O que se testa é a promessa —
 `ExplicacaoDaInsignia` se desenha no `body`, por `createPortal`, e não onde o
 JSX o põe. Assim "ocupa a tela" é verdade seja de onde for que alguém o chame.
+
+**Trilha se chama trilha; vereda se chama vereda.** No código as duas precisam
+de um nome que sirva às duas — o certificado é o mesmo documento, o emblema é o
+mesmo componente, o relatório lista as duas —, e "percurso" é esse nome. De
+dentro do código ele escorregou para a tela: "Percurso bloqueado" no selo do
+emblema, "Percurso" no cabeçalho da contabilidade do clube, "está em percurso"
+no relatório entregue à liderança.
+
+Nada disso estoura, e o estrago é lento: a plataforma passou meses
+estabelecendo que as duas são coisas diferentes — vereda não tem requisito
+oficial, não tem nota, não entra em percentual nenhum —, e uma terceira palavra
+que cobre as duas desfaz isso em silêncio. Quem lê "percurso" não sabe qual das
+duas está vendo.
+
+Na tela, então, só trilha e vereda. Como nome de identificador a palavra
+continua valendo, e é por isso que ela aparece tanto neste documento:
+`percursoDoCertificado` responde pelos dois currículos e precisa de um nome que
+sirva aos dois. `vocabulario.test.ts` lê a árvore do TypeScript e olha só para
+texto de JSX e literais — comentário não é nó e fica de fora sozinho, e o miolo
+de `${...}` também, porque ali dentro é código. A CC003 é a exceção declarada:
+lá "o caminho absoluto diz o percurso inteiro" fala de pasta, e é português
+comum.
 
 **Link externo é sempre `<a target="_blank">`**, pelo componente `LinkExterno`.
 `window.open` funciona no computador e falha no celular.
@@ -1454,6 +1496,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/ui/EstanteDeInsignias.test.tsx` | insígnia do painel que leva ao formulário do perfil em vez de contar o que rendeu |
 | `src/components/ui/ExplicacaoDaInsignia.test.tsx` | cartão de explicação desenhado dentro de quem o chamou, onde o `backdrop-filter` prende o `fixed` |
 | `src/lib/relatorioEmPdf.test.ts` | conquista sem data dizendo-se a primeira, ou sumário reservando menos folhas do que tem entradas |
+| `src/lib/vocabulario.test.ts` | trilha ou vereda chamada de "percurso" em texto que chega à tela |
 | `src/lib/formaDaArte.test.ts` | emblema de trilha quadrado ou de vereda deitado, que troca no painel o tipo do percurso |
 | `src/lib/formaDaInsignia.test.ts` | glifo maior que o círculo inscrito do triângulo, que vaza só no Amigo e no Companheiro |
 | `src/lib/formaDaInsignia.test.ts` | classe cujo glifo não se lê sobre a própria cor, ou ícone sem raio de tinta medido |

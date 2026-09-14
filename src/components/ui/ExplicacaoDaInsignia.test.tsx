@@ -82,14 +82,14 @@ describe('o cartão de explicação', () => {
     ).toBeNull();
   });
 
-  it('conta o feito e a data, e cala sobre o percurso que não foi gravado', () => {
+  it('conta o feito e a data, e cala sobre a trilha ou vereda que não foi gravada', () => {
     desenhar();
 
     expect(cartao()!.textContent).toContain('Estudou entre a meia-noite');
     expect(cartao()!.textContent).toContain('de fevereiro de 2026');
-    /* Não se inventa percurso: dizer "na AP034" sem saber é afirmar o que não
+    /* Não se inventa trilha: dizer "na AP034" sem saber é afirmar o que não
        foi conferido, que é a mesma assimetria do `umDe`. */
-    expect(cartao()!.textContent).toContain('não ficou registrado');
+    expect(cartao()!.textContent).toContain('Não ficou registrado onde esta foi conquistada');
   });
 
   /* Três saídas, porque a pessoa veio ver uma medalha e não abrir um

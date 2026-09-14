@@ -272,7 +272,7 @@ export function buildBadgeParagraph(badges: Badge[], studentName: string): strin
     ? `${studentName} conquistou uma insígnia em toda a sua trajetória na plataforma`
     : `${studentName} conquistou ${badges.length} insígnias em toda a sua trajetória na plataforma — ${tally}`;
 
-  return `${opening}. As insígnias não são concedidas pela simples conclusão de atividades: cada uma reconhece um comportamento sustentado ao longo do tempo, como a constância de estudo em dias seguidos ou o desempenho máximo em uma avaliação. Por abrangerem o percurso inteiro, não se restringem às especialidades listadas acima. Seguem descritas abaixo.`;
+  return `${opening}. As insígnias não são concedidas pela simples conclusão de atividades: cada uma reconhece um comportamento sustentado ao longo do tempo, como a constância de estudo em dias seguidos ou o desempenho máximo em uma avaliação. Por abrangerem tudo o que foi feito na plataforma, não se restringem às especialidades listadas acima. Seguem descritas abaixo.`;
 }
 
 export function buildClosingParagraph(
@@ -299,11 +299,11 @@ export function buildClosingParagraph(
   } else if (fullyDone.length > 0) {
     text += `${studentName} completou os requisitos curriculares de ${fullyDone.map(n => n.code).join(' e ')}, restando a realização da avaliação final para a emissão da certificação. `;
   } else {
-    text += `${studentName} encontra-se em percurso na Trilha.Web(). `;
+    text += `${studentName} encontra-se em estudo na Trilha.Web(). `;
   }
 
   if (attemptsCount > 0) {
-    text += `Ao longo do percurso foram registradas ${attemptsCount} ${plural(attemptsCount, 'atividade avaliada', 'atividades avaliadas')}, com aproveitamento médio de ${averageScore}%. `;
+    text += `Ao longo do estudo foram registradas ${attemptsCount} ${plural(attemptsCount, 'atividade avaliada', 'atividades avaliadas')}, com aproveitamento médio de ${averageScore}%. `;
   }
 
   text += `Todo o progresso descrito neste relatório foi registrado automaticamente pela plataforma no momento em que cada atividade foi realizada, não dependendo de autodeclaração. Este documento é apresentado à liderança do clube para subsidiar o reconhecimento das especialidades no registro oficial do Clube de Desbravadores.`;

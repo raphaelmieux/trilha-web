@@ -164,8 +164,8 @@ export default function ReportPage() {
     itens.length <= 1 ? (itens[0] ?? '')
       : `${itens.slice(0, -1).join(', ')} e ${itens[itens.length - 1]}`;
 
-  const percursos = narratives.map(n => nomeCompleto(n));
-  const nomeExtenso = enumerar(percursos);
+  const trilhasDoRelatorio = narratives.map(n => nomeCompleto(n));
+  const nomeExtenso = enumerar(trilhasDoRelatorio);
 
   const intro = `Este documento descreve, em linguagem corrente, as competências efetivamente demonstradas por ${studentName} ao longo da Trilha.Web(), plataforma de estudo autônomo de especialidades do Clube de Desbravadores. Abrange ${narratives.length === 1 ? 'a especialidade' : 'as especialidades'} ${nomeExtenso}. Destina-se à apresentação à liderança do Clube, para subsidiar o reconhecimento e o registro ${narratives.length === 1 ? 'da especialidade' : 'das especialidades'} pelos canais oficiais do clube.`;
 
@@ -240,10 +240,10 @@ export default function ReportPage() {
         club: profile.club || '',
         unit: profile.unit || '',
         issuedOn: today,
-        /* Um por linha na capa. A frase única estourava a margem com três
+        /* Uma por linha na capa. A frase única estourava a margem com três
            especialidades, e era justamente a linha que diz do que o documento
            trata. */
-        percursos,
+        trilhas: trilhasDoRelatorio,
         intro,
         sections,
         badgeIntro,
@@ -329,11 +329,11 @@ export default function ReportPage() {
         <header className="report-head">
           <h1>Relatório de Competências</h1>
           <p className="report-sub">{comMarca('Trilha.Web()')}</p>
-          {/* Um por linha, como na capa do PDF. Era uma frase só — "Especialidades
-              A, B e C" —, e no papel ela estourava a margem justamente na linha
-              que diz do que o documento trata. */}
-          <ul className="report-percursos">
-            {percursos.map(p => <li key={p}>{p}</li>)}
+          {/* Uma por linha, como na capa do PDF. Era uma frase só —
+              "Especialidades A, B e C" —, e no papel ela estourava a margem
+              justamente na linha que diz do que o documento trata. */}
+          <ul className="report-trilhas">
+            {trilhasDoRelatorio.map(t => <li key={t}>{t}</li>)}
           </ul>
         </header>
 

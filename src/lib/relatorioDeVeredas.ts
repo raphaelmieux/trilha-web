@@ -103,7 +103,7 @@ function fraseDaVereda(
   }
 
   const feito = partes.length === 2 ? `${partes[0]} e ${partes[1]}` : partes[0];
-  return `Está em percurso: venceu ${feito}, de um total de ${total}.${onde}`;
+  return `Está em andamento: venceu ${feito}, de um total de ${total}.${onde}`;
 }
 
 /**
@@ -151,7 +151,7 @@ export function montarRelatorioDeVeredas(
     vereda. Sem esta abertura, os parágrafos seguintes parecem falar de
     especialidades que a liderança não encontra em documento nenhum.
   */
-  const introducao = `Vereda é o caminho estreito que sai da trilha principal: um percurso `
+  const introducao = `Vereda é o caminho estreito que sai da trilha principal: um estudo `
     + `curto, com lições de teoria e laboratórios a vencer, que a plataforma oferece `
     + `fora do currículo das especialidades. Não tem requisito oficial, não tem nota e `
     + `não entra no percentual de especialidade nenhuma — é estudo que ${studentName} `
@@ -164,7 +164,7 @@ export function montarRelatorioDeVeredas(
       + `(${concluidas.map(p => p.code).join(', ')})`);
   }
   if (emCurso.length > 0) {
-    contagem.push(`está em percurso em ${emCurso.length} ${plural(emCurso.length, 'outra', 'outras')} `
+    contagem.push(`está em andamento em ${emCurso.length} ${plural(emCurso.length, 'outra', 'outras')} `
       + `(${emCurso.map(p => p.code).join(', ')})`);
   }
 
