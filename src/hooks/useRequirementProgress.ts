@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchRequirementProgress, progressoEmCache, type ProgressMap } from '../lib/progress';
+import { useMontado } from './useMontado';
 
 /*
   Wraps the repeated "fetch this user's requirement progress on mount / when the
@@ -17,20 +18,24 @@ export function useRequirementProgress(userId: string | undefined) {
   /* Só há espera de verdade quando não se sabe nada ainda. */
   const [loading, setLoading] = useState(() => progressoEmCache(userId) === undefined);
 
+  const montado = useMontado();
+
   const refresh = useCallback(async () => {
     if (!userId) return;
     const prog = await fetchRequirementProgress(userId);
-    setProgress(prog);
+    /* Devolve o mapa de qualquer jeito: quem chamou pode estar usando o valor
+       para outra coisa. O que não acontece com a tela fora é escrever nela. */
+    if (montado.current) setProgress(prog);
     return prog;
-  }, [userId]);
+  }, [userId, montado]);
 
   useEffect(() => {
     if (!userId) return;
     const emCache = progressoEmCache(userId);
     if (emCache) setProgress(emCache);   // troca de conta na mesma aba
     setLoading(emCache === undefined);
-    refresh().finally(() => setLoading(false));
-  }, [userId, refresh]);
+    refresh().finally(() => { if (montado.current) setLoading(false); });
+  }, [userId, refresh, montado]);
 
   return { progress, loading, refresh };
 }

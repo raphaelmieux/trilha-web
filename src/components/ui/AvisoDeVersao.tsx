@@ -43,7 +43,11 @@ export default function AvisoDeVersao() {
     let vivo = true;
     const conferir = async () => {
       if (!vivo || document.visibilityState !== 'visible') return;
-      if (await haVersaoNova()) setTemNova(true);
+      /* A conferência atravessa a rede, e a guarda de cima ficou para trás
+         quando ela voltou: quem fecha a aba de uma tela no meio disso recebia
+         o aviso numa tela que não existe mais. */
+      const nova = await haVersaoNova();
+      if (vivo && nova) setTemNova(true);
     };
 
     conferir();

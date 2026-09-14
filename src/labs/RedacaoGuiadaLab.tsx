@@ -73,6 +73,10 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
   const tudoPronto = roteiro ? podeUnir(roteiro, respostas) : false;
 
   useEffect(() => {
+    /* A consulta pode voltar depois de a tela sair. Escrever estado em
+       componente desmontado é desperdício no navegador e erro num ambiente já
+       desmontado — ver `useMontado`, que conta a história inteira. */
+    let vivo = true;
     (async () => {
       const { data, error } = await supabase
         .from('text_projects')
@@ -80,6 +84,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
         .eq('user_id', userId)
         .eq('specialty_code', specialtyCode)
         .maybeSingle();
+      if (!vivo) return;
 
       /*
         Ignorar este erro sai caro. Sem a migration da coluna `etapas` aplicada,
@@ -114,6 +119,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
 
       setCarregando(false);
     })();
+    return () => { vivo = false; };
   }, [userId, specialtyCode, lessonCode]);
 
   /* A rede embaixo do salvamento: grava no navegador a cada pausa. */

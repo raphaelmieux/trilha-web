@@ -19,10 +19,15 @@ export default function CertificatePage() {
 
   useEffect(() => {
     if (!code) return;
+    /* A consulta pode voltar depois de a tela sair. Escrever estado em
+       componente desmontado é desperdício no navegador e erro num ambiente já
+       desmontado — ver `useMontado`, que conta a história inteira. */
+    let vivo = true;
     (async () => {
       /* Uma consulta só, por código, contra a função de verificação — a tabela
          de certificações não é mais legível publicamente. */
       const { data, error: rpcError } = await supabase.rpc('verify_certificate', { p_code: code });
+      if (!vivo) return;
       const linha = data?.[0];
       const encontrado = linha && comoCertificadoVerificado(linha);
 
@@ -40,6 +45,7 @@ export default function CertificatePage() {
       setCert(encontrado);
       setLoading(false);
     })();
+    return () => { vivo = false; };
   }, [code]);
 
   if (loading) return <LoadingState label="Carregando certificado..." />;

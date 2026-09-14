@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { umDe, ORDEM_DOS_NIVEIS, STATUS_DO_CERTIFICADO } from '../types';
+import { useMontado } from './useMontado';
 import type { Certification } from '../types';
 
 // A user has at most two active certifications (fundamental, advanced), so fetching
@@ -16,12 +17,15 @@ export function useCertifications(userId: string | undefined) {
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const montado = useMontado();
+
   const refresh = useCallback(async () => {
     if (!userId) return;
     const { data } = await supabase
       .from('certifications')
       .select(COLUNAS_DO_CERTIFICADO)
       .eq('user_id', userId);
+    if (!montado.current) return;
     /* `level` e `status` são `text` com CHECK; o padrão de `status` é 'revoked'
        pelo motivo escrito em lib/certificados.ts. */
     setCertifications((data ?? []).map(c => ({
@@ -29,13 +33,13 @@ export function useCertifications(userId: string | undefined) {
       level: umDe(ORDEM_DOS_NIVEIS, c.level, 'basico'),
       status: umDe(STATUS_DO_CERTIFICADO, c.status, 'revoked'),
     })));
-  }, [userId]);
+  }, [userId, montado]);
 
   useEffect(() => {
     if (!userId) return;
     setLoading(true);
-    refresh().finally(() => setLoading(false));
-  }, [userId, refresh]);
+    refresh().finally(() => { if (montado.current) setLoading(false); });
+  }, [userId, refresh, montado]);
 
   /*
     Pelo código da especialidade, e não pelo grau.

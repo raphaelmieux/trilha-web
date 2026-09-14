@@ -4,6 +4,7 @@ import {
   buscarPercurso, percursoDosEventos, licoesVencidas,
   type PercursoDeVereda, type PercursoDasVeredas,
 } from '../lib/veredas';
+import { useMontado } from './useMontado';
 
 export interface AndamentoDeVereda {
   id: string;
@@ -26,12 +27,17 @@ export function useVeredas(userId: string | undefined) {
   const [percurso, setPercurso] = useState<PercursoDasVeredas>({});
   const [carregando, setCarregando] = useState(true);
 
+  const montado = useMontado();
+
   const recarregar = useCallback(async () => {
     if (!userId) { setCarregando(false); return; }
     const eventos = await buscarPercurso(userId);
+    /* A `VeredaPage` chama isto ao fechar um laboratório, e fechar um
+       laboratório é exatamente quando a pessoa costuma sair da vereda. */
+    if (!montado.current) return;
     setPercurso(percursoDosEventos(eventos));
     setCarregando(false);
-  }, [userId]);
+  }, [userId, montado]);
 
   useEffect(() => { void recarregar(); }, [recarregar]);
 

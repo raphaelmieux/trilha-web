@@ -148,18 +148,26 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!profile) return;
+    /* A consulta pode voltar depois de a tela sair. Escrever estado em
+       componente desmontado é desperdício no navegador e erro num ambiente já
+       desmontado — ver `useMontado`, que conta a história inteira. */
+    let vivo = true;
     (async () => {
       const { data: enrolls } = await supabase.from('enrollments').select('*, specialties(*)').eq('user_id', profile.id);
+      if (!vivo) return;
       setEnrollments(enrolls || []);
       const { data: events } = await supabase.from('activity_events').select('*').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(10);
+      if (!vivo) return;
       setRecentEvents(events || []);
       /* A colocação só é buscada de quem optou por aparecer: para quem não
          optou, ela nem existe. */
       const { data: prefs } = await supabase
         .from('privacy_preferences').select('show_on_leaderboard').eq('user_id', profile.id).maybeSingle();
+      if (!vivo) return;
       setNoRanking(!!prefs?.show_on_leaderboard);
       setLoading(false);
     })();
+    return () => { vivo = false; };
   }, [profile]);
 
   if (!profile) return null;

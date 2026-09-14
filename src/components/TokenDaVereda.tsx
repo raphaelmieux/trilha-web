@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import type { Vereda } from '../curriculum/veredas';
 import type { Certification } from '../types';
+import { useMontado } from '../hooks/useMontado';
 
 /*
  * O Token.Web() de uma vereda.
@@ -53,6 +54,12 @@ export default function TokenDaVereda({ vereda, userId, tokens, aoEmitir }: {
 }) {
   const [erro, setErro] = useState('');
   const pedido = useRef(false);
+  /*
+    A emissão atravessa a rede duas vezes — a sessão e a função de borda — e
+    começa sozinha, ao aparecer. Quem concluiu a vereda e saiu da tela no meio
+    disso recebia o recado de erro numa tela que não existe mais.
+  */
+  const montado = useMontado();
 
   const ativo = tokens.find(c => c.status === 'active');
   /* Existe documento, e ele não vale: foi revogado. */
@@ -61,6 +68,7 @@ export default function TokenDaVereda({ vereda, userId, tokens, aoEmitir }: {
   const emitir = useCallback(async () => {
     setErro('');
     const { data: { session } } = await supabase.auth.getSession();
+    if (!montado.current) return;
     if (!session) { setErro('Sessão expirada. Entre de novo para receber seu Token.Web().'); return; }
 
     try {
@@ -86,6 +94,7 @@ export default function TokenDaVereda({ vereda, userId, tokens, aoEmitir }: {
         },
       );
       const dados = await resposta.json();
+      if (!montado.current) return;
       if (!resposta.ok) { setErro(dados.error ?? 'Não foi possível emitir agora.'); return; }
       /*
         O mural quem escreve é o servidor, na mesma transação da emissão.
@@ -95,9 +104,9 @@ export default function TokenDaVereda({ vereda, userId, tokens, aoEmitir }: {
       */
       await aoEmitir();
     } catch {
-      setErro('Erro de conexão ao emitir o certificado. Verifique a internet.');
+      if (montado.current) setErro('Erro de conexão ao emitir o certificado. Verifique a internet.');
     }
-  }, [userId, vereda.code, vereda.id, aoEmitir]);
+  }, [userId, vereda.code, vereda.id, aoEmitir, montado]);
 
   useEffect(() => {
     if (ativo || revogado || pedido.current) return;

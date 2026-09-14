@@ -11,12 +11,17 @@ export function useBadges(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
     setLoading(true);
+    /* A consulta pode voltar depois de a tela sair. Escrever estado em
+       componente desmontado é desperdício no navegador e erro num ambiente já
+       desmontado — ver `useMontado`, que conta a história inteira. */
+    let vivo = true;
     (async () => {
       const { data } = await supabase
         .from('user_badges')
         .select('awarded_at, context, badges(id, code, name, description, icon, tier)')
         .eq('user_id', userId)
         .order('awarded_at', { ascending: false });
+      if (!vivo) return;
       /* `badge_id` é NOT NULL, então a junção sempre traz a insígnia — o
          `.filter(Boolean)` que havia aqui defendia de um caso que o schema já
          impede. O que o banco realmente não garante no tipo é o `tier`. */
@@ -43,6 +48,7 @@ export function useBadges(userId: string | undefined) {
       })));
       setLoading(false);
     })();
+    return () => { vivo = false; };
   }, [userId]);
 
   return { badges, loading };
