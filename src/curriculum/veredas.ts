@@ -461,17 +461,6 @@ export const VEREDAS: Vereda[] = [
     familia: 'Base',
     description: 'Listas, dicionários, arquivos e erros — o que separa um exercício de um programa que se usa.',
     /*
-      Ainda em construção: a teoria está escrita, os laboratórios não.
-
-      É o que "vereda em construção pode ter conteúdo" permite, e é a razão de
-      as travas de qualidade olharem para `veredasComConteudo()` e não só para
-      as abertas — uma vereda leva vários dias para ficar pronta, e questão
-      repetida que só reprovasse no dia da abertura reprovaria com tudo já
-      escrito. Insígnia e certificado continuam saindo das abertas: prometer
-      prêmio por vereda que ninguém pode percorrer é outra coisa.
-    */
-    emConstrucao: true,
-    /*
       Sai da CC002, e não de uma trilha. Lá o programa é um arquivo que se lê
       de cima para baixo, e isso resolve exercício — para de resolver na hora
       em que o programa cresce, e é aí que esta começa.
