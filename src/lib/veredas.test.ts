@@ -18,6 +18,10 @@ import { PASSOS_DO_AMBIENTE } from '../labs/passosDoAmbiente';
 import { PASSOS_DO_TERMINAL } from '../labs/passosDeTerminal';
 import { validarTerminal, IDS_DO_TERMINAL } from './terminalValidator';
 import { maquinaInicial } from '../labs/terminal';
+import { validarExplorador, IDS_DO_EXPLORADOR, gestosVazios } from './exploradorValidator';
+import { discoDoClube } from '../labs/discoDoClube';
+import { dispositivoInicial } from '../labs/dispositivoExterno';
+import { PASSOS_DO_EXPLORADOR } from '../labs/passosDeExplorador';
 import { validarPython, IDS_DE_PYTHON } from './pythonValidator';
 import { classificacaoInicial } from '../labs/falhasDePython';
 import { PASSOS } from '../labs/desafioDeHtml';
@@ -263,6 +267,35 @@ describe('os modelos dos laboratórios da vereda', () => {
   }
 
   /*
+    O Explorador, pela mesma razão do ambiente e do terminal.
+
+    Ele também não tem `modelo`: o ponto de partida é um computador, e ele mora
+    em `discoDoClube()`. São sete lições sobre o **mesmo** disco, e é isso que
+    torna a trava aqui mais necessária do que nas outras: uma sobra no disco de
+    partida não abriria uma lição resolvida, abriria qualquer uma das sete.
+  */
+  for (const vereda of veredasComConteudo()) {
+    for (const licao of licoesDaVereda(vereda)) {
+      if (licao.tipo !== 'explorador') continue;
+
+      it(`${vereda.code} · ${licao.id} abre num computador sem nada feito`, () => {
+        const agora = Date.UTC(2026, 8, 14, 12);
+        const verdes = validarExplorador({
+          arvore: discoDoClube(agora),
+          inicial: discoDoClube(agora),
+          dispositivo: dispositivoInicial(),
+          gestos: gestosVazios(),
+        }, licao.verificacoes).filter(r => r.passed).map(r => r.id);
+        expect(verdes).toEqual([]);
+      });
+
+      it(`${vereda.code} · ${licao.id} cobra verificação que o validador conhece`, () => {
+        expect(licao.verificacoes.filter(id => !IDS_DO_EXPLORADOR.includes(id))).toEqual([]);
+      });
+    }
+  }
+
+  /*
     Falha plantada e verificação são as duas metades da mesma coisa.
 
     Uma lição que cobra `classificouAsFalhas` e não escreve falha nenhuma dá uma
@@ -321,6 +354,9 @@ describe('os modelos dos laboratórios da vereda', () => {
         }
         if (l.tipo === 'terminal') {
           return l.verificacoes.map(id => [PASSOS_DO_TERMINAL, id] as const);
+        }
+        if (l.tipo === 'explorador') {
+          return l.verificacoes.map(id => [PASSOS_DO_EXPLORADOR, id] as const);
         }
         if (l.tipo !== 'laboratorio') return [];
         return l.verificacoes.map(id => [passosDe(l.linguagem), id] as const);

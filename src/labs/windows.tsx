@@ -122,6 +122,24 @@ export const CSS_WINDOWS = `
      parecido com ele. */
   @media (max-width: 1023px) {
     .win-busca { display: none; }
+    /*
+      A pesquisa que funciona não some com a tela.
+
+      Na AP043 ela é enfeite, e esconder enfeite em tela estreita é o certo.
+      Na CC-ES001 ela é o requisito 4.3 inteiro, e some junto seria tirar o
+      único caminho até a tarefa no celular — que é onde boa parte dos
+      desbravadores estuda. É o mesmo caso do menu Classificar, que existe
+      porque as colunas do meio somem.
+
+      Ela encolhe para o ícone, como o Explorador de verdade faz na janela
+      estreita, e quem diz qual das duas é qual é a presença de aoBuscar.
+
+      Sem crase neste comentário de propósito: o bloco inteiro é um literal de
+      template, e uma crase aqui o fecha no meio — o arquivo para de compilar
+      com um erro que aponta para a linha errada.
+    */
+    .win-busca.ativa { display: flex; width: auto; padding: 0 8px; }
+    .win-busca.ativa span { display: none; }
   }
   @media (max-width: 767px) {
     .win-painel { width: 136px; padding: 5px 2px; }
@@ -152,6 +170,22 @@ export const CSS_WINDOWS = `
   .win-modal-fundo {
     position: absolute; inset: 0; z-index: 70; display: grid; place-items: center;
     background: rgba(0,0,0,.35); padding: 16px;
+  }
+  /*
+    No celular o diálogo sobe, para o pé dele não cair debaixo da cápsula.
+
+    A cápsula de tarefas da plataforma mora no canto de baixo, e um diálogo
+    centrado punha os botões Cancelar e Confirmar justamente ali — quem abrisse
+    a pesquisa via o formulário inteiro e não via como confirmar. É a mesma
+    conta do rodape, que sobe a cápsula acima da barra de tarefas, do outro
+    lado.
+
+    A regra fica aqui, depois da base, e não no bloco estreito lá em cima: as
+    duas têm a mesma especificidade, e a que vem por último ganha. Escrita
+    antes, ela não valeria nada — e nada estouraria.
+  */
+  @media (max-width: 1023px) {
+    .win-modal-fundo { place-items: start center; padding-top: 8px; }
   }
   .win-modal {
     background: #F3F3F3; color: #1B1B1B; border-radius: 8px; width: min(520px, 100%);

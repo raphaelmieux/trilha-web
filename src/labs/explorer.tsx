@@ -151,13 +151,20 @@ function Galho(p: GalhoProps) {
  * Só pastas descem por aqui, como no Explorer: a lateral é para navegar, e uma
  * árvore que mostrasse arquivo repetiria a lista da direita sem acrescentar
  * nada.
+ *
+ * `raizes` existe porque nem toda raiz está sempre visível: o pen drive da
+ * CC-ES001 continua na árvore depois de ejetado — é de lá que a verificação lê
+ * o que chegou inteiro —, e some da lateral, que é o que acontece quando se
+ * puxa um pen drive. Sem o filtro, ejetar deixaria o dispositivo desenhado na
+ * tela, em cima de uma porta vazia.
  */
-export function PainelDeNavegacao(p: Omit<GalhoProps, 'n' | 'nivel'>) {
+export function PainelDeNavegacao(
+  p: Omit<GalhoProps, 'n' | 'nivel'> & { raizes?: No[] },
+) {
+  const raizes = p.raizes ?? p.arvore.filter(n => n.paiId === null);
   return (
     <div className="win-painel">
-      {p.arvore.filter(n => n.paiId === null).map(r => (
-        <Galho key={r.id} {...p} n={r} nivel={0} />
-      ))}
+      {raizes.map(r => <Galho key={r.id} {...p} n={r} nivel={0} />)}
     </div>
   );
 }
@@ -215,7 +222,10 @@ export function BarraDeEndereco({
       </div>
 
       {aoBuscar ? (
-        <button className="win-busca" onClick={aoBuscar} title="Pesquisar"
+        /* `ativa` é o que a mantém na tela estreita — o motivo está em
+           `CSS_WINDOWS`, junto da regra. */
+        <button className="win-busca ativa" onClick={aoBuscar} title="Pesquisar"
+          aria-label="Pesquisar"
           style={{ cursor: 'pointer', color: termoDaBusca ? '#1B1B1B' : undefined }}>
           <Search className="w-3.5 h-3.5" />
           <span className="truncate">
@@ -285,6 +295,16 @@ export interface LinhaProps {
   aoArrastar: (id: string | null) => void;
   aoPassarArrastando: (id: string | null) => void;
   aoSoltar: (id: string, copiando: boolean) => void;
+  /**
+   * O nome como a tela o escreve, quando ele não é o nome do arquivo.
+   *
+   * É o que permite o Explorador esconder a extensão, que é o padrão do
+   * Windows e a razão de o requisito 4.4 existir: com ela escondida, um
+   * arquivo chamado `foto.jpg.exe` aparece como `foto.jpg`. Esconder de
+   * verdade — e não desenhar uma dica escrita por cima — é o que faz a lição
+   * acontecer.
+   */
+  nomeVisivel?: string;
   /** O que a coluna Nome mostra à direita do nome. A CC-ES001 põe o rótulo da
       versão ali; a AP043 não põe nada. */
   complemento?: React.ReactNode;
@@ -326,7 +346,7 @@ export function LinhaDeArquivo(p: LinhaProps) {
           />
         ) : (
           <>
-            <span className="truncate">{n.nome}</span>
+            <span className="truncate">{p.nomeVisivel ?? n.nome}</span>
             {p.complemento}
           </>
         )}

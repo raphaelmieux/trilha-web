@@ -121,7 +121,7 @@ const HIERARQUIA: Spec[] = [
       return {
         passed: false,
         detail: fundo === 0
-          ? 'Nenhuma pasta nova ainda. Crie a do projeto e dê nome a ela.'
+          ? 'Nenhuma pasta nova ainda. Crie a pasta do projeto e dê um nome a ela.'
           : `A corrente mais funda tem ${fundo} ${fundo === 1 ? 'nível' : 'níveis'}. Faltam ${3 - fundo}.`,
       };
     },

@@ -1031,6 +1031,93 @@ alguns minutos em que o `deploy.yml` termina antes do `supabase.yml`, e ela não
 alcança ninguém: a vereda leva catorze lições para ser concluída, e
 `evaluateBadges` roda de novo na atividade seguinte de quem quer que seja.
 
+**A janela do Explorador saiu do laboratório que era dono dela.** Ela morava
+dentro de `FileManagerLab.tsx` — barra de endereço, painel de navegação,
+cabeçalhos, linha, os dois menus e a barra de tarefas —, tudo privado ao
+exercício da AP043. A CC-ES001 precisava de um segundo laboratório de
+Explorador, e copiar a janela é como a plataforma já teve dois "Word"
+diferentes uma vez. `explorer.tsx` é ela, extraída **antes** de a cópia
+existir: a mesma decisão de `word.tsx` e de `excel.tsx`, pelo motivo escrito
+nos dois.
+
+O que ficou em `explorer.tsx` é do **programa** — como uma linha se desenha, o
+que a barra de endereço tem. O que ficou em cada laboratório é do
+**exercício** — que comandos a barra oferece, que tarefas se cobram, de que
+disco se parte. Nenhuma peça
+guarda estado: uma janela com estado próprio obrigaria os dois lados a
+concordar sobre a mesma árvore, que é a forma mais rápida de mostrarem coisas
+diferentes.
+
+Por causa dela, `ehRaiz` passou a ler a árvore em vez de uma lista de três
+nomes. A CC-ES001 acrescenta duas raízes — o pen drive e o disco de cópia de
+segurança —, e a lista fixa diria que elas têm pai: arrastáveis, renomeáveis e
+excluíveis. Arrastar o pen drive para dentro de Documentos não estoura nada.
+Some o dispositivo, aparece uma pasta, e nada explica.
+
+**Um computador, sete lições.** Os sete laboratórios da CC-ES001 são o mesmo
+Explorador, e o disco de partida é um só — `discoDoClube()`. Quem abre o módulo
+5 reencontra a mesma Área de Trabalho bagunçada que o módulo 1 deixou, e é dela
+que a lição fala; sete discos diferentes ensinariam que cada exercício acontece
+numa máquina de mentira. É o arranjo do terminal da CC003, e vale o que está
+escrito lá: o disco não vem do currículo, porque um currículo que pudesse
+descrevê-lo poderia descrevê-lo com a hierarquia já montada.
+
+E o Explorador não ganha botão conforme o exercício: tem todos os comandos o
+tempo todo, porque é assim que um programa é. Um que só mostrasse "Compactar"
+na lição de compactar ensinaria a procurar o botão que a tarefa quer, e não a
+procurar no programa.
+
+**Três lugares onde o erro precisa poder acontecer.** "Abrir com" lista todos
+os programas e abre no que se escolher — errado, aparecem os bytes lidos como
+texto, que é o que de fato acontece, e não um aviso que o Windows não dá.
+Puxar o pen drive fica ao lado de Ejetar, porque no computador de verdade
+puxar não precisa de menu nenhum: é a mão, e esconder isso faria o requisito
+4.6 virar um botão com um caminho só. E renomear com a extensão escondida
+**guarda** a extensão, que é o que o Windows faz: gravar o que está no campo
+tiraria o `.jpg` de dez arquivos em silêncio, que é o defeito que o requisito
+4.4 existe para nomear.
+
+**O padrão de nomeação é próprio, e mesmo assim se confere.** O requisito 5
+pede padrão **próprio**, então a trava não pode ditar um. Ela reduz cada nome a
+um molde — números viram `#`, letras viram uma letra — e cobra dez no mesmo
+molde; **separadamente**, cobra de cada nome uma data e uma versão. As duas
+contas são necessárias e não se substituem: o molde é justamente o que apaga a
+diferença entre uma data e um número qualquer (`ata-2026-03-14-v01` e
+`ata-1-2-3-v03` têm o mesmo molde), e dez datados em dez moldes não ordenam.
+
+**Verificação que só existe como gesto é a exceção, e se justifica uma a uma.**
+O validador do Explorador lê o disco, e não o clique — apertar "Compactar" sem
+nada selecionado não faz pacote nenhum, e um teste de clique aprovaria. Quatro
+fogem disso porque não deixam marca: extrair um pacote cujo original continua
+lá dá uma árvore igual à de quem copiou à mão, restaurar da Lixeira devolve a
+árvore ao que ela era, e "Salvar como" grava um arquivo que qualquer caminho
+gravaria.
+
+E o contexto carrega o disco de agora **e** o de quando a lição abriu. Sem
+isso, o histórico de versões que o relatório já traz diria que alguém salvou
+por cima de um arquivo que nem abriu.
+
+**Trava de motor não é trava de tela.** `exploradorValidator.test.ts` prova que
+cada verificação pode ficar verde chamando o motor. Isso não prova que a janela
+chama alguma delas: um botão sem `onClick`, um menu que não abre, uma caixa de
+pesquisa que não pesquisa — o motor continua correto e o laboratório fica
+impossível de vencer, que é pior do que um que abre resolvido. Por isso as sete
+lições são levadas até o fim pelos mesmos cliques que o desbravador daria.
+
+**Peça que só funciona numa largura de tela é peça que some.** A caixa de
+pesquisa desaparece abaixo de 1024 px, e na AP043 isso é o certo — lá ela é
+enfeite. Na CC-ES001 ela é o requisito 4.3 inteiro, e sumir junto tirava o
+único caminho até a tarefa no celular. Ela encolhe para o ícone, como o
+Explorador de verdade faz, e quem diz qual das duas é qual é a presença de
+`aoBuscar`.
+
+Do mesmo dia: o diálogo do sistema subiu no celular, porque a cápsula de
+tarefas mora no canto de baixo e um diálogo centrado punha Cancelar e
+Confirmar debaixo dela — via-se o formulário inteiro e não se via como
+confirmar. A regra que o sobe vem **depois** da que o centra: as duas têm a
+mesma especificidade, e escrita antes ela não valeria nada, sem nada estourar.
+`explorer.test.ts` confere a ordem, e não só a existência da regra.
+
 **O programa da lição pode ter mais de um arquivo.** `arquivosDoProjeto`, na
 lição de laboratório de Python, é o que existe na pasta ao lado do que se
 digita: o CSV que a lição entrega para ser lido (só de leitura, como a
@@ -1541,6 +1628,10 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/maquinaDoClube.test.ts` | "abrir com" que mudou o padrão junto, ou usuário novo criado administrador |
 | `src/labs/ConfiguracoesLab.test.tsx` | caminho de Configurações que não leva à tarefa, ou botão de otimizar com o nome errado para o disco |
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
+| `src/lib/exploradorValidator.test.ts` | verificação do Explorador que nasce verde no disco do clube, ou que ninguém consegue vencer |
+| `src/labs/explorer.test.tsx` | peça da janela do Explorador que sumiu no recorte, ou pesquisa que some na tela estreita |
+| `src/labs/roteiroDaEstrutura.test.ts` | roteiro da apresentação que julga a organização alheia, ou que lê os arquivos um por um |
+| `src/components/LaboratorioDeExplorador.test.tsx` | lição da CC-ES001 impossível de vencer clicando, ou os dois Exploradores mostrando janelas diferentes |
 | `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
 | `src/components/ui/TokenNoCartao.test.tsx` | cartão que anuncia certificado e não leva a ele, ou que volta a ser uma âncora em volta de tudo |
