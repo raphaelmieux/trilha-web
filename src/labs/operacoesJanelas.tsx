@@ -154,6 +154,39 @@ export function JanelaWinRAR({ nomeDoArquivo, linhas, aoExtrair, aoAvisar, aoMin
  * menuzinho suspenso antes: praticava a decisão certa e ensinava a procurar no
  * lugar errado, porque no Word de verdade não existe menu suspenso ali.
  */
+/**
+ * A prévia de impressão deste laboratório.
+ *
+ * Ela morava dentro de `BastidoresDoWord`, que é a janela compartilhada: o
+ * segundo laboratório a abrir Imprimir mostraria a prévia do documento deste
+ * aqui. Prévia que diverge do documento é pior do que prévia nenhuma, e é o
+ * mesmo defeito do `LeitorDeVereda` que discorda do laboratório.
+ */
+function PreviaDoRelatorioDaUnidade() {
+  return (
+    <>
+      <div className="wd-previa-folha">
+        <p style={{ fontSize: 11, fontWeight: 700, textAlign: 'center', marginBottom: 8 }}>
+          Relatório da Unidade Falcão
+        </p>
+        <p style={{ marginBottom: 5 }}>
+          No primeiro semestre a unidade participou de quatro programações
+          do clube e de um acampamento de três dias no Parque das Águas.
+        </p>
+        <p style={{ marginBottom: 5 }}>
+          Oito desbravadores começaram especialidades novas, e cinco delas
+          foram concluídas antes do acampamento.
+        </p>
+        <p>
+          A unidade pede à diretoria duas barracas para a próxima saída, já
+          que uma das atuais teve a vareta quebrada na última chuva.
+        </p>
+      </div>
+      <p style={{ fontSize: 11.5, color: '#605E5C' }}>1 de 4 páginas</p>
+    </>
+  );
+}
+
 export function JanelaEditor({
   nome, pdfPronto, formato, aoMudarFormato, aoSalvar, aoSalvarComo, aoExportarPdf,
   imp, aoMudarImpressao, aoImprimir, aoAvisar, aoMinimizar, aoFechar,
@@ -199,6 +232,7 @@ export function JanelaEditor({
           aoMudarImpressao={aoMudarImpressao}
           aoImprimir={aoImprimir}
           aoAvisar={aoAvisar}
+          previaDaImpressao={<PreviaDoRelatorioDaUnidade />}
         />
       ) : (
         <div className="wd-janela">

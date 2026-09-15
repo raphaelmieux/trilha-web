@@ -341,7 +341,7 @@ export type LicaoDeVereda =
      * documento/metas conferir: sem ele ela olharia sempre para o mesmo, e a
      * lição nova escaparia da conferência sem nada acusar.
      */
-    documento: 'oficio' | 'circular' | 'relatorio' | 'anual' | 'revisao';
+    documento: 'oficio' | 'circular' | 'relatorio' | 'anual' | 'revisao' | 'entrega';
     /** Os ids das metas, na lista do documento acima. */
     verificacoes: string[];
   }
