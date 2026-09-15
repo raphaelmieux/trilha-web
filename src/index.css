@@ -46,20 +46,28 @@
   --color-tertiary-light: #4b69db;
   --color-tertiary-dim: rgba(75, 105, 219, 0.1);
 
-  /* ── Text hierarchy ──
-     Measured against the *worst* surface a panel produces, not the average. The
-     card is now a light grey at 50% alpha, so where a globe stroke passes behind
-     it the surface rises to rgb(57,57,61) — that is the pixel the text has to
-     survive, and it is seven times lighter than the old panel. Every level below
-     was raised to clear WCAG AA (4.5:1) against it; at the previous values
-     `muted` and `dim` measured 3.5:1 there, which would have been the price of
-     letting the background show through. `faint` is only used for disabled and
-     decorative elements, where AA does not apply. */
-  --color-text: #E8E8E8;       /* primary body text     — 12.9:1 */
-  --color-text-soft: #C6C6CC;  /* secondary text        —  8.9:1 */
-  --color-text-muted: #B0B0B8; /* labels, descriptions  —  5.2:1 */
-  --color-text-dim: #A8A8B2;   /* captions, meta        —  4.8:1 */
-  --color-text-faint: #6E6E78; /* disabled, blocked */
+  /* ── Escala de texto ──
+     Medida contra o pior pixel que o card produz, e não contra a média. O card
+     é um cinza claro a 50% de alfa, então a superfície dele é metade da cor
+     dele mais metade do que passa por trás — e o que passa por trás é o fundo
+     da plataforma. O pixel mais claro que o fundo pode entregar é a base do
+     moiré, rgb(29,29,29), o que põe a superfície do card em rgb(48.5,48.5,52.5)
+     — é esse o pixel que o texto tem de sobreviver.
+
+     Os números abaixo são contra ele. Eles subiram quando a textura do globo
+     saiu: o traço branco dela chegava a rgb(46,46,46) e levava a superfície a
+     rgb(57,57,61), meio ponto de razão abaixo de cada linha desta lista. Nada
+     foi afrouxado por causa disso — as cores continuam as mesmas, e o que mudou
+     foi o fundo ficar mais escuro. `faint` só veste elemento desabilitado e
+     decorativo, onde AA não se aplica.
+
+     `fundoDaPlataforma.test.ts` refaz esta conta a partir da folha publicada:
+     clarear o fundo sem mexer aqui derrubaria `dim` abaixo de AA em silêncio. */
+  --color-text: #E8E8E8;       /* texto corrido        — 10.7:1 */
+  --color-text-soft: #C6C6CC;  /* texto secundário     —  7.7:1 */
+  --color-text-muted: #B0B0B8; /* rótulos, descrições  —  6.1:1 */
+  --color-text-dim: #A8A8B2;   /* legendas, metadados  —  5.6:1 */
+  --color-text-faint: #6E6E78; /* desabilitado, bloqueado */
 
   /* ── Backgrounds ──
      The inner surfaces are translucent black rather than a solid near-black.
@@ -127,45 +135,132 @@
     color: var(--color-text);
   }
 
-  /* Ambient globe/network texture behind the whole app. It is a fixed layer so it
-     stays put while content scrolls, and it sits at z-index 0 with the app shell
-     lifted to 1 — putting it at -1 instead would hide it behind the body's own
-     background colour. Kept at very low opacity: it should read as texture, never
-     compete with text. */
-  body::before {
-    content: '';
+  /* ═══════════════════════════════════════════════════════════
+     O FUNDO DE TODA TELA
+     ═══════════════════════════════════════════════════════════
+     Duas grades de listras quase idênticas, giradas uma contra a outra. Onde as
+     listras de uma caem no vão da outra passa luz; onde coincidem, o `multiply`
+     fecha. O padrão que nasce dessa diferença é o moiré — e ele é grande
+     comparado às listras que o produzem: as listras têm 10px de período e a
+     franja vai de uns 80px, quando as duas grades estão no ângulo máximo uma da
+     outra, a uns 460px, quando elas se cruzam. É essa franja abrindo e fechando
+     que se vê; as listras em si somem na distância de leitura.
+
+     As duas camadas são quadrados de 150vmax girando ±3.5° sobre o próprio
+     centro, e é o tamanho que garante que nenhum canto entre em cena, em
+     proporção de tela nenhuma.
+
+     Os dois tempos, 34,67s e 44,67s, não têm divisor comum: o par leva dezenas
+     de horas para voltar à posição de partida, e ninguém reconhece um trecho
+     repetido. Períodos redondos — 30s e 45s — se reencontrariam a cada minuto e
+     meio.
+
+     `isolation: isolate` é o que faz o `multiply` funcionar: sem ele as camadas
+     multiplicariam contra o preto da página, e preto multiplica tudo em preto —
+     o fundo inteiro apagaria, sem erro em lugar nenhum. `contain: strict` faz a
+     mesma promessa por outro caminho e ainda tira a camada do cálculo de layout
+     do resto da página.
+
+     O pixel mais claro que isto pode produzir é a própria base, rgb(29,29,29):
+     o `multiply` e a vinheta só escurecem, e o granulado está em opacidade
+     zero. É esse número que sustenta a escala de texto declarada lá em cima, e
+     `fundoDaPlataforma.test.ts` refaz a conta em cima dele.
+
+     A marcação mora no `index.html`, e o motivo de morar lá está escrito lá. */
+  .moire {
     position: fixed;
     inset: 0;
     z-index: 0;
+    overflow: hidden;
+    isolation: isolate;
+    contain: strict;
+    background: #000;
     pointer-events: none;
-    background-image: url('./assets/bg-globe.svg');
-    background-repeat: no-repeat;
-    background-position: center 45%;
-    background-size: min(115vh, 115vw) auto;
-    /* The strokes are white, so this value is the grey they land on: 0.18 puts
-       them near RGB 46 on the bare page, and behind a panel at 50% alpha the
-       surface rises from RGB 34 to RGB 57 — a visible watermark, and the ceiling
-       that keeps `--color-text-dim` above 4.5:1 on the worst pixel of the panel.
-       Brighter artwork would cost readability, which is not a trade worth making
-       for a texture. */
-    opacity: 0.18;
   }
 
-  /* Soft radial vignette so the texture fades toward the edges instead of ending
-     on a hard circle. */
-  body::after {
-    content: '';
-    position: fixed;
+  .moire__base {
+    position: absolute;
     inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background: radial-gradient(
-      ellipse at center 45%,
-      transparent 0%,
-      transparent 45%,
-      var(--color-bg) 85%
+    background: rgb(29, 29, 29);
+  }
+
+  /* Camadas maiores que o viewport, giradas sobre o próprio eixo: nenhuma borda
+     entra em cena, em nenhuma proporção de tela. */
+  .moire__camada {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 150vmax;
+    height: 150vmax;
+    margin: -75vmax 0 0 -75vmax;
+    mix-blend-mode: multiply;
+    backface-visibility: hidden;
+  }
+
+  /* Os dois períodos diferem em 2,2%. Grades de período igual só produzem
+     moiré quando estão em ângulo, e no instante em que se cruzam a franja
+     sumiria; com a diferença, ela continua ali mesmo no cruzamento. */
+  .moire__camada--a {
+    background-image: repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.94) 0px,
+      rgba(0, 0, 0, 0.94) 0.7px,
+      transparent 4.3px,
+      transparent 5.7px,
+      rgba(0, 0, 0, 0.94) 9.3px,
+      rgba(0, 0, 0, 0.94) 10px
     );
-    opacity: 0.75;
+    animation: moire-pendulo 34.67s ease-in-out infinite alternate;
+  }
+
+  .moire__camada--b {
+    background-image: repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.94) 0px,
+      rgba(0, 0, 0, 0.94) 0.72px,
+      transparent 4.39px,
+      transparent 5.83px,
+      rgba(0, 0, 0, 0.94) 9.5px,
+      rgba(0, 0, 0, 0.94) 10.22px
+    );
+    animation: moire-pendulo-rev 44.67s ease-in-out infinite alternate;
+  }
+
+  @keyframes moire-pendulo {
+    from { transform: rotate(-3.5deg); }
+    to   { transform: rotate(3.5deg); }
+  }
+
+  @keyframes moire-pendulo-rev {
+    from { transform: rotate(3.5deg); }
+    to   { transform: rotate(-3.5deg); }
+  }
+
+  /* Fecha as bordas no preto. */
+  .moire__vinheta {
+    position: absolute;
+    inset: -2px;
+    background: radial-gradient(130% 100% at 50% 42%, transparent 30%, rgba(0, 0, 0, 0.62) 100%);
+  }
+
+  /* Granulado: dissolve o banding de 8 bits perto do preto. `stitchTiles` deixa
+     o ladrilho sem emenda. Vai desligado (opacidade zero) — a reserva está
+     escrita e medida, para o dia em que uma tela de 8 bits mostrar as faixas. */
+  .moire__grao {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    mix-blend-mode: screen;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+  }
+
+  /* Quem pediu menos movimento recebe o moiré parado, e não o fundo liso: as
+     duas grades ficam onde estão, defasadas de 2.2°, e a franja continua ali —
+     é o desenho, e não a animação, que faz o fundo. */
+  @media (prefers-reduced-motion: reduce) {
+    .moire__camada { animation: none; }
+    .moire__camada--b { transform: rotate(2.2deg); }
   }
 
   #root {
@@ -177,9 +272,9 @@
     O seletor de cores do Scratch fica **acima** da casca do aplicativo.
 
     A regra logo acima é o que exige esta. `#root` é posicionado e leva
-    `z-index: 1` para ficar por cima da textura do globo — e com isso ele vira
-    um contexto de empilhamento, pintado depois de todo irmão que não tenha
-    z-index próprio.
+    `z-index: 1` para ficar por cima do fundo, que é `.moire` em 0 — e com isso
+    ele vira um contexto de empilhamento, pintado depois de todo irmão que não
+    tenha z-index próprio.
 
     O editor de pintura do Scratch abre o seletor de cores num popover
     pendurado direto no `<body>`, irmão do `#root`, e o `react-popover` não põe
@@ -216,8 +311,9 @@
      composited to rgb(8,8,9), indistinguishable from an opaque card. The blur
      had nothing to blur.
      A light grey at 50% inverts that. The panel lands on rgb(34,34,38) where the
-     page is bare and rgb(57,57,61) where a globe stroke passes behind it, so the
-     artwork reads straight through the glass.
+     page is bare and rgb(48.5,48.5,52.5) over the lightest the moiré gets, so the
+     fringe reads straight through the glass — smeared by the 20px blur, which
+     is what keeps a 10px stripe pattern from fighting the text sitting on it.
      The two inset lines are what sells the material: a bright top edge reading as
      light catching the bevel, and a dark bottom edge as its thickness. Blur alone
      looks like plain transparency. */
@@ -353,10 +449,11 @@
     color: #111111 !important;
   }
 
-  /* The ambient globe texture is screen-only: on paper it would print as grey
-     smudges over the document and waste toner. */
-  body::before,
-  body::after {
+  /* O fundo é de tela, e nunca de papel. Ele é `position: fixed` cobrindo o
+     viewport inteiro, então no papel sairia como um retângulo quase preto por
+     cima da primeira página — gastando tinta para esconder o que se quis
+     imprimir. `fundoDaPlataforma.test.ts` cobra esta regra. */
+  .moire {
     display: none !important;
   }
 
