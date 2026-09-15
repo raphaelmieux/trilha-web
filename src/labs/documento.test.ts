@@ -4,6 +4,7 @@ import {
   trechoDe, blocoDe, linhaDe, textoDoBloco, titulosDoDoc, sumarioAtualizado,
   aplicarCaixa, NOMES_DA_CAIXA, paragrafos, paragrafosVazios, ehParagrafo,
   campoDe, numeroDoCampo, textoDoTrecho, blocoAntesDoSumario,
+  substituirTudo, BUSCA_CRUA, acrescentarComentario, comentariosDoDoc, textoVisivel,
   type Doc, type Estilo, type ModoDeCaixa,
 } from './documento';
 import { DOC_INICIAL, METAS_DOS_ESTILOS } from './metasDaAp044';
@@ -288,5 +289,49 @@ describe('onde o sumário pousa', () => {
     /* `null` é o topo, e é o que sobra: sem bloco não há o que ficar embaixo. */
     expect(blocoAntesDoSumario({ blocos: [], colunas: { unica: 1 }, sumario: null } as Doc<'unica'>))
       .toBe(null);
+  });
+});
+
+describe('substituir não desfaz o que a margem aponta', () => {
+  /*
+    Comentário se pendura em id de trecho, e a substituição parte o trecho em
+    pedaços. Renumerar todos faria a margem esvaziar sozinha na primeira
+    troca — sem erro nenhum, e sem nada explicando para onde foi a pergunta de
+    quem revisou.
+
+    O caso que erra é o do trecho que **começa** com a palavra procurada e é
+    trocado com o controle de alterações ligado: não há pedaço "de antes" para
+    herdar o id, e os dois pedaços que a marca produz nascem com nome novo. Nas
+    outras três combinações o id sobrevive sozinho, e é por isso que este se
+    testa aqui, construído — no documento da lição a palavra está no meio.
+  */
+  const comentado = (texto: string, marcando = false): Doc<'unica'> => {
+    const d: Doc<'unica'> = {
+      blocos: [{ ...linhaDe('p', 'unica', texto) }],
+      colunas: { unica: 1 },
+      sumario: null,
+      controlarAlteracoes: marcando,
+    };
+    return acrescentarComentario(d, {
+      id: 'c', trecho: 'p-a', autor: 'lideranca',
+      texto: 'confere isto?', respostas: [], resolvido: false,
+    });
+  };
+
+  it('o trecho que começa com a palavra trocada mantém o id, com o controle ligado', () => {
+    const d = substituirTudo(comentado('crianças de lenço novo', true), 'crianças',
+      'desbravadores', BUSCA_CRUA).doc;
+    const ids = paragrafos(d).flatMap(b => b.trechos.map(x => x.id));
+    expect(ids, 'o comentário ficou pendurado num trecho que não existe mais').toContain('p-a');
+    expect(comentariosDoDoc(d)[0].trecho).toBe('p-a');
+    expect(textoVisivel(d)).toBe('desbravadores de lenço novo');
+  });
+
+  it('e o trecho que tem a palavra no meio também', () => {
+    const d = substituirTudo(comentado('vieram crianças de lenço novo'), 'crianças',
+      'desbravadores', BUSCA_CRUA).doc;
+    const ids = paragrafos(d).flatMap(b => b.trechos.map(x => x.id));
+    expect(ids).toContain('p-a');
+    expect(textoDoBloco(paragrafos(d)[0])).toBe('vieram desbravadores de lenço novo');
   });
 });

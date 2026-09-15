@@ -1483,6 +1483,102 @@ cabeçalho vazio se repete em toda folha dizendo nada. É "zero link não é zer
 link quebrado" aplicado à faixa, e por isso `cabecalhoEscrito` olha o texto e
 não a existência.
 
+**O documento do módulo 5 tem duas autorias, e é o único.** Os quatro
+anteriores chegam errados e quem conserta é quem abre; este chega **já mexido
+por outra pessoa** — a liderança leu, marcou duas alterações e deixou uma
+pergunta na margem. É o requisito 5, e ele só existe com duas pessoas, o que
+obrigou `Autor` a entrar no modelo. Ele é união de dois valores e não o nome
+de quem quer que seja: com nome livre, "aceite as marcas da liderança" viraria
+comparação de texto, e um erro de digitação deixaria a tarefa impossível sem
+nada acusar.
+
+**A marca é do trecho, e não do parágrafo.** No Word o mesmo parágrafo tem
+palavra inserida, palavra riscada e palavra intocada ao mesmo tempo. Marca por
+parágrafo obrigaria a lição a riscar a frase inteira para trocar uma palavra,
+que é o contrário do que o recurso mostra. E nada disso é definitivo: um
+`'excluido'` continua na tela, riscado, e volta inteiro se for rejeitado — é a
+distância entre `textoDoDoc`, que responde pelo que foi digitado, e
+`textoVisivel`, que responde pelo que a página diz.
+
+**Aceitar e rejeitar são a mesma operação espelhada, e por isso são uma
+função.** Aceitar um inserido é tirar a marca e deixar o texto; aceitar um
+excluído é apagar o trecho, e rejeitar troca os dois. Escritas como dois `if`
+separados elas divergiram na primeira correção: aceitar deixou de apagar o
+excluído, e o texto riscado ficava no documento final sem marca nenhuma
+explicando por que estava ali.
+
+**Uma marca certa e uma errada, para que os dois botões grossos falhem.**
+Aceitar Todas e Rejeitar Todas estão na faixa porque um programa tem todos os
+comandos. Com a correção de um erro de digitação e uma troca de data que o
+próprio documento desmente em outros dois lugares, nenhum dos dois fecha a
+tarefa — e é isso que põe o desbravador a percorrer marca a marca, que é o que
+o recurso existe para ensinar. A evidência de qual rejeitar está **dentro do
+documento**: sem ela, rejeitar seria adivinhação.
+
+**A substituição precisa poder errar, e erra.** A teoria diz com todas as
+letras que o programa não protege — ele oferece as caixas. O documento traz a
+palavra no singular e no plural, e um Substituir Tudo sem "palavras inteiras"
+deixa "desbravadors" em dois lugares, de uma vez, sem nada avisar. Há dois
+caminhos certos, e não um: marcar a caixa e fazer duas passagens, ou trocar o
+**plural primeiro**, que funciona com as caixas desmarcadas. As quatro frases
+trocadas são escolhidas para sobreviver à troca — "cada", "quarenta e nove" e
+"mais de trinta" não têm gênero, e uma frase mal escolhida entregaria
+"Nenhuma desbravador", fazendo o exercício premiar um texto que ninguém
+entregaria.
+
+Três decisões da substituição são do Word e erram calado se invertidas. **O
+que está riscado não se substitui**: ele já saiu do texto, e trocar palavra
+dentro dele mudaria o texto que voltaria se alguém rejeitasse a marca. **Com o
+controle ligado a troca sai marcada**, porque o controle marca toda edição,
+inclusive a que se fez de uma vez em quatro lugares. E **o pedaço de antes fica
+com o id original**: comentário se pendura em id de trecho, e renumerar tudo
+faria a margem esvaziar sozinha na primeira substituição. Essa última só erra
+quando a palavra abre o trecho **e** o controle está ligado — nas outras três
+combinações o id sobrevive sozinho, e é por isso que ela se testa construída,
+em `documento.test.ts`.
+
+**Desfazer é peça desta lição, e não enfeite.** A teoria promete que o Ctrl+Z
+desfaz um Substituir Tudo inteiro e é a primeira coisa a apertar quando o
+documento fica estranho. Sem ele, a referência divergiria do que o laboratório
+faz — que é pior do que referência nenhuma —, e quem estragasse o texto só
+teria Recomeçar, que joga fora tudo o mais que já foi feito. A pilha guarda o
+documento inteiro a cada comando: é barato, e não tem como divergir do que está
+na tela.
+
+**Resolver é um clique, e responder não.** O comentário da liderança faz uma
+pergunta, e a meta exige a resposta **e** o resolvido: sem isso ela premiaria
+fechar o assunto sem dizer nada a quem perguntou — "zero link não é zero link
+quebrado" aplicado a uma conversa. Pelo mesmo motivo, rejeitar em silêncio não
+basta: a outra meta pede um comentário próprio no parágrafo da data, porque
+rejeitar sem explicar devolve o documento com a marca sumida e quem revisou
+achando que você não viu.
+
+**A cor do revisor vai inline, e a folha não alcança.** `aparenciaDoTrecho`
+devolve `style` inline — é ela que carrega a formatação direta —, e estilo
+inline vence classe. A regra de folha existia, media 7,3:1 e 5,4:1 sobre o
+papel branco, e **nunca chegava à tela**: as duas marcas saíam na cor do corpo
+do documento, com o traço e o sublinhado certos e a autoria dizendo nada. Quem
+viu foi o Chromium; no jsdom não há cascata para atropelar, então o que se
+testa é a promessa — a cor está no elemento, e não à espera de uma regra. É a
+irmã do `float` ignorado em item de flex, e do `\t` colapsado.
+
+E é riscado **e** sublinhado, além da cor: quem não distingue as duas cores
+continua vendo o traço. Mesma razão de a insígnia ter forma e cor.
+
+**A margem de revisão é irmã da folha, e não filha.** No Word os balões ficam
+fora do papel: desenhá-los dentro faria o comentário sair na impressão e
+empurrar o texto, que é justamente o que a lição diz que ele não faz. No
+celular não há 210 px de sobra ao lado, e ela desce para baixo do papel
+**inteira** — esconder os balões tiraria o único caminho até duas das cinco
+tarefas, e reduzir a tela nunca reduz o que dá para fazer nela.
+
+**Comando sem alvo escolhido não age.** Aceitar e Rejeitar sem marca
+selecionada avisam, em vez de agir na primeira pendente: agir pareceria
+funcionar e resolveria a marca errada — a pessoa clicaria pensando no nome do
+clube e aceitaria a data. É a mesma decisão do "selecione primeiro" do
+laboratório de Word e do cursor na célula do módulo 3, e nenhum teste de motor
+a sente.
+
 **Despacho de três telas não é ternário.** Com dois documentos de Word o
 `documento === 'circular' ? A : B` funcionava; com três, o `else` passa a ser
 "todo o resto" e um documento novo cairia calado no laboratório do módulo 1 —
@@ -2005,6 +2101,12 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDoRelatorio.test.tsx` | bloco solto na folha de flex, onde o float é ignorado e três disposições viram uma |
 | `src/labs/relatorioAnual.test.ts` | número de página digitado valendo por campo, ou cabeçalho vazio valendo por escrito |
 | `src/labs/relatorioAnual.test.ts` | título empurrado de folha sem envelhecer o sumário, que passa a apontar para a folha errada |
+| `src/labs/diaDoDesbravador.test.ts` | Aceitar Todas fechando a tarefa, ou documento sem plural para o Substituir Tudo estragar |
+| `src/labs/diaDoDesbravador.test.ts` | comentário resolvido sem resposta, ou substituição que mexe no texto riscado |
+| `src/labs/documento.test.ts` | substituição que renumera o trecho comentado e deixa a margem pendurada em nada |
+| `src/components/LaboratorioDaRevisao.test.tsx` | Aceitar que age na primeira marca pendente em vez da escolhida |
+| `src/components/LaboratorioDaRevisao.test.tsx` | cor do revisor que fica na folha e não no elemento, e some debaixo do estilo inline |
+| `src/components/LaboratorioDaRevisao.test.tsx` | Substituir Tudo que não estraga na tela, ou Desfazer que não devolve o documento |
 | `src/components/LaboratorioDoRelatorioAnual.test.tsx` | folha que para de repartir, onde o cabeçalho não tem onde se repetir |
 | `src/components/LaboratorioDoRelatorioAnual.test.tsx` | campo de página que aceita ser digitado por cima, ou posto ao lado do número errado |
 | `src/components/LaboratorioDoRelatorioAnual.test.tsx` | sumário desenhado acima do título do documento, ou repetido em toda folha |
