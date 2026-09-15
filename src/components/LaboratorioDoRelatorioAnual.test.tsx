@@ -288,3 +288,39 @@ describe('o sumário guarda a folha, e ela anda', () => {
     expect(linhasDoSumario().some(l => l.includes(SECAO_QUE_FALTA.titulo))).toBe(true);
   });
 });
+
+describe('o sumário fica embaixo do título', () => {
+  /*
+    Ele abria a folha 1, acima do nome do relatório: quem abre o documento lia
+    a lista das seções antes de saber de que documento elas eram.
+
+    A trava olha a **ordem no DOM**, e não a existência do sumário. É o tipo de
+    defeito que nenhuma outra trava daqui sente: as cinco metas ficam verdes do
+    mesmo jeito, as folhas do sumário continuam certas, e o único sinal é a
+    tela. Voltar o sumário para o topo da folha não quebraria mais nada.
+  */
+  const naFolha1 = () => {
+    const folha = container.querySelector('[data-pagina="1"]')!;
+    return [...folha.querySelectorAll('[data-bloco], .wd-sumario')]
+      .map(e => e.getAttribute('data-bloco') ?? 'SUMÁRIO');
+  };
+
+  it('vem depois do título e das linhas que viajam com ele', () => {
+    montar();
+    clicar(guia('Referências'), 'a guia Referências');
+    clicar(comando('Sumário'), 'Sumário');
+
+    expect(naFolha1(), 'o sumário saiu de baixo do título da folha 1')
+      .toEqual(['titulo', 'clube', 'entrega', 'SUMÁRIO']);
+  });
+
+  it('e a folha 2 não ganha um sumário só por ser folha', () => {
+    /* Ele é um só, e mora onde foi gerado. Desenhá-lo em toda folha daria
+       quatro sumários iguais num documento que tem um. */
+    montar();
+    clicar(guia('Referências'), 'a guia Referências');
+    clicar(comando('Sumário'), 'Sumário');
+
+    expect(container.querySelectorAll('.wd-sumario').length).toBe(1);
+  });
+});

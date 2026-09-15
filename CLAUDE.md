@@ -1460,6 +1460,24 @@ envelhece primeiro num documento de verdade: acrescentar uma seção no meio
 empurra todas as seguintes sem mudar uma palavra de título nenhum, e um sumário
 que só comparasse texto e nível continuaria se dizendo em dia.
 
+**E ele fica embaixo do título, e quem diz isso é a seção.** Ele abria a folha
+1, acima do nome do documento: quem abre o relatório lia a lista das seções
+antes de saber de que documento elas eram. `sumario` é campo do documento e não
+bloco posicionado — ele guarda o que leu, e isso não muda —, então a posição sai
+de uma regra, e a regra é a `secao`: o sumário fecha a **abertura**, que é o
+título e as linhas que viajam com ele.
+
+Ela não pergunta por título de propósito. O ofício do módulo 1 chega com os
+cinco títulos em negrito à mão e nenhum com estilo — é o defeito que a lição
+existe para mostrar —, e uma regra que procurasse estilo de título não acharia
+nenhum: jogaria o sumário vazio no pé da última folha, que é justamente onde
+ninguém lê "Nenhuma entrada de sumário foi encontrada". A `secao` responde o
+mesmo antes e depois de os estilos entrarem, então o sumário também não muda de
+lugar enquanto se trabalha nele.
+
+E a trava é de **ordem no DOM**, e não de existência: voltar o sumário para o
+topo deixa as cinco metas verdes, as folhas certas e nada mais reclamando.
+
 **Faixa aberta e nunca escrita não conta.** Abrir o cabeçalho é um clique, e um
 cabeçalho vazio se repete em toda folha dizendo nada. É "zero link não é zero
 link quebrado" aplicado à faixa, e por isso `cabecalhoEscrito` olha o texto e
@@ -1969,6 +1987,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/relatorioAnual.test.ts` | título empurrado de folha sem envelhecer o sumário, que passa a apontar para a folha errada |
 | `src/components/LaboratorioDoRelatorioAnual.test.tsx` | folha que para de repartir, onde o cabeçalho não tem onde se repetir |
 | `src/components/LaboratorioDoRelatorioAnual.test.tsx` | campo de página que aceita ser digitado por cima, ou posto ao lado do número errado |
+| `src/components/LaboratorioDoRelatorioAnual.test.tsx` | sumário desenhado acima do título do documento, ou repetido em toda folha |
+| `src/labs/documento.test.ts` | regra do sumário que só acha a abertura quando existe estilo de título |
 | `src/components/LaboratorioDaCircular.test.tsx` | botão ¶ que liga o estado e não desenha marca nenhuma, ou Excluir que apaga parágrafo com texto |
 | `src/labs/EstilosTextoLab.test.tsx` | botão do laboratório de estilos que não chega ao documento, ou sumário velho valendo por novo |
 | `src/labs/BancoDeDadosLab.test.tsx` | assistente de importação que já chega com o mapeamento certo, ou relatório sem os quatro campos |

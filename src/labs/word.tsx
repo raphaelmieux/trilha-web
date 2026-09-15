@@ -23,9 +23,11 @@ import {
  * ensinaria a procurar no lugar errado.
  */
 
+import { Fragment } from 'react';
+
 import {
   aparenciaDe, aparenciaDoTrecho, textoDoTrecho, larguraDaTabela,
-  paginasDoDoc,
+  paginasDoDoc, blocoAntesDoSumario,
   type Doc, type Bloco, type Paragrafo, type TabelaDoDoc, type ImagemDoDoc,
   type Disposicao, type ItemDeSumario, type FaixaDaPagina,
 } from './documento';
@@ -767,8 +769,10 @@ export const CSS_FOLHA = `
      métrica da fonte, e um valor na beirada viraria "alinhado" noutra máquina
      sem nada acusar. */
   .wd-tab { white-space: pre-wrap; tab-size: 32; }
+  /* Margem dos dois lados: ele deixou de abrir a folha e passou a ficar entre
+     blocos, embaixo do título. Só embaixo o encostaria no que vem antes. */
   .wd-sumario {
-    border: 1px solid #D1D1D1; padding: 8px 10px; margin-bottom: 12px;
+    border: 1px solid #D1D1D1; padding: 8px 10px; margin: 12px 0;
     font-size: 10.5px; color: #201F1E;
   }
   .wd-sumario-linha { display: flex; gap: 6px; align-items: baseline; }
@@ -1218,6 +1222,9 @@ export function FolhaDoWord({
   aoEscreverNaFaixa?: (onde: 'cabecalho' | 'rodape', trechoId: string, valor: string) => void;
 }) {
   const paginas = paginasDoDoc(doc);
+  /* Embaixo do título, e não acima dele: quem fecha a abertura é quem carrega
+     o sumário logo depois. `null` só acontece em folha sem bloco nenhum. */
+  const fechaAAbertura = doc.sumario ? blocoAntesDoSumario(doc) : null;
   return (
     <div className="wd-canvas" onClick={aoClicarNoVazio}>
       {paginas.map((blocos, i) => {
@@ -1234,9 +1241,11 @@ export function FolhaDoWord({
                   aoEscrever={aoEscreverNaFaixa
                     ? (id, valor) => aoEscreverNaFaixa('cabecalho', id, valor) : undefined} />
               )}
-              {/* O sumário mora na primeira folha, que é onde ele é gerado. */}
-              {numero === 1 && doc.sumario && <SumarioDaFolha itens={doc.sumario} />}
               <div className="wd-corpo">
+                {/* Folha sem bloco nenhum: não há abertura para fechar. */}
+                {numero === 1 && doc.sumario && fechaAAbertura === null && (
+                  <SumarioDaFolha itens={doc.sumario} />
+                )}
                 {blocos.map((b) => {
                   const dentro = doc.blocos.indexOf(b);
                   const anterior = doc.blocos[dentro - 1];
@@ -1244,18 +1253,23 @@ export function FolhaDoWord({
                     && anterior?.tipo === 'imagem'
                     && DISPOSICOES_QUE_FLUTUAM.includes(anterior.disposicao);
                   return (
-                    <BlocoDaFolha
-                      key={b.id} doc={doc} bloco={b}
-                      escolhido={selecionado === b.id}
-                      marcas={marcas}
-                      aoEscolher={aoEscolher ? () => aoEscolher(b.id) : undefined}
-                      celula={selecionado === b.id ? celula : null}
-                      aoCursorNaCelula={aoCursorNaCelula
-                        ? (linha, coluna) => aoCursorNaCelula(b.id, linha, coluna) : undefined}
-                      aoEditarCelula={aoEditarCelula
-                        ? (linha, coluna, valor) => aoEditarCelula(b.id, linha, coluna, valor) : undefined}
-                      classe={flutuaComAFigura ? 'wd-legenda-flutua' : undefined}
-                    />
+                    <Fragment key={b.id}>
+                      <BlocoDaFolha
+                        doc={doc} bloco={b}
+                        escolhido={selecionado === b.id}
+                        marcas={marcas}
+                        aoEscolher={aoEscolher ? () => aoEscolher(b.id) : undefined}
+                        celula={selecionado === b.id ? celula : null}
+                        aoCursorNaCelula={aoCursorNaCelula
+                          ? (linha, coluna) => aoCursorNaCelula(b.id, linha, coluna) : undefined}
+                        aoEditarCelula={aoEditarCelula
+                          ? (linha, coluna, valor) => aoEditarCelula(b.id, linha, coluna, valor) : undefined}
+                        classe={flutuaComAFigura ? 'wd-legenda-flutua' : undefined}
+                      />
+                      {numero === 1 && doc.sumario && b.id === fechaAAbertura && (
+                        <SumarioDaFolha itens={doc.sumario} />
+                      )}
+                    </Fragment>
                   );
                 })}
               </div>

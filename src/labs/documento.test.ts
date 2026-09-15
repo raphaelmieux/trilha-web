@@ -3,10 +3,12 @@ import {
   APARENCIA_DO_ESTILO, NIVEL_DO_TITULO, ehTitulo,
   trechoDe, blocoDe, linhaDe, textoDoBloco, titulosDoDoc, sumarioAtualizado,
   aplicarCaixa, NOMES_DA_CAIXA, paragrafos, paragrafosVazios, ehParagrafo,
-  campoDe, numeroDoCampo, textoDoTrecho,
+  campoDe, numeroDoCampo, textoDoTrecho, blocoAntesDoSumario,
   type Doc, type Estilo, type ModoDeCaixa,
 } from './documento';
 import { DOC_INICIAL, METAS_DOS_ESTILOS } from './metasDaAp044';
+import { OFICIO_INICIAL } from './oficioDoClube';
+import { RELATORIO_ANUAL_INICIAL } from './relatorioAnual';
 
 /*
   O modelo de documento, depois de ele sair do arquivo de metas da AP044.
@@ -230,5 +232,61 @@ describe('os blocos que não são parágrafo', () => {
     /* Zero, e não 1: não há posição para contar, e devolver 1 afirmaria uma
        posição que não existe. */
     expect(numeroDoCampo(comImagemETabela, 'nao-existe')).toBe(0);
+  });
+});
+
+describe('onde o sumário pousa', () => {
+  /*
+    Ele abria a folha, acima do nome do documento: o leitor via a lista das
+    seções antes de saber de que documento elas eram. Agora fecha a abertura —
+    embaixo do título e das linhas que viajam com ele.
+
+    As duas travas daqui são o mesmo defeito por dois lados. Uma regra que
+    procurasse parágrafo com estilo de título acertaria o relatório anual e
+    erraria calada no ofício, que chega com os cinco títulos em negrito à mão e
+    nenhum com estilo — o sumário vazio iria para o pé da última folha, que é
+    onde ninguém lê a mensagem que a lição do módulo 1 existe para mostrar.
+  */
+
+  it('fecha a abertura do relatório anual, e não abre a folha', () => {
+    /* A folha 1 é título, clube e entrega, todos na seção de abertura: o
+       sumário vem depois dos três. */
+    expect(blocoAntesDoSumario(RELATORIO_ANUAL_INICIAL),
+      'o sumário não está embaixo do título do relatório').toBe('entrega');
+  });
+
+  it('acha a abertura do ofício mesmo sem um título com estilo', () => {
+    /* Nenhum parágrafo do ofício tem estilo de título — é o defeito do módulo
+       1. A resposta tem de sair mesmo assim, e sair antes da primeira seção. */
+    const semEstiloDeTitulo = paragrafos(OFICIO_INICIAL).every(b => !ehTitulo(b.estilo));
+    expect(semEstiloDeTitulo,
+      'o ofício ganhou estilo de título e esta trava parou de medir o caso sem título').toBe(true);
+
+    expect(blocoAntesDoSumario(OFICIO_INICIAL),
+      'o sumário do ofício saiu de baixo do título').toBe('periodo');
+  });
+
+  it('a abertura é o começo da folha, e não toda ocorrência da seção nela', () => {
+    /*
+      Seção que volta mais adiante: o sumário tem de parar na primeira mudança.
+      Um filtro pela seção inteira o empurraria para o meio do conteúdo, entre
+      dois parágrafos que não têm nada a ver com ele, e nada acusaria.
+    */
+    const comSecaoQueVolta: Doc<'capa' | 'corpo'> = {
+      blocos: [
+        linhaDe('t', 'capa', 'Relatório'),
+        linhaDe('c1', 'corpo', 'O acampamento foi em junho.'),
+        linhaDe('t2', 'capa', 'Uma linha de capa perdida no meio.'),
+      ],
+      colunas: { capa: 1, corpo: 1 },
+      sumario: null,
+    };
+    expect(blocoAntesDoSumario(comSecaoQueVolta)).toBe('t');
+  });
+
+  it('folha sem bloco nenhum não tem abertura para fechar', () => {
+    /* `null` é o topo, e é o que sobra: sem bloco não há o que ficar embaixo. */
+    expect(blocoAntesDoSumario({ blocos: [], colunas: { unica: 1 }, sumario: null } as Doc<'unica'>))
+      .toBe(null);
   });
 });

@@ -680,6 +680,45 @@ export function sumarioAtualizado(d: Doc<string>): boolean {
     && x.pagina === d.sumario![i].pagina);
 }
 
+/**
+ * Depois de que bloco da primeira folha o sumário se desenha.
+ *
+ * No Word o sumário é um campo posto onde o cursor está, e quem o põe o põe
+ * embaixo do título: ele é a porta do documento, e um sumário acima do nome do
+ * documento anuncia o que o leitor ainda não sabe o que é. Aqui `sumario` é
+ * campo do documento e não bloco posicionado — pela razão escrita no alto
+ * deste arquivo —, então a posição sai de uma regra.
+ *
+ * A regra é a `secao`: o sumário fecha a **abertura**, que é o título e as
+ * linhas que viajam com ele, e vem antes da primeira seção de conteúdo.
+ *
+ * Ela não pergunta por título de propósito. O documento do módulo 1 chega sem
+ * um único parágrafo com estilo de título — é o defeito que a lição existe
+ * para mostrar —, e uma regra que procurasse o título não acharia nenhum:
+ * jogaria o sumário vazio no pé da última folha, que é justamente onde ninguém
+ * vai ler "Nenhuma entrada de sumário foi encontrada". A `secao` responde o
+ * mesmo antes e depois de os estilos entrarem, então o sumário não muda de
+ * lugar enquanto se trabalha nele.
+ *
+ * A abertura é o **começo** da folha, e não toda ocorrência daquela seção
+ * nela: o laço para na primeira mudança. Uma seção que voltasse mais adiante
+ * empurraria o sumário para o meio do conteúdo, sem nada acusar.
+ *
+ * Devolve o id do bloco depois do qual ele vai, ou `null` para o topo — que é
+ * o que sobra numa folha sem bloco nenhum.
+ */
+export function blocoAntesDoSumario<S extends string>(d: Doc<S>): string | null {
+  const primeira = paginasDoDoc(d)[0];
+  if (primeira.length === 0) return null;
+  const abertura = primeira[0].secao;
+  let ultimo = primeira[0];
+  for (const b of primeira) {
+    if (b.secao !== abertura) break;
+    ultimo = b;
+  }
+  return ultimo.id;
+}
+
 /* ── O botão Aa ───────────────────────────────────────────────────────────── */
 
 /** Os cinco modos do botão Aa do Word, com os nomes que ele usa. */
