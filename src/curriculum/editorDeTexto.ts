@@ -479,6 +479,20 @@ export const MODULOS_DO_EDITOR: ModuloDeVereda[] = [
         resumo: 'A decisão local, a decisão com nome, e os dois problemas que separam as duas.',
         topicos: FORMATAR,
       },
+      {
+        /*
+          O requisito 6 inteiro, mais o 4.1 e o 8.
+
+          O documento chega formatado à mão e parece pronto. Consertá-lo é
+          trocar cada decisão local por uma com nome, sem mexer no texto — e a
+          prova de que valeu a pena é o último gesto: modificar a definição de
+          Título 2 e as quatro seções mudarem juntas.
+        */
+        id: 'm1-lab', tipo: 'word',
+        titulo: 'Consertando o relatório do clube',
+        resumo: 'Um relatório formatado inteiro à mão, e a troca por estilos sem mudar uma palavra.',
+        verificacoes: ['titulos', 'citacao-legenda', 'limpar', 'modificar', 'sumario'],
+      },
     ],
   },
   {
