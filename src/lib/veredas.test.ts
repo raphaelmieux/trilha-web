@@ -33,6 +33,7 @@ import { PASSOS_DE_PYTHON } from '../labs/passosDePython';
 import { ROTEIROS } from '../labs/redacaoGuiada';
 import { OFICIO_INICIAL, METAS_DO_OFICIO } from '../labs/oficioDoClube';
 import { CIRCULAR_INICIAL, METAS_DA_CIRCULAR, gestosVazios as gestosDaCircular } from '../labs/circularDoClube';
+import { RELATORIO_INICIAL, METAS_DO_RELATORIO } from '../labs/relatorioDoAcampamento';
 
 /*
   Os laboratórios de Word partem de documentos diferentes, e a trava precisa
@@ -53,6 +54,11 @@ const DOCUMENTOS_DE_WORD = {
       id: m.id,
       passos: m.passos,
       feita: () => m.feita({ doc: CIRCULAR_INICIAL, gestos: gestosDaCircular() }),
+    })),
+  },
+  relatorio: {
+    metas: METAS_DO_RELATORIO.map(m => ({
+      id: m.id, passos: m.passos, feita: () => m.feita(RELATORIO_INICIAL),
     })),
   },
 } as const;

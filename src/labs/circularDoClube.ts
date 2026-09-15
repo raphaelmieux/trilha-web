@@ -1,5 +1,5 @@
 import {
-  linhaDe, textoDoBloco, textoDoDoc, paragrafosVazios,
+  linhaDe, textoDoBloco, textoDoDoc, paragrafosVazios, paragrafos,
   type Doc as DocDoWord, type Bloco as BlocoDoWord,
 } from './documento';
 
@@ -117,7 +117,7 @@ const um = (d: Doc, id: string) => d.blocos.find(b => b.id === id);
 
 /** O endereço virou um parágrafo só, com as três linhas dentro dele. */
 export function enderecoNumBlocoSo(d: Doc): boolean {
-  const doEndereco = d.blocos.filter(b => b.secao === 'endereco');
+  const doEndereco = paragrafos(d).filter(b => b.secao === 'endereco');
   if (doEndereco.length !== 1) return false;
   const [b] = doEndereco;
   /* Três linhas lógicas, e as duas de baixo entrando por quebra — não basta

@@ -4,7 +4,7 @@ import {
   gestosVazios, metaDaVez, enderecoNumBlocoSo,
   type Doc, type ContextoDaCircular,
 } from './circularDoClube';
-import { paragrafosVazios, linhaDe, trechoDe, textoDoBloco } from './documento';
+import { paragrafosVazios, linhaDe, trechoDe, textoDoBloco, paragrafos } from './documento';
 
 /*
   A circular do módulo 2, e as cinco metas que a consertam.
@@ -89,7 +89,7 @@ describe('a circular abre por consertar', () => {
 
   it('nenhum trecho chega com quebra de linha, e nenhum bloco com quebra de página', () => {
     // Se chegassem, a lição teria a resposta desenhada dentro dela.
-    expect(CIRCULAR_INICIAL.blocos.some(b => b.trechos.some(x => x.quebra))).toBe(false);
+    expect(paragrafos(CIRCULAR_INICIAL).some(b => b.trechos.some(x => x.quebra))).toBe(false);
     expect(CIRCULAR_INICIAL.blocos.some(b => b.quebraDePagina)).toBe(false);
   });
 
@@ -152,7 +152,7 @@ describe('juntar o endereço é quebra de linha, e não texto corrido', () => {
     const semQuebra = juntarEndereco(CIRCULAR_INICIAL);
     const sem: Doc = {
       ...semQuebra,
-      blocos: semQuebra.blocos.map(b => (b.secao === 'endereco'
+      blocos: semQuebra.blocos.map(b => (b.secao === 'endereco' && b.tipo === 'paragrafo'
         ? { ...b, trechos: b.trechos.map(({ quebra, ...x }) => { void quebra; return x; }) }
         : b)),
     };

@@ -20,6 +20,7 @@ import LaboratorioDeTerminal from '../components/LaboratorioDeTerminal';
 import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
+import LaboratorioDoRelatorio from '../components/LaboratorioDoRelatorio';
 import LaboratorioDePython from '../components/LaboratorioDePython';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -223,15 +224,29 @@ export default function VeredaPage() {
     sumário está em dia com os títulos.
   */
   if (licaoAberta?.tipo === 'word' && profile?.id) {
-    /* Qual dos dois abre sai do `documento` da lição, e não do id dela: o id é
-       do módulo, e amarrar a tela a ele faria o terceiro laboratório de Word
-       pedir um `if` novo aqui em vez de um campo no currículo. */
-    return licaoAberta.documento === 'circular' ? (
-      <LaboratorioDaCircular vereda={vereda} licao={licaoAberta}
-        aoVencer={vencer} aoSair={fechar} />
-    ) : (
-      <LaboratorioDeWord vereda={vereda} licao={licaoAberta}
-        aoVencer={vencer} aoSair={fechar} />
+    /*
+      Qual deles abre sai do `documento` da lição, e não do id dela: o id é do
+      módulo, e amarrar a tela a ele faria cada laboratório de Word novo pedir
+      um `if` aqui em vez de um campo no currículo.
+
+      E é uma tabela, e não uma escada de ternários. Com dois documentos o
+      ternário funcionava; com três, o `else` passa a ser "todo o resto", e um
+      documento novo cairia calado no laboratório do módulo 1 — o desbravador
+      abriria a lição certa e encontraria o documento errado. A tabela é
+      `Record` sobre a união, então o quarto documento não compila até ter
+      tela: é a mesma decisão do `switch` exaustivo das travas da vereda.
+    */
+    const TELA_DO_DOCUMENTO: Record<
+      Extract<LicaoDeVereda, { tipo: 'word' }>['documento'],
+      typeof LaboratorioDeWord
+    > = {
+      oficio: LaboratorioDeWord,
+      circular: LaboratorioDaCircular,
+      relatorio: LaboratorioDoRelatorio,
+    };
+    const Tela = TELA_DO_DOCUMENTO[licaoAberta.documento];
+    return (
+      <Tela vereda={vereda} licao={licaoAberta} aoVencer={vencer} aoSair={fechar} />
     );
   }
 

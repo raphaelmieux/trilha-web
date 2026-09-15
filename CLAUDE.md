@@ -1327,6 +1327,90 @@ de linha faz, e o defeito só apareceu no navegador. A correção não foi pôr 
 quebra: com ela, o documento chegaria com a resposta do endereço desenhada
 dentro dele. Virou uma linha só.
 
+**Tabela e imagem não são parágrafo, e o bloco virou união.** O `Bloco` tinha
+`trechos` e ponto, e o módulo 3 da CC-ES002 precisa dos dois. Pendurar
+`tabela?:` dentro do parágrafo deixaria representável o parágrafo que é tabela
+**e** tem trechos, que não existe, e cada leitor teria de lembrar qual dos dois
+vale. Hoje `Bloco` é `Paragrafo | TabelaDoDoc | ImagemDoDoc`, discriminado por
+`tipo`, com o que é comum — `id`, `secao`, `quebraDePagina` — numa base.
+
+O compilador apontou os vinte e seis lugares que supunham parágrafo, e a
+correção quase sempre foi pedir `paragrafos(d)` ao modelo em vez de
+`d.blocos`. Dois deles importavam: `paragrafosVazios` contaria a imagem, que
+não tem texto nenhum — e aí a meta do módulo 2 passaria a exigir que se
+apagasse a foto para ficar verde; e `titulosDoDoc` leria estilo de um bloco que
+não tem.
+
+A legenda, essa, **é** parágrafo: no Word ela é um parágrafo de estilo Legenda
+com um campo dentro. Pendurá-la na imagem tiraria dela o estilo, e com ele o
+índice de figuras e metade do requisito 4.3.
+
+**A legenda é campo, e campo não guarda número.** É a armadilha inteira do
+requisito 4.3: quem digita "Figura 1" entrega um documento em que a Figura 2
+vem antes da Figura 1 depois da primeira revisão, e nada avisa. `Trecho.campo`
+é `'figura' | 'tabela'` e o `texto` dele fica **vazio** — o número sai de
+`numeroDoCampo`, que é a posição dele entre os campos do mesmo tipo na ordem do
+documento. Um campo que gravasse `'Figura 1'` seria texto digitado com outro
+nome.
+
+Figura e tabela contam em séries separadas, como no Word: a Figura 1 e a
+Tabela 1 convivem, e contar tudo junto daria "Tabela 2" à primeira tabela do
+documento — um número plausível apontando para nada.
+
+São duas leituras, e é de propósito: `textoDoBloco` devolve o que foi
+**digitado** (é ele que responde por "sem alterar uma palavra do texto") e
+`textoDoTrecho` devolve o que se **lê**. A distância entre as duas é a lição —
+na legenda digitada elas dizem a mesma coisa, e é por isso que ela não se
+corrige sozinha.
+
+E o que separa as duas na tela é o **sombreado cinza do campo**, que é do Word
+e não nosso. Sem ele as duas legendas ficam idênticas e a diferença só existe
+dentro do modelo; um aviso da plataforma poria na nossa tela a resposta que o
+programa imitado já dá na dele.
+
+**A tabulação some no HTML, e com ela o defeito que a lição mostra.** A lista
+de inscritos do módulo 3 chega alinhada com Tab — é o defeito do requisito 4.2,
+e o único dos três documentos da vereda que se vê na primeira olhada. Só que
+`white-space: normal` colapsa `\t` num espaço, e a lista saía **reta**: o
+exercício virava "converta porque a tarefa mandou".
+
+O jsdom não denuncia — lá o `\t` continua no `textContent`, e a trava passava.
+Quem viu foi o Chromium. `.wd-tab` liga `pre-wrap` e uma `tab-size` medida:
+de 28 a 38 os quatro nomes curtos param na mesma coluna e só o comprido salta
+para a parada seguinte. Ficou 32, no meio da faixa, porque o número depende da
+métrica da fonte e um valor na beirada viraria "alinhado" noutra máquina sem
+nada acusar.
+
+**Float não vale em item de flex.** A folha é `display: flex` por causa da
+altura mínima dela, e com os blocos soltos ali dentro o navegador ignora o
+`float` — Quadrada e Próxima prometiam que o texto contorna a imagem e faziam
+exatamente o que Acima e Abaixo faz. Três das seis disposições idênticas, sem
+erro nenhum, numa lição cujo assunto **é** a diferença entre elas. Os blocos
+moram num `.wd-corpo` comum dentro do flex, e o float volta a valer entre
+irmãos.
+
+Da mesma volta: a legenda de uma figura que flutua flutua junto, na largura
+dela. Sem isso ela é um parágrafo comum depois do float, e o "Figura 1 — ..."
+sai ao lado da foto em vez de embaixo — com cara de documento mal montado pelo
+desbravador, e não de defeito nosso.
+
+**"Ajustar ao texto" não é qualquer disposição.** Atrás e à frente tiram a
+imagem da linha, o que parece resolver, e é o contrário do que o requisito
+pede: elas fazem o texto **ignorar** a imagem. É a família do "abrir com" que
+não é "definir padrão". As seis existem no menu, porque um programa tem todos
+os comandos; a meta aceita as três que arrumam o texto em volta, e o
+laboratório explica por que as outras duas não respondem — e as desenha
+cobrindo o texto, porque desenhar as seis iguais faria a recusa parecer
+capricho.
+
+**Comentário dentro de template de CSS não leva crase.** `CSS_WORD` e
+`CSS_FOLHA` são template literals, e um `` `flex: 1` `` escrito dentro de um
+comentário fecha a string no meio. Aconteceu três vezes num dia. O `tsc` pega —
+é erro de sintaxe —, mas o servidor de desenvolvimento continua servindo o
+módulo antigo, então a tela parece certa e a medida que se faz nela é de um
+arquivo que não existe mais. Rode o `tsc` **antes** de medir qualquer coisa no
+navegador.
+
 **Escada de `if` por tipo de lição ignora em silêncio o tipo novo.** As travas
 de vereda escolhiam o mapa de passo a passo com uma escada de `if` terminada em
 `if (l.tipo !== 'laboratorio') return []`. O editor de texto entrou como sexto
@@ -1335,6 +1419,14 @@ não citou meta inexistente por sorte, e não ficou sem passo a passo por sorte.
 a mesma família do `describe.each` com quatro trilhas escritas à mão. Hoje é um
 `switch` exaustivo com `never` no `default`: o sétimo tipo não compila até
 alguém dizer de onde sai o passo a passo dele.
+
+**Despacho de três telas não é ternário.** Com dois documentos de Word o
+`documento === 'circular' ? A : B` funcionava; com três, o `else` passa a ser
+"todo o resto" e um documento novo cairia calado no laboratório do módulo 1 —
+o desbravador abriria a lição certa e encontraria o documento errado. Hoje é um
+`Record` sobre a união, então a quarta lição de Word não compila até ter tela.
+É a mesma decisão do `switch` exaustivo das travas da vereda, do outro lado da
+mesma ponte.
 
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
@@ -1765,6 +1857,11 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/oficioDoClube.test.ts` | relatório que abre com estilo aplicado, ou meta que passa com o texto alterado |
 | `src/components/LaboratorioDeWord.test.tsx` | caixa Modificar cujo OK não grava ou cujo Cancelar grava, ou os dois Words divergindo |
 | `src/labs/circularDoClube.test.ts` | circular que chega com o endereço já junto, ou meta de quebra que aceita só apagar |
+| `src/labs/relatorioDoAcampamento.test.ts` | legenda digitada valendo por campo, ou documento sem legenda nenhuma passando por legendado |
+| `src/labs/relatorioDoAcampamento.test.ts` | coluna esvaziada valendo por coluna removida, ou disposição que cobre o texto valendo por ajuste |
+| `src/labs/documento.test.ts` | imagem contada como parágrafo vazio, ou figura e tabela numerando na mesma série |
+| `src/components/LaboratorioDoRelatorio.test.tsx` | tabulação colapsada, que apaga o único defeito visível do documento |
+| `src/components/LaboratorioDoRelatorio.test.tsx` | bloco solto na folha de flex, onde o float é ignorado e três disposições viram uma |
 | `src/components/LaboratorioDaCircular.test.tsx` | botão ¶ que liga o estado e não desenha marca nenhuma, ou Excluir que apaga parágrafo com texto |
 | `src/labs/EstilosTextoLab.test.tsx` | botão do laboratório de estilos que não chega ao documento, ou sumário velho valendo por novo |
 | `src/labs/BancoDeDadosLab.test.tsx` | assistente de importação que já chega com o mapeamento certo, ou relatório sem os quatro campos |

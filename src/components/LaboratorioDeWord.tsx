@@ -13,7 +13,7 @@ import {
   OFICIO_INICIAL, METAS_DO_OFICIO, type Doc,
 } from '../labs/oficioDoClube';
 import {
-  aparenciaDe, textoDoBloco, ehTitulo, titulosDoDoc,
+  aparenciaDe, textoDoBloco, ehTitulo, titulosDoDoc, paragrafos, ehParagrafo,
   type Estilo, type AjusteDeEstilo,
 } from '../labs/documento';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
@@ -78,7 +78,10 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
   const [gravando, setGravando] = useState(false);
   const jaGravou = useRef(false);
 
-  const alvo = doc.blocos.find(b => b.id === selecionado) ?? null;
+  /* Parágrafo, e não bloco: todo comando desta lição — estilo, formatação
+     direta, sumário — vale para um parágrafo, e o relatório não tem outra
+     coisa. Pedir o parágrafo ao modelo é o que mantém isso verdade. */
+  const alvo = paragrafos(doc).find(b => b.id === selecionado) ?? null;
 
   const feitas = useMemo(
     () => new Set(METAS_DO_OFICIO.filter(m => m.feita(doc)).map(m => m.id)),
@@ -119,7 +122,7 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
     if (!exigirSelecao()) return;
     setDoc(d => ({
       ...d,
-      blocos: d.blocos.map(b => (b.id === selecionado ? { ...b, estilo: e } : b)),
+      blocos: d.blocos.map(b => (b.id === selecionado && ehParagrafo(b) ? { ...b, estilo: e } : b)),
     }));
     fecharMenu();
     setAviso(ehTitulo(e)
@@ -133,13 +136,13 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
       e limpar" faz, que é o caminho que o passo a passo ensina — e é o gesto
       honesto num documento que chegou inteiro formatado à mão.
     */
-    const tinha = doc.blocos.some(b => b.trechos.some(x => x.direta));
+    const tinha = paragrafos(doc).some(b => b.trechos.some(x => x.direta));
     setDoc(d => ({
       ...d,
-      blocos: d.blocos.map(b => ({
+      blocos: d.blocos.map(b => (ehParagrafo(b) ? {
         ...b,
         trechos: b.trechos.map(({ direta, ...x }) => { void direta; return x; }),
-      })),
+      } : b)),
     }));
     fecharMenu();
     setAviso(tinha
@@ -158,7 +161,7 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
     const estilo = modificando;
     setDoc(d => ({ ...d, estilos: { ...d.estilos, [estilo]: rascunho } }));
     setModificando(null);
-    const quantos = doc.blocos.filter(b => b.estilo === estilo).length;
+    const quantos = paragrafos(doc).filter(b => b.estilo === estilo).length;
     setAviso(`${estilo} redefinido. ${quantos} ${quantos === 1 ? 'parágrafo mudou' : 'parágrafos mudaram'} `
       + 'de uma vez, e você mexeu numa coisa só — é isso que formatar por estilo compra.');
   };

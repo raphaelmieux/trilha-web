@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   APARENCIA_DO_ESTILO, NIVEL_DO_TITULO, ehTitulo,
   trechoDe, blocoDe, linhaDe, textoDoBloco, titulosDoDoc, sumarioAtualizado,
-  aplicarCaixa, NOMES_DA_CAIXA,
+  aplicarCaixa, NOMES_DA_CAIXA, paragrafos, paragrafosVazios, ehParagrafo,
+  campoDe, numeroDoCampo, textoDoTrecho,
   type Doc, type Estilo, type ModoDeCaixa,
 } from './documento';
 import { DOC_INICIAL, METAS_DOS_ESTILOS } from './metasDaAp044';
@@ -136,7 +137,7 @@ describe('o documento da AP044 continua o que era', () => {
     sem sumário, e com as nove metas que ele sempre teve.
   */
   it('abre sem um estilo sequer', () => {
-    const comEstilo = DOC_INICIAL.blocos.filter(b => b.estilo !== 'Normal');
+    const comEstilo = paragrafos(DOC_INICIAL).filter(b => b.estilo !== 'Normal');
     expect(comEstilo).toEqual([]);
     expect(DOC_INICIAL.blocos.length).toBeGreaterThan(10);
   });
@@ -149,5 +150,69 @@ describe('o documento da AP044 continua o que era', () => {
   it('continua cobrando as mesmas nove metas', () => {
     expect(METAS_DOS_ESTILOS).toHaveLength(9);
     expect(METAS_DOS_ESTILOS.every(m => m.passos.length > 0)).toBe(true);
+  });
+});
+
+describe('os blocos que não são parágrafo', () => {
+  /*
+    Tabela e imagem entraram no modelo pela CC-ES002, e as duas leituras que
+    elas quebram quebram **caladas**: uma conta a mais num filtro, um número
+    que anda uma casa. Nenhuma das duas estoura, e as duas chegam à tela como
+    um documento plausível.
+  */
+  const comImagemETabela: Doc<'unica'> = {
+    blocos: [
+      linhaDe('p1', 'unica', 'A fogueira foi acesa às 19h.'),
+      {
+        tipo: 'imagem', id: 'img', secao: 'unica',
+        arquivo: 'fogueira.jpg', descricao: 'A fogueira', disposicao: 'quadrada',
+      },
+      {
+        ...linhaDe('leg-fig', 'unica', ''), estilo: 'Legenda',
+        trechos: [campoDe('leg-fig-n', 'figura'), trechoDe('leg-fig-t', ' — A fogueira.')],
+      },
+      linhaDe('vazio', 'unica', ''),
+      {
+        ...linhaDe('leg-tab', 'unica', ''), estilo: 'Legenda',
+        trechos: [campoDe('leg-tab-n', 'tabela'), trechoDe('leg-tab-t', ' — Os inscritos.')],
+      },
+      {
+        tipo: 'tabela', id: 'tab', secao: 'unica',
+        linhas: [['Nome', 'Unidade'], ['Rute', 'Tigre']],
+        cabecalho: true, estilo: 'Tabela de Lista 3',
+      },
+    ],
+    colunas: { unica: 1 },
+    sumario: null,
+  };
+
+  it('imagem não é parágrafo vazio', () => {
+    /*
+      Imagem não tem texto nenhum, então um filtro que olhasse para todo bloco
+      sem texto a contaria — e a meta do módulo 2, que pede zero parágrafos
+      vazios, passaria a exigir que se apagasse a foto para ficar verde.
+    */
+    const vazios = paragrafosVazios(comImagemETabela).map(b => b.id);
+    expect(vazios, 'um bloco que não é parágrafo entrou na conta dos vazios')
+      .toEqual(['vazio']);
+  });
+
+  it('figura e tabela numeram em séries separadas', () => {
+    /*
+      No Word a Figura 1 e a Tabela 1 convivem: uma série não empurra a outra.
+      Contar todos os campos juntos daria "Tabela 2" à primeira tabela do
+      documento, que é um número plausível apontando para nada.
+    */
+    expect(numeroDoCampo(comImagemETabela, 'leg-fig-n')).toBe(1);
+    expect(numeroDoCampo(comImagemETabela, 'leg-tab-n'),
+      'a legenda da tabela foi empurrada pela figura que veio antes').toBe(1);
+    expect(textoDoTrecho(comImagemETabela, comImagemETabela.blocos
+      .filter(ehParagrafo).find(b => b.id === 'leg-tab')!.trechos[0])).toBe('Tabela 1');
+  });
+
+  it('campo que não está no documento não recebe número', () => {
+    /* Zero, e não 1: não há posição para contar, e devolver 1 afirmaria uma
+       posição que não existe. */
+    expect(numeroDoCampo(comImagemETabela, 'nao-existe')).toBe(0);
   });
 });

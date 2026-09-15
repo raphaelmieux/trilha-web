@@ -538,6 +538,22 @@ export const MODULOS_DO_EDITOR: ModuloDeVereda[] = [
         resumo: 'Inserir, mudar depois de pronto, e o que a disposição do texto decide.',
         topicos: NO_MEIO_DO_TEXTO,
       },
+      {
+        /*
+          Os requisitos 4.2 e 4.3, num documento que chega **incompleto**.
+
+          É a variação que faltava: os módulos 1 e 2 chegam errados de um jeito
+          que não se vê, e este chega com a lista de inscritos torta na
+          primeira olhada — porque ela foi alinhada com Tab e abriu noutra
+          fonte. O que continua invisível é a legenda da foto do mastro, que
+          foi digitada e por isso vai continuar dizendo "Figura 1" quando
+          entrar uma figura antes dela.
+        */
+        id: 'm3-lab', tipo: 'word', documento: 'relatorio',
+        titulo: 'Completando o relatório do acampamento',
+        resumo: 'Uma lista alinhada com Tab, uma foto que falta, e uma legenda que não se renumera.',
+        verificacoes: ['tabela', 'formatar', 'linhas-e-colunas', 'imagem', 'disposicao', 'legendas'],
+      },
     ],
   },
   {
