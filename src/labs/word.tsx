@@ -266,9 +266,28 @@ function Ajuste({ rotulo, detalhe, valor, opcoes, aoMudar }: {
 export function BastidoresDoWord({
   nomeDoArquivo, painel, aoTrocarPainel, aoVoltar,
   formato, aoMudarFormato, aoSalvarComo, aoSalvar, aoExportarPdf,
-  imp, aoMudarImpressao, aoImprimir, aoAvisar,
+  imp, aoMudarImpressao, aoImprimir, aoAvisar, aoMudarNome, previaDaImpressao,
 }: {
   nomeDoArquivo: string;
+  /**
+   * Quando o laboratório o entrega, o nome vira campo de digitar.
+   *
+   * A presença do setter é quem decide, como o `aoBuscar` do Explorador: na
+   * AP042 o nome é enfeite, e um campo editável ali prometeria um gesto que
+   * não muda nada; na CC-ES002 o nome **é** o requisito, e um campo de leitura
+   * tiraria o único caminho até a tarefa.
+   */
+  aoMudarNome?: (v: string) => void;
+  /**
+   * O que a prévia de impressão mostra.
+   *
+   * Ela era o texto do documento da AP042, escrito dentro da janela
+   * compartilhada: o segundo laboratório a abrir Imprimir mostraria a prévia do
+   * relatório do outro exercício — prévia que diverge do documento é pior do
+   * que prévia nenhuma, e é o mesmo defeito do `LeitorDeVereda` que discorda do
+   * laboratório.
+   */
+  previaDaImpressao?: ReactNode;
   painel: PainelDosBastidores;
   aoTrocarPainel: (p: PainelDosBastidores) => void;
   aoVoltar: () => void;
@@ -341,8 +360,10 @@ export function BastidoresDoWord({
                 <span style={{ display: 'block', fontSize: 12, color: '#605E5C', marginBottom: 3 }}>
                   Nome do arquivo
                 </span>
-                <input className="wd-campo" readOnly aria-label="Nome do arquivo"
-                  value={nomeDoArquivo.replace(/\.[^.]+$/, '')} />
+                <input className="wd-campo" aria-label="Nome do arquivo"
+                  readOnly={!aoMudarNome}
+                  value={nomeDoArquivo.replace(/\.[^.]+$/, '')}
+                  onChange={aoMudarNome ? e => aoMudarNome(e.target.value) : undefined} />
               </label>
               {/* É esta lista que o desbravador precisa achar depois: trocar o
                   tipo aqui é o que transforma o documento em pdf. */}
@@ -428,26 +449,7 @@ export function BastidoresDoWord({
 
           {/* A prévia, que no Word ocupa metade da tela e é o que faz a pessoa
               perceber o que vai sair antes de gastar papel. */}
-          <div className="wd-previa">
-            <div className="wd-previa-folha">
-              <p style={{ fontSize: 11, fontWeight: 700, textAlign: 'center', marginBottom: 8 }}>
-                Relatório da Unidade Falcão
-              </p>
-              <p style={{ marginBottom: 5 }}>
-                No primeiro semestre a unidade participou de quatro programações
-                do clube e de um acampamento de três dias no Parque das Águas.
-              </p>
-              <p style={{ marginBottom: 5 }}>
-                Oito desbravadores começaram especialidades novas, e cinco delas
-                foram concluídas antes do acampamento.
-              </p>
-              <p>
-                A unidade pede à diretoria duas barracas para a próxima saída, já
-                que uma das atuais teve a vareta quebrada na última chuva.
-              </p>
-            </div>
-            <p style={{ fontSize: 11.5, color: '#605E5C' }}>1 de 4 páginas</p>
-          </div>
+          <div className="wd-previa">{previaDaImpressao}</div>
         </div>
       )}
 
@@ -569,18 +571,34 @@ export function BarraDeTituloDoWord({ documento, estado = 'Salvo', aoAvisar }: {
  * As contextuais entram no fim, na cor delas, porque é onde o Word as põe:
  * depois de todas as fixas, e só enquanto o cursor está no que as convoca.
  */
-export function GuiasDoWord({ atual, usaveis, contextuais = [], aoTrocar, aoAvisar }: {
+export function GuiasDoWord({
+  atual, usaveis, contextuais = [], aoTrocar, aoAvisar, aoAbrirArquivo,
+}: {
   atual: string;
   usaveis: readonly string[];
   contextuais?: readonly { id: string; nome: string }[];
   aoTrocar: (id: string) => void;
   aoAvisar: (recado: string) => void;
+  /**
+   * Quando o laboratório o entrega, Arquivo abre os bastidores — que é o que
+   * ela faz no Word: ela não é guia, é a porta para Salvar como, Exportar e
+   * Imprimir.
+   *
+   * A presença do setter é quem decide, como o `aoBuscar` do Explorador. Sem
+   * ele a guia continua avisando que não faz parte do exercício, que é o certo
+   * nas lições que não entregam arquivo nenhum; com ele, o laboratório não
+   * precisa redesenhar a fileira de guias para ter a porta — que foi o que o
+   * de operações fez, e é como a plataforma ficou com dois "Words" uma vez.
+   */
+  aoAbrirArquivo?: () => void;
 }) {
   return (
     <div className="wd-guias" role="tablist">
       <button type="button" className="wd-guia"
         style={{ background: '#2B579A', color: '#FFFFFF', borderRadius: '3px 3px 0 0' }}
-        onClick={() => aoAvisar('A guia Arquivo existe no Word de verdade, e está aqui para a faixa ficar igual — mas não faz parte deste exercício.')}>
+        onClick={aoAbrirArquivo
+          ? aoAbrirArquivo
+          : () => aoAvisar('A guia Arquivo existe no Word de verdade, e está aqui para a faixa ficar igual — mas não faz parte deste exercício.')}>
         Arquivo
       </button>
       {GUIAS_DO_WORD.map(nome => (

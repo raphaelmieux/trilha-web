@@ -23,6 +23,7 @@ import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
 import LaboratorioDoRelatorio from '../components/LaboratorioDoRelatorio';
 import LaboratorioDoRelatorioAnual from '../components/LaboratorioDoRelatorioAnual';
 import LaboratorioDaRevisao from '../components/LaboratorioDaRevisao';
+import LaboratorioDaEntrega from '../components/LaboratorioDaEntrega';
 import LaboratorioDePython from '../components/LaboratorioDePython';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -247,6 +248,7 @@ export default function VeredaPage() {
       relatorio: LaboratorioDoRelatorio,
       anual: LaboratorioDoRelatorioAnual,
       revisao: LaboratorioDaRevisao,
+      entrega: LaboratorioDaEntrega,
     };
     const Tela = TELA_DO_DOCUMENTO[licaoAberta.documento];
     return (

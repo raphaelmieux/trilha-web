@@ -38,6 +38,7 @@ import { CIRCULAR_INICIAL, METAS_DA_CIRCULAR, gestosVazios as gestosDaCircular }
 import { RELATORIO_INICIAL, METAS_DO_RELATORIO } from '../labs/relatorioDoAcampamento';
 import { RELATORIO_ANUAL_INICIAL, METAS_DO_RELATORIO_ANUAL } from '../labs/relatorioAnual';
 import { DIA_DO_DESBRAVADOR_INICIAL, METAS_DA_REVISAO } from '../labs/diaDoDesbravador';
+import { RELATORIO_DA_ENTREGA_INICIAL, ENTREGA_INICIAL, METAS_DA_ENTREGA } from '../labs/entregaDoRelatorio';
 
 /*
   Os laboratórios de Word partem de documentos diferentes, e a trava precisa
@@ -73,6 +74,13 @@ const DOCUMENTOS_DE_WORD = {
   revisao: {
     metas: METAS_DA_REVISAO.map(m => ({
       id: m.id, passos: m.passos, feita: () => m.feita(DIA_DO_DESBRAVADOR_INICIAL),
+    })),
+  },
+  entrega: {
+    metas: METAS_DA_ENTREGA.map(m => ({
+      id: m.id,
+      passos: m.passos,
+      feita: () => m.feita({ doc: RELATORIO_DA_ENTREGA_INICIAL, entrega: ENTREGA_INICIAL }),
     })),
   },
 } as const;

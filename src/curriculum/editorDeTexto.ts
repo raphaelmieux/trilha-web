@@ -639,6 +639,26 @@ export const MODULOS_DO_EDITOR: ModuloDeVereda[] = [
         resumo: 'O que o PDF carrega dentro, a ordem de exportar, e o editável que vai junto.',
         topicos: ENTREGAR,
       },
+      {
+        /*
+          Os requisitos 4.6 e 7, no único documento da vereda que chega pronto.
+
+          As quatro peças que o requisito 7 nomeia — sumário, cabeçalho, imagem
+          legendada e tabela — já estão lá, porque construí-las é o que os
+          módulos 3 e 4 cobraram, e repetir a tarefa aqui mediria de novo o que
+          já foi medido. O que falta é a **entrega**, e ela tem ordem.
+
+          Duas coisas ficaram para trás, e nenhuma se vê sem procurar: uma
+          marca de revisão que ninguém resolveu, e o sumário, gerado quando o
+          relatório tinha três folhas. Exportar agora é o gesto que se faz sem
+          pensar, e o PDF sai com as duas dentro — o PDF congela o que existir
+          na hora, e do lado de fora um velho e um novo são o mesmo ícone.
+        */
+        id: 'm6-lab', tipo: 'word', documento: 'entrega',
+        titulo: 'Entregando o relatório do ano',
+        resumo: 'O relatório pronto, a ordem de entrega, e o par de arquivos que fica com o clube.',
+        verificacoes: ['terminar', 'nomear', 'exportar', 'pdf-em-dia', 'entrega-dupla'],
+      },
     ],
   },
 ];

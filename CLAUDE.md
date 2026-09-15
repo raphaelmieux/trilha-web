@@ -1579,6 +1579,64 @@ clube e aceitaria a data. É a mesma decisão do "selecione primeiro" do
 laboratório de Word e do cursor na célula do módulo 3, e nenhum teste de motor
 a sente.
 
+**O documento do módulo 6 chega pronto, e é o único.** As quatro peças que o
+requisito 7 nomeia — sumário, cabeçalho, imagem legendada e tabela — já estão
+lá, porque construí-las é o que os módulos 3 e 4 cobraram, e repetir a tarefa
+aqui mediria de novo o que já foi medido. O que falta é a **entrega**, e quem
+garante que as quatro peças estão no documento é a trava do repositório, e não
+um item da lista: tarefa que abre verde ensina a não ler a lista.
+
+**Duas coisas ficaram para trás, e nenhuma se vê.** Uma marca de revisão que
+ninguém resolveu e o sumário, gerado quando o relatório tinha três folhas.
+Exportar agora é o gesto que se faz sem pensar, e o PDF sai com as duas
+dentro. As duas são uma meta só — "terminar antes de exportar" —, porque o
+assunto dela é a **ordem**, e não cada um dos dois consertos; mas ela exige as
+duas metades, senão a que ficasse de fora entraria no PDF com a lista verde.
+
+**O PDF congela porque guarda um retrato, e o retrato não é só o texto.** Ele
+inclui o sumário gravado e as marcas pendentes, porque as três coisas aparecem
+no papel: marca não resolvida sai impressa, e sumário velho manda o leitor para
+a folha errada. Um retrato só de texto deixaria as duas passarem, e o arquivo
+entregue sairia errado com a tarefa verde. O conserto é exportar de novo — quem
+conserta dentro do PDF acaba com dois documentos diferentes, e o editável, que é
+o que vai ser usado no ano que vem, fica sendo o errado.
+
+**A entrega dupla pede três coisas, e nenhuma se substitui**: os dois arquivos
+existirem, terem o mesmo nome, e o **editável** estar em dia como o PDF. Um
+.docx salvo antes de terminar ao lado de um PDF novo é o pior dos dois mundos —
+o papel mostra o relatório pronto e o arquivo que a próxima diretoria abre é o
+de antes, com os dois na pasta e o mesmo nome.
+
+**O padrão de nome daqui é mais frouxo que o da CC-ES001, e é de propósito.**
+Lá o requisito pede padrão **próprio**, e a conferência reduz dez nomes a um
+molde comum. Aqui o que a teoria escreve é só "mesmo nome, mesma data, mesma
+versão", e cobrar o molde de um nome só não mediria nada: um nome sozinho sempre
+tem o próprio molde. Data e versão são duas contas separadas, porque faltar uma
+ou faltar a outra são erros diferentes.
+
+**A janela compartilhada tinha dentro dela o documento de um exercício.** A
+prévia de impressão de `BastidoresDoWord` era o texto do relatório da AP042,
+escrito na janela: o segundo laboratório a abrir Imprimir mostraria a prévia do
+documento do outro — prévia que diverge do documento é pior do que prévia
+nenhuma, e é o mesmo defeito do `LeitorDeVereda` que discorda do laboratório.
+Ela passou a vir de fora, e a AP042 leva a dela.
+
+Pelo mesmo caminho, duas peças da janela passaram a decidir por **presença de
+setter**, como o `aoBuscar` do Explorador: o nome do arquivo vira campo de
+digitar quando o laboratório entrega `aoMudarNome` — na AP042 ele é enfeite, e
+um campo editável ali prometeria um gesto que não muda nada; na CC-ES002 ele é o
+requisito, e um campo travado tiraria o único caminho até a tarefa. E a guia
+**Arquivo** abre os bastidores quando o laboratório entrega `aoAbrirArquivo`, em
+vez de só avisar que não faz parte: sem isso, quem precisa da porta redesenha a
+fileira de guias à mão — que foi o que o laboratório de operações fez, e é como
+a plataforma ficou com dois "Words" uma vez.
+
+**A régua de status conta o que está na pasta, e não julga o arquivo.** Ela diz
+os nomes gravados e não escreve "PDF desatualizado": o Word não sabe disso, e
+escrevê-lo poria na nossa tela a resposta que a lição existe para o desbravador
+descobrir sozinho, olhando a ordem. É a mesma regra do polegar do laboratório de
+IA e do painel de Problemas do de Python.
+
 **Despacho de três telas não é ternário.** Com dois documentos de Word o
 `documento === 'circular' ? A : B` funcionava; com três, o `else` passa a ser
 "todo o resto" e um documento novo cairia calado no laboratório do módulo 1 —
@@ -2107,6 +2165,10 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDaRevisao.test.tsx` | Aceitar que age na primeira marca pendente em vez da escolhida |
 | `src/components/LaboratorioDaRevisao.test.tsx` | cor do revisor que fica na folha e não no elemento, e some debaixo do estilo inline |
 | `src/components/LaboratorioDaRevisao.test.tsx` | Substituir Tudo que não estraga na tela, ou Desfazer que não devolve o documento |
+| `src/labs/entregaDoRelatorio.test.ts` | relatório de entrega sem uma das quatro peças do requisito 7, ou com menos de quatro folhas |
+| `src/labs/entregaDoRelatorio.test.ts` | PDF que não congela, retrato que olha só o texto, ou editável velho valendo por entrega |
+| `src/components/LaboratorioDaEntrega.test.tsx` | Salvar como que ignora o tipo escolhido, ou nome de arquivo que não se digita |
+| `src/components/LaboratorioDaEntrega.test.tsx` | prévia de impressão mostrando o documento de outro laboratório |
 | `src/components/LaboratorioDoRelatorioAnual.test.tsx` | folha que para de repartir, onde o cabeçalho não tem onde se repetir |
 | `src/components/LaboratorioDoRelatorioAnual.test.tsx` | campo de página que aceita ser digitado por cima, ou posto ao lado do número errado |
 | `src/components/LaboratorioDoRelatorioAnual.test.tsx` | sumário desenhado acima do título do documento, ou repetido em toda folha |
