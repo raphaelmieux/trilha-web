@@ -1420,6 +1420,69 @@ a mesma família do `describe.each` com quatro trilhas escritas à mão. Hoje é
 `switch` exaustivo com `never` no `default`: o sétimo tipo não compila até
 alguém dizer de onde sai o passo a passo dele.
 
+**A folha reparte de verdade, e foi o requisito 4.4 que cobrou.** Havia uma
+folha só, e a quebra de página era uma régua tracejada desenhada no meio dela.
+Servia enquanto nenhuma lição falava do que se repete **por página** — e a
+partir do módulo 4 não serve: cabeçalho que se repete numa folha só não se
+repete, e número de página que nunca muda não mostra a diferença entre o campo
+e o número digitado, que é a lição inteira.
+
+`paginasDoDoc` reparte pelas quebras que o documento carrega, e não pela altura
+do que cabe. A diferença não custa a lição — o que os requisitos 4.4 e 4.5
+pedem é ver a faixa se repetir e o número mudar, e para isso basta haver mais
+de uma folha —, e simular o corte por altura pediria medir texto no modelo, que
+é trabalho do navegador: daria uma paginação que muda com a fonte de quem está
+olhando. A régua tracejada saiu junto, porque uma quebra que abre folha nova e
+ainda desenha um aviso de quebra diz duas vezes a mesma coisa. Os três
+laboratórios anteriores ganharam isso de lambuja, e o do módulo 2 passou a
+mostrar duas folhas onde mostrava uma linha pontilhada — que é o que uma quebra
+de página de fato faz.
+
+**O número da página é campo, e é de outra natureza que os outros dois.**
+Figura e Tabela contam quantos vieram antes no texto; o da página conta em que
+folha ele está sendo desenhado, e a **mesma** ocorrência dele — uma só, no
+rodapé — mostra um número diferente em cada página. No Word são dois campos
+diferentes pelo mesmo motivo, SEQ e PAGE, e aqui `CAMPOS_EM_SERIE` separa os
+dois comportamentos: `textoDoTrecho` recebe a folha e resolve o da página com
+ela.
+
+E ele **não é editável na tela**. Deixar digitar por cima ensinaria que dá para
+consertar o número errado escrevendo o certo, que é exatamente o gesto que a
+lição existe para desfazer — e o documento chega com "Página 2" digitado em
+todas as quatro folhas, certo numa e errado em três.
+
+**O sumário guarda a folha, e não a posição da linha.** Ele imprimia `i + 1`,
+que é o índice da entrada: num documento de quatro folhas o sumário mandava
+todo mundo para as folhas 1, 2, 3, 4 na ordem em que os títulos aparecem, o que
+só por acaso bate com o papel. `ItemDeSumario` grava `pagina`, e
+`sumarioAtualizado` compara também por ela — porque é o número de página que
+envelhece primeiro num documento de verdade: acrescentar uma seção no meio
+empurra todas as seguintes sem mudar uma palavra de título nenhum, e um sumário
+que só comparasse texto e nível continuaria se dizendo em dia.
+
+**E ele fica embaixo do título, e quem diz isso é a seção.** Ele abria a folha
+1, acima do nome do documento: quem abre o relatório lia a lista das seções
+antes de saber de que documento elas eram. `sumario` é campo do documento e não
+bloco posicionado — ele guarda o que leu, e isso não muda —, então a posição sai
+de uma regra, e a regra é a `secao`: o sumário fecha a **abertura**, que é o
+título e as linhas que viajam com ele.
+
+Ela não pergunta por título de propósito. O ofício do módulo 1 chega com os
+cinco títulos em negrito à mão e nenhum com estilo — é o defeito que a lição
+existe para mostrar —, e uma regra que procurasse estilo de título não acharia
+nenhum: jogaria o sumário vazio no pé da última folha, que é justamente onde
+ninguém lê "Nenhuma entrada de sumário foi encontrada". A `secao` responde o
+mesmo antes e depois de os estilos entrarem, então o sumário também não muda de
+lugar enquanto se trabalha nele.
+
+E a trava é de **ordem no DOM**, e não de existência: voltar o sumário para o
+topo deixa as cinco metas verdes, as folhas certas e nada mais reclamando.
+
+**Faixa aberta e nunca escrita não conta.** Abrir o cabeçalho é um clique, e um
+cabeçalho vazio se repete em toda folha dizendo nada. É "zero link não é zero
+link quebrado" aplicado à faixa, e por isso `cabecalhoEscrito` olha o texto e
+não a existência.
+
 **Despacho de três telas não é ternário.** Com dois documentos de Word o
 `documento === 'circular' ? A : B` funcionava; com três, o `else` passa a ser
 "todo o resto" e um documento novo cairia calado no laboratório do módulo 1 —
@@ -1705,8 +1768,21 @@ que é o que se espera de um contador funcionando.
 Contar o que a vereda tem não desfaz a decisão de ela não virar uma
 `Specialty`. Requisito oficial ela continua não tendo, e inventar um a puxaria
 para dentro do percentual e do XP, que é o contrário de bônus. O que ela tem
-são lições a vencer e módulos a fechar, e é exatamente isso que essas duas
-escadas contam.
+são lições a vencer e módulos a fechar, e é exatamente isso que essas escadas
+contam.
+
+**E a de Requisitos também, porque a trilha já a conta assim.** Lá, passar numa
+lição grava o `requirement_progress` dos códigos que ela cita: a mesma lição
+anda na escada de Lições **e** na de Requisitos. Deixar a vereda fora da
+segunda não seria neutralidade, seria dar à lição dela metade do valor da lição
+de trilha — pela falta de um código oficial que ela não vai ter. Quem responde
+é a lição, que é a unidade que a vereda pede que se demonstre.
+
+São dois nomes para o mesmo número hoje, e mesmo assim `requisitos` é campo
+separado em `ConquistasNasVeredas`: somar `licoes` nas duas escadas lá dentro
+do resumo esconderia a escolha numa linha com cara de erro de digitação. O
+número alimenta uma escada só — `escadasDeInsignia` é o único leitor —, e não
+entra em percentual nenhum.
 
 `conquistasNasVeredas` mora em `lib/veredas.ts`, com as outras regras puras, e
 não dentro de `montarResumo`: o resumo fala com o banco, e conta escondida lá
@@ -1719,6 +1795,13 @@ de novo, agora premiando módulo que ninguém percorreu; e o registro de vereda 
 **parâmetro** com o de verdade por padrão, porque hoje vereda anunciada vem com
 a lista de módulos vazia e não com módulo vazio dentro — sem o parâmetro, a
 guarda seria código que ninguém nunca leu e a trava passaria sem conferir nada.
+
+E há um buraco entre a conta e a soma que é calado dos dois lados: campo novo
+aqui vale zero na estante de todo mundo sem nada reprovar, porque toda trava
+deste arquivo continua verde conferindo a conta, que está certa. A trava lê a
+fonte de `montarResumo` e cobra **cada** campo do retorno — tirados do próprio
+retorno, e não de uma lista escrita à mão, que é o que deixou de conferir a
+AP043 e a AP044 no dia em que elas abriram.
 
 **O mural mostrava "Vereda teoria".** Os eventos de vereda não tinham frase, e
 caíam na saída de último recurso: o `event_type` cru com os sublinhados
@@ -1920,6 +2003,12 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/documento.test.ts` | imagem contada como parágrafo vazio, ou figura e tabela numerando na mesma série |
 | `src/components/LaboratorioDoRelatorio.test.tsx` | tabulação colapsada, que apaga o único defeito visível do documento |
 | `src/components/LaboratorioDoRelatorio.test.tsx` | bloco solto na folha de flex, onde o float é ignorado e três disposições viram uma |
+| `src/labs/relatorioAnual.test.ts` | número de página digitado valendo por campo, ou cabeçalho vazio valendo por escrito |
+| `src/labs/relatorioAnual.test.ts` | título empurrado de folha sem envelhecer o sumário, que passa a apontar para a folha errada |
+| `src/components/LaboratorioDoRelatorioAnual.test.tsx` | folha que para de repartir, onde o cabeçalho não tem onde se repetir |
+| `src/components/LaboratorioDoRelatorioAnual.test.tsx` | campo de página que aceita ser digitado por cima, ou posto ao lado do número errado |
+| `src/components/LaboratorioDoRelatorioAnual.test.tsx` | sumário desenhado acima do título do documento, ou repetido em toda folha |
+| `src/labs/documento.test.ts` | regra do sumário que só acha a abertura quando existe estilo de título |
 | `src/components/LaboratorioDaCircular.test.tsx` | botão ¶ que liga o estado e não desenha marca nenhuma, ou Excluir que apaga parágrafo com texto |
 | `src/labs/EstilosTextoLab.test.tsx` | botão do laboratório de estilos que não chega ao documento, ou sumário velho valendo por novo |
 | `src/labs/BancoDeDadosLab.test.tsx` | assistente de importação que já chega com o mapeamento certo, ou relatório sem os quatro campos |
@@ -1950,6 +2039,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/vocabulario.test.ts` | insígnia chamada de "badge" ou ofensiva de "streak" no texto de JSX |
 | `src/lib/atividade.test.ts` | evento de vereda que cai no mural com o nome cru do `event_type` |
 | `src/lib/veredas.test.ts` | lição de vereda que não soma em escada nenhuma, ou módulo vazio contando como fechado |
+| `src/lib/veredas.test.ts` | campo novo da conta das veredas que o resumo não soma, e que conta zero calado |
 | `src/lib/formaDaArte.test.ts` | emblema de trilha quadrado ou de vereda deitado, que troca no painel o tipo do percurso |
 | `src/lib/formaDaInsignia.test.ts` | glifo maior que o círculo inscrito do triângulo, que vaza só no Amigo e no Companheiro |
 | `src/lib/formaDaInsignia.test.ts` | classe cujo glifo não se lê sobre a própria cor, ou ícone sem raio de tinta medido |
