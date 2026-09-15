@@ -1677,6 +1677,64 @@ nenhum teste de unidade pega o sintoma. O que se testa é a promessa —
 `ExplicacaoDaInsignia` se desenha no `body`, por `createPortal`, e não onde o
 JSX o põe. Assim "ocupa a tela" é verdade seja de onde for que alguém o chame.
 
+**O contador da home dizia o nome da tabela.** "890 XP", "3 dias", "82
+**badges**" — o nome da tabela do banco, escrito na tela, ao lado de dois
+rótulos em português. Não estoura e não confunde ninguém que já conheça a
+plataforma; o que ele faz é dizer ao desbravador de dez anos que a coisa se
+chama assim, e aí "insígnia" — a palavra que a estante, o relatório, o perfil e
+o aviso de conquista usam — passa a parecer sinônimo de outra coisa.
+
+`vocabulario.test.ts` ganhou a segunda regra, e ela olha para **menos** do que a
+primeira, de propósito. "Percurso" é palavra portuguesa e só erra quando chega
+à tela, então lá vale todo literal. "Badge" é nome de tabela e de campo, e
+aparece com razão em `from('badges')`, em `badge_id` e no código de toda
+insígnia do catálogo — procurar em todo literal daria dezenas de acusações a
+código que está certo, e trava que se aprende a ignorar não é trava. Então ela
+lê só o que é de fato pintado ou anunciado: texto de JSX e os atributos que o
+navegador mostra ou lê em voz alta.
+
+**O que a vereda rende não contava em escada nenhuma.** As escadas de Lições e
+de Módulos se alimentam de duas coisas que a vereda não tem: `lesson_attempts`,
+que só a lição de trilha escreve, e requisito cumprido, que ela não guarda de
+propósito. O efeito era que catorze lições de vereda vencidas somavam **zero**
+em toda escada menos a de Veredas — quem percorresse três veredas inteiras e
+nenhuma trilha via a estante dizer que não tinha estudado. É a família do
+"número guardado não responde por hoje": o contador mostra um número plausível,
+que é o que se espera de um contador funcionando.
+
+Contar o que a vereda tem não desfaz a decisão de ela não virar uma
+`Specialty`. Requisito oficial ela continua não tendo, e inventar um a puxaria
+para dentro do percentual e do XP, que é o contrário de bônus. O que ela tem
+são lições a vencer e módulos a fechar, e é exatamente isso que essas duas
+escadas contam.
+
+`conquistasNasVeredas` mora em `lib/veredas.ts`, com as outras regras puras, e
+não dentro de `montarResumo`: o resumo fala com o banco, e conta escondida lá
+dentro só se testaria subindo um. Ela lê os mesmos eventos que o resumo já
+buscou — nenhuma consulta nova, nenhum campo novo —, e o histórico de quem
+percorreu vereda antes disto entra junto, porque os eventos sempre estiveram lá.
+
+Duas guardas. Módulo sem lição nenhuma não conta, que é o "zero de zero é tudo"
+de novo, agora premiando módulo que ninguém percorreu; e o registro de vereda é
+**parâmetro** com o de verdade por padrão, porque hoje vereda anunciada vem com
+a lista de módulos vazia e não com módulo vazio dentro — sem o parâmetro, a
+guarda seria código que ninguém nunca leu e a trava passaria sem conferir nada.
+
+**O mural mostrava "Vereda teoria".** Os eventos de vereda não tinham frase, e
+caíam na saída de último recurso: o `event_type` cru com os sublinhados
+trocados por espaço. Catorze lições viravam catorze linhas iguais, sem dizer de
+qual vereda nem de qual lição, ao lado de "AP041 · Laboratório concluído:
+Mexendo em pastas e arquivos" no mesmo mural, para a mesma pessoa.
+
+Tudo o que a frase precisa já estava gravado: o **id** da vereda e o **id** da
+lição. O nome de campo antigo também é lido — quando a vereda se chamava
+mini-trilha o id dela ia em `trilha` —, pela regra de sempre: uma decisão nossa
+não se cobra de quem já andou.
+
+E a trava que cobra isso não procura a palavra "vereda" na frase, porque as
+frases certas também a têm: ela compara com o que a saída de último recurso
+produziria. Evento de vereda novo sem frase reprova ali.
+
 **Trilha se chama trilha; vereda se chama vereda.** No código as duas precisam
 de um nome que sirva às duas — o certificado é o mesmo documento, o emblema é o
 mesmo componente, o relatório lista as duas —, e "percurso" é esse nome. De
@@ -1889,6 +1947,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/ui/ExplicacaoDaInsignia.test.tsx` | cartão de explicação desenhado dentro de quem o chamou, onde o `backdrop-filter` prende o `fixed` |
 | `src/lib/relatorioEmPdf.test.ts` | conquista sem data dizendo-se a primeira, ou sumário reservando menos folhas do que tem entradas |
 | `src/lib/vocabulario.test.ts` | trilha ou vereda chamada de "percurso" em texto que chega à tela |
+| `src/lib/vocabulario.test.ts` | insígnia chamada de "badge" ou ofensiva de "streak" no texto de JSX |
+| `src/lib/atividade.test.ts` | evento de vereda que cai no mural com o nome cru do `event_type` |
+| `src/lib/veredas.test.ts` | lição de vereda que não soma em escada nenhuma, ou módulo vazio contando como fechado |
 | `src/lib/formaDaArte.test.ts` | emblema de trilha quadrado ou de vereda deitado, que troca no painel o tipo do percurso |
 | `src/lib/formaDaInsignia.test.ts` | glifo maior que o círculo inscrito do triângulo, que vaza só no Amigo e no Companheiro |
 | `src/lib/formaDaInsignia.test.ts` | classe cujo glifo não se lê sobre a própria cor, ou ícone sem raio de tinta medido |

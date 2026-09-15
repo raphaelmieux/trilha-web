@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { getOpenSpecialties } from '../curriculum';
 import { laboratorioDoEvento } from './atividade';
 import { insigniasConquistadas, type ResumoDoDesbravador } from './insignias';
-import { veredasConcluidas } from './veredas';
+import { veredasConcluidas, conquistasNasVeredas } from './veredas';
 import {
   diaEmBrasilia, horaEmBrasilia, diaDaSemanaEmBrasilia,
   diasDeAtividade, melhorOfensiva,
@@ -115,11 +115,21 @@ export async function montarResumo(userId: string): Promise<ResumoDoDesbravador>
     }
   }
 
+  /*
+    E o que foi vencido nas veredas conta junto.
+
+    A conta mora em `veredas.ts`, com as outras regras puras: aqui só se soma.
+    Nenhuma consulta nova — ela lê os mesmos eventos já buscados acima —, e o
+    histórico de quem percorreu vereda antes disto entra junto, porque os
+    eventos sempre estiveram lá.
+  */
+  const naVereda = conquistasNasVeredas(eventos.data ?? []);
+
   return {
     requisitos: completed.size,
-    licoes: licoes.size,
+    licoes: licoes.size + naVereda.licoes,
     licoesPerfeitas: perfeitas.size,
-    modulos,
+    modulos: modulos + naVereda.modulos,
     trilhas,
     laboratorios,
     provas,

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { descreverAtividade, trilhaDoEvento, laboratorioDoEvento } from './atividade';
+import { VEREDAS, licoesDaVereda } from '../curriculum/veredas';
 
 /*
   O painel de atividade mostrava o tipo do evento cru: "lesson completed",
@@ -187,5 +188,86 @@ describe('o laboratório de que o evento fala', () => {
   it('não chuta quando não há como saber', () => {
     expect(laboratorioDoEvento({ event_type: 'text_submitted' })).toBeUndefined();
     expect(laboratorioDoEvento({ event_type: 'coisa_que_nao_existe' })).toBeUndefined();
+  });
+});
+
+describe('o que a pessoa fez numa vereda', () => {
+  /*
+    O mural mostrava "Vereda teoria", "Vereda laboratorio" e "Vereda completed"
+    — o tipo do evento cru, que é a saída de último recurso para o que ninguém
+    descreveu. Catorze lições de vereda viravam catorze linhas iguais, ao lado
+    de "AP041 · Laboratório concluído: Mexendo em pastas e arquivos" no mesmo
+    mural, para a mesma pessoa.
+
+    Tudo o que a frase precisa já estava gravado desde sempre: o id da vereda e
+    o id da lição.
+  */
+  const vereda = VEREDAS.find(v => licoesDaVereda(v).length > 0)!;
+  const teoria = licoesDaVereda(vereda).find(l => l.tipo === 'teoria')!;
+  const pratica = licoesDaVereda(vereda).find(l => l.tipo !== 'teoria')!;
+
+  it('nomeia a teoria pela lição, e diz de que vereda', () => {
+    const d = descreverAtividade({
+      event_type: 'vereda_teoria',
+      metadata: { vereda: vereda.id, licao: teoria.id },
+    });
+    expect(d.trilha, 'a linha não diz de qual vereda').toBe(vereda.code);
+    expect(d.texto).toBe(`Teoria da vereda concluída: ${teoria.titulo}`);
+    expect(d.texto, 'sobrou o nome cru do evento').not.toMatch(/vereda[ _]teoria/i);
+  });
+
+  it('nomeia o laboratório pela lição', () => {
+    const d = descreverAtividade({
+      event_type: 'vereda_laboratorio',
+      metadata: { vereda: vereda.id, licao: pratica.id },
+    });
+    expect(d.trilha).toBe(vereda.code);
+    expect(d.texto).toBe(`Laboratório da vereda concluído: ${pratica.titulo}`);
+  });
+
+  it('a conclusão fala da vereda inteira, e não de uma lição', () => {
+    const d = descreverAtividade({
+      event_type: 'vereda_completed',
+      metadata: { vereda: vereda.id, codigo: vereda.code },
+    });
+    expect(d.trilha).toBe(vereda.code);
+    expect(d.texto).toBe('Vereda concluída');
+    expect(d.detalhe).toBe(vereda.name);
+  });
+
+  it('lê o nome de campo de quando a vereda se chamava mini-trilha', () => {
+    /*
+      Naquele tempo o id da vereda ia em `trilha`. Uma decisão nossa não se
+      cobra de quem já andou: o registro antigo continua sendo lido, como já
+      vale para os nomes de evento `mini_trilha_*`.
+    */
+    const d = descreverAtividade({
+      event_type: 'mini_trilha_completed',
+      metadata: { trilha: vereda.id },
+    });
+    expect(d.trilha).toBe(vereda.code);
+    expect(d.texto).toBe('Vereda concluída');
+  });
+
+  it('nenhum evento de vereda cai na saída de último recurso', () => {
+    /*
+      A guarda contra o vazio desta trava: acrescentar um evento de vereda e
+      esquecer a frase dele o devolve ao mural em inglês, e nada reprova —
+      porque a saída de último recurso sempre devolve alguma coisa legível.
+    */
+    const eventos = [
+      'vereda_teoria', 'vereda_laboratorio', 'vereda_completed',
+      'vereda_topico', 'mini_trilha_topico', 'mini_trilha_completed',
+    ];
+    /* A saída de último recurso é o tipo do evento com os sublinhados trocados
+       por espaço e a inicial em maiúscula. É essa igualdade que denuncia — e
+       não a palavra "vereda", que as frases certas também têm. */
+    const comoOCru = (tipo: string) =>
+      tipo.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
+    const crus = eventos.filter((tipo) => {
+      const d = descreverAtividade({ event_type: tipo, metadata: { vereda: vereda.id } });
+      return d.texto === comoOCru(tipo);
+    });
+    expect(crus, 'estes eventos ainda saem com o nome cru no mural').toEqual([]);
   });
 });
