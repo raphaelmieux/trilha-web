@@ -12,6 +12,10 @@ import {
   PainelDeNavegacao, BarraDeEndereco, CabecalhosDaLista, LinhaDeArquivo,
   MenuFlutuante, MenuClassificar, BarraDeTarefasDoWindows,
 } from './explorer';
+import {
+  SEM_SELECAO, apenas, aoClicar, aoAbrirMenu, aoComecarArrasto, aoMarcarCaixa,
+  todos, podar, semMouse, useAtalhosDoExplorador, type Selecao,
+} from './selecao';
 import { VisualizadorDe } from './visualizadores';
 import { familiaDe, PROGRAMA_DA_FAMILIA } from './tiposDeArquivo';
 import {
@@ -22,7 +26,7 @@ import {
 import {
   AREA, DOCUMENTOS, LIXEIRA, ehRaiz, type No, type Coluna,
   acharNo, filhosDe, caminhoDe, podeSoltarEm, nomeDisponivel, ordenar,
-  copiarPara, moverPara, mandarParaLixeira, restaurar, esvaziarLixeira,
+  copiarPara, moverPara, mandarParaLixeira, restaurar, esvaziarLixeira, formatarKb,
   criarGerador,
 } from './arquivos';
 import type { PropsDeLaboratorio as Props } from './tipos';
@@ -111,12 +115,15 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
   const [arvore, setArvore] = useState<No[]>(() => arvoreInicial(agora));
   const [historico, setHistorico] = useState<string[]>([AREA]);
   const [posicao, setPosicao] = useState(0);
-  const [selecionado, setSelecionado] = useState<string | null>(null);
+  const [selecao, setSelecao] = useState<Selecao>(SEM_SELECAO);
+  /* As caixas de seleção de item, do menu Exibir do Windows. Nascem ligadas em
+     quem não tem mouse: `Ctrl` e `Shift` não existem no celular. */
+  const [caixas, setCaixas] = useState(semMouse);
   const [expandidas, setExpandidas] = useState<Set<string>>(new Set([AREA]));
   const [coluna, setColuna] = useState<Coluna>('nome');
   const [crescente, setCrescente] = useState(true);
   const [ordensUsadas, setOrdensUsadas] = useState<Set<Coluna>>(new Set(['nome']));
-  const [transferencia, setTransferencia] = useState<{ id: string; recortar: boolean } | null>(null);
+  const [transferencia, setTransferencia] = useState<{ ids: string[]; recortar: boolean } | null>(null);
   const [renomeando, setRenomeando] = useState<string | null>(null);
   const [rascunho, setRascunho] = useState('');
   const [menu, setMenu] = useState<{ x: number; y: number; id: string } | null>(null);
@@ -125,6 +132,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
      celular — que é onde boa parte dos desbravadores estuda. O Explorer de
      verdade tem esse menu pelo mesmo motivo. */
   const [menuOrdem, setMenuOrdem] = useState<{ x: number; y: number } | null>(null);
+  const [menuExibir, setMenuExibir] = useState<{ x: number; y: number } | null>(null);
   /* Os arquivos abertos, na ordem em que foram usados. Todo arquivo abre —
      não porque cada visualizador ensine algo, mas porque não abrir quebraria a
      única coisa que a janela toda constrói, que é estar num computador. */
@@ -138,25 +146,38 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
 
   const pastaAtual = historico[posicao];
   const noAtual = acharNo(arvore, pastaAtual);
-  const item = acharNo(arvore, selecionado) ?? null;
-  const naLixeira = pastaAtual === LIXEIRA || (selecionado ? caminhoDe(arvore, selecionado).some(n => n.id === LIXEIRA) : false);
-
   const visiveis = useMemo(
     () => ordenar(filhosDe(arvore, pastaAtual), coluna, crescente),
     [arvore, pastaAtual, coluna, crescente],
   );
+
+  /* A seleção que vale é a que ainda está na tela — o porquê está escrito em
+     `selecao.ts`, e é o mesmo do outro Explorador. */
+  const idsVisiveis = useMemo(() => visiveis.map(n => n.id), [visiveis]);
+  const escolhidos = useMemo(() => podar(selecao, idsVisiveis).ids, [selecao, idsVisiveis]);
+  const itens = useMemo(
+    () => escolhidos.map(id => acharNo(arvore, id)).filter((n): n is No => !!n),
+    [escolhidos, arvore],
+  );
+
+  const limpar = () => setSelecao(SEM_SELECAO);
+  const item = itens[0] ?? null;
+  const mexiveis = itens.filter(n => !ehRaiz(arvore, n.id));
+  const totalSelecionado = itens.reduce((s, n) => s + (n.tipo === 'pasta' ? 0 : n.tamanhoKb), 0);
+  const naLixeira = pastaAtual === LIXEIRA
+    || (itens.length > 0 && itens.every(n => caminhoDe(arvore, n.id).some(x => x.id === LIXEIRA)));
 
   const concluir = useCallback((t: TarefaId) => setFeitas(f => (f.has(t) ? f : new Set(f).add(t))), []);
 
   /* Fecha o menu de contexto ao clicar em qualquer lugar — é o que todo menu de
      sistema faz, e sem isso ele fica preso na tela. */
   useEffect(() => {
-    if (!menu && !menuOrdem) return;
-    const fechar = () => { setMenu(null); setMenuOrdem(null); };
+    if (!menu && !menuOrdem && !menuExibir) return;
+    const fechar = () => { setMenu(null); setMenuOrdem(null); setMenuExibir(null); };
     window.addEventListener('click', fechar);
     window.addEventListener('scroll', fechar, true);
     return () => { window.removeEventListener('click', fechar); window.removeEventListener('scroll', fechar, true); };
-  }, [menu, menuOrdem]);
+  }, [menu, menuOrdem, menuExibir]);
 
   /* ── Navegação ─────────────────────────────────────────────────────────── */
 
@@ -164,7 +185,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
     if (id === pastaAtual) return;
     setHistorico(h => [...h.slice(0, posicao + 1), id]);
     setPosicao(p => p + 1);
-    setSelecionado(null);
+    limpar();
     setAviso('');
     setExpandidas(e => new Set([...e, ...caminhoDe(arvore, id).map(n => n.id)]));
   };
@@ -205,7 +226,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
     const nome = nomeDisponivel(arvore, pastaAtual, 'Nova pasta');
     const id = novoId();
     setArvore(a => [...a, { id, nome, tipo: 'pasta', paiId: pastaAtual, tamanhoKb: 0, modificadoEm: Date.now() }]);
-    setSelecionado(id);
+    setSelecao(apenas(id));
     setRenomeando(id);
     setRascunho(nome);
     setAviso('Pasta criada. Agora dê um nome a ela.');
@@ -227,27 +248,55 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
 
   const colar = (destino: string) => {
     if (!transferencia) return;
-    const origem = acharNo(arvore, transferencia.id);
-    if (!origem) return;
+    const origens = transferencia.ids
+      .map(id => acharNo(arvore, id))
+      .filter((n): n is No => !!n);
+    if (!origens.length) return;
+    const plural = origens.length === 1 ? '' : 's';
 
     if (transferencia.recortar) {
-      if (!podeSoltarEm(arvore, transferencia.id, destino)) {
+      const podem = origens.filter(o => podeSoltarEm(arvore, o.id, destino));
+      if (!podem.length) {
         setAviso('Não dá para mover uma pasta para dentro dela mesma.');
         return;
       }
-      setArvore(a => moverPara(a, transferencia.id, destino, Date.now()));
-      if (origem.tipo === 'pasta') concluir('t3');
-      setAviso('Movido. No lugar de origem não ficou nenhuma cópia.');
+      setArvore(a => podem.reduce((acc, o) => moverPara(acc, o.id, destino, Date.now()), a));
+      if (podem.some(o => o.tipo === 'pasta')) concluir('t3');
+      setAviso(`Movido${plural}. No lugar de origem não ficou nenhuma cópia.`);
       setTransferencia(null);
     } else {
-      setArvore(a => copiarPara(a, transferencia.id, destino, novoId, Date.now()));
-      if (origem.tipo === 'pasta' && origem.paiId !== destino) concluir('t2');
-      setAviso('Copiado. O original continua onde estava.');
+      setArvore(a => origens.reduce((acc, o) => copiarPara(acc, o.id, destino, novoId, Date.now()), a));
+      if (origens.some(o => o.tipo === 'pasta' && o.paiId !== destino)) concluir('t2');
+      setAviso(`Copiado${plural}. ${origens.length === 1 ? 'O original continua' : 'Os originais continuam'} onde estava${plural}.`);
     }
   };
 
+  /* Escritos uma vez porque a barra, o menu de contexto **e** o teclado chamam
+     os mesmos. As dicas dos botões prometiam Ctrl+C, Ctrl+X, F2 e Del desde
+     sempre, e nenhuma fazia nada: não havia ouvinte de teclado aqui. */
+
+  const copiar = () => {
+    if (!mexiveis.length) return;
+    setTransferencia({ ids: mexiveis.map(n => n.id), recortar: false });
+    setAviso('Copiado. Vá até o destino e cole.');
+  };
+
+  const recortar = () => {
+    if (!mexiveis.length) return;
+    setTransferencia({ ids: mexiveis.map(n => n.id), recortar: true });
+    setAviso('Recortado. Vá até o destino e cole.');
+  };
+
+  const podeRenomear = itens.length === 1 && !!item && !ehRaiz(arvore, item.id);
+
+  const renomear = () => {
+    if (!podeRenomear || !item) return;
+    setRenomeando(item.id);
+    setRascunho(item.nome);
+  };
+
   const criarAtalho = () => {
-    if (!item) return;
+    if (!item || itens.length !== 1) return;
     const nome = nomeDisponivel(arvore, pastaAtual, `${item.nome} — Atalho`);
     setArvore(a => [...a, {
       id: novoId(), nome, tipo: 'atalho', paiId: pastaAtual,
@@ -258,17 +307,20 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
   };
 
   const excluir = () => {
-    if (!item || ehRaiz(arvore, item.id)) return;
-    setArvore(a => mandarParaLixeira(a, item.id));
-    setSelecionado(null);
-    setAviso('Foi para a Lixeira. Enquanto estiver lá, ainda dá para recuperar.');
+    if (!mexiveis.length) return;
+    const ids = mexiveis.map(n => n.id);
+    setArvore(a => ids.reduce((acc, id) => mandarParaLixeira(acc, id), a));
+    limpar();
+    setAviso(`${ids.length === 1 ? 'Foi' : 'Foram'} para a Lixeira. Enquanto `
+      + `${ids.length === 1 ? 'estiver' : 'estiverem'} lá, ainda dá para recuperar.`);
   };
 
   const devolver = () => {
-    if (!item) return;
-    setArvore(a => restaurar(a, item.id));
-    setSelecionado(null);
-    setAviso('Restaurado para o lugar de onde saiu.');
+    if (!itens.length) return;
+    const ids = itens.map(n => n.id);
+    setArvore(a => ids.reduce((acc, id) => restaurar(acc, id), a));
+    limpar();
+    setAviso(`Restaurado${ids.length === 1 ? '' : 's'} para o lugar de onde saiu.`);
   };
 
   const esvaziar = () => {
@@ -276,7 +328,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
        que nunca recebeu arquivo não demonstra a primeira metade. */
     const tinhaArquivo = arvore.some(n => n.tipo === 'arquivo' && caminhoDe(arvore, n.id).some(p => p.id === LIXEIRA));
     setArvore(a => esvaziarLixeira(a));
-    setSelecionado(null);
+    limpar();
     if (tinhaArquivo) concluir('t5');
     setAviso(tinhaArquivo
       ? 'Lixeira esvaziada. Agora sim: o que estava lá não volta mais.'
@@ -299,24 +351,30 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
     const id = arrastando;
     setArrastando(null);
     setAlvoSolto(null);
-    if (!id) return;
-    const origem = acharNo(arvore, id);
-    if (!origem) return;
+    if (!id || !acharNo(arvore, id)) return;
 
-    if (!podeSoltarEm(arvore, id, destino)) {
+    /* Arrastar uma linha da seleção leva a seleção inteira; arrastar uma de
+       fora leva só ela — `aoComecarArrasto` já pôs a seleção nesse estado. */
+    const origens = (selecao.ids.includes(id) ? selecao.ids : [id])
+      .map(x => acharNo(arvore, x))
+      .filter((n): n is No => !!n);
+    const podem = origens.filter(o => podeSoltarEm(arvore, o.id, destino));
+
+    if (!podem.length) {
       setAviso(destino === id || !acharNo(arvore, destino)
         ? ''
         : 'Não dá para soltar aí: uma pasta não entra dentro dela mesma.');
       return;
     }
+    const plural = podem.length === 1 ? '' : 's';
     if (copiando) {
-      setArvore(a => copiarPara(a, id, destino, novoId, Date.now()));
-      if (origem.tipo === 'pasta') concluir('t2');
-      setAviso('Copiado — segurar Ctrl enquanto arrasta copia em vez de mover.');
+      setArvore(a => podem.reduce((acc, o) => copiarPara(acc, o.id, destino, novoId, Date.now()), a));
+      if (podem.some(o => o.tipo === 'pasta')) concluir('t2');
+      setAviso(`Copiado${plural} — segurar Ctrl enquanto arrasta copia em vez de mover.`);
     } else {
-      setArvore(a => moverPara(a, id, destino, Date.now()));
-      if (origem.tipo === 'pasta') concluir('t3');
-      setAviso('Movido para a pasta de destino.');
+      setArvore(a => podem.reduce((acc, o) => moverPara(acc, o.id, destino, Date.now()), a));
+      if (podem.some(o => o.tipo === 'pasta')) concluir('t3');
+      setAviso(`Movido${plural} para a pasta de destino.`);
     }
   };
 
@@ -354,6 +412,27 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
     setSalvo(true);
   };
 
+  /* A janela de cima é a última usada que não esteja minimizada. */
+  const emFoco = [...abertos].reverse().find(a => !minimizados.has(a.id)) ?? null;
+
+  /*
+    As teclas que a barra já prometia, e o Ctrl+A que a seleção múltipla pede.
+
+    Fica **acima** do `if (salvo)`: hook depois de um return antecipado é hook
+    que deixa de ser chamado em algumas renderizações, e o React conta os hooks
+    pela ordem. Desligado quando há janela aberta ou quando o laboratório já
+    fechou — nos dois casos o Del apagaria de uma lista que não está na frente
+    de ninguém.
+  */
+  useAtalhosDoExplorador({
+    copiar,
+    recortar,
+    colar: () => colar(pastaAtual),
+    excluir: naLixeira ? undefined : excluir,
+    renomear,
+    selecionarTudo: () => setSelecao(todos(idsVisiveis)),
+  }, !emFoco && !salvo);
+
   if (salvo) {
     return (
       <div className="card p-6 text-center">
@@ -371,9 +450,6 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
   }
 
   const caminho = caminhoDe(arvore, pastaAtual);
-
-  /* A janela de cima é a última usada que não esteja minimizada. */
-  const emFoco = [...abertos].reverse().find(a => !minimizados.has(a.id)) ?? null;
 
   const naoFazParte = (nome: string) =>
     setAviso(`${nome} existe no Explorador de verdade, e está aqui para a janela ficar igual — mas não faz parte deste exercício.`);
@@ -480,20 +556,23 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
             Novo
           </Cmd>
           <div className="win-sep" />
-          <Cmd dica="Recortar (Ctrl+X)" Ico={Scissors} desabilitado={!item || ehRaiz(arvore, item.id)}
-            onClick={() => { setTransferencia({ id: item!.id, recortar: true }); setAviso('Recortado. Vá até o destino e cole.'); }} />
-          <Cmd dica="Copiar (Ctrl+C)" Ico={Copy} desabilitado={!item || ehRaiz(arvore, item.id)}
-            onClick={() => { setTransferencia({ id: item!.id, recortar: false }); setAviso('Copiado. Vá até o destino e cole.'); }} />
+          <Cmd dica="Recortar (Ctrl+X)" Ico={Scissors} desabilitado={!mexiveis.length}
+            onClick={recortar} />
+          <Cmd dica="Copiar (Ctrl+C)" Ico={Copy} desabilitado={!mexiveis.length}
+            onClick={copiar} />
           <Cmd dica="Colar (Ctrl+V)" Ico={ClipboardPaste} desabilitado={!transferencia}
             onClick={() => colar(pastaAtual)} />
-          <Cmd dica="Renomear (F2)" Ico={Pencil} desabilitado={!item || ehRaiz(arvore, item.id)}
-            onClick={() => { setRenomeando(item!.id); setRascunho(item!.nome); }} />
+          {/* Renomear é de um só: dois nomes iguais não convivem na mesma pasta,
+              e um campo para dois arquivos não tem o que gravar. */}
+          <Cmd dica="Renomear (F2)" Ico={Pencil} desabilitado={!podeRenomear}
+            onClick={renomear} />
           {naLixeira
-            ? <Cmd dica="Restaurar" Ico={RotateCcw} desabilitado={!item} onClick={devolver} />
-            : <Cmd dica="Excluir (Del)" Ico={Trash2} desabilitado={!item || ehRaiz(arvore, item.id)} onClick={excluir} />}
+            ? <Cmd dica="Restaurar" Ico={RotateCcw} desabilitado={!itens.length} onClick={devolver} />
+            : <Cmd dica="Excluir (Del)" Ico={Trash2} desabilitado={!mexiveis.length} onClick={excluir} />}
           <div className="win-sep" />
+          {/* O atalho aponta para **um** original: é o que ele é. */}
           <Cmd onClick={criarAtalho} Ico={Link2} dica="Criar atalho"
-            desabilitado={!item || ehRaiz(arvore, item.id) || naLixeira}>
+            desabilitado={itens.length !== 1 || !mexiveis.length || naLixeira}>
             Criar atalho
           </Cmd>
           {pastaAtual === LIXEIRA && (
@@ -514,7 +593,15 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
             }}>
             Classificar
           </Cmd>
-          <Cmd onClick={() => naoFazParte('O menu Exibir')} Ico={LayoutGrid} dica="Exibir">
+          {/* O Exibir avisava que não fazia parte. Agora ele tem a única coisa
+              deste laboratório que depende dele: as caixas de seleção, que são o
+              caminho para escolher vários em quem não tem Ctrl nem Shift. */}
+          <Cmd Ico={LayoutGrid} dica="Exibir"
+            onClick={e => {
+              e.stopPropagation();
+              const r = e.currentTarget.getBoundingClientRect();
+              setMenuExibir({ x: r.left, y: r.bottom + 4 });
+            }}>
             Exibir
           </Cmd>
         </div>
@@ -524,8 +611,8 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
           podeVoltar={posicao > 0}
           podeAvancar={posicao < historico.length - 1}
           paiId={noAtual?.paiId}
-          aoVoltar={() => { setPosicao(p => Math.max(0, p - 1)); setSelecionado(null); }}
-          aoAvancar={() => { setPosicao(p => Math.min(historico.length - 1, p + 1)); setSelecionado(null); }}
+          aoVoltar={() => { setPosicao(p => Math.max(0, p - 1)); limpar(); }}
+          aoAvancar={() => { setPosicao(p => Math.min(historico.length - 1, p + 1)); limpar(); }}
           aoIr={irPara}
           aoAvisar={naoFazParte}
         />
@@ -547,7 +634,13 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
           <div className="win-lista">
             <CabecalhosDaLista coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
 
-            <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+            {/* Clicar no vazio desfaz a seleção, como no Explorador. Só quando
+                o alvo é este `div`: sem a comparação, o clique que escolhe uma
+                linha borbulharia até aqui e a desfaria no mesmo gesto. */}
+            <div
+              style={{ flex: 1, minHeight: 0, overflow: 'auto' }}
+              onClick={e => { if (e.target === e.currentTarget) limpar(); }}
+            >
               {visiveis.length === 0 && (
                 <p style={{ padding: 16, fontSize: 12.5, color: '#767676' }}>Esta pasta está vazia.</p>
               )}
@@ -555,7 +648,11 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
               {visiveis.map(n => (
                 <LinhaDeArquivo
                   key={n.id} n={n} arvore={arvore}
-                  escolhido={selecionado === n.id}
+                  escolhido={escolhidos.includes(n.id)}
+                  caixa={caixas ? {
+                    marcada: escolhidos.includes(n.id),
+                    aoMarcar: () => setSelecao(sel => aoMarcarCaixa(sel, n.id)),
+                  } : undefined}
                   recebendo={alvoSolto === n.id}
                   arrastando={arrastando}
                   renomeando={renomeando === n.id ? {
@@ -564,10 +661,17 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
                     aoConfirmar: confirmarNome,
                     aoDesistir: () => setRenomeando(null),
                   } : undefined}
-                  aoSelecionar={() => { setSelecionado(n.id); setAviso(''); }}
+                  aoSelecionar={mod => { setSelecao(sel => aoClicar(sel, n.id, idsVisiveis, mod)); setAviso(''); }}
                   aoAbrir={() => abrir(n)}
-                  aoMenu={e => { e.preventDefault(); setSelecionado(n.id); setMenu({ x: e.clientX, y: e.clientY, id: n.id }); }}
-                  aoArrastar={setArrastando}
+                  aoMenu={e => {
+                    e.preventDefault();
+                    setSelecao(sel => aoAbrirMenu(sel, n.id));
+                    setMenu({ x: e.clientX, y: e.clientY, id: n.id });
+                  }}
+                  aoArrastar={id => {
+                    if (id) setSelecao(sel => aoComecarArrasto(sel, id));
+                    setArrastando(id);
+                  }}
                   aoPassarArrastando={setAlvoSolto}
                   aoSoltar={soltarEm}
                 />
@@ -578,10 +682,21 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
 
         <div className="win-status">
           <span>{visiveis.length} {visiveis.length === 1 ? 'item' : 'itens'}</span>
-          {item && <span>1 item selecionado</span>}
+          {itens.length > 0 && (
+            <span>
+              {itens.length} {itens.length === 1 ? 'item selecionado' : 'itens selecionados'}
+              {/* O total soma o que a coluna Tamanho mostra, e pasta não mostra
+                  nada — somar o conteúdo dela daria um número que não bate com
+                  nenhuma linha à vista. */}
+              {totalSelecionado > 0 && `\u00A0\u00A0${formatarKb(totalSelecionado)}`}
+            </span>
+          )}
           {transferencia && (
             <span style={{ marginLeft: 'auto' }}>
-              {transferencia.recortar ? 'Recortado' : 'Copiado'}: {acharNo(arvore, transferencia.id)?.nome}
+              {transferencia.recortar ? 'Recortado' : 'Copiado'}:{' '}
+              {transferencia.ids.length === 1
+                ? acharNo(arvore, transferencia.ids[0])?.nome
+                : `${transferencia.ids.length} itens`}
             </span>
           )}
         </div>
@@ -629,6 +744,18 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
       </BarraDeTarefasDoWindows>
       </div>
 
+      {menuExibir && (
+        <MenuFlutuante x={menuExibir.x} y={menuExibir.y}>
+          <button onClick={() => { setCaixas(c => !c); setMenuExibir(null); }}>
+            <span style={{ width: 14, flex: 'none' }}>{caixas ? '•' : ''}</span>
+            Caixas de seleção de item
+          </button>
+          <button onClick={() => { naoFazParte('Itens ocultos'); setMenuExibir(null); }}>
+            <span style={{ width: 14, flex: 'none' }} /> Itens ocultos
+          </button>
+        </MenuFlutuante>
+      )}
+
       {menuOrdem && (
         <MenuClassificar
           x={menuOrdem.x} y={menuOrdem.y} coluna={coluna} crescente={crescente}
@@ -643,11 +770,15 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
         const naoRaiz = !ehRaiz(arvore, n.id);
         const opcoes: [string, typeof Folder, () => void, boolean][] = [
           ['Abrir', FolderOpen, () => abrir(n), true],
-          ['Recortar', Scissors, () => setTransferencia({ id: n.id, recortar: true }), naoRaiz],
-          ['Copiar', Copy, () => setTransferencia({ id: n.id, recortar: false }), naoRaiz],
+          /* Daqui para baixo os comandos valem para a **seleção**, e não só para
+             a linha clicada: o botão direito numa linha já selecionada preserva
+             a seleção (`aoAbrirMenu`), e é assim que se movem cinco arquivos de
+             uma vez. Com um item só, a seleção é essa linha. */
+          ['Recortar', Scissors, recortar, naoRaiz],
+          ['Copiar', Copy, copiar, naoRaiz],
           ['Colar', ClipboardPaste, () => colar(n.tipo === 'pasta' ? n.id : pastaAtual), !!transferencia],
-          ['Criar atalho', Link2, criarAtalho, naoRaiz && !naLixeira],
-          ['Renomear', Pencil, () => { setRenomeando(n.id); setRascunho(n.nome); }, naoRaiz],
+          ['Criar atalho', Link2, criarAtalho, naoRaiz && !naLixeira && itens.length === 1],
+          ['Renomear', Pencil, renomear, naoRaiz && podeRenomear],
           [naLixeira ? 'Restaurar' : 'Excluir', naLixeira ? RotateCcw : Trash2, naLixeira ? devolver : excluir, naoRaiz],
         ];
         return (

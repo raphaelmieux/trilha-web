@@ -160,7 +160,8 @@ const PACOTE: Spec[] = [
   {
     id: 'compactou',
     label: 'Compactar um conjunto de arquivos num pacote só',
-    hint: 'Selecione uma pasta com vários arquivos e mande compactar.',
+    hint: 'Escolha vários arquivos — clique no primeiro e segure Ctrl nos outros — '
+      + 'ou uma pasta com vários dentro, e mande compactar.',
     run: c => {
       const pacotes = c.arvore.filter(n => (n.empacotado?.length ?? 0) >= 3);
       if (pacotes.length) return { passed: true };

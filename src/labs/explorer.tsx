@@ -9,6 +9,7 @@ import {
   formatarData, formatarTamanho, rotuloDoTipo,
   type No, type Coluna,
 } from './arquivos';
+import type { Modificadores } from './selecao';
 
 /*
  * A janela do Explorador de Arquivos, em peças.
@@ -289,7 +290,20 @@ export interface LinhaProps {
   arrastando: string | null;
   /** Quando este nó está sendo renomeado, o rascunho e o que fazer com ele. */
   renomeando?: { rascunho: string; aoMudar: (v: string) => void; aoConfirmar: () => void; aoDesistir: () => void };
-  aoSelecionar: () => void;
+  /**
+   * O clique na linha, com as teclas que o acompanharam — quem decide o que
+   * fazer com elas é `selecao.ts`, para que os dois Exploradores decidam igual.
+   */
+  aoSelecionar: (mod: Modificadores) => void;
+  /**
+   * A caixa de seleção de item, quando ela está ligada.
+   *
+   * É o caminho do Windows para escolher vários sem teclado, e é o único que
+   * existe no celular: `Ctrl` e `Shift` não cabem numa tela de toque, e sem ela
+   * a seleção múltipla sumiria justamente onde ela não pode sumir — reduzir a
+   * tela nunca reduz o que dá para fazer nela.
+   */
+  caixa?: { marcada: boolean; aoMarcar: () => void };
   aoAbrir: () => void;
   aoMenu: (e: React.MouseEvent) => void;
   aoArrastar: (id: string | null) => void;
@@ -317,16 +331,32 @@ export function LinhaDeArquivo(p: LinhaProps) {
     <div
       className={`win-linha${escolhido ? ' escolhida' : ''}${recebendo ? ' recebendo' : ''}`}
       draggable={!ehRaiz(arvore, n.id) && !renomeando}
-      onDragStart={() => { p.aoArrastar(n.id); p.aoSelecionar(); }}
+      /* Quem ajusta a seleção ao começar o arrasto é o laboratório, dentro do
+         próprio `aoArrastar`: a regra do arrasto não é a do clique — arrastar
+         uma linha já selecionada leva a seleção inteira junto. */
+      onDragStart={() => p.aoArrastar(n.id)}
       onDragEnd={() => { p.aoArrastar(null); p.aoPassarArrastando(null); }}
       onDragOver={e => { if (arrastando && podeSoltarEm(arvore, arrastando, n.id)) { e.preventDefault(); p.aoPassarArrastando(n.id); } }}
       onDragLeave={() => p.aoPassarArrastando(null)}
       onDrop={e => { e.preventDefault(); p.aoSoltar(n.id, e.ctrlKey || e.metaKey); }}
-      onClick={p.aoSelecionar}
+      onClick={e => p.aoSelecionar({ ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey })}
       onDoubleClick={p.aoAbrir}
       onContextMenu={p.aoMenu}
     >
       <div className="win-c-nome flex items-center gap-2 px-2">
+        {p.caixa && (
+          <input
+            type="checkbox"
+            className="win-caixa"
+            checked={p.caixa.marcada}
+            /* O clique na caixa não pode subir até a linha: lá ele viraria um
+               clique sem tecla nenhuma, que zera a seleção e desmarca tudo o que
+               já se tinha marcado — o gesto desfaria a si mesmo. */
+            onClick={e => e.stopPropagation()}
+            onChange={p.caixa.aoMarcar}
+            aria-label={`Selecionar ${n.nome}`}
+          />
+        )}
         <IconeDoNo n={n} arvore={arvore} />
         {renomeando ? (
           <input
