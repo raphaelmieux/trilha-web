@@ -144,13 +144,26 @@ export interface Direta {
  * um campo que gravasse `'Figura 1'` seria texto digitado com outro nome, e
  * entrar uma figura no meio o deixaria dizendo 1 para sempre.
  */
-export type Campo = 'figura' | 'tabela';
+export type Campo = 'figura' | 'tabela' | 'pagina';
 
-/** Como cada campo se lê na folha. */
+/** Como cada campo se lê na folha. A página não leva nome: é só o número. */
 export const NOME_DO_CAMPO: Record<Campo, string> = {
   figura: 'Figura',
   tabela: 'Tabela',
+  pagina: '',
 };
+
+/**
+ * Os campos que se numeram pela **posição no documento**, cada um na série
+ * dele.
+ *
+ * O da página não entra, e não é exceção arbitrária: ele é de outra natureza.
+ * Figura e Tabela contam quantos vieram antes no texto; o da página conta em
+ * que folha ele está sendo desenhado, e a mesma ocorrência dele — uma só, no
+ * rodapé — mostra um número diferente em cada página. No Word são dois campos
+ * diferentes pela mesma razão, SEQ e PAGE.
+ */
+export const CAMPOS_EM_SERIE: readonly Campo[] = ['figura', 'tabela'];
 
 export interface Trecho {
   id: string;
@@ -337,6 +350,16 @@ export const ehImagem = <S extends string>(b: Bloco<S>): b is ImagemDoDoc<S> =>
 export interface ItemDeSumario {
   texto: string;
   nivel: 1 | 2 | 3;
+  /**
+   * A folha em que o título estava **quando o sumário foi gerado**.
+   *
+   * Ela é gravada, e não calculada na leitura, pela mesma razão que o texto: o
+   * sumário guarda o que leu. É justamente o número de página que envelhece
+   * primeiro num documento de verdade — acrescentar uma seção no meio empurra
+   * todas as seguintes, e o sumário continua mandando quem lê para a folha
+   * errada sem nada avisar.
+   */
+  pagina: number;
 }
 
 /**
@@ -354,8 +377,34 @@ export interface AjusteDeEstilo {
   italico?: boolean;
 }
 
+/**
+ * O cabeçalho ou o rodapé: o que se repete em toda página.
+ *
+ * É uma lista de trechos, e não uma `string`, porque o que mora aí dentro
+ * quase sempre inclui um **campo** — o número da página. Guardar texto puro
+ * obrigaria a inventar um marcador dentro dele, e aí a diferença entre o
+ * número digitado e o número calculado, que é a lição do requisito 4.4,
+ * deixaria de estar representada.
+ */
+export interface FaixaDaPagina {
+  trechos: Trecho[];
+}
+
 export interface Doc<S extends string = string> {
   blocos: Bloco<S>[];
+  /** A faixa acima da margem de cima. `null` enquanto ninguém a abriu. */
+  cabecalho?: FaixaDaPagina | null;
+  /** A faixa abaixo da margem de baixo. */
+  rodape?: FaixaDaPagina | null;
+  /**
+   * A primeira página não leva as faixas — a caixa "Primeira página
+   * diferente" do Word.
+   *
+   * Ela existe para a capa, e é o que evita a gambiarra de pôr a capa num
+   * arquivo separado. Sem ela no modelo, um documento com capa não teria como
+   * ficar certo, e a tarefa que a pede não teria o que medir.
+   */
+  primeiraPaginaDiferente?: boolean;
   /**
    * As redefinições de estilo que moram **neste documento**.
    *
@@ -496,9 +545,20 @@ export function aparenciaDoTrecho(d: Doc<string>, b: Paragrafo<string>, x: Trech
 
 /** Os títulos do documento, na ordem, como o sumário os leria agora. */
 export function titulosDoDoc(d: Doc<string>): ItemDeSumario[] {
+  /* A folha de cada título sai da mesma repartição que a tela desenha: duas
+     contas de página divergiriam, e o sumário passaria a apontar para uma
+     folha que não é a que o desbravador vê. */
+  const paginas = paginasDoDoc(d);
+  const folhaDoBloco = new Map<string, number>();
+  paginas.forEach((blocos, i) => blocos.forEach(b => folhaDoBloco.set(b.id, i + 1)));
+
   return paragrafos(d)
     .filter(b => ehTitulo(b.estilo))
-    .map(b => ({ texto: textoDoBloco(b), nivel: NIVEL_DO_TITULO[b.estilo]! }));
+    .map(b => ({
+      texto: textoDoBloco(b),
+      nivel: NIVEL_DO_TITULO[b.estilo]!,
+      pagina: folhaDoBloco.get(b.id) ?? 1,
+    }));
 }
 
 /* ── Os campos de numeração ───────────────────────────────────────────────── */
@@ -527,7 +587,8 @@ export function camposDoDoc(d: Doc<string>): { bloco: string; trecho: Trecho }[]
  */
 export function numeroDoCampo(d: Doc<string>, trechoId: string): number {
   const alvo = camposDoDoc(d).find(c => c.trecho.id === trechoId);
-  if (!alvo) return 0;
+  if (!alvo || !alvo.trecho.campo) return 0;
+  if (!CAMPOS_EM_SERIE.includes(alvo.trecho.campo)) return 0;
   return camposDoDoc(d)
     .filter(c => c.trecho.campo === alvo.trecho.campo)
     .findIndex(c => c.trecho.id === trechoId) + 1;
@@ -542,14 +603,56 @@ export function numeroDoCampo(d: Doc<string>, trechoId: string): number {
  * este módulo ensina: a legenda digitada à mão responde a mesma coisa nas
  * duas, e é por isso que ela não se corrige sozinha.
  */
-export function textoDoTrecho(d: Doc<string>, x: Trecho): string {
+export function textoDoTrecho(d: Doc<string>, x: Trecho, pagina?: number): string {
   if (!x.campo) return x.texto;
+  /* O da página não tem posição no texto: ele diz em que folha está sendo
+     desenhado, e é a folha que informa. Sem número de página — porque quem
+     desenha não é a folha — ele sai como 1, que é onde ele estaria. */
+  if (x.campo === 'pagina') return String(pagina ?? 1);
   return `${NOME_DO_CAMPO[x.campo]} ${numeroDoCampo(d, x.id)}`;
 }
 
 /** O que um parágrafo mostra na folha, com os campos já resolvidos. */
-export const textoNaTela = (d: Doc<string>, b: Paragrafo<string>) =>
-  b.trechos.map(x => textoDoTrecho(d, x)).join('');
+export const textoNaTela = (d: Doc<string>, b: Paragrafo<string>, pagina?: number) =>
+  b.trechos.map(x => textoDoTrecho(d, x, pagina)).join('');
+
+/** O que uma faixa mostra na folha indicada. */
+export const textoDaFaixa = (d: Doc<string>, faixa: FaixaDaPagina, pagina: number) =>
+  faixa.trechos.map(x => textoDoTrecho(d, x, pagina)).join('');
+
+/** A faixa tem um campo de página, em vez de um número digitado? */
+export const faixaTemCampoDePagina = (faixa: FaixaDaPagina | null | undefined) =>
+  !!faixa?.trechos.some(x => x.campo === 'pagina');
+
+/* ── As folhas ────────────────────────────────────────────────────────────── */
+
+/**
+ * O documento repartido em folhas, pelas quebras de página que ele carrega.
+ *
+ * O Word reparte pela altura do que cabe; aqui é pela quebra explícita, e a
+ * diferença não custa a lição: o que os requisitos 4.4 e 4.5 pedem é ver o
+ * cabeçalho se repetir e o número mudar de uma folha para a outra, e para isso
+ * basta haver mais de uma folha. Simular o corte por altura pediria medir
+ * texto, que é trabalho do navegador e não do modelo — e daria uma paginação
+ * que muda com a fonte de quem está olhando.
+ *
+ * Devolve sempre ao menos uma folha, mesmo num documento sem bloco nenhum: a
+ * folha em branco existe no Word, e uma lista vazia faria a tela não desenhar
+ * papel nenhum.
+ */
+export function paginasDoDoc<S extends string>(d: Doc<S>): Bloco<S>[][] {
+  const paginas: Bloco<S>[][] = [[]];
+  for (const b of d.blocos) {
+    const atual = paginas[paginas.length - 1];
+    /* Quebra na primeira posição não abre folha em branco antes dela. */
+    if (b.quebraDePagina && atual.length > 0) paginas.push([]);
+    paginas[paginas.length - 1].push(b);
+  }
+  return paginas;
+}
+
+/** Quantas folhas o documento tem hoje. */
+export const quantasPaginas = (d: Doc<string>) => paginasDoDoc(d).length;
 
 /* ── Tabelas ──────────────────────────────────────────────────────────────── */
 
@@ -572,7 +675,9 @@ export function sumarioAtualizado(d: Doc<string>): boolean {
   if (!d.sumario) return false;
   const agora = titulosDoDoc(d);
   if (agora.length !== d.sumario.length) return false;
-  return agora.every((x, i) => x.texto === d.sumario![i].texto && x.nivel === d.sumario![i].nivel);
+  return agora.every((x, i) => x.texto === d.sumario![i].texto
+    && x.nivel === d.sumario![i].nivel
+    && x.pagina === d.sumario![i].pagina);
 }
 
 /* ── O botão Aa ───────────────────────────────────────────────────────────── */

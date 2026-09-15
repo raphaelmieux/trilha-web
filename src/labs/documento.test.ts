@@ -69,12 +69,28 @@ describe('o modelo de documento', () => {
     expect(ehTitulo('Normal')).toBe(false);
   });
 
-  it('os títulos saem na ordem do documento, com o nível de cada um', () => {
+  it('os títulos saem na ordem do documento, com o nível e a folha de cada um', () => {
+    /* A folha entra porque o sumário a grava: é ela que envelhece primeiro
+       num documento de verdade, quando uma seção nova empurra as seguintes.
+       Aqui não há quebra de página, então todos estão na folha 1. */
     expect(titulosDoDoc(AGORA)).toEqual([
-      { texto: 'Antes do acampamento', nivel: 1 },
-      { texto: 'A lista de inscritos', nivel: 2 },
-      { texto: 'Quem falta pagar', nivel: 3 },
+      { texto: 'Antes do acampamento', nivel: 1, pagina: 1 },
+      { texto: 'A lista de inscritos', nivel: 2, pagina: 1 },
+      { texto: 'Quem falta pagar', nivel: 3, pagina: 1 },
     ]);
+  });
+
+  it('o título que a quebra de página empurra muda de folha', () => {
+    /*
+      A conta que o sumário grava. Sem ela, um documento de quatro folhas teria
+      um sumário mandando todo mundo para a folha 1 — e o número ali é a única
+      coisa que o sumário existe para dizer.
+    */
+    const comQuebra: Doc<'unica'> = {
+      ...AGORA,
+      blocos: AGORA.blocos.map(b => (b.id === 'h2' ? { ...b, quebraDePagina: true } : b)),
+    };
+    expect(titulosDoDoc(comQuebra).map(t => t.pagina)).toEqual([1, 2, 2]);
   });
 
   it('o sumário guarda o que leu, e envelhece calado', () => {

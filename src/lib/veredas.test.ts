@@ -35,6 +35,7 @@ import { ROTEIROS } from '../labs/redacaoGuiada';
 import { OFICIO_INICIAL, METAS_DO_OFICIO } from '../labs/oficioDoClube';
 import { CIRCULAR_INICIAL, METAS_DA_CIRCULAR, gestosVazios as gestosDaCircular } from '../labs/circularDoClube';
 import { RELATORIO_INICIAL, METAS_DO_RELATORIO } from '../labs/relatorioDoAcampamento';
+import { RELATORIO_ANUAL_INICIAL, METAS_DO_RELATORIO_ANUAL } from '../labs/relatorioAnual';
 
 /*
   Os laboratórios de Word partem de documentos diferentes, e a trava precisa
@@ -60,6 +61,11 @@ const DOCUMENTOS_DE_WORD = {
   relatorio: {
     metas: METAS_DO_RELATORIO.map(m => ({
       id: m.id, passos: m.passos, feita: () => m.feita(RELATORIO_INICIAL),
+    })),
+  },
+  anual: {
+    metas: METAS_DO_RELATORIO_ANUAL.map(m => ({
+      id: m.id, passos: m.passos, feita: () => m.feita(RELATORIO_ANUAL_INICIAL),
     })),
   },
 } as const;

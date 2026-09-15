@@ -569,6 +569,24 @@ export const MODULOS_DO_EDITOR: ModuloDeVereda[] = [
         resumo: 'O que o editor calcula, ele recalcula — e o que se digita fica errado sozinho.',
         topicos: EM_TODA_PAGINA,
       },
+      {
+        /*
+          Os requisitos 4.4 e 4.5, num documento de quatro folhas.
+
+          O defeito deste **muda de página**: o rodapé diz "Página 2" em todas
+          elas, porque alguém digitou isso no dia em que o documento tinha
+          duas. Na folha 2 está certo; nas outras três, não. É a irmã exata da
+          legenda digitada do módulo 3, com o outro campo que a vereda ensina.
+
+          E o sumário envelhece enquanto se trabalha: a seção que a liderança
+          pediu entra depois, e quem gerou o sumário antes o vê ficar velho na
+          própria tela, sem nada avisar.
+        */
+        id: 'm4-lab', tipo: 'word', documento: 'anual',
+        titulo: 'Arrumando o relatório anual',
+        resumo: 'Um rodapé digitado que erra em três folhas, e um sumário que envelhece enquanto se trabalha.',
+        verificacoes: ['cabecalho', 'numeracao', 'primeira-diferente', 'secao', 'sumario'],
+      },
     ],
   },
   {

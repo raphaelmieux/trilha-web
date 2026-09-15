@@ -1420,6 +1420,51 @@ a mesma família do `describe.each` com quatro trilhas escritas à mão. Hoje é
 `switch` exaustivo com `never` no `default`: o sétimo tipo não compila até
 alguém dizer de onde sai o passo a passo dele.
 
+**A folha reparte de verdade, e foi o requisito 4.4 que cobrou.** Havia uma
+folha só, e a quebra de página era uma régua tracejada desenhada no meio dela.
+Servia enquanto nenhuma lição falava do que se repete **por página** — e a
+partir do módulo 4 não serve: cabeçalho que se repete numa folha só não se
+repete, e número de página que nunca muda não mostra a diferença entre o campo
+e o número digitado, que é a lição inteira.
+
+`paginasDoDoc` reparte pelas quebras que o documento carrega, e não pela altura
+do que cabe. A diferença não custa a lição — o que os requisitos 4.4 e 4.5
+pedem é ver a faixa se repetir e o número mudar, e para isso basta haver mais
+de uma folha —, e simular o corte por altura pediria medir texto no modelo, que
+é trabalho do navegador: daria uma paginação que muda com a fonte de quem está
+olhando. A régua tracejada saiu junto, porque uma quebra que abre folha nova e
+ainda desenha um aviso de quebra diz duas vezes a mesma coisa. Os três
+laboratórios anteriores ganharam isso de lambuja, e o do módulo 2 passou a
+mostrar duas folhas onde mostrava uma linha pontilhada — que é o que uma quebra
+de página de fato faz.
+
+**O número da página é campo, e é de outra natureza que os outros dois.**
+Figura e Tabela contam quantos vieram antes no texto; o da página conta em que
+folha ele está sendo desenhado, e a **mesma** ocorrência dele — uma só, no
+rodapé — mostra um número diferente em cada página. No Word são dois campos
+diferentes pelo mesmo motivo, SEQ e PAGE, e aqui `CAMPOS_EM_SERIE` separa os
+dois comportamentos: `textoDoTrecho` recebe a folha e resolve o da página com
+ela.
+
+E ele **não é editável na tela**. Deixar digitar por cima ensinaria que dá para
+consertar o número errado escrevendo o certo, que é exatamente o gesto que a
+lição existe para desfazer — e o documento chega com "Página 2" digitado em
+todas as quatro folhas, certo numa e errado em três.
+
+**O sumário guarda a folha, e não a posição da linha.** Ele imprimia `i + 1`,
+que é o índice da entrada: num documento de quatro folhas o sumário mandava
+todo mundo para as folhas 1, 2, 3, 4 na ordem em que os títulos aparecem, o que
+só por acaso bate com o papel. `ItemDeSumario` grava `pagina`, e
+`sumarioAtualizado` compara também por ela — porque é o número de página que
+envelhece primeiro num documento de verdade: acrescentar uma seção no meio
+empurra todas as seguintes sem mudar uma palavra de título nenhum, e um sumário
+que só comparasse texto e nível continuaria se dizendo em dia.
+
+**Faixa aberta e nunca escrita não conta.** Abrir o cabeçalho é um clique, e um
+cabeçalho vazio se repete em toda folha dizendo nada. É "zero link não é zero
+link quebrado" aplicado à faixa, e por isso `cabecalhoEscrito` olha o texto e
+não a existência.
+
 **Despacho de três telas não é ternário.** Com dois documentos de Word o
 `documento === 'circular' ? A : B` funcionava; com três, o `else` passa a ser
 "todo o resto" e um documento novo cairia calado no laboratório do módulo 1 —
@@ -1920,6 +1965,10 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/documento.test.ts` | imagem contada como parágrafo vazio, ou figura e tabela numerando na mesma série |
 | `src/components/LaboratorioDoRelatorio.test.tsx` | tabulação colapsada, que apaga o único defeito visível do documento |
 | `src/components/LaboratorioDoRelatorio.test.tsx` | bloco solto na folha de flex, onde o float é ignorado e três disposições viram uma |
+| `src/labs/relatorioAnual.test.ts` | número de página digitado valendo por campo, ou cabeçalho vazio valendo por escrito |
+| `src/labs/relatorioAnual.test.ts` | título empurrado de folha sem envelhecer o sumário, que passa a apontar para a folha errada |
+| `src/components/LaboratorioDoRelatorioAnual.test.tsx` | folha que para de repartir, onde o cabeçalho não tem onde se repetir |
+| `src/components/LaboratorioDoRelatorioAnual.test.tsx` | campo de página que aceita ser digitado por cima, ou posto ao lado do número errado |
 | `src/components/LaboratorioDaCircular.test.tsx` | botão ¶ que liga o estado e não desenha marca nenhuma, ou Excluir que apaga parágrafo com texto |
 | `src/labs/EstilosTextoLab.test.tsx` | botão do laboratório de estilos que não chega ao documento, ou sumário velho valendo por novo |
 | `src/labs/BancoDeDadosLab.test.tsx` | assistente de importação que já chega com o mapeamento certo, ou relatório sem os quatro campos |

@@ -25,8 +25,9 @@ import {
 
 import {
   aparenciaDe, aparenciaDoTrecho, textoDoTrecho, larguraDaTabela,
+  paginasDoDoc,
   type Doc, type Bloco, type Paragrafo, type TabelaDoDoc, type ImagemDoDoc,
-  type Disposicao, type ItemDeSumario,
+  type Disposicao, type ItemDeSumario, type FaixaDaPagina,
 } from './documento';
 
 export const CSS_WORD = `
@@ -842,6 +843,30 @@ export const CSS_FOLHA = `
      Os blocos vão num bloco comum dentro do flex, e aí o float volta a valer
      entre irmãos. O flex 1 mantém a folha esticando como antes. */
   .wd-corpo { flex: 1; min-height: 0; }
+  /* As faixas de cima e de baixo.
+
+     Elas são desenhadas em cinza e separadas por uma régua tracejada, que é
+     como o Word mostra a área de cabeçalho quando ela não está sendo editada:
+     ela pertence à página e não ao texto, e pintá-la igual ao corpo faria o
+     desbravador achar que dá para escrever nela digitando. */
+  .wd-faixa-pagina {
+    color: #767676; font-size: 9.5px; display: flex; justify-content: space-between;
+    gap: 8px; min-height: 14px;
+  }
+  .wd-faixa-cabecalho { border-bottom: 1px dashed #C8C6C4; padding-bottom: 3px; margin-bottom: 8px; }
+  .wd-faixa-rodape { border-top: 1px dashed #C8C6C4; padding-top: 3px; margin-top: 8px; }
+  /* O número da folha, fora da faixa: ele existe mesmo sem rodapé, porque a
+     folha é uma folha. É o cinza do papel, e não texto do documento. */
+  .wd-folha-numero { color: #A19F9D; font-size: 9px; text-align: center; margin-top: 2px; }
+  /* O campo onde se escreve a faixa. Sem borda, como a célula da tabela: no
+     Word a área de cabeçalho é texto, e uma caixinha dentro dela ensinaria um
+     programa que não existe. */
+  .wd-faixa-escrita {
+    border: none; background: transparent; padding: 0; margin: 0;
+    font: inherit; color: inherit; flex: 1; min-width: 40px; outline: none;
+  }
+  .wd-faixa-escrita:focus { box-shadow: inset 0 0 0 2px #2B579A; }
+  .wd-faixa-escrita::placeholder { color: #B9B9B9; font-style: italic; }
   /* Atrás e à frente saem da linha e **cobrem** o texto — é isto que faz delas
      a resposta errada para uma foto num relatório, e é preciso vê-lo. O
      invólucro tem altura zero para que a imagem não empurre nada: fora da
@@ -1070,7 +1095,9 @@ export function SumarioDaFolha({ itens }: { itens: ItemDeSumario[] }) {
         <div key={i} className="wd-sumario-linha" style={{ paddingLeft: (it.nivel - 1) * 14 }}>
           <span>{it.texto}</span>
           <span className="wd-sumario-pontos" />
-          <span>{i + 1}</span>
+          {/* A folha que ele leu, e não a posição da linha. Era o índice, o que
+              dava um sumário cujos números só por acaso batiam com o papel. */}
+          <span data-sumario-pagina={it.pagina}>{it.pagina}</span>
         </div>
       ))}
     </div>
@@ -1119,10 +1146,66 @@ export function BlocoDaFolha({
   }
 }
 
-/** A folha inteira: o sumário, quando existe, e os blocos. */
+/**
+ * A faixa que se repete: cabeçalho ou rodapé.
+ *
+ * O campo de página se resolve **aqui**, com o número da folha em que ela está
+ * sendo desenhada — é a diferença inteira entre o número calculado e o
+ * digitado, e ela só aparece quando há mais de uma folha para comparar.
+ */
+export function FaixaDaFolha({ doc, faixa, pagina, onde, aoEscrever }: {
+  doc: Doc<string>;
+  faixa: FaixaDaPagina;
+  pagina: number;
+  onde: 'cabecalho' | 'rodape';
+  /** Quando dado, o que é texto vira campo de digitar; o campo nunca vira. */
+  aoEscrever?: (trechoId: string, valor: string) => void;
+}) {
+  return (
+    <div className={`wd-faixa-pagina wd-faixa-${onde}`} data-faixa={onde}>
+      <span style={{ display: 'flex', gap: 2, alignItems: 'baseline', flex: 1 }}>
+        {faixa.trechos.map(x => (x.campo ? (
+          /*
+            O número não se digita por cima: ele é calculado, e o sombreado é o
+            Word dizendo isso. Deixá-lo editável ensinaria que dá para
+            consertar o número errado escrevendo o certo, que é exatamente o
+            gesto que esta lição existe para desfazer.
+          */
+          <span key={x.id} className="wd-campo" data-campo={x.campo}>
+            {textoDoTrecho(doc, x, pagina)}
+          </span>
+        ) : aoEscrever ? (
+          <input
+            key={x.id} className="wd-faixa-escrita" value={x.texto}
+            aria-label={onde === 'cabecalho' ? 'Cabeçalho' : 'Rodapé'}
+            placeholder={onde === 'cabecalho' ? 'Escreva o cabeçalho…' : 'Escreva o rodapé…'}
+            onChange={ev => aoEscrever(x.id, ev.target.value)}
+          />
+        ) : (
+          <span key={x.id}>{x.texto}</span>
+        )))}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * A folha inteira: quantas páginas o documento tiver, cada uma com as faixas
+ * que se repetem.
+ *
+ * ── Por que ela reparte de verdade ───────────────────────────────────────
+ * Antes havia uma folha só, e a quebra de página era uma régua tracejada
+ * escrita no meio dela. Servia enquanto nenhuma lição falava do que se repete
+ * **por página** — e a partir do requisito 4.4 não serve mais: cabeçalho que
+ * se repete numa folha só não se repete, e número de página que nunca muda não
+ * mostra a diferença entre o campo e o número digitado, que é a lição.
+ *
+ * A régua tracejada saiu junto: uma quebra que abre folha nova e ainda desenha
+ * um aviso de quebra diz duas vezes a mesma coisa.
+ */
 export function FolhaDoWord({
   doc, selecionado, marcas, aoEscolher, aoClicarNoVazio,
-  celula, aoCursorNaCelula, aoEditarCelula,
+  celula, aoCursorNaCelula, aoEditarCelula, aoEscreverNaFaixa,
 }: {
   doc: Doc<string>;
   selecionado?: string | null;
@@ -1130,41 +1213,65 @@ export function FolhaDoWord({
   aoEscolher?: (id: string) => void;
   aoClicarNoVazio?: () => void;
   celula?: { linha: number; coluna: number } | null;
-  /** Recebe o bloco junto: é ele que o laboratório precisa selecionar. */
   aoCursorNaCelula?: (blocoId: string, linha: number, coluna: number) => void;
   aoEditarCelula?: (blocoId: string, linha: number, coluna: number, valor: string) => void;
+  aoEscreverNaFaixa?: (onde: 'cabecalho' | 'rodape', trechoId: string, valor: string) => void;
 }) {
+  const paginas = paginasDoDoc(doc);
   return (
     <div className="wd-canvas" onClick={aoClicarNoVazio}>
-      <div className="wd-pagina" onClick={ev => ev.stopPropagation()}>
-        {doc.sumario && <SumarioDaFolha itens={doc.sumario} />}
-        <div className="wd-corpo">
-        {doc.blocos.map((b, i) => {
-          /* A legenda logo depois de uma figura que flutua pertence a ela, e
-             flutua junto. É a ordem dos blocos que diz isso — no Word é o
-             agrupamento da figura com a legenda, e aqui a vizinhança basta,
-             porque `Inserir Legenda` sempre a põe imediatamente abaixo. */
-          const anterior = doc.blocos[i - 1];
-          const flutuaComAFigura = b.tipo === 'paragrafo' && b.estilo === 'Legenda'
-            && anterior?.tipo === 'imagem'
-            && DISPOSICOES_QUE_FLUTUAM.includes(anterior.disposicao);
-          return (
-          <BlocoDaFolha
-            key={b.id} doc={doc} bloco={b}
-            escolhido={selecionado === b.id}
-            marcas={marcas}
-            aoEscolher={aoEscolher ? () => aoEscolher(b.id) : undefined}
-            celula={selecionado === b.id ? celula : null}
-            aoCursorNaCelula={aoCursorNaCelula
-              ? (linha, coluna) => aoCursorNaCelula(b.id, linha, coluna) : undefined}
-            aoEditarCelula={aoEditarCelula
-              ? (linha, coluna, valor) => aoEditarCelula(b.id, linha, coluna, valor) : undefined}
-            classe={flutuaComAFigura ? 'wd-legenda-flutua' : undefined}
-          />
-          );
-        })}
-        </div>
-      </div>
+      {paginas.map((blocos, i) => {
+        const numero = i + 1;
+        /* A caixa "Primeira página diferente" do Word: a capa não leva faixa.
+           É o que evita a gambiarra de pôr a capa noutro arquivo. */
+        const comFaixas = !(doc.primeiraPaginaDiferente && numero === 1);
+        return (
+          <div key={numero}>
+            <div className="wd-pagina" onClick={ev => ev.stopPropagation()}
+              data-pagina={numero}>
+              {comFaixas && doc.cabecalho && (
+                <FaixaDaFolha doc={doc} faixa={doc.cabecalho} pagina={numero} onde="cabecalho"
+                  aoEscrever={aoEscreverNaFaixa
+                    ? (id, valor) => aoEscreverNaFaixa('cabecalho', id, valor) : undefined} />
+              )}
+              {/* O sumário mora na primeira folha, que é onde ele é gerado. */}
+              {numero === 1 && doc.sumario && <SumarioDaFolha itens={doc.sumario} />}
+              <div className="wd-corpo">
+                {blocos.map((b) => {
+                  const dentro = doc.blocos.indexOf(b);
+                  const anterior = doc.blocos[dentro - 1];
+                  const flutuaComAFigura = b.tipo === 'paragrafo' && b.estilo === 'Legenda'
+                    && anterior?.tipo === 'imagem'
+                    && DISPOSICOES_QUE_FLUTUAM.includes(anterior.disposicao);
+                  return (
+                    <BlocoDaFolha
+                      key={b.id} doc={doc} bloco={b}
+                      escolhido={selecionado === b.id}
+                      marcas={marcas}
+                      aoEscolher={aoEscolher ? () => aoEscolher(b.id) : undefined}
+                      celula={selecionado === b.id ? celula : null}
+                      aoCursorNaCelula={aoCursorNaCelula
+                        ? (linha, coluna) => aoCursorNaCelula(b.id, linha, coluna) : undefined}
+                      aoEditarCelula={aoEditarCelula
+                        ? (linha, coluna, valor) => aoEditarCelula(b.id, linha, coluna, valor) : undefined}
+                      classe={flutuaComAFigura ? 'wd-legenda-flutua' : undefined}
+                    />
+                  );
+                })}
+              </div>
+              {comFaixas && doc.rodape && (
+                <FaixaDaFolha doc={doc} faixa={doc.rodape} pagina={numero} onde="rodape"
+                  aoEscrever={aoEscreverNaFaixa
+                    ? (id, valor) => aoEscreverNaFaixa('rodape', id, valor) : undefined} />
+              )}
+            </div>
+            {/* Fora do papel: a contagem de folhas que a régua de status do
+                Word também mostra. Ela não é do documento, e por isso não some
+                com "Primeira página diferente". */}
+            <div className="wd-folha-numero">Folha {numero} de {paginas.length}</div>
+          </div>
+        );
+      })}
     </div>
   );
 }
