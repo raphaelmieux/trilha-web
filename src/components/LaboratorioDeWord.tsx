@@ -6,14 +6,14 @@ import {
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
-  CSS_WORD, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
-  BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord,
+  CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
+  BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
 } from '../labs/word';
 import {
   OFICIO_INICIAL, METAS_DO_OFICIO, type Doc,
 } from '../labs/oficioDoClube';
 import {
-  aparenciaDe, aparenciaDoTrecho, textoDoBloco, ehTitulo, titulosDoDoc,
+  aparenciaDe, textoDoBloco, ehTitulo, titulosDoDoc,
   type Estilo, type AjusteDeEstilo,
 } from '../labs/documento';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
@@ -221,6 +221,7 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
       rodape={26}
     >
       <style>{CSS_WORD}</style>
+      <style>{CSS_FOLHA}</style>
       <style>{`
         .wr-galeria { display: flex; gap: 3px; }
         .wr-estilo {
@@ -230,14 +231,6 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
           font-size: 11px; color: #201F1E; white-space: nowrap;
         }
         .wr-estilo:hover { border-color: #2B579A; }
-        .wr-sumario {
-          border: 1px solid #D1D1D1; padding: 8px 10px; margin-bottom: 12px;
-          font-size: 10.5px; color: #201F1E;
-        }
-        .wr-sumario-linha { display: flex; gap: 6px; align-items: baseline; }
-        .wr-sumario-pontos { flex: 1; border-bottom: 1px dotted #8A8886; }
-        .wr-bloco { cursor: text; }
-        .wr-bloco.escolhido { outline: 1px solid #2B579A; outline-offset: 2px; }
         /* A caixa Modificar Estilo. Superfície clara dentro da moldura escura:
            ela diz a própria cor, pela razão escrita em CSS_DA_MOLDURA. */
         .wr-caixa-fundo {
@@ -371,41 +364,12 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
 
         <ReguaDoWord larguraCm={21} margemCm={2.5} />
 
-        <div className="wd-canvas" onClick={() => { setSelecionado(null); fecharMenu(); }}>
-          <div className="wd-pagina" onClick={ev => ev.stopPropagation()}>
-            {doc.sumario && (
-              <div className="wr-sumario">
-                <p style={{ fontWeight: 700, color: '#2F5496', marginBottom: 4 }}>Sumário</p>
-                {doc.sumario.length === 0 ? (
-                  <p style={{ color: '#A19F9D', fontStyle: 'italic' }}>
-                    Nenhuma entrada de sumário foi encontrada.
-                  </p>
-                ) : doc.sumario.map((it, i) => (
-                  <div key={i} className="wr-sumario-linha" style={{ paddingLeft: (it.nivel - 1) * 14 }}>
-                    <span>{it.texto}</span>
-                    <span className="wr-sumario-pontos" />
-                    <span>{i + 1}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {doc.blocos.map(b => (
-              <p
-                key={b.id}
-                className={`wr-bloco${selecionado === b.id ? ' escolhido' : ''}`}
-                style={aparenciaDe(doc, b.estilo)}
-                onClick={ev => { ev.stopPropagation(); setSelecionado(b.id); setAviso(''); fecharMenu(); }}
-                data-bloco={b.id}
-                data-estilo={b.estilo}
-              >
-                {b.trechos.map(x => (
-                  <span key={x.id} style={aparenciaDoTrecho(doc, b, x)}>{x.texto}</span>
-                ))}
-              </p>
-            ))}
-          </div>
-        </div>
+        <FolhaDoWord
+          doc={doc}
+          selecionado={selecionado}
+          aoEscolher={id => { setSelecionado(id); setAviso(''); fecharMenu(); }}
+          aoClicarNoVazio={() => { setSelecionado(null); fecharMenu(); }}
+        />
 
         <div className="wd-status">
           <span>{doc.blocos.length} parágrafos</span>

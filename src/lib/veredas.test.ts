@@ -32,6 +32,30 @@ import { PASSOS_DE_SCRATCH } from '../labs/passosDeScratch';
 import { PASSOS_DE_PYTHON } from '../labs/passosDePython';
 import { ROTEIROS } from '../labs/redacaoGuiada';
 import { OFICIO_INICIAL, METAS_DO_OFICIO } from '../labs/oficioDoClube';
+import { CIRCULAR_INICIAL, METAS_DA_CIRCULAR, gestosVazios as gestosDaCircular } from '../labs/circularDoClube';
+
+/*
+  Os laboratórios de Word partem de documentos diferentes, e a trava precisa
+  saber de qual. Sem esta escolha ela conferiria sempre o mesmo par, e a lição
+  nova passaria sem ser olhada — o defeito que o `switch` exaustivo logo abaixo
+  acabou de consertar do outro lado.
+
+  As metas da circular recebem contexto, e as do ofício recebem o documento
+  direto: uma delas depende de gesto que não deixa marca (ligar as marcas de
+  parágrafo), e a outra não tem nenhum desses.
+*/
+const DOCUMENTOS_DE_WORD = {
+  oficio: {
+    metas: METAS_DO_OFICIO.map(m => ({ id: m.id, passos: m.passos, feita: () => m.feita(OFICIO_INICIAL) })),
+  },
+  circular: {
+    metas: METAS_DA_CIRCULAR.map(m => ({
+      id: m.id,
+      passos: m.passos,
+      feita: () => m.feita({ doc: CIRCULAR_INICIAL, gestos: gestosDaCircular() }),
+    })),
+  },
+} as const;
 
 /* O validador de HTML lança em id desconhecido, então a lista dele se monta
    dos três registros que `validateHtml` consulta. */
@@ -310,15 +334,17 @@ describe('os modelos dos laboratórios da vereda', () => {
     for (const licao of licoesDaVereda(vereda)) {
       if (licao.tipo !== 'word') continue;
 
+      const { metas } = DOCUMENTOS_DE_WORD[licao.documento];
+
       it(`${vereda.code} · ${licao.id} abre num documento sem nada consertado`, () => {
-        const verdes = METAS_DO_OFICIO
-          .filter(m => licao.verificacoes.includes(m.id) && m.feita(OFICIO_INICIAL))
+        const verdes = metas
+          .filter(m => licao.verificacoes.includes(m.id) && m.feita())
           .map(m => m.id);
         expect(verdes).toEqual([]);
       });
 
       it(`${vereda.code} · ${licao.id} cobra meta que existe`, () => {
-        const conhecidas = METAS_DO_OFICIO.map(m => m.id);
+        const conhecidas = metas.map(m => m.id);
         expect(licao.verificacoes.filter(id => !conhecidas.includes(id))).toEqual([]);
       });
     }
@@ -393,7 +419,8 @@ describe('os modelos dos laboratórios da vereda', () => {
         /* O do editor de texto não é um mapa à parte: cada meta carrega os
            próprios passos, porque quem os escreve é quem escreve o enunciado
            dela — separá-los daria duas listas para a mesma tarefa. */
-        case 'word': return Object.fromEntries(METAS_DO_OFICIO.map(m => [m.id, m.passos]));
+        case 'word': return Object.fromEntries(
+          DOCUMENTOS_DE_WORD[l.documento].metas.map(m => [m.id, m.passos]));
         case 'laboratorio': return passosDe(l.linguagem);
         /* Teoria e redação não têm verificação com passo a passo. */
         case 'teoria': case 'redacao': return null;

@@ -1,6 +1,6 @@
 import {
-  blocoDe, linhaDe, trechoDe, textoDoBloco, textoDoDoc, paragrafosVazios,
-  type Doc as DocDoWord, type Bloco as BlocoDoWord, type Trecho,
+  linhaDe, textoDoBloco, textoDoDoc, paragrafosVazios,
+  type Doc as DocDoWord, type Bloco as BlocoDoWord,
 } from './documento';
 
 /*
@@ -37,13 +37,6 @@ const linha = (id: string, secao: Secao, texto: string): Bloco =>
 /** Um parágrafo vazio: o Enter apertado para empurrar. */
 const vazio = (id: string, secao: Secao): Bloco => linhaDe(id, secao, '');
 
-/** Um parágrafo de várias linhas lógicas, cada uma um trecho. */
-const comLinhas = (id: string, secao: Secao, linhas: string[], quebrado: boolean): Bloco =>
-  blocoDe(id, secao, linhas.map((texto, i): Trecho => ({
-    ...trechoDe(`${id}-${i}`, texto),
-    ...(quebrado && i > 0 ? { quebra: true } : {}),
-  })));
-
 /**
  * A circular como ela chega.
  *
@@ -71,10 +64,11 @@ export const CIRCULAR_INICIAL: Doc = {
     vazio('v4', 'assinatura'),
     vazio('v5', 'assinatura'),
 
-    comLinhas('assina', 'assinatura', [
-      'Diretoria do Clube de Desbravadores Pioneiros',
-      'Sobradinho, 2 de junho de 2026',
-    ], false),
+    /* Uma linha só, e não duas coladas: dois trechos sem quebra saem grudados
+       na tela — "PioneirosSobradinho" —, porque é exatamente isso que um
+       parágrafo sem quebra de linha faz. E com quebra ela chegaria com a
+       resposta do endereço desenhada dentro do próprio documento. */
+    linha('assina', 'assinatura', 'Diretoria do Clube de Desbravadores Pioneiros — Sobradinho, 2 de junho de 2026'),
   ],
   colunas: { cabeca: 1, corpo: 1, endereco: 1, assinatura: 1 },
   sumario: null,

@@ -1304,6 +1304,29 @@ parágrafo. Como item próprio da lista ela abriria verde, que `veredas.test.ts`
 reprova — e com razão, porque lista com item já marcado no segundo zero ensina a
 não ler a lista.
 
+**A folha desceu para `word.tsx`, e o tipo da lição não diz de que documento
+ela parte.** O segundo laboratório de Word da vereda é outro componente
+vestindo a mesma janela — `LaboratorioDeWord` é a **lição do módulo 1**, e não a
+janela —, que é o arranjo de `FileManagerLab` e `LaboratorioDeExplorador` sobre
+`explorer.tsx`. Então a folha, o parágrafo, a quebra de linha, as marcas e o
+sumário desceram **antes** de a cópia existir.
+
+E `tipo: 'word'` não basta para escolher a tela: os dois módulos abrem o Word e
+partem de documentos diferentes. A lição diz `documento: 'oficio' | 'circular'`,
+e é ele que o despacho lê — amarrar a tela ao **id** do módulo faria o terceiro
+laboratório de Word pedir um `if` novo na página em vez de um campo no
+currículo. É o mesmo campo que diz à trava de "abre sem nada consertado" qual
+par documento/metas conferir: sem ele, ela olharia sempre para o primeiro e a
+lição nova escaparia sem nada acusar — que é o defeito que o `switch` exaustivo
+logo abaixo acabou de consertar do outro lado.
+
+**Dois trechos sem quebra saem grudados, e é isso que um parágrafo é.** A
+assinatura da circular tinha dois trechos e nenhuma quebra entre eles, e a tela
+mostrou "PioneirosSobradinho" — que é exatamente o que um parágrafo sem quebra
+de linha faz, e o defeito só apareceu no navegador. A correção não foi pôr a
+quebra: com ela, o documento chegaria com a resposta do endereço desenhada
+dentro dele. Virou uma linha só.
+
 **Escada de `if` por tipo de lição ignora em silêncio o tipo novo.** As travas
 de vereda escolhiam o mapa de passo a passo com uma escada de `if` terminada em
 `if (l.tipo !== 'laboratorio') return []`. O editor de texto entrou como sexto
@@ -1741,6 +1764,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaAp044.test.ts` | tarefa do laboratório de estilos que nasce verde, ou que ninguém consegue vencer |
 | `src/labs/oficioDoClube.test.ts` | relatório que abre com estilo aplicado, ou meta que passa com o texto alterado |
 | `src/components/LaboratorioDeWord.test.tsx` | caixa Modificar cujo OK não grava ou cujo Cancelar grava, ou os dois Words divergindo |
+| `src/labs/circularDoClube.test.ts` | circular que chega com o endereço já junto, ou meta de quebra que aceita só apagar |
+| `src/components/LaboratorioDaCircular.test.tsx` | botão ¶ que liga o estado e não desenha marca nenhuma, ou Excluir que apaga parágrafo com texto |
 | `src/labs/EstilosTextoLab.test.tsx` | botão do laboratório de estilos que não chega ao documento, ou sumário velho valendo por novo |
 | `src/labs/BancoDeDadosLab.test.tsx` | assistente de importação que já chega com o mapeamento certo, ou relatório sem os quatro campos |
 | `src/labs/apresentacaoDoClube.test.ts` | apresentação que abre sem os defeitos que as tarefas consertam, ou mídia vinculada valendo por incorporada |
