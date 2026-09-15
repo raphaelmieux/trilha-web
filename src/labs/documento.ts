@@ -165,6 +165,49 @@ export const NOME_DO_CAMPO: Record<Campo, string> = {
  */
 export const CAMPOS_EM_SERIE: readonly Campo[] = ['figura', 'tabela'];
 
+/**
+ * Quem assina uma marca de revisão ou um comentário.
+ *
+ * São dois de propósito, e não uma `string` com o nome de quem quer que seja:
+ * o documento do módulo 5 chega revisado pela liderança, e o que a lição cobra
+ * é a diferença entre **a marca que veio de fora** e a que a pessoa acabou de
+ * fazer. Com nome livre, "aceite as marcas da liderança" viraria comparação de
+ * texto, e um erro de digitação no nome deixaria a tarefa impossível sem nada
+ * acusar.
+ */
+export type Autor = 'voce' | 'lideranca';
+
+/** Como o autor se assina na margem e no balão. */
+export const NOME_DO_AUTOR: Record<Autor, string> = {
+  voce: 'Você',
+  lideranca: 'Liderança',
+};
+
+/**
+ * A cor de cada revisor, e por que ela é constante e não só uma classe.
+ *
+ * `aparenciaDoTrecho` devolve `style` inline — é ela que carrega a formatação
+ * direta —, e estilo inline vence classe. A regra de folha existia, media
+ * 7,3:1 e 5,4:1 sobre o papel branco, e **nunca chegava à tela**: as duas
+ * marcas saíam na cor do corpo do documento, com o traço e o sublinhado
+ * certos e a autoria dizendo nada. Quem viu foi o navegador; no jsdom não há
+ * cascata para atropelar.
+ *
+ * Então a cor vai inline por cima, que também é o que o Word faz: a marca de
+ * revisão pinta o texto na cor do revisor seja qual for a cor dele no
+ * documento.
+ */
+export const COR_DO_AUTOR: Record<Autor, string> = {
+  lideranca: '#A4262C',
+  voce: '#0F6CBD',
+};
+
+/** O que a marca fez com o trecho: ele entrou, ou ele saiu. */
+export interface Revisao {
+  autor: Autor;
+  tipo: 'inserido' | 'excluido';
+}
+
 export interface Trecho {
   id: string;
   /**
@@ -201,6 +244,21 @@ export interface Trecho {
    * são os do documento.
    */
   deFora?: boolean;
+  /**
+   * A marca de revisão, quando este trecho entrou ou saiu com o controle de
+   * alterações ligado.
+   *
+   * Ela mora no trecho, e não no parágrafo, porque é isso que ela é: no Word
+   * a marca é de um pedaço de texto, e o mesmo parágrafo tem palavra inserida,
+   * palavra riscada e palavra intocada ao mesmo tempo. Marca por parágrafo
+   * obrigaria a lição a riscar a frase inteira para trocar uma palavra, que é
+   * o contrário do que o recurso mostra.
+   *
+   * Nada disso é definitivo, e é aí que está a lição: o texto só muda de
+   * verdade quando alguém aceita ou rejeita. Um `'excluido'` continua na tela,
+   * riscado, e volta inteiro se for rejeitado.
+   */
+  revisao?: Revisao;
 }
 
 /**
@@ -346,6 +404,76 @@ export const ehTabela = <S extends string>(b: Bloco<S>): b is TabelaDoDoc<S> =>
 export const ehImagem = <S extends string>(b: Bloco<S>): b is ImagemDoDoc<S> =>
   b.tipo === 'imagem';
 
+/* ── Comentários ──────────────────────────────────────────────────────────── */
+
+/** Uma resposta dentro de um comentário. A conversa fica encadeada ali. */
+export interface RespostaDeComentario {
+  id: string;
+  autor: Autor;
+  texto: string;
+}
+
+/**
+ * Um comentário da margem, preso a um trecho do texto.
+ *
+ * Ele **não é o texto**: não sai na impressão comum, não entra no sumário e
+ * não conta para "sem alterar uma palavra do texto". É por isso que ele é
+ * lista à parte no `Doc` e não um `Trecho` com uma marca — pendurá-lo no texto
+ * o faria aparecer em `textoDoDoc`, e a trava do módulo 1 passaria a acusar de
+ * mudança de redação quem só tivesse perguntado uma coisa na margem.
+ *
+ * `resolvido` e apagar não são a mesma coisa, como no Word: o resolvido some
+ * de quem só lê e continua lá para quem procura. Comentário que fica para
+ * sempre vira ruído, e o próximo leitor não sabe se aquilo ainda importa.
+ */
+export interface Comentario {
+  id: string;
+  /** O id do trecho a que ele está preso. */
+  trecho: string;
+  autor: Autor;
+  texto: string;
+  respostas: RespostaDeComentario[];
+  resolvido: boolean;
+}
+
+export const comentariosDoDoc = (d: Doc<string>): Comentario[] => d.comentarios ?? [];
+
+/**
+ * As quatro operações da margem.
+ *
+ * Elas moram aqui e não na tela porque são do **documento**: o balão desenha,
+ * mas quem guarda a conversa é o arquivo, e é ele que a trava lê. Ficando na
+ * tela, "resolvido sem resposta" só se testaria clicando.
+ */
+export const acrescentarComentario = <S extends string>(d: Doc<S>, c: Comentario): Doc<S> =>
+  ({ ...d, comentarios: [...comentariosDoDoc(d), c] });
+
+export const responderComentario = <S extends string>(
+  d: Doc<S>, comentarioId: string, resposta: RespostaDeComentario,
+): Doc<S> => ({
+  ...d,
+  comentarios: comentariosDoDoc(d).map(c =>
+    c.id === comentarioId ? { ...c, respostas: [...c.respostas, resposta] } : c),
+});
+
+/**
+ * Resolver e apagar não são a mesma coisa, e o Word tem os dois.
+ *
+ * Resolvido some de quem só lê e continua lá para quem procura; apagado não
+ * volta. Oferecer só um deles faria a lição ensinar que comentário resolvido
+ * desaparece, que é o contrário do que ele faz.
+ */
+export const resolverComentario = <S extends string>(
+  d: Doc<S>, comentarioId: string, resolvido = true,
+): Doc<S> => ({
+  ...d,
+  comentarios: comentariosDoDoc(d).map(c =>
+    c.id === comentarioId ? { ...c, resolvido } : c),
+});
+
+export const removerComentario = <S extends string>(d: Doc<S>, comentarioId: string): Doc<S> =>
+  ({ ...d, comentarios: comentariosDoDoc(d).filter(c => c.id !== comentarioId) });
+
 /** Uma linha do sumário, como ela foi lida no momento em que ele foi gerado. */
 export interface ItemDeSumario {
   texto: string;
@@ -435,6 +563,17 @@ export interface Doc<S extends string = string> {
    * alto deste arquivo. Só "Atualizar Sumário" o alcança.
    */
   sumario: ItemDeSumario[] | null;
+  /**
+   * O controle de alterações está ligado?
+   *
+   * Ele é do **documento** e não da sessão de quem edita, como no Word: o
+   * arquivo carrega o estado, e quem abre um documento que veio com o controle
+   * ligado continua marcando sem ter ligado nada. É metade da lição — a outra
+   * metade é que desligá-lo não apaga marca nenhuma.
+   */
+  controlarAlteracoes?: boolean;
+  /** Os comentários da margem. Ausente é o mesmo que nenhum. */
+  comentarios?: Comentario[];
 }
 
 /* ── Montar ───────────────────────────────────────────────────────────────── */
@@ -491,6 +630,205 @@ export const textoDoBloco = (b: Bloco<string>): string => {
  */
 export const textoDoDoc = (d: Doc<string>) =>
   d.blocos.map(textoDoBloco).join('\n');
+
+/* ── Controle de alterações ───────────────────────────────────────────────── */
+
+/**
+ * O texto que se **lê** hoje, com as marcas pendentes ainda na tela.
+ *
+ * O que está riscado não entra: ele continua desenhado, mas ninguém o lê como
+ * texto do documento. O que está inserido entra, porque está lá.
+ *
+ * É outra leitura, e não um substituto de `textoDoDoc`: aquele responde pelo
+ * que foi **digitado** — é ele que diz "sem alterar uma palavra do texto" — e
+ * este responde pelo que a página diz. A distância entre os dois é a lição
+ * inteira do controle de alterações: enquanto ninguém aceita nem rejeita, o
+ * documento tem dois textos ao mesmo tempo.
+ */
+export const textoVisivel = (d: Doc<string>): string =>
+  paragrafos(d)
+    .map(b => b.trechos
+      .filter(x => x.revisao?.tipo !== 'excluido')
+      .map(x => textoDoTrecho(d, x))
+      .join(''))
+    .join('\n');
+
+/** As marcas de revisão que ainda esperam alguém, na ordem do documento. */
+export const revisoesPendentes = <S extends string>(d: Doc<S>) =>
+  paragrafos(d).flatMap(b => b.trechos
+    .filter((x): x is Trecho & { revisao: Revisao } => !!x.revisao)
+    .map(x => ({ bloco: b.id, trecho: x })));
+
+/** As marcas de um autor só — "as que a liderança fez". */
+export const revisoesDe = <S extends string>(d: Doc<S>, autor: Autor) =>
+  revisoesPendentes(d).filter(r => r.trecho.revisao.autor === autor);
+
+/**
+ * Aceitar ou rejeitar uma marca, que são a mesma operação espelhada.
+ *
+ * Aceitar um inserido é tirar a marca e deixar o texto; aceitar um excluído é
+ * apagar o trecho. Rejeitar troca os dois. Escrever as quatro combinações em
+ * dois `if` separados foi a primeira tentativa, e as duas funções divergiram na
+ * primeira correção — aceitar deixou de apagar o excluído e o texto riscado
+ * ficava no documento final, sem marca nenhuma explicando por que ele estava
+ * ali.
+ */
+const resolverMarca = <S extends string>(
+  d: Doc<S>, trechoId: string, fica: 'inserido' | 'excluido',
+): Doc<S> => ({
+  ...d,
+  blocos: d.blocos.map(b => {
+    if (!ehParagrafo(b)) return b;
+    if (!b.trechos.some(x => x.id === trechoId)) return b;
+    return {
+      ...b,
+      trechos: b.trechos.flatMap(x => {
+        if (x.id !== trechoId || !x.revisao) return [x];
+        if (x.revisao.tipo !== fica) return [];
+        /* A marca sai, e o resto do trecho fica: `delete` numa cópia, e não
+           `revisao: undefined`, porque a chave presente com `undefined`
+           continua sendo chave — e `!!x.revisao` é falso enquanto
+           `'revisao' in x` é verdadeiro, que é a divergência que faria duas
+           leituras do mesmo trecho discordarem. */
+        const semMarca: Trecho = { ...x };
+        delete semMarca.revisao;
+        return [semMarca];
+      }),
+    };
+  }),
+});
+
+/** O texto inserido fica; o riscado vai embora. */
+export const aceitarRevisao = <S extends string>(d: Doc<S>, trechoId: string) =>
+  resolverMarca(d, trechoId, 'inserido');
+
+/** O texto riscado volta inteiro; o inserido nunca existiu. */
+export const rejeitarRevisao = <S extends string>(d: Doc<S>, trechoId: string) =>
+  resolverMarca(d, trechoId, 'excluido');
+
+/** Os dois botões grossos da guia Revisão, que resolvem tudo de uma vez. */
+export const aceitarTodasAsRevisoes = <S extends string>(d: Doc<S>): Doc<S> =>
+  revisoesPendentes(d).reduce((acc, r) => aceitarRevisao(acc, r.trecho.id), d);
+
+export const rejeitarTodasAsRevisoes = <S extends string>(d: Doc<S>): Doc<S> =>
+  revisoesPendentes(d).reduce((acc, r) => rejeitarRevisao(acc, r.trecho.id), d);
+
+/* ── Localizar e substituir ───────────────────────────────────────────────── */
+
+/**
+ * As duas caixas que quase ninguém marca, e que são a lição do requisito 5.
+ *
+ * Elas são campo, e não um comportamento fixo, porque o laboratório precisa
+ * **deixar errar**: uma substituição que protegesse sozinha ensinaria que o
+ * programa protege, e ele não protege. O que ele faz é oferecer as caixas.
+ */
+export interface OpcoesDeBusca {
+  diferenciarMaiusculas: boolean;
+  palavrasInteiras: boolean;
+}
+
+export const BUSCA_CRUA: OpcoesDeBusca = {
+  diferenciarMaiusculas: false,
+  palavrasInteiras: false,
+};
+
+const escaparRegex = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * O que "palavra inteira" quer dizer, e por que não é `\b`.
+ *
+ * `\b` do JavaScript é fronteira entre `[A-Za-z0-9_]` e o resto, e português
+ * tem acento: em "criança", o `ç` já não é palavra para ele, então `\bcriança\b`
+ * casa no meio de "acriançada" e deixa de casar onde devia. A fronteira aqui é
+ * "o vizinho não é letra", com as letras acentuadas dentro da conta.
+ */
+const LETRA = 'A-Za-zÀ-ÖØ-öø-ÿ0-9';
+
+const padraoDaBusca = (procurar: string, op: OpcoesDeBusca): RegExp => {
+  const alvo = escaparRegex(procurar);
+  const corpo = op.palavrasInteiras
+    ? `(?<![${LETRA}])${alvo}(?![${LETRA}])`
+    : alvo;
+  return new RegExp(corpo, op.diferenciarMaiusculas ? 'g' : 'gi');
+};
+
+/** Quantas ocorrências a busca acha hoje, sem trocar nada. */
+export const ocorrencias = (d: Doc<string>, procurar: string, op: OpcoesDeBusca): number =>
+  procurar === '' ? 0 : paragrafos(d).reduce((n, b) => n + b.trechos
+    .filter(x => x.revisao?.tipo !== 'excluido')
+    .reduce((m, x) => m + (x.texto.match(padraoDaBusca(procurar, op))?.length ?? 0), 0), 0);
+
+/**
+ * Substituir em todo o documento.
+ *
+ * Três decisões moram aqui, e as três são do Word:
+ *
+ * **O que está riscado não se substitui.** Ele já saiu do texto; trocar palavra
+ * dentro dele encheria o documento de marcas sobre marcas e mudaria o texto que
+ * voltaria se alguém rejeitasse a marca.
+ *
+ * **Com o controle ligado, a troca sai marcada** — o velho riscado, o novo
+ * inserido — como qualquer outra edição. Fazê-la em silêncio pareceria mais
+ * limpo e ensinaria o contrário do que a lição diz: que o controle marca
+ * **toda** edição, inclusive a que se fez de uma vez em dezoito lugares.
+ *
+ * **O pedaço de antes fica com o id original.** Os comentários se penduram em
+ * id de trecho: renumerar tudo faria a margem esvaziar sozinha na primeira
+ * substituição, sem erro nenhum e sem nada explicando para onde foi a pergunta
+ * da liderança.
+ */
+export function substituirTudo<S extends string>(
+  d: Doc<S>, procurar: string, por: string, op: OpcoesDeBusca,
+): { doc: Doc<S>; trocas: number } {
+  if (procurar === '') return { doc: d, trocas: 0 };
+  const marcado = d.controlarAlteracoes === true;
+  let trocas = 0;
+
+  const blocos = d.blocos.map(b => {
+    if (!ehParagrafo(b)) return b;
+    const trechos = b.trechos.flatMap((x): Trecho[] => {
+      if (x.revisao?.tipo === 'excluido' || x.campo) return [x];
+      const padrao = padraoDaBusca(procurar, op);
+      if (!padrao.test(x.texto)) return [x];
+
+      const pedacos: Trecho[] = [];
+      let resto = x.texto;
+      let n = 0;
+      let primeiro = true;
+      const busca = padraoDaBusca(procurar, op);
+      let m: RegExpExecArray | null;
+      let cursor = 0;
+      while ((m = busca.exec(x.texto)) !== null) {
+        const antes = x.texto.slice(cursor, m.index);
+        if (antes !== '') {
+          pedacos.push({ ...x, id: primeiro ? x.id : `${x.id}-a${n}`, texto: antes });
+          primeiro = false;
+        }
+        if (marcado) {
+          pedacos.push({ ...x, id: `${x.id}-v${n}`, texto: m[0], revisao: { autor: 'voce', tipo: 'excluido' } });
+          pedacos.push({ ...x, id: `${x.id}-n${n}`, texto: por, revisao: { autor: 'voce', tipo: 'inserido' } });
+        } else {
+          pedacos.push({ ...x, id: primeiro ? x.id : `${x.id}-n${n}`, texto: por });
+        }
+        primeiro = false;
+        cursor = m.index + m[0].length;
+        n += 1;
+        trocas += 1;
+      }
+      resto = x.texto.slice(cursor);
+      if (resto !== '') pedacos.push({ ...x, id: `${x.id}-z`, texto: resto });
+      /* Nenhum pedaço sobrou com o id original: o comentário preso a este
+         trecho ficaria órfão. Devolve o primeiro com ele. */
+      if (pedacos.length > 0 && !pedacos.some(p => p.id === x.id)) {
+        pedacos[0] = { ...pedacos[0], id: x.id };
+      }
+      return pedacos;
+    });
+    return { ...b, trechos };
+  });
+
+  return { doc: { ...d, blocos }, trocas };
+}
 
 /**
  * Os parágrafos vazios — Enter apertado para empurrar texto.

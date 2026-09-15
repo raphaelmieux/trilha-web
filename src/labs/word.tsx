@@ -23,19 +23,24 @@ import {
  * ensinaria a procurar no lugar errado.
  */
 
-import { Fragment } from 'react';
+import { Fragment, type ReactNode } from 'react';
 
 import {
   aparenciaDe, aparenciaDoTrecho, textoDoTrecho, larguraDaTabela,
-  paginasDoDoc, blocoAntesDoSumario,
+  paginasDoDoc, blocoAntesDoSumario, NOME_DO_AUTOR, COR_DO_AUTOR,
   type Doc, type Bloco, type Paragrafo, type TabelaDoDoc, type ImagemDoDoc,
   type Disposicao, type ItemDeSumario, type FaixaDaPagina,
+  type Comentario, type OpcoesDeBusca,
 } from './documento';
 
 export const CSS_WORD = `
 /* A janela não tem mais moldura: ela é a tela. */
 .wd-janela {
   background: #F3F2F1; color: #201F1E;
+  /* O diálogo de Localizar e Substituir se posiciona nela, e não na tela: no
+     Word ele é uma janela dentro da janela, e ancorá-lo no viewport o faria
+     boiar por cima da cápsula de tarefas da plataforma. */
+  position: relative;
   flex: 1; display: flex; flex-direction: column; min-height: 0;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   /* Pixels por centímetro, e portanto o zoom da folha. 34 é 90% do
@@ -769,6 +774,72 @@ export const CSS_FOLHA = `
      métrica da fonte, e um valor na beirada viraria "alinhado" noutra máquina
      sem nada acusar. */
   .wd-tab { white-space: pre-wrap; tab-size: 32; }
+  /* ── Revisão ─────────────────────────────────────────────────────────────
+     Sublinhado no que entrou, riscado no que saiu, e a cor dizendo de quem é.
+     Cor sozinha não basta — é a mesma razão de a insígnia ter forma e cor:
+     quem não distingue as duas cores continua vendo o traço e o sublinhado. */
+  .wd-rev-inserido { text-decoration: underline; }
+  .wd-rev-excluido { text-decoration: line-through; }
+  /* O realce do comentário é o do Word: fundo amarelo claro debaixo do texto
+     a que ele está preso, e não um ícone na margem que não diz de onde é. */
+  .wd-comentado { background: #FFF4CE; cursor: pointer; }
+
+  /* A margem de revisão fica **fora** do papel: comentário não sai na
+     impressão e não empurra o texto, e desenhá-lo dentro diria o contrário. */
+  .wd-folha-com-margem { display: flex; align-items: flex-start; gap: 10px; }
+  .wd-margem { width: 210px; flex: none; display: flex; flex-direction: column; gap: 8px; }
+  .wd-balao {
+    background: #FFFFFF; border: 1px solid #D1D1D1; border-left: 3px solid ${COR_DO_AUTOR.lideranca};
+    border-radius: 3px; padding: 8px 10px; font-size: 11px; color: #201F1E;
+  }
+  .wd-balao.meu { border-left-color: ${COR_DO_AUTOR.voce}; }
+  .wd-balao.resolvido { opacity: .55; border-left-color: #8A8886; }
+  .wd-balao-autor { font-weight: 600; font-size: 10.5px; margin-bottom: 2px; }
+  .wd-balao-resposta {
+    margin-top: 6px; padding-left: 8px; border-left: 2px solid #E1DFDD;
+  }
+  .wd-balao textarea {
+    width: 100%; margin-top: 6px; font: inherit; color: inherit;
+    border: 1px solid #D1D1D1; border-radius: 2px; padding: 4px 6px; resize: vertical;
+    background: #FFFFFF;
+  }
+  .wd-balao-acoes { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .wd-balao-acoes button {
+    font: inherit; font-size: 10.5px; padding: 3px 8px; border-radius: 2px;
+    border: 1px solid #D1D1D1; background: #FFFFFF; color: #201F1E; cursor: pointer;
+  }
+  .wd-balao-acoes button:hover { background: #F3F2F1; }
+
+  /* No celular não há 210 px de sobra ao lado do papel: a margem desce para
+     baixo dele, inteira. Esconder os balões tiraria o único caminho até duas
+     das cinco tarefas — reduzir a tela nunca reduz o que dá para fazer nela. */
+  @media (max-width: 900px) {
+    .wd-folha-com-margem { flex-direction: column; align-items: stretch; }
+    .wd-margem { width: auto; }
+  }
+
+  /* ── Localizar e Substituir ───────────────────────────────────────────── */
+  .wd-dialogo {
+    position: absolute; top: 12px; right: 12px; z-index: 5;
+    background: #FFFFFF; border: 1px solid #C8C6C4; border-radius: 4px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.25); padding: 12px; width: 300px;
+    font-size: 12px; color: #201F1E;
+  }
+  .wd-dialogo h4 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #201F1E; }
+  .wd-dialogo label { display: block; margin-bottom: 6px; }
+  .wd-dialogo input[type="text"] {
+    width: 100%; font: inherit; padding: 4px 6px; margin-top: 2px;
+    border: 1px solid #8A8886; border-radius: 2px; background: #FFFFFF; color: #201F1E;
+  }
+  .wd-dialogo .wd-caixa { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .wd-dialogo .wd-caixa input { margin: 0; }
+  .wd-dialogo-acoes { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .wd-dialogo-acoes button {
+    font: inherit; padding: 4px 10px; border-radius: 2px; cursor: pointer;
+    border: 1px solid #D1D1D1; background: #FFFFFF; color: #201F1E;
+  }
+  .wd-dialogo-acoes button.principal { background: #2B579A; border-color: #2B579A; color: #FFFFFF; }
+
   /* Margem dos dois lados: ele deixou de abrir a folha e passou a ficar entre
      blocos, embaixo do título. Só embaixo o encostaria no que vem antes. */
   .wd-sumario {
@@ -890,7 +961,9 @@ export const CSS_FOLHA = `
  * CC-ES002 diz, e é por isso que um laboratório sobre essa diferença precisa
  * saber desenhá-las.
  */
-export function ParagrafoDaFolha({ doc, bloco, escolhido, marcas, aoEscolher, classe }: {
+export function ParagrafoDaFolha({
+  doc, bloco, escolhido, marcas, aoEscolher, classe, comentado, aoEscolherTrecho,
+}: {
   doc: Doc<string>;
   bloco: Paragrafo<string>;
   escolhido?: boolean;
@@ -898,6 +971,10 @@ export function ParagrafoDaFolha({ doc, bloco, escolhido, marcas, aoEscolher, cl
   aoEscolher?: () => void;
   /** Classe extra da folha — hoje só a legenda que flutua com a figura. */
   classe?: string;
+  /** Os ids de trecho que têm comentário na margem, para o realce amarelo. */
+  comentado?: Set<string>;
+  /** Clicar num trecho — é assim que se escolhe uma marca de revisão. */
+  aoEscolherTrecho?: (trechoId: string) => void;
 }) {
   return (
     <>
@@ -924,10 +1001,24 @@ export function ParagrafoDaFolha({ doc, bloco, escolhido, marcas, aoEscolher, cl
                 campos do documento. Ler o texto cru aqui deixaria toda legenda
                 inserida como campo aparecendo vazia na folha. */}
             <span
-              className={[x.campo ? 'wd-campo' : '', x.texto.includes('\t') ? 'wd-tab' : '']
-                .filter(Boolean).join(' ') || undefined}
-              style={aparenciaDoTrecho(doc, bloco, x)}
+              className={[
+                x.campo ? 'wd-campo' : '',
+                x.texto.includes('\t') ? 'wd-tab' : '',
+                /* A marca é do autor: o Word dá uma cor a cada revisor, e sem
+                   isso duas pessoas revisando o mesmo documento produzem um
+                   texto colorido que não diz de quem é nada. */
+                x.revisao ? `wd-rev wd-rev-${x.revisao.tipo} wd-autor-${x.revisao.autor}` : '',
+                comentado?.has(x.id) ? 'wd-comentado' : '',
+              ].filter(Boolean).join(' ') || undefined}
+              style={x.revisao
+                ? { ...aparenciaDoTrecho(doc, bloco, x), color: COR_DO_AUTOR[x.revisao.autor] }
+                : aparenciaDoTrecho(doc, bloco, x)}
+              title={x.revisao ? `${NOME_DO_AUTOR[x.revisao.autor]}: ${x.revisao.tipo}` : undefined}
+              onClick={aoEscolherTrecho
+                ? ev => { ev.stopPropagation(); aoEscolherTrecho(x.id); } : undefined}
               data-trecho={x.id}
+              data-revisao={x.revisao?.tipo}
+              data-autor={x.revisao?.autor}
               data-campo={x.campo}
             >
               {textoDoTrecho(doc, x)}
@@ -1119,6 +1210,7 @@ export function SumarioDaFolha({ itens }: { itens: ItemDeSumario[] }) {
  */
 export function BlocoDaFolha({
   doc, bloco, escolhido, marcas, aoEscolher, celula, aoCursorNaCelula, aoEditarCelula, classe,
+  comentado, aoEscolherTrecho,
 }: {
   doc: Doc<string>;
   bloco: Bloco<string>;
@@ -1129,12 +1221,15 @@ export function BlocoDaFolha({
   celula?: { linha: number; coluna: number } | null;
   aoCursorNaCelula?: (linha: number, coluna: number) => void;
   aoEditarCelula?: (linha: number, coluna: number, valor: string) => void;
+  comentado?: Set<string>;
+  aoEscolherTrecho?: (trechoId: string) => void;
 }) {
   switch (bloco.tipo) {
     case 'paragrafo':
       return (
         <ParagrafoDaFolha doc={doc} bloco={bloco} escolhido={escolhido}
-          marcas={marcas} aoEscolher={aoEscolher} classe={classe} />
+          marcas={marcas} aoEscolher={aoEscolher} classe={classe}
+          comentado={comentado} aoEscolherTrecho={aoEscolherTrecho} />
       );
     case 'tabela':
       return (
@@ -1210,6 +1305,7 @@ export function FaixaDaFolha({ doc, faixa, pagina, onde, aoEscrever }: {
 export function FolhaDoWord({
   doc, selecionado, marcas, aoEscolher, aoClicarNoVazio,
   celula, aoCursorNaCelula, aoEditarCelula, aoEscreverNaFaixa,
+  comentado, aoEscolherTrecho, margem,
 }: {
   doc: Doc<string>;
   selecionado?: string | null;
@@ -1220,6 +1316,17 @@ export function FolhaDoWord({
   aoCursorNaCelula?: (blocoId: string, linha: number, coluna: number) => void;
   aoEditarCelula?: (blocoId: string, linha: number, coluna: number, valor: string) => void;
   aoEscreverNaFaixa?: (onde: 'cabecalho' | 'rodape', trechoId: string, valor: string) => void;
+  /** Os trechos com comentário, para o realce que o Word põe embaixo deles. */
+  comentado?: Set<string>;
+  aoEscolherTrecho?: (trechoId: string) => void;
+  /**
+   * A margem de revisão, à direita do papel.
+   *
+   * Ela é **irmã** da folha e não filha, porque no Word os balões ficam fora
+   * do papel: desenhá-los dentro faria o comentário sair na impressão e
+   * empurrar o texto, que é justamente o que a lição diz que ele não faz.
+   */
+  margem?: ReactNode;
 }) {
   const paginas = paginasDoDoc(doc);
   /* Embaixo do título, e não acima dele: quem fecha a abertura é quem carrega
@@ -1233,7 +1340,7 @@ export function FolhaDoWord({
            É o que evita a gambiarra de pôr a capa noutro arquivo. */
         const comFaixas = !(doc.primeiraPaginaDiferente && numero === 1);
         return (
-          <div key={numero}>
+          <div key={numero} className={margem ? 'wd-folha-com-margem' : undefined}>
             <div className="wd-pagina" onClick={ev => ev.stopPropagation()}
               data-pagina={numero}>
               {comFaixas && doc.cabecalho && (
@@ -1258,6 +1365,8 @@ export function FolhaDoWord({
                         doc={doc} bloco={b}
                         escolhido={selecionado === b.id}
                         marcas={marcas}
+                        comentado={comentado}
+                        aoEscolherTrecho={aoEscolherTrecho}
                         aoEscolher={aoEscolher ? () => aoEscolher(b.id) : undefined}
                         celula={selecionado === b.id ? celula : null}
                         aoCursorNaCelula={aoCursorNaCelula
@@ -1283,9 +1392,140 @@ export function FolhaDoWord({
                 Word também mostra. Ela não é do documento, e por isso não some
                 com "Primeira página diferente". */}
             <div className="wd-folha-numero">Folha {numero} de {paginas.length}</div>
+            {margem && numero === 1 && <div className="wd-margem">{margem}</div>}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/* ── Revisão: os balões da margem ─────────────────────────────────────────── */
+
+/**
+ * Um comentário na margem, com a conversa encadeada dentro dele.
+ *
+ * Responder e resolver são **dois** gestos, e é essa a lição: resolver é um
+ * clique, e quem resolve sem responder fecha o assunto sem dizer nada a quem
+ * perguntou. Um botão só — "Resolver", que gravasse o texto junto — apagaria a
+ * diferença e faria a tarefa premiar o clique.
+ */
+export function BalaoDeComentario({
+  comentario, rascunho, aoEscrever, aoResponder, aoResolver, aoExcluir,
+}: {
+  comentario: Comentario;
+  rascunho: string;
+  aoEscrever: (valor: string) => void;
+  aoResponder: () => void;
+  aoResolver: () => void;
+  aoExcluir?: () => void;
+}) {
+  const meu = comentario.autor === 'voce';
+  return (
+    <div
+      className={`wd-balao${meu ? ' meu' : ''}${comentario.resolvido ? ' resolvido' : ''}`}
+      data-comentario={comentario.id}
+      data-resolvido={comentario.resolvido}
+    >
+      <div className="wd-balao-autor">{NOME_DO_AUTOR[comentario.autor]}</div>
+      <div>{comentario.texto}</div>
+
+      {comentario.respostas.map(r => (
+        <div key={r.id} className="wd-balao-resposta" data-resposta={r.id}>
+          <div className="wd-balao-autor">{NOME_DO_AUTOR[r.autor]}</div>
+          <div>{r.texto}</div>
+        </div>
+      ))}
+
+      {!comentario.resolvido && (
+        <>
+          <textarea
+            rows={2}
+            value={rascunho}
+            placeholder="Responder…"
+            aria-label={`Responder o comentário de ${NOME_DO_AUTOR[comentario.autor]}`}
+            onChange={ev => aoEscrever(ev.target.value)}
+          />
+          <div className="wd-balao-acoes">
+            <button type="button" onClick={aoResponder}>Responder</button>
+            <button type="button" onClick={aoResolver}>Resolver</button>
+            {aoExcluir && <button type="button" onClick={aoExcluir}>Excluir</button>}
+          </div>
+        </>
+      )}
+      {comentario.resolvido && <div className="wd-balao-acoes"><span>Resolvido</span></div>}
+    </div>
+  );
+}
+
+/* ── Localizar e Substituir ───────────────────────────────────────────────── */
+
+/**
+ * A caixa do Ctrl+H, com as duas opções que quase ninguém marca.
+ *
+ * Elas ficam **desmarcadas** ao abrir, que é como o Word abre, e é o que faz o
+ * requisito 5 existir: a caixa protege, e quem não a vê perde o documento em
+ * dois segundos. Abrir com elas marcadas tornaria a armadilha inalcançável e a
+ * tarefa passaria a medir ter clicado em Substituir Tudo.
+ *
+ * "Substituir" um a um existe ao lado de "Substituir Tudo" porque é o caminho
+ * que a teoria recomenda — mais lento, e o único que mostra cada ocorrência
+ * antes de trocar. Só o botão grosso ensinaria que o jeito de fazer é o de
+ * uma vez.
+ */
+export function DialogoDeSubstituir({
+  procurar, por, opcoes, achados, aoMudarProcurar, aoMudarPor, aoMudarOpcoes,
+  aoSubstituirTudo, aoFechar,
+}: {
+  procurar: string;
+  por: string;
+  opcoes: OpcoesDeBusca;
+  achados: number;
+  aoMudarProcurar: (v: string) => void;
+  aoMudarPor: (v: string) => void;
+  aoMudarOpcoes: (o: OpcoesDeBusca) => void;
+  aoSubstituirTudo: () => void;
+  aoFechar: () => void;
+}) {
+  return (
+    <div className="wd-dialogo" role="dialog" aria-label="Localizar e Substituir">
+      <h4>Localizar e Substituir</h4>
+      <label>
+        Localizar:
+        <input type="text" value={procurar} aria-label="Localizar"
+          onChange={ev => aoMudarProcurar(ev.target.value)} />
+      </label>
+      <label>
+        Substituir por:
+        <input type="text" value={por} aria-label="Substituir por"
+          onChange={ev => aoMudarPor(ev.target.value)} />
+      </label>
+
+      <div className="wd-caixa">
+        <input type="checkbox" id="wd-op-maiusculas" checked={opcoes.diferenciarMaiusculas}
+          onChange={ev => aoMudarOpcoes({ ...opcoes, diferenciarMaiusculas: ev.target.checked })} />
+        <label htmlFor="wd-op-maiusculas" style={{ margin: 0 }}>
+          Diferenciar maiúsculas de minúsculas
+        </label>
+      </div>
+      <div className="wd-caixa">
+        <input type="checkbox" id="wd-op-inteiras" checked={opcoes.palavrasInteiras}
+          onChange={ev => aoMudarOpcoes({ ...opcoes, palavrasInteiras: ev.target.checked })} />
+        <label htmlFor="wd-op-inteiras" style={{ margin: 0 }}>Localizar palavras inteiras</label>
+      </div>
+
+      <div data-achados={achados} style={{ marginTop: 6, color: '#605E5C' }}>
+        {procurar === ''
+          ? 'Escreva o que procurar.'
+          : `${achados} ${achados === 1 ? 'ocorrência' : 'ocorrências'} no documento.`}
+      </div>
+
+      <div className="wd-dialogo-acoes">
+        <button type="button" className="principal" onClick={aoSubstituirTudo}>
+          Substituir Tudo
+        </button>
+        <button type="button" onClick={aoFechar}>Fechar</button>
+      </div>
     </div>
   );
 }

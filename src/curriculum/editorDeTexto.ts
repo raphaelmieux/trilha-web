@@ -602,6 +602,28 @@ export const MODULOS_DO_EDITOR: ModuloDeVereda[] = [
         resumo: 'Os três recursos de quem manda o documento para alguém ler antes.',
         topicos: REVISAR,
       },
+      {
+        /*
+          O requisito 5 inteiro, e o único documento da vereda com duas
+          autorias.
+
+          Os quatro anteriores chegam errados e quem conserta é quem abre.
+          Este chega **já mexido**: a liderança leu, marcou duas alterações e
+          deixou uma pergunta na margem. Uma das marcas está certa e a outra
+          não — e é por isso que Aceitar Todas e Rejeitar Todas falham os dois,
+          cada um do seu jeito, e o desbravador precisa percorrer marca a
+          marca.
+
+          A substituição tem de poder errar, e erra: o documento traz a palavra
+          no singular e no plural, e um Substituir Tudo sem "palavras inteiras"
+          deixa "desbravadors" em dois lugares sem nada avisar. Ctrl+Z desfaz a
+          troca inteira, que é o que a teoria diz e é o que o laboratório faz.
+        */
+        id: 'm5-lab', tipo: 'word', documento: 'revisao',
+        titulo: 'Fechando o relato que voltou revisado',
+        resumo: 'Duas marcas da liderança, uma pergunta na margem, e uma troca que pode estragar o texto.',
+        verificacoes: ['controlar', 'resolver', 'responder', 'comentar', 'substituir'],
+      },
     ],
   },
   {

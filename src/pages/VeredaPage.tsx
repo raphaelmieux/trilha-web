@@ -22,6 +22,7 @@ import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
 import LaboratorioDoRelatorio from '../components/LaboratorioDoRelatorio';
 import LaboratorioDoRelatorioAnual from '../components/LaboratorioDoRelatorioAnual';
+import LaboratorioDaRevisao from '../components/LaboratorioDaRevisao';
 import LaboratorioDePython from '../components/LaboratorioDePython';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -234,7 +235,7 @@ export default function VeredaPage() {
       ternário funcionava; com três, o `else` passa a ser "todo o resto", e um
       documento novo cairia calado no laboratório do módulo 1 — o desbravador
       abriria a lição certa e encontraria o documento errado. A tabela é
-      `Record` sobre a união, então o quarto documento não compila até ter
+      `Record` sobre a união, então o documento novo não compila até ter
       tela: é a mesma decisão do `switch` exaustivo das travas da vereda.
     */
     const TELA_DO_DOCUMENTO: Record<
@@ -245,6 +246,7 @@ export default function VeredaPage() {
       circular: LaboratorioDaCircular,
       relatorio: LaboratorioDoRelatorio,
       anual: LaboratorioDoRelatorioAnual,
+      revisao: LaboratorioDaRevisao,
     };
     const Tela = TELA_DO_DOCUMENTO[licaoAberta.documento];
     return (
