@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { VEREDAS, veredasAbertas, veredasComConteudo, licoesDaVereda, topicosDaVereda,
   textoDaOrigem, preRequisitoDaVeredaCumprido, veredasQueFaltamAntes,
   type LicaoDeVereda, type Vereda } from '../curriculum/veredas';
@@ -748,12 +749,19 @@ describe('o que a vereda rende para as escadas de conquista', () => {
   });
 
   it('sem evento nenhum, nada é contado', () => {
-    expect(conquistasNasVeredas([])).toEqual({ licoes: 0, modulos: 0 });
+    expect(conquistasNasVeredas([])).toEqual({ licoes: 0, modulos: 0, requisitos: 0 });
   });
 
-  it('cada lição vencida conta uma', () => {
+  it('cada lição vencida conta uma, e ela anda nas duas escadas', () => {
     const uma = conquistasNasVeredas([evento(aVereda.id, oModulo.licoes[0])]);
     expect(uma.licoes, 'a lição vencida não somou').toBe(1);
+    /*
+      É o que a trilha já faz: passar numa lição grava o `requirement_progress`
+      dos códigos que ela cita, e a mesma lição anda na escada de Lições e na
+      de Requisitos. A vereda não tem requisito oficial para citar — e não vai
+      ter —, então quem responde é a lição, que é a unidade que ela pede.
+    */
+    expect(uma.requisitos, 'a lição de vereda não somou na escada de Requisitos').toBe(1);
   });
 
   it('o módulo só conta com todas as lições dele vencidas', () => {
@@ -792,6 +800,7 @@ describe('o que a vereda rende para as escadas de conquista', () => {
     const r = conquistasNasVeredas(tocou, [comModuloVazio]);
     expect(r.licoes, 'uma lição que não existe foi contada').toBe(0);
     expect(r.modulos, 'um módulo sem lição contou como fechado').toBe(0);
+    expect(r.requisitos, 'um módulo sem lição rendeu requisito').toBe(0);
   });
 
   it('o registro de quando a vereda se chamava mini-trilha conta junto', () => {
@@ -807,5 +816,28 @@ describe('o que a vereda rende para as escadas de conquista', () => {
     const duas = [evento(aVereda.id, oModulo.licoes[0]), evento(aVereda.id, oModulo.licoes[0])];
     expect(conquistasNasVeredas(duas).licoes,
       'a lição repetida contou duas vezes').toBe(1);
+  });
+
+  it('o resumo soma todos os campos desta conta, e não os que havia no dia', () => {
+    /*
+      A conta mora aqui e a soma mora em `montarResumo`, que fala com o banco e
+      por isso não se testa sem subir um. O buraco entre as duas é calado: um
+      campo novo aqui — como `requisitos` acabou de ser — fica valendo zero na
+      estante de todo mundo, e nada reprova, porque todo teste deste arquivo
+      continua verde conferindo a conta que está certa.
+
+      Então a trava lê a fonte do resumo e cobra **cada** campo, tirados do
+      próprio retorno e não de uma lista escrita à mão: lista escrita à mão é o
+      que deixou de conferir a AP043 e a AP044 quando elas abriram.
+    */
+    const fonte = readFileSync(resolve(__dirname, 'gamification.ts'), 'utf8');
+    const campos = Object.keys(conquistasNasVeredas([]));
+
+    expect(campos.length, 'a conta das veredas ficou sem campo nenhum').toBeGreaterThan(0);
+    for (const campo of campos) {
+      expect(fonte.includes(`naVereda.${campo}`),
+        `montarResumo não soma "${campo}": a escada dele conta zero para toda vereda`)
+        .toBe(true);
+    }
   });
 });

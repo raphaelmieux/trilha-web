@@ -1768,8 +1768,21 @@ que é o que se espera de um contador funcionando.
 Contar o que a vereda tem não desfaz a decisão de ela não virar uma
 `Specialty`. Requisito oficial ela continua não tendo, e inventar um a puxaria
 para dentro do percentual e do XP, que é o contrário de bônus. O que ela tem
-são lições a vencer e módulos a fechar, e é exatamente isso que essas duas
-escadas contam.
+são lições a vencer e módulos a fechar, e é exatamente isso que essas escadas
+contam.
+
+**E a de Requisitos também, porque a trilha já a conta assim.** Lá, passar numa
+lição grava o `requirement_progress` dos códigos que ela cita: a mesma lição
+anda na escada de Lições **e** na de Requisitos. Deixar a vereda fora da
+segunda não seria neutralidade, seria dar à lição dela metade do valor da lição
+de trilha — pela falta de um código oficial que ela não vai ter. Quem responde
+é a lição, que é a unidade que a vereda pede que se demonstre.
+
+São dois nomes para o mesmo número hoje, e mesmo assim `requisitos` é campo
+separado em `ConquistasNasVeredas`: somar `licoes` nas duas escadas lá dentro
+do resumo esconderia a escolha numa linha com cara de erro de digitação. O
+número alimenta uma escada só — `escadasDeInsignia` é o único leitor —, e não
+entra em percentual nenhum.
 
 `conquistasNasVeredas` mora em `lib/veredas.ts`, com as outras regras puras, e
 não dentro de `montarResumo`: o resumo fala com o banco, e conta escondida lá
@@ -1782,6 +1795,13 @@ de novo, agora premiando módulo que ninguém percorreu; e o registro de vereda 
 **parâmetro** com o de verdade por padrão, porque hoje vereda anunciada vem com
 a lista de módulos vazia e não com módulo vazio dentro — sem o parâmetro, a
 guarda seria código que ninguém nunca leu e a trava passaria sem conferir nada.
+
+E há um buraco entre a conta e a soma que é calado dos dois lados: campo novo
+aqui vale zero na estante de todo mundo sem nada reprovar, porque toda trava
+deste arquivo continua verde conferindo a conta, que está certa. A trava lê a
+fonte de `montarResumo` e cobra **cada** campo do retorno — tirados do próprio
+retorno, e não de uma lista escrita à mão, que é o que deixou de conferir a
+AP043 e a AP044 no dia em que elas abriram.
 
 **O mural mostrava "Vereda teoria".** Os eventos de vereda não tinham frase, e
 caíam na saída de último recurso: o `event_type` cru com os sublinhados
@@ -2019,6 +2039,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/vocabulario.test.ts` | insígnia chamada de "badge" ou ofensiva de "streak" no texto de JSX |
 | `src/lib/atividade.test.ts` | evento de vereda que cai no mural com o nome cru do `event_type` |
 | `src/lib/veredas.test.ts` | lição de vereda que não soma em escada nenhuma, ou módulo vazio contando como fechado |
+| `src/lib/veredas.test.ts` | campo novo da conta das veredas que o resumo não soma, e que conta zero calado |
 | `src/lib/formaDaArte.test.ts` | emblema de trilha quadrado ou de vereda deitado, que troca no painel o tipo do percurso |
 | `src/lib/formaDaInsignia.test.ts` | glifo maior que o círculo inscrito do triângulo, que vaza só no Amigo e no Companheiro |
 | `src/lib/formaDaInsignia.test.ts` | classe cujo glifo não se lê sobre a própria cor, ou ícone sem raio de tinta medido |

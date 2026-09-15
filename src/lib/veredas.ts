@@ -109,6 +109,22 @@ export interface ConquistasNasVeredas {
   licoes: number;
   /** Módulos com todas as lições vencidas. */
   modulos: number;
+  /**
+   * Requisitos cumpridos — hoje, o mesmo número de `licoes`, e de propósito.
+   *
+   * Não é conta duplicada: é o que a trilha **já faz**. Lá, passar numa lição
+   * grava o `requirement_progress` dos códigos que ela cita, e a mesma lição
+   * anda nas duas escadas — a de Lições e a de Requisitos. A vereda não tem
+   * requisito oficial para citar, e não vai ter: inventar um a puxaria para
+   * dentro do percentual e do XP, que é o contrário de bônus. O que ela tem é
+   * a lição, que é a unidade que ela pede que se demonstre.
+   *
+   * Então são dois nomes para o mesmo número **hoje**, e o campo existe
+   * separado para o dia em que deixarem de ser: somar `licoes` nas duas
+   * escadas lá no resumo esconderia a escolha dentro de uma linha que parece
+   * um erro de digitação.
+   */
+  requisitos: number;
 }
 
 /**
@@ -124,7 +140,8 @@ export interface ConquistasNasVeredas {
  * Contar o que a vereda tem não desfaz a decisão de ela não virar `Specialty`:
  * requisito oficial ela continua não tendo, e inventar um a puxaria para dentro
  * do percentual e do XP, que é o contrário de bônus. Lição e módulo ela tem, e
- * é o que estas duas escadas contam.
+ * é o que estas escadas contam — a de Requisitos inclusa, pela razão escrita
+ * no campo `requisitos` logo acima: na trilha, a lição também anda nas duas.
  *
  * ── E ela mora aqui, e não no resumo ─────────────────────────────────────
  * É regra pura sobre eventos, como tudo o mais neste arquivo: `montarResumo`
@@ -168,7 +185,9 @@ export function conquistasNasVeredas(
     }
   }
 
-  return { licoes, modulos };
+  /* `requisitos` sai de `licoes` por escrito, e não por um segundo laço que
+     contaria a mesma coisa e discordaria no primeiro ajuste. */
+  return { licoes, modulos, requisitos: licoes };
 }
 
 /**

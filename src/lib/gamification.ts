@@ -126,7 +126,7 @@ export async function montarResumo(userId: string): Promise<ResumoDoDesbravador>
   const naVereda = conquistasNasVeredas(eventos.data ?? []);
 
   return {
-    requisitos: completed.size,
+    requisitos: completed.size + naVereda.requisitos,
     licoes: licoes.size + naVereda.licoes,
     licoesPerfeitas: perfeitas.size,
     modulos: modulos + naVereda.modulos,
