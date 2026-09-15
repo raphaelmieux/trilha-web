@@ -33,7 +33,10 @@ export const PASSOS_DO_EXPLORADOR: Record<string, string[]> = {
 
   /* ── O pacote (requisito 4.5) ── */
   compactou: [
-    'Entre em Documentos e clique uma vez em "Fotos do Acampamento".',
+    'Escolha o que vai no pacote. Pode ser uma pasta inteira — entre em Documentos '
+      + 'e clique uma vez em "Fotos do Acampamento" — ou vários arquivos soltos: '
+      + 'clique no primeiro e, segurando Ctrl, clique nos outros. No celular, ligue '
+      + '"Caixas de seleção de item" no menu Exibir e marque um por um.',
     'Na barra de comandos, clique em "Compactar".',
     'Aparece um arquivo novo com a extensão .zip, e bem menor que a soma das fotos.',
     'Repare que a pasta original continua lá: compactar copia, não move. Quem compacta para liberar espaço e não apaga o original acabou de ocupar mais.',

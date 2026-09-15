@@ -105,6 +105,17 @@ export const CSS_WINDOWS = `
   .win-linha {
     display: flex; align-items: center; font-size: 12.5px; color: #1B1B1B;
     padding: 5px 0; margin: 1px 4px; border-radius: 4px; cursor: default;
+    /* Sem isto, o Shift+clique que escolhe uma faixa de arquivos tambem seleciona
+       o texto por onde passou, e a lista fica com meia dúzia de nomes pintados
+       de azul do navegador por cima do azul da selecao do Explorador. A lista do
+       Explorador de verdade tambem nao deixa selecionar texto. */
+    user-select: none; -webkit-user-select: none;
+  }
+  /* A caixa de selecao de item. Ela ocupa lugar so quando esta ligada, entao
+     nada se mexe para quem usa Ctrl e Shift. */
+  .win-caixa {
+    flex: none; width: 15px; height: 15px; margin: 0; accent-color: #0F6CBD;
+    cursor: pointer;
   }
   .win-linha:hover { background: #F0F0F0; }
   .win-linha.escolhida { background: #CCE4F7; }

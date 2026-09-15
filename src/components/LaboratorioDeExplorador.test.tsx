@@ -116,6 +116,42 @@ const linhaDe = (nome: string) =>
 
 const escolher = (nome: string) => clicar(linhaDe(nome), nome);
 
+/**
+ * Clica numa linha segurando uma tecla.
+ *
+ * `HTMLElement.click()` não carrega modificador nenhum — ele fabrica um evento
+ * sem `ctrlKey` —, então a seleção múltipla precisa do `MouseEvent` montado à
+ * mão. É o mesmo motivo de `abrirMenuDe` despachar `contextmenu` em vez de
+ * chamar um método.
+ */
+const clicarCom = (nome: string, teclas: { ctrlKey?: boolean; shiftKey?: boolean }) => {
+  const l = linhaDe(nome);
+  expect(l, `não achei "${nome}" para clicar`).toBeTruthy();
+  act(() => {
+    l!.dispatchEvent(new MouseEvent('click', { bubbles: true, ...teclas }));
+  });
+};
+
+const comCtrl = (nome: string) => clicarCom(nome, { ctrlKey: true });
+const comShift = (nome: string) => clicarCom(nome, { shiftKey: true });
+
+/** Os nomes das linhas pintadas de escolhido, na ordem da tela. */
+const selecionadas = () =>
+  [...container.querySelectorAll('.win-linha.escolhida')]
+    .map(l => l.querySelector('.win-c-nome span')?.textContent?.trim());
+
+/** O que a barra de estado diz sobre a seleção. */
+const contagem = () =>
+  [...container.querySelectorAll('.win-status span')]
+    .map(e => e.textContent?.trim())
+    .find(t => t?.includes('selecionad')) ?? '';
+
+const teclar = (key: string, teclas: { ctrlKey?: boolean } = {}) => {
+  act(() => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...teclas }));
+  });
+};
+
 const botaoDeMenu = (texto: string) =>
   [...container.querySelectorAll('.win-menu button')]
     .find(b => b.textContent?.trim().startsWith(texto));
@@ -484,4 +520,196 @@ describe('os dois Exploradores da plataforma mostram a mesma janela', () => {
     expect(daVereda.colunas).toHaveLength(4);
     expect(daVereda.raizes).toEqual([true, true, true]);
   });
+
+  it('a mesma seleção múltipla, pelas mesmas teclas e pelo mesmo menu', () => {
+    /*
+      A seleção múltipla mora em `selecao.ts` justamente para não haver duas.
+      Isto confere que as duas janelas a **usam**: ligar o Ctrl num laboratório
+      e esquecer o outro não estoura nada — o desbravador que aprendeu a
+      escolher três arquivos na CC-ES001 tentaria o mesmo na AP041 e concluiria
+      que errou o gesto.
+    */
+    const escolherDois = () => {
+      const nomes = [...container.querySelectorAll('.win-linha .win-c-nome span')]
+        .map(e => e.textContent!.trim());
+      expect(nomes.length, 'a pasta inicial abriu com menos de duas linhas')
+        .toBeGreaterThan(1);
+      clicar(linhaDe(nomes[0]), nomes[0]);
+      comCtrl(nomes[1]);
+      return selecionadas();
+    };
+
+    const temCaixas = () => {
+      clicar(comando('Exibir'), 'Exibir');
+      const b = botaoDeMenu('Caixas de seleção de item');
+      clicar(b, 'Caixas de seleção de item');
+      return !!container.querySelector('.win-caixa');
+    };
+
+    montar('m1-lab');
+    expect(escolherDois(), 'o Ctrl não juntou duas linhas na CC-ES001').toHaveLength(2);
+    expect(temCaixas(), 'a CC-ES001 não oferece as caixas de seleção').toBe(true);
+
+    act(() => root.unmount());
+    root = createRoot(container);
+    act(() => {
+      root.render(
+        <MemoryRouter>
+          <FileManagerLab
+            specialtyCode="AP041" lessonCode="AP041.5-L1"
+            lessonTitle="Organizando as pastas do clube"
+            requirementCodes={['AP041-5']}
+            userId="00000000-0000-0000-0000-000000000000" />
+        </MemoryRouter>,
+      );
+    });
+
+    expect(escolherDois(), 'o Ctrl não juntou duas linhas na AP041').toHaveLength(2);
+    expect(temCaixas(), 'a AP041 não oferece as caixas de seleção').toBe(true);
+  });
 });
+
+/* ── A seleção múltipla ───────────────────────────────────────────────────── */
+
+describe('a seleção múltipla do Explorador', () => {
+  /*
+    `selecao.test.ts` prova que as regras estão certas. Isto é outra pergunta,
+    e é a que a plataforma já aprendeu a fazer: **a janela chama as regras?**
+    Um `onClick` que joga fora os modificadores, uma caixa que não aparece, um
+    comando que continua lendo só o primeiro item — as regras seguem corretas e
+    a ferramenta não existe na tela.
+
+    A Área de Trabalho abre com os dez arquivos mal nomeados do requisito 5, que
+    é justamente onde escolher vários faz falta.
+  */
+
+  it('o Ctrl junta linhas soltas, e a barra de estado as conta', () => {
+    montar('m2-lab');
+    escolher('IMG_20260214_193045.jpg');
+    comCtrl('ata.docx');
+    comCtrl('cantina.pdf');
+
+    expect(selecionadas()).toHaveLength(3);
+    expect(contagem()).toMatch(/3 itens selecionados/);
+  });
+
+  it('o Ctrl no que já estava escolhido tira aquela linha', () => {
+    montar('m2-lab');
+    escolher('ata.docx');
+    comCtrl('ata nova.docx');
+    comCtrl('ata.docx');
+
+    expect(selecionadas()).toEqual([semExtensao('ata nova.docx')]);
+  });
+
+  it('o Shift pega a faixa inteira, na ordem da tela', () => {
+    montar('m2-lab');
+    /* Os nomes saem da lista como ela está ordenada, e não de uma lista escrita
+       à mão: a collation do português decide a ordem, e uma faixa esperada
+       escrita de cabeça mediria a ordenação em vez do Shift. */
+    const nomes = [...container.querySelectorAll('.win-linha .win-c-nome span')]
+      .map(e => e.textContent!.trim());
+    expect(nomes.length, 'a Área de Trabalho abriu vazia').toBeGreaterThan(4);
+
+    clicar(linhaDe(nomes[1]), nomes[1]);
+    comShift(nomes[4]);
+
+    expect(selecionadas()).toEqual(nomes.slice(1, 5));
+  });
+
+  it('o clique sem tecla desfaz a seleção e fica com uma só', () => {
+    montar('m2-lab');
+    teclar('a', { ctrlKey: true });
+    expect(selecionadas().length).toBeGreaterThan(5);
+
+    escolher('ata.docx');
+    expect(selecionadas()).toEqual([semExtensao('ata.docx')]);
+  });
+
+  it('o Ctrl+A escolhe tudo o que está à vista', () => {
+    montar('m2-lab');
+    const quantas = container.querySelectorAll('.win-linha').length;
+    teclar('a', { ctrlKey: true });
+    expect(selecionadas()).toHaveLength(quantas);
+  });
+
+  it('clicar no vazio abaixo da lista desfaz a seleção', () => {
+    montar('m2-lab');
+    escolher('ata.docx');
+    expect(selecionadas()).toHaveLength(1);
+
+    const area = linhaDe('ata.docx')!.parentElement!;
+    act(() => { area.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    expect(selecionadas()).toHaveLength(0);
+  });
+
+  it('o botão direito num item já escolhido não encolhe a seleção', () => {
+    /*
+      É o detalhe que faz a ferramenta valer alguma coisa. Sem ele, escolher
+      três e mandar compactar pelo menu empacotaria **um** — e a tarefa diria
+      "o pacote tem menos de três itens", culpando a pessoa por um gesto que a
+      tela desfez no caminho.
+    */
+    montar('m2-lab');
+    escolher('ata.docx');
+    comCtrl('ata nova.docx');
+    comCtrl('ata nova FINAL.docx');
+    abrirMenuDe('ata nova.docx');
+
+    expect(selecionadas()).toHaveLength(3);
+  });
+
+  it('m2 também se vence escolhendo três arquivos, que é o gesto de verdade', () => {
+    /*
+      A outra volta da m2 compacta uma **pasta** de quatro fotos, e passa. Mas
+      "compactar um conjunto de arquivos" é o que o requisito 4.5 pede, e o
+      conjunto se escolhe com Ctrl — sem ele o laboratório só aceitava o caminho
+      que não exercita o gesto.
+    */
+    montar('m2-lab');
+    escolher('ata.docx');
+    comCtrl('ata nova.docx');
+    comCtrl('ata nova FINAL.docx');
+    clicar(botaoDeMenu('Compactar') ?? comando('Compactar'), 'Compactar');
+
+    /* Os três originais continuam lá: compactar copia. */
+    for (const n of ['ata.docx', 'ata nova.docx', 'ata nova FINAL.docx']) {
+      expect(linhaDe(n), `"${n}" sumiu depois de compactar`).toBeTruthy();
+    }
+
+    const pacote = [...container.querySelectorAll('.win-linha')]
+      .find(l => l.querySelector('.win-c-tipo')?.textContent?.includes('compactada'));
+    expect(pacote, 'nenhum pacote apareceu na lista').toBeTruthy();
+    clicar(pacote, 'o pacote');
+    clicar(comando('Extrair tudo'), 'Extrair');
+
+    expect(venceu(), oQueFalta()).toBe(true);
+  });
+
+  it('as caixas de seleção do menu Exibir escolhem vários sem tecla nenhuma', () => {
+    /*
+      É o caminho do celular, onde não há `Ctrl` nem `Shift`. Sem elas a seleção
+      múltipla sumiria justamente na tela em que boa parte dos desbravadores
+      estuda — e reduzir a tela nunca reduz o que dá para fazer nela.
+    */
+    montar('m2-lab');
+    expect(container.querySelector('.win-caixa'),
+      'as caixas já vinham ligadas — no computador elas nascem desligadas').toBeNull();
+
+    clicar(comando('Exibir'), 'Exibir');
+    clicar(botaoDeMenu('Caixas de seleção de item'), 'Caixas de seleção de item');
+
+    const caixaDe = (nome: string) =>
+      linhaDe(nome)?.querySelector('.win-caixa') as HTMLInputElement | null;
+    expect(caixaDe('ata.docx'), 'a caixa não apareceu na linha').toBeTruthy();
+
+    clicar(caixaDe('ata.docx'), 'a caixa de ata.docx');
+    clicar(caixaDe('cantina.pdf'), 'a caixa de cantina.pdf');
+    expect(selecionadas()).toHaveLength(2);
+
+    /* Desmarcar tira uma sem levar a outra junto. */
+    clicar(caixaDe('ata.docx'), 'a caixa de ata.docx');
+    expect(selecionadas()).toEqual([semExtensao('cantina.pdf')]);
+  });
+});
+

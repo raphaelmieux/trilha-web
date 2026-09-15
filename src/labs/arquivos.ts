@@ -517,10 +517,15 @@ export function restaurarVersao(arvore: No[], id: string, indice: number, agora:
 
 /* ── Apresentação ─────────────────────────────────────────────────────────── */
 
+/** KB no formato que a coluna Tamanho mostra. */
+export function formatarKb(kb: number): string {
+  if (kb >= 1024) return `${(kb / 1024).toFixed(1).replace('.', ',')} MB`;
+  return `${kb} KB`;
+}
+
 export function formatarTamanho(n: No): string {
   if (n.tipo === 'pasta') return '';
-  if (n.tamanhoKb >= 1024) return `${(n.tamanhoKb / 1024).toFixed(1).replace('.', ',')} MB`;
-  return `${n.tamanhoKb} KB`;
+  return formatarKb(n.tamanhoKb);
 }
 
 export function formatarData(ms: number): string {

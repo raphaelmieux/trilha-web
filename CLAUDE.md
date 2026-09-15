@@ -1097,6 +1097,48 @@ E o contexto carrega o disco de agora **e** o de quando a lição abriu. Sem
 isso, o histórico de versões que o relatório já traz diria que alguém salvou
 por cima de um arquivo que nem abriu.
 
+**Escolher vários é uma ferramenta, e ela mora fora dos dois laboratórios.**
+A lista aceitava um item por vez, e com isso metade do requisito 4.5 não tinha
+gesto: "compactar um conjunto de arquivos" só se alcançava compactando uma
+**pasta**, que é o caminho que não exercita a escolha. `selecao.ts` tem as
+regras — Ctrl alterna, Shift pega a faixa, Ctrl+Shift soma uma segunda faixa,
+Ctrl+A pega tudo — e os dois Exploradores as usam. Duas seleções ligeiramente
+diferentes seriam dois Windows, que é a mesma razão de `explorer.tsx` existir.
+
+Quatro detalhes dela erram calado, e é por isso que são funções puras e não um
+`if` dentro de um `onClick`:
+
+- **o intervalo do Shift corre a ordem da tela**, e não a da árvore. Depois de
+  classificar por data as duas deixam de coincidir, e a faixa pegaria linhas que
+  não estão entre as duas em que a pessoa clicou;
+- **o botão direito numa linha já selecionada preserva a seleção.** Sem isso,
+  escolher cinco e mandar compactar pelo menu encolhe para um no caminho: o
+  pacote sai com um arquivo, e a tarefa diz "o pacote tem menos de três itens"
+  — acusando a pessoa de um erro que a tela cometeu. Arrastar segue a mesma
+  regra;
+- **a âncora não se move com o Shift.** Movê-la faria a faixa caminhar, e
+  encolher a seleção clicando mais perto do começo passaria a ser impossível;
+- **a seleção é podada contra o que está à vista.** O id de um arquivo excluído
+  continuaria lá, e o comando seguinte agiria sobre o que ninguém vê.
+
+**No celular não há Ctrl nem Shift, e a resposta é a do Windows.** O menu
+Exibir ganhou "Caixas de seleção de item", que é como o Explorer de verdade
+resolve isso — e elas nascem ligadas quando `(pointer: coarse)` diz que não há
+mouse. A pergunta é essa, e não a largura: um tablet de dez polegadas tem a
+largura de um computador e o mesmo problema. É a regra de sempre — reduzir a
+tela nunca reduz o que dá para fazer nela.
+
+**E as teclas que a barra prometia passaram a existir.** "Copiar (Ctrl+C)",
+"Renomear (F2)", "Excluir (Del)" estavam escritas nos botões dos dois
+laboratórios desde sempre, e **nenhuma fazia nada**: não havia ouvinte de
+teclado em lugar nenhum. Dica que nomeia um gesto que o programa não tem é pior
+do que dica nenhuma — o desbravador aperta, nada acontece, e conclui que errou.
+`useAtalhosDoExplorador` ignora o que vem de campo de texto, senão o Ctrl+A de
+dentro do campo de renomear selecionaria a pasta em vez do texto, e o Del
+apagaria o arquivo em vez da letra. E fica **acima** do `if (salvo)` do
+`FileManagerLab`: hook depois de um return antecipado deixa de ser chamado em
+algumas renderizações, e o React conta os hooks pela ordem.
+
 **Trava de motor não é trava de tela.** `exploradorValidator.test.ts` prova que
 cada verificação pode ficar verde chamando o motor. Isso não prova que a janela
 chama alguma delas: um botão sem `onClick`, um menu que não abre, uma caixa de
@@ -1666,6 +1708,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/lib/exploradorValidator.test.ts` | verificação do Explorador que nasce verde no disco do clube, ou que ninguém consegue vencer |
 | `src/labs/explorer.test.tsx` | peça da janela do Explorador que sumiu no recorte, ou pesquisa que some na tela estreita |
+| `src/labs/selecao.test.ts` | faixa do Shift medida fora da ordem da tela, ou botão direito que encolhe a seleção |
+| `src/components/LaboratorioDeExplorador.test.tsx` | Explorador que joga fora Ctrl e Shift no clique, ou um dos dois sem as caixas de seleção |
 | `src/labs/roteiroDaEstrutura.test.ts` | roteiro da apresentação que julga a organização alheia, ou que lê os arquivos um por um |
 | `src/components/LaboratorioDeExplorador.test.tsx` | lição da CC-ES001 impossível de vencer clicando, ou os dois Exploradores mostrando janelas diferentes |
 | `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
