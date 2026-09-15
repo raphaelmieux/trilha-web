@@ -85,6 +85,17 @@ const paragrafo = (id: string) => container.querySelector(`[data-bloco="${id}"]`
 
 const estiloDe = (id: string) => paragrafo(id)?.getAttribute('data-estilo');
 
+/**
+ * O `span` que **carrega a aparência** do trecho.
+ *
+ * Por `data-trecho`, e não pelo primeiro `span` que aparecer: a folha aninha
+ * cada trecho num invólucro que segura a marca de quebra de linha, e "o
+ * primeiro span" passou a ser o invólucro no dia da extração — o teste
+ * reprovou dizendo que o título não estava em negrito quando ele estava.
+ */
+const pintado = (bloco: string) =>
+  paragrafo(bloco)?.querySelector('[data-trecho]') as HTMLElement | null;
+
 /** Um botão da galeria de Estilos, pelo nome. */
 const naGaleria = (nome: string) =>
   [...container.querySelectorAll('.wr-estilo')].find(b => b.textContent?.trim() === nome);
@@ -167,7 +178,7 @@ describe('o relatório abre por consertar', () => {
     expect(estiloDe('h-abertura')).toBe('Normal');
 
     // O que os faz parecer títulos é a formatação direta desenhada no `span`.
-    const escrito = paragrafo('titulo')!.querySelector('span') as HTMLElement;
+    const escrito = pintado('titulo')!;
     expect(escrito.style.fontWeight, 'o título não chega em negrito — ele não engana ninguém')
       .toBe('700');
     expect(escrito.style.fontSize).toBe('16px');
@@ -200,11 +211,10 @@ describe('o relatório pode ser vencido clicando', () => {
       estava em 16, e Título 1 também é 16 — o título fica igualzinho, e é
       justamente isso que a lição diz ("a aparência mudou pouco").
     */
-    const daDireta = paragrafo('titulo')!.querySelector('span') as HTMLElement;
-    expect(daDireta.style.fontWeight, 'o título não estava em negrito à mão').toBe('700');
+    expect(pintado('titulo')!.style.fontWeight, 'o título não estava em negrito à mão').toBe('700');
 
     clicar(comando('Limpar Toda a Formatação'), 'Limpar Toda a Formatação');
-    const doEstilo = paragrafo('titulo')!.querySelector('span') as HTMLElement;
+    const doEstilo = pintado('titulo')!;
     expect(doEstilo.style.fontWeight,
       'a formatação direta continuou vencendo o estilo depois de limpar').toBe('400');
 

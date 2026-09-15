@@ -488,7 +488,7 @@ export const MODULOS_DO_EDITOR: ModuloDeVereda[] = [
           prova de que valeu a pena é o último gesto: modificar a definição de
           Título 2 e as quatro seções mudarem juntas.
         */
-        id: 'm1-lab', tipo: 'word',
+        id: 'm1-lab', tipo: 'word', documento: 'oficio',
         titulo: 'Consertando o relatório do clube',
         resumo: 'Um relatório formatado inteiro à mão, e a troca por estilos sem mudar uma palavra.',
         verificacoes: ['titulos', 'citacao-legenda', 'limpar', 'modificar', 'sumario'],
@@ -507,6 +507,21 @@ export const MODULOS_DO_EDITOR: ModuloDeVereda[] = [
         titulo: 'O que o Enter faz e o que ele não faz',
         resumo: 'Parágrafo, quebra de linha, e a serifa que decide onde o texto se lê.',
         topicos: PARAGRAFO_E_LETRA,
+      },
+      {
+        /*
+          Os requisitos 2.3 e 2.4, num documento cujo defeito é estrutural.
+
+          Nada está errado na tela: cinco parágrafos vazios empurram a
+          assinatura e o endereço foi escrito com três Enters. O que denuncia é
+          acrescentar uma frase no meio e ver o empurrão ir parar no lugar
+          errado — e é por isso que uma das tarefas **acrescenta** esse
+          parágrafo em vez de descrever o problema.
+        */
+        id: 'm2-lab', tipo: 'word', documento: 'circular',
+        titulo: 'Consertando a circular às famílias',
+        resumo: 'Enter usado como régua, endereço partido em três, e a fonte que ninguém escolheu.',
+        verificacoes: ['marcas', 'endereco', 'cresceu', 'quebra', 'fonte'],
       },
     ],
   },

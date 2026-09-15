@@ -329,7 +329,20 @@ export type LicaoDeVereda =
     tipo: 'word';
     titulo: string;
     resumo: string;
-    /** Os ids das metas, em `METAS_DO_OFICIO`. */
+    /**
+     * De qual documento a lição parte, e com qual lista de metas.
+     *
+     * O tipo sozinho não basta: dois módulos da CC-ES002 abrem o Word e partem
+     * de documentos diferentes — um relatório formatado à mão e uma circular
+     * com Enter usado como régua. Sem este campo, `tipo: 'word'` implicaria
+     * **um** documento, e o segundo laboratório abriria o do primeiro.
+     *
+     * É ele também que diz à trava de "abre sem nada consertado" qual par
+     * documento/metas conferir: sem ele ela olharia sempre para o mesmo, e a
+     * lição nova escaparia da conferência sem nada acusar.
+     */
+    documento: 'oficio' | 'circular';
+    /** Os ids das metas, na lista do documento acima. */
     verificacoes: string[];
   }
   | {

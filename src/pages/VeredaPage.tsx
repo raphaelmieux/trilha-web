@@ -19,6 +19,7 @@ import LaboratorioDeAmbiente from '../components/LaboratorioDeAmbiente';
 import LaboratorioDeTerminal from '../components/LaboratorioDeTerminal';
 import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
+import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
 import LaboratorioDePython from '../components/LaboratorioDePython';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -222,7 +223,13 @@ export default function VeredaPage() {
     sumário está em dia com os títulos.
   */
   if (licaoAberta?.tipo === 'word' && profile?.id) {
-    return (
+    /* Qual dos dois abre sai do `documento` da lição, e não do id dela: o id é
+       do módulo, e amarrar a tela a ele faria o terceiro laboratório de Word
+       pedir um `if` novo aqui em vez de um campo no currículo. */
+    return licaoAberta.documento === 'circular' ? (
+      <LaboratorioDaCircular vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    ) : (
       <LaboratorioDeWord vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );

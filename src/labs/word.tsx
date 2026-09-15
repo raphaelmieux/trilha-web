@@ -22,6 +22,11 @@ import {
  * ensinaria a procurar no lugar errado.
  */
 
+import {
+  aparenciaDe, aparenciaDoTrecho,
+  type Doc, type Bloco, type ItemDeSumario,
+} from './documento';
+
 export const CSS_WORD = `
 /* A janela não tem mais moldura: ela é a tela. */
 .wd-janela {
@@ -700,5 +705,142 @@ export function ZoomDoWord({ zoom, aoMudar }: { zoom: number; aoMudar: (z: numbe
       </button>
       <span style={{ minWidth: 34, textAlign: 'right' }}>{Math.round(zoom * 100)}%</span>
     </span>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   A FOLHA
+   ══════════════════════════════════════════════════════════════════════════
+   O que estas peças desenham é do **documento**, e não do exercício: como um
+   parágrafo se pinta, o que uma quebra de linha faz na tela, o que o sumário
+   mostra quando não achou nada.
+
+   Elas saíram do primeiro laboratório de Word da vereda no dia em que o
+   segundo foi escrito — **antes** de a cópia existir, e não depois. É a mesma
+   decisão que fez `word.tsx`, `excel.tsx` e `explorer.tsx` existirem, um nível
+   abaixo, e o motivo está escrito nos três: duas cópias divergem no primeiro
+   ajuste, e a plataforma passa a mostrar dois Word diferentes para o mesmo
+   programa.
+
+   Nenhuma guarda estado. Quem sabe qual parágrafo está escolhido é o
+   laboratório, porque é ele que sabe o que fazer com o clique.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+export const CSS_FOLHA = `
+  .wd-bloco { cursor: text; }
+  .wd-bloco.escolhido { outline: 1px solid #2B579A; outline-offset: 2px; }
+  /* As marcas de parágrafo. Cinza claro, como no Word: elas são auxílio de
+     edição e não podem competir com o texto que a pessoa está lendo. */
+  .wd-marca { color: #9AA0A6; user-select: none; }
+  .wd-sumario {
+    border: 1px solid #D1D1D1; padding: 8px 10px; margin-bottom: 12px;
+    font-size: 10.5px; color: #201F1E;
+  }
+  .wd-sumario-linha { display: flex; gap: 6px; align-items: baseline; }
+  .wd-sumario-pontos { flex: 1; border-bottom: 1px dotted #8A8886; }
+  .wd-quebra-pagina {
+    border-top: 1px dashed #8A8886; margin: 14px 0 10px;
+    font-size: 9.5px; color: #767676; text-align: center; letter-spacing: .04em;
+  }
+`;
+
+/**
+ * Um parágrafo da folha.
+ *
+ * `marcas` liga o ¶ do fim e o ↵ das quebras de linha. Não é enfeite: enquanto
+ * elas estão desligadas, o Enter e a quebra de linha são **invisíveis**, e um
+ * documento errado por causa deles passa por certo. É o que a teoria da
+ * CC-ES002 diz, e é por isso que um laboratório sobre essa diferença precisa
+ * saber desenhá-las.
+ */
+export function ParagrafoDaFolha({ doc, bloco, escolhido, marcas, aoEscolher }: {
+  doc: Doc<string>;
+  bloco: Bloco<string>;
+  escolhido?: boolean;
+  marcas?: boolean;
+  aoEscolher?: () => void;
+}) {
+  return (
+    <>
+      {bloco.quebraDePagina && (
+        <div className="wd-quebra-pagina">Quebra de Página</div>
+      )}
+      <p
+        className={`wd-bloco${escolhido ? ' escolhido' : ''}`}
+        style={aparenciaDe(doc, bloco.estilo)}
+        onClick={aoEscolher ? ev => { ev.stopPropagation(); aoEscolher(); } : undefined}
+        data-bloco={bloco.id}
+        data-estilo={bloco.estilo}
+      >
+        {bloco.trechos.map((x, i) => (
+          <span key={x.id}>
+            {x.quebra && (
+              <>
+                {marcas && <span className="wd-marca" data-marca="quebra">↵</span>}
+                <br />
+              </>
+            )}
+            <span style={aparenciaDoTrecho(doc, bloco, x)} data-trecho={x.id}>{x.texto}</span>
+            {/* O ¶ vai depois do último trecho: ele marca o fim do parágrafo, e
+                não o fim de cada pedaço dele. */}
+            {marcas && i === bloco.trechos.length - 1 && (
+              <span className="wd-marca" data-marca="paragrafo">¶</span>
+            )}
+          </span>
+        ))}
+      </p>
+    </>
+  );
+}
+
+/**
+ * O sumário, com a mensagem do Word quando ele não achou nada.
+ *
+ * "Nenhuma entrada de sumário foi encontrada" é o texto do programa, e é o
+ * único sinal de que um documento formatado à mão está quebrado — o sumário lê
+ * estilo, e negrito não é estilo. Trocá-lo por um aviso da plataforma tiraria a
+ * lição da tela do programa imitado e a poria na nossa.
+ */
+export function SumarioDaFolha({ itens }: { itens: ItemDeSumario[] }) {
+  return (
+    <div className="wd-sumario">
+      <p style={{ fontWeight: 700, color: '#2F5496', marginBottom: 4 }}>Sumário</p>
+      {itens.length === 0 ? (
+        <p style={{ color: '#A19F9D', fontStyle: 'italic' }}>
+          Nenhuma entrada de sumário foi encontrada.
+        </p>
+      ) : itens.map((it, i) => (
+        <div key={i} className="wd-sumario-linha" style={{ paddingLeft: (it.nivel - 1) * 14 }}>
+          <span>{it.texto}</span>
+          <span className="wd-sumario-pontos" />
+          <span>{i + 1}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** A folha inteira: o sumário, quando existe, e os parágrafos. */
+export function FolhaDoWord({ doc, selecionado, marcas, aoEscolher, aoClicarNoVazio }: {
+  doc: Doc<string>;
+  selecionado?: string | null;
+  marcas?: boolean;
+  aoEscolher?: (id: string) => void;
+  aoClicarNoVazio?: () => void;
+}) {
+  return (
+    <div className="wd-canvas" onClick={aoClicarNoVazio}>
+      <div className="wd-pagina" onClick={ev => ev.stopPropagation()}>
+        {doc.sumario && <SumarioDaFolha itens={doc.sumario} />}
+        {doc.blocos.map(b => (
+          <ParagrafoDaFolha
+            key={b.id} doc={doc} bloco={b}
+            escolhido={selecionado === b.id}
+            marcas={marcas}
+            aoEscolher={aoEscolher ? () => aoEscolher(b.id) : undefined}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
