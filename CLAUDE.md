@@ -1614,6 +1614,14 @@ versão", e cobrar o molde de um nome só não mediria nada: um nome sozinho sem
 tem o próprio molde. Data e versão são duas contas separadas, porque faltar uma
 ou faltar a outra são erros diferentes.
 
+**A CC-ES002 abriu com doze lições, e a classe da insígnia saiu do tamanho.**
+São seis módulos, cada um com teoria e laboratório; doze cai na faixa que vai
+até treze, que é Pioneiro. Vereda não tem nível — grava `'basico'` justamente
+para não reivindicar grau nenhum —, então o tamanho é a única medida honesta
+dela, e escrever outra classe na migration não estouraria nada: a tela lê a do
+banco, e `insignias.test.ts` compara as duas justamente porque elas já
+divergiram em silêncio por meses.
+
 **A janela compartilhada tinha dentro dela o documento de um exercício.** A
 prévia de impressão de `BastidoresDoWord` era o texto do relatório da AP042,
 escrito na janela: o segundo laboratório a abrir Imprimir mostraria a prévia do

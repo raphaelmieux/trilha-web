@@ -587,13 +587,6 @@ export const VEREDAS: Vereda[] = [
     familia: 'Escritório',
     description: 'Estilo em vez de negrito à mão: mudar um e o documento inteiro muda junto.',
     /*
-      Ainda em construção: a teoria está escrita, os laboratórios não. É o que
-      "vereda em construção pode ter conteúdo" permite, e é o que mantém cada
-      PR pequeno — o que já está escrito passa pelas travas de qualidade desde
-      agora, em vez de tudo passar de uma vez no fim.
-    */
-    emConstrucao: true,
-    /*
       Sai da AP044, e não da AP042: as duas ensinam o Word, e é a AP044 que
       chega nos estilos, no sumário e na nota de rodapé. Aqui a pergunta muda —
       não é onde fica o botão, é por que o documento está formatado assim e o
