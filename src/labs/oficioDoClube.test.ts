@@ -5,6 +5,7 @@ import {
 } from './oficioDoClube';
 import {
   aparenciaDe, aparenciaDoTrecho, comFormatacaoDireta, textoDoDoc, titulosDoDoc,
+  paragrafos, ehParagrafo,
   type Estilo,
 } from './documento';
 
@@ -29,12 +30,14 @@ import {
 
 const comEstilo = (d: Doc, id: string, estilo: Estilo): Doc => ({
   ...d,
-  blocos: d.blocos.map(b => (b.id === id ? { ...b, estilo } : b)),
+  blocos: d.blocos.map(b => (b.id === id && ehParagrafo(b) ? { ...b, estilo } : b)),
 });
 
 const semDireta = (d: Doc): Doc => ({
   ...d,
-  blocos: d.blocos.map(b => ({ ...b, trechos: b.trechos.map(({ direta, ...x }) => { void direta; return x; }) })),
+  blocos: d.blocos.map(b => (ehParagrafo(b)
+    ? { ...b, trechos: b.trechos.map(({ direta, ...x }) => { void direta; return x; }) }
+    : b)),
 });
 
 const modificando = (d: Doc, estilo: Estilo, ajuste: { tamanho?: number; cor?: string }): Doc =>
@@ -67,7 +70,7 @@ describe('o relatório abre por fazer', () => {
       passa por bem feito, e o único sinal está no que ele não faz.
     */
     for (const id of Object.keys(ESTILO_ESPERADO)) {
-      const b = OFICIO_INICIAL.blocos.find(x => x.id === id);
+      const b = paragrafos(OFICIO_INICIAL).find(x => x.id === id);
       expect(b, `o bloco "${id}" sumiu do documento`).toBeTruthy();
       expect(b!.estilo, `"${id}" já chega com estilo — não haveria o que consertar`).toBe('Normal');
       expect(b!.trechos.some(x => x.direta),
@@ -130,7 +133,7 @@ describe('o texto não muda — são as palavras do requisito 6', () => {
     let d = resolvido();
     d = {
       ...d,
-      blocos: d.blocos.map(b => (b.id === 'titulo'
+      blocos: d.blocos.map(b => (b.id === 'titulo' && ehParagrafo(b)
         ? { ...b, trechos: [{ ...b.trechos[0], texto: 'Relatório de Atividades — 1º Semestre' }] }
         : b)),
     };
@@ -163,7 +166,7 @@ describe('a formatação direta vence o estilo, e é por isso que ela tem de sai
     let d: Doc = OFICIO_INICIAL;
     for (const [id, estilo] of Object.entries(ESTILO_ESPERADO)) d = comEstilo(d, id, estilo);
     const comDireta = modificando(d, 'Título 2', { tamanho: 24 });
-    const cabecalho = comDireta.blocos.find(b => b.id === 'h-abertura')!;
+    const cabecalho = paragrafos(comDireta).find(b => b.id === 'h-abertura')!;
 
     expect(aparenciaDe(comDireta, 'Título 2').fontSize,
       'a redefinição do estilo não pegou').toBe(24);
@@ -172,7 +175,7 @@ describe('a formatação direta vence o estilo, e é por isso que ela tem de sai
       + 'direta vence, e é essa precedência que faz a meta "limpar" existir').toBe(13);
 
     const limpo = semDireta(comDireta);
-    const dela = limpo.blocos.find(b => b.id === 'h-abertura')!;
+    const dela = paragrafos(limpo).find(b => b.id === 'h-abertura')!;
     expect(aparenciaDoTrecho(limpo, dela, dela.trechos[0]).fontSize,
       'depois de limpar, o trecho precisa seguir o estilo').toBe(24);
   });
@@ -181,7 +184,7 @@ describe('a formatação direta vence o estilo, e é por isso que ela tem de sai
     // O requisito 8, medido: uma mexida, quatro parágrafos.
     const d = modificando(semDireta(resolvido()), 'Título 2', { cor: '#7F2C1E' });
     const seguem = ['h-abertura', 'h-atividades', 'h-numeros', 'h-fecho'].map(id => {
-      const b = d.blocos.find(x => x.id === id)!;
+      const b = paragrafos(d).find(x => x.id === id)!;
       return aparenciaDoTrecho(d, b, b.trechos[0]).color;
     });
     expect(seguem).toEqual(['#7F2C1E', '#7F2C1E', '#7F2C1E', '#7F2C1E']);

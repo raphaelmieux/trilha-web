@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   DOC_INICIAL, METAS_DOS_ESTILOS, TEXTO_DO_SITE,
   aplicarCaixa, sumarioAtualizado, titulosDoDoc, textoDoBloco,
-  type Doc, type Bloco, type Trecho,
+  paragrafos, ehParagrafo,
+  type Doc, type Bloco, type Paragrafo, type Trecho,
 } from './metasDaAp044';
 
 /*
@@ -46,21 +47,21 @@ describe('nenhuma tarefa do laboratório de estilos nasce verde', () => {
 
 /* ── O manual pronto ───────────────────────────────────────────────────────── */
 
-const mudarBloco = (d: Doc, id: string, mudanca: Partial<Bloco>): Doc =>
-  ({ ...d, blocos: d.blocos.map(b => (b.id === id ? { ...b, ...mudanca } : b)) });
+const mudarBloco = (d: Doc, id: string, mudanca: Partial<Paragrafo>): Doc =>
+  ({ ...d, blocos: d.blocos.map(b => (b.id === id && ehParagrafo(b) ? { ...b, ...mudanca } : b)) });
 
 const mudarTrecho = (d: Doc, id: string, mudanca: Partial<Trecho>): Doc => ({
   ...d,
-  blocos: d.blocos.map(b => ({
+  blocos: d.blocos.map(b => (ehParagrafo(b) ? {
     ...b,
     trechos: b.trechos.map(x => (x.id === id ? { ...x, ...mudanca } : x)),
-  })),
+  } : b)),
 });
 
 const colar = (d: Doc, id: string, secao: Bloco['secao'], deFora: boolean): Doc => ({
   ...d,
   blocos: [...d.blocos, {
-    id, secao, estilo: 'Normal' as const,
+    tipo: 'paragrafo' as const, id, secao, estilo: 'Normal' as const,
     trechos: [{ id: `${id}-a`, texto: TEXTO_DO_SITE, posicao: 'normal' as const, realce: 'nenhum' as const, enfase: false, deFora }],
   }],
 });
@@ -73,7 +74,7 @@ function manualPronto(): Doc {
   d = mudarBloco(d, 'citacao', { estilo: 'Citação' });
   d = mudarTrecho(d, 'prazo-b', { enfase: true, realce: 'amarelo' });
   d = mudarBloco(d, 'titulo', {
-    trechos: [{ ...d.blocos.find(b => b.id === 'titulo')!.trechos[0], texto: aplicarCaixa('MANUAL DO ACAMPAMENTO DE INVERNO', 'frase') }],
+    trechos: [{ ...paragrafos(d).find(b => b.id === 'titulo')!.trechos[0], texto: aplicarCaixa('MANUAL DO ACAMPAMENTO DE INVERNO', 'frase') }],
   });
   d = colar(d, 'colado-site', 'programacao', true);
   d = colar(d, 'colado-doc', 'fim', false);
@@ -115,7 +116,7 @@ describe('o sumário envelhece quando um título muda', () => {
 
     /* Agora o Caps Lock é consertado — e o sumário não fica sabendo. */
     d = mudarBloco(d, 'titulo', {
-      trechos: [{ ...d.blocos.find(b => b.id === 'titulo')!.trechos[0], texto: 'Manual do acampamento de inverno' }],
+      trechos: [{ ...paragrafos(d).find(b => b.id === 'titulo')!.trechos[0], texto: 'Manual do acampamento de inverno' }],
     });
     expect(sumarioAtualizado(d)).toBe(false);
     expect(METAS_DOS_ESTILOS.find(m => m.id === 'sumario')!.feita(d)).toBe(false);

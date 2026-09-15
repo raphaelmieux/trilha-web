@@ -15,7 +15,8 @@ import {
 import {
   DOC_INICIAL, METAS_DOS_ESTILOS, TEXTO_DO_SITE, NOMES_DA_CAIXA,
   aplicarCaixa, titulosDoDoc, textoDoBloco, APARENCIA_DO_ESTILO,
-  type Doc, type Bloco, type Trecho, type Estilo, type Realce, type ModoDeCaixa,
+  paragrafos, ehParagrafo,
+  type Doc, type Paragrafo, type Trecho, type Estilo, type Realce, type ModoDeCaixa,
 } from './metasDaAp044';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
@@ -85,10 +86,10 @@ export default function EstilosTextoLab({ specialtyCode, lessonCode, lessonTitle
   const [gravando, setGravando] = useState(false);
 
   const blocoDoTrecho = (id: string | null) =>
-    id ? doc.blocos.find(b => b.trechos.some(x => x.id === id)) ?? null : null;
+    id ? paragrafos(doc).find(b => b.trechos.some(x => x.id === id)) ?? null : null;
   const alvoBloco = blocoDoTrecho(selecionado);
   const alvoTrecho = selecionado
-    ? doc.blocos.flatMap(b => b.trechos).find(x => x.id === selecionado) ?? null
+    ? paragrafos(doc).flatMap(b => b.trechos).find(x => x.id === selecionado) ?? null
     : null;
 
   const tarefas = METAS_DOS_ESTILOS.map(m => ({
@@ -112,15 +113,18 @@ export default function EstilosTextoLab({ specialtyCode, lessonCode, lessonTitle
     return false;
   };
 
-  const mudarBloco = (id: string, mudanca: Partial<Bloco>) =>
-    setDoc(d => ({ ...d, blocos: d.blocos.map(b => (b.id === id ? { ...b, ...mudanca } : b)) }));
+  const mudarBloco = (id: string, mudanca: Partial<Paragrafo>) =>
+    setDoc(d => ({
+      ...d,
+      blocos: d.blocos.map(b => (b.id === id && ehParagrafo(b) ? { ...b, ...mudanca } : b)),
+    }));
 
   const mudarTrecho = (id: string, mudanca: Partial<Trecho>) =>
     setDoc(d => ({
       ...d,
-      blocos: d.blocos.map(b => ({
+      blocos: d.blocos.map(b => (ehParagrafo(b) ? {
         ...b, trechos: b.trechos.map(x => (x.id === id ? { ...x, ...mudanca } : x)),
-      })),
+      } : b)),
     }));
 
   const aplicarEstilo = (e: Estilo) => {
@@ -178,8 +182,8 @@ export default function EstilosTextoLab({ specialtyCode, lessonCode, lessonTitle
     }
     const deFora = modo === 'original';
     const id = `colado-${doc.blocos.length}`;
-    const novo: Bloco = {
-      id, secao: alvoBloco.secao, estilo: 'Normal',
+    const novo: Paragrafo = {
+      tipo: 'paragrafo', id, secao: alvoBloco.secao, estilo: 'Normal',
       trechos: [{ id: `${id}-a`, texto: TEXTO_DO_SITE, posicao: 'normal', realce: 'nenhum', enfase: false, deFora }],
     };
     setDoc(d => {
@@ -285,7 +289,7 @@ export default function EstilosTextoLab({ specialtyCode, lessonCode, lessonTitle
     '--zoom': zoom,
   } as React.CSSProperties;
 
-  const notas = doc.blocos.filter(b => b.nota !== undefined);
+  const notas = paragrafos(doc).filter(b => b.nota !== undefined);
   const palavras = doc.blocos.reduce((n, b) => n + textoDoBloco(b).trim().split(/\s+/).length, 0);
 
   const desenharTrecho = (x: Trecho) => {
@@ -309,7 +313,7 @@ export default function EstilosTextoLab({ specialtyCode, lessonCode, lessonTitle
     );
   };
 
-  const desenharBloco = (b: Bloco) => (
+  const desenharBloco = (b: Paragrafo) => (
     <p key={b.id} className="wd-par" style={{ ...APARENCIA_DO_ESTILO[b.estilo], lineHeight: 1.45 }}>
       {b.trechos.map(desenharTrecho)}
       {b.nota !== undefined && (
@@ -621,7 +625,7 @@ export default function EstilosTextoLab({ specialtyCode, lessonCode, lessonTitle
             )}
 
             {ORDEM_DAS_SECOES.map(secao => {
-              const blocos = doc.blocos.filter(b => b.secao === secao);
+              const blocos = paragrafos(doc).filter(b => b.secao === secao);
               if (!blocos.length) return null;
               const n = doc.colunas[secao];
               return (

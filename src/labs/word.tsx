@@ -1,6 +1,7 @@
 import {
   ArrowLeft, Printer, Save, FileType2, FolderOpen, Cloud, Clock, HardDrive,
   Plus, Info, Share2, X, Search, Minus, Square as SquareIcon,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 /*
@@ -23,8 +24,9 @@ import {
  */
 
 import {
-  aparenciaDe, aparenciaDoTrecho,
-  type Doc, type Bloco, type ItemDeSumario,
+  aparenciaDe, aparenciaDoTrecho, textoDoTrecho, larguraDaTabela,
+  type Doc, type Bloco, type Paragrafo, type TabelaDoDoc, type ImagemDoDoc,
+  type Disposicao, type ItemDeSumario,
 } from './documento';
 
 export const CSS_WORD = `
@@ -119,8 +121,14 @@ export const CSS_WORD = `
    mostrou. É a mesma armadilha de escrever colr no lugar de color: o CSS erra calado.
 
    A4 em pé é o padrão porque é o papel que sai de toda impressora de clube. */
+/* O position relative com z-index zero faz da folha um contexto de
+   empilhamento, e é só por causa disso que a imagem "atrás do texto" pode
+   existir: ela é desenhada com z-index -1, que a põe acima do fundo branco da
+   folha e abaixo do texto dela. Sem o contexto aqui, o -1 a jogaria atrás do
+   fundo de quem quer que seja o contexto mais próximo, e a imagem sumiria
+   inteira — sem erro nenhum, que é como este defeito se apresentaria. */
 .wd-pagina {
-  background: #FFFFFF; margin: 0 auto;
+  background: #FFFFFF; margin: 0 auto; position: relative; z-index: 0;
   box-shadow: 0 1px 4px rgba(0,0,0,0.28);
   width: calc(var(--largura-cm, 21) * var(--px-cm) * 1px);
   min-height: calc(var(--altura-cm, 29.7) * var(--px-cm) * 1px);
@@ -732,6 +740,32 @@ export const CSS_FOLHA = `
   /* As marcas de parágrafo. Cinza claro, como no Word: elas são auxílio de
      edição e não podem competir com o texto que a pessoa está lendo. */
   .wd-marca { color: #9AA0A6; user-select: none; }
+  /* O sombreado de campo, que é do Word e não nosso.
+
+     É por ele que se vê, sem clicar em nada, qual legenda se numera sozinha e
+     qual foi digitada. Trocá-lo por um aviso da plataforma poria na nossa tela
+     a resposta que o programa imitado já dá na dele — e tirá-lo deixaria as
+     duas legendas idênticas, com a diferença inteira do requisito 4.3
+     invisível até alguém inserir uma figura no meio. */
+  .wd-campo { background: #E1E1E1; }
+  /* Tabulação.
+
+     Sem isto o HTML colapsa o \t num espaço só, e a lista alinhada com Tab
+     sai **reta** na folha — o defeito visível do relatório do módulo 3
+     simplesmente não apareceria, e a lição viraria "converta porque a tarefa
+     mandou". O jsdom não denuncia: lá o texto continua tendo o \t, e só o
+     navegador decide que ele não vale nada.
+
+     A parada de tabulação conta larguras de espaço, e espaço em fonte
+     proporcional é estreito. 32 foi medido no Chromium: de 28 a 38 os quatro
+     nomes curtos param na mesma coluna e só o comprido salta para a parada
+     seguinte, que é exatamente o que a tabulação faz num documento de verdade.
+     Abaixo de 28 o próprio cabeçalho sai fora de esquadro e a lista parece
+     torta por outro motivo; de 40 em diante cabe tudo na mesma parada e o
+     defeito some. 32 fica no meio da faixa de propósito: o número depende da
+     métrica da fonte, e um valor na beirada viraria "alinhado" noutra máquina
+     sem nada acusar. */
+  .wd-tab { white-space: pre-wrap; tab-size: 32; }
   .wd-sumario {
     border: 1px solid #D1D1D1; padding: 8px 10px; margin-bottom: 12px;
     font-size: 10.5px; color: #201F1E;
@@ -742,6 +776,80 @@ export const CSS_FOLHA = `
     border-top: 1px dashed #8A8886; margin: 14px 0 10px;
     font-size: 9.5px; color: #767676; text-align: center; letter-spacing: .04em;
   }
+
+  /* ── A tabela ─────────────────────────────────────────────────────────── */
+  .wd-tabela { border-collapse: collapse; width: 100%; margin: 6px 0 10px; font-size: 10.5px; }
+  .wd-tabela.escolhido { outline: 1px solid #2B579A; outline-offset: 2px; }
+  .wd-tabela td { border: 1px solid #000000; padding: 3px 6px; color: #201F1E; }
+  .wd-tabela caption { caption-side: top; }
+  /* A célula editável. Ela é um campo de verdade, e desenhada para não
+     parecer um: no Word a célula é texto, e uma caixinha com borda dentro de
+     cada uma ensinaria uma tabela que não existe. */
+  .wd-celula {
+    border: none; background: transparent; padding: 0; margin: 0;
+    font: inherit; color: inherit; width: 100%; min-width: 48px;
+    outline: none;
+  }
+  .wd-celula:focus { box-shadow: inset 0 0 0 2px #2B579A; }
+  .wd-tabela td.cursor { box-shadow: inset 0 0 0 2px #2B579A; }
+  /* A linha de cabeçalho. Ela é negrito em toda a galeria do Word, e é o que
+     se repetiria no alto da folha seguinte. */
+  .wd-tabela .wd-th { font-weight: 700; }
+  /* "Tabela de Lista 3": sem grade vertical, régua embaixo do cabeçalho. */
+  .wd-tabela.est-lista td { border: none; border-bottom: 1px solid #BFBFBF; }
+  .wd-tabela.est-lista .wd-th { border-bottom: 2px solid #4472C4; }
+  /* "Tabela de Grade 4 — Ênfase 1": faixa azul no cabeçalho e linhas listradas. */
+  .wd-tabela.est-grade4 td { border: 1px solid #FFFFFF; }
+  .wd-tabela.est-grade4 .wd-th { background: #4472C4; color: #FFFFFF; }
+  .wd-tabela.est-grade4 tr:nth-child(even) td { background: #D9E2F3; }
+  .wd-tabela.est-grade4 tr:nth-child(odd) td { background: #EDF2FA; }
+  .wd-tabela.est-grade4 .wd-th { background: #4472C4; }
+
+  /* ── A imagem ─────────────────────────────────────────────────────────── */
+  .wd-imagem {
+    border: 1px solid #A6A6A6; background: #F2F2F2; color: #595959;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; text-align: center; padding: 8px; box-sizing: border-box;
+    width: 46%; aspect-ratio: 4 / 3; font-size: 9px; cursor: pointer;
+  }
+  .wd-imagem.escolhido { outline: 2px solid #2B579A; outline-offset: 1px; }
+  .wd-imagem-nome { font-family: Consolas, "Courier New", monospace; font-size: 8px; color: #7F7F7F; }
+  /* Alinhada com o texto: ela entra na linha como uma letra gigante, e é por
+     isso que ela empurra o parágrafo inteiro para baixo dela. */
+  .wd-disp-alinhada { display: inline-flex; vertical-align: text-bottom; margin: 0 2px 2px 0; }
+  .wd-disp-quadrada, .wd-disp-proxima { float: left; margin: 2px 10px 6px 0; }
+  /* Próxima contorna o desenho, e não a caixa. Sem foto de verdade o que dá
+     para mostrar honestamente é o recorte da caixa. */
+  .wd-disp-proxima { border-radius: 50% / 22%; }
+  .wd-disp-acima-e-abaixo { display: flex; margin: 8px auto; clear: both; }
+  /* A legenda de uma figura que flutua flutua com ela, e na largura dela.
+
+     Sem isto a legenda é um parágrafo comum logo depois do float: as linhas
+     dela se desviam da imagem e o texto "Figura 1 — ..." aparece **ao lado**
+     da foto, na altura do topo. Não estoura nada e fica com cara de defeito de
+     quem escreveu o documento, e não da plataforma. No Word a legenda inserida
+     entra no grupo da figura e fica embaixo dela. */
+  .wd-legenda-flutua { float: left; clear: left; width: 46%; margin-top: 0; }
+  /* O corpo da folha, e ele existe por uma razão só.
+
+     A folha é display flex por causa da altura mínima dela, e float **não
+     vale em item de flex** — o navegador simplesmente ignora. As
+     disposições Quadrada e Próxima prometiam que o texto contorna a imagem e
+     não contornavam nada: a foto ficava numa linha e o parágrafo na de baixo,
+     igualzinho a Acima e Abaixo. Nada estoura, e três das seis disposições
+     passam a fazer a mesma coisa.
+
+     Os blocos vão num bloco comum dentro do flex, e aí o float volta a valer
+     entre irmãos. O flex 1 mantém a folha esticando como antes. */
+  .wd-corpo { flex: 1; min-height: 0; }
+  /* Atrás e à frente saem da linha e **cobrem** o texto — é isto que faz delas
+     a resposta errada para uma foto num relatório, e é preciso vê-lo. O
+     invólucro tem altura zero para que a imagem não empurre nada: fora da
+     linha quer dizer fora da linha. */
+  .wd-fora-da-linha { position: relative; height: 0; }
+  .wd-fora-da-linha > .wd-imagem { position: absolute; top: 0; left: 18%; opacity: .9; }
+  .wd-disp-atras { z-index: -1; }
+  .wd-disp-frente { z-index: 2; }
 `;
 
 /**
@@ -753,12 +861,14 @@ export const CSS_FOLHA = `
  * CC-ES002 diz, e é por isso que um laboratório sobre essa diferença precisa
  * saber desenhá-las.
  */
-export function ParagrafoDaFolha({ doc, bloco, escolhido, marcas, aoEscolher }: {
+export function ParagrafoDaFolha({ doc, bloco, escolhido, marcas, aoEscolher, classe }: {
   doc: Doc<string>;
-  bloco: Bloco<string>;
+  bloco: Paragrafo<string>;
   escolhido?: boolean;
   marcas?: boolean;
   aoEscolher?: () => void;
+  /** Classe extra da folha — hoje só a legenda que flutua com a figura. */
+  classe?: string;
 }) {
   return (
     <>
@@ -766,7 +876,7 @@ export function ParagrafoDaFolha({ doc, bloco, escolhido, marcas, aoEscolher }: 
         <div className="wd-quebra-pagina">Quebra de Página</div>
       )}
       <p
-        className={`wd-bloco${escolhido ? ' escolhido' : ''}`}
+        className={`wd-bloco${escolhido ? ' escolhido' : ''}${classe ? ` ${classe}` : ''}`}
         style={aparenciaDe(doc, bloco.estilo)}
         onClick={aoEscolher ? ev => { ev.stopPropagation(); aoEscolher(); } : undefined}
         data-bloco={bloco.id}
@@ -780,7 +890,19 @@ export function ParagrafoDaFolha({ doc, bloco, escolhido, marcas, aoEscolher }: 
                 <br />
               </>
             )}
-            <span style={aparenciaDoTrecho(doc, bloco, x)} data-trecho={x.id}>{x.texto}</span>
+            {/* O que se lê sai de `textoDoTrecho`, e não de `x.texto`: num
+                campo o número é calculado na hora, da posição dele entre os
+                campos do documento. Ler o texto cru aqui deixaria toda legenda
+                inserida como campo aparecendo vazia na folha. */}
+            <span
+              className={[x.campo ? 'wd-campo' : '', x.texto.includes('\t') ? 'wd-tab' : '']
+                .filter(Boolean).join(' ') || undefined}
+              style={aparenciaDoTrecho(doc, bloco, x)}
+              data-trecho={x.id}
+              data-campo={x.campo}
+            >
+              {textoDoTrecho(doc, x)}
+            </span>
             {/* O ¶ vai depois do último trecho: ele marca o fim do parágrafo, e
                 não o fim de cada pedaço dele. */}
             {marcas && i === bloco.trechos.length - 1 && (
@@ -789,6 +911,141 @@ export function ParagrafoDaFolha({ doc, bloco, escolhido, marcas, aoEscolher }: 
           </span>
         ))}
       </p>
+    </>
+  );
+}
+
+/**
+ * A tabela na folha.
+ *
+ * Ela desenha `linhas` como estão, com a largura medida pela linha mais larga:
+ * uma linha curta receberia célula vazia em vez de deixar buraco na borda, que
+ * é um defeito que não estoura e some no meio de uma tabela de seis linhas.
+ *
+ * O cabeçalho sai em `<td class="wd-th">` e não em `<th>` de propósito: aqui
+ * ele é um **estado da tabela** que o desbravador liga e desliga, e trocar a
+ * tag mudaria a semântica do documento junto com a aparência — o que faria a
+ * mesma célula ser lida de dois jeitos por quem usa leitor de tela conforme a
+ * tarefa estivesse cumprida ou não.
+ */
+export function TabelaDaFolha({
+  tabela, escolhido, aoEscolher, celula, aoCursorNaCelula, aoEditarCelula,
+}: {
+  tabela: TabelaDoDoc<string>;
+  escolhido?: boolean;
+  aoEscolher?: () => void;
+  /**
+   * Onde está o cursor dentro da tabela.
+   *
+   * Comando de tabela age onde o cursor está — "Excluir › Colunas" tira a
+   * coluna da célula em que se clicou, e não uma coluna qualquer. Sem esta
+   * posição o laboratório teria de perguntar qual, num diálogo que o Word não
+   * tem.
+   */
+  celula?: { linha: number; coluna: number } | null;
+  aoCursorNaCelula?: (linha: number, coluna: number) => void;
+  aoEditarCelula?: (linha: number, coluna: number, valor: string) => void;
+}) {
+  const largura = larguraDaTabela(tabela);
+  const classeDoEstilo = tabela.estilo === 'Tabela de Lista 3' ? ' est-lista'
+    : tabela.estilo === 'Tabela de Grade 4 — Ênfase 1' ? ' est-grade4'
+      : '';
+  return (
+    <>
+      {tabela.quebraDePagina && <div className="wd-quebra-pagina">Quebra de Página</div>}
+      <table
+        className={`wd-tabela${classeDoEstilo}${escolhido ? ' escolhido' : ''}`}
+        onClick={aoEscolher ? ev => { ev.stopPropagation(); aoEscolher(); } : undefined}
+        data-bloco={tabela.id}
+        data-tabela-estilo={tabela.estilo}
+        data-cabecalho={tabela.cabecalho ? 'sim' : 'nao'}
+      >
+        <tbody>
+          {tabela.linhas.map((linha, i) => (
+            <tr key={i}>
+              {Array.from({ length: largura }, (_, j) => {
+                const classes = [
+                  tabela.cabecalho && i === 0 ? 'wd-th' : '',
+                  celula?.linha === i && celula?.coluna === j ? 'cursor' : '',
+                ].filter(Boolean).join(' ');
+                return (
+                  <td key={j} className={classes || undefined}
+                    data-celula={`${i}-${j}`}
+                    /*
+                      O clique para aqui. Acima está a própria tabela, e o
+                      `aoEscolher` dela zera o cursor que a célula acabou de
+                      pôr — e aí "Excluir › Colunas" nunca sabe qual coluna.
+                      Quem seleciona a tabela é `aoCursorNaCelula`, que faz as
+                      duas coisas de uma vez, como o cursor do Word faz.
+                    */
+                    onClick={aoCursorNaCelula
+                      ? (ev) => { ev.stopPropagation(); aoCursorNaCelula(i, j); }
+                      : undefined}>
+                    {aoEditarCelula ? (
+                      <input
+                        className="wd-celula"
+                        value={linha[j] ?? ''}
+                        aria-label={`Linha ${i + 1}, coluna ${j + 1}`}
+                        onFocus={() => aoCursorNaCelula?.(i, j)}
+                        onChange={ev => aoEditarCelula(i, j, ev.target.value)}
+                      />
+                    ) : (linha[j] ?? '')}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+/** As disposições que saem da linha e cobrem o texto, em vez de arrumá-lo. */
+const FORA_DA_LINHA: readonly Disposicao[] = ['atras', 'frente'];
+
+/** As que flutuam, e em volta das quais o texto contorna. */
+const DISPOSICOES_QUE_FLUTUAM: readonly Disposicao[] = ['quadrada', 'proxima'];
+
+/**
+ * A imagem na folha.
+ *
+ * Não há foto: o que se desenha é a moldura com a descrição e o nome do
+ * arquivo, que é o bastante para o que esta lição mede — **onde** a imagem
+ * fica e como o texto se arruma em volta dela. Pôr uma arte do repositório no
+ * lugar seria dizer que a foto da fogueira é um emblema de especialidade.
+ *
+ * A disposição vira classe, e o desenho de cada uma é o que ela de fato faz:
+ * quadrada e próxima flutuam e o texto contorna; acima e abaixo toma a largura
+ * sozinha; alinhada entra na linha; atrás e à frente saem dela e cobrem o
+ * texto. Desenhar as seis iguais faria a recusa das duas últimas parecer
+ * capricho da plataforma, quando ela é a diferença que o requisito nomeia.
+ */
+export function ImagemDaFolha({ imagem, escolhido, aoEscolher }: {
+  imagem: ImagemDoDoc<string>;
+  escolhido?: boolean;
+  aoEscolher?: () => void;
+}) {
+  const caixa = (
+    <div
+      className={`wd-imagem wd-disp-${imagem.disposicao}${escolhido ? ' escolhido' : ''}`}
+      onClick={aoEscolher ? ev => { ev.stopPropagation(); aoEscolher(); } : undefined}
+      data-bloco={imagem.id}
+      data-disposicao={imagem.disposicao}
+      role="img"
+      aria-label={imagem.descricao}
+    >
+      <ImageIcon className="w-6 h-6" aria-hidden="true" />
+      <span>{imagem.descricao}</span>
+      <span className="wd-imagem-nome">{imagem.arquivo}</span>
+    </div>
+  );
+  return (
+    <>
+      {imagem.quebraDePagina && <div className="wd-quebra-pagina">Quebra de Página</div>}
+      {FORA_DA_LINHA.includes(imagem.disposicao)
+        ? <div className="wd-fora-da-linha">{caixa}</div>
+        : caixa}
     </>
   );
 }
@@ -820,26 +1077,93 @@ export function SumarioDaFolha({ itens }: { itens: ItemDeSumario[] }) {
   );
 }
 
-/** A folha inteira: o sumário, quando existe, e os parágrafos. */
-export function FolhaDoWord({ doc, selecionado, marcas, aoEscolher, aoClicarNoVazio }: {
+/**
+ * Um bloco qualquer da folha.
+ *
+ * O `switch` é exaustivo com `never` no `default`, e não uma escada de `if`:
+ * um quarto tipo de bloco — uma caixa de texto, um gráfico — não compila até
+ * alguém dizer como ele se desenha. A escada devolveria `null` calado, e o
+ * bloco simplesmente não apareceria na folha, que é o defeito que já escapou
+ * de três travas nesta vereda quando o tipo `'word'` entrou no currículo.
+ */
+export function BlocoDaFolha({
+  doc, bloco, escolhido, marcas, aoEscolher, celula, aoCursorNaCelula, aoEditarCelula, classe,
+}: {
+  doc: Doc<string>;
+  bloco: Bloco<string>;
+  escolhido?: boolean;
+  marcas?: boolean;
+  aoEscolher?: () => void;
+  classe?: string;
+  celula?: { linha: number; coluna: number } | null;
+  aoCursorNaCelula?: (linha: number, coluna: number) => void;
+  aoEditarCelula?: (linha: number, coluna: number, valor: string) => void;
+}) {
+  switch (bloco.tipo) {
+    case 'paragrafo':
+      return (
+        <ParagrafoDaFolha doc={doc} bloco={bloco} escolhido={escolhido}
+          marcas={marcas} aoEscolher={aoEscolher} classe={classe} />
+      );
+    case 'tabela':
+      return (
+        <TabelaDaFolha tabela={bloco} escolhido={escolhido} aoEscolher={aoEscolher}
+          celula={celula} aoCursorNaCelula={aoCursorNaCelula} aoEditarCelula={aoEditarCelula} />
+      );
+    case 'imagem':
+      return <ImagemDaFolha imagem={bloco} escolhido={escolhido} aoEscolher={aoEscolher} />;
+    default: {
+      const naoTratado: never = bloco;
+      throw new Error(`bloco de tipo não tratado na folha: ${JSON.stringify(naoTratado)}`);
+    }
+  }
+}
+
+/** A folha inteira: o sumário, quando existe, e os blocos. */
+export function FolhaDoWord({
+  doc, selecionado, marcas, aoEscolher, aoClicarNoVazio,
+  celula, aoCursorNaCelula, aoEditarCelula,
+}: {
   doc: Doc<string>;
   selecionado?: string | null;
   marcas?: boolean;
   aoEscolher?: (id: string) => void;
   aoClicarNoVazio?: () => void;
+  celula?: { linha: number; coluna: number } | null;
+  /** Recebe o bloco junto: é ele que o laboratório precisa selecionar. */
+  aoCursorNaCelula?: (blocoId: string, linha: number, coluna: number) => void;
+  aoEditarCelula?: (blocoId: string, linha: number, coluna: number, valor: string) => void;
 }) {
   return (
     <div className="wd-canvas" onClick={aoClicarNoVazio}>
       <div className="wd-pagina" onClick={ev => ev.stopPropagation()}>
         {doc.sumario && <SumarioDaFolha itens={doc.sumario} />}
-        {doc.blocos.map(b => (
-          <ParagrafoDaFolha
+        <div className="wd-corpo">
+        {doc.blocos.map((b, i) => {
+          /* A legenda logo depois de uma figura que flutua pertence a ela, e
+             flutua junto. É a ordem dos blocos que diz isso — no Word é o
+             agrupamento da figura com a legenda, e aqui a vizinhança basta,
+             porque `Inserir Legenda` sempre a põe imediatamente abaixo. */
+          const anterior = doc.blocos[i - 1];
+          const flutuaComAFigura = b.tipo === 'paragrafo' && b.estilo === 'Legenda'
+            && anterior?.tipo === 'imagem'
+            && DISPOSICOES_QUE_FLUTUAM.includes(anterior.disposicao);
+          return (
+          <BlocoDaFolha
             key={b.id} doc={doc} bloco={b}
             escolhido={selecionado === b.id}
             marcas={marcas}
             aoEscolher={aoEscolher ? () => aoEscolher(b.id) : undefined}
+            celula={selecionado === b.id ? celula : null}
+            aoCursorNaCelula={aoCursorNaCelula
+              ? (linha, coluna) => aoCursorNaCelula(b.id, linha, coluna) : undefined}
+            aoEditarCelula={aoEditarCelula
+              ? (linha, coluna, valor) => aoEditarCelula(b.id, linha, coluna, valor) : undefined}
+            classe={flutuaComAFigura ? 'wd-legenda-flutua' : undefined}
           />
-        ))}
+          );
+        })}
+        </div>
       </div>
     </div>
   );

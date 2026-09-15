@@ -1,7 +1,7 @@
 import {
-  trechoDe, blocoDe, linhaDe, textoDoBloco, sumarioAtualizado,
+  trechoDe, blocoDe, linhaDe, textoDoBloco, sumarioAtualizado, paragrafos,
   type Doc as DocDoWord, type Bloco as BlocoDoWord,
-  type Trecho, type Estilo,
+  type Paragrafo as ParagrafoDoWord, type Trecho, type Estilo,
 } from './documento';
 
 /**
@@ -46,21 +46,25 @@ export type Secao = 'capa' | 'abertura' | 'levar' | 'programacao' | 'culto' | 'f
 
 export type Doc = DocDoWord<Secao>;
 export type Bloco = BlocoDoWord<Secao>;
+/* O documento desta lição é só parágrafo — não há tabela nem imagem nele. É
+   por isso que as metas daqui pedem `Paragrafo` e não `Bloco`: elas leem
+   estilo e trechos, e nenhum dos dois existe nos outros dois tipos. */
+export type Paragrafo = ParagrafoDoWord<Secao>;
 
 export type {
   Estilo, Posicao, Realce, Trecho, ItemDeSumario, ModoDeCaixa,
 } from './documento';
 export {
   NOMES_DA_CAIXA, aplicarCaixa, textoDoBloco, titulosDoDoc, sumarioAtualizado,
-  APARENCIA_DO_ESTILO,
+  APARENCIA_DO_ESTILO, paragrafos, ehParagrafo,
 } from './documento';
 
 const t = (id: string, texto: string): Trecho => trechoDe(id, texto);
 
-const bloco = (id: string, secao: Secao, trechos: Trecho[]): Bloco =>
+const bloco = (id: string, secao: Secao, trechos: Trecho[]): Paragrafo =>
   blocoDe(id, secao, trechos);
 
-const linha = (id: string, secao: Secao, texto: string): Bloco =>
+const linha = (id: string, secao: Secao, texto: string): Paragrafo =>
   linhaDe(id, secao, texto);
 
 export const TEXTO_DO_SITE = 'O ônibus sai da igreja às 6h da sexta-feira e volta no domingo à noite.';
@@ -124,11 +128,11 @@ export interface MetaDeEstilos {
   feita: (d: Doc) => boolean;
 }
 
-const comEstilo = (d: Doc, e: Estilo) => d.blocos.filter(b => b.estilo === e);
-const trechos = (d: Doc) => d.blocos.flatMap(b => b.trechos);
-const um = (d: Doc, id: string) => d.blocos.find(b => b.id === id);
+const comEstilo = (d: Doc, e: Estilo) => paragrafos(d).filter(b => b.estilo === e);
+const trechos = (d: Doc) => paragrafos(d).flatMap(b => b.trechos);
+const um = (d: Doc, id: string) => paragrafos(d).find(b => b.id === id);
 const trecho = (d: Doc, id: string) => trechos(d).find(x => x.id === id);
-const colados = (d: Doc) => d.blocos.filter(b => textoDoBloco(b) === TEXTO_DO_SITE);
+const colados = (d: Doc) => paragrafos(d).filter(b => textoDoBloco(b) === TEXTO_DO_SITE);
 
 export const METAS_DOS_ESTILOS: MetaDeEstilos[] = [
   {
@@ -234,7 +238,7 @@ export const METAS_DOS_ESTILOS: MetaDeEstilos[] = [
       'Vá na guia Referências e clique em Inserir Nota de Rodapé.',
       'Escreva a explicação no pé da página, por exemplo: "Espuma fina que fica entre o saco de dormir e o chão."',
     ],
-    feita: d => d.blocos.some(b => (b.nota ?? '').trim().length >= 10),
+    feita: d => paragrafos(d).some(b => (b.nota ?? '').trim().length >= 10),
   },
   {
     id: 'sumario',

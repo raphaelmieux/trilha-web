@@ -1,6 +1,6 @@
 import {
   blocoDe, linhaDe, trechoDe, textoDoBloco, textoDoDoc, comFormatacaoDireta,
-  sumarioAtualizado, titulosDoDoc,
+  sumarioAtualizado, titulosDoDoc, paragrafos,
   type Doc as DocDoWord, type Bloco as BlocoDoWord, type Trecho, type Estilo,
 } from './documento';
 
@@ -126,7 +126,7 @@ export interface MetaDoOficio {
   feita: (d: Doc) => boolean;
 }
 
-const um = (d: Doc, id: string) => d.blocos.find(b => b.id === id);
+const um = (d: Doc, id: string) => paragrafos(d).find(b => b.id === id);
 
 /**
  * O texto está intacto.

@@ -135,9 +135,33 @@ export interface Direta {
   cor?: string;
 }
 
+/**
+ * Um campo de numeração — o que `Referências › Inserir Legenda` insere.
+ *
+ * Ele não guarda o número: o número sai da **posição** entre os campos do
+ * mesmo tipo, contada na hora de desenhar. É essa a diferença inteira do
+ * requisito 4.3, e ela só existe se o modelo se recusar a guardar o número:
+ * um campo que gravasse `'Figura 1'` seria texto digitado com outro nome, e
+ * entrar uma figura no meio o deixaria dizendo 1 para sempre.
+ */
+export type Campo = 'figura' | 'tabela';
+
+/** Como cada campo se lê na folha. */
+export const NOME_DO_CAMPO: Record<Campo, string> = {
+  figura: 'Figura',
+  tabela: 'Tabela',
+};
+
 export interface Trecho {
   id: string;
+  /**
+   * O texto **digitado**. Num trecho que é campo ele fica vazio: o que se lê
+   * ali é calculado, e guardar as duas coisas deixaria a folha mostrando uma e
+   * a conferência lendo a outra.
+   */
   texto: string;
+  /** Quando presente, este trecho é um campo de numeração, e não texto. */
+  campo?: Campo;
   /**
    * Quebra de linha **antes** deste trecho — o `Shift+Enter` do Word.
    *
@@ -166,22 +190,148 @@ export interface Trecho {
   deFora?: boolean;
 }
 
-export interface Bloco<S extends string = string> {
+/**
+ * O que todo bloco do corpo tem, seja ele parágrafo, tabela ou imagem.
+ *
+ * A quebra de página fica aqui e não no parágrafo porque `Ctrl+Enter` empurra
+ * o que vier depois, e o que vem depois pode ser uma tabela. Deixá-la só no
+ * parágrafo obrigaria quem quisesse a tabela na folha seguinte a pôr um
+ * parágrafo vazio antes dela — que é exatamente o gesto que o módulo 2 existe
+ * para desensinar.
+ */
+interface BlocoBase<S extends string> {
   id: string;
-  trechos: Trecho[];
+  secao: S;
   /**
-   * Quebra de página antes deste parágrafo — `Ctrl+Enter`.
+   * Quebra de página antes deste bloco — `Ctrl+Enter`.
    *
    * É o que empurra texto para a folha seguinte sem os oito parágrafos vazios
    * que a teoria desaconselha. Os dois se parecem na tela do dia em que foram
    * escritos, e só um continua certo quando o texto de cima cresce.
    */
   quebraDePagina?: boolean;
+}
+
+export interface Paragrafo<S extends string = string> extends BlocoBase<S> {
+  tipo: 'paragrafo';
+  trechos: Trecho[];
   estilo: Estilo;
-  secao: S;
   /** Nota de rodapé pendurada neste parágrafo. */
   nota?: string;
 }
+
+/**
+ * Os estilos da galeria de tabela, com os nomes do Word em português.
+ *
+ * `'Tabela com Grade'` é o que `Inserir › Tabela` aplica sozinho — a grade
+ * crua, linha preta fina em tudo. Ela está na lista, e não fora dela, porque
+ * é um estilo de verdade e não um estado de "sem estilo": tratá-la como
+ * ausência obrigaria a folha a ter um desenho para o caso de não haver nenhum,
+ * e aí a galeria passaria a ter quatro entradas em vez de três.
+ */
+export const ESTILOS_DE_TABELA = [
+  'Tabela com Grade',
+  'Tabela de Lista 3',
+  'Tabela de Grade 4 — Ênfase 1',
+] as const;
+
+export type EstiloDeTabela = typeof ESTILOS_DE_TABELA[number];
+
+/** O que `Inserir › Tabela` aplica sem ninguém escolher nada. */
+export const ESTILO_PADRAO_DE_TABELA: EstiloDeTabela = 'Tabela com Grade';
+
+export interface TabelaDoDoc<S extends string = string> extends BlocoBase<S> {
+  tipo: 'tabela';
+  /**
+   * As células, linha a linha. Toda linha tem o mesmo número de células —
+   * é o que `larguraDaTabela` confere, porque uma linha curta desenharia uma
+   * tabela com buraco e nada estouraria.
+   */
+  linhas: string[][];
+  /**
+   * A primeira linha é cabeçalho.
+   *
+   * Não é enfeite: é ela que se repete no alto da folha seguinte quando a
+   * tabela atravessa duas páginas. Uma tabela que muda de página sem cabeçalho
+   * marcado vira, na segunda folha, uma tabela sem títulos de coluna — e quem
+   * a lê não tem como saber o que é cada uma.
+   */
+  cabecalho: boolean;
+  estilo: EstiloDeTabela;
+}
+
+/**
+ * A disposição do texto em volta da imagem, com os seis nomes do Word.
+ *
+ * `'alinhada'` é como a imagem **nasce**: ela entra na linha como se fosse uma
+ * letra gigante, empurrando o parágrafo inteiro. Os cinco outros a tiram da
+ * linha — e só três deles arrumam o texto em volta dela, que é o que o
+ * requisito 4.3 chama de ajustar ao texto.
+ */
+export type Disposicao =
+  | 'alinhada'
+  | 'quadrada'
+  | 'proxima'
+  | 'atras'
+  | 'frente'
+  | 'acima-e-abaixo';
+
+export const NOMES_DA_DISPOSICAO: Record<Disposicao, string> = {
+  alinhada: 'Alinhada com o Texto',
+  quadrada: 'Quadrada',
+  proxima: 'Próxima',
+  atras: 'Atrás do Texto',
+  frente: 'À Frente do Texto',
+  'acima-e-abaixo': 'Acima e Abaixo',
+};
+
+/**
+ * As disposições que de fato **arrumam o texto** em volta da imagem.
+ *
+ * Atrás e à frente não entram, e não é rigor nosso: elas fazem o texto
+ * *ignorar* a imagem, que é o contrário de ajustá-la a ele. É a mesma
+ * distinção do "abrir com" que não é "definir padrão" — dois comandos que se
+ * parecem na hora de clicar e respondem a perguntas diferentes.
+ */
+export const DISPOSICOES_QUE_AJUSTAM: readonly Disposicao[] =
+  ['quadrada', 'proxima', 'acima-e-abaixo'];
+
+export interface ImagemDoDoc<S extends string = string> extends BlocoBase<S> {
+  tipo: 'imagem';
+  /** O nome do arquivo, que é o que o painel de informações mostra. */
+  arquivo: string;
+  /** O que a foto mostra. É isto que a folha desenha, já que não há foto. */
+  descricao: string;
+  disposicao: Disposicao;
+}
+
+/**
+ * Um bloco do corpo do documento.
+ *
+ * Tabela e imagem **não são parágrafos**, e é por isso que elas são membros da
+ * união em vez de campos pendurados num. No Word também não são: o cursor não
+ * anda dentro delas como anda no texto, elas não têm estilo de parágrafo, e
+ * elas convocam guias contextuais que o texto não convoca. Um `tabela?:` dentro
+ * do parágrafo deixaria representável o parágrafo que é tabela **e** tem
+ * trechos, que não existe — e cada leitor teria de lembrar qual dos dois vale.
+ *
+ * A legenda, sim, é parágrafo: no Word ela é um parágrafo de estilo Legenda com
+ * um campo dentro. Pendurá-la na imagem tiraria dela o estilo, e com ele o
+ * índice de figuras e a metade do requisito 4.3 que o módulo 1 já ensinou.
+ */
+export type Bloco<S extends string = string> =
+  | Paragrafo<S>
+  | TabelaDoDoc<S>
+  | ImagemDoDoc<S>;
+
+export const ehParagrafo = <S extends string>(b: Bloco<S>): b is Paragrafo<S> =>
+  b.tipo === 'paragrafo';
+
+export const ehTabela = <S extends string>(b: Bloco<S>): b is TabelaDoDoc<S> =>
+  b.tipo === 'tabela';
+
+export const ehImagem = <S extends string>(b: Bloco<S>): b is ImagemDoDoc<S> =>
+  b.tipo === 'imagem';
 
 /** Uma linha do sumário, como ela foi lida no momento em que ele foi gerado. */
 export interface ItemDeSumario {
@@ -243,15 +393,43 @@ export interface Doc<S extends string = string> {
 export const trechoDe = (id: string, texto: string): Trecho =>
   ({ id, texto, posicao: 'normal', realce: 'nenhum', enfase: false });
 
-export const blocoDe = <S extends string>(id: string, secao: S, trechos: Trecho[]): Bloco<S> =>
-  ({ id, secao, trechos, estilo: 'Normal' });
+/** Um trecho que é campo de numeração. O texto fica vazio de propósito. */
+export const campoDe = (id: string, campo: Campo): Trecho =>
+  ({ ...trechoDe(id, ''), campo });
 
-export const linhaDe = <S extends string>(id: string, secao: S, texto: string): Bloco<S> =>
+export const blocoDe = <S extends string>(id: string, secao: S, trechos: Trecho[]): Paragrafo<S> =>
+  ({ tipo: 'paragrafo', id, secao, trechos, estilo: 'Normal' });
+
+export const linhaDe = <S extends string>(id: string, secao: S, texto: string): Paragrafo<S> =>
   blocoDe(id, secao, [trechoDe(`${id}-a`, texto)]);
 
 /* ── Ler ──────────────────────────────────────────────────────────────────── */
 
-export const textoDoBloco = (b: Bloco<string>) => b.trechos.map(x => x.texto).join('');
+/** Os parágrafos do documento, na ordem. Tabela e imagem não são parágrafos. */
+export const paragrafos = <S extends string>(d: Doc<S>): Paragrafo<S>[] =>
+  d.blocos.filter(ehParagrafo);
+
+/**
+ * O texto **digitado** de um bloco.
+ *
+ * Campo não entra: o que ele mostra é calculado, e somá-lo aqui faria o
+ * "sem alterar uma palavra do texto" do requisito 6 acusar de edição uma
+ * figura que entrou noutro lugar do documento.
+ */
+export const textoDoBloco = (b: Bloco<string>): string => {
+  switch (b.tipo) {
+    case 'paragrafo': return b.trechos.map(x => (x.campo ? '' : x.texto)).join('');
+    /* As células, como o Word as copia: tabulação entre colunas, quebra entre
+       linhas. É o mesmo texto que a conversão de tabela em texto devolveria. */
+    case 'tabela': return b.linhas.map(l => l.join('\t')).join('\n');
+    /* Imagem não tem texto. A legenda dela é outro bloco, e tem o próprio. */
+    case 'imagem': return '';
+    default: {
+      const naoTratado: never = b;
+      throw new Error(`bloco de tipo não tratado: ${JSON.stringify(naoTratado)}`);
+    }
+  }
+};
 
 /**
  * Todo o texto do documento, na ordem, sem formatação nenhuma.
@@ -265,9 +443,15 @@ export const textoDoBloco = (b: Bloco<string>) => b.trechos.map(x => x.texto).jo
 export const textoDoDoc = (d: Doc<string>) =>
   d.blocos.map(textoDoBloco).join('\n');
 
-/** Os parágrafos vazios — Enter apertado para empurrar texto. */
-export const paragrafosVazios = (d: Doc<string>) =>
-  d.blocos.filter(b => textoDoBloco(b).trim() === '');
+/**
+ * Os parágrafos vazios — Enter apertado para empurrar texto.
+ *
+ * Ele olha só para parágrafos, e não para todo bloco sem texto: imagem não tem
+ * texto nenhum, e contá-la aqui faria a meta do módulo 2 pedir que se apagasse
+ * a foto para ficar verde.
+ */
+export const paragrafosVazios = <S extends string>(d: Doc<S>) =>
+  paragrafos(d).filter(b => textoDoBloco(b).trim() === '');
 
 /** As pilhas de nomes de fonte que cada família rende, com os nomes do Word. */
 export const FONTES: Record<'serifada' | 'sem-serifa', string> = {
@@ -275,9 +459,9 @@ export const FONTES: Record<'serifada' | 'sem-serifa', string> = {
   'sem-serifa': 'Calibri, Arial, sans-serif',
 };
 
-/** Os trechos que ainda carregam formatação direta. */
-export const comFormatacaoDireta = (d: Doc<string>) =>
-  d.blocos.filter(b => b.trechos.some(x => x.direta && Object.keys(x.direta).length > 0));
+/** Os parágrafos que ainda carregam formatação direta. */
+export const comFormatacaoDireta = <S extends string>(d: Doc<S>) =>
+  paragrafos(d).filter(b => b.trechos.some(x => x.direta && Object.keys(x.direta).length > 0));
 
 /**
  * A aparência com que um estilo é desenhado **neste** documento: a do Word,
@@ -297,7 +481,7 @@ export function aparenciaDe(d: Doc<string>, e: Estilo): CSSProperties {
 }
 
 /** A aparência de um trecho: a do estilo do bloco, com a direta por cima. */
-export function aparenciaDoTrecho(d: Doc<string>, b: Bloco<string>, x: Trecho): CSSProperties {
+export function aparenciaDoTrecho(d: Doc<string>, b: Paragrafo<string>, x: Trecho): CSSProperties {
   const doEstilo = aparenciaDe(d, b.estilo);
   if (!x.direta) return doEstilo;
   const { negrito, italico, tamanho, cor } = x.direta;
@@ -312,10 +496,76 @@ export function aparenciaDoTrecho(d: Doc<string>, b: Bloco<string>, x: Trecho): 
 
 /** Os títulos do documento, na ordem, como o sumário os leria agora. */
 export function titulosDoDoc(d: Doc<string>): ItemDeSumario[] {
-  return d.blocos
+  return paragrafos(d)
     .filter(b => ehTitulo(b.estilo))
     .map(b => ({ texto: textoDoBloco(b), nivel: NIVEL_DO_TITULO[b.estilo]! }));
 }
+
+/* ── Os campos de numeração ───────────────────────────────────────────────── */
+
+/**
+ * Os trechos que são campo, na ordem do documento.
+ *
+ * A ordem é a do documento e não a de inserção, e é ela que faz a numeração
+ * andar sozinha: entrar uma figura no meio muda a posição de todas as
+ * seguintes, e nenhum campo precisou ser tocado.
+ */
+export function camposDoDoc(d: Doc<string>): { bloco: string; trecho: Trecho }[] {
+  return paragrafos(d).flatMap(b =>
+    b.trechos.filter(x => x.campo).map(x => ({ bloco: b.id, trecho: x })));
+}
+
+/**
+ * O número que um campo mostra: a posição dele entre os campos **do mesmo
+ * tipo**, contada na ordem do documento.
+ *
+ * Figura e tabela contam separado, como no Word — a Figura 1 e a Tabela 1
+ * convivem, e uma série não empurra a outra.
+ *
+ * Devolve 0 para trecho que não é campo, e quem pergunta por um trecho que não
+ * está no documento recebe 0 também: não há posição para contar.
+ */
+export function numeroDoCampo(d: Doc<string>, trechoId: string): number {
+  const alvo = camposDoDoc(d).find(c => c.trecho.id === trechoId);
+  if (!alvo) return 0;
+  return camposDoDoc(d)
+    .filter(c => c.trecho.campo === alvo.trecho.campo)
+    .findIndex(c => c.trecho.id === trechoId) + 1;
+}
+
+/**
+ * O que um trecho mostra na folha: o texto digitado, ou o campo resolvido.
+ *
+ * É a única leitura que a tela usa, e ela é separada de `textoDoBloco` de
+ * propósito. As duas respondem a perguntas diferentes — uma é "o que se lê",
+ * a outra é "o que foi digitado" —, e é justamente a distância entre elas que
+ * este módulo ensina: a legenda digitada à mão responde a mesma coisa nas
+ * duas, e é por isso que ela não se corrige sozinha.
+ */
+export function textoDoTrecho(d: Doc<string>, x: Trecho): string {
+  if (!x.campo) return x.texto;
+  return `${NOME_DO_CAMPO[x.campo]} ${numeroDoCampo(d, x.id)}`;
+}
+
+/** O que um parágrafo mostra na folha, com os campos já resolvidos. */
+export const textoNaTela = (d: Doc<string>, b: Paragrafo<string>) =>
+  b.trechos.map(x => textoDoTrecho(d, x)).join('');
+
+/* ── Tabelas ──────────────────────────────────────────────────────────────── */
+
+/**
+ * Quantas colunas a tabela tem, medida pela linha mais larga.
+ *
+ * Ela existe para que a folha nunca desenhe uma tabela com buraco: uma linha
+ * curta sai com uma célula a menos e a borda da direita sobe uma linha, sem
+ * erro nenhum. Quem acrescenta linha ou coluna preenche por aqui.
+ */
+export const larguraDaTabela = (t: TabelaDoDoc<string>) =>
+  t.linhas.reduce((maior, l) => Math.max(maior, l.length), 0);
+
+/** A tabela é retangular: toda linha com o mesmo número de células. */
+export const tabelaRetangular = (t: TabelaDoDoc<string>) =>
+  t.linhas.every(l => l.length === larguraDaTabela(t));
 
 /** O sumário existe e diz o que os títulos dizem hoje. */
 export function sumarioAtualizado(d: Doc<string>): boolean {
