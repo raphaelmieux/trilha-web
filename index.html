@@ -10,6 +10,28 @@
     <title>Trilha.Web()</title>
   </head>
   <body>
+    <!--
+      O fundo da plataforma. Fica aqui, e não num componente montado no `App`
+      como o `CodigoFonte`, por duas razões.
+
+      A primeira é o que ele é: decoração do documento, e não do aplicativo. A
+      textura que ele substitui era `body::before` — não passava por React
+      nenhum, e não há estado, texto nem rota que mude uma linha dele.
+
+      A segunda é quando ele aparece. Daqui ele é pintado no primeiro byte;
+      montado no `App`, só existiria depois de o pacote de JavaScript baixar e
+      analisar, e toda abertura a frio começaria com a tela preta e ganharia o
+      fundo depois — no computador do clube, que é lento, isso se vê.
+
+      As cinco camadas e o que cada uma faz estão em `src/index.css`, em `.moire`.
+    -->
+    <div class="moire" aria-hidden="true">
+      <div class="moire__base"></div>
+      <div class="moire__camada moire__camada--a"></div>
+      <div class="moire__camada moire__camada--b"></div>
+      <div class="moire__vinheta"></div>
+      <div class="moire__grao"></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -8,10 +8,11 @@ import tailwind from 'tailwindcss';
   O seletor de cores do Scratch precisa ficar por cima do aplicativo.
 
   A `#root` a folha dá `position: relative; z-index: 1`, para que a casca fique
-  acima da textura do globo. O efeito colateral é que `#root` vira um contexto
-  de empilhamento e passa a ser pintado depois de todo irmão sem z-index
-  próprio — e o editor de pintura do Scratch pendura o seletor de cores num
-  popover do `react-popover` direto no `<body>`, sem z-index nenhum.
+  acima do fundo da plataforma, que é `.moire` em z-index 0. O efeito colateral
+  é que `#root` vira um contexto de empilhamento e passa a ser pintado depois de
+  todo irmão sem z-index próprio — e o editor de pintura do Scratch pendura o
+  seletor de cores num popover do `react-popover` direto no `<body>`, sem
+  z-index nenhum.
 
   O sintoma foi o pior que há: o popover existia, na posição certa e do tamanho
   certo, e era desenhado **debaixo** da tela inteira. Clicar em "Preencher" não
@@ -25,7 +26,9 @@ import tailwind from 'tailwindcss';
 
   E a comparação é entre os dois, e não com o 2 escrito: quem um dia precisar
   levantar o `#root` — outra camada de fundo, outra textura — vai mexer só nele,
-  e o seletor de cores voltaria a sumir sem que nada acusasse.
+  e o seletor de cores voltaria a sumir sem que nada acusasse. Foi o que quase
+  aconteceu quando a textura do globo virou o moiré: trocou-se a camada de
+  baixo, e é este teste que garante que a de cima acompanhou.
 */
 
 const RAIZ = resolve(__dirname, '../../..');
@@ -53,7 +56,7 @@ describe('o seletor de cores do Scratch fica acima da casca', () => {
     const raiz = zDe(css, '#root');
     const popover = zDe(css, 'body > .Popover');
 
-    expect(raiz, '#root perdeu o z-index — a textura do globo depende dele').toBeTypeOf('number');
+    expect(raiz, '#root perdeu o z-index — o fundo da plataforma depende dele').toBeTypeOf('number');
     expect(popover,
       'a regra de `body > .Popover` sumiu da folha publicada — sem ela o seletor '
       + 'de cores do editor de pintura é desenhado debaixo do aplicativo inteiro, '

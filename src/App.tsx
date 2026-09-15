@@ -304,8 +304,9 @@ export default function App() {
   return (
     <AuthProvider>
       <HashRouter>
-        {/* No background colour here: body already paints it, and an opaque layer
-            at this level would hide the ambient globe texture behind the app. */}
+        {/* Sem cor de fundo aqui: o `body` já pinta a dele, e uma camada opaca
+            neste nível esconderia o moiré que o `index.html` põe atrás do
+            aplicativo. */}
         <div className="min-h-screen">
           <NavBar />
           {/* Fora das rotas: a conquista pode cair em qualquer tela. */}

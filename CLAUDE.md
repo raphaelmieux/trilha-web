@@ -1161,9 +1161,45 @@ protege. O que o denuncia está no `pip show` — autor desconhecido, quatro dia
 trinta e um downloads —, que é o que se leria na página do pacote, e não num
 alerta escrito por cima.
 
+**O fundo de toda tela é o moiré, e ele mora em dois arquivos.** Era uma
+textura de globo em `body::before`, com vinheta em `body::after` — dois
+pseudo-elementos e um SVG. O moiré precisa de cinco camadas, porque o que
+produz o padrão é uma multiplicar contra a outra, e pseudo-elemento não dá
+cinco.
+
+A marcação ficou no `index.html`, e não num componente montado no `App` como o
+`CodigoFonte`. São duas razões. O fundo é decoração do **documento**: não tem
+estado, não tem texto, não muda de rota, e o que ele substitui também não
+passava por React nenhum. E de lá ele é pintado no primeiro byte — montado no
+`App`, toda abertura a frio começaria preta e ganharia o fundo depois que o
+pacote de JavaScript baixasse e analisasse, que no computador do clube se vê.
+
+O preço dessa escolha é que marcação e folha não sabem uma da outra. Apagar a
+`div`, renomear uma classe ou tirar uma regra deixa a tela **preta** — e preto
+é a cor que a plataforma já tinha, então ninguém estranha. `fundoDaPlataforma.test.ts`
+compara os dois conjuntos de classes, com a guarda contra o vazio de sempre:
+dois conjuntos vazios são iguais.
+
+**O pixel mais claro do fundo é o que decide a escala de texto.** O card é
+translúcido a 50%, então a superfície em que o texto pousa é metade da cor dele
+mais metade do que passa por trás. O traço branco do globo chegava a
+rgb(46,46,46) e punha o card em rgb(57,57,61); a base do moiré é rgb(29,29,29) e
+põe em rgb(48.5,48.5,52.5) — por cima dela só há `multiply`, que nunca clareia, e
+a vinheta, que vai de transparente a preto. Todas as razões de contraste
+subiram meio ponto, e as declaradas ao lado de cada cor foram remedidas.
+
+O granulado é a exceção: ele usa `screen`, que clareia, e está em opacidade
+zero. A trava não o proíbe — ligá-lo é legítimo no dia em que uma tela de 8 bits
+mostrar as faixas —, ela **inclui** a opacidade dele na conta. Clarear até o
+texto cair abaixo de AA é que reprova.
+
+E o fundo é de tela, nunca de papel: `position: fixed` cobrindo o viewport sai
+no papel como um retângulo quase preto por cima da primeira página do que
+alguém quis imprimir. A regra de `@media print` também é conferida.
+
 **O que o Scratch pendura no `<body>` precisa passar por cima do `#root`.**
-`#root` leva `position: relative; z-index: 1` para ficar acima da textura do
-globo, e isso o torna um contexto de empilhamento pintado depois de todo irmão
+`#root` leva `position: relative; z-index: 1` para ficar acima do fundo, que é
+`.moire` em 0, e isso o torna um contexto de empilhamento pintado depois de todo irmão
 sem z-index próprio. O `scratch-gui` põe várias coisas ali fora — janelas em
 510, menus e balões do Blockly em 1000 e acima —, e todas trazem o próprio
 número. **Uma não traz**: o popover do `react-popover`, que é o seletor de
@@ -1633,6 +1669,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/roteiroDaEstrutura.test.ts` | roteiro da apresentação que julga a organização alheia, ou que lê os arquivos um por um |
 | `src/components/LaboratorioDeExplorador.test.tsx` | lição da CC-ES001 impossível de vencer clicando, ou os dois Exploradores mostrando janelas diferentes |
 | `src/labs/scratch/seletorDeCores.test.ts` | seletor de cores do Scratch empilhado abaixo do `#root`, que o faz sumir sem erro |
+| `src/lib/fundoDaPlataforma.test.ts` | camada do fundo que existe na folha e não na marcação, ou o contrário, que deixa a tela preta |
+| `src/lib/fundoDaPlataforma.test.ts` | fundo clareado a ponto de derrubar o texto abaixo de AA por trás do card, ou saindo no papel |
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
 | `src/components/ui/TokenNoCartao.test.tsx` | cartão que anuncia certificado e não leva a ele, ou que volta a ser uma âncora em volta de tudo |
 | `src/components/ui/PainelDeTokens.test.tsx` | uma das duas telas montando a própria lista de Token.Web(), ou o revogado contando como conquista |
