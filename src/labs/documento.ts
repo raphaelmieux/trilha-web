@@ -114,9 +114,32 @@ export const APARENCIA_DO_ESTILO: Record<Estilo, CSSProperties> = {
 
 /* ── As peças ─────────────────────────────────────────────────────────────── */
 
+/**
+ * Formatação direta: negrito, tamanho e cor postos no trecho, por cima do que
+ * o estilo dele já diz.
+ *
+ * É o que o requisito 6 da CC-ES002 manda substituir por estilo, e por isso
+ * precisa existir como estado — um documento em que ela não pudesse ser
+ * representada não teria como chegar mal formatado, e o exercício inteiro
+ * dependeria de acreditar num enunciado.
+ *
+ * Ela **vence** o estilo na hora de desenhar, como no Word. É essa precedência
+ * que faz o documento mal formatado parecer pronto: os títulos estão em negrito
+ * e grandes, só que continuam sendo parágrafos Normal — e o sumário, que lê
+ * estilo e não aparência, sai vazio sem nada na tela explicando por quê.
+ */
+export interface Direta {
+  negrito?: boolean;
+  italico?: boolean;
+  tamanho?: number;
+  cor?: string;
+}
+
 export interface Trecho {
   id: string;
   texto: string;
+  /** Formatação direta, quando há. Ausente é o normal. */
+  direta?: Direta;
   posicao: Posicao;
   realce: Realce;
   /** Estilo de caractere — o único é Ênfase, e é de propósito. */
@@ -146,8 +169,34 @@ export interface ItemDeSumario {
   nivel: 1 | 2 | 3;
 }
 
+/**
+ * O que a caixa "Modificar Estilo" do Word deixa mudar, e só isso.
+ *
+ * Não é `CSSProperties` de propósito: a caixa do Word oferece fonte, tamanho,
+ * cor, negrito e itálico, e abrir a porta para qualquer propriedade CSS daria
+ * ao laboratório poderes que o programa imitado não tem — que é a forma mais
+ * rápida de a simulação ensinar um gesto que não existe.
+ */
+export interface AjusteDeEstilo {
+  tamanho?: number;
+  cor?: string;
+  negrito?: boolean;
+  italico?: boolean;
+}
+
 export interface Doc<S extends string = string> {
   blocos: Bloco<S>[];
+  /**
+   * As redefinições de estilo que moram **neste documento**.
+   *
+   * No Word o estilo é do documento, e não do programa: é por isso que mudar
+   * Título 1 aqui não mexe no Título 1 de outro arquivo. Guardar as
+   * redefinições num módulo global faria a plataforma inteira mudar de
+   * aparência quando alguém mexesse num exercício — e faria o requisito 8
+   * ("demonstrar que a alteração de um único estilo modifica o documento
+   * inteiro") virar uma afirmação sobre o programa em vez de sobre o documento.
+   */
+  estilos?: Partial<Record<Estilo, AjusteDeEstilo>>;
   /** Quantas colunas cada seção usa. Uma é o padrão do Word. */
   colunas: Record<S, number>;
   /**
@@ -173,6 +222,53 @@ export const linhaDe = <S extends string>(id: string, secao: S, texto: string): 
 /* ── Ler ──────────────────────────────────────────────────────────────────── */
 
 export const textoDoBloco = (b: Bloco<string>) => b.trechos.map(x => x.texto).join('');
+
+/**
+ * Todo o texto do documento, na ordem, sem formatação nenhuma.
+ *
+ * É com isto que se confere "sem alterar uma palavra do texto", que são as
+ * palavras do requisito 6. A comparação é com o documento **de partida**, e não
+ * com uma cópia feita no meio do caminho: quem apagasse um parágrafo e o
+ * reescrevesse passaria por qualquer conferência que só olhasse para o estado
+ * de agora.
+ */
+export const textoDoDoc = (d: Doc<string>) =>
+  d.blocos.map(textoDoBloco).join('\n');
+
+/** Os trechos que ainda carregam formatação direta. */
+export const comFormatacaoDireta = (d: Doc<string>) =>
+  d.blocos.filter(b => b.trechos.some(x => x.direta && Object.keys(x.direta).length > 0));
+
+/**
+ * A aparência com que um estilo é desenhado **neste** documento: a do Word,
+ * com a redefinição por cima quando existe.
+ */
+export function aparenciaDe(d: Doc<string>, e: Estilo): CSSProperties {
+  const base = APARENCIA_DO_ESTILO[e];
+  const ajuste = d.estilos?.[e];
+  if (!ajuste) return base;
+  return {
+    ...base,
+    ...(ajuste.tamanho !== undefined ? { fontSize: ajuste.tamanho } : {}),
+    ...(ajuste.cor !== undefined ? { color: ajuste.cor } : {}),
+    ...(ajuste.negrito !== undefined ? { fontWeight: ajuste.negrito ? 700 : 400 } : {}),
+    ...(ajuste.italico !== undefined ? { fontStyle: ajuste.italico ? 'italic' : 'normal' } : {}),
+  };
+}
+
+/** A aparência de um trecho: a do estilo do bloco, com a direta por cima. */
+export function aparenciaDoTrecho(d: Doc<string>, b: Bloco<string>, x: Trecho): CSSProperties {
+  const doEstilo = aparenciaDe(d, b.estilo);
+  if (!x.direta) return doEstilo;
+  const { negrito, italico, tamanho, cor } = x.direta;
+  return {
+    ...doEstilo,
+    ...(tamanho !== undefined ? { fontSize: tamanho } : {}),
+    ...(cor !== undefined ? { color: cor } : {}),
+    ...(negrito !== undefined ? { fontWeight: negrito ? 700 : 400 } : {}),
+    ...(italico !== undefined ? { fontStyle: italico ? 'italic' : 'normal' } : {}),
+  };
+}
 
 /** Os títulos do documento, na ordem, como o sumário os leria agora. */
 export function titulosDoDoc(d: Doc<string>): ItemDeSumario[] {
