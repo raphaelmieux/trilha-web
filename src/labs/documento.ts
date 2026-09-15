@@ -138,6 +138,18 @@ export interface Direta {
 export interface Trecho {
   id: string;
   texto: string;
+  /**
+   * Quebra de linha **antes** deste trecho — o `Shift+Enter` do Word.
+   *
+   * Ela desce uma linha sem fechar o parágrafo, então mora dentro do bloco e
+   * não entre blocos. É essa a diferença que o requisito 2.3 pede: três Enters
+   * num endereço são três parágrafos, e ganham três vezes o espaçamento de
+   * depois; duas quebras de linha são um parágrafo só, com as linhas coladas.
+   *
+   * Sem ela no modelo, o endereço só poderia ser escrito do jeito errado, e a
+   * lição não teria o que consertar.
+   */
+  quebra?: boolean;
   /** Formatação direta, quando há. Ausente é o normal. */
   direta?: Direta;
   posicao: Posicao;
@@ -157,6 +169,14 @@ export interface Trecho {
 export interface Bloco<S extends string = string> {
   id: string;
   trechos: Trecho[];
+  /**
+   * Quebra de página antes deste parágrafo — `Ctrl+Enter`.
+   *
+   * É o que empurra texto para a folha seguinte sem os oito parágrafos vazios
+   * que a teoria desaconselha. Os dois se parecem na tela do dia em que foram
+   * escritos, e só um continua certo quando o texto de cima cresce.
+   */
+  quebraDePagina?: boolean;
   estilo: Estilo;
   secao: S;
   /** Nota de rodapé pendurada neste parágrafo. */
@@ -197,6 +217,16 @@ export interface Doc<S extends string = string> {
    * inteiro") virar uma afirmação sobre o programa em vez de sobre o documento.
    */
   estilos?: Partial<Record<Estilo, AjusteDeEstilo>>;
+  /**
+   * A fonte do corpo do documento.
+   *
+   * Duas famílias, e não uma lista de nomes: o requisito 2.4 pede a distinção
+   * entre serifada e sem serifa, e é ela que a decisão usa — "texto longo
+   * impresso" contra "tela e título". Guardar "Times New Roman" como string
+   * deixaria a trava conferindo um nome em vez da escolha, e qualquer fonte
+   * nova pediria um novo `if`.
+   */
+  fonte?: 'serifada' | 'sem-serifa';
   /** Quantas colunas cada seção usa. Uma é o padrão do Word. */
   colunas: Record<S, number>;
   /**
@@ -234,6 +264,16 @@ export const textoDoBloco = (b: Bloco<string>) => b.trechos.map(x => x.texto).jo
  */
 export const textoDoDoc = (d: Doc<string>) =>
   d.blocos.map(textoDoBloco).join('\n');
+
+/** Os parágrafos vazios — Enter apertado para empurrar texto. */
+export const paragrafosVazios = (d: Doc<string>) =>
+  d.blocos.filter(b => textoDoBloco(b).trim() === '');
+
+/** As pilhas de nomes de fonte que cada família rende, com os nomes do Word. */
+export const FONTES: Record<'serifada' | 'sem-serifa', string> = {
+  serifada: 'Georgia, "Times New Roman", serif',
+  'sem-serifa': 'Calibri, Arial, sans-serif',
+};
 
 /** Os trechos que ainda carregam formatação direta. */
 export const comFormatacaoDireta = (d: Doc<string>) =>
