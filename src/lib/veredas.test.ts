@@ -3,11 +3,12 @@ import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { VEREDAS, veredasAbertas, veredasComConteudo, licoesDaVereda, topicosDaVereda,
   textoDaOrigem, preRequisitoDaVeredaCumprido, veredasQueFaltamAntes,
-  type LicaoDeVereda } from '../curriculum/veredas';
+  type LicaoDeVereda, type Vereda } from '../curriculum/veredas';
 import { getAllSpecialties } from '../curriculum';
 import {
   EVENTO_TOPICO, EVENTO_TEORIA, EVENTO_LABORATORIO,
   percursoDosEventos, veredasConcluidas, licaoVencida, licoesVencidas,
+  conquistasNasVeredas,
 } from './veredas';
 import type { EventoDeAtividade } from './atividade';
 import { validateHtml, CHECKS, TABLE_CHALLENGE_CHECKS, SITE_CHECKS } from './htmlValidator';
@@ -715,5 +716,90 @@ describe('zero de zero não é tudo, em nenhuma das contas', () => {
       } as unknown as EventoDeAtividade));
       expect(veredasConcluidas(tudo), v.code).not.toContain(v.id);
     }
+  });
+});
+
+describe('o que a vereda rende para as escadas de conquista', () => {
+  /*
+    A escada de Lições se alimenta de `lesson_attempts`, que só a lição de
+    trilha escreve, e a de Módulos de requisito cumprido, que a vereda não
+    guarda de propósito. O resultado era que catorze lições de vereda vencidas
+    somavam **zero** em toda escada menos a de Veredas: quem percorresse três
+    veredas inteiras e nenhuma trilha via a estante dizer que não estudou nada.
+
+    Nada disso estoura, e é a família do "número guardado não responde por
+    hoje": o contador mostra um número plausível, que é o que se espera de um
+    contador funcionando.
+  */
+  const comConteudo = VEREDAS.filter(v => licoesDaVereda(v).length > 0);
+  expect(comConteudo.length, 'não há vereda com conteúdo para conferir').toBeGreaterThan(0);
+  const aVereda = comConteudo[0];
+  const oModulo = aVereda.modulos.find(m => m.licoes.length > 0)!;
+
+  const evento = (vereda: string, licao: LicaoDeVereda): EventoDeAtividade => ({
+    event_type: licao.tipo === 'teoria' ? EVENTO_TEORIA : EVENTO_LABORATORIO,
+    metadata: { vereda, licao: licao.id },
+  });
+
+  it('sem evento nenhum, nada é contado', () => {
+    expect(conquistasNasVeredas([])).toEqual({ licoes: 0, modulos: 0 });
+  });
+
+  it('cada lição vencida conta uma', () => {
+    const uma = conquistasNasVeredas([evento(aVereda.id, oModulo.licoes[0])]);
+    expect(uma.licoes, 'a lição vencida não somou').toBe(1);
+  });
+
+  it('o módulo só conta com todas as lições dele vencidas', () => {
+    const faltando = oModulo.licoes.slice(0, -1).map(l => evento(aVereda.id, l));
+    if (faltando.length > 0) {
+      expect(conquistasNasVeredas(faltando).modulos,
+        'um módulo pela metade contou como fechado').toBe(0);
+    }
+    const todas = oModulo.licoes.map(l => evento(aVereda.id, l));
+    expect(conquistasNasVeredas(todas).modulos, 'o módulo inteiro não contou').toBe(1);
+    expect(conquistasNasVeredas(todas).licoes).toBe(oModulo.licoes.length);
+  });
+
+  it('módulo sem lição nenhuma não conta como fechado', () => {
+    /*
+      A armadilha de sempre — "zero de zero é tudo": "todas as lições vencidas"
+      é verdade quando não há lição nenhuma. `veredasConcluidas` já teve de
+      consertar isto uma vez; aqui ele voltaria premiando um módulo que ninguém
+      percorreu, para todo mundo, de graça.
+
+      O módulo vazio é **construído**, e não procurado no registro: hoje vereda
+      anunciada vem com a lista de módulos vazia, e não com módulo vazio dentro,
+      então contra `VEREDAS` esta trava não conferiria nada. O dia que ela
+      espera é aquele em que alguém registrar o esqueleto de um módulo antes de
+      escrever as lições — que é como as veredas desta leva vêm sendo feitas.
+    */
+    const comModuloVazio: Vereda = {
+      ...aVereda,
+      id: 'vereda-de-prova',
+      modulos: [{ id: 'm-vazio', titulo: 'Por escrever', resumo: 'Ainda sem lição', licoes: [] }],
+    };
+    const tocou: EventoDeAtividade[] = [{
+      event_type: EVENTO_TEORIA,
+      metadata: { vereda: comModuloVazio.id, licao: 'nao-existe' },
+    }];
+    const r = conquistasNasVeredas(tocou, [comModuloVazio]);
+    expect(r.licoes, 'uma lição que não existe foi contada').toBe(0);
+    expect(r.modulos, 'um módulo sem lição contou como fechado').toBe(0);
+  });
+
+  it('o registro de quando a vereda se chamava mini-trilha conta junto', () => {
+    /* O id ia em `trilha`, e quem percorreu assim não perde o que fez. */
+    const antigo: EventoDeAtividade[] = [{
+      event_type: EVENTO_TEORIA,
+      metadata: { trilha: aVereda.id, licao: oModulo.licoes[0].id },
+    }];
+    expect(conquistasNasVeredas(antigo).licoes).toBe(1);
+  });
+
+  it('vencer a mesma lição duas vezes conta uma', () => {
+    const duas = [evento(aVereda.id, oModulo.licoes[0]), evento(aVereda.id, oModulo.licoes[0])];
+    expect(conquistasNasVeredas(duas).licoes,
+      'a lição repetida contou duas vezes').toBe(1);
   });
 });

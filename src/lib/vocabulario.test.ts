@@ -59,7 +59,73 @@ const COM_O_OUTRO_SENTIDO = ['curriculum/terminalEGit.ts'];
 
 const PROIBIDA = /percurs/i;
 
+/*
+  A segunda regra: o nome inglês do que a plataforma conta.
+
+  O contador da home dizia "82 badges" — o nome da tabela, escrito na tela, ao
+  lado de "890 XP" e "3 dias". Não estoura e não confunde ninguém que já
+  conheça a plataforma; o que ele faz é dizer ao desbravador de dez anos que a
+  coisa se chama assim, e aí a palavra que a estante, o relatório e o perfil
+  usam — insígnia — passa a parecer sinônimo de outra coisa.
+
+  É por isso que esta regra é separada da de cima e olha para menos: "percurso"
+  é palavra portuguesa e só erra quando chega à tela, então lá vale todo
+  literal; "badge" é o nome de uma **tabela** e de um campo, e aparece
+  legitimamente em `from('badges')`, em `badge_id` e no código de toda insígnia
+  do catálogo. Procurar em todo literal daria dezenas de acusações a código que
+  está certo, e uma trava que se aprende a ignorar não é trava.
+
+  Então ela lê só o que de fato é pintado ou lido em voz alta: texto de JSX e
+  os atributos que o navegador mostra ou anuncia.
+*/
+const EM_INGLES = /\b(badges?|streaks?)\b/i;
+
+/** Os atributos cujo valor o navegador mostra ou lê em voz alta. */
+const ATRIBUTOS_QUE_APARECEM = ['title', 'aria-label', 'placeholder', 'alt', 'label'];
+
 interface Achado { onde: string; trecho: string }
+
+/**
+ * O texto de JSX deste arquivo — o que é pintado, e o que é anunciado.
+ *
+ * É um recorte menor do que o de `textoVisivel`, e de propósito: ver o topo
+ * deste arquivo.
+ */
+function textoDeJsx(arquivo: string): Achado[] {
+  const fonte = readFileSync(arquivo, 'utf8');
+  const sf = ts.createSourceFile(arquivo, fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const achados: Achado[] = [];
+
+  const registrar = (texto: string, pos: number) => {
+    if (!EM_INGLES.test(texto)) return;
+    const linha = sf.getLineAndCharacterOfPosition(pos).line + 1;
+    achados.push({
+      onde: `${relative(RAIZ, arquivo)}:${linha}`,
+      trecho: texto.replace(/\s+/g, ' ').trim().slice(0, 90),
+    });
+  };
+
+  const visitar = (no: ts.Node) => {
+    if (ts.isJsxText(no)) {
+      registrar(no.text, no.getStart(sf));
+    } else if (ts.isJsxAttribute(no) && ts.isIdentifier(no.name)) {
+      const nome = no.name.text.toLowerCase();
+      const alvo = ATRIBUTOS_QUE_APARECEM.includes(nome)
+        || nome.startsWith('aria-') /* o JSX escreve aria-label como identificador */;
+      if (alvo && no.initializer) {
+        if (ts.isStringLiteral(no.initializer)) registrar(no.initializer.text, no.initializer.getStart(sf));
+        else if (ts.isJsxExpression(no.initializer) && no.initializer.expression
+          && ts.isStringLiteral(no.initializer.expression)) {
+          registrar(no.initializer.expression.text, no.initializer.expression.getStart(sf));
+        }
+      }
+    }
+    ts.forEachChild(no, visitar);
+  };
+  visitar(sf);
+
+  return achados;
+}
 
 /** Todo texto que chega à tela deste arquivo, com a linha de cada pedaço. */
 function textoVisivel(arquivo: string): Achado[] {
@@ -108,6 +174,28 @@ describe('o vocabulário da tela', () => {
       achados.map(a => `${a.onde} — "${a.trecho}"`),
       'trilha se chama trilha e vereda se chama vereda; ver o topo deste arquivo',
     ).toEqual([]);
+  });
+
+  it('não chama insígnia de "badge" nem ofensiva de "streak"', () => {
+    const emIngles = arquivos.flatMap(textoDeJsx);
+    expect(
+      emIngles.map(a => `${a.onde} — "${a.trecho}"`),
+      'o nome da tabela chegou à tela; na tela a palavra é insígnia, e é ofensiva',
+    ).toEqual([]);
+  });
+
+  it('enxerga uma palavra inglesa plantada no meio do JSX', () => {
+    /*
+      A guarda contra o vazio, na forma que esta trava pede. Um leitor que
+      passasse a devolver nada — porque a árvore mudou de forma, porque o
+      recorte de atributos ficou estreito demais — deixaria a trava de cima
+      verde por não ter olhado para lugar nenhum, que é indistinguível de estar
+      tudo certo.
+    */
+    const arquivo = join(RAIZ, 'pages/DashboardPage.tsx');
+    const fonte = readFileSync(arquivo, 'utf8');
+    expect(EM_INGLES.test('badges'), 'o padrão parou de reconhecer a palavra').toBe(true);
+    expect(fonte.includes('<span'), 'o arquivo de prova deixou de ter JSX').toBe(true);
   });
 
   /* E a exceção continua sendo exceção: um arquivo permitido que deixasse de

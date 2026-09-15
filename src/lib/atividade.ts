@@ -1,4 +1,5 @@
 import { getSpecialty, getAllSpecialties } from '../curriculum';
+import { VEREDAS, licoesDaVereda } from '../curriculum/veredas';
 import type { Json, LabType } from '../types';
 
 /*
@@ -94,6 +95,36 @@ export const LABORATORIO_DO_EVENTO: Record<string, LabType> = {
 };
 
 /** Os que não concluem nada — são passos dentro de um laboratório. */
+/*
+  Os eventos de vereda, e por que eles precisavam de frase própria.
+
+  O mural mostrava "Vereda teoria", "Vereda laboratorio" e "Vereda completed" —
+  o `event_type` cru com os sublinhados trocados por espaços, que é o que a
+  saída de último recurso faz com o que ninguém descreveu. Ao lado de "AP041 ·
+  Laboratório concluído: Mexendo em pastas e arquivos", a mesma pessoa via as
+  próprias catorze lições de vereda como catorze linhas iguais, sem dizer de
+  qual vereda nem de qual lição — e a data sozinha não conta história nenhuma.
+
+  Tudo o que a frase precisa já estava gravado: o evento carrega o **id** da
+  vereda e o **id** da lição desde sempre. O nome antigo do campo também é
+  lido, porque quando a vereda se chamava mini-trilha o id dela ia em `trilha`,
+  e uma decisão nossa não se cobra de quem já andou.
+*/
+const EVENTOS_DE_VEREDA: Record<string, string> = {
+  vereda_teoria: 'Teoria da vereda concluída',
+  vereda_laboratorio: 'Laboratório da vereda concluído',
+  vereda_completed: 'Vereda concluída',
+  mini_trilha_completed: 'Vereda concluída',
+  vereda_topico: 'Tópico da vereda lido',
+  mini_trilha_topico: 'Tópico da vereda lido',
+};
+
+/** A vereda de um evento, pelo id gravado — e pelo nome de campo antigo. */
+function veredaDoEvento(m: Record<string, unknown>) {
+  const id = texto(m.vereda) ?? texto(m.trilha);
+  return id ? VEREDAS.find(v => v.id === id) : undefined;
+}
+
 const PASSOS: Record<string, string> = {
   mail_sent: 'E-mail enviado no laboratório',
   threat_sim_run: 'Simulação de ameaça executada',
@@ -239,6 +270,28 @@ export function descreverAtividade(e: EventoDeAtividade): AtividadeDescrita {
     if (achada) return { trilha: trilha ?? achada.trilha, texto: `Laboratório concluído: ${achada.titulo}` };
 
     return { trilha, texto: 'Laboratório concluído' };
+  }
+
+  const daVereda = EVENTOS_DE_VEREDA[e.event_type];
+  if (daVereda) {
+    const vereda = veredaDoEvento(m);
+    /*
+      O código da vereda ocupa o mesmo lugar que o da trilha na linha do mural —
+      é o rótulo que diz de onde a atividade veio, e a página pública já o usa
+      assim para o certificado de vereda. Sem ele a linha fica dizendo
+      "Laboratório da vereda concluído" sem dizer de qual.
+    */
+    const codigo = vereda?.code ?? texto(m.codigo);
+
+    /* A lição, quando o evento diz qual. Nem todo evento de vereda tem uma: o
+       de conclusão fala da vereda inteira. */
+    const idDaLicao = texto(m.licao);
+    const titulo = vereda && idDaLicao
+      ? licoesDaVereda(vereda).find(l => l.id === idDaLicao)?.titulo
+      : undefined;
+
+    if (titulo) return { trilha: codigo, texto: `${daVereda}: ${titulo}` };
+    return { trilha: codigo, texto: daVereda, detalhe: vereda?.name };
   }
 
   const passo = PASSOS[e.event_type];

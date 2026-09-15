@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { logActivity } from './progress';
 import {
-  veredasAbertas, licoesDaVereda, type Vereda, type LicaoDeVereda,
+  VEREDAS, veredasAbertas, licoesDaVereda, type Vereda, type LicaoDeVereda,
 } from '../curriculum/veredas';
 import { objeto, type EventoDeAtividade } from './atividade';
 
@@ -101,6 +101,74 @@ export function licaoVencida(licao: LicaoDeVereda, feito: PercursoDeVereda | und
 /** Quantas lições de uma vereda já foram vencidas. */
 export function licoesVencidas(vereda: Vereda, feito: PercursoDeVereda | undefined): number {
   return licoesDaVereda(vereda).filter(l => licaoVencida(l, feito)).length;
+}
+
+/** O que as veredas renderam para as escadas de conquista. */
+export interface ConquistasNasVeredas {
+  /** Lições vencidas, somadas em todas as veredas. */
+  licoes: number;
+  /** Módulos com todas as lições vencidas. */
+  modulos: number;
+}
+
+/**
+ * O que foi vencido nas veredas, para as escadas de Lições e de Módulos.
+ *
+ * ── Por que isto precisou existir ────────────────────────────────────────
+ * As duas escadas se alimentam de coisas que a vereda não tem: `lesson_attempts`,
+ * que só a lição de trilha escreve, e requisito cumprido, que a vereda não
+ * guarda de propósito. O efeito é que catorze lições de vereda vencidas somavam
+ * **zero** em toda escada menos a de Veredas — quem percorresse três veredas
+ * inteiras e nenhuma trilha tinha a estante dizendo que não estudou nada.
+ *
+ * Contar o que a vereda tem não desfaz a decisão de ela não virar `Specialty`:
+ * requisito oficial ela continua não tendo, e inventar um a puxaria para dentro
+ * do percentual e do XP, que é o contrário de bônus. Lição e módulo ela tem, e
+ * é o que estas duas escadas contam.
+ *
+ * ── E ela mora aqui, e não no resumo ─────────────────────────────────────
+ * É regra pura sobre eventos, como tudo o mais neste arquivo: `montarResumo`
+ * fala com o banco, e uma conta escondida lá dentro só se testaria subindo um.
+ *
+ * Vale para toda vereda **registrada**, e não só para as abertas: o evento é a
+ * prova de que a pessoa fez, e fechar uma vereda depois não desfaz o que ela já
+ * venceu ali.
+ */
+export function conquistasNasVeredas(
+  eventos: EventoDeAtividade[],
+  /*
+    O registro é parâmetro, com o de verdade por padrão, por uma razão só: a
+    guarda do módulo sem lição não tem como ser exercitada contra `VEREDAS`
+    hoje — vereda anunciada vem com a lista de módulos vazia, e não com módulo
+    vazio dentro. A guarda existe para o dia em que alguém registrar o
+    esqueleto de um módulo antes de escrever as lições dele, que é como as
+    veredas desta leva vêm sendo construídas; sem o parâmetro, ela seria código
+    que ninguém nunca leu, e a trava passaria sem ter conferido nada.
+  */
+  registro: Vereda[] = VEREDAS,
+): ConquistasNasVeredas {
+  const percurso = percursoDosEventos(eventos);
+  let licoes = 0;
+  let modulos = 0;
+
+  for (const vereda of registro) {
+    const feito = percurso[vereda.id];
+    if (!feito) continue;
+    for (const modulo of vereda.modulos) {
+      /*
+        Módulo sem lição nenhuma não conta. Vereda anunciada tem módulos por
+        escrever, e "todas vencidas" é verdade quando não há nenhuma — seria o
+        "zero de zero é tudo" que `veredasConcluidas` já teve de consertar uma
+        vez, agora premiando módulo que ninguém percorreu.
+      */
+      if (modulo.licoes.length === 0) continue;
+      const vencidas = modulo.licoes.filter(l => licaoVencida(l, feito)).length;
+      licoes += vencidas;
+      if (vencidas === modulo.licoes.length) modulos += 1;
+    }
+  }
+
+  return { licoes, modulos };
 }
 
 /**
