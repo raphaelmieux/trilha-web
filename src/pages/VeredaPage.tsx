@@ -18,6 +18,7 @@ import LaboratorioDeScratch from '../components/LaboratorioDeScratch';
 import LaboratorioDeAmbiente from '../components/LaboratorioDeAmbiente';
 import LaboratorioDeTerminal from '../components/LaboratorioDeTerminal';
 import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
+import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDePython from '../components/LaboratorioDePython';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -208,6 +209,21 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'explorador' && profile?.id) {
     return (
       <LaboratorioDeExplorador vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /*
+    O editor de texto também não passa pelo editor de código.
+
+    Não há arquivo para escrever nem linguagem para realçar: o que se confere é
+    o **documento** — que estilo cada parágrafo carrega, se sobrou formatação
+    direta por cima, o que a definição de um estilo passou a dizer, e se o
+    sumário está em dia com os títulos.
+  */
+  if (licaoAberta?.tipo === 'word' && profile?.id) {
+    return (
+      <LaboratorioDeWord vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

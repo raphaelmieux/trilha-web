@@ -307,6 +307,33 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O editor de texto, e por que ele é mais um tipo.
+
+      Vale a conta já escrita em `ambiente`, em `terminal` e em `explorador`:
+      não há `modelo` string nem linguagem. O que se confere é o **documento**
+      depois dos gestos — que estilo cada parágrafo carrega, se sobrou
+      formatação direta por cima, o que a definição de um estilo passou a dizer,
+      e se o sumário está em dia com os títulos. Enfiá-lo em `laboratorio`
+      obrigaria a inventar um `modelo: ''` e uma linguagem falsa, e a trava dos
+      modelos passaria a conferir uma string vazia com o validador de HTML —
+      verde sem ter olhado nada.
+
+      O documento de partida não vem do currículo: é sempre o mesmo relatório
+      mal formatado, e ele mora em `OFICIO_INICIAL`. Um currículo que pudesse
+      descrever o documento poderia descrevê-lo com os estilos já aplicados,
+      que é justamente o laboratório que abre resolvido.
+
+      Para o progresso conta como lição de fazer: grava `vereda_laboratorio`.
+    */
+    id: string;
+    tipo: 'word';
+    titulo: string;
+    resumo: string;
+    /** Os ids das metas, em `METAS_DO_OFICIO`. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não

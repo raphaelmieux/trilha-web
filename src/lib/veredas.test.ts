@@ -2,7 +2,8 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { VEREDAS, veredasAbertas, veredasComConteudo, licoesDaVereda, topicosDaVereda,
-  textoDaOrigem, preRequisitoDaVeredaCumprido, veredasQueFaltamAntes } from '../curriculum/veredas';
+  textoDaOrigem, preRequisitoDaVeredaCumprido, veredasQueFaltamAntes,
+  type LicaoDeVereda } from '../curriculum/veredas';
 import { getAllSpecialties } from '../curriculum';
 import {
   EVENTO_TOPICO, EVENTO_TEORIA, EVENTO_LABORATORIO,
@@ -30,6 +31,7 @@ import { PASSOS_DE_BLOCOS } from '../labs/passosDeBlocos';
 import { PASSOS_DE_SCRATCH } from '../labs/passosDeScratch';
 import { PASSOS_DE_PYTHON } from '../labs/passosDePython';
 import { ROTEIROS } from '../labs/redacaoGuiada';
+import { OFICIO_INICIAL, METAS_DO_OFICIO } from '../labs/oficioDoClube';
 
 /* O validador de HTML lança em id desconhecido, então a lista dele se monta
    dos três registros que `validateHtml` consulta. */
@@ -296,6 +298,33 @@ describe('os modelos dos laboratórios da vereda', () => {
   }
 
   /*
+    O editor de texto, pela mesma razão do ambiente, do terminal e do Explorador.
+
+    Ele também não tem `modelo`: o ponto de partida é um documento, e ele mora
+    em `OFICIO_INICIAL`. E aqui a trava tem um trabalho a mais do que nas
+    outras — o documento **parece pronto**, então uma meta que abrisse verde
+    passaria por documento bem formatado, que é exatamente a impressão que a
+    lição existe para desfazer.
+  */
+  for (const vereda of veredasComConteudo()) {
+    for (const licao of licoesDaVereda(vereda)) {
+      if (licao.tipo !== 'word') continue;
+
+      it(`${vereda.code} · ${licao.id} abre num documento sem nada consertado`, () => {
+        const verdes = METAS_DO_OFICIO
+          .filter(m => licao.verificacoes.includes(m.id) && m.feita(OFICIO_INICIAL))
+          .map(m => m.id);
+        expect(verdes).toEqual([]);
+      });
+
+      it(`${vereda.code} · ${licao.id} cobra meta que existe`, () => {
+        const conhecidas = METAS_DO_OFICIO.map(m => m.id);
+        expect(licao.verificacoes.filter(id => !conhecidas.includes(id))).toEqual([]);
+      });
+    }
+  }
+
+  /*
     Falha plantada e verificação são as duas metades da mesma coisa.
 
     Uma lição que cobra `classificouAsFalhas` e não escreve falha nenhuma dá uma
@@ -345,21 +374,41 @@ describe('os modelos dos laboratórios da vereda', () => {
         : linguagem === 'scratch' ? PASSOS_DE_SCRATCH
           : linguagem === 'blocos' ? PASSOS_DE_BLOCOS
             : linguagem === 'css' ? PASSOS_DE_CSS : PASSOS);
+    /*
+      O `switch` é exaustivo de propósito, e o `never` é o que o torna uma
+      trava de verdade.
+
+      A escolha era uma escada de `if`, e uma escada de `if` **ignora em
+      silêncio** o tipo que ninguém acrescentou nela: foi o que aconteceu com
+      o editor de texto, que entrou como sexto tipo e passou três travas sem
+      ser olhado — a mesma família do `describe.each` com quatro trilhas
+      escritas à mão. Agora o sétimo tipo não compila até alguém dizer de onde
+      sai o passo a passo dele.
+    */
+    const mapaDosPassos = (l: LicaoDeVereda): Record<string, string[] | undefined> | null => {
+      switch (l.tipo) {
+        case 'ambiente': return PASSOS_DO_AMBIENTE;
+        case 'terminal': return PASSOS_DO_TERMINAL;
+        case 'explorador': return PASSOS_DO_EXPLORADOR;
+        /* O do editor de texto não é um mapa à parte: cada meta carrega os
+           próprios passos, porque quem os escreve é quem escreve o enunciado
+           dela — separá-los daria duas listas para a mesma tarefa. */
+        case 'word': return Object.fromEntries(METAS_DO_OFICIO.map(m => [m.id, m.passos]));
+        case 'laboratorio': return passosDe(l.linguagem);
+        /* Teoria e redação não têm verificação com passo a passo. */
+        case 'teoria': case 'redacao': return null;
+        default: {
+          const naoTratado: never = l;
+          throw new Error(`tipo de lição sem passo a passo declarado: ${JSON.stringify(naoTratado)}`);
+        }
+      }
+    };
+
     const sem = veredasComConteudo().flatMap(v => licoesDaVereda(v))
       .flatMap(l => {
-        /* O computador simulado não tem linguagem: o passo a passo dele é o
-           do ambiente, e a escolha se faz pelo tipo da lição. */
-        if (l.tipo === 'ambiente') {
-          return l.verificacoes.map(id => [PASSOS_DO_AMBIENTE, id] as const);
-        }
-        if (l.tipo === 'terminal') {
-          return l.verificacoes.map(id => [PASSOS_DO_TERMINAL, id] as const);
-        }
-        if (l.tipo === 'explorador') {
-          return l.verificacoes.map(id => [PASSOS_DO_EXPLORADOR, id] as const);
-        }
-        if (l.tipo !== 'laboratorio') return [];
-        return l.verificacoes.map(id => [passosDe(l.linguagem), id] as const);
+        const mapa = mapaDosPassos(l);
+        if (!mapa || l.tipo === 'teoria' || l.tipo === 'redacao') return [];
+        return l.verificacoes.map(id => [mapa, id] as const);
       })
       .filter(([mapa, id]) => !mapa[id]?.length)
       .map(([, id]) => id);

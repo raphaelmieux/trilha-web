@@ -1270,6 +1270,49 @@ parágrafo de ajuda do Explorador fixava `--color-text-dim`, que só podia acert
 numa das duas superfícies: hoje herda a cor de quem o desenha.
 `painelDoLaboratorio.test.ts` refaz a conta sobre as folhas de verdade.
 
+**A formatação direta é estado, e ela vence o estilo.** A CC-ES002 existe por
+causa do requisito 6 — consertar um documento mal formatado trocando toda a
+formatação direta por estilos, *sem alterar uma palavra do texto* —, e isso
+pediu três coisas do modelo do documento.
+
+O `Trecho` sabia carregar ênfase e sobrescrito, mas não o negrito-e-16pt que
+alguém aplica apertando os botões da barra. Sem isso o documento não podia
+**chegar** mal formatado, e o exercício ficaria dependendo de acreditar num
+enunciado. E ela vence o estilo ao desenhar, como no Word: é essa precedência
+que faz a lição existir — aplicar o estilo e nada mudar na tela significa que a
+direta continua lá, ganhando.
+
+**As definições de estilo moram no documento, e não num módulo.** Eram
+constante global, o que basta enquanto ninguém as edita e fica impossível no
+instante em que o requisito 8 pede para demonstrar que mudar um estilo muda o
+documento inteiro. No Word o estilo é do arquivo — mexer em Título 1 aqui não
+mexe no de outro documento —, e uma tabela global faria a plataforma inteira
+trocar de aparência quando alguém editasse um exercício. `AjusteDeEstilo` não é
+`CSSProperties` de propósito: a caixa "Modificar Estilo" oferece fonte, tamanho,
+cor, negrito e itálico, e abrir a porta para qualquer propriedade CSS daria ao
+laboratório poderes que o programa imitado não tem.
+
+**"Sem alterar uma palavra" se mede contra o documento de partida.** Conferir
+contra uma cópia tirada no meio do caminho deixaria passar o atalho mais rápido
+e mais errado que existe: apagar o parágrafo feio e redigitá-lo — que num
+documento de verdade é como se perde um parágrafo inteiro sem perceber.
+`TEXTO_ORIGINAL` é derivado de `OFICIO_INICIAL`, e não escrito à parte: duas
+cópias do mesmo texto divergiriam no primeiro ajuste de redação.
+
+E é **condição, não tarefa**: viaja como conjunção de cada meta que mexe em
+parágrafo. Como item próprio da lista ela abriria verde, que `veredas.test.ts`
+reprova — e com razão, porque lista com item já marcado no segundo zero ensina a
+não ler a lista.
+
+**Escada de `if` por tipo de lição ignora em silêncio o tipo novo.** As travas
+de vereda escolhiam o mapa de passo a passo com uma escada de `if` terminada em
+`if (l.tipo !== 'laboratorio') return []`. O editor de texto entrou como sexto
+tipo e **passou por três travas sem ser olhado**: não abriu resolvido por sorte,
+não citou meta inexistente por sorte, e não ficou sem passo a passo por sorte. É
+a mesma família do `describe.each` com quatro trilhas escritas à mão. Hoje é um
+`switch` exaustivo com `never` no `default`: o sétimo tipo não compila até
+alguém dizer de onde sai o passo a passo dele.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -1696,6 +1739,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `src/labs/metasDaAp044.test.ts` | tarefa do laboratório de estilos que nasce verde, ou que ninguém consegue vencer |
+| `src/labs/oficioDoClube.test.ts` | relatório que abre com estilo aplicado, ou meta que passa com o texto alterado |
+| `src/components/LaboratorioDeWord.test.tsx` | caixa Modificar cujo OK não grava ou cujo Cancelar grava, ou os dois Words divergindo |
 | `src/labs/EstilosTextoLab.test.tsx` | botão do laboratório de estilos que não chega ao documento, ou sumário velho valendo por novo |
 | `src/labs/BancoDeDadosLab.test.tsx` | assistente de importação que já chega com o mapeamento certo, ou relatório sem os quatro campos |
 | `src/labs/apresentacaoDoClube.test.ts` | apresentação que abre sem os defeitos que as tarefas consertam, ou mídia vinculada valendo por incorporada |
