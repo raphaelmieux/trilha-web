@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
-  CSS_EXCEL, BarraDeTituloDoExcel, GuiasDoExcel, AbasDoExcel,
+  CSS_EXCEL, BarraDeTituloDoExcel, GuiasDoExcel, AbasDoExcel, GradeDoExcel,
 } from './excel';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
@@ -19,7 +19,7 @@ import {
 import type { PropsDeLaboratorio as Props } from './tipos';
 import {
   PLANILHA_INICIAL, ALTURA_PADRAO, METAS_DA_PLANILHA as METAS,
-  nomeDaCelula, valorDe, alinhamentoDe, ehNumero,
+  nomeDaCelula, valorDe, ehNumero,
   normalizar, naFaixa, umaCelulaSo, nomeDaFaixa, larguraDaTabela, alturaDaTabela,
   type Planilha, type AlinhaH, type AlinhaV, type Faixa,
 } from './metasDaAp043';
@@ -832,121 +832,58 @@ export default function PlanilhaLab({
         {/* A caixa da grade recebe o teclado: `tabIndex` a torna focável, e o
             foco vai para ela sempre que alguém clica numa célula. Sem isso as
             setas rolariam a página em vez de andar pela planilha. */}
-        <div
-          ref={gradeRef}
-          className="pl-grade-caixa"
-          tabIndex={0}
-          onKeyDown={aoTeclar}
-          onPointerMove={moverArrasto}
-          onPointerUp={() => { soltarArrasto(); setArrastandoFaixa(false); }}
-          onPointerLeave={() => setArrastandoFaixa(false)}>
-          <table className={`pl-grade pl-layout-${p.layout}`}>
-            <thead>
-              <tr>
-                <th className="pl-canto" />
-                {p.larguras.map((w, c) => (
-                  <th key={c} className="pl-cab-col" style={{ width: w, minWidth: w }}
-                    onPointerDown={e => {
-                      if (e.button !== 0) return;
-                      gradeRef.current?.focus();
-                      setFaixa({ l1: 0, c1: c, l2: p.celulas.length - 1, c2: c });
-                    }}
-                    onContextMenu={e => abrirContexto(e, 'coluna', 0, c)}>
-                    {String.fromCharCode(65 + c)}
-                    <span
-                      className="pl-alca-col"
-                      title="Arraste para mudar a largura, ou dois cliques para caber o conteúdo"
-                      onPointerDown={e => comecarArrasto('coluna', c, e)}
-                      onDoubleClick={() => ajustarAoConteudo(c)} />
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {p.celulas.map((linha, l) => (
-                <tr key={l} style={{ height: p.alturas[l] }}>
-                  <th className="pl-cab-lin"
-                    onPointerDown={e => {
-                      if (e.button !== 0) return;
-                      gradeRef.current?.focus();
-                      setFaixa({ l1: l, c1: 0, l2: l, c2: p.celulas[0].length - 1 });
-                    }}
-                    onContextMenu={e => abrirContexto(e, 'linha', l, 0)}>
-                    {l + 1}
-                    <span
-                      className="pl-alca-lin"
-                      title="Arraste para mudar a altura, ou dois cliques para o AutoAjuste"
-                      onPointerDown={e => comecarArrasto('linha', l, e)}
-                      onDoubleClick={() => ajustarLinhaAoConteudo(l)} />
-                  </th>
-                  {linha.map((cel, c) => {
-                    if (cel.coberta) return null;
-                    const ancora = sel.l === l && sel.c === c;
-                    const dentro = naFaixa(faixa, l, c);
-                    const mostrado = valorDe(p, l, c);
-                    const h = alinhamentoDe(cel, mostrado);
-                    return (
-                      <td
-                        key={c}
-                        colSpan={cel.span}
-                        /* Apontar começa a faixa, arrastar a estende e soltar a
-                           fecha — o mesmo gesto da planilha de verdade. Sem ele
-                           não havia como dizer "de A1 até D1", e a tarefa de
-                           mesclar pedia uma coisa que a tela não fazia. */
-                        onPointerDown={e => {
-                          gradeRef.current?.focus();
-                          if (e.button !== 0) return;
-                          if (e.shiftKey) { setFaixa(f => ({ ...f, l2: l, c2: c })); return; }
-                          selecionar(l, c);
-                          setArrastandoFaixa(true);
-                        }}
-                        onContextMenu={e => abrirContexto(e, 'celula', l, c)}
-                        onPointerEnter={() => {
-                          if (arrastandoFaixa) setFaixa(f => ({ ...f, l2: l, c2: c }));
-                        }}
-                        className={[
-                          ancora ? 'pl-ativa' : '',
-                          dentro && !ancora ? 'pl-na-faixa' : '',
-                          l < linhasDaTabela && c < colunasDaTabela ? 'pl-na-tabela' : '',
-                        ].filter(Boolean).join(' ')}
-                        style={{
-                          textAlign: h === 'centro' ? 'center' : h === 'direita' ? 'right' : 'left',
-                          verticalAlign: cel.v === 'meio' ? 'middle' : cel.v === 'acima' ? 'top' : 'bottom',
-                          fontWeight: cel.negrito ? 700 : 400,
-                        }}>
-                        {/* O autoFocus é só de quem começou a editar *na
-                            célula*: dado à célula durante a digitação na barra,
-                            era ele que roubava o foco a cada tecla. */}
-                        {ancora && editando === 'celula' ? (
-                          <input
-                            className="pl-celula-entrada"
-                            autoFocus
-                            value={barra}
-                            onChange={e => setBarra(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') { e.preventDefault(); confirmar(barra, e.shiftKey ? 'cima' : 'baixo'); gradeRef.current?.focus(); }
-                              if (e.key === 'Tab') { e.preventDefault(); confirmar(barra, e.shiftKey ? 'esquerda' : 'direita'); gradeRef.current?.focus(); }
-                              if (e.key === 'Escape') { e.preventDefault(); cancelarEdicao(); gradeRef.current?.focus(); }
-                            }}
-                            onBlur={() => {
-                              if (cancelando.current) { cancelando.current = false; return; }
-                              confirmar(barra);
-                            }} />
-                        ) : (
-                          <span
-                            onDoubleClick={() => { setBarra(cel.texto); setEditando('celula'); }}
-                            className="pl-valor">
-                            {mostrado}
-                          </span>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/*
+          A grade mora em excel.tsx, e não aqui.
+
+          Ela saiu no dia em que a CC-ES003 precisou da mesma grade — antes de
+          a cópia existir, que é a decisão de word.tsx e de explorer.tsx. O que
+          ficou aqui é do exercício: que botões a faixa oferece, que tarefas se
+          conferem, e de que planilha se parte.
+
+          Esta tela não passa aoPreencher nem aoAbrirFiltro: a alça de
+          preenchimento e o filtro não fazem parte do que a AP043 cobra, e peça
+          que aparece sem ter o que fazer ensina a desconfiar do programa.
+        */}
+        <GradeDoExcel
+          planilha={p}
+          faixa={faixa}
+          ativa={sel}
+          rascunho={editando === 'celula' ? barra : null}
+          gradeRef={gradeRef}
+          aoTeclar={aoTeclar}
+          aoApontarCelula={(l, c, e) => {
+            gradeRef.current?.focus();
+            if (e.button !== 0) return;
+            if (e.shiftKey) { setFaixa(f => ({ ...f, l2: l, c2: c })); return; }
+            selecionar(l, c);
+            setArrastandoFaixa(true);
+          }}
+          aoEntrarNaCelula={(l, c) => { if (arrastandoFaixa) setFaixa(f => ({ ...f, l2: l, c2: c })); }}
+          aoApontarColuna={(c, e) => {
+            if (e.button !== 0) return;
+            gradeRef.current?.focus();
+            setFaixa({ l1: 0, c1: c, l2: p.celulas.length - 1, c2: c });
+          }}
+          aoApontarLinha={(l, e) => {
+            if (e.button !== 0) return;
+            gradeRef.current?.focus();
+            setFaixa({ l1: l, c1: 0, l2: l, c2: p.celulas[0].length - 1 });
+          }}
+          aoMoverPonteiro={moverArrasto}
+          aoSoltarPonteiro={() => { soltarArrasto(); setArrastandoFaixa(false); }}
+          aoSairDaGrade={() => setArrastandoFaixa(false)}
+          aoAbrirEdicao={texto => { setBarra(texto); setEditando('celula'); }}
+          aoEscrever={setBarra}
+          aoConfirmar={(texto, direcao) => {
+            if (cancelando.current) { cancelando.current = false; return; }
+            confirmar(texto, direcao);
+          }}
+          aoCancelar={cancelarEdicao}
+          aoContexto={abrirContexto}
+          aoArrastarBorda={comecarArrasto}
+          aoAjustarAoConteudo={(tipo, indice) => (tipo === 'coluna' ? ajustarAoConteudo(indice) : ajustarLinhaAoConteudo(indice))}
+          naTabela={(l, c) => l < linhasDaTabela && c < colunasDaTabela}
+        />
 
 
         {/* ── O menu do botão direito ──────────────────────────────────────

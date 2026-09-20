@@ -1,4 +1,8 @@
-import { X } from 'lucide-react';
+import { ArrowDownAZ, ArrowUpZA, Filter, X } from 'lucide-react';
+import {
+  type Direcao, type Faixa, type Planilha,
+  alinhamentoDe, estiloCondicional, linhaEscondida, naFaixa, nomeDaColuna, valorDe,
+} from './planilha';
 
 /*
  * A janela do Excel, compartilhada.
@@ -183,6 +187,53 @@ export const CSS_EXCEL = `
   border: none; cursor: pointer;
 }
 .pl-aba-mais:hover { background: #EDEBE9; }
+
+/* ── O que a CC-ES003 acrescentou à grade ──────────────────────────────────
+
+   As três saem do **modelo**, e não do laboratório: a planilha guarda as
+   regras, o filtro e quantas linhas estão congeladas, então a mesma grade
+   desenha as duas telas e a da AP043 simplesmente não tem nenhuma delas. */
+
+/* As cores da formatação condicional. Elas são escolhidas de uma lista curta,
+   e não livres, porque cada uma tem o texto medido contra ela: o vermelho do
+   Excel sobre a letra escura dá 9,4:1, o amarelo 13,1:1 e o verde 10,6:1.
+   "Escolha qualquer cor" acabaria com vermelho sobre vermelho num exercício em
+   que o desbravador não teria como saber que errou. */
+.pl-cond-vermelho { background: #FFC7CE; color: #9C0006; }
+.pl-cond-amarelo  { background: #FFEB9C; color: #9C6500; }
+.pl-cond-verde    { background: #C6EFCE; color: #006100; }
+
+/* A linha escondida pelo filtro some da tela e **continua na planilha** —
+   display: none na linha, e não remoção: os números das linhas à esquerda
+   continuam pulando, que é como se vê que há linha escondida. */
+.pl-escondida { display: none; }
+
+/* O congelamento é de tela: a linha congelada gruda no alto enquanto o resto
+   rola. O z-index fica acima do cabeçalho de linha, senão a coluna de números passa
+   por cima dela ao rolar de lado. */
+.pl-congelada td, .pl-congelada th { position: sticky; z-index: 3; background: #FFFFFF; }
+.pl-congelada th.pl-cab-lin { z-index: 4; }
+
+/* A alça de preenchimento: o quadradinho no canto da célula ativa. Ela fica
+   **fora** do fluxo do texto, senão empurra o conteúdo da célula e a coluna
+   parece mais larga do que é. */
+.pl-alca-preencher {
+  position: absolute; right: -3px; bottom: -3px; width: 7px; height: 7px;
+  background: #217346; border: 1px solid #FFFFFF; cursor: crosshair; z-index: 5;
+}
+.pl-grade td.pl-ativa { position: relative; }
+
+/* A setinha do filtro e a da ordenação moram no cabeçalho, como no Excel. */
+.pl-cab-marca {
+  display: inline-flex; align-items: center; gap: 2px;
+  margin-left: 4px; vertical-align: middle; color: #217346;
+}
+.pl-cab-bt {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; border: none; background: transparent;
+  color: #605E5C; cursor: pointer; border-radius: 2px;
+}
+.pl-cab-bt:hover { background: #E1DFDD; color: #217346; }
 `;
 
 
@@ -284,4 +335,232 @@ export function AbasDoExcel({ nome, aoAvisar }: { nome: string; aoAvisar: (r: st
       </button>
     </div>
   );
+}
+
+/**
+ * A grade: a peça que mais diz "isto é uma planilha".
+ *
+ * ── Por que ela saiu de `PlanilhaLab.tsx` ────────────────────────────────
+ * Ela morava dentro do laboratório da AP043 — cabeçalhos com letra e número,
+ * alças de redimensionar, seleção de faixa por arrasto, edição na célula. A
+ * CC-ES003 precisa da mesma grade, e copiá-la é como a plataforma já teve dois
+ * "Word" e quase teve dois "Explorador". Saiu **antes** de a cópia existir,
+ * que é a decisão de `word.tsx` e de `explorer.tsx`, pelo motivo escrito nos
+ * dois.
+ *
+ * ── O que é do programa e o que é do exercício ───────────────────────────
+ * Aqui fica o que é da **planilha**: como uma célula se desenha, onde ficam as
+ * alças, o que a faixa selecionada mostra. O que cada laboratório cobra — que
+ * botões a faixa oferece, que tarefas se conferem, de que planilha se parte —
+ * continua no laboratório.
+ *
+ * ── E ela não guarda estado ──────────────────────────────────────────────
+ * Nem um pedaço. Uma grade com seleção própria obrigaria os dois lados a
+ * concordar sobre a mesma célula ativa, que é a forma mais rápida de mostrarem
+ * coisas diferentes. É a mesma regra escrita em `explorer.tsx`.
+ *
+ * ── Formatação condicional, filtro e congelamento saem do modelo ─────────
+ * A planilha guarda as regras, o filtro e quantas linhas estão congeladas,
+ * então a mesma grade desenha as duas telas — e a da AP043 simplesmente não
+ * tem nenhuma das três. Sem isso, cada laboratório teria de dizer à grade como
+ * pintar, e dois laboratórios pintariam diferente.
+ */
+export interface PropsDaGradeDoExcel {
+  planilha: Planilha;
+  /** A faixa selecionada, da âncora até onde o arrasto parou. */
+  faixa: Faixa;
+  /** A célula ativa: onde o cursor está, e onde a edição acontece. */
+  ativa: { l: number; c: number };
+  /**
+   * O texto em edição, ou `null` quando não se está editando **na célula**.
+   *
+   * A distinção é o defeito que custou caro na AP043: a barra de fórmulas
+   * ligava o modo de edição, a célula passava a desenhar um campo com
+   * `autoFocus`, e esse campo roubava o foco a cada tecla. Só quem começou a
+   * editar na célula recebe o campo.
+   */
+  rascunho: string | null;
+  gradeRef: React.RefObject<HTMLDivElement>;
+
+  aoTeclar: (e: React.KeyboardEvent) => void;
+  aoApontarCelula: (l: number, c: number, e: React.PointerEvent) => void;
+  aoEntrarNaCelula: (l: number, c: number) => void;
+  aoApontarColuna: (c: number, e: React.PointerEvent) => void;
+  aoApontarLinha: (l: number, e: React.PointerEvent) => void;
+  aoMoverPonteiro: (e: React.PointerEvent) => void;
+  aoSoltarPonteiro: () => void;
+  aoSairDaGrade: () => void;
+
+  aoAbrirEdicao: (texto: string) => void;
+  aoEscrever: (texto: string) => void;
+  aoConfirmar: (texto: string, direcao?: Direcao) => void;
+  aoCancelar: () => void;
+
+  /** Menu do botão direito. Sem ele, a grade não abre menu nenhum. */
+  aoContexto?: (e: React.MouseEvent, alvo: 'celula' | 'coluna' | 'linha', l: number, c: number) => void;
+  /** Arrastar a borda do cabeçalho. Sem ele, as alças de tamanho não aparecem. */
+  aoArrastarBorda?: (tipo: 'coluna' | 'linha', indice: number, e: React.PointerEvent) => void;
+  aoAjustarAoConteudo?: (tipo: 'coluna' | 'linha', indice: number) => void;
+  /**
+   * A alça de preenchimento. Quem não a passa não a desenha — é a regra do
+   * `aoBuscar` do Explorador: a peça existe quando o laboratório tem o que
+   * fazer com ela.
+   */
+  aoPreencher?: (ate: { l: number; c: number }) => void;
+  /** Quais células o estilo de tabela pinta. Só a AP043 usa. */
+  naTabela?: (l: number, c: number) => boolean;
+  /** A setinha do filtro no cabeçalho. Sem ela, o cabeçalho não tem botão. */
+  aoAbrirFiltro?: (c: number) => void;
+}
+
+export function GradeDoExcel({
+  planilha: p, faixa, ativa, rascunho, gradeRef,
+  aoTeclar, aoApontarCelula, aoEntrarNaCelula, aoApontarColuna, aoApontarLinha,
+  aoMoverPonteiro, aoSoltarPonteiro, aoSairDaGrade,
+  aoAbrirEdicao, aoEscrever, aoConfirmar, aoCancelar,
+  aoContexto, aoArrastarBorda, aoAjustarAoConteudo, aoPreencher, naTabela, aoAbrirFiltro,
+}: PropsDaGradeDoExcel) {
+  return (
+    <div
+      ref={gradeRef}
+      className="pl-grade-caixa"
+      tabIndex={0}
+      onKeyDown={aoTeclar}
+      onPointerMove={aoMoverPonteiro}
+      onPointerUp={aoSoltarPonteiro}
+      onPointerLeave={aoSairDaGrade}>
+      <table className={`pl-grade pl-layout-${p.layout}`}>
+        <thead>
+          <tr>
+            <th className="pl-canto" />
+            {p.larguras.map((w, c) => (
+              <th key={c} className="pl-cab-col" style={{ width: w, minWidth: w }}
+                onPointerDown={e => aoApontarColuna(c, e)}
+                onContextMenu={e => aoContexto?.(e, 'coluna', 0, c)}>
+                {nomeDaColuna(c)}
+                {p.ordenacao?.coluna === c && (
+                  <span className="pl-cab-marca" aria-label={p.ordenacao.crescente ? 'ordenada de A a Z' : 'ordenada de Z a A'}>
+                    {p.ordenacao.crescente ? <ArrowDownAZ className="w-3 h-3" /> : <ArrowUpZA className="w-3 h-3" />}
+                  </span>
+                )}
+                {aoAbrirFiltro && ehCabecalhoDaTabela(p, c) && (
+                  <button type="button" className="pl-cab-bt"
+                    title={`Filtrar a coluna ${nomeDaColuna(c)}`}
+                    aria-label={`Filtrar a coluna ${nomeDaColuna(c)}`}
+                    onPointerDown={e => e.stopPropagation()}
+                    onClick={() => aoAbrirFiltro(c)}>
+                    <Filter className="w-3 h-3" style={{ color: p.filtro?.coluna === c && p.filtro.valor ? '#217346' : undefined }} />
+                  </button>
+                )}
+                {aoArrastarBorda && (
+                  <span
+                    className="pl-alca-col"
+                    title="Arraste para mudar a largura, ou dois cliques para caber o conteúdo"
+                    onPointerDown={e => aoArrastarBorda('coluna', c, e)}
+                    onDoubleClick={() => aoAjustarAoConteudo?.('coluna', c)} />
+                )}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {p.celulas.map((linha, l) => (
+            <tr
+              key={l}
+              style={{ height: p.alturas[l], top: l < p.congeladas ? l * p.alturas[0] : undefined }}
+              className={[
+                linhaEscondida(p, l) ? 'pl-escondida' : '',
+                l < p.congeladas ? 'pl-congelada' : '',
+              ].filter(Boolean).join(' ')}>
+              <th className="pl-cab-lin"
+                onPointerDown={e => aoApontarLinha(l, e)}
+                onContextMenu={e => aoContexto?.(e, 'linha', l, 0)}>
+                {l + 1}
+                {aoArrastarBorda && (
+                  <span
+                    className="pl-alca-lin"
+                    title="Arraste para mudar a altura, ou dois cliques para o AutoAjuste"
+                    onPointerDown={e => aoArrastarBorda('linha', l, e)}
+                    onDoubleClick={() => aoAjustarAoConteudo?.('linha', l)} />
+                )}
+              </th>
+              {linha.map((cel, c) => {
+                if (cel.coberta) return null;
+                const ancora = ativa.l === l && ativa.c === c;
+                const dentro = naFaixa(faixa, l, c);
+                const mostrado = valorDe(p, l, c);
+                const h = alinhamentoDe(cel, mostrado);
+                const cond = estiloCondicional(p, l, c);
+                return (
+                  <td
+                    key={c}
+                    colSpan={cel.span}
+                    /* Apontar começa a faixa, arrastar a estende e soltar a
+                       fecha — o mesmo gesto da planilha de verdade. Sem ele não
+                       havia como dizer "de A1 até D1". */
+                    onPointerDown={e => aoApontarCelula(l, c, e)}
+                    onContextMenu={e => aoContexto?.(e, 'celula', l, c)}
+                    onPointerEnter={() => aoEntrarNaCelula(l, c)}
+                    className={[
+                      ancora ? 'pl-ativa' : '',
+                      dentro && !ancora ? 'pl-na-faixa' : '',
+                      naTabela?.(l, c) ? 'pl-na-tabela' : '',
+                      cond ? `pl-cond-${cond}` : '',
+                    ].filter(Boolean).join(' ')}
+                    style={{
+                      textAlign: h === 'centro' ? 'center' : h === 'direita' ? 'right' : 'left',
+                      verticalAlign: cel.v === 'meio' ? 'middle' : cel.v === 'acima' ? 'top' : 'bottom',
+                      fontWeight: cel.negrito ? 700 : 400,
+                    }}>
+                    {/* O autoFocus é só de quem começou a editar *na célula*:
+                        dado à célula durante a digitação na barra, era ele que
+                        roubava o foco a cada tecla. */}
+                    {ancora && rascunho !== null ? (
+                      <input
+                        className="pl-celula-entrada"
+                        autoFocus
+                        value={rascunho}
+                        onChange={e => aoEscrever(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') { e.preventDefault(); aoConfirmar(rascunho, e.shiftKey ? 'cima' : 'baixo'); gradeRef.current?.focus(); }
+                          if (e.key === 'Tab') { e.preventDefault(); aoConfirmar(rascunho, e.shiftKey ? 'esquerda' : 'direita'); gradeRef.current?.focus(); }
+                          if (e.key === 'Escape') { e.preventDefault(); aoCancelar(); gradeRef.current?.focus(); }
+                        }}
+                        onBlur={() => aoConfirmar(rascunho)} />
+                    ) : (
+                      <span onDoubleClick={() => aoAbrirEdicao(cel.texto)} className="pl-valor">
+                        {mostrado}
+                      </span>
+                    )}
+                    {ancora && aoPreencher && rascunho === null && (
+                      <span
+                        className="pl-alca-preencher"
+                        title="Arraste para preencher as células abaixo"
+                        aria-label="Alça de preenchimento"
+                        onPointerDown={e => { e.stopPropagation(); e.preventDefault(); }}
+                        onPointerUp={e => { e.stopPropagation(); aoPreencher({ l, c }); }} />
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * A coluna faz parte do cabeçalho da tabela declarada.
+ *
+ * A setinha do filtro só aparece onde há o que filtrar. Pô-la em toda coluna
+ * prometeria filtrar a coluna vazia da direita, que é um gesto sem efeito — e
+ * gesto sem efeito é o que ensina a pessoa a desconfiar do programa.
+ */
+function ehCabecalhoDaTabela(p: Planilha, c: number): boolean {
+  if (!p.tabela) return false;
+  const esq = Math.min(p.tabela.c1, p.tabela.c2);
+  const dir = Math.max(p.tabela.c1, p.tabela.c2);
+  return c >= esq && c <= dir;
 }
