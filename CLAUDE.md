@@ -1673,9 +1673,32 @@ número plausível — a pior forma de aparecer.
 "isto é texto"; ele aparece na barra de fórmulas e **não** aparece na célula.
 Sem essa distinção, "número armazenado como texto" seria um enunciado sem nada
 por trás: a `SOMA` somaria tudo e o defeito que a lição manda achar não
-existiria. O que denuncia são duas coisas independentes — o alinhamento, que já
-estava escrito em `alinhamentoDe`, e a `CONT.NÚM`, que conta um a menos do que
-a `CONT.VALORES`. É forma **e** cor outra vez.
+existiria. O que denuncia são duas coisas independentes — o alinhamento e a
+`CONT.NÚM`, que conta um a menos do que a `CONT.VALORES`. É forma **e** cor
+outra vez.
+
+**E o alinhamento perguntava à pessoa errada.** Ele se lia `ehNumero(mostrado)`,
+em cima do texto **já impresso** — e imprimir joga fora justamente a distinção
+de que ele precisa: um `'1620` imprime `1620`, que é caractere por caractere o
+que um número de verdade imprime. Então o motor entendia texto, a `SOMA` pulava
+a célula, e a célula ia para a direita com todas as outras.
+
+O estrago era a primeira das duas pistas, que é a que se usa primeiro: a lição
+manda olhar a coluna, quem olhava via doze números arrumados e concluía que não
+havia defeito ali. Duas pistas existem porque uma sozinha escapa de quem não
+repara — com uma só, o requisito 7 passava a depender de alguém lembrar da
+`CONT.NÚM`. E nada estourava: coluna bonita, total plausível e errado, que é o
+que esta vereda inteira existe para ensinar a desconfiar.
+
+Hoje `alinhamentoDe` recebe o **`Valor`**, e `valorCalculado` é quem o entrega —
+`valorDe` passou a ser ele mais `mostrar`. Trocar a assinatura em vez de
+acrescentar uma segunda função é a decisão: a antiga era estruturalmente
+incapaz de acertar, e deixada de pé seria chamada pelo laboratório seguinte.
+O compilador apontou os três lugares.
+
+Nenhum teste sentiu isso por meses porque a AP043 não tem número guardado como
+texto — sem apóstrofo em lugar nenhum, `ehNumero(mostrado)` e o tipo do valor
+concordam sempre.
 
 **E texto numérico entra na conta e não entra na função.** `=D4+0` devolve 1620
 e `=SOMA(D2:D13)` pula a célula. A assimetria é do Excel e não nossa, e é ela
@@ -1847,6 +1870,27 @@ dias.
 apóstrofo junto e deixa a coluna com onze valores e um buraco — o defeito
 "consertado" virando outro defeito. A conferência pede as duas coisas: sem
 apóstrofo, **e** com o número lá.
+
+**O exemplo da teoria declara resultado, e quem o confere é o motor.** É a
+mesma trava de `exemplosDePython.test.ts`, pelo mesmo motivo escrito lá:
+escrever de cabeça o que uma fórmula devolve erra por pouco e com frequência,
+nada estoura, e quem confere a **própria** planilha contra um exemplo errado
+conclui que a planilha dele é que está errada. Lá o resultado sai do CPython do
+navegador; aqui sai de `formulas.ts`, que é o mesmo motor que responde ao
+desbravador — lição e laboratório não podem discordar.
+
+A diferença para a de Python é o contexto. Um programa traz tudo consigo; uma
+fórmula só significa alguma coisa sobre uma planilha, e a planilha do exemplo
+está **desenhada** no texto. Ler o desenho seria máquina frágil que um dia para
+de achar o que procura e aprova tudo calada — a armadilha do "zero link não é
+zero link quebrado" aplicada à própria trava. Então a divisão é esta: a
+**grade** se declara no teste, e a **afirmação** se lê da lição. O número que a
+tela mostra nunca é o número que o teste escreveu, e mudar o desenho sem mudar
+a conta reprova, que é a falha certa. Com a guarda contra o vazio de sempre:
+cada exemplo diz quantas afirmações tem, e um reescrito sem as setas reprova em
+vez de passar por não ter conferido nada.
+
+Ela achou, na primeira execução, o alinhamento que perguntava ao texto impresso.
 
 **O roteiro da apresentação lê a forma da fórmula, e não uma árvore.** O
 `roteiroDePython.ts` percorre o `ast` porque um programa tem forma livre; uma
@@ -2481,6 +2525,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/cadernoDoClube.test.ts` | gráfico de tipo que não responde à pergunta, ou sem eixo identificado |
 | `src/labs/cadernoDoClube.test.ts` | número-como-texto "consertado" apagando a célula |
 | `src/labs/cadernoDoClube.test.ts` | fórmula das lições que sai no roteiro sem frase própria, ou coluna arrastada virando doze frases |
+| `src/curriculum/exemplosDePlanilha.test.ts` | exemplo da teoria cujo resultado declarado não é o que o motor devolve |
+| `src/curriculum/exemplosDePlanilha.test.ts` | número guardado como texto encostando à direita, que apaga a primeira pista do requisito 7 |
+| `src/labs/metasDaAp043.test.ts` | alinhamento decidido pelo texto impresso, que já perdeu o tipo do valor |
 | `src/labs/excel.test.tsx` | peça da grade que sumiu no recorte, ou que aparece sem o laboratório ter pedido |
 | `src/labs/excel.test.tsx` | grade que guarda a própria seleção, em vez de desenhar a que o chamador diz |
 | `src/components/LaboratorioDePlanilha.test.tsx` | lição da CC-ES003 impossível de vencer clicando |

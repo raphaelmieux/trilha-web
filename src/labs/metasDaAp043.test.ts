@@ -4,7 +4,10 @@ import {
   METAS_DA_INSERCAO, METAS_DA_PLANILHA, METAS_DA_AREA,
   valorDe, refazerMesclagens, vazia, alinhamentoDe, larguraDaTabela,
   excluirColunaDe, inserirColunaEm, nomeDaFaixa, naFaixa,
+  type AlinhaH, type Planilha,
 } from './metasDaAp043';
+import { valorCalculado } from './planilha';
+import { erro } from './formulas';
 
 /*
   Os três laboratórios da AP043 abrem com tudo por fazer.
@@ -323,24 +326,54 @@ describe('número vai para a direita e texto para a esquerda', () => {
     É a diferença que diz que a planilha entendeu o que foi digitado, e é como
     se descobre número guardado como texto — o defeito mais comum de planilha.
     Tudo nascia à esquerda, e essa informação não chegava a existir.
+
+    O alinhamento pergunta ao **valor**, e não ao texto que a célula mostra:
+    imprimir joga fora o tipo, e `'1620` imprime a mesma string que 1620. Estas
+    travas passam pelo caminho de verdade — uma planilha de uma célula lida por
+    `valorCalculado` — justamente porque foi entre calcular e imprimir que a
+    distinção se perdia.
   */
+  const comoAlinha = (texto: string, h: AlinhaH = 'padrao') => {
+    const p: Planilha = { ...PLANILHA_INICIAL, celulas: [[{ ...vazia(texto), h }]] };
+    return alinhamentoDe(p.celulas[0][0], valorCalculado(p, 0, 0));
+  };
+
   it('sem ninguém escolher, o padrão segue o conteúdo', () => {
-    expect(alinhamentoDe(vazia('Falcão'), 'Falcão')).toBe('esquerda');
-    expect(alinhamentoDe(vazia('12'), '12')).toBe('direita');
-    expect(alinhamentoDe(vazia('1.620,50'), '1620,50')).toBe('direita');
-    expect(alinhamentoDe(vazia(''), '')).toBe('esquerda');
+    expect(comoAlinha('Falcão')).toBe('esquerda');
+    expect(comoAlinha('12')).toBe('direita');
+    expect(comoAlinha('1.620,50')).toBe('direita');
+    expect(comoAlinha('')).toBe('esquerda');
+  });
+
+  it('o número guardado como texto encosta à esquerda, que é a pista', () => {
+    /*
+      O apóstrofo é o gesto do Excel para dizer "isto é texto", e ele não
+      aparece na célula: o que se lê ali é `1620`, idêntico a um número. Quem
+      decidia pelo texto impresso mandava os dois para a direita, e a coluna
+      ficava com doze números arrumados e um deles fora da SOMA — o requisito 7
+      da CC-ES003 perdendo a primeira das suas duas pistas, sem nada estourar.
+    */
+    expect(comoAlinha(`'1620`)).toBe('esquerda');
+    expect(comoAlinha('1620')).toBe('direita');
   });
 
   it('a fórmula segue o resultado, e não o que está escrito', () => {
-    /* =SOMA(...) começa por "=" e não é número; o que se vê é o total, e é
-       ele que decide o lado — como na planilha de verdade. */
-    expect(alinhamentoDe(vazia('=SOMA(B3:B6)'), '40')).toBe('direita');
-    expect(alinhamentoDe(vazia('=SOMA(B3:B6)'), '#NOME?')).toBe('esquerda');
+    /* =SOMA(...) começa por "=" e não é número; o que decide o lado é o total
+       que ela devolve — como na planilha de verdade. */
+    const soma = (linhas: string[]): Planilha => ({
+      ...PLANILHA_INICIAL,
+      celulas: [[vazia('=SOMA(A2:A5)')], ...linhas.map(t => [vazia(t)])],
+    });
+    const lado = (p: Planilha) => alinhamentoDe(p.celulas[0][0], valorCalculado(p, 0, 0));
+
+    expect(lado(soma(['10', '10', '10', '10']))).toBe('direita');
+    expect(lado(soma(['10', 'não é número', '10', '10']))).toBe('direita');
+    expect(alinhamentoDe(vazia('=SOMANDO(A1)'), erro('nome'))).toBe('esquerda');
   });
 
   it('quem escolhe o alinhamento ganha do padrão', () => {
-    expect(alinhamentoDe({ ...vazia('12'), h: 'centro' }, '12')).toBe('centro');
-    expect(alinhamentoDe({ ...vazia('Falcão'), h: 'direita' }, 'Falcão')).toBe('direita');
+    expect(comoAlinha('12', 'centro')).toBe('centro');
+    expect(comoAlinha('Falcão', 'direita')).toBe('direita');
   });
 });
 

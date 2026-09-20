@@ -155,18 +155,30 @@ export const vazia = (texto = ''): Celula => ({
   texto, h: 'padrao', v: 'abaixo', span: 1, coberta: false, negrito: false, formato: 'geral',
 });
 
-/*
-  Reexportado do motor, e não escrito de novo aqui: "é número" precisa querer
-  dizer a mesma coisa para quem alinha a célula e para quem a soma. Duas
-  definições divergiriam no primeiro ajuste, e aí um valor iria para a direita
-  sem entrar na conta — que é exatamente o sintoma que o requisito 7 da
-  CC-ES003 manda o desbravador diagnosticar.
-*/
 export { ehNumero };
 
-/** O alinhamento que a célula de fato usa, depois de aplicado o padrão. */
-export const alinhamentoDe = (cel: Celula, mostrado: string): Exclude<AlinhaH, 'padrao'> =>
-  cel.h !== 'padrao' ? cel.h : (ehNumero(mostrado) ? 'direita' : 'esquerda');
+/**
+ * O alinhamento que a célula de fato usa, depois de aplicado o padrão.
+ *
+ * Ele recebe o **valor**, e não o que a célula mostra, e essa é a correção de
+ * um defeito que não aparecia. A conta era `ehNumero(mostrado)`, lendo de volta
+ * o texto já impresso — e imprimir joga fora justamente a distinção de que esta
+ * função precisa: um `'1620` vira a string `1620`, que se parece com número em
+ * tudo, porque é a mesma string que um número de verdade imprime.
+ *
+ * O estrago era o requisito 7 inteiro. O número guardado como texto tem duas
+ * pistas independentes — o alinhamento e a `CONT.NÚM` —, e são duas justamente
+ * porque uma sozinha escapa de quem não repara. Encostado à direita como todos
+ * os outros, ele ficava com uma só: quem olhasse a coluna, que é o que a lição
+ * manda fazer primeiro, via doze números arrumados e concluía que não havia
+ * defeito nenhum ali. É forma **e** cor outra vez, com a forma faltando.
+ *
+ * E nada estourava: a coluna ficava bonita, a `SOMA` continuava pulando a
+ * célula, e o total saía plausível e errado — que é o que esta vereda inteira
+ * existe para ensinar a desconfiar.
+ */
+export const alinhamentoDe = (cel: Celula, valor: Valor): Exclude<AlinhaH, 'padrao'> =>
+  cel.h !== 'padrao' ? cel.h : (valor.tipo === 'numero' ? 'direita' : 'esquerda');
 
 export const LARGURA_PADRAO = 92;
 export const ALTURA_PADRAO = 24;
@@ -253,8 +265,12 @@ export const nomeDaFaixa = (f: Faixa) => {
  * avaliadores de fórmula na mesma base seriam os dois "Word" outra vez: a
  * mesma fórmula daria dois resultados em duas lições.
  */
+export function valorCalculado(p: Planilha, l: number, c: number): Valor {
+  return valorDaCelula((li, ci) => p.celulas[li]?.[ci]?.texto ?? '', l, c);
+}
+
 export function valorDe(p: Planilha, l: number, c: number): string {
-  return mostrar(valorDaCelula((li, ci) => p.celulas[li]?.[ci]?.texto ?? '', l, c));
+  return mostrar(valorCalculado(p, l, c));
 }
 
 /*
