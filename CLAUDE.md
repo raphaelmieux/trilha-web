@@ -1702,6 +1702,55 @@ mostrar, e quem digita `=A1` em A1 é justamente quem não faz ideia do que
 aconteceu. A célula diz `Ref. circular` — e a guarda em si não é opcional: sem
 ela a recursão trava a aba e leva junto o trabalho da lição inteira.
 
+**O modelo da planilha desceu para `planilha.ts`.** A célula, a grade, a faixa
+e o valor moravam em `metasDaAp043.ts`, junto das tarefas daquele laboratório —
+e `planilha.ts`, que só tinha as operações, importava de lá: as contas
+dependiam das metas de um exercício. Desceram no dia em que a CC-ES003 precisou
+da mesma grade com formato de célula, formatação condicional e mais de uma aba,
+e desceram **antes** de a cópia existir, que é a decisão de `word.tsx`, de
+`explorer.tsx` e do próprio `excel.tsx`. O que ficou em `metasDaAp043.ts` é do
+**exercício**: o conteúdo da planilha de partida e o que se cobra dela.
+
+**Uma pasta de trabalho, sete lições.** As sete planilhas da CC-ES003 são abas
+de um arquivo só — `Caderno` —, e é o arranjo do `discoDoClube()` da CC-ES001 e
+do terminal da CC003, pelo motivo escrito nos dois: sete arquivos diferentes
+ensinariam que cada exercício acontece numa planilha de mentira.
+
+**Ordenar mexe nos dados; filtrar e congelar são de tela.** Filtro esconde
+linha e nunca apaga nenhuma — e a escondida continua na `SOMA`, que é a lição
+que a AP044 já cobra. Ordenar é o contrário: a linha troca de lugar de verdade,
+e por isso ela anda **sempre inteira**. Ordenar só a coluna da chave embaralha
+o cadastro — o nome de uma unidade passa a ficar ao lado do telefone de outra,
+sem erro nenhum e sem volta. É também por isso que `tabela` é **declarada** na
+planilha em vez de adivinhada pelo que está preenchido: uma planilha de verdade
+tem título solto e bloco de cálculos ao lado, e ordenar "a tabela" adivinhada
+levaria o título junto.
+
+**O cabeçalho nunca é escondido pelo filtro.** Sem ele não haveria onde clicar
+para tirar o filtro, e a tabela ficaria escondida para sempre — o desbravador
+veria a planilha vazia e concluiria que apagou tudo.
+
+**A célula vazia vale zero na formatação condicional, e isso é o Excel.** A
+primeira versão a excluía, e estava errada nos dois sentidos. Era **código
+morto** — a guarda de "regra sem valor de comparação" já cobria tudo o que ela
+alcançava, e a mutação que a apagou não derrubou teste nenhum, que foi como ela
+apareceu. E era mentira sobre o programa: no Excel, "menor que 10" pinta a
+metade em branco da coluna, e é uma das reclamações mais antigas que a
+formatação condicional tem. Simulação que "conserta" isso ensina errado — a
+mesma regra no computador do clube acenderia a coluna inteira, sem nada aqui
+tendo avisado. A lição de módulo 5 nomeia o caso: a faixa da regra vai até a
+última linha com dado, e não até o fim da coluna.
+
+O que **não** casa é a regra com o campo de comparação em branco, e essa guarda
+é nossa: `Number('')` é **zero**, e não NaN, então "maior que" em branco
+pintaria toda célula positiva da faixa e "igual a" em branco pintaria todas as
+vazias. Nos dois casos a planilha fica colorida e a regra parece ter
+funcionado. É "zero link não é zero link quebrado" outra vez.
+
+**E vale a última regra que casa, não a primeira.** Regras se empilham, como no
+Excel. Devolver a primeira faria a regra recém-criada não pintar nada, e quem
+acabou de criá-la concluiria que ela não funciona.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2242,6 +2291,10 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |
 | `src/labs/formulas.test.ts` | referência circular devolvendo zero, ou travando a aba |
 | `src/labs/metasDaAp043.test.ts` | segundo avaliador de fórmula escrito fora de `formulas.ts` |
+| `src/labs/planilha.test.ts` | filtro que esconde o cabeçalho, deixando a tabela sem como voltar |
+| `src/labs/planilha.test.ts` | ordenação que leva só a coluna da chave, embaralhando o cadastro |
+| `src/labs/planilha.test.ts` | alça de preenchimento que copia a fórmula sem transpor a referência |
+| `src/labs/planilha.test.ts` | regra condicional com o campo em branco pintando meia planilha |
 | `src/labs/correioDoClube.test.ts` | Cco preenchido com a lista grande vazando pelo Para, ou assinatura configurada e nunca usada |
 | `src/labs/maquinaDoClube.test.ts` | "abrir com" que mudou o padrão junto, ou usuário novo criado administrador |
 | `src/labs/ConfiguracoesLab.test.tsx` | caminho de Configurações que não leva à tarefa, ou botão de otimizar com o nome errado para o disco |

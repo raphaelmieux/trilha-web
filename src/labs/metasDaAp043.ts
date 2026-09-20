@@ -17,7 +17,33 @@
  * desenho continua no componente.
  */
 
-import { ehNumero, mostrar, nomeDaColuna, valorDaCelula } from './formulas';
+/*
+  O modelo da planilha mora em `planilha.ts`, e não aqui.
+
+  Ele nasceu neste arquivo, junto das metas da AP043, e saiu no dia em que a
+  CC-ES003 precisou da mesma grade com formato de célula, formatação
+  condicional e mais de uma aba. É a mesma decisão de `word.tsx` e de
+  `explorer.tsx`, tomada pelo mesmo motivo e no mesmo momento: **antes** de a
+  cópia existir. Duas grades divergem no primeiro ajuste, e a plataforma passa
+  a mostrar dois "Excel" — que é exatamente o que a AP043 ensina a reconhecer.
+
+  O que ficou aqui é do **exercício**: o conteúdo da planilha de partida e as
+  tarefas que se cobram dela.
+*/
+import {
+  type Planilha, vazia, LARGURA_PADRAO, ALTURA_PADRAO,
+  COLUNAS_DA_GRADE, LINHAS_DA_GRADE, larguraDaTabela,
+} from './planilha';
+
+export type {
+  AlinhaH, AlinhaV, Layout, Celula, Planilha, Faixa,
+} from './planilha';
+export {
+  vazia, ehNumero, alinhamentoDe, LARGURA_PADRAO, ALTURA_PADRAO,
+  COLUNAS_DA_GRADE, LINHAS_DA_GRADE, larguraDaTabela, alturaDaTabela,
+  nomeDaCelula, normalizar, naFaixa, umaCelulaSo, nomeDaFaixa, valorDe,
+  refazerMesclagens, excluirColunaDe, inserirColunaEm,
+} from './planilha';
 
 /* ── O documento ───────────────────────────────────────────────────────────── */
 
@@ -130,53 +156,6 @@ export const METAS_DA_INSERCAO: MetaDeInsercao[] = [
 /* ── A planilha ────────────────────────────────────────────────────────────── */
 
 /*
-  'padrao' é o alinhamento que a planilha dá sozinha, e ele não é 'esquerda':
-  número vai para a direita, texto para a esquerda. Essa diferença é como se
-  descobre que a planilha entendeu o que foi digitado — número que fica à
-  esquerda é número guardado como texto, e é o engano mais comum de quem faz
-  planilha. Nascendo tudo à esquerda, ninguém aprende a reparar nisso.
-*/
-export type AlinhaH = 'padrao' | 'esquerda' | 'centro' | 'direita';
-export type AlinhaV = 'acima' | 'meio' | 'abaixo';
-export type Layout = 'nenhum' | 'automatico' | 'manual';
-
-export interface Celula {
-  /** O que está escrito — pode ser texto, número ou fórmula começando por =. */
-  texto: string;
-  h: AlinhaH;
-  v: AlinhaV;
-  /** Quantas colunas esta célula ocupa depois de mesclada. 1 é o normal. */
-  span: number;
-  /** Coberta por uma mesclagem à esquerda: não se desenha. */
-  coberta: boolean;
-  negrito: boolean;
-}
-
-export interface Planilha {
-  celulas: Celula[][];
-  larguras: number[];
-  alturas: number[];
-  layout: Layout;
-}
-
-export const vazia = (texto = ''): Celula => ({
-  texto, h: 'padrao', v: 'abaixo', span: 1, coberta: false, negrito: false,
-});
-
-/*
-  Reexportado do motor, e não escrito de novo aqui: "é número" precisa querer
-  dizer a mesma coisa para quem alinha a célula e para quem a soma. Duas
-  definições divergiriam no primeiro ajuste, e aí um valor iria para a direita
-  sem entrar na conta — que é exatamente o sintoma que o requisito 7 da
-  CC-ES003 manda o desbravador diagnosticar.
-*/
-export { ehNumero };
-
-/** O alinhamento que a célula de fato usa, depois de aplicado o padrão. */
-export const alinhamentoDe = (cel: Celula, mostrado: string): Exclude<AlinhaH, 'padrao'> =>
-  cel.h !== 'padrao' ? cel.h : (ehNumero(mostrado) ? 'direita' : 'esquerda');
-
-/*
   A coluna vazia nasce no meio da tabela, entre Diárias e Total, e é ela que a
   tarefa manda excluir.
 
@@ -196,19 +175,6 @@ const CONTEUDO_INICIAL: string[][] = [
   ['Tucano', '11', '3', '', '1485'],
 ];
 
-export const LARGURA_PADRAO = 92;
-export const ALTURA_PADRAO = 24;
-
-/*
-  A grade é maior do que a tabela, e é isso que faz dela uma planilha.
-
-  Ela tinha exatamente o tamanho dos dados — cinco colunas e sete linhas — e o
-  resto da janela ficava branco: na tela aparecia uma tabelinha solta num vazio,
-  que não é o que ninguém encontra ao abrir Excel, Calc ou Planilhas. A grade do
-  programa de verdade vai até a borda da janela e continua rolando.
-*/
-export const COLUNAS_DA_GRADE = 12;
-export const LINHAS_DA_GRADE = 26;
 
 export const PLANILHA_INICIAL: Planilha = {
   celulas: Array.from({ length: LINHAS_DA_GRADE }, (_, l) =>
@@ -216,134 +182,17 @@ export const PLANILHA_INICIAL: Planilha = {
   larguras: new Array(COLUNAS_DA_GRADE).fill(LARGURA_PADRAO),
   alturas: new Array(LINHAS_DA_GRADE).fill(ALTURA_PADRAO),
   layout: 'nenhum',
+  /* A AP043 monta a tabela do zero: ela não parte de bloco reconhecido, não
+     tem aba, não congela nada e não filtra. O que a CC-ES003 acrescentou ao
+     modelo chega aqui no estado em que o Excel abre um arquivo novo. */
+  nome: 'Planilha1',
+  tabela: null,
+  congeladas: 0,
+  filtro: null,
+  ordenacao: null,
+  regras: [],
+  grafico: null,
 };
-
-/*
-  Onde a tabela acaba.
-
-  Com a grade maior do que os dados, "a tabela" deixou de ser "a planilha
-  inteira" — e as tarefas falam da tabela. Ela vai até a última coluna com
-  alguma coisa escrita; a coluna vazia do meio continua dentro, que é
-  justamente o defeito que a tarefa manda consertar.
-*/
-export const larguraDaTabela = (p: Planilha): number => {
-  let ultima = -1;
-  p.celulas.forEach(linha => linha.forEach((cel, c) => {
-    if (cel.texto.trim() !== '' && c > ultima) ultima = c;
-  }));
-  return ultima + 1;
-};
-
-export const alturaDaTabela = (p: Planilha): number => {
-  let ultima = -1;
-  p.celulas.forEach((linha, l) => {
-    if (linha.some(cel => cel.texto.trim() !== '') && l > ultima) ultima = l;
-  });
-  return ultima + 1;
-};
-
-/** A1, B3 — o nome que a caixa de nome mostra e que a fórmula usa. */
-export const nomeDaCelula = (l: number, c: number) => `${nomeDaColuna(c)}${l + 1}`;
-
-/*
-  Uma faixa de células: da âncora, onde o clique começou, até onde ele parou.
-
-  A planilha não tinha faixa nenhuma — só a célula do cursor —, e tudo o que
-  precisa de faixa saiu torto por causa disso. Mesclar ia da célula escolhida
-  até o fim da linha, porque não havia como dizer "até D1"; a tarefa mandava
-  mesclar de A1 até D1, e isso era impossível de fazer na tela. Selecionar uma
-  faixa é o gesto mais básico de uma planilha: é assim que se mescla, que se
-  soma e que se formata.
-*/
-export interface Faixa { l1: number; c1: number; l2: number; c2: number }
-
-export const normalizar = (f: Faixa) => ({
-  topo: Math.min(f.l1, f.l2), base: Math.max(f.l1, f.l2),
-  esq: Math.min(f.c1, f.c2), dir: Math.max(f.c1, f.c2),
-});
-
-export const naFaixa = (f: Faixa, l: number, c: number) => {
-  const n = normalizar(f);
-  return l >= n.topo && l <= n.base && c >= n.esq && c <= n.dir;
-};
-
-export const umaCelulaSo = (f: Faixa) => f.l1 === f.l2 && f.c1 === f.c2;
-
-/** A1, ou A1:D1 quando a faixa tem mais de uma célula. */
-export const nomeDaFaixa = (f: Faixa) => {
-  const n = normalizar(f);
-  const inicio = nomeDaCelula(n.topo, n.esq);
-  return umaCelulaSo(f) ? inicio : `${inicio}:${nomeDaCelula(n.base, n.dir)}`;
-};
-
-/**
- * Resolve o que a célula mostra.
- *
- * Fórmula é o coração do requisito, e por isso ela é calculada de verdade em
- * cima dos valores da grade — e não guardada como número. É essa diferença que
- * a tarefa da soma cobra: mudar um inscrito muda o total sozinho.
- *
- * Quem calcula é `formulas.ts`, e não este arquivo. Ele entendia `=SOMA` e
- * `=MÉDIA` de uma faixa retangular e devolvia `#NOME?` para todo o resto, o
- * que bastava enquanto a AP043 era a única planilha da plataforma. Dois
- * avaliadores de fórmula na mesma base seriam os dois "Word" outra vez: a
- * mesma fórmula daria dois resultados em duas lições.
- */
-export function valorDe(p: Planilha, l: number, c: number): string {
-  return mostrar(valorDaCelula((li, ci) => p.celulas[li]?.[ci]?.texto ?? '', l, c));
-}
-
-/*
-  Refaz `coberta` a partir dos `span` gravados, e apara o que não cabe mais.
-
-  Antes isto reescrevia toda mesclagem como "daqui até o fim da linha", porque
-  era só isso que dava para mesclar. Agora o span diz quantas colunas a
-  mesclagem tem de verdade, e refazer é redesenhar o que ele diz — cortando no
-  fim da linha quando a linha encurta, senão o navegador desenha uma célula
-  estourando a tabela.
-*/
-export function refazerMesclagens(celulas: Celula[][]): Celula[][] {
-  return celulas.map(linha => {
-    const saida = linha.map(c => ({ ...c, coberta: false }));
-    for (let i = 0; i < saida.length; i++) {
-      saida[i].span = Math.max(1, Math.min(saida[i].span, saida.length - i));
-      for (let j = i + 1; j < i + saida[i].span; j++) {
-        saida[j].coberta = true;
-        saida[j].span = 1;
-      }
-      i += saida[i].span - 1;
-    }
-    return saida;
-  });
-}
-
-/*
-  Excluir e inserir coluna, com a mesclagem acompanhando.
-
-  Moram aqui, e não na tela, porque o caso difícil não se vê clicando: tirar
-  uma coluna de dentro de um título mesclado tem de encolher a mesclagem em
-  um, e não deixá-la com o tamanho antigo sobrando para fora da tabela. É
-  exatamente a ordem que o exercício pede — mesclar o título e depois tirar a
-  coluna vazia que ficou debaixo dele.
-*/
-const ajustarSpans = (linha: Celula[], c: number, delta: number) =>
-  linha.map((cel, i) => (
-    cel.span > 1 && i < c && c < i + cel.span ? { ...cel, span: cel.span + delta } : cel
-  ));
-
-export function excluirColunaDe(celulas: Celula[][], c: number): Celula[][] {
-  return refazerMesclagens(celulas.map(linha =>
-    ajustarSpans(linha, c, -1).filter((_, i) => i !== c)));
-}
-
-export function inserirColunaEm(celulas: Celula[][], c: number): Celula[][] {
-  return refazerMesclagens(celulas.map(linha => {
-    const nova = [...ajustarSpans(linha, c, 1)];
-    nova.splice(c, 0, vazia());
-    return nova;
-  }));
-}
-
 /* ── As metas ──────────────────────────────────────────────────────────────── */
 
 export interface MetaDePlanilha {
