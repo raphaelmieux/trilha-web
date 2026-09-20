@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  type Caderno, type Celula, escrever, mesclar, preencherAbaixo, planilhaAtiva,
+  type Caderno, type Celula, escrever, mesclar, ordenar,
+  preencherAbaixo, preencherADireita, planilhaAtiva,
 } from './planilha';
 import {
   ABAS, CONSELHEIROS, INSCRITOS, TOTAL_ARRECADADO, TOTAL_DE_DIARIAS,
@@ -25,6 +26,26 @@ import {
   PRIMEIRA_LINHA as PRIMEIRA_DE_UNIDADE, ULTIMA_LINHA as ULTIMA_DE_UNIDADE,
   COLUNA_DO_CONSELHEIRO, COLUNA_DO_ALMOCO,
 } from './unidadesEConselheiros';
+import {
+  METAS_DO_DESTAQUE, cadernoDoDestaque, DIARIAS_COMPLETAS,
+  COLUNA_DA_UNIDADE, COLUNA_DAS_DIARIAS,
+} from './destaqueDasInscricoes';
+import {
+  METAS_DO_ORCAMENTO, cadernoDoOrcamento, TIPO_QUE_RESPONDE,
+  PRIMEIRA_LINHA as PRIMEIRA_DE_ORCAMENTO, ULTIMA_LINHA as ULTIMA_DE_ORCAMENTO,
+  LINHA_DO_TOTAL, PRIMEIRA_COLUNA_DE_MES, COLUNA_DO_TOTAL,
+  TOTAL_POR_CATEGORIA, TOTAL_GERAL,
+} from './orcamentoDoClube';
+import {
+  METAS_DA_CONFERENCIA, cadernoDaConferencia, COLUNA_DO_VALOR,
+  COLUNA_DAS_DIARIAS as COLUNA_DAS_DIARIAS_CONF, LINHA_DO_TOTAL_DE_DIARIAS,
+} from './conferenciaDaTesouraria';
+import {
+  LINHA_DO_TEXTO_DISFARCADO, LINHA_DO_TOTAL_CONFERIR, GASTOS, valorEm,
+} from './cadernoDoClube';
+import { roteiroDaPlanilha } from './roteiroDaPlanilha';
+
+const GASTOS_DA_PRIMEIRA = GASTOS[0];
 import { mostrarNumero } from './formulas';
 
 /*
@@ -105,6 +126,78 @@ function resolverUnidades(cad: Caderno): Caderno {
 }
 
 LICOES.push({ nome: 'módulo 4 — decidir e procurar', metas: METAS_DAS_UNIDADES, inicial: cadernoDasUnidades, resolver: resolverUnidades });
+
+/* ── Módulo 5: destacar, congelar, ordenar e filtrar ──────────────────────── */
+
+function resolverDestaque(cad: Caderno): Caderno {
+  let p = abaDe(cad, ABA_1);
+  p = { ...p, congeladas: 2 };
+  p = ordenar(p, COLUNA_DA_UNIDADE, true);
+  p = { ...p, filtro: { coluna: COLUNA_DA_UNIDADE, valor: INSCRITOS[0].unidade } };
+  p = {
+    ...p,
+    regras: [{
+      id: 'r1',
+      /* A faixa para na última linha com dado — é a lição inteira desta
+         tarefa: a célula vazia vale zero, e zero é menor que três. */
+      faixa: { l1: PRIMEIRA_LINHA_DE_DADO, c1: COLUNA_DAS_DIARIAS, l2: ULTIMA_LINHA_DE_DADO, c2: COLUNA_DAS_DIARIAS },
+      quando: 'menorQue',
+      valor: String(DIARIAS_COMPLETAS),
+      estilo: 'amarelo',
+    }],
+  };
+  return comAba(cad, p);
+}
+
+LICOES.push({ nome: 'módulo 5 — ver o que importa', metas: METAS_DO_DESTAQUE, inicial: cadernoDoDestaque, resolver: resolverDestaque });
+
+/* ── Módulo 6: o orçamento e o gráfico ────────────────────────────────────── */
+
+function resolverOrcamento(cad: Caderno): Caderno {
+  let p = abaDe(cad, 'Orçamento');
+  const col = (c: number) => 'ABCDEFGH'[c];
+  p = escrever(p, PRIMEIRA_DE_ORCAMENTO, COLUNA_DO_TOTAL,
+    `=SOMA(${col(PRIMEIRA_COLUNA_DE_MES)}${PRIMEIRA_DE_ORCAMENTO + 1}:${col(COLUNA_DO_TOTAL - 1)}${PRIMEIRA_DE_ORCAMENTO + 1})`);
+  p = preencherAbaixo(p, { l: PRIMEIRA_DE_ORCAMENTO, c: COLUNA_DO_TOTAL }, ULTIMA_DE_ORCAMENTO);
+
+  p = escrever(p, LINHA_DO_TOTAL, PRIMEIRA_COLUNA_DE_MES,
+    `=SOMA(${col(PRIMEIRA_COLUNA_DE_MES)}${PRIMEIRA_DE_ORCAMENTO + 1}:${col(PRIMEIRA_COLUNA_DE_MES)}${ULTIMA_DE_ORCAMENTO + 1})`);
+  p = preencherADireita(p, { l: LINHA_DO_TOTAL, c: PRIMEIRA_COLUNA_DE_MES }, COLUNA_DO_TOTAL - 1);
+
+  p = escrever(p, LINHA_DO_TOTAL, COLUNA_DO_TOTAL,
+    `=SOMA(${col(COLUNA_DO_TOTAL)}${PRIMEIRA_DE_ORCAMENTO + 1}:${col(COLUNA_DO_TOTAL)}${ULTIMA_DE_ORCAMENTO + 1})`);
+
+  p = {
+    ...p,
+    grafico: {
+      tipo: TIPO_QUE_RESPONDE,
+      titulo: 'Para onde foi o dinheiro do acampamento',
+      eixoX: 'Categoria',
+      eixoY: 'Reais gastos',
+      faixa: { l1: PRIMEIRA_DE_ORCAMENTO, c1: 0, l2: ULTIMA_DE_ORCAMENTO, c2: COLUNA_DO_TOTAL },
+    },
+  };
+  return comAba(cad, p);
+}
+
+LICOES.push({ nome: 'módulo 6 — orçamento e gráfico', metas: METAS_DO_ORCAMENTO, inicial: cadernoDoOrcamento, resolver: resolverOrcamento });
+
+/* ── Módulo 7: a planilha defeituosa ──────────────────────────────────────── */
+
+const faixaDe = (col: string, a: number, b: number) => `${col}${a + 1}:${col}${b + 1}`;
+
+function resolverConferencia(cad: Caderno): Caderno {
+  let p = abaDe(cad, 'Conferir');
+  p = escrever(p, LINHA_DO_TOTAL_CONFERIR, COLUNA_DO_VALOR,
+    `=SOMA(${faixaDe('D', PRIMEIRA_LINHA_DE_DADO, ULTIMA_LINHA_DE_DADO)})`);
+  p = escrever(p, LINHA_DO_TEXTO_DISFARCADO, COLUNA_DO_VALOR,
+    String(INSCRITOS[LINHA_DO_TEXTO_DISFARCADO - PRIMEIRA_LINHA_DE_DADO].diarias * VALOR_DA_DIARIA));
+  p = escrever(p, LINHA_DO_TOTAL_DE_DIARIAS, COLUNA_DAS_DIARIAS_CONF,
+    `=SOMA(${faixaDe('C', PRIMEIRA_LINHA_DE_DADO, ULTIMA_LINHA_DE_DADO)})`);
+  return comAba(cad, p);
+}
+
+LICOES.push({ nome: 'módulo 7 — a planilha defeituosa', metas: METAS_DA_CONFERENCIA, inicial: cadernoDaConferencia, resolver: resolverConferencia });
 
 /* ── As duas travas de sempre ─────────────────────────────────────────────── */
 
@@ -335,5 +428,272 @@ describe('usaFuncao procura o nome seguido de parêntese', () => {
 
   it('e o número digitado não é função nenhuma', () => {
     expect(usaFuncao(String(TOTAL_DE_DIARIAS), 'SOMA')).toBe(false);
+  });
+});
+
+/* ── Módulo 5: a faixa da regra, e a ordenação que leva a linha ───────────── */
+
+describe('destacar sem pintar a planilha inteira', () => {
+  const ABA_5 = 'Inscrições';
+
+  /*
+    A célula vazia vale **zero** na comparação, e zero é menor que três. Uma
+    regra pintada sobre a coluna inteira acende a metade em branco dela — e
+    uma planilha toda colorida não destaca coisa nenhuma, que é o contrário do
+    que a formatação condicional faz.
+  */
+  it('a regra que passa do fim dos dados acende a coluna em branco, e reprova', () => {
+    const cad = resolverDestaque(cadernoDoDestaque());
+    expect(METAS_DO_DESTAQUE.find(m => m.id === 'condicional')!.feita(cad)).toBe(true);
+
+    const p = abaDe(cad, ABA_5);
+    const esticada = comAba(cad, {
+      ...p,
+      regras: p.regras.map(r => ({ ...r, faixa: { ...r.faixa, l2: p.celulas.length - 1 } })),
+    });
+    expect(METAS_DO_DESTAQUE.find(m => m.id === 'condicional')!.feita(esticada)).toBe(false);
+  });
+
+  /*
+    Uma planilha com as unidades ordenadas e os nomes parados continua com doze
+    linhas, doze nomes e doze unidades, todos plausíveis — e o cadastro inteiro
+    está trocado. É o estrago mais caro que uma tabela sofre, e não estoura.
+  */
+  it('ordenar só a coluna da chave reprova, mesmo com a coluna em ordem', () => {
+    /*
+      A mutação gira a coluna dos nomes uma linha, e deixa tudo o mais como a
+      ordenação certa deixou: a coluna Unidade continua em ordem, a marca de
+      ordenação continua lá, e a tabela continua com doze linhas plausíveis.
+      Só que cada nome está ao lado da unidade de outro — que é exatamente o
+      que acontece quando alguém seleciona uma coluna só antes de ordenar.
+    */
+    const pronta = resolverDestaque(cadernoDoDestaque());
+    const p = abaDe(pronta, ABA_5);
+    const nomes = INSCRITOS.map((_, n) => escritoEm(p, PRIMEIRA_LINHA_DE_DADO + n, 0));
+    const girada = comAba(pronta, comCelulas(p, (cel, l, c): Celula => (
+      l >= PRIMEIRA_LINHA_DE_DADO && l <= ULTIMA_LINHA_DE_DADO && c === 0
+        ? { ...cel, texto: nomes[(l - PRIMEIRA_LINHA_DE_DADO + 1) % nomes.length] }
+        : cel)));
+
+    const meta = METAS_DO_DESTAQUE.find(m => m.id === 'ordenar')!;
+    expect(meta.feita(pronta)).toBe(true);
+    /* A marca de ordenação e a coluna em ordem continuam lá: quem reprova é a
+       linha desfeita, e não a falta de ordenação. */
+    expect(abaDe(girada, ABA_5).ordenacao).toEqual(abaDe(pronta, ABA_5).ordenacao);
+    expect(meta.feita(girada)).toBe(false);
+  });
+
+  it('e um filtro que não esconde ninguém não mostra o que um filtro faz', () => {
+    const cad = resolverDestaque(cadernoDoDestaque());
+    const p = abaDe(cad, ABA_5);
+    const semEfeito = comAba(cad, { ...p, filtro: { coluna: COLUNA_DA_UNIDADE, valor: '' } });
+    expect(METAS_DO_DESTAQUE.find(m => m.id === 'filtrar')!.feita(semEfeito)).toBe(false);
+  });
+
+  it('congelar prende o título e o cabeçalho, e não uma linha só', () => {
+    const cad = resolverDestaque(cadernoDoDestaque());
+    const p = abaDe(cad, ABA_5);
+    expect(METAS_DO_DESTAQUE.find(m => m.id === 'congelar')!.feita(comAba(cad, { ...p, congeladas: 1 }))).toBe(false);
+  });
+});
+
+/* ── Módulo 6: o total que começa por igual e mesmo assim é um número parado ─ */
+
+describe('o orçamento sem nenhum total digitado', () => {
+  const ABA_6 = 'Orçamento';
+
+  /*
+    `=820+910+1180` começa por `=`, devolve o número certo, e é um número
+    parado com um sinal na frente. Só a conferência que mexe num gasto pega.
+  */
+  it('a soma com os números escritos dentro passa pelo valor e reprova na mudança', () => {
+    const cad = resolverOrcamento(cadernoDoOrcamento());
+    const p = abaDe(cad, ABA_6);
+    const chapada = comAba(cad, escrever(p, PRIMEIRA_DE_ORCAMENTO, COLUNA_DO_TOTAL,
+      `=${GASTOS_DA_PRIMEIRA.join('+')}`));
+    expect(METAS_DO_ORCAMENTO.find(m => m.id === 'porCategoria')!.feita(chapada)).toBe(true);
+    expect(METAS_DO_ORCAMENTO.find(m => m.id === 'seguem')!.feita(chapada)).toBe(false);
+  });
+
+  it('e o número digitado sem o igual reprova nas duas', () => {
+    const cad = resolverOrcamento(cadernoDoOrcamento());
+    const p = abaDe(cad, ABA_6);
+    const digitado = comAba(cad, escrever(p, PRIMEIRA_DE_ORCAMENTO, COLUNA_DO_TOTAL, String(TOTAL_POR_CATEGORIA[0])));
+    expect(METAS_DO_ORCAMENTO.find(m => m.id === 'porCategoria')!.feita(digitado)).toBe(false);
+    expect(METAS_DO_ORCAMENTO.find(m => m.id === 'seguem')!.feita(digitado)).toBe(false);
+  });
+
+  it('os dois caminhos até o total geral dão o mesmo número', () => {
+    const p = abaDe(resolverOrcamento(cadernoDoOrcamento()), ABA_6);
+    expect(mostradoEm(p, LINHA_DO_TOTAL, COLUNA_DO_TOTAL)).toBe(String(TOTAL_GERAL));
+    expect(TOTAL_POR_CATEGORIA.reduce((s, n) => s + n, 0)).toBe(TOTAL_GERAL);
+  });
+
+  /*
+    O tipo sai da pergunta, e a pergunta aqui é de composição — para onde vai o
+    dinheiro. Pizza responde isso; linha afirmaria que Alimentação virou
+    Transporte. Se a tarefa aceitasse qualquer tipo, ela mediria ter clicado em
+    Inserir.
+  */
+  it('o gráfico de linhas desenha sem erro e mesmo assim reprova', () => {
+    const cad = resolverOrcamento(cadernoDoOrcamento());
+    const p = abaDe(cad, ABA_6);
+    const linha = comAba(cad, { ...p, grafico: { ...p.grafico!, tipo: 'linha' } });
+    expect(METAS_DO_ORCAMENTO.find(m => m.id === 'grafico')!.feita(linha)).toBe(false);
+  });
+
+  it('e gráfico sem título ou sem eixo identificado não afirma nada', () => {
+    const cad = resolverOrcamento(cadernoDoOrcamento());
+    const p = abaDe(cad, ABA_6);
+    const grafico = METAS_DO_ORCAMENTO.find(m => m.id === 'grafico')!;
+    expect(grafico.feita(comAba(cad, { ...p, grafico: { ...p.grafico!, titulo: '  ' } }))).toBe(false);
+    expect(grafico.feita(comAba(cad, { ...p, grafico: { ...p.grafico!, eixoY: '' } }))).toBe(false);
+  });
+});
+
+/* ── Módulo 7: os três defeitos, e as três naturezas ──────────────────────── */
+
+describe('a planilha defeituosa tem três defeitos, e três pistas diferentes', () => {
+  const ABA_7 = 'Conferir';
+
+  it('a fórmula quebrada é a única que aparece na tela', () => {
+    const p = abaDe(cadernoDaConferencia(), ABA_7);
+    expect(mostradoEm(p, LINHA_DO_TOTAL_CONFERIR, COLUNA_DO_VALOR)).toBe('#REF!');
+  });
+
+  /*
+    O número guardado como texto não aparece: na célula ele é igual aos outros
+    onze. O que o denuncia são duas coisas independentes — o alinhamento e a
+    diferença entre CONT.NÚM e CONT.VALORES. Uma pista sozinha escaparia de
+    quem não repara em alinhamento.
+  */
+  it('o número guardado como texto some na tela, e aparece nas duas contagens', () => {
+    const p = abaDe(cadernoDaConferencia(), ABA_7);
+    const esperado = String(INSCRITOS[LINHA_DO_TEXTO_DISFARCADO - PRIMEIRA_LINHA_DE_DADO].diarias * VALOR_DA_DIARIA);
+    expect(mostradoEm(p, LINHA_DO_TEXTO_DISFARCADO, COLUNA_DO_VALOR)).toBe(esperado);
+    expect(valorEm(p, LINHA_DO_TEXTO_DISFARCADO, COLUNA_DO_VALOR).tipo).toBe('texto');
+
+    const faixa = `D${PRIMEIRA_LINHA_DE_DADO + 1}:D${ULTIMA_LINHA_DE_DADO + 1}`;
+    const comContagens = escrever(escrever(p, 20, 0, `=CONT.NÚM(${faixa})`), 20, 1, `=CONT.VALORES(${faixa})`);
+    expect(mostradoEm(comContagens, 20, 0)).toBe(String(INSCRITOS.length - 1));
+    expect(mostradoEm(comContagens, 20, 1)).toBe(String(INSCRITOS.length));
+  });
+
+  /*
+    Apagar a célula tira o apóstrofo junto, e a coluna fica com onze valores e
+    um buraco — o defeito "consertado" virando outro defeito. Por isso a
+    conferência pede as duas coisas: sem apóstrofo, **e** com o número lá.
+  */
+  it('apagar a célula não conserta o número guardado como texto', () => {
+    const cad = cadernoDaConferencia();
+    const apagada = comAba(cad, escrever(abaDe(cad, ABA_7), LINHA_DO_TEXTO_DISFARCADO, COLUNA_DO_VALOR, ''));
+    expect(METAS_DA_CONFERENCIA.find(m => m.id === 'texto')!.feita(apagada)).toBe(false);
+  });
+
+  /*
+    O total digitado não tem pista nenhuma: está certo hoje. Escrever o número
+    certo de novo não é conserto — é o mesmo defeito redigitado.
+  */
+  it('o total digitado está certo, e redigitá-lo não conserta nada', () => {
+    const cad = cadernoDaConferencia();
+    const p = abaDe(cad, ABA_7);
+    expect(mostradoEm(p, LINHA_DO_TOTAL_DE_DIARIAS, COLUNA_DAS_DIARIAS_CONF)).toBe(String(TOTAL_DE_DIARIAS));
+    const redigitado = comAba(cad, escrever(p, LINHA_DO_TOTAL_DE_DIARIAS, COLUNA_DAS_DIARIAS_CONF, String(TOTAL_DE_DIARIAS)));
+    expect(METAS_DA_CONFERENCIA.find(m => m.id === 'digitado')!.feita(redigitado)).toBe(false);
+  });
+
+  /*
+    `=33` começa por igual, devolve o número certo, e é o mesmo número parado
+    com um sinal na frente — a irmã do `=820+910+1180` do orçamento. É o único
+    caso que a simulação pega sozinha: conferir que a célula começa por `=`
+    aprova, e conferir que o valor está certo também.
+  */
+  it('e o número com um igual na frente também não conserta nada', () => {
+    const cad = cadernoDaConferencia();
+    const p = abaDe(cad, ABA_7);
+    const comIgual = comAba(cad, escrever(p, LINHA_DO_TOTAL_DE_DIARIAS, COLUNA_DAS_DIARIAS_CONF, `=${TOTAL_DE_DIARIAS}`));
+    expect(mostradoEm(abaDe(comIgual, ABA_7), LINHA_DO_TOTAL_DE_DIARIAS, COLUNA_DAS_DIARIAS_CONF)).toBe(String(TOTAL_DE_DIARIAS));
+    expect(METAS_DA_CONFERENCIA.find(m => m.id === 'digitado')!.feita(comIgual)).toBe(false);
+  });
+
+  it('e são exatamente três: nenhum defeito a mais escondido na aba', () => {
+    const p = abaDe(cadernoDaConferencia(), ABA_7);
+    const comErro: string[] = [];
+    const comoTexto: string[] = [];
+    p.celulas.forEach((linha, l) => linha.forEach((cel, c) => {
+      if (cel.texto.trim() === '') return;
+      if (valorEm(p, l, c).tipo === 'erro') comErro.push(`${l}:${c}`);
+      if (cel.texto.startsWith("'")) comoTexto.push(`${l}:${c}`);
+    }));
+    expect(comErro).toHaveLength(1);
+    expect(comoTexto).toHaveLength(1);
+  });
+});
+
+/* ── O roteiro da apresentação ────────────────────────────────────────────── */
+
+describe('o roteiro da apresentação', () => {
+  const PRONTAS = [
+    abaDe(resolverContas(cadernoDasContas()), 'Inscrições'),
+    abaDe(resolverCustos(cadernoDosCustos()), 'Custos'),
+    abaDe(resolverUnidades(cadernoDasUnidades()), 'Unidades'),
+    abaDe(resolverOrcamento(cadernoDoOrcamento()), 'Orçamento'),
+    abaDe(resolverConferencia(cadernoDaConferencia()), 'Conferir'),
+  ];
+
+  /*
+    A frase de último recurso existe porque a planilha aceita qualquer fórmula
+    que o desbravador escreva. Mas nenhuma fórmula **das lições** pode cair
+    nela: função nova ensinada sem frase nova sairia no roteiro como "aqui eu
+    uso a fórmula =PROCH(...)", que não explica nada — e é o roteiro que o
+    requisito 8 existe para preparar.
+  */
+  it('toda fórmula que as lições produzem tem frase própria', () => {
+    const semFrase: string[] = [];
+    PRONTAS.forEach(p => roteiroDaPlanilha(p).forEach(passo => {
+      if (passo.fala.includes('uso a fórmula')) semFrase.push(passo.formula);
+    }));
+    expect(semFrase, `sem frase própria: ${semFrase.join(', ')}`).toEqual([]);
+  });
+
+  /*
+    Doze frases idênticas não são um roteiro: são o que faz alguém parar de
+    ler. A coluna preenchida com a alça se apresenta de uma vez.
+  */
+  it('a coluna arrastada vira uma entrada, e não doze', () => {
+    const passos = roteiroDaPlanilha(PRONTAS[1]);
+    const daColuna = passos.filter(x => x.onde.startsWith('C'));
+    expect(daColuna).toHaveLength(1);
+    expect(daColuna[0].onde).toContain(':');
+    expect(daColuna[0].fala).toContain('desce até');
+  });
+
+  /*
+    Ele descreve, e não julga. Julgar a planilha de quem vai apresentá-la é a
+    forma mais rápida de a pessoa decorar a nossa opinião em vez de explicar o
+    trabalho dela. É a mesma trava do `roteiroDePython`.
+  */
+  it('e nenhuma frase julga a planilha', () => {
+    const julgamento = /\b(melhor|pior|errad|certo|deveria|poderia|ruim|bom|ideal|correto)/i;
+    PRONTAS.forEach(p => roteiroDaPlanilha(p).forEach(passo => {
+      expect(passo.fala, `${passo.formula} julga`).not.toMatch(julgamento);
+    }));
+  });
+
+  it('fala em primeira pessoa, porque é para falar em voz alta', () => {
+    PRONTAS.forEach(p => roteiroDaPlanilha(p).forEach(passo => {
+      expect(passo.fala, passo.formula).toMatch(/\beu\b/);
+    }));
+  });
+
+  it('e explica o cifrão só onde ele existe', () => {
+    const custos = roteiroDaPlanilha(PRONTAS[1])[0];
+    expect(custos.fala).toContain('cifrão');
+    const soma = roteiroDaPlanilha(PRONTAS[0]).find(x => x.formula.toUpperCase().startsWith('=SOMA'))!;
+    expect(soma.fala).not.toContain('cifrão');
+  });
+
+  it('a planilha sem fórmula nenhuma dá roteiro vazio, e não uma frase inventada', () => {
+    expect(roteiroDaPlanilha(abaDe(cadernoDoOrcamento(), 'Orçamento'))).toEqual([]);
   });
 });

@@ -658,3 +658,25 @@ export function preencherAbaixo(p: Planilha, origem: { l: number; c: number }, a
       : linha)),
   };
 }
+
+/**
+ * A mesma alça, arrastada para o lado.
+ *
+ * Existe porque a linha de totais do orçamento se preenche assim, e porque
+ * arrastar só para baixo ensinaria que a alça tem uma direção só. Aqui quem
+ * anda é a **coluna** da referência, e é por isso que o cifrão que importa
+ * muda de lado: descendo, trava-se a linha; indo para o lado, trava-se a
+ * coluna.
+ */
+export function preencherADireita(p: Planilha, origem: { l: number; c: number }, ate: number): Planilha {
+  const base = p.celulas[origem.l]?.[origem.c];
+  if (!base || ate <= origem.c) return p;
+  return {
+    ...p,
+    celulas: p.celulas.map((linha, i) => (i !== origem.l
+      ? linha
+      : linha.map((cel, j) => (j > origem.c && j <= ate
+        ? { ...base, texto: transporFormula(base.texto, 0, j - origem.c) }
+        : cel)))),
+  };
+}

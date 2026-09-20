@@ -5,7 +5,7 @@ import {
   inserirLinha, excluirLinha, inserirColuna, excluirColuna,
   mesclar, desmesclar, mesclagemApaga,
   historicoDe, registrar, desfazer, refazer, PASSOS_GUARDADOS,
-  linhaEscondida, estiloCondicional, ordenar, preencherAbaixo,
+  linhaEscondida, estiloCondicional, ordenar, preencherAbaixo, preencherADireita,
   valorDaGrade, planilhaAtiva, trocarAtiva, planilhaPorNome,
 } from './planilha';
 import { mostrar } from './formulas';
@@ -430,5 +430,34 @@ describe('a pasta de trabalho tem várias planilhas', () => {
   it('e a planilha se acha pelo nome', () => {
     expect(planilhaPorNome(cad, 'Inscrições')?.nome).toBe('Inscrições');
     expect(planilhaPorNome(cad, 'Planilha9')).toBeNull();
+  });
+});
+
+describe('a alça também anda para o lado', () => {
+  /*
+    Arrastar só para baixo ensinaria que a alça tem uma direção só, e é
+    arrastando para o lado que o outro cifrão passa a importar: descendo,
+    trava-se a linha; indo para o lado, trava-se a coluna.
+  */
+  it('a referência anda de coluna, e a travada fica', () => {
+    const base = comTabela([
+      ['', 'Março', 'Abril', 'Maio'],
+      ['Gasto', '10', '20', '30'],
+      ['Dobro', '=B2*2'],
+    ]);
+    const p = preencherADireita(base, { l: 2, c: 1 }, 3);
+    expect(p.celulas[2][2].texto).toBe('=C2*2');
+    expect(p.celulas[2][3].texto).toBe('=D2*2');
+    expect(mostrar(valorDaGrade(p, 2, 3))).toBe('60');
+  });
+
+  it('com a coluna travada, ela não anda', () => {
+    const base = comTabela([['5', '', '', ''], ['', '=$A$1*2']]);
+    expect(preencherADireita(base, { l: 1, c: 1 }, 3).celulas[1][3].texto).toBe('=$A$1*2');
+  });
+
+  it('e para a esquerda ou para lugar nenhum não muda nada', () => {
+    const base = comTabela([['1', '2']]);
+    expect(preencherADireita(base, { l: 0, c: 1 }, 0)).toBe(base);
   });
 });

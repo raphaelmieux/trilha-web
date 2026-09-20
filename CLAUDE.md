@@ -1808,6 +1808,59 @@ seria sobre um argumento que ninguém precisa escrever.
 dentro de `SOMASE` casaria, e a tarefa da soma ficaria verde com uma fórmula
 que soma condicionalmente — um número plausível a mais.
 
+**A tarefa de formatação condicional confere o que ficou pintado, e não a
+regra.** Há mais de uma regra certa — "menor que 3" e "igual a 2" acendem as
+mesmas três linhas —, e cobrar uma delas mediria ter adivinhado a nossa. E
+conferindo o resultado ela cobra de lambuja o detalhe que a lição existe para
+ensinar: a faixa da regra para na última linha com dado. Esticada até o fim da
+coluna, a metade em branco acende — célula vazia vale zero, e zero é menor que
+três —, e planilha toda colorida não destaca coisa nenhuma.
+
+**Ordenar sem levar a linha inteira não estoura, e não tem volta.** A tabela
+continua com doze linhas, doze nomes e doze unidades, todos plausíveis, e cada
+nome ao lado da unidade de outro. Por isso a tarefa não confere só que houve
+ordenação: confere que os pares continuam de pé.
+
+**O gráfico da CC-ES003 responde outra pergunta que o da AP044.** Lá é
+evolução — como a inscrição cresceu mês a mês —, e só a linha responde. Aqui é
+**composição**: para onde vai o dinheiro do acampamento, que é o que a pizza
+responde. Repetir a pergunta mediria de novo o que já foi medido; ligar
+Alimentação a Transporte com um traço afirma que uma virou a outra.
+
+**Total que começa por igual ainda pode ser um número parado.**
+`=820+910+1180` começa por `=`, devolve o número certo, e não acompanha nada;
+`=33` é a versão curta do mesmo. O requisito 6 pede que nenhum total seja
+digitado, e quem mede isso é **mexer num gasto dentro da conferência e olhar
+se o total andou** — a mesma conta simulada do módulo 2 e do módulo 7.
+
+**Os três defeitos do requisito 7 são de três naturezas, e é por isso que são
+estes três.** A fórmula quebrada **grita**: `#REF!` aparece na célula e é o
+único que se acha olhando a tela. O número guardado como texto **não grita**,
+e tem duas pistas independentes — encosta à esquerda, e a `CONT.NÚM` conta onze
+onde a `CONT.VALORES` conta doze; uma pista sozinha escaparia de quem não
+repara em alinhamento. O total digitado à mão **não tem pista nenhuma**: está
+certo hoje, e continua mostrando o número de hoje amanhã. É a família do
+"número guardado não responde por hoje", a mesma da ofensiva parada em dois
+dias.
+
+**E apagar não é consertar.** Apagar a célula do número-como-texto tira o
+apóstrofo junto e deixa a coluna com onze valores e um buraco — o defeito
+"consertado" virando outro defeito. A conferência pede as duas coisas: sem
+apóstrofo, **e** com o número lá.
+
+**O roteiro da apresentação lê a forma da fórmula, e não uma árvore.** O
+`roteiroDePython.ts` percorre o `ast` porque um programa tem forma livre; uma
+fórmula de planilha, nesta vereda, tem um punhado de formas, e são as que as
+lições ensinam. Descrever genericamente daria frases que ninguém diz em voz
+alta — "aplico a função SOMA ao argumento D3:D14". O preço é que função nova
+pede frase nova, e a trava cobra: toda fórmula que as sete lições produzem sai
+com frase própria, nunca com a de último recurso.
+
+E a coluna arrastada vira **uma** entrada, e não doze: doze frases idênticas
+não são um roteiro, são o que faz alguém parar de ler. Ele fala em primeira
+pessoa, porque é para falar, e **descreve sem julgar** — é a mesma trava do
+roteiro de Python, pelo mesmo motivo escrito lá.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2357,6 +2410,12 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/cadernoDoClube.test.ts` | total digitado valendo por soma, ou intervalo que deixa um inscrito de fora |
 | `src/labs/cadernoDoClube.test.ts` | valor da diária digitado dentro da fórmula, que erra calado no ano seguinte |
 | `src/labs/cadernoDoClube.test.ts` | tabela de procura ordenada, que apaga a armadilha do PROCV aproximado |
+| `src/labs/cadernoDoClube.test.ts` | regra condicional esticada até o fim da coluna, que acende a metade em branco |
+| `src/labs/cadernoDoClube.test.ts` | ordenação que deixa cada nome ao lado da unidade de outro |
+| `src/labs/cadernoDoClube.test.ts` | total escrito como `=820+910+1180` ou `=33`, que começa por igual e não acompanha |
+| `src/labs/cadernoDoClube.test.ts` | gráfico de tipo que não responde à pergunta, ou sem eixo identificado |
+| `src/labs/cadernoDoClube.test.ts` | número-como-texto "consertado" apagando a célula |
+| `src/labs/cadernoDoClube.test.ts` | fórmula das lições que sai no roteiro sem frase própria, ou coluna arrastada virando doze frases |
 | `src/labs/correioDoClube.test.ts` | Cco preenchido com a lista grande vazando pelo Para, ou assinatura configurada e nunca usada |
 | `src/labs/maquinaDoClube.test.ts` | "abrir com" que mudou o padrão junto, ou usuário novo criado administrador |
 | `src/labs/ConfiguracoesLab.test.tsx` | caminho de Configurações que não leva à tarefa, ou botão de otimizar com o nome errado para o disco |
