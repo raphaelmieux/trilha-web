@@ -1888,6 +1888,44 @@ laboratório não faz — gesto sem efeito é o que ensina a desconfiar do progr
 A setinha, além disso, só nasce nas colunas da tabela **declarada**: pô-la em
 toda coluna prometeria filtrar a coluna vazia da direita.
 
+**Um componente para as sete lições da CC-ES003.** Elas abrem a mesma pasta de
+trabalho e usam os mesmos comandos: o que muda é de que estado se parte e o que
+se cobra. Sete componentes seriam sete Excel. É o arranjo do
+`LaboratorioDeExplorador` sobre `explorer.tsx`, e a escolha do caderno sai de um
+`Record` sobre a união — com dois cadernos um ternário funcionava; com sete, o
+`else` vira "todo o resto" e a lição nova cai calada na aba do módulo 1. A
+oitava não compila até dizer de onde parte e o que cobra.
+
+E o mapa dos cadernos mora **fora do teste**, ao contrário do de Word: quem o
+lê é a tela, que monta a lição, **e** a trava, que confere que nenhuma meta
+abre verde. Escrito só no teste, a tela repetiria a escolha e as duas
+divergiriam no primeiro caderno novo.
+
+**A alça de preenchimento é arrasto, e não clique.** A primeira versão
+preenchia no clique e exigia a faixa já selecionada — o gesto ao contrário, que
+ninguém que conhece Excel descobriria. Hoje ela começa um arrasto, a faixa
+cresce debaixo do ponteiro, e soltar preenche para o lado que andou mais:
+arrastar na diagonal é um gesto que o Excel resolve de um jeito só, e adivinhar
+o outro faria a coluna aparecer preenchida onde ninguém pediu.
+
+**A AutoSoma para na primeira célula vazia subindo.** Somar tudo o que está
+acima pegaria o cabeçalho e o título, e daria erro ou um número maior. É a
+conta que o Excel faz, e escrever outra aqui ensinaria um botão que não existe.
+
+**`onPointerEnter` não se testa com `pointerenter`.** O React não escuta esse
+evento — ele não borbulha —, e implementa `onPointerEnter` a partir de
+`pointerover` na raiz. Uma trava que despachasse `pointerenter` veria a janela
+não reagir e acusaria o componente de um defeito que é do teste: foi assim que
+a trava de tela da CC-ES003 nasceu vermelha com o navegador verde, em cinco das
+sete lições. É irmã do `float` ignorado em item de flex e do `\t` colapsado — o
+jsdom mentindo em cima de uma diferença que o navegador não tem.
+
+**Os três laboratórios de planilha avisam juntos.** A lembrança do aviso de
+tela pequena é por programa imitado, e o da AP043 dizia `programa="planilha"`
+enquanto o da AP044 dizia `"excel"`: quem dispensava o aviso num era avisado de
+novo no outro. Com um terceiro laboratório o estrago passou a ser duplo, e
+aviso que volta é o que ensina a pessoa a não ler avisos.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2445,6 +2483,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/cadernoDoClube.test.ts` | fórmula das lições que sai no roteiro sem frase própria, ou coluna arrastada virando doze frases |
 | `src/labs/excel.test.tsx` | peça da grade que sumiu no recorte, ou que aparece sem o laboratório ter pedido |
 | `src/labs/excel.test.tsx` | grade que guarda a própria seleção, em vez de desenhar a que o chamador diz |
+| `src/components/LaboratorioDePlanilha.test.tsx` | lição da CC-ES003 impossível de vencer clicando |
+| `src/components/LaboratorioDePlanilha.test.tsx` | trocar de aba perdendo o que foi escrito, ou faixa que muda conforme o exercício |
 | `src/labs/correioDoClube.test.ts` | Cco preenchido com a lista grande vazando pelo Para, ou assinatura configurada e nunca usada |
 | `src/labs/maquinaDoClube.test.ts` | "abrir com" que mudou o padrão junto, ou usuário novo criado administrador |
 | `src/labs/ConfiguracoesLab.test.tsx` | caminho de Configurações que não leva à tarefa, ou botão de otimizar com o nome errado para o disco |

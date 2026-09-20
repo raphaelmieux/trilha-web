@@ -234,6 +234,80 @@ export const CSS_EXCEL = `
   color: #605E5C; cursor: pointer; border-radius: 2px;
 }
 .pl-cab-bt:hover { background: #E1DFDD; color: #217346; }
+
+/* ── As caixas de diálogo ──────────────────────────────────────────────────
+
+   Formatação condicional, gráfico e filtro abrem caixa, como no Excel. Elas
+   sobem no celular pela mesma razão do diálogo do Explorador: a cápsula de
+   tarefas mora no canto de baixo, e uma caixa centrada punha Cancelar e OK
+   debaixo dela — via-se o formulário inteiro e não se via como confirmar.
+
+   A regra que sobe vem DEPOIS da que centra: as duas têm a mesma
+   especificidade, e escrita antes ela não valeria nada, sem nada estourar. */
+.pl-veu-dialogo { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.35); }
+.pl-dialogo {
+  position: fixed; z-index: 71; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  background: #FFFFFF; color: #201F1E; border: 1px solid #C8C6C4; border-radius: 4px;
+  box-shadow: 0 12px 34px rgba(0,0,0,.3); width: min(420px, calc(100vw - 32px));
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif; font-size: 12.5px;
+}
+.pl-dialogo-titulo {
+  padding: 10px 14px; border-bottom: 1px solid #E1DFDD; font-weight: 600; font-size: 13px;
+}
+.pl-dialogo-corpo { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.pl-dialogo-pe {
+  padding: 10px 14px; border-top: 1px solid #E1DFDD;
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+.pl-campo { display: flex; flex-direction: column; gap: 4px; }
+.pl-campo > span { font-size: 11.5px; color: #605E5C; }
+.pl-campo input, .pl-campo select {
+  border: 1px solid #C8C6C4; border-radius: 2px; padding: 5px 7px;
+  font: inherit; background: #FFFFFF; color: #201F1E;
+}
+.pl-campo input:focus, .pl-campo select:focus { outline: 2px solid #217346; outline-offset: -1px; }
+.pl-dialogo-bt {
+  padding: 6px 16px; border: 1px solid #C8C6C4; border-radius: 2px;
+  background: #F3F2F1; color: #201F1E; font: inherit; cursor: pointer;
+}
+.pl-dialogo-bt:hover { background: #EDEBE9; }
+.pl-dialogo-bt-ok { background: #217346; border-color: #217346; color: #FFFFFF; }
+.pl-dialogo-bt-ok:hover { background: #1A5C38; }
+.pl-nota {
+  background: #FFF4CE; border: 1px solid #E8D26A; border-radius: 3px;
+  padding: 8px 10px; font-size: 11.5px; line-height: 1.45; color: #4A3B00;
+}
+
+/* A lista de valores do filtro, como a do Excel. */
+.pl-filtro-lista {
+  position: fixed; z-index: 71; background: #FFFFFF; border: 1px solid #C8C6C4;
+  border-radius: 3px; box-shadow: 0 8px 24px rgba(0,0,0,.26);
+  min-width: 190px; max-height: 260px; overflow: auto; padding: 4px;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+.pl-filtro-item {
+  display: block; width: 100%; text-align: left; padding: 6px 10px;
+  border: none; background: transparent; font-size: 12.5px; color: #201F1E;
+  border-radius: 2px; cursor: pointer;
+}
+.pl-filtro-item:hover { background: #EDEBE9; }
+.pl-filtro-item[aria-current="true"] { background: #E3EFE8; font-weight: 600; }
+
+/* O gráfico: ele mora sobre a grade, como no Excel, e pode ser arrastado
+   para fora do caminho não — arrastar gráfico não é o que a lição cobra, e um
+   gesto que existe sem ser cobrado é um caminho a mais para se perder. */
+.pl-grafico {
+  position: absolute; right: 16px; top: 16px; z-index: 6;
+  background: #FFFFFF; border: 1px solid #C8C6C4; border-radius: 3px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.18); padding: 10px 12px; width: 280px;
+}
+.pl-grafico-titulo { font-size: 12.5px; font-weight: 600; text-align: center; margin-bottom: 6px; }
+.pl-grafico-eixo { font-size: 10.5px; color: #605E5C; text-align: center; }
+.pl-grade-caixa { position: relative; }
+
+@media (max-width: 720px) {
+  .pl-dialogo { top: 12px; transform: translate(-50%, 0); }
+}
 `;
 
 
@@ -402,11 +476,16 @@ export interface PropsDaGradeDoExcel {
   aoArrastarBorda?: (tipo: 'coluna' | 'linha', indice: number, e: React.PointerEvent) => void;
   aoAjustarAoConteudo?: (tipo: 'coluna' | 'linha', indice: number) => void;
   /**
-   * A alça de preenchimento. Quem não a passa não a desenha — é a regra do
-   * `aoBuscar` do Explorador: a peça existe quando o laboratório tem o que
-   * fazer com ela.
+   * O começo do arrasto da alça de preenchimento. Quem não o passa não desenha
+   * a alça — é a regra do `aoBuscar` do Explorador: a peça existe quando o
+   * laboratório tem o que fazer com ela.
+   *
+   * Ela **começa** um arrasto, e não preenche: no Excel se arrasta a alça até
+   * onde a fórmula deve ir, e a faixa cresce debaixo do ponteiro. A primeira
+   * versão daqui preenchia no clique e exigia a faixa já selecionada, que é o
+   * gesto ao contrário — e ninguém que conhece Excel o descobriria.
    */
-  aoPreencher?: (ate: { l: number; c: number }) => void;
+  aoComecarPreenchimento?: (origem: { l: number; c: number }) => void;
   /** Quais células o estilo de tabela pinta. Só a AP043 usa. */
   naTabela?: (l: number, c: number) => boolean;
   /** A setinha do filtro no cabeçalho. Sem ela, o cabeçalho não tem botão. */
@@ -418,7 +497,7 @@ export function GradeDoExcel({
   aoTeclar, aoApontarCelula, aoEntrarNaCelula, aoApontarColuna, aoApontarLinha,
   aoMoverPonteiro, aoSoltarPonteiro, aoSairDaGrade,
   aoAbrirEdicao, aoEscrever, aoConfirmar, aoCancelar,
-  aoContexto, aoArrastarBorda, aoAjustarAoConteudo, aoPreencher, naTabela, aoAbrirFiltro,
+  aoContexto, aoArrastarBorda, aoAjustarAoConteudo, aoComecarPreenchimento, naTabela, aoAbrirFiltro,
 }: PropsDaGradeDoExcel) {
   return (
     <div
@@ -532,13 +611,16 @@ export function GradeDoExcel({
                         {mostrado}
                       </span>
                     )}
-                    {ancora && aoPreencher && rascunho === null && (
+                    {ancora && aoComecarPreenchimento && rascunho === null && (
                       <span
                         className="pl-alca-preencher"
-                        title="Arraste para preencher as células abaixo"
+                        title="Arraste para preencher as células abaixo ou ao lado"
                         aria-label="Alça de preenchimento"
-                        onPointerDown={e => { e.stopPropagation(); e.preventDefault(); }}
-                        onPointerUp={e => { e.stopPropagation(); aoPreencher({ l, c }); }} />
+                        onPointerDown={e => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          aoComecarPreenchimento({ l, c });
+                        }} />
                     )}
                   </td>
                 );

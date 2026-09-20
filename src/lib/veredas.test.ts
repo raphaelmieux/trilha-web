@@ -39,6 +39,7 @@ import { RELATORIO_INICIAL, METAS_DO_RELATORIO } from '../labs/relatorioDoAcampa
 import { RELATORIO_ANUAL_INICIAL, METAS_DO_RELATORIO_ANUAL } from '../labs/relatorioAnual';
 import { DIA_DO_DESBRAVADOR_INICIAL, METAS_DA_REVISAO } from '../labs/diaDoDesbravador';
 import { RELATORIO_DA_ENTREGA_INICIAL, ENTREGA_INICIAL, METAS_DA_ENTREGA } from '../labs/entregaDoRelatorio';
+import { CADERNOS_DA_CC_ES003 } from '../labs/cadernosDaCcEs003';
 
 /*
   Os laboratórios de Word partem de documentos diferentes, e a trava precisa
@@ -379,6 +380,35 @@ describe('os modelos dos laboratórios da vereda', () => {
   }
 
   /*
+    A planilha, pela mesma razão do editor de texto.
+
+    E aqui a trava tem o mesmo trabalho a mais: a planilha **parece certa** —
+    a de conferência mostra doze valores plausíveis e um total que fecha —,
+    então uma meta que abrisse verde passaria por planilha conferida, que é
+    exatamente a impressão que a lição existe para desfazer.
+  */
+  for (const vereda of veredasComConteudo()) {
+    for (const licao of licoesDaVereda(vereda)) {
+      if (licao.tipo !== 'planilha') continue;
+
+      const { inicial, metas } = CADERNOS_DA_CC_ES003[licao.caderno];
+
+      it(`${vereda.code} · ${licao.id} abre numa planilha sem nada resolvido`, () => {
+        const cad = inicial();
+        const verdes = metas
+          .filter(m => licao.verificacoes.includes(m.id) && m.feita(cad))
+          .map(m => m.id);
+        expect(verdes).toEqual([]);
+      });
+
+      it(`${vereda.code} · ${licao.id} cobra meta que existe`, () => {
+        const conhecidas = metas.map(m => m.id);
+        expect(licao.verificacoes.filter(id => !conhecidas.includes(id))).toEqual([]);
+      });
+    }
+  }
+
+  /*
     Falha plantada e verificação são as duas metades da mesma coisa.
 
     Uma lição que cobra `classificouAsFalhas` e não escreve falha nenhuma dá uma
@@ -449,6 +479,11 @@ describe('os modelos dos laboratórios da vereda', () => {
            dela — separá-los daria duas listas para a mesma tarefa. */
         case 'word': return Object.fromEntries(
           DOCUMENTOS_DE_WORD[l.documento].metas.map(m => [m.id, m.passos]));
+        /* Pela mesma razão do de Word: cada meta da planilha carrega os
+           próprios passos, porque quem os escreve é quem escreve o enunciado
+           dela. O mapa dos cadernos mora fora do teste — a tela também o lê. */
+        case 'planilha': return Object.fromEntries(
+          CADERNOS_DA_CC_ES003[l.caderno].metas.map(m => [m.id, m.passos]));
         case 'laboratorio': return passosDe(l.linguagem);
         /* Teoria e redação não têm verificação com passo a passo. */
         case 'teoria': case 'redacao': return null;
