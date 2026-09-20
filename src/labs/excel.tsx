@@ -1,7 +1,8 @@
 import { ArrowDownAZ, ArrowUpZA, Filter, X } from 'lucide-react';
 import {
   type Direcao, type Faixa, type Planilha,
-  alinhamentoDe, estiloCondicional, linhaEscondida, naFaixa, nomeDaColuna, valorDe,
+  alinhamentoDe, estiloCondicional, linhaEscondida, mostrar, naFaixa, nomeDaColuna,
+  valorCalculado,
 } from './planilha';
 
 /*
@@ -567,8 +568,11 @@ export function GradeDoExcel({
                 if (cel.coberta) return null;
                 const ancora = ativa.l === l && ativa.c === c;
                 const dentro = naFaixa(faixa, l, c);
-                const mostrado = valorDe(p, l, c);
-                const h = alinhamentoDe(cel, mostrado);
+                /* O valor primeiro, e o texto a partir dele: o alinhamento
+                   pergunta o **tipo**, e imprimir joga o tipo fora. */
+                const valor = valorCalculado(p, l, c);
+                const mostrado = mostrar(valor);
+                const h = alinhamentoDe(cel, valor);
                 const cond = estiloCondicional(p, l, c);
                 return (
                   <td
