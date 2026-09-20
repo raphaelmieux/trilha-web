@@ -1861,6 +1861,33 @@ não são um roteiro, são o que faz alguém parar de ler. Ele fala em primeira
 pessoa, porque é para falar, e **descreve sem julgar** — é a mesma trava do
 roteiro de Python, pelo mesmo motivo escrito lá.
 
+**A grade do Excel saiu do laboratório que era dono dela.** Ela morava dentro
+de `PlanilhaLab.tsx` — cabeçalhos com letra e número, alças de redimensionar,
+seleção de faixa por arrasto, edição na célula —, tudo privado à AP043. A
+CC-ES003 precisa da mesma grade, e copiá-la é como a plataforma já teve dois
+"Word". `GradeDoExcel` é ela, extraída **antes** de a cópia existir: a mesma
+decisão de `word.tsx`, de `explorer.tsx` e do próprio `excel.tsx`.
+
+O que ficou em `excel.tsx` é do **programa** — como uma célula se desenha, onde
+ficam as alças, o que a faixa selecionada mostra. O que ficou em cada
+laboratório é do **exercício**. E ela não guarda estado nenhum: uma grade com
+seleção própria obrigaria os dois lados a concordar sobre a mesma célula ativa,
+que é a forma mais rápida de mostrarem coisas diferentes.
+
+**Formatação condicional, filtro e congelamento saem do modelo.** A planilha
+guarda as regras, o filtro e quantas linhas estão congeladas, então a mesma
+grade desenha as duas telas — e a da AP043 simplesmente não tem nenhuma das
+três. Sem isso, cada laboratório teria de dizer à grade como pintar, e dois
+laboratórios pintariam diferente, que é a razão de a grade existir.
+
+**E as peças novas aparecem pela presença do setter.** É a regra do `aoBuscar`
+do Explorador: a alça de preenchimento só existe quando o laboratório passa
+`aoPreencher`, e a setinha do filtro quando ele passa `aoAbrirFiltro`. A AP043
+não passa nenhum dos dois, e desenhá-los lá prometeria gestos que aquele
+laboratório não faz — gesto sem efeito é o que ensina a desconfiar do programa.
+A setinha, além disso, só nasce nas colunas da tabela **declarada**: pô-la em
+toda coluna prometeria filtrar a coluna vazia da direita.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2416,6 +2443,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/cadernoDoClube.test.ts` | gráfico de tipo que não responde à pergunta, ou sem eixo identificado |
 | `src/labs/cadernoDoClube.test.ts` | número-como-texto "consertado" apagando a célula |
 | `src/labs/cadernoDoClube.test.ts` | fórmula das lições que sai no roteiro sem frase própria, ou coluna arrastada virando doze frases |
+| `src/labs/excel.test.tsx` | peça da grade que sumiu no recorte, ou que aparece sem o laboratório ter pedido |
+| `src/labs/excel.test.tsx` | grade que guarda a própria seleção, em vez de desenhar a que o chamador diz |
 | `src/labs/correioDoClube.test.ts` | Cco preenchido com a lista grande vazando pelo Para, ou assinatura configurada e nunca usada |
 | `src/labs/maquinaDoClube.test.ts` | "abrir com" que mudou o padrão junto, ou usuário novo criado administrador |
 | `src/labs/ConfiguracoesLab.test.tsx` | caminho de Configurações que não leva à tarefa, ou botão de otimizar com o nome errado para o disco |

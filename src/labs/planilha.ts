@@ -4,6 +4,7 @@ import {
 } from './formulas';
 
 export type { Formato } from './formulas';
+export { nomeDaColuna, mostrar, ehFormula } from './formulas';
 
 /*
  * A planilha: o modelo e o que se faz com ele, sem tela nenhuma.
