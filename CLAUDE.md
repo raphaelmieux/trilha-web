@@ -1653,6 +1653,55 @@ o desbravador abriria a lição certa e encontraria o documento errado. Hoje é 
 É a mesma decisão do `switch` exaustivo das travas da vereda, do outro lado da
 mesma ponte.
 
+**A planilha passou a calcular, e é um motor só.** Ela não calculava: `valorDe`
+entendia exatamente `=SOMA(A1:B2)` e `=MÉDIA(A1:B2)` e devolvia `#NOME?` para
+todo o resto, e o laboratório da AP044 confere a fórmula do total por **prefixo
+de texto**. Bastava enquanto o que se cobrava era ter escrito a fórmula.
+
+A CC-ES003 cobra outra coisa. O requisito 7 manda achar, numa planilha
+defeituosa, um **número armazenado como texto** — e isso só significa alguma
+coisa se a `SOMA` de fato pular a célula e mostrar um total plausível e errado.
+O 4.3 manda mostrar *quando* a referência absoluta é necessária, o que só se
+entende arrastando a fórmula e vendo as relativas andarem enquanto as travadas
+ficam. Nenhuma das duas se mede comparando texto.
+
+`formulas.ts` é o motor, e `valorDe` passou a chamar dele. Dois avaliadores na
+mesma base seriam os dois "Word" outra vez, com a divergência aparecendo como
+número plausível — a pior forma de aparecer.
+
+**O apóstrofo é o requisito 7 inteiro.** `'1620` é o gesto do Excel para dizer
+"isto é texto"; ele aparece na barra de fórmulas e **não** aparece na célula.
+Sem essa distinção, "número armazenado como texto" seria um enunciado sem nada
+por trás: a `SOMA` somaria tudo e o defeito que a lição manda achar não
+existiria. O que denuncia são duas coisas independentes — o alinhamento, que já
+estava escrito em `alinhamentoDe`, e a `CONT.NÚM`, que conta um a menos do que
+a `CONT.VALORES`. É forma **e** cor outra vez.
+
+**E texto numérico entra na conta e não entra na função.** `=D4+0` devolve 1620
+e `=SOMA(D2:D13)` pula a célula. A assimetria é do Excel e não nossa, e é ela
+que esconde o defeito: quem confere uma célula por vez não vê nada de errado.
+A regra exata é "texto vindo de **faixa** se ignora; texto escrito **direto** no
+argumento se converte", e as duas metades são conferidas.
+
+**Três coisas do motor erram calado se escritas do jeito óbvio.** O menos unário
+liga mais forte que a potência — `=-2^2` é 4 no Excel, e não −4: copiar a
+matemática da escola faria a plataforma discordar do programa que ela imita. A
+comparação de texto sai por `localeCompare` em pt-BR e nunca por `<` entre
+strings, porque `á` vale 225 em UTF-16 e cairia depois de `z` — numa coluna de
+unidades isso põe Águia atrás de Tucano, e quem paga é o PROCV aproximado, que
+lê a coluna como ordenada e para na linha errada. E `PROCV` sem o quarto
+argumento procura **aproximado**, que é o padrão do Excel: numa tabela fora de
+ordem — que é toda tabela digitada à mão — ele devolve a linha errada com toda
+a confiança, e acerta em algumas e erra em outras, que é pior do que errar
+sempre.
+
+**Referência circular não devolve zero.** O Excel recusa a fórmula numa caixa de
+diálogo e deixa zero na célula, com um aviso na barra de status que ninguém lê.
+Zero aqui seria o número plausível e errado que esta plataforma existe para não
+mostrar, e quem digita `=A1` em A1 é justamente quem não faz ideia do que
+aconteceu. A célula diz `Ref. circular` — e a guarda em si não é opcional: sem
+ela a recursão trava a aba e leva junto o trabalho da lição inteira.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2188,6 +2237,11 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/ApresentacaoLab.test.tsx` | operação de slide que age no slide errado, ou PDF velho valendo por novo |
 | `src/labs/planilhaDoAcampamento.test.ts` | planilha pequena demais para o filtro fazer falta, ou SUBTOTAL escrito sem filtro nenhum |
 | `src/labs/PlanilhaAvancadaLab.test.tsx` | os dois laboratórios de planilha mostrando janelas de Excel diferentes |
+| `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
+| `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
+| `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |
+| `src/labs/formulas.test.ts` | referência circular devolvendo zero, ou travando a aba |
+| `src/labs/metasDaAp043.test.ts` | segundo avaliador de fórmula escrito fora de `formulas.ts` |
 | `src/labs/correioDoClube.test.ts` | Cco preenchido com a lista grande vazando pelo Para, ou assinatura configurada e nunca usada |
 | `src/labs/maquinaDoClube.test.ts` | "abrir com" que mudou o padrão junto, ou usuário novo criado administrador |
 | `src/labs/ConfiguracoesLab.test.tsx` | caminho de Configurações que não leva à tarefa, ou botão de otimizar com o nome errado para o disco |

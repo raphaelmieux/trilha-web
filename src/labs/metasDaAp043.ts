@@ -17,6 +17,8 @@
  * desenho continua no componente.
  */
 
+import { ehNumero, mostrar, nomeDaColuna, valorDaCelula } from './formulas';
+
 /* ── O documento ───────────────────────────────────────────────────────────── */
 
 export type Quebra = 'linha' | 'quadrada' | 'atras';
@@ -161,11 +163,14 @@ export const vazia = (texto = ''): Celula => ({
   texto, h: 'padrao', v: 'abaixo', span: 1, coberta: false, negrito: false,
 });
 
-/** É número o que a planilha consegue somar — e é ele que vai para a direita. */
-export const ehNumero = (texto: string) => {
-  const t = texto.trim();
-  return t !== '' && !Number.isNaN(Number(t.replace(',', '.')));
-};
+/*
+  Reexportado do motor, e não escrito de novo aqui: "é número" precisa querer
+  dizer a mesma coisa para quem alinha a célula e para quem a soma. Duas
+  definições divergiriam no primeiro ajuste, e aí um valor iria para a direita
+  sem entrar na conta — que é exatamente o sintoma que o requisito 7 da
+  CC-ES003 manda o desbravador diagnosticar.
+*/
+export { ehNumero };
 
 /** O alinhamento que a célula de fato usa, depois de aplicado o padrão. */
 export const alinhamentoDe = (cel: Celula, mostrado: string): Exclude<AlinhaH, 'padrao'> =>
@@ -238,7 +243,7 @@ export const alturaDaTabela = (p: Planilha): number => {
 };
 
 /** A1, B3 — o nome que a caixa de nome mostra e que a fórmula usa. */
-export const nomeDaCelula = (l: number, c: number) => `${String.fromCharCode(65 + c)}${l + 1}`;
+export const nomeDaCelula = (l: number, c: number) => `${nomeDaColuna(c)}${l + 1}`;
 
 /*
   Uma faixa de células: da âncora, onde o clique começou, até onde ele parou.
@@ -277,37 +282,15 @@ export const nomeDaFaixa = (f: Faixa) => {
  * Fórmula é o coração do requisito, e por isso ela é calculada de verdade em
  * cima dos valores da grade — e não guardada como número. É essa diferença que
  * a tarefa da soma cobra: mudar um inscrito muda o total sozinho.
+ *
+ * Quem calcula é `formulas.ts`, e não este arquivo. Ele entendia `=SOMA` e
+ * `=MÉDIA` de uma faixa retangular e devolvia `#NOME?` para todo o resto, o
+ * que bastava enquanto a AP043 era a única planilha da plataforma. Dois
+ * avaliadores de fórmula na mesma base seriam os dois "Word" outra vez: a
+ * mesma fórmula daria dois resultados em duas lições.
  */
 export function valorDe(p: Planilha, l: number, c: number): string {
-  const bruto = p.celulas[l]?.[c]?.texto ?? '';
-  if (!bruto.startsWith('=')) return bruto;
-
-  const m = /^=(SOMA|M[ÉE]DIA)\(([A-Z])(\d+):([A-Z])(\d+)\)$/i.exec(bruto.trim());
-  if (!m) return '#NOME?';
-
-  const [, funcao, colA, linA, colB, linB] = m;
-  const c1 = colA.toUpperCase().charCodeAt(0) - 65;
-  const c2 = colB.toUpperCase().charCodeAt(0) - 65;
-  const l1 = Number(linA) - 1;
-  const l2 = Number(linB) - 1;
-
-  const numeros: number[] = [];
-  for (let li = Math.min(l1, l2); li <= Math.max(l1, l2); li++) {
-    for (let ci = Math.min(c1, c2); ci <= Math.max(c1, c2); ci++) {
-      const t = p.celulas[li]?.[ci]?.texto ?? '';
-      /* Célula com texto não entra na conta, como na planilha de verdade: ela
-         é ignorada, e não vira zero. Virar zero puxaria a média para baixo sem
-         ninguém entender por quê. */
-      if (t === '' || t.startsWith('=')) continue;
-      const n = Number(t.replace(',', '.'));
-      if (!Number.isNaN(n)) numeros.push(n);
-    }
-  }
-  if (numeros.length === 0) return '0';
-
-  const soma = numeros.reduce((s, n) => s + n, 0);
-  const r = /^m/i.test(funcao) ? soma / numeros.length : soma;
-  return Number.isInteger(r) ? String(r) : r.toFixed(2).replace('.', ',');
+  return mostrar(valorDaCelula((li, ci) => p.celulas[li]?.[ci]?.texto ?? '', l, c));
 }
 
 /*

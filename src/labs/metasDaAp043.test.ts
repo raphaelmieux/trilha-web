@@ -220,6 +220,30 @@ describe('a planilha calcula de verdade', () => {
   it('função desconhecida vira erro à vista, e não zero', () => {
     expect(valorDe(com('=SOMATORIO(B3:B5)', 5, 1), 5, 1)).toBe('#NOME?');
   });
+
+  /*
+    A conta é a de `formulas.ts`, e não uma segunda escrita aqui dentro.
+
+    Este arquivo teve o próprio avaliador: ele entendia `=SOMA` e `=MÉDIA` de
+    uma faixa retangular e devolvia `#NOME?` para todo o resto. Dois
+    avaliadores de fórmula na mesma base seriam os dois "Word" outra vez — a
+    mesma fórmula com dois resultados em duas lições —, e a divergência
+    apareceria como número plausível, que é a pior forma de aparecer.
+
+    Estas três só passam por quem delega: multiplicação, condição e o número
+    guardado como texto não existiam no avaliador antigo.
+  */
+  it('a conta vem do motor de fórmulas, e não de um segundo avaliador daqui', () => {
+    expect(valorDe(com('=B3*C3', 5, 1), 5, 1)).toBe('36');
+    expect(valorDe(com('=SE(B3>10;"cheia";"cabe mais")', 5, 1), 5, 1)).toBe('cheia');
+
+    const comTexto = com("'40", 2, 1);
+    expect(valorDe(comTexto, 2, 1)).toBe('40');
+    expect(valorDe({
+      ...comTexto,
+      celulas: comTexto.celulas.map((l, i) => l.map((c, j) => (i === 5 && j === 1 ? { ...c, texto: '=SOMA(B3:B5)' } : c))),
+    }, 5, 1)).toBe('20');
+  });
 });
 
 
