@@ -131,13 +131,13 @@ describe('as peças novas aparecem pela presença do setter', () => {
     laboratório não faz — gesto sem efeito é o que ensina a desconfiar do
     programa.
   */
-  it('sem aoPreencher, não há alça de preenchimento', () => {
+  it('sem aoComecarPreenchimento, não há alça de preenchimento', () => {
     const container = montar(<Grade planilha={planilhaDeTeste(CLUBE)} />);
     expect(container.querySelector('.pl-alca-preencher')).toBeNull();
   });
 
-  it('com aoPreencher, ela aparece na célula ativa', () => {
-    const container = montar(<Grade planilha={planilhaDeTeste(CLUBE)} aoPreencher={vi.fn()} />);
+  it('com aoComecarPreenchimento, ela aparece na célula ativa', () => {
+    const container = montar(<Grade planilha={planilhaDeTeste(CLUBE)} aoComecarPreenchimento={vi.fn()} />);
     expect(container.querySelector('.pl-alca-preencher')).not.toBeNull();
     /* E numa célula só: a alça é da ativa. */
     expect(container.querySelectorAll('.pl-alca-preencher')).toHaveLength(1);

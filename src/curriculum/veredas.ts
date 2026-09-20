@@ -347,6 +347,39 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      A planilha, e por que ela é mais um tipo.
+
+      Vale a conta já escrita em `ambiente`, em `terminal`, em `explorador` e
+      em `word`: não há `modelo` string nem linguagem. O que se confere é a
+      **pasta de trabalho** depois dos gestos — que fórmula foi escrita em que
+      célula, o que a regra de formatação condicional acendeu, se a linha
+      inteira viajou junto na ordenação, se o total se refaz quando um dado
+      muda. Enfiá-la em `laboratorio` obrigaria a inventar um `modelo: ''` e
+      uma linguagem falsa, e a trava dos modelos passaria a conferir uma string
+      vazia com o validador de HTML — verde sem ter olhado nada.
+
+      Para o progresso conta como lição de fazer: grava `vereda_laboratorio`.
+    */
+    id: string;
+    tipo: 'planilha';
+    titulo: string;
+    resumo: string;
+    /**
+     * De que estado da pasta de trabalho a lição parte, e com qual lista de
+     * metas.
+     *
+     * O tipo sozinho não basta, pela mesma razão do `documento` da CC-ES002:
+     * as sete lições abrem a mesma pasta e partem de estados diferentes dela —
+     * o módulo 1 recebe a aba de inscrições bagunçada e o módulo 2 recebe a
+     * mesma aba já arrumada. Sem este campo, `tipo: 'planilha'` implicaria
+     * **uma** planilha, e a segunda lição abriria a do primeiro.
+     */
+    caderno: import('../labs/cadernosDaCcEs003').CadernoDaLicao;
+    /** Os ids das metas, na lista daquele caderno. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não

@@ -471,19 +471,32 @@ export function desmesclar(p: Planilha, f: Faixa): Planilha {
   qualquer: uma das tarefas manda mesclar e desmesclar *para ver o que a
   mesclagem faz*, e mesclar apaga conteúdo. Sem desfazer, experimentar custa.
 */
-export interface Historico {
-  passado: Planilha[];
-  presente: Planilha;
-  futuro: Planilha[];
+/*
+  O histórico é genérico sobre o que ele guarda, e o padrão é a planilha.
+
+  A AP043 desfaz uma **planilha**; a CC-ES003 desfaz uma **pasta de trabalho**,
+  porque nela um comando pode trocar de aba no caminho — ordenar em Inscrições
+  e desfazer estando em Custos precisa devolver a aba certa. Escrever um
+  segundo histórico para isso seria a mesma conta em dois lugares, e o dia em
+  que um deles ganhasse um passo a mais os dois Excel se comportariam
+  diferente no Ctrl+Z.
+
+  O parâmetro tem `Planilha` por padrão justamente para que nada do lado da
+  AP043 precise mudar.
+*/
+export interface Historico<T = Planilha> {
+  passado: T[];
+  presente: T;
+  futuro: T[];
 }
 
 /** Quantos passos o histórico guarda. Fundo infinito guardaria a sessão toda. */
 export const PASSOS_GUARDADOS = 40;
 
-export const historicoDe = (p: Planilha): Historico =>
+export const historicoDe = <T,>(p: T): Historico<T> =>
   ({ passado: [], presente: p, futuro: [] });
 
-export function registrar(h: Historico, novo: Planilha): Historico {
+export function registrar<T>(h: Historico<T>, novo: T): Historico<T> {
   return {
     passado: [...h.passado, h.presente].slice(-PASSOS_GUARDADOS),
     presente: novo,
@@ -493,7 +506,7 @@ export function registrar(h: Historico, novo: Planilha): Historico {
   };
 }
 
-export function desfazer(h: Historico): Historico {
+export function desfazer<T>(h: Historico<T>): Historico<T> {
   if (h.passado.length === 0) return h;
   return {
     passado: h.passado.slice(0, -1),
@@ -502,7 +515,7 @@ export function desfazer(h: Historico): Historico {
   };
 }
 
-export function refazer(h: Historico): Historico {
+export function refazer<T>(h: Historico<T>): Historico<T> {
   if (h.futuro.length === 0) return h;
   return {
     passado: [...h.passado, h.presente],

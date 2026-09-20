@@ -620,7 +620,12 @@ export default function PlanilhaLab({
       trilha={specialtyCode}
       voltarPara={`/especialidade/${specialtyCode}`}
       titulo={lessonTitle}
-      programa="planilha"
+      /* "excel", e não "planilha": a lembrança do aviso de tela pequena é por
+         programa imitado, e os três laboratórios de planilha imitam o mesmo.
+         Com duas chaves, quem dispensava o aviso aqui era avisado de novo na
+         AP044 e na CC-ES003 — e aviso que volta é o que ensina a pessoa a não
+         ler avisos. */
+      programa="excel"
       tarefas={tarefas}
       aviso={aviso}
       acoes={acoes}
