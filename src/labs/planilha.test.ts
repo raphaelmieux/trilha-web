@@ -5,7 +5,10 @@ import {
   inserirLinha, excluirLinha, inserirColuna, excluirColuna,
   mesclar, desmesclar, mesclagemApaga,
   historicoDe, registrar, desfazer, refazer, PASSOS_GUARDADOS,
+  linhaEscondida, estiloCondicional, ordenar, preencherAbaixo,
+  valorDaGrade, planilhaAtiva, trocarAtiva, planilhaPorNome,
 } from './planilha';
+import { mostrar } from './formulas';
 
 /*
   O teclado e a área de transferência da planilha.
@@ -175,5 +178,257 @@ describe('desfazer e refazer', () => {
       h = registrar(h, escrever(h.presente, 6, 0, String(i)));
     }
     expect(h.passado).toHaveLength(PASSOS_GUARDADOS);
+  });
+});
+
+/*
+  O que a CC-ES003 acrescentou ao modelo: filtro, formatação condicional,
+  ordenação e a alça de preenchimento.
+
+  As quatro erram calado se escritas do jeito óbvio, e as quatro são o assunto
+  de uma lição inteira — é por isso que elas são funções puras e não um `if`
+  dentro de um `onClick`.
+*/
+
+const comTabela = (linhas: string[][], tabela = { l1: 0, c1: 0, l2: linhas.length - 1, c2: 3 }): Planilha => ({
+  ...p0,
+  celulas: p0.celulas.map((linha, l) => linha.map((_, j) => vazia(linhas[l]?.[j] ?? ''))),
+  tabela,
+});
+
+const UNIDADES = [
+  ['Unidade', 'Inscritos', 'Diárias', 'Total'],
+  ['Tucano', '11', '3', '=B2*C2*45'],
+  ['Falcão', '12', '3', '=B3*C3*45'],
+  ['Águia', '9', '3', '=B4*C4*45'],
+];
+
+describe('o filtro esconde linha, e nunca apaga nenhuma', () => {
+  const p = { ...comTabela(UNIDADES), filtro: { coluna: 0, valor: 'Falcão' } };
+
+  it('esconde o que não casa e deixa o que casa', () => {
+    expect(linhaEscondida(p, 1)).toBe(true);
+    expect(linhaEscondida(p, 2)).toBe(false);
+    expect(linhaEscondida(p, 3)).toBe(true);
+  });
+
+  /*
+    O cabeçalho nunca some. Sem ele não haveria onde clicar para tirar o
+    filtro, e a tabela ficaria escondida para sempre — o desbravador veria a
+    planilha vazia e concluiria que apagou tudo.
+  */
+  it('mas o cabeçalho fica, senão não há como desfazer o filtro', () => {
+    expect(linhaEscondida(p, 0)).toBe(false);
+  });
+
+  it('e a linha escondida continua na conta, que é a lição inteira', () => {
+    expect(mostrar(valorDaGrade(p, 1, 3))).toBe('1485');
+    expect(valorDaGrade(p, 2, 3)).toEqual({ tipo: 'numero', n: 1620 });
+  });
+
+  it('fora da tabela e sem filtro, nada se esconde', () => {
+    expect(linhaEscondida({ ...p, filtro: { coluna: 0, valor: '' } }, 1)).toBe(false);
+    expect(linhaEscondida({ ...p, tabela: null }, 1)).toBe(false);
+    expect(linhaEscondida(p, 9)).toBe(false);
+  });
+});
+
+describe('a formatação condicional pinta o que a regra diz', () => {
+  const comRegra = (quando: 'maiorQue' | 'menorQue' | 'igualA' | 'contemTexto', valor: string, estilo = 'vermelho' as const) => ({
+    ...comTabela(UNIDADES),
+    regras: [{ id: 'r1', faixa: { l1: 1, c1: 1, l2: 3, c2: 1 }, quando, valor, estilo }],
+  });
+
+  it('pinta pelo valor, e só dentro da faixa da regra', () => {
+    const p = comRegra('maiorQue', '10');
+    expect(estiloCondicional(p, 1, 1)).toBe('vermelho');
+    expect(estiloCondicional(p, 3, 1)).toBeNull();
+    expect(estiloCondicional(p, 1, 3)).toBeNull();
+  });
+
+  it('e lê o resultado da fórmula, e não o texto dela', () => {
+    const p = {
+      ...comTabela(UNIDADES),
+      regras: [{ id: 'r1', faixa: { l1: 1, c1: 3, l2: 3, c2: 3 }, quando: 'maiorQue' as const, valor: '1500', estilo: 'vermelho' as const }],
+    };
+    /* Tucano 1485, Falcão 1620, Águia 1215 — e a regra é "maior que 1500".
+       Quem lesse o texto da fórmula não acharia número nenhum e não pintaria
+       nada; quem lesse o texto como se fosse valor pintaria as três iguais. */
+    expect(estiloCondicional(p, 2, 3)).toBe('vermelho');
+    expect(estiloCondicional(p, 1, 3)).toBeNull();
+    expect(estiloCondicional(p, 3, 3)).toBeNull();
+  });
+
+  /*
+    A célula vazia vale **zero** na comparação numérica, e isso é o Excel — uma
+    das reclamações mais antigas que a formatação condicional tem: "menor que
+    10" pinta a metade em branco da coluna.
+
+    A primeira versão daqui a excluía, e estava errada nos dois sentidos. Era
+    código morto, porque a guarda de valor em branco já cobria tudo o que ela
+    alcançava — a mutação que a apagou não derrubou teste nenhum, que é como
+    ela foi descoberta. E era mentira sobre o programa: o desbravador aplicaria
+    a mesma regra no computador do clube e veria a coluna acender inteira, sem
+    nada aqui tendo avisado.
+  */
+  it('a célula vazia vale zero, e "menor que" pinta a coluna em branco', () => {
+    const p = {
+      ...comTabela(UNIDADES),
+      regras: [{ id: 'r1', faixa: { l1: 1, c1: 1, l2: 9, c2: 1 }, quando: 'menorQue' as const, valor: '10', estilo: 'vermelho' as const }],
+    };
+    expect(estiloCondicional(p, 3, 1)).toBe('vermelho');
+    expect(estiloCondicional(p, 6, 1)).toBe('vermelho');
+    /* E "maior que 0" não a pega, porque zero não é maior que zero. */
+    const maior = {
+      ...p,
+      regras: [{ id: 'r1', faixa: { l1: 1, c1: 1, l2: 9, c2: 1 }, quando: 'maiorQue' as const, valor: '0', estilo: 'vermelho' as const }],
+    };
+    expect(estiloCondicional(maior, 6, 1)).toBeNull();
+  });
+
+  /*
+    Célula com erro fica de fora: uma regra sobre texto não é sobre `#DIV/0!`.
+    Sem isto, quem escreveu "contém DIV" para achar "Divisão de tarefas" veria
+    pintada uma célula que não tem essa palavra em lugar nenhum.
+  */
+  it('e a célula com erro não casa com regra de texto', () => {
+    const comErro = comTabela([...UNIDADES, ['Arara', '=1/0', '3', '']]);
+    const p = {
+      ...comErro,
+      regras: [{ id: 'r1', faixa: { l1: 1, c1: 1, l2: 4, c2: 1 }, quando: 'contemTexto' as const, valor: 'DIV', estilo: 'amarelo' as const }],
+    };
+    expect(estiloCondicional(p, 4, 1)).toBeNull();
+  });
+
+  /*
+    Regra sem valor de comparação não casa com nada, e é a armadilha do vazio
+    outra vez: `Number('')` é **zero**, e não NaN. Uma regra "maior que" com o
+    campo em branco pintaria toda célula positiva da faixa; uma "igual a" em
+    branco pintaria todas as vazias. Nos dois casos a planilha fica colorida e
+    a regra parece ter funcionado.
+  */
+  it('e regra com o campo de comparação em branco não pinta nada', () => {
+    const faixa = { l1: 1, c1: 1, l2: 9, c2: 1 };
+    const semValor = (quando: 'maiorQue' | 'igualA') => estiloCondicional({
+      ...comTabela(UNIDADES),
+      regras: [{ id: 'r1', faixa, quando, valor: '', estilo: 'vermelho' as const }],
+    }, quando === 'igualA' ? 6 : 1, 1);
+    expect(semValor('maiorQue')).toBeNull();
+    expect(semValor('igualA')).toBeNull();
+  });
+
+  /*
+    A última regra que casa é a que vale, como no Excel. Devolver a primeira
+    faria a regra recém-criada não pintar nada, e quem acabou de criá-la
+    concluiria que ela não funciona.
+  */
+  it('quando duas regras casam, vale a de baixo', () => {
+    const p = {
+      ...comTabela(UNIDADES),
+      regras: [
+        { id: 'r1', faixa: { l1: 1, c1: 1, l2: 3, c2: 1 }, quando: 'maiorQue' as const, valor: '5', estilo: 'verde' as const },
+        { id: 'r2', faixa: { l1: 1, c1: 1, l2: 3, c2: 1 }, quando: 'maiorQue' as const, valor: '10', estilo: 'vermelho' as const },
+      ],
+    };
+    expect(estiloCondicional(p, 1, 1)).toBe('vermelho');
+    expect(estiloCondicional(p, 3, 1)).toBe('verde');
+  });
+
+  it('e "contém texto" não casa com regra de texto vazio', () => {
+    const p = {
+      ...comTabela(UNIDADES),
+      regras: [{ id: 'r1', faixa: { l1: 1, c1: 0, l2: 3, c2: 0 }, quando: 'contemTexto' as const, valor: '', estilo: 'amarelo' as const }],
+    };
+    expect(estiloCondicional(p, 1, 0)).toBeNull();
+  });
+});
+
+describe('ordenar mexe nos dados, e leva a linha inteira', () => {
+  /*
+    Ordenar só a coluna escolhida embaralha o cadastro: o nome de uma unidade
+    passa a ficar ao lado do número de inscritos de outra, sem erro nenhum e
+    sem volta. É o estrago mais caro que uma planilha sofre.
+  */
+  it('a linha viaja junto com a chave', () => {
+    const p = ordenar(comTabela(UNIDADES), 1, true);
+    expect(p.celulas.slice(1, 4).map(l => [l[0].texto, l[1].texto]))
+      .toEqual([['Águia', '9'], ['Tucano', '11'], ['Falcão', '12']]);
+  });
+
+  it('o cabeçalho fica onde está', () => {
+    expect(ordenar(comTabela(UNIDADES), 0, true).celulas[0][0].texto).toBe('Unidade');
+  });
+
+  it('ordena texto pela ordem do português, e número por tamanho', () => {
+    const porNome = ordenar(comTabela(UNIDADES), 0, true);
+    expect(porNome.celulas.slice(1, 4).map(l => l[0].texto)).toEqual(['Águia', 'Falcão', 'Tucano']);
+    const decrescente = ordenar(comTabela(UNIDADES), 1, false);
+    expect(decrescente.celulas[1][1].texto).toBe('12');
+  });
+
+  it('e guarda qual coluna, que é de onde sai a setinha do cabeçalho', () => {
+    expect(ordenar(comTabela(UNIDADES), 1, false).ordenacao).toEqual({ coluna: 1, crescente: false });
+  });
+
+  it('sem tabela declarada, não ordena nada', () => {
+    const p = { ...comTabela(UNIDADES), tabela: null };
+    expect(ordenar(p, 1, true).celulas[1][0].texto).toBe('Tucano');
+  });
+});
+
+describe('a alça de preenchimento anda com a fórmula', () => {
+  /*
+    É o requisito 4.3 virando gesto: a relativa anda junto, a travada fica.
+    Uma alça que copiasse o texto sem transpor faria todas as linhas mostrarem
+    o resultado da primeira — três totais iguais, plausíveis, e errados.
+  */
+  it('a referência relativa anda linha a linha', () => {
+    const p = preencherAbaixo(comTabela(UNIDADES), { l: 1, c: 3 }, 3);
+    expect(p.celulas[2][3].texto).toBe('=B3*C3*45');
+    expect(p.celulas[3][3].texto).toBe('=B4*C4*45');
+  });
+
+  it('e a travada com cifrão fica onde está', () => {
+    const base = comTabela([
+      ['Diária', '45'],
+      ['Unidade', 'Inscritos', 'Diárias', 'Total'],
+      ['Tucano', '11', '3', '=B3*C3*$B$1'],
+      ['Falcão', '12', '3', ''],
+    ]);
+    const p = preencherAbaixo(base, { l: 2, c: 3 }, 3);
+    expect(p.celulas[3][3].texto).toBe('=B4*C4*$B$1');
+    expect(mostrar(valorDaGrade(p, 3, 3))).toBe('1620');
+  });
+
+  it('o que não é fórmula se copia como está', () => {
+    const p = preencherAbaixo(comTabela(UNIDADES), { l: 1, c: 2 }, 3);
+    expect(p.celulas[3][2].texto).toBe('3');
+  });
+
+  it('e preencher para cima ou para lugar nenhum não muda nada', () => {
+    const base = comTabela(UNIDADES);
+    expect(preencherAbaixo(base, { l: 3, c: 3 }, 1)).toBe(base);
+  });
+});
+
+describe('a pasta de trabalho tem várias planilhas', () => {
+  const cad = {
+    planilhas: [
+      { ...p0, nome: 'Inscrições' },
+      { ...p0, nome: 'Orçamento' },
+    ],
+    ativa: 1,
+  };
+
+  it('a ativa é a da aba escolhida, e trocar só mexe nela', () => {
+    expect(planilhaAtiva(cad).nome).toBe('Orçamento');
+    const depois = trocarAtiva(cad, escrever(planilhaAtiva(cad), 0, 0, 'oi'));
+    expect(depois.planilhas[1].celulas[0][0].texto).toBe('oi');
+    expect(depois.planilhas[0].celulas[0][0].texto).toBe(cad.planilhas[0].celulas[0][0].texto);
+  });
+
+  it('e a planilha se acha pelo nome', () => {
+    expect(planilhaPorNome(cad, 'Inscrições')?.nome).toBe('Inscrições');
+    expect(planilhaPorNome(cad, 'Planilha9')).toBeNull();
   });
 });
