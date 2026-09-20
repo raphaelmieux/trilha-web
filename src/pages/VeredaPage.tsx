@@ -18,6 +18,7 @@ import LaboratorioDeScratch from '../components/LaboratorioDeScratch';
 import LaboratorioDeAmbiente from '../components/LaboratorioDeAmbiente';
 import LaboratorioDeTerminal from '../components/LaboratorioDeTerminal';
 import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
+import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
 import LaboratorioDoRelatorio from '../components/LaboratorioDoRelatorio';
@@ -253,6 +254,25 @@ export default function VeredaPage() {
     const Tela = TELA_DO_DOCUMENTO[licaoAberta.documento];
     return (
       <Tela vereda={vereda} licao={licaoAberta} aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /*
+    A planilha também não passa pelo editor de código.
+
+    Não há arquivo para escrever nem linguagem para realçar: o que se confere é
+    a **pasta de trabalho** — que fórmula foi escrita em que célula, o que a
+    regra de formatação condicional acendeu, se a linha inteira viajou junto na
+    ordenação, e se o total se refaz quando um dado muda.
+
+    As sete lições abrem a mesma tela: o que muda entre elas é de que estado da
+    pasta se parte e o que se cobra, e quem diz isso é o `caderno` da lição.
+    Sete componentes seriam sete Excel, que é o defeito dos dois "Word".
+  */
+  if (licaoAberta?.tipo === 'planilha' && profile?.id) {
+    return (
+      <LaboratorioDePlanilha vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
     );
   }
 

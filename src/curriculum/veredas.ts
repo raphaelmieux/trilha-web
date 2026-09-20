@@ -6,6 +6,7 @@ import { MODULOS_DE_TERMINAL } from './terminalEGit';
 import { MODULOS_DE_PYTHON_AVANCADO } from './pythonAvancado';
 import { MODULOS_DE_ARQUIVOS } from './arquivosEArmazenamento';
 import { MODULOS_DO_EDITOR } from './editorDeTexto';
+import { MODULOS_DE_PLANILHA } from './planilhas';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -636,9 +637,28 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DO_EDITOR,
   },
-  anunciada('CC-ES003', 'Planilhas', 'Escritório',
-    'Fórmula que calcula sozinha, e a diferença entre dado, conta e apresentação.',
-    ['cc-es001']),
+  {
+    id: 'cc-es003',
+    code: 'CC-ES003',
+    name: 'Planilhas',
+    familia: 'Escritório',
+    description: 'Fórmula que calcula sozinha, e a diferença entre dado, conta e apresentação.',
+    /*
+      Sai da AP043, e não da AP044: é lá que o desbravador vê a planilha pela
+      primeira vez, como programa. Aqui a pergunta muda — não é onde fica o
+      botão de somar, é por que a planilha está montada do jeito que está e o
+      que acontece com ela quando os dados mudam.
+
+      `preRequisitos` é a CC-ES001, e está escrito no requisito 1 do documento
+      oficial. A razão é a de sempre: a planilha do acampamento é um arquivo
+      que vai ser aberto de novo no ano que vem, e quem não sabe onde ele está
+      monta outro.
+    */
+    origem: 'AP043',
+    preRequisitos: ['cc-es001'],
+    mostraResultado: true,
+    modulos: MODULOS_DE_PLANILHA,
+  },
   anunciada('CC-ES004', 'Documentos Portáteis', 'Escritório',
     'PDF de verdade: juntar, dividir, digitalizar, assinar e achar palavra dentro.',
     ['cc-es002']),
