@@ -1751,6 +1751,63 @@ funcionado. É "zero link não é zero link quebrado" outra vez.
 Excel. Devolver a primeira faria a regra recém-criada não pintar nada, e quem
 acabou de criá-la concluiria que ela não funciona.
 
+**A CC-ES003 parte de uma pasta de trabalho, e cada lição parte de um estado
+dela.** A pasta é uma só — `Inscrições`, `Custos`, `Unidades`, `Orçamento`,
+`Conferir` —, mas o módulo 1 recebe a aba de inscrições bagunçada e o módulo 2
+recebe a mesma aba **já arrumada**. Começar a segunda lição mandando refazer a
+primeira ensinaria que o trabalho anterior não conta, e as quatro tarefas do
+módulo 1 apareceriam cumpridas ou não ao acaso. É o campo `documento` da
+CC-ES002 outra vez, pelo motivo escrito lá.
+
+**A estrutura vem rotulada; a arrumação, não.** O requisito 3 pede explicar por
+que a planilha separa dado bruto, cálculo e apresentação. "Organize como achar
+melhor" mediria gosto; uma planilha que chegasse já separada não mediria nada.
+Então a zona de Cálculos chega escrita, com os rótulos do que se quer, e o que
+se cobra é pôr cada coisa na zona dela. A coluna entre os dois blocos fica
+vazia de propósito: é a calha que os separa, e sem ela ordenar os dados levaria
+os cálculos junto.
+
+**Arrumar não é apagar.** A tarefa de limpar o bloco de dados exige que os doze
+inscritos continuem lá. Sem isso, apagar a tabela inteira deixaria a tarefa
+verde — o bloco ficaria "só com dado" por não ter dado nenhum. É "zero link não
+é zero link quebrado" aplicado a uma limpeza, e numa lista de tarefas isso é
+uma tarefa verde de graça.
+
+**A tarefa confere a função e o resultado, nunca só um dos dois.** Conferir só
+o texto deixaria passar `=SOMA(D3:D13)` — a função certa sobre o intervalo
+errado, que é o erro de planilha mais comum que existe e o que o requisito 2.1
+existe para evitar. Conferir só o número deixaria passar o número digitado.
+
+**E o que separa a fórmula do número digitado é simular a mudança.** A tarefa
+"ver a conta se refazer" muda uma diária **dentro da conferência**, olha se o
+total acompanhou, e descarta a planilha alterada. Pedir que a mudança aconteça
+de verdade obrigaria a lembrar de desfazer, e deixaria a tarefa verde numa
+planilha alterada — a lição seguinte partiria de dados errados.
+
+É a mesma conta no módulo 3, e lá ela pega o caso que mais ninguém pega:
+`=B4*45`, com o valor da diária digitado dentro da fórmula, sai com os doze
+valores certos e passa pelas duas primeiras tarefas. A planilha do ano que vem,
+com a diária a 50, sairia inteira errada sem nada acusar.
+
+**O cifrão que a trava cobra é o que a tarefa precisa, e não os dois.**
+Arrastando **para baixo**, quem precisa ficar parada é a linha: `B$1` está
+certo. Exigir `$B$1` reprovaria uma fórmula correta e ensinaria a decorar a
+forma em vez de entender o que cada cifrão faz. A lição explica os dois.
+
+**A tabela de procura não está em ordem alfabética, e é o requisito 4.5
+inteiro.** Ela está na ordem em que o clube escreve as unidades, que é a ordem
+em que foram fundadas — e é assim que toda tabela digitada à mão fica. O
+`PROCV` sem o quarto argumento lê a coluna como ordenada e erra de **dois
+jeitos** nela: procurando "Águia" devolve `#N/D`, que pelo menos se vê;
+procurando "Onça" devolve **Tia Rute**, que é da Águia — um nome plausível,
+numa célula sem erro nenhum, ao lado de um desbravador que não é da unidade
+dela. Com a tabela ordenada, o `FALSO` pareceria não fazer diferença e a lição
+seria sobre um argumento que ninguém precisa escrever.
+
+**`usaFuncao` procura o nome seguido de parêntese, e não o nome.** `SOMA`
+dentro de `SOMASE` casaria, e a tarefa da soma ficaria verde com uma fórmula
+que soma condicionalmente — um número plausível a mais.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2295,6 +2352,11 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/planilha.test.ts` | ordenação que leva só a coluna da chave, embaralhando o cadastro |
 | `src/labs/planilha.test.ts` | alça de preenchimento que copia a fórmula sem transpor a referência |
 | `src/labs/planilha.test.ts` | regra condicional com o campo em branco pintando meia planilha |
+| `src/labs/cadernoDoClube.test.ts` | tarefa da CC-ES003 que abre verde, ou que a solução de referência não fecha |
+| `src/labs/cadernoDoClube.test.ts` | limpeza do bloco de dados que aceita a tabela apagada junto |
+| `src/labs/cadernoDoClube.test.ts` | total digitado valendo por soma, ou intervalo que deixa um inscrito de fora |
+| `src/labs/cadernoDoClube.test.ts` | valor da diária digitado dentro da fórmula, que erra calado no ano seguinte |
+| `src/labs/cadernoDoClube.test.ts` | tabela de procura ordenada, que apaga a armadilha do PROCV aproximado |
 | `src/labs/correioDoClube.test.ts` | Cco preenchido com a lista grande vazando pelo Para, ou assinatura configurada e nunca usada |
 | `src/labs/maquinaDoClube.test.ts` | "abrir com" que mudou o padrão junto, ou usuário novo criado administrador |
 | `src/labs/ConfiguracoesLab.test.tsx` | caminho de Configurações que não leva à tarefa, ou botão de otimizar com o nome errado para o disco |
