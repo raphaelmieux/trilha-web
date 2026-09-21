@@ -27,7 +27,7 @@
  * disso que ninguém restaura.
  */
 
-import type { Autor, Doc } from './documento';
+import { type Autor, type Doc, NOME_DO_AUTOR } from './documento';
 import {
   ATA_INTEIRA, ATA_SEM_AS_DECISOES, COMBINADO, ESCALA, LISTA_DE_MATERIAIS,
 } from './documentosDaNuvem';
@@ -386,7 +386,7 @@ export function mandarPorAnexo(n: Nuvem, id: string, para: Pessoa, quando: strin
   if (!orig) return n;
   const copia: ArquivoDaNuvem = {
     id: `${orig.id}-copia-${para}`,
-    nome: `${orig.nome} (cópia de ${para})`,
+    nome: `${orig.nome} (cópia de ${NOME_DO_AUTOR[para]})`,
     tipo: orig.tipo,
     dono: para,
     acessos: [],
@@ -476,7 +476,7 @@ export function conflitoDeSincronizacao(
   if (!orig) return n;
   const conflito: ArquivoDaNuvem = {
     id: `${orig.id}-conflito-${quem}`,
-    nome: `${orig.nome} (cópia em conflito de ${quem})`,
+    nome: `${orig.nome} (cópia em conflito de ${NOME_DO_AUTOR[quem]})`,
     tipo: orig.tipo,
     dono: orig.dono,
     acessos: orig.acessos,

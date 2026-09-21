@@ -441,6 +441,31 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O trabalho compartilhado, e por que ele é um tipo e não dois.
+
+      A CC-ES006 abre **um** programa — o serviço de nuvem —, e a lista de
+      arquivos e o editor de documento são duas telas dele, do jeito que a
+      tela inicial e o documento são duas telas do leitor de PDF. Dois tipos
+      diriam que são dois programas, e a lição passaria a ter de escolher
+      entre eles: só que quase toda uma começa numa tela e termina na outra.
+
+      O campo é `licao` pela razão escrita em `contas`: é ele que diz de que
+      estado se parte e qual arquivo abre, e um `Record` sobre a união faz a
+      décima não compilar até alguém responder as duas coisas.
+
+      Para o progresso conta como lição de fazer: grava `vereda_laboratorio`.
+    */
+    id: string;
+    tipo: 'nuvem';
+    titulo: string;
+    resumo: string;
+    /** Qual das nove lições é esta. Dela saem o estado inicial e as metas. */
+    licao: import('../labs/metasDaCcEs006').LicaoDaCcEs006;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não

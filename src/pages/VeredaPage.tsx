@@ -21,6 +21,7 @@ import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
 import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
 import LaboratorioDePdf from '../components/LaboratorioDePdf';
 import LaboratorioDeContas from '../components/LaboratorioDeContas';
+import LaboratorioDaNuvem from '../components/LaboratorioDaNuvem';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
 import LaboratorioDoRelatorio from '../components/LaboratorioDoRelatorio';
@@ -311,6 +312,25 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'contas' && profile?.id) {
     return (
       <LaboratorioDeContas vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /*
+    E a CC-ES006 abre um programa só, em duas telas.
+
+    A lista de arquivos e o editor de documento são duas telas do mesmo
+    serviço de nuvem, como a tela inicial e o documento são duas telas do
+    leitor de PDF — e quase toda lição começa numa e termina na outra. Dois
+    tipos aqui diriam que são dois programas, e a lição teria de escolher.
+
+    Quem diz de que estado da nuvem cada uma parte e que arquivo ela abre é
+    `LICOES_DA_CC_ES006`, num `Record` sobre a união: a décima não compila até
+    alguém responder as duas coisas.
+  */
+  if (licaoAberta?.tipo === 'nuvem' && profile?.id) {
+    return (
+      <LaboratorioDaNuvem vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }
