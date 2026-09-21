@@ -381,6 +381,38 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O leitor de PDF, e por que ele é mais um tipo.
+
+      Vale a conta já escrita em `ambiente`, em `terminal`, em `explorador`, em
+      `word` e em `planilha`: não há `modelo` string nem linguagem. O que se
+      confere é a **pasta do clube** depois dos gestos — que PDFs existem, se o
+      texto foi reconhecido antes ou depois de reduzir, que campos do formulário
+      foram preenchidos, o que a assinatura respondeu. Enfiá-lo em `laboratorio`
+      obrigaria a inventar um `modelo: ''` e uma linguagem falsa, e a trava dos
+      modelos passaria a conferir uma string vazia com o validador de HTML —
+      verde sem ter olhado nada.
+
+      Para o progresso conta como lição de fazer: grava `vereda_laboratorio`.
+    */
+    id: string;
+    tipo: 'pdf';
+    titulo: string;
+    resumo: string;
+    /**
+     * De que estado da pasta do clube a lição parte, e com qual lista de metas.
+     *
+     * O tipo sozinho não basta, pela mesma razão do `documento` da CC-ES002 e
+     * do `caderno` da CC-ES003: as sete lições abrem a mesma pasta e partem de
+     * estados diferentes dela — o módulo 2 recebe os três PDFs que o módulo 1
+     * gerou. Sem este campo, `tipo: 'pdf'` implicaria **uma** pasta, e a
+     * segunda lição abriria a do módulo 1.
+     */
+    pasta: import('../labs/metasDaCcEs004').LicaoDaCcEs004;
+    /** Os ids das metas, na lista daquela pasta. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
