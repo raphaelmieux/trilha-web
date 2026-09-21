@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Mail, Pencil, Inbox, Send, Archive, Reply, Forward, Paperclip,
-  Settings, Search, Users, X, Trash2, Star, ChevronLeft,
+  Inbox, Send, Archive, Paperclip, Users, Trash2,
   FileCheck2, RotateCcw, AlertTriangle, Check,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
+import {
+  CSS_DO_CORREIO, TopoDoCorreio, LateralDoCorreio, ListaDoCorreio, LinhaDaLista,
+  BarraDaMensagem, LeituraDaMensagem, JanelinhaDeEscrever, CampoDeEndereco,
+  CaixaDeConfiguracoes,
+} from './correio';
 import {
   CORREIO_INICIAL, METAS_DO_CORREIO, FAMILIAS, DIRETOR, SECRETARIA,
   ANEXOS_DISPONIVEIS, naCaixaDeEntrada, enderecosVisiveis,
@@ -20,6 +24,13 @@ import type { PropsDeLaboratorio as Props } from './tipos';
 
 /*
  * AP044 requisito 11 — os nove itens, num correio de navegador.
+ *
+ * ── A janela mora em `correio.tsx` ──────────────────────────────────────
+ * Ela saiu daqui **antes** de a cópia existir, no dia em que a CC-ES005
+ * precisou de uma segunda caixa de correio para o requisito 5. É a decisão de
+ * `word.tsx`, de `excel.tsx`, de `explorer.tsx` e de `leitorDePdf.tsx`, e o
+ * que ficou aqui é o que é do **exercício**: que mensagens existem, que
+ * tarefas se cobram, e o que cada botão faz com elas.
  *
  * ── Por que outro laboratório de correio ─────────────────────────────────
  * A AP034 tem um, e ele ensina a **receber**: reconhecer golpe, conferir
@@ -239,123 +250,21 @@ export default function CorreioLab({ specialtyCode, lessonCode, lessonTitle, req
       aviso={aviso}
       acoes={acoes}
     >
-      <style>{`
-        .co-janela {
-          flex: 1; min-height: 0; display: flex; flex-direction: column;
-          background: #FFFFFF; color: #202124;
-          font-family: system-ui, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13.5px;
-        }
-        .co-topo {
-          display: flex; align-items: center; gap: 12px; padding: 8px 14px;
-          border-bottom: 1px solid #E0E0E0; background: #F6F8FC;
-        }
-        .co-busca {
-          flex: 1; max-width: 620px; background: #EAF1FB; border: none; border-radius: 8px;
-          padding: 8px 12px; font-size: 13.5px; color: #202124; display: flex; gap: 8px; align-items: center;
-        }
-        .co-corpo { flex: 1; min-height: 0; display: flex; }
-        .co-lado { width: 190px; flex: none; padding: 10px 6px; }
-        .co-escrever {
-          display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px;
-          border-radius: 999px; background: #C2E7FF; color: #001D35; border: none;
-          font-size: 14px; cursor: pointer; margin: 0 8px 14px;
-        }
-        .co-escrever:hover { background: #A8DBFF; }
-        .co-pasta {
-          display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
-          padding: 7px 14px; border: none; background: none; cursor: pointer;
-          border-radius: 0 999px 999px 0; color: #202124; font-size: 13.5px;
-        }
-        .co-pasta:hover { background: #EAECEF; }
-        .co-pasta[aria-current="true"] { background: #D3E3FD; font-weight: 700; }
-        .co-lista { flex: 1; min-width: 0; overflow: auto; border-left: 1px solid #E0E0E0; }
-        .co-linha {
-          display: flex; gap: 12px; align-items: center; width: 100%; text-align: left;
-          padding: 10px 14px; border-bottom: 1px solid #F1F1F1; background: none;
-          border-left: none; border-right: none; border-top: none; cursor: pointer; color: #202124;
-        }
-        .co-linha:hover { box-shadow: inset 0 0 0 1px #E0E0E0; }
-        .co-de { width: 168px; flex: none; font-weight: 700; }
-        .co-msg { flex: 1; min-width: 0; overflow: auto; border-left: 1px solid #E0E0E0; padding: 14px 18px; }
-        .co-acoes { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
-        .co-bt {
-          display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
-          border: 1px solid #DADCE0; border-radius: 999px; background: #FFFFFF;
-          font-size: 12.5px; color: #202124; cursor: pointer;
-        }
-        .co-bt:hover { background: #F1F3F4; }
-        .co-bt.primario { background: #0B57D0; border-color: #0B57D0; color: #FFFFFF; }
-        .co-bt.primario:hover { background: #0A4BB5; }
-        .co-janelinha {
-          position: absolute; right: 16px; bottom: 0; width: min(520px, calc(100% - 32px));
-          background: #FFFFFF; border-radius: 8px 8px 0 0;
-          box-shadow: 0 -2px 16px rgba(0,0,0,.28); display: flex; flex-direction: column;
-          max-height: 88%; z-index: 5;
-        }
-        .co-janelinha-topo {
-          background: #F2F6FC; padding: 8px 14px; border-radius: 8px 8px 0 0;
-          display: flex; align-items: center; font-size: 13px; font-weight: 600;
-        }
-        .co-campo {
-          border: none; border-bottom: 1px solid #E0E0E0; padding: 8px 14px;
-          font-size: 13px; width: 100%; color: #202124; background: transparent;
-        }
-        .co-campo:focus { outline: none; border-bottom-color: #0B57D0; }
-        .co-linha-campo { display: flex; align-items: center; border-bottom: 1px solid #E0E0E0; }
-        .co-linha-campo .co-campo { border-bottom: none; }
-        .co-rotulo { padding: 0 6px 0 14px; color: #5F6368; font-size: 12.5px; flex: none; }
-        .co-copias { padding: 0 14px; color: #5F6368; font-size: 12.5px; background: none; border: none; cursor: pointer; }
-        .co-texto {
-          flex: 1; min-height: 130px; border: none; padding: 12px 14px; resize: none;
-          font: inherit; color: #202124; background: transparent;
-        }
-        .co-texto:focus { outline: none; }
-        .co-assinatura { padding: 0 14px 8px; color: #5F6368; font-size: 12.5px; white-space: pre-wrap; }
-        .co-historico {
-          margin: 0 14px 10px; padding-left: 10px; border-left: 2px solid #DADCE0;
-          color: #5F6368; font-size: 12px; white-space: pre-wrap; max-height: 96px; overflow: auto;
-        }
-        .co-pe {
-          display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-          border-top: 1px solid #E0E0E0; flex-wrap: wrap;
-        }
-        .co-anexo {
-          display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px;
-          border: 1px solid #DADCE0; border-radius: 6px; font-size: 12px; color: #202124;
-        }
-        .co-previa {
-          margin: 0 14px 10px; padding: 10px; border-radius: 6px;
-          background: #FEF7E0; border: 1px solid #F1D68C; font-size: 12.5px; color: #202124;
-        }
-        .co-previa.perigo { background: #FCE8E6; border-color: #F0B4AE; }
-        .co-config { padding: 18px; max-width: 620px; }
-      `}</style>
+      <style>{CSS_DO_CORREIO}</style>
 
       <div className="co-janela" style={{ position: 'relative' }}>
-        <div className="co-topo">
-          <Mail className="w-5 h-5" style={{ color: '#C5221F' }} />
-          <span style={{ fontWeight: 600 }}>Correio</span>
-          <div className="co-busca">
-            <Search className="w-4 h-4" style={{ color: '#5F6368' }} />
-            <span style={{ color: '#5F6368' }}>Pesquisar no correio</span>
-          </div>
-          <button type="button" className="co-bt" aria-label="Configurações"
-            onClick={() => { setRascunhoDaAssinatura(correio.assinatura); setTela('configuracoes'); }}>
-            <Settings className="w-4 h-4" /> Configurações
-          </button>
-        </div>
+        <TopoDoCorreio aoAbrirConfiguracoes={() => {
+          setRascunhoDaAssinatura(correio.assinatura);
+          setTela('configuracoes');
+        }} />
 
         {tela === 'configuracoes' ? (
-          <div className="co-config">
-            <button type="button" className="co-bt" aria-label="Voltar para o correio"
-              onClick={() => setTela('lista')} style={{ marginBottom: 14 }}>
-              <ChevronLeft className="w-4 h-4" /> Voltar
-            </button>
-            <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 4, color: '#202124' }}>Assinatura</h2>
-            <p style={{ color: '#5F6368', fontSize: 12.5, marginBottom: 10 }}>
-              Este texto entra sozinho no fim de toda mensagem que você escrever.
-              Nome, função no clube e um contato costumam bastar.
-            </p>
+          <CaixaDeConfiguracoes
+            titulo="Assinatura"
+            explica={'Este texto entra sozinho no fim de toda mensagem que você escrever. '
+              + 'Nome, função no clube e um contato costumam bastar.'}
+            aoVoltar={() => setTela('lista')}
+          >
             <textarea className="co-campo" rows={4}
               style={{ border: '1px solid #DADCE0', borderRadius: 6 }}
               aria-label="Texto da assinatura"
@@ -366,145 +275,99 @@ export default function CorreioLab({ specialtyCode, lessonCode, lessonTitle, req
               onClick={salvarAssinatura}>
               Salvar alterações
             </button>
-          </div>
+          </CaixaDeConfiguracoes>
         ) : (
           <div className="co-corpo">
-            <div className="co-lado">
-              <button type="button" className="co-escrever" aria-label="Escrever"
-                onClick={() => escrever()}>
-                <Pencil className="w-4 h-4" /> Escrever
-              </button>
-              <button type="button" className="co-pasta" aria-current={pasta === 'entrada'}
-                onClick={() => { setPasta('entrada'); setTela('lista'); }}>
-                <Inbox className="w-4 h-4" /> Caixa de entrada
-                <span style={{ marginLeft: 'auto', fontSize: 12 }}>{naCaixaDeEntrada(correio).length}</span>
-              </button>
-              <button type="button" className="co-pasta" aria-current={pasta === 'enviados'}
-                onClick={() => { setPasta('enviados'); setTela('lista'); }}>
-                <Send className="w-4 h-4" /> Enviados
-                <span style={{ marginLeft: 'auto', fontSize: 12 }}>{correio.enviadas.length}</span>
-              </button>
-              <button type="button" className="co-pasta" aria-current={pasta === 'arquivados'}
-                onClick={() => { setPasta('arquivados'); setTela('lista'); }}>
-                <Archive className="w-4 h-4" /> Arquivados
-                <span style={{ marginLeft: 'auto', fontSize: 12 }}>
-                  {correio.caixa.filter(m => m.arquivada).length}
-                </span>
-              </button>
-              <button type="button" className="co-pasta"
-                onClick={() => setAviso('A lixeira existe no correio de verdade, e está aqui para a lateral ficar igual — mas não faz parte deste exercício. Repare que arquivar não põe nada nela.')}>
-                <Trash2 className="w-4 h-4" /> Lixeira
-              </button>
-            </div>
+            <LateralDoCorreio
+              atual={pasta}
+              aoEscrever={() => escrever()}
+              aoTrocar={id => {
+                if (id === 'lixeira') {
+                  setAviso('A lixeira existe no correio de verdade, e está aqui para a lateral ficar igual — mas não faz parte deste exercício. Repare que arquivar não põe nada nela.');
+                  return;
+                }
+                setPasta(id as Pasta);
+                setTela('lista');
+              }}
+              pastas={[
+                { id: 'entrada', nome: 'Caixa de entrada', icone: Inbox, quantas: naCaixaDeEntrada(correio).length },
+                { id: 'enviados', nome: 'Enviados', icone: Send, quantas: correio.enviadas.length },
+                { id: 'arquivados', nome: 'Arquivados', icone: Archive, quantas: correio.caixa.filter(m => m.arquivada).length },
+                /* A lixeira entra sem contagem: ela existe em todo correio, e
+                   uma lateral sem ela seria outra lateral. Clicar avisa. */
+                { id: 'lixeira', nome: 'Lixeira', icone: Trash2 },
+              ]}
+            />
 
             {tela === 'mensagem' && mensagem ? (
-              <div className="co-msg">
-                <div className="co-acoes">
-                  <button type="button" className="co-bt" aria-label="Voltar"
-                    onClick={() => { setTela('lista'); setAberta(null); }}>
-                    <ChevronLeft className="w-4 h-4" /> Voltar
-                  </button>
-                  <button type="button" className="co-bt" aria-label="Arquivar"
-                    onClick={() => arquivar(mensagem)}>
-                    <Archive className="w-4 h-4" /> Arquivar
-                  </button>
-                  <button type="button" className="co-bt" aria-label="Responder"
-                    onClick={() => responder(mensagem)}>
-                    <Reply className="w-4 h-4" /> Responder
-                  </button>
-                  <button type="button" className="co-bt" aria-label="Encaminhar"
-                    onClick={() => encaminhar(mensagem)}>
-                    <Forward className="w-4 h-4" /> Encaminhar
-                  </button>
-                  <button type="button" className="co-bt" aria-label="Marcar com estrela"
-                    onClick={() => setAviso('A estrela existe no correio de verdade, e não faz parte deste exercício.')}>
-                    <Star className="w-4 h-4" />
-                  </button>
-                </div>
-                <h2 style={{ fontSize: 19, marginBottom: 6, color: '#202124' }}>{mensagem.assunto}</h2>
-                <p style={{ color: '#5F6368', fontSize: 12.5, marginBottom: 12 }}>
-                  <strong style={{ color: '#202124' }}>{mensagem.deNome}</strong> &lt;{mensagem.de}&gt;
-                </p>
-                <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{mensagem.corpo}</p>
-              </div>
+              <LeituraDaMensagem
+                assunto={mensagem.assunto}
+                deNome={mensagem.deNome}
+                de={mensagem.de}
+                corpo={mensagem.corpo}
+              >
+                <BarraDaMensagem acoes={{
+                  aoVoltar: () => { setTela('lista'); setAberta(null); },
+                  aoArquivar: () => arquivar(mensagem),
+                  aoResponder: () => responder(mensagem),
+                  aoEncaminhar: () => encaminhar(mensagem),
+                  aoMarcarEstrela: () => setAviso('A estrela existe no correio de verdade, e não faz parte deste exercício.'),
+                }} />
+              </LeituraDaMensagem>
             ) : (
-              <div className="co-lista">
-                {pasta === 'enviados' ? (
-                  correio.enviadas.length === 0 ? (
-                    <p style={{ padding: 20, color: '#5F6368' }}>Nada enviado ainda.</p>
-                  ) : correio.enviadas.map((e, i) => (
-                    <div key={i} className="co-linha" style={{ cursor: 'default' }}>
-                      <span className="co-de">
-                        Para: {e.para[0] ?? e.cc[0] ?? `${e.cco.length} em cópia oculta`}
-                      </span>
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <strong>{e.assunto || '(sem assunto)'}</strong>
-                        <span style={{ color: '#5F6368' }}> — {e.corpo.slice(0, 48)}</span>
-                      </span>
-                      <span style={{ fontSize: 11.5, color: '#5F6368', whiteSpace: 'nowrap' }}>
+              <ListaDoCorreio vazia={
+                pasta === 'enviados' && correio.enviadas.length === 0 ? 'Nada enviado ainda.'
+                  : pasta !== 'enviados' && daPasta.length === 0
+                    ? (pasta === 'arquivados' ? 'Nada arquivado ainda.' : 'A caixa de entrada está vazia.')
+                    : undefined
+              }>
+                {pasta === 'enviados'
+                  ? correio.enviadas.map((e, i) => (
+                    /* Sem `aoAbrir`: enviada não se abre, e uma linha que
+                       parecesse clicável prometeria um gesto que não existe. */
+                    <LinhaDaLista
+                      key={i}
+                      de={`Para: ${e.para[0] ?? e.cc[0] ?? `${e.cco.length} em cópia oculta`}`}
+                      assunto={e.assunto}
+                      previa={e.corpo.slice(0, 48)}
+                      direita={<>
                         {e.anexos.length > 0 && <Paperclip className="w-3 h-3 inline" />}
                         {' '}{e.cco.length > 0 ? `Cco: ${e.cco.length}` : ''}
-                      </span>
-                    </div>
+                      </>}
+                    />
                   ))
-                ) : daPasta.length === 0 ? (
-                  <p style={{ padding: 20, color: '#5F6368' }}>
-                    {pasta === 'arquivados' ? 'Nada arquivado ainda.' : 'A caixa de entrada está vazia.'}
-                  </p>
-                ) : daPasta.map(m => (
-                  <button key={m.id} type="button" className="co-linha"
-                    aria-label={`Abrir: ${m.assunto}`}
-                    onClick={() => { setAberta(m.id); setTela('mensagem'); }}>
-                    <span className="co-de">{m.deNome}</span>
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <strong>{m.assunto}</strong>
-                      <span style={{ color: '#5F6368' }}> — {m.corpo.slice(0, 52)}…</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
+                  : daPasta.map(m => (
+                    <LinhaDaLista
+                      key={m.id}
+                      de={m.deNome}
+                      assunto={m.assunto}
+                      previa={`${m.corpo.slice(0, 52)}…`}
+                      aoAbrir={() => { setAberta(m.id); setTela('mensagem'); }}
+                    />
+                  ))}
+              </ListaDoCorreio>
             )}
           </div>
         )}
 
         {/* A janelinha de escrever, no canto — como no correio de verdade. */}
         {rascunhoAtual && (
-          <div className="co-janelinha">
-            <div className="co-janelinha-topo">
-              Nova mensagem
-              <button type="button" aria-label="Descartar a mensagem" className="ml-auto"
-                onClick={() => { setRascunho(null); setConferindo(false); }}>
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="co-linha-campo">
-              <span className="co-rotulo">Para</span>
-              <input className="co-campo" value={rascunhoAtual.para}
-                aria-label="Para"
-                onChange={e => setRascunho(r => r && ({ ...r, para: e.target.value }))} />
-              {!rascunhoAtual.mostrarCopias && (
+          <JanelinhaDeEscrever aoDescartar={() => { setRascunho(null); setConferindo(false); }}>
+            <CampoDeEndereco rotulo="Para" valor={rascunhoAtual.para}
+              aoMudar={v => setRascunho(r => r && ({ ...r, para: v }))}
+              extra={!rascunhoAtual.mostrarCopias && (
                 <button type="button" className="co-copias" aria-label="Mostrar Cc e Cco"
                   onClick={() => setRascunho(r => r && ({ ...r, mostrarCopias: true }))}>
                   Cc Cco
                 </button>
-              )}
-            </div>
+              )} />
 
             {rascunhoAtual.mostrarCopias && (
               <>
-                <div className="co-linha-campo">
-                  <span className="co-rotulo">Cc</span>
-                  <input className="co-campo" value={rascunhoAtual.cc}
-                    aria-label="Cc"
-                    onChange={e => setRascunho(r => r && ({ ...r, cc: e.target.value }))} />
-                </div>
-                <div className="co-linha-campo">
-                  <span className="co-rotulo">Cco</span>
-                  <input className="co-campo" value={rascunhoAtual.cco}
-                    aria-label="Cco"
-                    onChange={e => setRascunho(r => r && ({ ...r, cco: e.target.value }))} />
-                </div>
+                <CampoDeEndereco rotulo="Cc" valor={rascunhoAtual.cc}
+                  aoMudar={v => setRascunho(r => r && ({ ...r, cc: v }))} />
+                <CampoDeEndereco rotulo="Cco" valor={rascunhoAtual.cco}
+                  aoMudar={v => setRascunho(r => r && ({ ...r, cco: v }))} />
               </>
             )}
 
@@ -557,7 +420,7 @@ export default function CorreioLab({ specialtyCode, lessonCode, lessonTitle, req
                 <span key={a} className="co-anexo"><Paperclip className="w-3 h-3" /> {a}</span>
               ))}
             </div>
-          </div>
+          </JanelinhaDeEscrever>
         )}
 
         {/* Os endereços que o exercício usa, à mão — como um papel ao lado do
