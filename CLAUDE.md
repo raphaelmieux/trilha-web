@@ -1970,6 +1970,75 @@ enquanto o da AP044 dizia `"excel"`: quem dispensava o aviso num era avisado de
 novo no outro. Com um terceiro laboratório o estrago passou a ser duplo, e
 aviso que volta é o que ensina a pessoa a não ler avisos.
 
+**O PDF calcula, porque a CC-ES004 cobra o que não se vê.** O requisito 5
+manda digitalizar um papel, reconhecer o texto e **comprovar o resultado
+localizando uma palavra dentro do arquivo** — enunciado vazio se a procura
+achar a palavra de qualquer jeito. O 4.4 manda reduzir o tamanho *explicando o
+que se perde*, o que não se explica sem haver perda. O 6 manda distinguir a
+assinatura colada da verificável, e as duas desenham o mesmo rabisco na mesma
+página.
+
+Então `documentoPdf.ts` é motor: a procura lê a camada de texto que existir, a
+compressão tira nitidez de quem é imagem, o reconhecimento erra quando a
+captura está ruim, e a assinatura verificável guarda o documento de quando foi
+assinada.
+
+**A página desenha igual, com texto dentro ou sem.** `linhas` é a tinta e
+existe sempre; `texto` é a camada por baixo, e `undefined` nela é documento em
+imagem. `procurar` lê `texto` e nunca `linhas` — lendo o desenho, a palavra
+apareceria em qualquer documento, inclusive na foto de papel que não tem uma
+letra dentro, e a comprovação do requisito 5 passaria a comprovar nada.
+
+**O reconhecimento erra, e erra parecido.** Captura torta, escura ou sem
+nitidez não devolve garrancho: devolve `Acarnpamento`, com o `m` virando `rn`,
+que é a troca mais famosa que existe e a mais cruel — lida rápido, ela é a
+palavra certa. Texto que **falta** se percebe olhando o tamanho; texto **quase
+certo** não se percebe de jeito nenhum, e os dois falham na procura igual. Do
+lado de fora o arquivo passou a ser "pesquisável", e é essa a parte que
+engana.
+
+**A ordem entre comprimir e reconhecer custa, e nada avisa.** A nitidez só
+desce. Comprimir **antes** deixa o reconhecimento com menos do que ler e o
+texto sai furado; comprimir **depois** não mexe no texto, que é leve e já está
+gravado — o arquivo continua pesquisável e só a foto fica feia. Nos dois casos
+o arquivo encolhe o mesmo tanto. É a família do sumário que guarda o que leu e
+do PDF que congela.
+
+**E a foto de papel pesar muito mais que a página digitada é premissa, não
+constante solta.** É dela que sai por que comprimir um documento digitado não
+adianta e comprimir um digitalizado adianta muito. Igualadas as duas, todas as
+contas relativas continuariam passando e o requisito 4.4 viraria um botão que
+mexe num número — por isso ela tem trava própria.
+
+**Reconhecer não passa por cima de quem já tem texto**, e a trava disso precisa
+de uma digitalizada **já reconhecida**, nunca de uma digital: a digital não tem
+captura, então a primeira metade da guarda sozinha já a protege e a segunda
+nunca é exercitada. O caso de verdade é o do requisito 8 — juntam-se cinco
+documentos, manda-se reconhecer o dossiê inteiro, e as páginas que estavam
+boas são relidas, trocando texto exato por texto adivinhado num arquivo que
+continua dizendo "pesquisável".
+
+**A assinatura colada e a verificável são iguais no dia de assinar.** O que
+muda é **depois**: a verificável guarda a impressão do documento e quebra se
+alguém mexer; a colada é um desenho, não tem o que comparar, e por isso nunca
+acusa nada — que é exatamente por que ela não prova. Quem escolhe pela tela
+escolhe no escuro. A impressão lê também os campos de formulário, senão daria
+para assinar a ficha em branco e preencher depois.
+
+**Juntar não leva assinatura adiante.** A verificável afirma sobre o documento
+que foi assinado, e o juntado é outro: sobrevivendo à junção, ela estaria
+afirmando sobre páginas que nunca viu, e mostrando "válida" para quem
+conferisse.
+
+**"Não permitir copiar" é pedido, e não trava.** O campo se chama
+`pedeAoLeitor` por isso. `copiarTexto` devolve o texto **apesar** dele, de
+propósito: fazer a simulação obedecer ensinaria que a restrição é uma trava —
+que é a crença que o requisito 7 existe para desfazer — e ensinaria pela via
+pior, a de quem confiou e mandou o documento adiante. Pelo mesmo motivo
+`removerSenha` existe: quem sabe a senha salva sem senha, e a partir daí o
+arquivo circula aberto. A ferramenta que faz isso não é de invasor, é o
+próprio programa.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2505,6 +2574,12 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/ApresentacaoLab.test.tsx` | operação de slide que age no slide errado, ou PDF velho valendo por novo |
 | `src/labs/planilhaDoAcampamento.test.ts` | planilha pequena demais para o filtro fazer falta, ou SUBTOTAL escrito sem filtro nenhum |
 | `src/labs/PlanilhaAvancadaLab.test.tsx` | os dois laboratórios de planilha mostrando janelas de Excel diferentes |
+| `src/labs/documentoPdf.test.ts` | procura que lê o desenho da página, achando a palavra no documento em imagem |
+| `src/labs/documentoPdf.test.ts` | reconhecimento que acerta com a captura torta, ou que relê página já reconhecida |
+| `src/labs/documentoPdf.test.ts` | comprimir antes de reconhecer saindo igual a comprimir depois |
+| `src/labs/documentoPdf.test.ts` | foto de papel pesando como página digitada, que apaga o sentido de comprimir |
+| `src/labs/documentoPdf.test.ts` | assinatura colada que quebra ao mexer no documento, ou verificável que não quebra |
+| `src/labs/documentoPdf.test.ts` | "não permitir copiar" tratado como trava, ou PDF sem página dizendo-se pesquisável |
 | `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |
