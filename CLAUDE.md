@@ -2284,6 +2284,31 @@ contra o vazio de sempre, que aqui é um piso de cinquenta: uma estante que
 esvaziasse, ou um filtro que tirasse tudo, deixaria a trava verde por não ter
 conferido nada.
 
+**A janela do correio saiu antes da cópia, e a da AP034 não é uma janela.**
+A CC-ES005 precisa de uma segunda caixa de correio — o requisito 5 manda
+analisar três mensagens fraudulentas —, então `correio.tsx` saiu de
+`CorreioLab.tsx` pelo motivo escrito em `word.tsx`, `excel.tsx`, `explorer.tsx`
+e `leitorDePdf.tsx`: extrair **antes** de a cópia existir.
+
+O laboratório de correio da AP034 ficou de fora, e não é esquecimento: ele é
+cartão da plataforma, não imita programa nenhum e não tem janela para
+compartilhar. Vesti-lo com esta moldura mudaria uma trilha já entregue, e não
+é disto que a vereda trata. Havia **uma** cópia do Gmail aqui, e não duas.
+
+**A mensagem mostra o endereço inteiro, e é premissa da lição seguinte.** O
+primeiro indício de uma mensagem fraudulenta é o domínio de quem a mandou —
+"Banco do Brasil" escrevendo de `bancodobrasil-verificacao.com`. Um correio
+que mostrasse só o nome de exibição apagaria esse indício da tela, e o
+requisito 5 passaria a pedir que se apontasse o que não está à vista.
+`correio.test.tsx` cobra.
+
+**E a lateral deita no celular, que é comportamento novo.** Ela era uma coluna
+de 190px ao lado da lista, e no celular isso deixava a mensagem sem largura
+nenhuma — ler a mensagem é justamente o que a lição seguinte pede. Vira uma
+fileira de 50px no alto, com as quatro pastas no lugar: reduzir a tela nunca
+reduz o que dá para fazer nela. A trava confere que a regra não esconde pasta
+nenhuma, e não só que ela existe.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2878,6 +2903,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/veredas.test.ts` | laboratório de vereda que abre resolvido, sem passo a passo, ou vereda sem emblema e sem certificado |
 | `src/lib/exploradorValidator.test.ts` | verificação do Explorador que nasce verde no disco do clube, ou que ninguém consegue vencer |
 | `src/labs/explorer.test.tsx` | peça da janela do Explorador que sumiu no recorte, ou pesquisa que some na tela estreita |
+| `src/labs/correio.test.tsx` | peça da janela do correio que sumiu no recorte, ou que aparece sem o laboratório ter pedido |
+| `src/labs/correio.test.tsx` | mensagem mostrando só o nome de exibição, que apaga o primeiro indício do golpe |
+| `src/labs/correio.test.tsx` | lateral que guarda a própria pasta, ou que esconde pasta na tela estreita |
 | `src/labs/selecao.test.ts` | faixa do Shift medida fora da ordem da tela, ou botão direito que encolhe a seleção |
 | `src/components/LaboratorioDeExplorador.test.tsx` | Explorador que joga fora Ctrl e Shift no clique, ou um dos dois sem as caixas de seleção |
 | `src/labs/roteiroDaEstrutura.test.ts` | roteiro da apresentação que julga a organização alheia, ou que lê os arquivos um por um |
