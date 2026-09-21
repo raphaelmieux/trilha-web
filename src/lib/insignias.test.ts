@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { INSIGNIAS, insigniasConquistadas, codigoDaInsigniaDaTrilha, type ResumoDoDesbravador } from './insignias';
+import { INSIGNIAS, SEM_CLASSE, insigniasConquistadas, codigoDaInsigniaDaTrilha, type ResumoDoDesbravador } from './insignias';
+import { fileirasDaEstante } from './estante';
 import { ESCADAS } from './escadasDeInsignia';
 import { getOpenSpecialties } from '../curriculum';
 import { veredasAbertas, codigoDaInsigniaDaVereda } from '../curriculum/veredas';
@@ -80,6 +81,43 @@ describe('o catálogo', () => {
     para a mesma coisa, e a trava antiga só conferia que o **código** existia
     nos dois lados.
   */
+  /*
+    E as que não estão no catálogo em TypeScript também são conferidas.
+
+    A trava acima filtra por `INSIGNIAS`, e a insígnia de vereda **não está
+    lá**: ela nasce da estante, de `classeDaVereda` e do ícone `route`. O filtro
+    passava por cima dela em silêncio, então escrever qualquer classe na
+    migration de uma vereda não reprovava nada — e é exatamente a divergência
+    que esta trava existe para pegar, com o agravante de que ninguém sabia que
+    não estava pegando. Achou-se mutando `excursionista` para `pioneiro` na
+    migration da CC-ES004: nenhum teste caiu.
+
+    A estante é a fonte certa da comparação porque é ela que a tela desenha.
+    Ela cobre de uma vez as três origens de insígnia — degrau de escada,
+    trilha e vereda —, então uma família nova entra aqui sozinha.
+  */
+  it('o tier e o ícone semeados são os que a estante desenha', () => {
+    const semeado = catalogoSemeado();
+    const lugares = fileirasDaEstante().flatMap(f => f.lugares);
+
+    const divergentes = lugares
+      .filter(l => semeado.has(l.code))
+      .map(l => ({ code: l.code, banco: semeado.get(l.code)!, estante: { icon: l.icone, tier: l.classe } }))
+      /* Off-white não é classe nenhuma, e as de horário ficam fora da escala:
+         o banco guarda um tier para elas e a estante não desenha nenhum. */
+      .filter(l => !SEM_CLASSE.has(l.code))
+      .filter(x => x.banco.icon !== x.estante.icon || x.banco.tier !== x.estante.tier);
+
+    expect(divergentes,
+      'a estante e a migration discordam — a tela lê o banco, então o que a '
+      + 'estante calcula não chega a ela e ninguém percebe.',
+    ).toEqual([]);
+
+    /* A guarda contra o vazio: uma estante que esvaziasse, ou um filtro que
+       tirasse tudo, deixaria esta trava verde por não ter conferido nada. */
+    expect(lugares.filter(l => semeado.has(l.code)).length).toBeGreaterThan(50);
+  });
+
   it('o tier e o ícone semeados são os do catálogo', () => {
     const semeado = catalogoSemeado();
     const divergentes = INSIGNIAS

@@ -7,6 +7,7 @@ import { MODULOS_DE_PYTHON_AVANCADO } from './pythonAvancado';
 import { MODULOS_DE_ARQUIVOS } from './arquivosEArmazenamento';
 import { MODULOS_DO_EDITOR } from './editorDeTexto';
 import { MODULOS_DE_PLANILHA } from './planilhas';
+import { MODULOS_DE_DOCUMENTOS_PORTATEIS } from './documentosPortateis';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -691,9 +692,28 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_PLANILHA,
   },
-  anunciada('CC-ES004', 'Documentos Portáteis', 'Escritório',
-    'PDF de verdade: juntar, dividir, digitalizar, assinar e achar palavra dentro.',
-    ['cc-es002']),
+  {
+    id: 'cc-es004',
+    code: 'CC-ES004',
+    name: 'Documentos Portáteis',
+    familia: 'Escritório',
+    description: 'PDF de verdade: juntar, dividir, digitalizar, assinar e achar palavra dentro.',
+    /*
+      Sai da CC-ES002, e está escrito no requisito 1 do documento oficial. A
+      razão é direta: o requisito 4.1 manda gerar PDF a partir de um documento
+      de texto, e quem não sabe montar o documento não tem o que exportar.
+
+      O que carrega esta vereda é o que **não se vê**. Um PDF pesquisável e um
+      em imagem abrem iguais; uma assinatura colada e uma verificável desenham
+      o mesmo rabisco; protegido por senha e seguro têm o mesmo cadeado. Nos
+      três, o que a pessoa vê não responde à pergunta que ela precisa fazer — e
+      é por isso que o requisito 5 pede prova, e não olhada.
+    */
+    origem: 'CC-ES002',
+    preRequisitos: ['cc-es002'],
+    mostraResultado: true,
+    modulos: MODULOS_DE_DOCUMENTOS_PORTATEIS,
+  },
   anunciada('CC-ES005', 'Contas e Segurança Digital', 'Escritório',
     'Senha, duas etapas e o plano de contas do clube — inclusive na troca de diretoria.',
     ['cc-es001']),

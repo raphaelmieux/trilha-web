@@ -2263,6 +2263,27 @@ continuou servindo o módulo antigo — a tela parecia certa e a medida que se
 fazia nela era de um arquivo que não existia mais. Está escrito acima e
 continua valendo: rode o `tsc` **antes** de medir qualquer coisa no navegador.
 
+**A classe da insígnia de vereda nunca era conferida, e este documento
+afirmava que era.** Está escrito acima, na migration da CC-ES003 e na da
+CC-ES002: "escrever outra classe na migration não estouraria nada — a tela lê
+a do banco, e `insignias.test.ts` compara as duas". Ela não comparava. A trava
+filtra por `INSIGNIAS`, e a insígnia de vereda **não está lá**: ela nasce da
+estante, de `classeDaVereda` e do ícone `route`. O filtro passava por cima
+dela em silêncio.
+
+O efeito é o de sempre: qualquer classe escrita numa migration de vereda
+passava, e a estante mostraria um degrau que a plataforma não calculou. Achou-se
+mutando `excursionista` para `pioneiro` na migration da CC-ES004 — nenhum teste
+caiu. E o sintoma de que alguma coisa estava errada estava à vista havia meses:
+`classeDaVereda` é exportada de `insignias.ts` e **não é usada lá dentro**.
+
+A comparação nova sai da **estante**, e não do catálogo, porque é a estante
+que a tela desenha — e ela cobre de uma vez as três origens de insígnia:
+degrau de escada, trilha e vereda. Família nova entra sozinha. Com a guarda
+contra o vazio de sempre, que aqui é um piso de cinquenta: uma estante que
+esvaziasse, ou um filtro que tirasse tudo, deixaria a trava verde por não ter
+conferido nada.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2879,6 +2900,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/formaDaInsignia.test.ts` | glifo maior que o círculo inscrito do triângulo, que vaza só no Amigo e no Companheiro |
 | `src/lib/formaDaInsignia.test.ts` | classe cujo glifo não se lê sobre a própria cor, ou ícone sem raio de tinta medido |
 | `src/lib/insignias.test.ts` | ícone ou classe do catálogo divergindo do que a migration semeia |
+| `src/lib/insignias.test.ts` | classe de insígnia de vereda ou de trilha divergindo da que a estante desenha |
 | `src/hooks/escritaDepoisDoDesmonte.test.ts` | efeito que escreve estado depois de esperar sem saber se a tela ainda está lá |
 | `src/lib/ofensiva.test.ts` | evento de laboratório que ninguém classificou, e que por isso não faria a ofensiva andar |
 | `src/lib/ofensiva.test.ts` | a lista de eventos do banco divergindo da do navegador, que daria duas ofensivas à mesma pessoa |
