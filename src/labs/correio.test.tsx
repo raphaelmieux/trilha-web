@@ -6,7 +6,7 @@ import { Inbox, Send, Archive, Trash2 } from 'lucide-react';
 import {
   CSS_DO_CORREIO, TopoDoCorreio, LateralDoCorreio, ListaDoCorreio, LinhaDaLista,
   BarraDaMensagem, LeituraDaMensagem, JanelinhaDeEscrever, CampoDeEndereco,
-  CaixaDeConfiguracoes,
+  CaixaDeConfiguracoes, DestinoDoLink,
 } from './correio';
 
 /*
@@ -262,5 +262,73 @@ describe('no celular a lateral vira fileira, e as pastas continuam', () => {
     expect(celular).toContain('flex-direction: column');
     expect(celular).not.toMatch(/\.co-pasta[^{]*\{[^}]*display:\s*none/);
     expect(celular).not.toMatch(/\.co-lado[^{]*\{[^}]*display:\s*none/);
+  });
+});
+
+/* ── O link disfarçado ─────────────────────────────────────────────────────── */
+
+describe('o link mostra um texto e vai para outro lugar', () => {
+  /*
+    É o indício mais comum de uma mensagem fraudulenta, e o único que não se vê
+    sem parar o ponteiro em cima. Um correio que não desenhasse links, ou que
+    escrevesse o destino ao lado do texto, apagaria da tela o gesto que o
+    requisito 5 da CC-ES005 manda fazer.
+  */
+  const LINKS = [{ texto: 'bancodobrasil.com.br', para: 'http://bb-verificacao.xyz/entrar' }];
+
+  it('o texto do link é o que se lê, e o destino não vai escrito ao lado', () => {
+    montar(
+      <LeituraDaMensagem
+        assunto="a" deNome="b" de="c@d.e" corpo="Confirme seus dados:"
+        links={LINKS}
+      />,
+    );
+    expect(texto()).toContain('bancodobrasil.com.br');
+    expect(texto(), 'o destino de verdade foi impresso junto do texto')
+      .not.toContain('bb-verificacao.xyz');
+  });
+
+  it('e ele está no href, que é de onde o navegador tira a barra de baixo', () => {
+    montar(
+      <LeituraDaMensagem assunto="a" deNome="b" de="c@d.e" corpo="x" links={LINKS} />,
+    );
+    const a = container.querySelector<HTMLAnchorElement>('a.co-link')!;
+    expect(a.getAttribute('href')).toBe(LINKS[0].para);
+  });
+
+  it('apontar o link avisa o laboratório para onde ele vai', () => {
+    /* E também pelo foco, não só pelo ponteiro: quem navega por teclado não
+       passa o mouse em lugar nenhum, e o indício não pode sumir para ele. */
+    const apontou: (string | undefined)[] = [];
+    montar(
+      <LeituraDaMensagem
+        assunto="a" deNome="b" de="c@d.e" corpo="x" links={LINKS}
+        aoApontarLink={p => apontou.push(p)}
+      />,
+    );
+    const a = container.querySelector('a.co-link')!;
+    act(() => { a.dispatchEvent(new MouseEvent('pointerover', { bubbles: true })); });
+    act(() => { a.dispatchEvent(new MouseEvent('mouseover', { bubbles: true })); });
+    act(() => { (a as HTMLElement).focus(); });
+    expect(apontou, 'apontar o link não avisou ninguém').toContain(LINKS[0].para);
+  });
+
+  it('e a barra de destino desenha o endereço inteiro quando há um', () => {
+    montar(<DestinoDoLink para="http://bb-verificacao.xyz/entrar" />);
+    expect(texto()).toContain('http://bb-verificacao.xyz/entrar');
+
+    montar(<DestinoDoLink />);
+    expect(container.querySelector('.co-destino')).toBeNull();
+  });
+
+  it('clicar no link não navega para fora da plataforma', () => {
+    /* A simulação tem de aguentar curiosidade, e curiosidade aqui é clicar no
+       link do golpe — que é o gesto que a lição existe para desaconselhar.
+       Sair da plataforma levaria o desbravador para um site de verdade. */
+    montar(<LeituraDaMensagem assunto="a" deNome="b" de="c@d.e" corpo="x" links={LINKS} />);
+    const a = container.querySelector('a.co-link')!;
+    const ev = new MouseEvent('click', { bubbles: true, cancelable: true });
+    act(() => { a.dispatchEvent(ev); });
+    expect(ev.defaultPrevented, 'o clique no link do golpe não foi barrado').toBe(true);
   });
 });

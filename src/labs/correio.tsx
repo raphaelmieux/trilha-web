@@ -135,6 +135,24 @@ export const CSS_DO_CORREIO = `
 .co-config { flex: 1; min-height: 0; overflow: auto; padding: 18px 22px; }
 .co-config h2 { color: #202124; }
 
+.co-link {
+  color: #1A73E8; text-decoration: underline; cursor: pointer;
+  margin-right: 14px; word-break: break-word;
+}
+.co-link:focus-visible { outline: 2px solid #1A73E8; outline-offset: 2px; }
+
+/* A barra que diz para onde o link vai, no canto de baixo — onde o navegador
+   a põe. Escrever o destino ao lado do link poria na nossa tela a resposta que
+   o programa imitado já dá na dele, e apagaria o gesto que o requisito 5
+   manda: parar o ponteiro em cima e ler. */
+.co-destino {
+  position: absolute; left: 0; bottom: 0; max-width: 80%;
+  background: #FFFFFF; border: 1px solid #DADCE0; border-bottom: none;
+  border-left: none; border-radius: 0 6px 0 0; padding: 3px 10px;
+  font-size: 11.5px; color: #3C4043;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
 /*
   No celular a lateral vira uma fileira no alto: uma coluna de 190px ao lado da
   lista deixa a mensagem sem largura nenhuma, e ler a mensagem é o que o
@@ -328,12 +346,34 @@ export function BarraDaMensagem({ acoes, extra }: {
  * domínio que não é do banco, e um correio que mostrasse só o nome apagaria o
  * primeiro indício que o requisito 5 manda apontar.
  */
-export function LeituraDaMensagem({ assunto, deNome, de, corpo, anexos, rodape, children }: {
+/**
+ * Um link dentro da mensagem.
+ *
+ * O `texto` é o que se lê; o `para` é para onde ele vai de verdade. Eles podem
+ * discordar, e **é essa discordância que o requisito 5 manda apontar**: um
+ * link escrito "banco.com.br" levando a outro lugar é o indício mais comum que
+ * existe, e o único que não se vê sem parar o ponteiro em cima dele.
+ *
+ * Por isso o destino aparece na barra de baixo da janela ao passar o ponteiro,
+ * como no navegador — e não escrito ao lado do link, que poria na nossa tela a
+ * resposta que o programa imitado dá na dele.
+ */
+export interface LinkDaMensagem {
+  texto: string;
+  para: string;
+}
+
+export function LeituraDaMensagem({
+  assunto, deNome, de, corpo, anexos, links, aoApontarLink, rodape, children,
+}: {
   assunto: string;
   deNome: string;
   de: string;
   corpo: string;
   anexos?: string[];
+  links?: LinkDaMensagem[];
+  /** Presente, apontar um link avisa o laboratório para onde ele vai. */
+  aoApontarLink?: (para: string | undefined) => void;
   rodape?: React.ReactNode;
   children?: React.ReactNode;
 }) {
@@ -345,6 +385,22 @@ export function LeituraDaMensagem({ assunto, deNome, de, corpo, anexos, rodape, 
         <strong style={{ color: '#202124' }}>{deNome}</strong> &lt;{de}&gt;
       </p>
       <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{corpo}</p>
+      {links && links.length > 0 && (
+        <p style={{ marginTop: 12, lineHeight: 1.9 }}>
+          {links.map(l => (
+            <a
+              key={l.texto} href={l.para} className="co-link"
+              onClick={e => e.preventDefault()}
+              onMouseEnter={() => aoApontarLink?.(l.para)}
+              onMouseLeave={() => aoApontarLink?.(undefined)}
+              onFocus={() => aoApontarLink?.(l.para)}
+              onBlur={() => aoApontarLink?.(undefined)}
+            >
+              {l.texto}
+            </a>
+          ))}
+        </p>
+      )}
       {anexos && anexos.length > 0 && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
           {anexos.map(a => (
@@ -356,6 +412,17 @@ export function LeituraDaMensagem({ assunto, deNome, de, corpo, anexos, rodape, 
     </div>
   );
 }
+
+/**
+ * Para onde o link aponta, no canto de baixo da janela.
+ *
+ * É onde o navegador a mostra, e é o único lugar em que o destino de verdade
+ * de um link aparece antes de alguém clicar nele. Um link disfarçado — texto
+ * "bancodobrasil.com.br" levando a outro endereço — é o indício mais comum
+ * que existe, e é o único que não se vê sem parar o ponteiro em cima.
+ */
+export const DestinoDoLink = ({ para }: { para?: string }) =>
+  (para ? <span className="co-destino">{para}</span> : null);
 
 /* ── A janelinha de escrever ──────────────────────────────────────────────── */
 
