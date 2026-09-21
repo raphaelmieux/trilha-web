@@ -393,12 +393,32 @@ export function qualidadeDaCaptura(c: Captura): number {
   Reconhecer errado é muito mais honesto do que reconhecer menos: texto que
   **falta** se percebe olhando o tamanho, texto que está **quase certo** não
   se percebe de jeito nenhum. E as duas falham na procura exatamente igual.
+
+  ── E a lista precisa cobrir a língua ────────────────────────────────────
+  Ela começou com quatro trocas — m, l, 0 e ç — e tinha um buraco que não se
+  via: palavra sem nenhuma dessas letras saía **intacta** de um
+  reconhecimento péssimo. Cinco de oito palavras portuguesas comuns passavam
+  ilesas, e entre elas estavam "Ficha", "Recibo" e "Chácara" — que são
+  exatamente as que as lições mandam procurar. A página ficava mal lida e
+  perfeitamente pesquisável, que é o contrário da lição.
+
+  Hoje são doze, todas confusões que o reconhecimento comete de verdade, e a
+  cobertura é conferida: `documentoPdf.test.ts` cobra que palavra portuguesa
+  comum não escape.
 */
 const TROCAS_DO_OCR: [RegExp, string][] = [
   [/m/g, 'rn'],
+  [/h/g, 'li'],
+  [/d/g, 'cl'],
   [/l/g, 'I'],
-  [/0/g, 'O'],
   [/ç/g, 'c'],
+  [/0/g, 'O'],
+  [/e/g, 'c'],
+  [/a/g, 'o'],
+  [/n/g, 'ri'],
+  [/u/g, 'ii'],
+  [/i/g, 'l'],
+  [/s/g, '5'],
 ];
 
 /**

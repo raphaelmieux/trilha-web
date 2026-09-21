@@ -2135,6 +2135,77 @@ escrevesse direto veria a régua não reagir e acusaria o componente de um
 defeito que é do teste. Quem desfaz isso é o setter nativo do protótipo. É a
 mesma família do `pointerenter` que o React não escuta.
 
+**Uma pasta do clube, sete lições.** Os documentos da CC-ES004 moram em
+`dossieDoClube.ts` e são os mesmos nas sete: a ata, o orçamento, a
+apresentação, a circular, as fichas e o recibo. É o arranjo do
+`cadernoDoClube()` da CC-ES003, do `discoDoClube()` da CC-ES001 e do terminal
+da CC003, pelo motivo escrito nos três — sete pastas diferentes ensinariam que
+cada exercício acontece num computador de mentira. E cada lição parte de um
+**estado** dela: o módulo 2 recebe os três PDFs que o módulo 1 gerou, e o
+módulo 7 recebe o dossiê quase montado. É o campo `documento` da CC-ES002 e o
+`caderno` da CC-ES003 outra vez.
+
+**O reconhecimento ruim precisa cobrir a língua, e o buraco não se via.** A
+lista de trocas do OCR começou com quatro — `m`→`rn`, `l`→`I`, `0`→`O`,
+`ç`→`c` —, que é a lista das confusões famosas, e parecia bastar. Só que a
+troca é **uma por palavra**, e palavra sem nenhuma dessas quatro letras saía
+**intacta** de um reconhecimento péssimo: de oito palavras portuguesas comuns,
+cinco passavam ilesas, e entre elas estavam "Ficha", "Recibo" e "Chácara" —
+que são exatamente as três que as lições mandam procurar.
+
+O estrago é o de sempre: a página ficava mal lida e **perfeitamente
+pesquisável**. O aviso de digitalização sumia, o leitor passava a dizer
+"pesquisável", a procura achava a palavra, e a armadilha do módulo 3 — reduzir
+antes de reconhecer — deixava de existir para metade das buscas. Nada
+estourava, e o requisito 5 comprovava coisa nenhuma.
+
+Hoje são doze trocas, todas confusões que o reconhecimento comete de verdade,
+e a cobertura é **conferida**: `documentoPdf.test.ts` passa uma lista de
+palavras portuguesas comuns e cobra que nenhuma escape. A trava nomeia a
+palavra que escapou, porque "alguma escapou" não diz onde procurar.
+
+**O dossiê abre com quatro documentos, e o quinto é o recibo do módulo 4.** Ele
+abria com cinco, e a meta "reunir cinco" nascia verde — a própria trava de
+"nenhuma meta abre verde" pegou o desenho de quem a escreveu. Consertar
+mudando a meta para seis seria contornar a trava; o que estava errado era a
+pasta. Reunir **é** metade do que o requisito 8 manda fazer, e o documento que
+falta é justamente o que o desbravador digitalizou dois módulos atrás.
+
+**O padrão de nome é o da CC-ES001, e as funções são as de lá.** O requisito 8
+manda nomear "conforme o padrão adotado na vereda CC-ES001", e a lição repete
+isso com todas as letras. Então `moldeDoNome` e `nomeTemDataEVersao` são
+importadas, e não reescritas — e escritas aqui elas **já tinham divergido**:
+as daqui aceitavam `v 2` com espaço e a data em dia-mês-ano, que as de lá
+recusam. O desbravador levaria bronca num nome que a outra vereda aprovou, ou
+o contrário, e nenhuma das duas telas teria como saber.
+
+A mutação é que mostrou isso. Trocar `moldes.size === 1` por `>= 1` **não
+derrubou teste nenhum**: o caso que eu tinha escrito para o molde divergente
+vinha sem versão, então reprovava pela conta da versão e a do molde nunca era
+exercitada. É a trava passando por acaso, que é indistinguível de estar certa.
+
+**As duas descobertas do módulo 6 não deixam marca no documento.** Ver a
+assinatura quebrar e copiar o texto apesar de "não permitir copiar" não mudam
+nada no arquivo — são o desbravador **olhando**, e o requisito 6 e o 7 são
+sobre isso. É a família das quatro verificações do Explorador que só existem
+como gesto, e como lá se justifica uma a uma: `descobertas` é uma lista na
+pasta, e não um campo do PDF, porque o que aconteceu foi com quem estuda.
+
+Elas também não podem sair de graça: assinar não basta para "viu quebrar", e
+pôr senha não basta para "senha não protege". Contá-las pelo estado do
+documento premiaria o clique e não a descoberta, que é o contrário do que as
+duas lições existem para mostrar.
+
+**Juntar é juntar coisas diferentes.** A meta contava páginas, e o mesmo
+documento combinado consigo mesmo três vezes dava um arquivo de três páginas
+sem nada reunido. Ela conta origens distintas. É "zero link não é zero link
+quebrado" na forma que mais engana: o número está certo, e não é o número que
+a tarefa queria.
+
+Pelo mesmo caminho, "o PDF congela" se mede pela **divergência** entre o PDF e
+a origem, e não por "editou": um documento que voltasse ao texto original
+depois da edição deixaria a tarefa verde sem ter mostrado nada.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2684,6 +2755,14 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/documentoPdf.test.ts` | foto de papel pesando como página digitada, que apaga o sentido de comprimir |
 | `src/labs/documentoPdf.test.ts` | assinatura colada que quebra ao mexer no documento, ou verificável que não quebra |
 | `src/labs/documentoPdf.test.ts` | "não permitir copiar" tratado como trava, ou PDF sem página dizendo-se pesquisável |
+| `src/labs/documentoPdf.test.ts` | palavra portuguesa comum saindo intacta de um reconhecimento péssimo |
+| `src/labs/metasDaCcEs004.test.ts` | meta da CC-ES004 que abre verde, ou que a solução de referência não fecha |
+| `src/labs/metasDaCcEs004.test.ts` | dossiê nomeado em cinco moldes, ou num molde só e sem data nenhuma |
+| `src/labs/metasDaCcEs004.test.ts` | nome que a CC-ES001 recusa passando aqui, que são duas contas do mesmo padrão |
+| `src/labs/metasDaCcEs004.test.ts` | reduzir antes de reconhecer fechando a lição, com o arquivo leve e sem achar nada |
+| `src/labs/metasDaCcEs004.test.ts` | balão da liderança contando como resposta, ou campo preenchido com espaço |
+| `src/labs/metasDaCcEs004.test.ts` | descoberta do módulo 6 saindo do estado do documento em vez do gesto |
+| `src/labs/metasDaCcEs004.test.ts` | documento combinado consigo mesmo valendo por três reunidos |
 | `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |
