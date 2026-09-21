@@ -14,6 +14,8 @@ import { moldeDoNome, nomeTemDataEVersao } from '../lib/exploradorValidator';
 import {
   type MetaDoPdf, type PastaDoClube,
   RECIBO,
+  pastaAntesDeExportar, pastaComOsTresPdfs, pastaDasFichas, pastaDoRecibo,
+  pastaDosFormularios, pastaParaAssinar, pastaDoDossie,
 } from './dossieDoClube';
 
 /* ── Auxiliares ───────────────────────────────────────────────────────────── */
@@ -469,6 +471,12 @@ export type LicaoDaCcEs004 =
   | 'gerar' | 'juntar' | 'reduzir' | 'digitalizar'
   | 'formulario' | 'assinar' | 'dossie';
 
+export interface LicaoDePasta {
+  /** A pasta como a lição a encontra. Função, e não constante: cada abertura é nova. */
+  inicial: () => PastaDoClube;
+  metas: MetaDoPdf[];
+}
+
 /**
  * De que estado cada lição parte e o que ela cobra.
  *
@@ -477,17 +485,20 @@ export type LicaoDaCcEs004 =
  * a lição certa e encontraria a pasta errada. Assim ela **não compila** até
  * dizer de onde parte.
  *
- * E o mapa mora fora do teste, como o da CC-ES003: quem o lê é a tela, que
- * monta a lição, **e** a trava, que confere que nenhuma meta abre verde.
+ * E o mapa traz o **estado de partida** junto das metas, e mora fora do teste,
+ * como o `CADERNOS_DA_CC_ES003`: quem o lê é a tela, que monta a lição, **e** a
+ * trava, que confere que nenhuma meta abre verde. Escrito só no teste, a tela
+ * repetiria a escolha e as duas divergiriam na primeira pasta nova — e a trava
+ * continuaria verde conferindo a pasta que a tela não abre.
  */
-export const METAS_DA_LICAO: Record<LicaoDaCcEs004, MetaDoPdf[]> = {
-  gerar: METAS_DE_GERAR,
-  juntar: METAS_DE_JUNTAR,
-  reduzir: METAS_DE_REDUZIR,
-  digitalizar: METAS_DE_DIGITALIZAR,
-  formulario: METAS_DE_FORMULARIO,
-  assinar: METAS_DE_ASSINAR,
-  dossie: METAS_DO_DOSSIE,
+export const PASTAS_DA_CC_ES004: Record<LicaoDaCcEs004, LicaoDePasta> = {
+  gerar: { inicial: pastaAntesDeExportar, metas: METAS_DE_GERAR },
+  juntar: { inicial: pastaComOsTresPdfs, metas: METAS_DE_JUNTAR },
+  reduzir: { inicial: pastaDasFichas, metas: METAS_DE_REDUZIR },
+  digitalizar: { inicial: pastaDoRecibo, metas: METAS_DE_DIGITALIZAR },
+  formulario: { inicial: pastaDosFormularios, metas: METAS_DE_FORMULARIO },
+  assinar: { inicial: pastaParaAssinar, metas: METAS_DE_ASSINAR },
+  dossie: { inicial: pastaDoDossie, metas: METAS_DO_DOSSIE },
 };
 
 /** O texto que o módulo 3 manda procurar, e o que o módulo 4 manda procurar. */

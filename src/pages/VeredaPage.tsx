@@ -19,6 +19,7 @@ import LaboratorioDeAmbiente from '../components/LaboratorioDeAmbiente';
 import LaboratorioDeTerminal from '../components/LaboratorioDeTerminal';
 import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
 import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
+import LaboratorioDePdf from '../components/LaboratorioDePdf';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
 import LaboratorioDoRelatorio from '../components/LaboratorioDoRelatorio';
@@ -272,6 +273,25 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'planilha' && profile?.id) {
     return (
       <LaboratorioDePlanilha vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /*
+    O leitor de PDF também não passa pelo editor de código.
+
+    Não há arquivo para escrever nem linguagem para realçar: o que se confere é
+    a **pasta do clube** — que PDFs existem nela, se o texto foi reconhecido
+    antes ou depois de reduzir, que campos do formulário foram preenchidos, e o
+    que a assinatura respondeu quando alguém mexeu no documento.
+
+    As sete lições abrem a mesma tela: o que muda entre elas é de que estado da
+    pasta se parte e o que se cobra, e quem diz isso é a `pasta` da lição. Sete
+    componentes seriam sete leitores de PDF, que é o defeito dos dois "Word".
+  */
+  if (licaoAberta?.tipo === 'pdf' && profile?.id) {
+    return (
+      <LaboratorioDePdf vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

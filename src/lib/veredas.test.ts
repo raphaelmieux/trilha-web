@@ -40,6 +40,7 @@ import { RELATORIO_ANUAL_INICIAL, METAS_DO_RELATORIO_ANUAL } from '../labs/relat
 import { DIA_DO_DESBRAVADOR_INICIAL, METAS_DA_REVISAO } from '../labs/diaDoDesbravador';
 import { RELATORIO_DA_ENTREGA_INICIAL, ENTREGA_INICIAL, METAS_DA_ENTREGA } from '../labs/entregaDoRelatorio';
 import { CADERNOS_DA_CC_ES003 } from '../labs/cadernosDaCcEs003';
+import { PASTAS_DA_CC_ES004 } from '../labs/metasDaCcEs004';
 
 /*
   Os laboratórios de Word partem de documentos diferentes, e a trava precisa
@@ -484,6 +485,11 @@ describe('os modelos dos laboratórios da vereda', () => {
            dela. O mapa dos cadernos mora fora do teste — a tela também o lê. */
         case 'planilha': return Object.fromEntries(
           CADERNOS_DA_CC_ES003[l.caderno].metas.map(m => [m.id, m.passos]));
+        /* E pela mesma razão do de Word e do de planilha: cada meta do PDF
+           carrega os próprios passos. O mapa das pastas mora fora do teste —
+           a tela também o lê. */
+        case 'pdf': return Object.fromEntries(
+          PASTAS_DA_CC_ES004[l.pasta].metas.map(m => [m.id, m.passos]));
         case 'laboratorio': return passosDe(l.linguagem);
         /* Teoria e redação não têm verificação com passo a passo. */
         case 'teoria': case 'redacao': return null;

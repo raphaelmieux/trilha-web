@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
-  METAS_DA_LICAO, type LicaoDaCcEs004,
+  PASTAS_DA_CC_ES004, type LicaoDaCcEs004,
 } from './metasDaCcEs004';
 import {
   type PastaDoClube, type MetaDoPdf,
-  pastaAntesDeExportar, pastaComOsTresPdfs, pastaDasFichas, pastaDoRecibo,
-  pastaDosFormularios, pastaParaAssinar, pastaDoDossie,
+  pastaComOsTresPdfs, pastaDasFichas, pastaDosFormularios,
+  pastaParaAssinar, pastaDoDossie,
   exportarDeOrigem, reciboFotografado, comPdf, semPdf, comDescoberta,
   ARQUIVOS_DE_ORIGEM, CAMPOS_DA_AUTORIZACAO,
 } from './dossieDoClube';
@@ -27,15 +27,11 @@ import {
   fica a um import de distância da tela.
 */
 
-const PARTIDA: Record<LicaoDaCcEs004, () => PastaDoClube> = {
-  gerar: pastaAntesDeExportar,
-  juntar: pastaComOsTresPdfs,
-  reduzir: pastaDasFichas,
-  digitalizar: pastaDoRecibo,
-  formulario: pastaDosFormularios,
-  assinar: pastaParaAssinar,
-  dossie: pastaDoDossie,
-};
+/* De onde cada lição parte sai do **mesmo** mapa que a tela lê. Escrito aqui,
+   ele seria uma segunda escolha, e a trava ficaria verde conferindo uma pasta
+   que a tela não abre. */
+const PARTIDA = (l: LicaoDaCcEs004) => PASTAS_DA_CC_ES004[l].inicial();
+const METAS = (l: LicaoDaCcEs004) => PASTAS_DA_CC_ES004[l].metas;
 
 const verdes = (metas: MetaDoPdf[], p: PastaDoClube) =>
   metas.filter(m => m.feita(p)).map(m => m.id);
@@ -94,13 +90,25 @@ const resolver: Record<LicaoDaCcEs004, (p: PastaDoClube) => PastaDoClube> = {
     };
   },
 
+  /*
+    A sequência é a que a pessoa faz, e não um atalho até o estado final.
+
+    Assinar, **mexer** para ver o selo virar "não confere", e assinar de novo.
+    A primeira versão pulava o meio — assinava, protegia, e carimbava as duas
+    descobertas à mão — e por isso não percebeu que `assinou` e `viu-quebrar`
+    se excluíam: quebrar a assinatura derruba a primeira, e sem assinar outra
+    vez a lição ficava impossível de fechar. Quem achou foi a trava de tela,
+    que clica; esta aqui passava.
+  */
   assinar: p => {
-    const assinado = p.pdfs.map(d => proteger(
-      assinarVerificavel(d, 'Marta Rocha', 1_700_000_000_000),
+    const assinado = p.pdfs.map(d => assinarVerificavel(d, 'Marta Rocha', 1_700_000_000_000));
+    const mexido = assinado.map(d => preencher(d, 'nome', 'Ana B. Rocha'));
+    const reassinado = mexido.map(d => proteger(
+      assinarVerificavel(d, 'Marta Rocha', 1_700_000_000_100),
       { senha: 'clube2026', pedeAoLeitor: { naoCopiar: true, naoImprimir: false } },
     ));
     return comDescoberta(
-      comDescoberta({ ...p, pdfs: assinado }, 'assinatura-quebra'),
+      comDescoberta({ ...p, pdfs: reassinado }, 'assinatura-quebra'),
       'senha-nao-protege',
     );
   },
@@ -123,32 +131,31 @@ const resolver: Record<LicaoDaCcEs004, (p: PastaDoClube) => PastaDoClube> = {
 
 /* ── As duas contas ───────────────────────────────────────────────────────── */
 
-const LICOES = Object.keys(METAS_DA_LICAO) as LicaoDaCcEs004[];
+const LICOES = Object.keys(PASTAS_DA_CC_ES004) as LicaoDaCcEs004[];
 
 describe('nenhuma lição da CC-ES004 abre com tarefa verde', () => {
   it.each(LICOES)('%s', licao => {
-    expect(verdes(METAS_DA_LICAO[licao], PARTIDA[licao]())).toEqual([]);
+    expect(verdes(METAS(licao), PARTIDA(licao))).toEqual([]);
   });
 
   it('e as sete têm tarefa', () => {
     /* A guarda contra o vazio: lista de metas vazia passaria na conta acima
        por não ter conferido nada. */
-    for (const l of LICOES) expect(METAS_DA_LICAO[l].length).toBeGreaterThan(0);
+    for (const l of LICOES) expect(METAS(l).length).toBeGreaterThan(0);
     expect(LICOES).toHaveLength(7);
   });
 });
 
 describe('e toda meta se vence', () => {
   it.each(LICOES)('%s', licao => {
-    const metas = METAS_DA_LICAO[licao];
-    expect(vermelhas(metas, resolver[licao](PARTIDA[licao]()))).toEqual([]);
+    expect(vermelhas(METAS(licao), resolver[licao](PARTIDA(licao)))).toEqual([]);
   });
 });
 
 /* ── As armadilhas que cada lição planta ──────────────────────────────────── */
 
 describe('módulo 3: a ordem entre reconhecer e reduzir', () => {
-  const meta = (id: string) => METAS_DA_LICAO.reduzir.find(m => m.id === id)!;
+  const meta = (id: string) => METAS('reduzir').find(m => m.id === id)!;
 
   it('reduzir antes de reconhecer deixa o arquivo leve e sem achar nada', () => {
     /*
@@ -167,7 +174,7 @@ describe('módulo 3: a ordem entre reconhecer e reduzir', () => {
 });
 
 describe('módulo 5: responder não é o mesmo que ter recebido', () => {
-  const meta = (id: string) => METAS_DA_LICAO.formulario.find(m => m.id === id)!;
+  const meta = (id: string) => METAS('formulario').find(m => m.id === id)!;
 
   it('o comentário que já veio da liderança não conta como resposta', () => {
     /* "Zero link não é zero link quebrado" aplicado a uma conversa: a
@@ -193,9 +200,35 @@ describe('módulo 6: as duas descobertas que não deixam marca', () => {
       ...pastaParaAssinar(),
       pdfs: pastaParaAssinar().pdfs.map(d => assinarVerificavel(d, 'Marta Rocha', 1)),
     };
-    const meta = (id: string) => METAS_DA_LICAO.assinar.find(m => m.id === id)!;
+    const meta = (id: string) => METAS('assinar').find(m => m.id === id)!;
     expect(meta('assinou').feita(soAssinou)).toBe(true);
     expect(meta('viu-quebrar').feita(soAssinou)).toBe(false);
+  });
+
+  it('e quebrar a assinatura derruba "assinou" até assinar de novo', () => {
+    /*
+      As duas metas convivem, e só convivem porque se assina outra vez. Sem
+      esta conta, a lição fecharia com o documento assinado por uma assinatura
+      que não confere — que é o contrário do que o requisito 6 ensina — ou não
+      fecharia nunca.
+    */
+    const meta = (id: string) => METAS('assinar').find(m => m.id === id)!;
+    const base = PASTAS_DA_CC_ES004.assinar.inicial();
+    const assinado = {
+      ...base,
+      pdfs: base.pdfs.map(d => assinarVerificavel(d, 'Marta Rocha', 1)),
+    };
+    const mexido: PastaDoClube = {
+      ...assinado,
+      pdfs: assinado.pdfs.map(d => preencher(d, 'nome', 'Outro Nome')),
+    };
+    expect(meta('assinou').feita(mexido)).toBe(false);
+
+    const reassinado: PastaDoClube = {
+      ...mexido,
+      pdfs: mexido.pdfs.map(d => assinarVerificavel(d, 'Marta Rocha', 2)),
+    };
+    expect(meta('assinou').feita(reassinado)).toBe(true);
   });
 
   it('e pôr senha não basta: é preciso ter copiado o texto apesar dela', () => {
@@ -205,14 +238,14 @@ describe('módulo 6: as duas descobertas que não deixam marca', () => {
         senha: 'x', pedeAoLeitor: { naoCopiar: true, naoImprimir: false },
       })),
     };
-    const meta = (id: string) => METAS_DA_LICAO.assinar.find(m => m.id === id)!;
+    const meta = (id: string) => METAS('assinar').find(m => m.id === id)!;
     expect(meta('protegeu').feita(soProtegeu)).toBe(true);
     expect(meta('senha-nao-protege').feita(soProtegeu)).toBe(false);
   });
 });
 
 describe('módulo 7: o padrão de nome pede molde e pede data', () => {
-  const meta = METAS_DA_LICAO.dossie.find(m => m.id === 'nomeados')!;
+  const meta = METAS('dossie').find(m => m.id === 'nomeados')!;
 
   /* Cinco documentos: os quatro da pasta mais o recibo trazido do módulo 4. */
   const cincoNaPasta = () => comPdf(pastaDoDossie(), reciboFotografado(CAPTURA_BOA));
@@ -271,7 +304,7 @@ describe('módulo 7: o padrão de nome pede molde e pede data', () => {
   });
 
   it('e um documento que continua sendo foto derruba o dossiê', () => {
-    const outra = METAS_DA_LICAO.dossie.find(m => m.id === 'todos-pesquisaveis')!;
+    const outra = METAS('dossie').find(m => m.id === 'todos-pesquisaveis')!;
     const quaseTudo: PastaDoClube = {
       ...cincoNaPasta(),
       pdfs: cincoNaPasta().pdfs.map((d, i) => (i === 2 ? d : reconhecerTexto(d))),
@@ -281,13 +314,13 @@ describe('módulo 7: o padrão de nome pede molde e pede data', () => {
 
   it('e a pasta vazia não se diz pesquisável', () => {
     /* "Zero de zero é tudo": `every` sobre lista vazia é verdadeiro. */
-    const outra = METAS_DA_LICAO.dossie.find(m => m.id === 'todos-pesquisaveis')!;
+    const outra = METAS('dossie').find(m => m.id === 'todos-pesquisaveis')!;
     expect(outra.feita({ origens: [], pdfs: [], descobertas: [] })).toBe(false);
   });
 });
 
 describe('módulo 2: juntar é juntar coisas diferentes', () => {
-  const meta = METAS_DA_LICAO.juntar.find(m => m.id === 'juntou')!;
+  const meta = METAS('juntar').find(m => m.id === 'juntou')!;
 
   it('o mesmo documento combinado consigo mesmo não conta', () => {
     /* Três páginas, e nada reunido. Contar só páginas deixaria passar. */

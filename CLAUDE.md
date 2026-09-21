@@ -2206,6 +2206,63 @@ Pelo mesmo caminho, "o PDF congela" se mede pela **divergência** entre o PDF e
 a origem, e não por "editou": um documento que voltasse ao texto original
 depois da edição deixaria a tarefa verde sem ter mostrado nada.
 
+**As sete lições da CC-ES004 são um componente só, e o mapa mora fora do
+teste.** É o arranjo do `LaboratorioDePlanilha` sobre `excel.tsx` e do
+`LaboratorioDeExplorador` sobre `explorer.tsx`, pelo motivo escrito nos dois:
+sete componentes seriam sete leitores de PDF. `PASTAS_DA_CC_ES004` traz o
+estado de partida **junto** das metas, e mora no mesmo arquivo que a tela lê —
+escrito só na trava, como o de Word já foi, a tela repetiria a escolha e as
+duas divergiriam na primeira pasta nova, com a trava continuando verde
+conferindo uma pasta que a tela não abre.
+
+**A tela inicial do leitor é do programa, e não do exercício.** Todo leitor de
+PDF tem uma — Recentes no Acrobat, Início no Foxit —, então ela mora em
+`leitorDePdf.tsx` e não dentro do laboratório. E ela **não** é uma janela do
+Explorador: a CC-ES001 é a vereda do Explorador, e imitá-lo aqui seria a
+terceira cópia de um programa que esta vereda não ensina. Os arquivos que ainda
+não são PDF aparecem na mesma lista, porque é assim que a pasta do clube está —
+esconder os outros formatos tiraria da tela o gesto inteiro do requisito 4.1,
+que é partir de um arquivo que não é PDF.
+
+**A lição de assinar era impossível de vencer, e as duas metas se excluíam.**
+"Assinou" pede assinatura válida; "viu quebrar" pede ter mexido depois de
+assinar, o que derruba a primeira. Quem fizesse as duas coisas ficaria com uma
+lista que nunca fecha — e a trava de motor passava, porque a solução de
+referência dela **pulava o meio do caminho**: assinava, protegia, e carimbava
+as duas descobertas à mão.
+
+O conserto não foi afrouxar a meta, e sim escrever a sequência que a pessoa
+faz: assinar, mexer para ver o selo virar "não confere", e **assinar de novo**.
+É o que se faz na vida, e entregar um documento com assinatura que não confere
+é o contrário do que o requisito 6 ensina. A solução de referência passou a
+fazer o mesmo — solução que pula o meio prova o fim e não prova o caminho.
+
+Quem achou foi a trava que **clica**. É a diferença que `exploradorValidator`
+já documentou: trava de motor não é trava de tela.
+
+**Dois documentos com o mesmo nome: o segundo apaga o primeiro, calado.**
+`comPdf` casa por nome, então a digitalização do módulo 4 substituía a foto que
+o dossiê do módulo 7 já tinha — a pessoa punha o quinto documento na pasta e
+continuava com quatro, sem nada na tela dizendo que alguma coisa sumiu. As duas
+são fotos do mesmo celular, e agora têm a data de cada uma no nome:
+`IMG_20260719_101204` para a lista de presença, `IMG_20260702_143512` para o
+recibo.
+
+**No celular o diálogo sobe, e a regra vem depois da que o centra.** A cápsula
+de tarefas mora no canto de baixo: centrado, o diálogo mais alto — o de
+Imprimir — terminava a **19px** do aviso de tela pequena. Dezenove pixels não
+são uma decisão. É o conserto que a CC-ES001 já fez no diálogo do sistema, e a
+ordem importa: as duas regras têm a mesma especificidade, e escrita antes a que
+sobe não valeria nada, sem nada estourar. A trava lê a folha e confere a
+**ordem**, e não só a existência.
+
+**E a crase dentro de comentário de template de CSS fechou a string pela
+quarta vez.** Um nome de arquivo entre crases num comentário de
+`CSS_DO_LABORATORIO` virou erro de sintaxe, e o servidor de desenvolvimento
+continuou servindo o módulo antigo — a tela parecia certa e a medida que se
+fazia nela era de um arquivo que não existia mais. Está escrito acima e
+continua valendo: rode o `tsc` **antes** de medir qualquer coisa no navegador.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2763,6 +2820,10 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaCcEs004.test.ts` | balão da liderança contando como resposta, ou campo preenchido com espaço |
 | `src/labs/metasDaCcEs004.test.ts` | descoberta do módulo 6 saindo do estado do documento em vez do gesto |
 | `src/labs/metasDaCcEs004.test.ts` | documento combinado consigo mesmo valendo por três reunidos |
+| `src/labs/metasDaCcEs004.test.ts` | quebrar a assinatura sem assinar de novo, que deixa a lição impossível de fechar |
+| `src/components/LaboratorioDePdf.test.tsx` | lição da CC-ES004 impossível de vencer clicando |
+| `src/components/LaboratorioDePdf.test.tsx` | faixa que muda conforme o exercício, ou comando que age sem documento escolhido |
+| `src/components/LaboratorioDePdf.test.tsx` | diálogo centrado no celular, com Confirmar debaixo da cápsula de tarefas |
 | `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |

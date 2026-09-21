@@ -207,6 +207,37 @@ export const CSS_DO_LEITOR = `
 }
 .pdf-campo:focus { outline: 2px solid #1F6FEB; outline-offset: -1px; }
 .pdf-campo[data-falta="sim"] { border-color: #B3261E; background: #FFF5F5; }
+
+/* ── A tela inicial: a lista de arquivos ─────────────────────────────────── */
+.pdf-inicial { flex: 1; overflow: auto; padding: 18px 20px; background: #FFFFFF; }
+.pdf-inicial h3 {
+  margin: 0 0 4px; font-size: 13px; color: #1F2328; font-weight: 700;
+}
+.pdf-inicial p.pdf-sub { margin: 0 0 14px; font-size: 12px; color: #57606A; }
+.pdf-lista { display: flex; flex-direction: column; gap: 2px; }
+.pdf-linha {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 9px; border-radius: 4px; border: 1px solid transparent;
+  font-size: 12.5px; color: #1F2328; text-align: left; width: 100%;
+  background: none; cursor: pointer;
+}
+.pdf-linha:hover { background: #F3F5F7; border-color: #D7DBE0; }
+.pdf-linha[aria-current="true"] { background: #E8F0FE; border-color: #A8C7FA; }
+.pdf-linha-nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pdf-linha-dados { color: #57606A; font-size: 11.5px; white-space: nowrap; }
+.pdf-linha-acao {
+  border: 1px solid #C4C9CF; background: #FFFFFF; border-radius: 3px;
+  padding: 2px 8px; font-size: 11px; color: #1F2328; cursor: pointer;
+}
+.pdf-linha-acao:hover { background: #F3F5F7; }
+.pdf-vazio {
+  padding: 22px; text-align: center; color: #57606A; font-size: 12.5px;
+  border: 1px dashed #D7DBE0; border-radius: 6px;
+}
+.pdf-grupo { margin-bottom: 18px; }
+@media (max-width: 720px) {
+  .pdf-linha-dados { display: none; }
+}
 `;
 
 /* ── Barra de título ──────────────────────────────────────────────────────── */
@@ -542,5 +573,112 @@ export function SetasDePagina({ indice, total, aoIr }: {
       <Comando icone={ChevronRight} rotulo="Próxima"
         aoClicar={indice < total - 1 ? () => aoIr(indice + 1) : undefined} />
     </>
+  );
+}
+
+/* ── A tela inicial do leitor ─────────────────────────────────────────────── */
+
+/**
+ * A lista de arquivos com que o leitor abre.
+ *
+ * Todo leitor de PDF tem uma: o Acrobat chama de Recentes, o Foxit de Início.
+ * Ela é do **programa**, e não do exercício — é por isso que mora aqui, e não
+ * dentro do laboratório. E é por isso que ela não é uma janela do Explorador:
+ * a CC-ES001 é a vereda do Explorador, e imitá-lo aqui seria a terceira cópia
+ * de um programa que esta vereda não ensina.
+ *
+ * Os arquivos que **ainda não são PDF** aparecem na mesma lista, porque é
+ * assim que a pasta do clube está: a ata em .docx ao lado do PDF que saiu
+ * dela. Um leitor que escondesse os outros formatos tiraria da tela o gesto
+ * inteiro do requisito 4.1 — gerar o PDF é partir de um arquivo que não é um.
+ *
+ * As três ações seguem a regra do `aoBuscar` do Explorador: a linha só ganha
+ * Renomear quando o laboratório entrega `aoRenomear`, e a tela só ganha
+ * Digitalizar quando ele entrega `aoDigitalizar`. Prometer um gesto que a
+ * lição não faz é o que ensina a desconfiar do programa.
+ */
+export function TelaInicialDoLeitor({
+  origens, pdfs, aberto, aoAbrir, aoAbrirOrigem, aoRenomear, aoDigitalizar,
+}: {
+  origens: { nome: string; programa: string }[];
+  pdfs: DocumentoPdf[];
+  /** O nome do documento aberto, para a linha dele aparecer marcada. */
+  aberto?: string;
+  aoAbrir: (nome: string) => void;
+  aoAbrirOrigem?: (nome: string) => void;
+  aoRenomear?: (nome: string) => void;
+  aoDigitalizar?: () => void;
+}) {
+  return (
+    <div className="pdf-inicial">
+      <h3>Documentos da atividade</h3>
+      <p className="pdf-sub">Acampamento de Inverno 2026 — Clube de Desbravadores</p>
+
+      {origens.length > 0 && (
+        <div className="pdf-grupo">
+          <h3>Arquivos dos programas</h3>
+          <div className="pdf-lista">
+            {origens.map(a => (
+              <button
+                key={a.nome}
+                type="button"
+                className="pdf-linha"
+                onClick={() => aoAbrirOrigem?.(a.nome)}
+                disabled={!aoAbrirOrigem}
+              >
+                <FileText className="w-4 h-4" style={{ color: '#2E6BBE', flex: 'none' }} />
+                <span className="pdf-linha-nome">{a.nome}</span>
+                <span className="pdf-linha-dados">{a.programa}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="pdf-grupo">
+        <h3>PDFs</h3>
+        {pdfs.length === 0
+          ? <div className="pdf-vazio">Nenhum PDF nesta pasta ainda.</div>
+          : (
+            <div className="pdf-lista">
+              {pdfs.map(d => (
+                /* Um `<div>` com um botão dentro, e não um botão dentro de
+                   outro: é o mesmo encaixe inválido do `<button>` dentro de
+                   `<button>` que o laboratório de Configurações já teve, e que
+                   o navegador desmancha decidindo sozinho o que o clique de
+                   dentro faz. */
+                <div key={d.nome} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <button
+                    type="button"
+                    className="pdf-linha"
+                    aria-current={d.nome === aberto}
+                    onClick={() => aoAbrir(d.nome)}
+                  >
+                    <FileText className="w-4 h-4" style={{ color: '#B3261E', flex: 'none' }} />
+                    <span className="pdf-linha-nome">{d.nome}</span>
+                    <span className="pdf-linha-dados">
+                      {d.paginas.length} {d.paginas.length === 1 ? 'pág.' : 'págs.'}
+                      {' · '}{pesoEscrito(pesoKb(d))}
+                    </span>
+                  </button>
+                  {aoRenomear && (
+                    <button type="button" className="pdf-linha-acao"
+                      onClick={() => aoRenomear(d.nome)}>
+                      Renomear
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+      </div>
+
+      {aoDigitalizar && (
+        <button type="button" className="pdf-bt" onClick={aoDigitalizar}>
+          <ScanLine className="w-4 h-4" />
+          <span className="pdf-rotulo">Digitalizar com o celular</span>
+        </button>
+      )}
+    </div>
   );
 }

@@ -305,7 +305,12 @@ export const pastaDoDossie = (): PastaDoClube => ({
   pdfs: [
     reconhecerTexto(pdf('Ata reunião.pdf', [paginaDePapel('d1', ATA)])),
     reconhecerTexto(pdf('orcamento final.pdf', [paginaDePapel('d2', ORCAMENTO)])),
-    pdf('IMG_20260702_143512.pdf', [paginaDePapel('d3', LISTA_DE_PRESENCA)]),
+    /* O nome da câmera, e **não** o mesmo da digitalização do módulo 4: são
+       duas fotos do mesmo celular em dias diferentes, e nomes iguais fariam a
+       segunda substituir a primeira em silêncio, deixando o dossiê com quatro
+       documentos onde a pessoa acabou de pôr cinco. Foi o que aconteceu, e
+       quem viu foi a trava que clica. */
+    pdf('IMG_20260719_101204.pdf', [paginaDePapel('d3', LISTA_DE_PRESENCA)]),
     reconhecerTexto(pdf('circular 03.pdf', [paginaDePapel('d4', CIRCULAR)])),
   ],
 });
