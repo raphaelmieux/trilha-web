@@ -28,6 +28,9 @@
  */
 
 import type { Autor, Doc } from './documento';
+import {
+  ATA_INTEIRA, ATA_SEM_AS_DECISOES, COMBINADO, ESCALA, LISTA_DE_MATERIAIS,
+} from './documentosDaNuvem';
 
 /* ── Quem é quem ──────────────────────────────────────────────────────────── */
 
@@ -163,6 +166,21 @@ export interface ArquivoDaNuvem {
   /** A pasta em que ele está. Ausente, ele está na raiz. */
   pasta?: string;
   /**
+   * "Qualquer pessoa com o link", e com que papel.
+   *
+   * Ausente é "Restrito", que é como a nuvem abre. Ele existe porque é o
+   * caminho rápido e errado do requisito 4.1: com o link aberto para editar,
+   * os três níveis que se acabou de aplicar não valem nada — e a caixa
+   * continua mostrando os três nomes com os três papéis escritos ao lado,
+   * certinhos, do jeito que a pessoa os deixou.
+   *
+   * Ele **não** entra em `papelDe`: `papelDe` responde por uma pessoa da
+   * lista, e quem entra pelo link não é ninguém em particular. Misturar os
+   * dois faria "quem tem acesso" devolver uma lista de nomes que não é a
+   * lista de quem entra.
+   */
+  linkAberto?: Papel;
+  /**
    * Cópia solta, sem vínculo com o original.
    *
    * É o que "mandar por anexo" produz, e o campo existe para o requisito 3
@@ -171,6 +189,16 @@ export interface ArquivoDaNuvem {
    * que a torna uma cópia.
    */
   copiaDe?: string;
+  /**
+   * Está na lixeira.
+   *
+   * Ela existe porque apagar de verdade apagaria a prova: o módulo 8 pede
+   * provocar um conflito e **resolvê-lo**, e uma cópia em conflito que
+   * sumisse do modelo deixaria a nuvem igualzinha à de quem nunca teve
+   * conflito nenhum — a meta abriria verde. Na nuvem de verdade também é
+   * assim: o que se manda para a lixeira continua lá por trinta dias.
+   */
+  naLixeira?: boolean;
   versoes: Versao[];
 }
 
@@ -271,6 +299,42 @@ export const compartilhar = (n: Nuvem, id: string, quem: Pessoa, papel: Papel): 
 
 export const tirarAcessoDoArquivo = (n: Nuvem, id: string, quem: Pessoa): Nuvem =>
   mexerNo(n, id, a => ({ ...a, acessos: a.acessos.filter(x => x.quem !== quem) }));
+
+/** Abrir para qualquer pessoa com o link, ou voltar a "Restrito" com `undefined`. */
+export const mudarAcessoGeral = (n: Nuvem, id: string, papel: Papel | undefined): Nuvem =>
+  mexerNo(n, id, a => {
+    if (papel) return { ...a, linkAberto: papel };
+    /* A chave sai, e não fica com `undefined`: chave presente com `undefined`
+       continua sendo chave, e `'linkAberto' in a` discordaria de
+       `!!a.linkAberto`. É a mesma razão do `delete` em `resolverMarca`. */
+    const fechado = { ...a };
+    delete fechado.linkAberto;
+    return fechado;
+  });
+
+/**
+ * Mover um arquivo para outra pasta, ou para a raiz com `undefined`.
+ *
+ * É o gesto que o requisito 5 deixa como único conserto de verdade: a ficha
+ * médica está aberta porque **está onde está**, e tirar o nome de cada pessoa
+ * da caixa dela não fecha nada. Quem não move, não fecha.
+ *
+ * Mover uma pasta para dentro dela mesma — ou para dentro de uma filha — não
+ * acontece: o laço travaria `pastasAcima` e sumiria com o galho inteiro da
+ * tela, sem nada explicando.
+ */
+export function mover(n: Nuvem, id: string, pasta: string | undefined): Nuvem {
+  if (pasta === id) return n;
+  if (pasta && pastasAcima(n, pasta).some(p => p.id === id)) return n;
+  return mexerNo(n, id, a => {
+    if (!pasta) {
+      const solto = { ...a };
+      delete solto.pasta;
+      return solto;
+    }
+    return { ...a, pasta };
+  });
+}
 
 /**
  * Passar a propriedade do arquivo.
@@ -423,8 +487,24 @@ export function conflitoDeSincronizacao(
   return { arquivos: [...n.arquivos, conflito] };
 }
 
+/** As cópias em conflito **na pasta**. O que foi para a lixeira saiu da frente. */
 export const copiasEmConflito = (n: Nuvem) =>
+  n.arquivos.filter(a => a.nome.includes('cópia em conflito') && !a.naLixeira);
+
+/** Todas elas, inclusive as que já foram para a lixeira. */
+export const conflitosQueHouve = (n: Nuvem) =>
   n.arquivos.filter(a => a.nome.includes('cópia em conflito'));
+
+/** Mandar para a lixeira. O arquivo continua na nuvem, fora da pasta. */
+export const mandarParaALixeira = (n: Nuvem, id: string): Nuvem =>
+  mexerNo(n, id, a => ({ ...a, naLixeira: true }));
+
+export const restaurarDaLixeira = (n: Nuvem, id: string): Nuvem =>
+  mexerNo(n, id, a => {
+    const fora = { ...a };
+    delete fora.naLixeira;
+    return fora;
+  });
 
 /**
  * Resolver o conflito: o conteúdo juntado fica, e a cópia sai da pasta.
@@ -482,7 +562,7 @@ export const nuvemDoClube = (): Nuvem => ({
     }),
     arquivoDe('fichas', 'Fichas médicas 2026', 'planilha', 'marta', {
       pasta: 'pasta-acampamento',
-      /* Sem acesso próprio nenhum — e mesmo assim quatro pessoas a abrem, pela
+      /* Sem acesso próprio nenhum — e mesmo assim três pessoas a abrem, pela
          pasta. É o requisito 5 inteiro, e é o arquivo em que ele mais custa. */
     }),
     /*
@@ -500,13 +580,47 @@ export const nuvemDoClube = (): Nuvem => ({
     */
     arquivoDe('combinado', 'Combinado do acampamento', 'documento', 'marta', {
       acessos: [{ quem: 'voce', papel: 'comentarista' }],
+      versoes: [{ id: 'combinado-v1', quando: 'há 2 meses', porQuem: ['marta'], doc: COMBINADO() }],
     }),
     arquivoDe('escala', 'Escala das unidades', 'documento', 'ronaldo', {
       pasta: 'pasta-clube',
       acessos: [{ quem: 'voce', papel: 'editor' }, { quem: 'marta', papel: 'editor' }],
+      versoes: [{ id: 'escala-v1', quando: 'há 2 meses', porQuem: ['ronaldo'], doc: ESCALA() }],
     }),
+    /*
+      A ata chega com o estrago **já feito**: a versão de agora perdeu o
+      parágrafo das decisões, que está na de 3 de julho. Sem ele, restaurar
+      seria um gesto sem consequência e o requisito 4.5 mediria ter clicado.
+
+      E são três versões, e não duas, porque o que a lição precisa mostrar é
+      que restaurar a do meio **não apaga** a de cima. Com duas, "não apagou"
+      e "voltou tudo" dariam a mesma tela.
+    */
     arquivoDe('ata', 'Ata da reunião de junho', 'documento', 'marta', {
       pasta: 'pasta-clube',
+      versoes: [
+        { id: 'ata-v1', quando: '1 de julho, 20:12', porQuem: ['marta'], doc: ATA_INTEIRA() },
+        {
+          id: 'ata-v2', quando: '3 de julho, 09:47', porQuem: ['marta', 'ronaldo'],
+          doc: ATA_INTEIRA(),
+        },
+        {
+          id: 'ata-v3', quando: '8 de julho, 21:30', porQuem: ['ronaldo'],
+          doc: ATA_SEM_AS_DECISOES(),
+        },
+      ],
+    }),
+    /*
+      A lista é **sua**, e é o arquivo do requisito 3: os dois gestos que ele
+      manda comparar — mandar a cópia por anexo e compartilhar o vínculo — são
+      de quem é dono. Um arquivo dos outros deixaria metade do requisito fora
+      de alcance.
+    */
+    arquivoDe('materiais', 'Lista de materiais', 'documento', 'voce', {
+      versoes: [{
+        id: 'materiais-v1', quando: 'ontem, 19:05', porQuem: ['voce'],
+        doc: LISTA_DE_MATERIAIS(),
+      }],
     }),
   ],
 });

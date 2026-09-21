@@ -5,6 +5,7 @@ import {
   nuvemDoClube, arquivoDe,
   papelDe, podeVer, podeComentar, podeEditar, abertosPelaPasta, pastasAcima,
   compartilhar, tirarAcessoDoArquivo, transferirPropriedade, arquivosQueVaoJunto,
+  mudarAcessoGeral, mover,
   mandarPorAnexo, copiasQueDivergiram,
   gravarVersao, restaurarVersao, versaoAtual, quemEscreveu,
   conflitoDeSincronizacao, copiasEmConflito, resolverConflito,
@@ -360,5 +361,68 @@ describe('tirar o acesso tira mesmo, e só daquele arquivo', () => {
   it('e tirá-lo da pasta é o que fecha', () => {
     const d = tirarAcessoDoArquivo(nuvemDoClube(), 'pasta-clube', 'ronaldo');
     expect(podeVer(d, 'fichas', 'ronaldo')).toBe(false);
+  });
+});
+
+/* ── O acesso geral e a mudança de pasta ───────────────────────────────────── */
+
+describe('o link aberto é outra coisa que a lista de pessoas, e não se mistura', () => {
+  it('a nuvem do clube abre com tudo restrito', () => {
+    /* A guarda contra o vazio: uma nuvem que já abrisse com o link aberto
+       deixaria a condição do requisito 4.1 vermelha desde o começo, e a lição
+       mediria fechar em vez de escolher. */
+    for (const a of nuvemDoClube().arquivos) {
+      expect(a.linkAberto, `${a.nome} abriu com o link aberto`).toBeUndefined();
+    }
+  });
+
+  it('abrir o link não põe ninguém novo na lista de quem alcança', () => {
+    /*
+      `papelDe` responde por uma pessoa; quem entra pelo link não é ninguém em
+      particular. Somar os dois faria "quem tem acesso" devolver uma lista de
+      nomes que não é a lista de quem entra — e o arquivo pareceria mais
+      fechado do que está, que é o erro exatamente ao contrário do que esta
+      vereda ensina.
+    */
+    const d = mudarAcessoGeral(nuvemDoClube(), 'materiais', 'editor');
+    expect(papelDe(d, 'materiais', 'cleide')).toBeUndefined();
+    expect(d.arquivos.find(a => a.id === 'materiais')!.linkAberto).toBe('editor');
+  });
+
+  it('e fechar de volta tira a chave, e não a deixa valendo `undefined`', () => {
+    let d = mudarAcessoGeral(nuvemDoClube(), 'materiais', 'leitor');
+    d = mudarAcessoGeral(d, 'materiais', undefined);
+    expect('linkAberto' in d.arquivos.find(a => a.id === 'materiais')!).toBe(false);
+  });
+});
+
+describe('mover é o único conserto de quem está na pasta errada', () => {
+  it('tirar o nome de cada um da caixa da ficha não fecha nada', () => {
+    /* É o outro lado do requisito 5: a ficha está aberta porque está onde
+       está. Quem não move, não fecha. */
+    let d = nuvemDoClube();
+    for (const quem of ['voce', 'ronaldo', 'cleide'] as const) {
+      d = tirarAcessoDoArquivo(d, 'fichas', quem);
+    }
+    expect(podeVer(d, 'fichas', 'ronaldo')).toBe(true);
+  });
+
+  it('e movê-la para fora fecha, sem mexer na pasta que o clube usa', () => {
+    const d = mover(nuvemDoClube(), 'fichas', undefined);
+    expect(podeVer(d, 'fichas', 'ronaldo')).toBe(false);
+    expect(podeVer(d, 'pasta-acampamento', 'ronaldo'), 'a pasta do clube fechou junto')
+      .toBe(true);
+  });
+
+  it('mover uma pasta para dentro dela mesma não acontece', () => {
+    /* O laço travaria `pastasAcima` e sumiria com o galho inteiro da tela,
+       sem nada explicando. */
+    expect(mover(nuvemDoClube(), 'pasta-clube', 'pasta-clube')).toEqual(nuvemDoClube());
+  });
+
+  it('nem para dentro de uma pasta que está dentro dela', () => {
+    const d = mover(nuvemDoClube(), 'pasta-clube', 'pasta-acampamento');
+    expect(pastasAcima(d, 'fichas').map(p => p.id))
+      .toEqual(['pasta-acampamento', 'pasta-clube']);
   });
 });
