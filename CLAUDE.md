@@ -2039,6 +2039,43 @@ pior, a de quem confiou e mandou o documento adiante. Pelo mesmo motivo
 arquivo circula aberto. A ferramenta que faz isso não é de invasor, é o
 próprio programa.
 
+**O leitor de PDF saiu antes de a cópia existir.** A CC-ES004 abre o mesmo
+leitor em cinco dos sete módulos — juntar, comprimir, preencher, assinar e
+montar o dossiê. `leitorDePdf.tsx` é a janela, e é a mesma decisão de
+`word.tsx`, `excel.tsx` e `explorer.tsx`, pelo motivo escrito nos três. Como
+eles, ela exporta **peças sem estado**: quem guarda página ativa e documento é
+o laboratório, que é quem responde à verificação.
+
+**A folha desenha igual, e é a premissa da vereda.** As duas espécies de
+página chegam ao desenho iguais, e nada na função que as pinta consegue
+distingui-las — porque não há o que distinguir **na tinta**. Se a folha
+marcasse na tela qual é qual, o requisito 5 não teria o que comprovar:
+bastaria olhar.
+
+O que muda é a foto de papel: a inclinação, a margem sobrando e o contraste
+aparecem de verdade, senão corrigir o enquadramento seria um clique que não
+muda nada na tela e a tarefa passaria a medir obediência.
+
+**O aviso de digitalização some assim que existir qualquer texto.** Inclusive o
+que um reconhecimento malfeito produziu — e é o que o leitor de verdade faz.
+Um aviso que continuasse enquanto o texto estivesse ruim poria na nossa tela a
+resposta que a lição existe para o desbravador achar sozinho, e faria a
+procura virar enfeite. Conferido no Chromium: o aviso sai, o documento passa a
+dizer "pesquisável", e a palavra continua sem aparecer.
+
+**A marca de "imagem" na miniatura ficava com altura visível zero no
+celular.** A tira tinha teto de altura, e a conta não fechava: prévia mais
+número mais marca passavam do teto, e o que sobrava de fora era a última
+linha — justamente a que diz que aquela página não tem texto dentro. Hoje a
+tira encolhe a **prévia**, e não o painel. É "peça que só funciona numa largura
+de tela é peça que some", e quem viu foi o navegador: no jsdom não há altura
+nenhuma para estourar, então o que se testa é a promessa.
+
+**E o nome do botão é o que ele faz.** Um comando da faixa nasceu com rótulo
+"Organizar páginas" e dica "Extrair ou dividir páginas", e a trava reprovou na
+hora — ela lê o **rótulo**, que é o que a pessoa lê, e não o `title`. Ler o
+`title` deixaria passar um botão cujo nome na tela discordasse da dica.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2575,6 +2612,11 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/planilhaDoAcampamento.test.ts` | planilha pequena demais para o filtro fazer falta, ou SUBTOTAL escrito sem filtro nenhum |
 | `src/labs/PlanilhaAvancadaLab.test.tsx` | os dois laboratórios de planilha mostrando janelas de Excel diferentes |
 | `src/labs/documentoPdf.test.ts` | procura que lê o desenho da página, achando a palavra no documento em imagem |
+| `src/labs/leitorDePdf.test.tsx` | folha que marca na tela qual página é imagem, ou que ignora a captura |
+| `src/labs/leitorDePdf.test.tsx` | aviso de digitalização que fica de pé depois de um reconhecimento malfeito |
+| `src/labs/leitorDePdf.test.tsx` | comando da faixa que some em vez de ficar desligado, ou rótulo que discorda da dica |
+| `src/labs/leitorDePdf.test.tsx` | selo da assinatura colada dizendo "válida", ou régua escrevendo veredito |
+| `src/labs/leitorDePdf.test.tsx` | tira de miniaturas do celular com teto de altura, que corta a marca de "imagem" |
 | `src/labs/documentoPdf.test.ts` | reconhecimento que acerta com a captura torta, ou que relê página já reconhecida |
 | `src/labs/documentoPdf.test.ts` | comprimir antes de reconhecer saindo igual a comprimir depois |
 | `src/labs/documentoPdf.test.ts` | foto de papel pesando como página digitada, que apaga o sentido de comprimir |
