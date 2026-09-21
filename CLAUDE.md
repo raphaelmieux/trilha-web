@@ -2076,6 +2076,65 @@ nenhuma para estourar, então o que se testa é a promessa.
 hora — ela lê o **rótulo**, que é o que a pessoa lê, e não o `title`. Ler o
 `title` deixaria passar um botão cujo nome na tela discordasse da dica.
 
+**O digitalizador é arquivo à parte porque é outro programa**, e não porque
+uma cópia esteja a caminho — hoje só a CC-ES004 digitaliza. A arquitetura da
+casa separa o programa do exercício, e escrevê-lo dentro do componente da
+lição faria daquele componente duas coisas. Ele imita o arranjo que o Adobe
+Scan, o Microsoft Lens e a digitalização do Google Drive têm em comum: câmera
+com a borda detectada sozinha, tela de recorte com quatro cantos, fileira de
+filtros, e só então salvar.
+
+**E ele chega errado de propósito.** O requisito 5 manda **corrigir**
+enquadramento e contraste; um aplicativo que detectasse a borda certa e
+escolhesse o filtro bom sozinho entregaria a lição resolvida — e aqui seria
+pior do que de costume, porque o gesto que ele apagaria é o gesto que o
+requisito nomeia. A detecção erra como erra de verdade: pega a beirada da mesa
+em vez da folha.
+
+**O filtro é como o celular corrige contraste, e ele muda o que dá para ler.**
+Original deixa a foto acinzentada e o reconhecimento erra; Preto e branco lê o
+texto inteiro. Se escolher um ou outro desse na mesma qualidade de leitura, a
+fileira viraria enfeite e a metade do requisito 5 que fala de contraste
+deixaria de existir. A ordem da fileira sobe em contraste, e o **primeiro** é o
+pior — porque é onde a foto cai sozinha.
+
+**E consertar metade não basta, que é o ponto.** Medido no Chromium: a foto
+cai torta, com mesa em volta e sem contraste, e o aviso diz "ruim". Depois de
+endireitar e enquadrar pelos cantos ela fica reta e sem margem — e o aviso
+continua dizendo "ruim", porque o contraste ainda é o de Original. Só com o
+filtro trocado ele passa a "bom". As duas metades do requisito precisam
+acontecer, e a do meio é a honesta: arrumou e ainda não serve.
+
+**Os cantos são botões, e não só alvos de arrasto.** No celular arrastar um
+alvo de 26px é difícil, e quem navega por teclado não arrasta nada. Apertar o
+canto encaixa, que é o mesmo resultado do arrasto bem-feito — "reduzir a tela
+nunca reduz o que dá para fazer nela", e o teclado vale a mesma regra.
+
+**O aviso de qualidade diz o que o aplicativo mediu, nunca se a tarefa está
+cumprida.** Digitalizador de verdade avisa "imagem escura" e "endireite a
+página"; nenhum diz "seu exercício está errado". É a regra da régua de status
+do Word e do painel de Problemas do Python.
+
+A trava disso nasceu grossa demais: ela proibia a palavra "errado" e reprovou
+a frase **verdadeira** "o texto pode sair errado", que é o aplicativo relatando
+o que mediu. Ela passou a procurar o vocabulário do **exercício** — tarefa,
+lição, cumprida —, porque trava que mede vocabulário em vez de papel reprova
+o certo e ensina a contorná-la.
+
+**O modelo do scanner desceu para `capturaDoScanner.ts`, e o corte caiu onde o
+ícone começa.** A lista de filtros é conteúdo — o nome, o contraste que deixa,
+o que custa — e o desenho é aparência. `FILTROS` nasceu carregando o
+componente de ícone, o que a tornava meio modelo e meio tela; o ícone ficou em
+`digitalizador.tsx`, **sem sair dele**, porque exportar um mapa que ninguém de
+fora lê é oferecer segunda fonte para a mesma coisa. É a divisão de
+`iconesDeLicao.ts`, e foi o próprio lint que a apontou.
+
+**`input.value = x` não chega ao React.** Ele guarda o último valor que ele
+mesmo pôs e descarta o evento quando os dois batem, então uma trava que
+escrevesse direto veria a régua não reagir e acusaria o componente de um
+defeito que é do teste. Quem desfaz isso é o setter nativo do protótipo. É a
+mesma família do `pointerenter` que o React não escuta.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2613,6 +2672,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/PlanilhaAvancadaLab.test.tsx` | os dois laboratórios de planilha mostrando janelas de Excel diferentes |
 | `src/labs/documentoPdf.test.ts` | procura que lê o desenho da página, achando a palavra no documento em imagem |
 | `src/labs/leitorDePdf.test.tsx` | folha que marca na tela qual página é imagem, ou que ignora a captura |
+| `src/labs/digitalizador.test.tsx` | filtro que não muda o que o reconhecimento lê, ou fileira que abre no filtro bom |
+| `src/labs/digitalizador.test.tsx` | papel que desenha igual torto e reto, ou canto que enquadra além do zero |
+| `src/labs/digitalizador.test.tsx` | aviso do digitalizador que julga a tarefa em vez de relatar o que mediu |
 | `src/labs/leitorDePdf.test.tsx` | aviso de digitalização que fica de pé depois de um reconhecimento malfeito |
 | `src/labs/leitorDePdf.test.tsx` | comando da faixa que some em vez de ficar desligado, ou rótulo que discorda da dica |
 | `src/labs/leitorDePdf.test.tsx` | selo da assinatura colada dizendo "válida", ou régua escrevendo veredito |
