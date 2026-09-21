@@ -41,6 +41,7 @@ import { DIA_DO_DESBRAVADOR_INICIAL, METAS_DA_REVISAO } from '../labs/diaDoDesbr
 import { RELATORIO_DA_ENTREGA_INICIAL, ENTREGA_INICIAL, METAS_DA_ENTREGA } from '../labs/entregaDoRelatorio';
 import { CADERNOS_DA_CC_ES003 } from '../labs/cadernosDaCcEs003';
 import { PASTAS_DA_CC_ES004 } from '../labs/metasDaCcEs004';
+import { LICOES_DA_CC_ES005 } from '../labs/metasDaCcEs005';
 
 /*
   Os laboratórios de Word partem de documentos diferentes, e a trava precisa
@@ -490,6 +491,12 @@ describe('os modelos dos laboratórios da vereda', () => {
            a tela também o lê. */
         case 'pdf': return Object.fromEntries(
           PASTAS_DA_CC_ES004[l.pasta].metas.map(m => [m.id, m.passos]));
+        /* E a CC-ES005 pelo mesmo motivo dos três acima. O registro dela mora
+           fora do teste — a tela também o lê — e ele cobre os três programas
+           da vereda de uma vez, porque quem responde pelos passos é a meta, e
+           não a janela em que ela acontece. */
+        case 'contas': return Object.fromEntries(
+          LICOES_DA_CC_ES005[l.licao].metas.map(m => [m.id, m.passos]));
         case 'laboratorio': return passosDe(l.linguagem);
         /* Teoria e redação não têm verificação com passo a passo. */
         case 'teoria': case 'redacao': return null;

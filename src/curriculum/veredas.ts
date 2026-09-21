@@ -8,6 +8,7 @@ import { MODULOS_DE_ARQUIVOS } from './arquivosEArmazenamento';
 import { MODULOS_DO_EDITOR } from './editorDeTexto';
 import { MODULOS_DE_PLANILHA } from './planilhas';
 import { MODULOS_DE_DOCUMENTOS_PORTATEIS } from './documentosPortateis';
+import { MODULOS_DE_CONTAS_E_SEGURANCA } from './contasESeguranca';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -414,6 +415,32 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      As contas e a segurança, e por que elas são mais um tipo.
+
+      A CC-ES005 é a primeira vereda com **três** programas em vez de um: o
+      cofre de senhas, a página de configurações da conta e o correio. Um tipo
+      por programa daria três tipos quase iguais, e o que muda entre eles não é
+      o que a lição é — é em qual janela ela acontece, e isso já está escrito
+      em `LICOES_DA_CC_ES005`.
+
+      Então o campo é `licao`, e é ele que diz as duas coisas de uma vez: de
+      que estado se parte e qual programa abre. O componente faz um `switch`
+      exaustivo sobre o programa, com `never` no `default` — a nona lição não
+      compila até dizer em qual dos três ela acontece.
+
+      Para o progresso conta como lição de fazer: grava `vereda_laboratorio`.
+    */
+    id: string;
+    tipo: 'contas';
+    titulo: string;
+    resumo: string;
+    /** Qual das oito lições é esta. Dela saem o programa, o estado e as metas. */
+    licao: import('../labs/metasDaCcEs005').LicaoDaCcEs005;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
@@ -714,9 +741,30 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_DOCUMENTOS_PORTATEIS,
   },
-  anunciada('CC-ES005', 'Contas e Segurança Digital', 'Escritório',
-    'Senha, duas etapas e o plano de contas do clube — inclusive na troca de diretoria.',
-    ['cc-es001']),
+  {
+    id: 'cc-es005',
+    code: 'CC-ES005',
+    name: 'Contas e Segurança Digital',
+    familia: 'Escritório',
+    description: 'Senha, duas etapas e o plano de contas do clube — inclusive na troca de diretoria.',
+    /*
+      Sai da CC-ES001, e está escrito no requisito 1 do documento oficial.
+
+      O que carrega esta vereda é o que **não avisa**. As duas etapas dizem
+      "ativada" enquanto os códigos de reserva foram embora; o aplicativo
+      autorizado há dois anos continua lendo tudo; a consulta de vazamento
+      responde "nada encontrado" e isso não é atestado; e trocar a senha da
+      conta invadida resolve um terço do problema, com a tela ficando com cara
+      de resolvida. É a mesma família da CC-ES004, com outro assunto.
+
+      E ela é a primeira vereda com **três** programas em vez de um: o cofre de
+      senhas, a página de configurações da conta e o correio.
+    */
+    origem: 'CC-ES001',
+    preRequisitos: ['cc-es001'],
+    mostraResultado: true,
+    modulos: MODULOS_DE_CONTAS_E_SEGURANCA,
+  },
   anunciada('CC-ES006', 'Trabalho Compartilhado', 'Escritório',
     'Um arquivo só, várias pessoas: permissão, sugestão, histórico e conflito.',
     ['cc-es002', 'cc-es005']),

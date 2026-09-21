@@ -20,6 +20,7 @@ import LaboratorioDeTerminal from '../components/LaboratorioDeTerminal';
 import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
 import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
 import LaboratorioDePdf from '../components/LaboratorioDePdf';
+import LaboratorioDeContas from '../components/LaboratorioDeContas';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
 import LaboratorioDoRelatorio from '../components/LaboratorioDoRelatorio';
@@ -292,6 +293,24 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'pdf' && profile?.id) {
     return (
       <LaboratorioDePdf vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /*
+    E a CC-ES005 é a primeira com três programas na mesma vereda.
+
+    Cofre de senhas, página de configurações da conta e correio — e o que se
+    confere não é um arquivo: é o estado de cada um deles. Quem diz em qual
+    dos três a lição acontece é `LICOES_DA_CC_ES005`, e o componente despacha
+    por `switch` exaustivo, com `never` no `default`.
+
+    Um `tipo` por programa daria três tipos quase iguais aqui; o que muda entre
+    eles não é o que a lição é, e sim em qual janela ela abre.
+  */
+  if (licaoAberta?.tipo === 'contas' && profile?.id) {
+    return (
+      <LaboratorioDeContas vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }
