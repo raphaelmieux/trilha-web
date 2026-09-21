@@ -414,6 +414,32 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      As contas e a segurança, e por que elas são mais um tipo.
+
+      A CC-ES005 é a primeira vereda com **três** programas em vez de um: o
+      cofre de senhas, a página de configurações da conta e o correio. Um tipo
+      por programa daria três tipos quase iguais, e o que muda entre eles não é
+      o que a lição é — é em qual janela ela acontece, e isso já está escrito
+      em `LICOES_DA_CC_ES005`.
+
+      Então o campo é `licao`, e é ele que diz as duas coisas de uma vez: de
+      que estado se parte e qual programa abre. O componente faz um `switch`
+      exaustivo sobre o programa, com `never` no `default` — a nona lição não
+      compila até dizer em qual dos três ela acontece.
+
+      Para o progresso conta como lição de fazer: grava `vereda_laboratorio`.
+    */
+    id: string;
+    tipo: 'contas';
+    titulo: string;
+    resumo: string;
+    /** Qual das oito lições é esta. Dela saem o programa, o estado e as metas. */
+    licao: import('../labs/metasDaCcEs005').LicaoDaCcEs005;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não

@@ -175,6 +175,22 @@ export const CSS_DA_CONTA = `
 .ct-metodo p { font-size: 12.5px; color: #444746; margin: 4px 0 0; }
 .ct-metodo p[data-lado="contra"] { color: #8C1D18; }
 
+.ct-dialogo-fundo {
+  position: absolute; inset: 0; z-index: 30;
+  background: rgba(32,33,36,0.5);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.ct-dialogo {
+  background: #FFFFFF; border-radius: 12px; padding: 20px;
+  width: min(420px, 100%); box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.ct-dialogo h3 { font-size: 16px; font-weight: 500; margin: 0 0 4px; }
+.ct-campo-dialogo {
+  width: 100%; margin-top: 12px; border: 1px solid #747775; border-radius: 6px;
+  padding: 8px 10px; font: inherit; font-size: 13px; color: #1F1F1F; background: #FFFFFF;
+}
+.ct-campo-dialogo:focus-visible { outline: 2px solid #0B57D0; outline-offset: 1px; }
+
 /* Abaixo de 820px a lateral deita, como a conta do celular faz. Escondê-la
    tiraria o único caminho até quatro das cinco demonstrações do requisito 4 —
    reduzir a tela nunca reduz o que dá para fazer nela. */
@@ -187,6 +203,14 @@ export const CSS_DA_CONTA = `
   .ct-secao { width: auto; flex: none; white-space: nowrap; padding: 7px 13px; }
   .ct-painel { padding: 14px; }
   .ct-item { flex-wrap: wrap; }
+
+  /* O diálogo sobe, porque a cápsula de tarefas mora no canto de baixo e um
+     diálogo centrado punha Salvar e Cancelar debaixo dela: via-se o formulário
+     inteiro e não se via como confirmar. A regra vem **depois** da que o
+     centra — as duas têm a mesma especificidade, e escrita antes ela não
+     valeria nada, sem nada estourar. É o conserto que a CC-ES001 e a CC-ES004
+     já fizeram, e a trava lê a ordem, e não só a existência. */
+  .ct-dialogo-fundo { align-items: flex-start; padding-top: 10px; }
 }
 `;
 
