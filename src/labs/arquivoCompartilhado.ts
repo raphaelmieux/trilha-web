@@ -89,6 +89,38 @@ export const maisPermissivo = (a: Papel, b: Papel): Papel => (FORCA[a] >= FORCA[
 
 export const papelAlcanca = (papel: Papel, minimo: Papel) => FORCA[papel] >= FORCA[minimo];
 
+/* ── Os três modos de trabalhar no documento ──────────────────────────────── */
+
+/**
+ * Em que modo a pessoa está escrevendo.
+ *
+ * O `sugestao` é o requisito 4.4 inteiro: quem escreve nele **não muda o
+ * texto**, propõe — e a proposta fica esperando alguém aceitar ou rejeitar.
+ * É a marca de revisão do Word vista de outro ângulo, que é por que o
+ * documento guarda a mesma coisa dos dois lados.
+ */
+export type ModoDeTrabalho = 'edicao' | 'sugestao' | 'visualizacao';
+
+/**
+ * O que cada modo faz, dito como o próprio editor diria.
+ *
+ * É **conteúdo**, e por isso mora aqui e não na janela: o passo a passo da
+ * lição e as metas leem estas frases. O desenho de cada um fica em
+ * `editorNaNuvem.tsx`, sem sair de lá. É o corte de `capturaDoScanner.ts`,
+ * e foi o próprio lint que o apontou nos dois.
+ */
+export const MODOS_DE_TRABALHO: Record<ModoDeTrabalho, { nome: string; diz: string }> = {
+  edicao: { nome: 'Edição', diz: 'Você escreve direto no documento.' },
+  sugestao: {
+    nome: 'Sugestão',
+    diz: 'O que você escrever vira sugestão, e espera alguém aceitar.',
+  },
+  visualizacao: {
+    nome: 'Visualização',
+    diz: 'Você lê o documento limpo, sem marcas nem comentários.',
+  },
+};
+
 /* ── O arquivo ────────────────────────────────────────────────────────────── */
 
 export interface Acesso {
