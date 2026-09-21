@@ -108,6 +108,23 @@ describe('o reconhecimento erra quando a captura está ruim', () => {
     expect(lerComoOcr('acampamento', 0)).toBe('acarnparnento');
   });
 
+  it('e nenhuma palavra portuguesa comum escapa da troca', () => {
+    /*
+      A lista de trocas começou com quatro letras e tinha um buraco calado:
+      palavra sem m, l, 0 ou ç saía intacta de um reconhecimento péssimo. Cinco
+      destas oito passavam ilesas — entre elas "Ficha", "Recibo" e "Chácara",
+      que são as que as lições mandam procurar. A página ficava mal lida e
+      perfeitamente pesquisável.
+    */
+    const comuns = [
+      'Ficha', 'médica', 'Clube', 'Desbravadores', 'Recibo',
+      'Chácara', 'acampamento', 'reunião', 'ata', 'presença',
+    ];
+    for (const palavra of comuns) {
+      expect(lerComoOcr(palavra, 0), `"${palavra}" saiu intacta`).not.toBe(palavra);
+    }
+  });
+
   it('a qualidade cai com cada um dos três defeitos, sozinho', () => {
     const q = qualidadeDaCaptura;
     expect(q(CAPTURA_BOA)).toBe(1);
