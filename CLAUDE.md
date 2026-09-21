@@ -2309,6 +2309,150 @@ fileira de 50px no alto, com as quatro pastas no lugar: reduzir a tela nunca
 reduz o que dá para fazer nela. A trava confere que a regra não esconde pasta
 nenhuma, e não só que ela existe.
 
+**A CC-ES005 é a primeira vereda com três programas, e por isso o `tipo` é um
+só.** Cofre de senhas, página de configurações da conta e correio. Um `tipo`
+por programa daria três variantes quase iguais em `veredas.ts`, e o que muda
+entre elas não é o que a lição **é** — é em qual janela ela abre, e isso já
+está escrito em `LICOES_DA_CC_ES005`. Então o campo é `licao`, e é ele que diz
+as duas coisas: de que estado se parte e qual programa abre. O componente
+despacha por `switch` exaustivo com `never` no `default`.
+
+O registro mora **fora do teste**, como o de planilha e o de PDF: quem o lê é
+a tela, que monta a lição, **e** a trava, que confere que nenhuma meta abre
+verde. Escrito só na trava, a tela repetiria a escolha e as duas divergiriam
+na primeira lição nova, com a trava continuando verde conferindo uma lição
+que a tela não abre.
+
+**Reutilizar senha não é "quatro vezes pior".** O requisito 3 manda comparar
+repetir a senha com usar uma senha curta num serviço só, e a assimetria é a
+lição inteira: a curta depende de alguém escolher **você**; a repetida depende
+de alguém escolher **qualquer um** dos serviços em que ela está. `cairiamJunto`
+responde a metade que nenhuma entrada do cofre mostra sozinha — quem vazou foi
+um serviço, e quem cai são todos os que repetem aquela senha, nenhum deles
+atacado e nenhum deles com defeito.
+
+E senha de lista é frágil por mais classes que tenha, antes de qualquer conta:
+`Senha@123` tem as quatro, doze caracteres, e passa em qualquer cadastro.
+Ninguém a adivinha — alguém a tenta. No resto quem manda é o comprimento, e
+não a classe.
+
+**De quem é a conta se declara, e não se adivinha pelo endereço.** Adivinhar
+exigiria uma lista de nomes de gente, e erraria nos dois sentidos:
+`tesouraria.pioneiros` parece nome de pessoa e é do clube. É a mesma decisão
+da `tabela` declarada na planilha.
+
+E as duas contas do requisito 7 **não se substituem**, que é o par inteiro:
+conta no nome de uma pessoa que duas pessoas abrem continua morrendo com o
+endereço dela, porque é para lá que vai a recuperação; conta do clube que só
+uma pessoa abre continua se perdendo no dia em que essa pessoa some. Corrigir
+uma e declarar o cofre resolvido é o que o par existe para não deixar
+acontecer, e há trava para cada sentido.
+
+**Tirar o acesso de quem saiu não apaga a senha da memória dela.** É a meta
+silenciosa do módulo 8, e a mais fácil de escrever errado: o cofre passa a
+dizer que a pessoa não tem acesso, ela continua entrando em tudo, e as duas
+telas concordam. Saber **quais** senhas ela chegou a usar exige o cofre de
+quando a lição abriu — é a mesma razão de a CC-ES001 carregar o disco de agora
+e o de quando abriu.
+
+**Ligar as duas etapas é um clique; ficar com a conta não é.** `ativa` e
+`codigosGuardados` são campos separados de propósito. O serviço mostra os
+códigos de reserva uma vez, fechar a caixa sem baixá-los é um clique, a tela
+continua escrita "ativada", e a conta se perde no dia em que o telefone se
+perder. É "zero link não é zero link quebrado" aplicado à caixa de duas etapas,
+e a caixa **fecha sem guardar** de propósito: uma que só fechasse depois de
+baixar apagaria o gesto que a lição existe para mostrar.
+
+Os três métodos existem porque um programa tem todos os comandos, e cada um
+traz **o que ele não cobre** escrito ao lado. Um método sem esse lado seria a
+plataforma recomendando dentro do programa imitado, e a escolha do requisito
+4.2 deixaria de ser da pessoa.
+
+**O que se lê de um aplicativo autorizado é o último uso, e não um `emUso`.**
+Um campo booleano seria a resposta impressa na tela: o desbravador leria "em
+uso" e revogaria o resto sem ter olhado nada, que é o contrário de *revisar*.
+E revogar todos é mais rápido e quebra a inscrição do acampamento, que passa
+pelo aplicativo dos formulários — quem o desligou não vai desconfiar dele
+quando as inscrições pararem de chegar.
+
+**Meta de preservação abre verde, e por isso vira condição.** "Sem tirar o que
+o clube usa" e "sem sumir da busca" são verdadeiras no segundo zero, e como
+item próprio da lista ensinariam a não ler a lista. `metasDaCcEs005.test.ts`
+reprovou as duas na primeira execução. Elas viajam como conjunção de cada meta
+que revoga ou que fecha — a decisão de "sem alterar uma palavra do texto" na
+CC-ES002 —, e aí "Deixar tudo privado" deixa as **duas** metas de privacidade
+vermelhas, e não uma terceira que a pessoa leria como detalhe à parte.
+
+**Consulta de vazamento que não acha nada não é atestado.** Ela responde sobre
+as listas públicas que consultou, e o programa diz isso em vez de escrever
+"você está seguro" — é o erro mais fácil de ensinar aqui. O que dá para onde ir
+ao requisito 4.4 é `vazamentosQueAindaValem`: vazamento de 2022 cuja senha já
+foi trocada é história, vazamento de abril cuja senha nunca mudou é a conta
+aberta agora. A comparação é de mês, e as duas datas são `AAAA-MM` porque dia
+e hora seriam precisão que a lista pública não tem.
+
+**A ordem do requisito 6 custa, e a simulação deixa isso acontecer.** Encerrar
+as sessões antes de trocar a senha põe para fora alguém que **ainda sabe a
+senha**: ele volta no minuto seguinte, e o que se perdeu foi o celular de quem
+trabalha no clube. Uma simulação que o mantivesse fora depois de um clique
+ensinaria que a ordem dá na mesma, que é o que o requisito existe para
+desmentir.
+
+E `portasAbertas` nomeia as três que a senha nova **não** fecha — a recuperação
+que ele trocou para o endereço dele, o crachá de aplicativo que é separado da
+senha, e a regra de encaminhamento, que nem precisa que ele volte: a conta
+manda tudo sozinha, todo dia, e a caixa de entrada continua exatamente igual.
+Cada uma sobrevive ao fechamento das outras, e isso é testado nas três
+direções.
+
+**Os indícios de uma mensagem se comparam por conjunto igual, e não por
+conjunto que contém.** Exigir só que os verdadeiros estejam marcados deixaria
+"marque todos os sete em todas" passar com louvor. E há **mensagem verdadeira**
+na caixa, pela mesma razão do Aceitar Todas: sem ela, "denuncie tudo" é a
+resposta certa, e o que a lição ensina é desconfiar de toda mensagem — que é
+inútil, porque ninguém vive assim e todo mundo volta a clicar em tudo na semana
+seguinte.
+
+As duas verdadeiras derrubam as duas regras erradas que alguém aprenderia
+depressa: a da secretária **tem prazo** e não é golpe, porque o indício é a
+ameaça junto do prazo; a do provedor **tem link** e não é golpe, porque o
+indício é o link cujo texto discorda do destino. E o destino de verdade aparece
+na barra de baixo ao apontar, como no navegador — escrevê-lo ao lado do link
+poria na nossa tela a resposta que o programa imitado já dá na dele.
+
+**Toda mensagem pede um veredito, e são dois botões e não um que alterna.** A
+trava que clica achou isto: sem um gesto para "li e é verdadeira", a mensagem
+honesta ficava sem análise nenhuma, e não ter opinião era indistinguível de
+nunca ter aberto a mensagem — quem fizesse exatamente o que a lição pede não
+conseguia fechá-la.
+
+**O gerador entregava a mesma senha duas vezes.** Ele sorteava ao montar e
+guardava o valor, então usar a senha gerada em duas contas punha a **mesma**
+senha nas duas: o cofre da plataforma cometendo exatamente a reutilização que
+a lição existe para desfazer, com o medidor dizendo "forte" nas duas. Um
+gerenciador de verdade sorteia outra assim que a anterior é usada.
+
+**A regra do botão desligado vem depois da do principal, e não antes.** Mesma
+especificidade, então escrita primeiro ela perde: o botão principal desligado
+saía azul e branco, com cara de clicável, e clicar não fazia nada — que é o que
+ensina a desconfiar do programa. Estava nas **duas** janelas novas. É a mesma
+ordem que o diálogo do celular precisou na CC-ES001 e na CC-ES004, e errá-la
+não estoura nada; a trava lê a **ordem** na folha, e uma segunda cobra que o
+desligado troque o fundo, porque um retângulo azul continua parecendo botão por
+mais clara que fique a palavra dentro dele.
+
+**E a crase dentro de comentário de template de CSS fechou a string pela
+quinta vez**, no primeiro arquivo escrito no dia. Está escrito acima, aconteceu
+de novo, e o `tsc` pegou — como sempre pega.
+
+**A alternativa certa era a mais comprida em 79% das questões.** Não foi
+descuido pontual: é um hábito de escrita, o de pôr o porquê dentro da
+alternativa certa enquanto as erradas ficam secas. Quem nunca estudou passaria
+escolhendo a mais longa, que é exatamente a estratégia que
+`qualidade.test.ts` existe para reprovar — e ele reprovou. O porquê já tem
+lugar próprio, o campo `explanation`, e a certa voltou a ser uma afirmação
+curta: 79% viraram 4,7%.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -2906,6 +3050,27 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/correio.test.tsx` | peça da janela do correio que sumiu no recorte, ou que aparece sem o laboratório ter pedido |
 | `src/labs/correio.test.tsx` | mensagem mostrando só o nome de exibição, que apaga o primeiro indício do golpe |
 | `src/labs/correio.test.tsx` | lateral que guarda a própria pasta, ou que esconde pasta na tela estreita |
+| `src/labs/correio.test.tsx` | link cujo destino sai escrito ao lado do texto, ou que não avisa ao ser apontado |
+| `src/labs/cofreDeSenhas.test.ts` | senha de lista dada por forte, ou comprimento que não vence classe de caractere |
+| `src/labs/cofreDeSenhas.test.ts` | as duas contas do requisito 7 colapsadas numa, que deixa metade do defeito de pé |
+| `src/labs/contaOnline.test.ts` | duas etapas que já nascem com os códigos de reserva guardados |
+| `src/labs/contaOnline.test.ts` | consulta de vazamento sem o corte da senha ou o da data, que pede troca à toa |
+| `src/labs/contaOnline.test.ts` | intruso que fica fora sem a senha ter mudado, ou porta que some de `portasAbertas` |
+| `src/labs/contaOnline.test.ts` | "deixar tudo privado" poupando a busca, que apaga a decisão do requisito 4.5 |
+| `src/labs/golpesDoClube.test.ts` | análise por conjunto que contém, que deixa marcar todos os indícios passar |
+| `src/labs/golpesDoClube.test.ts` | caixa sem mensagem verdadeira, onde "denuncie tudo" é a resposta certa |
+| `src/labs/golpesDoClube.test.ts` | indício que não aparece na mensagem, ou explicação que nomeia o remetente |
+| `src/labs/gerenciadorDeSenhas.test.tsx` | medidor que diz a força só pela cor, ou senha que abre à mostra no cofre |
+| `src/labs/paginaDaConta.test.tsx` | método de duas etapas sem o lado que ele não cobre, ou escopo cru na tela |
+| `src/labs/paginaDaConta.test.tsx` | consulta vazia virando atestado de segurança |
+| `src/labs/gerenciadorDeSenhas.test.tsx` | regra do botão desligado escrita antes da do principal, que o deixa com cara de clicável |
+| `src/labs/paginaDaConta.test.tsx` | a mesma ordem, na janela da conta |
+| `src/labs/metasDaCcEs005.test.ts` | meta da CC-ES005 que abre verde, ou que a solução de referência não fecha |
+| `src/labs/metasDaCcEs005.test.ts` | revogar todos os aplicativos ou fechar toda a privacidade fechando a lição |
+| `src/labs/metasDaCcEs005.test.ts` | acesso tirado sem a senha trocada, que deixa quem saiu entrando em tudo |
+| `src/components/LaboratorioDeContas.test.tsx` | lição da CC-ES005 impossível de vencer clicando |
+| `src/components/LaboratorioDeContas.test.tsx` | gerador que entrega a mesma senha duas vezes, criando reutilização |
+| `src/components/LaboratorioDeContas.test.tsx` | sessão encerrada antes da troca de senha sem o intruso voltar |
 | `src/labs/selecao.test.ts` | faixa do Shift medida fora da ordem da tela, ou botão direito que encolhe a seleção |
 | `src/components/LaboratorioDeExplorador.test.tsx` | Explorador que joga fora Ctrl e Shift no clique, ou um dos dois sem as caixas de seleção |
 | `src/labs/roteiroDaEstrutura.test.ts` | roteiro da apresentação que julga a organização alheia, ou que lê os arquivos um por um |
