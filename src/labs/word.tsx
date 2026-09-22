@@ -950,7 +950,12 @@ export const CSS_FOLHA = `
   .wd-faixa-rodape { border-top: 1px dashed #C8C6C4; padding-top: 3px; margin-top: 8px; }
   /* O número da folha, fora da faixa: ele existe mesmo sem rodapé, porque a
      folha é uma folha. É o cinza do papel, e não texto do documento. */
-  .wd-folha-numero { color: #A19F9D; font-size: 9px; text-align: center; margin-top: 2px; }
+  /* O contador de folhas media 2,64:1 sobre a mesa cinza-clara, a 9px — bem
+     abaixo de AA, e é a única legenda da folha que existe. O cinza do Word é
+     #A19F9D, e ele funciona lá porque a interface inteira dele é clara; aqui
+     ele pousa numa mesa mais escura. #706E6C mede 5,08:1 e continua sendo
+     legenda: quem olha a folha não lê isto, quem procura a folha 3 de 4 lê. */
+  .wd-folha-numero { color: #706E6C; font-size: 9px; text-align: center; margin-top: 2px; }
   /* O campo onde se escreve a faixa. Sem borda, como a célula da tabela: no
      Word a área de cabeçalho é texto, e uma caixinha dentro dela ensinaria um
      programa que não existe. */

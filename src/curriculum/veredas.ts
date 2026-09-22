@@ -9,6 +9,7 @@ import { MODULOS_DO_EDITOR } from './editorDeTexto';
 import { MODULOS_DE_PLANILHA } from './planilhas';
 import { MODULOS_DE_DOCUMENTOS_PORTATEIS } from './documentosPortateis';
 import { MODULOS_DE_CONTAS_E_SEGURANCA } from './contasESeguranca';
+import { MODULOS_DO_COMPARTILHADO } from './trabalhoCompartilhado';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -790,9 +791,41 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_CONTAS_E_SEGURANCA,
   },
-  anunciada('CC-ES006', 'Trabalho Compartilhado', 'Escritório',
-    'Um arquivo só, várias pessoas: permissão, sugestão, histórico e conflito.',
-    ['cc-es002', 'cc-es005']),
+  {
+    id: 'cc-es006',
+    code: 'CC-ES006',
+    name: 'Trabalho Compartilhado',
+    familia: 'Escritório',
+    description: 'Um arquivo só, várias pessoas: permissão, sugestão, histórico e conflito.',
+    /*
+      A primeira vereda com **duas** exigências, e está escrito no requisito 1.
+
+      A CC-ES002 porque o documento daqui é o documento de lá — os mesmos
+      trechos, os mesmos comentários, as mesmas marcas de revisão; o modo de
+      sugestão do editor de navegador é a marca de revisão do Word vista de
+      outro ângulo. E a CC-ES005 porque compartilhar é decidir quem entra, e
+      quem não sabe o que é uma conta não tem o que decidir.
+
+      O que carrega esta vereda é o que **parece resolvido**. Dar permissão de
+      editar parece dar a conta, e não dá: quando o dono sai, os arquivos vão
+      com ele. Marcar um arquivo como restrito dentro de uma pasta
+      compartilhada parece restringi-lo, e não restringe. Mandar o anexo parece
+      a mesma coisa que mandar o vínculo, e é — no dia em que se manda. E
+      restaurar uma versão antiga parece apagar as novas, e é por medo disso
+      que ninguém restaura.
+
+      Nenhuma das quatro dá erro em lugar nenhum: a pasta abre, os arquivos
+      abrem, e todo mundo acha o que procura.
+
+      `origem` é a CC-ES002 porque é de lá que o documento vem. As duas
+      exigências ficam em `preRequisitos`, que é lista justamente para casos
+      assim: guardar só a primeira abriria a vereda para quem não fez a outra.
+    */
+    origem: 'CC-ES002',
+    preRequisitos: ['cc-es002', 'cc-es005'],
+    mostraResultado: true,
+    modulos: MODULOS_DO_COMPARTILHADO,
+  },
   anunciada('CC-ES007', 'Comunicação e Agenda', 'Escritório',
     'Mensagem que se entende, cópia oculta que protege, e um calendário que o clube usa.',
     ['cc-es005']),

@@ -597,8 +597,11 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
               onClick={() => descobrir('viu-as-bolhas')}>
               <Users size={17} aria-hidden />
             </button>
-            <PresencaNoEditor quem={['voce', ...arquivoAberto.acessos
-              .filter(a => a.papel === 'editor').map(a => a.quem)]} />
+            {/* Sem repetir ninguém: você costuma estar na lista de acesso do
+                arquivo **e** ser quem o abriu, e as duas bolhas iguais dizem
+                que há duas pessoas com o seu nome dentro do documento. */}
+            <PresencaNoEditor quem={[...new Set<Pessoa>(['voce', ...arquivoAberto.acessos
+              .filter(a => a.papel === 'editor').map(a => a.quem)])]} />
             <BotaoCompartilharNoEditor aoClicar={() => {
               setEscolhido(arquivoAberto.id); setCaixa('compartilhar'); setAberto(null);
             }} />
