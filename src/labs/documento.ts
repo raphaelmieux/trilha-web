@@ -175,12 +175,30 @@ export const CAMPOS_EM_SERIE: readonly Campo[] = ['figura', 'tabela'];
  * texto, e um erro de digitação no nome deixaria a tarefa impossível sem nada
  * acusar.
  */
-export type Autor = 'voce' | 'lideranca';
+/*
+  A CC-ES006 acrescentou três nomes, e não trocou os dois que já estavam aqui.
+
+  A vereda de Trabalho Compartilhado precisa de gente com nome: o requisito 8
+  pede um documento feito com **no mínimo duas outras pessoas**, comprovado no
+  histórico, e "Liderança" não é uma pessoa — é um papel, e o documento da
+  CC-ES002 tem razão de chamá-la assim, porque lá ela é quem revisa e não
+  importa quem seja.
+
+  Alargar a união e não trocá-la custa duas linhas e mantém a CC-ES002
+  intocada. E o compilador cobra o resto sozinho: `NOME_DO_AUTOR` e
+  `COR_DO_AUTOR` são `Record<Autor, …>`, então um nome novo sem cor não
+  compila — que é o contrário do mapa que aceita a chave faltando e desenha
+  `undefined` na tela.
+*/
+export type Autor = 'voce' | 'lideranca' | 'marta' | 'ronaldo' | 'cleide';
 
 /** Como o autor se assina na margem e no balão. */
 export const NOME_DO_AUTOR: Record<Autor, string> = {
   voce: 'Você',
   lideranca: 'Liderança',
+  marta: 'Marta',
+  ronaldo: 'Ronaldo',
+  cleide: 'Cleide',
 };
 
 /**
@@ -200,6 +218,14 @@ export const NOME_DO_AUTOR: Record<Autor, string> = {
 export const COR_DO_AUTOR: Record<Autor, string> = {
   lideranca: '#A4262C',
   voce: '#0F6CBD',
+  /* As três da CC-ES006 foram medidas sobre o papel branco como as duas de
+     cima, e são distinguíveis entre si também por quem não separa vermelho de
+     verde: os tons ficam em claridades diferentes, e não só em matizes
+     diferentes. É a razão de a marca ser riscada **e** sublinhada além de
+     colorida. */
+  marta: '#B14A00',
+  ronaldo: '#146B4F',
+  cleide: '#6B2FA8',
 };
 
 /** O que a marca fez com o trecho: ele entrou, ou ele saiu. */

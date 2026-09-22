@@ -950,7 +950,12 @@ export const CSS_FOLHA = `
   .wd-faixa-rodape { border-top: 1px dashed #C8C6C4; padding-top: 3px; margin-top: 8px; }
   /* O número da folha, fora da faixa: ele existe mesmo sem rodapé, porque a
      folha é uma folha. É o cinza do papel, e não texto do documento. */
-  .wd-folha-numero { color: #A19F9D; font-size: 9px; text-align: center; margin-top: 2px; }
+  /* O contador de folhas media 2,64:1 sobre a mesa cinza-clara, a 9px — bem
+     abaixo de AA, e é a única legenda da folha que existe. O cinza do Word é
+     #A19F9D, e ele funciona lá porque a interface inteira dele é clara; aqui
+     ele pousa numa mesa mais escura. #706E6C mede 5,08:1 e continua sendo
+     legenda: quem olha a folha não lê isto, quem procura a folha 3 de 4 lê. */
+  .wd-folha-numero { color: #706E6C; font-size: 9px; text-align: center; margin-top: 2px; }
   /* O campo onde se escreve a faixa. Sem borda, como a célula da tabela: no
      Word a área de cabeçalho é texto, e uma caixinha dentro dela ensinaria um
      programa que não existe. */
@@ -968,6 +973,13 @@ export const CSS_FOLHA = `
   .wd-fora-da-linha > .wd-imagem { position: absolute; top: 0; left: 18%; opacity: .9; }
   .wd-disp-atras { z-index: -1; }
   .wd-disp-frente { z-index: 2; }
+.wd-escrevendo {
+  display: block; width: 100%; border: none; background: transparent;
+  font: inherit; color: inherit; resize: none; overflow: hidden;
+  padding: 0; margin: 0 0 .35em; outline: none;
+}
+.wd-escrevendo:focus { background: rgba(43,120,228,.07); }
+
 `;
 
 /**
@@ -979,8 +991,21 @@ export const CSS_FOLHA = `
  * CC-ES002 diz, e é por isso que um laboratório sobre essa diferença precisa
  * saber desenhá-las.
  */
+/**
+ * Dá para digitar por cima deste parágrafo?
+ *
+ * Só quando ele é texto simples: um trecho só, sem campo e sem marca de
+ * revisão. Deixar digitar por cima de um parágrafo com campo apagaria a
+ * distinção entre o número calculado e o digitado, que é a lição do
+ * requisito 4.4 da CC-ES002; por cima de uma marca, retypar desfaria em
+ * silêncio a proposta de outra pessoa.
+ */
+const daParaDigitar = (b: Paragrafo<string>) =>
+  b.trechos.length <= 1 && !b.trechos.some(x => x.campo || x.revisao);
+
 export function ParagrafoDaFolha({
   doc, bloco, escolhido, marcas, aoEscolher, classe, comentado, aoEscolherTrecho,
+  aoEscrever, aoNovoParagrafo,
 }: {
   doc: Doc<string>;
   bloco: Paragrafo<string>;
@@ -993,7 +1018,47 @@ export function ParagrafoDaFolha({
   comentado?: Set<string>;
   /** Clicar num trecho — é assim que se escolhe uma marca de revisão. */
   aoEscolherTrecho?: (trechoId: string) => void;
+  /**
+   * Digitar dentro deste parágrafo.
+   *
+   * Sem ele a folha é de leitura, que é como os laboratórios da CC-ES002 a
+   * usam — lá o que se exercita é formatar, e não escrever. A CC-ES006
+   * precisa escrever, e por isso a peça entra **aqui**, na janela
+   * compartilhada, e não numa segunda folha ao lado: duas folhas divergiriam
+   * no primeiro ajuste, que é a razão de `word.tsx` existir.
+   *
+   * Quem decide o que o texto vira — texto mesmo, ou marca de sugestão — é o
+   * laboratório, que é quem sabe em que modo a pessoa está.
+   */
+  aoEscrever?: (texto: string) => void;
+  /** Enter no fim do parágrafo. Sem ele, Enter não faz nada. */
+  aoNovoParagrafo?: () => void;
 }) {
+  if (aoEscrever && escolhido && daParaDigitar(bloco)) {
+    return (
+      <textarea
+        className={`wd-bloco wd-escrevendo${classe ? ` ${classe}` : ''}`}
+        style={aparenciaDe(doc, bloco.estilo)}
+        data-bloco={bloco.id}
+        data-estilo={bloco.estilo}
+        aria-label={`Parágrafo: ${bloco.trechos.map(x => x.texto).join('')}`}
+        value={bloco.trechos.map(x => x.texto).join('')}
+        autoFocus
+        rows={1}
+        onClick={ev => ev.stopPropagation()}
+        onChange={ev => aoEscrever(ev.target.value)}
+        onKeyDown={ev => {
+          if (ev.key === 'Enter' && !ev.shiftKey && aoNovoParagrafo) {
+            ev.preventDefault();
+            aoNovoParagrafo();
+          }
+          /* Esc sai do campo, senão quem navega por teclado fica preso nele.
+             É a mesma decisão do editor de código da vereda de HTML. */
+          if (ev.key === 'Escape') ev.currentTarget.blur();
+        }}
+      />
+    );
+  }
   return (
     <>
       {bloco.quebraDePagina && (
@@ -1228,7 +1293,7 @@ export function SumarioDaFolha({ itens }: { itens: ItemDeSumario[] }) {
  */
 export function BlocoDaFolha({
   doc, bloco, escolhido, marcas, aoEscolher, celula, aoCursorNaCelula, aoEditarCelula, classe,
-  comentado, aoEscolherTrecho,
+  comentado, aoEscolherTrecho, aoEscrever, aoNovoParagrafo,
 }: {
   doc: Doc<string>;
   bloco: Bloco<string>;
@@ -1241,13 +1306,17 @@ export function BlocoDaFolha({
   aoEditarCelula?: (linha: number, coluna: number, valor: string) => void;
   comentado?: Set<string>;
   aoEscolherTrecho?: (trechoId: string) => void;
+  /** Digitar no parágrafo. Só o parágrafo a recebe: tabela e imagem não têm texto. */
+  aoEscrever?: (texto: string) => void;
+  aoNovoParagrafo?: () => void;
 }) {
   switch (bloco.tipo) {
     case 'paragrafo':
       return (
         <ParagrafoDaFolha doc={doc} bloco={bloco} escolhido={escolhido}
           marcas={marcas} aoEscolher={aoEscolher} classe={classe}
-          comentado={comentado} aoEscolherTrecho={aoEscolherTrecho} />
+          comentado={comentado} aoEscolherTrecho={aoEscolherTrecho}
+          aoEscrever={aoEscrever} aoNovoParagrafo={aoNovoParagrafo} />
       );
     case 'tabela':
       return (
@@ -1323,7 +1392,7 @@ export function FaixaDaFolha({ doc, faixa, pagina, onde, aoEscrever }: {
 export function FolhaDoWord({
   doc, selecionado, marcas, aoEscolher, aoClicarNoVazio,
   celula, aoCursorNaCelula, aoEditarCelula, aoEscreverNaFaixa,
-  comentado, aoEscolherTrecho, margem,
+  comentado, aoEscolherTrecho, margem, aoEscreverNoParagrafo, aoNovoParagrafo,
 }: {
   doc: Doc<string>;
   selecionado?: string | null;
@@ -1345,6 +1414,10 @@ export function FolhaDoWord({
    * empurrar o texto, que é justamente o que a lição diz que ele não faz.
    */
   margem?: ReactNode;
+  /** Digitar no parágrafo escolhido. Sem ele a folha é de leitura. */
+  aoEscreverNoParagrafo?: (blocoId: string, texto: string) => void;
+  /** Enter no fim de um parágrafo. */
+  aoNovoParagrafo?: (blocoId: string) => void;
 }) {
   const paginas = paginasDoDoc(doc);
   /* Embaixo do título, e não acima dele: quem fecha a abertura é quem carrega
@@ -1386,6 +1459,10 @@ export function FolhaDoWord({
                         comentado={comentado}
                         aoEscolherTrecho={aoEscolherTrecho}
                         aoEscolher={aoEscolher ? () => aoEscolher(b.id) : undefined}
+                        aoEscrever={aoEscreverNoParagrafo
+                          ? (texto: string) => aoEscreverNoParagrafo(b.id, texto) : undefined}
+                        aoNovoParagrafo={aoNovoParagrafo
+                          ? () => aoNovoParagrafo(b.id) : undefined}
                         celula={selecionado === b.id ? celula : null}
                         aoCursorNaCelula={aoCursorNaCelula
                           ? (linha, coluna) => aoCursorNaCelula(b.id, linha, coluna) : undefined}

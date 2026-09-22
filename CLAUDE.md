@@ -2453,6 +2453,129 @@ escolhendo a mais longa, que é exatamente a estratégia que
 lugar próprio, o campo `explanation`, e a certa voltou a ser uma afirmação
 curta: 79% viraram 4,7%.
 
+**A CC-ES006 é um programa em duas telas, e por isso o `tipo` é um só.** A
+lista de arquivos da nuvem e o editor de documento são duas telas do mesmo
+serviço, como a tela inicial e o documento são duas telas do leitor de PDF — e
+quase toda lição começa numa e termina na outra. Dois tipos diriam que são
+dois programas, e a lição teria de escolher entre eles. O campo é `licao`,
+como na CC-ES005, e um `Record` sobre a união faz a décima não compilar até
+alguém dizer de que estado ela parte e que arquivo ela abre.
+
+**O documento não nasce aqui.** É o `Doc` da CC-ES002, com os trechos, as
+marcas de revisão por autor e os comentários com resposta e resolução — e o
+papel continua sendo desenhado por `FolhaDoWord`. Não é economia: é a razão de
+o requisito 1 pedir aquela vereda antes desta. O modo de sugestão do editor de
+navegador **é** a marca de revisão do Word vista de outro ângulo, e os
+comentários são os mesmos comentários. O que muda entre os dois programas é a
+**casca**: o Word tem barra de título, faixa e guias; o editor de navegador
+tem o nome do arquivo em cima, um menu de palavras e as bolhas de quem está
+junto.
+
+**E a folha passou a aceitar digitação, em `word.tsx`.** Os laboratórios da
+CC-ES002 formatam, e nunca escrevem; esta vereda escreve. `aoEscreverNoParagrafo`
+entra pela presença do setter, então aqueles quatro laboratórios não mudam —
+e entra **na janela compartilhada**, e não numa segunda folha ao lado, pela
+razão de `word.tsx` existir. Só parágrafo simples a aceita: digitar por cima
+de um campo apagaria a diferença entre o número calculado e o digitado, e por
+cima de uma marca de revisão desfaria calado a proposta de outra pessoa.
+
+**A primeira vereda a abrir com duas exigências.** CC-ES002 e CC-ES005, e está
+escrito no requisito 1. A lista já existia — as de escritório anunciadas
+declaram duas e até três —, e esta é a primeira em que ela vale para alguém:
+guardar só a primeira abriria a vereda para quem não fez a outra, e
+`veredasQueFaltamAntes` nomeia as duas em vez de mandar a pessoa concluir uma
+e voltar para descobrir que falta outra.
+
+**A permissão da pasta alcança o que está dentro, e vence a do arquivo.**
+`papelDe` toma o mais permissivo entre o que o arquivo dá e o que cada pasta
+acima dele dá. O efeito é o que ninguém espera: pôr um arquivo restrito dentro
+de uma pasta compartilhada com o clube **não o restringe** — ele continua com
+o "só você" escrito na caixa dele, e todo mundo o abre. É a ficha médica das
+crianças, e o conserto é **mover**: tirar o nome de cada pessoa da caixa do
+arquivo não tira nada, porque não há nome nenhum lá.
+
+**E a janela não pode contar isso.** A lista nunca escreve o papel de ninguém,
+nem como texto para leitor de tela — resolveria o requisito 5 numa palavra, e
+só para uma parte das pessoas. O selo "Compartilhado" lê o acesso **próprio**,
+e não o efetivo: lido do efetivo, ele marcaria a ficha médica e diria em uma
+sílaba o que a lição manda descobrir. E quem herda pela pasta aparece
+**recolhido**, como a nuvem de verdade faz — expandido poria a resposta na
+nossa tela, escondido faria o programa mentir. Recolhido, ninguém abre, que é
+por que o arquivo fica aberto sem ninguém saber.
+
+**Dar permissão de editar não é dar a conta.** O arquivo mora na conta do
+dono, e some com ela — por mais gente que tenha acesso. Transferir a
+propriedade é gesto separado, e mora **dentro** do seletor de papel, que é
+onde a nuvem o esconde: é por isso que o requisito 4.6 existe como
+demonstração. E transferir não é perder: quem entrega continua editor, senão
+ninguém transferiria nunca e o clube ficaria com tudo na conta de uma pessoa.
+
+**Restaurar uma versão não apaga as mais novas: acrescenta uma.** É a metade
+do requisito 4.5 que decide se alguém usa o recurso — quem acha que restaurar
+destrói o que veio depois nunca restaura, e refaz o trabalho à mão. O painel
+**escreve** isso, e um painel sem essa linha funciona perfeitamente e ensina o
+medo. E o histórico nomeia quem **escreveu**, nunca quem leu: um histórico que
+contasse leitura deixaria "produzimos juntos" verdadeiro para quem só abriu, e
+para quem colou o texto das outras duas.
+
+**O conflito é do arquivo sincronizado, e a cópia vai para a lixeira.** No
+navegador não há conflito: as duas edições entram e nada precisa ser
+resolvido. O conflito nasce na pasta que sincroniza com o computador, quando a
+internet de alguém volta — e a nuvem guarda as duas, com a segunda virando um
+arquivo ao lado. O trabalho não se perde por ser sobrescrito: se perde por
+ficar num arquivo que ninguém abre, na mesma pasta, com nome quase igual.
+
+Resolver pede as duas metades, e a cópia vai para a **lixeira** em vez de
+deixar de existir. Apagá-la de verdade deixaria a nuvem igualzinha à de quem
+nunca teve conflito nenhum, e aí "não há cópia em conflito na pasta" seria
+verdade no segundo zero: a meta abriria verde.
+
+**A meta que apagava a própria prova.** "Provocar o conflito" lia
+`copiasEmConflito`, e a meta duas linhas abaixo manda tirar a cópia da pasta —
+quem fizesse tudo certo via a primeira tarefa ficar vermelha de novo no fim,
+com uma lista que nunca fecha. É o defeito que a CC-ES004 teve na lição de
+assinar, e desta vez a trava o achou antes de alguém clicar. "Propor em modo
+de Sugestão" tinha a mesma forma, e lê a descoberta — que não sai de graça: ela
+só é gravada quando o que se digita vira marca em vez de virar texto.
+
+**As metas de preservação são condição, e não item da lista.** O link deixado
+restrito, a pasta do clube deixada compartilhada, nenhuma cópia solta na mão
+do Ronaldo — as três são verdadeiras antes de alguém fazer qualquer coisa, e
+como item ensinariam a não ler a lista. Cada uma viaja conjugada com a meta que
+de fato pede um gesto, de modo que o caminho rápido e errado deixa **aquela**
+meta vermelha.
+
+**Enter leva o cursor junto.** `paragrafoDepoisDe` devolve o id do parágrafo
+novo, e o editor o seleciona. Sem isso aparece uma linha em branco e o que se
+digita continua entrando na linha de cima: a tecla parece quebrada e nada
+estoura. Foi a trava que clica quem achou, junto com "Mover para a lixeira"
+travado por propriedade — a cópia em conflito é do dono do **original**, e não
+de quem a provocou, então o único gesto que o requisito 6 pede vinha
+desligado.
+
+**E as outras pessoas escrevem depois da sua primeira edição, e não num
+relógio.** Um temporizador faria a lição depender de esperar, e uma trava que
+clica nunca saberia quanto. Além disso, o que o requisito 4.2 manda ver é que
+as duas edições entram sem uma esperar a outra — o que só se vê quando a sua
+já está lá. Cada consequência acontece uma vez: uma linha da Marta por tecla
+seria um documento que ninguém lê.
+
+**O contador de folhas media 2,64:1, desde a CC-ES002.** `#A19F9D` é o cinza
+do Word, e ele funciona lá porque a interface inteira daquele programa é
+clara; aqui ele pousa numa mesa mais escura, a 9px, e é a única legenda que a
+folha tem. Hoje é `#706E6C`, a 5,08:1. E as bolhas de presença desenhavam
+"Você" duas vezes, porque você costuma estar na lista de acesso **e** ser quem
+abriu — duas bolhas iguais dizem que há duas pessoas com o seu nome dentro do
+documento, numa lição cujo assunto é quem está ali.
+
+**A correta mais comprida se mede na vereda, e não no corpus.** A trava de
+`qualidade.test.ts` soma todas as lições de todas as trilhas e veredas, e
+sessenta e uma questões novas se diluem em mil e quinhentas: a CC-ES006 abriu
+com 18% das questões entregando a resposta pelo tamanho — a pior com sessenta
+e quatro caracteres de vantagem — e a trava passou. Ela está certa sobre o
+corpus e não diz nada sobre o arquivo novo. Medir o arquivo sozinho, antes de
+abrir, é o que pega isso; 18% viraram 8,2%.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -3051,6 +3174,26 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/correio.test.tsx` | mensagem mostrando só o nome de exibição, que apaga o primeiro indício do golpe |
 | `src/labs/correio.test.tsx` | lateral que guarda a própria pasta, ou que esconde pasta na tela estreita |
 | `src/labs/correio.test.tsx` | link cujo destino sai escrito ao lado do texto, ou que não avisa ao ser apontado |
+| `src/labs/nuvem.test.tsx` | linha da nuvem que escreve o papel de alguém, entregando o requisito 5 |
+| `src/labs/nuvem.test.tsx` | selo de compartilhado lido do acesso efetivo, que marca a ficha médica |
+| `src/labs/nuvem.test.tsx` | herança pela pasta desenhada já expandida, ou aberta sem ninguém dentro |
+| `src/labs/nuvem.test.tsx` | "Transferir propriedade" ou "Remover acesso" oferecidos sem quem os atenda |
+| `src/labs/editorNaNuvem.test.tsx` | painel de histórico que não diz que a versão de agora continua nele |
+| `src/labs/editorNaNuvem.test.tsx` | versão sem os nomes de quem escreveu, que deixa o requisito 8 sem prova |
+| `src/labs/editorNaNuvem.test.tsx` | Restaurar ligado na versão já aberta, que é botão que não faz nada |
+| `src/labs/editorNaNuvem.test.tsx` | cursor do outro desenhado sem achar o parágrafo, apontando para o lugar errado |
+| `src/labs/arquivoCompartilhado.test.ts` | permissão do arquivo vencendo a da pasta, que fecharia a ficha médica sozinha |
+| `src/labs/arquivoCompartilhado.test.ts` | restaurar apagando as versões mais novas, que é o medo que trava o recurso |
+| `src/labs/arquivoCompartilhado.test.ts` | cópia por anexo que se religa ao original, ou acesso que alcança a cópia |
+| `src/labs/arquivoCompartilhado.test.ts` | link aberto entrando em `papelDe`, ou pasta movida para dentro dela mesma |
+| `src/labs/metasDaCcEs006.test.ts` | meta da CC-ES006 que abre verde, ou que a solução de referência não fecha |
+| `src/labs/metasDaCcEs006.test.ts` | link aberto para qualquer pessoa fechando a lição dos três níveis |
+| `src/labs/metasDaCcEs006.test.ts` | fechar a pasta do clube valendo por tirar a ficha de dentro dela |
+| `src/labs/metasDaCcEs006.test.ts` | apagar a cópia em conflito sem juntar, ou juntar sem tirá-la da pasta |
+| `src/labs/metasDaCcEs006.test.ts` | comentário resolvido em silêncio, ou vínculo mandado junto de uma cópia |
+| `src/components/LaboratorioDaNuvem.test.tsx` | lição da CC-ES006 impossível de vencer clicando |
+| `src/components/LaboratorioDaNuvem.test.tsx` | Enter que deixa o cursor no parágrafo de cima, com a tecla parecendo quebrada |
+| `src/components/LaboratorioDaNuvem.test.tsx` | linha da Marta chegando a cada tecla, ou escrita de comentarista virando texto |
 | `src/labs/cofreDeSenhas.test.ts` | senha de lista dada por forte, ou comprimento que não vence classe de caractere |
 | `src/labs/cofreDeSenhas.test.ts` | as duas contas do requisito 7 colapsadas numa, que deixa metade do defeito de pé |
 | `src/labs/contaOnline.test.ts` | duas etapas que já nascem com os códigos de reserva guardados |

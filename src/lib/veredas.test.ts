@@ -42,6 +42,7 @@ import { RELATORIO_DA_ENTREGA_INICIAL, ENTREGA_INICIAL, METAS_DA_ENTREGA } from 
 import { CADERNOS_DA_CC_ES003 } from '../labs/cadernosDaCcEs003';
 import { PASTAS_DA_CC_ES004 } from '../labs/metasDaCcEs004';
 import { LICOES_DA_CC_ES005 } from '../labs/metasDaCcEs005';
+import { LICOES_DA_CC_ES006 } from '../labs/metasDaCcEs006';
 
 /*
   Os laboratórios de Word partem de documentos diferentes, e a trava precisa
@@ -497,6 +498,11 @@ describe('os modelos dos laboratórios da vereda', () => {
            não a janela em que ela acontece. */
         case 'contas': return Object.fromEntries(
           LICOES_DA_CC_ES005[l.licao].metas.map(m => [m.id, m.passos]));
+        /* E a CC-ES006 pelo mesmo motivo. O registro dela também mora fora do
+           teste, e vale para as duas telas do serviço — a lista de arquivos e
+           o editor —, porque quem responde pelos passos é a meta. */
+        case 'nuvem': return Object.fromEntries(
+          LICOES_DA_CC_ES006[l.licao].metas.map(m => [m.id, m.passos]));
         case 'laboratorio': return passosDe(l.linguagem);
         /* Teoria e redação não têm verificação com passo a passo. */
         case 'teoria': case 'redacao': return null;
