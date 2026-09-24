@@ -10,6 +10,7 @@ import { MODULOS_DE_PLANILHA } from './planilhas';
 import { MODULOS_DE_DOCUMENTOS_PORTATEIS } from './documentosPortateis';
 import { MODULOS_DE_CONTAS_E_SEGURANCA } from './contasESeguranca';
 import { MODULOS_DO_COMPARTILHADO } from './trabalhoCompartilhado';
+import { MODULOS_DA_COMUNICACAO } from './comunicacaoEAgenda';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -851,9 +852,40 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DO_COMPARTILHADO,
   },
-  anunciada('CC-ES007', 'Comunicação e Agenda', 'Escritório',
-    'Mensagem que se entende, cópia oculta que protege, e um calendário que o clube usa.',
-    ['cc-es005']),
+  {
+    id: 'cc-es007',
+    code: 'CC-ES007',
+    name: 'Comunicação e Agenda',
+    familia: 'Escritório',
+    description: 'Mensagem que se entende, cópia oculta que protege, e um calendário que o clube usa.',
+    /*
+      A exigência é uma só, e está escrita no requisito 1: a CC-ES005.
+
+      A razão é a resposta automática de ausência, do requisito 4.5. Ela é a
+      única mensagem que alguém escreve para **quem quer que escreva** — o
+      clube, as famílias, e quem atirou o endereço no escuro. Quem não sabe o
+      que é uma conta e o que se conta a desconhecidos escreve nela que a casa
+      está vazia e por quanto tempo.
+
+      `origem` é a AP044 porque é de lá que o correio vem: aquela trilha tem um
+      laboratório que ensina a **enviar** — pôr a lista grande no Cco, anexar,
+      assinar. Esta vereda mede a **decisão**, que é o que os requisitos 3 e
+      4.2 pedem com todas as letras: "explicar quando se deve usar",
+      "justificando a escolha".
+
+      O que carrega esta vereda é o que **não dá erro**. Cinquenta endereços
+      entregues a cinquenta pessoas: a mensagem chegou. Um convite num endereço
+      errado: a lista diz "aguardando", igual a quem não decidiu. Um evento
+      criado no fuso de Brasília para quem combinou no do Acre: as duas agendas
+      concordam. Uma resposta automática sem data de fim: ela responde em
+      março, correta e velha. Uma lista de unidade que ninguém revisa: ela
+      entrega, certinha, para as pessoas de antes.
+    */
+    origem: 'AP044',
+    preRequisitos: ['cc-es005'],
+    mostraResultado: true,
+    modulos: MODULOS_DA_COMUNICACAO,
+  },
   anunciada('CC-ES008', 'Dados e Formulários', 'Escritório',
     'Formulário que coleta, planilha que guarda, e por que as duas não são a mesma coisa.',
     ['cc-es003', 'cc-es006']),

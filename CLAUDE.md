@@ -2576,6 +2576,198 @@ e quatro caracteres de vantagem — e a trava passou. Ela está certa sobre o
 corpus e não diz nada sobre o arquivo novo. Medir o arquivo sozinho, antes de
 abrir, é o que pega isso; 18% viraram 8,2%.
 
+**A CC-ES007 mede a decisão, e a AP044 media o gesto.** A trilha já tem um
+laboratório de correio, e ele cobra pôr a lista grande no Cco, anexar,
+assinar, arquivar. Os requisitos 3 e 4.2 desta vereda pedem outra coisa, com
+todas as letras: "explicar quando se deve usar", "justificando a escolha".
+
+A diferença aparece em cada peça. O Cco tem um lado em que ele é a escolha
+**errada** — os quatro da direção precisam responder uns aos outros, e
+esconder qualquer um deles tira dele a conversa; quem responde a todos de
+dentro do Cco entrega que estava ali. E a conta não é "o campo está
+preenchido": é quantos endereços cada quem-recebe consegue ler. Uma família no
+Cco e cinquenta e uma no Para tem o campo cheio e entregou tudo.
+
+**Lista de distribuição não é privacidade, e as duas se confundem porque as
+duas encurtam a digitação.** A lista é um apelido: na entrega ela abre nos
+endereços de todo mundo, e quem acha que mandou "para a lista" acha que não
+mostrou nada.
+
+**E ela envelhece em dois sentidos.** O Daniel saiu em fevereiro e continua
+nela; a Helena entrou em março e não está. Esquecer de tirar manda a conversa
+interna da unidade para quem não está mais nela; esquecer de pôr deixa alguém
+de fora de tudo. Nenhum dos dois volta com erro, e uma lista errada de um jeito
+só deixaria metade do requisito 4.4 sem o que exercitar.
+
+**O assunto e o pedido são duas contas cada, e o prazo mora na frase do
+pedido.** "Reunião do ônibus" nomeia a matéria e continua sendo o assunto que
+um clube semanal não distingue; "Confirmação para quarta" não é vago e não diz
+do que trata. É o molde e a data da CC-ES001, duas vezes.
+
+E medir o prazo no corpo inteiro engana: quase toda mensagem de clube cita uma
+data — a do acampamento, a da reunião —, então "a saída é dia 3 de julho"
+passaria por prazo numa mensagem que não pede nada a ninguém. `pedidoComPrazo`
+procura as duas coisas na **mesma frase**. As duas contas soltas continuam
+existindo porque elas nomeiam erros diferentes, e é isso que a lição ensina.
+
+**Arquivar e excluir só se separam pela busca.** Ela lê o arquivado e não lê a
+lixeira, como em todo provedor. Sem essa assimetria as duas são a mesma coisa
+com dois nomes — e é por acreditar que tirar da entrada é perder que alguém
+passa três anos com quatro mil mensagens nela. E o que decide o que fica na
+entrada não é um campo `pedeAcao` na mensagem: isso seria a resposta impressa
+na tela, que é a decisão do `emUso` que a CC-ES005 recusou. Quem sabe é a
+meta, e `metasDaCcEs007.test.ts` cobra que as duas listas juntas cubram a caixa
+inteira — mensagem nova sem classificação reprova ali, como em
+`ofensiva.test.ts`.
+
+**A resposta automática tem três guardas, e duas ninguém liga.** Sem `ate` ela
+responde em março que você está de férias. Com `soParaContatos` desligado ela
+responde a quem atirou no escuro — e responder confirma que o endereço existe
+e que tem gente lendo, que é o que quem atirou queria saber. E
+`dizComQuemFalar` é a metade que a torna útil: sem ela, a resposta informa que
+não vai haver resposta e nada mais.
+
+É o requisito 4.5 encostando na CC-ES005, que é a vereda exigida aqui: a
+resposta de ausência é a única mensagem que se escreve para **quem quer que
+escreva**, e dizer que a família inteira está viajando de 10 a 25 é dizer isso
+a todo mundo.
+
+**O fuso se diz pelo nome, e o que o torna concreto é Rio Branco ser do mesmo
+país.** Ninguém desconfia do fuso quando a reunião é com gente do Brasil.
+Combinar 15h com quem está lá e criar o evento no fuso de Brasília o põe às
+13h — na agenda dele, sem erro nenhum, com os dois convites certos e as duas
+agendas concordando. A conta sai do `Intl` com o nome IANA, e `instanteDe`
+corrige duas vezes: a segunda passada é para a virada do horário de verão,
+onde o deslocamento do palpite e o do instante de verdade são diferentes.
+
+**E escrever "15h, horário do Acre" na descrição não põe nada no campo.** A
+descrição fica certa, o campo fica errado, e quem lê confia no calendário — que
+é o que o calendário existe para ser. É o "Figura 1" digitado da CC-ES002, com
+outro assunto.
+
+**"Aguardando" cobre duas situações e uma delas nunca muda.** Um convite
+mandado para um endereço errado espera para sempre, e na tela isso é
+exatamente o que se vê de quem recebeu e não decidiu. É por isso que o
+requisito 5.2 diz *acompanhar as confirmações* e não *enviar os convites*, e
+por isso `trocarConvidado` põe o endereço novo como **aguardando**: quem acabou
+de receber ainda não respondeu.
+
+**Cancelar um sábado e cancelar o ano são dois itens da mesma caixa em letra
+miúda.** "Todos os eventos" apaga a série e não pergunta de novo, e o que sumiu
+sumiu da agenda de todo mundo ao mesmo tempo. "Este e os seguintes" não pode
+reescrever o passado: mudar o horário a partir de agosto não toca em junho.
+
+E série sem fim declarado é infinita de verdade — é o que o calendário oferece
+por padrão, e é o que põe a reunião de sábado do clube em 2075.
+
+**Os quatro níveis de calendário não são quatro graus de confiança.**
+`livre-ocupado` é para quem precisa marcar hora com você e não tem nada que ver
+com o que você faz; `gerenciar` é o único que se propaga. Cada um traz escrito
+o que **não** deixa fazer, como os métodos de duas etapas da CC-ES005 — sem
+esse lado, a fileira é quatro palavras parecidas e a escolha vira "clicar na
+primeira".
+
+O atalho errado é dar "fazer alterações" a todo mundo: resolve a reclamação de
+que ninguém consegue marcar nada e põe o acampamento ao alcance de trinta
+pessoas. Ninguém apaga de propósito — apaga arrastando.
+
+**E o calendário público leva a descrição de cada evento junto**, para qualquer
+pessoa e para os buscadores. A descrição é onde se escreve o telefone de quem
+abre o salão.
+
+**A grade de disponibilidade responde sobre as agendas que ela conseguiu
+consultar.** Quem não compartilhou aparece **sem informação** — hachurado, e
+nunca branco: livre e desconhecido cabem no mesmo espaço em branco, e é aí que
+o requisito 5.5 acontece. Tratar "sem acesso" como ocupado esvaziaria a grade e
+ensinaria que não dá para marcar nada; devolver "livre" seria o programa
+afirmando o que não tem como saber. O rótulo lido em voz alta diz a mesma
+coisa: um que dissesse "livre" resolveria o requisito numa palavra, e
+resolveria errado, e só para uma parte das pessoas.
+
+A primeira janela que a grade oferece é justamente a que o Tio Márcio não pode,
+para a lição não ser "clique no primeiro buraco". E ele trabalha até as
+**quatro**, e não até as seis, para que as duas contas da meta tenham caso: com
+o corte às dezoito, nenhum horário servia a ele e atropelava alguém visível ao
+mesmo tempo, e a conta de atropelar seria código que nenhum teste exercita.
+
+**Conduzir uma reunião quer dizer que as três coisas que dão errado podem dar
+errado.** A fala carrega o estado do microfone do instante em que saiu, então
+abri-lo depois não faz ninguém ouvir o que já foi dito — uma simulação que
+bloqueasse a tentativa ensinaria que o programa avisa a tempo, que é o
+contrário do que acontece. A tela inteira entrega a notificação que chega por
+cima; a janela continua mostrando a janela depois que você foi olhar outra
+coisa. E só a guia leva som, e só com a caixa marcada: pela janela do navegador
+o vídeo chega mudo.
+
+A mensagem que chega no meio da reunião é da tesouraria, sobre dinheiro de uma
+família, e é de propósito **não** constrangedora: uma inventada para ser
+vexatória ensinaria a rir, esta ensina que a tela inteira entrega o que estiver
+lá.
+
+**Duas metas que leem o estado de agora se excluem.** "Mostrou a planilha" e
+"mostrou o vídeo" liam o que a sala está vendo, e só uma apresentação acontece
+por vez: quem fizesse as duas ficava com uma lista que nunca fecha. É o defeito
+da lição de assinar da CC-ES004, e desta vez apareceu escrevendo, e não
+clicando. As duas contas são históricas, sobre `apresentacoes`.
+
+E a escolha da tela inteira **fica no registro**: o que vazou vazou, do jeito
+que uma mensagem enviada não volta. A meta não trava por causa dela — travar
+deixaria a lição impossível de fechar —, ela mede a escolha: mostrar a planilha
+pela tela inteira não fecha aquela tarefa nunca.
+
+**A sala não guarda descobertas.** O que a pessoa viu é dela, e quem guarda é o
+contexto da lição, que é o mesmo para os três programas. Um segundo campo em
+`Reuniao` era segunda fonte para a mesma coisa, e as duas divergiram
+imediatamente — a solução de referência anotava de um lado e a meta lia do
+outro.
+
+**O contexto da CC-ES007 é um só para três programas, e é o contrário da
+CC-ES005.** Lá cada programa tinha o seu. Aqui a caixa, a agenda e a sala
+viajam juntas porque o clube é um e as lições se atravessam: a reunião se
+agenda no calendário, e quem não respondeu ao convite se cobra por mensagem.
+Três contextos separados obrigariam cada lição a escolher um programa e ficar
+nele, que não é como um clube trabalha.
+
+E os gestos que atravessam moram onde o programa de verdade os põe: o
+calendário escreve aos convidados, porque todo calendário tem esse envelope ao
+lado da lista; a sala agenda no calendário, porque é o que o botão "Agendar" de
+toda sala faz. Nenhum dos dois é a plataforma costurando dois programas.
+
+**Meta que depende de um id que a tela nunca produz é impossível de fechar.**
+`marcou-quando-todos-podem` exigia `id === 'conselheiros'`, e o calendário dá um
+id novo a cada evento criado — como todo calendário. O motor fechava a lista e
+a janela não. Ela procura pelo **dia** agora, que é a decisão que `regional` já
+tinha tomado procurando pelo título. Quem achou foi a trava que clica: trava de
+motor não é trava de tela.
+
+**Dois botões com o mesmo nome, um atrás do diálogo, são ambíguos.** Escolher
+"Este evento" e confirmar reabria a caixa em vez de confirmá-la, porque o
+evento atrás dela também tem um botão "Excluir". Quem navega por teclado ou por
+leitor de tela tem o mesmo problema, e o calendário de verdade confirma com OK.
+
+**O cinza dos dias do mês vizinho media 2,53:1.** `#9AA0A6` é o cinza do
+calendário de verdade, e num número de 12px que é a única coisa escrita na
+célula ele some. E parece **certo**: dia de outro mês tem de sair apagado,
+então ninguém estranha um apagado demais. É o contador de folhas da CC-ES002
+outra vez, achado do mesmo jeito — no Chromium, porque o jsdom não calcula
+contraste nenhum. Eles não são enfeite: é por eles que se lê que a semana
+começa no dia 28 de junho.
+
+**E a crase dentro de comentário de template de CSS fechou a string pela sétima
+vez** — e desta vez custou mais: eu medi no navegador **antes** de rodar o
+`tsc`, então o servidor de desenvolvimento ainda servia o módulo anterior e a
+medida era de um arquivo que não existia mais. Está escrito acima, e é
+exatamente para isso: rode o `tsc` antes de medir qualquer coisa no navegador.
+
+**A trava que mede o tamanho da alternativa certa precisa de um caso que só ela
+reprove.** Duas mutações sobreviveram à primeira passada das metas, e nas duas
+o que faltava era o caminho errado que distingue a conta: medir o vazamento por
+"o Cco está preenchido" passava porque o meu caminho errado mandava com o Cco
+vazio; e a conta de quem pode apagar o acampamento passava porque dar "fazer
+alterações" a um conselheiro derruba também a conta dos conselheiros. Quem
+recebe o acesso a mais tem de estar **fora** dos dois grupos que a meta já
+confere.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -3256,6 +3448,33 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |
 | `src/curriculum/qualidade.test.ts` | lição ou prova que sorteia sem ter três questões de sobra |
 | `src/curriculum/qualidade.test.ts` | questão de prova sem requisito, requisito de teoria sem questão, ou sorteio que não cabe a cobertura |
+| `src/labs/correspondencia.test.ts` | lista de distribuição que não abre na entrega, escondendo o vazamento |
+| `src/labs/correspondencia.test.ts` | vazamento medido por "o Cco está preenchido", que aprova cinquenta e um endereços à mostra |
+| `src/labs/correspondencia.test.ts` | busca que lê a lixeira, que faz arquivar e excluir virarem a mesma coisa |
+| `src/labs/correspondencia.test.ts` | ausência sem a guarda de contatos, ou sem a de fim de período |
+| `src/labs/correspondencia.test.ts` | data da viagem valendo por prazo do pedido, numa frase que não pede nada |
+| `src/labs/correspondencia.test.ts` | custo do envio que não multiplica pelas caixas que recebem |
+| `src/labs/agenda.test.ts` | fuso do leitor ignorado, com todo mundo lendo a mesma hora |
+| `src/labs/agenda.test.ts` | quem não compartilha a agenda aparecendo livre, ou apagando as janelas dos outros |
+| `src/labs/agenda.test.ts` | cancelar uma ocorrência apagando a série, ou o corte engolindo o próprio dia |
+| `src/labs/agenda.test.ts` | calendário público mostrando só o título, sem a descrição que vai junto |
+| `src/labs/agenda.test.ts` | qualquer nível de acesso passando a poder apagar o acampamento |
+| `src/labs/reuniaoRemota.test.ts` | fala que chega com o microfone fechado, ou janela que entrega a notificação |
+| `src/labs/reuniaoRemota.test.ts` | janela do navegador levando o som, que só a guia leva |
+| `src/labs/calendario.test.tsx` | grade que pinta de branco quem não compartilhou, ou rótulo que o diz livre |
+| `src/labs/calendario.test.tsx` | grade do mês que não começa no domingo, com o dia na coluna errada |
+| `src/labs/calendario.test.tsx` | cinza do dia de outro mês que deixa de se ler sobre o fundo dele |
+| `src/labs/salaDeReuniao.test.tsx` | palco que desenha a sua janela em foco em vez do que a sala vê |
+| `src/labs/salaDeReuniao.test.tsx` | abas de apresentar que não dizem o que cada uma leva junto |
+| `src/labs/correio.test.tsx` | campo de endereço que despeja os cinquenta e dois, ou busca que vira campo sem `aoBuscar` |
+| `src/labs/metasDaCcEs007.test.ts` | meta da CC-ES007 que abre verde, ou que a solução de referência não fecha |
+| `src/labs/metasDaCcEs007.test.ts` | mensagem da caixa que ninguém classificou como pedindo ação ou não |
+| `src/labs/metasDaCcEs007.test.ts` | esvaziar a entrada ou mandar para a lixeira valendo por arrumar |
+| `src/labs/metasDaCcEs007.test.ts` | fuso escrito na descrição fechando a meta do fuso |
+| `src/labs/metasDaCcEs007.test.ts` | um acesso a mais de "fazer alterações" passando pela conta de quem apaga |
+| `src/labs/metasDaCcEs007.test.ts` | ata sem dono e sem prazo, ou pauta escrita em parágrafo |
+| `src/components/LaboratorioDeComunicacao.test.tsx` | lição da CC-ES007 impossível de vencer clicando |
+| `src/components/LaboratorioDeComunicacao.test.tsx` | comando do calendário que não chega ao evento, sem meta nenhuma exercitá-lo |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 
