@@ -3005,6 +3005,337 @@ const rawAp044Final: Question[] = [
   },
 ];
 
+/*
+  A prova da AP045.
+
+  A trilha mais curta da família Computação — dez requisitos, uma página no
+  documento oficial — e a prova segue o tamanho dela: sem margem declarada em
+  O requisito 1 é pelo bloqueio da trilha, e fica de fora. O requisito 2 (o
+  relatório) é de prática, e por isso também fica de fora da obrigação de
+  cobertura — mas ganha uma questão aqui mesmo assim, pela mesma razão da
+  AP041-1.1: entender as quatro áreas ajuda a escrever sobre elas.
+
+  Vinte e duas questões, dezessete requisitos com matéria — nenhuma questão
+  aqui mede mais de um requisito por vez, ao contrário das provas mais
+  antigas, então o piso de cobertura fica perto do total: dezoito. Sorteiam-se
+  dezenove, o mínimo que a margem de três (a regra do x+3) permite acima
+  desse piso.
+*/
+const rawAp045Final: Question[] = [
+  {
+    id: 'AP045-F-Q1', type: 'multiple_choice',
+    requisitos: ['AP045-2.1'],
+    prompt: 'O relatório do requisito 2 pede a evolução da computação em quatro áreas. Quais são elas?',
+    data: { options: [
+      { id: 'a', text: 'Inteligência artificial, mundo virtual, internet e intranets.', correct: true },
+      { id: 'b', text: 'Hardware, software, sistema operacional e driver.',
+        porque: 'Esses quatro termos são de Computação 1, não das quatro áreas que este relatório pede.' },
+      { id: 'c', text: 'Impressoras, periféricos, sistemas operacionais e redes sociais.',
+        porque: 'Impressoras e periféricos são de outros requisitos desta trilha, mas não são as quatro áreas do relatório.' },
+      { id: 'd', text: 'Usuário, programador, analista de sistemas e help desk.',
+        porque: 'Esses são os quatro papéis do requisito 3, não as quatro áreas de evolução da computação do requisito 2.' },
+    ]},
+    explanation: 'As quatro áreas do relatório são inteligência artificial, mundo virtual, internet e intranets.',
+  },
+  {
+    id: 'AP045-F-Q2', type: 'multiple_choice',
+    requisitos: ['AP045-3.1'],
+    prompt: 'O que define um usuário de um sistema?',
+    data: { options: [
+      { id: 'a', text: 'Opera o sistema sem precisar saber como ele foi construído por dentro.', correct: true },
+      { id: 'b', text: 'Escreve o código que faz o sistema funcionar.',
+        porque: 'Isso é o programador. O usuário opera o que já está pronto.' },
+      { id: 'c', text: 'Planeja a solução antes de qualquer código ser escrito.',
+        porque: 'Isso é o analista de sistemas, que trabalha antes de o sistema existir.' },
+      { id: 'd', text: 'Atende quem liga com um problema técnico no sistema.',
+        porque: 'Isso é o help desk. O usuário é quem usa o sistema no dia a dia.' },
+    ]},
+    explanation: 'Usar sem precisar entender o código por dentro é o que caracteriza o usuário.',
+  },
+  {
+    id: 'AP045-F-Q3', type: 'multiple_choice',
+    requisitos: ['AP045-3.2'],
+    prompt: 'Qual é o trabalho do programador?',
+    data: { options: [
+      { id: 'a', text: 'Escrever o código que faz um sistema funcionar.', correct: true },
+      { id: 'b', text: 'Planejar como o sistema deve funcionar, antes de o código existir.',
+        porque: 'Planejar antes de codificar é o trabalho do analista de sistemas.' },
+      { id: 'c', text: 'Usar o sistema já pronto, sem escrever nenhuma linha de código.',
+        porque: 'Usar sem escrever código é o papel do usuário, e não do programador.' },
+      { id: 'd', text: 'Atender chamados de suporte técnico de quem usa o sistema.',
+        porque: 'Atender chamados é o trabalho do help desk.' },
+    ]},
+    explanation: 'O programador constrói, em código, o que o usuário depois vai usar.',
+  },
+  {
+    id: 'AP045-F-Q4', type: 'multiple_choice',
+    requisitos: ['AP045-3.3'],
+    prompt: 'Antes de um programador escrever a primeira linha de código de um sistema novo, de quem costuma ser o trabalho de entender o problema e desenhar a solução?',
+    data: { options: [
+      { id: 'a', text: 'Do analista de sistemas.', correct: true },
+      { id: 'b', text: 'Do usuário, que só entra depois que o sistema fica pronto.',
+        porque: 'O usuário opera o sistema depois de pronto; ele não desenha a solução antes de o código existir.' },
+      { id: 'c', text: 'Do help desk, que atua quando algo já dá errado.',
+        porque: 'O help desk resolve problema de sistema já em funcionamento, não planeja o que ainda vai ser construído.' },
+      { id: 'd', text: 'Do hacker, que testa a segurança do sistema depois de pronto.',
+        porque: 'Testar segurança acontece depois que o sistema existe; o planejamento inicial não é papel do hacker.' },
+    ]},
+    explanation: 'Entender o problema e desenhar a solução antes de programar é o trabalho do analista de sistemas.',
+  },
+  {
+    id: 'AP045-F-Q5', type: 'true_false',
+    requisitos: ['AP045-3.4'],
+    prompt: 'Help desk é o serviço que ajuda quem tem um problema técnico, como uma senha que não funciona ou uma impressora que não liga.',
+    data: { options: [
+      { id: 'a', text: 'Verdadeiro', correct: true },
+      { id: 'b', text: 'Falso', porque: 'É verdadeiro: help desk é justamente o serviço de suporte para esse tipo de problema.' },
+    ]},
+    explanation: 'Quem já ligou para o suporte de um aplicativo já falou com um help desk.',
+  },
+  {
+    id: 'AP045-F-Q6', type: 'multiple_choice',
+    requisitos: ['AP045-3.5'],
+    prompt: 'Qual é o sentido original da palavra "hacker"?',
+    data: { options: [
+      { id: 'a', text: 'Quem entende tão profundamente um sistema que encontra usos para ele que ninguém previu.', correct: true },
+      { id: 'b', text: 'Quem invade sistemas sem autorização, sempre com intenção de prejudicar.',
+        porque: 'Essa descrição é mais próxima de "cracker". O hacker, no sentido original, pode usar o conhecimento para o bem.' },
+      { id: 'c', text: 'Quem trabalha atendendo chamados de suporte técnico.',
+        porque: 'Isso descreve o help desk, um papel diferente do hacker.' },
+      { id: 'd', text: 'Quem projeta a interface visual de um site ou aplicativo.',
+        porque: 'Projetar interface é um trabalho de design, sem relação com o sentido original de "hacker".' },
+    ]},
+    explanation: 'O termo é sobre conhecimento profundo, e não sobre crime — daí os termos "hacker ético" e "cracker".',
+  },
+  {
+    id: 'AP045-F-Q7', type: 'multiple_choice',
+    requisitos: ['AP045-3.6'],
+    prompt: 'O que é um hiperlink?',
+    data: { options: [
+      { id: 'a', text: 'Um texto ou imagem clicável que leva a outra página ou a outro trecho de conteúdo.', correct: true },
+      { id: 'b', text: 'O nome técnico do cabo que conecta o computador à internet.',
+        porque: 'Isso descreve um cabo de rede, e não o que liga uma página a outra dentro do conteúdo.' },
+      { id: 'c', text: 'O programa usado para abrir páginas da internet.',
+        porque: 'Isso é o navegador. O hiperlink existe dentro de uma página; o navegador segue quando alguém clica nele.' },
+      { id: 'd', text: 'A senha que protege o acesso a uma página restrita.',
+        porque: 'Isso descreve autenticação, sem relação com o que é um hiperlink.' },
+    ]},
+    explanation: 'É o hiperlink que costura páginas separadas numa rede, dando à internet sua forma de teia.',
+  },
+  {
+    id: 'AP045-F-Q8', type: 'true_false',
+    requisitos: ['AP045-3.7'],
+    prompt: '"Internet" e "World Wide Web" (WWW) significam exatamente a mesma coisa.',
+    data: { options: [
+      { id: 'a', text: 'Falso', correct: true },
+      { id: 'b', text: 'Verdadeiro', porque: 'São coisas diferentes: a internet é a rede de computadores; a Web é um dos serviços que rodam sobre ela, como o e-mail é outro.' },
+    ]},
+    explanation: 'E-mail e Web usam a mesma internet, mas são serviços diferentes — sinal de que não são sinônimos.',
+  },
+  {
+    id: 'AP045-F-Q9', type: 'multiple_choice',
+    requisitos: ['AP045-4.1'],
+    prompt: 'Por que a impressora matricial ainda é usada para notas fiscais e boletos com segunda via em papel-carbono?',
+    data: { options: [
+      { id: 'a', text: 'Porque ela bate fisicamente no papel, o que atravessa o papel-carbono e gera várias vias de uma vez.', correct: true },
+      { id: 'b', text: 'Porque ela é a que imprime com a melhor qualidade de cor entre as quatro.',
+        porque: 'A matricial imprime só em preto ou na cor da fita; qualidade de cor é o forte da jato de tinta.' },
+      { id: 'c', text: 'Porque ela é a mais silenciosa entre as quatro impressoras.',
+        porque: 'É o oposto: a matricial é a mais barulhenta, por bater a agulha contra a fita.' },
+      { id: 'd', text: 'Porque ela imprime em folhas do tamanho de uma planta baixa.',
+        porque: 'Imprimir em tamanho grande é o forte da plotter, não da matricial.' },
+    ]},
+    explanation: 'É o impacto físico da agulha que atravessa o papel-carbono, permitindo várias cópias numa só impressão.',
+  },
+  {
+    id: 'AP045-F-Q10', type: 'multiple_choice',
+    requisitos: ['AP045-4.2'],
+    prompt: 'Por que um escritório que imprime centenas de páginas de texto por dia costuma preferir a impressora laser?',
+    data: { options: [
+      { id: 'a', text: 'Porque ela é mais rápida e tem custo mais baixo por página em grande volume.', correct: true },
+      { id: 'b', text: 'Porque é a única das quatro capaz de imprimir mais de uma folha por vez.',
+        porque: 'Todas as quatro impressoras imprimem folha por folha; a vantagem da laser é velocidade e custo por página.' },
+      { id: 'c', text: 'Porque é a mais barata de comprar entre as quatro impressoras.',
+        porque: 'A laser costuma ser mais cara de comprar do que a jato de tinta — a vantagem dela aparece no volume, não no preço inicial.' },
+      { id: 'd', text: 'Porque ela imprime em papel-carbono, gerando cópias automáticas.',
+        porque: 'Imprimir em papel-carbono é o diferencial da impressora matricial, não da laser.' },
+    ]},
+    explanation: 'Velocidade e custo por página em grande volume são o forte da impressora laser.',
+  },
+  {
+    id: 'AP045-F-Q11', type: 'multiple_choice',
+    requisitos: ['AP045-4.3'],
+    prompt: 'Um escritório de arquitetura precisa imprimir a planta de uma casa em tamanho grande. Qual impressora resolve isso?',
+    data: { options: [
+      { id: 'a', text: 'A plotter.', correct: true },
+      { id: 'b', text: 'A matricial.',
+        porque: 'A matricial se destaca por bater no papel-carbono, sem relação com imprimir em tamanho grande.' },
+      { id: 'c', text: 'A jato de tinta comum de casa.',
+        porque: 'Uma jato de tinta comum imprime folhas do tamanho de A4, não do tamanho de uma planta baixa.' },
+      { id: 'd', text: 'A laser comum de escritório.',
+        porque: 'A vantagem da laser é velocidade em texto, e ela também imprime em folhas do tamanho de A4.' },
+    ]},
+    explanation: 'A plotter é definida pelo tamanho grande do papel que consegue imprimir de uma vez.',
+  },
+  {
+    id: 'AP045-F-Q12', type: 'multiple_choice',
+    requisitos: ['AP045-4.4'],
+    prompt: 'Por que a impressora jato de tinta costuma ser a escolha mais comum para imprimir fotos em casa?',
+    data: { options: [
+      { id: 'a', text: 'Porque a tinta líquida que ela usa reproduz cores e gradientes com boa qualidade.', correct: true },
+      { id: 'b', text: 'Porque ela é a mais barulhenta e por isso imprime mais rápido que as outras três.',
+        porque: 'A impressora mais barulhenta é a matricial, e o barulho não tem relação com qualidade de foto.' },
+      { id: 'c', text: 'Porque ela é a única capaz de imprimir mais de uma cor de uma vez.',
+        porque: 'A laser também imprime em cores; a diferença está na qualidade da reprodução de cor, não em imprimir cor ou não.' },
+      { id: 'd', text: 'Porque ela imprime em tamanho grande, como cartazes e banners.',
+        porque: 'Imprimir em tamanho grande é o forte da plotter, e não da jato de tinta comum de casa.' },
+    ]},
+    explanation: 'A tinta líquida da jato de tinta é reconhecida pela qualidade de cor, especialmente em foto.',
+  },
+  {
+    id: 'AP045-F-Q13', type: 'ordering',
+    requisitos: ['AP045-5.1'],
+    prompt: 'Ordene os passos do caminho de uma tecla apertada até a letra aparecer na tela.',
+    data: { items: [
+      { id: 'a', text: 'O teclado converte o toque da tecla num código binário', order: 1 },
+      { id: 'b', text: 'O código viaja até a CPU, que o interpreta', order: 2 },
+      { id: 'c', text: 'A CPU manda a instrução para a placa de vídeo', order: 3 },
+      { id: 'd', text: 'O monitor acende os pixels certos para mostrar a letra', order: 4 },
+    ]},
+    explanation: 'Entrada, processamento e saída — com código binário passando por cada etapa.',
+  },
+  {
+    id: 'AP045-F-Q14', type: 'multiple_choice',
+    requisitos: ['AP045-5.1'],
+    prompt: 'Por que o computador representa a informação em código binário, com apenas 1 e 0?',
+    data: { options: [
+      { id: 'a', text: 'Porque um circuito eletrônico distingue com facilidade só dois estados: tem corrente, ou não tem.', correct: true },
+      { id: 'b', text: 'Porque o teclado só consegue enviar um número de cada vez para a CPU.',
+        porque: 'Não é sobre quantos números o teclado envia — é sobre como o circuito elétrico representa informação de forma confiável.' },
+      { id: 'c', text: 'Porque a memória RAM só entende números pares.',
+        porque: 'A memória RAM não distingue números pares de ímpares — a escolha do binário vem da natureza do circuito elétrico.' },
+      { id: 'd', text: 'Porque o monitor só consegue acender pixels em dois tons de cor.',
+        porque: 'Monitores modernos acendem muitas cores; a razão do binário está no circuito, não na tela.' },
+    ]},
+    explanation: 'Distinguir "tem corrente" de "não tem corrente" é mais confiável do que distinguir vários níveis de voltagem.',
+  },
+  {
+    id: 'AP045-F-Q15', type: 'multiple_choice',
+    requisitos: ['AP045-6.1'],
+    prompt: 'Por que guardar o ano com apenas dois dígitos criava um problema na virada para o ano 2000?',
+    data: { options: [
+      { id: 'a', text: 'Porque "00" podia ser confundido com 1900 em vez de 2000, bagunçando cálculos que dependiam de data.', correct: true },
+      { id: 'b', text: 'Porque os computadores da época não conseguiam ligar depois do ano 2000.',
+        porque: 'O problema não era ligar o computador: era o cálculo de datas dar resultado errado dentro dos programas.' },
+      { id: 'c', text: 'Porque a internet ainda não existia e os sistemas não sabiam a data certa.',
+        porque: 'O problema era interno ao próprio sistema — como ele guardava e calculava a data —, e não dependia da internet.' },
+      { id: 'd', text: 'Porque dois dígitos ocupavam mais espaço de memória do que quatro dígitos.',
+        porque: 'É o contrário: dois dígitos ocupavam menos espaço — foi por isso que a prática surgiu.' },
+    ]},
+    explanation: '"00" menos "87" dá um número negativo, e um sistema podia entender "00" como 1900, quebrando cálculos de data.',
+  },
+  {
+    id: 'AP045-F-Q16', type: 'true_false',
+    requisitos: ['AP045-6.1'],
+    prompt: 'Os desastres graves previstos para o bug do milênio não aconteceram porque o problema nunca foi real, e sim um boato.',
+    data: { options: [
+      { id: 'a', text: 'Falso', correct: true },
+      { id: 'b', text: 'Verdadeiro', porque: 'É falso: o problema era real, e os desastres não aconteceram porque bilhões de dólares foram gastos corrigindo sistemas antes da virada do ano.' },
+    ]},
+    explanation: 'O resultado — nada de grave acontecer — foi fruto de anos de trabalho de correção, e não de o problema ser falso.',
+  },
+  {
+    id: 'AP045-F-Q17', type: 'multiple_choice',
+    requisitos: ['AP045-7.1'],
+    prompt: 'Qual é a diferença entre update e upgrade?',
+    data: { options: [
+      { id: 'a', text: 'Update deixa em dia o que você já tem; upgrade troca por algo diferente e superior.', correct: true },
+      { id: 'b', text: 'Update é sempre pago; upgrade é sempre gratuito.',
+        porque: 'O preço não define os termos: um update também pode ser pago, e um upgrade às vezes é gratuito.' },
+      { id: 'c', text: 'Update é sobre hardware; upgrade é sobre software.',
+        porque: 'É o contrário do que costuma acontecer: update mexe no software existente, e upgrade pode incluir troca de hardware.' },
+      { id: 'd', text: 'Update e upgrade são exatamente a mesma coisa, com nomes diferentes.',
+        porque: 'São conceitos diferentes: um deixa em dia o que já existe, o outro troca por algo superior.' },
+    ]},
+    explanation: 'Update é a mesma coisa numa versão mais nova; upgrade é trocar por algo diferente e mais capaz.',
+  },
+  {
+    id: 'AP045-F-Q18', type: 'scenario',
+    requisitos: ['AP045-7.1'],
+    prompt: 'Um desbravador troca a memória RAM do computador por uma maior, para rodar programas mais pesados. Como chamar essa troca?',
+    data: { scenarios: [
+      { id: 'a', text: 'Upgrade, porque ele trocou uma peça por outra diferente e superior.', correct: true },
+      { id: 'b', text: 'Update, porque o computador continua sendo usado para o mesmo tipo de tarefa.',
+        porque: 'Update seria baixar uma versão mais nova de um programa que ele já tem — aqui houve troca física de peça.' },
+      { id: 'c', text: 'Download, porque ele instalou algo novo no computador.',
+        porque: 'Download é baixar um arquivo pela internet; trocar uma peça física não é download.' },
+      { id: 'd', text: 'Backup, porque ele guardou uma cópia dos arquivos antes de trocar a peça.',
+        porque: 'Guardar cópia de arquivos é backup, mas a troca da peça em si é o upgrade.' },
+    ]},
+    explanation: 'Trocar por uma peça diferente e mais capaz é a marca do upgrade.',
+  },
+  {
+    id: 'AP045-F-Q19', type: 'multiple_choice',
+    requisitos: ['AP045-8.1'],
+    prompt: 'Qual é uma diferença marcante entre o Linux e os sistemas Windows e macOS?',
+    data: { options: [
+      { id: 'a', text: 'O Linux é gratuito e de código aberto, e existe em várias distribuições diferentes, como Ubuntu e Fedora.', correct: true },
+      { id: 'b', text: 'O Linux é o único dos três que tem interface gráfica com janelas e ícones.',
+        porque: 'Os três têm interface gráfica — isso não é exclusividade do Linux.' },
+      { id: 'c', text: 'O Linux só roda oficialmente em computadores fabricados pela própria empresa que o criou.',
+        porque: 'Essa característica descreve o macOS, exclusivo do hardware da Apple, e não o Linux.' },
+      { id: 'd', text: 'O Linux não pode ser usado em computadores pessoais, só em servidores.',
+        porque: 'Existem distribuições de Linux feitas justamente para uso pessoal, como o Ubuntu Desktop.' },
+    ]},
+    explanation: 'Ser gratuito, de código aberto e existir em várias distribuições é a marca mais distintiva do Linux.',
+  },
+  {
+    id: 'AP045-F-Q20', type: 'multiple_choice',
+    requisitos: ['AP045-9.1'],
+    prompt: 'O que é catfishing?',
+    data: { options: [
+      { id: 'a', text: 'A criação de um perfil falso, com fotos e informações que não são reais, para enganar quem conversa com ele.', correct: true },
+      { id: 'b', text: 'Um programa que rouba a senha de contas de redes sociais sem a pessoa perceber.',
+        porque: 'Isso descreve outro tipo de ataque, ligado a roubo de senha, e não uma identidade falsa numa conversa.' },
+      { id: 'c', text: 'Um vírus que se espalha por mensagens de aplicativos de conversa.',
+        porque: 'Catfishing não é um programa nem um vírus — é o uso de uma identidade falsa por uma pessoa.' },
+      { id: 'd', text: 'O nome dado a qualquer perfil que usa apelido em vez do nome real.',
+        porque: 'Usar apelido não é, por si só, catfishing — o que caracteriza é fingir ser outra pessoa, com fotos e histórias falsas.' },
+    ]},
+    explanation: 'O nome vem de um documentário sobre esse tipo de engano, e passou a nomear a prática inteira.',
+  },
+  {
+    id: 'AP045-F-Q21', type: 'scenario',
+    requisitos: ['AP045-9.1'],
+    prompt: 'Uma pessoa que você conhece só pela internet, há poucas semanas, pede que você envie dinheiro para uma emergência. O que fazer?',
+    data: { scenarios: [
+      { id: 'a', text: 'Não enviar dinheiro, e conversar com alguém de confiança sobre a situação antes de decidir.', correct: true },
+      { id: 'b', text: 'Enviar o dinheiro rapidamente, já que uma emergência não pode esperar.',
+        porque: 'Esse tipo de urgência costuma preceder um golpe — nunca enviar dinheiro a quem só se conhece pela internet é a orientação de segurança.' },
+      { id: 'c', text: 'Pedir a senha da rede social da pessoa para confirmar que ela é real.',
+        porque: 'Pedir senha não confirma identidade nenhuma, e ensina a pedir informação sensível, o oposto de se proteger.' },
+      { id: 'd', text: 'Ignorar totalmente a mensagem e nunca mais falar com a pessoa, sem checar nada.',
+        porque: 'Não é preciso cortar contato sem investigar: dá para pedir uma chamada de vídeo antes de decidir qualquer coisa.' },
+    ]},
+    explanation: 'Pedido de dinheiro somado a urgência é um padrão clássico de golpe — pausar e buscar uma segunda opinião é a defesa mais simples.',
+  },
+  {
+    id: 'AP045-F-Q22', type: 'multiple_choice',
+    requisitos: ['AP045-10.1'],
+    prompt: 'Por que tentar ensinar todos os requisitos de Computação 1 e 2 numa única aula costuma dar errado?',
+    data: { options: [
+      { id: 'a', text: 'Porque quantidade demais numa aula só é a forma mais comum de o grupo não reter nada.', correct: true },
+      { id: 'b', text: 'Porque o documento oficial proíbe explicitamente ensinar mais de um requisito por vez.',
+        porque: 'Não há essa proibição — o problema é pedagógico: cobrir tudo de uma vez costuma fazer nada ficar.' },
+      { id: 'c', text: 'Porque só quem tem a especialidade de Computação 5 pode ensinar mais de um requisito.',
+        porque: 'Não existe essa exigência formal — qualquer desbravador que domine a matéria pode ensiná-la.' },
+      { id: 'd', text: 'Porque cada requisito de Computação 1 e 2 exige uma sala de aula diferente.',
+        porque: 'Não há essa exigência de espaço físico — a questão é de foco pedagógico, não de sala.' },
+    ]},
+    explanation: 'Escolher dois ou três pontos e aprofundar neles costuma render mais aprendizado do que cobrir tudo superficialmente.',
+  },
+];
+
 const PROVAS: Record<string, Question[]> = {
   AP034: rawAp034Final,
   AP035: rawAp035Final,
@@ -3012,6 +3343,7 @@ const PROVAS: Record<string, Question[]> = {
   AP042: rawAp042Final,
   AP043: rawAp043Final,
   AP044: rawAp044Final,
+  AP045: rawAp045Final,
 };
 
 /*
@@ -3028,6 +3360,7 @@ const PERGUNTAS_POR_PROVA: Record<string, number | undefined> = {
   AP042: 15,   /* de 18 */
   AP043: 16,   /* de 20 */
   AP044: 24,   /* de 40 */
+  AP045: 19,   /* de 22 */
 };
 
 /*

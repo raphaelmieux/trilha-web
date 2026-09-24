@@ -206,6 +206,90 @@ export const ROTEIROS: Record<string, RoteiroRedacao> = {
     ],
   },
   /*
+    AP045 — a mesma forma do relatório da AP041, com um assunto em quatro
+    partes em vez de uma linha do tempo só. Os oito ids são os mesmos do
+    servidor (supabase/functions/ai-gateway/redacao.ts); redacaoGuiada.test.ts
+    reprova a divergência.
+
+    Os mínimos somam 355, acima das 350 que o documento pede: quem cumprir as
+    oito etapas passa do piso sem precisar contar palavra nenhuma.
+  */
+  AP045: {
+    titulo: 'A evolução da computação',
+    introducao:
+      'Você vai montar seu relatório respondendo oito perguntas sobre quatro áreas: inteligência artificial, '
+      + 'mundo virtual, internet e intranets. Pesquise cada uma antes de responder, escreva com suas palavras, '
+      + 'e no fim o texto todo é montado a partir do que você escreveu.',
+    minPalavrasTotal: 350,
+    etapas: [
+      {
+        id: 'ia-o-que-e',
+        titulo: 'O nascimento da IA',
+        pergunta: 'O que é inteligência artificial, e qual foi uma aplicação antiga que ficou famosa por vencer um humano num jogo?',
+        paraPesquisar: 'Procure por "inteligência artificial Dartmouth 1956" e por "Deep Blue Kasparov". Veja o ano de cada um e como a IA daquela época funcionava.',
+        exemplo: 'Inteligência artificial é ... . O termo nasceu em ... , numa conferência em ... . Em ... , o programa ... venceu ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'ia-hoje',
+        titulo: 'A IA que cria coisas novas',
+        pergunta: 'O que mudou na inteligência artificial nos últimos anos, e o que é uma IA generativa?',
+        paraPesquisar: 'Procure por "aprendizado de máquina", "IA generativa" e "ChatGPT 2022". Veja a diferença entre reconhecer um padrão e criar algo novo.',
+        exemplo: 'A partir de ... , a IA passou a ... . Em ... , o ... popularizou a IA generativa, que é capaz de ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'mundo-virtual-o-que-e',
+        titulo: 'O nascimento do mundo virtual',
+        pergunta: 'O que é um mundo virtual (realidade virtual), e qual foi um dos primeiros aparelhos a tentar essa experiência?',
+        paraPesquisar: 'Procure por "Sensorama 1962" e por "Oculus Rift 2012". Veja o que cada aparelho tentava simular.',
+        exemplo: 'Um mundo virtual é ... . Um dos primeiros aparelhos foi o ... , de ... , que simulava ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'mundo-virtual-hoje',
+        titulo: 'Para que serve hoje',
+        pergunta: 'Para que os mundos virtuais são usados hoje, além dos jogos? Cite pelo menos um exemplo.',
+        paraPesquisar: 'Procure por "realidade virtual treinamento" e por "metaverso". Pense em áreas como educação, saúde ou reuniões de trabalho.',
+        exemplo: 'Além dos jogos, mundos virtuais são usados em ... , como no caso de ... . O termo "metaverso" nomeia ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'internet-evolucao',
+        titulo: 'Da linha telefônica ao celular',
+        pergunta: 'Como a internet mudou desde que surgiu até hoje, em termos de velocidade e forma de acesso?',
+        paraPesquisar: 'Procure por "internet discada", "banda larga no Brasil" e "acesso à internet por celular CGI.br". Veja o que mudou de velocidade e de aparelho.',
+        exemplo: 'No começo, a internet era ... e chegava a ... . Depois vieram ... , e hoje a maior parte das pessoas acessa por ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'internet-uso',
+        titulo: 'O que mudou no uso',
+        pergunta: 'O que mudou na forma como as pessoas usam a internet no dia a dia, desde os primeiros anos até hoje?',
+        paraPesquisar: 'Procure por "redes sociais" e "streaming". Pense em como as pessoas usavam a internet antes, e o que fazem com ela agora.',
+        exemplo: 'Antes, a internet servia principalmente para ... . Hoje ela também serve para ... , por causa de ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'intranet',
+        titulo: 'A rede de portas fechadas',
+        pergunta: 'O que é uma intranet, e em que ela se parece e se diferencia da internet?',
+        paraPesquisar: 'Procure por "intranet definição" e "extranet". Veja quem pode acessar uma intranet, e para que uma empresa usa isso.',
+        exemplo: 'Uma intranet é ... , parecida com a internet porque ... , mas diferente porque ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'opiniao',
+        titulo: 'O que você acha',
+        pergunta: 'Na sua opinião, qual dessas quatro áreas vai mudar mais a vida das pessoas nos próximos anos? Explique por quê.',
+        paraPesquisar: 'Aqui não precisa pesquisar: releia o que você escreveu nas etapas anteriores e escreva a sua opinião.',
+        exemplo: 'Na minha opinião, a área que mais vai mudar é ... , porque ... . Um exemplo do meu dia a dia é ...',
+        minPalavras: 40,
+        opiniao: true,
+      },
+    ],
+  },
+  /*
     A CC001 é a primeira vereda a usar a redação guiada.
 
     Os oito ids são os mesmos do servidor, e têm de ser: uma etapa que a tela
