@@ -1,6 +1,6 @@
 import type React from 'react';
 import {
-  Mail, Pencil, Inbox, Reply, Forward, Archive, Paperclip,
+  Mail, Pencil, Inbox, Reply, Forward, Archive, Paperclip, Link2,
   Settings, Search, Star, ChevronLeft, X,
 } from 'lucide-react';
 
@@ -135,6 +135,47 @@ export const CSS_DO_CORREIO = `
 .co-config { flex: 1; min-height: 0; overflow: auto; padding: 18px 22px; }
 .co-config h2 { color: #202124; }
 
+.co-busca-campo {
+  flex: 1; min-width: 0; border: none; background: transparent;
+  font: inherit; color: #202124; outline: none;
+}
+.co-fichas { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 0; flex: 1; min-width: 0; }
+.co-ficha {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px 2px 8px;
+  border-radius: 999px; background: #E8F0FE; color: #174EA6; font-size: 12px;
+  max-width: 100%;
+}
+.co-ficha span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.co-ficha button { border: none; background: none; cursor: pointer; color: #174EA6; line-height: 0; }
+.co-mais {
+  padding: 2px 8px; border-radius: 999px; background: #F1F3F4; color: #5F6368; font-size: 12px;
+}
+.co-abas { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.co-aba {
+  padding: 7px 12px; border: 1px solid #DADCE0; border-radius: 6px;
+  background: #FFFFFF; color: #202124; font-size: 13px; cursor: pointer;
+}
+.co-aba[aria-pressed="true"] { background: #E8F0FE; border-color: #0B57D0; color: #174EA6; }
+.co-aviso {
+  margin: 0 14px 10px; padding: 10px 12px; border-radius: 6px; font-size: 12.5px;
+  background: #FEF7E0; border: 1px solid #F1D68C; color: #202124;
+}
+.co-aviso[data-tom="ruim"] { background: #FCE8E6; border-color: #F0B4AE; }
+.co-aviso[data-tom="bom"] { background: #E6F4EA; border-color: #A8D5B5; }
+.co-vinculo {
+  display: flex; align-items: center; gap: 8px; margin: 10px 14px; padding: 8px 10px;
+  border: 1px solid #DADCE0; border-radius: 8px; font-size: 12.5px; color: #202124;
+}
+/*
+  A regra do desligado vem **depois** da do primário, e não antes: mesma
+  especificidade, e escrita primeiro ela perde — o botão desligado sairia azul
+  e branco, com cara de clicável. É a ordem que a CC-ES001, a CC-ES004 e a
+  CC-ES005 precisaram, e errá-la não estoura nada.
+*/
+.co-bt:disabled, .co-bt.primario:disabled {
+  background: #F1F3F4; border-color: #E0E0E0; color: #9AA0A6; cursor: not-allowed;
+}
+
 .co-link {
   color: #1A73E8; text-decoration: underline; cursor: pointer;
   margin-right: 14px; word-break: break-word;
@@ -177,12 +218,17 @@ export const CSS_DO_CORREIO = `
 /**
  * O topo do correio: marca, caixa de pesquisa e a engrenagem.
  *
- * A caixa de pesquisa é enfeite aqui, e é honesto que seja: ela existe em todo
- * correio e nenhuma das lições a usa. Fosse requisito de alguma, ela viraria
- * campo de verdade pela presença de um `aoBuscar`, como no Explorador.
+ * A caixa de pesquisa é enfeite quando o laboratório não entrega `aoBuscar`, e
+ * é honesto que seja: ela existe em todo correio, e a AP044 e a CC-ES005 não a
+ * usam. Com `aoBuscar` ela vira campo de verdade — é a regra do Explorador,
+ * escrita aqui desde o primeiro dia e agora com um caso: o requisito 4.3 da
+ * CC-ES007 é justamente achar na busca o que foi arquivado, que é a diferença
+ * entre arquivar e excluir.
  */
-export function TopoDoCorreio({ aoAbrirConfiguracoes, extra }: {
+export function TopoDoCorreio({ aoAbrirConfiguracoes, busca, aoBuscar, extra }: {
   aoAbrirConfiguracoes?: () => void;
+  busca?: string;
+  aoBuscar?: (termo: string) => void;
   extra?: React.ReactNode;
 }) {
   return (
@@ -191,7 +237,15 @@ export function TopoDoCorreio({ aoAbrirConfiguracoes, extra }: {
       <span style={{ fontWeight: 600 }}>Correio</span>
       <div className="co-busca">
         <Search className="w-4 h-4" style={{ color: '#5F6368' }} />
-        <span style={{ color: '#5F6368' }}>Pesquisar no correio</span>
+        {aoBuscar
+          ? (
+            <input
+              className="co-busca-campo" value={busca ?? ''} aria-label="Pesquisar no correio"
+              placeholder="Pesquisar no correio"
+              onChange={e => aoBuscar(e.target.value)}
+            />
+          )
+          : <span style={{ color: '#5F6368' }}>Pesquisar no correio</span>}
       </div>
       {extra}
       {aoAbrirConfiguracoes && (
@@ -482,5 +536,190 @@ export function CaixaDeConfiguracoes({ titulo, explica, aoVoltar, children }: {
       )}
       {children}
     </div>
+  );
+}
+
+/* ── Muitos destinatários ─────────────────────────────────────────────────── */
+
+/**
+ * Um campo de endereços que aguenta cinquenta e dois.
+ *
+ * `CampoDeEndereco` é um texto, e serve enquanto o campo tem dois ou três
+ * endereços — que é o caso da AP044. Cinquenta e duas famílias num campo de
+ * texto não se leem nem se conferem, e é justamente a conferência que o
+ * requisito 3 pede.
+ *
+ * Ele mostra as primeiras e diz quantas faltam, que é o que todo correio faz —
+ * e é a razão de o vazamento passar despercebido: ninguém vê os cinquenta e um
+ * endereços, vê "e mais 49".
+ */
+export function CampoDeDestinatarios({
+  rotulo, enderecos, aoTirar, aoAcrescentar, mostrarAte = 3, extra,
+}: {
+  rotulo: string;
+  enderecos: string[];
+  aoTirar?: (endereco: string) => void;
+  /** O que se digita e se confirma com Enter. Sem ele, o campo é só de leitura. */
+  aoAcrescentar?: (endereco: string) => void;
+  mostrarAte?: number;
+  extra?: React.ReactNode;
+}) {
+  const visiveis = enderecos.slice(0, mostrarAte);
+  const restam = enderecos.length - visiveis.length;
+  return (
+    <div className="co-linha-campo">
+      <span className="co-rotulo">{rotulo}</span>
+      <div className="co-fichas">
+        {visiveis.map(e => (
+          <span key={e} className="co-ficha">
+            <span>{e}</span>
+            {aoTirar && (
+              <button type="button" aria-label={`Tirar ${e}`} onClick={() => aoTirar(e)}>
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </span>
+        ))}
+        {restam > 0 && <span className="co-mais">e mais {restam}</span>}
+        {aoAcrescentar && (
+          <input
+            className="co-campo" style={{ flex: 1, minWidth: 120, borderBottom: 'none' }}
+            aria-label={rotulo} placeholder="Escreva um endereço e tecle Enter"
+            onKeyDown={e => {
+              if (e.key !== 'Enter') return;
+              e.preventDefault();
+              const v = (e.target as HTMLInputElement).value.trim();
+              if (!v) return;
+              aoAcrescentar(v);
+              (e.target as HTMLInputElement).value = '';
+            }}
+          />
+        )}
+      </div>
+      {extra}
+    </div>
+  );
+}
+
+/* ── O pé da janelinha ────────────────────────────────────────────────────── */
+
+/**
+ * A barra de baixo de quem está escrevendo.
+ *
+ * Anexar e inserir vínculo ficam lado a lado, que é onde os dois ficam num
+ * correio de verdade — e é o que faz o requisito 4.2 ser uma escolha e não uma
+ * instrução: os dois botões estão ali, e nada na tela diz qual usar.
+ */
+export function PeDeEscrever({ aoEnviar, podeEnviar = true, aoAnexar, aoInserirVinculo, extra }: {
+  aoEnviar?: () => void;
+  podeEnviar?: boolean;
+  aoAnexar?: () => void;
+  aoInserirVinculo?: () => void;
+  extra?: React.ReactNode;
+}) {
+  return (
+    <div className="co-pe">
+      <button type="button" className="co-bt primario" onClick={aoEnviar}
+        disabled={!aoEnviar || !podeEnviar}>
+        Enviar
+      </button>
+      {aoAnexar && (
+        <button type="button" className="co-bt" aria-label="Anexar arquivo" onClick={aoAnexar}>
+          <Paperclip className="w-4 h-4" /> Anexar
+        </button>
+      )}
+      {aoInserirVinculo && (
+        <button type="button" className="co-bt" aria-label="Inserir vínculo de arquivo"
+          onClick={aoInserirVinculo}>
+          <Link2 className="w-4 h-4" /> Inserir vínculo
+        </button>
+      )}
+      {extra}
+    </div>
+  );
+}
+
+/**
+ * Um vínculo dentro da mensagem.
+ *
+ * Ele mostra o nome do arquivo e **quem consegue abrir**, que é o campo que o
+ * correio de verdade mostra e a metade do requisito 4.2 que ninguém conta:
+ * mandar um vínculo que a pessoa não abre troca um problema barulhento por um
+ * quieto. O anexo grande pelo menos volta com erro.
+ */
+export function VinculoDaMensagem({ nome, quemAbre, aoTrocarAcesso, aoTirar }: {
+  nome: string;
+  quemAbre: string;
+  aoTrocarAcesso?: () => void;
+  aoTirar?: () => void;
+}) {
+  return (
+    <div className="co-vinculo">
+      <Link2 className="w-4 h-4" style={{ color: '#5F6368' }} />
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <strong>{nome}</strong>
+        <span style={{ color: '#5F6368' }}> — {quemAbre}</span>
+      </span>
+      {aoTrocarAcesso && (
+        <button type="button" className="co-bt" onClick={aoTrocarAcesso}>Mudar quem abre</button>
+      )}
+      {aoTirar && (
+        <button type="button" className="co-bt" aria-label={`Tirar o vínculo ${nome}`}
+          onClick={aoTirar}>
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * O aviso do provedor.
+ *
+ * Ele diz o que o **correio** sabe — "o anexo passa de 25 MB" — e nunca se a
+ * tarefa está cumprida. É a regra da régua de status do Word, do painel de
+ * Problemas do Python e do aviso do digitalizador.
+ */
+export function AvisoDoCorreio({ tom, children }: {
+  tom?: 'bom' | 'ruim';
+  children: React.ReactNode;
+}) {
+  return <p className="co-aviso" data-tom={tom}>{children}</p>;
+}
+
+/* ── As abas das configurações ────────────────────────────────────────────── */
+
+/**
+ * As abas de dentro das Configurações.
+ *
+ * Elas existem **todas**, sempre, mesmo nas lições que só usam uma: é assim
+ * que um programa é, e um correio que só mostrasse "Resposta automática" na
+ * lição da resposta automática ensinaria a procurar o botão que a tarefa quer,
+ * e não a procurar no programa.
+ */
+export function AbasDasConfiguracoes({ abas, atual, aoTrocar }: {
+  abas: { id: string; nome: string }[];
+  atual: string;
+  aoTrocar: (id: string) => void;
+}) {
+  return (
+    <div className="co-abas">
+      {abas.map(a => (
+        <button key={a.id} type="button" className="co-aba" aria-pressed={a.id === atual}
+          onClick={() => aoTrocar(a.id)}>
+          {a.nome}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function BotaoDoCorreio({ primario, children, ...resto }: {
+  primario?: boolean;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button type="button" className={primario ? 'co-bt primario' : 'co-bt'} {...resto}>
+      {children}
+    </button>
   );
 }

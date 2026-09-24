@@ -224,6 +224,44 @@ export function ocorrencias(e: Evento, de: string, ate: string): string[] {
 export const serieTemFim = (e: Evento): boolean =>
   !e.repete || e.repete.ate.trim().length > 0;
 
+/* ── Como um mês se desenha ───────────────────────────────────────────────── */
+
+export const NOMES_DOS_DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+
+export const NOMES_DOS_MESES = [
+  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+];
+
+export interface CelulaDoMes {
+  /** O dia, AAAA-MM-DD. */
+  dia: string;
+  /** Está no mês que se está olhando, e não na sobra da semana. */
+  doMes: boolean;
+  hoje: boolean;
+}
+
+/**
+ * Os quarenta e dois dias que um mês desenha.
+ *
+ * Seis semanas sempre, começando no domingo — que é o que todo calendário faz,
+ * porque uma grade que mudasse de altura conforme o mês pularia debaixo do
+ * ponteiro na troca de mês. A conta de dia é `Date.UTC`, e não subtração de
+ * milissegundos: está escrito em `ofensiva.ts` e vale aqui.
+ *
+ * Ela mora no modelo e não na tela porque é conta de calendário, e não
+ * desenho: é o corte de `capturaDoScanner.ts`, e foi o lint que o apontou.
+ */
+export function diasDoMes(ano: number, mes: number, hoje: string): CelulaDoMes[] {
+  const primeiro = new Date(Date.UTC(ano, mes, 1));
+  const comeco = new Date(Date.UTC(ano, mes, 1 - primeiro.getUTCDay()));
+  return Array.from({ length: 42 }, (_, i) => {
+    const d = new Date(comeco.getTime() + i * 86400000);
+    const dia = d.toISOString().slice(0, 10);
+    return { dia, doMes: d.getUTCMonth() === mes, hoje: dia === hoje };
+  });
+}
+
 /* ── Calendários e permissão ──────────────────────────────────────────────── */
 
 /**

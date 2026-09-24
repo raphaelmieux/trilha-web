@@ -6,7 +6,8 @@ import { Inbox, Send, Archive, Trash2 } from 'lucide-react';
 import {
   CSS_DO_CORREIO, TopoDoCorreio, LateralDoCorreio, ListaDoCorreio, LinhaDaLista,
   BarraDaMensagem, LeituraDaMensagem, JanelinhaDeEscrever, CampoDeEndereco,
-  CaixaDeConfiguracoes, DestinoDoLink,
+  CaixaDeConfiguracoes, DestinoDoLink, AbasDasConfiguracoes, AvisoDoCorreio,
+  CampoDeDestinatarios, PeDeEscrever, VinculoDaMensagem,
 } from './correio';
 
 /*
@@ -330,5 +331,143 @@ describe('o link mostra um texto e vai para outro lugar', () => {
     const ev = new MouseEvent('click', { bubbles: true, cancelable: true });
     act(() => { a.dispatchEvent(ev); });
     expect(ev.defaultPrevented, 'o clique no link do golpe não foi barrado').toBe(true);
+  });
+});
+
+/* ── As peças que a CC-ES007 trouxe ────────────────────────────────────────── */
+
+describe('a caixa de pesquisa vira campo pela presença de aoBuscar', () => {
+  it('sem ele ela continua sendo o enfeite que a AP044 e a CC-ES005 têm', () => {
+    /*
+      É a regra do `aoBuscar` do Explorador, e estava escrita neste arquivo
+      desde o primeiro dia sem caso nenhum. O requisito 4.3 da CC-ES007 é o
+      caso: achar na busca o que foi arquivado é a diferença entre arquivar e
+      excluir, e sem campo de verdade não há como mostrá-la.
+    */
+    montar(<TopoDoCorreio />);
+    expect(container.querySelector('input')).toBeNull();
+    expect(texto()).toContain('Pesquisar no correio');
+  });
+
+  it('com ele, o que se digita chega ao laboratório', () => {
+    let termo = '';
+    montar(<TopoDoCorreio busca="" aoBuscar={t => { termo = t; }} />);
+    const campo = container.querySelector('input') as HTMLInputElement;
+    expect(campo).toBeTruthy();
+    const setar = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype, 'value')!.set!;
+    act(() => {
+      setar.call(campo, 'salão');
+      campo.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(termo, 'o que se digitou na busca não chegou ao laboratório').toBe('salão');
+  });
+});
+
+describe('o campo que aguenta cinquenta e dois endereços', () => {
+  const CINQUENTA = Array.from({ length: 52 }, (_, i) => `familia${i + 1}@exemplo.com`);
+
+  it('mostra as primeiras e diz quantas faltam', () => {
+    /*
+      É o que todo correio faz, e é a razão de o vazamento passar
+      despercebido: ninguém vê os cinquenta e um endereços, vê "e mais 49".
+    */
+    montar(<CampoDeDestinatarios rotulo="Cco" enderecos={CINQUENTA} />);
+    expect(container.querySelectorAll('.co-ficha')).toHaveLength(3);
+    expect(texto()).toContain('e mais 49');
+  });
+
+  it('e com três não diz que faltam', () => {
+    montar(<CampoDeDestinatarios rotulo="Para" enderecos={CINQUENTA.slice(0, 3)} />);
+    expect(texto()).not.toContain('e mais');
+  });
+
+  it('tirar e acrescentar só aparecem quando alguém os atende', () => {
+    montar(<CampoDeDestinatarios rotulo="Para" enderecos={CINQUENTA.slice(0, 2)} />);
+    expect(botoes()).toHaveLength(0);
+    expect(container.querySelector('input')).toBeNull();
+
+    act(() => root.render(<CampoDeDestinatarios rotulo="Para" enderecos={CINQUENTA.slice(0, 2)}
+      aoTirar={() => {}} aoAcrescentar={() => {}} />));
+    expect(botoes()).toHaveLength(2);
+    expect(container.querySelector('input')).toBeTruthy();
+  });
+
+  it('Enter acrescenta o endereço e limpa o campo', () => {
+    let posto = '';
+    montar(<CampoDeDestinatarios rotulo="Para" enderecos={[]}
+      aoAcrescentar={e => { posto = e; }} />);
+    const campo = container.querySelector('input') as HTMLInputElement;
+    const setar = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype, 'value')!.set!;
+    act(() => { setar.call(campo, ' tio.samuel@clubepioneiros.org.br '); });
+    act(() => {
+      campo.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+    expect(posto).toBe('tio.samuel@clubepioneiros.org.br');
+    expect(campo.value).toBe('');
+  });
+});
+
+describe('o pé de escrever e o vínculo', () => {
+  it('anexar e inserir vínculo ficam lado a lado, e é isso que faz a escolha', () => {
+    /* Os dois botões estão ali, e nada na tela diz qual usar — que é o que
+       faz o requisito 4.2 ser uma escolha e não uma instrução. */
+    montar(<PeDeEscrever aoEnviar={() => {}} aoAnexar={() => {}} aoInserirVinculo={() => {}} />);
+    expect(porRotulo('Anexar arquivo')).toBeTruthy();
+    expect(porRotulo('Inserir vínculo de arquivo')).toBeTruthy();
+  });
+
+  it('Enviar fica desligado quando o laboratório diz que ainda não dá', () => {
+    montar(<PeDeEscrever aoEnviar={() => {}} podeEnviar={false} />);
+    const enviar = botoes().find(b => b.textContent === 'Enviar') as HTMLButtonElement;
+    expect(enviar.disabled).toBe(true);
+  });
+
+  it('o vínculo mostra quem consegue abrir, que é a metade que ninguém conta', () => {
+    /* Mandar um vínculo que a pessoa não abre troca um problema barulhento por
+       um quieto: ela clica, cai em "solicitar acesso", e o pedido espera numa
+       caixa que você não lê. O anexo grande pelo menos volta com erro. */
+    montar(<VinculoDaMensagem nome="Fotos do acampamento"
+      quemAbre="Só você consegue abrir" />);
+    expect(texto()).toContain('Só você consegue abrir');
+  });
+});
+
+describe('as abas das configurações e o aviso do provedor', () => {
+  it('as abas existem todas, mesmo na lição que usa uma', () => {
+    /* Um correio que só mostrasse "Resposta automática" na lição da resposta
+       automática ensinaria a procurar o botão que a tarefa quer. */
+    montar(<AbasDasConfiguracoes atual="geral" aoTrocar={() => {}} abas={[
+      { id: 'geral', nome: 'Geral' },
+      { id: 'listas', nome: 'Listas' },
+      { id: 'ausencia', nome: 'Resposta automática' },
+    ]} />);
+    expect(botoes()).toHaveLength(3);
+    expect(container.querySelectorAll('.co-aba[aria-pressed="true"]')).toHaveLength(1);
+  });
+
+  it('o aviso diz o que o correio sabe, e quem escreve o texto é o laboratório', () => {
+    /* "O anexo passa de 25 MB" é do provedor; "sua lição está errada" seria
+       nosso. É a regra da régua de status do Word. */
+    montar(<AvisoDoCorreio tom="ruim">O anexo passa de 25 MB e a mensagem voltou.</AvisoDoCorreio>);
+    expect(container.querySelector('.co-aviso[data-tom="ruim"]')).toBeTruthy();
+  });
+});
+
+describe('a folha, depois das peças novas', () => {
+  it('a regra do desligado vem depois da do primário, e troca o fundo', () => {
+    /*
+      Mesma especificidade: escrita antes, ela perde, e o botão primário
+      desligado sai azul e branco, com cara de clicável. É a quarta vez na
+      plataforma, e nada estoura quando a ordem está errada.
+    */
+    const primario = CSS_DO_CORREIO.indexOf('.co-bt.primario {');
+    const desligado = CSS_DO_CORREIO.indexOf('.co-bt:disabled');
+    expect(primario, 'a regra do primário sumiu da folha').toBeGreaterThan(-1);
+    expect(desligado, 'a regra do desligado sumiu da folha').toBeGreaterThan(primario);
+
+    const regra = CSS_DO_CORREIO.slice(desligado);
+    expect(regra.slice(0, regra.indexOf('}'))).toContain('background');
   });
 });
