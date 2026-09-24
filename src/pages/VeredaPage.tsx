@@ -22,6 +22,7 @@ import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
 import LaboratorioDePdf from '../components/LaboratorioDePdf';
 import LaboratorioDeContas from '../components/LaboratorioDeContas';
 import LaboratorioDaNuvem from '../components/LaboratorioDaNuvem';
+import LaboratorioDeComunicacao from '../components/LaboratorioDeComunicacao';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
 import LaboratorioDoRelatorio from '../components/LaboratorioDoRelatorio';
@@ -331,6 +332,25 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'nuvem' && profile?.id) {
     return (
       <LaboratorioDaNuvem vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /*
+    E a CC-ES007 abre três programas, com um contexto só.
+
+    Correio, calendário e sala de reunião. A CC-ES005 também abre três, e a
+    diferença é que aqui eles se atravessam: a reunião se agenda no
+    calendário, e quem não respondeu ao convite se cobra por mensagem. Três
+    contextos separados obrigariam cada lição a escolher um programa e ficar
+    nele, que não é como um clube trabalha.
+
+    Quem diz em qual dos três a lição acontece é `LICOES_DA_CC_ES007`, e o
+    componente despacha por `switch` exaustivo com `never` no `default`.
+  */
+  if (licaoAberta?.tipo === 'comunicacao' && profile?.id) {
+    return (
+      <LaboratorioDeComunicacao vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

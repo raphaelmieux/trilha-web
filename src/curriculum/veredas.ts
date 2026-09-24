@@ -467,6 +467,31 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      A comunicação e a agenda, e por que ela é um tipo só para três programas.
+
+      A CC-ES007 abre **três** — o correio, o calendário e a sala de reunião —,
+      e mesmo assim o campo é um: o que muda entre as lições não é o que elas
+      **são**, é em qual janela abrem, e isso já está escrito em
+      `LICOES_DA_CC_ES007`. Três tipos quase iguais em `veredas.ts` seriam três
+      formas para a mesma coisa, e todo leitor teria de lembrar qual veio.
+
+      É a decisão de `contas`, da CC-ES005, e pelo motivo escrito lá: um
+      `Record` sobre a união faz a décima terceira não compilar até alguém
+      dizer de que estado ela parte e qual programa ela abre.
+
+      Para o progresso conta como lição de fazer: grava `vereda_laboratorio`.
+    */
+    id: string;
+    tipo: 'comunicacao';
+    titulo: string;
+    resumo: string;
+    /** Qual das doze lições é esta. Dela saem o estado inicial e as metas. */
+    licao: import('../labs/metasDaCcEs007').LicaoDaCcEs007;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não

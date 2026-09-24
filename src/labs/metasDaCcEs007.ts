@@ -711,6 +711,13 @@ export const METAS_DA_RECORRENCIA: Meta[] = [
 
 export const OLHOU_A_GRADE = 'olhou-a-grade';
 export const PERGUNTOU_A_QUEM_NAO_COMPARTILHA = 'perguntou-ao-marcio';
+/**
+ * O id com que a solução de referência cria a reunião dos conselheiros.
+ *
+ * A meta **não** o exige: o calendário dá um id novo a cada evento criado, e
+ * exigi-lo deixaria a lição impossível de fechar pela tela. Ele existe para o
+ * teste ter como pegar o evento de volta e mexer nele.
+ */
 export const REUNIAO_DOS_CONSELHEIROS = 'conselheiros';
 
 const calendarioDoClube = (c: ContextoDaComunicacao) =>
@@ -785,14 +792,23 @@ export const METAS_DO_CALENDARIO: Meta[] = [
       `E que sirva para o Tio Márcio, que só pode depois das ${MARCIO_SO_DEPOIS_DE}.`,
       'Confirme e mande os convites.',
     ],
-    feita: c => {
-      const e = evt(c, REUNIAO_DOS_CONSELHEIROS);
-      if (!e || e.dia !== DIA_DA_REUNIAO) return false;
+    /*
+      A conta procura pelo **dia**, e não por um id fixo.
+
+      O calendário dá um id novo a cada evento criado, como todo calendário
+      faz — então uma meta que exigisse `id === 'conselheiros'` nunca fecharia
+      pela tela, por mais certo que fosse o horário. Foi a trava que clica que
+      achou isso: o motor fechava a lista e a janela não.
+
+      É a mesma decisão de `regional`, no módulo 7, que procura pelo título.
+    */
+    feita: c => c.agenda.eventos.some(e => {
+      if (e.calendario !== CALENDARIO_DO_CLUBE || e.dia !== DIA_DA_REUNIAO) return false;
       if (e.inicio < MARCIO_SO_DEPOIS_DE) return false;
       if (e.inicio >= GRADE.ate) return false;
       return !CONVIDADOS_DA_REUNIAO.some(p => p.compartilha
         && p.ocupado.some(b => b.dia === e.dia && b.inicio < e.fim && b.fim > e.inicio));
-    },
+    }),
   },
 ];
 
