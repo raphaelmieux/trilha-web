@@ -193,6 +193,85 @@ export const ROTEIROS: Record<string, RoteiroServidor> = {
       },
     },
   },
+  AP045: {
+    assunto: 'a evolução da computação em inteligência artificial, mundo virtual, internet e intranets',
+    etapas: {
+      'ia-o-que-e': {
+        titulo: 'O nascimento da IA',
+        pergunta: 'O que é inteligência artificial, e qual foi uma aplicação antiga que ficou famosa por vencer um humano num jogo?',
+        fatos: [
+          'O termo "inteligência artificial" foi criado em 1956, numa conferência na Universidade de Dartmouth, nos Estados Unidos, organizada por John McCarthy.',
+          'Em 1997, o programa de xadrez Deep Blue, da IBM, venceu o campeão mundial Garry Kasparov.',
+          'As primeiras inteligências artificiais seguiam regras escritas à mão por programadores, em vez de aprender a partir de exemplos.',
+        ],
+      },
+      'ia-hoje': {
+        titulo: 'A IA que cria coisas novas',
+        pergunta: 'O que mudou na inteligência artificial nos últimos anos, e o que é uma IA generativa?',
+        fatos: [
+          'A partir dos anos 2010, o aprendizado de máquina (machine learning) permitiu que a IA reconhecesse padrões a partir de grandes quantidades de exemplos, em vez de seguir só regras fixas.',
+          'IA generativa é o tipo de inteligência artificial que cria conteúdo novo — texto, imagem, áudio ou vídeo — a partir de um pedido em linguagem natural.',
+          'O ChatGPT, lançado pela OpenAI em novembro de 2022, popularizou o uso de IA generativa de texto para o público em geral.',
+          'Ferramentas como o Midjourney e o DALL-E geram imagens a partir de uma descrição escrita.',
+        ],
+      },
+      'mundo-virtual-o-que-e': {
+        titulo: 'O nascimento do mundo virtual',
+        pergunta: 'O que é um mundo virtual (realidade virtual), e qual foi um dos primeiros aparelhos a tentar essa experiência?',
+        fatos: [
+          'Um mundo virtual (realidade virtual, VR) é um ambiente gerado por computador que simula um espaço em três dimensões, em que a pessoa pode se mover e interagir.',
+          'O Sensorama, criado por Morton Heilig em 1962, é considerado um dos primeiros aparelhos a buscar uma experiência imersiva, juntando imagem, som, vento e cheiro.',
+          'O Oculus Rift, lançado em 2012, foi um dos primeiros óculos de realidade virtual voltados ao público em geral.',
+        ],
+      },
+      'mundo-virtual-hoje': {
+        titulo: 'Para que serve hoje',
+        pergunta: 'Para que os mundos virtuais são usados hoje, além dos jogos?',
+        fatos: [
+          'Realidade virtual é usada em treinamentos, como simuladores de voo para pilotos e simulações de cirurgia para médicos.',
+          'Escolas e museus usam realidade virtual para levar estudantes a lugares de difícil acesso, como o interior do corpo humano ou ruínas históricas.',
+          '"Metaverso" é o nome dado a mundos virtuais persistentes e compartilhados, em que várias pessoas usam avatares ao mesmo tempo.',
+          'Empresas usam reuniões em realidade virtual, com avatares dos participantes num mesmo ambiente 3D.',
+        ],
+      },
+      'internet-evolucao': {
+        titulo: 'Da linha telefônica ao celular',
+        pergunta: 'Como a internet mudou desde que surgiu até hoje, em termos de velocidade e forma de acesso?',
+        fatos: [
+          'A internet discada, comum no Brasil nos anos 1990 e no início dos anos 2000, usava a linha telefônica e chegava a poucos kilobits por segundo.',
+          'A banda larga chegou ao Brasil a partir de meados dos anos 2000, com velocidades muito maiores e sem ocupar a linha telefônica.',
+          'A maior parte dos brasileiros acessa a internet pelo celular, segundo pesquisas do Comitê Gestor da Internet no Brasil (CGI.br).',
+          'A tecnologia móvel evoluiu do 2G, usado para mensagens de texto e chamadas, até o 5G, capaz de transmitir vídeo em alta qualidade com pouco atraso.',
+        ],
+      },
+      'internet-uso': {
+        titulo: 'O que mudou no uso',
+        pergunta: 'O que mudou na forma como as pessoas usam a internet no dia a dia, desde os primeiros anos até hoje?',
+        fatos: [
+          'Nos primeiros anos, a internet era usada principalmente para e-mail e para consultar páginas estáticas.',
+          'As redes sociais, populares a partir de meados dos anos 2000, mudaram a internet de um lugar de consulta para um lugar de publicação, em que qualquer pessoa posta conteúdo.',
+          'Serviços de streaming de vídeo e música por assinatura substituíram boa parte do costume de baixar arquivos para guardar no computador.',
+          'A internet das coisas (IoT) conecta à rede aparelhos além do computador e do celular, como televisões, geladeiras e campainhas.',
+        ],
+      },
+      'intranet': {
+        titulo: 'A rede de portas fechadas',
+        pergunta: 'O que é uma intranet, e em que ela se parece e se diferencia da internet?',
+        fatos: [
+          'Intranet é uma rede de computadores que usa a mesma tecnologia da internet, mas é privada e fechada, normalmente ao uso interno de uma empresa, escola ou órgão público.',
+          'Diferente da internet, que qualquer pessoa no mundo pode acessar, a intranet só é acessível a quem está dentro da rede da instituição, ou conectado por uma conexão autorizada, como uma VPN.',
+          'Empresas usam intranets para compartilhar documentos internos, avisos e sistemas de RH.',
+          'Uma extranet é parecida com a intranet, mas permite acesso controlado a pessoas de fora da instituição, como fornecedores ou parceiros.',
+        ],
+      },
+      'opiniao': {
+        titulo: 'O que você acha',
+        pergunta: 'Na sua opinião, qual dessas quatro áreas vai mudar mais a vida das pessoas nos próximos anos?',
+        fatos: [],
+        opiniao: true,
+      },
+    },
+  },
   /*
     A CC001 é a primeira vereda a usar a redação guiada, e a primeira em que o
     relatório tem três alvos ao mesmo tempo: a origem da programação em blocos,
