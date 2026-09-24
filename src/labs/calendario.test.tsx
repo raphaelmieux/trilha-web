@@ -304,3 +304,40 @@ describe('o diálogo', () => {
     expect(acharBotao(/^Fechar$/)).toBeTruthy();
   });
 });
+
+/* ── O contraste que o jsdom não mede ──────────────────────────────────────── */
+
+describe('o cinza dos dias do mês vizinho se lê', () => {
+  const lum = (hex: string) => {
+    const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map(s => (s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  };
+  const razao = (a: string, b: string) => {
+    const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+    return (x + 0.05) / (y + 0.05);
+  };
+
+  it('a regra do dia de fora declara as duas cores, e elas passam em AA', () => {
+    /*
+      `#9AA0A6` é o cinza do calendário de verdade, e media **2,53:1** aqui —
+      num número de 12px que é a única coisa escrita na célula. E ele parece
+      certo: dia de outro mês tem de sair apagado, então ninguém estranha um
+      apagado demais. É a mesma armadilha do contador de folhas da CC-ES002, e
+      foi achada do mesmo jeito: no Chromium, porque o jsdom não calcula
+      contraste nenhum.
+
+      Eles não são enfeite — é por eles que se lê que a semana começa no dia 28
+      de junho.
+    */
+    const regra = CSS_DO_CALENDARIO.slice(
+      CSS_DO_CALENDARIO.indexOf('.ca-dia[data-fora="sim"] {'));
+    const corpo = regra.slice(0, regra.indexOf('}'));
+    const cores = corpo.match(/#[0-9A-Fa-f]{6}/g) ?? [];
+    expect(cores, 'a regra do dia de fora deixou de declarar as duas cores')
+      .toHaveLength(2);
+    const [fundo, texto] = cores as [string, string];
+    expect(razao(texto, fundo), `${texto} sobre ${fundo} não se lê`)
+      .toBeGreaterThanOrEqual(4.5);
+  });
+});

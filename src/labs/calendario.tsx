@@ -92,7 +92,19 @@ export const CSS_DO_CALENDARIO = `
   padding: 4px; display: flex; flex-direction: column; gap: 3px; min-width: 0;
   background: #FFFFFF; text-align: left;
 }
-.ca-dia[data-fora="sim"] { background: #FAFAFA; color: #9AA0A6; }
+/*
+  O cinza dos dias do mês vizinho mede 4,79:1, e não 2,53:1.
+
+  O #9AA0A6 é o cinza do calendário de verdade, e ele funciona lá porque o
+  desenho inteiro daquele programa é claro; aqui o número tem 12px e é a única
+  coisa escrita na célula. E ele parece **certo**: dia de outro mês tem de sair
+  apagado, então ninguém estranha um apagado demais — que é a mesma armadilha
+  do contador de folhas da CC-ES002, achado do mesmo jeito, no navegador.
+
+  Eles não são enfeite: é por eles que se lê que a semana começa no dia 28 de
+  junho. O #6B7075 continua dizendo "este dia é de outro mês" e passa em AA.
+*/
+.ca-dia[data-fora="sim"] { background: #FAFAFA; color: #6B7075; }
 .ca-dia-numero {
   align-self: center; font-size: 12px; width: 24px; height: 24px; flex: none;
   display: flex; align-items: center; justify-content: center; border-radius: 999px;
