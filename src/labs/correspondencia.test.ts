@@ -6,7 +6,8 @@ import {
   arquivar, assuntoNomeiaAMateria, assuntoVago, buscar, cabeNoAnexo, caixaDoClube,
   contaDemais, criarLista, custoDoEnvio, dizComQuemFalar, enderecosQueCadaUmVe,
   enderecosVisiveis, enviar, expandir, mudarMembros, naPasta, paraALixeira,
-  pedeAlgumaCoisa, pesoDosAnexos, quemRecebe, rascunhoVazio, responderiaA,
+  assinaturaDizQuemEVoce, pedeAlgumaCoisa, pedidoComPrazo, pesoDosAnexos, quemRecebe,
+  rascunhoVazio, responderiaA,
   temFim, temPrazo, temSaudacao,
 } from './correspondencia';
 
@@ -319,5 +320,40 @@ describe('enviar', () => {
     }, HOJE);
     expect(naPasta(depois, 'enviadas').length).toBe(1);
     expect(cabeNoAnexo(naPasta(depois, 'enviadas')[0])).toBe(false);
+  });
+});
+
+describe('o pedido e o prazo moram na mesma frase', () => {
+  it('uma data solta noutra frase não é o prazo do pedido', () => {
+    /*
+      Quase toda mensagem de clube cita uma data — a do acampamento, a da
+      reunião. Medidas separadas, as duas contas se enganam: esta mensagem tem
+      "dia 3 de julho" e não pede nada a ninguém com prazo nenhum, e passaria.
+    */
+    const ruim = 'A saída é dia 3 de julho às 6h da Igreja Central. '
+      + 'Seria bom se alguém pudesse me passar o número da unidade.';
+    expect(temPrazo(ruim), 'a data do passeio conta como prazo do corpo').toBe(true);
+    expect(pedidoComPrazo(ruim)).toBe(false);
+  });
+
+  it('e o pedido com o prazo junto passa', () => {
+    const bom = 'A saída é dia 3 de julho às 6h da Igreja Central. '
+      + 'Peço que me confirmem o número da unidade até quarta.';
+    expect(pedidoComPrazo(bom)).toBe(true);
+  });
+
+  it('pedido sem prazo nenhum não passa, em frase nenhuma', () => {
+    expect(pedidoComPrazo('Peço que confirmem a presença da unidade de vocês.')).toBe(false);
+  });
+});
+
+describe('a assinatura diz quem é você no clube', () => {
+  it('um nome sozinho assina e não diz a quem responder', () => {
+    /* É o requisito 2.3: a assinatura existe para quem recebe saber quem está
+       pedindo, e com que autoridade. */
+    expect(assinaturaDizQuemEVoce('Marina')).toBe(false);
+    expect(assinaturaDizQuemEVoce('Marina Duarte')).toBe(false);
+    expect(assinaturaDizQuemEVoce('Marina Duarte — Secretaria do Clube Pioneiros')).toBe(true);
+    expect(assinaturaDizQuemEVoce('Tio Nelson, tesouraria')).toBe(true);
   });
 });

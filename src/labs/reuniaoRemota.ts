@@ -81,14 +81,35 @@ export interface Reuniao {
   suaCamera: boolean;
   participantes: Participante[];
   compartilhando?: Compartilhamento;
+  /**
+   * Tudo o que você já apresentou nesta reunião.
+   *
+   * Sem ela, "mostrou a planilha" e "mostrou o vídeo" se excluiriam: só uma
+   * apresentação está acontecendo por vez, e a lista nunca fecharia. É o
+   * defeito que a lição de assinar da CC-ES004 teve, e desta vez ele foi
+   * achado antes de alguém clicar.
+   *
+   * E é o registro que faz "apresentou sem vazar" medir a **escolha**: quem
+   * escolheu a tela inteira uma vez fica com a escolha na lista, do jeito que
+   * uma mensagem enviada fica em Enviados.
+   */
+  apresentacoes: Compartilhamento[];
   /** O que está na frente na **sua** máquina agora. */
   emFoco: string;
   /** As notificações que chegaram desde que a reunião começou. */
   notificacoes: Notificacao[];
   falas: Fala[];
-  /** O que você viu acontecer, e que não deixa marca em campo nenhum. */
-  descobertas: string[];
 }
+
+/*
+  A sala **não** guarda descobertas.
+
+  O que a pessoa viu acontecer é dela, e não da reunião: quem guarda isso é o
+  contexto da lição, que é o mesmo para os três programas desta vereda. Um
+  segundo campo aqui seria segunda fonte para a mesma coisa, e duas fontes
+  divergem no primeiro ajuste — foi o que a trava das metas achou, com a
+  solução de referência anotando de um lado e a meta lendo do outro.
+*/
 
 /* ── As janelas da sua máquina ────────────────────────────────────────────── */
 
@@ -171,7 +192,27 @@ export const falar = (r: Reuniao, texto: string): Reuniao =>
 export const naoOuviram = (r: Reuniao): Fala[] => r.falas.filter(f => !f.ouviram);
 
 export const compartilhar = (r: Reuniao, c: Compartilhamento): Reuniao =>
-  ({ ...r, compartilhando: c });
+  ({ ...r, compartilhando: c, apresentacoes: [...r.apresentacoes, c] });
+
+/** Você já apresentou este alvo sem ser pela tela inteira? */
+export const mostrouSemATelaInteira = (r: Reuniao, alvo: string): boolean =>
+  r.apresentacoes.some(a => a.alvo === alvo && a.oQue !== 'tela-inteira');
+
+/** Você já mostrou este alvo com o som indo junto? */
+export const mostrouComSom = (r: Reuniao, alvo: string): boolean =>
+  r.apresentacoes.some(a => a.alvo === alvo && a.oQue === 'guia' && a.comSom);
+
+/**
+ * A tela inteira já foi escolhida alguma vez nesta reunião.
+ *
+ * O que vazou vazou: a notificação foi lida por catorze pessoas e não há como
+ * desfazer, do jeito que uma mensagem enviada não volta. A lista não trava por
+ * causa disso — travar deixaria a lição impossível de fechar, que é pior do
+ * que uma que abre resolvida —, mas a escolha fica registrada, e é dela que a
+ * meta fala.
+ */
+export const escolheuATelaInteira = (r: Reuniao): boolean =>
+  r.apresentacoes.some(a => a.oQue === 'tela-inteira');
 
 export const pararDeCompartilhar = (r: Reuniao): Reuniao =>
   ({ ...r, compartilhando: undefined });
@@ -197,9 +238,6 @@ export const naEspera = (r: Reuniao): Participante[] =>
 
 export const naSala = (r: Reuniao): Participante[] =>
   r.participantes.filter(p => p.estado === 'na-sala');
-
-export const anotar = (r: Reuniao, o: string): Reuniao =>
-  (r.descobertas.includes(o) ? r : { ...r, descobertas: [...r.descobertas, o] });
 
 /* ── A sala do clube ──────────────────────────────────────────────────────── */
 
@@ -245,9 +283,9 @@ export function reuniaoDoConselho(): Reuniao {
       { endereco: 'arara@clubepioneiros.org.br', nome: 'Tio Márcio (Arara)', estado: 'fora', microfone: false },
     ],
     compartilhando: undefined,
+    apresentacoes: [],
     emFoco: PLANILHA,
     notificacoes: [MENSAGEM_QUE_CHEGA],
     falas: [],
-    descobertas: [],
   };
 }

@@ -9,6 +9,7 @@ import {
   mudarDaquiEmDiante, mudarEvento, naoChegaram, nivelDe, ocorrencias, oQuePublicoMostra,
   podeAlterar, podeGerenciar, podeVerDetalhes, publicarCalendario, quemPodeApagar,
   responder, responderam, semAgendaCompartilhada, serieTemFim, temDescricao, temLocal,
+  trocarConvidado,
 } from './agenda';
 
 const evento = (p: Partial<Evento>): Evento => ({
@@ -316,5 +317,33 @@ describe('o mês planejado', () => {
     const a = mudarEvento(agendaDoClube(), 'dentista', { dia: '2026-07-10' });
     expect(diasPlanejados(a, CALENDARIO_DO_CLUBE, JULHO.de, JULHO.ate))
       .not.toContain('2026-07-10');
+  });
+});
+
+describe('consertar o endereço do convite', () => {
+  const comErro = {
+    id: 'reg', titulo: 'Reunião regional', local: 'Sala 2',
+    descricao: 'Fechamento do semestre com os clubes da região e o calendário de 2027.',
+    dia: '2026-07-08', inicio: '15:00', fim: '16:30',
+    fuso: FUSO_DE_BRASILIA, calendario: CALENDARIO_DO_CLUBE,
+    convidados: [
+      { endereco: 'tio.samuel@exmplo.com', resposta: 'aguardando' as const, naoChegou: true },
+      { endereco: 'aguia@clubepioneiros.org.br', resposta: 'sim' as const },
+    ],
+  };
+
+  it('o convidado novo entra aguardando, e não confirmado', () => {
+    /* Quem acabou de receber ainda não respondeu. Dar por respondido seria a
+       plataforma decidindo por ele — e apagaria o gesto de acompanhar, que é
+       o que o requisito 5.2 pede. */
+    const a = criarEvento(agendaDoClube(), comErro);
+    const depois = trocarConvidado(a, 'reg', 'tio.samuel@exmplo.com',
+      'falcao@clubepioneiros.org.br');
+    const e = eventoDe(depois, 'reg') as Evento;
+    expect(naoChegaram(e)).toEqual([]);
+    expect(e.convidados.map(c => c.endereco)).toContain('falcao@clubepioneiros.org.br');
+    expect(responderam(e, 'aguardando')).toHaveLength(1);
+    /* E quem já tinha respondido não é mexido. */
+    expect(responderam(e, 'sim')).toHaveLength(1);
   });
 });

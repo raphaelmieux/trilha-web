@@ -103,6 +103,20 @@ export const FALCAO_NA_LISTA = ['bruno', 'daniel', 'lucas', 'sofia', 'tiago'];
   estouraria com "Cannot access before initialization" — é a armadilha que
   `INSIGNIAS` já pagou uma vez.
 */
+/**
+ * A unidade Águia, que é a lista que o requisito 4.4 manda **criar**.
+ *
+ * A do Falcão já existe e está velha — foi montada pela secretária anterior —,
+ * e são dois trabalhos diferentes: consertar uma lista que envelheceu e montar
+ * uma que não existe. Quem só conserta nunca escolheu quem entra.
+ */
+export const AGUIA: Contato[] = [
+  { id: 'ana', nome: 'Ana Beatriz Rocha', endereco: 'ana.rocha@exemplo.com' },
+  { id: 'gabriela', nome: 'Gabriela Nunes', endereco: 'gabriela.nunes@exemplo.com' },
+  { id: 'rafael', nome: 'Rafael Brito', endereco: 'rafael.brito@exemplo.com' },
+  { id: 'vitoria', nome: 'Vitória Sales', endereco: 'vitoria.sales@exemplo.com' },
+];
+
 function semAcento(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
@@ -535,6 +549,45 @@ export function temPrazo(corpo: string): boolean {
   return false;
 }
 
+/** As frases do corpo: ponto, interrogação, exclamação ou quebra de linha. */
+const frases = (corpo: string): string[] =>
+  corpo.split(/[.!?\n]+/).map(f => f.trim()).filter(Boolean);
+
+/**
+ * O pedido e o prazo **na mesma frase**.
+ *
+ * Separadas, as duas contas se enganam: quase toda mensagem de clube cita uma
+ * data — a do acampamento, a da reunião —, e uma mensagem que diga "a saída é
+ * dia 3 de julho" e peça alguma coisa em outra frase passaria por ter prazo
+ * sem ter prazo nenhum. O prazo de que o requisito 4.1 fala é o do **pedido**,
+ * e ele mora junto do pedido: "confirme até quarta".
+ *
+ * As duas contas continuam existindo separadas porque elas nomeiam erros
+ * diferentes, e é isso que a lição ensina; esta é a que a tarefa mede.
+ */
+export const pedidoComPrazo = (corpo: string): boolean =>
+  frases(corpo).some(f => pedeAlgumaCoisa(f) && temPrazo(f));
+
+/**
+ * As palavras que dizem quem é você no clube.
+ *
+ * É o requisito 2.3: uma assinatura existe para quem recebe saber quem está
+ * pedindo. "Marina" assina; "Marina Duarte — Secretaria do Clube Pioneiros"
+ * diz a quem responder e com que autoridade o pedido foi feito, que é a
+ * diferença entre uma mensagem que é atendida e uma que fica esperando alguém
+ * perguntar quem escreveu.
+ */
+const FUNCOES_NO_CLUBE = [
+  'secretaria', 'secretário', 'secretaria', 'secretária', 'diretor', 'diretora',
+  'direção', 'tesoureiro', 'tesoureira', 'tesouraria', 'conselheiro', 'conselheira',
+  'instrutor', 'instrutora', 'capitão', 'capitã', 'clube', 'unidade',
+];
+
+export const assinaturaDizQuemEVoce = (assinatura: string): boolean => {
+  const t = assinatura.trim();
+  return t.length >= 12 && FUNCOES_NO_CLUBE.some(f => t.toLowerCase().includes(f));
+};
+
 /* ── A caixa do clube ─────────────────────────────────────────────────────── */
 
 /**
@@ -624,6 +677,29 @@ export const MENSAGENS_DO_CLUBE: Mensagem[] = [
     quando: '2026-06-19', pasta: 'entrada', lida: false,
   },
   {
+    /*
+      A mensagem que já chegou vazada, e que é o requisito 3 acontecendo na
+      caixa de quem estuda.
+
+      Trinta e quatro clubes no campo Cc: quem abre esta mensagem está lendo o
+      endereço de trinta e três secretarias que nunca autorizaram nada, e o
+      endereço dela foi lido por trinta e três pessoas. Ninguém fez por mal, e
+      é exatamente por isso que ela existe aqui — o vazamento do requisito 3
+      não é uma hipótese, é a mensagem de terça.
+    */
+    id: 'regional',
+    de: 'secretaria@clubealvorada.org.br', deNome: 'Secretaria do Clube Alvorada',
+    para: ['secretaria@clubealvorada.org.br'],
+    cc: [VOCE, ...Array.from({ length: 33 }, (_, i) =>
+      `secretaria@clube${String(i + 1).padStart(2, '0')}.org.br`)],
+    cco: [],
+    assunto: 'Datas do campori regional de 2027',
+    corpo: 'Boa tarde a todos os clubes. Segue o calendário do campori regional '
+      + 'de 2027 para vocês irem programando. Não é preciso responder.',
+    anexos: [], vinculos: [], assinada: false,
+    quando: '2026-06-23', pasta: 'entrada', lida: false,
+  },
+  {
     id: 'senha',
     de: 'nao-responda@correio.exemplo.com', deNome: 'Correio do Clube',
     para: [VOCE], cc: [], cco: [],
@@ -650,7 +726,7 @@ export const AUSENCIA_DESLIGADA = (): Ausencia => ({
 export function caixaDoClube(): Caixa {
   return {
     mensagens: MENSAGENS_DO_CLUBE.map(m => ({ ...m })),
-    contatos: [...DIRECAO, ...CONSELHEIROS_DO_CLUBE, ...FALCAO, ...FAMILIAS],
+    contatos: [...DIRECAO, ...CONSELHEIROS_DO_CLUBE, ...FALCAO, ...AGUIA, ...FAMILIAS],
     listas: [{
       id: 'falcao',
       nome: 'Unidade Falcão',
@@ -661,3 +737,41 @@ export function caixaDoClube(): Caixa {
     ausencia: AUSENCIA_DESLIGADA(),
   };
 }
+
+/* ── A pauta e a ata ──────────────────────────────────────────────────────── */
+
+/**
+ * Os itens de uma pauta.
+ *
+ * Uma pauta é uma **lista**: três ou quatro assuntos, na ordem em que vão ser
+ * tratados. Um parágrafo dizendo "vamos falar do acampamento e de mais umas
+ * coisas" não é pauta — quem recebe não sabe o que preparar, que é a única
+ * razão de mandar a pauta antes.
+ *
+ * A conta é por linha que abre com marcador ou número, que é como se escreve
+ * lista em mensagem: nem toda plataforma tem lista de verdade, e todo mundo
+ * escreve assim mesmo.
+ */
+export const itensDaPauta = (corpo: string): string[] =>
+  corpo.split('\n')
+    .map(l => l.trim())
+    .filter(l => /^([-*\u2022]|\d+[.)])\s+\S/.test(l));
+
+/**
+ * As decisões de uma ata que têm dono e prazo.
+ *
+ * É a metade do requisito 7 que decide se a ata serve para alguma coisa. "Ficou
+ * combinado que alguém vai ver o som" é a mesma frase de "seria bom se alguém
+ * pudesse levar o som", escrita um mês depois: ninguém vê o som, e a ata
+ * registrou que a reunião aconteceu e mais nada.
+ *
+ * As duas contas são as do pedido — quem, e até quando —, e é de propósito:
+ * uma ata inteira de decisões sem prazo e uma inteira de prazos sem responsável
+ * são erros diferentes, e as duas vêm de reuniões que pareciam produtivas.
+ */
+export const decisoesComDono = (corpo: string, nomes: readonly string[]): string[] =>
+  corpo.split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0
+      && nomes.some(n => l.toLowerCase().includes(n.toLowerCase()))
+      && temPrazo(l));

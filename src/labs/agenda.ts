@@ -532,6 +532,24 @@ export const publicarCalendario = (a: Agenda, id: string, publico: boolean): Age
   calendarios: a.calendarios.map(c => (c.id === id ? { ...c, publico } : c)),
 });
 
+/**
+ * Trocar o endereço de um convidado.
+ *
+ * É o conserto do requisito 5.2: o convite que nunca chegou não se reenvia
+ * para o mesmo endereço errado. O convidado novo entra **aguardando**, e não
+ * confirmado — quem acabou de receber ainda não respondeu, e dar por
+ * respondido seria a plataforma decidindo por ele.
+ */
+export const trocarConvidado = (a: Agenda, id: string, de: string, para: string): Agenda => {
+  const e = eventoDe(a, id);
+  if (!e) return a;
+  return mudarEvento(a, id, {
+    convidados: e.convidados.map(c => (c.endereco === de
+      ? { endereco: para, resposta: 'aguardando' as Resposta }
+      : c)),
+  });
+};
+
 export const responder = (a: Agenda, id: string, quem: string, r: Resposta): Agenda => {
   const e = eventoDe(a, id);
   if (!e) return a;
@@ -603,11 +621,17 @@ export const GRADE = { de: '08:00', ate: '20:00', duracao: 90 };
 /**
  * A partir de que hora o Tio Márcio pode.
  *
- * Ele trabalha, e o trabalho dele não está em calendário nenhum que o clube
- * possa ver — que é a situação da maioria das pessoas. Perguntar é o gesto que
- * o requisito 5.5 pede, e é o único jeito de saber disto.
+ * Ele trabalha até as quatro, e o trabalho dele não está em calendário nenhum
+ * que o clube possa ver — que é a situação da maioria das pessoas. Perguntar é
+ * o gesto que o requisito 5.5 pede, e é o único jeito de saber disto.
+ *
+ * A hora é dezesseis e não dezoito para que **as duas** contas da meta tenham
+ * caso: a Tia Rute está ocupada das 16h às 18h, então existe horário que serve
+ * ao Tio Márcio e atropela alguém que a grade mostra. Com o corte às dezoito,
+ * nenhum horário fazia as duas coisas, e a conta de atropelar seria código que
+ * nenhum teste exercita — foi a mutação que apontou.
  */
-export const MARCIO_SO_DEPOIS_DE = '18:00';
+export const MARCIO_SO_DEPOIS_DE = '16:00';
 
 export function agendaDoClube(): Agenda {
   return {
