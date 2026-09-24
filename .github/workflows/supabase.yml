@@ -20,7 +20,10 @@
 # it reaches here.
 #
 # Required repository secrets (Settings > Secrets and variables > Actions):
-#   SUPABASE_ACCESS_TOKEN  supabase.com/dashboard/account/tokens
+#   SUPABASE_ACCESS_TOKEN  supabase.com/dashboard/account/tokens — generated
+#                          by an account that is a member of the organisation
+#                          owning the project. Rotating it is replacing the
+#                          secret here; nothing else in the repo holds a copy.
 #   SUPABASE_DB_PASSWORD   the project's database password
 #
 # Optional repository secrets. Each one is only written to the project when it
@@ -83,6 +86,66 @@ jobs:
             echo "::error::Missing repository secret(s):$faltando — add them under Settings > Secrets and variables > Actions, then re-run this workflow."
             exit 1
           fi
+
+      # The step above proves the secret is *set*. It cannot prove it still
+      # works, and those are two failures with two different remedies: a missing
+      # secret is a project never configured, a rejected one is a token that used
+      # to work. Both came out the same opaque way, and the second reads like the
+      # project was deleted.
+      #
+      # It happened, twice in a row: `supabase link` died with `Unexpected error
+      # retrieving remote project status: {"message":"Unauthorized"}`, and every
+      # step after it was skipped — migrations, function secrets, the function
+      # deploys, the types check. Nothing in that sentence says which secret,
+      # which account, or where to go, and the run before it had already been
+      # re-run once by somebody reading it as a blip.
+      #
+      # This sits ahead of a deploy step and is still not a gate, which is the
+      # distinction the types check further down turns on. That one can fail over
+      # something the deploy does not need, so it reports from the bottom. This
+      # one fails on 401 alone — the single answer under which `supabase link` is
+      # *certain* to fail a second later. It holds nothing back; it names what is
+      # about to happen anyway.
+      #
+      # Everything else is a warning and the run carries on. A token scoped in a
+      # way this probe does not expect, or a blip reaching the API, must never
+      # redden a run the CLI would have finished: on anything but 401, the link
+      # step below is the judge.
+      - name: The access token is still accepted
+        run: |
+          set -uo pipefail
+          resposta=$(curl -sS -m 30 -w '\n%{http_code}' \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects") || {
+              echo "::warning::Could not reach the Management API to check the access token. Not failing the run over it; the link step below is the judge."
+              exit 0
+            }
+          codigo=$(printf '%s' "$resposta" | tail -n1)
+          corpo=$(printf '%s' "$resposta" | sed '$d')
+
+          if [ "$codigo" = "401" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN is set, but the Supabase Management API rejected it (HTTP 401) — so nothing in this run can reach the project, and the link step below would fail with a bare \"Unauthorized\". Generate a new token at https://supabase.com/dashboard/account/tokens, signed in as an account that is a member of the organisation owning project $PROJECT_REF; replace the SUPABASE_ACCESS_TOKEN secret under Settings > Secrets and variables > Actions; then re-run this workflow from the Actions tab. Nothing was applied or deployed. Migrations are selected by the versions missing from the remote history and the seeds are idempotent, so the next run picks up exactly where this one stopped — there is nothing to undo first."
+            exit 1
+          fi
+
+          if [ "$codigo" != "200" ]; then
+            echo "::warning::Checking the access token got HTTP $codigo instead of 200. Not failing the run over it; the link step below is the judge."
+            exit 0
+          fi
+
+          # 200 with the project absent from the list is the neighbouring
+          # mistake: a valid token on an account that cannot see this project —
+          # another organisation, or one it was removed from. Warned rather than
+          # failed, because a narrowly scoped token could answer 200 with a list
+          # this probe reads as empty, and refusing to deploy over the shape of a
+          # list is the gate this step must not become.
+          if printf '%s' "$corpo" | jq -e --arg ref "$PROJECT_REF" \
+               'type == "array" and any(.[]; type == "object" and .id == $ref)' >/dev/null 2>&1; then
+            echo "The access token is accepted, and it can see $PROJECT_REF."
+            exit 0
+          fi
+
+          echo "::warning::The access token is accepted, but project $PROJECT_REF is not among the projects it can see. If the link step below fails, the token belongs to an account that is not a member of the organisation owning this project; generate one at https://supabase.com/dashboard/account/tokens from an account that is."
 
       - uses: supabase/setup-cli@v1
         with:
@@ -268,8 +331,19 @@ jobs:
           codigo=$(printf '%s' "$resposta" | tail -n1)
           corpo=$(printf '%s' "$resposta" | sed '$d')
 
+          # Saying only "not failing over it" made this step green while having
+          # read nothing — the guard passing by not having looked, which is the
+          # failure mode it exists to prevent, wearing the face of a guard that
+          # works. It says so now. Still a warning and not an error: the token
+          # check near the top already reddens the run for the 401 case, and a
+          # dashboard setting that could not be read is not a reason to redden a
+          # run in which everything else shipped.
           if [ "$codigo" != "200" ]; then
-            echo "::warning::The auth settings check got HTTP $codigo. Not failing the run over it; check the token's scope if this repeats."
+            if [ "$codigo" = "401" ]; then
+              echo "::warning::The auth settings check got HTTP 401 — the access token was rejected, so \"Confirm email\" was NOT read on this run and this run says nothing about it. The step near the top of this workflow names the remedy; this one does not redden the run a second time over the same cause."
+            else
+              echo "::warning::The auth settings check got HTTP $codigo, so \"Confirm email\" was NOT read on this run and this run says nothing about it. Not failing over it; check the token's scope if this repeats."
+            fi
             exit 0
           fi
 
