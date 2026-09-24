@@ -3477,8 +3477,37 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDeComunicacao.test.tsx` | comando do calendário que não chega ao evento, sem meta nenhuma exercitá-lo |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
+| `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |
 
 No `supabase.yml`, a checagem dos tipos e a do `Confirm email` rodam **depois**
 dos deploys, de propósito: deixam a execução vermelha sem segurar o que já
 estava pronto para subir. As duas foram parar ali por terem feito o contrário
 uma vez.
+
+**Segredo posto não é segredo aceito.** O `supabase.yml` conferia que o
+`SUPABASE_ACCESS_TOKEN` não estava **vazio**, e essa é outra pergunta. Token
+posto e recusado morria lá embaixo, no `supabase link`, como `Unexpected error
+retrieving remote project status: {"message":"Unauthorized"}` — frase que não diz
+qual dos dois segredos, nem de que conta, nem para onde ir, e que de fora parece
+projeto apagado. Aconteceu duas vezes seguidas, e a primeira já tinha sido
+re-executada por alguém lendo aquilo como instabilidade. Tudo depois dele ficou
+**pulado**: migrations, segredos das funções, os deploys e a conferência dos
+tipos.
+
+Agora há um passo antes do CLI, e ele reprova **só no 401** — a única resposta em
+que o `link` vai falhar um segundo depois de qualquer jeito. É isso que o separa
+da conferência dos tipos, que reporta lá de baixo justamente para não virar
+portão: esta não segura nada, ela nomeia o que já ia acontecer. Em qualquer outra
+resposta ela avisa e deixa correr, porque token com escopo que a sonda não previu,
+ou instabilidade para alcançar a API, não podem deixar vermelha uma execução que
+o CLI teria terminado. Duzentos com o projeto fora da lista é o erro vizinho —
+token válido de uma conta que não enxerga este projeto — e também só avisa: um
+token estreito o bastante responderia 200 com uma lista que a sonda lê como
+vazia, e recusar deploy pelo formato de uma lista é o portão que ela não pode ser.
+
+**E "não reprovei por isso" não é "conferi".** O passo do `Confirm email`
+respondia 401 e saía **verde**, dizendo apenas que não ia reprovar: a trava
+passando por não ter olhado, que é exatamente o que ela existe para impedir, com
+a cara de uma trava funcionando. Ela continua não reprovando — o 401 já deixa a
+execução vermelha lá em cima —, mas agora escreve que **não leu**, e a execução
+deixa de afirmar nada sobre o painel.
