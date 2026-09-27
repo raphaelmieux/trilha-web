@@ -25,8 +25,8 @@
 
 import {
   type Campo, type Formulario,
-  CAMPO_DIARIAS, CAMPO_UNIDADE, ROTULO_DO_INSTANTE, UNIDADES,
-  cabecalhoDe, campoPorId, camposComValidacao, camposObrigatorios,
+  CAMPO_DIARIAS, CAMPO_EMAIL, CAMPO_UNIDADE, ROTULO_DO_INSTANTE, UNIDADES,
+  cabecalhoDe, campoPorId, camposComValidacao, camposObrigatorios, comCampo,
   formularioDeInscricao, linhasDe, paraComparar, respostasReais, temOpcoes, tiposUsados,
 } from './formulario';
 import {
@@ -86,6 +86,10 @@ export interface ContextoDeDados {
    * terceira roupa — e é isso que o requisito 5.4 manda abrir no editor.
    */
   csv: string | null;
+  /** As perguntas que a pessoa marcou como dado pessoal, no módulo 8. */
+  pessoaisMarcados: string[];
+  /** Os cuidados que ela escolheu. */
+  cuidadosEscolhidos: string[];
 }
 
 const viu = (c: ContextoDeDados, o: string) => c.descobertas.includes(o);
@@ -702,12 +706,158 @@ function agendaNaOrdemDeEntrada(c: ContextoDeDados): boolean {
   return agora.join('\u0000') === esperada.join('\u0000');
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+   Módulo 8 — Dado pessoal e a entrega (requisitos 7 e 8)
+   ──────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Este módulo é **tela da plataforma**, e não um programa imitado.
+ *
+ * Classificar e escolher não são gestos que o Google Forms ou o Excel tenham:
+ * marcar "isto é dado pessoal" ao lado de uma pergunta é recurso que nenhum dos
+ * dois oferece, e inventá-lo dentro da janela seria pôr coisa nossa dentro do
+ * programa imitado — o contrário do que a moldura existe para fazer. O CLAUDE.md
+ * já nomeia a saída: laboratório que não imita nada continua sendo tela da
+ * plataforma, e ordenar, classificar e escrever são exatamente esses.
+ */
+
+export interface Cuidado {
+  id: string;
+  texto: string;
+  certo: boolean;
+  /** Por que a errada é errada. Só as erradas o têm, como nas alternativas das provas. */
+  porque?: string;
+}
+
+/**
+ * Os cuidados da guarda e do descarte, e as três que parecem cuidado e não são.
+ *
+ * As erradas não são bobagens: são as três coisas que alguém responderia de
+ * primeira porque **soam** prudentes. Trocar a senha todo mês é higiene de conta
+ * e não diz nada sobre onde este dado está; pôr senha no arquivo é a crença que
+ * o requisito 7 da CC-ES004 existe para desfazer — quem sabe a senha salva sem
+ * ela, e o arquivo circula aberto; e guardar tudo para sempre é o contrário de
+ * descarte, vestido de precaução.
+ */
+export const CUIDADOS: Cuidado[] = [
+  {
+    id: 'so-quem-precisa',
+    texto: 'Só quem precisa dos dados tem acesso à planilha — e lembrar que a pasta compartilhada abre o que está dentro dela.',
+    certo: true,
+  },
+  {
+    id: 'tira-a-copia',
+    texto: 'Quando o trabalho acaba, o arquivo exportado sai da pasta de downloads, e da lixeira também.',
+    certo: true,
+  },
+  {
+    id: 'prazo-para-a-base',
+    texto: 'A base tem prazo: acabado o acampamento, o que não serve mais se apaga.',
+    certo: true,
+  },
+  {
+    id: 'senha-todo-mes',
+    texto: 'Trocar a senha da conta do clube todo mês.',
+    certo: false,
+    porque: 'É higiene da conta, e não cuidado com este dado: ele continua onde está, com quem já tem acesso.',
+  },
+  {
+    id: 'senha-no-arquivo',
+    texto: 'Pôr uma senha no arquivo da planilha.',
+    certo: false,
+    porque: 'Quem sabe a senha salva sem ela, e a partir daí o arquivo circula aberto. É o "não permitir copiar" da CC-ES004: pedido, e não trava.',
+  },
+  {
+    id: 'guardar-para-sempre',
+    texto: 'Guardar uma cópia de tudo para sempre, por segurança.',
+    certo: false,
+    porque: 'O requisito pede cuidado no descarte. Guardar para sempre é o contrário disso, e cada cópia é mais um lugar de onde o dado pode sair.',
+  },
+];
+
+export const CUIDADOS_CERTOS = CUIDADOS.filter(x => x.certo).map(x => x.id);
+
+export const METAS_DA_ENTREGA: Meta[] = [
+  {
+    id: 'classificou-os-pessoais',
+    titulo: 'Marcou quais das perguntas coletam dado pessoal',
+    detalhe: 'Dado pessoal é o que aponta para uma pessoa: o nome dela, como falar com ela, o que ela come. A unidade não aponta para ninguém.',
+    onde: 'Na lista de perguntas, marcando uma por uma.',
+    passos: [
+      'Leia cada pergunta e pense: isto aponta para uma pessoa?',
+      'Marque as que apontam.',
+      'Marcar todas não vale: aí você não classificou, só marcou.',
+    ],
+    feita: (c) => {
+      const esperados = c.formulario.campos.filter(x => x.pessoal).map(x => x.id).sort();
+      const marcados = [...c.pessoaisMarcados].sort();
+      /*
+        Conjunto **igual**, e não conjunto que contém: exigir só que os
+        verdadeiros estejam marcados deixaria "marque todas" passar com louvor,
+        que é a decisão dos indícios da CC-ES005.
+      */
+      return esperados.join('\u0000') === marcados.join('\u0000') && aEntregaEstaDePe(c);
+    },
+  },
+  {
+    id: 'tres-cuidados',
+    titulo: 'Escolheu três cuidados com a guarda e o descarte',
+    detalhe: 'Três, e não quatro: escolher tudo não é escolher. E as três têm de ser cuidado com este dado, e não com a conta.',
+    onde: 'Na lista de cuidados, abaixo das perguntas.',
+    passos: [
+      'Leia os seis e escolha três.',
+      'Pergunte de cada um: isto muda onde este dado está, ou quem o alcança?',
+    ],
+    feita: (c) => {
+      const escolhidos = [...c.cuidadosEscolhidos].sort();
+      return escolhidos.join('\u0000') === [...CUIDADOS_CERTOS].sort().join('\u0000')
+        && aEntregaEstaDePe(c);
+    },
+  },
+  {
+    id: 'descartou-a-copia',
+    titulo: 'A cópia exportada saiu da pasta de downloads',
+    detalhe: 'O CSV que você exportou é a base inteira em texto puro, sem senha e sem dono. Enquanto ele está lá, o descarte não aconteceu.',
+    onde: 'Na pasta de downloads, no arquivo exportado.',
+    passos: [
+      'Ache o arquivo que você exportou.',
+      'Apague, e apague da lixeira também.',
+    ],
+    feita: c => c.csv === null && aEntregaEstaDePe(c),
+  },
+];
+
+/**
+ * Os três artefatos do requisito 8 continuam de pé.
+ *
+ * Condição conjugada das três metas, e não item da lista: os três já estão
+ * prontos quando o módulo 8 abre — foram os sete módulos anteriores que os
+ * fizeram —, então como item ela abriria verde e ensinaria a não ler a lista.
+ *
+ * É a decisão do módulo 6 da CC-ES002, pelo motivo escrito lá: o que o requisito
+ * 8 pede é a **entrega**, e garantir que as peças estão no lugar é trabalho da
+ * trava do repositório, não de uma tarefa. O que ela impede aqui é o caminho
+ * rápido do descarte: apagar a planilha junto com a cópia. O dado tem prazo, e o
+ * prazo não é hoje — o relatório ainda vai ser entregue ao examinador.
+ */
+function aEntregaEstaDePe(c: ContextoDeDados): boolean {
+  const formularioPronto = tiposUsados(c.formulario).length >= 3
+    && camposObrigatorios(c.formulario).length >= 1
+    && camposComValidacao(c.formulario).length >= 1
+    && respostasReais(c.formulario).length >= 15;
+  const base = registrosNaAba(aba(c, ABA_RESPOSTAS), cabecalhoDe(c.formulario).length);
+  const temResumo = !!aba(c, ABA_RELATORIO).resumo;
+  const temAgendaOrdenada = registrosNaAba(aba(c, ABA_AGENDA_ORDENADA), CABECALHO_DA_AGENDA.length)
+    .length >= AGENDA_DO_CLUBE().length;
+  return formularioPronto && base.length >= 15 && temResumo && temAgendaOrdenada;
+}
+
 /* ── O registro das lições ───────────────────────────────────────────────── */
 
-export type ProgramaDaCcEs008 = 'formulario' | 'planilha' | 'texto';
+export type ProgramaDaCcEs008 = 'formulario' | 'planilha' | 'texto' | 'plataforma';
 
 export type LicaoDaCcEs008 =
-  | 'campos' | 'validacao' | 'base' | 'resumo' | 'conserto' | 'csv' | 'agenda';
+  | 'campos' | 'validacao' | 'base' | 'resumo' | 'conserto' | 'csv' | 'agenda' | 'entrega';
 
 export interface LicaoDeDados {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -725,6 +875,8 @@ function doZero(formulario: Formulario): ContextoDeDados {
     cadernoAntes: { planilhas: [planilhaDe(ABA_RESPOSTAS, []), planilhaDe(ABA_RELATORIO, [])], ativa: 0 },
     descobertas: [],
     csv: null,
+    pessoaisMarcados: [],
+    cuidadosEscolhidos: [],
   };
 }
 
@@ -805,6 +957,27 @@ export const LICOES_DA_CC_ES008: Record<LicaoDaCcEs008, LicaoDeDados> = {
       return { ...c, caderno: comAgenda, cadernoAntes: comAgenda };
     },
     metas: METAS_DA_AGENDA_DO_CLUBE,
+  },
+  /*
+    O módulo 8 parte do fim do módulo 7, com a cópia exportada ainda na pasta de
+    downloads: os três artefatos estão prontos, e é por isso que a entrega é
+    condição conjugada e não item da lista.
+  */
+  entrega: {
+    programa: 'plataforma',
+    inicial: () => {
+      const c = LICOES_DA_CC_ES008.agenda.inicial();
+      const comRelatorio: Caderno = comAba(c.caderno,
+        planilhaDe(ABA_AGENDA_ORDENADA, [
+          [...CABECALHO_DA_AGENDA],
+          ...[...AGENDA_DO_CLUBE()].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR')),
+        ]));
+      const comValidacao = comCampo(c.formulario, CAMPO_EMAIL,
+        x => ({ ...x, obrigatorio: true, validacao: { tipo: 'email' } }));
+      const pronto = { ...c, formulario: comValidacao, caderno: comRelatorio, cadernoAntes: comRelatorio };
+      return { ...pronto, csv: csvDaBase(pronto) };
+    },
+    metas: METAS_DA_ENTREGA,
   },
 };
 

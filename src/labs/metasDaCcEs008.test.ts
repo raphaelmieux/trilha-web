@@ -14,6 +14,7 @@ import {
   ABA_AGENDA, ABA_AGENDA_ORDENADA, ABA_RELATORIO, ABA_RESPOSTAS, ABRIU_O_CSV,
   AGENDA_DO_CLUBE, CABECALHO_DA_AGENDA,
   LICOES_DA_CC_ES008, VIU_AS_ASPAS, VIU_A_RECUSA, VIU_GRUPOS_DEMAIS, VIU_O_GRUPO_VAZIO,
+  CUIDADOS, CUIDADOS_CERTOS,
   baseConsertada, contextoDa, csvDaBase,
 } from './metasDaCcEs008';
 
@@ -133,6 +134,16 @@ function resolveAgenda(c: ContextoDeDados): ContextoDeDados {
   };
 }
 
+/** Módulo 8: classifica, escolhe os três cuidados, e descarta a cópia. */
+function resolveEntrega(c: ContextoDeDados): ContextoDeDados {
+  return {
+    ...c,
+    pessoaisMarcados: c.formulario.campos.filter(x => x.pessoal).map(x => x.id),
+    cuidadosEscolhidos: [...CUIDADOS_CERTOS],
+    csv: null,
+  };
+}
+
 const RESOLVE: Record<LicaoDaCcEs008, (c: ContextoDeDados) => ContextoDeDados> = {
   campos: resolveCampos,
   validacao: resolveValidacao,
@@ -141,6 +152,7 @@ const RESOLVE: Record<LicaoDaCcEs008, (c: ContextoDeDados) => ContextoDeDados> =
   conserto: resolveConserto,
   csv: resolveCsv,
   agenda: resolveAgenda,
+  entrega: resolveEntrega,
 };
 
 /* ── As três contas ──────────────────────────────────────────────────────── */
@@ -473,6 +485,69 @@ describe('o resumo do módulo 4 relata o que a lição manda ver', () => {
     const rotulos = abaDe(c.caderno, ABA_RELATORIO).resumo!.retrato.map(l => l.rotulo);
     expect(rotulos.length).toBeGreaterThan(UNIDADES.length);
     expect(rotulos).toContain('(vazio)');
+  });
+});
+
+describe('o módulo 8 compara conjunto igual, e não conjunto que contém', () => {
+  it('marcar todas as perguntas como pessoais não passa', () => {
+    // Exigir só que as verdadeiras estejam marcadas deixaria "marque todas"
+    // passar com louvor, e aí a pessoa não classificou: só marcou. É a decisão
+    // dos indícios da CC-ES005.
+    const c = resolveEntrega(contextoDa('entrega'));
+    const todas = { ...c, pessoaisMarcados: c.formulario.campos.map(x => x.id) };
+    expect(vermelhas(todas, 'entrega')).toEqual(['classificou-os-pessoais']);
+  });
+
+  it('e escolher os seis cuidados também não', () => {
+    const c = resolveEntrega(contextoDa('entrega'));
+    const todos = { ...c, cuidadosEscolhidos: CUIDADOS.map(x => x.id) };
+    expect(vermelhas(todos, 'entrega')).toEqual(['tres-cuidados']);
+  });
+
+  it('nem três, sendo um deles o que soa prudente e não é', () => {
+    const c = resolveEntrega(contextoDa('entrega'));
+    const errado = CUIDADOS.find(x => !x.certo)!;
+    const quase = {
+      ...c,
+      cuidadosEscolhidos: [...CUIDADOS_CERTOS.slice(0, 2), errado.id],
+    };
+    expect(quase.cuidadosEscolhidos.length).toBe(3);
+    expect(vermelhas(quase, 'entrega')).toEqual(['tres-cuidados']);
+  });
+});
+
+describe('os cuidados errados dizem por que são errados', () => {
+  it('e os certos não carregam porquê', () => {
+    // É a regra do `porque` das alternativas das provas, aplicada a uma escolha
+    // de laboratório: quem erra recebe o motivo, e quem acerta não recebe o
+    // gabarito de graça.
+    for (const x of CUIDADOS) {
+      if (x.certo) expect(x.porque).toBeUndefined();
+      else expect((x.porque ?? '').length).toBeGreaterThan(30);
+    }
+  });
+
+  it('e há errados o bastante para escolher três não ser sorte', () => {
+    const errados = CUIDADOS.filter(x => !x.certo);
+    expect(CUIDADOS_CERTOS.length).toBe(3);
+    expect(errados.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe('descartar a cópia não é apagar a entrega', () => {
+  it('apagar a planilha junto deixa as três metas vermelhas', () => {
+    /*
+      O caminho rápido do descarte: apagar tudo. O dado tem prazo, e o prazo não
+      é hoje — o relatório ainda vai ser entregue ao examinador. Sem a condição
+      conjugada, as três metas ficariam verdes numa pasta vazia.
+    */
+    const c = resolveEntrega(contextoDa('entrega'));
+    const apagou = {
+      ...c,
+      caderno: comAba(comAba(c.caderno, planilhaDe(ABA_RESPOSTAS, [])),
+        planilhaDe(ABA_AGENDA_ORDENADA, [])),
+    };
+    expect(feitas(apagou, 'entrega')).toEqual([]);
   });
 });
 
