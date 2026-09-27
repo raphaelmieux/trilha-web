@@ -95,6 +95,8 @@ export interface Planilha {
   ordenacao: { coluna: number; crescente: boolean } | null;
   regras: RegraCondicional[];
   grafico: Grafico | null;
+  /** O resumo do requisito 5.3 da CC-ES008. Guarda o que leu: ver `resumoEmDia`. */
+  resumo: TabelaDinamica | null;
 }
 
 /**
@@ -126,6 +128,119 @@ export interface Grafico {
   eixoY: string;
   /** De onde saem os dados: primeira coluna é o rótulo, segunda é o valor. */
   faixa: Faixa;
+}
+
+/* ── Tabela dinâmica ─────────────────────────────────────────────────────── */
+
+export type ComoResumir = 'contagem' | 'soma' | 'media';
+
+export const NOME_DO_RESUMO: Record<ComoResumir, string> = {
+  contagem: 'Contagem',
+  soma: 'Soma',
+  media: 'Média',
+};
+
+export interface LinhaDoResumo {
+  rotulo: string;
+  /**
+   * `null` é "não há número para resumir", e só a média o produz.
+   *
+   * A soma de nada é zero, que é o que a `SOMA` devolve e o que a lição do
+   * requisito 5.2 existe para ensinar a desconfiar. A média de nada não é zero:
+   * escrever zero ali afirmaria que a média é zero, que é o número plausível e
+   * errado — a mesma decisão da contabilidade do clube, onde contagem que
+   * falhou não pode parecer contagem zero.
+   */
+  valor: number | null;
+}
+
+/** O que a célula em branco vira no resumo, que é o que o Excel escreve. */
+export const ROTULO_VAZIO = '(vazio)';
+
+/**
+ * O resumo do requisito 5.3 da CC-ES008.
+ *
+ * **Ela guarda o que leu, e é essa a metade da lição que ninguém conta.** No
+ * Excel a tabela dinâmica não se refaz sozinha: consertar a origem deixa o
+ * resumo mostrando os números velhos, e nada na tela avisa. É o mesmo defeito
+ * do sumário do Word e do PDF que congela, e aqui ele é o par do requisito 5.2
+ * — arruma-se a grafia das unidades e o resumo continua relatando dez grupos,
+ * com o total de respostas certo. Quem o alcança é o botão Atualizar, que é o
+ * que o programa de verdade oferece.
+ *
+ * Por isso ela mora no modelo e é desenhada por cima das células, e não escrita
+ * dentro delas: gravar nas células deixaria `retrato` sendo uma segunda fonte
+ * para a mesma coisa, e as duas divergiriam no primeiro ajuste. É a decisão da
+ * formatação condicional e do filtro, que também saem do modelo para que a
+ * mesma grade desenhe as duas telas.
+ */
+export interface TabelaDinamica {
+  /** O canto de cima à esquerda de onde ela se desenha. */
+  em: { l: number; c: number };
+  /** A planilha de onde ela lê, e a faixa com o cabeçalho na primeira linha. */
+  origem: { planilha: string; faixa: Faixa };
+  /** A coluna que vira linha do resumo, contada da esquerda da faixa. */
+  linha: number;
+  /** O que se resume, e como. `contagem` conta linhas e ignora a coluna. */
+  valor: { coluna: number; como: ComoResumir };
+  /** O que ela leu quando foi gerada ou atualizada. */
+  retrato: LinhaDoResumo[];
+}
+
+/**
+ * O que o resumo leria **agora** na planilha de origem.
+ *
+ * Agrupa pelo valor **escrito**, e não por uma forma comparável: é justamente
+ * isso que faz as quatro grafias do Falcão virarem quatro linhas, que é o que a
+ * lição manda ver. Normalizar aqui consertaria o defeito por baixo e deixaria o
+ * requisito 5.2 sem nada para consertar.
+ *
+ * E a soma conta só o que é número de verdade, como a SOMA faz: o 1,5 digitado
+ * com vírgula é texto, e o total sai plausível e menor. É o comportamento do
+ * requisito 7 da CC-ES003, e não uma segunda regra escrita aqui.
+ */
+export function resumir(origem: Planilha, t: TabelaDinamica): LinhaDoResumo[] {
+  const f = normalizar(t.origem.faixa);
+  const grupos = new Map<string, number[]>();
+  // A primeira linha da faixa é o cabeçalho, como em toda tabela declarada.
+  for (let l = f.topo + 1; l <= f.base; l++) {
+    const cru = origem.celulas[l]?.[f.esq + t.linha]?.texto ?? '';
+    const rotulo = cru.trim() ? cru : ROTULO_VAZIO;
+    const v = valorCalculado(origem, l, f.esq + t.valor.coluna);
+    const numeros = grupos.get(rotulo) ?? [];
+    numeros.push(v.tipo === 'numero' ? v.n : NaN);
+    grupos.set(rotulo, numeros);
+  }
+
+  return [...grupos].map(([rotulo, numeros]) => {
+    if (t.valor.como === 'contagem') return { rotulo, valor: numeros.length };
+    const validos = numeros.filter(n => !Number.isNaN(n));
+    const soma = validos.reduce((a, b) => a + b, 0);
+    if (t.valor.como === 'soma') return { rotulo, valor: soma };
+    return { rotulo, valor: validos.length ? soma / validos.length : null };
+  });
+}
+
+/**
+ * Se o retrato guardado ainda é o que a origem diz.
+ *
+ * Compara rótulo **e** valor, na ordem: um resumo cujos grupos foram unidos
+ * pelo conserto tem menos linhas, e um cuja coluna de número foi corrigida tem
+ * as mesmas linhas com outros totais. Conferir só a quantidade deixaria o
+ * segundo caso passar por em dia, com os números velhos na tela.
+ */
+export function resumoEmDia(cad: Caderno, t: TabelaDinamica): boolean {
+  const origem = planilhaPorNome(cad, t.origem.planilha);
+  if (!origem) return false;
+  const agora = resumir(origem, t);
+  if (agora.length !== t.retrato.length) return false;
+  return agora.every((l, i) => l.rotulo === t.retrato[i].rotulo && l.valor === t.retrato[i].valor);
+}
+
+/** Relê a origem e grava o retrato novo — é o botão Atualizar. */
+export function atualizarResumo(cad: Caderno, t: TabelaDinamica): TabelaDinamica {
+  const origem = planilhaPorNome(cad, t.origem.planilha);
+  return origem ? { ...t, retrato: resumir(origem, t) } : t;
 }
 
 /**

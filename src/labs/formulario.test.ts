@@ -6,7 +6,7 @@ import {
   RESPOSTAS_COLETADAS, SEPARADOR_DE_ESCOLHAS, UNIDADES,
   cabecalhoDe, campoPorId, camposComBranco, camposComGrafiaDividida, comResposta,
   camposComValidacao, camposObrigatorios, comCampo, enviar, formularioDeInscricao,
-  grafiasDe, inconsistencias, linhasDe, numerosComVirgula, paraComparar, recusas,
+  grafiasDe, inconsistencias, linhasDe, numerosComPonto, paraComparar, recusas,
   preenchido, respostasCompletas, respostasReais, tiposUsados, validacaoVale, valorDa,
 } from './formulario';
 
@@ -50,10 +50,10 @@ describe('a caixa de onde as lições partem', () => {
     expect(camposComBranco(f)).toEqual([]);
     expect(camposComBranco(comObrigatorio(f, CAMPO_EMAIL)).map(c => c.id)).toEqual([CAMPO_EMAIL]);
 
-    // A que não aparece em lugar nenhum: o número com vírgula.
-    const virgulas = numerosComVirgula(comCampo(f, CAMPO_DIARIAS, c => ({ ...c, tipo: 'numero' })));
+    // A que não aparece em lugar nenhum: o número com ponto decimal.
+    const virgulas = numerosComPonto(comCampo(f, CAMPO_DIARIAS, c => ({ ...c, tipo: 'numero' })));
     expect(virgulas.length).toBe(2);
-    expect(virgulas.map(v => valorDa(v.resposta, CAMPO_DIARIAS)).sort()).toEqual(['1,5', '2,5']);
+    expect(virgulas.map(v => valorDa(v.resposta, CAMPO_DIARIAS)).sort()).toEqual(['1.5', '2.5']);
     // E ela olha só campo de número. Uma observação escrita com vírgula é
     // português, e não defeito: sem este caso, tirar a restrição de tipo não
     // derrubaria teste nenhum — a trava passaria por sorte.
@@ -230,10 +230,12 @@ describe('a recusa', () => {
       c => ({ ...c, tipo: 'numero', validacao: { tipo: 'numero-entre', min: 1, max: 3 } }));
     expect(recusas(f, { [CAMPO_DIARIAS]: '4' }).length).toBe(1);
     expect(recusas(f, { [CAMPO_DIARIAS]: '2' })).toEqual([]);
-    // "1,5" é um número escrito em português, e a regra não é o lugar de
-    // reclamar dele: quem paga pela vírgula é a soma da planilha, que é a
-    // lição. Recusar aqui apagaria a inconsistência antes de ela existir.
+    // O formulário aceita as duas formas, porque o que ele coleta é texto e as
+    // duas são um e meio para quem escreve. Quem não aceita as duas é a
+    // planilha, e é lá que a lição acontece: recusar aqui apagaria a
+    // inconsistência antes de ela existir.
     expect(recusas(f, { [CAMPO_DIARIAS]: '1,5' })).toEqual([]);
+    expect(recusas(f, { [CAMPO_DIARIAS]: '1.5' })).toEqual([]);
   });
 
   it('campo em branco não é recusado pela validação, só pelo obrigatório', () => {
@@ -346,7 +348,7 @@ describe('a conta das inconsistências', () => {
     };
     expect(inconsistencias(f)).toBe(antes - 2);
 
-    // Preenche os dois e-mails que faltavam e troca a vírgula pelo ponto.
+    // Preenche os dois e-mails que faltavam e troca o ponto pela vírgula.
     f = {
       ...f,
       respostas: f.respostas.map(r => ({
@@ -354,7 +356,7 @@ describe('a conta das inconsistências', () => {
         valores: {
           ...r.valores,
           [CAMPO_EMAIL]: valorDa(r, CAMPO_EMAIL) || (valorDa(r, CAMPO_NOME) ? 'contato@exemplo.com' : ''),
-          [CAMPO_DIARIAS]: valorDa(r, CAMPO_DIARIAS).replace(',', '.'),
+          [CAMPO_DIARIAS]: valorDa(r, CAMPO_DIARIAS).replace('.', ','),
         },
       })),
     };

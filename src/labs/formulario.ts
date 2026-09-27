@@ -29,9 +29,10 @@
  *     quatro unidades onde há uma — com o total certo;
  *   - **o campo em branco** aparece na coluna, se alguém olhar, e no resumo
  *     como um grupo vazio, que é o que o Excel escreve;
- *   - **o número com vírgula** não aparece em lugar nenhum. Ele é texto, a
- *     soma o pula, e o total sai plausível e menor. É o "número armazenado
- *     como texto" da CC-ES003 chegando por outra porta.
+ *   - **o número com ponto decimal** não aparece em lugar nenhum. Em máquina
+ *     pt-BR o separador é a vírgula, então `1.5` é texto: a soma o pula, e o
+ *     total sai plausível e menor. É o "número armazenado como texto" da
+ *     CC-ES003 chegando por outra porta.
  *
  * ── O clube é o mesmo clube ──────────────────────────────────────────────
  * As unidades vêm de `cadernoDoClube`, que é a vereda exigida no requisito 1.
@@ -348,20 +349,31 @@ export const camposComBranco = (f: Formulario): Campo[] =>
   camposObrigatorios(f).filter(c => respostasReais(f).some(r => !preenchido(r, c.id)));
 
 /**
- * As respostas em que um campo de número chegou com vírgula.
+ * As respostas em que um campo de número chegou com **ponto** decimal.
  *
  * Esta é a que não tem pista nenhuma na tela do formulário: a resposta está
- * escrita, é plausível, e é texto. Na planilha ela encosta à esquerda e a
- * `SOMA` a pula — o total sai menor e continua com cara de total. É o mesmo
- * defeito que a CC-ES003 ensina a achar pelo alinhamento e pela `CONT.NÚM`,
- * agora entrando pelo formulário em vez de ser digitado na célula.
+ * escrita, é plausível, e o formulário aceita as duas formas porque o que ele
+ * coleta é texto. Quem não aceita as duas é a planilha: em máquina pt-BR o
+ * separador decimal é a **vírgula**, então `1,5` é número e `1.5` é texto —
+ * encosta à esquerda, a `SOMA` o pula, e o total sai menor e continua com cara
+ * de total.
+ *
+ * Escrevi este defeito ao contrário na primeira versão, com a vírgula sendo a
+ * errada, e quem desmentiu foi o próprio motor: `numeroDoTexto` é pt-BR e lê
+ * `1,5` como um e meio. Um cenário que ensinasse o contrário do que o programa
+ * faz é pior do que cenário nenhum — é a regra do `exemploSaida` conferido
+ * rodando, aplicada a um dado de partida.
+ *
+ * É o mesmo defeito que a CC-ES003 ensina a achar pelo alinhamento e pela
+ * `CONT.NÚM`, agora entrando pelo formulário de quem digita como aprendeu em
+ * vez de ser digitado na célula com apóstrofo.
  */
-export function numerosComVirgula(f: Formulario): { campo: Campo; resposta: Resposta }[] {
+export function numerosComPonto(f: Formulario): { campo: Campo; resposta: Resposta }[] {
   const fora: { campo: Campo; resposta: Resposta }[] = [];
   for (const campo of f.campos.filter(c => c.tipo === 'numero')) {
     for (const r of respostasReais(f)) {
       const v = valorDa(r, campo.id);
-      if (v.trim() && v.includes(',')) fora.push({ campo, resposta: r });
+      if (v.trim() && v.includes('.')) fora.push({ campo, resposta: r });
     }
   }
   return fora;
@@ -371,7 +383,7 @@ export function numerosComVirgula(f: Formulario): { campo: Campo; resposta: Resp
 export const inconsistencias = (f: Formulario): number =>
   camposComGrafiaDividida(f).reduce((s, x) => s + x.grafias.length, 0)
   + camposComBranco(f).length
-  + numerosComVirgula(f).length;
+  + numerosComPonto(f).length;
 
 /* ── Da base para a planilha ─────────────────────────────────────────────── */
 
@@ -440,7 +452,8 @@ export function formularioDeInscricao(): Formulario {
  *
  *   - o Falcão escrito de quatro jeitos, e a Águia de dois;
  *   - dois responsáveis sem e-mail, num campo que vai virar obrigatório;
- *   - duas diárias escritas com vírgula, que é o número que vira texto.
+ *   - duas diárias escritas com ponto decimal, que numa planilha pt-BR é o
+ *     número que vira texto.
  */
 export const RESPOSTAS_COLETADAS: Resposta[] = [
   resposta('r01', '2026-06-08T19:12', 'Ana Beatriz Lima', 'Falcão', 'marcia.lima@exemplo.com', '3', 'Vegetariana'),
@@ -448,13 +461,13 @@ export const RESPOSTAS_COLETADAS: Resposta[] = [
   resposta('r03', '2026-06-08T20:05', 'Carla Menezes', 'Águia', 'menezes.familia@exemplo.com', '2', 'Chega no sábado'),
   resposta('r04', '2026-06-09T08:22', 'Daniel Rocha', 'FALCÃO', 'rocha.daniel@exemplo.com', '3', ''),
   resposta('r05', '2026-06-09T09:01', 'Eduarda Pires', 'Tucano', '', '3', ''),
-  resposta('r06', '2026-06-09T12:47', 'Felipe Andrade', 'Arara', 'andrade@exemplo.com', '1,5', 'Sai no domingo de manhã'),
+  resposta('r06', '2026-06-09T12:47', 'Felipe Andrade', 'Arara', 'andrade@exemplo.com', '1.5', 'Sai no domingo de manhã'),
   resposta('r07', '2026-06-09T18:33', 'Gabriela Souza', 'aguia', 'souza.g@exemplo.com', '3', ''),
   resposta('r08', '2026-06-10T07:15', 'Henrique Dias', 'Jaguar', 'dias.henrique@exemplo.com', '3', 'Toma remédio às 8h, com suco'),
   resposta('r09', '2026-06-10T10:58', 'Isabela Moreira', 'Onça', 'moreira.i@exemplo.com', '2', ''),
   resposta('r10', '2026-06-10T14:20', 'João Pedro Alves', 'Falcao ', 'alves.jp@exemplo.com', '3', ''),
   resposta('r11', '2026-06-10T21:06', 'Larissa Campos', 'Tucano', '', '3', 'Alergia a amendoim'),
-  resposta('r12', '2026-06-11T06:44', 'Matheus Ferraz', 'Arara', 'ferraz.m@exemplo.com', '2,5', ''),
+  resposta('r12', '2026-06-11T06:44', 'Matheus Ferraz', 'Arara', 'ferraz.m@exemplo.com', '2.5', ''),
   resposta('r13', '2026-06-11T11:30', 'Natália Brito', 'Jaguar', 'brito.natalia@exemplo.com', '3', ''),
   resposta('r14', '2026-06-11T16:52', 'Otávio Lins', 'Onça', 'lins.otavio@exemplo.com', '3', 'Leva violão'),
   resposta('r15', '2026-06-11T19:18', 'Paula Nogueira', 'Águia', 'nogueira.p@exemplo.com', '1', ''),

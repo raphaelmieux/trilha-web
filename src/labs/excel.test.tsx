@@ -35,6 +35,7 @@ const planilhaDeTeste = (conteudo: string[][], extras: Partial<Planilha> = {}): 
   ordenacao: null,
   regras: [],
   grafico: null,
+  resumo: null,
   ...extras,
 });
 
