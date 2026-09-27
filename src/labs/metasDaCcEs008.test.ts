@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   type Caderno, type TabelaDinamica,
-  resumir,
+  atualizarResumo, resumir,
 } from './planilha';
 import { abaDe, comAba, escritoEm, planilhaDe } from './cadernoDoClube';
 import {
@@ -11,9 +11,10 @@ import {
 } from './formulario';
 import {
   type ContextoDeDados, type LicaoDaCcEs008,
-  ABA_RELATORIO, ABA_RESPOSTAS, LICOES_DA_CC_ES008,
-  VIU_A_RECUSA, VIU_GRUPOS_DEMAIS, VIU_O_GRUPO_VAZIO,
-  contextoDa,
+  ABA_AGENDA, ABA_AGENDA_ORDENADA, ABA_RELATORIO, ABA_RESPOSTAS, ABRIU_O_CSV,
+  AGENDA_DO_CLUBE, CABECALHO_DA_AGENDA,
+  LICOES_DA_CC_ES008, VIU_AS_ASPAS, VIU_A_RECUSA, VIU_GRUPOS_DEMAIS, VIU_O_GRUPO_VAZIO,
+  baseConsertada, contextoDa, csvDaBase,
 } from './metasDaCcEs008';
 
 /*
@@ -102,11 +103,44 @@ function resolveResumo(c: ContextoDeDados): ContextoDeDados {
   };
 }
 
+/** Módulo 5: uma grafia por unidade, ninguém em branco, vírgula, e Atualizar. */
+function resolveConserto(c: ContextoDeDados): ContextoDeDados {
+  return { ...c, caderno: baseConsertada(c) };
+}
+
+/** Módulo 6: escreve um ponto e vírgula numa observação, exporta, e lê o arquivo. */
+function resolveCsv(c: ContextoDeDados): ContextoDeDados {
+  const base = abaDe(c.caderno, ABA_RESPOSTAS);
+  const comPontoEVirgula = planilhaDe(ABA_RESPOSTAS,
+    base.celulas.map((linha, l) => linha.map((cel, col) =>
+      (l === 1 && col === 5 ? 'Vegetariana; sem lactose' : cel.texto))),
+    { tabela: base.tabela });
+  const comTexto = { ...c, caderno: comAba(c.caderno, comPontoEVirgula) };
+  return {
+    ...comTexto,
+    csv: csvDaBase(comTexto),
+    descobertas: [...c.descobertas, ABRIU_O_CSV, VIU_AS_ASPAS],
+  };
+}
+
+/** Módulo 7: o relatório ordenado por nome, com a agenda intocada. */
+function resolveAgenda(c: ContextoDeDados): ContextoDeDados {
+  const ordenadas = [...AGENDA_DO_CLUBE()].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'));
+  return {
+    ...c,
+    caderno: comAba(c.caderno,
+      planilhaDe(ABA_AGENDA_ORDENADA, [[...CABECALHO_DA_AGENDA], ...ordenadas])),
+  };
+}
+
 const RESOLVE: Record<LicaoDaCcEs008, (c: ContextoDeDados) => ContextoDeDados> = {
   campos: resolveCampos,
   validacao: resolveValidacao,
   base: resolveBase,
   resumo: resolveResumo,
+  conserto: resolveConserto,
+  csv: resolveCsv,
+  agenda: resolveAgenda,
 };
 
 /* ── As três contas ──────────────────────────────────────────────────────── */
@@ -264,6 +298,169 @@ describe('consertar a grafia antes de olhar o resumo apaga o que ele mostra', ()
     };
     const rapido = { ...pronto, caderno: comAba(pronto.caderno, trocado) };
     expect(vermelhas(rapido, 'resumo')).toEqual(['criou-o-resumo']);
+  });
+});
+
+describe('consertar pela metade não fecha o módulo 5', () => {
+  it('consertar sem atualizar deixa o resumo relatando o erro', () => {
+    const c = contextoDa('conserto');
+    const relatorio = abaDe(c.caderno, ABA_RELATORIO);
+    const semAtualizar = resolveConserto(c);
+    const voltaOResumoVelho = {
+      ...semAtualizar,
+      caderno: comAba(semAtualizar.caderno,
+        { ...abaDe(semAtualizar.caderno, ABA_RELATORIO), resumo: relatorio.resumo }),
+    };
+    expect(vermelhas(voltaOResumoVelho, 'conserto'))
+      .toEqual(['resumo-com-uma-linha-por-unidade']);
+  });
+
+  it('e atualizar sem consertar continua dando dez unidades', () => {
+    const c = contextoDa('conserto');
+    const relatorio = abaDe(c.caderno, ABA_RELATORIO);
+    const soAtualizado = {
+      ...c,
+      caderno: comAba(c.caderno, {
+        ...relatorio,
+        resumo: atualizarResumo(c.caderno, relatorio.resumo!),
+      }),
+    };
+    const falta = vermelhas(soAtualizado, 'conserto');
+    expect(falta).toContain('resumo-com-uma-linha-por-unidade');
+    expect(falta).toContain('uma-grafia-por-unidade');
+  });
+
+  it('e unir a grafia escrevendo sem acento deixa seis linhas erradas', () => {
+    /*
+      O caso que a conta dos rótulos existe para pegar, e sem ele ela passava por
+      só contar quantas linhas há: junta-se o Falcão num só, junta-se a Águia num
+      só **escrevendo "aguia"**, preenche-se a unidade em branco — e o resumo
+      relata exatamente seis linhas, que é o número certo, com uma unidade que o
+      clube não tem.
+
+      Contar linhas aprovaria isto. É o número plausível e errado de sempre.
+    */
+    const c = contextoDa('conserto');
+    const base = abaDe(c.caderno, ABA_RESPOSTAS);
+    const semAcento = (v: string) => {
+      const chave = paraComparar(v);
+      return chave === 'falcao' ? 'Falcão' : (chave || 'tucano');
+    };
+    const meioArrumada = planilhaDe(ABA_RESPOSTAS,
+      base.celulas.map((linha, l) => linha.map((cel, col) =>
+        (l > 0 && l <= 16 && col === 2 ? semAcento(cel.texto) : cel.texto))),
+      { tabela: base.tabela });
+    const comBase = comAba(c.caderno, meioArrumada);
+    const relatorio = abaDe(comBase, ABA_RELATORIO);
+    const rapido = {
+      ...c,
+      caderno: comAba(comBase, {
+        ...relatorio,
+        resumo: atualizarResumo(comBase, relatorio.resumo!),
+      }),
+    };
+
+    const rotulos = abaDe(rapido.caderno, ABA_RELATORIO).resumo!.retrato.map(l => l.rotulo);
+    expect(rotulos.length).toBe(UNIDADES.length);
+    expect(rotulos).toContain('aguia');
+    // A diária com ponto continua lá — este caminho só mexeu na grafia —, então
+    // são três vermelhas. O que a conta dos rótulos carrega é a terceira: sem
+    // ela, o resumo de seis linhas erradas passaria por resumo certo.
+    expect(vermelhas(rapido, 'conserto')).toEqual([
+      'uma-grafia-por-unidade', 'diarias-sao-numero', 'resumo-com-uma-linha-por-unidade',
+    ]);
+  });
+
+  it('e apagar as linhas esquisitas deixa as quatro metas vermelhas', () => {
+    // O caminho rápido de toda inconsistência: apagar a linha. A coluna fica
+    // impecável e o clube fica com doze inscritos.
+    const c = contextoDa('conserto');
+    const base = abaDe(c.caderno, ABA_RESPOSTAS);
+    const semAsFeias = base.celulas.map(linha => linha.map(cel => cel.texto))
+      .filter((linha, l) => l === 0 || !['falcao', 'FALCÃO', 'Falcao ', ''].includes(linha[2]));
+    const rapido = {
+      ...c,
+      caderno: comAba(c.caderno, planilhaDe(ABA_RESPOSTAS, semAsFeias, { tabela: base.tabela })),
+    };
+    expect(feitas(rapido, 'conserto')).toEqual([]);
+  });
+});
+
+describe('exportar sem o ponto e vírgula não mostra a aspa', () => {
+  it('a meta fica vermelha com o arquivo exportado', () => {
+    const c = contextoDa('csv');
+    const exportado = {
+      ...c,
+      csv: csvDaBase(c),
+      descobertas: [ABRIU_O_CSV, VIU_AS_ASPAS],
+    };
+    // Sem nenhuma célula contendo o separador, o escritor não tem por que citar
+    // nada — e a lição mandaria ver aspas que não existem.
+    expect(exportado.csv).not.toContain('"');
+    expect(vermelhas(exportado, 'csv')).toEqual(['fez-a-aspa-aparecer']);
+  });
+});
+
+describe('ordenar a própria agenda não é gerar relatório', () => {
+  it('as duas metas ficam vermelhas', () => {
+    // Sai em ordem alfabética, parece resolvido, e o que se perdeu foi a ordem
+    // de entrada — que não tem cópia em lugar nenhum e não volta.
+    const c = contextoDa('agenda');
+    const ordenadas = [...AGENDA_DO_CLUBE()].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'));
+    const rapido = {
+      ...c,
+      caderno: comAba(c.caderno,
+        planilhaDe(ABA_AGENDA, [[...CABECALHO_DA_AGENDA], ...ordenadas])),
+    };
+    expect(feitas(rapido, 'agenda')).toEqual([]);
+  });
+
+  it('nem ordenar a agenda e depois copiá-la para o relatório', () => {
+    /*
+      Este é o caminho que isola a condição, e sem ele ela passava por não ter
+      caso: o relatório sai certo — vinte e cinco linhas, em ordem, cada pessoa
+      com o telefone dela —, e a agenda perdeu a ordem de entrada no caminho. As
+      duas primeiras contas ficam verdes e é só a condição que reprova, que é o
+      que ela existe para fazer.
+    */
+    const c = contextoDa('agenda');
+    const ordenadas = [...AGENDA_DO_CLUBE()].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'));
+    const rapido = {
+      ...c,
+      caderno: comAba(
+        comAba(c.caderno, planilhaDe(ABA_AGENDA, [[...CABECALHO_DA_AGENDA], ...ordenadas])),
+        planilhaDe(ABA_AGENDA_ORDENADA, [[...CABECALHO_DA_AGENDA], ...ordenadas]),
+      ),
+    };
+    expect(feitas(rapido, 'agenda')).toEqual([]);
+  });
+
+  it('e copiar sem ordenar deixa só a primeira meta vermelha', () => {
+    // O outro caso que faltava: as vinte e cinco estão lá, cada uma inteira, e
+    // na ordem de entrada. Sem este caminho, a conta de "está em ordem" passava
+    // por nunca ter sido exercitada.
+    const c = contextoDa('agenda');
+    const rapido = {
+      ...c,
+      caderno: comAba(c.caderno,
+        planilhaDe(ABA_AGENDA_ORDENADA, [[...CABECALHO_DA_AGENDA], ...AGENDA_DO_CLUBE()])),
+    };
+    expect(vermelhas(rapido, 'agenda')).toEqual(['relatorio-ordenado']);
+  });
+
+  it('e ordenar só a coluna do nome embaralha o cadastro', () => {
+    const c = contextoDa('agenda');
+    const original = AGENDA_DO_CLUBE();
+    const nomes = original.map(l => l[0]).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    // Os nomes em ordem, e o resto de cada linha onde estava: vinte e cinco
+    // pessoas, vinte e cinco telefones, e cada um ao lado de outra pessoa.
+    const embaralhado = original.map((l, i) => [nomes[i], l[1], l[2], l[3]]);
+    const rapido = {
+      ...c,
+      caderno: comAba(c.caderno,
+        planilhaDe(ABA_AGENDA_ORDENADA, [[...CABECALHO_DA_AGENDA], ...embaralhado])),
+    };
+    expect(feitas(rapido, 'agenda')).toEqual(['relatorio-ordenado']);
   });
 });
 

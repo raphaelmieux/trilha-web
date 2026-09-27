@@ -31,9 +31,12 @@ import {
 } from './formulario';
 import {
   type Caderno, type Faixa, type Planilha,
-  ROTULO_VAZIO, resumoEmDia,
+  type TabelaDinamica,
+  ROTULO_VAZIO, atualizarResumo, resumir, resumoEmDia, valorCalculado,
 } from './planilha';
-import { abaDe, escritoEm, planilhaDe } from './cadernoDoClube';
+import { LISTA_DO_CLUBE } from './metasDaAp044';
+import { toCsv } from '../lib/csv';
+import { abaDe, comAba, escritoEm, planilhaDe } from './cadernoDoClube';
 
 /* ── A forma de uma meta ──────────────────────────────────────────────────── */
 
@@ -74,6 +77,15 @@ export interface ContextoDeDados {
    * requisito manda demonstrar.
    */
   descobertas: string[];
+  /**
+   * O CSV exportado, como texto.
+   *
+   * Ele mora no contexto e não num campo da planilha porque o arquivo **saiu**
+   * dela: a partir da exportação ele é outra coisa, que não se refaz quando a
+   * planilha muda. É o retrato do PDF da CC-ES004 e o do sumário do Word, na
+   * terceira roupa — e é isso que o requisito 5.4 manda abrir no editor.
+   */
+  csv: string | null;
 }
 
 const viu = (c: ContextoDeDados, o: string) => c.descobertas.includes(o);
@@ -89,6 +101,15 @@ const respostasPreservadas = (c: ContextoDeDados): boolean => {
 export const ABA_RESPOSTAS = 'Respostas';
 export const ABA_RELATORIO = 'Relatório';
 export const ABA_AGENDA = 'Agenda';
+/**
+ * O relatório ordenado tem aba própria.
+ *
+ * Vinte e cinco linhas mais cabeçalho não cabem embaixo do resumo numa grade de
+ * vinte e seis — e foi assim que descobri, com a solução de referência perdendo
+ * as últimas pessoas em silêncio. Mas o motivo de ficar assim é outro, e melhor:
+ * uma aba por artefato é o requisito 3 desta vereda aplicado a ela mesma.
+ */
+export const ABA_AGENDA_ORDENADA = 'Agenda em ordem';
 
 export const LINHA_DO_CABECALHO_IMPORTADO = 1;
 
@@ -418,11 +439,275 @@ function baseIntocada(c: ContextoDeDados): boolean {
   return unidades(agora).join('\u0000') === unidades(antes).join('\u0000');
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+   Módulo 5 — Consertar o preenchimento (requisito 5.2)
+   ──────────────────────────────────────────────────────────────────────── */
+
+const COLUNA_DA_UNIDADE = 2;
+const COLUNA_DAS_DIARIAS = 4;
+
+/** O que a coluna de unidades tem de escrito, registro a registro. */
+const unidadesNaBase = (c: ContextoDeDados): string[] =>
+  registrosNaAba(aba(c, ABA_RESPOSTAS), cabecalhoDe(c.formulario).length)
+    .map(l => l[COLUNA_DA_UNIDADE]);
+
+export const METAS_DO_CONSERTO: Meta[] = [
+  {
+    id: 'uma-grafia-por-unidade',
+    titulo: 'Cada unidade escrita de um jeito só',
+    detalhe: 'O Falcão está escrito de quatro jeitos e a Águia de dois. Para quem lê a tabela, são seis unidades diferentes.',
+    onde: 'Na aba Respostas, na coluna Unidade.',
+    passos: [
+      'Olhe a coluna Unidade e ache as que se parecem.',
+      'Escreva todas do mesmo jeito que a lista do formulário escreve.',
+      'Repare no espaço atrás: ele não se vê, e conta como outra grafia.',
+    ],
+    feita: (c) => {
+      const escritas = unidadesNaBase(c).filter(v => v.trim());
+      if (!escritas.length) return false;
+      const certas = new Set(UNIDADES);
+      return escritas.every(v => certas.has(v)) && registrosPreservados(c);
+    },
+  },
+  {
+    id: 'sem-branco-na-unidade',
+    titulo: 'Ninguém sem unidade',
+    detalhe: 'A linha sem unidade é a que o resumo chama de "(vazio)". Ela conta no total e não pertence a unidade nenhuma.',
+    onde: 'Na aba Respostas, na linha que está em branco.',
+    passos: [
+      'Ache a linha cuja Unidade está vazia.',
+      'Descubra de que unidade a pessoa é e escreva.',
+      'Apagar a linha não vale: você perderia um inscrito.',
+    ],
+    feita: c => unidadesNaBase(c).every(v => v.trim() !== '') && registrosPreservados(c),
+  },
+  {
+    id: 'diarias-sao-numero',
+    titulo: 'Toda diária é número para a planilha',
+    detalhe: 'Duas famílias escreveram com ponto, e aqui o separador decimal é a vírgula: aquilo é texto, e a soma pula.',
+    onde: 'Na aba Respostas, na coluna Diárias.',
+    passos: [
+      'Olhe a coluna Diárias: as que estão encostadas à esquerda são texto.',
+      'Troque o ponto pela vírgula.',
+      'Confira a soma na aba Relatório: ela sobe.',
+    ],
+    feita: (c) => {
+      const p = aba(c, ABA_RESPOSTAS);
+      const registros = registrosNaAba(p, cabecalhoDe(c.formulario).length);
+      if (!registros.length) return false;
+      const todas = registros.every((_, i) =>
+        valorCalculado(p, i + 1, COLUNA_DAS_DIARIAS).tipo === 'numero');
+      return todas && registrosPreservados(c);
+    },
+  },
+  {
+    id: 'resumo-com-uma-linha-por-unidade',
+    titulo: 'O resumo com uma linha por unidade, e nenhuma sem nome',
+    detalhe: 'Tabela dinâmica não se refaz sozinha: ela guarda o que leu. Depois de consertar, ela continua relatando o erro até alguém mandar atualizar.',
+    onde: 'Na aba Relatório, no botão Atualizar.',
+    passos: [
+      'Volte à aba Relatório e olhe o resumo: ele continua com as unidades de antes.',
+      'Clique em Atualizar.',
+      'Conte as linhas: agora são as seis unidades do clube, e nenhuma "(vazio)".',
+    ],
+    /*
+      "O resumo está em dia" abriria **verde**: o módulo 4 acabou de montá-lo, e
+      um retrato recém-tirado sempre confere com a origem. O que só é verdade
+      depois de consertar **e** atualizar é ele relatar uma linha por unidade —
+      atualizar sem consertar continua dando dez, e consertar sem atualizar deixa
+      o retrato com as dez de antes. A conta exige os dois, e nenhum dos dois
+      sozinho a fecha.
+    */
+    feita: (c) => {
+      const r = aba(c, ABA_RELATORIO);
+      if (!r.resumo) return false;
+      const rotulos = r.resumo.retrato.map(l => l.rotulo);
+      /*
+        Só os rótulos, e não também `resumoEmDia`: a conta dele era **código
+        morto** aqui. Um retrato com as seis unidades e nada mais só existe
+        depois de consertar e atualizar, e nessa altura ele está em dia por
+        construção — a mutação que apagou a chamada não derrubou teste nenhum,
+        que foi como ela apareceu. É a decisão da célula vazia na formatação
+        condicional da CC-ES003.
+      */
+      return rotulos.length === UNIDADES.length
+        && rotulos.every(x => UNIDADES.includes(x))
+        && registrosPreservados(c);
+    },
+  },
+];
+
+/**
+ * Os registros que estavam na base continuam todos lá.
+ *
+ * Condição conjugada de cada meta do módulo 5, e a mais necessária desta
+ * vereda: o caminho rápido de toda inconsistência é **apagar a linha**. Apagar
+ * as quatro grafias esquisitas deixa a coluna impecável e o clube com doze
+ * inscritos, e apagar a linha sem unidade resolve o grupo vazio perdendo um
+ * desbravador. É "arrumar não é apagar" da CC-ES003, aplicado a quatro metas de
+ * uma vez.
+ */
+function registrosPreservados(c: ContextoDeDados): boolean {
+  const colunas = cabecalhoDe(c.formulario).length;
+  const antes = registrosNaAba(abaDe(c.cadernoAntes, ABA_RESPOSTAS), colunas);
+  const agora = registrosNaAba(aba(c, ABA_RESPOSTAS), colunas);
+  if (agora.length < antes.length) return false;
+  // E são as mesmas pessoas: trocar um nome por outro manteria a contagem.
+  const nomes = new Set(agora.map(l => l[1]));
+  return antes.every(l => nomes.has(l[1]));
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Módulo 6 — CSV (requisitos 2.5 e 5.4)
+   ──────────────────────────────────────────────────────────────────────── */
+
+export const ABRIU_O_CSV = 'abriu-o-csv-no-editor';
+export const VIU_AS_ASPAS = 'viu-as-aspas-em-volta-da-celula';
+
+export const NOME_DO_CSV = 'inscricoes-2026-07-03-v01.csv';
+
+export const METAS_DO_CSV: Meta[] = [
+  {
+    id: 'exportou',
+    titulo: 'A base exportada em CSV',
+    detalhe: 'CSV é a planilha sem planilha: só o texto, sem cor, sem fórmula e sem aba.',
+    onde: 'Na planilha, em Salvar como, escolhendo CSV.',
+    passos: [
+      'Abra Salvar como.',
+      'Escolha CSV e confirme.',
+    ],
+    feita: c => c.csv !== null,
+  },
+  {
+    id: 'abriu-no-editor',
+    titulo: 'O arquivo aberto no editor de texto',
+    detalhe: 'É no editor de texto que se vê o que o CSV de fato é. A planilha esconde isso de propósito.',
+    onde: 'No editor de texto simples, com o arquivo exportado.',
+    passos: [
+      'Abra o arquivo exportado no editor de texto.',
+      'Leia a primeira linha: ela é o cabeçalho.',
+      'Veja o que separa uma coluna da outra.',
+    ],
+    feita: c => viu(c, ABRIU_O_CSV) && c.csv !== null,
+  },
+  {
+    id: 'fez-a-aspa-aparecer',
+    titulo: 'Uma resposta com ponto e vírgula dentro, e o que o arquivo faz com ela',
+    detalhe: 'O ponto e vírgula é o que separa as colunas. Quando ele aparece dentro de uma resposta, o arquivo põe aspas em volta dela — senão a linha inteira desandaria.',
+    onde: 'Na aba Respostas, numa observação; depois exporte de novo.',
+    passos: [
+      'Escreva numa observação duas coisas separadas por ponto e vírgula.',
+      'Exporte de novo em CSV.',
+      'Abra no editor: aquela resposta está entre aspas.',
+    ],
+    feita: c => viu(c, VIU_AS_ASPAS) && (c.csv ?? '').includes('"'),
+  },
+];
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Módulo 7 — A agenda e o relatório ordenado (requisito 6)
+   ──────────────────────────────────────────────────────────────────────── */
+
+export const CABECALHO_DA_AGENDA = ['Nome', 'Telefone', 'Endereço', 'E-mail'] as const;
+
+/**
+ * A ordem em que as famílias entraram no clube.
+ *
+ * `LISTA_DO_CLUBE` está em ordem alfabética, e agenda que chega ordenada deixa
+ * "gerar relatório ordenado" sem nada para ordenar — é a mesma razão pela qual a
+ * tabela de procura da CC-ES003 não está em ordem alfabética: é assim que fica
+ * toda lista digitada à mão, uma linha por vez, conforme as pessoas chegam.
+ *
+ * As pessoas continuam vindo de uma fonte só: o que se declara aqui é a
+ * **ordem**, que é um dado sobre o clube, e não uma segunda cópia da lista.
+ */
+export const ORDEM_DE_ENTRADA = [
+  7, 0, 19, 3, 11, 24, 5, 16, 1, 22, 9, 14, 2, 20, 8, 17, 4, 12, 23, 6, 15, 10, 21, 13, 18,
+];
+
+export const AGENDA_DO_CLUBE = (): string[][] =>
+  ORDEM_DE_ENTRADA.map(i => LISTA_DO_CLUBE[i]).filter(Boolean);
+
+const registrosDaAgenda = (c: ContextoDeDados): string[][] =>
+  registrosNaAba(aba(c, ABA_AGENDA), CABECALHO_DA_AGENDA.length);
+
+/** As linhas do relatório, lidas de onde ele foi montado. */
+const linhasDoRelatorioDaAgenda = (c: ContextoDeDados): string[][] => {
+  const r = aba(c, ABA_AGENDA_ORDENADA);
+  const inicio = r.celulas.findIndex(linha => escritoTexto(linha) === CABECALHO_DA_AGENDA[0]);
+  if (inicio < 0) return [];
+  const fora: string[][] = [];
+  for (let l = inicio + 1; l < r.celulas.length; l++) {
+    const linha = Array.from({ length: CABECALHO_DA_AGENDA.length }, (_, col) => escritoEm(r, l, col));
+    if (linha.every(v => !v)) break;
+    fora.push(linha);
+  }
+  return fora;
+};
+
+const escritoTexto = (linha: { texto: string }[]) => (linha[0]?.texto ?? '').trim();
+
+export const METAS_DA_AGENDA_DO_CLUBE: Meta[] = [
+  {
+    id: 'relatorio-ordenado',
+    titulo: 'Um relatório com as vinte e cinco pessoas em ordem de nome',
+    detalhe: 'A agenda guarda as pessoas na ordem em que entraram. O relatório é outra coisa: é a mesma gente numa ordem que serve para procurar.',
+    onde: 'Na aba Agenda em ordem, no pé da janela.',
+    passos: [
+      'Copie o cabeçalho e as linhas da aba Agenda para a aba Agenda em ordem.',
+      'Ordene pela coluna Nome, de A a Z.',
+      'Confira que as vinte e cinco continuam lá.',
+    ],
+    feita: (c) => {
+      const linhas = linhasDoRelatorioDaAgenda(c);
+      if (linhas.length < AGENDA_DO_CLUBE().length) return false;
+      const nomes = linhas.map(l => l[0]);
+      const ordenados = [...nomes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      return nomes.join('\u0000') === ordenados.join('\u0000') && agendaNaOrdemDeEntrada(c);
+    },
+  },
+  {
+    id: 'linha-inteira',
+    titulo: 'Cada pessoa com o telefone dela',
+    detalhe: 'Ordenar só a coluna do nome embaralha o cadastro: o nome de um fica ao lado do telefone de outro, e nada avisa.',
+    onde: 'Na aba Agenda em ordem, comparando uma linha com a da Agenda.',
+    passos: [
+      'Escolha uma pessoa no relatório.',
+      'Ache a mesma pessoa na aba Agenda.',
+      'Confira que o telefone, o endereço e o e-mail são os mesmos.',
+    ],
+    feita: (c) => {
+      const daAgenda = new Map(AGENDA_DO_CLUBE().map(l => [l[0], l.join('\u0000')]));
+      const linhas = linhasDoRelatorioDaAgenda(c);
+      if (!linhas.length) return false;
+      return linhas.every(l => daAgenda.get(l[0]) === l.join('\u0000'))
+        && agendaNaOrdemDeEntrada(c);
+    },
+  },
+];
+
+/**
+ * A agenda continua na ordem em que as famílias entraram.
+ *
+ * Condição conjugada das duas metas, e o caminho rápido que ela fecha é o mais
+ * tentador de todos: ordenar a **própria** agenda em vez de produzir um
+ * relatório. A lista sai em ordem alfabética, parece resolvido, e o que se
+ * perdeu foi a ordem de entrada — que não tem cópia em lugar nenhum e não
+ * volta. É o requisito 3 desta vereda caindo em cima do requisito 6: a base
+ * guarda o que foi coletado, e quem muda de forma é o relatório.
+ */
+function agendaNaOrdemDeEntrada(c: ContextoDeDados): boolean {
+  const esperada = AGENDA_DO_CLUBE().map(l => l[0]);
+  const agora = registrosDaAgenda(c).map(l => l[0]);
+  return agora.join('\u0000') === esperada.join('\u0000');
+}
+
 /* ── O registro das lições ───────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs008 = 'formulario' | 'planilha' | 'texto';
 
-export type LicaoDaCcEs008 = 'campos' | 'validacao' | 'base' | 'resumo';
+export type LicaoDaCcEs008 =
+  | 'campos' | 'validacao' | 'base' | 'resumo' | 'conserto' | 'csv' | 'agenda';
 
 export interface LicaoDeDados {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -439,6 +724,7 @@ function doZero(formulario: Formulario): ContextoDeDados {
     caderno: { planilhas: [planilhaDe(ABA_RESPOSTAS, []), planilhaDe(ABA_RELATORIO, [])], ativa: 0 },
     cadernoAntes: { planilhas: [planilhaDe(ABA_RESPOSTAS, []), planilhaDe(ABA_RELATORIO, [])], ativa: 0 },
     descobertas: [],
+    csv: null,
   };
 }
 
@@ -485,6 +771,41 @@ export const LICOES_DA_CC_ES008: Record<LicaoDaCcEs008, LicaoDeDados> = {
     },
     metas: METAS_DO_RESUMO,
   },
+  conserto: {
+    programa: 'planilha',
+    inicial: () => comResumoMontado(),
+    metas: METAS_DO_CONSERTO,
+  },
+  csv: {
+    programa: 'planilha',
+    inicial: () => {
+      const c = comResumoMontado();
+      return { ...c, caderno: baseConsertada(c), cadernoAntes: baseConsertada(c) };
+    },
+    metas: METAS_DO_CSV,
+  },
+  agenda: {
+    programa: 'planilha',
+    inicial: () => {
+      const c = comResumoMontado();
+      const limpa = baseConsertada(c);
+      const comAgenda: Caderno = {
+        planilhas: [
+          ...limpa.planilhas,
+          planilhaDe(ABA_AGENDA_ORDENADA, []),
+          planilhaDe(ABA_AGENDA, [[...CABECALHO_DA_AGENDA], ...AGENDA_DO_CLUBE()], {
+            tabela: {
+              l1: 0, c1: 0,
+              l2: AGENDA_DO_CLUBE().length, c2: CABECALHO_DA_AGENDA.length - 1,
+            },
+          }),
+        ],
+        ativa: 3,
+      };
+      return { ...c, caderno: comAgenda, cadernoAntes: comAgenda };
+    },
+    metas: METAS_DA_AGENDA_DO_CLUBE,
+  },
 };
 
 export const contextoDa = (l: LicaoDaCcEs008): ContextoDeDados =>
@@ -522,6 +843,90 @@ export function baseArrumada(c: ContextoDeDados): Caderno {
   ]);
   return { planilhas: [respostas, relatorio], ativa: 0 };
 }
+
+/**
+ * A pasta do módulo 5: a base limpa pelo módulo 3 **e** o resumo já montado.
+ *
+ * O resumo tem de chegar pronto, porque a lição do conserto é sobre o que ele
+ * relata: quem chega no módulo 5 já viu dez unidades onde há seis, no módulo 4.
+ * Montá-lo de novo aqui mediria de novo o que já foi medido.
+ */
+function comResumoMontado(): ContextoDeDados {
+  const c = comCaderno(comTiposArrumados(FORMULARIO_COMO_CHEGA()));
+  const limpa = baseArrumada(c);
+  const base = abaDe(limpa, ABA_RESPOSTAS);
+  const colunas = cabecalhoDe(c.formulario).length;
+  const t: TabelaDinamica = {
+    em: { l: 3, c: 0 },
+    origem: {
+      planilha: ABA_RESPOSTAS,
+      faixa: { l1: 0, c1: 0, l2: respostasReais(c.formulario).length, c2: colunas - 1 },
+    },
+    linha: COLUNA_DA_UNIDADE,
+    valor: { coluna: COLUNA_DAS_DIARIAS, como: 'contagem' },
+    retrato: [],
+  };
+  const comRetrato: Caderno = comAba(limpa, {
+    ...abaDe(limpa, ABA_RELATORIO),
+    resumo: { ...t, retrato: resumir(base, t) },
+  });
+  return { ...c, caderno: comRetrato, cadernoAntes: comRetrato };
+}
+
+/**
+ * A base depois do módulo 5: uma grafia por unidade, ninguém sem unidade, e
+ * toda diária lida como número — com o resumo atualizado.
+ *
+ * A unidade que faltava sai de quem a pessoa é, e não de um chute: a Eduarda é
+ * do Tucano, e é isso que a secretária descobre ligando para a família.
+ */
+export function baseConsertada(c: ContextoDeDados): Caderno {
+  const certa = (v: string) => UNIDADES.find(u => paraComparar(u) === paraComparar(v)) ?? v;
+  const base = abaDe(c.caderno, ABA_RESPOSTAS);
+  /*
+    A última linha **com dado**, e não a última da grade.
+    Preencher a coluna inteira escreve a unidade nas linhas vazias de baixo, e
+    cada uma delas passa a contar como registro — com tudo o mais em branco. É a
+    faixa que passa da última linha com dado, da CC-ES003, e foi a trava de
+    "a solução fecha a lista" quem a pegou aqui.
+  */
+  const ultima = registrosNaAba(base, cabecalhoDe(c.formulario).length).length;
+  const arrumada = planilhaDe(ABA_RESPOSTAS, base.celulas.map((linha, l) => linha.map((cel, col) => {
+    if (l === 0 || l > ultima) return cel.texto;
+    if (col === COLUNA_DA_UNIDADE) return cel.texto.trim() ? certa(cel.texto) : UNIDADE_DA_EDUARDA;
+    if (col === COLUNA_DAS_DIARIAS) return cel.texto.replace('.', ',');
+    return cel.texto;
+  })), { tabela: base.tabela });
+
+  const comBase = comAba(c.caderno, arrumada);
+  const relatorio = abaDe(comBase, ABA_RELATORIO);
+  return relatorio.resumo
+    ? comAba(comBase, { ...relatorio, resumo: atualizarResumo(comBase, relatorio.resumo) })
+    : comBase;
+}
+
+/**
+ * O CSV que a base exporta.
+ *
+ * Mora aqui, e não na tela nem na trava: a tela exporta e a trava confere o que
+ * foi exportado, e dois exportadores divergiriam no primeiro ajuste — com a
+ * divergência aparecendo como uma aspa que a tela põe e a trava não espera. É a
+ * decisão de `formulas.ts` ser um motor só.
+ *
+ * E ele sai por `toCsv`, que é o mesmo escritor da plataforma, com o ponto e
+ * vírgula que uma máquina pt-BR usa. Um segundo escritor aqui seria a mesma
+ * coisa em outra roupa.
+ */
+export function csvDaBase(c: ContextoDeDados): string {
+  const p = aba(c, ABA_RESPOSTAS);
+  const colunas = cabecalhoDe(c.formulario).length;
+  const inicio = primeiraLinhaEscrita(p);
+  const cabecalho = Array.from({ length: colunas }, (_, col) => escritoEm(p, Math.max(inicio, 0), col));
+  return toCsv(cabecalho, registrosNaAba(p, colunas));
+}
+
+/** De que unidade é quem deixou o campo em branco. O clube sabe; a planilha não. */
+export const UNIDADE_DA_EDUARDA = 'Tucano';
 
 /** O rótulo com que o resumo do módulo 4 nasce, para a trava e a tela concordarem. */
 export const GRUPOS_QUE_O_RESUMO_RELATA = (c: ContextoDeDados): string[] => {
