@@ -39,21 +39,20 @@ import { modulo7 } from './ap045/modulo7';
  * apresentação em si acontece fora daqui.
  *
  * ── A abertura ──────────────────────────────────────────────────────────
- * Como as trilhas anteriores da família, esta nasce `emConstrucao`: cinza no
- * painel, sem link e sem permitir início. O frontend e o Supabase saem do
- * mesmo push e correm ao mesmo tempo, e as linhas de `requirements` e
- * `lessons` desta trilha entram por migration — abrir no mesmo push que as
- * cria deixaria a redação guiada comemorando sem ter gravado nada.
+ * A trilha nasceu `emConstrucao` num primeiro push: cinza no painel, sem link
+ * e sem permitir início, enquanto a migration do seed — as linhas de
+ * `requirements` e `lessons` — corria em paralelo no `supabase.yml`. Abrir
+ * naquele mesmo push teria deixado a redação guiada comemorando sem ter
+ * gravado nada.
  *
- * A insígnia (`ap045_complete`) também fica de fora deste push, e não por
- * esquecimento: `fileiraDasTrilhas()`, em `lib/estante.ts`, monta a
- * prateleira a partir de `getOpenSpecialties()` — semear a linha com a trilha
- * ainda `emConstrucao` reprovaria `estante.test.ts` na hora, com uma insígnia
- * no banco e nenhum lugar na estante para ela. É a mesma exceção que as
- * veredas já documentam: a insígnia e a abertura saem no mesmo push.
- *
- * O flag sai, com a insígnia junto, só depois de confirmar — pelo log do
- * `supabase.yml` em `main` — que esta migration aplicou.
+ * O `supabase.yml` daquele push falhou duas vezes seguidas — um
+ * `SUPABASE_ACCESS_TOKEN` recusado pela API do Supabase, sem relação com o
+ * conteúdo desta trilha — e só aplicou depois que outra correção consertou o
+ * token. O flag sai agora, neste segundo push, junto com a insígnia
+ * (`ap045_complete`): `fileiraDasTrilhas()`, em `lib/estante.ts`, só reserva
+ * lugar na estante para trilha aberta, e semear a insígnia um push antes
+ * teria reprovado `estante.test.ts` — a mesma exceção que as veredas já
+ * documentam.
  */
 
 export const ap045: Specialty = {
@@ -63,7 +62,6 @@ export const ap045: Specialty = {
   familia: 'Computação',
   preRequisito: 'AP044',
   description: 'A que fecha a família Computação: quem trabalha com o computador, como a informação viaja por dentro dele, e o que ensinar para o próximo grupo.',
-  emConstrucao: true,
 
   requirements: [
     // 1 — A especialidade anterior
