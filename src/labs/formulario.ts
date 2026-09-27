@@ -395,8 +395,17 @@ export const inconsistencias = (f: Formulario): number =>
  * dois envios não têm o mesmo instante. O requisito 2.3 pede definir chave, e
  * uma base cuja chave é o nome é a base que perde uma das duas Joanas.
  */
+/**
+ * O rótulo da coluna da chave.
+ *
+ * Constante porque o motor a escreve e a meta do módulo 3 a procura: duas
+ * cópias do mesmo literal divergem no primeiro ajuste de redação, e aí a meta
+ * fica impossível de fechar sem nada explicando por quê.
+ */
+export const ROTULO_DO_INSTANTE = 'Enviado em';
+
 export const cabecalhoDe = (f: Formulario): string[] =>
-  ['Enviado em', ...f.campos.map(c => c.rotulo)];
+  [ROTULO_DO_INSTANTE, ...f.campos.map(c => c.rotulo)];
 
 export const linhasDe = (f: Formulario): string[][] =>
   respostasReais(f).map(r => [r.em, ...f.campos.map(c => valorDa(r, c.id))]);
@@ -451,6 +460,8 @@ export function formularioDeInscricao(): Formulario {
  * As inconsistências plantadas:
  *
  *   - o Falcão escrito de quatro jeitos, e a Águia de dois;
+ *   - uma família que não escolheu unidade, que é o grupo sem nome que o resumo
+ *     relata;
  *   - dois responsáveis sem e-mail, num campo que vai virar obrigatório;
  *   - duas diárias escritas com ponto decimal, que numa planilha pt-BR é o
  *     número que vira texto.
@@ -460,7 +471,7 @@ export const RESPOSTAS_COLETADAS: Resposta[] = [
   resposta('r02', '2026-06-08T19:40', 'Bruno Costa', 'falcao', 'p.costa@exemplo.com', '3', ''),
   resposta('r03', '2026-06-08T20:05', 'Carla Menezes', 'Águia', 'menezes.familia@exemplo.com', '2', 'Chega no sábado'),
   resposta('r04', '2026-06-09T08:22', 'Daniel Rocha', 'FALCÃO', 'rocha.daniel@exemplo.com', '3', ''),
-  resposta('r05', '2026-06-09T09:01', 'Eduarda Pires', 'Tucano', '', '3', ''),
+  resposta('r05', '2026-06-09T09:01', 'Eduarda Pires', '', '', '3', ''),
   resposta('r06', '2026-06-09T12:47', 'Felipe Andrade', 'Arara', 'andrade@exemplo.com', '1.5', 'Sai no domingo de manhã'),
   resposta('r07', '2026-06-09T18:33', 'Gabriela Souza', 'aguia', 'souza.g@exemplo.com', '3', ''),
   resposta('r08', '2026-06-10T07:15', 'Henrique Dias', 'Jaguar', 'dias.henrique@exemplo.com', '3', 'Toma remédio às 8h, com suco'),

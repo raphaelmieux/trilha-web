@@ -1,0 +1,303 @@
+import { describe, expect, it } from 'vitest';
+import {
+  type Caderno, type TabelaDinamica,
+  resumir,
+} from './planilha';
+import { abaDe, comAba, escritoEm, planilhaDe } from './cadernoDoClube';
+import {
+  type Campo, type Formulario,
+  CAMPO_DIARIAS, CAMPO_EMAIL, CAMPO_NOME, CAMPO_UNIDADE, UNIDADES,
+  cabecalhoDe, comCampo, enviar, linhasDe, paraComparar, respostasReais, valorDa,
+} from './formulario';
+import {
+  type ContextoDeDados, type LicaoDaCcEs008,
+  ABA_RELATORIO, ABA_RESPOSTAS, LICOES_DA_CC_ES008,
+  VIU_A_RECUSA, VIU_GRUPOS_DEMAIS, VIU_O_GRUPO_VAZIO,
+  contextoDa,
+} from './metasDaCcEs008';
+
+/*
+  As metas da CC-ES008.
+
+  Três contas, e as três se multiplicam:
+
+  - **nenhuma meta abre verde**, porque lista com item já marcado no segundo zero
+    ensina a não ler a lista;
+  - **uma solução de referência fecha cada lista**, porque laboratório que ninguém
+    consegue vencer é pior do que um que abre resolvido — o outro deixa quem fez
+    tudo certo olhando vermelho sem nada na tela explicando;
+  - **cada caminho rápido e errado deixa vermelha a meta certa**, e não outra: uma
+    conta que reprova pelo motivo errado é uma conta que não confere o que diz.
+*/
+
+const LICOES = Object.keys(LICOES_DA_CC_ES008) as LicaoDaCcEs008[];
+
+const feitas = (c: ContextoDeDados, l: LicaoDaCcEs008) =>
+  LICOES_DA_CC_ES008[l].metas.filter(m => m.feita(c)).map(m => m.id);
+
+const vermelhas = (c: ContextoDeDados, l: LicaoDaCcEs008) =>
+  LICOES_DA_CC_ES008[l].metas.filter(m => !m.feita(c)).map(m => m.id);
+
+/* ── Soluções de referência ──────────────────────────────────────────────── */
+
+const comUnidadeEmLista = (f: Formulario): Formulario =>
+  comCampo(f, CAMPO_UNIDADE, c => ({ ...c, tipo: 'lista', opcoes: [...UNIDADES] }));
+
+const comDiariasEmNumero = (f: Formulario): Formulario =>
+  comCampo(f, CAMPO_DIARIAS, c => ({ ...c, tipo: 'numero' }));
+
+/** Módulo 1: dá à unidade uma lista fechada e às diárias o tipo número. */
+function resolveCampos(c: ContextoDeDados): ContextoDeDados {
+  return { ...c, formulario: comDiariasEmNumero(comUnidadeEmLista(c.formulario)) };
+}
+
+/** Módulo 2: obrigatório, validação que recusa, a recusa vista, e um envio bom. */
+function resolveValidacao(c: ContextoDeDados): ContextoDeDados {
+  let f = comCampo(c.formulario, CAMPO_EMAIL,
+    (campo): Campo => ({ ...campo, obrigatorio: true, validacao: { tipo: 'email' } }));
+  const depois = enviar(f, {
+    [CAMPO_NOME]: 'Sara Vieira',
+    [CAMPO_UNIDADE]: 'Onça',
+    [CAMPO_EMAIL]: 'vieira.sara@exemplo.com',
+    [CAMPO_DIARIAS]: '3',
+  });
+  expect(depois).not.toBeNull();
+  f = depois!;
+  return { ...c, formulario: f, descobertas: [...c.descobertas, VIU_A_RECUSA] };
+}
+
+/** Módulo 3: tira o título, tira o TOTAL, e põe a soma na aba Relatório. */
+function resolveBase(c: ContextoDeDados): ContextoDeDados {
+  const cabecalho = cabecalhoDe(c.formulario);
+  const linhas = linhasDe(c.formulario);
+  const respostas = planilhaDe(ABA_RESPOSTAS, [cabecalho, ...linhas], {
+    tabela: { l1: 0, c1: 0, l2: linhas.length, c2: cabecalho.length - 1 },
+  });
+  const relatorio = planilhaDe(ABA_RELATORIO, [
+    ['Diárias somadas', `=SOMA(${ABA_RESPOSTAS}!E2:E${linhas.length + 1})`],
+  ]);
+  return { ...c, caderno: { planilhas: [respostas, relatorio], ativa: 0 } };
+}
+
+/** Módulo 4: monta o resumo sobre a base e lê as duas coisas que ele relata. */
+function resolveResumo(c: ContextoDeDados): ContextoDeDados {
+  const base = abaDe(c.caderno, ABA_RESPOSTAS);
+  const cabecalho = cabecalhoDe(c.formulario);
+  const t: TabelaDinamica = {
+    em: { l: 3, c: 0 },
+    origem: {
+      planilha: ABA_RESPOSTAS,
+      faixa: { l1: 0, c1: 0, l2: respostasReais(c.formulario).length, c2: cabecalho.length - 1 },
+    },
+    linha: 2,
+    valor: { coluna: 4, como: 'contagem' },
+    retrato: [],
+  };
+  const comRetrato = { ...t, retrato: resumir(base, t) };
+  const relatorio = { ...abaDe(c.caderno, ABA_RELATORIO), resumo: comRetrato };
+  return {
+    ...c,
+    caderno: comAba(c.caderno, relatorio),
+    descobertas: [...c.descobertas, VIU_GRUPOS_DEMAIS, VIU_O_GRUPO_VAZIO],
+  };
+}
+
+const RESOLVE: Record<LicaoDaCcEs008, (c: ContextoDeDados) => ContextoDeDados> = {
+  campos: resolveCampos,
+  validacao: resolveValidacao,
+  base: resolveBase,
+  resumo: resolveResumo,
+};
+
+/* ── As três contas ──────────────────────────────────────────────────────── */
+
+describe('nenhuma meta abre verde', () => {
+  it.each(LICOES)('%s', (l) => {
+    const c = contextoDa(l);
+    // Guarda contra o vazio: uma lição sem meta nenhuma passaria por não ter
+    // conferido nada.
+    expect(LICOES_DA_CC_ES008[l].metas.length).toBeGreaterThan(0);
+    expect(feitas(c, l)).toEqual([]);
+  });
+});
+
+describe('a solução de referência fecha a lista inteira', () => {
+  it.each(LICOES)('%s', (l) => {
+    const c = RESOLVE[l](contextoDa(l));
+    expect(vermelhas(c, l)).toEqual([]);
+  });
+});
+
+describe('cada meta tem detalhe, lugar e passo a passo', () => {
+  it.each(LICOES)('%s', (l) => {
+    for (const m of LICOES_DA_CC_ES008[l].metas) {
+      expect(m.titulo.length).toBeGreaterThan(8);
+      expect(m.detalhe.length).toBeGreaterThan(20);
+      expect(m.onde.length).toBeGreaterThan(8);
+      // Verificação sem passo a passo é o defeito que `veredas.test.ts` já
+      // reprova: quem trava fica sem saída.
+      expect(m.passos.length).toBeGreaterThanOrEqual(2);
+      for (const p of m.passos) expect(p.length).toBeGreaterThan(10);
+    }
+  });
+});
+
+describe('os ids não repetem dentro de uma lição', () => {
+  it.each(LICOES)('%s', (l) => {
+    const ids = LICOES_DA_CC_ES008[l].metas.map(m => m.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+/* ── Os caminhos rápidos e errados ───────────────────────────────────────── */
+
+describe('apagar o que incomoda não arruma o formulário', () => {
+  /** O caminho de quem "limpa" o formulário jogando fora as respostas feias. */
+  const semAsFeias = (f: Formulario): Formulario => ({
+    ...f,
+    respostas: f.respostas.filter(r =>
+      paraComparar(valorDa(r, CAMPO_UNIDADE)) !== 'falcao' || valorDa(r, CAMPO_UNIDADE) === 'Falcão'),
+  });
+
+  it('no módulo 1, as três metas ficam vermelhas', () => {
+    const c = contextoDa('campos');
+    const rapido = resolveCampos({ ...c, formulario: semAsFeias(c.formulario) });
+    // Os tipos estão certos e a unidade é lista: sem a condição conjugada, as
+    // três metas ficariam verdes num formulário com três respostas a menos.
+    expect(respostasReais(rapido.formulario).length)
+      .toBeLessThan(respostasReais(c.formulario).length);
+    expect(feitas(rapido, 'campos')).toEqual([]);
+  });
+
+  it('e no módulo 2, também', () => {
+    const c = contextoDa('validacao');
+    const rapido = resolveValidacao({ ...c, formulario: semAsFeias(c.formulario) });
+    expect(vermelhas(rapido, 'validacao')).toContain('um-obrigatorio');
+    expect(vermelhas(rapido, 'validacao')).toContain('uma-resposta-nova');
+  });
+});
+
+describe('lista com metade das unidades não fecha a meta', () => {
+  it('as três que alguém lembrou de cor deixam a meta vermelha', () => {
+    // É o caminho mais natural que existe: escrever as unidades de memória e
+    // parar nas que vieram à cabeça. A unidade que faltar na lista volta a ser
+    // digitada à mão por quem a tem — e a grafia se divide de novo, agora com o
+    // formulário parecendo consertado.
+    const c = contextoDa('campos');
+    const meia = comCampo(c.formulario, CAMPO_UNIDADE,
+      (campo): Campo => ({ ...campo, tipo: 'lista', opcoes: UNIDADES.slice(0, 3) }));
+    const rapido = { ...c, formulario: comDiariasEmNumero(meia) };
+    expect(vermelhas(rapido, 'campos')).toEqual(['unidade-em-lista']);
+  });
+});
+
+describe('validação sem parâmetro não fecha a meta', () => {
+  it('mesmo com a regra escrita no campo', () => {
+    // `Number('')` é zero: "entre 0 e 0" é uma regra que a tela desenha ao lado
+    // do campo e que não recusa o que a lição quer que ela recuse.
+    const c = contextoDa('validacao');
+    const comRegraVazia = comCampo(c.formulario, CAMPO_DIARIAS,
+      (campo): Campo => ({ ...campo, validacao: { tipo: 'numero-entre' } }));
+    const quase = resolveValidacao({ ...c, formulario: comRegraVazia });
+    const semAValida = comCampo(quase.formulario, CAMPO_EMAIL,
+      (campo): Campo => ({ ...campo, validacao: undefined }));
+    const rapido = { ...quase, formulario: semAValida };
+    expect(vermelhas(rapido, 'validacao')).toEqual(['uma-validacao']);
+  });
+});
+
+describe('ligar obrigatório sem ver a recusa não fecha a lição', () => {
+  it('o interruptor que ninguém viu agir fica vermelho', () => {
+    const c = contextoDa('validacao');
+    const semDescoberta = { ...resolveValidacao(c), descobertas: [] };
+    expect(vermelhas(semDescoberta, 'validacao')).toEqual(['viu-a-recusa']);
+  });
+});
+
+describe('apagar a base não é separar a base do relatório', () => {
+  it('a aba esvaziada deixa três metas vermelhas', () => {
+    const c = contextoDa('base');
+    const vazia: Caderno = comAba(c.caderno, planilhaDe(ABA_RESPOSTAS, []));
+    const rapido = { ...c, caderno: vazia };
+    // Sem título solto e sem TOTAL: as duas primeiras metas passariam a valer
+    // numa planilha em que ninguém consegue achar uma resposta.
+    expect(escritoEm(abaDe(vazia, ABA_RESPOSTAS), 0, 0)).toBe('');
+    const falta = vermelhas(rapido, 'base');
+    expect(falta).toContain('base-abre-no-cabecalho');
+    expect(falta).toContain('base-sem-total');
+    expect(falta).toContain('faixa-da-tabela');
+  });
+
+  it('e o total copiado para o relatório sem sair da base não fecha as duas', () => {
+    const c = contextoDa('base');
+    const comCopia = comAba(c.caderno, planilhaDe(ABA_RELATORIO, [
+      ['Diárias somadas', `=SOMA(${ABA_RESPOSTAS}!E3:E18)`],
+    ]));
+    const rapido = { ...c, caderno: comCopia };
+    expect(feitas(rapido, 'base')).toEqual(['total-no-relatorio']);
+  });
+});
+
+describe('consertar a grafia antes de olhar o resumo apaga o que ele mostra', () => {
+  it('as três metas do módulo 4 ficam vermelhas', () => {
+    const c = contextoDa('resumo');
+    const base = abaDe(c.caderno, ABA_RESPOSTAS);
+    const certa = (v: string) => UNIDADES.find(u => paraComparar(u) === paraComparar(v)) ?? v;
+    const arrumada = planilhaDe(ABA_RESPOSTAS,
+      base.celulas.map((linha, l) => linha.map((cel, col) =>
+        (l > 0 && col === 2 ? certa(cel.texto) : cel.texto))),
+      { tabela: base.tabela });
+    const rapido = resolveResumo({ ...c, caderno: comAba(c.caderno, arrumada) });
+    expect(vermelhas(rapido, 'resumo')).toEqual(
+      ['criou-o-resumo', 'viu-grupos-demais', 'viu-o-grupo-vazio']);
+  });
+
+  it('e o resumo sobre a própria aba do relatório não conta', () => {
+    // Uma tabela dinâmica que lê a aba onde ela mesma está não resume nada, e
+    // abriria vazia sem erro nenhum.
+    const c = contextoDa('resumo');
+    const pronto = resolveResumo(c);
+    const relatorio = abaDe(pronto.caderno, ABA_RELATORIO);
+    const trocado = {
+      ...relatorio,
+      resumo: { ...relatorio.resumo!, origem: { ...relatorio.resumo!.origem, planilha: ABA_RELATORIO } },
+    };
+    const rapido = { ...pronto, caderno: comAba(pronto.caderno, trocado) };
+    expect(vermelhas(rapido, 'resumo')).toEqual(['criou-o-resumo']);
+  });
+});
+
+describe('o resumo do módulo 4 relata o que a lição manda ver', () => {
+  it('mais grupos do que o clube tem unidades, e um deles sem nome', () => {
+    // Se a base de partida não tivesse a grafia dividida nem o campo em branco,
+    // as duas descobertas do módulo 4 seriam sobre coisas que não estão na
+    // tela: a lição mandaria ver o que não há.
+    const c = resolveResumo(contextoDa('resumo'));
+    const rotulos = abaDe(c.caderno, ABA_RELATORIO).resumo!.retrato.map(l => l.rotulo);
+    expect(rotulos.length).toBeGreaterThan(UNIDADES.length);
+    expect(rotulos).toContain('(vazio)');
+  });
+});
+
+describe('cada lição parte de um estado da anterior', () => {
+  it('o módulo 2 recebe os tipos que o módulo 1 arrumou', () => {
+    const c = contextoDa('validacao');
+    expect(c.formulario.campos.find(x => x.id === CAMPO_UNIDADE)?.tipo).toBe('lista');
+    expect(c.formulario.campos.find(x => x.id === CAMPO_DIARIAS)?.tipo).toBe('numero');
+  });
+
+  it('e o módulo 4 recebe a base que o módulo 3 limpou', () => {
+    const c = contextoDa('resumo');
+    // Começar mandando refazer o módulo 3 ensinaria que o trabalho anterior não
+    // conta, e as metas dele apareceriam cumpridas ou não ao acaso.
+    expect(escritoEm(abaDe(c.caderno, ABA_RESPOSTAS), 0, 0)).toBe('Enviado em');
+    expect(feitas(c, 'base')).toEqual(LICOES_DA_CC_ES008.base.metas.map(m => m.id));
+  });
+
+  it('e o módulo 3 recebe a pasta misturada, que é o que ele conserta', () => {
+    const c = contextoDa('base');
+    const base = abaDe(c.caderno, ABA_RESPOSTAS);
+    expect(escritoEm(base, 0, 0)).not.toBe('Enviado em');
+    expect(base.celulas.some(l => l.some(cel => cel.texto.startsWith('TOTAL')))).toBe(true);
+  });
+});
