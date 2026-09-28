@@ -21,6 +21,13 @@ import { emOrdemDeConquista } from '../lib/conquista';
 import { dataPorExtenso } from '../lib/explicacaoDaInsignia';
 import { Download, ArrowLeft, Loader2 } from 'lucide-react';
 
+interface TextoEntregue { titulo: string; corpo: string }
+
+/* Com dois relatórios na mesma trilha, "Relatório escrito pelo desbravador"
+   duas vezes não diz qual é qual: o título que o laboratório gravou vai junto. */
+const cabecalhoDoTexto = (t: TextoEntregue) =>
+  t.titulo ? `Relatório escrito pelo desbravador: ${t.titulo}` : 'Relatório escrito pelo desbravador';
+
 export default function ReportPage() {
   const { profile } = useAuth();
   const navigate = useNavigate();
@@ -31,8 +38,13 @@ export default function ReportPage() {
   const [lessonAttempts, setLessonAttempts] = useState<Pick<Tabela<'lesson_attempts'>, 'score' | 'total'>[]>([]);
   const [evidence, setEvidence] = useState<LabEvidence>({});
   /* Os relatórios escritos nos laboratórios de redação, por código de trilha.
-     São a prova do cumprimento do requisito, e por isso vão impressos. */
-  const [textos, setTextos] = useState<Record<string, string>>({});
+     São a prova do cumprimento do requisito, e por isso vão impressos.
+
+     Uma lista, e não um texto por trilha: a AP045 pede dois relatórios, e um
+     mapa de trilha para texto guardaria só o último que a consulta trouxesse —
+     o documento entregue ao clube diria, por omissão, que o outro não foi
+     escrito. */
+  const [textos, setTextos] = useState<Record<string, TextoEntregue[]>>({});
   const [attemptsLoading, setAttemptsLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
@@ -67,24 +79,28 @@ export default function ReportPage() {
       if (latest) setEvidence(latest);
 
       /*
-        Os textos entregues, de qualquer um dos dois laboratórios de escrita.
+        Os textos entregues, de qualquer laboratório de escrita.
 
-        Os dois gravam na mesma tabela, com a mesma chave, então quem escreveu
-        na caixa de texto antiga e quem montou o relatório por etapas aparecem
-        aqui do mesmo jeito. Só entram os que foram entregues: rascunho não é
-        prova de cumprimento.
+        Todos gravam na mesma tabela, então quem escreveu na caixa de texto
+        antiga e quem montou o relatório por etapas aparecem aqui do mesmo
+        jeito. Só entram os que foram entregues: rascunho não é prova de
+        cumprimento. Na ordem em que foram começados, que numa trilha com dois
+        relatórios é a ordem dos requisitos.
       */
       const { data: projetos } = await supabase
         .from('text_projects')
-        .select('specialty_code, body, status')
+        .select('specialty_code, title, body, status')
         .eq('user_id', profile.id)
-        .eq('status', 'submitted');
+        .eq('status', 'submitted')
+        .order('created_at', { ascending: true });
       if (!vivo) return;
-      setTextos(Object.fromEntries(
-        (projetos ?? [])
-          .filter(p => p.specialty_code && (p.body ?? '').trim())
-          .map(p => [p.specialty_code as string, (p.body as string).trim()]),
-      ));
+      const porTrilha: Record<string, TextoEntregue[]> = {};
+      for (const p of projetos ?? []) {
+        const corpo = (p.body ?? '').trim();
+        if (!p.specialty_code || !corpo) continue;
+        (porTrilha[p.specialty_code] ??= []).push({ titulo: (p.title ?? '').trim(), corpo });
+      }
+      setTextos(porTrilha);
 
       setAttemptsLoading(false);
     })();
@@ -212,7 +228,7 @@ export default function ReportPage() {
             /* O texto vai inteiro, e no PDF também: um relatório que prova o
                cumprimento na tela e não prova no papel não serve ao clube, que
                é quem recebe o papel. */
-            ...(textos[n.code] ? ['Relatório escrito pelo desbravador:', textos[n.code]] : []),
+            ...(textos[n.code] ?? []).flatMap(t => [cabecalhoDoTexto(t), t.corpo]),
           ],
         })),
         /*
@@ -361,12 +377,12 @@ export default function ReportPage() {
               ))}
               {n.pending && <p>{n.pending}</p>}
               {n.certification && <p>{n.certification}</p>}
-              {textos[n.code] && (
-                <div className="report-texto">
-                  <h3>Relatório escrito pelo desbravador</h3>
-                  <p className="report-texto-corpo">{textos[n.code]}</p>
+              {(textos[n.code] ?? []).map((t, i) => (
+                <div key={i} className="report-texto">
+                  <h3>{cabecalhoDoTexto(t)}</h3>
+                  <p className="report-texto-corpo">{t.corpo}</p>
                 </div>
-              )}
+              ))}
             </div>
           ))}
 
