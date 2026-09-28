@@ -8,6 +8,7 @@ import {
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
   CSS_EXCEL, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, AbasDoExcel,
+  DesenhoDoGrafico,
 } from './excel';
 import {
   ACAMPAMENTO_INICIAL, METAS_DO_ACAMPAMENTO, UNIDADES, INSCRICOES_POR_MES,
@@ -261,8 +262,6 @@ export default function PlanilhaAvancadaLab({ specialtyCode, lessonCode, lessonT
           border: 1px solid #D2D0CE; background: #FFFFFF; padding: 8px; font-size: 11.5px;
         }
         .pa-grafico { border: 1px solid #D2D0CE; background: #FFFFFF; padding: 10px; }
-        .pa-barras { display: flex; align-items: flex-end; gap: 6px; height: 92px; }
-        .pa-fatia { border-radius: 2px; }
       `}</style>
 
       <div className="pl-janela" onClick={fecharMenu}>
@@ -451,38 +450,23 @@ export default function PlanilhaAvancadaLab({ specialtyCode, lessonCode, lessonT
                   value={ac.grafico.titulo}
                   onChange={e => setAc(a => ({ ...a, grafico: { ...a.grafico!, titulo: e.target.value } }))} />
 
-                {ac.grafico.tipo === 'pizza' ? (
-                  <div style={{
-                    width: 92, height: 92, borderRadius: '50%', margin: '4px auto',
-                    background: 'conic-gradient(#217346 0 12%, #4C9A6E 0 26%, #7FBFA8 0 44%, #A9D6C4 0 66%, #CBE7DC 0 100%)',
-                  }} />
-                ) : ac.grafico.tipo === 'dispersao' ? (
-                  <div style={{ position: 'relative', height: 92, border: '1px solid #E1DFDD' }}>
-                    {INSCRICOES_POR_MES.map((m, i) => (
-                      <span key={m.mes} style={{
-                        position: 'absolute', width: 6, height: 6, borderRadius: '50%', background: '#217346',
-                        left: `${8 + i * 15}%`, bottom: `${(m.total / 120) * 80}%`,
-                      }} />
-                    ))}
-                  </div>
-                ) : ac.grafico.tipo === 'linha' ? (
-                  <svg viewBox="0 0 120 60" style={{ width: '100%', height: 92, border: '1px solid #E1DFDD' }}>
-                    <polyline fill="none" stroke="#217346" strokeWidth="2"
-                      points={INSCRICOES_POR_MES.map((m, i) =>
-                        `${8 + i * 20},${56 - (m.total / 120) * 48}`).join(' ')} />
-                    {INSCRICOES_POR_MES.map((m, i) => (
-                      <circle key={m.mes} r="2" fill="#217346"
-                        cx={8 + i * 20} cy={56 - (m.total / 120) * 48} />
-                    ))}
-                  </svg>
-                ) : (
-                  <div className="pa-barras">
-                    {INSCRICOES_POR_MES.map(m => (
-                      <span key={m.mes} className="pa-fatia" style={{
-                        flex: 1, background: '#217346', height: `${(m.total / 120) * 100}%`,
-                      }} />
-                    ))}
-                  </div>
+                {/* O desenho vem de `excel.tsx`, e não daqui.
+
+                    Ele era escrito neste arquivo, e já tinha divergido do da
+                    CC-ES003 de um jeito que nada acusava: a pizza era um
+                    `conic-gradient` de porcentagens fixas, que não saíam de
+                    dado nenhum, e as outras três liam esta constante. O gráfico
+                    de pizza desenhava a mesma figura para qualquer planilha.
+
+                    Agora a pizza mostra os meses de verdade — o que ela
+                    continua não respondendo é a pergunta, que é a lição
+                    inteira: "pizza e colunas desenham sem erro nenhum". Um
+                    desenho errado do dado certo ensina isso; um desenho que não
+                    vem de dado nenhum não ensina nada. */}
+                {ac.grafico.tipo !== 'nenhum' && (
+                  <DesenhoDoGrafico
+                    tipo={ac.grafico.tipo === 'barras' ? 'colunas' : ac.grafico.tipo}
+                    pontos={INSCRICOES_POR_MES.map(m => ({ rotulo: m.mes, valor: m.total }))} />
                 )}
 
                 <label className="flex items-center gap-2" style={{ fontSize: 11.5, marginTop: 6 }}>
