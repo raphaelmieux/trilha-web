@@ -362,11 +362,29 @@ describe('a lista do banco e a do navegador', () => {
     lista e continuava respondendo por RPC direta. As duas saíram, e a conta
     voltou para dentro da junção que a protege.
   */
-  const SQL = resolve(
-    __dirname,
-    '../../supabase/migrations/20260913140000_ofensiva_so_dentro_do_ranking.sql',
-  );
+  /*
+    E a lista que vale é a da **última** migration que reescreve o
+    `leaderboard`, porque é ela que o banco fica tendo depois do `db push`.
+
+    Esta trava lia um arquivo com nome escrito à mão. No dia em que um
+    laboratório novo entrasse numa migration seguinte, ela continuaria
+    comparando a lista velha — verde, e conferindo o que o banco já não roda.
+    É o `describe.each` com quatro trilhas escritas à mão outra vez.
+  */
+  const PASTA = resolve(__dirname, '../../supabase/migrations');
+  const doRanking = readdirSync(PASTA)
+    .filter(f => f.endsWith('.sql'))
+    .sort()
+    .filter(f => /create or replace function public\.leaderboard\(/.test(readFileSync(join(PASTA, f), 'utf8')));
+  const SQL = join(PASTA, doRanking[doRanking.length - 1] ?? 'nenhuma');
   const fonte = readFileSync(SQL, 'utf8');
+  /* A que fechou as duas portas a mais continua sendo a que as fecha. */
+  const QUE_FECHOU = join(PASTA, '20260913140000_ofensiva_so_dentro_do_ranking.sql');
+  const fechamento = readFileSync(QUE_FECHOU, 'utf8');
+  const depoisDela = readdirSync(PASTA)
+    .filter(f => f.endsWith('.sql') && f > '20260913140000_ofensiva_so_dentro_do_ranking.sql')
+    .map(f => readFileSync(join(PASTA, f), 'utf8'))
+    .join('\n');
 
   const doBanco = (() => {
     const corpo = fonte.match(/and a\.event_type in \(([\s\S]*?)\)/);
@@ -391,8 +409,9 @@ describe('a lista do banco e a do navegador', () => {
     fizeram o `supabase.yml` reprovar por divergência de tipo.
   */
   it('não reabre a porta que não pergunta pelo consentimento', () => {
-    expect(fonte).toContain('drop function if exists public.melhor_ofensiva(uuid)');
-    expect(fonte).toContain('drop function if exists public.eventos_da_ofensiva()');
+    expect(fechamento).toContain('drop function if exists public.melhor_ofensiva(uuid)');
+    expect(fechamento).toContain('drop function if exists public.eventos_da_ofensiva()');
+    expect(depoisDela).not.toMatch(/create (or replace )?function public\.(melhor_ofensiva|eventos_da_ofensiva)\b/);
   });
 
   /* A junção do consentimento continua sendo o que decide quem aparece. */
