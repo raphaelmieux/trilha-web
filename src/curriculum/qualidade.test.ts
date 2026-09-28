@@ -163,6 +163,48 @@ describe('as alternativas não entregam a resposta pelo tamanho', () => {
     expect(ehAMaior(licoes), 'lições').toBeLessThanOrEqual(0.35);
     expect(ehAMaior(provas), 'provas').toBeLessThanOrEqual(0.35);
   });
+
+  /*
+    E a conta se faz **por vereda**, e não só sobre o corpus inteiro.
+
+    As duas medidas acima somam todas as lições de todas as trilhas e veredas,
+    e sessenta questões novas se diluem em mais de mil e quinhentas: a CC-ES006
+    abriu com 18% das questões dela entregando a resposta pelo tamanho, e a
+    CC-ES007 com mais da metade — as duas com a trava do corpus verde. Ela está
+    certa sobre o corpus e não diz nada sobre o arquivo novo, que é justamente
+    o que precisa ser conferido antes de abrir.
+
+    A lista sai de `veredasComConteudo()`, e não de nomes escritos aqui: vereda
+    nova é medida no dia em que ganha a primeira questão. Com a guarda contra o
+    vazio de sempre — uma vereda sem questão com alternativa passaria por não
+    ter conferido nada, e quatro questões dão uma taxa em degraus de 25%, onde
+    um teto de 35% não mede coisa nenhuma.
+  */
+  it('e nenhuma vereda entrega a resposta pelo tamanho sozinha', () => {
+    /*
+      A conta é a da **vantagem visível**, e não a de "é a mais comprida".
+
+      As duas existem acima, e a diferença importa aqui: ganhar por um
+      caractere é ruído de redação, e num arquivo de quarenta questões o ruído
+      sozinho põe metade delas do lado da correta sem que ninguém consiga ver
+      isso de relance. O que se pode marcar sem estudar é a alternativa
+      **visivelmente** mais longa que todas as outras, e é essa que se conta.
+    */
+    const MINIMO_PARA_MEDIR = 8;
+    const acima: string[] = [];
+    let medidas = 0;
+    for (const v of veredasComConteudo()) {
+      const alvo = comAlternativas(questoesDaVereda(v));
+      if (alvo.length < MINIMO_PARA_MEDIR) continue;
+      medidas++;
+      const { taxa, casos } = proporcaoMaiorEhCorreta(questoesDaVereda(v));
+      if (taxa > TETO) {
+        acima.push(`${v.code}: ${casos.length}/${alvo.length} = ${(taxa * 100).toFixed(0)}% (${casos.slice(0, 5).join(', ')})`);
+      }
+    }
+    expect(medidas, 'nenhuma vereda tinha questões bastantes para medir').toBeGreaterThan(0);
+    expect(acima, acima.join(' | ')).toEqual([]);
+  });
 });
 
 describe('as questões de ordenar não trazem a resposta no enunciado', () => {

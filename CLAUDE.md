@@ -2576,6 +2576,20 @@ e quatro caracteres de vantagem — e a trava passou. Ela está certa sobre o
 corpus e não diz nada sobre o arquivo novo. Medir o arquivo sozinho, antes de
 abrir, é o que pega isso; 18% viraram 8,2%.
 
+E medir à mão, quando alguém lembra, é o que esta casa converte em trava:
+`qualidade.test.ts` passou a medir **cada vereda sozinha**, com a lista saindo
+de `veredasComConteudo()`. A conta é a da **vantagem visível** — a correta ser
+mais de doze caracteres mais longa que todas as outras —, e não a de "é a mais
+comprida": ganhar por um caractere é ruído de redação, e num arquivo de
+quarenta questões o ruído sozinho põe metade delas do lado da correta sem que
+ninguém consiga ver isso de relance.
+
+Ela reprovou **uma** vereda na primeira execução, e reprovou com razão: a
+CC-ES004 estava em 43%, com dezoito questões em que a correta se lia de longe —
+a pior com sessenta e três caracteres de vantagem. As outras treze passaram, a
+pior delas em 21%. O conserto é sempre o mesmo: a correta volta a ser uma
+afirmação curta e o porquê vai para o `explanation`, que é o lugar dele.
+
 **A CC-ES007 mede a decisão, e a AP044 media o gesto.** A trilha já tem um
 laboratório de correio, e ele cobra pôr a lista grande no Cco, anexar,
 assinar, arquivar. Os requisitos 3 e 4.2 desta vereda pedem outra coisa, com
@@ -2753,6 +2767,12 @@ outra vez, achado do mesmo jeito — no Chromium, porque o jsdom não calcula
 contraste nenhum. Eles não são enfeite: é por eles que se lê que a semana
 começa no dia 28 de junho.
 
+**E a crase dentro de comentário de template de CSS fechou a string pela oitava
+e pela nona vez**, as duas no mesmo dia, nos arquivos novos da CC-ES008 — e a
+segunda custou como sempre custa: eu medi no navegador antes de rodar o `tsc`,
+o servidor de desenvolvimento continuou servindo o módulo anterior, e a medida
+era de um arquivo que não existia mais. Está escrito abaixo desde a quarta vez.
+
 **E a crase dentro de comentário de template de CSS fechou a string pela sétima
 vez** — e desta vez custou mais: eu medi no navegador **antes** de rodar o
 `tsc`, então o servidor de desenvolvimento ainda servia o módulo anterior e a
@@ -2767,6 +2787,68 @@ vazio; e a conta de quem pode apagar o acampamento passava porque dar "fazer
 alterações" a um conselheiro derruba também a conta dos conselheiros. Quem
 recebe o acesso a mais tem de estar **fora** dos dois grupos que a meta já
 confere.
+
+**A CC-ES008 abre quatro telas, e a lição começa em uma delas.** Construtor de
+formulários, planilha, editor de texto simples e a tela da plataforma do módulo
+8. Onde a lição **começa** e onde ela **acaba** não são a mesma coisa: o módulo
+6 parte da planilha, exporta o CSV e termina no editor, que é onde se vê o que
+o arquivo de fato é. Por isso `LICOES_DA_CC_ES008` diz o programa de partida e
+o componente guarda a tela de agora — um campo só diria que a lição acontece
+num programa e ficaria mentindo na metade dela.
+
+**Dois programas abertos querem dizer barra de tarefas.** É a regra do
+laboratório de compactar da AP041, e só o módulo 6 a aciona: a planilha que
+exporta e o editor que mostra o que saiu. Nas outras sete lições ela não
+aparece, porque prometeria caminho para um programa que a lição não usa.
+
+O editor é arquivo à parte — `blocoDeNotas.tsx` — pela razão do
+`digitalizador.tsx`, e não porque uma cópia esteja a caminho: escrever um editor
+de texto dentro do componente da lição faria daquele componente duas coisas. E
+ele abre o arquivo **só de leitura**, por dois motivos que se somam: o CSV é o
+retrato que saiu da planilha, e consertar dentro dele deixa os dois
+discordando — é o PDF que congela, da CC-ES004 —; e num editor que aceitasse
+digitação, digitar a aspa à mão fecharia a tarefa sem nada ter sido provocado.
+
+**A fórmula passou a atravessar a aba, porque o requisito 3 manda.** Ele pede
+a base numa aba e o total na outra, e `=SOMA(Respostas!E2:E17)` respondia
+`#NOME?`: a lição pedia uma fórmula quebrada, e a tarefa ficava verde porque o
+que ela confere é o texto. `Bruto` ganhou a aba — `(linha, coluna, aba?)` —,
+`Ref` também, e a chave do cache junto; ausente, a aba continua sendo a de quem
+escreveu, que é o que toda planilha de uma aba só sempre foi. O que separa
+`Respostas!E2` de `SOMA(` é a exclamação, e é no tokenizador que se decide.
+
+De lambuja apareceu a lição do módulo 5 inteira desenhada: a `SOMA` que
+atravessa dá **38**, e o total digitado à mão ao lado dá **42**. Os dois
+plausíveis, e a diferença são as duas diárias escritas com ponto.
+
+**O relatório de tabela dinâmica recusa a digitação, e não a engole.** Ele é
+desenhado por cima das células — está no modelo, como o filtro e a formatação
+condicional, e por isso quem o pinta é a grade. Sem a guarda, digitar ali grava
+por baixo: o texto entra na célula, o resumo continua desenhado em cima, e o
+que foi escrito não aparece em lugar nenhum. `celulaProtegida` é opcional no
+gancho, e só a CC-ES008 a passa; ela **avisa em vez de agir**, que é a decisão
+do "selecione primeiro" do laboratório de Word.
+
+**Três defeitos de layout que só o navegador mostra.** A área de trabalho era
+`position: absolute` com inset zero, e inset mede o bloco de contenção — que
+ali é a tela inteira, e não o miolo da moldura: o Excel passava **por baixo** do
+painel de tarefas da plataforma, com a barra de tarefas atravessando a tela.
+Depois de virar item de flex, ela precisou ser **coluna** e não fileira: numa
+fileira o eixo principal é o horizontal, o item herda `min-width: auto` e se
+recusa a encolher abaixo do conteúdo, e a grade larga empurrava a janela trinta
+pixels para fora. E, sem barra de tarefas, a janela era filha de uma `div` sem
+classe no meio do flex: ela parava vinte e quatro pixels antes do fim e as abas
+das planilhas subiam para dentro da cápsula de tarefas — meio escondidas, numa
+vereda cuja matéria é trocar de aba.
+
+**O aviso de tela pequena mente numa tela que não imita programa.** Ele diz,
+com todas as letras, que o laboratório imita um programa de computador e que no
+celular os botões encolhem. O módulo 8 é uma lista de perguntas a classificar e
+uma escolha a fazer: a frase é falsa, e ela manda a pessoa procurar um
+computador para uma tela que funciona perfeitamente no telefone dela.
+`imitaPrograma` é o que a moldura passou a perguntar, e é `true` por omissão —
+laboratório que não imita nada continua sendo tela da plataforma, e tela da
+plataforma não avisa nada sobre programa nenhum.
 
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
@@ -3475,6 +3557,14 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaCcEs007.test.ts` | ata sem dono e sem prazo, ou pauta escrita em parágrafo |
 | `src/components/LaboratorioDeComunicacao.test.tsx` | lição da CC-ES007 impossível de vencer clicando |
 | `src/components/LaboratorioDeComunicacao.test.tsx` | comando do calendário que não chega ao evento, sem meta nenhuma exercitá-lo |
+| `src/labs/gradeDoExcel.test.tsx` | laboratório de planilha que tecla diferente dos outros, ou que não entrou na mesa |
+| `src/labs/excel.test.tsx` | resumo desenhado onde não é dele, ou guia Arquivo que abre sem ter o que abrir |
+| `src/labs/tabelaDinamica.test.ts` | média de nada escrita como zero, ou retrato que escreve fora da própria faixa |
+| `src/labs/formulas.test.ts` | fórmula que nomeia aba e não acha o que ler, ou nome de função lido como aba |
+| `src/labs/metasDaCcEs008.test.ts` | meta da CC-ES008 que abre verde, ou que a solução de referência não fecha |
+| `src/components/LaboratorioDeDados.test.tsx` | lição da CC-ES008 impossível de vencer clicando |
+| `src/components/LaboratorioDeDados.test.tsx` | relatório de tabela dinâmica que engole a digitação em vez de recusá-la |
+| `src/curriculum/qualidade.test.ts` | vereda cuja alternativa correta se lê pelo tamanho, medida sozinha |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

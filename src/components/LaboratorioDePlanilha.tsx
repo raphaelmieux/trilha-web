@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   AlignLeft, AlignCenter, AlignRight, ChevronsUp, Minus, ChevronsDown,
   Bold, Combine, Sigma, Palette, ArrowDownAZ, ArrowUpZA, Filter,
@@ -8,18 +8,16 @@ import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
   CSS_EXCEL, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
 } from '../labs/excel';
+import { useGradeDoExcel } from '../labs/gradeDoExcel';
 import {
-  type Caderno, type Direcao, type EstiloCondicional, type Faixa, type Planilha,
-  type TipoDeGrafico, type Formato,
-  escrever, limpar, mesclar, mesclagemApaga, mover, proxima, ordenar,
-  preencherAbaixo, preencherADireita, planilhaAtiva, trocarAtiva,
-  historicoDe, registrar, desfazer, refazer, type Historico,
+  type Caderno, type EstiloCondicional, type Planilha, type TipoDeGrafico,
+  type Formato, type Historico,
+  mesclar, mesclagemApaga, ordenar, planilhaAtiva, trocarAtiva,
+  historicoDe, registrar, desfazer, refazer,
   nomeDaCelula, nomeDaFaixa, normalizar, umaCelulaSo, linhaEscondida, valorDaGrade,
-  ALTURA_PADRAO, LARGURA_PADRAO,
 } from '../labs/planilha';
 import { CADERNOS_DA_CC_ES003 } from '../labs/cadernosDaCcEs003';
 import { roteiroDaPlanilha } from '../labs/roteiroDaPlanilha';
-import { mostrar } from '../labs/formulas';
 import type { LicaoDeVereda, Vereda } from '../curriculum/veredas';
 
 /*
@@ -100,24 +98,11 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
   const cad = hist.presente;
   const p = planilhaAtiva(cad);
 
-  const [faixa, setFaixa] = useState<Faixa>({ l1: 0, c1: 0, l2: 0, c2: 0 });
-  const [arrastandoFaixa, setArrastandoFaixa] = useState(false);
-  /* De onde a alça de preenchimento começou a ser arrastada, se estiver. */
-  const [preenchendo, setPreenchendo] = useState<{ l: number; c: number } | null>(null);
-  const sel = { l: faixa.l1, c: faixa.c1 };
-  const [barra, setBarra] = useState(p.celulas[0][0].texto);
-  /* Onde a edição começou. Era um booleano na AP043, e foi ele o defeito:
-     escrever na barra ligava o modo de edição, a célula ganhava um campo com
-     autoFocus, e esse campo roubava o foco a cada tecla. */
-  const [editando, setEditando] = useState<'celula' | 'barra' | null>(null);
   const [guia, setGuia] = useState<string>('Página Inicial');
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
   const [filtroAberto, setFiltroAberto] = useState<{ coluna: number; x: number; y: number } | null>(null);
   const [aviso, setAviso] = useState('');
   const [salvando, setSalvando] = useState(false);
-  const gradeRef = useRef<HTMLDivElement>(null);
-  const cancelando = useRef(false);
-  const arrasto = useRef<{ tipo: 'coluna' | 'linha'; indice: number; inicio: number; base: number } | null>(null);
 
   const avisar = (texto: string) => {
     setAviso(texto);
@@ -128,115 +113,26 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
   const mudar = (f: (p: Planilha) => Planilha) =>
     setHist(h => registrar(h, trocarAtiva(h.presente, f(planilhaAtiva(h.presente)))));
 
-  /* ── Seleção e escrita ─────────────────────────────────────────────────── */
-
-  const selecionar = (l: number, c: number) => {
-    setFaixa({ l1: l, c1: c, l2: l, c2: c });
-    setBarra(p.celulas[l][c].texto);
-    setEditando(null);
-  };
-
-  const confirmar = (texto: string, andarPara?: Direcao) => {
-    mudar(q => escrever(q, sel.l, sel.c, texto));
-    setEditando(null);
-    if (andarPara) {
-      const destino = proxima(p, faixa, andarPara);
-      setFaixa(destino);
-      setBarra(p.celulas[destino.l1][destino.c1].texto);
-    } else {
-      setBarra(texto);
-    }
-  };
-
-  const cancelarEdicao = () => {
-    cancelando.current = true;
-    setEditando(null);
-    setBarra(p.celulas[sel.l][sel.c].texto);
-  };
-
-  /* ── O teclado do Excel ────────────────────────────────────────────────── */
-
-  const aoTeclar = (e: React.KeyboardEvent) => {
-    if (editando) return;
-    const ctrl = e.ctrlKey || e.metaKey;
-
-    if (ctrl && e.key.toLowerCase() === 'z') { e.preventDefault(); setHist(desfazer); return; }
-    if (ctrl && e.key.toLowerCase() === 'y') { e.preventDefault(); setHist(refazer); return; }
-
-    const setas: Record<string, Direcao> = {
-      ArrowUp: 'cima', ArrowDown: 'baixo', ArrowLeft: 'esquerda', ArrowRight: 'direita',
-    };
-    if (setas[e.key]) {
-      e.preventDefault();
-      const destino = mover(p, faixa, setas[e.key], e.shiftKey);
-      setFaixa(destino);
-      if (!e.shiftKey) setBarra(p.celulas[destino.l1][destino.c1].texto);
-      return;
-    }
-    if (e.key === 'Enter') { e.preventDefault(); selecionarDe(proxima(p, faixa, e.shiftKey ? 'cima' : 'baixo')); return; }
-    if (e.key === 'Tab') { e.preventDefault(); selecionarDe(proxima(p, faixa, e.shiftKey ? 'esquerda' : 'direita')); return; }
-    if (e.key === 'F2') { e.preventDefault(); setBarra(p.celulas[sel.l][sel.c].texto); setEditando('celula'); return; }
-    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); mudar(q => limpar(q, faixa)); setBarra(''); return; }
-    if (e.key === 'Escape') { e.preventDefault(); cancelarEdicao(); return; }
-
-    /* Digitar sobre a célula selecionada substitui o conteúdo — o gesto mais
-       usado do programa, e o que não existia na primeira versão da AP043. */
-    if (!ctrl && !e.altKey && e.key.length === 1) {
-      e.preventDefault();
-      setBarra(e.key);
-      setEditando('celula');
-    }
-  };
-
-  const selecionarDe = (f: Faixa) => {
-    setFaixa(f);
-    setBarra(p.celulas[f.l1][f.c1].texto);
-    setEditando(null);
-  };
-
-  /* ── Arrastar a borda do cabeçalho ─────────────────────────────────────── */
-
-  const comecarArrasto = (tipo: 'coluna' | 'linha', indice: number, e: React.PointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    arrasto.current = {
-      tipo, indice,
-      inicio: tipo === 'coluna' ? e.clientX : e.clientY,
-      base: tipo === 'coluna' ? p.larguras[indice] : p.alturas[indice],
-    };
-  };
-
-  const moverArrasto = (e: React.PointerEvent) => {
-    const a = arrasto.current;
-    if (!a) return;
-    const delta = (a.tipo === 'coluna' ? e.clientX : e.clientY) - a.inicio;
-    const minimo = a.tipo === 'coluna' ? 28 : 16;
-    const valor = Math.max(minimo, Math.round(a.base + delta));
-    mudar(q => (a.tipo === 'coluna'
-      ? { ...q, larguras: q.larguras.map((w, i) => (i === a.indice ? valor : w)) }
-      : { ...q, alturas: q.alturas.map((h, i) => (i === a.indice ? valor : h)) }));
-  };
-
   /*
-    Dois cliques na borda ajustam ao conteúdo, como no Excel.
+    A grade é controlada pelo gancho, e não por fiação escrita aqui.
 
-    Sete pixels por caractere é a medida da fonte da grade, e as duas margens
-    de cinco são o padding da célula — os mesmos números que a tarefa do módulo
-    1 usa para saber se o nome mais comprido cabe.
+    Ela estava escrita duas vezes — uma aqui e outra em `PlanilhaLab` —, e as
+    duas já tinham divergido: lá o Ctrl+C copia, aqui não copiava nada. Quem
+    aprendeu a copiar e colar na AP043 chegava nesta vereda, apertava Ctrl+C, e
+    nada acontecia, sem erro e sem aviso.
+
+    O estado continua sendo daqui: é este componente que guarda a pasta e o
+    histórico, e é o `mudar` acima que o Ctrl+Z alcança. O gancho guarda só o
+    que é do gesto.
   */
-  const ajustarAoConteudo = (tipo: 'coluna' | 'linha', indice: number) => {
-    if (tipo === 'linha') {
-      mudar(q => ({ ...q, alturas: q.alturas.map((h, i) => (i === indice ? ALTURA_PADRAO : h)) }));
-      return;
-    }
-    const maior = p.celulas.reduce(
-      (a, linha, l) => Math.max(a, mostrar(valorDaGrade(p, l, indice), linha[indice]?.formato).length),
-      0);
-    mudar(q => ({
-      ...q,
-      larguras: q.larguras.map((w, i) => (i === indice ? Math.max(LARGURA_PADRAO, maior * 7 + 10) : w)),
-    }));
-  };
+  const g = useGradeDoExcel({
+    planilha: p,
+    mudar,
+    desfazer: () => setHist(desfazer),
+    refazer: () => setHist(refazer),
+    avisar: (texto: string) => avisar(texto),
+  });
+  const { faixa, setFaixa, sel, setBarra, setEditando, gradeRef } = g;
 
   /* ── Os comandos da faixa ──────────────────────────────────────────────── */
 
@@ -291,18 +187,6 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
     diagonal é um gesto que o Excel resolve de um jeito só, e adivinhar o
     outro faria a coluna aparecer preenchida onde ninguém pediu.
   */
-  const soltarPreenchimento = () => {
-    if (!preenchendo) return;
-    const origem = preenchendo;
-    setPreenchendo(null);
-    const n = normalizar(faixa);
-    const desceu = n.base - origem.l;
-    const andou = n.dir - origem.c;
-    if (desceu <= 0 && andou <= 0) return;
-    if (desceu >= andou) mudar(q => preencherAbaixo(q, origem, n.base));
-    else mudar(q => preencherADireita(q, origem, n.dir));
-  };
-
   const classificar = (crescente: boolean) => {
     if (!p.tabela) { avisar('Esta aba não tem uma tabela reconhecida para classificar.'); return; }
     mudar(q => ordenar(q, sel.c, crescente));
@@ -420,10 +304,10 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
           {guia === 'Página Inicial' && (
             <>
               <GrupoDoExcel nome="Desfazer">
-                <BotaoDoExcel dica="Desfazer (Ctrl+Z)" aoClicar={() => setHist(desfazer)}>
+                <BotaoDoExcel dica="Desfazer (Ctrl+Z)" aoClicar={g.desfazer}>
                   <Undo2 className="w-4 h-4" />
                 </BotaoDoExcel>
-                <BotaoDoExcel dica="Refazer (Ctrl+Y)" aoClicar={() => setHist(refazer)}>
+                <BotaoDoExcel dica="Refazer (Ctrl+Y)" aoClicar={g.refazer}>
                   <Redo2 className="w-4 h-4" />
                 </BotaoDoExcel>
               </GrupoDoExcel>
@@ -523,64 +407,14 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
             className="pl-entrada"
             aria-label="Barra de fórmulas"
             placeholder="Escreva aqui, ou uma fórmula começando por ="
-            value={editando ? barra : p.celulas[sel.l][sel.c].texto}
-            onFocus={() => setEditando('barra')}
-            onChange={e => setBarra(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') { e.preventDefault(); confirmar(barra, 'baixo'); gradeRef.current?.focus(); }
-              if (e.key === 'Escape') { e.preventDefault(); cancelarEdicao(); gradeRef.current?.focus(); }
-            }}
-            onBlur={() => {
-              if (cancelando.current) { cancelando.current = false; setEditando(null); return; }
-              if (editando === 'barra') confirmar(barra);
-            }} />
+            {...g.propsDaBarra} />
         </div>
 
         <GradeDoExcel
-          planilha={p}
-          faixa={faixa}
-          ativa={sel}
-          rascunho={editando === 'celula' ? barra : null}
-          gradeRef={gradeRef}
-          aoTeclar={aoTeclar}
-          aoApontarCelula={(l, c, e) => {
-            gradeRef.current?.focus();
-            if (e.button !== 0) return;
-            if (e.shiftKey) { setFaixa(f => ({ ...f, l2: l, c2: c })); return; }
-            selecionar(l, c);
-            setArrastandoFaixa(true);
-          }}
-          aoEntrarNaCelula={(l, c) => {
-            if (preenchendo) { setFaixa(f => ({ ...f, l2: l, c2: c })); return; }
-            if (arrastandoFaixa) setFaixa(f => ({ ...f, l2: l, c2: c }));
-          }}
-          aoApontarColuna={(c, e) => {
-            if (e.button !== 0) return;
-            gradeRef.current?.focus();
-            setFaixa({ l1: 0, c1: c, l2: p.celulas.length - 1, c2: c });
-          }}
-          aoApontarLinha={(l, e) => {
-            if (e.button !== 0) return;
-            gradeRef.current?.focus();
-            setFaixa({ l1: l, c1: 0, l2: l, c2: p.celulas[0].length - 1 });
-          }}
-          aoMoverPonteiro={moverArrasto}
-          aoSoltarPonteiro={() => {
-            arrasto.current = null;
-            setArrastandoFaixa(false);
-            soltarPreenchimento();
-          }}
-          aoSairDaGrade={() => setArrastandoFaixa(false)}
-          aoAbrirEdicao={texto => { setBarra(texto); setEditando('celula'); }}
-          aoEscrever={setBarra}
-          aoConfirmar={(texto, direcao) => {
-            if (cancelando.current) { cancelando.current = false; return; }
-            confirmar(texto, direcao);
-          }}
-          aoCancelar={cancelarEdicao}
-          aoArrastarBorda={comecarArrasto}
-          aoAjustarAoConteudo={ajustarAoConteudo}
-          aoComecarPreenchimento={setPreenchendo}
+          {...g.props}
+          aoArrastarBorda={g.aoArrastarBorda}
+          aoAjustarAoConteudo={g.aoAjustarAoConteudo}
+          aoComecarPreenchimento={g.aoComecarPreenchimento}
           aoAbrirFiltro={p.filtro ? (c => {
             const alvo = gradeRef.current?.querySelectorAll('.pl-cab-col')[c]?.getBoundingClientRect();
             setFiltroAberto({ coluna: c, x: alvo?.left ?? 80, y: (alvo?.bottom ?? 120) + 2 });

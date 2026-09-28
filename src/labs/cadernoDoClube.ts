@@ -104,6 +104,7 @@ export function planilhaDe(nome: string, conteudo: string[][], extras: Partial<P
     ordenacao: null,
     regras: [],
     grafico: null,
+    resumo: null,
     ...extras,
   };
 }

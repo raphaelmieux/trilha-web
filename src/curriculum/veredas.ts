@@ -11,6 +11,7 @@ import { MODULOS_DE_DOCUMENTOS_PORTATEIS } from './documentosPortateis';
 import { MODULOS_DE_CONTAS_E_SEGURANCA } from './contasESeguranca';
 import { MODULOS_DO_COMPARTILHADO } from './trabalhoCompartilhado';
 import { MODULOS_DA_COMUNICACAO } from './comunicacaoEAgenda';
+import { MODULOS_DE_DADOS } from './dadosEFormularios';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -493,6 +494,25 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      A CC-ES008, que abre quatro telas e começa em uma delas.
+
+      Construtor de formulários, planilha, editor de texto simples e a tela da
+      plataforma do módulo 8. `licao` diz de que estado se parte **e** em qual
+      delas a lição começa — que não é a mesma coisa que onde ela termina: o
+      módulo 6 começa na planilha, exporta o CSV e acaba no editor. Um `tipo`
+      por tela daria quatro variantes quase iguais aqui, e o que muda entre
+      elas não é o que a lição é.
+    */
+    id: string;
+    tipo: 'dados';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcEs008').LicaoDaCcEs008;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
@@ -886,9 +906,38 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DA_COMUNICACAO,
   },
-  anunciada('CC-ES008', 'Dados e Formulários', 'Escritório',
-    'Formulário que coleta, planilha que guarda, e por que as duas não são a mesma coisa.',
-    ['cc-es003', 'cc-es006']),
+  {
+    id: 'cc-es008',
+    code: 'CC-ES008',
+    name: 'Dados e Formulários',
+    familia: 'Escritório',
+    description: 'Formulário que coleta, planilha que guarda, e por que as duas não são a mesma coisa.',
+    /*
+      As duas exigências estão escritas no requisito 1, e nenhuma delas é
+      decoração.
+
+      A CC-ES003 porque tudo aqui acontece numa planilha: a fórmula, a tabela
+      declarada, a classificação que leva a linha inteira e a formatação são de
+      lá. E a CC-ES006 porque um formulário coleta dado **de outras pessoas** —
+      quem não sabe o que uma pasta compartilhada abre não sabe quem está lendo
+      a ficha que ele acabou de montar.
+
+      `origem` é a CC-ES003, que é de onde a planilha vem. O que muda aqui é o
+      que se pede dela: lá a planilha é a ferramenta, e aqui ela é o depósito —
+      a base que guarda e o relatório que mostra são duas coisas, e misturá-las
+      é o requisito 3 inteiro.
+
+      O que carrega esta vereda é o que **não dá erro**. Telefone guardado como
+      número continua sendo um número válido, sem o zero da frente. A soma pula
+      duas células e devolve um total plausível e menor. O resumo relata dez
+      unidades onde há seis, com o total de respostas certo. E ele continua
+      relatando o erro depois de consertado, porque guarda o que leu.
+    */
+    origem: 'CC-ES003',
+    preRequisitos: ['cc-es003', 'cc-es006'],
+    mostraResultado: true,
+    modulos: MODULOS_DE_DADOS,
+  },
   anunciada('CC-ES009', 'Análise de Dados', 'Escritório',
     'O que os números dizem, o que não dizem, e como um gráfico engana sem mentir.',
     ['cc-es008']),

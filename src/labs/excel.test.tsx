@@ -2,9 +2,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act, useRef, useState, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { GradeDoExcel, CSS_EXCEL } from './excel';
+import { GradeDoExcel, GuiasDoExcel, CSS_EXCEL } from './excel';
 import {
-  type Faixa, type Planilha, type RegraCondicional, escrever, vazia,
+  type Faixa, type Planilha, type RegraCondicional, type TabelaDinamica,
+  escrever, vazia,
   LARGURA_PADRAO, ALTURA_PADRAO,
 } from './planilha';
 
@@ -35,6 +36,7 @@ const planilhaDeTeste = (conteudo: string[][], extras: Partial<Planilha> = {}): 
   ordenacao: null,
   regras: [],
   grafico: null,
+  resumo: null,
   ...extras,
 });
 
@@ -251,5 +253,90 @@ describe('a grade não guarda estado', () => {
         aoEscrever={() => {}} aoConfirmar={() => {}} aoCancelar={() => {}} />,
     );
     expect(container.querySelector('.pl-ativa')?.textContent?.trim()).toBe('11');
+  });
+});
+
+
+/* ── O relatório de tabela dinâmica ───────────────────────────────────────── */
+
+const RESUMO: TabelaDinamica = {
+  em: { l: 4, c: 1 },
+  origem: { planilha: 'Respostas', faixa: { l1: 0, c1: 0, l2: 3, c2: 1 } },
+  linha: 0,
+  valor: { coluna: 1, como: 'contagem' },
+  retrato: [
+    { rotulo: 'Falcão', valor: 2 },
+    { rotulo: '(vazio)', valor: 1 },
+  ],
+};
+
+describe('o resumo é desenhado por cima das células', () => {
+  /*
+    Ele sai do **modelo**, como o filtro e a formatação condicional, e não de um
+    setter: se cada laboratório tivesse de dizer à grade como desenhá-lo, dois
+    laboratórios o desenhariam diferente — que é a razão de a grade existir.
+  */
+  it('a planilha sem resumo não desenha nada dele', () => {
+    const container = montar(<Grade planilha={planilhaDeTeste(CLUBE)} />);
+    expect(container.querySelectorAll('.pl-resumo')).toHaveLength(0);
+  });
+
+  it('o cabeçalho e as linhas do retrato saem onde o resumo diz', () => {
+    const container = montar(
+      <Grade planilha={planilhaDeTeste(CLUBE, { resumo: RESUMO })} />);
+    const daLinha = (l: number) =>
+      [...container.querySelectorAll('.pl-grade tbody tr')[l].querySelectorAll('td')]
+        .map(td => td.textContent?.trim() ?? '');
+    expect(daLinha(4).slice(1, 3)).toEqual(['Rótulos de Linha', 'Contagem']);
+    expect(daLinha(5).slice(1, 3)).toEqual(['Falcão', '2']);
+    expect(daLinha(6).slice(1, 3)).toEqual(['(vazio)', '1']);
+  });
+
+  it('e ele vence o que estiver escrito na célula por baixo', () => {
+    /*
+      No Excel aquela área é do relatório: mostrar o texto de baixo faria a tela
+      discordar do retrato, e quem digitasse ali veria a planilha engolir a
+      digitação sem dizer nada.
+    */
+    const suja = escrever(planilhaDeTeste(CLUBE, { resumo: RESUMO }), 5, 1, 'lixo');
+    const container = montar(<Grade planilha={suja} />);
+    const celula = container.querySelectorAll('.pl-grade tbody tr')[5].querySelectorAll('td')[1];
+    expect(celula.textContent?.trim()).toBe('Falcão');
+    expect(celula.className).toContain('pl-resumo');
+  });
+});
+
+describe('a guia Arquivo abre os bastidores quando há o que pôr neles', () => {
+  /*
+    É a decisão de `word.tsx`, e a razão está escrita lá: sem esta porta, quem
+    precisa dela — o Salvar como do requisito 5.4 da CC-ES008 — redesenha a
+    fileira de guias à mão, que é como a plataforma ficou com dois "Word".
+  */
+  const guias = (extras: Partial<Parameters<typeof GuiasDoExcel>[0]>) => montar(
+    <GuiasDoExcel
+      atual="Página Inicial" usaveis={['Página Inicial']}
+      aoTrocar={() => {}} aoAvisar={() => {}} {...extras}
+    />);
+
+  it('sem o laboratório entregar nada, ela avisa que não faz parte', () => {
+    const avisou = vi.fn();
+    const container = guias({ aoAvisar: avisou });
+    act(() => {
+      container.querySelector('.pl-guia-arquivo')!
+        .dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(avisou).toHaveBeenCalled();
+  });
+
+  it('e com ele, abre o que o laboratório pôs lá', () => {
+    const abriu = vi.fn();
+    const avisou = vi.fn();
+    const container = guias({ aoAbrirArquivo: abriu, aoAvisar: avisou });
+    act(() => {
+      container.querySelector('.pl-guia-arquivo')!
+        .dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(abriu).toHaveBeenCalled();
+    expect(avisou, 'a guia avisou que não faz parte e abriu ao mesmo tempo').not.toHaveBeenCalled();
   });
 });

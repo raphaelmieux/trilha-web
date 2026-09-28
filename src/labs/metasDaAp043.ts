@@ -192,6 +192,7 @@ export const PLANILHA_INICIAL: Planilha = {
   ordenacao: null,
   regras: [],
   grafico: null,
+    resumo: null,
 };
 /* ── As metas ──────────────────────────────────────────────────────────────── */
 

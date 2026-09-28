@@ -42,7 +42,7 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M1-Q2', type: 'scenario',
       prompt: 'A ata foi escrita num computador com a fonte Garamond e mandada em .docx para o computador do clube, que não tem essa fonte. O que se vê lá?',
       data: { scenarios: [
-        { id: 'a', text: 'O texto aparece com outra fonte, e as quebras de linha e de página mudam de lugar.', correct: true },
+        { id: 'a', text: 'A fonte troca e as quebras mudam de lugar.', correct: true },
         { id: 'b', text: 'O documento não abre, e o programa pede a fonte que falta.', porque: 'Ele abre. Faltar fonte nunca impede a abertura — o programa troca por outra e segue, sem avisar.' },
         { id: 'c', text: 'O texto aparece em branco onde a fonte falta.', porque: 'Nada fica em branco: o texto continua legível, escrito com outra fonte. É justamente por continuar legível que ninguém percebe.' },
         { id: 'd', text: 'A fonte vem junto no arquivo .docx, então nada muda.', porque: 'O .docx pode embutir fontes, mas não faz isso por padrão — e o que se manda por e-mail quase nunca está com essa opção ligada.' },
@@ -53,7 +53,7 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M1-Q3', type: 'multiple_choice',
       prompt: 'Por que o PDF é ruim para um grupo escrever um documento junto?',
       data: { options: [
-        { id: 'a', text: 'Porque ele guarda onde cada letra fica, então acrescentar texto não empurra o que vem depois.', correct: true },
+        { id: 'a', text: 'Porque o texto dele não se reorganiza.', correct: true },
         { id: 'b', text: 'Porque PDF é somente leitura e não existe como editar um.', porque: 'Existem editores de PDF, e eles funcionam. O que não funciona bem é o texto se reorganizar quando alguém escreve no meio.' },
         { id: 'c', text: 'Porque PDF não aceita mais de um autor no mesmo arquivo.', porque: 'Um arquivo não tem lista de autores que impeça nada. Qualquer pessoa com o arquivo pode mexer nele.' },
         { id: 'd', text: 'Porque o PDF perde a formatação a cada vez que é salvo.', porque: 'Ele não perde: guardar a formatação intacta é exatamente o que ele faz melhor.' },
@@ -84,7 +84,7 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M1-Q6', type: 'scenario',
       prompt: 'A tesouraria mandou o orçamento em PDF. Alguém achou um erro num valor e corrigiu direto no PDF, com um editor. O que fica errado nessa história?',
       data: { scenarios: [
-        { id: 'a', text: 'A planilha original continua com o valor errado, e é ela que alguém vai abrir no ano que vem.', correct: true },
+        { id: 'a', text: 'A planilha original continua errada.', correct: true },
         { id: 'b', text: 'O PDF não aceita a correção e o valor volta ao que era.', porque: 'Ele aceita. O editor de PDF muda o que está desenhado na página sem reclamar.' },
         { id: 'c', text: 'A correção feita no PDF apaga a assinatura, mesmo que não houvesse nenhuma.', porque: 'Só se houvesse assinatura verificável, e o documento não tinha. Sem ela, mexer não deixa marca.' },
         { id: 'd', text: 'Nada fica errado: corrigir no PDF é mais rápido e o resultado é o mesmo.', porque: 'O resultado não é o mesmo. Passam a existir dois documentos discordando, e o editável — que é o que sobrevive — é o errado.' },
@@ -123,7 +123,7 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M2-Q2', type: 'multiple_choice',
       prompt: 'Qual é a diferença entre extrair e dividir?',
       data: { options: [
-        { id: 'a', text: 'Extrair copia páginas para um arquivo novo e deixa o inteiro de pé; dividir reparte o documento em dois.', correct: true },
+        { id: 'a', text: 'Extrair copia; dividir reparte.', correct: true },
         { id: 'b', text: 'Extrair funciona em uma página e dividir funciona em várias.', porque: 'As duas funcionam com qualquer número de páginas. O que muda é o que sobra do documento original.' },
         { id: 'c', text: 'Extrair tira o texto do PDF e dividir tira as imagens.', porque: 'Nenhuma das duas separa texto de imagem: as duas trabalham com páginas inteiras.' },
         { id: 'd', text: 'Dividir precisa que o documento esteja pesquisável e extrair não.', porque: 'Nenhuma das duas olha para a camada de texto. Elas movem páginas, e página sem texto se move igual.' },
@@ -134,7 +134,7 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M2-Q3', type: 'scenario',
       prompt: 'A reunião gerou três documentos, e eles foram mandados como três anexos num e-mail. O que costuma acontecer?',
       data: { scenarios: [
-        { id: 'a', text: 'Quem recebe abre o primeiro, resolve o assunto e não volta aos outros dois.', correct: true },
+        { id: 'a', text: 'Quem recebe abre o primeiro e não volta aos outros.', correct: true },
         { id: 'b', text: 'O servidor de e-mail junta os três num só ao entregar.', porque: 'Nenhum servidor faz isso. Os anexos chegam como foram mandados.' },
         { id: 'c', text: 'Só o primeiro anexo é entregue, e os outros ficam retidos.', porque: 'Os três são entregues. O problema não é técnico, é de quem lê.' },
         { id: 'd', text: 'Os três abrem juntos numa mesma janela do leitor.', porque: 'Cada anexo abre por conta, quando alguém clica nele — e é aí que os dois últimos ficam para trás.' },
@@ -165,12 +165,12 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M2-Q6', type: 'scenario',
       prompt: 'Depois de dividir um documento de seis páginas, os dois arquivos têm cinco páginas somadas. Como isso é percebido?',
       data: { scenarios: [
-        { id: 'a', text: 'Só conferindo a conta, porque os dois arquivos abrem normalmente e nada avisa.', correct: true },
+        { id: 'a', text: 'Só conferindo a conta.', correct: true },
         { id: 'b', text: 'O leitor mostra um aviso de página faltando ao abrir.', porque: 'Ele não tem como saber que faltou: para o leitor, cada arquivo é um documento completo do tamanho que tem.' },
         { id: 'c', text: 'Um dos dois arquivos fica corrompido e não abre.', porque: 'Nenhum corrompe. Os dois são PDFs válidos, só que um deles perdeu uma página no caminho.' },
         { id: 'd', text: 'A numeração das páginas fica com um salto visível.', porque: 'A numeração que o leitor mostra é sempre contínua, de 1 até o total. Se o documento tinha número impresso na folha, aí sim aparece — mas quase nenhum tem.' },
       ]},
-      explanation: 'A soma das páginas dos dois pedaços tem de dar o total do original. É uma conferência de cinco segundos e ninguém faz.',
+      explanation: 'Os dois arquivos abrem normalmente e nada avisa. A soma das páginas dos dois pedaços tem de dar o total do original — é uma conferência de cinco segundos e ninguém faz.',
     },
     {
       id: 'ES4-M2-Q7', type: 'multiple_choice',
@@ -193,7 +193,7 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M3-Q1', type: 'multiple_choice',
       prompt: 'O que é um documento em imagem?',
       data: { options: [
-        { id: 'a', text: 'Um PDF cujas páginas são fotografias, sem letras gravadas dentro.', correct: true },
+        { id: 'a', text: 'Um PDF cujas páginas são fotografias.', correct: true },
         { id: 'b', text: 'Um PDF que tem alguma figura no meio do texto.', porque: 'Figura no meio do texto é normal e não muda nada: o texto em volta dela continua sendo texto.' },
         { id: 'c', text: 'Um PDF salvo com qualidade reduzida.', porque: 'Reduzir a qualidade não apaga a camada de texto. Um documento digitado e comprimido continua pesquisável.' },
         { id: 'd', text: 'Um PDF que só abre em programas de edição de imagem.', porque: 'Ele abre em qualquer leitor de PDF, exatamente como os outros. É por isso que a diferença não aparece.' },
@@ -204,12 +204,12 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M3-Q2', type: 'scenario',
       prompt: 'Dois PDFs estão abertos lado a lado e mostram exatamente a mesma folha escrita. Como descobrir qual deles é pesquisável?',
       data: { scenarios: [
-        { id: 'a', text: 'Procurando uma palavra que está à vista na página: num o contador acha, no outro diz nenhum resultado.', correct: true },
+        { id: 'a', text: 'Procurando uma palavra que está à vista na página.', correct: true },
         { id: 'b', text: 'Comparando a nitidez da letra na tela.', porque: 'Uma digitalização boa fica tão nítida quanto um documento gerado. A nitidez não separa os dois.' },
         { id: 'c', text: 'Olhando qual dos dois tem mais páginas.', porque: 'O número de páginas não tem relação nenhuma com haver texto dentro.' },
         { id: 'd', text: 'Vendo qual abre mais rápido.', porque: 'O documento em imagem costuma abrir até mais devagar, por ser mais pesado — mas isso varia com o computador e não responde a pergunta.' },
       ]},
-      explanation: 'Na tela, os dois são idênticos. A diferença mora na camada de texto, e quem a enxerga é a busca.',
+      explanation: 'Na tela, os dois são idênticos. Num deles o contador acha a palavra; no outro a busca diz nenhum resultado, porque não há letra nenhuma gravada dentro.',
     },
     {
       id: 'ES4-M3-Q3', type: 'multiple_choice',
@@ -226,7 +226,7 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M3-Q4', type: 'scenario',
       prompt: 'Cinco páginas fotografadas foram comprimidas antes de passar pelo reconhecimento de texto. O arquivo ficou com 2 MB e diz-se pesquisável. O que a pessoa tem em mãos?',
       data: { scenarios: [
-        { id: 'a', text: 'Um arquivo com texto dentro, só que o texto está errado — e a busca não acha as palavras.', correct: true },
+        { id: 'a', text: 'Um arquivo com o texto dentro, e o texto errado.', correct: true },
         { id: 'b', text: 'Um arquivo idêntico ao que sairia da ordem contrária.', porque: 'O tamanho é o mesmo, e é por isso que engana. O que está gravado como texto não é o mesmo.' },
         { id: 'c', text: 'Um arquivo que o leitor recusa, por ter sido comprimido cedo demais.', porque: 'Nenhum leitor recusa. As duas ordens produzem PDFs perfeitamente válidos.' },
         { id: 'd', text: 'Um arquivo ainda em imagem, porque comprimir apaga o reconhecimento.', porque: 'O reconhecimento aconteceu, e o texto foi gravado. O problema é que ele foi lido de uma imagem já estragada.' },
@@ -285,7 +285,7 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M4-Q2', type: 'scenario',
       prompt: 'Uma página foi digitalizada torta e escura. O reconhecimento gravou "Acarnpamento" no lugar de "Acampamento". Por que isso é pior do que não ter gravado nada?',
       data: { scenarios: [
-        { id: 'a', text: 'Porque o arquivo passa a se dizer pesquisável, e ninguém tem como perceber que o texto está errado.', correct: true },
+        { id: 'a', text: 'Porque o arquivo passa a se dizer pesquisável.', correct: true },
         { id: 'b', text: 'Porque o texto errado aparece desenhado por cima da página.', porque: 'Ele não aparece: a camada de texto é invisível. O que se vê continua sendo a foto do papel.' },
         { id: 'c', text: 'Porque o arquivo fica maior do que ficaria sem texto nenhum.', porque: 'O texto é leve e o aumento é desprezível. O problema não é de tamanho.' },
         { id: 'd', text: 'Porque o leitor recusa abrir documentos com texto reconhecido de baixa qualidade.', porque: 'Ele abre normalmente. Nenhum leitor avalia a qualidade do que o reconhecimento gravou.' },
@@ -296,7 +296,7 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M4-Q3', type: 'multiple_choice',
       prompt: 'Por que os cantos do recorte precisam ser ajustáveis num aplicativo de digitalizar?',
       data: { options: [
-        { id: 'a', text: 'Porque a detecção da borda erra com frequência, e pega a beirada da mesa em vez da folha.', correct: true },
+        { id: 'a', text: 'Porque a detecção da borda erra com frequência.', correct: true },
         { id: 'b', text: 'Porque o papel muda de tamanho conforme a distância da câmera.', porque: 'A distância muda o tamanho na foto, e a detecção lida com isso. O que ela erra é onde a folha acaba.' },
         { id: 'c', text: 'Porque cada tamanho de papel exige uma proporção diferente de recorte.', porque: 'O aplicativo não precisa saber o tamanho do papel: ele recorta pelo que vê, seja A4 ou meia folha.' },
         { id: 'd', text: 'Porque sem ajuste manual o aplicativo não salva o arquivo.', porque: 'Ele salva com o recorte que detectou, errado e tudo. É justamente por salvar assim que o ajuste importa.' },
@@ -307,12 +307,12 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M4-Q4', type: 'multiple_choice',
       prompt: 'Para fotografar papel escrito, qual filtro serve melhor?',
       data: { options: [
-        { id: 'a', text: 'Preto e branco, porque joga fora tudo o que não é quase-preto e deixa a letra limpa.', correct: true },
+        { id: 'a', text: 'Preto e branco.', correct: true },
         { id: 'b', text: 'Original, porque guarda a foto como ela é e não perde informação.', porque: 'Ele guarda a cor e deixa a letra acinzentada — e é onde a foto cai sozinha, sem ninguém escolher.' },
         { id: 'c', text: 'Tons de cinza, porque é o único que o reconhecimento entende.', porque: 'O reconhecimento entende qualquer um deles. Tons de cinza ajuda, e ainda deixa menos contraste que preto e branco.' },
         { id: 'd', text: 'Nenhum: filtro é enfeite e não muda o que dá para ler.', porque: 'Muda, e muito. O contraste é metade do que o requisito de digitalizar pede corrigir.' },
       ]},
-      explanation: 'O filtro é como um celular corrige contraste. Deixar em Original é a diferença entre o texto sair inteiro e sair trocado.',
+      explanation: 'Preto e branco joga fora tudo o que não é quase-preto e deixa a letra limpa. Deixar em Original é a diferença entre o texto sair inteiro e sair trocado.',
     },
     {
       id: 'ES4-M4-Q5', type: 'true_false',
@@ -355,7 +355,7 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M5-Q1', type: 'multiple_choice',
       prompt: 'Qual é o problema de imprimir a autorização, preencher à mão e mandar a foto de volta?',
       data: { options: [
-        { id: 'a', text: 'O documento deixa de ser pesquisável e vira uma imagem pesada, com a letra de quem estava com pressa.', correct: true },
+        { id: 'a', text: 'Ele vira uma imagem, pesada e sem texto dentro.', correct: true },
         { id: 'b', text: 'O documento perde a validade por não ter sido preenchido no computador.', porque: 'A validade não depende disso. Autorização preenchida à mão vale — o que se perde é legibilidade e a possibilidade de procurar.' },
         { id: 'c', text: 'Os campos do formulário ficam bloqueados depois de impressos.', porque: 'O PDF original continua com os campos intactos. O que voltou foi outro arquivo.' },
         { id: 'd', text: 'A foto não pode ser anexada junto de outros PDFs num dossiê.', porque: 'Pode, e é justamente aí que ela atrapalha: entra no dossiê como o documento que ninguém acha.' },
@@ -419,12 +419,12 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M5-Q7', type: 'scenario',
       prompt: 'Todos os campos obrigatórios da autorização perderam a borda vermelha, mas o responsável diz que não recebeu o nome dele no documento. O que pode ter acontecido?',
       data: { scenarios: [
-        { id: 'a', text: 'O campo foi preenchido com espaços, que tiram a borda vermelha e não escrevem nada.', correct: true },
+        { id: 'a', text: 'O campo foi preenchido com espaços.', correct: true },
         { id: 'b', text: 'O campo foi preenchido e o documento foi salvo sem os campos.', porque: 'Salvar guarda o que está nos campos. Existem opções de achatar o formulário, e elas preservam o que foi escrito.' },
         { id: 'c', text: 'O leitor do responsável não mostra campos de formulário.', porque: 'Qualquer leitor mostra o que está escrito nos campos. Alguns não deixam editar, o que é diferente de não mostrar.' },
         { id: 'd', text: 'A borda vermelha some sozinha depois de um tempo aberto.', porque: 'Ela não tem tempo: some quando o campo deixa de estar vazio, e volta se ele for esvaziado.' },
       ]},
-      explanation: 'Espaço é conteúdo para o programa e nada para quem lê. O leitor não reclama, e o documento chega sem o nome.',
+      explanation: 'Espaço é conteúdo para o programa e nada para quem lê: ele tira a borda vermelha do campo e não escreve nada. O documento chega sem o nome, e o leitor não reclama.',
     },
   ],
 
@@ -436,7 +436,7 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M6-Q1', type: 'multiple_choice',
       prompt: 'O que uma assinatura verificável guarda junto do documento?',
       data: { options: [
-        { id: 'a', text: 'Quem assinou, quando, e uma impressão digital do documento naquele instante.', correct: true },
+        { id: 'a', text: 'Quem assinou, quando, e uma impressão do documento.', correct: true },
         { id: 'b', text: 'Uma cópia do documento de identidade de quem assinou.', porque: 'Nada disso vai para dentro do arquivo. A identificação vem do certificado usado, e não de um documento anexado.' },
         { id: 'c', text: 'Uma senha que só quem assinou conhece.', porque: 'Senha é outra coisa, e serve para abrir o arquivo. A assinatura não protege a abertura.' },
         { id: 'd', text: 'Uma cópia intacta do documento, para comparar depois.', porque: 'Guardar o documento inteiro dobraria o tamanho do arquivo. O que se guarda é um número calculado a partir dele.' },
@@ -458,7 +458,7 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M6-Q3', type: 'scenario',
       prompt: 'Um recibo foi assinado com a imagem de uma assinatura colada. Um mês depois, alguém mudou o valor. O que o leitor mostra?',
       data: { scenarios: [
-        { id: 'a', text: 'O rabisco continua lá e nada acusa nada: o documento adulterado continua parecendo assinado.', correct: true },
+        { id: 'a', text: 'O rabisco continua lá, e nada acusa nada.', correct: true },
         { id: 'b', text: 'A imagem da assinatura some, porque o documento mudou.', porque: 'Ela é uma figura como outra qualquer, e continua onde foi colada.' },
         { id: 'c', text: 'Um aviso de que o documento foi alterado depois de assinado.', porque: 'Para avisar, o leitor precisaria de uma impressão do documento guardada junto — e a imagem colada não guarda nenhuma.' },
         { id: 'd', text: 'O leitor pede a senha de quem assinou antes de abrir.', porque: 'Não há senha envolvida. A imagem colada não estabelece relação nenhuma entre o documento e quem assinou.' },
@@ -478,7 +478,7 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M6-Q5', type: 'multiple_choice',
       prompt: 'O que a caixa "não permitir copiar" de fato faz?',
       data: { options: [
-        { id: 'a', text: 'Grava um pedido dentro do arquivo, que o leitor obedece porque foi escrito para obedecer.', correct: true },
+        { id: 'a', text: 'Grava um pedido que o leitor escolhe obedecer.', correct: true },
         { id: 'b', text: 'Criptografa o texto, de modo que copiá-lo devolve caracteres embaralhados.', porque: 'O texto continua gravado normalmente. Se fosse embaralhado, o próprio leitor não teria como mostrá-lo.' },
         { id: 'c', text: 'Remove a camada de texto e deixa só a imagem das páginas.', porque: 'Isso destruiria a busca no documento, e não é o que acontece: o arquivo continua pesquisável.' },
         { id: 'd', text: 'Registra quem tentou copiar, para o autor do documento saber depois.', porque: 'O arquivo não relata nada a ninguém. Ele fica no computador de quem recebeu, sem falar com o mundo.' },
@@ -550,12 +550,12 @@ export const QUESTOES_DE_PDF: Record<string, Question[]> = {
       id: 'ES4-M7-Q4', type: 'scenario',
       prompt: 'Cinco arquivos foram nomeados assim: ata-um-v01, orcamento-um-v02, recibo-um-v01, presenca-um-v01, circular-um-v01. Eles estão no mesmo padrão. O que ainda falta?',
       data: { scenarios: [
-        { id: 'a', text: 'A data: sem ela, os nomes não dizem quando cada coisa aconteceu nem se ordenam por tempo.', correct: true },
+        { id: 'a', text: 'A data.', correct: true },
         { id: 'b', text: 'Nada: cinco nomes no mesmo formato já são um padrão completo.', porque: 'São um padrão, e não um que sirva. A pasta continua sem ordenar por tempo e nada diz quando cada documento é de quando.' },
         { id: 'c', text: 'A versão, que está escrita de um jeito que o sistema não reconhece.', porque: 'A versão está lá e está legível: v01, v02. É a data que não existe em nenhum deles.' },
         { id: 'd', text: 'O nome do clube em cada arquivo.', porque: 'Dentro da pasta do clube, isso repetiria a mesma palavra cinco vezes sem distinguir nada.' },
       ]},
-      explanation: 'Molde e data são duas contas separadas, e nenhuma substitui a outra: cinco datados em cinco moldes também não ordenam.',
+      explanation: 'Sem a data, os nomes não dizem quando cada coisa aconteceu nem se ordenam por tempo. Molde e data são duas contas separadas, e nenhuma substitui a outra.',
     },
     {
       id: 'ES4-M7-Q5', type: 'true_false',

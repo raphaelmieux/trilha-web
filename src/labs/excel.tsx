@@ -1,8 +1,8 @@
 import { ArrowDownAZ, ArrowUpZA, Filter, X } from 'lucide-react';
 import {
-  type Direcao, type Faixa, type Planilha,
+  type Caderno, type Direcao, type Faixa, type Planilha,
   alinhamentoDe, estiloCondicional, linhaEscondida, mostrar, naFaixa, nomeDaColuna,
-  valorCalculado,
+  textoDoResumo, valorCalculado,
 } from './planilha';
 
 /*
@@ -204,6 +204,15 @@ export const CSS_EXCEL = `
 .pl-cond-amarelo  { background: #FFEB9C; color: #9C6500; }
 .pl-cond-verde    { background: #C6EFCE; color: #006100; }
 
+/* A área do relatório de tabela dinâmica.
+
+   Ela precisa **parecer** outra coisa, porque é: o que está ali não foi
+   digitado e não se edita na célula. O Excel a pinta com um fundo próprio pelo
+   mesmo motivo, e sem essa diferença o desbravador tenta escrever por cima e
+   conclui que a planilha travou. Medido contra a letra do Excel (#323130) em
+   cima de #F3F2F1: 11,6:1. */
+.pl-resumo { background: #F3F2F1; color: #323130; }
+
 /* A linha escondida pelo filtro some da tela e **continua na planilha** —
    display: none na linha, e não remoção: os números das linhas à esquerda
    continuam pulando, que é como se vê que há linha escondida. */
@@ -341,16 +350,27 @@ export function BarraDeTituloDoExcel({ arquivo, estado = 'Salvo', aoAvisar }: {
  * aparece assim mesmo, apagada, e responde que existe e não faz parte. Guia que
  * sumisse da fileira ensinaria que o Excel não a tem.
  */
-export function GuiasDoExcel({ atual, usaveis, aoTrocar, aoAvisar }: {
+export function GuiasDoExcel({ atual, usaveis, aoTrocar, aoAvisar, aoAbrirArquivo }: {
   atual: string;
   usaveis: readonly string[];
   aoTrocar: (id: string) => void;
   aoAvisar: (recado: string) => void;
+  /**
+   * Os bastidores, quando o laboratório tem o que pôr neles.
+   *
+   * É a decisão de `word.tsx`, escrita lá: sem ela, quem precisa da porta —
+   * aqui, o Salvar como do requisito 5.4 — redesenha a fileira de guias à mão,
+   * que é como a plataforma ficou com dois "Word" uma vez. Sem o laboratório
+   * entregar nada, a guia continua avisando que não faz parte do exercício.
+   */
+  aoAbrirArquivo?: () => void;
 }) {
   return (
     <div className="pl-guias" role="tablist">
       <button type="button" className="pl-guia pl-guia-arquivo"
-        onClick={() => aoAvisar('A guia Arquivo existe no Excel de verdade, e não faz parte deste exercício.')}>
+        onClick={() => (aoAbrirArquivo
+          ? aoAbrirArquivo()
+          : aoAvisar('A guia Arquivo existe no Excel de verdade, e não faz parte deste exercício.'))}>
         Arquivo
       </button>
       {GUIAS_DO_EXCEL.map(nome => (
@@ -442,6 +462,14 @@ export function AbasDoExcel({ nome, aoAvisar }: { nome: string; aoAvisar: (r: st
  */
 export interface PropsDaGradeDoExcel {
   planilha: Planilha;
+  /**
+   * A pasta inteira, quando o laboratório tem mais de uma aba.
+   *
+   * É o que faz `=SOMA(Respostas!E2:E17)` achar o que somar. Sem ela a fórmula
+   * que nomeia aba responde #NOME?, e a lição do requisito 3 da CC-ES008 —
+   * a base numa aba, o total na outra — pediria uma fórmula quebrada.
+   */
+  caderno?: Caderno;
   /** A faixa selecionada, da âncora até onde o arrasto parou. */
   faixa: Faixa;
   /** A célula ativa: onde o cursor está, e onde a edição acontece. */
@@ -494,7 +522,7 @@ export interface PropsDaGradeDoExcel {
 }
 
 export function GradeDoExcel({
-  planilha: p, faixa, ativa, rascunho, gradeRef,
+  planilha: p, caderno, faixa, ativa, rascunho, gradeRef,
   aoTeclar, aoApontarCelula, aoEntrarNaCelula, aoApontarColuna, aoApontarLinha,
   aoMoverPonteiro, aoSoltarPonteiro, aoSairDaGrade,
   aoAbrirEdicao, aoEscrever, aoConfirmar, aoCancelar,
@@ -570,9 +598,20 @@ export function GradeDoExcel({
                 const dentro = naFaixa(faixa, l, c);
                 /* O valor primeiro, e o texto a partir dele: o alinhamento
                    pergunta o **tipo**, e imprimir joga o tipo fora. */
-                const valor = valorCalculado(p, l, c);
-                const mostrado = mostrar(valor);
-                const h = alinhamentoDe(cel, valor);
+                const valor = valorCalculado(p, l, c, caderno);
+                /*
+                  O resumo é desenhado **por cima** da célula, e ganha dela.
+
+                  Ele não está escrito nas células — está no modelo, como o
+                  filtro e a formatação condicional —, e por isso a grade o
+                  pinta aqui. Quem o guarda é `planilha.resumo`; quem o mexe é
+                  o botão Atualizar. Ele vence o texto porque no Excel aquela
+                  área é do relatório: o que estiver por baixo não aparece, e
+                  mostrar o de baixo faria a tela discordar do retrato.
+                */
+                const doResumo = textoDoResumo(p, l, c);
+                const mostrado = doResumo ?? mostrar(valor);
+                const h = doResumo !== null ? 'esquerda' : alinhamentoDe(cel, valor);
                 const cond = estiloCondicional(p, l, c);
                 return (
                   <td
@@ -588,6 +627,7 @@ export function GradeDoExcel({
                       ancora ? 'pl-ativa' : '',
                       dentro && !ancora ? 'pl-na-faixa' : '',
                       naTabela?.(l, c) ? 'pl-na-tabela' : '',
+                      doResumo !== null ? 'pl-resumo' : '',
                       cond ? `pl-cond-${cond}` : '',
                     ].filter(Boolean).join(' ')}
                     style={{
@@ -598,7 +638,7 @@ export function GradeDoExcel({
                     {/* O autoFocus é só de quem começou a editar *na célula*:
                         dado à célula durante a digitação na barra, era ele que
                         roubava o foco a cada tecla. */}
-                    {ancora && rascunho !== null ? (
+                    {ancora && rascunho !== null && doResumo === null ? (
                       <input
                         className="pl-celula-entrada"
                         autoFocus
@@ -611,7 +651,9 @@ export function GradeDoExcel({
                         }}
                         onBlur={() => aoConfirmar(rascunho)} />
                     ) : (
-                      <span onDoubleClick={() => aoAbrirEdicao(cel.texto)} className="pl-valor">
+                      <span
+                        onDoubleClick={() => doResumo === null && aoAbrirEdicao(cel.texto)}
+                        className="pl-valor">
                         {mostrado}
                       </span>
                     )}
