@@ -131,6 +131,57 @@ export interface Grafico {
   faixa: Faixa;
 }
 
+/** Um rótulo e o número que ele vale, que é tudo o que um gráfico desenha. */
+export interface PontoDoGrafico {
+  rotulo: string;
+  valor: number;
+}
+
+/**
+ * Onde o eixo dos valores começa e termina.
+ *
+ * `minimo` é o eixo truncado do requisito 7 da CC-ES009, e ele é uma opção de
+ * verdade do Excel — Formatar Eixo, Limites, Mínimo. Por isso ele mora no
+ * modelo e não num desenho à parte: o gráfico enganoso não é um gráfico
+ * quebrado, é o gráfico de sempre desenhando **certo** um dado **certo** a
+ * partir de um começo que alguém escolheu, e nada avisa.
+ *
+ * Ausente, o eixo começa em zero, que é onde o eixo de uma coluna começa.
+ */
+export interface EixoDoGrafico {
+  minimo?: number;
+  maximo?: number;
+}
+
+/**
+ * Os pontos que o gráfico da planilha desenha.
+ *
+ * A primeira coluna da faixa é o rótulo e o valor é o primeiro número que
+ * aparece vindo da direita — que é como o Excel lê uma faixa de duas colunas
+ * com uma coluna de texto no meio.
+ *
+ * Linha sem rótulo fica de fora, porque ela não tem o que dizer. Linha com
+ * rótulo e **zero** entra: descartá-la faria a unidade sem inscrito nenhum
+ * sumir do gráfico, e um gráfico em que a categoria vazia não aparece afirma
+ * que ela não existe. É o "zero link não é zero link quebrado" aplicado ao
+ * desenho, e era o que o código anterior fazia com `valor > 0`.
+ */
+export function pontosDoGrafico(p: Planilha): PontoDoGrafico[] {
+  const g = p.grafico;
+  if (!g) return [];
+  const n = normalizar(g.faixa);
+  const pontos: PontoDoGrafico[] = [];
+  for (let l = n.topo; l <= n.base; l++) {
+    const rotulo = (p.celulas[l]?.[n.esq]?.texto ?? '').trim();
+    if (rotulo === '') continue;
+    for (let c = n.dir; c > n.esq; c--) {
+      const v = valorDaGrade(p, l, c);
+      if (v.tipo === 'numero') { pontos.push({ rotulo, valor: v.n }); break; }
+    }
+  }
+  return pontos;
+}
+
 /* ── Tabela dinâmica ─────────────────────────────────────────────────────── */
 
 export type ComoResumir = 'contagem' | 'soma' | 'media';

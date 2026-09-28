@@ -7,6 +7,7 @@ import {
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
   CSS_EXCEL, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
+  DesenhoDoGrafico,
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
 import {
@@ -14,7 +15,7 @@ import {
   type Formato, type Historico,
   mesclar, mesclagemApaga, ordenar, planilhaAtiva, trocarAtiva,
   historicoDe, registrar, desfazer, refazer,
-  nomeDaCelula, nomeDaFaixa, normalizar, umaCelulaSo, linhaEscondida, valorDaGrade,
+  nomeDaCelula, nomeDaFaixa, normalizar, umaCelulaSo, linhaEscondida, pontosDoGrafico,
 } from '../labs/planilha';
 import { CADERNOS_DA_CC_ES003 } from '../labs/cadernosDaCcEs003';
 import { roteiroDaPlanilha } from '../labs/roteiroDaPlanilha';
@@ -424,7 +425,7 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
         {p.grafico && (
           <div className="pl-grafico" role="figure" aria-label={`Gráfico: ${p.grafico.titulo}`}>
             <div className="pl-grafico-titulo">{p.grafico.titulo || '(sem título)'}</div>
-            <DesenhoDoGrafico planilha={p} />
+            <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p)} />
             <div className="pl-grafico-eixo">
               {p.grafico.eixoX || '(eixo sem nome)'} × {p.grafico.eixoY || '(eixo sem nome)'}
             </div>
@@ -629,88 +630,3 @@ const contarVisiveis = (p: Planilha) => {
  * do título e dos eixos, e não a beleza do desenho. Um gráfico caprichado aqui
  * faria o exercício parecer ser sobre desenhar.
  */
-function DesenhoDoGrafico({ planilha: p }: { planilha: Planilha }) {
-  const g = p.grafico;
-  if (!g) return null;
-  const n = normalizar(g.faixa);
-  const linhas: { rotulo: string; valor: number }[] = [];
-  for (let l = n.topo; l <= n.base; l++) {
-    const rotulo = (p.celulas[l]?.[n.esq]?.texto ?? '').trim();
-    let valor = 0;
-    for (let c = n.dir; c > n.esq; c--) {
-      const v = valorNumerico(p, l, c);
-      if (v !== null) { valor = v; break; }
-    }
-    if (rotulo !== '' && valor > 0) linhas.push({ rotulo, valor });
-  }
-  const total = linhas.reduce((s, x) => s + x.valor, 0) || 1;
-  const maior = Math.max(...linhas.map(x => x.valor), 1);
-
-  if (g.tipo === 'pizza') {
-    let inicio = 0;
-    return (
-      <svg viewBox="0 0 120 70" style={{ width: '100%', height: 90 }} role="img">
-        {linhas.map((x, i) => {
-          const fatia = (x.valor / total) * 360;
-          const d = arco(35, 35, 30, inicio, inicio + fatia);
-          inicio += fatia;
-          return <path key={x.rotulo} d={d} fill={CORES_DO_GRAFICO[i % CORES_DO_GRAFICO.length]} />;
-        })}
-        {linhas.slice(0, 4).map((x, i) => (
-          <g key={x.rotulo}>
-            <rect x={74} y={10 + i * 12} width={8} height={8} fill={CORES_DO_GRAFICO[i % CORES_DO_GRAFICO.length]} />
-            <text x={86} y={17 + i * 12} fontSize={7} fill="#201F1E">{x.rotulo}</text>
-          </g>
-        ))}
-      </svg>
-    );
-  }
-
-  return (
-    <svg viewBox="0 0 120 70" style={{ width: '100%', height: 90 }} role="img">
-      {linhas.map((x, i) => {
-        const largura = Math.min(18, 110 / Math.max(linhas.length, 1));
-        const altura = (x.valor / maior) * 46;
-        return (
-          <g key={x.rotulo}>
-            <rect x={6 + i * (largura + 4)} y={56 - altura} width={largura} height={altura}
-              fill={CORES_DO_GRAFICO[i % CORES_DO_GRAFICO.length]} />
-            <text x={6 + i * (largura + 4)} y={66} fontSize={6} fill="#605E5C">{x.rotulo.slice(0, 6)}</text>
-          </g>
-        );
-      })}
-      <line x1={4} y1={56} x2={116} y2={56} stroke="#C8C6C4" strokeWidth={0.6} />
-    </svg>
-  );
-}
-
-const CORES_DO_GRAFICO = ['#217346', '#4C8C6B', '#8AB79A', '#C13516', '#D98C6A', '#7A6FAE'];
-
-/** O número que a célula mostra, ou `null` quando ela não mostra número nenhum. */
-function valorNumerico(p: Planilha, l: number, c: number): number | null {
-  const v = valorDaGrade(p, l, c);
-  return v.tipo === 'numero' ? v.n : null;
-}
-
-/**
- * Uma fatia de pizza, em caminho SVG.
- *
- * Os ângulos começam no topo e crescem no sentido do relógio, que é como a
- * pizza do Excel é desenhada — começar à direita deixaria a primeira fatia num
- * lugar que ninguém reconhece.
- */
-function arco(cx: number, cy: number, r: number, de: number, ate: number): string {
-  const ponto = (grau: number) => {
-    const rad = ((grau - 90) * Math.PI) / 180;
-    return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
-  };
-  const [x1, y1] = ponto(de);
-  const [x2, y2] = ponto(ate);
-  const grande = ate - de > 180 ? 1 : 0;
-  /* Uma fatia sozinha fecharia em si mesma e não desenharia nada: um arco de
-     360° tem começo e fim no mesmo ponto. O círculo inteiro vira dois arcos. */
-  if (ate - de >= 359.9) {
-    return `M ${cx} ${cy - r} A ${r} ${r} 0 1 1 ${cx - 0.01} ${cy - r} Z`;
-  }
-  return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${grande} 1 ${x2} ${y2} Z`;
-}
