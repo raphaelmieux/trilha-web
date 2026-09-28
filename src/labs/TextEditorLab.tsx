@@ -73,7 +73,7 @@ export default function TextEditorLab({ specialtyCode, lessonCode, lessonTitle, 
         .from('text_projects')
         .select('*')
         .eq('user_id', userId)
-        .eq('specialty_code', specialtyCode)
+        .eq('projeto', specialtyCode)
         .maybeSingle();
       if (!vivo) return;
       if (data) {
@@ -106,6 +106,11 @@ export default function TextEditorLab({ specialtyCode, lessonCode, lessonTitle, 
     const campos = {
       user_id: userId,
       specialty_code: specialtyCode,
+      /* O texto desta trilha é o único que ela pede neste laboratório, então o
+         projeto é o próprio código — que é o valor que a migration deu às
+         linhas antigas, e por isso o que já foi escrito continua sendo achado.
+         Trilha com um segundo texto dá a ele um nome próprio. */
+      projeto: specialtyCode,
       title: tema.titulo,
       body: text,
       word_count: wordCount,
@@ -115,7 +120,7 @@ export default function TextEditorLab({ specialtyCode, lessonCode, lessonTitle, 
     };
     const { data, error } = await supabase
       .from('text_projects')
-      .upsert(campos, { onConflict: 'user_id,specialty_code' })
+      .upsert(campos, { onConflict: 'user_id,projeto' })
       .select('id')
       .single();
     if (error) { setErro('Não foi possível guardar o texto agora. Tente de novo em instantes.'); return null; }

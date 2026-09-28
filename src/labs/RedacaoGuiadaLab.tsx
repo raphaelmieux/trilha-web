@@ -82,7 +82,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
         .from('text_projects')
         .select('body, etapas, status, updated_at')
         .eq('user_id', userId)
-        .eq('specialty_code', specialtyCode)
+        .eq('projeto', specialtyCode)
         .maybeSingle();
       if (!vivo) return;
 
@@ -139,6 +139,11 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
     const { error } = await supabase.from('text_projects').upsert({
       user_id: userId,
       specialty_code: specialtyCode,
+      /* O texto desta trilha é o único que ela pede neste laboratório, então o
+         projeto é o próprio código — que é o valor que a migration deu às
+         linhas antigas, e por isso o que já foi escrito continua sendo achado.
+         Trilha com um segundo texto dá a ele um nome próprio. */
+      projeto: specialtyCode,
       title: roteiro?.titulo ?? '',
       body: dados.corpo,
       word_count: dados.corpo ? contarPalavras(dados.corpo) : totalDePalavras(dados.respostas),
@@ -146,7 +151,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
       criteria_met: prontasIds,
       etapas: dados.respostas,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,specialty_code' });
+    }, { onConflict: 'user_id,projeto' });
     if (error) { setErro('Não foi possível guardar agora. Tente de novo em instantes.'); return false; }
     return true;
   }, [userId, specialtyCode, roteiro, etapas]);
