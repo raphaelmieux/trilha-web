@@ -736,7 +736,7 @@ export type Database = {
           criteria_met: Json
           etapas: Json
           id: string
-          projeto: string | null
+          projeto: string
           quiz_score: number | null
           quiz_total: number | null
           specialty_code: string
@@ -752,7 +752,7 @@ export type Database = {
           criteria_met?: Json
           etapas?: Json
           id?: string
-          projeto?: string | null
+          projeto: string
           quiz_score?: number | null
           quiz_total?: number | null
           specialty_code: string
@@ -768,7 +768,7 @@ export type Database = {
           criteria_met?: Json
           etapas?: Json
           id?: string
-          projeto?: string | null
+          projeto?: string
           quiz_score?: number | null
           quiz_total?: number | null
           specialty_code?: string
