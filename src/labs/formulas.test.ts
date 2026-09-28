@@ -402,3 +402,89 @@ describe('a fórmula pode ler outra aba', () => {
     expect(mostrar(valorDaCelula(g, 1, 0))).toBe('4');
   });
 });
+
+/*
+  As medidas da CC-ES009.
+
+  Elas existem porque o requisito 2.3 e o 2.4 pedem, e a lição que elas
+  sustentam é o requisito 3: a média sozinha descreve mal um conjunto, e a
+  mediana o descreve melhor. Isso só é demonstrável se as duas forem contas de
+  verdade sobre a mesma coluna — escrever o número na lição e deixar a planilha
+  responder outra coisa é o defeito que `exemplosDePlanilha.test.ts` existe
+  para pegar, um andar acima.
+*/
+describe('média, mediana, moda e dispersão', () => {
+  /* Onze inscritos e um valor que destoa: a mensalidade de quem paga por três
+     irmãos. A média sobe para 78, que nenhuma família paga; a mediana fica em
+     60, que é o que quase todo mundo paga. É o requisito 3 numa coluna. */
+  const COM_ATIPICO = [['60'], ['60'], ['55'], ['60'], ['65'], ['60'], ['58'], ['62'], ['60'], ['60'], ['258']];
+
+  it('a média sobe com o atípico e a mediana não', () => {
+    expect(ver(COM_ATIPICO, '=MÉDIA(A1:A11)')).toBe('78');
+    expect(ver(COM_ATIPICO, '=MED(A1:A11)')).toBe('60');
+  });
+
+  it('a mediana de um número par de valores é a média dos dois do meio', () => {
+    /* Pegar um dos dois daria uma mediana que **existe na tabela** e está
+       errada, que é pior do que uma que não aparece em linha nenhuma. */
+    expect(ver([['10'], ['20'], ['30'], ['40']], '=MED(A1:A4)')).toBe('25');
+  });
+
+  it('a moda é o que mais repete, e é #N/D quando nada repete', () => {
+    expect(ver(COM_ATIPICO, '=MODO(A1:A11)')).toBe('60');
+    /* Conjunto sem valor repetido não tem moda. Devolver zero, ou o primeiro
+       valor, afirmaria uma moda que não existe — e o número sairia plausível. */
+    expect(ver([['3'], ['7'], ['9']], '=MODO(A1:A3)')).toBe('#N/D');
+  });
+
+  it('a amplitude é máximo menos mínimo, e o atípico a domina sozinho', () => {
+    expect(ver(COM_ATIPICO, '=MÁXIMO(A1:A11)-MÍNIMO(A1:A11)')).toBe('203');
+  });
+
+  it('os dois desvios padrão diferem, e a diferença é a escolha de quem analisa', () => {
+    /* DESVPADP responde sobre o conjunto inteiro (divide por n) e DESVPAD
+       sobre uma amostra (por n−1). Iguais, a lição do requisito 2.4 não teria
+       o que distinguir; e em uma base grande eles ficam a cerca de 1% um do
+       outro, que é o número plausível e pouco errado. */
+    const amostra = Number(ver(COM_ATIPICO, '=DESVPAD(A1:A11)').replace(',', '.'));
+    const populacao = Number(ver(COM_ATIPICO, '=DESVPADP(A1:A11)').replace(',', '.'));
+    expect(amostra).toBeGreaterThan(populacao);
+    expect(populacao).toBeGreaterThan(0);
+    /* Com onze valores a diferença é de uns 5%; com quarenta e oito ela cai
+       para perto de 1%, que é onde ela deixa de se ver. */
+    /* Quatro casas, e não mais: os dois números voltam pela tela, que
+       arredonda, então a razão carrega o arredondamento junto. */
+    expect(amostra / populacao).toBeCloseTo(Math.sqrt(11 / 10), 4);
+  });
+
+  it('o desvio de amostra de um valor só é #DIV/0!, e o de população é zero', () => {
+    /* Zero nos dois casos afirmaria que não há dispersão nenhuma — e para a
+       amostra isso é falso: não há **como saber**, porque não há n−1 por onde
+       dividir. Um conjunto de um elemento, esse, de fato não varia. */
+    expect(ver([['60']], '=DESVPAD(A1:A1)')).toBe('#DIV/0!');
+    expect(ver([['60']], '=DESVPADP(A1:A1)')).toBe('0');
+  });
+
+  it('os nomes de hoje do Excel também respondem', () => {
+    /* `DESVPAD.A` e `MODO.ÚNICO` são os nomes que o Excel de hoje mostra na
+       lista de funções. Devolver #NOME? a quem digitou o nome que o próprio
+       programa sugeriu o faria concluir que errou a fórmula. */
+    expect(ver(COM_ATIPICO, '=DESVPAD.A(A1:A11)')).toBe(ver(COM_ATIPICO, '=DESVPAD(A1:A11)'));
+    expect(ver(COM_ATIPICO, '=MODO.ÚNICO(A1:A11)')).toBe('60');
+  });
+
+  it('continuam pulando o número guardado como texto, como a SOMA', () => {
+    /* É a regra do requisito 7 da CC-ES003, e ela vale para as medidas novas
+       pelo mesmo motivo: a coluna fica com onze valores lidos e doze escritos,
+       e a mediana sai de um conjunto menor do que o que está na tela. */
+    const comTexto = [['10'], ["'20"], ['30']];
+    expect(ver(comTexto, '=MED(A1:A3)')).toBe('20');
+    expect(ver(comTexto, '=CONT.NÚM(A1:A3)')).toBe('2');
+  });
+
+  it('a mediana de faixa vazia é #NÚM!, e não zero', () => {
+    /* Zero é um número plausível para "mediana de nada", e é a armadilha de
+       sempre: a célula mostraria 0 e a análise seguiria em frente. */
+    expect(ver([['']], '=MED(A1:A3)')).toBe('#NÚM!');
+  });
+});
