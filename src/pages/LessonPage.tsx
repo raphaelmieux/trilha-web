@@ -41,6 +41,9 @@ import CorreioLab from '../labs/CorreioLab';
 import ConfiguracoesLab from '../labs/ConfiguracoesLab';
 import PlanilhaLab from '../labs/PlanilhaLab';
 import AreaDeTrabalhoLab from '../labs/AreaDeTrabalhoLab';
+import DiagramaBinarioLab from '../labs/DiagramaBinarioLab';
+import PesquisaWebLab from '../labs/PesquisaWebLab';
+import RelatorioDePesquisaLab from '../labs/RelatorioDePesquisaLab';
 import { CheckCircle2, CircleX, ArrowRight, BookOpen, RefreshCw, Loader2, HardHat } from 'lucide-react';
 
 export default function LessonPage() {
@@ -155,6 +158,9 @@ export default function LessonPage() {
         {lesson.labType === 'planilha' && <PlanilhaLab {...labProps} />}
         {lesson.labType === 'area_de_trabalho' && <AreaDeTrabalhoLab {...labProps} />}
         {lesson.labType === 'ai_lab' && <AILab {...labProps} />}
+        {lesson.labType === 'diagrama_binario' && <DiagramaBinarioLab {...labProps} />}
+        {lesson.labType === 'pesquisa_web' && <PesquisaWebLab {...labProps} />}
+        {lesson.labType === 'relatorio_de_pesquisa' && <RelatorioDePesquisaLab {...labProps} />}
       </div>
     );
   }

@@ -117,6 +117,9 @@ const LABORATORIOS: [LabType, string, string][] = [
   ['apresentacao', 'Apresentação pronta', 'Montou uma apresentação com modelo, mídia e PDF.'],
   ['correio_completo', 'Correio do clube', 'Escreveu, anexou, arquivou, respondeu e encaminhou.'],
   ['configuracoes_sistema', 'Máquina ajustada', 'Limpou o disco, escolheu os programas padrão e criou um usuário.'],
+  ['diagrama_binario', 'Caminho dos bits', 'Montou o diagrama do teclado à tela, com o código binário nas setas.'],
+  ['pesquisa_web', 'Fonte conferida', 'Pesquisou em sites especializados e fez fichas com a fonte presa.'],
+  ['relatorio_de_pesquisa', 'Relatório com referências', 'Escreveu um relatório a partir das próprias fichas de pesquisa.'],
 ];
 
 /*

@@ -174,6 +174,28 @@ export const modulo5: Module = {
         },
       ],
     },
+    /*
+      A pesquisa e o relatório vêm logo depois da teoria, e o upgrade/update
+      passa para o fim: as três lições do requisito 6 são uma sequência, e um
+      assunto no meio dela partiria a pesquisa ao meio. O código da lição de
+      upgrade continua `L2` — é a identidade dela no banco —; a ordem é esta.
+    */
+    {
+      code: 'AP045.5-L3',
+      title: 'Pesquisando o bug do milênio em sites especializados',
+      type: 'lab',
+      content: '',
+      requirementCodes: ['AP045-6.1'],
+      labType: 'pesquisa_web',
+    },
+    {
+      code: 'AP045.5-L4',
+      title: 'Escrevendo o relatório sobre o bug do milênio',
+      type: 'lab',
+      content: '',
+      requirementCodes: ['AP045-6.1'],
+      labType: 'relatorio_de_pesquisa',
+    },
     {
       code: 'AP045.5-L2',
       title: 'Upgrade e update',

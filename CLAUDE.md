@@ -3199,6 +3199,29 @@ de `${...}` também, porque ali dentro é código. A CC003 é a exceção declar
 lá "o caminho absoluto diz o percurso inteiro" fala de pasta, e é português
 comum.
 
+**Um texto por projeto, e não por trilha.** `text_projects` era único em
+`(user_id, specialty_code)`, e bastava enquanto toda trilha pedia uma redação
+só. A AP045 pede duas — a evolução da computação e o bug do milênio —, e o
+segundo upsert sobrescreveria o primeiro calado. A chave hoje é `projeto`: o
+código da trilha quando ela pede um texto, um nome próprio quando pede mais
+(`AP045-bug-do-milenio`). O roteiro da redação e o do servidor se acham pela
+mesma chave, e o relatório entregue ao clube lista todos os textos da trilha.
+
+**A pesquisa é um laboratório, e o relatório sai das fichas dela.** O requisito
+6 da AP045 diz "sites especializados", e isso só se mede com páginas
+confiáveis e não confiáveis misturadas no mesmo buscador, e com o primeiro
+resultado sendo o que foi escrito para ser clicado. A tela nunca diz se uma
+página é confiável — nem ao avaliar, nem ao fazer a ficha: dito, dois botões
+viram duas tentativas. As fichas viajam no evento `pesquisa_concluida`, e o
+relatório é a redação guiada com `projeto` e `fichas`: toda etapa de fato cita
+ficha, cópia sem aspas trava a etapa, e as referências entram sozinhas e não
+contam palavras.
+
+**O diagrama chega com uma seta ao contrário.** Monitor para CPU é o erro de
+quem desenha isto pela primeira vez, e é ele que a simulação mostra parando. A
+paleta lista as peças pelo nome, e não por papel: agrupar entrada e saída
+escreveria na tela metade da resposta.
+
 **Link externo é sempre `<a target="_blank">`**, pelo componente `LinkExterno`.
 `window.open` funciona no computador e falha no celular.
 
@@ -3565,6 +3588,10 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDeDados.test.tsx` | lição da CC-ES008 impossível de vencer clicando |
 | `src/components/LaboratorioDeDados.test.tsx` | relatório de tabela dinâmica que engole a digitação em vez de recusá-la |
 | `src/curriculum/qualidade.test.ts` | vereda cuja alternativa correta se lê pelo tamanho, medida sozinha |
+| `src/labs/diagramaDoComputador.test.ts` | meta do diagrama da AP045 que abre verde, seta ao contrário passando porque outro caminho chega, ou mover peça invalidando a simulação |
+| `src/labs/pesquisaDoBug.test.ts` | página que responde às quatro perguntas sozinha, primeiro resultado confiável, ou ficha de fonte ruim valendo no caderno |
+| `src/labs/relatorioDePesquisa.test.ts` | etapa de fato sem ficha citada, cópia sem aspas passando, ou referências contando palavras |
+| `src/labs/laboratoriosDaAp045.test.tsx` | laboratório da AP045 impossível de vencer clicando, ou pesquisa que diz se a página é confiável |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

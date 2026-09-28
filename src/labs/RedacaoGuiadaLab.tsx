@@ -17,7 +17,27 @@ import {
   CheckCircle2, AlertTriangle, XCircle, Search, Sparkles,
   Save, ChevronLeft, ChevronRight, FileText, Loader2, RotateCcw,
 } from 'lucide-react';
-import type { PropsDeLaboratorio as Props } from './tipos';
+import type { PropsDeLaboratorio } from './tipos';
+import type { FichaEntregue } from './pesquisaDoBug';
+import {
+  faltaNaEtapa, referencias, semReferencias, TITULO_DAS_REFERENCIAS,
+} from './relatorioDePesquisa';
+
+type Props = PropsDeLaboratorio & {
+  /**
+   * Qual texto é este. Por padrão, o da trilha: é o único que ela pede. A
+   * AP045 pede dois, e o segundo chega aqui com nome próprio — é por ele que o
+   * roteiro, a gravação e a conferência do servidor se acham.
+   */
+  projeto?: string;
+  /**
+   * As fichas de uma pesquisa, quando o relatório nasce dela. Com elas, toda
+   * etapa de fato cita ficha, cópia sem aspas trava a etapa, e as
+   * referências entram sozinhas no fim — `relatorioDePesquisa.ts` conta por
+   * quê.
+   */
+  fichas?: FichaEntregue[];
+};
 
 /*
  * A redação guiada: o relatório de 250 palavras construído por etapas.
@@ -44,8 +64,11 @@ type EstadoIA = 'ok' | 'indisponivel';
 /** O que o rascunho local guarda: o laboratório inteiro, menos o que veio do servidor. */
 interface RascunhoRedacao { respostas: RespostasRedacao; textoFinal: string }
 
-export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId, aoVencer }: Props) {
-  const roteiro = ROTEIROS[specialtyCode];
+export default function RedacaoGuiadaLab({
+  specialtyCode, lessonCode, lessonTitle, requirementCodes, userId, aoVencer, projeto: projetoDado, fichas,
+}: Props) {
+  const projeto = projetoDado ?? specialtyCode;
+  const roteiro = ROTEIROS[projeto];
 
   const [respostas, setRespostas] = useState<RespostasRedacao>({});
   const [indice, setIndice] = useState(0);
@@ -69,8 +92,15 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
   const texto = resposta?.texto ?? '';
   const palavrasDaEtapa = contarPalavras(texto);
   const total = totalDePalavras(respostas);
-  const prontas = roteiro ? etapas.filter(e => etapaPronta(e, respostas[e.id])).length : 0;
-  const tudoPronto = roteiro ? podeUnir(roteiro, respostas) : false;
+  /* Com fichas, a etapa também precisa citar e não copiar — a redação de
+     sempre não sabe disso, e por isso a conta é feita aqui, por cima dela. */
+  const faltaExtra = (e: EtapaRedacao) => (fichas ? faltaNaEtapa(e, respostas[e.id], fichas) : null);
+  const prontaAqui = (e: EtapaRedacao) => etapaPronta(e, respostas[e.id]) && !faltaExtra(e);
+  const prontas = roteiro ? etapas.filter(prontaAqui).length : 0;
+  const tudoPronto = roteiro ? podeUnir(roteiro, respostas) && etapas.every(e => !faltaExtra(e)) : false;
+  /* As palavras que contam para o envio: as referências são montadas, e não
+     escritas por ninguém. */
+  const palavrasDoTexto = contarPalavras(fichas ? semReferencias(textoFinal) : textoFinal);
 
   useEffect(() => {
     /* A consulta pode voltar depois de a tela sair. Escrever estado em
@@ -82,7 +112,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
         .from('text_projects')
         .select('body, etapas, status, updated_at')
         .eq('user_id', userId)
-        .eq('projeto', specialtyCode)
+        .eq('projeto', projeto)
         .maybeSingle();
       if (!vivo) return;
 
@@ -120,7 +150,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
       setCarregando(false);
     })();
     return () => { vivo = false; };
-  }, [userId, specialtyCode, lessonCode]);
+  }, [userId, projeto, lessonCode]);
 
   /* A rede embaixo do salvamento: grava no navegador a cada pausa. */
   useRascunhoLocal(
@@ -139,14 +169,16 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
     const { error } = await supabase.from('text_projects').upsert({
       user_id: userId,
       specialty_code: specialtyCode,
-      /* O texto desta trilha é o único que ela pede neste laboratório, então o
-         projeto é o próprio código — que é o valor que a migration deu às
-         linhas antigas, e por isso o que já foi escrito continua sendo achado.
-         Trilha com um segundo texto dá a ele um nome próprio. */
-      projeto: specialtyCode,
+      /* Na trilha que pede um texto só, o projeto é o próprio código — que é
+         o valor que a migration deu às linhas antigas, e por isso o que já foi
+         escrito continua sendo achado. O segundo texto da AP045 chega com nome
+         próprio. */
+      projeto,
       title: roteiro?.titulo ?? '',
       body: dados.corpo,
-      word_count: dados.corpo ? contarPalavras(dados.corpo) : totalDePalavras(dados.respostas),
+      word_count: dados.corpo
+        ? contarPalavras(fichas ? semReferencias(dados.corpo) : dados.corpo)
+        : totalDePalavras(dados.respostas),
       status,
       criteria_met: prontasIds,
       etapas: dados.respostas,
@@ -154,7 +186,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
     }, { onConflict: 'user_id,projeto' });
     if (error) { setErro('Não foi possível guardar agora. Tente de novo em instantes.'); return false; }
     return true;
-  }, [userId, specialtyCode, roteiro, etapas]);
+  }, [userId, specialtyCode, projeto, roteiro, etapas, fichas]);
 
   /** Uma chamada ao gateway, com a sessão do próprio desbravador. */
   const chamarGateway = async (corpo: Record<string, unknown>) => {
@@ -190,7 +222,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
 
     const resultado = await chamarGateway({
       type: 'redacao_validar',
-      especialidade: specialtyCode,
+      especialidade: projeto,
       etapaId: etapa.id,
       resposta: alvo,
     });
@@ -219,7 +251,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
     const partes = respostasParaUniao(roteiro, respostas);
     const resultado = await chamarGateway({
       type: 'redacao_unir',
-      especialidade: specialtyCode,
+      especialidade: projeto,
       respostas: partes,
     });
 
@@ -230,10 +262,17 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
     } else {
       corpo = String(resultado.data?.result ?? '').trim() || unirLocalmente(roteiro, respostas);
     }
+    /* As referências saem das fichas citadas, e não do modelo: ele não as
+       vê, e uma referência inventada seria pior do que nenhuma. */
+    if (fichas) {
+      const citadas = fichas.filter(f => etapas.some(e => respostas[e.id]?.fichas?.includes(f.id)));
+      const refs = referencias(citadas);
+      if (refs) corpo = `${corpo}\n\n${refs}`;
+    }
 
     setTextoFinal(corpo);
     await gravar('draft', { respostas, corpo });
-    await logActivity(userId, 'redacao_montada', { specialtyCode, palavras: contarPalavras(corpo) });
+    await logActivity(userId, 'redacao_montada', { specialtyCode, projeto, palavras: contarPalavras(corpo) });
     setMontando(false);
   };
 
@@ -271,8 +310,8 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
     setEnviado(true);
     /* Enviado: o servidor tem a versão boa, e o rascunho local só atrapalharia. */
     descartarRascunho(userId, lessonCode);
-    await logActivity(userId, 'text_submitted', { specialtyCode, lessonCode,
-      wordCount: contarPalavras(textoFinal), etapas: prontas,
+    await logActivity(userId, 'text_submitted', { specialtyCode, lessonCode, projeto,
+      wordCount: palavrasDoTexto, etapas: prontas,
     });
   };
 
@@ -319,7 +358,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
           <CheckCircle2 className="w-16 h-16 mx-auto mb-3" style={{ color: 'var(--color-success)' }} />
           <h2 className="text-xl font-bold mb-2">Relatório enviado!</h2>
           <p style={{ color: 'var(--color-text-muted)' }}>
-            {contarPalavras(textoFinal)} palavras
+            {palavrasDoTexto} palavras
             {porEtapas && `, construídas a partir das suas ${etapas.length} respostas`}.
           </p>
         </div>
@@ -345,6 +384,10 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
   }
 
   const faltaTexto = palavrasDaEtapa < (etapa?.minPalavras ?? 0);
+  /* Conferir o texto de outra pessoa não diria nada sobre o que você
+     entendeu: a cópia trava o botão, e a mensagem diz o que fazer. */
+  const faltaAqui = etapa ? faltaExtra(etapa) : null;
+  const copiadaAqui = faltaAqui?.tipo === 'copia';
   const conferenciaAtual = resposta?.conferidoEm === texto ? resposta?.conferencia : undefined;
 
   return (
@@ -416,6 +459,36 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
             <span><strong>Para pesquisar:</strong> {etapa.paraPesquisar}</span>
           </div>
 
+          {fichas && !etapa.opiniao && (
+            <fieldset className="mb-3">
+              <legend className="text-sm font-bold mb-1">Em que fichas esta resposta se apoia?</legend>
+              {fichas.length === 0 && (
+                <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>A sua pesquisa não trouxe fichas.</p>
+              )}
+              {/* As da pergunta desta etapa primeiro; as outras continuam
+                  ali, porque um trecho pode servir a duas respostas. */}
+              {[...fichas].sort((a, b) => Number(b.pergunta === etapa.id) - Number(a.pergunta === etapa.id)).map(f => {
+                const marcada = resposta?.fichas?.includes(f.id) ?? false;
+                return (
+                  <label key={f.id} className="flex items-start gap-2 text-sm py-1 cursor-pointer">
+                    <input type="checkbox" className="mt-1" checked={marcada}
+                      onChange={() => setRespostas(prev => {
+                        const atual = prev[etapa.id]?.fichas ?? [];
+                        const proximas = marcada ? atual.filter(x => x !== f.id) : [...atual, f.id];
+                        return { ...prev, [etapa.id]: { ...(prev[etapa.id] ?? { texto: '' }), fichas: proximas } };
+                      })} />
+                    <span>
+                      {f.anotacao}
+                      <span className="block text-xs" style={{ color: 'var(--color-text-dim)' }}>
+                        {f.site}{f.pergunta === etapa.id ? ' · desta pergunta' : ''}{f.desmente ? ' · desmente' : ''}
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </fieldset>
+          )}
+
           <textarea
             value={texto}
             onChange={ev => {
@@ -439,12 +512,16 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
             )}
           </div>
 
+          {faltaAqui && texto.trim() && (
+            <p className="text-sm mb-3" style={{ color: 'var(--color-secondary)' }}>{faltaAqui.mensagem}</p>
+          )}
+
           {conferenciaAtual && <Conferencia c={conferenciaAtual} />}
 
           <div className="flex flex-wrap gap-2 mt-3">
             <button
               onClick={conferir}
-              disabled={faltaTexto || conferindo}
+              disabled={faltaTexto || conferindo || copiadaAqui}
               className="btn-primary"
             >
               {conferindo
@@ -500,8 +577,8 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
               rows={14}
               className="input-field text-sm"
             />
-            <p className="text-sm mt-2" style={{ color: contarPalavras(textoFinal) >= roteiro.minPalavrasTotal ? 'var(--color-success)' : 'var(--color-primary)' }}>
-              {contarPalavras(textoFinal)} palavras — você pode ajustar o texto antes de enviar.
+            <p className="text-sm mt-2" style={{ color: palavrasDoTexto >= roteiro.minPalavrasTotal ? 'var(--color-success)' : 'var(--color-primary)' }}>
+              {palavrasDoTexto} palavras{fichas ? `, fora a lista de ${TITULO_DAS_REFERENCIAS.toLowerCase()},` : ''} — você pode ajustar o texto antes de enviar.
             </p>
           </>
         )}
@@ -514,7 +591,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
           </button>
           <button
             onClick={enviar}
-            disabled={!textoFinal || contarPalavras(textoFinal) < roteiro.minPalavrasTotal}
+            disabled={!textoFinal || palavrasDoTexto < roteiro.minPalavrasTotal}
             className="btn-primary"
           >
             Enviar relatório
