@@ -34,9 +34,15 @@ import { modulo7 } from './ap045/modulo7';
  * Só dois requisitos pedem produção escrita com piso de palavras: o 2 (350
  * palavras, evolução da computação) usa a redação guiada, o mesmo mecanismo da
  * AP034 e da AP041; o 6 (bug do milênio) não tem piso no documento oficial, e
- * por isso fica só como lição teórica — a mesma solução da AP041.4 para
- * "apresentar ao examinador": a plataforma ensina o que apresentar, e a
- * apresentação em si acontece fora daqui.
+ * as 200 palavras do relatório dele são escolha nossa.
+ *
+ * O 5 e o 6 abriram como teoria e ganharam laboratórios depois: o diagrama
+ * do caminho da informação (`diagrama_binario`), a pesquisa num buscador com
+ * páginas confiáveis e não confiáveis misturadas (`pesquisa_web`), e o
+ * relatório escrito a partir das fichas dela (`relatorio_de_pesquisa`). "Montar
+ * um diagrama" e "pesquisar em sites especializados" são gestos, e gesto se
+ * mede num laboratório. O segundo relatório da trilha é o que fez
+ * `text_projects` passar a ter chave por projeto, e não por trilha.
  *
  * ── A abertura ──────────────────────────────────────────────────────────
  * A trilha nasceu `emConstrucao` num primeiro push: cinza no painel, sem link

@@ -374,6 +374,67 @@ export const ROTEIROS: Record<string, RoteiroRedacao> = {
       },
     ],
   },
+  /*
+    O segundo texto da AP045, e o primeiro roteiro cuja chave é um projeto, e
+    não uma trilha: `AP045` já é o relatório da evolução da computação.
+
+    As quatro primeiras etapas são as quatro perguntas do recorte da pesquisa
+    (`pesquisaDoBug.ts`), com os mesmos ids — é assim que a tela sabe quais
+    fichas sugerir em cada uma. A última é a opinião, que não cita ficha.
+
+    O documento oficial não pede tamanho nenhum; as 200 palavras são escolha
+    nossa, e os mínimos das etapas somam 210.
+  */
+  'AP045-bug-do-milenio': {
+    titulo: 'O bug do milênio',
+    introducao:
+      'Você vai escrever o relatório a partir das fichas que fez na pesquisa. Em cada etapa, marque as fichas '
+      + 'em que a resposta se apoia e escreva com as suas palavras. No fim, as referências entram sozinhas.',
+    minPalavrasTotal: 200,
+    etapas: [
+      {
+        id: 'causa',
+        titulo: 'Por que ele existia',
+        pergunta: 'O que era o bug do milênio, e por que ele existia?',
+        paraPesquisar: 'Use as suas fichas da pergunta "Por que o bug existia?". Explique a economia de memória e o que acontecia com o ano 2000.',
+        exemplo: 'O bug do milênio era ... . Ele existia porque ... , e por isso o ano 2000 ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'temor',
+        titulo: 'O que se temia',
+        pergunta: 'O que as pessoas temiam que acontecesse na virada de 1999 para 2000?',
+        paraPesquisar: 'Use as fichas da pergunta "O que as pessoas temiam?". Diga que sistemas poderiam falhar e o que as pessoas fizeram por precaução.',
+        exemplo: 'Na virada do ano, as pessoas tinham medo de que ... . Por isso, muitas ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'correcao',
+        titulo: 'O que foi feito',
+        pergunta: 'O que governos e empresas fizeram para evitar o problema?',
+        paraPesquisar: 'Use as fichas da pergunta "O que foi feito para evitar o problema?". Fale da correção dos programas, dos testes e do custo.',
+        exemplo: 'Para evitar o problema, ... . Isso custou ... , e os sistemas foram testados ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'resultado',
+        titulo: 'O que aconteceu',
+        pergunta: 'O que aconteceu de fato em 1º de janeiro de 2000? Diga também se é verdade que aviões caíram.',
+        paraPesquisar: 'Use as fichas da pergunta "O que aconteceu de fato?", e a ficha que desmente a história dos aviões.',
+        exemplo: 'Em 1º de janeiro de 2000, ... . Uma página dizia que ... , mas ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'licao',
+        titulo: 'O que essa história ensina',
+        pergunta: 'O que o bug do milênio ensina sobre as decisões que se tomam ao criar um programa? Escreva o que você pensa.',
+        paraPesquisar: 'Aqui não há ficha: é a sua opinião. Pense na economia de memória de 1970 e em quem pagou a conta em 1999.',
+        exemplo: 'Para mim, o bug do milênio mostra que ... , porque ... .',
+        minPalavras: 30,
+        opiniao: true,
+      },
+    ],
+  },
 };
 
 /* ── Estado de cada resposta ──────────────────────────────────────────────── */
@@ -403,6 +464,11 @@ export type RespostaEtapa = {
   conferencia?: ConferenciaEtapa;
   /** O texto que estava no campo quando a conferência rodou. */
   conferidoEm?: string;
+  /**
+   * As fichas em que a resposta se apoia, quando o relatório nasce de uma
+   * pesquisa (`relatorioDePesquisa.ts`). Ausente na redação de sempre.
+   */
+  fichas?: string[];
 };
 
 export type RespostasRedacao = Record<string, RespostaEtapa>;

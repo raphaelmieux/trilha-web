@@ -4,12 +4,15 @@ import type { Module } from '../../types';
  * AP045 módulo 4 — o requisito 5: explicar, com 1 e 0, como a informação
  * circula entre periféricos e a CPU, e montar um diagrama.
  *
- * É um requisito "apresentar ao examinador" sem dizer essas palavras: entender
- * a ideia é o que a plataforma consegue medir; montar o diagrama de verdade é
- * o que se demonstra fora daqui, com papel e lápis ou um programa de desenho.
- * A lição dá o vocabulário e o roteiro para esse diagrama — a mesma forma da
- * AP041.4, que ensinava o que apresentar ao examinador sem substituir a
- * apresentação.
+ * Duas lições. A teoria dá o vocabulário e o caminho; o laboratório é o
+ * diagrama montado de verdade, num editor de diagramas: as peças, as setas no
+ * sentido em que a informação anda, o código binário da letra C escrito na
+ * seta que sai do teclado, e uma simulação que solta os bits e mostra onde eles
+ * chegam. A explicação ao examinador continua acontecendo fora daqui — o
+ * laboratório entrega a imagem e o roteiro em primeira pessoa para ela.
+ *
+ * BNCC: EF06MA02 (sistema de numeração, valor posicional — aqui, na base 2) e
+ * o eixo Mundo Digital do complemento de Computação.
  */
 
 const conteudo_L1 = `
@@ -157,6 +160,14 @@ export const modulo4: Module = {
           explanation: 'O que muda de etapa a etapa é o que o código representa (uma tecla, depois um pixel) — não a forma binária dele.',
         },
       ],
+    },
+    {
+      code: 'AP045.4-L2',
+      title: 'Montando o diagrama do caminho da informação',
+      type: 'lab',
+      content: '',
+      requirementCodes: ['AP045-5.1'],
+      labType: 'diagrama_binario',
     },
   ],
 };

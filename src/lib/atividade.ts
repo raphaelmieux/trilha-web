@@ -78,6 +78,7 @@ export const LABORATORIO_DO_EVENTO: Record<string, LabType> = {
   ai_lab_completed: 'ai_lab',
   code_lab_completed: 'code_lab',
   cuidados_concluido: 'computer_care',
+  diagrama_concluido: 'diagrama_binario',
   file_manager_completed: 'file_manager',
   filipenses_completed: 'filipenses',
   formatacao_concluida: 'formatacao_texto',
@@ -89,6 +90,7 @@ export const LABORATORIO_DO_EVENTO: Record<string, LabType> = {
   mail_lab_completed: 'mail_lab',
   operacoes_concluidas: 'operacoes_arquivo',
   pact_completed: 'pact_builder',
+  pesquisa_concluida: 'pesquisa_web',
   site_lab_completed: 'site_lab',
   threat_lab_completed: 'threat_lab',
   web_lab_completed: 'web_lab',
@@ -247,7 +249,12 @@ export function descreverAtividade(e: EventoDeAtividade): AtividadeDescrita {
   }
 
   if (e.event_type === 'text_submitted') {
-    const titulo = tituloDaLicao(trilha, l => l.labType === 'redacao_guiada' || l.labType === 'text_editor');
+    /* A lição gravada manda: a AP045 tem dois relatórios, e "a primeira lição
+       de escrita da trilha" daria o nome do outro. Sem ela, eventos antigos,
+       a trilha tinha um só. */
+    const codigo = texto(m.lessonCode);
+    const titulo = (codigo ? tituloDaLicao(trilha, l => l.code === codigo) : undefined)
+      ?? tituloDaLicao(trilha, l => l.labType === 'redacao_guiada' || l.labType === 'text_editor');
     return { trilha, texto: titulo ? `Relatório enviado: ${titulo}` : 'Relatório enviado' };
   }
 

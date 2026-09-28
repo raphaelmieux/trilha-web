@@ -124,6 +124,12 @@ export type LabType =
   | 'correio_completo'
   | 'configuracoes_sistema'
   | 'ai_lab'
+  /* A AP045 mede três gestos que as lições de teoria só descreviam: montar o
+     diagrama do caminho da informação, pesquisar em sites especializados, e
+     escrever o relatório a partir das fichas dessa pesquisa. */
+  | 'diagrama_binario'
+  | 'pesquisa_web'
+  | 'relatorio_de_pesquisa'
   | 'final_exam';
 
 export interface Requirement {
