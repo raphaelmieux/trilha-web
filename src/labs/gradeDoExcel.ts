@@ -45,6 +45,20 @@ export interface UsoDaGrade {
   refazer: () => void;
   /** Recado passageiro para a moldura. Sem ele, os gestos que avisam ficam mudos. */
   avisar?: (texto: string) => void;
+  /**
+   * Por que uma célula não aceita escrita, quando não aceita.
+   *
+   * Devolve a frase que o programa diria, ou `null` quando a célula é livre.
+   * Quem a passa é o laboratório que tem área protegida — hoje só o da
+   * CC-ES008, por causa do relatório de tabela dinâmica, que no Excel recusa
+   * a edição com todas as letras. Sem a guarda, digitar ali grava por baixo
+   * do resumo: o texto entra na célula, o resumo continua desenhado por cima,
+   * e o que foi escrito não aparece em lugar nenhum.
+   *
+   * Ela **avisa em vez de agir**, que é a decisão do "selecione primeiro" do
+   * laboratório de Word e do Aceitar sem marca escolhida do de revisão.
+   */
+  celulaProtegida?: (l: number, c: number) => string | null;
 }
 
 /**
@@ -138,6 +152,7 @@ const texto = (p: Planilha, l: number, c: number) => p.celulas[l]?.[c]?.texto ??
 
 export function useGradeDoExcel({
   planilha: p, mudar, desfazer: desfazerHist, refazer: refazerHist, avisar,
+  celulaProtegida,
 }: UsoDaGrade): GradeControlada {
   const [faixa, setFaixa] = useState<Faixa>({ l1: 0, c1: 0, l2: 0, c2: 0 });
   const [arrastandoFaixa, setArrastandoFaixa] = useState(false);
@@ -186,7 +201,27 @@ export function useGradeDoExcel({
     setEditando(null);
   };
 
+  /** A frase de recusa da faixa inteira, ou `null` se toda ela aceita escrita. */
+  const recusaDaFaixa = (f: Faixa): string | null => {
+    if (!celulaProtegida) return null;
+    const n = normalizar(f);
+    for (let l = n.topo; l <= n.base; l++) {
+      for (let c = n.esq; c <= n.dir; c++) {
+        const porque = celulaProtegida(l, c);
+        if (porque) return porque;
+      }
+    }
+    return null;
+  };
+
   const confirmar = (valor: string, andarPara?: Direcao) => {
+    const porque = celulaProtegida?.(sel.l, sel.c);
+    if (porque) {
+      avisar?.(porque);
+      setEditando(null);
+      setBarra(texto(p, sel.l, sel.c));
+      return;
+    }
     mudar(q => escrever(q, sel.l, sel.c, valor));
     setEditando(null);
     if (andarPara) {
@@ -218,10 +253,21 @@ export function useGradeDoExcel({
       avisar?.('Não há nada copiado ainda. Selecione as células e use Copiar, ou Ctrl+C.');
       return;
     }
+    const porque = recusaDaFaixa({
+      l1: faixa.l1, c1: faixa.c1,
+      l2: faixa.l1 + recorte.celulas.length - 1,
+      c2: faixa.c1 + (recorte.celulas[0]?.length ?? 1) - 1,
+    });
+    if (porque) { avisar?.(porque); return; }
     mudar(q => colarEm(q, faixa, recorte));
   };
 
-  const limparConteudo = () => { mudar(q => limpar(q, faixa)); setBarra(''); };
+  const limparConteudo = () => {
+    const porque = recusaDaFaixa(faixa);
+    if (porque) { avisar?.(porque); return; }
+    mudar(q => limpar(q, faixa));
+    setBarra('');
+  };
 
   const desfazer = () => { setEditando(null); desfazerHist(); };
   const refazer = () => { setEditando(null); refazerHist(); };

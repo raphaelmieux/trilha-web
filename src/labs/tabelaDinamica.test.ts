@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { planilhaDe } from './cadernoDoClube';
 import {
   type Caderno, type LinhaDoResumo, type TabelaDinamica,
-  ROTULO_VAZIO, atualizarResumo, resumir, resumoEmDia,
+  ROTULO_VAZIO, atualizarResumo, resumir, resumoEmDia, textoDoResumo,
 } from './planilha';
 
 /*
@@ -190,5 +190,64 @@ describe('a faixa do resumo', () => {
       origem: { planilha: 'Respostas', faixa: { l1: ULTIMA_LINHA, c1: 3, l2: 0, c2: 0 } },
     };
     expect(resumir(respostas(), t).length).toBe(7);
+  });
+});
+
+
+/* ── O que o resumo escreve na tela ───────────────────────────────────────── */
+
+describe('o retrato vira texto na célula', () => {
+  /*
+    Ele é desenhado por cima das células, e não gravado dentro delas: gravar
+    faria do texto uma segunda fonte para o mesmo retrato, e as duas
+    divergiriam no primeiro Atualizar — com a divergência aparecendo como um
+    número plausível, que é a pior forma de aparecer.
+  */
+  const comResumo = (t: TabelaDinamica) =>
+    planilhaDe('Relatório', [], { resumo: t });
+
+  const t = (): TabelaDinamica => ({
+    em: { l: 2, c: 1 },
+    origem: { planilha: 'Respostas', faixa: { l1: 0, c1: 0, l2: ULTIMA_LINHA, c2: 3 } },
+    linha: COLUNA_DA_UNIDADE,
+    valor: { coluna: COLUNA_DAS_DIARIAS, como: 'contagem' },
+    retrato: [{ rotulo: 'Falcão', valor: 4 }, { rotulo: ROTULO_VAZIO, valor: 1 }],
+  });
+
+  it('a planilha sem resumo não escreve nada em lugar nenhum', () => {
+    const p = planilhaDe('Relatório', [['a', 'b']]);
+    expect(textoDoResumo(p, 0, 0)).toBeNull();
+    expect(textoDoResumo(p, 2, 1)).toBeNull();
+  });
+
+  it('o cabeçalho é o do Excel, e o nome da conta vem do modelo', () => {
+    /* "Rótulos de Linha" é o que o Excel escreve, e não o nome da coluna de
+       origem: a grade recebe **uma** planilha, e a origem está noutra. */
+    expect(textoDoResumo(comResumo(t()), 2, 1)).toBe('Rótulos de Linha');
+    expect(textoDoResumo(comResumo(t()), 2, 2)).toBe('Contagem');
+    expect(textoDoResumo(comResumo({ ...t(), valor: { coluna: 3, como: 'media' } }), 2, 2))
+      .toBe('Média');
+  });
+
+  it('cada linha do retrato sai no seu lugar, e nada além delas', () => {
+    const p = comResumo(t());
+    expect(textoDoResumo(p, 3, 1)).toBe('Falcão');
+    expect(textoDoResumo(p, 3, 2)).toBe('4');
+    expect(textoDoResumo(p, 4, 1)).toBe(ROTULO_VAZIO);
+    // Uma linha depois do fim do retrato não é do resumo: escrever '' ali
+    // apagaria o que a pessoa tivesse abaixo dele.
+    expect(textoDoResumo(p, 5, 1)).toBeNull();
+    // E nem acima, nem ao lado da segunda coluna.
+    expect(textoDoResumo(p, 1, 1)).toBeNull();
+    expect(textoDoResumo(p, 3, 3)).toBeNull();
+    expect(textoDoResumo(p, 3, 0)).toBeNull();
+  });
+
+  it('média de nada sai em branco, e nunca como zero', () => {
+    /* Zero afirmaria que a média é zero, que é o número plausível e errado. É
+       a decisão da contabilidade do clube: contagem que falhou não pode
+       parecer contagem zero. */
+    const p = comResumo({ ...t(), retrato: [{ rotulo: 'Arara', valor: null }] });
+    expect(textoDoResumo(p, 3, 2)).toBe('');
   });
 });

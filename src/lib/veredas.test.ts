@@ -44,6 +44,7 @@ import { PASTAS_DA_CC_ES004 } from '../labs/metasDaCcEs004';
 import { LICOES_DA_CC_ES005 } from '../labs/metasDaCcEs005';
 import { LICOES_DA_CC_ES006 } from '../labs/metasDaCcEs006';
 import { LICOES_DA_CC_ES007 } from '../labs/metasDaCcEs007';
+import { LICOES_DA_CC_ES008 } from '../labs/metasDaCcEs008';
 
 /*
   Os laboratórios de Word partem de documentos diferentes, e a trava precisa
@@ -509,6 +510,11 @@ describe('os modelos dos laboratórios da vereda', () => {
            meta, e não a janela em que ela acontece. */
         case 'comunicacao': return Object.fromEntries(
           LICOES_DA_CC_ES007[l.licao].metas.map(m => [m.id, m.passos]));
+        /* E a CC-ES008 pelo mesmo motivo, agora com quatro telas: o construtor
+           de formulários, a planilha, o editor de texto e a da plataforma.
+           Quem responde pelos passos continua sendo a meta. */
+        case 'dados': return Object.fromEntries(
+          LICOES_DA_CC_ES008[l.licao].metas.map(m => [m.id, m.passos]));
         case 'laboratorio': return passosDe(l.linguagem);
         /* Teoria e redação não têm verificação com passo a passo. */
         case 'teoria': case 'redacao': return null;

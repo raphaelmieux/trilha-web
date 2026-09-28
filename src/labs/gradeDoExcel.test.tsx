@@ -7,7 +7,9 @@ import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import PlanilhaLab from './PlanilhaLab';
 import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
+import LaboratorioDeDados from '../components/LaboratorioDeDados';
 import { CADERNOS_DA_CC_ES003 } from './cadernosDaCcEs003';
+import { LICOES_DA_CC_ES008 } from './metasDaCcEs008';
 import type { LicaoDeVereda, Vereda } from '../curriculum/veredas';
 
 /*
@@ -84,6 +86,19 @@ const LABORATORIOS: Record<string, () => React.ReactElement> = {
         caderno: 'arrumar',
         verificacoes: CADERNOS_DA_CC_ES003.arrumar.metas.map(m => m.id),
       } as Extract<LicaoDeVereda, { tipo: 'planilha' }>}
+      aoVencer={async () => {}} aoSair={() => {}} />
+  ),
+  'components/LaboratorioDeDados.tsx': () => (
+    <LaboratorioDeDados
+      vereda={{ code: 'CC-ES008' } as Vereda}
+      licao={{
+        id: 'lab-conserto',
+        tipo: 'dados',
+        titulo: 'Lição de teste',
+        resumo: '',
+        licao: 'conserto',
+        verificacoes: LICOES_DA_CC_ES008.conserto.metas.map(m => m.id),
+      } as Extract<LicaoDeVereda, { tipo: 'dados' }>}
       aoVencer={async () => {}} aoSair={() => {}} />
   ),
 };
@@ -302,7 +317,7 @@ describe('a lista de laboratórios sai do repositório', () => {
     const usam = quemUsaOGancho();
     /* A guarda contra o vazio de sempre: uma varredura que não achasse nada
        deixaria a trava verde por não ter conferido laboratório nenhum. */
-    expect(usam.length, 'a varredura não achou quem usa o gancho').toBeGreaterThanOrEqual(2);
+    expect(usam.length, 'a varredura não achou quem usa o gancho').toBeGreaterThanOrEqual(3);
     expect(usam).toEqual(Object.keys(LABORATORIOS).sort());
   });
 

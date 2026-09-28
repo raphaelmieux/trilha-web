@@ -493,6 +493,25 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      A CC-ES008, que abre quatro telas e começa em uma delas.
+
+      Construtor de formulários, planilha, editor de texto simples e a tela da
+      plataforma do módulo 8. `licao` diz de que estado se parte **e** em qual
+      delas a lição começa — que não é a mesma coisa que onde ela termina: o
+      módulo 6 começa na planilha, exporta o CSV e acaba no editor. Um `tipo`
+      por tela daria quatro variantes quase iguais aqui, e o que muda entre
+      elas não é o que a lição é.
+    */
+    id: string;
+    tipo: 'dados';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcEs008').LicaoDaCcEs008;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não

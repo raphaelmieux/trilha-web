@@ -23,6 +23,7 @@ import LaboratorioDePdf from '../components/LaboratorioDePdf';
 import LaboratorioDeContas from '../components/LaboratorioDeContas';
 import LaboratorioDaNuvem from '../components/LaboratorioDaNuvem';
 import LaboratorioDeComunicacao from '../components/LaboratorioDeComunicacao';
+import LaboratorioDeDados from '../components/LaboratorioDeDados';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
 import LaboratorioDoRelatorio from '../components/LaboratorioDoRelatorio';
@@ -351,6 +352,27 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'comunicacao' && profile?.id) {
     return (
       <LaboratorioDeComunicacao vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /*
+    E a CC-ES008 abre quatro telas, e a lição começa em uma delas.
+
+    Construtor de formulários, planilha, editor de texto simples e a tela da
+    plataforma do módulo 8 — que é da plataforma justamente porque classificar
+    um dado como pessoal não é gesto que o Forms nem o Excel tenham, e
+    inventá-lo dentro da janela seria pôr coisa nossa dentro do programa
+    imitado.
+
+    Onde a lição **começa** e onde ela **acaba** não são a mesma coisa aqui: o
+    módulo 6 parte da planilha, exporta o CSV e termina no editor, que é onde
+    se vê o que o arquivo de fato é. Por isso `LICOES_DA_CC_ES008` diz o
+    programa de partida, e o componente guarda a tela de agora.
+  */
+  if (licaoAberta?.tipo === 'dados' && profile?.id) {
+    return (
+      <LaboratorioDeDados vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

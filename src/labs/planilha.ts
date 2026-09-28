@@ -1,5 +1,6 @@
 import {
-  ehNumero, mostrar, nomeDaColuna, numeroDoTexto, valorDaCelula, transporFormula,
+  ehNumero, mostrar, mostrarNumero, nomeDaColuna, numeroDoTexto, valorDaCelula,
+  transporFormula,
   type Formato, type Valor,
 } from './formulas';
 
@@ -241,6 +242,36 @@ export function resumoEmDia(cad: Caderno, t: TabelaDinamica): boolean {
 export function atualizarResumo(cad: Caderno, t: TabelaDinamica): TabelaDinamica {
   const origem = planilhaPorNome(cad, t.origem.planilha);
   return origem ? { ...t, retrato: resumir(origem, t) } : t;
+}
+
+/**
+ * O que o resumo escreve numa célula, ou `null` se ela não é dele.
+ *
+ * Ele é **desenhado por cima** das células, e não gravado dentro delas: gravar
+ * faria do texto uma segunda fonte para o mesmo retrato, e as duas divergiriam
+ * no primeiro Atualizar — com a divergência aparecendo como um número
+ * plausível. É a decisão da formatação condicional e do filtro, que também
+ * saem do modelo para que a mesma grade desenhe as duas telas.
+ *
+ * O cabeçalho não pergunta nada à planilha de origem, e não é economia: a
+ * grade recebe **uma** planilha, e o resumo mora na de destino. "Rótulos de
+ * Linha" é o que o Excel de verdade escreve ali, então não há o que buscar —
+ * e um cabeçalho que copiasse o nome da coluna de origem obrigaria a grade a
+ * conhecer a pasta inteira para desenhar uma célula.
+ */
+export function textoDoResumo(p: Planilha, l: number, c: number): string | null {
+  const t = p.resumo;
+  if (!t) return null;
+  const dl = l - t.em.l;
+  const dc = c - t.em.c;
+  if (dc !== 0 && dc !== 1) return null;
+  if (dl === 0) return dc === 0 ? 'Rótulos de Linha' : NOME_DO_RESUMO[t.valor.como];
+  const linha = t.retrato[dl - 1];
+  if (!linha) return null;
+  if (dc === 0) return linha.rotulo;
+  /* Média de nada não é zero, e a célula diz isso em vez de mostrar um número
+     que ninguém calculou. É a razão de `valor` ser anulável. */
+  return linha.valor === null ? '' : mostrarNumero(linha.valor);
 }
 
 /**

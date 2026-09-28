@@ -45,7 +45,7 @@ import {
 } from 'lucide-react';
 import {
   type Campo, type TipoDeResposta,
-  NOME_DO_TIPO, temOpcoes,
+  NOME_DO_TIPO, SEPARADOR_DE_ESCOLHAS, temOpcoes,
 } from './formulario';
 
 /* ── Aparência ────────────────────────────────────────────────────────────── */
@@ -125,6 +125,30 @@ export const CSS_DO_CONSTRUTOR = `
 }
 .fb-item:hover { background: #F1F3F4; }
 .fb-item[aria-checked="true"] { background: #E8DEF8; }
+
+/* O rótulo quando ele é só de leitura. É o data-fixo do nome do formulário,
+   pelo mesmo motivo: campo com cara de editável promete um gesto sem efeito. */
+.fb-rotulo[data-fixo="sim"] {
+  background: transparent; border-bottom-color: transparent; padding-left: 0;
+}
+
+/* A regra de validação, escrita no cartão depois de salva. Sem ela, ligar a
+   validação não muda nada na tela do construtor, e o gesto parece não ter
+   acontecido — é o interruptor que se liga e nunca se vê agir. */
+.fb-validacao-resumo {
+  margin-top: 12px; font-size: 12.5px; color: #5F6368;
+  border-left: 3px solid #673AB7; padding-left: 10px;
+}
+
+/* Os campos de dentro de um diálogo. */
+.fb-campo { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.fb-campo > span { font-size: 12px; color: #5F6368; }
+.fb-campo select, .fb-campo input {
+  border: 1px solid #DADCE0; border-radius: 4px; padding: 7px 9px;
+  font-size: 13.5px; color: #202124; background: #FFFFFF;
+}
+.fb-dois { display: flex; gap: 12px; }
+.fb-dois > * { flex: 1; }
 
 .fb-opcoes { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
 .fb-opcao { display: flex; align-items: center; gap: 10px; }
@@ -678,29 +702,57 @@ function PerguntaDaPrevia({ campo, valor, aoMudar, recusa }: {
         />
       )}
 
-      {(campo.tipo === 'escolha-unica' || campo.tipo === 'lista') && opcoes.map(o => (
-        <label className="fb-escolha" key={o}>
-          <input
-            type="radio" name={grupo} checked={valor === o}
-            onChange={() => aoMudar(o)}
-          />
-          {o}
-        </label>
-      ))}
+      {/*
+        A lista suspensa é um menu, e a múltipla escolha é uma fileira de
+        botões. Desenhar as duas iguais apagaria a diferença que o menu de tipo
+        oferece: quem trocasse de uma para a outra veria a tela não mudar, e
+        concluiria que o tipo não faz nada. É a mesma regra do "abrir com" que
+        não é "definir padrão".
+      */}
+      {campo.tipo === 'lista' && (
+        <select
+          className="fb-resposta-campo" value={valor} aria-label={campo.rotulo}
+          onChange={e => aoMudar(e.target.value)}
+        >
+          <option value="">Escolher</option>
+          {opcoes.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      )}
 
-      {campo.tipo === 'varias-escolhas' && opcoes.map(o => {
-        const marcadas = valor ? valor.split('; ') : [];
-        return (
-          <label className="fb-escolha" key={o}>
-            <input
-              type="checkbox" checked={marcadas.includes(o)}
-              onChange={() => aoMudar(
-                (marcadas.includes(o) ? marcadas.filter(m => m !== o) : [...marcadas, o]).join('; '))}
-            />
-            {o}
-          </label>
-        );
-      })}
+      {/* O grupo de rádio tem nome, e o nome é a pergunta: sem ele, quem ouve
+          a tela escuta "Falcão, botão 1 de 6" sem saber do que se trata. */}
+      {campo.tipo === 'escolha-unica' && (
+        <div role="radiogroup" aria-label={campo.rotulo}>
+          {opcoes.map(o => (
+            <label className="fb-escolha" key={o}>
+              <input
+                type="radio" name={grupo} checked={valor === o}
+                onChange={() => aoMudar(o)}
+              />
+              {o}
+            </label>
+          ))}
+        </div>
+      )}
+
+      {campo.tipo === 'varias-escolhas' && (
+        <div role="group" aria-label={campo.rotulo}>
+          {opcoes.map((o) => {
+            const marcadas = valor ? valor.split(SEPARADOR_DE_ESCOLHAS) : [];
+            return (
+              <label className="fb-escolha" key={o}>
+                <input
+                  type="checkbox" checked={marcadas.includes(o)}
+                  onChange={() => aoMudar(
+                    (marcadas.includes(o) ? marcadas.filter(m => m !== o) : [...marcadas, o])
+                      .join(SEPARADOR_DE_ESCOLHAS))}
+                />
+                {o}
+              </label>
+            );
+          })}
+        </div>
+      )}
 
       {recusa && <div className="fb-recusa">{recusa}</div>}
     </div>
