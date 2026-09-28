@@ -92,10 +92,11 @@ type Comum = {
 };
 
 function Moldura({
-  vereda, licao, metas, contexto, recomecar, programa, rodape, aviso, acoesExtra,
-  aoVencer, aoSair, children,
+  vereda, licao, metas, contexto, recomecar, programa, imitaPrograma, rodape, aviso,
+  acoesExtra, aoVencer, aoSair, children,
 }: Comum & {
   programa: string;
+  imitaPrograma?: boolean;
   rodape?: number;
   aviso?: string;
   acoesExtra?: React.ReactNode;
@@ -116,6 +117,7 @@ function Moldura({
       voltarPara={`/vereda/${vereda.code}`}
       titulo={licao.titulo}
       programa={programa}
+      imitaPrograma={imitaPrograma}
       tarefas={tarefas}
       aviso={aviso}
       rodape={rodape}
@@ -400,6 +402,28 @@ function TelaDoFormulario(c: Comum) {
 
 const GUIAS_USAVEIS = ['Página Inicial', 'Inserir', 'Dados'] as const;
 
+/**
+ * A área de trabalho, quando há mais de um programa aberto — e nada, quando
+ * não há.
+ *
+ * Com dois programas ela é a área com a barra de tarefas embaixo, que é como
+ * um computador resolve isso. Com um só ela não envolve nada: uma div a mais
+ * no meio do flex da moldura é uma div sem altura, e a janela deixa de chegar
+ * ao fim da tela.
+ */
+function Area({ barra, children }: { barra?: React.ReactNode; children: React.ReactNode }) {
+  if (!barra) return <>{children}</>;
+  /* A barra é irmã do palco, e não filha dele: dentro, ela rolaria junto com a
+     janela em vez de ficar colada no pé, que é onde toda barra de tarefas
+     fica. */
+  return (
+    <div className="bn-area">
+      <div className="bn-palco">{children}</div>
+      {barra}
+    </div>
+  );
+}
+
 type DialogoDaPlanilha =
   | { tipo: 'dinamica'; linha: number; valor: number; como: ComoResumir }
   | { tipo: 'salvar'; nome: string; formato: 'xlsx' | 'csv' };
@@ -598,8 +622,19 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
       <style>{CSS_EXCEL}</style>
       {c.comBarraDeTarefas && <style>{CSS_DO_BLOCO_DE_NOTAS}</style>}
 
-      <div className={c.comBarraDeTarefas ? 'bn-area' : undefined}>
-        <div className={c.comBarraDeTarefas ? 'bn-palco' : undefined}>
+      {/*
+        Sem barra de tarefas, a janela do Excel é filha **direta** da moldura.
+
+        Ela envolvia tudo numa div sem classe quando não havia barra, e essa
+        div é um bloco comum no meio do flex da moldura: a janela parava vinte
+        e quatro pixels antes do fim, e as abas das planilhas subiam para
+        dentro da cápsula de tarefas da plataforma — meio escondidas, numa
+        vereda cuja matéria é trocar de aba. Quem viu foi o Chromium: no jsdom
+        não há altura nenhuma para estourar.
+      */}
+      <Area barra={c.comBarraDeTarefas && (
+        <BarraDeTarefas atual="planilha" aoTrocar={t => t === 'texto' && c.irPara('texto')} />
+      )}>
           <div className="pl-janela">
             <BarraDeTituloDoExcel arquivo="Inscrições 2026" aoAvisar={avisar} />
             <GuiasDoExcel
@@ -677,6 +712,7 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
 
             <GradeDoExcel
               {...grade.props}
+              caderno={cad}
               aoApontarCelula={(l, col, e) => {
                 grade.props.aoApontarCelula(l, col, e);
                 olharOResumo(l, col);
@@ -701,11 +737,7 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
               <span style={{ marginLeft: 'auto' }}>{nomeDaFaixa(faixa)}</span>
             </div>
           </div>
-        </div>
-        {c.comBarraDeTarefas && (
-          <BarraDeTarefas atual="planilha" aoTrocar={t => t === 'texto' && c.irPara('texto')} />
-        )}
-      </div>
+      </Area>
 
       {dialogo?.tipo === 'dinamica' && (
         <>
@@ -893,7 +925,13 @@ function TelaDaPlataforma(c: Comum) {
   };
 
   return (
-    <Moldura {...c} programa="entrega-de-dados">
+    /* Esta tela não imita programa nenhum: classificar uma pergunta como dado
+       pessoal e escolher um cuidado são gestos que nem o Forms nem o Excel
+       têm. Sem o `imitaPrograma={false}`, a moldura avisaria no celular que
+       "este laboratório imita um programa de computador" — uma frase falsa,
+       mandando procurar um computador para uma lista de caixas que funciona
+       perfeitamente no telefone. */
+    <Moldura {...c} programa="entrega-de-dados" imitaPrograma={false}>
       <div className="p-4 sm:p-6 overflow-auto h-full">
         <div className="max-w-3xl mx-auto flex flex-col gap-5">
           <section className="card p-4">

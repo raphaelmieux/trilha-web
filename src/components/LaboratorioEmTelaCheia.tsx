@@ -80,6 +80,20 @@ interface Props {
    * programa passam o mesmo valor, e aí o aviso vale para os dois.
    */
   programa: string;
+  /**
+   * Se esta lição imita mesmo um programa de computador.
+   *
+   * O aviso de tela pequena diz, com todas as letras, que o laboratório imita
+   * um programa e que no celular os botões encolhem. Numa lição que não imita
+   * nada — uma lista de perguntas a classificar, uma escolha a fazer — isso é
+   * falso, e o aviso pede que a pessoa vá procurar um computador para uma tela
+   * que funciona perfeitamente no telefone dela.
+   *
+   * É a mesma regra do resto da casa, vista do outro lado: laboratório que não
+   * imita nada continua sendo tela da plataforma, e tela da plataforma não
+   * avisa nada sobre programa nenhum.
+   */
+  imitaPrograma?: boolean;
   tarefas: TarefaDoLaboratorio[];
   /** Mensagem passageira do laboratório — erro, dica, retorno de um clique. */
   aviso?: string;
@@ -183,13 +197,14 @@ export const CSS_DA_MOLDURA = `
 `;
 
 export default function LaboratorioEmTelaCheia({
-  trilha, voltarPara, titulo, programa, tarefas, aviso, children, acoes, rodape = 0,
+  trilha, voltarPara, titulo, programa, imitaPrograma = true,
+  tarefas, aviso, children, acoes, rodape = 0,
 }: Props) {
   const [painelAberto, setPainelAberto] = useState(true);
-  const [avisoDeTela, setAvisoDeTela] = useState(() => !jaAvisado(programa));
+  const [avisoDeTela, setAvisoDeTela] = useState(() => imitaPrograma && !jaAvisado(programa));
   /* Com o aviso de pé a bolha começa fechada: dois painéis escuros empilhados
      num celular são um só borrão, e o aviso vem antes da lista de tarefas. */
-  const [bolhaAberta, setBolhaAberta] = useState(() => jaAvisado(programa));
+  const [bolhaAberta, setBolhaAberta] = useState(() => !imitaPrograma || jaAvisado(programa));
   const [ajudaOferecida, setAjudaOferecida] = useState(false);
   const [ajudaAberta, setAjudaAberta] = useState(false);
 

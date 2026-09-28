@@ -357,3 +357,48 @@ describe('todo erro tem texto próprio', () => {
     expect(new Set(textos).size).toBe(textos.length);
   });
 });
+
+describe('a fórmula pode ler outra aba', () => {
+  /*
+    O requisito 3 da CC-ES008 manda somar, na aba de relatório, uma coluna que
+    mora na aba de dados. Sem isto a lição pediria uma fórmula que a própria
+    planilha responde com #NOME? — e a tarefa ficaria verde com uma célula
+    quebrada na tela, porque o que ela confere é o texto da fórmula.
+  */
+  const pasta = (l: number, c: number, aba?: string) => {
+    const dados: Record<string, string[][]> = {
+      Respostas: [['Diárias'], ['3'], ['1.5'], ['2']],
+      Relatório: [['=SOMA(Respostas!A2:A4)'], ['=Respostas!A2+1'], ['=SOMA(A1:A1)']],
+    };
+    return dados[aba ?? 'Relatório']?.[l]?.[c] ?? '';
+  };
+
+  it('a soma atravessa a aba, e continua pulando o que é texto', () => {
+    /* 3 e 2 somam; o 1.5 com ponto é texto numa planilha brasileira, e a SOMA
+       o pula — do mesmo jeito que pularia na aba dele. */
+    expect(mostrar(valorDaCelula(pasta, 0, 0))).toBe('5');
+  });
+
+  it('e a referência solta também', () => {
+    expect(mostrar(valorDaCelula(pasta, 1, 0))).toBe('4');
+  });
+
+  it('a referência sem aba continua lendo a aba de quem escreveu', () => {
+    /* Sem isto, uma fórmula que não nomeia aba passaria a ler a primeira da
+       pasta, e toda planilha de uma aba só mudaria de resposta. */
+    expect(mostrar(valorDaCelula(pasta, 2, 0))).toBe('5');
+  });
+
+  it('aba que não existe lê vazio, e não estoura', () => {
+    const soUma = (l: number, c: number, aba?: string) =>
+      (aba ? '' : [['=SOMA(Sumida!A1:A9)']][l]?.[c] ?? '');
+    expect(mostrar(valorDaCelula(soUma, 0, 0))).toBe('0');
+  });
+
+  it('o nome antes do parêntese continua sendo função, e não aba', () => {
+    /* `SOMA` casa com a mesma expressão de nome que `Respostas`. O que separa
+       os dois é a exclamação, e não o que vem depois. */
+    const g = (l: number, c: number) => [['4'], ['=SOMA(A1:A1)']][l]?.[c] ?? '';
+    expect(mostrar(valorDaCelula(g, 1, 0))).toBe('4');
+  });
+});

@@ -411,8 +411,24 @@ export const nomeDaFaixa = (f: Faixa) => {
  * avaliadores de fórmula na mesma base seriam os dois "Word" outra vez: a
  * mesma fórmula daria dois resultados em duas lições.
  */
-export function valorCalculado(p: Planilha, l: number, c: number): Valor {
-  return valorDaCelula((li, ci) => p.celulas[li]?.[ci]?.texto ?? '', l, c);
+/**
+ * O valor de uma célula, com a pasta inteira ao alcance da fórmula.
+ *
+ * O `caderno` é opcional porque a AP043 e a AP044 têm uma planilha só, e uma
+ * fórmula que nomeasse aba ali não teria onde procurar. Quando ele vem, a
+ * referência escrita `Respostas!E2` acha a aba pelo nome — que é o que o
+ * requisito 3 da CC-ES008 manda escrever: a base numa aba, o total na outra.
+ *
+ * Aba que não existe devolve célula vazia, e não erro: é o que uma pasta com a
+ * aba renomeada faz, e o `#REF!` do Excel só aparece quando a aba é apagada
+ * com a fórmula já escrita — coisa que nenhum laboratório daqui faz.
+ */
+export function valorCalculado(p: Planilha, l: number, c: number, caderno?: Caderno): Valor {
+  return valorDaCelula((li, ci, aba) => {
+    if (!aba || aba === p.nome) return p.celulas[li]?.[ci]?.texto ?? '';
+    const outra = caderno && planilhaPorNome(caderno, aba);
+    return outra ? outra.celulas[li]?.[ci]?.texto ?? '' : '';
+  }, l, c);
 }
 
 export function valorDe(p: Planilha, l: number, c: number): string {

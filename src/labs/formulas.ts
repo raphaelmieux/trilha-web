@@ -79,6 +79,15 @@ export interface Ref {
   linhaFixa: boolean;
   /** O `$` antes da letra: a coluna não anda quando a fórmula é copiada. */
   colunaFixa: boolean;
+  /**
+   * A aba de onde a referência lê, quando ela vem escrita antes do `!`.
+   *
+   * Ausente é "a aba desta célula", que é o que toda fórmula de uma planilha
+   * só sempre foi. Ela existe porque o requisito 3 da CC-ES008 manda somar, na
+   * aba de relatório, uma coluna que mora na aba de dados: sem isso a lição
+   * pede uma fórmula que a própria planilha responde com #NOME?.
+   */
+  aba?: string;
 }
 
 /*
@@ -105,8 +114,9 @@ export function colunaDoNome(nome: string): number {
 export const nomeDaRef = (r: Ref) =>
   `${r.colunaFixa ? '$' : ''}${nomeDaColuna(r.coluna)}${r.linhaFixa ? '$' : ''}${r.linha + 1}`;
 
-export const ref = (linha: number, coluna: number, linhaFixa = false, colunaFixa = false): Ref =>
-  ({ linha, coluna, linhaFixa, colunaFixa });
+export const ref = (
+  linha: number, coluna: number, linhaFixa = false, colunaFixa = false, aba?: string,
+): Ref => ({ linha, coluna, linhaFixa, colunaFixa, aba });
 
 /* ── O que está escrito vira valor ────────────────────────────────────────── */
 
@@ -225,7 +235,28 @@ function tokens(formula: string): Token[] {
     }
 
     const mNome = NOME.exec(resto);
-    if (mNome) { saida.push({ t: 'nome', v: mNome[0] }); i += mNome[0].length; continue; }
+    if (mNome) {
+      /*
+        Nome seguido de `!` é aba, e não função: `Respostas!E2` lê a coluna E
+        da aba Respostas. A distinção é feita aqui e não depois porque o mesmo
+        `NOME` casa com `SOMA` — o que separa os dois é a exclamação.
+      */
+      const depois = resto.slice(mNome[0].length);
+      const mDaAba = depois.startsWith('!') ? REF.exec(depois.slice(1)) : null;
+      if (mDaAba) {
+        const [todo, cifraCol, letras, cifraLin, digitos] = mDaAba;
+        saida.push({
+          t: 'ref',
+          v: ref(Number(digitos) - 1, colunaDoNome(letras),
+            cifraLin === '$', cifraCol === '$', mNome[0]),
+        });
+        i += mNome[0].length + 1 + todo.length;
+        continue;
+      }
+      saida.push({ t: 'nome', v: mNome[0] });
+      i += mNome[0].length;
+      continue;
+    }
 
     const mLit = LITERAL.exec(resto);
     if (mLit) { saida.push({ t: 'num', v: Number(mLit[0].replace(',', '.')) }); i += mLit[0].length; continue; }
@@ -415,7 +446,14 @@ function comoCondicao(v: Valor): boolean | Valor {
 /* ── Avaliação ────────────────────────────────────────────────────────────── */
 
 /** O que está escrito na célula — string vazia fora da grade. */
-export type Bruto = (linha: number, coluna: number) => string;
+/**
+ * O que está escrito numa célula, cru.
+ *
+ * `aba` ausente é "a aba desta fórmula" — que é o que todo laboratório de uma
+ * planilha só entrega. Quem tem pasta de trabalho entrega as duas, e é assim
+ * que `Respostas!E2` acha o que ler.
+ */
+export type Bruto = (linha: number, coluna: number, aba?: string) => string;
 
 interface Ctx {
   bruto: Bruto;
@@ -423,10 +461,10 @@ interface Ctx {
   cache: Map<string, Valor>;
 }
 
-const chave = (l: number, c: number) => `${l}:${c}`;
+const chave = (l: number, c: number, aba?: string) => `${aba ?? ''}:${l}:${c}`;
 
-function celula(ctx: Ctx, linha: number, coluna: number): Valor {
-  const k = chave(linha, coluna);
+function celula(ctx: Ctx, linha: number, coluna: number, aba?: string): Valor {
+  const k = chave(linha, coluna, aba);
   const guardado = ctx.cache.get(k);
   if (guardado) return guardado;
 
@@ -437,7 +475,7 @@ function celula(ctx: Ctx, linha: number, coluna: number): Valor {
   */
   if (ctx.visitando.has(k)) return erro('circular');
 
-  const bruto = ctx.bruto(linha, coluna) ?? '';
+  const bruto = ctx.bruto(linha, coluna, aba) ?? '';
   if (!ehFormula(bruto)) {
     const v = valorDoBruto(bruto);
     ctx.cache.set(k, v);
@@ -473,7 +511,7 @@ function daFaixa(ctx: Ctx, a: Ref, b: Ref): Valor[] {
   const l2 = Math.max(a.linha, b.linha);
   const c1 = Math.min(a.coluna, b.coluna);
   const c2 = Math.max(a.coluna, b.coluna);
-  for (let l = l1; l <= l2; l++) for (let c = c1; c <= c2; c++) saida.push(celula(ctx, l, c));
+  for (let l = l1; l <= l2; l++) for (let c = c1; c <= c2; c++) saida.push(celula(ctx, l, c, a.aba));
   return saida;
 }
 
@@ -485,7 +523,7 @@ function avaliar(ctx: Ctx, no: No): Valor {
       if (no.v === '\u0001F') return logico(false);
       return txt(no.v);
     case 'erro': return erro(no.e);
-    case 'ref': return celula(ctx, no.r.linha, no.r.coluna);
+    case 'ref': return celula(ctx, no.r.linha, no.r.coluna, no.r.aba);
     /*
       Faixa usada onde se espera um valor — `=A1:A5+1` — é erro no Excel, e
       devolver a primeira célula calada faria a fórmula "funcionar" mostrando
@@ -582,7 +620,9 @@ function numerosDosArgs(ctx: Ctx, args: No[]): number[] | Valor {
   const saida: number[] = [];
   for (const arg of args) {
     if (arg.k === 'faixa' || arg.k === 'ref') {
-      const valores = arg.k === 'faixa' ? daFaixa(ctx, arg.a, arg.b) : [celula(ctx, arg.r.linha, arg.r.coluna)];
+      const valores = arg.k === 'faixa'
+        ? daFaixa(ctx, arg.a, arg.b)
+        : [celula(ctx, arg.r.linha, arg.r.coluna, arg.r.aba)];
       for (const v of valores) {
         if (ehErro(v)) return v;
         if (v.tipo === 'numero') saida.push(v.n);
@@ -781,7 +821,7 @@ function procv(ctx: Ctx, args: No[]): Valor {
 
   let achou = -1;
   for (let l = l1; l <= l2; l++) {
-    const v = celula(ctx, l, c1);
+    const v = celula(ctx, l, c1, faixa.a.aba);
     if (ehErro(v)) return v;
     if (!aproximado) {
       const igual = comparar('=', v, alvo);
@@ -794,7 +834,7 @@ function procv(ctx: Ctx, args: No[]): Valor {
   }
 
   if (achou < 0) return erro('nd');
-  return celula(ctx, achou, c1 + col - 1);
+  return celula(ctx, achou, c1 + col - 1, faixa.a.aba);
 }
 
 /* ── A porta de entrada ───────────────────────────────────────────────────── */

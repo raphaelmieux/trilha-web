@@ -1,6 +1,6 @@
 import { ArrowDownAZ, ArrowUpZA, Filter, X } from 'lucide-react';
 import {
-  type Direcao, type Faixa, type Planilha,
+  type Caderno, type Direcao, type Faixa, type Planilha,
   alinhamentoDe, estiloCondicional, linhaEscondida, mostrar, naFaixa, nomeDaColuna,
   textoDoResumo, valorCalculado,
 } from './planilha';
@@ -462,6 +462,14 @@ export function AbasDoExcel({ nome, aoAvisar }: { nome: string; aoAvisar: (r: st
  */
 export interface PropsDaGradeDoExcel {
   planilha: Planilha;
+  /**
+   * A pasta inteira, quando o laboratório tem mais de uma aba.
+   *
+   * É o que faz `=SOMA(Respostas!E2:E17)` achar o que somar. Sem ela a fórmula
+   * que nomeia aba responde #NOME?, e a lição do requisito 3 da CC-ES008 —
+   * a base numa aba, o total na outra — pediria uma fórmula quebrada.
+   */
+  caderno?: Caderno;
   /** A faixa selecionada, da âncora até onde o arrasto parou. */
   faixa: Faixa;
   /** A célula ativa: onde o cursor está, e onde a edição acontece. */
@@ -514,7 +522,7 @@ export interface PropsDaGradeDoExcel {
 }
 
 export function GradeDoExcel({
-  planilha: p, faixa, ativa, rascunho, gradeRef,
+  planilha: p, caderno, faixa, ativa, rascunho, gradeRef,
   aoTeclar, aoApontarCelula, aoEntrarNaCelula, aoApontarColuna, aoApontarLinha,
   aoMoverPonteiro, aoSoltarPonteiro, aoSairDaGrade,
   aoAbrirEdicao, aoEscrever, aoConfirmar, aoCancelar,
@@ -590,7 +598,7 @@ export function GradeDoExcel({
                 const dentro = naFaixa(faixa, l, c);
                 /* O valor primeiro, e o texto a partir dele: o alinhamento
                    pergunta o **tipo**, e imprimir joga o tipo fora. */
-                const valor = valorCalculado(p, l, c);
+                const valor = valorCalculado(p, l, c, caderno);
                 /*
                   O resumo é desenhado **por cima** da célula, e ganha dela.
 

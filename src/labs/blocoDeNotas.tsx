@@ -37,11 +37,28 @@ import { FileText, Sheet } from 'lucide-react';
  */
 
 export const CSS_DO_BLOCO_DE_NOTAS = `
+/* A área de trabalho cresce dentro da moldura, e não por cima dela.
+
+   Ela era position: absolute com inset zero, e o inset mede o bloco de
+   contenção —
+   que aqui é a tela inteira, e não o miolo da moldura. O resultado foi a área
+   passando **por baixo** do painel de tarefas da plataforma: o Excel ocupava a
+   largura toda, a barra de tarefas atravessava a tela, e o painel ficava
+   escondido atrás dela. É a irmã do position: fixed que só mede a janela
+   enquanto nenhum ancestral filtra, escrita no CLAUDE.md. */
 .bn-area {
-  position: absolute; inset: 0; display: flex; flex-direction: column;
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
   background: #1F1D1B;
 }
-.bn-palco { flex: 1; min-height: 0; display: flex; }
+/* O palco é uma coluna, e não uma fileira, e a diferença não é enfeite.
+
+   Numa fileira o eixo principal é o horizontal, e aí o item herda
+   min-width: auto e se recusa a encolher abaixo do conteúdo: a grade do Excel
+   é larga, e a janela saía trinta pixels mais larga que o palco, por baixo do
+   painel de tarefas da plataforma. Numa coluna a largura é o eixo cruzado, e o
+   item se estica para caber — que é exatamente o que a moldura já faz com a
+   janela quando não há barra de tarefas. */
+.bn-palco { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 
 .bn-janela {
   flex: 1; min-width: 0; display: flex; flex-direction: column;
