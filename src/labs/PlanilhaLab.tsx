@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlignLeft, AlignCenter, AlignRight, ChevronsUp, ChevronsDown, Minus,
@@ -11,6 +11,7 @@ import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
   CSS_EXCEL, BarraDeTituloDoExcel, GuiasDoExcel, AbasDoExcel, GradeDoExcel,
 } from './excel';
+import { useGradeDoExcel } from './gradeDoExcel';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
@@ -18,18 +19,17 @@ import {
 } from '../lib/progress';
 import type { PropsDeLaboratorio as Props } from './tipos';
 import {
-  PLANILHA_INICIAL, ALTURA_PADRAO, METAS_DA_PLANILHA as METAS,
+  PLANILHA_INICIAL, METAS_DA_PLANILHA as METAS,
   nomeDaCelula, valorDe, ehNumero,
   normalizar, naFaixa, umaCelulaSo, nomeDaFaixa, larguraDaTabela, alturaDaTabela,
-  type Planilha, type AlinhaH, type AlinhaV, type Faixa,
+  type Planilha, type AlinhaH, type AlinhaV,
 } from './metasDaAp043';
 import {
-  mover, proxima, escrever as escreverEm, limpar, copiar as copiarFaixa, colar as colarEm,
   inserirLinha as inserirLinhaEm, excluirLinha as excluirLinhaDe,
   inserirColuna as inserirColunaNa, excluirColuna as excluirColunaNa,
   mesclar as mesclarFaixa, desmesclar as desmesclarFaixa, mesclagemApaga,
   historicoDe, registrar as empilhar, desfazer as desfazerHist, refazer as refazerHist,
-  type Historico, type Recorte, type Direcao,
+  type Historico,
 } from './planilha';
 
 /*
@@ -101,12 +101,47 @@ export default function PlanilhaLab({
   */
   const [hist, setHist] = useState<Historico>(() => historicoDe(PLANILHA_INICIAL));
   const p = hist.presente;
-  /* A seleção é uma faixa: `l1/c1` é a âncora, onde o clique começou, e
-     `l2/c2` é onde ele parou. Clique simples deixa as duas iguais, e aí a
-     faixa é uma célula só — que era tudo o que existia aqui antes. */
-  const [faixa, setFaixa] = useState<Faixa>({ l1: 0, c1: 0, l2: 0, c2: 0 });
-  const [arrastandoFaixa, setArrastandoFaixa] = useState(false);
-  const sel = { l: faixa.l1, c: faixa.c1 };
+  const [aviso, setAviso] = useState('');
+  /** Menu do botão direito: onde abriu e sobre o quê. */
+  const [contexto, setContexto] = useState<
+    { x: number; y: number; alvo: 'celula' | 'coluna' | 'linha' } | null>(null);
+  const [menu, setMenu] = useState<string | null>(null);
+  const [gravando, setGravando] = useState(false);
+  const [erro, setErro] = useState('');
+  const [pronto, setPronto] = useState(false);
+
+  const avisar = (texto: string) => {
+    setAviso(texto);
+    window.setTimeout(() => setAviso(a => (a === texto ? '' : a)), 7000);
+  };
+
+  /** Toda mudança passa por aqui, e por isso Ctrl+Z alcança todas elas. */
+  const mudar = (f: (p: Planilha) => Planilha) => setHist(h => empilhar(h, f(h.presente)));
+
+  /*
+    A seleção, a edição, o teclado e a área de transferência moram em
+    `useGradeDoExcel`.
+
+    Estavam escritas aqui e escritas de novo no laboratório da CC-ES003, e as
+    duas já tinham divergido: ali o Ctrl+C não copiava nada. Quem aprendeu a
+    copiar e colar nesta trilha chegava na vereda, apertava Ctrl+C, e nada
+    acontecia — sem erro, sem aviso, e sem nada na tela dizendo que ali aquilo
+    não existe.
+
+    O estado da pasta continua sendo daqui: é este componente que guarda o
+    histórico, e é o `mudar` acima que o gancho chama — o que faz o Ctrl+Z
+    alcançar tudo, inclusive o que o gancho mexe. O gancho guarda só o que é do
+    gesto: onde está a seleção, o que está sendo digitado, de onde o arrasto
+    começou.
+  */
+  const g = useGradeDoExcel({
+    planilha: p,
+    mudar,
+    desfazer: () => setHist(desfazerHist),
+    refazer: () => setHist(refazerHist),
+    avisar,
+  });
+  const { faixa, setFaixa, sel, setBarra, setEditando } = g;
   const area = normalizar(faixa);
 
   /* Até onde a tabela vai. Formatar como tabela pinta o que está dentro deste
@@ -133,89 +168,24 @@ export default function PlanilhaLab({
     const escrever = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace('.', ','));
     return `Média: ${escrever(media)}    Contagem: ${numeros.length}    Soma: ${escrever(soma)}`;
   })();
-  const [barra, setBarra] = useState('');
-  /*
-    Onde a edição está acontecendo, e não só *se* está.
-
-    Era um booleano, e foi ele o defeito: escrever na barra de fórmulas ligava
-    o modo de edição, a célula passava a desenhar um campo com autoFocus, e
-    esse campo roubava o foco da barra no meio da digitação. O onBlur da barra
-    então confirmava o que havia — uma letra. Cada tecla virava uma gravação.
-
-    Sabendo *onde*, só a célula recebe autoFocus, e só quando a edição começou
-    nela. A barra fica com o foco enquanto quem escreve está escrevendo nela.
-  */
-  const [editando, setEditando] = useState<'celula' | 'barra' | null>(null);
-  /** Área de transferência: o que Ctrl+C guardou. */
-  const [recorte, setRecorte] = useState<Recorte | null>(null);
-  /** Menu do botão direito: onde abriu e sobre o quê. */
-  const [contexto, setContexto] = useState<
-    { x: number; y: number; alvo: 'celula' | 'coluna' | 'linha' } | null>(null);
-  const gradeRef = useRef<HTMLDivElement>(null);
-  const [menu, setMenu] = useState<string | null>(null);
-  const [aviso, setAviso] = useState('');
-  const [gravando, setGravando] = useState(false);
-  const [erro, setErro] = useState('');
-  const [pronto, setPronto] = useState(false);
-  /** O arrasto em curso no cabeçalho, se houver. */
-  const arrasto = useRef<{ tipo: 'coluna' | 'linha'; indice: number; inicio: number; base: number } | null>(null);
-
-  const avisar = (texto: string) => {
-    setAviso(texto);
-    window.setTimeout(() => setAviso(a => (a === texto ? '' : a)), 7000);
-  };
-
-  /** Toda mudança passa por aqui, e por isso Ctrl+Z alcança todas elas. */
-  const mudar = (f: (p: Planilha) => Planilha) => setHist(h => empilhar(h, f(h.presente)));
-
-  /* ── Seleção e escrita ── */
-
-  const selecionar = (l: number, c: number) => {
-    setFaixa({ l1: l, c1: c, l2: l, c2: c });
-    setBarra(p.celulas[l][c].texto);
-    setEditando(null);
-    setContexto(null);
-  };
-
-  /**
-   * Grava o que foi escrito e, se pedirem, anda — como o Enter e o Tab do
-   * Excel, que confirmam *e* saem da célula no mesmo gesto.
-   */
-  const confirmar = (texto: string, andarPara?: Direcao) => {
-    mudar(a => escreverEm(a, sel.l, sel.c, texto));
-    setEditando(null);
-    if (andarPara) {
-      const destino = proxima(p, faixa, andarPara);
-      setFaixa(destino);
-      setBarra(p.celulas[destino.l1][destino.c1].texto);
-    }
-  };
 
   /*
-    Esc desiste, e precisa ganhar do onBlur.
-
-    O campo da célula grava no onBlur — o que está certo, porque no Excel
-    clicar noutra célula durante a edição grava o que foi escrito. Só que Esc
-    também tira o foco, e o onBlur disparava logo depois, gravando exatamente
-    o que Esc acabara de descartar: apertar F2, escrever, e apertar Esc
-    deixava o texto novo na célula.
-
-    A bandeira é um ref e não um estado porque o onBlur roda antes de qualquer
-    re-renderização: um estado ainda estaria com o valor velho quando ele lê.
+    O menu do botão direito é deste laboratório, e não do gancho: a CC-ES003
+    não tem nenhum. Então todo gesto que o gancho oferece passa por um
+    invólucro que o fecha antes — deixá-lo aberto por cima de uma linha que
+    acabou de sumir mostra comandos que agiriam noutra linha.
   */
-  const cancelando = useRef(false);
+  const semMenu = <A extends unknown[]>(f: (...a: A) => void) => (...a: A) => { setContexto(null); f(...a); };
 
-  const cancelarEdicao = () => {
-    cancelando.current = true;
-    setEditando(null);
-    setBarra(p.celulas[sel.l][sel.c].texto);
-  };
-
-  /** Começa a editar do zero, com a tecla que a pessoa acabou de apertar. */
-  const digitarPorCima = (tecla: string) => {
-    setBarra(tecla);
-    setEditando('celula');
-  };
+  const selecionar = semMenu(g.selecionar);
+  const copiar = semMenu(g.copiar);
+  const recortar = semMenu(g.recortar);
+  const colar = semMenu(g.colar);
+  const limparConteudo = semMenu(g.limparConteudo);
+  const desfazer = semMenu(g.desfazer);
+  const refazer = semMenu(g.refazer);
+  const ajustar = semMenu(g.aoAjustarAoConteudo);
+  const aoTeclar = (e: React.KeyboardEvent) => { setContexto(null); g.aoTeclar(e); };
 
   /* ── Alinhamento: vale para a faixa inteira, como no Excel ── */
 
@@ -239,32 +209,6 @@ export default function PlanilhaLab({
         naFaixa(faixa, i, j) ? { ...cel, negrito: ligando } : cel))),
     };
   });
-
-  /* ── Área de transferência ── */
-
-  const copiar = () => {
-    setRecorte(copiarFaixa(p, faixa));
-    setContexto(null);
-  };
-
-  const recortar = () => {
-    setRecorte(copiarFaixa(p, faixa));
-    mudar(a => limpar(a, faixa));
-    setContexto(null);
-  };
-
-  const colar = () => {
-    setContexto(null);
-    if (!recorte) { avisar('Não há nada copiado ainda. Selecione as células e use Copiar, ou Ctrl+C.'); return; }
-    mudar(a => colarEm(a, faixa, recorte));
-  };
-
-  const limparConteudo = () => { mudar(a => limpar(a, faixa)); setContexto(null); };
-
-  /* ── Desfazer e refazer ── */
-
-  const desfazer = () => { setHist(desfazerHist); setEditando(null); };
-  const refazer = () => { setHist(refazerHist); setEditando(null); };
 
   /* ── Mesclar ── */
 
@@ -339,123 +283,11 @@ export default function PlanilhaLab({
   };
 
 
-  /*
-    O teclado.
-
-    É metade do Excel, e não existia nenhum pedaço dele. O que a mão de quem
-    usa planilha já sabe fazer: as setas andam, Shift+setas estendem a faixa,
-    Enter desce, Shift+Enter sobe, Tab anda de lado, F2 edita no lugar, Delete
-    limpa, Esc cancela — e **digitar sobre a célula selecionada substitui o
-    conteúdo**, que é o gesto mais usado do programa inteiro. Sem ele, a única
-    forma de escrever era dar dois cliques, que quase ninguém tenta primeiro.
-  */
-  const aoTeclar = (e: React.KeyboardEvent) => {
-    if (contexto) setContexto(null);
-
-    /* Editando, o teclado é do campo de texto — menos as teclas que fecham a
-       edição, que continuam sendo da planilha. */
-    if (editando) {
-      if (e.key === 'Escape') { e.preventDefault(); cancelarEdicao(); }
-      return;
-    }
-
-    const ctrl = e.ctrlKey || e.metaKey;
-    if (ctrl) {
-      const k = e.key.toLowerCase();
-      if (k === 'c') { e.preventDefault(); copiar(); return; }
-      if (k === 'x') { e.preventDefault(); recortar(); return; }
-      if (k === 'v') { e.preventDefault(); colar(); return; }
-      if (k === 'z') { e.preventDefault(); desfazer(); return; }
-      if (k === 'y') { e.preventDefault(); refazer(); return; }
-      return;
-    }
-
-    const setas: Record<string, Direcao> = {
-      ArrowUp: 'cima', ArrowDown: 'baixo', ArrowLeft: 'esquerda', ArrowRight: 'direita',
-    };
-    if (setas[e.key]) {
-      e.preventDefault();
-      const destino = mover(p, faixa, setas[e.key], e.shiftKey);
-      setFaixa(destino);
-      if (!e.shiftKey) setBarra(p.celulas[destino.l1][destino.c1].texto);
-      return;
-    }
-
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const destino = proxima(p, faixa, e.shiftKey ? 'cima' : 'baixo');
-      setFaixa(destino);
-      setBarra(p.celulas[destino.l1][destino.c1].texto);
-      return;
-    }
-
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const destino = proxima(p, faixa, e.shiftKey ? 'esquerda' : 'direita');
-      setFaixa(destino);
-      setBarra(p.celulas[destino.l1][destino.c1].texto);
-      return;
-    }
-
-    if (e.key === 'F2') {
-      e.preventDefault();
-      setBarra(p.celulas[sel.l][sel.c].texto);
-      setEditando('celula');
-      return;
-    }
-
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-      e.preventDefault();
-      mudar(a => limpar(a, faixa));
-      setBarra('');
-      return;
-    }
-
-    /* Qualquer caractere que se possa escrever começa a edição por cima do que
-       estava lá. É o comportamento do Excel, e é o que faz a planilha parecer
-       responder em vez de estar travada. */
-    if (e.key.length === 1 && !e.altKey) {
-      e.preventDefault();
-      digitarPorCima(e.key);
-    }
-  };
-
-  /* ── Arrastar o cabeçalho ── */
-
-  const comecarArrasto = (tipo: 'coluna' | 'linha', indice: number, e: React.PointerEvent) => {
-    e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    arrasto.current = {
-      tipo, indice,
-      inicio: tipo === 'coluna' ? e.clientX : e.clientY,
-      base: tipo === 'coluna' ? p.larguras[indice] : p.alturas[indice],
-    };
-  };
-
-  const moverArrasto = (e: React.PointerEvent) => {
-    const a = arrasto.current;
-    if (!a) return;
-    const delta = (a.tipo === 'coluna' ? e.clientX : e.clientY) - a.inicio;
-    const valor = Math.max(a.tipo === 'coluna' ? 40 : 18, Math.round(a.base + delta));
-    mudar(atual => (a.tipo === 'coluna'
-      ? { ...atual, larguras: atual.larguras.map((w, i) => (i === a.indice ? valor : w)) }
-      : { ...atual, alturas: atual.alturas.map((h, i) => (i === a.indice ? valor : h)) }));
-  };
-
-  const soltarArrasto = () => { arrasto.current = null; };
-
-  /* Dois cliques na borda ajustam ao conteúdo, como na planilha de verdade. */
-  const ajustarAoConteudo = (indice: number) => {
-    const maior = p.celulas.reduce((m, linha) => Math.max(m, (linha[indice]?.texto ?? '').length), 0);
-    mudar(a => ({ ...a, larguras: a.larguras.map((w, i) => (i === indice ? Math.max(60, maior * 8 + 20) : w)) }));
-  };
-
   const recomecar = () => {
     setHist(historicoDe(PLANILHA_INICIAL));
     setFaixa({ l1: 0, c1: 0, l2: 0, c2: 0 });
     setBarra('');
     setEditando(null);
-    setRecorte(null);
     setContexto(null);
     setAviso('');
   };
@@ -558,13 +390,6 @@ export default function PlanilhaLab({
       {menu === id && <div className="pl-menu" role="menu">{children}</div>}
     </div>
   );
-
-  /* Dois cliques na borda de baixo do cabeçalho de linha ajustam a altura,
-     como o AutoAjuste do Excel. A altura mínima é a padrão: linha que
-     encolhesse abaixo dela esconderia o texto. */
-  const ajustarLinhaAoConteudo = (indice: number) => {
-    mudar(a => ({ ...a, alturas: a.alturas.map((h, i) => (i === indice ? ALTURA_PADRAO : h)) }));
-  };
 
   /**
    * Abre o menu do botão direito.
@@ -778,12 +603,12 @@ export default function PlanilhaLab({
             </BtMenu>
             <BtMenu id="formatar" rotulo="Formatar" icone={<Ruler className="w-4 h-4" />}>
               <ItemDoMenu aoClicar={pedirAltura}>Altura da Linha…</ItemDoMenu>
-              <ItemDoMenu aoClicar={() => { ajustarLinhaAoConteudo(sel.l); fecharMenu(); }}>
+              <ItemDoMenu aoClicar={() => { ajustar('linha', sel.l); fecharMenu(); }}>
                 AutoAjuste da Altura da Linha
               </ItemDoMenu>
               <div className="pl-menu-risco" />
               <ItemDoMenu aoClicar={pedirLargura}>Largura da Coluna…</ItemDoMenu>
-              <ItemDoMenu aoClicar={() => { ajustarAoConteudo(sel.c); fecharMenu(); }}>
+              <ItemDoMenu aoClicar={() => { ajustar('coluna', sel.c); fecharMenu(); }}>
                 AutoAjuste da Largura da Coluna
               </ItemDoMenu>
             </BtMenu>
@@ -811,24 +636,16 @@ export default function PlanilhaLab({
 
         {/* Caixa de nome e barra de fórmulas */}
         <div className="pl-formula">
-          <span className="pl-nome">{nomeDaFaixa(faixa)}</span>
+          <span className="pl-nome" aria-label="Caixa de nome">{nomeDaFaixa(faixa)}</span>
           <span className="pl-fx">fx</span>
-          {/* Escrever aqui liga a edição *na barra*, e não na célula: era a
-              célula que ganhava foco no meio da digitação, roubava a tecla
-              seguinte e fazia o onBlur daqui gravar uma letra sozinha.
-
-              E o onBlur não confirma mais nada. Sair da barra clicando noutro
-              lugar é desistir, não gravar — gravar é Enter, como no Excel. Um
-              onBlur que grava é o que transforma um clique acidental numa
-              alteração que ninguém pediu. */}
+          {/* O que a barra faz mora no gancho, junto da edição na célula: as
+              duas dividem o mesmo `barra`, o mesmo `editando` e a mesma guarda
+              de cancelamento, e escrever uma delas por fora custaria justamente
+              essa guarda. Os dois defeitos que esta barra já teve estão
+              anotados lá. */}
           <input
             className="pl-entrada"
-            value={editando ? barra : p.celulas[sel.l][sel.c].texto}
-            onChange={e => { setBarra(e.target.value); setEditando('barra'); }}
-            onKeyDown={e => {
-              if (e.key === 'Enter') { e.preventDefault(); confirmar(barra, 'baixo'); }
-              if (e.key === 'Escape') { e.preventDefault(); cancelarEdicao(); }
-            }}
+            {...g.propsDaBarra}
             placeholder="Escreva aqui, ou uma fórmula começando por ="
           />
         </div>
@@ -845,48 +662,20 @@ export default function PlanilhaLab({
           ficou aqui é do exercício: que botões a faixa oferece, que tarefas se
           conferem, e de que planilha se parte.
 
-          Esta tela não passa aoPreencher nem aoAbrirFiltro: a alça de
-          preenchimento e o filtro não fazem parte do que a AP043 cobra, e peça
-          que aparece sem ter o que fazer ensina a desconfiar do programa.
+          Esta tela não passa aoComecarPreenchimento nem aoAbrirFiltro: a alça
+          de preenchimento e o filtro não fazem parte do que a AP043 cobra, e
+          peça que aparece sem ter o que fazer ensina a desconfiar do programa.
+
+          O `aoContexto` é o contrário: o menu do botão direito é daqui, porque
+          é aqui que se inserem e se excluem linhas. `g.props` traz só o núcleo
+          que toda grade precisa, e cada laboratório escolhe os extras.
         */}
         <GradeDoExcel
-          planilha={p}
-          faixa={faixa}
-          ativa={sel}
-          rascunho={editando === 'celula' ? barra : null}
-          gradeRef={gradeRef}
+          {...g.props}
           aoTeclar={aoTeclar}
-          aoApontarCelula={(l, c, e) => {
-            gradeRef.current?.focus();
-            if (e.button !== 0) return;
-            if (e.shiftKey) { setFaixa(f => ({ ...f, l2: l, c2: c })); return; }
-            selecionar(l, c);
-            setArrastandoFaixa(true);
-          }}
-          aoEntrarNaCelula={(l, c) => { if (arrastandoFaixa) setFaixa(f => ({ ...f, l2: l, c2: c })); }}
-          aoApontarColuna={(c, e) => {
-            if (e.button !== 0) return;
-            gradeRef.current?.focus();
-            setFaixa({ l1: 0, c1: c, l2: p.celulas.length - 1, c2: c });
-          }}
-          aoApontarLinha={(l, e) => {
-            if (e.button !== 0) return;
-            gradeRef.current?.focus();
-            setFaixa({ l1: l, c1: 0, l2: l, c2: p.celulas[0].length - 1 });
-          }}
-          aoMoverPonteiro={moverArrasto}
-          aoSoltarPonteiro={() => { soltarArrasto(); setArrastandoFaixa(false); }}
-          aoSairDaGrade={() => setArrastandoFaixa(false)}
-          aoAbrirEdicao={texto => { setBarra(texto); setEditando('celula'); }}
-          aoEscrever={setBarra}
-          aoConfirmar={(texto, direcao) => {
-            if (cancelando.current) { cancelando.current = false; return; }
-            confirmar(texto, direcao);
-          }}
-          aoCancelar={cancelarEdicao}
           aoContexto={abrirContexto}
-          aoArrastarBorda={comecarArrasto}
-          aoAjustarAoConteudo={(tipo, indice) => (tipo === 'coluna' ? ajustarAoConteudo(indice) : ajustarLinhaAoConteudo(indice))}
+          aoArrastarBorda={g.aoArrastarBorda}
+          aoAjustarAoConteudo={ajustar}
           naTabela={(l, c) => l < linhasDaTabela && c < colunasDaTabela}
         />
 
@@ -918,7 +707,7 @@ export default function PlanilhaLab({
                   <ItemDoMenu aoClicar={excluirColuna}>Excluir coluna</ItemDoMenu>
                   <div className="pl-menu-risco" />
                   <ItemDoMenu aoClicar={pedirLargura}>Largura da Coluna…</ItemDoMenu>
-                  <ItemDoMenu aoClicar={() => ajustarAoConteudo(sel.c)}>AutoAjuste da Largura</ItemDoMenu>
+                  <ItemDoMenu aoClicar={() => ajustar('coluna', sel.c)}>AutoAjuste da Largura</ItemDoMenu>
                 </>
               )}
               {contexto.alvo === 'linha' && (
@@ -927,7 +716,7 @@ export default function PlanilhaLab({
                   <ItemDoMenu aoClicar={excluirLinha}>Excluir linha</ItemDoMenu>
                   <div className="pl-menu-risco" />
                   <ItemDoMenu aoClicar={pedirAltura}>Altura da Linha…</ItemDoMenu>
-                  <ItemDoMenu aoClicar={() => ajustarLinhaAoConteudo(sel.l)}>AutoAjuste da Altura</ItemDoMenu>
+                  <ItemDoMenu aoClicar={() => ajustar('linha', sel.l)}>AutoAjuste da Altura</ItemDoMenu>
                 </>
               )}
               {contexto.alvo === 'celula' && (
