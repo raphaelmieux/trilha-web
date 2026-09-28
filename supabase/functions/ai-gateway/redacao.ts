@@ -273,6 +273,71 @@ export const ROTEIROS: Record<string, RoteiroServidor> = {
     },
   },
   /*
+    O segundo texto da AP045, e o primeiro roteiro cuja chave não é uma trilha.
+
+    O requisito 6 pede pesquisar em sites especializados e apresentar um
+    relatório sobre o bug do milênio. O relatório é escrito a partir das fichas
+    que o desbravador fez na lição anterior, cada uma com a fonte presa, e a
+    chave é o **projeto** — `AP045` já é o relatório da evolução da computação,
+    e as duas redações da mesma trilha precisam de roteiros diferentes.
+
+    Os fatos são os que as páginas confiáveis do buscador da lição trazem, e
+    nada além deles: conferir contra o que a pesquisa não podia ter achado
+    reprovaria quem pesquisou direito.
+  */
+  'AP045-bug-do-milenio': {
+    assunto: 'o bug do milênio, o problema do ano 2000 nos computadores',
+    etapas: {
+      'causa': {
+        titulo: 'Por que ele existia',
+        pergunta: 'O que era o bug do milênio, e por que ele existia?',
+        fatos: [
+          'Muitos sistemas antigos guardavam o ano com apenas dois dígitos — 98 no lugar de 1998 — para economizar memória, que era cara nas décadas de 1960 e 1970.',
+          'Com dois dígitos, o ano 2000 virava "00", e um programa podia entendê-lo como 1900.',
+          'O problema também é chamado de Y2K: Y de year, ano em inglês, e 2K de dois mil.',
+          'Contas que dependem da data — idade, juros, prazos e vencimentos — podiam dar resultado errado ou até negativo.',
+        ],
+      },
+      'temor': {
+        titulo: 'O que se temia',
+        pergunta: 'O que as pessoas temiam que acontecesse na virada de 1999 para 2000?',
+        fatos: [
+          'Temia-se que sistemas de bancos, energia, hospitais, telefonia e transporte falhassem na virada de 31 de dezembro de 1999 para 1º de janeiro de 2000.',
+          'Havia medo de erros em cobranças, pagamentos e registros, e de aparelhos com relógio interno pararem de funcionar.',
+          'Muitas pessoas guardaram comida, água e dinheiro em casa por precaução.',
+          'Parte da imprensa e muitos boatos espalharam previsões exageradas, como aviões caindo do céu.',
+        ],
+      },
+      'correcao': {
+        titulo: 'O que foi feito',
+        pergunta: 'O que governos e empresas fizeram para evitar o problema?',
+        fatos: [
+          'Governos e empresas passaram anos revisando os programas e corrigindo o ano para quatro dígitos, ou ensinando o programa a entender "00" como 2000.',
+          'O custo da correção no mundo é estimado em centenas de bilhões de dólares — perto de 300 bilhões.',
+          'Programadores de linguagens antigas, como o COBOL, foram chamados de volta ao trabalho para corrigir sistemas.',
+          'Os sistemas foram testados adiantando o relógio para depois da virada, antes de ela acontecer.',
+          'No Brasil, bancos, governo e empresas também fizeram planos de correção e testes.',
+        ],
+      },
+      'resultado': {
+        titulo: 'O que aconteceu',
+        pergunta: 'O que aconteceu de fato em 1º de janeiro de 2000? Diga também se é verdade que aviões caíram.',
+        fatos: [
+          'Na virada para 2000 não aconteceram os desastres previstos: nenhum avião caiu por causa do bug, e não houve apagão em larga escala.',
+          'Houve falhas pequenas e isoladas, como sites e sistemas mostrando o ano como 1900 ou "19100", corrigidas em pouco tempo.',
+          'Especialistas atribuem a calmaria principalmente ao trabalho de correção feito antes; outros acham que o risco foi exagerado.',
+          'Um problema parecido é esperado para 2038 em sistemas que guardam o tempo em 32 bits.',
+        ],
+      },
+      'licao': {
+        titulo: 'O que essa história ensina',
+        pergunta: 'O que o bug do milênio ensina sobre as decisões que se tomam ao criar um programa? Escreva o que você pensa.',
+        fatos: [],
+        opiniao: true,
+      },
+    },
+  },
+  /*
     A CC001 é a primeira vereda a usar a redação guiada, e a primeira em que o
     relatório tem três alvos ao mesmo tempo: a origem da programação em blocos,
     o que é um algoritmo, e dois exemplos do cotidiano sem computador. Os três
