@@ -37,8 +37,8 @@ import {
 } from './formulario';
 import {
   type Escala, type Natureza,
-  CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_IDADE, UNIDADES_DO_CLUBE,
-  CLASSIFICACAO, baseDoAcampamento, camposDaBase,
+  CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_IDADE, ELENCO, UNIDADES_DO_CLUBE,
+  CLASSIFICACAO, adesaoPorUnidade, baseDoAcampamento, camposDaBase,
 } from './baseDoAcampamento';
 import type { Caderno, Planilha } from './planilha';
 import {
@@ -126,6 +126,16 @@ const aba = (c: ContextoDaAnalise, nome: string) => abaDe(c.caderno, nome);
 
 export const ABA_RESPOSTAS = 'Respostas';
 export const ABA_CALCULOS = 'Cálculos';
+
+/**
+ * A aba do elenco: quantos desbravadores cada unidade tem.
+ *
+ * Ela **não sai do formulário**, e é essa a razão de existir: o formulário só
+ * sabe de quem se inscreveu. Quantos são ao todo vem da secretaria do clube,
+ * que é de onde vem na vida — e sem esse denominador o requisito 4 não tem
+ * como acontecer, porque taxa é uma divisão.
+ */
+export const ABA_UNIDADES = 'Unidades';
 
 /** O cabeçalho é a linha 0; o primeiro registro é a 1. */
 export const PRIMEIRA_LINHA = 1;
@@ -373,6 +383,57 @@ export function blocoDasClasses(base: Formulario): BlocoDeContas {
   );
 }
 
+/* ── O bloco da adesão (requisitos 2.6 e 4) ──────────────────────────────── */
+
+export const COL_MEMBROS = 'Membros';
+export const COL_FORA = 'Ficaram de fora';
+export const COL_TAXA = 'Taxa de adesão';
+
+/**
+ * As duas leituras da mesma coisa, lado a lado — o requisito 4 inteiro.
+ *
+ * `Ficaram de fora` é o **número absoluto**: quantas vagas o acampamento
+ * perdeu naquela unidade. `Taxa de adesão` é a **taxa**: que parte da unidade
+ * de fato veio. As duas saem do mesmo par de números e nenhuma está errada.
+ *
+ * O que elas fazem é responder a perguntas diferentes — e nesta base elas
+ * ordenam ao contrário. O Falcão tem o maior número de ausentes **e** a melhor
+ * taxa: quem ordena pela coluna de ausentes conclui que é a unidade que mais
+ * deixa gente para trás, e quem divide conclui o contrário. Só uma das duas
+ * responde "qual conselheiro mobilizou melhor a unidade dele", que é a
+ * pergunta que a lição faz.
+ *
+ * Nenhuma das duas colunas tem função obrigatória: a subtração e a divisão se
+ * escrevem de um jeito só, e não há nome de função para cobrar. Quem segura é
+ * a guarda de referência — célula que não aponta para lugar nenhum é número
+ * digitado — mais o valor.
+ */
+export function blocoDaAdesao(base: Formulario): BlocoDeContas {
+  const adesao = new Map(adesaoPorUnidade(base).map(a => [a.unidade, a]));
+  return {
+    titulo: 'Adesão por unidade',
+    rotulos: [...UNIDADES_DO_CLUBE],
+    colunas: [COL_MEMBROS, COL_INSCRITOS, COL_FORA, COL_TAXA],
+    funcoes: (_linha, coluna) => (coluna === COL_INSCRITOS ? ['CONT.SE'] : []),
+    esperado: (_base, linha, coluna) => {
+      const a = adesao.get(linha);
+      if (!a) return null;
+      if (coluna === COL_MEMBROS) return a.membros;
+      if (coluna === COL_INSCRITOS) return a.inscritos;
+      if (coluna === COL_FORA) return a.fora;
+      return a.taxa;
+    },
+  };
+}
+
+/** A unidade que mais deixou gente de fora, em número absoluto. */
+export const maisAusentes = (base: Formulario) =>
+  [...adesaoPorUnidade(base)].sort((a, b) => b.fora - a.fora)[0].unidade;
+
+/** A unidade que levou a maior parte da própria gente. */
+export const melhorTaxa = (base: Formulario) =>
+  [...adesaoPorUnidade(base)].sort((a, b) => (b.taxa ?? 0) - (a.taxa ?? 0))[0].unidade;
+
 /* ── O bloco de comparação entre grupos (requisitos 5.4 e 5.5) ───────────── */
 
 export const COL_INSCRITOS = 'Inscritos';
@@ -471,8 +532,26 @@ export const colunaDaMedida = (campoId: string) =>
  * mediria gosto. Os rótulos do que se quer estão escritos, e as células ao
  * lado estão vazias.
  */
-export function cadernoDaAnalise(base: Formulario, blocos: BlocoDeContas[] = [BLOCO_DAS_MEDIDAS]): Caderno {
-  return { planilhas: [abaDeRespostas(base), abaDeCalculos(blocos)], ativa: 0 };
+export function cadernoDaAnalise(
+  base: Formulario,
+  blocos: BlocoDeContas[] = [BLOCO_DAS_MEDIDAS],
+  comElenco = false,
+): Caderno {
+  const planilhas = [abaDeRespostas(base), abaDeCalculos(blocos)];
+  /* A aba do elenco só aparece na lição que precisa dela: uma aba a mais na
+     tela é uma pergunta a mais, e o módulo 2 não tem o que fazer com ela. */
+  if (comElenco) planilhas.push(abaDoElenco());
+  return { planilhas, ativa: 0 };
+}
+
+function abaDoElenco(): Planilha {
+  const conteudo = [
+    ['Unidade', 'Membros', 'Conselheiro'],
+    ...ELENCO.map(u => [u.nome, String(u.membros), u.conselheiro]),
+  ];
+  return planilhaDe(ABA_UNIDADES, conteudo, {
+    tabela: { l1: 0, c1: 0, l2: ELENCO.length, c2: 2 },
+  });
 }
 
 function abaDeRespostas(base: Formulario): Planilha {
@@ -975,12 +1054,73 @@ export const METAS_DA_COMPARACAO: Meta[] = [
   },
 ];
 
+/* ────────────────────────────────────────────────────────────────────────────
+   Módulo 6 — Taxa e número absoluto (requisitos 2.6 e 4)
+   ──────────────────────────────────────────────────────────────────────── */
+
+export const CHAVE_MOBILIZOU_MELHOR = 'unidade-que-mobilizou-melhor';
+export const VIU_AS_DUAS_LEITURAS = 'viu-as-duas-leituras-da-mesma-coisa';
+
+/**
+ * ── O caso está armado na base, e não no enunciado ───────────────────────
+ * O Falcão tem dezesseis membros e treze inscritos: **três** ausentes contra
+ * dois de todas as outras, e ao mesmo tempo a melhor taxa das seis. Quem
+ * ordena pela coluna de ausentes conclui que é a unidade que mais deixa gente
+ * para trás; quem divide conclui o contrário, e é o contrário que é verdade.
+ *
+ * Nenhuma das duas colunas está errada. Elas respondem a perguntas diferentes,
+ * e só uma responde à pergunta que foi feita — que é exatamente o que o
+ * requisito 4 manda demonstrar, e não explicar.
+ */
+export const METAS_DA_ADESAO: Meta[] = [
+  {
+    id: 'adesao-por-unidade',
+    titulo: 'Quantos ficaram de fora, e que parte da unidade veio',
+    detalhe: 'O formulário só sabe de quem se inscreveu. Quantos são ao todo vem da secretaria do clube — e sem esse número não há taxa, porque taxa é uma divisão.',
+    onde: 'Na aba Cálculos, no bloco "Adesão por unidade", com a aba Unidades ao lado.',
+    passos: [
+      'Em Membros, aponte para a aba Unidades — não digite o número, que ele muda quando alguém entra no clube.',
+      'Em Inscritos, =CONT.SE( sobre a coluna de unidade da aba Respostas.',
+      'Ficaram de fora é membros menos inscritos.',
+      'A taxa é inscritos dividido por membros. Deixe como número entre zero e um; quem transforma em porcentagem é o formato.',
+    ],
+    feita: c => {
+      const bloco = c.blocos.find(b => b.titulo.startsWith('Adesão por unidade'));
+      return Boolean(bloco) && blocoCompleto(c, bloco!) && baseIntacta(c);
+    },
+  },
+  {
+    id: 'viu-as-duas-leituras',
+    titulo: 'Reparar que as duas colunas ordenam ao contrário',
+    detalhe: 'A unidade com mais ausentes é a mesma com a melhor taxa. As duas contas estão certas — e levam a conclusões opostas.',
+    onde: 'Ordenando o bloco pela coluna de ausentes, e depois pela de taxa.',
+    passos: [
+      'Olhe qual unidade tem o maior número na coluna "Ficaram de fora".',
+      'Agora olhe qual tem o maior número na coluna "Taxa de adesão".',
+      'É a mesma. Ela é a maior unidade do clube: três de dezesseis é menos que dois de oito.',
+    ],
+    feita: c => viu(c, VIU_AS_DUAS_LEITURAS),
+  },
+  {
+    id: 'qual-mobilizou-melhor',
+    titulo: 'Responder qual conselheiro mobilizou melhor a unidade dele',
+    detalhe: 'Esta é a pergunta, e só uma das duas colunas responde a ela. A outra responde quantas vagas o acampamento perdeu — que também importa, e para outra coisa.',
+    onde: 'Na pergunta abaixo da tabela.',
+    passos: [
+      'Mobilizar bem é levar a maior parte da própria gente, e isso é a taxa.',
+      'O número absoluto responde outra coisa: quantas vagas ficaram vazias.',
+      'Quem compra comida quer o número absoluto; quem elogia o conselheiro quer a taxa.',
+    ],
+    feita: c => (c.textos[CHAVE_MOBILIZOU_MELHOR] ?? '').trim() === melhorTaxa(c.base),
+  },
+];
+
 /* ── O registro das lições ───────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs009 = 'planilha' | 'plataforma';
 
 export type LicaoDaCcEs009 =
-  | 'tipos' | 'centro' | 'engano' | 'frequencias' | 'comparacao';
+  | 'tipos' | 'centro' | 'engano' | 'frequencias' | 'comparacao' | 'adesao';
 
 export interface LicaoDeAnalise {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -990,9 +1130,12 @@ export interface LicaoDeAnalise {
 }
 
 /** A pasta como ela chega, sem nada calculado. */
-export function contextoInicial(blocos: BlocoDeContas[] = [BLOCO_DAS_MEDIDAS]): ContextoDaAnalise {
+export function contextoInicial(
+  blocos: BlocoDeContas[] = [BLOCO_DAS_MEDIDAS],
+  comElenco = false,
+): ContextoDaAnalise {
   const base = baseDoAcampamento();
-  const caderno = cadernoDaAnalise(base, blocos);
+  const caderno = cadernoDaAnalise(base, blocos, comElenco);
   return { base, caderno, cadernoAntes: caderno, blocos, descobertas: [], marcacoes: {}, textos: {} };
 }
 
@@ -1027,6 +1170,11 @@ export const LICOES_DA_CC_ES009: Record<LicaoDaCcEs009, LicaoDeAnalise> = {
     programa: 'planilha',
     inicial: () => contextoInicial([blocoDaComparacao(baseDoAcampamento())]),
     metas: METAS_DA_COMPARACAO,
+  },
+  adesao: {
+    programa: 'planilha',
+    inicial: () => contextoInicial([blocoDaAdesao(baseDoAcampamento())], true),
+    metas: METAS_DA_ADESAO,
   },
   engano: {
     programa: 'planilha',

@@ -7,13 +7,14 @@ import {
   ROTULO_CHEGAM, ROTULO_RAZAO, ROTULO_TOTAL, VIU_A_COLUNA_QUE_ENGANA,
   COL_ACUMULADA, COL_FREQUENCIA, COL_RELATIVA, VIU_QUE_MEDIDA_NAO_SE_CONTA,
   CHAVE_MAIS_EXPERIENTE, COL_INSCRITOS, COL_MEDIA_ACAMPAMENTOS, COL_MEDIA_IDADE,
-  unidadeMaisExperiente,
+  ABA_UNIDADES, CHAVE_MOBILIZOU_MELHOR, COL_FORA, COL_MEMBROS, COL_TAXA,
+  VIU_AS_DUAS_LEITURAS, maisAusentes, melhorTaxa, unidadeMaisExperiente,
   cadernoDaAnalise, colunaDaMedida, colunaDoBloco, colunaDoCampo, contextoInicial,
   esperadoDe, faixaDoCampo, formulaDaMedida, linhaDoRotulo,
 } from './metasDaCcEs009';
 import {
   CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_CAMISETA, CAMPO_IDADE,
-  CLASSIFICACAO, baseDoAcampamento, camposDaBase,
+  CLASSIFICACAO, adesaoPorUnidade, baseDoAcampamento, camposDaBase,
 } from './baseDoAcampamento';
 import { type TabelaDinamica, atualizarResumo, escrever, valorCalculado } from './planilha';
 import { abaDe, comAba, escritoEm, mostradoEm, valorEm } from './cadernoDoClube';
@@ -90,7 +91,42 @@ const SOLUCOES: Record<LicaoDaCcEs009, (c: ContextoDaAnalise) => ContextoDaAnali
   engano: comOEngano,
   frequencias: comAsFrequencias,
   comparacao: comAComparacao,
+  adesao: comAAdesao,
 };
+
+/**
+ * O módulo 6, escrito como a pessoa escreve.
+ *
+ * Membros aponta para a aba Unidades — e não traz o número digitado, que muda
+ * quando alguém entra no clube. Os que ficaram de fora e a taxa saem das duas
+ * células ao lado, que é o que torna a tabela inteira uma conta só.
+ */
+function comAAdesao(c: ContextoDaAnalise): ContextoDaAnalise {
+  const bloco = c.blocos[0];
+  let p = abaDe(c.caderno, ABA_CALCULOS);
+  const unidades = `${ABA_RESPOSTAS}!${faixaDoCampo(c.base, CAMPO_UNIDADE)}`;
+  const cMembros = colunaDoBloco(bloco, COL_MEMBROS);
+  const cInscritos = colunaDoBloco(bloco, COL_INSCRITOS);
+
+  bloco.rotulos.forEach((unidade, i) => {
+    const l = linhaDoRotulo(c.blocos, unidade);
+    const membros = `${nomeDaColuna(cMembros)}${l + 1}`;
+    const inscritos = `${nomeDaColuna(cInscritos)}${l + 1}`;
+    /* A aba Unidades traz o cabeçalho na linha 1 e as seis unidades na mesma
+       ordem, então a linha do elenco é `i + 2` em notação de planilha. */
+    p = escrever(p, l, cMembros, `=${ABA_UNIDADES}!B${i + 2}`);
+    p = escrever(p, l, cInscritos, `=CONT.SE(${unidades};"${unidade}")`);
+    p = escrever(p, l, colunaDoBloco(bloco, COL_FORA), `=${membros}-${inscritos}`);
+    p = escrever(p, l, colunaDoBloco(bloco, COL_TAXA), `=${inscritos}/${membros}`);
+  });
+
+  return {
+    ...c,
+    caderno: comAba(c.caderno, p),
+    descobertas: [VIU_AS_DUAS_LEITURAS],
+    textos: { ...c.textos, [CHAVE_MOBILIZOU_MELHOR]: melhorTaxa(c.base) },
+  };
+}
 
 /**
  * O módulo 5, escrito como a pessoa escreve.
@@ -629,6 +665,109 @@ describe('comparar grupos, e o resumo que confere', () => {
     expect(meta('a-unidade-mais-experiente').feita(
       { ...c, textos: { ...c.textos, [CHAVE_MAIS_EXPERIENTE]: 'Falcão' } },
     )).toBe(false);
+  });
+});
+
+/* ── O módulo 6 ───────────────────────────────────────────────────────────── */
+
+describe('taxa e número absoluto', () => {
+  const licao = LICOES_DA_CC_ES009.adesao;
+  const meta = (id: string) => licao.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES.adesao(licao.inicial());
+
+  it('a unidade com mais ausentes é a mesma com a melhor taxa, e as duas pontas são únicas', () => {
+    /*
+      É o requisito 4 inteiro, e ele mora na base e não no enunciado. Se as
+      duas colunas ordenassem igual, "um caso em que a comparação por número
+      absoluto conduz a conclusão errada" não teria caso.
+
+      As pontas precisam ser únicas: com empate, a lição teria duas respostas
+      certas e a tarefa mediria ter escolhido a nossa.
+    */
+    const base = baseDoAcampamento();
+    expect(maisAusentes(base)).toBe(melhorTaxa(base));
+
+    const adesao = adesaoPorUnidade(base);
+    const fora = [...adesao].sort((a, b) => b.fora - a.fora);
+    const taxa = [...adesao].sort((a, b) => (b.taxa ?? 0) - (a.taxa ?? 0));
+    expect(fora[0].fora).toBeGreaterThan(fora[1].fora);
+    expect(taxa[0].taxa!).toBeGreaterThan(taxa[1].taxa!);
+  });
+
+  it('e o contraste mora só no topo, que é onde a lição precisa dele', () => {
+    /*
+      Ordenar por taxa e ordenar por ausentes dá a **mesma fila**, e não filas
+      opostas: todas as unidades menos o Falcão têm exatamente dois ausentes, e
+      a fila delas cai na ordem de sempre.
+
+      O contraste está no primeiro lugar, e é ele que a lição usa: ser o
+      primeiro na coluna de ausentes quer dizer o **pior**, e ser o primeiro na
+      de taxa quer dizer o **melhor**. Mesma unidade, mesma posição, leituras
+      opostas.
+
+      Uma consequência disto é que trocar a chave de `melhorTaxa` de taxa para
+      contagem não muda resposta nenhuma nesta base: a mutação é equivalente, e
+      nenhuma trava pode pegá-la. O que dá para fixar é o contraste, e é o que
+      está escrito aqui — uma base futura que o perdesse reprova neste ponto.
+    */
+    const adesao = adesaoPorUnidade(baseDoAcampamento());
+    const topo = maisAusentes(baseDoAcampamento());
+    expect(melhorTaxa(baseDoAcampamento())).toBe(topo);
+
+    const outras = adesao.filter(a => a.unidade !== topo);
+    expect(new Set(outras.map(a => a.fora)).size,
+      'as outras unidades deixaram de empatar em ausentes').toBe(1);
+    expect(adesao.find(a => a.unidade === topo)!.fora)
+      .toBeGreaterThan(outras[0].fora);
+  });
+
+  it('o número de membros digitado não passa', () => {
+    /*
+      Ele muda quando alguém entra no clube, e uma célula com o número parado
+      continuaria mostrando o de hoje. A coluna não tem função obrigatória —
+      apontar para a aba Unidades é o gesto —, então quem segura é a guarda de
+      referência.
+    */
+    const c = pronto();
+    expect(meta('adesao-por-unidade').feita(c)).toBe(true);
+
+    const bloco = c.blocos[0];
+    const l = linhaDoRotulo(c.blocos, 'Falcão');
+    const p = escrever(abaDe(c.caderno, ABA_CALCULOS), l, colunaDoBloco(bloco, COL_MEMBROS), '=16');
+    expect(meta('adesao-por-unidade').feita({ ...c, caderno: comAba(c.caderno, p) })).toBe(false);
+  });
+
+  it('a taxa de cabeça para baixo não passa', () => {
+    /* Membros dividido por inscritos devolve um número perfeitamente
+       plausível — maior que 1, e ninguém repara quando a coluna está
+       formatada como número. */
+    const c = pronto();
+    const bloco = c.blocos[0];
+    const l = linhaDoRotulo(c.blocos, 'Falcão');
+    const membros = `${nomeDaColuna(colunaDoBloco(bloco, COL_MEMBROS))}${l + 1}`;
+    const inscritos = `${nomeDaColuna(colunaDoBloco(bloco, COL_INSCRITOS))}${l + 1}`;
+    const p = escrever(abaDe(c.caderno, ABA_CALCULOS), l,
+      colunaDoBloco(bloco, COL_TAXA), `=${membros}/${inscritos}`);
+    expect(meta('adesao-por-unidade').feita({ ...c, caderno: comAba(c.caderno, p) })).toBe(false);
+  });
+
+  it('responder pela coluna errada não fecha a lista', () => {
+    /* A pergunta é quem mobilizou melhor. Respondê-la pela coluna de ausentes
+       daria a mesma unidade nesta base — por isso a trava usa o nome de outra,
+       que é o que um raciocínio errado sobre uma base diferente produziria. */
+    const c = pronto();
+    expect(meta('qual-mobilizou-melhor').feita(c)).toBe(true);
+    expect(meta('qual-mobilizou-melhor').feita(
+      { ...c, textos: { ...c.textos, [CHAVE_MOBILIZOU_MELHOR]: 'Onça' } },
+    )).toBe(false);
+  });
+
+  it('a aba do elenco só aparece na lição que precisa dela', () => {
+    /* Uma aba a mais na tela é uma pergunta a mais, e o módulo 2 não tem o
+       que fazer com ela. */
+    expect(licao.inicial().caderno.planilhas.map(q => q.nome)).toContain(ABA_UNIDADES);
+    expect(LICOES_DA_CC_ES009.centro.inicial().caderno.planilhas.map(q => q.nome))
+      .not.toContain(ABA_UNIDADES);
   });
 });
 
