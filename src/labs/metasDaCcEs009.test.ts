@@ -3,12 +3,14 @@ import {
   type ContextoDaAnalise, type LicaoDaCcEs009, type Meta,
   ABA_CALCULOS, ABA_RESPOSTAS, COLUNAS_MEDIDAS, LICOES_DA_CC_ES009, MEDIDAS,
   PRIMEIRA_LINHA, VIU_A_CONTA_SE_REFAZER, VIU_QUE_A_MODA_NAO_SERVE,
-  REPETICOES_QUE_FAZEM_MODA,
+  BLOCO_DAS_MEDIDAS, REPETICOES_QUE_FAZEM_MODA,
+  ROTULO_CHEGAM, ROTULO_RAZAO, ROTULO_TOTAL, VIU_A_COLUNA_QUE_ENGANA,
   cadernoDaAnalise, colunaDaMedida, colunaDoCampo, contextoInicial,
-  esperadoDe, faixaDoCampo, linhaDaMedida,
+  esperadoDe, faixaDoCampo, formulaDaMedida, linhaDoRotulo,
 } from './metasDaCcEs009';
 import {
-  CAMPO_ALTURA, CAMPO_IDADE, CLASSIFICACAO, baseDoAcampamento, camposDaBase,
+  CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_IDADE,
+  CLASSIFICACAO, baseDoAcampamento, camposDaBase,
 } from './baseDoAcampamento';
 import { escrever, valorCalculado } from './planilha';
 import { abaDe, comAba, escritoEm, mostradoEm, valorEm } from './cadernoDoClube';
@@ -31,19 +33,43 @@ const comTodasAsMedidas = (c: ContextoDaAnalise): ContextoDaAnalise => {
   let p = abaDe(c.caderno, ABA_CALCULOS);
   for (const medida of MEDIDAS) {
     for (const campo of COLUNAS_MEDIDAS) {
-      p = escrever(p, linhaDaMedida(medida.rotulo), colunaDaMedida(campo),
-        formulaDa(medida.rotulo, campo, c));
+      p = escrever(p, linhaDoRotulo(c.blocos, medida.rotulo), colunaDaMedida(campo),
+        formulaDaMedida(medida, c.base, campo));
     }
   }
   return { ...c, caderno: comAba(c.caderno, p) };
 };
 
-function formulaDa(rotulo: string, campoId: string, c: ContextoDaAnalise): string {
-  const faixa = `${ABA_RESPOSTAS}!${faixaDoCampo(c.base, campoId)}`;
-  if (rotulo === 'Amplitude') return `=MÁXIMO(${faixa})-MÍNIMO(${faixa})`;
-  const funcao = MEDIDAS.find(m => m.rotulo === rotulo)!.funcoes[0];
-  return `=${funcao}(${faixa})`;
-}
+/** O endereço de uma célula da aba de cálculos, como quem escreve a fórmula. */
+const enderecoDe = (c: ContextoDaAnalise, rotulo: string, campoId: string) =>
+  `${nomeDaColuna(colunaDaMedida(campoId))}${linhaDoRotulo(c.blocos, rotulo) + 1}`;
+
+/**
+ * O módulo 3, escrito como a pessoa escreve.
+ *
+ * A razão aponta para as duas células de cima, que é a boa prática — repetir
+ * as funções também responde, e por isso a conta não cobra nenhuma das duas.
+ * O que ela cobra é que a célula **aponte** para alguma coisa: `=1,43` devolve
+ * o número certo e não acompanha nada.
+ */
+const comOEngano = (c0: ContextoDaAnalise): ContextoDaAnalise => {
+  const c = comTodasAsMedidas(c0);
+  let p = abaDe(c.caderno, ABA_CALCULOS);
+  for (const campo of COLUNAS_MEDIDAS) {
+    const col = colunaDaMedida(campo);
+    const faixa = `${ABA_RESPOSTAS}!${faixaDoCampo(c.base, campo)}`;
+    p = escrever(p, linhaDoRotulo(c.blocos, ROTULO_RAZAO), col,
+      `=${enderecoDe(c, 'Média', campo)}/${enderecoDe(c, 'Mediana', campo)}`);
+    p = escrever(p, linhaDoRotulo(c.blocos, ROTULO_CHEGAM), col,
+      `=CONT.SE(${faixa};">="&${enderecoDe(c, 'Média', campo)})`);
+    p = escrever(p, linhaDoRotulo(c.blocos, ROTULO_TOTAL), col, `=CONT.NÚM(${faixa})`);
+  }
+  return {
+    ...c,
+    caderno: comAba(c.caderno, p),
+    descobertas: [...c.descobertas, VIU_A_COLUNA_QUE_ENGANA],
+  };
+};
 
 const SOLUCOES: Record<LicaoDaCcEs009, (c: ContextoDaAnalise) => ContextoDaAnalise> = {
   tipos: c => ({
@@ -58,6 +84,7 @@ const SOLUCOES: Record<LicaoDaCcEs009, (c: ContextoDaAnalise) => ContextoDaAnali
     ...comTodasAsMedidas(c),
     descobertas: [VIU_QUE_A_MODA_NAO_SERVE, VIU_A_CONTA_SE_REFAZER],
   }),
+  engano: comOEngano,
 };
 
 const licoes = Object.entries(LICOES_DA_CC_ES009) as [LicaoDaCcEs009, typeof LICOES_DA_CC_ES009[LicaoDaCcEs009]][];
@@ -128,7 +155,8 @@ describe('cada meta se explica', () => {
 
 describe('a pasta como ela chega', () => {
   const base = baseDoAcampamento();
-  const caderno = cadernoDaAnalise(base);
+  const BLOCOS = [BLOCO_DAS_MEDIDAS];
+  const caderno = cadernoDaAnalise(base, BLOCOS);
   const respostas = abaDe(caderno, ABA_RESPOSTAS);
   const calculos = abaDe(caderno, ABA_CALCULOS);
 
@@ -169,9 +197,9 @@ describe('a pasta como ela chega', () => {
       nenhum, mediria gosto.
     */
     for (const medida of MEDIDAS) {
-      expect(escritoEm(calculos, linhaDaMedida(medida.rotulo), 0)).toBe(medida.rotulo);
+      expect(escritoEm(calculos, linhaDoRotulo(BLOCOS, medida.rotulo), 0)).toBe(medida.rotulo);
       for (const campo of COLUNAS_MEDIDAS) {
-        expect(escritoEm(calculos, linhaDaMedida(medida.rotulo), colunaDaMedida(campo)),
+        expect(escritoEm(calculos, linhaDoRotulo(BLOCOS, medida.rotulo), colunaDaMedida(campo)),
           `${medida.rotulo} de ${campo} já vem escrita`).toBe('');
       }
     }
@@ -206,7 +234,7 @@ describe('a conta confere a fórmula e o resultado', () => {
 
   const comFormula = (c: ContextoDaAnalise, rotulo: string, campo: string, texto: string) => {
     const p = escrever(abaDe(c.caderno, ABA_CALCULOS),
-      linhaDaMedida(rotulo), colunaDaMedida(campo), texto);
+      linhaDoRotulo(c.blocos, rotulo), colunaDaMedida(campo), texto);
     return { ...c, caderno: comAba(c.caderno, p) };
   };
 
@@ -219,7 +247,7 @@ describe('a conta confere a fórmula e o resultado', () => {
     let c = SOLUCOES.centro(licao.inicial());
     const certo = esperadoDe(c.base, CAMPO_IDADE, 'Média')!;
     c = comFormula(c, 'Média', CAMPO_IDADE, `=${String(certo).replace('.', ',')}`);
-    expect(valorEm(abaDe(c.caderno, ABA_CALCULOS), linhaDaMedida('Média'), colunaDaMedida(CAMPO_IDADE)))
+    expect(valorEm(abaDe(c.caderno, ABA_CALCULOS), linhaDoRotulo(c.blocos, 'Média'), colunaDaMedida(CAMPO_IDADE)))
       .toMatchObject({ tipo: 'numero' });
     expect(meta('media-e-mediana').feita(c)).toBe(false);
   });
@@ -280,7 +308,7 @@ describe('a conta confere a fórmula e o resultado', () => {
     */
     const c = SOLUCOES.centro(licao.inicial());
     const calculos = abaDe(c.caderno, ABA_CALCULOS);
-    const l = linhaDaMedida('Média');
+    const l = linhaDoRotulo(c.blocos, 'Média');
     const col = colunaDaMedida(CAMPO_IDADE);
 
     expect(valorCalculado(calculos, l, col, c.caderno)).toMatchObject({ tipo: 'numero' });
@@ -307,6 +335,76 @@ describe('a conta confere a fórmula e o resultado', () => {
     const faixa = `${ABA_RESPOSTAS}!${faixaDoCampo(c.base, CAMPO_IDADE)}`;
     c = comFormula(c, 'Desvio padrão', CAMPO_IDADE, `=DESVPAD(${faixa})`);
     expect(meta('amplitude-e-desvio').feita(c)).toBe(false);
+  });
+});
+
+/* ── O módulo 3 ───────────────────────────────────────────────────────────── */
+
+describe('onde a média engana', () => {
+  const licao = LICOES_DA_CC_ES009.engano;
+  const meta = (id: string) => licao.metas.find(m => m.id === id)!;
+
+  it('a razão digitada não passa, mesmo com o número certo', () => {
+    /*
+      Esta é a conta em que mais de um caminho serve — dividir as duas células
+      de cima, ou repetir as funções —, então não há função obrigatória para
+      cobrar. Sem a guarda de referência, `=1,4270833333333333` passaria: um
+      número certo hoje que continua mostrando o de hoje amanhã, com um sinal
+      de igual na frente para parecer conta.
+    */
+    const pronto = SOLUCOES.engano(licao.inicial());
+    expect(meta('a-razao-entre-as-duas').feita(pronto)).toBe(true);
+
+    let p = abaDe(pronto.caderno, ABA_CALCULOS);
+    const certo = esperadoDe(pronto.base, CAMPO_ACAMPAMENTOS, ROTULO_RAZAO)!;
+    p = escrever(p, linhaDoRotulo(pronto.blocos, ROTULO_RAZAO), colunaDaMedida(CAMPO_ACAMPAMENTOS),
+      `=${String(certo).replace('.', ',')}`);
+    const digitada = { ...pronto, caderno: comAba(pronto.caderno, p) };
+
+    /* O valor continua certo — é só isso que uma conferência de resultado veria. */
+    expect(valorCalculado(abaDe(digitada.caderno, ABA_CALCULOS),
+      linhaDoRotulo(digitada.blocos, ROTULO_RAZAO), colunaDaMedida(CAMPO_ACAMPAMENTOS),
+      digitada.caderno)).toMatchObject({ tipo: 'numero' });
+    expect(meta('a-razao-entre-as-duas').feita(digitada)).toBe(false);
+  });
+
+  it('apagar o veterano que puxa a média derruba as metas que mexem na conta', () => {
+    /*
+      É o caminho rápido e errado do módulo 3, e o requisito 5.6 existe para
+      recusá-lo: decide-se por escrito o que fazer com um valor atípico, não se
+      some com ele. A condição viaja conjugada com cada meta que pede um gesto,
+      e não como item da lista — "a base continua inteira" é verdadeira no
+      segundo zero, e item já marcado ensina a não ler a lista.
+    */
+    const pronto = SOLUCOES.engano(licao.inicial());
+    const respostas = abaDe(pronto.caderno, ABA_RESPOSTAS);
+    const coluna = colunaDoCampo('nome');
+    const linha = respostas.celulas.findIndex(l => l[coluna]?.texto === 'Marina Sobral');
+    expect(linha, 'a veterana de dezoito acampamentos não está na aba').toBeGreaterThan(0);
+
+    const semEla = {
+      ...pronto,
+      caderno: comAba(pronto.caderno, escrever(respostas, linha, coluna, '')),
+    };
+    expect(meta('a-razao-entre-as-duas').feita(semEla)).toBe(false);
+    expect(meta('quantos-chegam-a-media').feita(semEla)).toBe(false);
+  });
+
+  it('a razão separa a coluna que engana das outras duas', () => {
+    /*
+      Contar quantos ficam abaixo da média não separa nada: são 29 dos 48 nos
+      acampamentos e 26 na idade, as duas acima da metade. O que separa é a
+      distância entre média e mediana — 43% numa, menos de 4% nas outras.
+
+      E as outras duas **precisam** ficar perto de 1. Se as três fossem
+      assimétricas, o desbravador sairia daqui achando que a média sempre
+      mente, e aí ele não usaria mais a média — que é pior.
+    */
+    const base = baseDoAcampamento();
+    const razao = (campo: string) => esperadoDe(base, campo, ROTULO_RAZAO)!;
+    expect(razao(CAMPO_ACAMPAMENTOS)).toBeGreaterThan(1.25);
+    expect(Math.abs(razao(CAMPO_IDADE) - 1)).toBeLessThan(0.1);
+    expect(Math.abs(razao(CAMPO_ALTURA) - 1)).toBeLessThan(0.1);
   });
 });
 

@@ -31,7 +31,7 @@
  * fora, que é o erro de planilha mais comum que existe.
  */
 
-import { type Formulario, cabecalhoDe, linhasDe, respostasReais } from './formulario';
+import { type Formulario, CAMPO_NOME, cabecalhoDe, linhasDe, respostasReais } from './formulario';
 import {
   type Escala, type Natureza,
   CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_IDADE,
@@ -39,11 +39,11 @@ import {
 } from './baseDoAcampamento';
 import type { Caderno, Planilha } from './planilha';
 import {
-  amplitude, colunaDe, desvioPadrao, media, mediana, moda,
+  amplitude, colunaDe, desvioPadrao, media, mediana, moda, numerosDe,
 } from './analiseDeDados';
-import { abaDe, escritoEm, planilhaDe, usaFuncao } from './cadernoDoClube';
-import { valorCalculado } from './planilha';
-import { nomeDaColuna } from './formulas';
+import { abaDe, comAba, escritoEm, planilhaDe, usaFuncao } from './cadernoDoClube';
+import { escrever, valorCalculado } from './planilha';
+import { nomeDaColuna, referenciasDe } from './formulas';
 
 /* ── A forma de uma meta ──────────────────────────────────────────────────── */
 
@@ -98,6 +98,16 @@ export interface ContextoDaAnalise {
    * Nenhuma muda um byte, e todas são o que o requisito manda demonstrar.
    */
   descobertas: string[];
+  /**
+   * Os blocos que a aba de cálculos desta lição traz.
+   *
+   * Eles moram no contexto e não numa constante porque cada lição monta a aba
+   * dela: a conferência precisa saber em que linha um rótulo caiu, e a linha
+   * depende do que veio antes. Um deslocamento escrito à mão erraria calado —
+   * a fórmula iria para a célula do lado e a tarefa ficaria vermelha com a
+   * conta certa na tela.
+   */
+  blocos: BlocoDeContas[];
   /** Como a pessoa classificou cada coluna, no módulo 1. */
   marcacoes: Record<string, Marcacao>;
   /** O que ela escreveu: a justificativa do atípico, a conclusão, a defesa. */
@@ -140,6 +150,10 @@ export function faixaDoCampo(base: Formulario, campoId: string): string {
 /** As três colunas quantitativas de que a zona de cálculo trata. */
 export const COLUNAS_MEDIDAS = [CAMPO_IDADE, CAMPO_ALTURA, CAMPO_ACAMPAMENTOS];
 
+export const ROTULO_RAZAO = 'Média ÷ mediana';
+export const ROTULO_CHEGAM = 'Quantos chegam à média';
+export const ROTULO_TOTAL = 'Quantos são ao todo';
+
 /**
  * As cinco medidas, na ordem em que a lição as apresenta.
  *
@@ -152,17 +166,103 @@ export const COLUNAS_MEDIDAS = [CAMPO_IDADE, CAMPO_ALTURA, CAMPO_ACAMPAMENTOS];
  * `=MÁXIMO(...)-MÍNIMO(...)` é o que torna visível que ela é a distância entre
  * as pontas, que é a definição que o requisito 2.4 pede.
  */
-export const MEDIDAS: { rotulo: string; funcoes: string[] }[] = [
-  { rotulo: 'Média', funcoes: ['MÉDIA'] },
-  { rotulo: 'Mediana', funcoes: ['MED'] },
-  { rotulo: 'Moda', funcoes: ['MODO'] },
-  { rotulo: 'Amplitude', funcoes: ['MÁXIMO', 'MÍNIMO'] },
-  { rotulo: 'Desvio padrão', funcoes: ['DESVPADP'] },
+export interface Conta {
+  rotulo: string;
+  /**
+   * As funções que a fórmula tem de chamar.
+   *
+   * Vazia quando mais de um caminho serve — a razão entre média e mediana se
+   * escreve dividindo as duas células de cima, que é a boa prática, ou
+   * repetindo as duas funções, que também responde. Cobrar um dos dois mediria
+   * ter adivinhado o nosso.
+   */
+  funcoes: string[];
+  /** Quanto ela deve devolver, sobre esta coluna. */
+  esperado: (base: Formulario, campoId: string) => number | null;
+}
+
+const daColuna = (f: (v: string[]) => number | null) =>
+  (base: Formulario, campoId: string) => f(colunaDe(base, campoId));
+
+export const CONTAS: Conta[] = [
+  { rotulo: 'Média', funcoes: ['MÉDIA'], esperado: daColuna(media) },
+  { rotulo: 'Mediana', funcoes: ['MED'], esperado: daColuna(mediana) },
+  { rotulo: 'Moda', funcoes: ['MODO'], esperado: daColuna(moda) },
+  { rotulo: 'Amplitude', funcoes: ['MÁXIMO', 'MÍNIMO'], esperado: daColuna(amplitude) },
+  { rotulo: 'Desvio padrão', funcoes: ['DESVPADP'], esperado: daColuna(desvioPadrao) },
+
+  {
+    rotulo: ROTULO_RAZAO,
+    funcoes: [],
+    esperado: daColuna(v => {
+      const md = mediana(v);
+      const m = media(v);
+      return m === null || md === null || md === 0 ? null : m / md;
+    }),
+  },
+  {
+    rotulo: ROTULO_CHEGAM,
+    funcoes: ['CONT.SE'],
+    esperado: daColuna(v => {
+      const m = media(v);
+      return m === null ? null : numerosDe(v).filter(n => n >= m).length;
+    }),
+  },
+  { rotulo: ROTULO_TOTAL, funcoes: ['CONT.NÚM'], esperado: daColuna(v => numerosDe(v).length) },
 ];
 
-/** A linha, na aba de cálculos, em que uma medida é pedida. */
-export const linhaDaMedida = (rotulo: string) =>
-  2 + MEDIDAS.findIndex(m => m.rotulo === rotulo);
+export const contaDoRotulo = (rotulo: string) => CONTAS.find(c => c.rotulo === rotulo);
+
+/** As cinco medidas do módulo 2, na ordem em que a lição as apresenta. */
+export const MEDIDAS = CONTAS.slice(0, 5);
+
+/* ── Os blocos da aba de cálculos ─────────────────────────────────────────── */
+
+/**
+ * Um bloco de contas: um título, o cabeçalho das três colunas, e uma linha por
+ * rótulo.
+ *
+ * A aba não traz todos os blocos sempre. Cada lição monta a dela com os blocos
+ * de que precisa, porque a de cima já deixou as contas dela escritas e a de
+ * baixo ainda não existe: mostrar no módulo 2 os rótulos que só o módulo 3 vai
+ * usar é pôr na tela a pergunta antes do assunto.
+ */
+export interface BlocoDeContas {
+  titulo: string;
+  rotulos: string[];
+}
+
+export const BLOCO_DAS_MEDIDAS: BlocoDeContas = {
+  titulo: 'Medidas da base',
+  rotulos: MEDIDAS.map(m => m.rotulo),
+};
+
+export const BLOCO_DO_ENGANO: BlocoDeContas = {
+  titulo: 'Onde a média engana',
+  rotulos: [ROTULO_RAZAO, ROTULO_CHEGAM, ROTULO_TOTAL],
+};
+
+/**
+ * Em que linha um rótulo cai, dada a lista de blocos da aba.
+ *
+ * A conta era `2 + índice`, e bastava enquanto havia um bloco só. Com dois, a
+ * posição de uma medida passa a depender do que veio antes — e um deslocamento
+ * escrito à mão erraria **calado**: a fórmula iria para a célula do lado, a
+ * conferência leria a célula vazia, e a tarefa ficaria vermelha com a conta
+ * certa escrita na tela. É a mesma família do `describe.each` com as trilhas
+ * escritas à mão.
+ */
+export function linhaDoRotulo(blocos: BlocoDeContas[], rotulo: string): number {
+  let linha = 0;
+  for (const b of blocos) {
+    /* Título, cabeçalho, rótulos — e uma linha em branco antes do bloco
+       seguinte, que é o que separa um do outro na tela. */
+    const dentro = b.rotulos.indexOf(rotulo);
+    if (dentro >= 0) return linha + 2 + dentro;
+    linha += 2 + b.rotulos.length + 1;
+  }
+  return -1;
+}
 
 /** A coluna, na aba de cálculos, em que uma variável é pedida. */
 export const colunaDaMedida = (campoId: string) =>
@@ -184,8 +284,8 @@ export const colunaDaMedida = (campoId: string) =>
  * mediria gosto. Os rótulos do que se quer estão escritos, e as células ao
  * lado estão vazias.
  */
-export function cadernoDaAnalise(base: Formulario): Caderno {
-  return { planilhas: [abaDeRespostas(base), abaDeCalculos()], ativa: 0 };
+export function cadernoDaAnalise(base: Formulario, blocos: BlocoDeContas[] = [BLOCO_DAS_MEDIDAS]): Caderno {
+  return { planilhas: [abaDeRespostas(base), abaDeCalculos(blocos)], ativa: 0 };
 }
 
 function abaDeRespostas(base: Formulario): Planilha {
@@ -199,14 +299,17 @@ function abaDeRespostas(base: Formulario): Planilha {
   });
 }
 
-function abaDeCalculos(): Planilha {
+function abaDeCalculos(blocos: BlocoDeContas[]): Planilha {
   const campos = camposDaBase();
   const rotulo = (id: string) => campos.find(c => c.id === id)?.rotulo ?? id;
-  return planilhaDe(ABA_CALCULOS, [
-    ['Medidas da base'],
-    ['', ...COLUNAS_MEDIDAS.map(rotulo)],
-    ...MEDIDAS.map(m => [m.rotulo]),
-  ]);
+  const conteudo: string[][] = [];
+  for (const b of blocos) {
+    if (conteudo.length) conteudo.push([]);
+    conteudo.push([b.titulo]);
+    conteudo.push(['', ...COLUNAS_MEDIDAS.map(rotulo)]);
+    for (const r of b.rotulos) conteudo.push([r]);
+  }
+  return planilhaDe(ABA_CALCULOS, conteudo);
 }
 
 /* ── A conferência de uma conta ───────────────────────────────────────────── */
@@ -228,15 +331,7 @@ function abaDeCalculos(): Planilha {
  * desbravador tem de aprender a fazer.
  */
 export function esperadoDe(base: Formulario, campoId: string, rotulo: string): number | null {
-  const v = colunaDe(base, campoId);
-  switch (rotulo) {
-    case 'Média': return media(v);
-    case 'Mediana': return mediana(v);
-    case 'Moda': return moda(v);
-    case 'Amplitude': return amplitude(v);
-    case 'Desvio padrão': return desvioPadrao(v);
-    default: return null;
-  }
+  return contaDoRotulo(rotulo)?.esperado(base, campoId) ?? null;
 }
 
 /**
@@ -252,12 +347,26 @@ export function esperadoDe(base: Formulario, campoId: string, rotulo: string): n
  *     fora.
  */
 function contaConfere(
-  c: ContextoDaAnalise, linha: number, coluna: number, funcoes: string[], esperado: number | null,
+  c: ContextoDaAnalise, rotulo: string, coluna: number, funcoes: string[], esperado: number | null,
 ): boolean {
   const p = aba(c, ABA_CALCULOS);
   if (!p) return false;
+  const linha = linhaDoRotulo(c.blocos, rotulo);
+  if (linha < 0) return false;
   const escrito = escritoEm(p, linha, coluna);
   if (!funcoes.every(f => usaFuncao(escrito, f))) return false;
+
+  /*
+    Fórmula que não aponta para lugar nenhum é um número digitado com um sinal
+    de igual na frente.
+
+    `=1,43` começa por igual, devolve o número certo, e não acompanha nada —
+    é o terceiro defeito do requisito 7 da CC-ES003, o que não tem pista. E ele
+    escapa da conferência de função sempre que a conta aceita mais de um
+    caminho, como a razão entre média e mediana: ali não há função obrigatória
+    para cobrar, e sem esta guarda a célula digitada passaria.
+  */
+  if (referenciasDe(escrito).length === 0) return false;
 
   /*
     O valor sai de `valorCalculado` **com a pasta junto**, e não de `valorEm`.
@@ -282,12 +391,40 @@ function contaConfere(
   return v.tipo === 'numero' && Math.abs(v.n - esperado) < 1e-9;
 }
 
-/** Uma medida escrita para as três colunas, com fórmula e resultado conferindo. */
-function medidaCompleta(c: ContextoDaAnalise, rotulo: string): boolean {
-  const linha = linhaDaMedida(rotulo);
-  const funcoes = MEDIDAS.find(m => m.rotulo === rotulo)?.funcoes ?? [];
+/** Uma conta escrita para as três colunas, com fórmula e resultado conferindo. */
+function contaCompleta(c: ContextoDaAnalise, rotulo: string): boolean {
+  const conta = contaDoRotulo(rotulo);
+  if (!conta) return false;
   return COLUNAS_MEDIDAS.every(campo =>
-    contaConfere(c, linha, colunaDaMedida(campo), funcoes, esperadoDe(c.base, campo, rotulo)));
+    contaConfere(c, rotulo, colunaDaMedida(campo), conta.funcoes, conta.esperado(c.base, campo)));
+}
+
+/**
+ * Os quarenta e oito registros continuam na aba.
+ *
+ * Viaja **conjugada** com cada meta que pede um gesto, e não como item da
+ * lista: "a base continua inteira" é verdadeira no segundo zero, e item já
+ * marcado ensina a não ler a lista. É a decisão de "sem alterar uma palavra do
+ * texto" da CC-ES002.
+ *
+ * E ela tem dentes justamente aqui: o caminho rápido do módulo 3 é apagar os
+ * três veteranos para a média "melhorar". O requisito 5.6 manda decidir por
+ * escrito o que fazer com eles, e não sumir com eles.
+ */
+function baseIntacta(c: ContextoDaAnalise): boolean {
+  const p = aba(c, ABA_RESPOSTAS);
+  const antes = abaDe(c.cadernoAntes, ABA_RESPOSTAS);
+  if (!p || !antes) return false;
+  const coluna = colunaDoCampo(CAMPO_NOME);
+  const nomes = (q: typeof p) => {
+    const fora: string[] = [];
+    for (let l = PRIMEIRA_LINHA; l < q.celulas.length; l++) {
+      const v = escritoEm(q, l, coluna);
+      if (v) fora.push(v);
+    }
+    return fora;
+  };
+  return nomes(p).join('\u0000') === nomes(antes).join('\u0000');
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -378,7 +515,7 @@ export const METAS_DO_CENTRO: Meta[] = [
       'Faça o mesmo com =MED( para a mediana.',
       'Arraste para o lado para repetir nas outras duas colunas — as referências andam junto.',
     ],
-    feita: c => medidaCompleta(c, 'Média') && medidaCompleta(c, 'Mediana'),
+    feita: c => contaCompleta(c, 'Média') && contaCompleta(c, 'Mediana'),
   },
   {
     id: 'a-moda-das-tres',
@@ -390,7 +527,7 @@ export const METAS_DO_CENTRO: Meta[] = [
       'Agora conte, na aba Respostas, quantas pessoas têm exatamente a moda da idade — e quantas têm exatamente a moda da altura.',
       'Uma se repete dezenas de vezes; a outra, duas. A planilha não avisa a diferença: quem pergunta é você.',
     ],
-    feita: c => medidaCompleta(c, 'Moda') && viu(c, VIU_QUE_A_MODA_NAO_SERVE),
+    feita: c => contaCompleta(c, 'Moda') && viu(c, VIU_QUE_A_MODA_NAO_SERVE),
   },
   {
     id: 'amplitude-e-desvio',
@@ -401,7 +538,7 @@ export const METAS_DO_CENTRO: Meta[] = [
       'A amplitude é a distância entre as pontas: =MÁXIMO(...) menos =MÍNIMO(...) da mesma coluna.',
       'O desvio padrão é =DESVPADP(...), com P no fim — a base é o clube inteiro, e não uma amostra dele.',
     ],
-    feita: c => medidaCompleta(c, 'Amplitude') && medidaCompleta(c, 'Desvio padrão'),
+    feita: c => contaCompleta(c, 'Amplitude') && contaCompleta(c, 'Desvio padrão'),
   },
   {
     id: 'a-conta-se-refaz',
@@ -417,11 +554,74 @@ export const METAS_DO_CENTRO: Meta[] = [
   },
 ];
 
+/* ────────────────────────────────────────────────────────────────────────────
+   Módulo 3 — Quando a média engana (requisito 3)
+   ──────────────────────────────────────────────────────────────────────── */
+
+export const VIU_A_COLUNA_QUE_ENGANA = 'viu-a-coluna-em-que-a-media-engana';
+
+/**
+ * ── Por que a lição é uma razão, e não uma contagem ──────────────────────
+ * O caminho óbvio seria contar quantos ficam abaixo da média, e ele não
+ * separa nada: na coluna de acampamentos são 29 dos 48, e na de idade são 26 —
+ * as duas passam da metade, e a conta diria que a média engana nas duas.
+ *
+ * O que separa é a **distância entre a média e a mediana**. Na idade elas
+ * ficam a 3% uma da outra; na altura, a menos de 1%; nos acampamentos, a
+ * média fica **43% acima** da mediana. Uma razão perto de 1 diz que as duas
+ * medidas concordam e qualquer uma descreve o conjunto; longe de 1 diz que
+ * elas discordam, e aí escolher qual relatar é escolher o que a liderança vai
+ * entender.
+ *
+ * Isso também é o que impede a lição de ensinar a regra errada. Se as três
+ * colunas fossem assimétricas, o desbravador sairia daqui achando que a média
+ * sempre mente — e aí ele não usaria mais a média, que é pior.
+ */
+export const METAS_DO_ENGANO: Meta[] = [
+  {
+    id: 'a-razao-entre-as-duas',
+    titulo: 'A média dividida pela mediana, nas três colunas',
+    detalhe: 'Perto de 1 quer dizer que as duas medidas concordam. Longe de 1 quer dizer que elas discordam — e aí uma delas está descrevendo mal.',
+    onde: 'Na aba Cálculos, na linha "Média ÷ mediana".',
+    passos: [
+      'Você já tem a média e a mediana das três colunas escritas logo acima.',
+      'Divida uma pela outra apontando para as duas células: algo como =B3/B4.',
+      'Não escreva o número à mão — a conta precisa se refazer se o dado mudar.',
+      'Compare os três resultados: dois ficam quase em 1, e um não.',
+    ],
+    feita: c => contaCompleta(c, ROTULO_RAZAO) && baseIntacta(c),
+  },
+  {
+    id: 'quantos-chegam-a-media',
+    titulo: 'Quantos desbravadores chegam à média, e quantos são ao todo',
+    detalhe: 'Na coluna que engana, a média fica acima do que a maioria fez: ela descreve um clube que não é este.',
+    onde: 'Nas duas últimas linhas da aba Cálculos.',
+    passos: [
+      'Use =CONT.SE( sobre a coluna, com o critério ">="&a célula da média.',
+      'As aspas e o & são o jeito de dizer "maior ou igual ao que está naquela célula".',
+      'Na linha de baixo, =CONT.NÚM( sobre a mesma coluna, para ter com o que comparar.',
+    ],
+    feita: c => contaCompleta(c, ROTULO_CHEGAM) && contaCompleta(c, ROTULO_TOTAL) && baseIntacta(c),
+  },
+  {
+    id: 'viu-a-coluna-que-engana',
+    titulo: 'Dizer em qual das três colunas a média descreve mal',
+    detalhe: 'E é uma só. Nas outras duas a média está ótima — quem sai daqui achando que média sempre mente deixa de usar uma medida boa.',
+    onde: 'Na pergunta abaixo da tabela.',
+    passos: [
+      'Olhe a linha da razão: duas colunas ficam quase em 1, e uma fica bem acima.',
+      'Olhe a coluna que ficou acima na aba Respostas, ordenada, e veja quem está no fim dela.',
+      'São três pessoas de verdade, e não erro de digitação: elas puxam a média e não mexem na mediana.',
+    ],
+    feita: c => viu(c, VIU_A_COLUNA_QUE_ENGANA),
+  },
+];
+
 /* ── O registro das lições ───────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs009 = 'planilha' | 'plataforma';
 
-export type LicaoDaCcEs009 = 'tipos' | 'centro';
+export type LicaoDaCcEs009 = 'tipos' | 'centro' | 'engano';
 
 export interface LicaoDeAnalise {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -431,10 +631,10 @@ export interface LicaoDeAnalise {
 }
 
 /** A pasta como ela chega, sem nada calculado. */
-export function contextoInicial(): ContextoDaAnalise {
+export function contextoInicial(blocos: BlocoDeContas[] = [BLOCO_DAS_MEDIDAS]): ContextoDaAnalise {
   const base = baseDoAcampamento();
-  const caderno = cadernoDaAnalise(base);
-  return { base, caderno, cadernoAntes: caderno, descobertas: [], marcacoes: {}, textos: {} };
+  const caderno = cadernoDaAnalise(base, blocos);
+  return { base, caderno, cadernoAntes: caderno, blocos, descobertas: [], marcacoes: {}, textos: {} };
 }
 
 /**
@@ -456,4 +656,41 @@ export const LICOES_DA_CC_ES009: Record<LicaoDaCcEs009, LicaoDeAnalise> = {
     inicial: contextoInicial,
     metas: METAS_DO_CENTRO,
   },
+  engano: {
+    programa: 'planilha',
+    /* Parte do módulo 2 fechado: as cinco medidas já escritas, e o bloco novo
+       vazio ao lado. Começar mandando refazer a lição anterior ensinaria que o
+       trabalho anterior não conta — é o `caderno` da CC-ES003. */
+    inicial: () => comAsMedidasEscritas(),
+    metas: METAS_DO_ENGANO,
+  },
 };
+
+/**
+ * O contexto do módulo 3: as cinco medidas do módulo 2 já calculadas.
+ *
+ * As fórmulas são escritas de verdade, e não os valores carimbados: a razão
+ * que o módulo 3 pede aponta para estas células, e uma célula com número
+ * parado não se refaria se alguém mexesse na base. Solução que pula o meio do
+ * caminho prova o fim e não prova o caminho — é o que deixou a lição de
+ * assinar da CC-ES004 impossível de vencer.
+ */
+export function comAsMedidasEscritas(): ContextoDaAnalise {
+  const c = contextoInicial([BLOCO_DAS_MEDIDAS, BLOCO_DO_ENGANO]);
+  let p = abaDe(c.caderno, ABA_CALCULOS);
+  for (const medida of MEDIDAS) {
+    for (const campo of COLUNAS_MEDIDAS) {
+      p = escrever(p, linhaDoRotulo(c.blocos, medida.rotulo), colunaDaMedida(campo),
+        formulaDaMedida(medida, c.base, campo));
+    }
+  }
+  const caderno = comAba(c.caderno, p);
+  return { ...c, caderno, cadernoAntes: caderno };
+}
+
+/** A fórmula que uma medida pede sobre uma coluna, escrita como se escreve. */
+export function formulaDaMedida(conta: Conta, base: Formulario, campoId: string): string {
+  const faixa = `${ABA_RESPOSTAS}!${faixaDoCampo(base, campoId)}`;
+  if (conta.funcoes.length === 2) return `=${conta.funcoes[0]}(${faixa})-${conta.funcoes[1]}(${faixa})`;
+  return `=${conta.funcoes[0]}(${faixa})`;
+}
