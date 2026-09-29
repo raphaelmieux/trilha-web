@@ -5,7 +5,8 @@ import { getSpecialty } from '../curriculum';
 import { nomeCompleto } from '../types';
 import { sortearQuestoes } from '../lib/questoes';
 
-import type { RequirementStatus, RespostaDaQuestao } from '../types';
+import type { LabType, RequirementStatus, RespostaDaQuestao } from '../types';
+import type { PropsDeLaboratorio } from '../labs/tipos';
 import {
   upsertRequirementProgress, logActivity, calculateMastery, melhorResultado, LIMIAR_DOMINIO,
   ensureEnrollment, updateEnrollmentActivity, getRequirementId, getLessonId, getSpecialtyId,
@@ -41,6 +42,7 @@ import CorreioLab from '../labs/CorreioLab';
 import ConfiguracoesLab from '../labs/ConfiguracoesLab';
 import PlanilhaLab from '../labs/PlanilhaLab';
 import AreaDeTrabalhoLab from '../labs/AreaDeTrabalhoLab';
+import DiagramaBinarioLab from '../labs/DiagramaBinarioLab';
 import { CheckCircle2, CircleX, ArrowRight, BookOpen, RefreshCw, Loader2, HardHat } from 'lucide-react';
 
 export default function LessonPage() {
@@ -129,32 +131,7 @@ export default function LessonPage() {
           <span style={{ color: 'var(--color-text-faint)' }}>/</span>
           <span className="font-medium" style={{ color: 'var(--color-text)' }}>{lesson.title}</span>
         </div>
-        {lesson.labType === 'text_editor' && <TextEditorLab {...labProps} />}
-        {lesson.labType === 'redacao_guiada' && <RedacaoGuiadaLab {...labProps} />}
-        {lesson.labType === 'pact_builder' && <PactBuilderLab {...labProps} />}
-        {lesson.labType === 'threat_lab' && <ThreatLab {...labProps} />}
-        {lesson.labType === 'web_lab' && <WebLab {...labProps} />}
-        {lesson.labType === 'mail_lab' && <MailLab {...labProps} />}
-        {lesson.labType === 'filipenses' && <FilipensesLab {...labProps} />}
-        {lesson.labType === 'code_lab' && <CodeLab {...labProps} variant="elementos" />}
-        {lesson.labType === 'table_challenge' && <CodeLab {...labProps} variant="tabela" />}
-        {lesson.labType === 'image_compress' && <ImageCompressLab {...labProps} />}
-        {lesson.labType === 'image_create' && <ImageCreateLab {...labProps} />}
-        {lesson.labType === 'site_lab' && <SiteLab {...labProps} />}
-        {lesson.labType === 'file_manager' && <FileManagerLab {...labProps} />}
-        {lesson.labType === 'computer_care' && <ComputerCareLab {...labProps} />}
-        {lesson.labType === 'formatacao_texto' && <FormatacaoTextoLab {...labProps} />}
-        {lesson.labType === 'operacoes_arquivo' && <OperacoesArquivoLab {...labProps} />}
-        {lesson.labType === 'insercao_texto' && <InsercaoTextoLab {...labProps} />}
-        {lesson.labType === 'estilos_texto' && <EstilosTextoLab {...labProps} />}
-        {lesson.labType === 'banco_de_dados' && <BancoDeDadosLab {...labProps} />}
-        {lesson.labType === 'apresentacao' && <ApresentacaoLab {...labProps} />}
-        {lesson.labType === 'planilha_avancada' && <PlanilhaAvancadaLab {...labProps} />}
-        {lesson.labType === 'correio_completo' && <CorreioLab {...labProps} />}
-        {lesson.labType === 'configuracoes_sistema' && <ConfiguracoesLab {...labProps} />}
-        {lesson.labType === 'planilha' && <PlanilhaLab {...labProps} />}
-        {lesson.labType === 'area_de_trabalho' && <AreaDeTrabalhoLab {...labProps} />}
-        {lesson.labType === 'ai_lab' && <AILab {...labProps} />}
+        <LaboratorioDaLicao tipo={lesson.labType} props={labProps} />
       </div>
     );
   }
@@ -368,4 +345,59 @@ export default function LessonPage() {
       })()}
     </div>
   );
+}
+
+/*
+ * Qual laboratório abre, por tipo.
+ *
+ * Era uma escada de `{lesson.labType === 'x' && <X/>}` — vinte e seis linhas
+ * dessas, uma por tipo. Ela não estoura quando falta um ramo: a lição abre uma
+ * `div` vazia, com o cabeçalho e o caminho de volta certos e nada no meio, e o
+ * desbravador conclui que o exercício ainda não foi escrito.
+ *
+ * É a mesma família do `switch` exaustivo que as travas de vereda ganharam
+ * depois de o editor de texto atravessar três delas sem ser olhado, e a mesma
+ * do `Record` sobre a união que a CC-ES003 usa para escolher o caderno. Aqui
+ * ela apareceu porque a AP045 acrescentou **três** tipos de uma vez: esquecer
+ * um dos três seria um laboratório publicado que não desenha nada.
+ *
+ * Com o `Record` completo, o tipo novo não compila até dizer que tela abre.
+ * `final_exam` fica de fora de propósito: ele é tratado antes, porque não
+ * recebe as mesmas props e não mora dentro do cabeçalho da lição.
+ */
+type TipoDeLaboratorio = Exclude<LabType, 'final_exam'>;
+
+const LABORATORIO: Record<TipoDeLaboratorio, (p: PropsDeLaboratorio) => React.ReactElement> = {
+  text_editor: p => <TextEditorLab {...p} />,
+  redacao_guiada: p => <RedacaoGuiadaLab {...p} />,
+  pact_builder: p => <PactBuilderLab {...p} />,
+  threat_lab: p => <ThreatLab {...p} />,
+  web_lab: p => <WebLab {...p} />,
+  mail_lab: p => <MailLab {...p} />,
+  filipenses: p => <FilipensesLab {...p} />,
+  code_lab: p => <CodeLab {...p} variant="elementos" />,
+  table_challenge: p => <CodeLab {...p} variant="tabela" />,
+  image_compress: p => <ImageCompressLab {...p} />,
+  image_create: p => <ImageCreateLab {...p} />,
+  site_lab: p => <SiteLab {...p} />,
+  file_manager: p => <FileManagerLab {...p} />,
+  computer_care: p => <ComputerCareLab {...p} />,
+  formatacao_texto: p => <FormatacaoTextoLab {...p} />,
+  operacoes_arquivo: p => <OperacoesArquivoLab {...p} />,
+  insercao_texto: p => <InsercaoTextoLab {...p} />,
+  planilha: p => <PlanilhaLab {...p} />,
+  area_de_trabalho: p => <AreaDeTrabalhoLab {...p} />,
+  estilos_texto: p => <EstilosTextoLab {...p} />,
+  planilha_avancada: p => <PlanilhaAvancadaLab {...p} />,
+  banco_de_dados: p => <BancoDeDadosLab {...p} />,
+  apresentacao: p => <ApresentacaoLab {...p} />,
+  correio_completo: p => <CorreioLab {...p} />,
+  configuracoes_sistema: p => <ConfiguracoesLab {...p} />,
+  ai_lab: p => <AILab {...p} />,
+  diagrama_binario: p => <DiagramaBinarioLab {...p} />,
+};
+
+function LaboratorioDaLicao({ tipo, props }: { tipo: LabType; props: PropsDeLaboratorio }) {
+  if (tipo === 'final_exam') return null;
+  return LABORATORIO[tipo](props);
 }

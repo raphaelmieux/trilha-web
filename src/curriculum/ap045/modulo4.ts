@@ -4,12 +4,21 @@ import type { Module } from '../../types';
  * AP045 módulo 4 — o requisito 5: explicar, com 1 e 0, como a informação
  * circula entre periféricos e a CPU, e montar um diagrama.
  *
- * É um requisito "apresentar ao examinador" sem dizer essas palavras: entender
- * a ideia é o que a plataforma consegue medir; montar o diagrama de verdade é
- * o que se demonstra fora daqui, com papel e lápis ou um programa de desenho.
- * A lição dá o vocabulário e o roteiro para esse diagrama — a mesma forma da
- * AP041.4, que ensinava o que apresentar ao examinador sem substituir a
- * apresentação.
+ * A teoria dá o vocabulário — que peças existem, o que trafega entre elas — e o
+ * laboratório ao lado cobra o gesto: acrescentar as peças, ligá-las na direção
+ * em que a informação viaja e escrever em cada ligação o código binário que
+ * passa ali.
+ *
+ * Isto é uma correção. O módulo abriu só com a teoria, e o comentário que
+ * estava aqui dizia que "montar o diagrama de verdade é o que se demonstra fora
+ * daqui, com papel e lápis". A comparação era com a AP041.4, que ensina o que
+ * apresentar ao examinador — só que aquele requisito pede uma **apresentação**,
+ * que de fato acontece entre duas pessoas, e este pede um **diagrama**, que é
+ * um desenho e se faz numa tela tão bem quanto num papel. Medir o gesto é o que
+ * um laboratório faz, e deixá-lo de fora tirava do requisito 5 justamente o
+ * verbo dele.
+ *
+ * O que continua fora daqui é mostrar o diagrama ao examinador, como sempre.
  */
 
 const conteudo_L1 = `
@@ -51,8 +60,8 @@ que agora você sabe o que trafega entre as peças — código binário, o tempo
 todo.</p>
 
 <h3 class="font-bold mt-4 mb-2">Como montar o diagrama</h3>
-<p class="mb-3">Um diagrama que mostra esse caminho tem, no mínimo, estas
-peças: um periférico de <strong>entrada</strong> (teclado, mouse ou scanner),
+<p class="mb-3">Na próxima lição você monta esse diagrama aqui mesmo. Ele tem,
+no mínimo, estas peças: um periférico de <strong>entrada</strong> (teclado, mouse ou scanner),
 uma seta com "01000001" (ou outro código binário de exemplo) indo até a
 <strong>CPU</strong>, a CPU ligada à <strong>memória RAM</strong>, e uma seta
 saindo até um periférico de <strong>saída</strong> (monitor, impressora ou
@@ -157,6 +166,14 @@ export const modulo4: Module = {
           explanation: 'O que muda de etapa a etapa é o que o código representa (uma tecla, depois um pixel) — não a forma binária dele.',
         },
       ],
+    },
+    {
+      code: 'AP045.4-L2',
+      title: 'Montando o diagrama do caminho da informação',
+      type: 'lab',
+      content: '',
+      requirementCodes: ['AP045-5.1'],
+      labType: 'diagrama_binario',
     },
   ],
 };

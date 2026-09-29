@@ -124,6 +124,14 @@ export type LabType =
   | 'correio_completo'
   | 'configuracoes_sistema'
   | 'ai_lab'
+  /* A AP045 fecha a família olhando para dentro do computador, e dois dos seus
+     requisitos pedem produção e não operação: montar o diagrama do caminho da
+     informação (5) e pesquisar em sites especializados para escrever um
+     relatório (6). A trilha abriu com os dois como teoria — a plataforma
+     ensinava o que pôr no diagrama e o que foi o bug do milênio, e o diagrama e
+     a pesquisa ficavam para fora daqui. São gestos que se fazem numa tela, e
+     medir o gesto é o que um laboratório faz. */
+  | 'diagrama_binario'
   | 'final_exam';
 
 export interface Requirement {
