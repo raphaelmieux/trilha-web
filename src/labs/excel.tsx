@@ -3,6 +3,7 @@ import {
   type Caderno, type Direcao, type Faixa, type Planilha,
   alinhamentoDe, estiloCondicional, linhaEscondida, mostrar, naFaixa, nomeDaColuna,
   textoDoResumo, valorCalculado,
+  type TipoDeGrafico, type PontoDoGrafico, type EixoDoGrafico,
 } from './planilha';
 
 /*
@@ -691,4 +692,190 @@ function ehCabecalhoDaTabela(p: Planilha, c: number): boolean {
   const esq = Math.min(p.tabela.c1, p.tabela.c2);
   const dir = Math.max(p.tabela.c1, p.tabela.c2);
   return c >= esq && c <= dir;
+}
+
+/* ── O gráfico ─────────────────────────────────────────────────────────────
+
+   Ele saiu de dentro dos laboratórios, e aqui a regra da casa chegou tarde:
+   não havia uma cópia a caminho, havia **duas** já escritas, e elas já tinham
+   divergido.
+
+   A da CC-ES003 lia a faixa da planilha e desenhava certo — mas só a pizza
+   tinha ramo próprio, e `linha` e `dispersão` caíam no ramo das colunas. Quem
+   escolhia "linha" via barras. A da AP044 desenhava uma pizza de
+   `conic-gradient` com porcentagens fixas, que não vinham de dado nenhum, e as
+   outras três liam uma constante do módulo em vez da planilha aberta.
+
+   Nenhuma das duas estoura, e é por isso que elas sobreviveram: um gráfico
+   errado é um gráfico. O preço aparece na CC-ES009, cujo requisito 6 é
+   exatamente "a pizza responde composição e a linha responde evolução" — com
+   o desenho de antes, escolher a linha desenhava colunas e a lição inteira
+   media ter clicado em Inserir.
+
+   O que mora aqui é do **programa**: como uma pizza, uma coluna, uma linha e
+   uma dispersão se desenham, e onde o eixo começa. O que fica em cada
+   laboratório é do **exercício**: de onde saem os pontos e o que se cobra
+   deles. Como as outras peças desta janela, ela não guarda estado nenhum.
+*/
+
+const CORES_DO_GRAFICO = ['#217346', '#4C8C6B', '#8AB79A', '#C13516', '#D98C6A', '#7A6FAE'];
+
+/* A caixa de desenho. A calha da esquerda é dos rótulos do eixo dos valores:
+   sem eles não há como ler onde o eixo começa, e um eixo truncado que ninguém
+   consegue ler deixa de ser um recurso a apontar e vira um desenho errado. */
+const ESQ = 22, DIR = 136, ALTO = 6, PISO = 58;
+
+export function DesenhoDoGrafico({ tipo, pontos, eixo, altura = 90 }: {
+  tipo: TipoDeGrafico;
+  pontos: PontoDoGrafico[];
+  eixo?: EixoDoGrafico;
+  altura?: number;
+}) {
+  if (pontos.length === 0) return null;
+
+  if (tipo === 'pizza') return <Pizza pontos={pontos} altura={altura} />;
+
+  const valores = pontos.map(p => p.valor);
+  /* O piso é o que `eixo.minimo` diz, e o teto o que `eixo.maximo` diz. O
+     padrão de um é zero e o do outro é o maior valor — e `|| 1` porque uma
+     série toda igual daria faixa zero e divisão por zero desenharia nada. */
+  const piso = eixo?.minimo ?? 0;
+  const teto = eixo?.maximo ?? Math.max(...valores, piso + 1);
+  const faixa = teto - piso || 1;
+  /* Valor abaixo do piso some do desenho, que é o que o Excel faz: o eixo
+     cortado corta o que fica embaixo dele, sem escrever nada. */
+  const y = (v: number) => PISO - (Math.min(Math.max(v, piso), teto) - piso) / faixa * (PISO - ALTO);
+  const passo = (DIR - ESQ) / Math.max(pontos.length, 1);
+  const x = (i: number) => ESQ + passo * (i + 0.5);
+
+  return (
+    <svg viewBox="0 0 140 74" style={{ width: '100%', height: altura }}
+      role="img" aria-label={descrever(tipo, pontos, piso, teto)}>
+      <line x1={ESQ} y1={ALTO} x2={ESQ} y2={PISO} stroke="#C8C6C4" strokeWidth={0.6} />
+      <line x1={ESQ} y1={PISO} x2={DIR} y2={PISO} stroke="#C8C6C4" strokeWidth={0.6} />
+      <text x={ESQ - 2} y={PISO + 2} fontSize={5} fill="#605E5C" textAnchor="end">{rotuloDoEixo(piso)}</text>
+      <text x={ESQ - 2} y={ALTO + 4} fontSize={5} fill="#605E5C" textAnchor="end">{rotuloDoEixo(teto)}</text>
+
+      {tipo === 'colunas' && pontos.map((p, i) => {
+        const largura = Math.min(16, passo * 0.7);
+        return (
+          <rect key={`${p.rotulo}-${i}`} x={x(i) - largura / 2} y={y(p.valor)}
+            width={largura} height={Math.max(PISO - y(p.valor), 0)}
+            fill={CORES_DO_GRAFICO[i % CORES_DO_GRAFICO.length]} />
+        );
+      })}
+
+      {tipo === 'linha' && (
+        <polyline fill="none" stroke={CORES_DO_GRAFICO[0]} strokeWidth={1.4}
+          points={pontos.map((p, i) => `${x(i)},${y(p.valor)}`).join(' ')} />
+      )}
+
+      {/* A linha marca os pontos e a dispersão só tem pontos: é a diferença
+          entre as duas, e desenhar a dispersão ligada afirmaria uma sequência
+          que ela não tem. */}
+      {(tipo === 'linha' || tipo === 'dispersao') && pontos.map((p, i) => (
+        <circle key={`${p.rotulo}-${i}`} cx={x(i)} cy={y(p.valor)} r={1.6} fill={CORES_DO_GRAFICO[0]} />
+      ))}
+
+      {pontos.map((p, i) => (
+        <text key={`r-${p.rotulo}-${i}`} x={x(i)} y={PISO + 8} fontSize={4.6} fill="#605E5C"
+          textAnchor="middle">{p.rotulo.slice(0, 8)}</text>
+      ))}
+    </svg>
+  );
+}
+
+function Pizza({ pontos, altura }: { pontos: PontoDoGrafico[]; altura: number }) {
+  /* Fatia negativa não existe numa pizza, e o Excel a descarta em silêncio:
+     somar o módulo dela daria um total que nenhuma fatia explica. Zero é outra
+     coisa — ele não tem fatia, porque não ocupa parte nenhuma do todo, **e
+     continua na legenda**, porque a categoria existe e a composição dela é de
+     0%. Tirá-lo da legenda faria a unidade sem inscrito nenhum sumir da tela,
+     que é o que o gráfico de colunas logo acima deixou de fazer.
+
+     Por isso a cor sai da posição em `pontos`, e não em uma lista filtrada: com
+     duas listas, a legenda e as fatias começariam a discordar de cor na
+     primeira categoria zerada. */
+  const total = pontos.reduce((s, p) => s + Math.max(p.valor, 0), 0);
+  if (total === 0) return null;
+  let inicio = 0;
+  const cor = (i: number) => CORES_DO_GRAFICO[i % CORES_DO_GRAFICO.length];
+  return (
+    <svg viewBox="0 0 140 74" style={{ width: '100%', height: altura }}
+      role="img" aria-label={descrever('pizza', pontos)}>
+      {pontos.map((p, i) => {
+        if (p.valor <= 0) return null;
+        const angulo = (p.valor / total) * 360;
+        const d = arcoDaPizza(38, 37, 30, inicio, inicio + angulo);
+        inicio += angulo;
+        return <path key={`${p.rotulo}-${i}`} d={d} fill={cor(i)} />;
+      })}
+      {/* A legenda encolhe para caber, e não corta.
+
+          Ela era `slice(0, 5)`, o que nunca apareceu enquanto a CC-ES003
+          desenhava quatro categorias. Com os seis meses da AP044, a fatia
+          **maior** — Junho, quase metade da pizza — ficava sem nome nenhum,
+          e o gráfico continuava parecendo um gráfico. Uma pizza com fatia
+          anônima é a mesma família da unidade que some por valer zero.
+
+          Acima de umas oito categorias a pizza deixa de responder qualquer
+          pergunta, e aí o problema não é a legenda. */}
+      {pontos.map((p, i) => {
+        const linha = Math.min(11, 62 / Math.max(pontos.length, 1));
+        return (
+          <g key={`l-${p.rotulo}-${i}`}>
+            <rect x={80} y={8 + i * linha} width={Math.min(7, linha * 0.64)}
+              height={Math.min(7, linha * 0.64)} fill={cor(i)} />
+            <text x={91} y={13.4 + i * linha} fontSize={Math.min(5.4, linha * 0.52)}
+              fill="#201F1E">{p.rotulo.slice(0, 11)}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/** O número do eixo, com a vírgula decimal que o português usa. */
+const rotuloDoEixo = (v: number) =>
+  (Number.isInteger(v) ? String(v) : v.toFixed(1)).replace('.', ',');
+
+/*
+ * O que o gráfico diz a quem não o vê.
+ *
+ * Ele diz os valores **e** onde o eixo começa, que é o que alguém lendo o
+ * desenho também consegue ler na calha da esquerda. Dizer só os valores
+ * esconderia de quem usa leitor de tela justamente o recurso que o requisito 7
+ * manda apontar; dizer "este gráfico engana" poria na nossa tela a resposta
+ * que a lição existe para a pessoa achar.
+ */
+function descrever(tipo: TipoDeGrafico, pontos: PontoDoGrafico[], piso?: number, teto?: number): string {
+  const nome = { pizza: 'pizza', colunas: 'colunas', linha: 'linha', dispersao: 'dispersão' }[tipo];
+  const eixo = piso === undefined || teto === undefined
+    ? ''
+    : ` O eixo dos valores vai de ${rotuloDoEixo(piso)} a ${rotuloDoEixo(teto)}.`;
+  const itens = pontos.map(p => `${p.rotulo}: ${rotuloDoEixo(p.valor)}`).join('; ');
+  return `Gráfico de ${nome}.${eixo} ${itens}.`;
+}
+
+/**
+ * Uma fatia de pizza, em caminho SVG.
+ *
+ * Os ângulos começam no topo e crescem no sentido do relógio, que é como a
+ * pizza do Excel é desenhada — começar à direita deixaria a primeira fatia num
+ * lugar que ninguém reconhece.
+ */
+function arcoDaPizza(cx: number, cy: number, r: number, de: number, ate: number): string {
+  const ponto = (grau: number) => {
+    const rad = ((grau - 90) * Math.PI) / 180;
+    return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+  };
+  const [x1, y1] = ponto(de);
+  const [x2, y2] = ponto(ate);
+  const grande = ate - de > 180 ? 1 : 0;
+  /* Uma fatia sozinha fecharia em si mesma e não desenharia nada: um arco de
+     360° tem começo e fim no mesmo ponto. O círculo inteiro vira dois arcos. */
+  if (ate - de >= 359.9) {
+    return `M ${cx} ${cy - r} A ${r} ${r} 0 1 1 ${cx - 0.01} ${cy - r} Z`;
+  }
+  return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${grande} 1 ${x2} ${y2} Z`;
 }

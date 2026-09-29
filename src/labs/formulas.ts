@@ -682,6 +682,20 @@ function testarCriterio(criterio: Valor, v: Valor): boolean {
   return r.tipo === 'logico' && r.b;
 }
 
+/**
+ * A raiz da soma dos quadrados dos desvios, dividida pelo que se pedir.
+ *
+ * `divisor` é `n` para o desvio da população e `n - 1` para o da amostra — é
+ * só nisso que os dois diferem, e escrevê-los como duas funções separadas
+ * faria as duas divergirem na primeira correção, como os dois "Word".
+ */
+function desvio(ns: number[], divisor: number): Valor {
+  if (divisor <= 0) return erro('div0');
+  const media = ns.reduce((s, n) => s + n, 0) / ns.length;
+  const soma = ns.reduce((s, n) => s + (n - media) ** 2, 0);
+  return num(Math.sqrt(soma / divisor));
+}
+
 function chamada(ctx: Ctx, nome: string, args: No[]): Valor {
   const f = semAcento(nome);
 
@@ -697,6 +711,64 @@ function chamada(ctx: Ctx, nome: string, args: No[]): Valor {
     case 'MEDIA': return agregar(ns => num(ns.reduce((s, n) => s + n, 0) / ns.length), () => erro('div0'));
     case 'MAXIMO': return agregar(ns => num(Math.max(...ns)), () => num(0));
     case 'MINIMO': return agregar(ns => num(Math.min(...ns)), () => num(0));
+
+    /*
+      As medidas que a CC-ES009 pede, e as três dizem coisas diferentes sobre
+      o mesmo conjunto — que é o requisito 3 inteiro.
+
+      MED ordena e tira o do meio. Com um número par de valores ele é a média
+      dos dois centrais, e não "o de baixo": num conjunto de 48 inscritos,
+      pegar um dos dois daria uma mediana que existe na tabela e está errada,
+      que é pior do que uma que não existe.
+    */
+    case 'MED': return agregar(ns => {
+      const o = [...ns].sort((a, b) => a - b);
+      const m = o.length >> 1;
+      return num(o.length % 2 ? o[m] : (o[m - 1] + o[m]) / 2);
+    }, () => erro('num'));
+
+    /*
+      MODO devolve **#N/D quando nada se repete**, que é o que o Excel faz, e
+      é a metade da lição que um zero ou um "não há" apagaria: conjunto sem
+      valor repetido não tem moda, e escrever um número ali afirmaria uma moda
+      que não existe. Havendo empate, vale o primeiro a aparecer na ordem em
+      que os valores foram lidos — também como no Excel.
+    */
+    /* `MODO.ÚNICO` é o nome que o Excel de hoje mostra na lista de funções, e
+       `MODO` é o de compatibilidade — os dois funcionam lá. Aceitar só um
+       devolveria `#NOME?` a quem digitou o nome que o próprio programa
+       sugeriu, e ele concluiria que errou a fórmula. `semAcento` já tira o
+       ponto, então os dois chegam aqui com a mesma cara. */
+    case 'MODOUNICO':
+    case 'MODO': return agregar(ns => {
+      const quantas = new Map<number, number>();
+      for (const n of ns) quantas.set(n, (quantas.get(n) ?? 0) + 1);
+      let melhor = 0;
+      for (const c of quantas.values()) melhor = Math.max(melhor, c);
+      if (melhor < 2) return erro('nd');
+      return num(ns.find(n => quantas.get(n) === melhor) as number);
+    }, () => erro('nd'));
+
+    /*
+      Os dois desvios padrão, e a diferença entre eles é escolha de quem
+      analisa, não detalhe de implementação.
+
+      DESVPADP divide por n e responde sobre o conjunto **inteiro**;
+      DESVPAD divide por n−1 e responde sobre uma **amostra** de algo maior.
+      Na base da CC-ES009 estão todos os inscritos, então quem responde é o
+      P — e em 48 valores os dois diferem por cerca de 1%, que é exatamente o
+      número plausível e pouco errado de que esta vereda trata. Ter só um
+      deles obrigaria a lição a não mencionar a escolha, e o desbravador
+      levaria para o computador do clube uma fórmula que ele escolheu sem
+      saber que estava escolhendo.
+
+      DESVPAD de um valor só é #DIV/0!, e não zero: não há n−1 por onde
+      dividir, e zero afirmaria que não há dispersão nenhuma. DESVPADP de um
+      valor só é zero de verdade — um conjunto de um elemento não varia.
+    */
+    case 'DESVPADA':
+    case 'DESVPAD': return agregar(ns => desvio(ns, ns.length - 1), () => erro('div0'));
+    case 'DESVPADP': return agregar(ns => desvio(ns, ns.length), () => erro('div0'));
 
     /*
       As duas contagens, e a diferença entre elas é o que acha o número
