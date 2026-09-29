@@ -132,6 +132,7 @@ export type LabType =
      a pesquisa ficavam para fora daqui. São gestos que se fazem numa tela, e
      medir o gesto é o que um laboratório faz. */
   | 'diagrama_binario'
+  | 'pesquisa_web'
   | 'final_exam';
 
 export interface Requirement {

@@ -9,12 +9,28 @@ import type { Module } from '../../types';
  * assuntos pequenos e sem relação direta entre si; ficam no mesmo módulo por
  * tamanho, não por parentesco.
  *
- * O requisito 6 não ganha um segundo laboratório de redação guiada: o
- * mecanismo é um roteiro por trilha (`ROTEIROS[especialidade]`), e a AP045 já
- * usa o dela no requisito 2. Sem piso de palavras no documento oficial, o que
- * se mede aqui é o entendimento do assunto — a mesma solução da AP041 para
- * "apresentar ao examinador": a lição ensina o que apresentar, e a
- * apresentação em si acontece fora da plataforma.
+ * ── O requisito 6 são três lições, e isso é uma correção ────────────────
+ * Ele começa em "pesquisar em sites especializados" e termina em "apresentar
+ * um relatório". O módulo abriu com as duas metades como uma lição de teoria
+ * só, e o comentário que estava aqui dava duas razões — nenhuma das quais
+ * sobreviveu.
+ *
+ * A primeira era que o roteiro da redação guiada é por **trilha**, e a AP045 já
+ * gastava o dela no requisito 2. Isso deixou de ser verdade: `text_projects`
+ * ganhou a chave `projeto`, em três passos de expand/contract, justamente para
+ * a mesma trilha poder ter dois textos.
+ *
+ * A segunda era que, sem piso de palavras no documento, o que dá para medir é o
+ * entendimento — com a comparação de sempre com a AP041.4. Só que aquele
+ * requisito pede uma **apresentação**, que acontece entre duas pessoas, e este
+ * pede pesquisar e escrever, que são dois gestos de tela. Ler um resultado de
+ * busca e decidir se ele serve é exatamente o que o verbo do requisito nomeia.
+ *
+ * Então: teoria (L1), a pesquisa num buscador com páginas de três espécies
+ * misturadas (L3), e o relatório escrito a partir das fichas dela (L4). O
+ * upgrade/update (L2) passou para o fim do módulo — as três lições do requisito
+ * 6 são uma sequência, e intercalar outro assunto no meio dela a quebraria.
+ * Quem identifica a lição é o `code`, e ele não muda; só a ordem anda.
  */
 
 const conteudo_L1 = `
@@ -173,6 +189,14 @@ export const modulo5: Module = {
           explanation: 'A memória era cara nos anos 1970; o custo daquela economia só apareceu décadas depois, quando os mesmos sistemas ainda rodavam.',
         },
       ],
+    },
+    {
+      code: 'AP045.5-L3',
+      title: 'Pesquisando o bug do milênio em sites especializados',
+      type: 'lab',
+      content: '',
+      requirementCodes: ['AP045-6.1'],
+      labType: 'pesquisa_web',
     },
     {
       code: 'AP045.5-L2',
