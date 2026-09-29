@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   agrupadoPor, amplitude, atipicosDe, cercaDe, classesDe, colunaDe, desvioPadrao,
   frequenciasDe, maximo, media, medidaDa, medidaPorGrupo, mediana, minimo, moda,
-  numerosDe, taxa,
+  numerosDe, repeticoesDaModa, taxa,
 } from './analiseDeDados';
 import { ehErro } from './formulas';
 import type { Formulario, Resposta } from './formulario';
@@ -57,6 +57,21 @@ describe('centro', () => {
   it('a moda não existe quando nada se repete', () => {
     expect(moda(['1', '2', '3'])).toBeNull();
     expect(moda(['1', '2', '2', '3'])).toBe(2);
+  });
+
+  it('e quando existe, quantas vezes ela se repete é outra pergunta', () => {
+    /*
+      A planilha responde a moda e não responde isto — e sem isto a moda de
+      uma coluna de medidas sai como um número perfeitamente plausível que
+      descreve duas pessoas. `MODO` não tem como avisar; quem pergunta é quem
+      descobre.
+    */
+    expect(repeticoesDaModa(['1', '2', '2', '3'])).toBe(2);
+    expect(repeticoesDaModa(['5', '5', '5', '5', '1'])).toBe(4);
+    expect(repeticoesDaModa([])).toBe(0);
+    /* Coluna sem número nenhum não tem moda, e não tem repetição zero por
+       acaso: não há o que contar. */
+    expect(repeticoesDaModa(['a', 'b'])).toBe(0);
   });
 
   it('a média sobe com o valor extremo e a mediana não', () => {
