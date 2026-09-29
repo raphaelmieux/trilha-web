@@ -31,18 +31,22 @@
  * fora, que é o erro de planilha mais comum que existe.
  */
 
-import { type Formulario, CAMPO_NOME, cabecalhoDe, linhasDe, respostasReais } from './formulario';
+import {
+  type Formulario, CAMPO_UNIDADE,
+  cabecalhoDe, linhasDe, respostasReais,
+} from './formulario';
 import {
   type Escala, type Natureza,
-  CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_IDADE,
+  CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_IDADE, UNIDADES_DO_CLUBE,
   CLASSIFICACAO, baseDoAcampamento, camposDaBase,
 } from './baseDoAcampamento';
 import type { Caderno, Planilha } from './planilha';
 import {
-  amplitude, colunaDe, desvioPadrao, media, mediana, moda, numerosDe,
+  amplitude, classesDe, colunaDe, desvioPadrao, frequenciasDe,
+  media, mediana, medidaPorGrupo, moda, numerosDe,
 } from './analiseDeDados';
 import { abaDe, comAba, escritoEm, planilhaDe, usaFuncao } from './cadernoDoClube';
-import { escrever, valorCalculado } from './planilha';
+import { escrever, resumoEmDia, valorCalculado } from './planilha';
 import { nomeDaColuna, referenciasDe } from './formulas';
 
 /* ── A forma de uma meta ──────────────────────────────────────────────────── */
@@ -227,20 +231,195 @@ export const MEDIDAS = CONTAS.slice(0, 5);
  * baixo ainda não existe: mostrar no módulo 2 os rótulos que só o módulo 3 vai
  * usar é pôr na tela a pergunta antes do assunto.
  */
+/**
+ * Um bloco de contas: um título, uma fileira de cabeçalhos, e uma linha por
+ * rótulo.
+ *
+ * ── Por que ele carrega as próprias colunas ──────────────────────────────
+ * O primeiro bloco tinha as três colunas de medida e mais nada, e bastava
+ * enquanto todo bloco fosse medida × variável. A distribuição de frequências
+ * do requisito 5.3 não é: as linhas dela são **categorias** — as seis unidades,
+ * as classes de altura — e as colunas são frequência, frequência relativa e
+ * acumulada.
+ *
+ * Duas máquinas para "qual célula, o que ela deve devolver, e ela confere?"
+ * seriam a divergência de sempre, e aqui ela sairia como número plausível. Uma
+ * só, com o bloco dizendo a forma dele.
+ *
+ * A aba não traz todos os blocos sempre: cada lição monta a dela com os de que
+ * precisa, porque a de cima já deixou as contas dela escritas e a de baixo
+ * ainda não existe. Mostrar no módulo 2 os rótulos que só o módulo 4 vai usar é
+ * pôr na tela a pergunta antes do assunto.
+ */
 export interface BlocoDeContas {
   titulo: string;
+  /** Os rótulos das linhas. */
   rotulos: string[];
+  /** Os cabeçalhos das colunas. */
+  colunas: string[];
+  /** As funções que a célula desta linha e desta coluna tem de chamar. */
+  funcoes: (linha: string, coluna: string) => string[];
+  /** Quanto ela deve devolver, ou `null` quando ela deve devolver erro. */
+  esperado: (base: Formulario, linha: string, coluna: string) => number | null;
 }
 
-export const BLOCO_DAS_MEDIDAS: BlocoDeContas = {
-  titulo: 'Medidas da base',
-  rotulos: MEDIDAS.map(m => m.rotulo),
-};
+/** Os rótulos das três colunas de medida, como a aba os escreve. */
+export function colunasDeMedida(): string[] {
+  const campos = camposDaBase();
+  return COLUNAS_MEDIDAS.map(id => campos.find(c => c.id === id)?.rotulo ?? id);
+}
 
-export const BLOCO_DO_ENGANO: BlocoDeContas = {
-  titulo: 'Onde a média engana',
-  rotulos: [ROTULO_RAZAO, ROTULO_CHEGAM, ROTULO_TOTAL],
-};
+/** O campo que um cabeçalho de coluna de medida designa. */
+const campoDaColuna = (cabecalho: string) =>
+  COLUNAS_MEDIDAS[colunasDeMedida().indexOf(cabecalho)];
+
+const blocoDeMedida = (titulo: string, rotulos: string[]): BlocoDeContas => ({
+  titulo,
+  rotulos,
+  colunas: colunasDeMedida(),
+  funcoes: linha => contaDoRotulo(linha)?.funcoes ?? [],
+  esperado: (base, linha, coluna) =>
+    contaDoRotulo(linha)?.esperado(base, campoDaColuna(coluna)) ?? null,
+});
+
+export const BLOCO_DAS_MEDIDAS = blocoDeMedida('Medidas da base', MEDIDAS.map(m => m.rotulo));
+
+export const BLOCO_DO_ENGANO = blocoDeMedida(
+  'Onde a média engana', [ROTULO_RAZAO, ROTULO_CHEGAM, ROTULO_TOTAL]);
+
+/* ── Os blocos de distribuição de frequências (requisito 5.3) ─────────────── */
+
+export const COL_FREQUENCIA = 'Frequência';
+export const COL_RELATIVA = 'Frequência relativa';
+export const COL_ACUMULADA = 'Acumulada';
+
+const COLUNAS_DE_FREQUENCIA = [COL_FREQUENCIA, COL_RELATIVA, COL_ACUMULADA];
+
+/**
+ * A largura das classes de altura.
+ *
+ * Dez centímetros dá oito classes sobre uma amplitude de setenta e quatro —
+ * o bastante para a forma aparecer e pouco o bastante para caber na tela.
+ * Uma classe por centímetro devolveria quase uma linha por pessoa, que é a
+ * lista com outro nome; uma de meio metro devolveria duas linhas, que não
+ * mostra forma nenhuma.
+ */
+export const LARGURA_DA_CLASSE = 0.1;
+
+/**
+ * Um bloco de frequências, sobre uma coluna.
+ *
+ * É função, e não constante, porque as linhas dele saem **do dado**: as seis
+ * unidades vêm do clube e as classes de altura vêm da amplitude medida. Um
+ * bloco escrito à mão passaria a discordar da base no dia em que alguém
+ * mudasse uma altura, e discordaria em silêncio — a conferência leria a linha
+ * de uma classe que não existe mais e devolveria vermelho com a conta certa na
+ * tela.
+ */
+function blocoDeFrequencia(
+  titulo: string,
+  linhas: { rotulo: string; absoluta: number; relativa: number; acumulada: number }[],
+): BlocoDeContas {
+  const por = new Map(linhas.map(l => [l.rotulo, l]));
+  return {
+    titulo,
+    rotulos: linhas.map(l => l.rotulo),
+    colunas: COLUNAS_DE_FREQUENCIA,
+    /*
+      Só a frequência tem função obrigatória. A relativa é uma divisão e a
+      acumulada é uma soma — as duas se escrevem de mais de um jeito, e cobrar
+      um deles mediria ter adivinhado o nosso. O que continua valendo para as
+      três é a guarda de referência: célula que não aponta para lugar nenhum é
+      número digitado com um sinal de igual na frente.
+    */
+    funcoes: (_linha, coluna) => (coluna === COL_FREQUENCIA ? ['CONT.SE'] : []),
+    esperado: (_base, linha, coluna) => {
+      const l = por.get(linha);
+      if (!l) return null;
+      if (coluna === COL_FREQUENCIA) return l.absoluta;
+      if (coluna === COL_RELATIVA) return l.relativa;
+      return l.acumulada;
+    },
+  };
+}
+
+/** A distribuição das seis unidades: contagem de uma variável qualitativa. */
+export function blocoDasUnidades(base: Formulario): BlocoDeContas {
+  return blocoDeFrequencia(
+    'Distribuição por unidade',
+    frequenciasDe(colunaDe(base, CAMPO_UNIDADE), UNIDADES_DO_CLUBE),
+  );
+}
+
+/**
+ * A distribuição da altura: uma variável **contínua**, que se agrupa em
+ * classes.
+ *
+ * Contar valor a valor uma coluna de alturas devolve quase uma linha por
+ * pessoa — quarenta e oito linhas de "1", que é uma lista com outro nome.
+ * Medida não se conta, se agrupa: é aqui que a classificação do módulo 1
+ * passa a valer alguma coisa.
+ *
+ * A contagem por classe é `CONT.SE` duas vezes — quantos abaixo do teto menos
+ * quantos abaixo do piso —, que é como se faz sem `CONT.SES`. A classe é
+ * fechada embaixo e **aberta em cima**: `<teto` e não `<=teto`, senão o valor
+ * de fronteira entraria em duas classes e a soma passaria do total sem nada
+ * estourar.
+ */
+export function blocoDasClasses(base: Formulario): BlocoDeContas {
+  return blocoDeFrequencia(
+    'Distribuição da altura, por classe',
+    classesDe(colunaDe(base, CAMPO_ALTURA), LARGURA_DA_CLASSE),
+  );
+}
+
+/* ── O bloco de comparação entre grupos (requisitos 5.4 e 5.5) ───────────── */
+
+export const COL_INSCRITOS = 'Inscritos';
+export const COL_MEDIA_ACAMPAMENTOS = 'Média de acampamentos';
+export const COL_MEDIA_IDADE = 'Média de idade';
+
+/**
+ * As seis unidades, lado a lado.
+ *
+ * ── Por que a média por grupo sai de duas funções ────────────────────────
+ * Esta planilha não tem `MÉDIASE`, e é o que toda planilha antiga não tem: a
+ * média de um grupo se escreve como `SOMASE` dividido por `CONT.SE`. Não é
+ * limitação a contornar — é o idioma, e quem o aprende sabe montar a média de
+ * qualquer recorte, inclusive os que nenhuma função pronta cobre.
+ *
+ * O denominador pode apontar para a célula de Inscritos, que a pessoa acabou
+ * de calcular na coluna ao lado, e é a melhor prática: por isso só o `SOMASE` é
+ * cobrado. Exigir as duas reprovaria quem escreveu a fórmula melhor.
+ */
+export function blocoDaComparacao(base: Formulario): BlocoDeContas {
+  const inscritos = medidaPorGrupo(base, CAMPO_UNIDADE, CAMPO_ACAMPAMENTOS, 'CONT.NÚM');
+  const acampamentos = medidaPorGrupo(base, CAMPO_UNIDADE, CAMPO_ACAMPAMENTOS, 'MÉDIA');
+  const idades = medidaPorGrupo(base, CAMPO_UNIDADE, CAMPO_IDADE, 'MÉDIA');
+  return {
+    titulo: 'Comparação entre as unidades',
+    rotulos: [...UNIDADES_DO_CLUBE],
+    colunas: [COL_INSCRITOS, COL_MEDIA_ACAMPAMENTOS, COL_MEDIA_IDADE],
+    funcoes: (_linha, coluna) => (coluna === COL_INSCRITOS ? ['CONT.SE'] : ['SOMASE']),
+    esperado: (_base, linha, coluna) => {
+      if (coluna === COL_INSCRITOS) return inscritos.get(linha) ?? null;
+      if (coluna === COL_MEDIA_ACAMPAMENTOS) return acampamentos.get(linha) ?? null;
+      return idades.get(linha) ?? null;
+    },
+  };
+}
+
+/**
+ * A unidade cuja gente já foi a mais acampamentos.
+ *
+ * Sai da conta, e não de uma constante: com o nome escrito à mão, uma mudança
+ * na base deixaria a resposta certa reprovando e a errada passando, sem nada
+ * acusar.
+ */
+export function unidadeMaisExperiente(base: Formulario): string {
+  const medias = medidaPorGrupo(base, CAMPO_UNIDADE, CAMPO_ACAMPAMENTOS, 'MÉDIA');
+  return [...medias.entries()].sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))[0][0];
+}
 
 /**
  * Em que linha um rótulo cai, dada a lista de blocos da aba.
@@ -264,7 +443,15 @@ export function linhaDoRotulo(blocos: BlocoDeContas[], rotulo: string): number {
   return -1;
 }
 
-/** A coluna, na aba de cálculos, em que uma variável é pedida. */
+/** O bloco a que um rótulo pertence. */
+export const blocoDoRotulo = (blocos: BlocoDeContas[], rotulo: string) =>
+  blocos.find(b => b.rotulos.includes(rotulo));
+
+/** A coluna, dentro de um bloco, em que um cabeçalho está. */
+export const colunaDoBloco = (bloco: BlocoDeContas, cabecalho: string) =>
+  1 + bloco.colunas.indexOf(cabecalho);
+
+/** A coluna, na aba de cálculos, em que uma variável de medida é pedida. */
 export const colunaDaMedida = (campoId: string) =>
   1 + COLUNAS_MEDIDAS.indexOf(campoId);
 
@@ -300,13 +487,11 @@ function abaDeRespostas(base: Formulario): Planilha {
 }
 
 function abaDeCalculos(blocos: BlocoDeContas[]): Planilha {
-  const campos = camposDaBase();
-  const rotulo = (id: string) => campos.find(c => c.id === id)?.rotulo ?? id;
   const conteudo: string[][] = [];
   for (const b of blocos) {
     if (conteudo.length) conteudo.push([]);
     conteudo.push([b.titulo]);
-    conteudo.push(['', ...COLUNAS_MEDIDAS.map(rotulo)]);
+    conteudo.push(['', ...b.colunas]);
     for (const r of b.rotulos) conteudo.push([r]);
   }
   return planilhaDe(ABA_CALCULOS, conteudo);
@@ -391,13 +576,24 @@ function contaConfere(
   return v.tipo === 'numero' && Math.abs(v.n - esperado) < 1e-9;
 }
 
-/** Uma conta escrita para as três colunas, com fórmula e resultado conferindo. */
-function contaCompleta(c: ContextoDaAnalise, rotulo: string): boolean {
-  const conta = contaDoRotulo(rotulo);
-  if (!conta) return false;
-  return COLUNAS_MEDIDAS.every(campo =>
-    contaConfere(c, rotulo, colunaDaMedida(campo), conta.funcoes, conta.esperado(c.base, campo)));
+/**
+ * Uma linha do bloco escrita **inteira**, com fórmula e resultado conferindo
+ * em cada coluna.
+ *
+ * Ela percorre as colunas do bloco, e não uma lista fixa: o bloco de medidas
+ * tem três, o de frequências tem outras três, e o próximo terá as dele.
+ */
+function linhaCompleta(c: ContextoDaAnalise, rotulo: string): boolean {
+  const bloco = blocoDoRotulo(c.blocos, rotulo);
+  if (!bloco) return false;
+  return bloco.colunas.every(coluna =>
+    contaConfere(c, rotulo, colunaDoBloco(bloco, coluna),
+      bloco.funcoes(rotulo, coluna), bloco.esperado(c.base, rotulo, coluna)));
 }
+
+/** Todas as linhas de um bloco, escritas. */
+const blocoCompleto = (c: ContextoDaAnalise, bloco: BlocoDeContas) =>
+  bloco.rotulos.every(r => linhaCompleta(c, r));
 
 /**
  * Os quarenta e oito registros continuam na aba.
@@ -415,16 +611,22 @@ function baseIntacta(c: ContextoDaAnalise): boolean {
   const p = aba(c, ABA_RESPOSTAS);
   const antes = abaDe(c.cadernoAntes, ABA_RESPOSTAS);
   if (!p || !antes) return false;
-  const coluna = colunaDoCampo(CAMPO_NOME);
-  const nomes = (q: typeof p) => {
+
+  /*
+    A região inteira, e não só a coluna de nomes.
+    
+    Olhando um campo só, apagar um nome reprovava e apagar a idade de alguém
+    passava — e as duas mexem no dado de que toda conta da lição depende.
+    "A base não foi mexida" quer dizer a base.
+  */
+  const regiao = (q: typeof p) => {
     const fora: string[] = [];
     for (let l = PRIMEIRA_LINHA; l < q.celulas.length; l++) {
-      const v = escritoEm(q, l, coluna);
-      if (v) fora.push(v);
+      for (let col = 0; col <= camposDaBase().length; col++) fora.push(escritoEm(q, l, col));
     }
-    return fora;
+    return fora.join('\u0000');
   };
-  return nomes(p).join('\u0000') === nomes(antes).join('\u0000');
+  return regiao(p) === regiao(antes);
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -515,7 +717,7 @@ export const METAS_DO_CENTRO: Meta[] = [
       'Faça o mesmo com =MED( para a mediana.',
       'Arraste para o lado para repetir nas outras duas colunas — as referências andam junto.',
     ],
-    feita: c => contaCompleta(c, 'Média') && contaCompleta(c, 'Mediana'),
+    feita: c => linhaCompleta(c, 'Média') && linhaCompleta(c, 'Mediana'),
   },
   {
     id: 'a-moda-das-tres',
@@ -527,7 +729,7 @@ export const METAS_DO_CENTRO: Meta[] = [
       'Agora conte, na aba Respostas, quantas pessoas têm exatamente a moda da idade — e quantas têm exatamente a moda da altura.',
       'Uma se repete dezenas de vezes; a outra, duas. A planilha não avisa a diferença: quem pergunta é você.',
     ],
-    feita: c => contaCompleta(c, 'Moda') && viu(c, VIU_QUE_A_MODA_NAO_SERVE),
+    feita: c => linhaCompleta(c, 'Moda') && viu(c, VIU_QUE_A_MODA_NAO_SERVE),
   },
   {
     id: 'amplitude-e-desvio',
@@ -538,7 +740,7 @@ export const METAS_DO_CENTRO: Meta[] = [
       'A amplitude é a distância entre as pontas: =MÁXIMO(...) menos =MÍNIMO(...) da mesma coluna.',
       'O desvio padrão é =DESVPADP(...), com P no fim — a base é o clube inteiro, e não uma amostra dele.',
     ],
-    feita: c => contaCompleta(c, 'Amplitude') && contaCompleta(c, 'Desvio padrão'),
+    feita: c => linhaCompleta(c, 'Amplitude') && linhaCompleta(c, 'Desvio padrão'),
   },
   {
     id: 'a-conta-se-refaz',
@@ -589,7 +791,7 @@ export const METAS_DO_ENGANO: Meta[] = [
       'Não escreva o número à mão — a conta precisa se refazer se o dado mudar.',
       'Compare os três resultados: dois ficam quase em 1, e um não.',
     ],
-    feita: c => contaCompleta(c, ROTULO_RAZAO) && baseIntacta(c),
+    feita: c => linhaCompleta(c, ROTULO_RAZAO) && baseIntacta(c),
   },
   {
     id: 'quantos-chegam-a-media',
@@ -601,7 +803,7 @@ export const METAS_DO_ENGANO: Meta[] = [
       'As aspas e o & são o jeito de dizer "maior ou igual ao que está naquela célula".',
       'Na linha de baixo, =CONT.NÚM( sobre a mesma coluna, para ter com o que comparar.',
     ],
-    feita: c => contaCompleta(c, ROTULO_CHEGAM) && contaCompleta(c, ROTULO_TOTAL) && baseIntacta(c),
+    feita: c => linhaCompleta(c, ROTULO_CHEGAM) && linhaCompleta(c, ROTULO_TOTAL) && baseIntacta(c),
   },
   {
     id: 'viu-a-coluna-que-engana',
@@ -617,11 +819,168 @@ export const METAS_DO_ENGANO: Meta[] = [
   },
 ];
 
+/* ────────────────────────────────────────────────────────────────────────────
+   Módulo 4 — Distribuição de frequências (requisito 5.3)
+   ──────────────────────────────────────────────────────────────────────── */
+
+export const VIU_QUE_MEDIDA_NAO_SE_CONTA = 'viu-que-medida-nao-se-conta-valor-a-valor';
+
+/**
+ * ── As duas distribuições não são a mesma lição duas vezes ───────────────
+ * A da unidade conta **categorias**: seis linhas, uma por unidade, e cada
+ * resposta cai numa delas. A da altura não pode: contar valor a valor devolve
+ * quase uma linha por pessoa — quarenta e oito linhas de "1", que é a lista
+ * com outro nome.
+ *
+ * É aqui que a classificação do módulo 1 passa a valer alguma coisa. Quem
+ * marcou a altura como contínua já sabe por que ela precisa de classes; quem
+ * marcou errado descobre agora, contando.
+ */
+export const METAS_DAS_FREQUENCIAS: Meta[] = [
+  {
+    id: 'frequencia-por-unidade',
+    titulo: 'Quantos de cada unidade, em número, em parte do todo e acumulado',
+    detalhe: 'A frequência diz quantos; a relativa diz que parte do clube eles são; a acumulada diz quantos já foram contados até ali.',
+    onde: 'Na aba Cálculos, no bloco "Distribuição por unidade".',
+    passos: [
+      'Na coluna Frequência, use =CONT.SE( sobre a coluna de unidade da aba Respostas, com o nome da unidade como critério.',
+      'Na relativa, divida a frequência pelo total — e aponte para a célula do total, não digite 48.',
+      'Na acumulada, some a frequência desta linha com a acumulada da linha de cima.',
+      'A última acumulada tem de dar o total: é assim que você confere a tabela inteira.',
+    ],
+    feita: c => {
+      const bloco = c.blocos.find(b => b.titulo.startsWith('Distribuição por unidade'));
+      return Boolean(bloco) && blocoCompleto(c, bloco!) && baseIntacta(c);
+    },
+  },
+  {
+    id: 'frequencia-da-altura-por-classe',
+    titulo: 'A altura distribuída em classes de dez centímetros',
+    detalhe: 'Medida não se conta valor a valor: quarenta e oito alturas dariam quarenta e oito linhas de um. Agrupar é o que faz a forma aparecer.',
+    onde: 'No bloco "Distribuição da altura, por classe".',
+    passos: [
+      'Cada classe vai de um piso até um teto, fechada embaixo e aberta em cima.',
+      'Conte com dois =CONT.SE(: quantos estão abaixo do teto, menos quantos estão abaixo do piso.',
+      'Aberta em cima importa: com <= nos dois lados, quem está exatamente na fronteira entraria em duas classes e a soma passaria do total.',
+      'Confira pela acumulada da última classe — ela tem de bater com o total.',
+    ],
+    feita: c => {
+      const bloco = c.blocos.find(b => b.titulo.startsWith('Distribuição da altura'));
+      return Boolean(bloco) && blocoCompleto(c, bloco!) && baseIntacta(c);
+    },
+  },
+  {
+    id: 'viu-por-que-a-altura-precisa-de-classe',
+    titulo: 'Dizer por que a altura precisou de classes e a unidade não',
+    detalhe: 'É a diferença que você marcou no módulo 1, agora fazendo diferença: uma se conta, a outra se mede.',
+    onde: 'Na pergunta abaixo das duas tabelas.',
+    passos: [
+      'Olhe a coluna da unidade: seis valores diferentes em quarenta e oito respostas.',
+      'Olhe a coluna da altura: quase uma altura diferente por pessoa.',
+      'Uma tabela com quarenta e oito linhas de "1" não mostra forma nenhuma — e forma é o que uma distribuição serve para mostrar.',
+    ],
+    feita: c => viu(c, VIU_QUE_MEDIDA_NAO_SE_CONTA),
+  },
+];
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Módulo 5 — Comparar grupos, e o resumo que confere (requisitos 5.4 e 5.5)
+   ──────────────────────────────────────────────────────────────────────── */
+
+export const CHAVE_MAIS_EXPERIENTE = 'unidade-mais-experiente';
+
+/**
+ * O resumo do requisito 5.5 lê a mesma coisa que a conta do 5.4, e os dois
+ * **têm** de concordar.
+ *
+ * É o par que dá sentido à tabela dinâmica: ela não é um jeito mais bonito de
+ * mostrar o que já se sabe, é uma segunda leitura do mesmo dado. Discordando,
+ * uma das duas está errada — e é aí que se aprende a desconfiar do resumo que
+ * chegou pronto na reunião.
+ *
+ * A conferência é por proximidade, e não por igualdade: a média sai de uma
+ * divisão dos dois lados, e dois caminhos até o mesmo número devolvem bits
+ * diferentes na última casa.
+ */
+function resumoConfere(c: ContextoDaAnalise): boolean {
+  const respostas = aba(c, ABA_RESPOSTAS);
+  const t = respostas?.resumo;
+  if (!respostas || !t) return false;
+
+  /*
+    Ele tem de ler a aba de respostas, agrupar por unidade e resumir os
+    acampamentos **por média**.
+
+    A conferência é da configuração, e não dos números que ele mostra. Ela já
+    foi dos números uma vez, comparados com a base — e isso é comparar o
+    resumo com uma coisa que ele nunca leu: um resumo pode estar
+    desatualizado e mesmo assim bater com a base, se a pessoa mexeu na aba e
+    não atualizou. Somar em vez de tirar média devolve um número plausível
+    sobre outra pergunta, e resumir a idade no lugar dos acampamentos também.
+  */
+  if (t.origem.planilha !== ABA_RESPOSTAS) return false;
+  if (t.linha !== colunaDoCampo(CAMPO_UNIDADE)) return false;
+  if (t.valor.coluna !== colunaDoCampo(CAMPO_ACAMPAMENTOS)) return false;
+  if (t.valor.como !== 'media') return false;
+
+  /*
+    E em dia: retrato velho mostra o que a aba era. É o defeito que a CC-ES008
+    nomeia — o resumo continua relatando o erro depois de consertado —, e aqui
+    ele volta pelo outro lado, com o número continuando plausível.
+  */
+  return resumoEmDia(c.caderno, t);
+}
+
+export const METAS_DA_COMPARACAO: Meta[] = [
+  {
+    id: 'comparacao-entre-unidades',
+    titulo: 'As seis unidades lado a lado: quantos, quanta experiência, que idade',
+    detalhe: 'Comparar grupos é o que transforma uma lista de quarenta e oito pessoas em alguma coisa que a liderança consegue ler.',
+    onde: 'Na aba Cálculos, no bloco "Comparação entre as unidades".',
+    passos: [
+      'Em Inscritos, =CONT.SE( sobre a coluna de unidade, com o nome da unidade como critério.',
+      'Esta planilha não tem MÉDIASE: a média de um grupo é =SOMASE( dividido pela contagem.',
+      'No SOMASE, a primeira faixa é a das unidades, o critério é o nome, e a terceira faixa é a coluna que você quer somar.',
+      'Para dividir, aponte para a célula de Inscritos que você acabou de calcular ao lado.',
+    ],
+    feita: c => {
+      const bloco = c.blocos.find(b => b.titulo.startsWith('Comparação entre'));
+      return Boolean(bloco) && blocoCompleto(c, bloco!) && baseIntacta(c);
+    },
+  },
+  {
+    id: 'resumo-que-confere',
+    titulo: 'Uma tabela dinâmica da mesma comparação, e ela bate com a sua conta',
+    detalhe: 'O resumo não é um jeito mais bonito de mostrar o que você já sabe: é uma segunda leitura do mesmo dado. Se as duas discordarem, uma está errada.',
+    onde: 'Na aba Respostas, em Inserir e depois Tabela Dinâmica.',
+    passos: [
+      'Escolha a coluna de unidade para as linhas do resumo.',
+      'Escolha a coluna de acampamentos para o valor, resumido por média.',
+      'Compare linha por linha com o bloco que você calculou na aba Cálculos.',
+      'Se alguma não bater, é porque uma das duas está lendo coisa diferente — e vale a pena achar qual.',
+    ],
+    feita: c => resumoConfere(c) && baseIntacta(c),
+  },
+  {
+    id: 'a-unidade-mais-experiente',
+    titulo: 'Dizer qual unidade já foi a mais acampamentos, em média',
+    detalhe: 'E repare que não é a maior. Contar quantos são responde uma pergunta; tirar a média responde outra.',
+    onde: 'Na pergunta abaixo da tabela.',
+    passos: [
+      'Olhe a coluna de média de acampamentos, e não a de inscritos.',
+      'A unidade com mais gente não é a com mais experiência — são perguntas diferentes.',
+      'É a mesma diferença que o módulo seguinte vai levar adiante: número absoluto e taxa.',
+    ],
+    feita: c => (c.textos[CHAVE_MAIS_EXPERIENTE] ?? '').trim() === unidadeMaisExperiente(c.base),
+  },
+];
+
 /* ── O registro das lições ───────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs009 = 'planilha' | 'plataforma';
 
-export type LicaoDaCcEs009 = 'tipos' | 'centro' | 'engano';
+export type LicaoDaCcEs009 =
+  | 'tipos' | 'centro' | 'engano' | 'frequencias' | 'comparacao';
 
 export interface LicaoDeAnalise {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -655,6 +1014,19 @@ export const LICOES_DA_CC_ES009: Record<LicaoDaCcEs009, LicaoDeAnalise> = {
     programa: 'planilha',
     inicial: contextoInicial,
     metas: METAS_DO_CENTRO,
+  },
+  frequencias: {
+    programa: 'planilha',
+    /* Parte com os dois blocos de distribuição vazios, e **sem** os blocos dos
+       módulos 2 e 3: as contas de lá já foram feitas e não se refazem aqui.
+       Trazê-las de volta vazias mandaria refazer a lição anterior. */
+    inicial: () => contextoInicial([blocoDasUnidades(baseDoAcampamento()), blocoDasClasses(baseDoAcampamento())]),
+    metas: METAS_DAS_FREQUENCIAS,
+  },
+  comparacao: {
+    programa: 'planilha',
+    inicial: () => contextoInicial([blocoDaComparacao(baseDoAcampamento())]),
+    metas: METAS_DA_COMPARACAO,
   },
   engano: {
     programa: 'planilha',

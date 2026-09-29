@@ -5,17 +5,20 @@ import {
   PRIMEIRA_LINHA, VIU_A_CONTA_SE_REFAZER, VIU_QUE_A_MODA_NAO_SERVE,
   BLOCO_DAS_MEDIDAS, REPETICOES_QUE_FAZEM_MODA,
   ROTULO_CHEGAM, ROTULO_RAZAO, ROTULO_TOTAL, VIU_A_COLUNA_QUE_ENGANA,
-  cadernoDaAnalise, colunaDaMedida, colunaDoCampo, contextoInicial,
+  COL_ACUMULADA, COL_FREQUENCIA, COL_RELATIVA, VIU_QUE_MEDIDA_NAO_SE_CONTA,
+  CHAVE_MAIS_EXPERIENTE, COL_INSCRITOS, COL_MEDIA_ACAMPAMENTOS, COL_MEDIA_IDADE,
+  unidadeMaisExperiente,
+  cadernoDaAnalise, colunaDaMedida, colunaDoBloco, colunaDoCampo, contextoInicial,
   esperadoDe, faixaDoCampo, formulaDaMedida, linhaDoRotulo,
 } from './metasDaCcEs009';
 import {
-  CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_IDADE,
+  CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_CAMISETA, CAMPO_IDADE,
   CLASSIFICACAO, baseDoAcampamento, camposDaBase,
 } from './baseDoAcampamento';
-import { escrever, valorCalculado } from './planilha';
+import { type TabelaDinamica, atualizarResumo, escrever, valorCalculado } from './planilha';
 import { abaDe, comAba, escritoEm, mostradoEm, valorEm } from './cadernoDoClube';
-import { colunaDe, repeticoesDaModa } from './analiseDeDados';
-import { respostasReais } from './formulario';
+import { colunaDe, medidaPorGrupo, repeticoesDaModa } from './analiseDeDados';
+import { CAMPO_UNIDADE, respostasReais } from './formulario';
 import { nomeDaColuna } from './formulas';
 
 /* ── A solução de referência ──────────────────────────────────────────────── */
@@ -85,7 +88,106 @@ const SOLUCOES: Record<LicaoDaCcEs009, (c: ContextoDaAnalise) => ContextoDaAnali
     descobertas: [VIU_QUE_A_MODA_NAO_SERVE, VIU_A_CONTA_SE_REFAZER],
   }),
   engano: comOEngano,
+  frequencias: comAsFrequencias,
+  comparacao: comAComparacao,
 };
+
+/**
+ * O módulo 5, escrito como a pessoa escreve.
+ *
+ * A média de cada grupo sai de `SOMASE` dividido pela célula de Inscritos que
+ * ela acabou de calcular ao lado — sem `MÉDIASE`, que esta planilha não tem, e
+ * apontando para o que já está na tela em vez de repetir a contagem.
+ */
+function comAComparacao(c: ContextoDaAnalise): ContextoDaAnalise {
+  const bloco = c.blocos[0];
+  let p = abaDe(c.caderno, ABA_CALCULOS);
+  const unidades = `${ABA_RESPOSTAS}!${faixaDoCampo(c.base, CAMPO_UNIDADE)}`;
+  const colInscritos = colunaDoBloco(bloco, COL_INSCRITOS);
+
+  for (const unidade of bloco.rotulos) {
+    const l = linhaDoRotulo(c.blocos, unidade);
+    const quantos = `${nomeDaColuna(colInscritos)}${l + 1}`;
+    p = escrever(p, l, colInscritos, `=CONT.SE(${unidades};"${unidade}")`);
+    for (const [coluna, campo] of [
+      [COL_MEDIA_ACAMPAMENTOS, CAMPO_ACAMPAMENTOS],
+      [COL_MEDIA_IDADE, CAMPO_IDADE],
+    ] as const) {
+      const alvo = `${ABA_RESPOSTAS}!${faixaDoCampo(c.base, campo)}`;
+      p = escrever(p, l, colunaDoBloco(bloco, coluna),
+        `=SOMASE(${unidades};"${unidade}";${alvo})/${quantos}`);
+    }
+  }
+
+  /* E o resumo, montado sobre a tabela declarada da aba de respostas. */
+  const respostas = abaDe(c.caderno, ABA_RESPOSTAS);
+  const tabela = respostas.tabela!;
+  const resumo = {
+    em: { l: 0, c: 0 },
+    origem: { planilha: ABA_RESPOSTAS, faixa: tabela },
+    linha: colunaDoCampo(CAMPO_UNIDADE),
+    valor: { coluna: colunaDoCampo(CAMPO_ACAMPAMENTOS), como: 'media' as const },
+    retrato: [],
+  };
+  const comResumo = { ...respostas, resumo: atualizarResumo(c.caderno, resumo) };
+
+  return {
+    ...c,
+    caderno: comAba(comAba(c.caderno, p), comResumo),
+    textos: { ...c.textos, [CHAVE_MAIS_EXPERIENTE]: unidadeMaisExperiente(c.base) },
+  };
+}
+
+/**
+ * O módulo 4, escrito como a pessoa escreve.
+ *
+ * A frequência sai de `CONT.SE`; a relativa aponta para a frequência e para o
+ * total; a acumulada soma a de cima com a desta linha. Nenhum valor é
+ * carimbado — a solução que pula o meio do caminho prova o fim e não prova o
+ * caminho.
+ */
+function comAsFrequencias(c: ContextoDaAnalise): ContextoDaAnalise {
+  let p = abaDe(c.caderno, ABA_CALCULOS);
+  const total = respostasReais(c.base).length;
+
+  for (const bloco of c.blocos) {
+    const colFreq = colunaDoBloco(bloco, COL_FREQUENCIA);
+    const colRel = colunaDoBloco(bloco, COL_RELATIVA);
+    const colAcum = colunaDoBloco(bloco, COL_ACUMULADA);
+    const daUnidade = bloco.titulo.startsWith('Distribuição por unidade');
+    const campo = daUnidade ? CAMPO_UNIDADE : CAMPO_ALTURA;
+    const faixa = `${ABA_RESPOSTAS}!${faixaDoCampo(c.base, campo)}`;
+
+    bloco.rotulos.forEach((rotulo, i) => {
+      const l = linhaDoRotulo(c.blocos, rotulo);
+      p = escrever(p, l, colFreq, daUnidade
+        ? `=CONT.SE(${faixa};"${rotulo}")`
+        : formulaDaClasse(faixa, rotulo));
+      /* A relativa aponta para a frequência e para o total — e não para 48
+         digitado, que é o número parado de sempre. */
+      p = escrever(p, l, colRel,
+        `=${nomeDaColuna(colFreq)}${l + 1}/${total}`);
+      p = escrever(p, l, colAcum, i === 0
+        ? `=${nomeDaColuna(colFreq)}${l + 1}`
+        : `=${nomeDaColuna(colAcum)}${l}+${nomeDaColuna(colFreq)}${l + 1}`);
+    });
+  }
+  return { ...c, caderno: comAba(c.caderno, p), descobertas: [VIU_QUE_MEDIDA_NAO_SE_CONTA] };
+}
+
+/**
+ * A contagem de uma classe: quantos abaixo do teto menos quantos abaixo do
+ * piso.
+ *
+ * É como se conta um intervalo sem `CONT.SES`, e a classe fica fechada embaixo
+ * e **aberta em cima** — `<teto` e não `<=teto`. Com `<=` nos dois lados, quem
+ * está exatamente na fronteira entraria em duas classes e a soma passaria do
+ * total sem nada estourar.
+ */
+function formulaDaClasse(faixa: string, rotulo: string): string {
+  const [piso, teto] = rotulo.split(' a ');
+  return `=CONT.SE(${faixa};"<${teto}")-CONT.SE(${faixa};"<${piso}")`;
+}
 
 const licoes = Object.entries(LICOES_DA_CC_ES009) as [LicaoDaCcEs009, typeof LICOES_DA_CC_ES009[LicaoDaCcEs009]][];
 
@@ -390,6 +492,28 @@ describe('onde a média engana', () => {
     expect(meta('quantos-chegam-a-media').feita(semEla)).toBe(false);
   });
 
+  it('e mexer em qualquer coluna da base derruba, não só nas que a conta lê', () => {
+    /*
+      "A base não foi mexida" quer dizer a base.
+
+      A trava precisa de uma coluna que **nenhuma fórmula desta lição leia**:
+      mexendo na idade, a própria conta já sai diferente e a meta cai por ali,
+      então o caso não separa nada. A camiseta não entra em conta nenhuma do
+      módulo 3 — se a guarda olhasse só algumas colunas, trocar o tamanho de
+      alguém passaria batido, e a base da vereda inteira teria mudado.
+    */
+    const pronto = SOLUCOES.engano(licao.inicial());
+    const respostas = abaDe(pronto.caderno, ABA_RESPOSTAS);
+    const col = colunaDoCampo(CAMPO_CAMISETA);
+    const antes = escritoEm(respostas, PRIMEIRA_LINHA, col);
+    const mexida = escrever(respostas, PRIMEIRA_LINHA, col, antes === 'GG' ? 'PP' : 'GG');
+    const c = { ...pronto, caderno: comAba(pronto.caderno, mexida) };
+
+    /* A conta continua dando o mesmo número: a camiseta não entra nela. */
+    expect(linhaDoRotulo(c.blocos, ROTULO_RAZAO)).toBeGreaterThan(0);
+    expect(meta('a-razao-entre-as-duas').feita(c)).toBe(false);
+  });
+
   it('a razão separa a coluna que engana das outras duas', () => {
     /*
       Contar quantos ficam abaixo da média não separa nada: são 29 dos 48 nos
@@ -405,6 +529,106 @@ describe('onde a média engana', () => {
     expect(razao(CAMPO_ACAMPAMENTOS)).toBeGreaterThan(1.25);
     expect(Math.abs(razao(CAMPO_IDADE) - 1)).toBeLessThan(0.1);
     expect(Math.abs(razao(CAMPO_ALTURA) - 1)).toBeLessThan(0.1);
+  });
+});
+
+/* ── O módulo 5 ───────────────────────────────────────────────────────────── */
+
+describe('comparar grupos, e o resumo que confere', () => {
+  const licao = LICOES_DA_CC_ES009.comparacao;
+  const meta = (id: string) => licao.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES.comparacao(licao.inicial());
+
+  const comResumo = (c: ContextoDaAnalise, mudar: (t: TabelaDinamica) => TabelaDinamica) => {
+    const respostas = abaDe(c.caderno, ABA_RESPOSTAS);
+    return { ...c, caderno: comAba(c.caderno, { ...respostas, resumo: mudar(respostas.resumo!) }) };
+  };
+
+  it('o resumo velho não passa, por mais que o número pareça certo', () => {
+    /*
+      Retrato velho mostra o que a aba era. É o defeito que a CC-ES008 já
+      nomeia — o resumo continua relatando o erro depois de consertado —, e
+      aqui ele volta pelo outro lado, com o número continuando plausível.
+
+      A configuração do resumo continua **certa** neste caso: o que está
+      errado é só o retrato. É por isso que conferir a configuração não basta
+      e o frescor é uma conta à parte.
+    */
+    const c = pronto();
+    expect(meta('resumo-que-confere').feita(c)).toBe(true);
+
+    const velho = comResumo(c, t => ({
+      ...t,
+      retrato: t.retrato.map((l, i) => (i === 0 ? { ...l, valor: (l.valor ?? 0) + 1 } : l)),
+    }));
+    expect(velho.caderno.planilhas[0].resumo!.linha)
+      .toBe(colunaDoCampo(CAMPO_UNIDADE));
+    expect(meta('resumo-que-confere').feita(velho)).toBe(false);
+  });
+
+  it('e mexer na aba sem atualizar o resumo derruba a tarefa', () => {
+    /* O caso de verdade: a pessoa muda um número na aba, o resumo continua
+       mostrando o de antes, e os dois números são plausíveis. */
+    const c = pronto();
+    const respostas = abaDe(c.caderno, ABA_RESPOSTAS);
+    const mexida = escrever(respostas, PRIMEIRA_LINHA,
+      colunaDoCampo(CAMPO_ACAMPAMENTOS), '9');
+    const semAtualizar = { ...c, caderno: comAba(c.caderno, { ...mexida, resumo: respostas.resumo }) };
+    expect(meta('resumo-que-confere').feita(semAtualizar)).toBe(false);
+  });
+
+  it('o resumo que soma no lugar de tirar média não passa', () => {
+    /*
+      A soma de acampamentos por unidade é um número perfeitamente plausível —
+      e responde outra pergunta. Sem conferir o resumo contra a conta, montar
+      uma tabela dinâmica qualquer fecharia a tarefa.
+    */
+    const c = pronto();
+    const somado = comResumo(c, t => {
+      const cru = { ...t, valor: { ...t.valor, como: 'soma' as const } };
+      return atualizarResumo(c.caderno, cru);
+    });
+    expect(meta('resumo-que-confere').feita(somado)).toBe(false);
+  });
+
+  it('o resumo de outra coluna não passa', () => {
+    const c = pronto();
+    const outra = comResumo(c, t => atualizarResumo(c.caderno, {
+      ...t, valor: { ...t.valor, coluna: colunaDoCampo(CAMPO_IDADE) },
+    }));
+    expect(meta('resumo-que-confere').feita(outra)).toBe(false);
+  });
+
+  it('a unidade mais experiente é a de maior média, e não a de mais gente', () => {
+    /*
+      A trava precisa de um número que não venha de `unidadeMaisExperiente`:
+      a solução de referência chama a mesma função, então trocar a medida lá
+      dentro moveria os dois lados juntos e nada reprovaria.
+
+      A Arara é a quarta em tamanho e a primeira em experiência, e é por isso
+      que ela é a resposta: com a maior unidade também sendo a mais
+      experiente, a lição não teria como separar as duas perguntas.
+    */
+    const base = baseDoAcampamento();
+    expect(unidadeMaisExperiente(base)).toBe('Arara');
+
+    const inscritos = medidaPorGrupo(base, CAMPO_UNIDADE, CAMPO_ACAMPAMENTOS, 'CONT.NÚM');
+    const maior = [...inscritos.entries()].sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))[0][0];
+    expect(maior).not.toBe(unidadeMaisExperiente(base));
+
+    /* E a resposta é única: com empate no topo a tarefa mediria ter escolhido
+       a nossa. */
+    const medias = [...medidaPorGrupo(base, CAMPO_UNIDADE, CAMPO_ACAMPAMENTOS, 'MÉDIA').values()]
+      .map(v => v ?? 0).sort((a, b) => b - a);
+    expect(medias[0]).toBeGreaterThan(medias[1]);
+  });
+
+  it('e responder o nome errado não fecha a lista', () => {
+    const c = pronto();
+    expect(meta('a-unidade-mais-experiente').feita(c)).toBe(true);
+    expect(meta('a-unidade-mais-experiente').feita(
+      { ...c, textos: { ...c.textos, [CHAVE_MAIS_EXPERIENTE]: 'Falcão' } },
+    )).toBe(false);
   });
 });
 
