@@ -2850,6 +2850,70 @@ computador para uma tela que funciona perfeitamente no telefone dela.
 laboratório que não imita nada continua sendo tela da plataforma, e tela da
 plataforma não avisa nada sobre programa nenhum.
 
+**"Isso se demonstra fora daqui" é uma conclusão, e ela envelhece.** A AP045
+abriu com os requisitos 5 e 6 como lição de teoria só, e os dois comentários
+que justificavam isso comparavam com a AP041.4 — onde a plataforma ensina o
+que apresentar e a apresentação acontece entre duas pessoas. A comparação não
+valia: o requisito 5 pede **montar um diagrama**, que é um desenho, e o 6 pede
+**pesquisar e escrever**, que são dois gestos de tela. O que ficava de fora era
+justamente o verbo de cada um.
+
+A segunda razão do requisito 6 era técnica e também caiu: o roteiro da redação
+guiada era chaveado por **trilha**, e a AP045 já gastava o dela no requisito 2.
+`text_projects` ganhou a coluna `projeto` em três passos de expand/contract, e
+a mesma trilha passou a poder ter dois textos. Antes disso, entregar o segundo
+relatório sobrescrevia o primeiro em silêncio, depois de escrito.
+
+**A seta ao contrário não estoura, e é por isso que há simulação.** No diagrama
+do requisito 5, um diagrama com todas as peças e todas as setas escritas, uma
+delas apontando do monitor para a CPU, é um diagrama bonito que afirma o
+contrário do que o requisito ensina. Conferir "existe ligação entre monitor e
+CPU" aprovaria isso; as verificações são direcionais, e `percorrer` anda pelas
+setas na direção delas.
+
+A simulação **mostra**, e não julga — e isso é correção. Ela era o oitavo item
+da lista, e a mutação que a reduziu a "o botão foi apertado" não derrubou teste
+nenhum: as sete verificações estruturais já exigem as setas na direção certa,
+então estrutura certa implica caminho que chega, e aquele item nunca conseguia
+ficar vermelho sozinho. **Item de lista que não consegue falhar é o espelho do
+que abre verde**: os dois ensinam a não ler a lista. Hoje ela desenha os bits
+andando e diz onde pararam, que é como a seta errada aparece enquanto se monta.
+
+**A ficha de pesquisa nasce da página, e não de um campo de texto.** No
+laboratório do requisito 6 não há onde digitar um fato: clica-se numa frase da
+página aberta e a fonte vai junto, porque ela **é** de onde a frase saiu. Um
+campo livre com um campo de fonte ao lado teria a forma certa e mediria a coisa
+errada — o fato digitado de cabeça e qualquer coisa na fonte. É a família do
+"Figura 1" digitado da CC-ES002.
+
+Então toda ficha sai bem formada, inclusive a que veio do fórum: **o que erra é
+de qual página se tira**. O buscador mistura páginas especializadas, páginas
+verdadeiras mas incompletas e páginas que afirmam o que não aconteceu, e as
+três se parecem na lista de resultados. O que as separa está escrito em cada
+uma — quem assina, quando, de onde tirou —, e a lista de tarefas nomeia o
+critério sem nunca dizer qual página é qual. Um selo de "confiável" resolveria
+o requisito num olhar, e resolveria só aqui dentro.
+
+A notícia de dezembro de 1999 é a que ensina o resto: jornal sério, assinado e
+datado, e **sem como** responder "o que aconteceu na virada", porque foi escrita
+antes. Fonte boa não é fonte boa para qualquer pergunta — e é por ela que a
+lista cobra as quatro etapas em vez de um número de fichas.
+
+**E o relatório só cobra o que a pesquisa podia ter achado.** Os fatos que a
+Edge Function guarda para conferir o texto são, frase por frase, os que as
+páginas confiáveis do buscador trazem. Conferir contra o que a pesquisa não
+podia ter encontrado reprovaria quem pesquisou direito, e o desbravador não
+teria como saber por quê. `pesquisaDoMilenio.test.ts` compara as duas listas nos
+dois sentidos e por etapa, que é a forma de `ofensiva.test.ts`.
+
+**O despacho de laboratório virou `Record` exaustivo.** Era uma escada de vinte
+e seis `{lesson.labType === 'x' && <X/>}`, e ela não estoura quando falta um
+ramo: a lição abre uma `div` vazia, com o cabeçalho e o caminho de volta certos
+e nada no meio, e o desbravador conclui que o exercício ainda não foi escrito. A
+AP045 acrescentou **três** tipos de uma vez, e esquecer um seria publicar um
+laboratório que não desenha nada. É a mesma decisão do `switch` exaustivo das
+travas de vereda e do `Record` sobre a união da CC-ES003.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -3382,6 +3446,17 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/EstilosTextoLab.test.tsx` | botão do laboratório de estilos que não chega ao documento, ou sumário velho valendo por novo |
 | `src/labs/BancoDeDadosLab.test.tsx` | assistente de importação que já chega com o mapeamento certo, ou relatório sem os quatro campos |
 | `src/labs/apresentacaoDoClube.test.ts` | apresentação que abre sem os defeitos que as tarefas consertam, ou mídia vinculada valendo por incorporada |
+| `src/labs/diagramaBinario.test.ts` | diagrama que abre montado, seta que conta nos dois sentidos, ou letra valendo por código binário |
+| `src/labs/diagramaBinario.test.ts` | peça solta ao lado impedindo os bits de chegarem, num diagrama que está certo |
+| `src/labs/DiagramaBinarioLab.test.tsx` | lição do diagrama impossível de vencer clicando, ou simulação que escreve veredito |
+| `src/labs/pesquisaDoMilenio.test.ts` | fato que o relatório confere e a pesquisa não podia ter achado, nos dois sentidos |
+| `src/labs/pesquisaDoMilenio.test.ts` | buscador sem página ruim, onde "clique em tudo" é a resposta certa |
+| `src/labs/pesquisaDoMilenio.test.ts` | resultado de busca que diz qual página é confiável, resolvendo o requisito num olhar |
+| `src/labs/PesquisaWebLab.test.tsx` | campo para digitar um fato à mão, ou ficha que chega sem a página de onde saiu |
+| `src/labs/PesquisaWebLab.test.tsx` | título de página herdando o h1 quase branco da plataforma sobre fundo branco |
+| `src/labs/RelatorioDePesquisaLab.test.tsx` | relatório chaveado pela trilha, que sobrescreveria o outro texto da AP045 |
+| `src/labs/RelatorioDePesquisaLab.test.tsx` | lição abrindo em branco sem a pesquisa feita, ou painel preso na primeira pergunta |
+| `src/labs/redacaoGuiada.test.ts` | laboratório de escrita sem roteiro, seja qual for a chave dele |
 | `src/labs/ApresentacaoLab.test.tsx` | operação de slide que age no slide errado, ou PDF velho valendo por novo |
 | `src/labs/planilhaDoAcampamento.test.ts` | planilha pequena demais para o filtro fazer falta, ou SUBTOTAL escrito sem filtro nenhum |
 | `src/labs/PlanilhaAvancadaLab.test.tsx` | os dois laboratórios de planilha mostrando janelas de Excel diferentes |
