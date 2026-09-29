@@ -7,7 +7,7 @@ import {
   ABAS, CONSELHEIROS, INSCRITOS, TOTAL_ARRECADADO, TOTAL_DE_DIARIAS,
   VALOR_DA_DIARIA, abaDe, comAba, comCelulas, escritoEm,
   mostradoEm, usaFuncao, type MetaDaPlanilha,
-  LINHA_DO_TITULO, LINHA_DO_CABECALHO,
+  LINHA_DO_TITULO, LINHA_DO_CABECALHO, planilhaDe,
   PRIMEIRA_LINHA_DE_DADO, ULTIMA_LINHA_DE_DADO,
 } from './cadernoDoClube';
 import {
@@ -695,5 +695,57 @@ describe('o roteiro da apresentação', () => {
 
   it('a planilha sem fórmula nenhuma dá roteiro vazio, e não uma frase inventada', () => {
     expect(roteiroDaPlanilha(abaDe(cadernoDoOrcamento(), 'Orçamento'))).toEqual([]);
+  });
+});
+
+/*
+  A aba cresce para caber o que ela guarda.
+
+  Vinte e seis linhas por doze colunas bastaram até a base da CC-ES009, que tem
+  quarenta e oito respostas. Escritas numa grade de vinte e seis, vinte e três
+  delas não existiriam — e nada estouraria: a aba abriria bonita e toda conta da
+  vereda sairia sobre metade do clube, plausível e menor.
+*/
+describe('o tamanho de uma aba', () => {
+  const PADRAO = 26;
+
+  it('quem cabe no tamanho de sempre fica com o tamanho de sempre', () => {
+    /* A mudança é monótona de propósito: nenhuma aba já escrita muda de
+       tamanho, senão toda medida feita contra elas mudaria junto. */
+    const p = planilhaDe('x', [['a', 'b'], ['c']]);
+    expect(p.celulas).toHaveLength(PADRAO);
+    expect(p.larguras).toHaveLength(12);
+  });
+
+  it('nenhum valor escrito some por não caber', () => {
+    const conteudo = Array.from({ length: 49 }, (_, l) =>
+      Array.from({ length: 11 }, (_, c) => `${l}-${c}`));
+    const p = planilhaDe('x', conteudo);
+    for (let l = 0; l < conteudo.length; l++) {
+      for (let c = 0; c < conteudo[l].length; c++) {
+        expect(p.celulas[l]?.[c]?.texto, `sumiu a célula ${l},${c}`).toBe(`${l}-${c}`);
+      }
+    }
+  });
+
+  it('sobra espaço embaixo e à direita do que já está escrito', () => {
+    /* É onde se escreve o que vem depois dos dados — o total, a conferência, a
+       coluna de taxa ao lado da de contagem. */
+    const p = planilhaDe('x', Array.from({ length: 49 }, () => new Array(11).fill('x')));
+    expect(p.celulas.length).toBeGreaterThan(49);
+    expect(p.celulas[0].length).toBeGreaterThan(11);
+  });
+
+  it('as três medidas da aba continuam concordando', () => {
+    /* A grade desenha `celulas`, e lê a altura de `alturas[l]` e a largura de
+       `larguras[c]`. Uma linha sem altura declarada some da tela sem erro
+       nenhum, porque `undefined` em `style.height` é altura automática — e a
+       trava que conferisse só `celulas` não veria. */
+    for (const conteudo of [[['a']], Array.from({ length: 60 }, () => ['a', 'b', 'c'])]) {
+      const p = planilhaDe('x', conteudo);
+      expect(p.alturas).toHaveLength(p.celulas.length);
+      expect(p.larguras).toHaveLength(p.celulas[0].length);
+      expect(p.celulas.every(l => l.length === p.larguras.length)).toBe(true);
+    }
   });
 });
