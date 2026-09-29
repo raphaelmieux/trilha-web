@@ -33,12 +33,12 @@
 
 import {
   type Formulario, CAMPO_UNIDADE,
-  cabecalhoDe, linhasDe, respostasReais,
+  cabecalhoDe, linhasDe, respostasReais, valorDa,
 } from './formulario';
 import {
   type Escala, type Natureza,
   CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_IDADE, ELENCO, UNIDADES_DO_CLUBE,
-  CLASSIFICACAO, adesaoPorUnidade, baseDoAcampamento, camposDaBase,
+  ATIPICOS, CLASSIFICACAO, adesaoPorUnidade, baseDoAcampamento, camposDaBase,
 } from './baseDoAcampamento';
 import type { Caderno, Planilha } from './planilha';
 import {
@@ -47,7 +47,7 @@ import {
 } from './analiseDeDados';
 import { abaDe, comAba, escritoEm, planilhaDe, usaFuncao } from './cadernoDoClube';
 import { escrever, resumoEmDia, valorCalculado } from './planilha';
-import { nomeDaColuna, referenciasDe } from './formulas';
+import { nomeDaColuna, numeroDoTexto, referenciasDe } from './formulas';
 
 /* ── A forma de uma meta ──────────────────────────────────────────────────── */
 
@@ -71,6 +71,15 @@ export interface Marcacao {
   escala?: Escala;
   naoAgrupa?: boolean;
 }
+
+/**
+ * O que se faz com um valor das pontas.
+ *
+ * `normal` é a resposta certa na maioria das vezes, e é o ponto: estar no
+ * extremo não é ser atípico. A coluna de idade tem seis pontas e nenhum
+ * atípico — alguém tem de ser o mais novo.
+ */
+export type Julgamento = 'normal' | 'mantem' | 'exclui';
 
 export interface ContextoDaAnalise {
   /**
@@ -114,11 +123,21 @@ export interface ContextoDaAnalise {
   blocos: BlocoDeContas[];
   /** Como a pessoa classificou cada coluna, no módulo 1. */
   marcacoes: Record<string, Marcacao>;
+  /**
+   * O que ela decidiu sobre cada valor das pontas, no módulo 7.
+   *
+   * A chave é campo e valor, e não campo e pessoa: o que se julga é **o
+   * número**. Duas pessoas com a mesma altura estranha são o mesmo caso, e
+   * pedir a decisão duas vezes ensinaria que ela é sobre gente.
+   */
+  julgamentos: Record<string, Julgamento>;
   /** O que ela escreveu: a justificativa do atípico, a conclusão, a defesa. */
   textos: Record<string, string>;
 }
 
 const viu = (c: ContextoDaAnalise, o: string) => c.descobertas.includes(o);
+
+const texto = (c: ContextoDaAnalise, chave: string) => (c.textos[chave] ?? '').trim();
 
 const aba = (c: ContextoDaAnalise, nome: string) => abaDe(c.caderno, nome);
 
@@ -381,6 +400,76 @@ export function blocoDasClasses(base: Formulario): BlocoDeContas {
     'Distribuição da altura, por classe',
     classesDe(colunaDe(base, CAMPO_ALTURA), LARGURA_DA_CLASSE),
   );
+}
+
+/* ── Os valores das pontas (requisitos 2.5 e 5.6) ────────────────────────── */
+
+export interface Candidato {
+  campo: string;
+  /** O valor como a coluna o guarda. */
+  valor: string;
+  /** Quantas pessoas têm exatamente este valor. */
+  quantos: number;
+  /** De qual ponta da coluna ele veio. */
+  ponta: 'alto' | 'baixo';
+}
+
+/** Quantos valores distintos de cada ponta a lição põe à mesa. */
+export const PONTAS_POR_COLUNA = 3;
+
+export const chaveDoCandidato = (campo: string, valor: string) => `${campo}:${valor}`;
+
+/**
+ * Os valores das pontas de cada coluna quantitativa.
+ *
+ * ── Por que as pontas, e não os atípicos ─────────────────────────────────
+ * Pôr à mesa só os quatro atípicos seria entregar a resposta: a tarefa
+ * passaria a ser decidir o que fazer com valores que alguém já apontou, e o
+ * requisito 5.6 manda **identificar** antes de decidir.
+ *
+ * O que se põe à mesa são os três maiores e os três menores valores distintos
+ * de cada coluna — dezoito ao todo, dos quais quatro são atípicos. A coluna de
+ * idade contribui com seis pontas e nenhum atípico, e é isso que faz a lição:
+ * alguém tem de ser o mais novo do clube, e isso não o torna estranho.
+ *
+ * Distintos, e não as três maiores linhas: seis desbravadores têm quinze anos,
+ * e "as três maiores" devolveria quinze três vezes.
+ */
+export function candidatosDasPontas(base: Formulario): Candidato[] {
+  const fora: Candidato[] = [];
+  for (const campo of COLUNAS_MEDIDAS) {
+    const valores = colunaDe(base, campo);
+    const contagem = new Map<number, number>();
+    for (const n of numerosDe(valores)) contagem.set(n, (contagem.get(n) ?? 0) + 1);
+    const distintos = [...contagem.keys()].sort((a, b) => a - b);
+
+    const escrever = (n: number, ponta: 'alto' | 'baixo') => {
+      /* O valor volta como a coluna o guarda, e não como o número o imprime:
+         1,05 na planilha é "1,05", e um "1.05" aqui não casaria com nada. */
+      const texto = valores.find(v => numeroDoTexto(v) === n) ?? String(n);
+      fora.push({ campo, valor: texto, quantos: contagem.get(n) ?? 0, ponta });
+    };
+    distintos.slice(0, PONTAS_POR_COLUNA).forEach(n => escrever(n, 'baixo'));
+    distintos.slice(-PONTAS_POR_COLUNA).reverse().forEach(n => escrever(n, 'alto'));
+  }
+  return fora;
+}
+
+/**
+ * O que cada candidato é, de verdade.
+ *
+ * Sai de `ATIPICOS`, que declara a **decisão**, cruzado com o valor que a
+ * resposta daquele id guarda. A cerca de Tukey já confere, em
+ * `baseDoAcampamento.test.ts`, que a lista declarada é exatamente a que a
+ * conta acusa — então aqui não há segunda fonte, há a mesma lida por chave.
+ */
+export function julgamentoCerto(base: Formulario, campo: string, valor: string): Julgamento {
+  for (const a of ATIPICOS) {
+    if (a.campo !== campo) continue;
+    const r = respostasReais(base).find(x => x.id === a.resposta);
+    if (r && valorDa(r, campo) === valor) return a.mantem ? 'mantem' : 'exclui';
+  }
+  return 'normal';
 }
 
 /* ── O bloco da adesão (requisitos 2.6 e 4) ──────────────────────────────── */
@@ -1115,12 +1204,92 @@ export const METAS_DA_ADESAO: Meta[] = [
   },
 ];
 
+/* ────────────────────────────────────────────────────────────────────────────
+   Módulo 7 — Valores atípicos (requisitos 2.5 e 5.6)
+   ──────────────────────────────────────────────────────────────────────── */
+
+export const CHAVE_POR_QUE_FICA = 'por-que-o-veterano-fica';
+export const CHAVE_POR_QUE_SAI = 'por-que-a-altura-sai';
+
+/** O mínimo que uma justificativa escrita precisa ter para ser uma. */
+export const LETRAS_DA_JUSTIFICATIVA = 40;
+
+/**
+ * ── Os dois atípicos são de naturezas opostas, e é isso que faz a lição ──
+ * Três veteranos com doze, catorze e dezoito acampamentos são **gente**. Estão
+ * longe do resto porque estão mesmo, e apagá-los para a média "melhorar" é
+ * apagar a parte mais interessante do clube — que é a coisa mais comum que se
+ * faz com um valor atípico.
+ *
+ * Uma altura de 1,05 m é **digitação**: o 1,50 com os algarismos trocados. Não
+ * é ninguém de 1,05 m, e ela sai da análise da altura. Sair não é apagar a
+ * linha: o Davi continua inscrito, com camiseta P e três diárias.
+ *
+ * Uma base com atípico de um tipo só faria "decidir com justificativa" virar
+ * "apagar o que está longe", que é a regra errada e a mais fácil de aprender.
+ *
+ * ── E a maioria das pontas é normal ──────────────────────────────────────
+ * Dezoito valores à mesa e quatro atípicos. A coluna de idade dá seis pontas e
+ * nenhum: alguém tem de ser o mais novo do clube, e isso não o torna estranho.
+ * Sem esse lado, a lição seria "o que está no extremo é suspeito".
+ */
+export const METAS_DOS_ATIPICOS: Meta[] = [
+  {
+    id: 'toda-ponta-julgada',
+    titulo: 'Um veredito para cada valor das pontas',
+    detalhe: 'São os três maiores e os três menores de cada coluna. A maioria é gente comum — alguém tem de ser o mais novo.',
+    onde: 'Na lista de valores das pontas, no botão de cada linha.',
+    passos: [
+      'Ordene a coluna na aba Respostas e olhe as duas pontas.',
+      'Para cada valor, pergunte: isto é uma pessoa possível?',
+      'Quinze anos é possível. Um metro e cinco num desbravador de onze, não.',
+    ],
+    feita: c => candidatosDasPontas(c.base).every(k =>
+      c.julgamentos[chaveDoCandidato(k.campo, k.valor)] !== undefined),
+  },
+  {
+    id: 'os-vereditos-certos',
+    titulo: 'E os dezoito certos',
+    detalhe: 'Estar no extremo não é ser atípico, e ser atípico não quer dizer sair. São três perguntas diferentes.',
+    onde: 'Na mesma lista.',
+    passos: [
+      'Normal: o valor é possível, só está na ponta.',
+      'Fica: é estranho e é verdadeiro — some à análise e relate a mediana ao lado da média.',
+      'Sai: é estranho porque está errado, e o que se tira é a célula, não a pessoa.',
+    ],
+    feita: c => candidatosDasPontas(c.base).every(k =>
+      c.julgamentos[chaveDoCandidato(k.campo, k.valor)]
+        === julgamentoCerto(c.base, k.campo, k.valor)),
+  },
+  {
+    id: 'as-duas-justificativas',
+    titulo: 'Escrever por que um fica e por que o outro sai',
+    detalhe: 'O requisito pede a decisão por escrito, e as duas razões são opostas: uma é sobre gente de verdade, a outra é sobre um dedo que escorregou.',
+    onde: 'Nos dois campos de texto abaixo da lista.',
+    passos: [
+      'No que fica: diga por que você acredita que o número é verdadeiro.',
+      'No que sai: diga o que você acha que aconteceu, e o que você faria para confirmar.',
+      'As duas razões não podem ser a mesma frase — se forem, uma das duas decisões não foi pensada.',
+    ],
+    feita: c => {
+      const fica = texto(c, CHAVE_POR_QUE_FICA);
+      const sai = texto(c, CHAVE_POR_QUE_SAI);
+      return fica.length >= LETRAS_DA_JUSTIFICATIVA
+        && sai.length >= LETRAS_DA_JUSTIFICATIVA
+        /* A mesma frase nos dois campos é não ter pensado na diferença, que é
+           a lição inteira. */
+        && fica !== sai;
+    },
+  },
+];
+
 /* ── O registro das lições ───────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs009 = 'planilha' | 'plataforma';
 
 export type LicaoDaCcEs009 =
-  | 'tipos' | 'centro' | 'engano' | 'frequencias' | 'comparacao' | 'adesao';
+  | 'tipos' | 'centro' | 'engano' | 'frequencias' | 'comparacao' | 'adesao'
+  | 'atipicos';
 
 export interface LicaoDeAnalise {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -1136,7 +1305,10 @@ export function contextoInicial(
 ): ContextoDaAnalise {
   const base = baseDoAcampamento();
   const caderno = cadernoDaAnalise(base, blocos, comElenco);
-  return { base, caderno, cadernoAntes: caderno, blocos, descobertas: [], marcacoes: {}, textos: {} };
+  return {
+    base, caderno, cadernoAntes: caderno, blocos,
+    descobertas: [], marcacoes: {}, julgamentos: {}, textos: {},
+  };
 }
 
 /**
@@ -1175,6 +1347,14 @@ export const LICOES_DA_CC_ES009: Record<LicaoDaCcEs009, LicaoDeAnalise> = {
     programa: 'planilha',
     inicial: () => contextoInicial([blocoDaAdesao(baseDoAcampamento())], true),
     metas: METAS_DA_ADESAO,
+  },
+  atipicos: {
+    programa: 'planilha',
+    /* Parte com as medidas escritas: as pontas de cada coluna são o MÁXIMO e o
+       MÍNIMO que o módulo 2 já calculou, e refazê-los aqui mandaria refazer a
+       lição anterior. */
+    inicial: () => comAsMedidasEscritas(),
+    metas: METAS_DOS_ATIPICOS,
   },
   engano: {
     programa: 'planilha',

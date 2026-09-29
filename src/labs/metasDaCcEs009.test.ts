@@ -9,6 +9,8 @@ import {
   CHAVE_MAIS_EXPERIENTE, COL_INSCRITOS, COL_MEDIA_ACAMPAMENTOS, COL_MEDIA_IDADE,
   ABA_UNIDADES, CHAVE_MOBILIZOU_MELHOR, COL_FORA, COL_MEMBROS, COL_TAXA,
   VIU_AS_DUAS_LEITURAS, maisAusentes, melhorTaxa, unidadeMaisExperiente,
+  type Julgamento, CHAVE_POR_QUE_FICA, CHAVE_POR_QUE_SAI, LETRAS_DA_JUSTIFICATIVA,
+  PONTAS_POR_COLUNA, candidatosDasPontas, chaveDoCandidato, julgamentoCerto,
   cadernoDaAnalise, colunaDaMedida, colunaDoBloco, colunaDoCampo, contextoInicial,
   esperadoDe, faixaDoCampo, formulaDaMedida, linhaDoRotulo,
 } from './metasDaCcEs009';
@@ -92,7 +94,34 @@ const SOLUCOES: Record<LicaoDaCcEs009, (c: ContextoDaAnalise) => ContextoDaAnali
   frequencias: comAsFrequencias,
   comparacao: comAComparacao,
   adesao: comAAdesao,
+  atipicos: comOsAtipicos,
 };
+
+/**
+ * O módulo 7, respondido como quem olhou as pontas.
+ *
+ * O veredito de cada valor sai de `julgamentoCerto`, que lê `ATIPICOS` — a
+ * mesma lista que a cerca de Tukey confere em `baseDoAcampamento.test.ts`. As
+ * duas justificativas são frases diferentes de propósito: é o que a meta
+ * cobra, e é a diferença que a lição existe para fazer pensar.
+ */
+function comOsAtipicos(c: ContextoDaAnalise): ContextoDaAnalise {
+  const julgamentos: Record<string, Julgamento> = {};
+  for (const k of candidatosDasPontas(c.base)) {
+    julgamentos[chaveDoCandidato(k.campo, k.valor)] = julgamentoCerto(c.base, k.campo, k.valor);
+  }
+  return {
+    ...c,
+    julgamentos,
+    textos: {
+      ...c.textos,
+      [CHAVE_POR_QUE_FICA]:
+        'Dezoito acampamentos é muito, mas é possível: ela entrou no clube cedo e não faltou a nenhum. Mantenho na análise e relato a mediana ao lado da média.',
+      [CHAVE_POR_QUE_SAI]:
+        'Ninguém com onze anos tem 1,05 m. Parece o 1,50 com os algarismos trocados. Tiro esta célula da análise da altura e peço a medida de novo antes do acampamento.',
+    },
+  };
+}
 
 /**
  * O módulo 6, escrito como a pessoa escreve.
@@ -768,6 +797,102 @@ describe('taxa e número absoluto', () => {
     expect(licao.inicial().caderno.planilhas.map(q => q.nome)).toContain(ABA_UNIDADES);
     expect(LICOES_DA_CC_ES009.centro.inicial().caderno.planilhas.map(q => q.nome))
       .not.toContain(ABA_UNIDADES);
+  });
+});
+
+/* ── O módulo 7 ───────────────────────────────────────────────────────────── */
+
+describe('os valores das pontas', () => {
+  const licao = LICOES_DA_CC_ES009.atipicos;
+  const meta = (id: string) => licao.metas.find(m => m.id === id)!;
+  const base = baseDoAcampamento();
+  const candidatos = candidatosDasPontas(base);
+
+  it('põe à mesa as pontas, e não os atípicos', () => {
+    /*
+      Pôr só os quatro atípicos entregaria a resposta: a tarefa viraria decidir
+      o que fazer com valores que alguém já apontou, e o requisito 5.6 manda
+      **identificar** antes de decidir.
+    */
+    expect(candidatos).toHaveLength(PONTAS_POR_COLUNA * 2 * COLUNAS_MEDIDAS.length);
+    const atipicos = candidatos.filter(k => julgamentoCerto(base, k.campo, k.valor) !== 'normal');
+    expect(atipicos.length).toBeGreaterThan(1);
+    expect(atipicos.length).toBeLessThan(candidatos.length / 3);
+  });
+
+  it('a maioria das pontas é gente comum, e uma coluna inteira não tem atípico', () => {
+    /*
+      Alguém tem de ser o mais novo do clube, e isso não o torna estranho. Sem
+      esse lado, a lição seria "o que está no extremo é suspeito" — que é a
+      regra errada, e a que um exercício só de atípicos ensinaria.
+    */
+    const porCampo = new Map<string, number>();
+    for (const k of candidatos) {
+      if (julgamentoCerto(base, k.campo, k.valor) !== 'normal') {
+        porCampo.set(k.campo, (porCampo.get(k.campo) ?? 0) + 1);
+      }
+    }
+    expect(porCampo.get(CAMPO_IDADE), 'a idade passou a ter atípico').toBeUndefined();
+  });
+
+  it('e os atípicos são das duas naturezas', () => {
+    /* Uma base em que todo atípico sai ensinaria "apague o que está longe". */
+    const vereditos = new Set(candidatos.map(k => julgamentoCerto(base, k.campo, k.valor)));
+    expect(vereditos).toEqual(new Set(['normal', 'mantem', 'exclui']));
+  });
+
+  it('as pontas são valores distintos, e não as três maiores linhas', () => {
+    /* Seis desbravadores têm quinze anos: "as três maiores" devolveria quinze
+       três vezes, e a lista viraria uma pergunta repetida. */
+    for (const campo of COLUNAS_MEDIDAS) {
+      const doCampo = candidatos.filter(k => k.campo === campo).map(k => k.valor);
+      expect(new Set(doCampo).size, `${campo} repete valor nas pontas`).toBe(doCampo.length);
+    }
+  });
+
+  it('o valor volta como a coluna o guarda', () => {
+    /* 1,05 na planilha é "1,05". Um "1.05" aqui não casaria com célula
+       nenhuma, e a lista abriria pedindo veredito sobre um valor que a base
+       não tem. */
+    const daAltura = candidatos.filter(k => k.campo === CAMPO_ALTURA).map(k => k.valor);
+    expect(daAltura).toContain('1,05');
+    expect(colunaDe(base, CAMPO_ALTURA)).toContain('1,05');
+  });
+
+  it('marcar tudo como normal não fecha a lista, e marcar tudo como atípico também não', () => {
+    const c = licao.inicial();
+    const todos = (v: Julgamento) => ({
+      ...c,
+      julgamentos: Object.fromEntries(
+        candidatos.map(k => [chaveDoCandidato(k.campo, k.valor), v])),
+    });
+    for (const v of ['normal', 'mantem', 'exclui'] as const) {
+      expect(meta('toda-ponta-julgada').feita(todos(v)), `${v}: nem todos julgados`).toBe(true);
+      expect(meta('os-vereditos-certos').feita(todos(v)), `${v}: vereditos aceitos`).toBe(false);
+    }
+  });
+
+  it('a mesma frase nos dois campos não conta como duas justificativas', () => {
+    /*
+      As duas razões são opostas — uma é sobre gente de verdade, a outra sobre
+      um dedo que escorregou. Copiada nos dois, uma das duas decisões não foi
+      pensada, que é a lição inteira.
+    */
+    const pronto = SOLUCOES.atipicos(licao.inicial());
+    expect(meta('as-duas-justificativas').feita(pronto)).toBe(true);
+
+    const repetida = pronto.textos[CHAVE_POR_QUE_FICA];
+    expect(meta('as-duas-justificativas').feita({
+      ...pronto,
+      textos: { ...pronto.textos, [CHAVE_POR_QUE_SAI]: repetida },
+    })).toBe(false);
+
+    /* E meia dúzia de palavras não é uma justificativa escrita. */
+    expect(meta('as-duas-justificativas').feita({
+      ...pronto,
+      textos: { ...pronto.textos, [CHAVE_POR_QUE_SAI]: 'está errado' },
+    })).toBe(false);
+    expect(LETRAS_DA_JUSTIFICATIVA).toBeGreaterThan(20);
   });
 });
 
