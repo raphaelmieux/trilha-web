@@ -11,6 +11,7 @@ import {
   VIU_AS_DUAS_LEITURAS, maisAusentes, melhorTaxa, unidadeMaisExperiente,
   type Julgamento, CHAVE_POR_QUE_FICA, CHAVE_POR_QUE_SAI, LETRAS_DA_JUSTIFICATIVA,
   PONTAS_POR_COLUNA, candidatosDasPontas, chaveDoCandidato, julgamentoCerto,
+  PERGUNTAS_DO_GRAFICO, faixaDoGrafico,
   cadernoDaAnalise, colunaDaMedida, colunaDoBloco, colunaDoCampo, contextoInicial,
   esperadoDe, faixaDoCampo, formulaDaMedida, linhaDoRotulo,
 } from './metasDaCcEs009';
@@ -18,7 +19,10 @@ import {
   CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_CAMISETA, CAMPO_IDADE,
   CLASSIFICACAO, adesaoPorUnidade, baseDoAcampamento, camposDaBase,
 } from './baseDoAcampamento';
-import { type TabelaDinamica, atualizarResumo, escrever, valorCalculado } from './planilha';
+import {
+  type Grafico, type TabelaDinamica,
+  atualizarResumo, escrever, valorCalculado,
+} from './planilha';
 import { abaDe, comAba, escritoEm, mostradoEm, valorEm } from './cadernoDoClube';
 import { colunaDe, medidaPorGrupo, repeticoesDaModa } from './analiseDeDados';
 import { CAMPO_UNIDADE, respostasReais } from './formulario';
@@ -95,7 +99,30 @@ const SOLUCOES: Record<LicaoDaCcEs009, (c: ContextoDaAnalise) => ContextoDaAnali
   comparacao: comAComparacao,
   adesao: comAAdesao,
   atipicos: comOsAtipicos,
+  graficos: comOsGraficos,
 };
+
+/** O módulo 8: um gráfico por aba, do tipo que responde à pergunta dela. */
+function comOsGraficos(c: ContextoDaAnalise): ContextoDaAnalise {
+  let caderno = c.caderno;
+  const textos: Record<string, string> = { ...c.textos };
+
+  for (const p of PERGUNTAS_DO_GRAFICO) {
+    const aba = caderno.planilhas.find(q => q.nome === p.aba)!;
+    caderno = comAba(caderno, {
+      ...aba,
+      grafico: {
+        tipo: p.tipo,
+        titulo: p.pergunta,
+        eixoX: aba.celulas[0][0].texto,
+        eixoY: aba.celulas[0][1].texto,
+        faixa: faixaDoGrafico(p, c.base),
+      },
+    });
+    textos[p.chave] = `A pergunta "${p.pergunta}" pede este desenho, e os outros dois mostrariam outra coisa sobre os mesmos números.`;
+  }
+  return { ...c, caderno, textos };
+}
 
 /**
  * O módulo 7, respondido como quem olhou as pontas.
@@ -893,6 +920,87 @@ describe('os valores das pontas', () => {
       textos: { ...pronto.textos, [CHAVE_POR_QUE_SAI]: 'está errado' },
     })).toBe(false);
     expect(LETRAS_DA_JUSTIFICATIVA).toBeGreaterThan(20);
+  });
+});
+
+/* ── O módulo 8 ───────────────────────────────────────────────────────────── */
+
+describe('o gráfico que responde à pergunta', () => {
+  const licao = LICOES_DA_CC_ES009.graficos;
+  const meta = (id: string) => licao.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES.graficos(licao.inicial());
+
+  const comGrafico = (c: ContextoDaAnalise, aba: string, mudar: (g: Grafico) => Grafico) => {
+    const p = c.caderno.planilhas.find(q => q.nome === aba)!;
+    return { ...c, caderno: comAba(c.caderno, { ...p, grafico: mudar(p.grafico!) }) };
+  };
+
+  it('as três perguntas pedem três tipos diferentes', () => {
+    /* Com dois iguais, uma das três escolhas não seria escolha — e o requisito
+       pede uma de composição, uma de comparação e uma de evolução. */
+    const tipos = PERGUNTAS_DO_GRAFICO.map(p => p.tipo);
+    expect(new Set(tipos).size).toBe(3);
+    expect(tipos).toContain('pizza');
+    expect(tipos).toContain('colunas');
+    expect(tipos).toContain('linha');
+  });
+
+  it('as abas chegam com o dado escrito e sem gráfico nenhum', () => {
+    /* O requisito pede a escolha, não a conta — e a chegada por semana nem se
+       refaz: esta planilha não tem função de data. Mas chegar com o gráfico
+       pronto faria a lição medir ter clicado em Inserir. */
+    const c = licao.inicial();
+    for (const p of PERGUNTAS_DO_GRAFICO) {
+      const aba = c.caderno.planilhas.find(q => q.nome === p.aba);
+      expect(aba, `a aba ${p.aba} não existe`).toBeDefined();
+      expect(aba!.grafico, `a aba ${p.aba} já abre com gráfico`).toBeNull();
+      expect(escritoEm(aba!, 1, 0), `a aba ${p.aba} abre vazia`).not.toBe('');
+    }
+  });
+
+  it('o tipo errado não passa, por mais que ele desenhe sem erro', () => {
+    /*
+      A pizza das médias por unidade soma 17,1 e mostra fatias perfeitamente
+      plausíveis de um todo que não existe. Nada estoura — e é por isso que a
+      meta confere o tipo, e não a existência.
+    */
+    const c = pronto();
+    expect(meta('os-tres-graficos').feita(c)).toBe(true);
+    expect(meta('os-tres-graficos').feita(
+      comGrafico(c, 'Comparação', g => ({ ...g, tipo: 'pizza' })),
+    )).toBe(false);
+    /* E ligar duas unidades com um traço afirma que uma virou a outra. */
+    expect(meta('os-tres-graficos').feita(
+      comGrafico(c, 'Composição', g => ({ ...g, tipo: 'linha' })),
+    )).toBe(false);
+  });
+
+  it('a faixa curta não passa, e ela desenha um gráfico bonito', () => {
+    /* Deixando a última linha de fora, a pizza continua redonda e uma unidade
+       inteira some — um gráfico em que a categoria ausente não aparece afirma
+       que ela não existe. */
+    const c = pronto();
+    expect(meta('os-tres-graficos').feita(
+      comGrafico(c, 'Composição', g => ({ ...g, faixa: { ...g.faixa, l2: g.faixa.l2 - 1 } })),
+    )).toBe(false);
+  });
+
+  it('eixo em branco não passa', () => {
+    const c = pronto();
+    expect(meta('os-eixos-escritos').feita(c)).toBe(true);
+    expect(meta('os-eixos-escritos').feita(
+      comGrafico(c, 'Evolução', g => ({ ...g, eixoY: '  ' })),
+    )).toBe(false);
+  });
+
+  it('a mesma justificativa nas três não conta como três', () => {
+    const c = pronto();
+    expect(meta('as-tres-justificativas').feita(c)).toBe(true);
+    const uma = c.textos[PERGUNTAS_DO_GRAFICO[0].chave];
+    expect(meta('as-tres-justificativas').feita({
+      ...c,
+      textos: Object.fromEntries(PERGUNTAS_DO_GRAFICO.map(p => [p.chave, uma])),
+    })).toBe(false);
   });
 });
 

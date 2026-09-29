@@ -38,16 +38,16 @@ import {
 import {
   type Escala, type Natureza,
   CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_IDADE, ELENCO, UNIDADES_DO_CLUBE,
-  ATIPICOS, CLASSIFICACAO, adesaoPorUnidade, baseDoAcampamento, camposDaBase,
+  ATIPICOS, CLASSIFICACAO, adesaoPorUnidade, baseDoAcampamento, camposDaBase, porSemana,
 } from './baseDoAcampamento';
-import type { Caderno, Planilha } from './planilha';
+import type { Caderno, Faixa, Planilha, TipoDeGrafico } from './planilha';
 import {
   amplitude, classesDe, colunaDe, desvioPadrao, frequenciasDe,
   media, mediana, medidaPorGrupo, moda, numerosDe,
 } from './analiseDeDados';
 import { abaDe, comAba, escritoEm, planilhaDe, usaFuncao } from './cadernoDoClube';
 import { escrever, resumoEmDia, valorCalculado } from './planilha';
-import { nomeDaColuna, numeroDoTexto, referenciasDe } from './formulas';
+import { mostrarNumero, nomeDaColuna, numeroDoTexto, referenciasDe } from './formulas';
 
 /* ── A forma de uma meta ──────────────────────────────────────────────────── */
 
@@ -402,6 +402,92 @@ export function blocoDasClasses(base: Formulario): BlocoDeContas {
   );
 }
 
+/* ── As três perguntas e os três gráficos (requisito 6) ──────────────────── */
+
+export interface PerguntaComGrafico {
+  /** A aba em que ela mora. */
+  aba: string;
+  /** A pergunta, como a liderança a faria. */
+  pergunta: string;
+  /** O tipo que a responde, e só ele. */
+  tipo: TipoDeGrafico;
+  /** A chave do campo em que a justificativa é escrita. */
+  chave: string;
+  /** O conteúdo com que a aba chega: cabeçalho e uma linha por categoria. */
+  dados: (base: Formulario) => string[][];
+}
+
+/**
+ * Três perguntas sobre a mesma base, e o gráfico que responde a cada uma.
+ *
+ * ── O que o requisito pede é a escolha, e não a conta ────────────────────
+ * "Escolher e produzir o gráfico adequado a três perguntas distintas". O dado
+ * de cada aba chega escrito, porque ele já foi produzido: a composição é a
+ * distribuição do módulo 4, a comparação é a tabela do módulo 5, e a chegada
+ * por semana é o que a secretaria do clube apurou. Mandar refazer as contas
+ * aqui mediria de novo o que já foi medido, e a chegada por semana nem se
+ * refaz — esta planilha não tem função de data, e é assim que uma planilha de
+ * clube de verdade costuma estar.
+ *
+ * ── E os três tipos não são intercambiáveis ──────────────────────────────
+ * A pizza responde **de que o todo é feito**, e só faz sentido quando as
+ * partes somam o todo. As colunas respondem **quem é maior**, e servem a
+ * qualquer conjunto de categorias. A linha responde **o que mudou ao longo do
+ * tempo**, e ligar duas categorias com um traço afirma que uma virou a outra.
+ *
+ * Desenhados errado, os três não dão erro nenhum: a pizza das médias por
+ * unidade soma 17,1 e mostra fatias perfeitamente plausíveis de um todo que
+ * não existe.
+ */
+export const PERGUNTAS_DO_GRAFICO: PerguntaComGrafico[] = [
+  {
+    aba: 'Composição',
+    pergunta: 'De que unidades o acampamento é feito?',
+    tipo: 'pizza',
+    chave: 'por-que-pizza',
+    dados: base => [
+      ['Unidade', 'Inscritos'],
+      ...frequenciasDe(colunaDe(base, CAMPO_UNIDADE), UNIDADES_DO_CLUBE)
+        .map(l => [l.rotulo, String(l.absoluta)]),
+    ],
+  },
+  {
+    aba: 'Comparação',
+    pergunta: 'Qual unidade já foi a mais acampamentos?',
+    tipo: 'colunas',
+    chave: 'por-que-colunas',
+    dados: base => {
+      const medias = medidaPorGrupo(base, CAMPO_UNIDADE, CAMPO_ACAMPAMENTOS, 'MÉDIA');
+      return [
+        ['Unidade', 'Média de acampamentos'],
+        ...UNIDADES_DO_CLUBE.map(u => [u, mostrarNumero(medias.get(u) ?? 0)]),
+      ];
+    },
+  },
+  {
+    aba: 'Evolução',
+    pergunta: 'Como as inscrições chegaram ao longo do prazo?',
+    tipo: 'linha',
+    chave: 'por-que-linha',
+    dados: base => [
+      ['Semana', 'Inscrições'],
+      ...porSemana(base).map(s => [s.rotulo, String(s.inscricoes)]),
+    ],
+  },
+];
+
+function abaDaPergunta(p: PerguntaComGrafico, base: Formulario): Planilha {
+  const conteudo = p.dados(base);
+  return planilhaDe(p.aba, conteudo, {
+    tabela: { l1: 0, c1: 0, l2: conteudo.length - 1, c2: 1 },
+  });
+}
+
+/** A faixa que o gráfico daquela aba tem de ler: do cabeçalho ao fim. */
+export function faixaDoGrafico(p: PerguntaComGrafico, base: Formulario): Faixa {
+  return { l1: 0, c1: 0, l2: p.dados(base).length - 1, c2: 1 };
+}
+
 /* ── Os valores das pontas (requisitos 2.5 e 5.6) ────────────────────────── */
 
 export interface Candidato {
@@ -625,11 +711,13 @@ export function cadernoDaAnalise(
   base: Formulario,
   blocos: BlocoDeContas[] = [BLOCO_DAS_MEDIDAS],
   comElenco = false,
+  comPerguntas = false,
 ): Caderno {
   const planilhas = [abaDeRespostas(base), abaDeCalculos(blocos)];
   /* A aba do elenco só aparece na lição que precisa dela: uma aba a mais na
      tela é uma pergunta a mais, e o módulo 2 não tem o que fazer com ela. */
   if (comElenco) planilhas.push(abaDoElenco());
+  if (comPerguntas) for (const p of PERGUNTAS_DO_GRAFICO) planilhas.push(abaDaPergunta(p, base));
   return { planilhas, ativa: 0 };
 }
 
@@ -1283,13 +1371,84 @@ export const METAS_DOS_ATIPICOS: Meta[] = [
   },
 ];
 
+/* ────────────────────────────────────────────────────────────────────────────
+   Módulo 8 — O gráfico que responde à pergunta (requisito 6)
+   ──────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Um gráfico desenhado, do tipo certo e sobre a faixa certa.
+ *
+ * Os eixos **não** entram aqui, e é decisão: quem cobra os nomes dos eixos é a
+ * meta ao lado, e escrever a mesma exigência nos dois lugares obrigaria as
+ * duas a concordarem para sempre. Uma cobra que o desenho responda à
+ * pergunta; a outra, que quem olhar saiba do que ele fala. São duas coisas, e
+ * a lista mostra as duas.
+ */
+function graficoConfere(c: ContextoDaAnalise, p: PerguntaComGrafico): boolean {
+  const aba = c.caderno.planilhas.find(q => q.nome === p.aba);
+  const g = aba?.grafico;
+  if (!g) return false;
+  if (g.tipo !== p.tipo) return false;
+
+  const esperada = faixaDoGrafico(p, c.base);
+  return g.faixa.l1 === esperada.l1 && g.faixa.l2 === esperada.l2
+    && g.faixa.c1 === esperada.c1 && g.faixa.c2 === esperada.c2;
+}
+
+export const METAS_DOS_GRAFICOS: Meta[] = [
+  {
+    id: 'os-tres-graficos',
+    titulo: 'Um gráfico em cada aba, do tipo que responde àquela pergunta',
+    detalhe: 'Os três tipos desenham sem erro sobre qualquer dado. O que muda é se o desenho responde ou não à pergunta que está escrita no alto da aba.',
+    onde: 'Em cada uma das três abas, em Inserir e depois Gráfico.',
+    passos: [
+      'Leia a pergunta no alto da aba antes de escolher o tipo.',
+      'De que o todo é feito? É pizza — e ela só serve quando as partes somam o todo.',
+      'Quem é maior? São colunas.',
+      'O que mudou ao longo do tempo? É linha — e ligar duas unidades com um traço afirmaria que uma virou a outra.',
+    ],
+    feita: c => PERGUNTAS_DO_GRAFICO.every(p => graficoConfere(c, p)),
+  },
+  {
+    id: 'os-eixos-escritos',
+    titulo: 'Os dois eixos de cada gráfico com nome',
+    detalhe: 'Gráfico sem eixo identificado não afirma nada: quem olha vê barras de altura diferente e não sabe do quê.',
+    onde: 'Na caixa do gráfico, nos campos de eixo.',
+    passos: [
+      'O eixo de baixo diz o que cada fatia ou coluna é.',
+      'O de lado diz em que unidade o número está — pessoas, acampamentos, inscrições.',
+      'Numa pizza não há eixo desenhado, e mesmo assim os dois nomes dizem o que ela mostra.',
+    ],
+    feita: c => PERGUNTAS_DO_GRAFICO.every(p => {
+      const g = c.caderno.planilhas.find(q => q.nome === p.aba)?.grafico;
+      return Boolean(g?.eixoX.trim()) && Boolean(g?.eixoY.trim());
+    }),
+  },
+  {
+    id: 'as-tres-justificativas',
+    titulo: 'Escrever por que cada tipo responde à sua pergunta',
+    detalhe: 'O requisito pede a escolha justificada, e as três razões são diferentes — se a mesma frase serve para os três, uma delas não foi pensada.',
+    onde: 'Nos três campos de texto, um por aba.',
+    passos: [
+      'Diga o que aquela pergunta quer saber, e por que aquele desenho mostra isso.',
+      'Diga também o que outro tipo mostraria de errado ali.',
+      'Três perguntas diferentes pedem três razões diferentes.',
+    ],
+    feita: c => {
+      const escritas = PERGUNTAS_DO_GRAFICO.map(p => texto(c, p.chave));
+      return escritas.every(t => t.length >= LETRAS_DA_JUSTIFICATIVA)
+        && new Set(escritas).size === escritas.length;
+    },
+  },
+];
+
 /* ── O registro das lições ───────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs009 = 'planilha' | 'plataforma';
 
 export type LicaoDaCcEs009 =
   | 'tipos' | 'centro' | 'engano' | 'frequencias' | 'comparacao' | 'adesao'
-  | 'atipicos';
+  | 'atipicos' | 'graficos';
 
 export interface LicaoDeAnalise {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -1302,9 +1461,10 @@ export interface LicaoDeAnalise {
 export function contextoInicial(
   blocos: BlocoDeContas[] = [BLOCO_DAS_MEDIDAS],
   comElenco = false,
+  comPerguntas = false,
 ): ContextoDaAnalise {
   const base = baseDoAcampamento();
-  const caderno = cadernoDaAnalise(base, blocos, comElenco);
+  const caderno = cadernoDaAnalise(base, blocos, comElenco, comPerguntas);
   return {
     base, caderno, cadernoAntes: caderno, blocos,
     descobertas: [], marcacoes: {}, julgamentos: {}, textos: {},
@@ -1355,6 +1515,14 @@ export const LICOES_DA_CC_ES009: Record<LicaoDaCcEs009, LicaoDeAnalise> = {
        lição anterior. */
     inicial: () => comAsMedidasEscritas(),
     metas: METAS_DOS_ATIPICOS,
+  },
+  graficos: {
+    programa: 'planilha',
+    /* As três abas chegam com o dado escrito e sem gráfico nenhum: o que o
+       requisito 6 pede é a **escolha**, e refazer as contas dos módulos 4 e 5
+       mediria de novo o que já foi medido. */
+    inicial: () => contextoInicial([BLOCO_DAS_MEDIDAS], false, true),
+    metas: METAS_DOS_GRAFICOS,
   },
   engano: {
     programa: 'planilha',
