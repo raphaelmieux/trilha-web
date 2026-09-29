@@ -65,6 +65,25 @@ export const minimo = (valores: string[]) => medida(valores, 'MÍNIMO');
 export const moda = (valores: string[]) => medida(valores, 'MODO');
 
 /**
+ * Quantas vezes o valor mais repetido aparece.
+ *
+ * É o que diz se a moda **quer dizer alguma coisa**. Numa coluna de idades ela
+ * sai onze vezes em quarenta e oito, e "a idade típica do clube é doze" é uma
+ * frase verdadeira. Numa coluna de alturas medidas ela sai **duas** vezes, e
+ * "a altura típica do clube é 1,58 m" é uma frase sobre duas pessoas — um
+ * número perfeitamente plausível que não descreve ninguém.
+ *
+ * A planilha não tem como dizer isso: `MODO` devolve 1,58 e pronto. Quem
+ * pergunta quantas vezes é quem descobre que a resposta não serve, e é por
+ * isso que esta conta existe.
+ */
+export function repeticoesDaModa(valores: string[]): number {
+  const conta = new Map<number, number>();
+  for (const n of numerosDe(valores)) conta.set(n, (conta.get(n) ?? 0) + 1);
+  return conta.size === 0 ? 0 : Math.max(...conta.values());
+}
+
+/**
  * O desvio padrão **populacional**, e a escolha é do requisito 5.
  *
  * A base é toda a inscrição do acampamento, e não uma amostra dela: não há
