@@ -233,4 +233,43 @@ describe('todo laboratório de redação guiada tem roteiro', () => {
     }
     expect(semRoteiro, semRoteiro.join(', ')).toEqual([]);
   });
+
+  /*
+    E os que escrevem com outra chave também.
+
+    A conferência acima olha só para `redacao_guiada`, e chaveia pelo código da
+    trilha. Ela estava certa enquanto esses dois fatos eram um só — e deixaram
+    de ser: `relatorio_de_pesquisa` é a mesma máquina de escrever com a chave do
+    **projeto**, e passaria por aqui sem ser olhado. É a escada de `if` por tipo
+    de lição de novo, que já deixou o editor de texto atravessar três travas das
+    veredas sem ser visto.
+
+    A lista de tipos que escrevem sai daqui, escrita à mão, e é o que ela tem de
+    frágil: um quarto tipo de redação não entra sozinho. O que ela não pode é
+    passar calada — por isso o piso, que reprova se a lista esvaziar.
+  */
+  const ESCREVEM: Partial<Record<string, (specialtyCode: string) => string>> = {
+    redacao_guiada: code => code,
+    relatorio_de_pesquisa: () => 'AP045-bug-do-milenio',
+  };
+
+  it('nenhum laboratório de escrita fica sem roteiro, seja qual for a chave', () => {
+    const semRoteiro: string[] = [];
+    let conferidos = 0;
+    for (const e of getOpenSpecialties()) {
+      for (const m of e.modules) {
+        for (const l of m.lessons) {
+          const chaveDe = l.labType ? ESCREVEM[l.labType] : undefined;
+          if (!chaveDe) continue;
+          conferidos += 1;
+          const chave = chaveDe(e.code);
+          if (!ROTEIROS[chave]) semRoteiro.push(`${e.code}/${l.code} → ${chave}`);
+        }
+      }
+    }
+    /* A guarda contra o vazio: um filtro que não achasse laboratório nenhum
+       deixaria esta trava verde por não ter conferido nada. */
+    expect(conferidos).toBeGreaterThanOrEqual(3);
+    expect(semRoteiro, semRoteiro.join(' | ')).toEqual([]);
+  });
 });

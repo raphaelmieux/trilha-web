@@ -199,6 +199,14 @@ export const modulo5: Module = {
       labType: 'pesquisa_web',
     },
     {
+      code: 'AP045.5-L4',
+      title: 'Escrevendo o relatório sobre o bug do milênio',
+      type: 'lab',
+      content: '',
+      requirementCodes: ['AP045-6.1'],
+      labType: 'relatorio_de_pesquisa',
+    },
+    {
       code: 'AP045.5-L2',
       title: 'Upgrade e update',
       type: 'theory',

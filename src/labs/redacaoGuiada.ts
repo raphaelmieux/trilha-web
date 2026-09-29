@@ -374,6 +374,77 @@ export const ROTEIROS: Record<string, RoteiroRedacao> = {
       },
     ],
   },
+
+  /*
+    O segundo relatório da AP045, e o primeiro roteiro cuja chave não é uma
+    trilha — é um **projeto**. `AP045` já é o relatório da evolução da
+    computação, do requisito 2; este é o do requisito 6.
+
+    ── Ele não manda pesquisar ─────────────────────────────────────────────
+    A pesquisa aconteceu na lição anterior, e as fichas dela estão ao lado do
+    campo enquanto se escreve. Por isso `paraPesquisar` aponta para elas, e não
+    para a web: mandar procurar de novo o que já está na tela ensinaria que a
+    pesquisa anterior não valeu nada, e abriria a porta para um relatório
+    escrito a partir de qualquer coisa — que é o contrário do requisito.
+
+    ── E o piso de palavras é nosso, não do documento ──────────────────────
+    O requisito 6 não tem piso, ao contrário do 2, que pede 350. Duzentas
+    palavras não saem da ficha oficial: saem de que um relatório precisa ser um
+    relatório, e de que os mínimos das cinco etapas somam 210 — quem cumpre as
+    cinco passa sem precisar contar nada, que é a regra que `redacaoGuiada.test`
+    cobra de todos os roteiros.
+  */
+  'AP045-bug-do-milenio': {
+    titulo: 'O bug do milênio',
+    introducao:
+      'As fichas que você guardou na pesquisa estão aqui ao lado, separadas por pergunta. '
+      + 'Responda cada uma com as suas palavras, olhando as fichas daquela pergunta — e no fim '
+      + 'o relatório é montado a partir do que você escreveu.',
+    minPalavrasTotal: 200,
+    etapas: [
+      {
+        id: 'causa',
+        titulo: 'Por que ele existia',
+        pergunta: 'O que era o bug do milênio, e por que ele existia?',
+        paraPesquisar: 'Olhe as fichas de “Por que ele existia”, aqui ao lado. Elas dizem como o ano era guardado e o que acontecia quando ele virava 00.',
+        exemplo: 'O bug do milênio era ... . Ele existia porque ... , e por isso o ano 2000 podia ser entendido como ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'temor',
+        titulo: 'O que se temia',
+        pergunta: 'O que as pessoas temiam que acontecesse na virada de 1999 para 2000?',
+        paraPesquisar: 'Olhe as fichas de “O que se temia”. Repare que uma coisa é o que podia falhar de verdade, e outra é o que os boatos diziam.',
+        exemplo: 'Temia-se que ... . Muita gente ... . Além disso, boatos diziam que ...',
+        minPalavras: 40,
+      },
+      {
+        id: 'correcao',
+        titulo: 'O que foi feito',
+        pergunta: 'O que governos e empresas fizeram para evitar o problema?',
+        paraPesquisar: 'Olhe as fichas de “O que foi feito”. Elas falam do trabalho de correção, de quanto custou e de como os sistemas foram testados.',
+        exemplo: 'Durante anos, ... . O custo foi de ... . Para ter certeza, os sistemas foram ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'resultado',
+        titulo: 'O que aconteceu',
+        pergunta: 'O que aconteceu de fato em 1º de janeiro de 2000? Diga também se é verdade que aviões caíram.',
+        paraPesquisar: 'Olhe as fichas de “O que aconteceu”. Uma delas responde direto sobre os aviões — e vale lembrar de qual página ela veio.',
+        exemplo: 'Na virada, ... . Houve apenas ... . Sobre os aviões, ...',
+        minPalavras: 45,
+      },
+      {
+        id: 'licao',
+        titulo: 'O que essa história ensina',
+        pergunta: 'O que o bug do milênio ensina sobre as decisões que se tomam ao criar um programa? Escreva o que você pensa.',
+        paraPesquisar: 'Aqui não há resposta certa: é a sua opinião. Releia o que você escreveu nas etapas anteriores antes de responder.',
+        exemplo: 'Para mim, o bug do milênio mostra que ... . Quem escreve um programa hoje precisa lembrar que ...',
+        minPalavras: 35,
+        opiniao: true,
+      },
+    ],
+  },
 };
 
 /* ── Estado de cada resposta ──────────────────────────────────────────────── */

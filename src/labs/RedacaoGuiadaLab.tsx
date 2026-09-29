@@ -44,8 +44,40 @@ type EstadoIA = 'ok' | 'indisponivel';
 /** O que o rascunho local guarda: o laboratório inteiro, menos o que veio do servidor. */
 interface RascunhoRedacao { respostas: RespostasRedacao; textoFinal: string }
 
-export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId, aoVencer }: Props) {
-  const roteiro = ROTEIROS[specialtyCode];
+/*
+ * O projeto, e por que ele não é a trilha.
+ *
+ * `ROTEIROS`, a linha de `text_projects` e o roteiro que a Edge Function usa
+ * para conferir eram todos chaveados pelo **código da trilha**. Bastava
+ * enquanto nenhuma trilha tivesse dois textos — e a AP045 tem: o relatório da
+ * evolução da computação (requisito 2) e o do bug do milênio (requisito 6).
+ * Com a chave antiga, entregar o segundo sobrescreveria o primeiro em
+ * silêncio, depois de escrito.
+ *
+ * `text_projects` ganhou a coluna `projeto` em três passos de expand/contract
+ * justamente para isto. Aqui ela entra como prop, e o padrão continua sendo a
+ * trilha: os laboratórios que já existem não mudam de chave nem de conteúdo.
+ */
+interface PropsDaRedacao extends Props {
+  /** A chave do texto. Ausente, é o código da trilha, como sempre foi. */
+  projeto?: string;
+  /**
+   * O que a lição põe ao lado da pergunta — as fichas da pesquisa anterior,
+   * no caso do bug do milênio. Presença do prop decide: sem ele, não há
+   * painel nenhum, e os laboratórios antigos seguem iguais.
+   *
+   * Recebe a etapa da vez porque o material dela é que interessa: despejar as
+   * quinze fichas em toda pergunta faria a pessoa procurar, a cada etapa, as
+   * três que importam no meio das outras doze.
+   */
+  material?: (etapaId: string) => React.ReactNode;
+}
+
+export default function RedacaoGuiadaLab({
+  specialtyCode, lessonCode, lessonTitle, requirementCodes, userId, aoVencer,
+  projeto = specialtyCode, material,
+}: PropsDaRedacao) {
+  const roteiro = ROTEIROS[projeto];
 
   const [respostas, setRespostas] = useState<RespostasRedacao>({});
   const [indice, setIndice] = useState(0);
@@ -82,7 +114,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
         .from('text_projects')
         .select('body, etapas, status, updated_at')
         .eq('user_id', userId)
-        .eq('projeto', specialtyCode)
+        .eq('projeto', projeto)
         .maybeSingle();
       if (!vivo) return;
 
@@ -120,7 +152,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
       setCarregando(false);
     })();
     return () => { vivo = false; };
-  }, [userId, specialtyCode, lessonCode]);
+  }, [userId, projeto, lessonCode]);
 
   /* A rede embaixo do salvamento: grava no navegador a cada pausa. */
   useRascunhoLocal(
@@ -143,7 +175,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
          projeto é o próprio código — que é o valor que a migration deu às
          linhas antigas, e por isso o que já foi escrito continua sendo achado.
          Trilha com um segundo texto dá a ele um nome próprio. */
-      projeto: specialtyCode,
+      projeto,
       title: roteiro?.titulo ?? '',
       body: dados.corpo,
       word_count: dados.corpo ? contarPalavras(dados.corpo) : totalDePalavras(dados.respostas),
@@ -154,7 +186,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
     }, { onConflict: 'user_id,projeto' });
     if (error) { setErro('Não foi possível guardar agora. Tente de novo em instantes.'); return false; }
     return true;
-  }, [userId, specialtyCode, roteiro, etapas]);
+  }, [userId, specialtyCode, projeto, roteiro, etapas]);
 
   /** Uma chamada ao gateway, com a sessão do próprio desbravador. */
   const chamarGateway = async (corpo: Record<string, unknown>) => {
@@ -190,7 +222,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
 
     const resultado = await chamarGateway({
       type: 'redacao_validar',
-      especialidade: specialtyCode,
+      especialidade: projeto,
       etapaId: etapa.id,
       resposta: alvo,
     });
@@ -219,7 +251,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
     const partes = respostasParaUniao(roteiro, respostas);
     const resultado = await chamarGateway({
       type: 'redacao_unir',
-      especialidade: specialtyCode,
+      especialidade: projeto,
       respostas: partes,
     });
 
@@ -233,7 +265,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
 
     setTextoFinal(corpo);
     await gravar('draft', { respostas, corpo });
-    await logActivity(userId, 'redacao_montada', { specialtyCode, palavras: contarPalavras(corpo) });
+    await logActivity(userId, 'redacao_montada', { specialtyCode, projeto, palavras: contarPalavras(corpo) });
     setMontando(false);
   };
 
@@ -271,7 +303,7 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
     setEnviado(true);
     /* Enviado: o servidor tem a versão boa, e o rascunho local só atrapalharia. */
     descartarRascunho(userId, lessonCode);
-    await logActivity(userId, 'text_submitted', { specialtyCode, lessonCode,
+    await logActivity(userId, 'text_submitted', { specialtyCode, projeto, lessonCode,
       wordCount: contarPalavras(textoFinal), etapas: prontas,
     });
   };
@@ -415,6 +447,13 @@ export default function RedacaoGuiadaLab({ specialtyCode, lessonCode, lessonTitl
             <Search className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-tertiary-light)' }} />
             <span><strong>Para pesquisar:</strong> {etapa.paraPesquisar}</span>
           </div>
+
+          {/* O material da lição, quando ela traz algum — as fichas da pesquisa
+              anterior, no relatório do bug do milênio. Fica **acima** do campo,
+              e não numa aba ao lado: o que se escreve aqui sai do que está
+              escrito ali, e obrigar a trocar de aba para consultar é o mesmo
+              defeito de escrever sem a marcação do CSS à vista. */}
+          {material?.(etapa.id)}
 
           <textarea
             value={texto}

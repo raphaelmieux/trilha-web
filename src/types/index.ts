@@ -133,6 +133,7 @@ export type LabType =
      medir o gesto é o que um laboratório faz. */
   | 'diagrama_binario'
   | 'pesquisa_web'
+  | 'relatorio_de_pesquisa'
   | 'final_exam';
 
 export interface Requirement {

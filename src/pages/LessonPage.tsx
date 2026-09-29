@@ -44,6 +44,7 @@ import PlanilhaLab from '../labs/PlanilhaLab';
 import AreaDeTrabalhoLab from '../labs/AreaDeTrabalhoLab';
 import DiagramaBinarioLab from '../labs/DiagramaBinarioLab';
 import PesquisaWebLab from '../labs/PesquisaWebLab';
+import RelatorioDePesquisaLab from '../labs/RelatorioDePesquisaLab';
 import { CheckCircle2, CircleX, ArrowRight, BookOpen, RefreshCw, Loader2, HardHat } from 'lucide-react';
 
 export default function LessonPage() {
@@ -397,6 +398,7 @@ const LABORATORIO: Record<TipoDeLaboratorio, (p: PropsDeLaboratorio) => React.Re
   ai_lab: p => <AILab {...p} />,
   diagrama_binario: p => <DiagramaBinarioLab {...p} />,
   pesquisa_web: p => <PesquisaWebLab {...p} />,
+  relatorio_de_pesquisa: p => <RelatorioDePesquisaLab {...p} />,
 };
 
 function LaboratorioDaLicao({ tipo, props }: { tipo: LabType; props: PropsDeLaboratorio }) {
