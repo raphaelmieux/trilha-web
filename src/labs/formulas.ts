@@ -421,10 +421,36 @@ function comoNumero(v: Valor): number | Valor {
   }
 }
 
+/**
+ * O número virando texto — que **não** é o número sendo mostrado.
+ *
+ * `mostrarNumero` arredonda para duas casas, e está certo: é o formato geral
+ * da célula, e uma coluna de médias com quinze casas não se lê. Só que `&` e a
+ * comparação de texto não estão mostrando nada — estão convertendo um valor
+ * para poder juntá-lo ou ordená-lo, e ali o arredondamento **apaga dado em
+ * silêncio**.
+ *
+ * O caso que descobriu isto é o idioma mais comum do `CONT.SE`:
+ * `=CONT.SE(alturas;">="&B3)`, com B3 valendo 1,5235416666. Pelo caminho do
+ * arredondamento o critério virava `">=1,52"`, e a conta passava a contar
+ * também quem tem exatamente 1,52 — um número plausível e maior, numa vereda
+ * cujo assunto é justamente esse. O Excel converte com a precisão que o número
+ * tem, e não com a que a célula mostra.
+ *
+ * Quinze algarismos significativos é o que o Excel usa, e aparar aqui também
+ * limpa o ruído de ponto flutuante: 1,5235416666666672 sai como
+ * 1,5235416666666**7**, e não com a sujeira da última casa.
+ */
+function textoDoNumero(n: number): string {
+  if (n === 0) return '0';
+  if (Number.isInteger(n)) return String(n);
+  return String(Number(n.toPrecision(15))).replace('.', ',');
+}
+
 function comoTexto(v: Valor): string {
   switch (v.tipo) {
     case 'texto': return v.t;
-    case 'numero': return mostrarNumero(v.n);
+    case 'numero': return textoDoNumero(v.n);
     case 'logico': return v.b ? 'VERDADEIRO' : 'FALSO';
     case 'vazio': return '';
     case 'erro': return TEXTO_DO_ERRO[v.e];

@@ -179,6 +179,37 @@ describe('a aritmética', () => {
     expect(ver(CLUBE, '=A2&" tem "&B2&" inscritos"')).toBe('Falcão tem 12 inscritos');
   });
 
+  it('o & converte com a precisão do número, e não com a que a célula mostra', () => {
+    /*
+      A célula mostra duas casas, e está certo: uma coluna de médias com quinze
+      casas não se lê. Mas `&` não está mostrando nada — está convertendo para
+      juntar, e arredondar ali **apaga dado em silêncio**.
+
+      O idioma que descobriu isto é o mais comum do CONT.SE:
+      `=CONT.SE(faixa;">="&B1)`. Com o arredondamento, um limiar de 1,5235 vira
+      ">=1,52" e a conta passa a contar também quem tem exatamente 1,52 — um
+      número plausível e maior.
+    */
+    const grade = [['1,5235416666666672'], ['2']];
+    const bruto = (l: number, c: number) => (c === 0 ? grade[l]?.[0] ?? '' : '');
+    expect(mostrar(valorDaFormula(bruto, '=A1'))).toBe('1,52');
+    expect(mostrar(valorDaFormula(bruto, '=""&A1'))).toBe('1,52354166666667');
+  });
+
+  it('e o critério montado com & conta o que a coluna de fato tem', () => {
+    const grade = [['1,52'], ['1,53'], ['1,54'], ['=MÉDIA(A1:A3)']];
+    const bruto = (l: number, c: number) => (c === 0 ? grade[l]?.[0] ?? '' : '');
+    /* A média é 1,53: dois valores a alcançam. Arredondada para 1,53 daria o
+       mesmo — o caso que separa é a média que não é redonda. */
+    expect(valorDaFormula(bruto, '=CONT.SE(A1:A3;">="&A4)')).toEqual({ tipo: 'numero', n: 2 });
+
+    const outra = [['1,52'], ['1,53'], ['1,58'], ['=MÉDIA(A1:A3)']];
+    const brutoB = (l: number, c: number) => (c === 0 ? outra[l]?.[0] ?? '' : '');
+    /* Média 1,5433...: só o 1,58 a alcança. Arredondada para 1,54 daria o
+       mesmo; para 1,53, daria dois. */
+    expect(valorDaFormula(brutoB, '=CONT.SE(A1:A3;">="&A4)')).toEqual({ tipo: 'numero', n: 1 });
+  });
+
   it('compara texto sem diferenciar maiúscula, como a planilha faz', () => {
     expect(ver(CLUBE, '="falcão"="FALCÃO"')).toBe('VERDADEIRO');
   });
