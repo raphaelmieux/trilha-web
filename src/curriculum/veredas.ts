@@ -513,6 +513,29 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      A CC-ES009, que abre a planilha e a tela da plataforma.
+
+      Sete das dez lições acontecem na mesma pasta de trabalho — a base numa
+      aba, os cálculos na outra — e três não acontecem em programa nenhum:
+      classificar uma variável, escrever a conclusão e responder ao examinador
+      não são gestos que o Excel tenha, e inventá-los dentro da janela seria
+      pôr coisa nossa dentro do programa imitado.
+
+      `licao` diz de que estado da pasta se parte **e** em qual das duas telas
+      a lição abre, que é o campo `licao` da CC-ES005 e da CC-ES006 pelo motivo
+      escrito nas duas: um `tipo` por tela daria duas variantes quase iguais, e
+      o que muda entre elas não é o que a lição **é**.
+    */
+    id: string;
+    tipo: 'analise';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcEs009').LicaoDaCcEs009;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
