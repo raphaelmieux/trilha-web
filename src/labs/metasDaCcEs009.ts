@@ -81,6 +81,15 @@ export interface Marcacao {
  */
 export type Julgamento = 'normal' | 'mantem' | 'exclui';
 
+/**
+ * O que se faz com uma contestação do examinador.
+ *
+ * As duas são respostas legítimas, e é isso que o requisito 9 pede: defender
+ * **com os dados** quando eles bastam, e reconhecer o limite quando não. Quem
+ * defende tudo não entendeu a análise; quem reconhece tudo não confia nela.
+ */
+export type Veredito = 'defendo' | 'reconheco';
+
 export interface ContextoDaAnalise {
   /**
    * A base, fechada, e ela **não muda**.
@@ -131,6 +140,18 @@ export interface ContextoDaAnalise {
    * pedir a decisão duas vezes ensinaria que ela é sobre gente.
    */
   julgamentos: Record<string, Julgamento>;
+  /**
+   * As colunas de que a pergunta do módulo 10 trata.
+   *
+   * É o que torna "a pergunta se responde com esta base" uma coisa
+   * conferível. A plataforma não sabe ler a pergunta; sabe ver que ela aponta
+   * para colunas que existem e que dá para agrupar ou contar. Uma pergunta
+   * cujo único campo é o nome não se responde com quarenta e oito nomes
+   * diferentes.
+   */
+  colunasDaPergunta: string[];
+  /** O que ela decidiu sobre cada contestação do examinador, no módulo 11. */
+  vereditos: Record<string, Veredito>;
   /** O que ela escreveu: a justificativa do atípico, a conclusão, a defesa. */
   textos: Record<string, string>;
 }
@@ -1442,13 +1463,224 @@ export const METAS_DOS_GRAFICOS: Meta[] = [
   },
 ];
 
+/* ────────────────────────────────────────────────────────────────────────────
+   Módulo 10 — A pergunta, a resposta e o que os dados não dizem (requisito 8)
+   ──────────────────────────────────────────────────────────────────────── */
+
+export const CHAVE_PERGUNTA = 'a-pergunta';
+export const CHAVE_RESPOSTA = 'a-resposta';
+export const CHAVE_CONCLUSAO = 'a-conclusao';
+export const CHAVE_LIMITES = 'o-que-os-dados-nao-dizem';
+
+/**
+ * "No máximo uma página" em caracteres.
+ *
+ * Uma página escrita à mão, com a letra de quem tem doze anos, tem em torno de
+ * duas mil e quinhentas letras. O corte existe porque o requisito o pede — e
+ * porque conclusão que não cabe numa página é a que não decidiu o que dizer.
+ */
+export const LETRAS_DA_PAGINA = 2600;
+
+/**
+ * ── Por que esta lição é tela da plataforma ──────────────────────────────
+ * Formular a pergunta, respondê-la e dizer o que os dados não permitem
+ * afirmar não é gesto de programa nenhum. A planilha já foi usada nos oito
+ * módulos anteriores; o que falta é escrever, e vestir isso de aplicativo
+ * seria fantasia sem ganho.
+ *
+ * ── E "o que os dados não dizem" é campo próprio ─────────────────────────
+ * O requisito o pede separado, e é a metade que não se escreve sozinha: quem
+ * acabou de achar um número quer contar o que ele mostra, não o que ele não
+ * mostra. Junto da conclusão, ele sairia como uma frase de rodapé; em campo
+ * próprio, ele é uma pergunta que precisa de resposta.
+ */
+export const METAS_DA_CONCLUSAO: Meta[] = [
+  {
+    id: 'uma-pergunta-que-a-base-responde',
+    titulo: 'Uma pergunta sua, e as colunas de que ela trata',
+    detalhe: 'A pergunta é sua — mas ela tem de se responder com esta base. Marcar as colunas é o que mostra que ela se responde.',
+    onde: 'No campo da pergunta, e na lista de colunas abaixo dele.',
+    passos: [
+      'Escreva a pergunta como você a faria para a liderança, terminando com sinal de interrogação.',
+      'Marque as colunas que a respondem: se você quer comparar unidades, é a de unidade mais a do que você vai medir.',
+      'Nome, e-mail e observação não respondem pergunta nenhuma: cada valor delas aparece uma vez só.',
+    ],
+    feita: c => {
+      const pergunta = texto(c, CHAVE_PERGUNTA);
+      if (pergunta.length < LETRAS_DA_JUSTIFICATIVA || !pergunta.includes('?')) return false;
+      if (c.colunasDaPergunta.length === 0) return false;
+      /* Toda coluna marcada existe, e pelo menos uma delas dá para agrupar ou
+         contar: uma pergunta só sobre a coluna de nomes não se responde. */
+      const campos = camposDaBase().map(x => x.id);
+      if (!c.colunasDaPergunta.every(id => campos.includes(id))) return false;
+      return c.colunasDaPergunta.some(id => !CLASSIFICACAO[id].naoAgrupa);
+    },
+  },
+  {
+    id: 'respondida-com-os-dados',
+    titulo: 'A resposta, com o número que a sustenta',
+    detalhe: 'Responder com os dados quer dizer com número. Sem ele, a resposta é uma opinião sobre uma base que você passou oito módulos montando.',
+    onde: 'No campo da resposta.',
+    passos: [
+      'Diga o que a base responde, e traga o número junto.',
+      'Se a pergunta compara grupos, traga os dois números — um sozinho não compara nada.',
+      'O número sai da aba Cálculos, e não de memória.',
+    ],
+    feita: c => {
+      const resposta = texto(c, CHAVE_RESPOSTA);
+      /* Um algarismo em algum lugar: é o mínimo que "respondê-la com os
+         dados" pode significar sem a plataforma tentar ler português. */
+      return resposta.length >= LETRAS_DA_JUSTIFICATIVA && /\d/.test(resposta);
+    },
+  },
+  {
+    id: 'a-conclusao-em-uma-pagina',
+    titulo: 'A conclusão, em no máximo uma página',
+    detalhe: 'O limite é do requisito, e ele ajuda: conclusão que não cabe numa página é a que ainda não decidiu o que dizer.',
+    onde: 'No campo da conclusão.',
+    passos: [
+      'Comece pela resposta, e não pelo caminho que levou até ela.',
+      'Traga os números que importam, e só eles.',
+      'Se passar de uma página, corte o que não muda a decisão de quem vai ler.',
+    ],
+    feita: c => {
+      const conclusao = texto(c, CHAVE_CONCLUSAO);
+      return conclusao.length >= LETRAS_DA_JUSTIFICATIVA * 3
+        && conclusao.length <= LETRAS_DA_PAGINA;
+    },
+  },
+  {
+    id: 'o-que-os-dados-nao-dizem',
+    titulo: 'E o que esta base não permite afirmar',
+    detalhe: 'É a metade que não se escreve sozinha: quem acabou de achar um número quer contar o que ele mostra, não o que ele não mostra.',
+    onde: 'No último campo, separado da conclusão de propósito.',
+    passos: [
+      'Pergunte: o que alguém poderia concluir disto que a base não sustenta?',
+      'A base diz quem se inscreveu. Ela não diz por quê, nem o que teria acontecido de outro jeito.',
+      'Ela também não compara este clube com nenhum outro: não há outro clube dentro dela.',
+    ],
+    feita: c => {
+      const limites = texto(c, CHAVE_LIMITES);
+      return limites.length >= LETRAS_DA_JUSTIFICATIVA
+        /* A mesma frase nos dois campos é não ter separado as duas coisas. */
+        && limites !== texto(c, CHAVE_CONCLUSAO);
+    },
+  },
+];
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Módulo 11 — A defesa diante do examinador (requisito 9)
+   ──────────────────────────────────────────────────────────────────────── */
+
+export interface Contestacao {
+  id: string;
+  /** O que o examinador diz, com as palavras dele. */
+  texto: string;
+  /**
+   * Os dados bastam para responder isto.
+   *
+   * `true` quer dizer que a base tem o número que desfaz a objeção; `false`,
+   * que ela não tem como responder — e aí reconhecer o limite é a resposta
+   * certa, e não uma derrota.
+   */
+  defensavel: boolean;
+}
+
+/**
+ * O que o examinador contesta.
+ *
+ * ── As duas espécies têm de existir ──────────────────────────────────────
+ * Duas objeções que os dados desfazem, e duas que eles não alcançam. Só
+ * defensáveis ensinariam que analista bom rebate tudo; só limites
+ * ensinariam que a base não serve para nada. O requisito 9 pede as duas
+ * respostas, e a lição só as pede se as duas couberem.
+ *
+ * ── As defensáveis têm número na base ────────────────────────────────────
+ * Cada uma se desfaz com um número que o desbravador já calculou: a taxa de
+ * adesão do Falcão, a mediana dos acampamentos. "Defender com os dados" tem
+ * de ser possível, senão a única saída honesta seria reconhecer.
+ *
+ * ── E os limites não são sobre falta de dado, são sobre outra pergunta ───
+ * A base não diz **por que** ninguém se inscreveu, e não diz o que teria
+ * acontecido se o prazo fosse outro. Não é uma coluna que falta: é uma
+ * pergunta que a base não foi feita para responder, e é isso que se reconhece.
+ */
+export const CONTESTACOES: Contestacao[] = [
+  {
+    id: 'falcao-leva-menos',
+    texto: 'O Falcão é a unidade que menos leva gente ao acampamento — ficaram três de fora, mais do que qualquer outra.',
+    defensavel: true,
+  },
+  {
+    id: 'clube-experiente',
+    texto: 'A média do clube é de quase três acampamentos por desbravador, então este é um clube de gente experiente.',
+    defensavel: true,
+  },
+  {
+    id: 'conselheiro-melhor',
+    texto: 'As unidades com mais experiência têm conselheiros melhores. Está nos seus números.',
+    defensavel: false,
+  },
+  {
+    id: 'prazo-mais-cedo',
+    texto: 'Se a inscrição tivesse aberto um mês mais cedo, teriam vindo mais desbravadores.',
+    defensavel: false,
+  },
+];
+
+export const chaveDaResposta = (id: string) => `resposta-${id}`;
+
+export const METAS_DA_DEFESA: Meta[] = [
+  {
+    id: 'toda-contestacao-respondida',
+    titulo: 'Um veredito e uma resposta para cada contestação',
+    detalhe: 'Defender e reconhecer são as duas respostas certas. O que não é resposta é ficar quieto.',
+    onde: 'Em cada cartão do examinador, no par de botões e no campo de texto.',
+    passos: [
+      'Leia a contestação e pergunte: a base tem o número que desfaz isto?',
+      'Se tem, defenda — e traga o número.',
+      'Se não tem, reconheça o limite. Reconhecer não é perder: é dizer até onde a sua análise vai.',
+    ],
+    feita: c => CONTESTACOES.every(o =>
+      c.vereditos[o.id] !== undefined
+      && texto(c, chaveDaResposta(o.id)).length >= LETRAS_DA_JUSTIFICATIVA),
+  },
+  {
+    id: 'os-vereditos-certos',
+    titulo: 'E os quatro vereditos certos',
+    detalhe: 'Duas se desfazem com os seus números. Duas não — e não porque falta uma coluna, mas porque são perguntas que esta base não foi feita para responder.',
+    onde: 'Nos mesmos cartões.',
+    passos: [
+      'A taxa de adesão do Falcão está na sua tabela: use-a.',
+      'A mediana dos acampamentos está na aba Cálculos: use-a.',
+      'Sobre o trabalho do conselheiro a base não tem coluna nenhuma — e nem teria como ter.',
+      'Sobre o que teria acontecido com outro prazo, nenhuma base tem: ela registra o que houve.',
+    ],
+    feita: c => CONTESTACOES.every(o =>
+      c.vereditos[o.id] === (o.defensavel ? 'defendo' : 'reconheco')),
+  },
+  {
+    id: 'defendida-com-numero',
+    titulo: 'E as duas que você defendeu, defendidas com número',
+    detalhe: 'Defender com os dados quer dizer com os dados. Uma defesa sem número é a mesma opinião do examinador, do outro lado.',
+    onde: 'Nos campos de texto das que você marcou como defensáveis.',
+    passos: [
+      'Traga o número que desfaz a objeção, e não a sua impressão sobre ela.',
+      'Na do Falcão, a taxa; na do clube experiente, a mediana ao lado da média.',
+      'Quem reconhece o limite não precisa de número: precisa dizer o que falta.',
+    ],
+    feita: c => CONTESTACOES.filter(o => o.defensavel).every(o =>
+      /\d/.test(texto(c, chaveDaResposta(o.id)))),
+  },
+];
+
 /* ── O registro das lições ───────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs009 = 'planilha' | 'plataforma';
 
 export type LicaoDaCcEs009 =
   | 'tipos' | 'centro' | 'engano' | 'frequencias' | 'comparacao' | 'adesao'
-  | 'atipicos' | 'graficos';
+  | 'atipicos' | 'graficos' | 'conclusao' | 'defesa';
 
 export interface LicaoDeAnalise {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -1467,7 +1699,8 @@ export function contextoInicial(
   const caderno = cadernoDaAnalise(base, blocos, comElenco, comPerguntas);
   return {
     base, caderno, cadernoAntes: caderno, blocos,
-    descobertas: [], marcacoes: {}, julgamentos: {}, textos: {},
+    descobertas: [], marcacoes: {}, julgamentos: {},
+    colunasDaPergunta: [], vereditos: {}, textos: {},
   };
 }
 
@@ -1523,6 +1756,19 @@ export const LICOES_DA_CC_ES009: Record<LicaoDaCcEs009, LicaoDeAnalise> = {
        mediria de novo o que já foi medido. */
     inicial: () => contextoInicial([BLOCO_DAS_MEDIDAS], false, true),
     metas: METAS_DOS_GRAFICOS,
+  },
+  conclusao: {
+    programa: 'plataforma',
+    /* Parte da pasta com as medidas escritas: a resposta do requisito 8 cita
+       números, e eles saem da aba Cálculos que os módulos anteriores
+       montaram — não de memória. */
+    inicial: () => comAsMedidasEscritas(),
+    metas: METAS_DA_CONCLUSAO,
+  },
+  defesa: {
+    programa: 'plataforma',
+    inicial: () => comAsMedidasEscritas(),
+    metas: METAS_DA_DEFESA,
   },
   engano: {
     programa: 'planilha',

@@ -12,6 +12,8 @@ import {
   type Julgamento, CHAVE_POR_QUE_FICA, CHAVE_POR_QUE_SAI, LETRAS_DA_JUSTIFICATIVA,
   PONTAS_POR_COLUNA, candidatosDasPontas, chaveDoCandidato, julgamentoCerto,
   PERGUNTAS_DO_GRAFICO, faixaDoGrafico,
+  CHAVE_CONCLUSAO, CHAVE_LIMITES, CHAVE_PERGUNTA, CHAVE_RESPOSTA,
+  CONTESTACOES, LETRAS_DA_PAGINA, chaveDaResposta,
   cadernoDaAnalise, colunaDaMedida, colunaDoBloco, colunaDoCampo, contextoInicial,
   esperadoDe, faixaDoCampo, formulaDaMedida, linhaDoRotulo,
 } from './metasDaCcEs009';
@@ -25,7 +27,7 @@ import {
 } from './planilha';
 import { abaDe, comAba, escritoEm, mostradoEm, valorEm } from './cadernoDoClube';
 import { colunaDe, medidaPorGrupo, repeticoesDaModa } from './analiseDeDados';
-import { CAMPO_UNIDADE, respostasReais } from './formulario';
+import { CAMPO_NOME as CAMPO_NOME_DA_BASE, CAMPO_UNIDADE, respostasReais } from './formulario';
 import { nomeDaColuna } from './formulas';
 
 /* ── A solução de referência ──────────────────────────────────────────────── */
@@ -100,7 +102,64 @@ const SOLUCOES: Record<LicaoDaCcEs009, (c: ContextoDaAnalise) => ContextoDaAnali
   adesao: comAAdesao,
   atipicos: comOsAtipicos,
   graficos: comOsGraficos,
+  conclusao: comAConclusao,
+  defesa: comADefesa,
 };
+
+/** O módulo 10: a pergunta, a resposta com número, a conclusão e os limites. */
+function comAConclusao(c: ContextoDaAnalise): ContextoDaAnalise {
+  const conclusao = [
+    'A Arara é a unidade cuja gente já foi a mais acampamentos: 4,71 por desbravador,',
+    'contra 3,88 do Tucano e 2,31 do Falcão. Ela não é a maior — tem sete inscritos',
+    'contra treze do Falcão —, então o que a coloca na frente não é tamanho, é',
+    'experiência por pessoa. A média do clube inteiro é 2,85, e a mediana é 2: três',
+    'veteranos com doze, catorze e dezoito acampamentos puxam a média para cima, e',
+    'vinte e nove dos quarenta e oito fizeram dois ou menos. Para montar as duplas do',
+    'acampamento, vale pôr alguém da Arara em cada barraca de gente nova.',
+  ].join(' ');
+
+  return {
+    ...c,
+    colunasDaPergunta: [CAMPO_UNIDADE, CAMPO_ACAMPAMENTOS],
+    textos: {
+      ...c.textos,
+      [CHAVE_PERGUNTA]: 'Qual unidade tem mais experiência de acampamento por desbravador, e isso tem a ver com o tamanho dela?',
+      [CHAVE_RESPOSTA]: 'A Arara, com média de 4,71 acampamentos por inscrito, contra 3,88 do Tucano e 2,31 do Falcão — e ela é a quarta em tamanho, com sete inscritos.',
+      [CHAVE_CONCLUSAO]: conclusao,
+      [CHAVE_LIMITES]: 'A base não diz por que a Arara tem mais experiência: ela não tem coluna sobre o trabalho do conselheiro nem sobre quanto tempo cada um está no clube. E ela não compara este clube com nenhum outro, porque não há outro clube dentro dela.',
+    },
+  };
+}
+
+/**
+ * O módulo 11: defender as duas que os números desfazem, reconhecer as duas
+ * que eles não alcançam.
+ *
+ * As duas defesas trazem número, que é o que "defender com os dados" quer
+ * dizer. As duas que reconhecem o limite não precisam — precisam dizer o que
+ * falta.
+ */
+function comADefesa(c: ContextoDaAnalise): ContextoDaAnalise {
+  const respostas: Record<string, string> = {
+    'falcao-leva-menos':
+      'Três de dezesseis é a melhor taxa das seis: 81,25%. As outras deixaram dois de fora, mas de unidades bem menores — a Onça deixou dois de oito, que é 75%.',
+    'clube-experiente':
+      'A média é 2,85 e a mediana é 2. Três veteranos com doze, catorze e dezoito puxam a média; vinte e nove dos quarenta e oito fizeram dois acampamentos ou menos.',
+    'conselheiro-melhor':
+      'Isto a base não responde. Ela não tem coluna nenhuma sobre o trabalho do conselheiro, e experiência acumulada também depende de há quanto tempo cada um está no clube, que ela também não registra. Reconheço o limite.',
+    'prazo-mais-cedo':
+      'Nenhuma base responde isso, porque ela registra o que aconteceu e não o que teria acontecido. Para saber, seria preciso abrir a inscrição mais cedo uma vez e comparar. Reconheço o limite.',
+  };
+  return {
+    ...c,
+    vereditos: Object.fromEntries(
+      CONTESTACOES.map(o => [o.id, o.defensavel ? 'defendo' : 'reconheco'] as const)),
+    textos: {
+      ...c.textos,
+      ...Object.fromEntries(CONTESTACOES.map(o => [chaveDaResposta(o.id), respostas[o.id]])),
+    },
+  };
+}
 
 /** O módulo 8: um gráfico por aba, do tipo que responde à pergunta dela. */
 function comOsGraficos(c: ContextoDaAnalise): ContextoDaAnalise {
@@ -1000,6 +1059,139 @@ describe('o gráfico que responde à pergunta', () => {
     expect(meta('as-tres-justificativas').feita({
       ...c,
       textos: Object.fromEntries(PERGUNTAS_DO_GRAFICO.map(p => [p.chave, uma])),
+    })).toBe(false);
+  });
+});
+
+/* ── Os módulos 10 e 11 ───────────────────────────────────────────────────── */
+
+describe('a pergunta e a conclusão', () => {
+  const licao = LICOES_DA_CC_ES009.conclusao;
+  const meta = (id: string) => licao.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES.conclusao(licao.inicial());
+  const com = (c: ContextoDaAnalise, chave: string, t: string) =>
+    ({ ...c, textos: { ...c.textos, [chave]: t } });
+
+  it('uma pergunta sobre a coluna de nomes não se responde com esta base', () => {
+    /*
+      Quarenta e oito nomes diferentes não agrupam nada e não contam nada. A
+      plataforma não sabe ler a pergunta; sabe ver que as colunas que ela
+      aponta dão para agrupar ou contar.
+    */
+    const c = pronto();
+    expect(meta('uma-pergunta-que-a-base-responde').feita(c)).toBe(true);
+    expect(meta('uma-pergunta-que-a-base-responde').feita(
+      { ...c, colunasDaPergunta: [CAMPO_NOME_DA_BASE] },
+    )).toBe(false);
+  });
+
+  it('e uma coluna que não existe também não', () => {
+    const c = pronto();
+    expect(meta('uma-pergunta-que-a-base-responde').feita(
+      { ...c, colunasDaPergunta: [...c.colunasDaPergunta, 'coluna-inventada'] },
+    )).toBe(false);
+  });
+
+  it('a pergunta precisa ser uma pergunta', () => {
+    const c = pronto();
+    const sem = c.textos[CHAVE_PERGUNTA].replace('?', '.');
+    expect(meta('uma-pergunta-que-a-base-responde').feita(com(c, CHAVE_PERGUNTA, sem))).toBe(false);
+  });
+
+  it('a resposta sem número não é resposta com os dados', () => {
+    /* Sem algarismo nenhum, ela é uma opinião sobre uma base que a pessoa
+       passou oito módulos montando. */
+    const c = pronto();
+    expect(meta('respondida-com-os-dados').feita(c)).toBe(true);
+    expect(meta('respondida-com-os-dados').feita(com(c, CHAVE_RESPOSTA,
+      'A Arara é a unidade com mais experiência de acampamento entre todas as seis do clube.',
+    ))).toBe(false);
+  });
+
+  it('a conclusão tem teto de uma página, e piso também', () => {
+    /* O teto é do requisito. O piso é porque três palavras não são uma
+       conclusão — e sem ele a tarefa fecharia com o campo quase vazio. */
+    const c = pronto();
+    expect(meta('a-conclusao-em-uma-pagina').feita(c)).toBe(true);
+    expect(meta('a-conclusao-em-uma-pagina').feita(
+      com(c, CHAVE_CONCLUSAO, 'A'.repeat(LETRAS_DA_PAGINA + 1)),
+    )).toBe(false);
+    expect(meta('a-conclusao-em-uma-pagina').feita(
+      com(c, CHAVE_CONCLUSAO, 'A Arara é a mais experiente.'),
+    )).toBe(false);
+  });
+
+  it('os limites não podem ser a conclusão copiada', () => {
+    /* Copiada, uma das duas metades não foi pensada — e é justamente a que não
+       se escreve sozinha. */
+    const c = pronto();
+    expect(meta('o-que-os-dados-nao-dizem').feita(c)).toBe(true);
+    expect(meta('o-que-os-dados-nao-dizem').feita(
+      com(c, CHAVE_LIMITES, c.textos[CHAVE_CONCLUSAO]),
+    )).toBe(false);
+  });
+});
+
+describe('a defesa diante do examinador', () => {
+  const licao = LICOES_DA_CC_ES009.defesa;
+  const meta = (id: string) => licao.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES.defesa(licao.inicial());
+
+  it('as contestações são das duas espécies', () => {
+    /*
+      Só defensáveis ensinariam que analista bom rebate tudo; só limites
+      ensinariam que a base não serve para nada. O requisito 9 pede as duas
+      respostas, e a lição só as pede se as duas couberem.
+    */
+    expect(CONTESTACOES.some(o => o.defensavel)).toBe(true);
+    expect(CONTESTACOES.some(o => !o.defensavel)).toBe(true);
+    expect(CONTESTACOES.length).toBeGreaterThan(3);
+    for (const o of CONTESTACOES) expect(o.texto.length).toBeGreaterThan(40);
+  });
+
+  it('defender tudo não fecha, e reconhecer tudo também não', () => {
+    const c = licao.inicial();
+    for (const v of ['defendo', 'reconheco'] as const) {
+      const todos = {
+        ...SOLUCOES.defesa(c),
+        vereditos: Object.fromEntries(CONTESTACOES.map(o => [o.id, v])),
+      };
+      expect(meta('toda-contestacao-respondida').feita(todos), `${v}: nem todas respondidas`).toBe(true);
+      expect(meta('os-vereditos-certos').feita(todos), `${v}: vereditos aceitos`).toBe(false);
+    }
+  });
+
+  it('a defesa sem número não conta como defesa com os dados', () => {
+    /* Defender com os dados quer dizer com os dados: sem número, é a mesma
+       opinião do examinador, do outro lado. */
+    const c = pronto();
+    expect(meta('defendida-com-numero').feita(c)).toBe(true);
+
+    const defensavel = CONTESTACOES.find(o => o.defensavel)!;
+    expect(meta('defendida-com-numero').feita({
+      ...c,
+      textos: {
+        ...c.textos,
+        [chaveDaResposta(defensavel.id)]: 'Discordo: o Falcão leva bem mais gente do que as outras unidades do clube.',
+      },
+    })).toBe(false);
+  });
+
+  it('e quem reconhece o limite não precisa de número', () => {
+    /* A meta olha só as defensáveis. Cobrar número de quem reconheceu o limite
+       pediria um dado que a base não tem — que é o que ele acabou de dizer. */
+    const c = pronto();
+    const limite = CONTESTACOES.find(o => !o.defensavel)!;
+    expect(/\d/.test(c.textos[chaveDaResposta(limite.id)])).toBe(false);
+    expect(meta('defendida-com-numero').feita(c)).toBe(true);
+  });
+
+  it('resposta em branco não fecha a lista', () => {
+    const c = pronto();
+    expect(meta('toda-contestacao-respondida').feita(c)).toBe(true);
+    expect(meta('toda-contestacao-respondida').feita({
+      ...c,
+      textos: { ...c.textos, [chaveDaResposta(CONTESTACOES[0].id)]: '   ' },
     })).toBe(false);
   });
 });
