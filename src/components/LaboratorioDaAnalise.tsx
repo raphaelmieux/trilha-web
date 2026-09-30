@@ -10,7 +10,7 @@ import {
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
 import {
-  type Caderno, type ComoResumir, type Direcao, type Historico, type Planilha,
+  type Caderno, type ComoResumir, type Historico, type Planilha,
   type TabelaDinamica, type TipoDeGrafico,
   atualizarResumo, desfazer, historicoDe, nomeDaFaixa, normalizar, ordenar,
   planilhaAtiva, pontosDoGrafico, refazer, registrar, textoDoResumo, trocarAtiva,
@@ -29,8 +29,8 @@ import {
   PERGUNTAS_DO_GRAFICO, REPETICOES_QUE_FAZEM_MODA, VIU_AS_DUAS_LEITURAS,
   VIU_A_COLUNA_QUE_ENGANA, VIU_A_CONTA_SE_REFAZER, VIU_QUE_A_MODA_NAO_SERVE,
   VIU_QUE_MEDIDA_NAO_SE_CONTA,
-  candidatosDasPontas, chaveDaResposta, chaveDoCandidato, colunaDoBloco,
-  colunaDoCampo, linhaDoRotulo, melhorTaxa, unidadeMaisExperiente,
+  assinaturaDaBase, candidatosDasPontas, chaveDaResposta, chaveDoCandidato,
+  colunaDoBloco, colunaDoCampo, linhaDoRotulo, melhorTaxa, unidadeMaisExperiente,
 } from '../labs/metasDaCcEs009';
 import {
   type Escala, type Natureza, UNIDADES_DO_CLUBE, camposDaBase,
@@ -87,6 +87,16 @@ type Comum = {
   */
   desfazer: () => void;
   refazer: () => void;
+  /*
+    O que a pessoa viu, gravado **fora** do histórico.
+
+    Não é atalho: é a diferença entre a pasta e quem a olha. A lição do módulo
+    2 manda mexer num dado, ver a média andar e devolver o dado ao que era — e
+    com a descoberta dentro do histórico o Ctrl+Z pediria dois toques para
+    desfazer uma digitação só, e o segundo apagaria a única coisa que a tarefa
+    mede. Descoberta é do desbravador; o histórico é da planilha.
+  */
+  anotarVisto: (o: string) => void;
   irPara: (t: ProgramaDaCcEs009) => void;
   recomecar: () => void;
   aoVencer: () => Promise<void> | void;
@@ -143,9 +153,6 @@ function Moldura({
     </LaboratorioEmTelaCheia>
   );
 }
-
-const anotar = (c: ContextoDaAnalise, o: string): ContextoDaAnalise =>
-  c.descobertas.includes(o) ? c : { ...c, descobertas: [...c.descobertas, o] };
 
 const escreverTexto = (c: ContextoDaAnalise, chave: string, valor: string): ContextoDaAnalise =>
   ({ ...c, textos: { ...c.textos, [chave]: valor } });
@@ -229,8 +236,26 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
   const mudarCaderno = (g: (k: Caderno) => Caderno) =>
     c.mudar(x => ({ ...x, caderno: g(x.caderno) }));
 
-  const mudar = (g: (q: Planilha) => Planilha) =>
+  /*
+    Toda mudança da planilha passa por aqui, e é aqui que se vê o dado mexer.
+
+    A primeira versão pendurava isso num `aoConfirmar` da grade, e a trava que
+    clica derrubou logo: quem escreve pela **barra de fórmulas** — que é como
+    se escreve numa planilha — nunca passava por lá, então a descoberta do
+    módulo 2 não acontecia para ninguém que digitasse onde se digita. Um lugar
+    só, e ele cobre a barra, a célula, o Delete e o colar.
+
+    A conta é a mesma que a meta faz, por `assinaturaDaBase`: classificar a
+    coluna não conta como mexer no dado, porque ordenar leva a linha inteira e
+    ordem de linha não é dado — e duas lições mandam classificar.
+  */
+  const mudar = (g: (q: Planilha) => Planilha) => {
     mudarCaderno(k => trocarAtiva(k, g(planilhaAtiva(k))));
+    if (p.nome !== ABA_RESPOSTAS) return;
+    if (assinaturaDaBase(g(p)) === assinaturaDaBase(p)) return;
+    c.anotarVisto(VIU_A_CONTA_SE_REFAZER);
+    avisar('O dado mudou. Volte à aba Cálculos: toda conta que aponta para esta coluna se refez sozinha — é isso que separa uma fórmula de um número digitado. Depois aperte Ctrl+Z: as contas desta lição são conferidas contra a base como ela chegou.');
+  };
 
   const grade = useGradeDoExcel({
     planilha: p,
@@ -250,7 +275,6 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
       : 'Não é possível alterar esta parte de um relatório de tabela dinâmica. Conserte na aba de origem e clique em Atualizar.'),
   });
   const { faixa, setFaixa, sel, setBarra, setEditando } = grade;
-  const area = normalizar(faixa);
 
   /* ── Os comandos da faixa ── */
 
@@ -334,14 +358,15 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
       avisar('Selecione a coluna dos rótulos e a dos números, do cabeçalho até a última linha, antes de inserir o gráfico.');
       return;
     }
-    const pergunta = PERGUNTAS_DO_GRAFICO.find(q => q.aba === p.nome);
-    setDialogo({
-      tipo: 'grafico',
-      grafico: 'colunas',
-      titulo: pergunta?.pergunta ?? '',
-      eixoX: escritoEm(p, area.topo, area.esq),
-      eixoY: escritoEm(p, area.topo, area.dir),
-    });
+    /*
+      A caixa abre com os três campos **vazios**, como a do Excel.
+
+      O Excel nomeia a série pelo cabeçalho da faixa, e não escreve título de
+      eixo nenhum: quem quer isso vai em Elementos do Gráfico e digita. Trazer
+      os cabeçalhos prontos aqui entregaria a tarefa dos eixos de graça — e ela
+      existe justamente porque gráfico sem eixo identificado não afirma nada.
+    */
+    setDialogo({ tipo: 'grafico', grafico: 'colunas', titulo: '', eixoX: '', eixoY: '' });
   };
 
   /* ── Os valores distintos de uma coluna, para o filtro ── */
@@ -401,9 +426,7 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
        comparação é essa, e não com o número que o MODO devolve: a coluna
        guarda "1,58" e o motor devolve 1.58, que não casa como texto. */
     const ehAModa = quantas > 0 && quantas === repeticoesDaModa(valores);
-    if (ehAModa && quantas < REPETICOES_QUE_FAZEM_MODA) {
-      c.mudar(x => anotar(x, VIU_QUE_A_MODA_NAO_SERVE));
-    }
+    if (ehAModa && quantas < REPETICOES_QUE_FAZEM_MODA) c.anotarVisto(VIU_QUE_A_MODA_NAO_SERVE);
   };
 
   /* ── Os dois cliques do módulo 6 ── */
@@ -433,45 +456,17 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
     if (col !== cFora && col !== cTaxa) return;
     if (l !== linhaDoMaior(bloco.rotulos, col)) return;
 
-    const marca = col === cFora ? VIU_O_MAIOR_AUSENTE : VIU_A_MELHOR_TAXA;
     /* O recado relata o que a célula é, e nunca o que ela quer dizer: a
        conclusão é da pessoa, e escrevê-la aqui apagaria a lição. */
     avisar(col === cFora
       ? `Este é o maior número da coluna ${COL_FORA}.`
       : `Este é o maior número da coluna ${COL_TAXA}.`);
-    c.mudar((x) => {
-      const comMarca = anotar(x, marca);
-      return comMarca.descobertas.includes(VIU_O_MAIOR_AUSENTE)
-        && comMarca.descobertas.includes(VIU_A_MELHOR_TAXA)
-        ? anotar(comMarca, VIU_AS_DUAS_LEITURAS)
-        : comMarca;
-    });
-  };
-
-  /* ── Mexer na base ── */
-
-  /*
-    A base aceita a digitação, e é ela que faz a conta se refazer.
-
-    Uma célula de dado travada mataria o módulo 2: "ver a conta se refazer
-    quando um dado muda" pede que o dado mude. Então ela muda, a média anda, e
-    o recado diz **os dois números** — que é o que uma régua de status faz, e
-    não o que um professor faz.
-
-    O que ele também diz é como voltar, porque quatro das sete lições de
-    planilha cobram a base inteira: a saída é o Ctrl+Z, que é o gesto de
-    verdade. Desfazer a digitação de alguém por conta própria seria a
-    plataforma mexendo na planilha pelas costas de quem a escreveu.
-  */
-  const naBase = (l: number, col: number) =>
-    p.nome === ABA_RESPOSTAS && l > 0 && col <= camposDaBase().length;
-
-  const aoConfirmar = (texto: string, direcao?: Direcao) => {
-    const antes = escritoEm(p, sel.l, sel.c);
-    grade.confirmar(texto, direcao);
-    if (!naBase(sel.l, sel.c) || texto.trim() === antes) return;
-    c.mudar(x => anotar(x, VIU_A_CONTA_SE_REFAZER));
-    avisar('O dado mudou. Volte à aba Cálculos: toda conta que aponta para esta coluna se refez sozinha — é isso que separa uma fórmula de um número digitado. Ctrl+Z devolve o dado ao que era, e quatro lições desta vereda cobram a base inteira.');
+    c.anotarVisto(col === cFora ? VIU_O_MAIOR_AUSENTE : VIU_A_MELHOR_TAXA);
+    /* As duas juntas são a descoberta. A conta é sobre o que já estava lá mais
+       a marca de agora, porque `anotarVisto` acabou de ser chamado e o
+       contexto desta renderização ainda é o de antes. */
+    const outra = col === cFora ? VIU_A_MELHOR_TAXA : VIU_O_MAIOR_AUSENTE;
+    if (c.contexto.descobertas.includes(outra)) c.anotarVisto(VIU_AS_DUAS_LEITURAS);
   };
 
   const botao = (dica: string, aoClicar: () => void, filho: React.ReactNode, ativo?: boolean) => (
@@ -568,7 +563,6 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
         <GradeDoExcel
           {...grade.props}
           caderno={cad}
-          aoConfirmar={aoConfirmar}
           aoApontarCelula={(l, col, e) => {
             grade.props.aoApontarCelula(l, col, e);
             olharAsDuasColunas(l, col);
@@ -693,6 +687,13 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
               <>
                 <div className="pl-dialogo-titulo">Inserir Gráfico — dados de {nomeDaFaixa(faixa)}</div>
                 <div className="pl-dialogo-corpo">
+                  {/* A pergunta da aba, repetida onde ela é necessária: na hora
+                      de escolher o tipo. Ela é o enunciado, e não a resposta —
+                      qual desenho a responde continua sendo decisão de quem
+                      escolhe. */}
+                  {PERGUNTAS_DO_GRAFICO.filter(q => q.aba === p.nome).map(q => (
+                    <p key={q.aba} className="pl-nota">{q.pergunta}</p>
+                  ))}
                   <label className="pl-campo">
                     <span>Tipo</span>
                     <select value={dialogo.grafico}
@@ -940,7 +941,8 @@ function TelaDoCaderno(c: Comum) {
               {campos.map((campo) => {
                 const m = x.marcacoes[campo.id];
                 return (
-                  <div key={campo.id} className="flex flex-col gap-1.5 pb-3"
+                  <div key={campo.id} role="group" aria-label={campo.rotulo}
+                    className="flex flex-col gap-1.5 pb-3"
                     style={{ borderBottom: '1px solid var(--color-border)' }}>
                     <span className="text-sm font-semibold">{campo.rotulo}</span>
                     <div className="flex flex-wrap gap-1.5">
@@ -998,7 +1000,7 @@ function TelaDoCaderno(c: Comum) {
               aoEscolher={(id) => {
                 if (id === colunaQueEngana()) {
                   setPorque(null);
-                  c.mudar(v => anotar(v, VIU_A_COLUNA_QUE_ENGANA));
+                  c.anotarVisto(VIU_A_COLUNA_QUE_ENGANA);
                   return;
                 }
                 const valores = colunaDe(x.base, id);
@@ -1025,7 +1027,7 @@ function TelaDoCaderno(c: Comum) {
                 const o = POR_QUE_A_ALTURA_PRECISA_DE_CLASSE.find(k => k.id === id);
                 if (o?.certo) {
                   setPorque(null);
-                  c.mudar(v => anotar(v, VIU_QUE_MEDIDA_NAO_SE_CONTA));
+                  c.anotarVisto(VIU_QUE_MEDIDA_NAO_SE_CONTA);
                   return;
                 }
                 setPorque(o && 'porque' in o ? o.porque : null);
@@ -1089,7 +1091,9 @@ function TelaDoCaderno(c: Comum) {
                   const chave = chaveDoCandidato(k.campo, k.valor);
                   const escolhido = x.julgamentos[chave];
                   return (
-                    <div key={chave} className="flex flex-wrap items-center gap-2 pb-2.5"
+                    <div key={chave} role="group"
+                      aria-label={`${campos.find(f => f.id === k.campo)?.rotulo ?? k.campo} ${k.valor}`}
+                      className="flex flex-wrap items-center gap-2 pb-2.5"
                       style={{ borderBottom: '1px solid var(--color-border)' }}>
                       <span className="text-sm" style={{ minWidth: 190 }}>
                         <span className="font-semibold">{campos.find(f => f.id === k.campo)?.rotulo}</span>
@@ -1326,6 +1330,35 @@ export default function LaboratorioDaAnalise({ vereda, licao, aoVencer, aoSair }
   const [hist, setHist] = useState<Historico<ContextoDaAnalise>>(() => historicoDe(daLicao.inicial()));
   const [tela, setTela] = useState<ProgramaDaCcEs009>(daLicao.programa);
 
+  /*
+    Desfazer e refazer andam com a **pasta**, e não com o que a pessoa viu.
+
+    O Ctrl+Z é peça da lição do módulo 2: mexe-se num dado, olha-se a média
+    andar, e devolve-se o dado ao que era. Levando a descoberta junto, o gesto
+    que a lição manda dar apagaria a única coisa que ela mede — e a tarefa
+    voltaria ao vermelho justamente depois de cumprida, sem nada na tela
+    explicando. Foi a trava que clica quem achou isto: gravar a descoberta fora
+    do histórico não bastava, porque desfazer troca o presente inteiro pelo
+    passado guardado, e o passado é de antes de ela existir.
+
+    Descoberta é monotônica — o que se viu, viu-se —, então trazê-la adiante é
+    a leitura certa e não um remendo. Quem responde pelo documento continua
+    sendo o histórico.
+  */
+  const andarNoHistorico = (
+    passo: (h: Historico<ContextoDaAnalise>) => Historico<ContextoDaAnalise>,
+  ) => setHist((h) => {
+    const depois = passo(h);
+    const vistas = h.presente.descobertas.filter(o => !depois.presente.descobertas.includes(o));
+    return vistas.length === 0 ? depois : {
+      ...depois,
+      presente: {
+        ...depois.presente,
+        descobertas: [...depois.presente.descobertas, ...vistas],
+      },
+    };
+  });
+
   const comum: Comum = {
     vereda,
     licao,
@@ -1333,8 +1366,13 @@ export default function LaboratorioDaAnalise({ vereda, licao, aoVencer, aoSair }
     metas: daLicao.metas,
     contexto: hist.presente,
     mudar: f => setHist(h => registrar(h, f(h.presente))),
-    desfazer: () => setHist(desfazer),
-    refazer: () => setHist(refazer),
+    desfazer: () => andarNoHistorico(desfazer),
+    refazer: () => andarNoHistorico(refazer),
+    /* Fora do histórico, de propósito — a razão está escrita em `Comum`. */
+    anotarVisto: o => setHist(h => (h.presente.descobertas.includes(o) ? h : {
+      ...h,
+      presente: { ...h.presente, descobertas: [...h.presente.descobertas, o] },
+    })),
     irPara: setTela,
     recomecar: () => { setHist(historicoDe(daLicao.inicial())); setTela(daLicao.programa); },
     aoVencer,

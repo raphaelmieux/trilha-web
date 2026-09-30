@@ -884,39 +884,48 @@ const blocoCompleto = (c: ContextoDaAnalise, bloco: BlocoDeContas) =>
  * três veteranos para a média "melhorar". O requisito 5.6 manda decidir por
  * escrito o que fazer com eles, e não sumir com eles.
  */
+/**
+ * O que a região de dados da aba de respostas contém, como assinatura.
+ *
+ * ── Ela é exportada porque a tela precisa da mesma conta ────────────────
+ * A meta pergunta "a base continua inteira?" e a tela pergunta "o dado acabou
+ * de mudar?" — são a mesma leitura, de dois lados. Duas cópias divergiriam no
+ * primeiro ajuste, e a divergência apareceria como uma tarefa que não fecha
+ * com a planilha certa na tela.
+ *
+ * ── As linhas entram como conjunto, e não em ordem ──────────────────────
+ * Classificar é o gesto que duas lições mandam fazer: "ordene a coluna na aba
+ * Respostas e olhe as duas pontas". Ordenar leva a linha inteira — nenhum
+ * registro muda, só a ordem deles —, e comparando em ordem quem seguisse o
+ * passo a passo via duas tarefas ficarem vermelhas por ter feito exatamente o
+ * que a lição pediu. Ordem de linha não é dado.
+ *
+ * O que continua aparecendo é o que mexe no dado: apagar uma linha muda
+ * quantas há, digitar por cima troca uma linha por outra que não existia, e
+ * limpar uma célula esvazia um campo.
+ */
+export function assinaturaDaBase(p: Planilha): string {
+  const linhas: string[] = [];
+  for (let l = PRIMEIRA_LINHA; l < p.celulas.length; l++) {
+    const campos: string[] = [];
+    for (let col = 0; col <= camposDaBase().length; col++) campos.push(escritoEm(p, l, col));
+    linhas.push(campos.join('\u0000'));
+  }
+  return linhas.sort().join('\u0001');
+}
+
 function baseIntacta(c: ContextoDaAnalise): boolean {
   const p = aba(c, ABA_RESPOSTAS);
   const antes = abaDe(c.cadernoAntes, ABA_RESPOSTAS);
   if (!p || !antes) return false;
 
   /*
-    A região inteira, e não só a coluna de nomes.
-
-    Olhando um campo só, apagar um nome reprovava e apagar a idade de alguém
-    passava — e as duas mexem no dado de que toda conta da lição depende.
-    "A base não foi mexida" quer dizer a base.
-
-    ── E as linhas entram como conjunto, e não em ordem ───────────────────
-    Classificar a base é o gesto que duas lições mandam fazer: "ordene a
-    coluna na aba Respostas e olhe as duas pontas". Ordenar leva a linha
-    inteira — nenhum registro muda, só a ordem deles —, e comparando em ordem
-    quem seguisse o passo a passo via duas tarefas ficarem vermelhas por ter
-    feito exatamente o que a lição pediu. Ordem de linha não é dado.
-
-    O que continua reprovando é o que mexe no dado: apagar uma linha muda
-    quantas há, digitar por cima troca uma linha por outra que não existia, e
-    limpar uma célula esvazia um campo. Nos três o conjunto muda.
+    A região inteira, e não só a coluna de nomes: olhando um campo só, apagar
+    um nome reprovava e apagar a idade de alguém passava — e as duas mexem no
+    dado de que toda conta da lição depende. "A base não foi mexida" quer dizer
+    a base, e quem a lê é `assinaturaDaBase`, que a tela também lê.
   */
-  const regiao = (q: typeof p) => {
-    const linhas: string[] = [];
-    for (let l = PRIMEIRA_LINHA; l < q.celulas.length; l++) {
-      const campos: string[] = [];
-      for (let col = 0; col <= camposDaBase().length; col++) campos.push(escritoEm(q, l, col));
-      linhas.push(campos.join('\u0000'));
-    }
-    return linhas.sort().join('\u0001');
-  };
-  return regiao(p) === regiao(antes);
+  return assinaturaDaBase(p) === assinaturaDaBase(antes);
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -1437,7 +1446,7 @@ export const METAS_DOS_GRAFICOS: Meta[] = [
     detalhe: 'Os três tipos desenham sem erro sobre qualquer dado. O que muda é se o desenho responde ou não à pergunta que está escrita no alto da aba.',
     onde: 'Em cada uma das três abas, selecionando as duas colunas e indo em Inserir, Gráfico.',
     passos: [
-      'A pergunta de cada aba está no caderno da análise, e a caixa do gráfico já a traz como título. Leia antes de escolher o tipo.',
+      'A pergunta de cada aba está no caderno da análise, e a caixa do gráfico a repete quando você a abre naquela aba. Leia antes de escolher o tipo.',
       'Selecione a coluna dos rótulos e a dos números, do cabeçalho até a última linha, antes de abrir a caixa.',
       'De que o todo é feito? É pizza — e ela só serve quando as partes somam o todo.',
       'Quem é maior? São colunas.',
