@@ -2925,6 +2925,35 @@ lição manda comparar com ele. A solução de referência o põe exatamente ond
 tela o põe: escrita de um jeito na trava e de outro na tela, é a divergência que
 ninguém vê até alguém clicar.
 
+**Os números que a teoria da CC-ES009 cita saem da base, e são conferidos.**
+É a trava de `exemplosDePython.test.ts` e de `exemplosDePlanilha.test.ts` pela
+terceira vez, e aqui a superfície é maior do que nas duas: esta vereda inteira
+fala de números de uma base concreta. A média da idade aparece na teoria do
+módulo 2, na do 3 e em três questões; a taxa do Falcão aparece na teoria do 6 e
+em duas questões do 11. Mexer num inscrito muda todas, e nenhuma delas
+reclamaria.
+
+A divisão é a de `exemplosDePlanilha`: a **conta** se declara na trava e a
+**afirmação** se lê da lição, então o número que o desbravador vê nunca é o que
+o teste escreveu. O que ela não faz é varrer o texto atrás de números soltos —
+isso seria máquina frágil que um dia para de achar o que procura e aprova tudo
+calada. Cada afirmação é declarada, com piso na tabela e cobrança de que toda
+entrada seja encontrada.
+
+E há **duas** formas de número, de propósito. Onde ele é resultado que se
+compara com a tela, a forma é a da plataforma — `mostrarNumero`, duas casas.
+Onde ele só se lê na prosa, é a da prosa: a cerca de Tukey não aparece em
+célula nenhuma, e cobrar "18,50" ali obrigaria a lição a escrever um zero que
+ninguém escreve.
+
+Ela achou três coisas na primeira execução, e a terceira não era de forma: a
+questão sobre "quantos ficam **abaixo** da média" citava na explicação os
+números de "quantos **chegam**" — 22 e 19 no lugar de 26 e 29 —, e a
+alternativa certa dizia que os dois passam da metade, o que é verdade de um par
+e falso do outro. Uma questão inteira em desacordo consigo mesma, com todos os
+números plausíveis. Hoje as duas metades falam de "quantos chegam", que é a
+conta que o laboratório de fato pede.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -3667,6 +3696,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDaAnalise.test.tsx` | dado mudado pela barra de fórmulas que não conta, ou Ctrl+Z que leva a descoberta junto |
 | `src/components/LaboratorioDaAnalise.test.tsx` | classificar a base acendendo a descoberta do dado que muda |
 | `src/components/LaboratorioDaAnalise.test.tsx` | caderno da análise oferecido na lição que não tem um, ou volta à planilha que falta |
+| `src/curriculum/exemplosDaAnalise.test.ts` | número da teoria da CC-ES009 que a base não devolve, dos dois lados |
+| `src/curriculum/exemplosDaAnalise.test.ts` | base em que a moda descreve gente nas duas colunas, ou em que a média engana em todas |
+| `src/curriculum/exemplosDaAnalise.test.ts` | base em que quem mais deixou de fora não é quem mobilizou melhor, que apaga o requisito 4 |
 | `src/curriculum/qualidade.test.ts` | vereda cuja alternativa correta se lê pelo tamanho, medida sozinha |
 | `src/labs/diagramaDoComputador.test.ts` | meta do diagrama da AP045 que abre verde, seta ao contrário passando porque outro caminho chega, ou mover peça invalidando a simulação |
 | `src/labs/pesquisaDoBug.test.ts` | página que responde às quatro perguntas sozinha, primeiro resultado confiável, ou ficha de fonte ruim valendo no caderno |
