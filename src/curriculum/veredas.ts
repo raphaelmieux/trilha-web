@@ -12,6 +12,7 @@ import { MODULOS_DE_CONTAS_E_SEGURANCA } from './contasESeguranca';
 import { MODULOS_DO_COMPARTILHADO } from './trabalhoCompartilhado';
 import { MODULOS_DA_COMUNICACAO } from './comunicacaoEAgenda';
 import { MODULOS_DE_DADOS } from './dadosEFormularios';
+import { MODULOS_DA_ANALISE } from './analiseDeDados';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -513,6 +514,29 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      A CC-ES009, que abre a planilha e a tela da plataforma.
+
+      Sete das dez lições acontecem na mesma pasta de trabalho — a base numa
+      aba, os cálculos na outra — e três não acontecem em programa nenhum:
+      classificar uma variável, escrever a conclusão e responder ao examinador
+      não são gestos que o Excel tenha, e inventá-los dentro da janela seria
+      pôr coisa nossa dentro do programa imitado.
+
+      `licao` diz de que estado da pasta se parte **e** em qual das duas telas
+      a lição abre, que é o campo `licao` da CC-ES005 e da CC-ES006 pelo motivo
+      escrito nas duas: um `tipo` por tela daria duas variantes quase iguais, e
+      o que muda entre elas não é o que a lição **é**.
+    */
+    id: string;
+    tipo: 'analise';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcEs009').LicaoDaCcEs009;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
@@ -938,9 +962,50 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_DADOS,
   },
-  anunciada('CC-ES009', 'Análise de Dados', 'Escritório',
-    'O que os números dizem, o que não dizem, e como um gráfico engana sem mentir.',
-    ['cc-es008']),
+  {
+    id: 'cc-es009',
+    code: 'CC-ES009',
+    name: 'Análise de Dados',
+    familia: 'Escritório',
+    description: 'O que os números dizem, o que não dizem, e como um gráfico engana sem mentir.',
+    /*
+      Em construção, e **com conteúdo** — que é legítimo e está escrito na
+      regra: vereda leva vários dias para ficar pronta, e as travas olham para
+      `veredasComConteudo()` justamente para que laboratório que abre resolvido
+      e questão repetida reprovem enquanto se escreve, e não no dia de abrir.
+
+      O que falta é o módulo 9, dos três gráficos enganosos **reais** do
+      requisito 7. Ele não se escreve de cabeça: analisar um gráfico que
+      alguém publicou exige ter visto o gráfico, e inventar três casos daria
+      uma lição sobre exemplos que não existem — numa vereda cuja matéria é
+      desconfiar do que lhe mostram.
+
+      A exigência é uma só, e está no requisito 1: a CC-ES008. O requisito 8
+      diz por quê — a base a analisar é **a base coletada lá**. Quem não a
+      coletou não sabe de onde vem cada coluna, nem por que o telefone é
+      texto, nem que a unidade saiu de uma lista para não chegar escrita de
+      quatro jeitos.
+
+      O que carrega esta vereda é o número plausível. A média dos acampamentos
+      é 2,85 e descreve um clube que não existe: vinte e nove dos quarenta e
+      oito fizeram dois ou menos. A moda da altura é 1,58 m e descreve duas
+      pessoas em quarenta e oito. O Falcão é a unidade que mais deixou gente
+      de fora **e** a que mobilizou melhor, e as duas contas estão certas. A
+      pizza das médias por unidade soma 17,1 e mostra fatias perfeitamente
+      plausíveis de um todo que não existe. Nenhuma dessas telas dá erro.
+    */
+    origem: 'CC-ES008',
+    preRequisitos: ['cc-es008'],
+    emConstrucao: true,
+    /*
+      Sem quadro de resultado: os exemplos desta vereda são tabelas de números
+      e desenhos de gráfico em texto, e não há o que executar. Ligá-lo
+      desenharia uma caixa de resultado vazia ao lado de cada exemplo, que é
+      fingir que executa.
+    */
+    mostraResultado: false,
+    modulos: MODULOS_DA_ANALISE,
+  },
   anunciada('CC-ES010', 'Análise Estatística', 'Escritório',
     'Correlação não é causa: amostra, tendência e o tamanho da própria incerteza.',
     ['cc-es009']),

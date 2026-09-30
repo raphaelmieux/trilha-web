@@ -24,6 +24,7 @@ import LaboratorioDeContas from '../components/LaboratorioDeContas';
 import LaboratorioDaNuvem from '../components/LaboratorioDaNuvem';
 import LaboratorioDeComunicacao from '../components/LaboratorioDeComunicacao';
 import LaboratorioDeDados from '../components/LaboratorioDeDados';
+import LaboratorioDaAnalise from '../components/LaboratorioDaAnalise';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
 import LaboratorioDoRelatorio from '../components/LaboratorioDoRelatorio';
@@ -373,6 +374,26 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'dados' && profile?.id) {
     return (
       <LaboratorioDeDados vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /*
+    E a CC-ES009 abre duas telas: a planilha e o caderno da análise.
+
+    A planilha é o Excel de sempre, com a base numa aba e os cálculos na
+    outra. O caderno é da plataforma, e existe porque sete das dez lições
+    terminam numa coisa que o Excel não tem onde guardar — dizer em qual
+    coluna a média descreve mal, julgar um valor de ponta, escrever por que
+    aquele gráfico responde àquela pergunta. Desenhar um botão desses dentro
+    da faixa seria pôr coisa nossa dentro do programa imitado, que é o
+    contrário do que a moldura existe para fazer: é a razão pela qual o módulo
+    1 e os módulos 10 e 11 são tela da plataforma inteira, como o módulo 8 da
+    CC-ES008.
+  */
+  if (licaoAberta?.tipo === 'analise' && profile?.id) {
+    return (
+      <LaboratorioDaAnalise vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

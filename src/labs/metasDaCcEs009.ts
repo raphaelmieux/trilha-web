@@ -884,26 +884,48 @@ const blocoCompleto = (c: ContextoDaAnalise, bloco: BlocoDeContas) =>
  * três veteranos para a média "melhorar". O requisito 5.6 manda decidir por
  * escrito o que fazer com eles, e não sumir com eles.
  */
+/**
+ * O que a região de dados da aba de respostas contém, como assinatura.
+ *
+ * ── Ela é exportada porque a tela precisa da mesma conta ────────────────
+ * A meta pergunta "a base continua inteira?" e a tela pergunta "o dado acabou
+ * de mudar?" — são a mesma leitura, de dois lados. Duas cópias divergiriam no
+ * primeiro ajuste, e a divergência apareceria como uma tarefa que não fecha
+ * com a planilha certa na tela.
+ *
+ * ── As linhas entram como conjunto, e não em ordem ──────────────────────
+ * Classificar é o gesto que duas lições mandam fazer: "ordene a coluna na aba
+ * Respostas e olhe as duas pontas". Ordenar leva a linha inteira — nenhum
+ * registro muda, só a ordem deles —, e comparando em ordem quem seguisse o
+ * passo a passo via duas tarefas ficarem vermelhas por ter feito exatamente o
+ * que a lição pediu. Ordem de linha não é dado.
+ *
+ * O que continua aparecendo é o que mexe no dado: apagar uma linha muda
+ * quantas há, digitar por cima troca uma linha por outra que não existia, e
+ * limpar uma célula esvazia um campo.
+ */
+export function assinaturaDaBase(p: Planilha): string {
+  const linhas: string[] = [];
+  for (let l = PRIMEIRA_LINHA; l < p.celulas.length; l++) {
+    const campos: string[] = [];
+    for (let col = 0; col <= camposDaBase().length; col++) campos.push(escritoEm(p, l, col));
+    linhas.push(campos.join('\u0000'));
+  }
+  return linhas.sort().join('\u0001');
+}
+
 function baseIntacta(c: ContextoDaAnalise): boolean {
   const p = aba(c, ABA_RESPOSTAS);
   const antes = abaDe(c.cadernoAntes, ABA_RESPOSTAS);
   if (!p || !antes) return false;
 
   /*
-    A região inteira, e não só a coluna de nomes.
-    
-    Olhando um campo só, apagar um nome reprovava e apagar a idade de alguém
-    passava — e as duas mexem no dado de que toda conta da lição depende.
-    "A base não foi mexida" quer dizer a base.
+    A região inteira, e não só a coluna de nomes: olhando um campo só, apagar
+    um nome reprovava e apagar a idade de alguém passava — e as duas mexem no
+    dado de que toda conta da lição depende. "A base não foi mexida" quer dizer
+    a base, e quem a lê é `assinaturaDaBase`, que a tela também lê.
   */
-  const regiao = (q: typeof p) => {
-    const fora: string[] = [];
-    for (let l = PRIMEIRA_LINHA; l < q.celulas.length; l++) {
-      for (let col = 0; col <= camposDaBase().length; col++) fora.push(escritoEm(q, l, col));
-    }
-    return fora.join('\u0000');
-  };
-  return regiao(p) === regiao(antes);
+  return assinaturaDaBase(p) === assinaturaDaBase(antes);
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -1000,10 +1022,11 @@ export const METAS_DO_CENTRO: Meta[] = [
     id: 'a-moda-das-tres',
     titulo: 'A moda das três, e reparar que uma delas não quer dizer nada',
     detalhe: 'A planilha devolve um número nas três, e num deles esse número descreve duas pessoas em quarenta e oito. Moda só significa alguma coisa quando o valor se repete bastante.',
-    onde: 'Na linha da Moda, nas três colunas — e depois na aba Respostas.',
+    onde: 'Na linha da Moda, nas três colunas — e depois no filtro da aba Respostas.',
     passos: [
       'Escreva =MODO( para as três colunas. Saem três números, todos plausíveis.',
-      'Agora conte, na aba Respostas, quantas pessoas têm exatamente a moda da idade — e quantas têm exatamente a moda da altura.',
+      'Agora conte quantas pessoas têm exatamente cada um: na aba Respostas, ligue o Filtro na guia Dados, abra a setinha da coluna e escolha o valor da moda.',
+      'A régua de baixo diz quantos registros sobraram. Faça com a idade e faça com a altura.',
       'Uma se repete dezenas de vezes; a outra, duas. A planilha não avisa a diferença: quem pergunta é você.',
     ],
     feita: c => linhaCompleta(c, 'Moda') && viu(c, VIU_QUE_A_MODA_NAO_SERVE),
@@ -1027,7 +1050,7 @@ export const METAS_DO_CENTRO: Meta[] = [
     passos: [
       'Vá à aba Respostas e mude a altura de alguém.',
       'Volte à aba Cálculos e veja a média andar.',
-      'A base volta ao que era sozinha: aqui ela é dado, e não rascunho.',
+      'Depois aperte Ctrl+Z para devolver o dado ao que era: a base é dado, e quatro lições desta vereda cobram ela inteira.',
     ],
     feita: c => viu(c, VIU_A_CONTA_SE_REFAZER),
   },
@@ -1086,7 +1109,7 @@ export const METAS_DO_ENGANO: Meta[] = [
     id: 'viu-a-coluna-que-engana',
     titulo: 'Dizer em qual das três colunas a média descreve mal',
     detalhe: 'E é uma só. Nas outras duas a média está ótima — quem sai daqui achando que média sempre mente deixa de usar uma medida boa.',
-    onde: 'Na pergunta abaixo da tabela.',
+    onde: 'No caderno da análise, na pergunta de três alternativas.',
     passos: [
       'Olhe a linha da razão: duas colunas ficam quase em 1, e uma fica bem acima.',
       'Olhe a coluna que ficou acima na aba Respostas, ordenada, e veja quem está no fim dela.',
@@ -1150,7 +1173,7 @@ export const METAS_DAS_FREQUENCIAS: Meta[] = [
     id: 'viu-por-que-a-altura-precisa-de-classe',
     titulo: 'Dizer por que a altura precisou de classes e a unidade não',
     detalhe: 'É a diferença que você marcou no módulo 1, agora fazendo diferença: uma se conta, a outra se mede.',
-    onde: 'Na pergunta abaixo das duas tabelas.',
+    onde: 'No caderno da análise, na pergunta de quatro alternativas.',
     passos: [
       'Olhe a coluna da unidade: seis valores diferentes em quarenta e oito respostas.',
       'Olhe a coluna da altura: quase uma altura diferente por pessoa.',
@@ -1242,7 +1265,7 @@ export const METAS_DA_COMPARACAO: Meta[] = [
     id: 'a-unidade-mais-experiente',
     titulo: 'Dizer qual unidade já foi a mais acampamentos, em média',
     detalhe: 'E repare que não é a maior. Contar quantos são responde uma pergunta; tirar a média responde outra.',
-    onde: 'Na pergunta abaixo da tabela.',
+    onde: 'No caderno da análise, escolhendo entre as seis unidades.',
     passos: [
       'Olhe a coluna de média de acampamentos, e não a de inscritos.',
       'A unidade com mais gente não é a com mais experiência — são perguntas diferentes.',
@@ -1291,11 +1314,11 @@ export const METAS_DA_ADESAO: Meta[] = [
     id: 'viu-as-duas-leituras',
     titulo: 'Reparar que as duas colunas ordenam ao contrário',
     detalhe: 'A unidade com mais ausentes é a mesma com a melhor taxa. As duas contas estão certas — e levam a conclusões opostas.',
-    onde: 'Ordenando o bloco pela coluna de ausentes, e depois pela de taxa.',
+    onde: 'Na aba Cálculos, clicando no maior número de cada uma das duas colunas.',
     passos: [
-      'Olhe qual unidade tem o maior número na coluna "Ficaram de fora".',
-      'Agora olhe qual tem o maior número na coluna "Taxa de adesão".',
-      'É a mesma. Ela é a maior unidade do clube: três de dezesseis é menos que dois de oito.',
+      'Ache o maior número da coluna "Ficaram de fora" e clique nele.',
+      'Agora ache o maior número da coluna "Taxa de adesão" e clique nele também.',
+      'É a mesma linha. Ela é a maior unidade do clube: três de dezesseis é menos que dois de oito.',
     ],
     feita: c => viu(c, VIU_AS_DUAS_LEITURAS),
   },
@@ -1303,7 +1326,7 @@ export const METAS_DA_ADESAO: Meta[] = [
     id: 'qual-mobilizou-melhor',
     titulo: 'Responder qual conselheiro mobilizou melhor a unidade dele',
     detalhe: 'Esta é a pergunta, e só uma das duas colunas responde a ela. A outra responde quantas vagas o acampamento perdeu — que também importa, e para outra coisa.',
-    onde: 'Na pergunta abaixo da tabela.',
+    onde: 'No caderno da análise, escolhendo entre as seis unidades.',
     passos: [
       'Mobilizar bem é levar a maior parte da própria gente, e isso é a taxa.',
       'O número absoluto responde outra coisa: quantas vagas ficaram vazias.',
@@ -1347,7 +1370,7 @@ export const METAS_DOS_ATIPICOS: Meta[] = [
     id: 'toda-ponta-julgada',
     titulo: 'Um veredito para cada valor das pontas',
     detalhe: 'São os três maiores e os três menores de cada coluna. A maioria é gente comum — alguém tem de ser o mais novo.',
-    onde: 'Na lista de valores das pontas, no botão de cada linha.',
+    onde: 'No caderno da análise, na lista de valores das pontas.',
     passos: [
       'Ordene a coluna na aba Respostas e olhe as duas pontas.',
       'Para cada valor, pergunte: isto é uma pessoa possível?',
@@ -1374,7 +1397,7 @@ export const METAS_DOS_ATIPICOS: Meta[] = [
     id: 'as-duas-justificativas',
     titulo: 'Escrever por que um fica e por que o outro sai',
     detalhe: 'O requisito pede a decisão por escrito, e as duas razões são opostas: uma é sobre gente de verdade, a outra é sobre um dedo que escorregou.',
-    onde: 'Nos dois campos de texto abaixo da lista.',
+    onde: 'No caderno da análise, nos dois campos de texto abaixo da lista.',
     passos: [
       'No que fica: diga por que você acredita que o número é verdadeiro.',
       'No que sai: diga o que você acha que aconteceu, e o que você faria para confirmar.',
@@ -1421,9 +1444,10 @@ export const METAS_DOS_GRAFICOS: Meta[] = [
     id: 'os-tres-graficos',
     titulo: 'Um gráfico em cada aba, do tipo que responde àquela pergunta',
     detalhe: 'Os três tipos desenham sem erro sobre qualquer dado. O que muda é se o desenho responde ou não à pergunta que está escrita no alto da aba.',
-    onde: 'Em cada uma das três abas, em Inserir e depois Gráfico.',
+    onde: 'Em cada uma das três abas, selecionando as duas colunas e indo em Inserir, Gráfico.',
     passos: [
-      'Leia a pergunta no alto da aba antes de escolher o tipo.',
+      'A pergunta de cada aba está no caderno da análise, e a caixa do gráfico a repete quando você a abre naquela aba. Leia antes de escolher o tipo.',
+      'Selecione a coluna dos rótulos e a dos números, do cabeçalho até a última linha, antes de abrir a caixa.',
       'De que o todo é feito? É pizza — e ela só serve quando as partes somam o todo.',
       'Quem é maior? São colunas.',
       'O que mudou ao longo do tempo? É linha — e ligar duas unidades com um traço afirmaria que uma virou a outra.',
@@ -1449,7 +1473,7 @@ export const METAS_DOS_GRAFICOS: Meta[] = [
     id: 'as-tres-justificativas',
     titulo: 'Escrever por que cada tipo responde à sua pergunta',
     detalhe: 'O requisito pede a escolha justificada, e as três razões são diferentes — se a mesma frase serve para os três, uma delas não foi pensada.',
-    onde: 'Nos três campos de texto, um por aba.',
+    onde: 'No caderno da análise, nos três campos de texto.',
     passos: [
       'Diga o que aquela pergunta quer saber, e por que aquele desenho mostra isso.',
       'Diga também o que outro tipo mostraria de errado ali.',

@@ -8,8 +8,10 @@ import { MemoryRouter } from 'react-router-dom';
 import PlanilhaLab from './PlanilhaLab';
 import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
 import LaboratorioDeDados from '../components/LaboratorioDeDados';
+import LaboratorioDaAnalise from '../components/LaboratorioDaAnalise';
 import { CADERNOS_DA_CC_ES003 } from './cadernosDaCcEs003';
 import { LICOES_DA_CC_ES008 } from './metasDaCcEs008';
+import { LICOES_DA_CC_ES009 } from './metasDaCcEs009';
 import type { LicaoDeVereda, Vereda } from '../curriculum/veredas';
 
 /*
@@ -101,6 +103,19 @@ const LABORATORIOS: Record<string, () => React.ReactElement> = {
       } as Extract<LicaoDeVereda, { tipo: 'dados' }>}
       aoVencer={async () => {}} aoSair={() => {}} />
   ),
+  'components/LaboratorioDaAnalise.tsx': () => (
+    <LaboratorioDaAnalise
+      vereda={{ code: 'CC-ES009' } as Vereda}
+      licao={{
+        id: 'lab-centro',
+        tipo: 'analise',
+        titulo: 'Lição de teste',
+        resumo: '',
+        licao: 'centro',
+        verificacoes: LICOES_DA_CC_ES009.centro.metas.map(m => m.id),
+      } as Extract<LicaoDeVereda, { tipo: 'analise' }>}
+      aoVencer={async () => {}} aoSair={() => {}} />
+  ),
 };
 
 /* ── Os gestos, escritos uma vez e rodados em todos ────────────────────────── */
@@ -155,10 +170,14 @@ const lido = (l: number, c: number) => celula(l, c).textContent?.trim() ?? '';
 /*
   Onde os gestos acontecem.
 
-  A linha 8 fica abaixo de tudo o que os dois cadernos trazem escrito, então
-  escrever ali não estraga o exercício de nenhum dos dois nem depende do que
-  cada um tem dentro — o que importa é que a **mesma** tecla produza o **mesmo**
-  resultado, e não qual planilha está aberta.
+  A linha 8 fica abaixo do que os cadernos da AP043 e da CC-ES003 trazem
+  escrito; na aba de respostas da CC-ES009 ela é um registro, e escrever ali
+  mexe na base daquela lição. Nenhum dos dois casos muda o que se confere:
+  cada gesto lê o que a célula trazia antes e compara com o que ela trouxe
+  depois, então o que está na mesa é a **tecla**, e nunca a planilha aberta.
+
+  Comparar com vazio funcionaria só no laboratório cuja célula nasce vazia —
+  que é a trava passando por acaso, indistinguível de estar certa.
 */
 const L = 8;
 

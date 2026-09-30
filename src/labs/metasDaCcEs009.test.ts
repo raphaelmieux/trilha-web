@@ -22,8 +22,8 @@ import {
   CLASSIFICACAO, adesaoPorUnidade, baseDoAcampamento, camposDaBase,
 } from './baseDoAcampamento';
 import {
-  type Grafico, type TabelaDinamica,
-  atualizarResumo, escrever, valorCalculado,
+  type Grafico, type Planilha, type TabelaDinamica,
+  atualizarResumo, escrever, ordenar, valorCalculado,
 } from './planilha';
 import { abaDe, comAba, escritoEm, mostradoEm, valorEm } from './cadernoDoClube';
 import { colunaDe, medidaPorGrupo, repeticoesDaModa } from './analiseDeDados';
@@ -274,7 +274,21 @@ function comAComparacao(c: ContextoDaAnalise): ContextoDaAnalise {
   const respostas = abaDe(c.caderno, ABA_RESPOSTAS);
   const tabela = respostas.tabela!;
   const resumo = {
-    em: { l: 0, c: 0 },
+    /*
+      Ao lado do dado, e não em cima dele — a mesma coluna que a tela usa.
+
+      O Excel oferece "nova planilha" ou "planilha existente"; aqui a pasta é a
+      da lição e não se acrescenta aba, então o relatório vai para a primeira
+      coluna livre à direita da base. Nascendo em A1, ele cobriria o cabeçalho
+      e as primeiras respostas — e a lição do módulo 5 pede justamente comparar
+      o resumo com o dado que ele leu.
+
+      `resumoConfere` não olha para `em`, então as duas posições passariam. É
+      por isso que ela está escrita igual nos dois lados: solução de referência
+      que faz o gesto de um jeito e tela que o faz de outro é a divergência que
+      ninguém vê até alguém clicar.
+    */
+    em: { l: 0, c: camposDaBase().length + 2 },
     origem: { planilha: ABA_RESPOSTAS, faixa: tabela },
     linha: colunaDoCampo(CAMPO_UNIDADE),
     valor: { coluna: colunaDoCampo(CAMPO_ACAMPAMENTOS), como: 'media' as const },
@@ -663,6 +677,32 @@ describe('onde a média engana', () => {
     /* A conta continua dando o mesmo número: a camiseta não entra nela. */
     expect(linhaDoRotulo(c.blocos, ROTULO_RAZAO)).toBeGreaterThan(0);
     expect(meta('a-razao-entre-as-duas').feita(c)).toBe(false);
+  });
+
+  it('classificar a base não a mexe, porque ordem de linha não é dado', () => {
+    /*
+      Duas lições mandam ordenar a coluna e olhar as duas pontas, e ordenar
+      leva a linha inteira: nenhum registro muda, só a ordem deles. Comparando
+      as linhas **em ordem**, quem seguisse o passo a passo via duas tarefas
+      ficarem vermelhas por ter feito exatamente o que a lição pediu — e sem
+      nada na tela explicando, que é o pior jeito de uma tarefa reprovar.
+
+      A guarda contra o vazio é a comparação de nomes: uma ordenação que não
+      ordenasse nada deixaria este caso aprovando a guarda por não a ter
+      exercitado.
+    */
+    const pronto = SOLUCOES.engano(licao.inicial());
+    const respostas = abaDe(pronto.caderno, ABA_RESPOSTAS);
+    const ordenada = ordenar(respostas, colunaDoCampo(CAMPO_ACAMPAMENTOS), false);
+
+    const nomes = (q: Planilha) => q.celulas
+      .slice(PRIMEIRA_LINHA)
+      .map(l => l[colunaDoCampo(CAMPO_NOME_DA_BASE)]?.texto ?? '');
+    expect(nomes(ordenada), 'a ordenação não mexeu em nada').not.toEqual(nomes(respostas));
+
+    const c = { ...pronto, caderno: comAba(pronto.caderno, ordenada) };
+    expect(meta('a-razao-entre-as-duas').feita(c)).toBe(true);
+    expect(meta('quantos-chegam-a-media').feita(c)).toBe(true);
   });
 
   it('a razão separa a coluna que engana das outras duas', () => {

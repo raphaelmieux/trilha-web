@@ -1964,11 +1964,15 @@ a trava de tela da CC-ES003 nasceu vermelha com o navegador verde, em cinco das
 sete lições. É irmã do `float` ignorado em item de flex e do `\t` colapsado — o
 jsdom mentindo em cima de uma diferença que o navegador não tem.
 
-**Os três laboratórios de planilha avisam juntos.** A lembrança do aviso de
-tela pequena é por programa imitado, e o da AP043 dizia `programa="planilha"`
+**Os laboratórios de planilha avisam juntos.** A lembrança do aviso de tela
+pequena é por programa imitado, e o da AP043 dizia `programa="planilha"`
 enquanto o da AP044 dizia `"excel"`: quem dispensava o aviso num era avisado de
-novo no outro. Com um terceiro laboratório o estrago passou a ser duplo, e
-aviso que volta é o que ensina a pessoa a não ler avisos.
+novo no outro. Eram três quando isto se escreveu e hoje são cinco — as duas
+trilhas, a CC-ES003, a CC-ES008 e a CC-ES009 —, então o estrago de uma chave
+por laboratório seria de cinco avisos, e aviso que volta é o que ensina a
+pessoa a não ler avisos. O nome do programa é `"excel"` em todos, e
+`gradeDoExcel.test.tsx` cobra de cada um os mesmos gestos de teclado pela mesma
+razão.
 
 **O PDF calcula, porque a CC-ES004 cobra o que não se vê.** O requisito 5
 manda digitalizar um papel, reconhecer o texto e **comprovar o resultado
@@ -2850,6 +2854,106 @@ computador para uma tela que funciona perfeitamente no telefone dela.
 laboratório que não imita nada continua sendo tela da plataforma, e tela da
 plataforma não avisa nada sobre programa nenhum.
 
+**A CC-ES009 abre duas telas, e a lição diz em qual ela começa.** A planilha é
+o Excel de sempre — `excel.tsx` mais `useGradeDoExcel`, a base numa aba e os
+cálculos na outra — e a outra é o **caderno da análise**, que é da plataforma.
+
+Ele existe porque sete das dez lições terminam numa coisa que o Excel não tem
+onde guardar: dizer em qual coluna a média descreve mal, julgar um valor de
+ponta, escrever por que aquele gráfico responde àquela pergunta. Não há botão
+de planilha nenhuma que faça isso, e desenhar um dentro da faixa seria pôr
+coisa nossa dentro do programa imitado — o contrário do que a moldura existe
+para fazer. É a razão pela qual o módulo 1 e os módulos 10 e 11 são tela da
+plataforma inteira, como o módulo 8 da CC-ES008: laboratório que não imita nada
+continua sendo tela da plataforma.
+
+O caderno não é um sexto programa: é a folha ao lado da planilha, que é onde a
+análise de verdade acontece. A travessia mora no painel de tarefas, onde as
+coisas da plataforma já moram, e ela existe nos dois sentidos — quem escreve no
+caderno cita números, e eles saem da aba Cálculos e não de memória. O módulo 2
+não tem caderno, e por isso não oferece a travessia: um botão que abrisse uma
+folha em branco prometeria trabalho que a lição não pede, que é a regra do
+`aoBuscar` do Explorador aplicada à própria plataforma.
+
+**A mudança do dado se vê num lugar só, e ele não é a célula.** A descoberta do
+módulo 2 — ver a conta se refazer quando um dado muda — estava pendurada num
+`aoConfirmar` da grade, que só enxerga a edição feita **dentro** da célula.
+Quem escrevia pela barra de fórmulas, que é onde se escreve numa planilha,
+passava por fora: a tarefa não fechava para ninguém, com o motor inteiramente
+correto. Hoje a leitura está dentro do `mudar` do laboratório, por onde toda
+mudança da planilha passa — e de lambuja ela cobre o Delete e o colar.
+
+Quem achou foi a trava que clica, e é o defeito que ela existe para achar:
+trava de motor não é trava de tela.
+
+**Classificar a base não é mexer nela, e as duas contas são a mesma.** Duas
+lições mandam ordenar a coluna e olhar as duas pontas, e ordenar leva a linha
+inteira: nenhum registro muda, só a ordem deles. `assinaturaDaBase` compara as
+linhas como **conjunto** por isso, e quem seguisse o passo a passo via duas
+tarefas ficarem vermelhas por ter feito exatamente o que a lição pediu, sem
+nada na tela explicando. Apagar uma linha, digitar por cima e limpar uma célula
+continuam aparecendo, porque o conjunto muda nos três.
+
+Ela é exportada, e é decisão: a meta pergunta "a base continua inteira?" e a
+tela pergunta "o dado acabou de mudar?" — são a mesma leitura de dois lados, e
+duas cópias divergiriam no primeiro ajuste com a divergência aparecendo como
+tarefa que não fecha com a planilha certa na tela.
+
+**O Ctrl+Z desfaz a planilha, e não o que a pessoa viu.** O gesto é da própria
+lição: mexe-se num dado, olha-se a média andar, e devolve-se o dado ao que era.
+Levando a descoberta junto, o passo final do passo a passo apagaria a única
+coisa que a tarefa mede — a lista fechava e abria de novo no mesmo toque.
+
+Gravar a descoberta fora do histórico não bastou, e é a parte que não se
+adivinha: desfazer troca o presente **inteiro** pelo passado guardado, e o
+passado é de antes de ela existir. As duas coisas são necessárias — fora do
+histórico, para que um toque desfaça uma digitação só; e trazida adiante pelo
+desfazer, porque descoberta é monotônica e o que se viu, viu-se.
+
+**A caixa do gráfico abre com os eixos vazios.** O Excel nomeia a série pelo
+cabeçalho da faixa e não escreve título de eixo nenhum — quem quer isso vai em
+Elementos do Gráfico e digita. A primeira versão daqui trazia os cabeçalhos
+prontos, o que entregava de graça a tarefa dos eixos, e ela existe justamente
+porque gráfico sem eixo identificado não afirma nada. A pergunta da aba, essa,
+a caixa repete: ela é o enunciado, e qual desenho a responde continua sendo
+decisão de quem escolhe.
+
+**A tabela dinâmica pousa ao lado do dado, e não em cima dele.**
+`resumoConfere` não olha para `em`, então o relatório nascendo em A1 passava nas
+travas — cobrindo o cabeçalho e as primeiras respostas da própria base que a
+lição manda comparar com ele. A solução de referência o põe exatamente onde a
+tela o põe: escrita de um jeito na trava e de outro na tela, é a divergência que
+ninguém vê até alguém clicar.
+
+**Os números que a teoria da CC-ES009 cita saem da base, e são conferidos.**
+É a trava de `exemplosDePython.test.ts` e de `exemplosDePlanilha.test.ts` pela
+terceira vez, e aqui a superfície é maior do que nas duas: esta vereda inteira
+fala de números de uma base concreta. A média da idade aparece na teoria do
+módulo 2, na do 3 e em três questões; a taxa do Falcão aparece na teoria do 6 e
+em duas questões do 11. Mexer num inscrito muda todas, e nenhuma delas
+reclamaria.
+
+A divisão é a de `exemplosDePlanilha`: a **conta** se declara na trava e a
+**afirmação** se lê da lição, então o número que o desbravador vê nunca é o que
+o teste escreveu. O que ela não faz é varrer o texto atrás de números soltos —
+isso seria máquina frágil que um dia para de achar o que procura e aprova tudo
+calada. Cada afirmação é declarada, com piso na tabela e cobrança de que toda
+entrada seja encontrada.
+
+E há **duas** formas de número, de propósito. Onde ele é resultado que se
+compara com a tela, a forma é a da plataforma — `mostrarNumero`, duas casas.
+Onde ele só se lê na prosa, é a da prosa: a cerca de Tukey não aparece em
+célula nenhuma, e cobrar "18,50" ali obrigaria a lição a escrever um zero que
+ninguém escreve.
+
+Ela achou três coisas na primeira execução, e a terceira não era de forma: a
+questão sobre "quantos ficam **abaixo** da média" citava na explicação os
+números de "quantos **chegam**" — 22 e 19 no lugar de 26 e 29 —, e a
+alternativa certa dizia que os dois passam da metade, o que é verdade de um par
+e falso do outro. Uma questão inteira em desacordo consigo mesma, com todos os
+números plausíveis. Hoje as duas metades falam de "quantos chegam", que é a
+conta que o laboratório de fato pede.
+
 **Trilha nova não estende o laboratório da trilha anterior.** O requisito 7 da
 AP044 pede nove coisas num editor de texto, e o caminho barato era acrescentar
 nove tarefas ao laboratório de formatação da AP042. Seria mudar o que a trilha
@@ -3587,6 +3691,14 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaCcEs008.test.ts` | meta da CC-ES008 que abre verde, ou que a solução de referência não fecha |
 | `src/components/LaboratorioDeDados.test.tsx` | lição da CC-ES008 impossível de vencer clicando |
 | `src/components/LaboratorioDeDados.test.tsx` | relatório de tabela dinâmica que engole a digitação em vez de recusá-la |
+| `src/labs/metasDaCcEs009.test.ts` | base classificada valendo por base mexida, que reprova quem seguiu o passo a passo |
+| `src/components/LaboratorioDaAnalise.test.tsx` | lição da CC-ES009 impossível de vencer clicando |
+| `src/components/LaboratorioDaAnalise.test.tsx` | dado mudado pela barra de fórmulas que não conta, ou Ctrl+Z que leva a descoberta junto |
+| `src/components/LaboratorioDaAnalise.test.tsx` | classificar a base acendendo a descoberta do dado que muda |
+| `src/components/LaboratorioDaAnalise.test.tsx` | caderno da análise oferecido na lição que não tem um, ou volta à planilha que falta |
+| `src/curriculum/exemplosDaAnalise.test.ts` | número da teoria da CC-ES009 que a base não devolve, dos dois lados |
+| `src/curriculum/exemplosDaAnalise.test.ts` | base em que a moda descreve gente nas duas colunas, ou em que a média engana em todas |
+| `src/curriculum/exemplosDaAnalise.test.ts` | base em que quem mais deixou de fora não é quem mobilizou melhor, que apaga o requisito 4 |
 | `src/curriculum/qualidade.test.ts` | vereda cuja alternativa correta se lê pelo tamanho, medida sozinha |
 | `src/labs/diagramaDoComputador.test.ts` | meta do diagrama da AP045 que abre verde, seta ao contrário passando porque outro caminho chega, ou mover peça invalidando a simulação |
 | `src/labs/pesquisaDoBug.test.ts` | página que responde às quatro perguntas sozinha, primeiro resultado confiável, ou ficha de fonte ruim valendo no caderno |
