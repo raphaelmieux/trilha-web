@@ -808,12 +808,13 @@ export function esperadoDe(base: Formulario, campoId: string, rotulo: string): n
  *     intervalo errado devolve um número plausível e deixa um inscrito de
  *     fora.
  */
-function contaConfere(
-  c: ContextoDaAnalise, rotulo: string, coluna: number, funcoes: string[], esperado: number | null,
+export function contaConfere(
+  caderno: Caderno, blocos: BlocoDeContas[],
+  rotulo: string, coluna: number, funcoes: string[], esperado: number | null,
 ): boolean {
-  const p = aba(c, ABA_CALCULOS);
+  const p = abaDe(caderno, ABA_CALCULOS);
   if (!p) return false;
-  const linha = linhaDoRotulo(c.blocos, rotulo);
+  const linha = linhaDoRotulo(blocos, rotulo);
   if (linha < 0) return false;
   const escrito = escritoEm(p, linha, coluna);
   if (!funcoes.every(f => usaFuncao(escrito, f))) return false;
@@ -840,7 +841,7 @@ function contaConfere(
     avaliador que não sabe onde procurar. Toda lição desta vereda atravessa a
     aba, porque a base mora numa e o cálculo mora na outra.
   */
-  const v = valorCalculado(p, linha, coluna, c.caderno);
+  const v = valorCalculado(p, linha, coluna, caderno);
   if (esperado === null) return v.tipo === 'erro';
   /*
     A comparação é por proximidade, e não por igualdade.
@@ -860,13 +861,27 @@ function contaConfere(
  * Ela percorre as colunas do bloco, e não uma lista fixa: o bloco de medidas
  * tem três, o de frequências tem outras três, e o próximo terá as dele.
  */
-function linhaCompleta(c: ContextoDaAnalise, rotulo: string): boolean {
-  const bloco = blocoDoRotulo(c.blocos, rotulo);
+export function linhaConfere(
+  caderno: Caderno, blocos: BlocoDeContas[], base: Formulario, rotulo: string,
+): boolean {
+  const bloco = blocoDoRotulo(blocos, rotulo);
   if (!bloco) return false;
   return bloco.colunas.every(coluna =>
-    contaConfere(c, rotulo, colunaDoBloco(bloco, coluna),
-      bloco.funcoes(rotulo, coluna), bloco.esperado(c.base, rotulo, coluna)));
+    contaConfere(caderno, blocos, rotulo, colunaDoBloco(bloco, coluna),
+      bloco.funcoes(rotulo, coluna), bloco.esperado(base, rotulo, coluna)));
 }
+
+/*
+  O sabor desta vereda, para os sete lugares que já o chamam.
+
+  As duas de cima recebem as **peças** — a pasta e os blocos — e não o
+  contexto, porque a regra de "confere a fórmula **e** o resultado" é uma só e
+  a CC-ES010 precisa da mesma. Uma segunda cópia dela divergiria no primeiro
+  ajuste, e a divergência apareceria do pior jeito possível: uma vereda
+  aprovando a célula digitada que a outra recusa.
+*/
+const linhaCompleta = (c: ContextoDaAnalise, rotulo: string) =>
+  linhaConfere(c.caderno, c.blocos, c.base, rotulo);
 
 /** Todas as linhas de um bloco, escritas. */
 const blocoCompleto = (c: ContextoDaAnalise, bloco: BlocoDeContas) =>

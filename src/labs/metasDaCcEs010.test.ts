@@ -3,7 +3,14 @@ import {
   type ContextoDaEstatistica, type LicaoDaCcEs010,
   LICOES_DA_CC_ES010, SOLUCOES_DA_CC_ES010,
 } from './metasDaCcEs010';
+import {
+  LEITURAS_DE_R, PARES, PAR_DO_MODULO_2, rDoPar,
+} from './metasDaCcEs010';
 import { COLETAS, populacaoCerta } from './amostraDoClube';
+import { ABA_CALCULOS, ABA_RESPOSTAS, linhaDoRotulo } from './metasDaCcEs009';
+import { abaDe, comAba } from './cadernoDoClube';
+import { escrever } from './planilha';
+import { colunaDe, correlacaoDe } from './analiseDeDados';
 
 /*
   As metas da CC-ES010.
@@ -181,6 +188,129 @@ describe('o módulo 1 recusa o atalho', () => {
   it('esticar a base para o Brasil inteiro também não fecha', () => {
     const c: ContextoDaEstatistica = { ...abrir(), populacao: 'brasil' };
     expect(meta('a-populacao').feita(c)).toBe(false);
+  });
+});
+
+/*
+  ── O módulo 2 recusa o gráfico que parece certo ─────────────────────────
+
+  Um gráfico errado continua sendo um gráfico, e é a família inteira de
+  defeitos que esta plataforma existe para nomear. Aqui o requisito 5.1 pede
+  dispersão **entre duas variáveis**, e cada um dos casos abaixo desenha uma
+  figura perfeitamente plausível que não responde a isso.
+*/
+describe('o módulo 2 recusa o gráfico que parece certo', () => {
+  const abrir = () => LICOES_DA_CC_ES010.correlacao.inicial();
+  const meta = (id: string) => LICOES_DA_CC_ES010.correlacao.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES_DA_CC_ES010.correlacao(abrir());
+
+  const comGrafico = (c: ContextoDaEstatistica, troca: Record<string, unknown>) => {
+    const r = c.caderno.planilhas.find(x => x.nome === ABA_RESPOSTAS)!;
+    const g = { ...r.grafico!, ...troca };
+    return { ...c, caderno: comAba(c.caderno, { ...r, grafico: g }) };
+  };
+
+  it('a solução de referência fecha as três', () => {
+    const c = pronto();
+    for (const m of LICOES_DA_CC_ES010.correlacao.metas) {
+      expect(m.feita(c), `"${m.titulo}" não fecha`).toBe(true);
+    }
+  });
+
+  it('pizza sobre as mesmas duas colunas não é dispersão', () => {
+    /* Ela desenha fatias de uma composição que não existe, e é redonda e
+       bonita. O tipo responde à pergunta; a existência do gráfico não. */
+    expect(meta('a-dispersao').feita(comGrafico(pronto(), { tipo: 'pizza' }))).toBe(false);
+  });
+
+  it('dispersão sem eixo escrito não fecha', () => {
+    /* Gráfico sem eixo identificado não afirma nada: a nuvem está lá e
+       ninguém sabe do que ela fala. */
+    expect(meta('a-dispersao').feita(comGrafico(pronto(), { eixoX: '' }))).toBe(false);
+    expect(meta('a-dispersao').feita(comGrafico(pronto(), { eixoY: '  ' }))).toBe(false);
+  });
+
+  it('dispersão sobre outras colunas desenha outra pergunta', () => {
+    /* Duas colunas quaisquer da base dão uma nuvem igualmente plausível — e o
+       que o requisito pede é a relação entre **estas** duas. */
+    const c = pronto();
+    expect(meta('a-dispersao').feita(comGrafico(c, { faixa: { l1: 1, c1: 1, l2: 48, c2: 2 } })))
+      .toBe(false);
+  });
+
+  it('faixa com uma linha de menos não fecha', () => {
+    /*
+      É o erro de planilha mais comum que existe, e aqui ele é invisível: a
+      nuvem sai quase idêntica, sem um ponto que ninguém vai procurar. É o
+      `=MÉDIA(F3:F49)` da CC-ES003, aplicado a um desenho.
+    */
+    const c = pronto();
+    const g = c.caderno.planilhas.find(x => x.nome === ABA_RESPOSTAS)!.grafico!;
+    expect(meta('a-dispersao').feita(comGrafico(c, { faixa: { ...g.faixa, l2: g.faixa.l2 - 1 } })))
+      .toBe(false);
+  });
+
+  it('número digitado na célula do r não fecha, mesmo sendo o número certo', () => {
+    /*
+      `=0,909...` começa por igual, devolve o valor certo, e não acompanha
+      nada. É o terceiro defeito do requisito 7 da CC-ES003 — o que não tem
+      pista nenhuma, porque está certo hoje e continua mostrando o de hoje
+      amanhã.
+    */
+    const c = abrir();
+    const certo = rDoPar(c.base, PAR_DO_MODULO_2)!;
+    const calc = escrever(
+      abaDe(c.caderno, ABA_CALCULOS),
+      linhaDoRotulo(c.blocos, PAR_DO_MODULO_2.rotulo),
+      1,
+      `=${String(certo).replace('.', ',')}`,
+    );
+    const digitado = { ...c, caderno: comAba(c.caderno, calc) };
+    expect(meta('o-coeficiente').feita(digitado)).toBe(false);
+  });
+
+  it('as três leituras erradas de r não fecham', () => {
+    const c = pronto();
+    for (const l of LEITURAS_DE_R) {
+      if (l.certa) continue;
+      expect(
+        meta('interpretou-o-valor').feita({ ...c, leituraDeR: l.id }),
+        `a leitura "${l.id}" fechou a meta`,
+      ).toBe(false);
+    }
+    /* E exatamente uma está certa, senão a conta acima não diz nada. */
+    expect(LEITURAS_DE_R.filter(l => l.certa)).toHaveLength(1);
+  });
+});
+
+/*
+  ── Os três pares são o requisito 3 desenhado em números ─────────────────
+*/
+describe('os pares da base', () => {
+  it('exatamente um é espúrio, e a coluna escondida dele existe', () => {
+    const espurios = PARES.filter(p => p.espuria);
+    expect(espurios).toHaveLength(1);
+    expect(espurios[0].escondida).toBeTruthy();
+  });
+
+  /*
+    A premissa que faz o requisito 3 existir, e ela é sobre a base e não sobre
+    o código: o par espúrio tem de ter correlação **boa o bastante para
+    convencer** — um r de 0,1 não engana ninguém e não haveria o que desfazer —
+    e a coluna escondida tem de explicar os dois lados melhor do que eles se
+    explicam. Mexer num inscrito pode desfazer isso, e nada reclamaria.
+  */
+  it('o par espúrio convence, e a coluna escondida explica os dois melhor', () => {
+    const base = LICOES_DA_CC_ES010.correlacao.inicial().base;
+    const espurio = PARES.find(p => p.espuria)!;
+    const r = rDoPar(base, espurio)!;
+    expect(Math.abs(r), `o par espúrio tem r = ${r}, fraco demais para enganar`)
+      .toBeGreaterThan(0.4);
+
+    const comEscondida = (campo: string) =>
+      Math.abs(correlacaoDe(colunaDe(base, espurio.escondida!), colunaDe(base, campo))!);
+    expect(comEscondida(espurio.x)).toBeGreaterThan(Math.abs(r));
+    expect(comEscondida(espurio.y)).toBeGreaterThan(Math.abs(r));
   });
 });
 
