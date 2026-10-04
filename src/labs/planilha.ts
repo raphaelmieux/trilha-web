@@ -534,7 +534,7 @@ export function valorCalculado(p: Planilha, l: number, c: number, caderno?: Cade
     if (!aba || aba === p.nome) return p.celulas[li]?.[ci]?.texto ?? '';
     const outra = caderno && planilhaPorNome(caderno, aba);
     return outra ? outra.celulas[li]?.[ci]?.texto ?? '' : '';
-  }, l, c);
+  }, l, c, p.nome);
 }
 
 export function valorDe(p: Planilha, l: number, c: number): string {
