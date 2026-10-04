@@ -3392,6 +3392,55 @@ quem desenha isto pela primeira vez, e é ele que a simulação mostra parando. 
 paleta lista as peças pelo nome, e não por papel: agrupar entrada e saída
 escreveria na tela metade da resposta.
 
+**Toda tela abre no começo dela.** Num aplicativo de uma página só, trocar de
+rota **não** mexe na rolagem: o navegador guarda o ponto em que a pessoa estava
+e a tela nova nasce ali. Quem rolasse o painel até as certificações e abrisse
+uma trilha chegava na trilha já rolada — emblema, nome e progresso acima da
+dobra, e o meio da página como primeira coisa a aparecer. Pior: a rolagem que
+sobra não é nem a mesma, porque a página nova tem outra altura — medido no
+Chromium, 2500 na saída viravam **2758** na chegada.
+
+O `react-router` não faz isso sozinho, e o `HashRouter` menos ainda:
+`ScrollRestoration` só existe nos roteadores de dados (`createBrowserRouter`),
+que não é o daqui. Nada estoura, e é por isso que durou: a tela abre inteira,
+certa, e no lugar errado — o desbravador conclui que a trilha começa no meio ou
+que falta conteúdo em cima. E o sintoma **some de quem vai conferir**: abre-se a
+página direto, ela está no topo, e nada parece errado; ele só existe para quem
+chegou rolado, que é quem estava usando a plataforma.
+
+`AoTopoAoNavegar` mora no `App`, e é a decisão do `CodigoFonte` pelo motivo
+escrito lá: página que esquecesse seria página servida aberta no meio, e a
+falta não aparece em lugar nenhum. Já havia começado a acontecer — a
+`LessonPage` tinha a conta dela sozinha e as outras doze telas não tinham
+nenhuma. (A da lição era outra coisa e continua: é o "refazer", gesto da pessoa
+**dentro** da mesma página, e lá suave está certo.)
+
+Três detalhes erram calado:
+
+- **só o caminho, e não a busca.** Trocar um filtro ou uma aba pela query não é
+  trocar de página, e jogar a pessoa ao topo a cada ajuste faria ela perder o
+  lugar em que estava lendo — o conserto virando o defeito do outro lado;
+- **`useLayoutEffect`, e não `useEffect`.** O layout corre antes de pintar. Com
+  o efeito comum há um quadro em que a tela nova aparece na rolagem antiga e
+  salta em seguida — um pisca que parece defeito, e que aparece justamente nas
+  páginas longas, que são as que precisam do conserto;
+- **`behavior: 'instant'` escrito, e não omitido.** Omitido, ele obedece ao
+  `scroll-behavior` da folha, e o dia em que alguém escrever `smooth` ali a
+  troca de página passa a **deslizar** dois mil pixels por um conteúdo que já
+  não é o da tela em que se está — e passa a desobedecer a quem pediu menos
+  movimento.
+
+E **`history.scrollRestoration = 'manual'`**, senão o navegador devolve a
+rolagem antiga *depois* do nosso efeito: o conserto funcionaria para a frente e
+falharia no botão voltar, de maneira intermitente, que é a pior forma de falhar
+porque tem cara de acaso.
+
+O jsdom não rola nada — `window.scrollTo` não é implementado lá, e
+`history.scrollRestoration` não existe —, então a trava confere a **promessa**:
+o pedido que o componente faz e com que argumentos, com a propriedade declarada
+no teste para a guarda ter o que escrever. Quem viu o defeito foi o Chromium,
+como no `float` em item de flex e no `\t` colapsado.
+
 **Link externo é sempre `<a target="_blank">`**, pelo componente `LinkExterno`.
 `window.open` funciona no computador e falha no celular.
 
@@ -3700,6 +3749,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/ui/EstanteDeInsignias.test.tsx` | insígnia do painel que leva ao formulário do perfil em vez de contar o que rendeu |
 | `src/components/ui/ExplicacaoDaInsignia.test.tsx` | cartão de explicação desenhado dentro de quem o chamou, onde o `backdrop-filter` prende o `fixed` |
 | `src/lib/relatorioEmPdf.test.ts` | conquista sem data dizendo-se a primeira, ou sumário reservando menos folhas do que tem entradas |
+| `src/components/AoTopoAoNavegar.test.tsx` | tela que abre na rolagem da anterior, com o título acima da dobra |
+| `src/components/AoTopoAoNavegar.test.tsx` | troca de página que desliza, ou que vai ao topo quando só a busca muda |
+| `src/components/AoTopoAoNavegar.test.tsx` | ir ao topo escrito numa página em vez do `App`, que conserta uma e deixa doze |
 | `src/lib/vocabulario.test.ts` | trilha ou vereda chamada de "percurso" em texto que chega à tela |
 | `src/lib/vocabulario.test.ts` | insígnia chamada de "badge" ou ofensiva de "streak" no texto de JSX |
 | `src/lib/atividade.test.ts` | evento de vereda que cai no mural com o nome cru do `event_type` |

@@ -3,6 +3,7 @@ import BrandMark from './components/ui/BrandMark';
 import AvisoDeVersao from './components/ui/AvisoDeVersao';
 import AvisoDeConquista from './components/AvisoDeConquista';
 import CodigoFonte from './components/ui/CodigoFonte';
+import AoTopoAoNavegar from './components/AoTopoAoNavegar';
 import { AuthProvider } from './context/AuthProvider';
 import { useAuth } from './context/AuthContext';
 import { percursoAtual } from './lib/navegacao';
@@ -309,6 +310,12 @@ export default function App() {
             aplicativo. */}
         <div className="min-h-screen">
           <NavBar />
+          {/* Fora das rotas, e dentro do roteador: toda tela abre no começo
+              dela. Num aplicativo de uma página só, trocar de rota não mexe na
+              rolagem — a tela nova nasce no ponto em que a anterior estava, com
+              o título acima da dobra. Como o `CodigoFonte`, mora aqui e não em
+              cada página: página que esquecesse seria página aberta no meio. */}
+          <AoTopoAoNavegar />
           {/* Fora das rotas: a conquista pode cair em qualquer tela. */}
           <AvisoDeConquista />
           <AppRoutes />
