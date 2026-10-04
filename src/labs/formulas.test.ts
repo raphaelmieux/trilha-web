@@ -519,3 +519,122 @@ describe('média, mediana, moda e dispersão', () => {
     expect(ver([['']], '=MED(A1:A3)')).toBe('#NÚM!');
   });
 });
+
+/*
+  ── A família da regressão ────────────────────────────────────────────────
+
+  Os pares são escolhidos para que as contas saiam redondas e o teste diga o
+  que espera sem um `toBeCloseTo` escondendo o número: com x = 1..5 e
+  y = 2x + 1, a reta é exata — inclinação 2, intercepção 1, r = 1.
+*/
+const RETA = [
+  ['x', 'y'],
+  ['1', '3'],
+  ['2', '5'],
+  ['3', '7'],
+  ['4', '9'],
+  ['5', '11'],
+];
+
+describe('a reta que passa por todos os pontos', () => {
+  it('tem correlação 1, inclinação 2 e intercepção 1', () => {
+    expect(ver(RETA, '=CORREL(B2:B6;A2:A6)')).toBe('1');
+    expect(ver(RETA, '=INCLINAÇÃO(B2:B6;A2:A6)')).toBe('2');
+    expect(ver(RETA, '=INTERCEPÇÃO(B2:B6;A2:A6)')).toBe('1');
+    expect(ver(RETA, '=RQUAD(B2:B6;A2:A6)')).toBe('1');
+  });
+
+  /*
+    PEARSON e CORREL são a mesma função com dois nomes, como MODO e
+    MODO.ÚNICO: os dois estão na lista do Excel, e aceitar só um mandaria
+    quem escreveu o outro procurar um erro de digitação que não existe.
+  */
+  it('responde ao nome PEARSON também', () => {
+    expect(ver(RETA, '=PEARSON(B2:B6;A2:A6)')).toBe(ver(RETA, '=CORREL(B2:B6;A2:A6)'));
+  });
+
+  it('prevê fora do intervalo observado sem reclamar, que é o requisito 5.4', () => {
+    expect(ver(RETA, '=PREVISÃO(6;B2:B6;A2:A6)')).toBe('13');
+    /* x = 100 está muito fora do observado, e a resposta vem igual. */
+    expect(ver(RETA, '=PREVISÃO(100;B2:B6;A2:A6)')).toBe('201');
+    expect(ver(RETA, '=PREVISÃO.LINEAR(6;B2:B6;A2:A6)')).toBe('13');
+  });
+});
+
+/*
+  A ordem dos argumentos é a armadilha do requisito 5.3, e ela não estoura:
+  devolve outra reta, com cara de reta certa.
+*/
+describe('a ordem dos argumentos', () => {
+  const TORTA = [
+    ['x', 'y'],
+    ['1', '2'],
+    ['2', '3'],
+    ['3', '7'],
+    ['4', '8'],
+  ];
+
+  it('não muda nada em CORREL, porque a correlação não tem lado', () => {
+    expect(ver(TORTA, '=CORREL(B2:B5;A2:A5)')).toBe(ver(TORTA, '=CORREL(A2:A5;B2:B5)'));
+  });
+
+  it('troca a reta em INCLINAÇÃO, e as duas saem plausíveis', () => {
+    /* y sobre x: 2,2. x sobre y: 0,42… — nenhuma das duas parece errada. */
+    expect(ver(TORTA, '=INCLINAÇÃO(B2:B5;A2:A5)')).toBe('2,20');
+    expect(ver(TORTA, '=INCLINAÇÃO(A2:A5;B2:B5)')).toBe('0,42');
+  });
+});
+
+describe('o que a regressão recusa', () => {
+  it('faixas de tamanhos diferentes são #N/D, e não a conta do menor', () => {
+    expect(ver(RETA, '=CORREL(B2:B6;A2:A5)')).toBe(TEXTO_DO_ERRO.nd);
+    expect(ver(RETA, '=INCLINAÇÃO(B2:B6;A2:A5)')).toBe(TEXTO_DO_ERRO.nd);
+  });
+
+  /*
+    Coluna que não varia: CORREL recusa, porque não há como perguntar se uma
+    sobe com a outra. Zero diria "não há relação", que é uma afirmação sobre
+    os dados.
+  */
+  it('coluna constante é #DIV/0! na correlação, e não zero', () => {
+    const PARADA = [['x', 'y'], ['1', '5'], ['2', '5'], ['3', '5']];
+    expect(ver(PARADA, '=CORREL(B2:B4;A2:A4)')).toBe(TEXTO_DO_ERRO.div0);
+    expect(ver(PARADA, '=RQUAD(B2:B4;A2:A4)')).toBe(TEXTO_DO_ERRO.div0);
+  });
+
+  /*
+    Mas a reta de um y constante existe, e é horizontal. É por isso que a
+    guarda de `ajuste` não é a de `correlacao`: quem não pode ser constante
+    ali é o x, que é por onde se divide.
+  */
+  it('y constante dá reta horizontal, e x constante é que não dá reta', () => {
+    const PARADA = [['x', 'y'], ['1', '5'], ['2', '5'], ['3', '5']];
+    expect(ver(PARADA, '=INCLINAÇÃO(B2:B4;A2:A4)')).toBe('0');
+    expect(ver(PARADA, '=INCLINAÇÃO(A2:A4;B2:B4)')).toBe(TEXTO_DO_ERRO.div0);
+  });
+
+  /*
+    O par inteiro cai quando um dos lados não é número. Descartar só o lado
+    vazio desalinharia o resto: a altura de uma linha passaria a ser comparada
+    com a idade da seguinte, e a correlação sairia um número plausível sobre
+    pares que não existem.
+  */
+  it('descarta o par inteiro, e não só o lado que falta', () => {
+    const FALTA = [
+      ['x', 'y'],
+      ['1', '3'],
+      ['2', ''],
+      ['3', '7'],
+      ['4', '9'],
+    ];
+    /* Sobram (1;3), (3;7) e (4;9) — que continuam na reta y = 2x + 1. */
+    expect(ver(FALTA, '=INCLINAÇÃO(B2:B5;A2:A5)')).toBe('2');
+    expect(ver(FALTA, '=INTERCEPÇÃO(B2:B5;A2:A5)')).toBe('1');
+    expect(ver(FALTA, '=CONT.NÚM(B2:B5)')).toBe('3');
+  });
+
+  it('argumento que não é faixa é #VALOR!, e não a conta de um ponto só', () => {
+    expect(ver(RETA, '=CORREL(B2;A2)')).toBe(TEXTO_DO_ERRO.valor);
+    expect(ver(RETA, '=PREVISÃO(6;B2:B6)')).toBe(TEXTO_DO_ERRO.valor);
+  });
+});

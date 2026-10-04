@@ -872,6 +872,69 @@ function chamada(ctx: Ctx, nome: string, args: No[]): Valor {
       return num(Math.round(n * f10) / f10);
     }
 
+    /*
+      A família da regressão, que é o requisito 5 da CC-ES010 inteiro.
+
+      **A ordem dos argumentos é a armadilha, e ela é do Excel.** CORREL é
+      simétrica — trocar as duas faixas devolve o mesmo número, porque a
+      correlação não tem lado. As outras três não são: INCLINAÇÃO,
+      INTERCEPÇÃO e RQUAD recebem **o y primeiro**, e trocá-las devolve um
+      número perfeitamente plausível da reta ao contrário. Quem escreve
+      `=INCLINAÇÃO(idades; alturas)` pensando "idade explica altura" recebe a
+      inclinação de idade sobre altura, que é outra reta, sem erro nenhum.
+
+      Escrever as quatro com a mesma ordem "arrumaria" isso e ensinaria uma
+      planilha que não existe — é a decisão do PROCV aproximado por padrão,
+      logo abaixo, pelo motivo escrito lá.
+    */
+    case 'PEARSON':
+    case 'CORREL': return comPares(ctx, args, 0, (ys, xs) => {
+      const r = correlacao(ys, xs);
+      return r === null ? erro('div0') : num(r);
+    });
+
+    /* Do y sobre o x: `ys` é o primeiro argumento nas três. */
+    case 'INCLINACAO': return comPares(ctx, args, 0, (ys, xs) => {
+      const a = ajuste(ys, xs);
+      return a === null ? erro('div0') : num(a.inclinacao);
+    });
+    case 'INTERCEPCAO': return comPares(ctx, args, 0, (ys, xs) => {
+      const a = ajuste(ys, xs);
+      return a === null ? erro('div0') : num(a.intercepcao);
+    });
+
+    /*
+      RQUAD é o quadrado de CORREL, e não uma conta à parte: duas
+      implementações da mesma coisa divergiriam no primeiro ajuste, e a
+      divergência apareceria como dois números plausíveis para a mesma
+      qualidade de ajuste.
+    */
+    case 'RQUAD': return comPares(ctx, args, 0, (ys, xs) => {
+      const r = correlacao(ys, xs);
+      return r === null ? erro('div0') : num(r * r);
+    });
+
+    /*
+      PREVISÃO recebe o x **antes** das duas faixas, e é por ela que o
+      requisito 5.4 acontece: ela responde para qualquer x, inclusive muito
+      fora do intervalo observado, e responde com a mesma cara de certeza.
+      Recusar a extrapolação seria a plataforma protegendo de um erro que a
+      planilha do clube não protege.
+
+      `PREVISÃO.LINEAR` é o nome de hoje e `PREVISÃO` o de compatibilidade,
+      como MODO.ÚNICO e MODO: os dois funcionam lá.
+    */
+    case 'PREVISAOLINEAR':
+    case 'PREVISAO': {
+      if (args.length !== 3) return erro('valor');
+      const x = comoNumero(avaliar(ctx, args[0]));
+      if (typeof x !== 'number') return x;
+      return comPares(ctx, args, 1, (ys, xs) => {
+        const a = ajuste(ys, xs);
+        return a === null ? erro('div0') : num(a.intercepcao + a.inclinacao * x);
+      });
+    }
+
     case 'PROCV': return procv(ctx, args);
 
     /*
@@ -881,6 +944,109 @@ function chamada(ctx: Ctx, nome: string, args: No[]): Valor {
     */
     default: return erro('nome');
   }
+}
+
+/**
+ * Os pares (y, x) de duas faixas, alinhados por posição.
+ *
+ * O descarte é o do Excel e não é detalhe: o par **inteiro** cai quando
+ * qualquer um dos dois lados não é número. Descartar só o lado vazio
+ * desalinharia tudo o que vem depois — a altura da linha 7 passaria a ser
+ * comparada com a idade da linha 8, e a correlação sairia um número plausível
+ * sobre pares que não existem.
+ *
+ * Faixas de tamanhos diferentes são `#N/D`, e não o menor dos dois: cortar no
+ * menor responderia sobre parte da base sem dizer que parte.
+ */
+function paresDe(ys: Valor[], xs: Valor[]): { ys: number[]; xs: number[] } | Valor {
+  if (ys.length !== xs.length) return erro('nd');
+  const py: number[] = [];
+  const px: number[] = [];
+  for (let i = 0; i < ys.length; i++) {
+    const a = ys[i];
+    const b = xs[i];
+    if (ehErro(a)) return a;
+    if (ehErro(b)) return b;
+    if (a.tipo !== 'numero' || b.tipo !== 'numero') continue;
+    py.push(a.n);
+    px.push(b.n);
+  }
+  return { ys: py, xs: px };
+}
+
+/**
+ * Lê as duas faixas a partir de `base` e entrega os pares à conta.
+ *
+ * `base` existe porque PREVISÃO põe o x na frente: as faixas dela são o
+ * segundo e o terceiro argumentos, e as das outras quatro são o primeiro e o
+ * segundo.
+ */
+function comPares(
+  ctx: Ctx,
+  args: No[],
+  base: number,
+  conta: (ys: number[], xs: number[]) => Valor,
+): Valor {
+  const a = args[base];
+  const b = args[base + 1];
+  if (args.length !== base + 2 || !a || !b) return erro('valor');
+  if (a.k !== 'faixa' || b.k !== 'faixa') return erro('valor');
+  const pares = paresDe(daFaixa(ctx, a.a, a.b), daFaixa(ctx, b.a, b.b));
+  /* `in` e não `ehErro`: o retorno não é um `Valor`, e um erro cabe nele. */
+  if (!('ys' in pares)) return pares;
+  return conta(pares.ys, pares.xs);
+}
+
+/**
+ * Os desvios em relação à média, que é o que as três contas têm em comum.
+ *
+ * `null` quando não há par nenhum, o que é #DIV/0! nos três lugares que a
+ * chamam — e não zero: zero afirmaria correlação nenhuma sobre dados que não
+ * existem.
+ */
+function somasDosDesvios(ys: number[], xs: number[]): { sxx: number; syy: number; sxy: number } | null {
+  const n = ys.length;
+  if (n === 0) return null;
+  const my = ys.reduce((s, v) => s + v, 0) / n;
+  const mx = xs.reduce((s, v) => s + v, 0) / n;
+  let sxx = 0;
+  let syy = 0;
+  let sxy = 0;
+  for (let i = 0; i < n; i++) {
+    sxx += (xs[i] - mx) ** 2;
+    syy += (ys[i] - my) ** 2;
+    sxy += (xs[i] - mx) * (ys[i] - my);
+  }
+  return { sxx, syy, sxy };
+}
+
+/**
+ * O r de Pearson. `null` quando um dos dois lados não varia — uma coluna de
+ * valores iguais não tem como subir nem descer com a outra, e o Excel
+ * responde #DIV/0! em vez de zero. Zero diria "não há relação", que é uma
+ * afirmação sobre os dados; a recusa diz "não dá para perguntar isto aqui".
+ */
+function correlacao(ys: number[], xs: number[]): number | null {
+  const s = somasDosDesvios(ys, xs);
+  if (!s || s.sxx === 0 || s.syy === 0) return null;
+  return s.sxy / Math.sqrt(s.sxx * s.syy);
+}
+
+/**
+ * A reta de mínimos quadrados de y sobre x.
+ *
+ * Só o x precisa variar: uma coluna y constante dá uma reta horizontal, que é
+ * uma resposta legítima (inclinação zero). É por isso que esta guarda não é a
+ * de `correlacao`, embora as duas partam das mesmas somas.
+ */
+function ajuste(ys: number[], xs: number[]): { inclinacao: number; intercepcao: number } | null {
+  const s = somasDosDesvios(ys, xs);
+  if (!s || s.sxx === 0) return null;
+  const n = ys.length;
+  const my = ys.reduce((v, x) => v + x, 0) / n;
+  const mx = xs.reduce((v, x) => v + x, 0) / n;
+  const inclinacao = s.sxy / s.sxx;
+  return { inclinacao, intercepcao: my - inclinacao * mx };
 }
 
 /**

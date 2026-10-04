@@ -3,7 +3,7 @@ import {
   type Caderno, type Direcao, type Faixa, type Planilha,
   alinhamentoDe, estiloCondicional, linhaEscondida, mostrar, naFaixa, nomeDaColuna,
   textoDoResumo, valorCalculado,
-  type TipoDeGrafico, type PontoDoGrafico, type EixoDoGrafico,
+  type TipoDeGrafico, type PontoDoGrafico, type PontoDeDispersao, type EixoDoGrafico,
 } from './planilha';
 
 /*
@@ -725,12 +725,25 @@ const CORES_DO_GRAFICO = ['#217346', '#4C8C6B', '#8AB79A', '#C13516', '#D98C6A',
    consegue ler deixa de ser um recurso a apontar e vira um desenho errado. */
 const ESQ = 22, DIR = 136, ALTO = 6, PISO = 58;
 
-export function DesenhoDoGrafico({ tipo, pontos, eixo, altura = 90 }: {
+export function DesenhoDoGrafico({ tipo, pontos, pares, eixo, tendencia, equacao, altura = 90 }: {
   tipo: TipoDeGrafico;
   pontos: PontoDoGrafico[];
+  /**
+   * Os pares da dispersão. Ela é o único tipo que não lê rótulo: os outros
+   * três põem uma fileira de nomes no eixo horizontal, e nela os dois eixos
+   * são medidas. Sem isto, os pontos caíam em posições igualmente espaçadas
+   * pela **ordem da linha** — um desenho plausível que muda de forma quando
+   * alguém ordena a tabela, e a dispersão de verdade não muda.
+   */
+  pares?: PontoDeDispersao[];
   eixo?: EixoDoGrafico;
+  tendencia?: boolean;
+  equacao?: boolean;
   altura?: number;
 }) {
+  if (tipo === 'dispersao') {
+    return <Dispersao pares={pares ?? []} tendencia={tendencia} equacao={equacao} altura={altura} />;
+  }
   if (pontos.length === 0) return null;
 
   if (tipo === 'pizza') return <Pizza pontos={pontos} altura={altura} />;
@@ -770,10 +783,10 @@ export function DesenhoDoGrafico({ tipo, pontos, eixo, altura = 90 }: {
           points={pontos.map((p, i) => `${x(i)},${y(p.valor)}`).join(' ')} />
       )}
 
-      {/* A linha marca os pontos e a dispersão só tem pontos: é a diferença
-          entre as duas, e desenhar a dispersão ligada afirmaria uma sequência
-          que ela não tem. */}
-      {(tipo === 'linha' || tipo === 'dispersao') && pontos.map((p, i) => (
+      {/* A linha marca os pontos que ela liga. A dispersão não passa por aqui:
+          ela tem desenho próprio, porque o eixo horizontal dela é uma medida e
+          não uma fileira de nomes. */}
+      {tipo === 'linha' && pontos.map((p, i) => (
         <circle key={`${p.rotulo}-${i}`} cx={x(i)} cy={y(p.valor)} r={1.6} fill={CORES_DO_GRAFICO[0]} />
       ))}
 
@@ -783,6 +796,144 @@ export function DesenhoDoGrafico({ tipo, pontos, eixo, altura = 90 }: {
       ))}
     </svg>
   );
+}
+
+/**
+ * A dispersão, que é o requisito 5.1 da CC-ES010.
+ *
+ * Os dois eixos são medidas: o horizontal sai do x de cada par, e não da
+ * posição da linha. É a diferença inteira entre ela e os outros três
+ * gráficos — e é o que a torna imune à ordenação, que os outros não são.
+ *
+ * Ela não liga os pontos, e nunca ligou: ligar afirmaria uma sequência que
+ * uma nuvem de pares não tem.
+ */
+function Dispersao({ pares, tendencia, equacao, altura }: {
+  pares: PontoDeDispersao[];
+  tendencia?: boolean;
+  equacao?: boolean;
+  altura: number;
+}) {
+  if (pares.length === 0) return null;
+
+  const xs = pares.map(p => p.x);
+  const ys = pares.map(p => p.y);
+  /* Os dois eixos começam no menor valor observado, e não em zero — que é o
+     que o Excel faz numa dispersão e o contrário do que ele faz numa coluna.
+     Forçar o zero aqui espremeria a nuvem de alturas entre 1,05 e 1,79 num
+     canto do desenho, e a relação que a lição manda ver sumiria. */
+  const escala = (vs: number[], de: number, ate: number) => {
+    const min = Math.min(...vs);
+    const max = Math.max(...vs);
+    /* `|| 1` porque uma coluna toda igual daria faixa zero: dividir por ela
+       não desenharia nada, e nada é indistinguível de um gráfico vazio. */
+    const faixa = (max - min) || 1;
+    return { min, max, em: (v: number) => de + (v - min) / faixa * (ate - de) };
+  };
+  const ex = escala(xs, ESQ, DIR);
+  const ey = escala(ys, PISO, ALTO);
+
+  const reta = tendencia ? ajusteDaNuvem(xs, ys) : null;
+
+  return (
+    <svg viewBox="0 0 140 74" style={{ width: '100%', height: altura }}
+      role="img" aria-label={descreverDispersao(pares, reta, equacao)}>
+      <line x1={ESQ} y1={ALTO} x2={ESQ} y2={PISO} stroke="#C8C6C4" strokeWidth={0.6} />
+      <line x1={ESQ} y1={PISO} x2={DIR} y2={PISO} stroke="#C8C6C4" strokeWidth={0.6} />
+      <text x={ESQ - 2} y={PISO + 2} fontSize={5} fill="#605E5C" textAnchor="end">{rotuloDoEixo(ey.min)}</text>
+      <text x={ESQ - 2} y={ALTO + 4} fontSize={5} fill="#605E5C" textAnchor="end">{rotuloDoEixo(ey.max)}</text>
+      <text x={ESQ} y={PISO + 7} fontSize={4.6} fill="#605E5C" textAnchor="start">{rotuloDoEixo(ex.min)}</text>
+      <text x={DIR} y={PISO + 7} fontSize={4.6} fill="#605E5C" textAnchor="end">{rotuloDoEixo(ex.max)}</text>
+
+      {/* A reta vai **debaixo** dos pontos: por cima, ela esconderia
+          justamente os pontos que mais se afastam dela, que são os que dizem
+          se o ajuste presta. */}
+      {reta && (
+        <line x1={ex.em(ex.min)} y1={ey.em(reta.intercepcao + reta.inclinacao * ex.min)}
+          x2={ex.em(ex.max)} y2={ey.em(reta.intercepcao + reta.inclinacao * ex.max)}
+          stroke="#C13516" strokeWidth={0.9} strokeDasharray="3 2" />
+      )}
+
+      {pares.map((p, i) => (
+        <circle key={`${p.x}-${p.y}-${i}`} cx={ex.em(p.x)} cy={ey.em(p.y)} r={1.6}
+          fill={CORES_DO_GRAFICO[0]} fillOpacity={0.75} />
+      ))}
+
+      {reta && equacao && (
+        <text x={DIR} y={ALTO + 5} fontSize={5} fill="#C13516" textAnchor="end">
+          {textoDaEquacao(reta)}
+        </text>
+      )}
+    </svg>
+  );
+}
+
+/**
+ * A reta de mínimos quadrados da nuvem.
+ *
+ * Ela repete a conta de `ajuste` em `formulas.ts` porque este arquivo é da
+ * **janela** e não pode importar o motor do exercício — mas as duas são
+ * conferidas uma contra a outra em `desenhoDoGrafico.test.tsx`, pelo motivo
+ * de sempre: duas contas parecidas discordam um dia, e aqui a divergência
+ * apareceria como uma reta desenhada por cima de uma equação que não é a
+ * dela.
+ */
+function ajusteDaNuvem(xs: number[], ys: number[]): { inclinacao: number; intercepcao: number } | null {
+  const n = xs.length;
+  if (n === 0) return null;
+  const mx = xs.reduce((s, v) => s + v, 0) / n;
+  const my = ys.reduce((s, v) => s + v, 0) / n;
+  let sxx = 0;
+  let sxy = 0;
+  for (let i = 0; i < n; i++) {
+    sxx += (xs[i] - mx) ** 2;
+    sxy += (xs[i] - mx) * (ys[i] - my);
+  }
+  if (sxx === 0) return null;
+  const inclinacao = sxy / sxx;
+  return { inclinacao, intercepcao: my - inclinacao * mx };
+}
+
+/* A forma que o Excel escreve: `y = 2,2x + 1,4`, com o sinal do termo
+   constante lido da própria conta — escrever sempre `+` daria
+   `y = 2,2x + -1,4`, que ninguém lê. */
+function textoDaEquacao(r: { inclinacao: number; intercepcao: number }): string {
+  const sinal = r.intercepcao < 0 ? '−' : '+';
+  return `y = ${rotuloDoEixo(r.inclinacao)}x ${sinal} ${rotuloDoEixo(Math.abs(r.intercepcao))}`;
+}
+
+/**
+ * O que o leitor de tela lê.
+ *
+ * Uma nuvem não se descreve ponto a ponto — quarenta e oito pares lidos em voz
+ * alta não são uma descrição —, então ele diz o que a nuvem tem: quantos
+ * pares, onde começam e terminam os dois eixos, e a reta, quando ela existe.
+ *
+ * **E a equação só entra quando a caixa dela está marcada.** Ela é a segunda
+ * metade do requisito 5.3 — "ajustar a linha de tendência **e obter sua
+ * equação**" —, e é um gesto: no Excel são duas caixas, e quem marca só a
+ * primeira vê a reta e nunca lê a equação. Ditá-la assim que a reta existe
+ * entregaria metade do requisito de graça, e entregaria **só a quem usa
+ * leitor de tela** — que é a mesma decisão da lista da nuvem da CC-ES006, que
+ * não escreve o papel de ninguém nem como texto para leitor de tela.
+ *
+ * O que cada pessoa recebe é o mesmo: vendo, a reta sem a equação; ouvindo, a
+ * reta sem a equação.
+ */
+function descreverDispersao(
+  pares: PontoDeDispersao[],
+  reta: { inclinacao: number; intercepcao: number } | null,
+  equacao?: boolean,
+): string {
+  const xs = pares.map(p => p.x);
+  const ys = pares.map(p => p.y);
+  const faixa = (vs: number[]) => `${rotuloDoEixo(Math.min(...vs))} a ${rotuloDoEixo(Math.max(...vs))}`;
+  const nuvem = `Gráfico de dispersão com ${pares.length} pontos. `
+    + `Eixo horizontal de ${faixa(xs)}; eixo vertical de ${faixa(ys)}.`;
+  if (!reta) return nuvem;
+  return equacao
+    ? `${nuvem} Linha de tendência: ${textoDaEquacao(reta)}.`
+    : `${nuvem} Com linha de tendência.`;
 }
 
 function Pizza({ pontos, altura }: { pontos: PontoDoGrafico[]; altura: number }) {
