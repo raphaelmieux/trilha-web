@@ -377,3 +377,97 @@ export function medidaPorGrupo(
   }
   return fora;
 }
+
+/* ── O acaso entre dois grupos ────────────────────────────────────────────── */
+
+/**
+ * O que um embaralhamento devolve.
+ *
+ * `sorteadas` vem na ordem em que saiu, e não ordenada: a tela desenha a
+ * nuvem delas com a real marcada, e ordenar aqui jogaria fora a única coisa
+ * que diz que foram sorteios independentes.
+ */
+export interface SorteioDeGrupos {
+  /** A diferença que a base de verdade mostra entre os dois grupos. */
+  real: number;
+  /** A diferença que cada embaralhamento produziu. */
+  sorteadas: number[];
+  /** Quantas delas foram tão grandes quanto a real, ou maiores. */
+  tantoOuMais: number;
+}
+
+/** De onde vem o sorteio. Injetável para a trava não depender de sorte. */
+export type Aleatorio = () => number;
+
+/**
+ * Embaralha quem é de qual grupo e devolve a diferença que cada sorteio dá.
+ *
+ * É o requisito 8 da CC-ES010 — "explicar por que uma diferença observada
+ * entre dois grupos pode ser efeito do acaso" — **sem cálculo formal**. Não há
+ * teste de hipótese aqui, e não vai haver: o que a pessoa faz é sortear de
+ * novo quem é de qual unidade e olhar uma diferença tão grande quanto a real
+ * aparecer sem que um único dado tenha mudado. Quem viu isso acontecer não
+ * precisa de valor-p para desconfiar de uma diferença entre dois grupos de
+ * sete pessoas; quem só leu a definição, precisa.
+ *
+ * ── Três coisas erram calado se escritas do jeito óbvio ─────────────────
+ *
+ * **Os rótulos se permutam; as medidas ficam onde estão.** É isso que a lição
+ * descreve, e é o que mantém a conta honesta: sortear rótulos **novos** — seis
+ * nomes ao acaso para cada linha — mudaria o tamanho dos grupos junto, e aí a
+ * diferença passaria a variar por dois motivos ao mesmo tempo. Com a permuta,
+ * Arara continua com sete pessoas e Águia com oito em todo sorteio, e o único
+ * que mudou foi **quem**.
+ *
+ * **A diferença é em módulo.** "Tão grande quanto" é sobre tamanho: um sorteio
+ * que põe Águia na frente por 2,6 é tão surpreendente quanto um que põe Arara,
+ * e contar só os do mesmo sinal responderia metade da pergunta — dando a
+ * metade que faz o acaso parecer mais raro do que é.
+ *
+ * **O sorteio entra por parâmetro.** Com `Math.random()` escrito aqui dentro,
+ * a trava passaria a depender de sorte: ela é 14,6% nesta base, então um teste
+ * que exigisse ver um sorteio grande falharia sozinho uma vez em sete, e
+ * "flake" é o que ensina a reexecutar em vez de ler.
+ */
+export function sortearEntreGrupos(
+  base: Formulario,
+  campoDoGrupo: string,
+  campoDaMedida: string,
+  grupoA: string,
+  grupoB: string,
+  vezes: number,
+  aleatorio: Aleatorio = Math.random,
+): SorteioDeGrupos {
+  const linhas = respostasReais(base);
+  const rotulos = linhas.map(r => valorDa(r, campoDoGrupo));
+  const medidas = linhas.map(r => valorDa(r, campoDaMedida));
+
+  const diferenca = (quais: string[]): number => {
+    const de = (g: string) => medidas.filter((_, i) => quais[i] === g);
+    const a = medidaDa(de(grupoA), 'MÉDIA');
+    const b = medidaDa(de(grupoB), 'MÉDIA');
+    /* Grupo vazio não tem média, e `medidaDa` devolve erro — que é o certo, e
+       aqui vira diferença zero: um sorteio que não achou ninguém num dos dois
+       lados não diz nada sobre tamanho de diferença. */
+    if (ehErro(a) || ehErro(b)) return 0;
+    return Math.abs((numeroDaMedida(a) ?? 0) - (numeroDaMedida(b) ?? 0));
+  };
+
+  const real = diferenca(rotulos);
+  const sorteadas: number[] = [];
+  for (let v = 0; v < vezes; v++) {
+    const mexidos = [...rotulos];
+    for (let k = mexidos.length - 1; k > 0; k--) {
+      const j = Math.floor(aleatorio() * (k + 1));
+      [mexidos[k], mexidos[j]] = [mexidos[j], mexidos[k]];
+    }
+    sorteadas.push(diferenca(mexidos));
+  }
+
+  /* A margem existe porque as duas médias passam pelo motor de fórmula e
+     voltam em ponto flutuante: a diferença de um sorteio que caiu exatamente
+     na real sai 2,5892857142857135 contra 2,589285714285714, e um `>=` cru
+     deixaria esse de fora sem nada explicando. */
+  const tantoOuMais = sorteadas.filter(d => d >= real - 1e-9).length;
+  return { real, sorteadas, tantoOuMais };
+}

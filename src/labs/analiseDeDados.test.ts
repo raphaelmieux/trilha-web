@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   agrupadoPor, amplitude, atipicosDe, cercaDe, classesDe, colunaDe, desvioPadrao,
   frequenciasDe, maximo, media, medidaDa, medidaPorGrupo, mediana, minimo, moda,
-  numerosDe, repeticoesDaModa, taxa,
+  numerosDe, repeticoesDaModa, sortearEntreGrupos, taxa,
 } from './analiseDeDados';
 import { ehErro } from './formulas';
 import type { Formulario, Resposta } from './formulario';
@@ -289,5 +289,128 @@ describe('sobre a base inteira', () => {
       respostas: [...formulario.respostas, resposta('r6', 'C', 'não sei')],
     };
     expect(medidaPorGrupo(semNumero, 'grupo', 'valor', 'MÉDIA').get('C')).toBeNull();
+  });
+});
+
+/*
+  ── O acaso entre dois grupos ──────────────────────────────────────────────
+
+  É o requisito 8 da CC-ES010, e ele pede isso **sem cálculo formal**: não há
+  teste de hipótese, há sortear de novo quem é de qual unidade e olhar uma
+  diferença tão grande quanto a real aparecer sem que um único dado tenha
+  mudado.
+*/
+describe('o embaralhamento dos grupos', () => {
+  /*
+    Um sorteio determinado **e que varia**: um gerador congruente de três
+    linhas. `() => 0` seria determinado e produziria a mesma permutação trinta
+    vezes, o que deixaria toda asserção abaixo falar de um sorteio só.
+  */
+  const sorteioDe = (semente: number) => {
+    let x = semente;
+    return () => {
+      x = (x * 1103515245 + 12345) % 2147483648;
+      return x / 2147483648;
+    };
+  };
+
+  /*
+    As diferenças que **cabem** nos tamanhos de grupo deste formulário: A com
+    dois e B com três, sobre os cinco valores. São dez repartições, e esta
+    lista sai enumerada em vez de escrita à mão para continuar valendo se o
+    formulário de teste mudar.
+  */
+  const possiveis = (): number[] => {
+    const vs = [2, 4, 10, 20, 30];
+    const fora: number[] = [];
+    for (let i = 0; i < vs.length; i++) {
+      for (let j = i + 1; j < vs.length; j++) {
+        const a = (vs[i] + vs[j]) / 2;
+        const resto = vs.filter((_, k) => k !== i && k !== j);
+        const b = resto.reduce((t, v) => t + v, 0) / resto.length;
+        fora.push(Math.abs(a - b));
+      }
+    }
+    return fora;
+  };
+
+  it('mede a diferença de verdade a partir dos rótulos como eles estão', () => {
+    /* A = (2+4)/2 = 3; B = (10+20+30)/3 = 20. */
+    const s = sortearEntreGrupos(formulario, 'grupo', 'valor', 'A', 'B', 0, sorteioDe(1));
+    expect(s.real).toBe(17);
+    expect(s.sorteadas).toEqual([]);
+    expect(s.tantoOuMais).toBe(0);
+  });
+
+  /*
+    ── A asserção que pega o defeito ────────────────────────────────────────
+
+    Sortear rótulos **novos** — um nome ao acaso por linha — mudaria o tamanho
+    dos grupos junto, e a diferença passaria a variar por dois motivos ao mesmo
+    tempo: numa base de sete contra oito, a conta deixaria de responder "e se
+    fossem outras sete pessoas?" e passaria a responder "e se fossem outras
+    sete pessoas, ou cinco, ou onze?".
+
+    Com a permuta, A continua com dois e B com três em todo sorteio, e por isso
+    **toda** diferença sorteada tem de ser uma das dez que esses tamanhos
+    permitem. Tamanho trocado produz valores fora da lista.
+  */
+  it('permuta os rótulos, mantendo o tamanho de cada grupo', () => {
+    const s = sortearEntreGrupos(formulario, 'grupo', 'valor', 'A', 'B', 60, sorteioDe(7));
+    expect(s.sorteadas).toHaveLength(60);
+    const cabem = possiveis();
+    for (const d of s.sorteadas) {
+      expect(cabem.some(c => Math.abs(c - d) < 1e-9), `${d} não cabe nos tamanhos dos grupos`).toBe(true);
+    }
+    /* E ele de fato varia: sessenta sorteios de uma permuta que não permutasse
+       dariam um valor só, e a asserção de cima passaria. */
+    expect(new Set(s.sorteadas.map(d => d.toFixed(6))).size).toBeGreaterThan(1);
+  });
+
+  /*
+    Em módulo, porque "tão grande quanto" é sobre tamanho. Um sorteio que põe
+    B na frente por dezessete é tão surpreendente quanto um que põe A, e contar
+    só os do mesmo sinal responderia metade da pergunta — dando a metade que
+    faz o acaso parecer mais raro do que é.
+  */
+  it('conta a diferença em módulo, e não só as do mesmo sinal', () => {
+    const aB = sortearEntreGrupos(formulario, 'grupo', 'valor', 'A', 'B', 40, sorteioDe(3));
+    const bA = sortearEntreGrupos(formulario, 'grupo', 'valor', 'B', 'A', 40, sorteioDe(3));
+    expect(bA.real).toBe(aB.real);
+    expect(bA.tantoOuMais).toBe(aB.tantoOuMais);
+    expect(bA.sorteadas).toEqual(aB.sorteadas);
+  });
+
+  it('o sorteio entra por parâmetro, para a trava não depender de sorte', () => {
+    /* Mesma semente, mesmas diferenças. Com `Math.random` escrito dentro da
+       função isto seria impossível de afirmar, e a trava da base de verdade
+       falharia sozinha uma vez em sete. */
+    const um = sortearEntreGrupos(formulario, 'grupo', 'valor', 'A', 'B', 20, sorteioDe(99));
+    const dois = sortearEntreGrupos(formulario, 'grupo', 'valor', 'A', 'B', 20, sorteioDe(99));
+    expect(dois.sorteadas).toEqual(um.sorteadas);
+  });
+
+  it('a real conta como "tão grande quanto", apesar do ponto flutuante', () => {
+    /*
+      As duas médias passam pelo motor de fórmula e voltam em ponto flutuante:
+      o sorteio que recai exatamente na repartição de verdade sai
+      2,5892857142857135 contra 2,589285714285714, e um `>=` cru o deixaria de
+      fora sem nada explicando — fazendo o acaso parecer mais raro do que é,
+      de um em cada tantos.
+    */
+    const s = sortearEntreGrupos(formulario, 'grupo', 'valor', 'A', 'B', 200, sorteioDe(5));
+    const naReal = s.sorteadas.filter(d => Math.abs(d - s.real) < 1e-9).length;
+    expect(naReal).toBeGreaterThan(0);
+    expect(s.tantoOuMais).toBeGreaterThanOrEqual(naReal);
+  });
+
+  it('grupo que o sorteio deixou vazio não vira diferença enorme', () => {
+    /* `C` não existe no formulário: a média de nada é erro, e um sorteio que
+       não achou ninguém num dos lados não diz nada sobre tamanho de diferença.
+       Devolver `NaN` ou a média do outro lado poria um número plausível na
+       nuvem que a tela desenha. */
+    const s = sortearEntreGrupos(formulario, 'grupo', 'valor', 'A', 'C', 5, sorteioDe(2));
+    expect(s.real).toBe(0);
+    for (const d of s.sorteadas) expect(d).toBe(0);
   });
 });
