@@ -55,7 +55,9 @@ import {
   ABA_CALCULOS, ABA_RESPOSTAS, cadernoDaAnalise, colunaDoCampo, faixaDoCampo,
   linhaConfere, linhaDoRotulo,
 } from './metasDaCcEs009';
-import { colunaDe, correlacaoDe, inclinacaoDe, intercepcaoDe } from './analiseDeDados';
+import {
+  colunaDe, correlacaoDe, inclinacaoDe, intercepcaoDe, previsaoDe, rquadDe,
+} from './analiseDeDados';
 import { abaDe, comAba } from './cadernoDoClube';
 import { nomeDaColuna } from './formulas';
 import {
@@ -116,6 +118,8 @@ export interface ContextoDaEstatistica {
   colunaEscondida?: string;
   /** Módulo 4: qual das duas colunas do par ela disse que é a independente. */
   independente?: string;
+  /** Módulo 6: qual par ela disse que a reta descreve pior. */
+  piorAjuste?: string;
   /** O que ela escreveu, por chave. */
   textos: Record<string, string>;
 }
@@ -123,6 +127,18 @@ export interface ContextoDaEstatistica {
 /* ── Atalhos de leitura ───────────────────────────────────────────────────── */
 
 const classificada = (c: ContextoDaEstatistica, id: string) => c.classificacoes[id] !== undefined;
+
+const texto = (c: ContextoDaEstatistica, chave: string) => (c.textos[chave] ?? '').trim();
+
+/**
+ * Uma frase escrita, e com conta dentro.
+ *
+ * É a conta de "respondida com o dado" da CC-ES009: a plataforma não lê
+ * português, então o que ela pode cobrar é que haja frase — e não duas
+ * palavras — e que ela cite número. Uma explicação de risco sem nem o
+ * intervalo nem o número absurdo é uma explicação de nada em particular.
+ */
+const frasePropria = (t: string) => t.length >= 60 && /\d/.test(t);
 
 /** O que a coleta **é**, na forma em que a pessoa a marca. */
 const certaPara = (forma: FormaDeEnviesar | null): ClassificacaoDaColeta =>
@@ -585,6 +601,170 @@ function tendenciaNoGrafico(c: ContextoDaEstatistica): 'sem' | 'tracada' | 'com-
   return g.equacao ? 'com-equacao' : 'tracada';
 }
 
+/* ── Módulo 5: prever, e o risco de extrapolar ────────────────────────────── */
+
+/**
+ * As duas idades que a lição manda prever, e por que são estas duas.
+ *
+ * A base vai de dez a quinze anos. Treze está **dentro**, e a reta responde
+ * 1,57 m — plausível, e é a previsão que serve para alguma coisa. Vinte e
+ * cinco está muito **fora**, e a reta responde 2,58 m com a mesma cara de
+ * certeza: mais alto do que qualquer pessoa que já viveu.
+ *
+ * É o requisito 5.4 inteiro, e ele não se explica com um número discreto: a
+ * previsão de dezesseis anos sairia em 1,83 m, que é alto e possível, e quem
+ * a visse concluiria que a reta funciona fora do intervalo. O absurdo tem de
+ * ser absurdo.
+ */
+export const IDADE_DENTRO = 13;
+export const IDADE_FORA = 25;
+
+export const rotuloDaPrevisao = (idade: number) => `Previsão para ${idade} anos`;
+
+export function blocoDasPrevisoes(par: ParDeColunas, idades: number[]): BlocoDeContas {
+  return {
+    titulo: 'O que a reta prevê',
+    rotulos: idades.map(rotuloDaPrevisao),
+    colunas: ['Altura prevista'],
+    funcoes: () => ['PREVISÃO'],
+    esperado: (base, linha) => {
+      const idade = idades.find(i => rotuloDaPrevisao(i) === linha);
+      if (idade === undefined) return null;
+      return previsaoDe(idade, colunaDe(base, par.y), colunaDe(base, par.x));
+    },
+  };
+}
+
+export const formulaDaPrevisao = (base: Formulario, par: ParDeColunas, x: number) =>
+  `=PREVISÃO(${x};${faixaNaBase(base, par.y)};${faixaNaBase(base, par.x)})`;
+
+export const METAS_DA_PREVISAO: Meta[] = [
+  {
+    id: 'previu-dentro',
+    titulo: `Prever a altura de alguém de ${IDADE_DENTRO} anos`,
+    detalhe:
+      'A reta serve para isso: dar um palpite para um valor que você não '
+      + 'mediu. Dentro do intervalo que a base cobre, o palpite tem no que se '
+      + 'apoiar — há gente de verdade em volta dele.',
+    onde: 'Na aba Cálculos, na primeira linha das previsões.',
+    passos: [
+      `Escreva =PREVISÃO(${IDADE_DENTRO}; e depois as duas faixas, o y primeiro.`,
+      'É a mesma ordem da inclinação: a explicada antes da que explica.',
+    ],
+    feita: c => linhaConfere(c.caderno, c.blocos, c.base, rotuloDaPrevisao(IDADE_DENTRO)),
+  },
+  {
+    id: 'previu-muito-fora',
+    titulo: `E a de alguém de ${IDADE_FORA}`,
+    detalhe:
+      'A base vai de dez a quinze anos. Vinte e cinco está muito fora dela — e '
+      + 'a planilha vai responder de qualquer jeito, sem avisar nada.',
+    onde: 'Na aba Cálculos, na segunda linha das previsões.',
+    passos: [
+      `A mesma fórmula, trocando ${IDADE_DENTRO} por ${IDADE_FORA}.`,
+      'Olhe o número que saiu. Compare com a altura da pessoa mais alta que você conhece.',
+    ],
+    feita: c => linhaConfere(c.caderno, c.blocos, c.base, rotuloDaPrevisao(IDADE_FORA)),
+  },
+  {
+    id: 'escreveu-o-risco',
+    titulo: 'Escrever por que o segundo número não serve',
+    detalhe:
+      'A conta está certa e a resposta é absurda. Dizer por quê é o que separa '
+      + 'quem usa a reta de quem obedece a ela.',
+    onde: 'No caderno da análise, no campo do risco.',
+    passos: [
+      'Diga até onde vai o intervalo que a base cobre.',
+      'Diga o que a reta não tem fora dele: ninguém medido ali para dizer se '
+        + 'ela continua valendo.',
+      'Cite o número que ela devolveu — é ele que mostra o tamanho do problema.',
+    ],
+    /*
+      Texto escrito, com um dígito dentro. É a conta de "respondida com o dado"
+      da CC-ES009: uma explicação do risco que não cita nem o intervalo nem o
+      número absurdo é uma explicação de nada em particular — e um campo de
+      texto sem conta nenhuma fecharia com "não serve".
+    */
+    feita: c => frasePropria(texto(c, 'risco-da-extrapolacao')),
+  },
+];
+
+/* ── Módulo 6: a qualidade do ajuste ──────────────────────────────────────── */
+
+export const COL_R2 = 'r²';
+
+export function blocoDoAjuste(pares: ParDeColunas[]): BlocoDeContas {
+  return {
+    titulo: 'Quanto a reta explica',
+    rotulos: pares.map(p => p.rotulo),
+    colunas: [COL_R2],
+    funcoes: () => ['RQUAD'],
+    esperado: (base, linha) => {
+      const par = pares.find(p => p.rotulo === linha);
+      return par ? rquadDe(colunaDe(base, par.y), colunaDe(base, par.x)) : null;
+    },
+  };
+}
+
+export const formulaDoAjuste = (base: Formulario, par: ParDeColunas) =>
+  `=RQUAD(${faixaNaBase(base, par.y)};${faixaNaBase(base, par.x)})`;
+
+/**
+ * O par que a reta descreve pior, calculado e não escrito à mão.
+ *
+ * **Comparativo, e não um corte.** Não há limiar oficial de r² — inventar um e
+ * apresentá-lo como fato ensinaria uma precisão que a estatística não tem.
+ * O que a lição pergunta é *qual dos três* a reta descreve pior, que é uma
+ * pergunta com resposta e sem limiar nenhum.
+ */
+export function piorAjusteDa(base: Formulario): ParDeColunas {
+  let pior = PARES[0];
+  let menor = Number.POSITIVE_INFINITY;
+  for (const par of PARES) {
+    const r2 = rquadDe(colunaDe(base, par.y), colunaDe(base, par.x));
+    if (r2 !== null && r2 < menor) {
+      menor = r2;
+      pior = par;
+    }
+  }
+  return pior;
+}
+
+export const METAS_DO_AJUSTE: Meta[] = [
+  {
+    id: 'o-r-quadrado-dos-tres',
+    titulo: 'Calcular quanto a reta explica, nos três pares',
+    detalhe:
+      'O r² vai de 0 a 1 e diz que parte do vaivém de uma coluna a reta dá '
+      + 'conta de explicar. O resto é tudo o que ela não sabe.',
+    onde: 'Na aba Cálculos, nas três linhas do bloco de ajuste.',
+    passos: [
+      'Escreva =RQUAD( com as duas faixas, o y primeiro, como nas outras.',
+      'Aqui a ordem não muda a resposta — o r² é simétrico —, mas manter o '
+        + 'hábito evita errar nas duas em que ela muda.',
+      'Faça os três, para poder comparar.',
+    ],
+    feita: c => PARES.every(par => linhaConfere(c.caderno, c.blocos, c.base, par.rotulo)),
+  },
+  {
+    id: 'achou-o-pior-ajuste',
+    titulo: 'Apontar o par que a reta descreve pior',
+    detalhe:
+      'Não existe número a partir do qual o ajuste "passa": o que existe é '
+      + 'comparar, e olhar a nuvem. Num dos três a reta passa longe de muita '
+      + 'gente, e o r² diz isso antes de você medir nada.',
+    onde: 'No caderno da análise, no bloco "Onde a reta descreve pior".',
+    passos: [
+      'Compare os três r² que você acabou de calcular.',
+      'Volte ao gráfico daquele par e olhe o quanto os pontos se espalham em '
+        + 'volta da reta.',
+      'Os dois dizem a mesma coisa — e é por isso que o número não substitui a '
+        + 'olhada.',
+    ],
+    feita: c => c.piorAjuste === piorAjusteDa(c.base).id,
+  },
+];
+
 /* ── O registro ───────────────────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs010 = 'planilha' | 'plataforma';
@@ -595,7 +775,8 @@ export type ProgramaDaCcEs010 = 'planilha' | 'plataforma';
   da CC-ES003 e da CC-ES008: com um ternário ou um `if` em escada, a lição nova
   cairia calada na primeira.
 */
-export type LicaoDaCcEs010 = 'amostra' | 'correlacao' | 'espuria' | 'reta';
+export type LicaoDaCcEs010 =
+  | 'amostra' | 'correlacao' | 'espuria' | 'reta' | 'prever' | 'ajuste';
 
 export interface LicaoDeEstatistica {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -693,6 +874,18 @@ export const LICOES_DA_CC_ES010: Record<LicaoDaCcEs010, LicaoDeEstatistica> = {
     inicial: () => comDispersaoPronta(contextoInicial([blocoDaReta(PAR_DO_MODULO_2)])),
     metas: METAS_DA_RETA,
   },
+  prever: {
+    programa: 'planilha',
+    inicial: () => contextoInicial(
+      [blocoDasPrevisoes(PAR_DO_MODULO_2, [IDADE_DENTRO, IDADE_FORA])],
+    ),
+    metas: METAS_DA_PREVISAO,
+  },
+  ajuste: {
+    programa: 'planilha',
+    inicial: () => contextoInicial([blocoDoAjuste(PARES)]),
+    metas: METAS_DO_AJUSTE,
+  },
 };
 
 /** A solução de referência de cada lição, para a trava provar que ela fecha. */
@@ -759,6 +952,38 @@ export const SOLUCOES_DA_CC_ES010: Record<
       ...c,
       caderno: comAba(comAba(c.caderno, calc), comReta),
       independente: independenteCerta(),
+    };
+  },
+  prever: (c) => {
+    let calc = abaDe(c.caderno, ABA_CALCULOS);
+    for (const idade of [IDADE_DENTRO, IDADE_FORA]) {
+      calc = escrever(calc, linhaDoRotulo(c.blocos, rotuloDaPrevisao(idade)), 1,
+        formulaDaPrevisao(c.base, PAR_DO_MODULO_2, idade));
+    }
+    return {
+      ...c,
+      caderno: comAba(c.caderno, calc),
+      textos: {
+        ...c.textos,
+        'risco-da-extrapolacao':
+          'A base só tem gente de 10 a 15 anos. Fora desse intervalo a reta '
+          + 'nunca foi testada: ninguém de 25 anos foi medido para dizer se ela '
+          + 'continua valendo. Ela respondeu 2,58 m, que é mais alto do que '
+          + 'qualquer pessoa que já viveu — a conta está certa e a resposta não '
+          + 'serve.',
+      },
+    };
+  },
+  ajuste: (c) => {
+    let calc = abaDe(c.caderno, ABA_CALCULOS);
+    for (const par of PARES) {
+      calc = escrever(calc, linhaDoRotulo(c.blocos, par.rotulo), 1,
+        formulaDoAjuste(c.base, par));
+    }
+    return {
+      ...c,
+      caderno: comAba(c.caderno, calc),
+      piorAjuste: piorAjusteDa(c.base).id,
     };
   },
   espuria: (c) => {

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   agrupadoPor, amplitude, atipicosDe, cercaDe, classesDe, colunaDe, desvioPadrao,
   frequenciasDe, maximo, media, medidaDa, medidaPorGrupo, mediana, minimo, moda,
-  correlacaoDe, inclinacaoDe, intercepcaoDe, numerosDe, repeticoesDaModa,
-  sortearEntreGrupos, taxa,
+  correlacaoDe, inclinacaoDe, intercepcaoDe, numerosDe, previsaoDe,
+  repeticoesDaModa, rquadDe, sortearEntreGrupos, taxa,
 } from './analiseDeDados';
 import { ehErro } from './formulas';
 import type { Formulario, Resposta } from './formulario';
@@ -381,6 +381,49 @@ describe('a reta de y sobre x', () => {
     expect(inclinacaoDe(['1', '2', '3'], ['5', '5', '5'])).toBeNull();
     /* Mas y constante **tem** reta, e ela é horizontal: a guarda é do x. */
     expect(inclinacaoDe(['5', '5', '5'], ['1', '2', '3'])).toBe(0);
+  });
+});
+
+/*
+  ── A qualidade do ajuste, e a previsão que responde a qualquer x ─────────
+*/
+describe('o ajuste e a previsão', () => {
+  const xs = ['1', '2', '3', '4'];
+  const ys = ['3', '5', '7', '9'];
+
+  it('o r² é o quadrado do r, e não uma conta à parte', () => {
+    /* Duas implementações da mesma coisa divergiriam no primeiro ajuste, e a
+       divergência sairia como dois números plausíveis para a mesma qualidade
+       de ajuste. */
+    const tortos = ['2', '3', '7', '8'];
+    const r = correlacaoDe(tortos, xs)!;
+    expect(rquadDe(tortos, xs)).toBeCloseTo(r * r, 12);
+    expect(rquadDe(ys, xs)).toBe(1);
+  });
+
+  it('prevê dentro do intervalo observado', () => {
+    /* y = 2x + 1 em x = 2,5. */
+    expect(previsaoDe(2.5, ys, xs)).toBe(6);
+  });
+
+  /*
+    ── O requisito 5.4 inteiro ────────────────────────────────────────────
+
+    Ela responde para **qualquer** x, inclusive muito fora do observado, e
+    responde com a mesma cara de certeza. Uma guarda que recusasse o x de fora
+    seria a plataforma protegendo de um erro que a planilha do clube não
+    protege — e apagaria a lição, que é justamente ver o número absurdo sair
+    sem aviso nenhum.
+  */
+  it('responde igual para um x muito fora do observado', () => {
+    /* O observado vai de 1 a 4. Em 100 ela responde 201, sem reclamar. */
+    expect(previsaoDe(100, ys, xs)).toBe(201);
+    expect(previsaoDe(-50, ys, xs)).toBe(-99);
+  });
+
+  it('não tem reta para prever quando o x não varia', () => {
+    expect(previsaoDe(2, ['1', '2', '3'], ['5', '5', '5'])).toBeNull();
+    expect(previsaoDe(2, [], [])).toBeNull();
   });
 });
 

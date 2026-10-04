@@ -121,6 +121,41 @@ export const inclinacaoDe = (ys: string[], xs: string[]) =>
 export const intercepcaoDe = (ys: string[], xs: string[]) =>
   numeroDaMedida(daDupla(ys, xs, 'INTERCEPÇÃO'));
 
+/**
+ * O quadrado da correlação: quanto da variação de y a reta explica.
+ *
+ * Mesma ordem das outras duas, e **não** uma conta à parte: ele é o quadrado
+ * de `CORREL`, e duas implementações da mesma coisa divergiriam no primeiro
+ * ajuste — com a divergência aparecendo como dois números plausíveis para a
+ * mesma qualidade de ajuste.
+ */
+export const rquadDe = (ys: string[], xs: string[]) =>
+  numeroDaMedida(daDupla(ys, xs, 'RQUAD'));
+
+/**
+ * O valor que a reta prevê para um x, pela mesma reta.
+ *
+ * Ela responde para **qualquer** x, inclusive muito fora do intervalo
+ * observado, e responde com a mesma cara de certeza — é por ela que o
+ * requisito 5.4 acontece. Uma guarda aqui que recusasse o x de fora seria a
+ * plataforma protegendo de um erro que a planilha do clube não protege, e
+ * apagaria a lição.
+ */
+export function previsaoDe(x: number, ys: string[], xs: string[]): number | null {
+  const n = Math.max(ys.length, xs.length);
+  const bruto: Bruto = (linha, coluna) => {
+    if (coluna === 0) return ys[linha] ?? '';
+    if (coluna === 1) return xs[linha] ?? '';
+    return '';
+  };
+  const ate = (m: number) => Math.max(m, 1);
+  const v = valorDaFormula(
+    bruto,
+    `=PREVISÃO(${String(x).replace('.', ',')};A1:A${ate(ys.length)};B1:B${ate(xs.length)})`,
+  );
+  return n === 0 ? null : numeroDaMedida(v);
+}
+
 export const media = (valores: string[]) => medida(valores, 'MÉDIA');
 export const mediana = (valores: string[]) => medida(valores, 'MED');
 export const maximo = (valores: string[]) => medida(valores, 'MÁXIMO');

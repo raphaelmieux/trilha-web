@@ -5,14 +5,18 @@ import {
 } from './metasDaCcEs010';
 import {
   CANDIDATAS_A_ESCONDIDA, LEITURAS_DE_R, PARES, PAR_DO_MODULO_2,
-  ROTULO_INCLINACAO, formulaDaReta, formulaDoR, parEspurio, rDoPar,
+  IDADE_DENTRO, IDADE_FORA, ROTULO_INCLINACAO,
+  formulaDaPrevisao, formulaDaReta, formulaDoR, parEspurio, piorAjusteDa,
+  rDoPar, rotuloDaPrevisao,
 } from './metasDaCcEs010';
 import { COLETAS, populacaoCerta } from './amostraDoClube';
 import { ABA_CALCULOS, ABA_RESPOSTAS, faixaDoCampo, linhaDoRotulo } from './metasDaCcEs009';
 import { abaDe, comAba } from './cadernoDoClube';
 import { escrever } from './planilha';
 import { nomeDaColuna } from './formulas';
-import { colunaDe, correlacaoDe } from './analiseDeDados';
+import {
+  colunaDe, correlacaoDe, maximo, minimo, previsaoDe, rquadDe,
+} from './analiseDeDados';
 
 /*
   As metas da CC-ES010.
@@ -495,6 +499,151 @@ describe('o módulo 4 separa a reta da equação dela', () => {
        ela que decide qual eixo é qual. */
     const c = { ...pronto(), independente: PAR_DO_MODULO_2.y };
     expect(meta('qual-eixo-e-qual').feita(c)).toBe(false);
+  });
+});
+
+/*
+  ── Os módulos 5 e 6, e as premissas que fazem as lições existirem ───────
+
+  Estas duas são sobre a **base**, e não sobre o código: mexer num inscrito
+  pode desfazê-las, e nada reclamaria. A lição continuaria rodando e deixaria
+  de ensinar.
+*/
+describe('o módulo 5: prever, e o risco de extrapolar', () => {
+  const abrir = () => LICOES_DA_CC_ES010.prever.inicial();
+  const meta = (id: string) => LICOES_DA_CC_ES010.prever.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES_DA_CC_ES010.prever(abrir());
+
+  it('a solução de referência fecha as três', () => {
+    const c = pronto();
+    for (const m of LICOES_DA_CC_ES010.prever.metas) {
+      expect(m.feita(c), `"${m.titulo}" não fecha`).toBe(true);
+    }
+  });
+
+  /*
+    ── O absurdo tem de ser absurdo ───────────────────────────────────────
+
+    A previsão de dentro tem de ser plausível e a de fora tem de ser
+    impossível. A de dezesseis anos sairia em 1,83 m, que é alto e possível, e
+    quem a visse concluiria que a reta funciona fora do intervalo — a lição
+    rodaria e ensinaria o contrário.
+  */
+  it('a previsão de dentro é gente, e a de fora não é', () => {
+    const base = abrir().base;
+    const par = PAR_DO_MODULO_2;
+    const alturas = colunaDe(base, par.y);
+    const idades = colunaDe(base, par.x);
+
+    const dentro = previsaoDe(IDADE_DENTRO, alturas, idades)!;
+    const fora = previsaoDe(IDADE_FORA, alturas, idades)!;
+
+    /* A de dentro cai no meio do que a base mede. */
+    expect(dentro).toBeGreaterThan(1.2);
+    expect(dentro).toBeLessThan(1.9);
+    /* A de fora passa de qualquer pessoa que já viveu. */
+    expect(fora, `a previsão de ${IDADE_FORA} anos saiu em ${fora} m, que é possível`)
+      .toBeGreaterThan(2.3);
+
+    /* E a idade de fora está mesmo fora do observado, senão não é extrapolação. */
+    expect(IDADE_FORA).toBeGreaterThan(Number(maximo(idades)));
+    expect(IDADE_DENTRO).toBeGreaterThanOrEqual(Number(minimo(idades)));
+    expect(IDADE_DENTRO).toBeLessThanOrEqual(Number(maximo(idades)));
+  });
+
+  it('texto curto, ou sem número nenhum, não fecha o risco', () => {
+    /* Uma explicação de risco sem nem o intervalo nem o número absurdo é uma
+       explicação de nada em particular — e um campo livre fecharia com "não
+       serve". */
+    const c = pronto();
+    expect(meta('escreveu-o-risco').feita({ ...c, textos: { 'risco-da-extrapolacao': 'não serve' } }))
+      .toBe(false);
+    const semNumero = 'A reta nunca foi testada fora do intervalo que a base cobre, '
+      + 'então ela responde sem ter em que se apoiar e ninguém avisa nada.';
+    expect(meta('escreveu-o-risco').feita({ ...c, textos: { 'risco-da-extrapolacao': semNumero } }))
+      .toBe(false);
+    /*
+      E o caso que a mutação achou: curto **com** número. "2,58 m" cita o
+      número e não explica nada, e o primeiro caso aqui falhava pela conta do
+      dígito — então a conta do comprimento nunca era exercitada. É a trava
+      passando por acaso, que é indistinguível de estar certa.
+    */
+    expect(meta('escreveu-o-risco').feita({ ...c, textos: { 'risco-da-extrapolacao': '2,58 m' } }))
+      .toBe(false);
+  });
+
+  it('prever só dentro não fecha a lição', () => {
+    const c = abrir();
+    const calc = escrever(
+      abaDe(c.caderno, ABA_CALCULOS),
+      linhaDoRotulo(c.blocos, rotuloDaPrevisao(IDADE_DENTRO)),
+      1,
+      formulaDaPrevisao(c.base, PAR_DO_MODULO_2, IDADE_DENTRO),
+    );
+    const so = { ...c, caderno: comAba(c.caderno, calc) };
+    expect(meta('previu-dentro').feita(so)).toBe(true);
+    expect(meta('previu-muito-fora').feita(so)).toBe(false);
+  });
+});
+
+describe('o módulo 6: a qualidade do ajuste', () => {
+  const abrir = () => LICOES_DA_CC_ES010.ajuste.inicial();
+  const meta = (id: string) => LICOES_DA_CC_ES010.ajuste.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES_DA_CC_ES010.ajuste(abrir());
+
+  it('a solução de referência fecha as duas', () => {
+    const c = pronto();
+    for (const m of LICOES_DA_CC_ES010.ajuste.metas) {
+      expect(m.feita(c), `"${m.titulo}" não fecha`).toBe(true);
+    }
+  });
+
+  /*
+    A pergunta é **comparativa**, e não um corte: não há limiar oficial de r², e
+    inventar um e apresentá-lo como fato ensinaria uma precisão que a
+    estatística não tem. Mas a comparação só ensina se o pior for pior de
+    longe — com os três empatados, apontar seria chutar.
+  */
+  it('o pior ajuste é pior de longe, senão apontar é chutar', () => {
+    const base = abrir().base;
+    const r2 = PARES.map(par => ({
+      par,
+      valor: rquadDe(colunaDe(base, par.y), colunaDe(base, par.x))!,
+    })).sort((a, b) => a.valor - b.valor);
+    expect(r2[0].par.id).toBe(piorAjusteDa(base).id);
+    /* Uma margem de verdade entre o pior e o seguinte. */
+    expect(r2[1].valor - r2[0].valor,
+      `o pior (${r2[0].valor.toFixed(2)}) e o seguinte (${r2[1].valor.toFixed(2)}) estão empatados`)
+      .toBeGreaterThan(0.08);
+    /* E o melhor descreve bem, senão a lição seria "a reta nunca serve". */
+    expect(r2[r2.length - 1].valor).toBeGreaterThan(0.7);
+  });
+
+  /*
+    E a ordem das faixas no `RQUAD` é uma mutação **equivalente**: r² é o
+    quadrado de r, e r é simétrico, então trocar as duas devolve o mesmo
+    número. Diferente do `INCLINAÇÃO`, onde trocar devolve a reta ao
+    contrário — e é por isso que isto fica escrito: quem lê o passo a passo
+    ("o y primeiro, como nas outras") pode achar que aqui a ordem também muda a
+    resposta, e ela não muda.
+  */
+  it('o r² não muda quando as duas faixas trocam de lugar', () => {
+    const base = abrir().base;
+    for (const par of PARES) {
+      const ys = colunaDe(base, par.y);
+      const xs = colunaDe(base, par.x);
+      expect(rquadDe(xs, ys)).toBeCloseTo(rquadDe(ys, xs)!, 12);
+    }
+  });
+
+  it('apontar outro par não fecha', () => {
+    const c = pronto();
+    const pior = piorAjusteDa(c.base);
+    for (const par of PARES) {
+      if (par.id === pior.id) continue;
+      expect(meta('achou-o-pior-ajuste').feita({ ...c, piorAjuste: par.id }),
+        `apontar "${par.id}" fechou a meta`).toBe(false);
+    }
   });
 });
 
