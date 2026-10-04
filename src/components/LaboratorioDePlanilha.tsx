@@ -15,7 +15,7 @@ import {
   type Formato, type Historico,
   mesclar, mesclagemApaga, ordenar, planilhaAtiva, trocarAtiva,
   historicoDe, registrar, desfazer, refazer,
-  nomeDaCelula, nomeDaFaixa, normalizar, umaCelulaSo, linhaEscondida, pontosDoGrafico,
+  nomeDaCelula, nomeDaFaixa, normalizar, umaCelulaSo, linhaEscondida, pontosDaDispersao, pontosDoGrafico,
 } from '../labs/planilha';
 import { CADERNOS_DA_CC_ES003 } from '../labs/cadernosDaCcEs003';
 import { roteiroDaPlanilha } from '../labs/roteiroDaPlanilha';
@@ -425,7 +425,9 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
         {p.grafico && (
           <div className="pl-grafico" role="figure" aria-label={`Gráfico: ${p.grafico.titulo}`}>
             <div className="pl-grafico-titulo">{p.grafico.titulo || '(sem título)'}</div>
-            <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p)} />
+            <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p)}
+              pares={pontosDaDispersao(p)} tendencia={p.grafico.tendencia}
+              equacao={p.grafico.equacao} />
             <div className="pl-grafico-eixo">
               {p.grafico.eixoX || '(eixo sem nome)'} × {p.grafico.eixoY || '(eixo sem nome)'}
             </div>

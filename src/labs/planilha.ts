@@ -129,6 +129,22 @@ export interface Grafico {
   eixoY: string;
   /** De onde saem os dados: primeira coluna é o rótulo, segunda é o valor. */
   faixa: Faixa;
+  /**
+   * A linha de tendência, que é o requisito 5.3 da CC-ES010.
+   *
+   * Ela mora aqui e não num desenho à parte porque no Excel ela é um
+   * **elemento do gráfico** — Elementos do Gráfico, Linha de Tendência —, e
+   * não um gráfico diferente. Ausente, não há linha: ela não aparece sozinha
+   * em dispersão nenhuma, do mesmo jeito que lá.
+   */
+  tendencia?: boolean;
+  /**
+   * "Exibir Equação no gráfico", que é a caixa que o Excel oferece junto — e
+   * é ela que responde à segunda metade do 5.3, "obter sua equação". Separada
+   * de `tendencia` porque lá são duas caixas: dá para ver a reta sem nunca ler
+   * a equação dela, que é o que quase todo mundo faz.
+   */
+  equacao?: boolean;
 }
 
 /** Um rótulo e o número que ele vale, que é tudo o que um gráfico desenha. */
@@ -180,6 +196,45 @@ export function pontosDoGrafico(p: Planilha): PontoDoGrafico[] {
     }
   }
   return pontos;
+}
+
+/** Um par de números, que é o que uma dispersão desenha. */
+export interface PontoDeDispersao {
+  x: number;
+  y: number;
+}
+
+/**
+ * Os pares (x, y) de uma dispersão.
+ *
+ * **A dispersão não lê rótulo, e é isso que a separa dos outros três.** Nos
+ * outros, a primeira coluna nomeia a categoria e o eixo horizontal é uma
+ * fileira de nomes; aqui as duas colunas são medidas, e o eixo horizontal é
+ * a primeira delas. Desenhá-la com o índice da linha no lugar do x — que é o
+ * que esta planilha fazia — dá um gráfico plausível que **muda de forma
+ * quando alguém ordena a tabela**, e a dispersão de verdade é imune a isso:
+ * é a mesma nuvem em qualquer ordem, porque a posição de cada ponto sai do
+ * dado e não da linha em que ele está.
+ *
+ * Com isso o requisito 5.1 passa a ter o que medir. Sem ele, "dispersão entre
+ * duas variáveis" seria um tipo de gráfico que nunca lê a segunda.
+ *
+ * O par cai inteiro quando qualquer um dos dois lados não é número, que é a
+ * regra de `paresDe` em `formulas.ts` e pelo mesmo motivo: descartar meio par
+ * desalinharia todos os seguintes.
+ */
+export function pontosDaDispersao(p: Planilha): PontoDeDispersao[] {
+  const g = p.grafico;
+  if (!g) return [];
+  const n = normalizar(g.faixa);
+  const pares: PontoDeDispersao[] = [];
+  for (let l = n.topo; l <= n.base; l++) {
+    const x = valorDaGrade(p, l, n.esq);
+    const y = valorDaGrade(p, l, n.dir);
+    if (x.tipo !== 'numero' || y.tipo !== 'numero') continue;
+    pares.push({ x: x.n, y: y.n });
+  }
+  return pares;
 }
 
 /* ── Tabela dinâmica ─────────────────────────────────────────────────────── */

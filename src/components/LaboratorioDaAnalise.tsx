@@ -13,7 +13,7 @@ import {
   type Caderno, type ComoResumir, type Historico, type Planilha,
   type TabelaDinamica, type TipoDeGrafico,
   atualizarResumo, desfazer, historicoDe, nomeDaFaixa, normalizar, ordenar,
-  planilhaAtiva, pontosDoGrafico, refazer, registrar, textoDoResumo, trocarAtiva,
+  planilhaAtiva, pontosDaDispersao, pontosDoGrafico, refazer, registrar, textoDoResumo, trocarAtiva,
   NOME_DO_RESUMO,
 } from '../labs/planilha';
 import { abaDe, comAba, escritoEm, mostradoEm } from '../labs/cadernoDoClube';
@@ -579,7 +579,9 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
         {p.grafico && (
           <div className="pl-grafico" role="figure" aria-label={`Gráfico: ${p.grafico.titulo}`}>
             <div className="pl-grafico-titulo">{p.grafico.titulo || '(sem título)'}</div>
-            <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p)} />
+            <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p)}
+              pares={pontosDaDispersao(p)} tendencia={p.grafico.tendencia}
+              equacao={p.grafico.equacao} />
             <div className="pl-grafico-eixo">
               {p.grafico.eixoX || '(eixo sem nome)'} × {p.grafico.eixoY || '(eixo sem nome)'}
             </div>

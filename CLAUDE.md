@@ -1974,6 +1974,72 @@ pessoa a não ler avisos. O nome do programa é `"excel"` em todos, e
 `gradeDoExcel.test.tsx` cobra de cada um os mesmos gestos de teclado pela mesma
 razão.
 
+**A dispersão era uma dispersão só de nome.** Ela desenhava os pontos em
+posições igualmente espaçadas pela **ordem da linha**, com o rótulo da linha
+embaixo — nunca lia a segunda variável. O sintoma é que ela **muda de forma
+quando alguém ordena a tabela**, e a dispersão de verdade é imune a isso: é a
+mesma nuvem em qualquer ordem, porque a posição de cada ponto sai do dado e não
+da linha em que ele está. Com o índice no lugar do x, o requisito 5.1 da
+CC-ES010 — "dispersão entre duas variáveis" — seria um tipo de gráfico que
+nunca lê a segunda.
+
+Nada disso estourava, que é a família inteira: um gráfico errado continua sendo
+um gráfico. Por isso ela é o único tipo que **não lê rótulo** — nos outros três
+a primeira coluna nomeia a categoria, nela as duas colunas são medidas —, e por
+isso `pontosDaDispersao` é outra função e não um parâmetro de
+`pontosDoGrafico`: os dois retornos têm formas diferentes, e uma união faria
+cada leitor lembrar qual veio.
+
+E os dois eixos dela começam no **menor valor observado**, e não em zero — que
+é o contrário do que o eixo de uma coluna faz, e é o que o Excel faz numa
+dispersão. Forçar o zero espremeria a nuvem de alturas entre 1,05 e 1,79 num
+canto do desenho, e a relação que a lição manda ver sumiria.
+
+**A linha de tendência é elemento do gráfico, e a equação é outra caixa.** No
+Excel são duas: Elementos do Gráfico → Linha de Tendência, e "Exibir Equação no
+gráfico". Dá para ver a reta sem nunca ler a equação dela, que é o que quase
+todo mundo faz — e o requisito 5.3 pede as duas metades, "ajustar a linha **e
+obter sua equação**". Uma dispersão que já viesse com a reta apagaria o
+primeiro gesto; uma reta que já viesse com a equação apagaria o segundo.
+
+Por causa disso o `aria-label` só dita a equação quando a caixa dela está
+marcada. Ditá-la assim que a reta existe entregaria metade do requisito de
+graça, e entregaria **só a quem usa leitor de tela** — que é a decisão da lista
+da nuvem da CC-ES006, que não escreve o papel de ninguém nem como texto para
+leitor de tela. Vendo ou ouvindo, recebe-se o mesmo: a reta sem a equação.
+
+**A ordem dos argumentos da regressão é a armadilha, e ela é do Excel.**
+`CORREL` é simétrica — trocar as duas faixas devolve o mesmo número, porque a
+correlação não tem lado. `INCLINAÇÃO`, `INTERCEPÇÃO` e `RQUAD` não são: elas
+recebem **o y primeiro**, e trocá-las devolve a reta ao contrário, com cara de
+reta certa. Quem escreve `=INCLINAÇÃO(idades; alturas)` pensando "idade explica
+altura" recebe a inclinação de idade sobre altura, que é outra reta, sem erro
+nenhum. Escrever as quatro com a mesma ordem "arrumaria" isso e ensinaria uma
+planilha que não existe.
+
+`RQUAD` é o quadrado de `CORREL`, e não uma conta à parte — duas
+implementações da mesma coisa divergiriam no primeiro ajuste, e a divergência
+apareceria como dois números plausíveis para a mesma qualidade de ajuste. E
+`PREVISÃO` responde para **qualquer** x, inclusive muito fora do intervalo
+observado, com a mesma cara de certeza: é por ela que o requisito 5.4 acontece,
+e recusar a extrapolação seria a plataforma protegendo de um erro que a
+planilha do clube não protege.
+
+O par cai **inteiro** quando qualquer um dos dois lados não é número, nos dois
+lugares que fazem pares (`paresDe` em `formulas.ts` e `pontosDaDispersao` em
+`planilha.ts`). Descartar meio par desalinharia todo o resto — a altura de uma
+linha passaria a ser comparada com a idade da seguinte —, e substituir o lado
+que falta por zero é a forma que mais engana: ela não desalinha nada e planta
+um ponto em cima do eixo, que puxa a reta para baixo sem nada na tela
+explicando. Faixas de tamanhos diferentes são `#N/D`, e não a conta do menor:
+cortar no menor responderia sobre parte da base sem dizer que parte.
+
+E a reta que a **janela** desenha não é a que o **motor** calcula: `excel.tsx`
+é da janela e não importa o motor do exercício, então a conta está escrita nos
+dois. Elas se conferem uma contra a outra, como número e não como texto — os
+dois formatadores são outros, o do eixo dá uma casa e o da célula dá duas, e
+comparar as cadeias conferiria a formatação em vez da conta.
+
 **O PDF calcula, porque a CC-ES004 cobra o que não se vê.** O requisito 5
 manda digitalizar um papel, reconhecer o texto e **comprovar o resultado
 localizando uma palavra dentro do arquivo** — enunciado vazio se a procura
@@ -3542,6 +3608,12 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |
 | `src/labs/formulas.test.ts` | referência circular devolvendo zero, ou travando a aba |
+| `src/labs/formulas.test.ts` | INCLINAÇÃO recebendo o x primeiro, que devolve a reta ao contrário sem erro |
+| `src/labs/formulas.test.ts` | PREVISÃO recusando x fora do observado, que apaga o requisito 5.4 |
+| `src/labs/formulas.test.ts` | meio par guardado numa das duas faixas, que desalinha todos os seguintes |
+| `src/labs/desenhoDoGrafico.test.tsx` | dispersão desenhada pela ordem da linha, que muda de forma quando alguém ordena |
+| `src/labs/desenhoDoGrafico.test.tsx` | tendência que aparece sem a caixa, ou equação ditada sem a dela |
+| `src/labs/desenhoDoGrafico.test.tsx` | reta desenhada pela janela divergindo da que a INCLINAÇÃO devolve |
 | `src/labs/metasDaAp043.test.ts` | segundo avaliador de fórmula escrito fora de `formulas.ts` |
 | `src/labs/planilha.test.ts` | filtro que esconde o cabeçalho, deixando a tabela sem como voltar |
 | `src/labs/planilha.test.ts` | ordenação que leva só a coluna da chave, embaralhando o cadastro |
