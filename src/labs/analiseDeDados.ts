@@ -104,6 +104,23 @@ export function daDupla(primeira: string[], segunda: string[], funcao: string): 
 export const correlacaoDe = (a: string[], b: string[]) =>
   numeroDaMedida(daDupla(a, b, 'CORREL'));
 
+/**
+ * A inclinação da reta de **y sobre x**, e a ordem é a do Excel.
+ *
+ * `INCLINAÇÃO` recebe o y primeiro, e os parâmetros aqui têm esse nome
+ * justamente para que quem chame não tenha de lembrar: `inclinacaoDe(ys, xs)`.
+ * Um ajudante que recebesse `(xs, ys)` e trocasse por dentro seria o lugar
+ * perfeito para a armadilha se perder — a reta ao contrário sai com cara de
+ * reta certa, e quem escreveu a fórmula na célula continuaria errando sem
+ * nada acusar.
+ */
+export const inclinacaoDe = (ys: string[], xs: string[]) =>
+  numeroDaMedida(daDupla(ys, xs, 'INCLINAÇÃO'));
+
+/** O ponto em que a reta corta o eixo vertical. Mesma ordem: o y primeiro. */
+export const intercepcaoDe = (ys: string[], xs: string[]) =>
+  numeroDaMedida(daDupla(ys, xs, 'INTERCEPÇÃO'));
+
 export const media = (valores: string[]) => medida(valores, 'MÉDIA');
 export const mediana = (valores: string[]) => medida(valores, 'MED');
 export const maximo = (valores: string[]) => medida(valores, 'MÁXIMO');

@@ -5,12 +5,13 @@ import {
 } from './metasDaCcEs010';
 import {
   CANDIDATAS_A_ESCONDIDA, LEITURAS_DE_R, PARES, PAR_DO_MODULO_2,
-  formulaDoR, parEspurio, rDoPar,
+  ROTULO_INCLINACAO, formulaDaReta, formulaDoR, parEspurio, rDoPar,
 } from './metasDaCcEs010';
 import { COLETAS, populacaoCerta } from './amostraDoClube';
-import { ABA_CALCULOS, ABA_RESPOSTAS, linhaDoRotulo } from './metasDaCcEs009';
+import { ABA_CALCULOS, ABA_RESPOSTAS, faixaDoCampo, linhaDoRotulo } from './metasDaCcEs009';
 import { abaDe, comAba } from './cadernoDoClube';
 import { escrever } from './planilha';
+import { nomeDaColuna } from './formulas';
 import { colunaDe, correlacaoDe } from './analiseDeDados';
 
 /*
@@ -392,6 +393,108 @@ describe('o módulo 3 recusa o chute', () => {
       expect(linhaDoRotulo(c.blocos, par.rotulo), `"${par.rotulo}" não está na aba`)
         .toBeGreaterThanOrEqual(0);
     }
+  });
+});
+
+/*
+  ── O módulo 4: a reta, e as duas caixas que não se colapsam ─────────────
+*/
+describe('o módulo 4 separa a reta da equação dela', () => {
+  const abrir = () => LICOES_DA_CC_ES010.reta.inicial();
+  const meta = (id: string) => LICOES_DA_CC_ES010.reta.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES_DA_CC_ES010.reta(abrir());
+
+  const comGrafico = (c: ContextoDaEstatistica, troca: Record<string, unknown>) => {
+    const r = c.caderno.planilhas.find(x => x.nome === ABA_RESPOSTAS)!;
+    return { ...c, caderno: comAba(c.caderno, { ...r, grafico: { ...r.grafico!, ...troca } }) };
+  };
+
+  it('a solução de referência fecha as três', () => {
+    const c = pronto();
+    for (const m of LICOES_DA_CC_ES010.reta.metas) {
+      expect(m.feita(c), `"${m.titulo}" não fecha`).toBe(true);
+    }
+  });
+
+  it('abre com a dispersão pronta e sem a linha de tendência', () => {
+    /*
+      A dispersão vem do módulo 2: começar mandando refazê-la ensinaria que o
+      trabalho anterior não conta. E ela vem **sem** a reta, que é o que esta
+      lição pede — com a reta já traçada, a meta abriria verde.
+    */
+    const c = abrir();
+    const g = c.caderno.planilhas.find(x => x.nome === ABA_RESPOSTAS)?.grafico;
+    expect(g?.tipo).toBe('dispersao');
+    expect(g?.tendencia).toBeFalsy();
+    expect(meta('a-linha-de-tendencia').feita(c)).toBe(false);
+  });
+
+  /*
+    ── As duas caixas, e por que elas não se colapsam ─────────────────────
+
+    No Excel são duas: Linha de Tendência e Exibir Equação. Dá para ver a reta
+    e nunca ler a equação dela, que é o que quase todo mundo faz — e o
+    requisito 5.3 pede as duas metades. Uma meta só apagaria uma delas.
+  */
+  it('a reta traçada fecha a primeira e não a segunda', () => {
+    const soReta = comGrafico(pronto(), { equacao: false });
+    expect(meta('a-linha-de-tendencia').feita(soReta)).toBe(true);
+    expect(meta('a-equacao').feita(soReta)).toBe(false);
+  });
+
+  it('a equação marcada sem as duas células não fecha', () => {
+    /* Marcar a caixa no gráfico mostra a conta; obtê-la é escrevê-la onde ela
+       serve para prever. As duas coisas, e não uma. */
+    const c = comGrafico(abrir(), { tendencia: true, equacao: true });
+    expect(meta('a-equacao').feita(c)).toBe(false);
+  });
+
+  /*
+    ── A armadilha da ordem, que é a do Excel ─────────────────────────────
+
+    `INCLINAÇÃO` e `INTERCEPÇÃO` recebem o y primeiro. Ao contrário, as duas
+    devolvem a reta de x sobre y — outro número, com a mesma cara de certo, e
+    sem erro nenhum na célula.
+  */
+  it('a fórmula com as faixas trocadas não fecha', () => {
+    const c = pronto();
+    const par = PAR_DO_MODULO_2;
+    let calc = abaDe(c.caderno, ABA_CALCULOS);
+    /* O x na frente: a reta ao contrário. */
+    calc = escrever(calc, linhaDoRotulo(c.blocos, ROTULO_INCLINACAO), 1,
+      `=INCLINAÇÃO(${ABA_RESPOSTAS}!${faixaDoCampo(c.base, par.x)};`
+      + `${ABA_RESPOSTAS}!${faixaDoCampo(c.base, par.y)})`);
+    const trocada = { ...c, caderno: comAba(c.caderno, calc) };
+    expect(meta('a-equacao').feita(trocada)).toBe(false);
+  });
+
+  /*
+    ── A que a mutação achou ──────────────────────────────────────────────
+
+    Um bloco que não cobrasse função nenhuma aceitaria a célula que **chega ao
+    número por outro caminho** — e o que esta lição ensina é justamente a
+    função e a ordem dos argumentos dela. Uma referência a outra célula que já
+    tenha o valor tem referência e tem o número certo, e não ensinou nada.
+
+    (A inclinação até se escreve por caminho longo, com CORREL e os dois
+    desvios. Cobrar o nome é a decisão: é ele que o requisito 5.3 nomeia, e é
+    nele que mora a armadilha da ordem.)
+  */
+  it('o número certo por outro caminho não fecha a equação', () => {
+    const c = pronto();
+    const linha = linhaDoRotulo(c.blocos, ROTULO_INCLINACAO);
+    let calc = abaDe(c.caderno, ABA_CALCULOS);
+    /* Guarda o valor numa célula à parte e aponta para ela. */
+    calc = escrever(calc, linha, 4, formulaDaReta(c.base, PAR_DO_MODULO_2, 'INCLINAÇÃO'));
+    calc = escrever(calc, linha, 1, `=${nomeDaColuna(4)}${linha + 1}`);
+    expect(meta('a-equacao').feita({ ...c, caderno: comAba(c.caderno, calc) })).toBe(false);
+  });
+
+  it('dizer que a explicada explica não fecha', () => {
+    /* Ninguém fica mais velho por ter crescido: a direção tem resposta, e é
+       ela que decide qual eixo é qual. */
+    const c = { ...pronto(), independente: PAR_DO_MODULO_2.y };
+    expect(meta('qual-eixo-e-qual').feita(c)).toBe(false);
   });
 });
 

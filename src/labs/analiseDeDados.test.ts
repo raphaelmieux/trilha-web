@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   agrupadoPor, amplitude, atipicosDe, cercaDe, classesDe, colunaDe, desvioPadrao,
   frequenciasDe, maximo, media, medidaDa, medidaPorGrupo, mediana, minimo, moda,
-  correlacaoDe, numerosDe, repeticoesDaModa, sortearEntreGrupos, taxa,
+  correlacaoDe, inclinacaoDe, intercepcaoDe, numerosDe, repeticoesDaModa,
+  sortearEntreGrupos, taxa,
 } from './analiseDeDados';
 import { ehErro } from './formulas';
 import type { Formulario, Resposta } from './formulario';
@@ -342,6 +343,44 @@ describe('a correlação entre duas colunas', () => {
        pares sem dizer que parte. */
     expect(correlacaoDe(['1', '2', '3'], ['3', '5'])).toBeNull();
     expect(correlacaoDe([], [])).toBeNull();
+  });
+});
+
+/*
+  ── A reta, e a ordem dos argumentos ──────────────────────────────────────
+
+  `CORREL` é simétrica; `INCLINAÇÃO` e `INTERCEPÇÃO` não são. É a armadilha que
+  o motor guarda de propósito, e um ajudante que a "arrumasse" por dentro seria
+  o lugar perfeito para ela se perder.
+*/
+describe('a reta de y sobre x', () => {
+  /* y = 2x + 1, exata. */
+  const xs = ['1', '2', '3', '4'];
+  const ys = ['3', '5', '7', '9'];
+
+  it('devolve a inclinação e a intercepção da reta', () => {
+    expect(inclinacaoDe(ys, xs)).toBe(2);
+    expect(intercepcaoDe(ys, xs)).toBe(1);
+  });
+
+  /*
+    E trocar a ordem devolve **outra reta**, não a mesma. É o que separa estas
+    duas da correlação, e é por isso que os parâmetros se chamam `ys` e `xs`:
+    quem chama não tem de lembrar a ordem, ela está escrita.
+  */
+  it('trocar a ordem devolve a reta ao contrário, e as duas são plausíveis', () => {
+    /* x sobre y: 1/2 e −0,5 — nenhuma das duas parece errada. */
+    expect(inclinacaoDe(xs, ys)).toBe(0.5);
+    expect(inclinacaoDe(xs, ys)).not.toBe(inclinacaoDe(ys, xs));
+    expect(intercepcaoDe(xs, ys)).toBe(-0.5);
+  });
+
+  it('x que não varia não tem reta, e isso é null e não zero', () => {
+    /* Zero afirmaria uma reta horizontal, que é uma resposta sobre os dados;
+       a recusa diz que não dá para ajustar reta nenhuma. */
+    expect(inclinacaoDe(['1', '2', '3'], ['5', '5', '5'])).toBeNull();
+    /* Mas y constante **tem** reta, e ela é horizontal: a guarda é do x. */
+    expect(inclinacaoDe(['5', '5', '5'], ['1', '2', '3'])).toBe(0);
   });
 });
 

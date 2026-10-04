@@ -55,7 +55,7 @@ import {
   ABA_CALCULOS, ABA_RESPOSTAS, cadernoDaAnalise, colunaDoCampo, faixaDoCampo,
   linhaConfere, linhaDoRotulo,
 } from './metasDaCcEs009';
-import { colunaDe, correlacaoDe } from './analiseDeDados';
+import { colunaDe, correlacaoDe, inclinacaoDe, intercepcaoDe } from './analiseDeDados';
 import { abaDe, comAba } from './cadernoDoClube';
 import { nomeDaColuna } from './formulas';
 import {
@@ -114,6 +114,8 @@ export interface ContextoDaEstatistica {
   parApontado?: string;
   /** Módulo 3: que coluna ela disse que explica os dois lados dele. */
   colunaEscondida?: string;
+  /** Módulo 4: qual das duas colunas do par ela disse que é a independente. */
+  independente?: string;
   /** O que ela escreveu, por chave. */
   textos: Record<string, string>;
 }
@@ -478,6 +480,111 @@ export const METAS_DA_ESPURIA: Meta[] = [
   },
 ];
 
+/* ── Módulo 4: a reta ─────────────────────────────────────────────────────── */
+
+export const ROTULO_INCLINACAO = 'Inclinação da reta';
+export const ROTULO_INTERCEPCAO = 'Onde ela corta o eixo';
+
+/**
+ * O bloco da reta: duas linhas, uma coluna.
+ *
+ * A ordem dos argumentos é a do Excel, e é a lição: `INCLINAÇÃO` e
+ * `INTERCEPÇÃO` recebem **o y primeiro**. Quem escrever ao contrário recebe a
+ * reta de x sobre y — outro número, igualmente plausível, sem erro nenhum.
+ */
+export function blocoDaReta(par: ParDeColunas): BlocoDeContas {
+  return {
+    titulo: `A reta de ${par.rotulo}`,
+    rotulos: [ROTULO_INCLINACAO, ROTULO_INTERCEPCAO],
+    colunas: ['Valor'],
+    funcoes: linha => [linha === ROTULO_INCLINACAO ? 'INCLINAÇÃO' : 'INTERCEPÇÃO'],
+    esperado: (base, linha) => {
+      const ys = colunaDe(base, par.y);
+      const xs = colunaDe(base, par.x);
+      return linha === ROTULO_INCLINACAO ? inclinacaoDe(ys, xs) : intercepcaoDe(ys, xs);
+    },
+  };
+}
+
+/** A fórmula da reta, com o y na frente — como se escreve na célula. */
+export const formulaDaReta = (base: Formulario, par: ParDeColunas, funcao: string) =>
+  `=${funcao}(${faixaNaBase(base, par.y)};${faixaNaBase(base, par.x)})`;
+
+/**
+ * Qual das duas colunas do par **explica** a outra.
+ *
+ * É o requisito 2.4, e no par do módulo 4 ele tem resposta: a idade explica a
+ * altura, e não o contrário — ninguém fica mais velho por ter crescido. É o
+ * único par da base em que a direção é clara nos dois sentidos da pergunta, e
+ * é por isso que é este que a lição usa.
+ */
+export const independenteCerta = () => PAR_DO_MODULO_2.x;
+
+export const METAS_DA_RETA: Meta[] = [
+  {
+    id: 'qual-eixo-e-qual',
+    titulo: 'Dizer qual das duas explica a outra',
+    detalhe:
+      'A que explica vai no eixo horizontal; a que é explicada, no vertical. '
+      + 'Trocar as duas desenha uma reta que responde a outra pergunta.',
+    onde: 'Na tela da lição, no bloco "Quem explica quem".',
+    passos: [
+      'Faça a pergunta nos dois sentidos, como no módulo anterior.',
+      'Uma das duas respostas é absurda — e é isso que decide a direção.',
+    ],
+    feita: c => c.independente === independenteCerta(),
+  },
+  {
+    id: 'a-linha-de-tendencia',
+    titulo: 'Traçar a linha de tendência na dispersão',
+    detalhe:
+      'Ela é a reta que passa o mais perto possível de todos os pontos ao '
+      + 'mesmo tempo. Não passa por cima de nenhum, e é isso que a torna útil: '
+      + 'ela resume a nuvem inteira.',
+    onde: 'No gráfico, em Elementos do Gráfico → Linha de Tendência.',
+    passos: [
+      'Clique no gráfico de dispersão.',
+      'Abra Elementos do Gráfico e marque Linha de Tendência.',
+      'A reta aparece tracejada, por baixo dos pontos.',
+    ],
+    feita: c => tendenciaNoGrafico(c) === 'tracada' || tendenciaNoGrafico(c) === 'com-equacao',
+  },
+  {
+    id: 'a-equacao',
+    titulo: 'Obter a equação da reta',
+    detalhe:
+      'Ver a reta e saber a conta dela são duas coisas, e no programa são duas '
+      + 'caixas. A equação é o que deixa você prever um valor sem medir o '
+      + 'gráfico com a régua.',
+    onde: 'No gráfico, marcando Exibir Equação — e na aba Cálculos, nas duas linhas da reta.',
+    passos: [
+      'No mesmo menu do gráfico, marque Exibir Equação.',
+      `Na aba Cálculos, escreva =INCLINAÇÃO( e selecione **primeiro** a coluna `
+        + `${letraDo(PAR_DO_MODULO_2.y)}, que é a explicada, e depois a coluna `
+        + `${letraDo(PAR_DO_MODULO_2.x)}.`,
+      'Faça o mesmo com =INTERCEPÇÃO(, na mesma ordem.',
+      'Esta ordem não é detalhe: ao contrário, as duas devolvem a reta de x '
+        + 'sobre y — outro número, com a mesma cara de certo.',
+    ],
+    feita: c => tendenciaNoGrafico(c) === 'com-equacao'
+      && linhaConfere(c.caderno, c.blocos, c.base, ROTULO_INCLINACAO)
+      && linhaConfere(c.caderno, c.blocos, c.base, ROTULO_INTERCEPCAO),
+  },
+];
+
+/**
+ * Em que pé está a linha de tendência do gráfico.
+ *
+ * Três estados e não dois, porque no Excel são **duas caixas**: dá para ver a
+ * reta e nunca ler a equação dela, que é o que quase todo mundo faz. Colapsar
+ * os dois apagaria uma das duas metades do requisito 5.3.
+ */
+function tendenciaNoGrafico(c: ContextoDaEstatistica): 'sem' | 'tracada' | 'com-equacao' {
+  const g = c.caderno.planilhas.find(x => x.nome === ABA_RESPOSTAS)?.grafico;
+  if (!g || g.tipo !== 'dispersao' || !g.tendencia) return 'sem';
+  return g.equacao ? 'com-equacao' : 'tracada';
+}
+
 /* ── O registro ───────────────────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs010 = 'planilha' | 'plataforma';
@@ -488,7 +595,7 @@ export type ProgramaDaCcEs010 = 'planilha' | 'plataforma';
   da CC-ES003 e da CC-ES008: com um ternário ou um `if` em escada, a lição nova
   cairia calada na primeira.
 */
-export type LicaoDaCcEs010 = 'amostra' | 'correlacao' | 'espuria';
+export type LicaoDaCcEs010 = 'amostra' | 'correlacao' | 'espuria' | 'reta';
 
 export interface LicaoDeEstatistica {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -512,6 +619,42 @@ export function contextoInicial(
     classificacoes: {},
     textos: {},
   };
+}
+
+/**
+ * A pasta com a dispersão do módulo 2 já desenhada.
+ *
+ * O módulo 4 parte dela: a lição anterior a desenhou, e começar mandando
+ * refazê-la ensinaria que o trabalho anterior não conta. Ela chega **sem** a
+ * linha de tendência, que é o que esta lição pede.
+ */
+function comDispersaoPronta(c: ContextoDaEstatistica): ContextoDaEstatistica {
+  const par = PAR_DO_MODULO_2;
+  const r = c.caderno.planilhas.find(x => x.nome === ABA_RESPOSTAS)!;
+  const cx = colunaDoCampo(par.x);
+  const cy = colunaDoCampo(par.y);
+  const comGrafico: Planilha = {
+    ...r,
+    grafico: {
+      tipo: 'dispersao',
+      titulo: par.rotulo,
+      eixoX: rotuloDoCampo(par.x),
+      eixoY: rotuloDoCampo(par.y),
+      faixa: {
+        l1: 1, c1: Math.min(cx, cy), l2: c.base.respostas.length, c2: Math.max(cx, cy),
+      },
+    },
+  };
+  /*
+    Os **dois** campos, e não só o de agora.
+
+    `cadernoAntes` é a pasta de quando a lição abriu, e é contra ela que "o que
+    mudou?" se mede. Mexendo só em `caderno`, a dispersão que a lição **entrega**
+    contaria como trabalho de quem abriu — e a trava de "a pasta de quando abriu
+    é a mesma pasta" pegou isto na primeira execução.
+  */
+  const caderno = comAba(c.caderno, comGrafico);
+  return { ...c, caderno, cadernoAntes: caderno };
 }
 
 export const LICOES_DA_CC_ES010: Record<LicaoDaCcEs010, LicaoDeEstatistica> = {
@@ -539,6 +682,16 @@ export const LICOES_DA_CC_ES010: Record<LicaoDaCcEs010, LicaoDeEstatistica> = {
        eles — e não cada número sozinho. */
     inicial: () => contextoInicial([blocoDosPares(PARES)]),
     metas: METAS_DA_ESPURIA,
+  },
+  reta: {
+    programa: 'planilha',
+    /*
+      Parte com a dispersão **já desenhada**, porque o módulo 2 a desenhou:
+      começar mandando refazê-la ensinaria que o trabalho anterior não conta.
+      É o campo `documento` da CC-ES002 e o `caderno` da CC-ES003.
+    */
+    inicial: () => comDispersaoPronta(contextoInicial([blocoDaReta(PAR_DO_MODULO_2)])),
+    metas: METAS_DA_RETA,
   },
 };
 
@@ -588,6 +741,24 @@ export const SOLUCOES_DA_CC_ES010: Record<
       ...c,
       caderno: comAba(comAba(c.caderno, calc), comGrafico),
       leituraDeR: leituraCerta(),
+    };
+  },
+  reta: (c) => {
+    const par = PAR_DO_MODULO_2;
+    let calc = abaDe(c.caderno, ABA_CALCULOS);
+    calc = escrever(calc, linhaDoRotulo(c.blocos, ROTULO_INCLINACAO), 1,
+      formulaDaReta(c.base, par, 'INCLINAÇÃO'));
+    calc = escrever(calc, linhaDoRotulo(c.blocos, ROTULO_INTERCEPCAO), 1,
+      formulaDaReta(c.base, par, 'INTERCEPÇÃO'));
+    const r = c.caderno.planilhas.find(x => x.nome === ABA_RESPOSTAS)!;
+    const comReta: Planilha = {
+      ...r,
+      grafico: { ...r.grafico!, tendencia: true, equacao: true },
+    };
+    return {
+      ...c,
+      caderno: comAba(comAba(c.caderno, calc), comReta),
+      independente: independenteCerta(),
     };
   },
   espuria: (c) => {
