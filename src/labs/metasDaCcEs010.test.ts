@@ -8,8 +8,11 @@ import {
   IDADE_DENTRO, IDADE_FORA, ROTULO_INCLINACAO,
   formulaDaPrevisao, formulaDaReta, formulaDoR, parEspurio, piorAjusteDa,
   rDoPar, rotuloDaPrevisao,
+  CHAVE_DADO, CHAVE_OUTRA, CHAVE_SUGERE, ROTULO_ESCOLHIDO,
 } from './metasDaCcEs010';
 import { COLETAS, populacaoCerta } from './amostraDoClube';
+import { CAMPO_ALTURA, CAMPO_IDADE } from './baseDoAcampamento';
+import { CAMPO_DIARIAS } from './formulario';
 import { ABA_CALCULOS, ABA_RESPOSTAS, faixaDoCampo, linhaDoRotulo } from './metasDaCcEs009';
 import { abaDe, comAba } from './cadernoDoClube';
 import { escrever } from './planilha';
@@ -644,6 +647,160 @@ describe('o módulo 6: a qualidade do ajuste', () => {
       expect(meta('achou-o-pior-ajuste').feita({ ...c, piorAjuste: par.id }),
         `apontar "${par.id}" fechou a meta`).toBe(false);
     }
+  });
+});
+
+/*
+  ── O módulo 7: o par que você escolheu ──────────────────────────────────
+
+  Requisito 6. A mecânica o requisito 5 já mediu; o que este mede é o
+  raciocínio escrito — e raciocínio só existe sobre um par que alguém escolheu.
+*/
+describe('o módulo 7 confere a escolha, e não só a fórmula', () => {
+  const abrir = () => LICOES_DA_CC_ES010.escolhido.inicial();
+  const meta = (id: string) => LICOES_DA_CC_ES010.escolhido.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES_DA_CC_ES010.escolhido(abrir());
+
+  it('a solução de referência fecha as quatro', () => {
+    const c = pronto();
+    for (const m of LICOES_DA_CC_ES010.escolhido.metas) {
+      expect(m.feita(c), `"${m.titulo}" não fecha`).toBe(true);
+    }
+  });
+
+  /*
+    ── A conta que o caminho comum não faz ────────────────────────────────
+
+    `linhaConfere` não serve aqui: `BlocoDeContas.esperado` recebe a base e o
+    rótulo, e não tem como saber que par a pessoa escolheu. Então a meta lê a
+    célula e confere contra a escolha — e o que ela pega é a fórmula de **um**
+    par ao lado da escolha de **outro**, que sem isso fechariam juntas.
+  */
+  it('a fórmula de um par com a escolha de outro não fecha', () => {
+    const c = pronto();
+    /* A escolha muda; a fórmula escrita continua a de idade × diárias. */
+    const trocada = { ...c, parEscolhido: { x: CAMPO_IDADE, y: CAMPO_ALTURA } };
+    expect(meta('escolheu-e-calculou').feita(trocada)).toBe(false);
+  });
+
+  /*
+    E a coluna consigo mesma precisa da **fórmula dela escrita**, senão a
+    guarda não é exercitada: com a escolha trocada e a fórmula de outro par na
+    célula, quem reprova é a conta do par, e a identidade passaria por cima.
+    A mutação mostrou isso — apagar `par.x === par.y` não derrubava nada.
+
+    Escrita de verdade, o r de uma coluna consigo mesma é **1**, a conta do par
+    espera 1, e as duas concordam: sem a guarda, a meta fecha com uma "relação"
+    que não existe.
+  */
+  it('escolher a mesma coluna duas vezes não fecha, com a fórmula dela escrita', () => {
+    const c = pronto();
+    const par = { x: CAMPO_IDADE, y: CAMPO_IDADE };
+    const calc = escrever(
+      abaDe(c.caderno, ABA_CALCULOS),
+      linhaDoRotulo(c.blocos, ROTULO_ESCOLHIDO),
+      1,
+      formulaDoR(c.base, { ...PAR_DO_MODULO_2, ...par }),
+    );
+    expect(meta('escolheu-e-calculou').feita({
+      ...c, parEscolhido: par, caderno: comAba(c.caderno, calc),
+    })).toBe(false);
+  });
+
+  /*
+    ── O valor certo por outro caminho ────────────────────────────────────
+
+    É a conferência que a CC-ES003 nomeia: a tarefa confere **a função e o
+    resultado**, nunca só um dos dois. Aqui a célula aponta para outra que tem
+    o `CORREL`, então ela referencia alguém, acompanha a base e mostra o número
+    certo — e não ensina o que a lição ensina, que é escrever a função.
+
+    A trava do número digitado não pega isto: `=0,33` reprova pela referência
+    antes de chegar à função.
+  */
+  it('o r trazido de outra célula não fecha, mesmo com o número certo', () => {
+    const c = abrir();
+    const par = { x: CAMPO_IDADE, y: CAMPO_DIARIAS };
+    const linha = linhaDoRotulo(c.blocos, ROTULO_ESCOLHIDO);
+    let calc = abaDe(c.caderno, ABA_CALCULOS);
+    /* O CORREL vai para uma célula ao lado, fora do bloco. */
+    calc = escrever(calc, linha, 3, formulaDoR(c.base, { ...PAR_DO_MODULO_2, ...par }));
+    calc = escrever(calc, linha, 1, `=${nomeDaColuna(3)}${linha + 1}`);
+    expect(meta('escolheu-e-calculou').feita({
+      ...c, parEscolhido: par, caderno: comAba(c.caderno, calc),
+    })).toBe(false);
+  });
+
+  it('o número digitado não fecha, mesmo com a escolha certa', () => {
+    const c = abrir();
+    const par = { x: CAMPO_IDADE, y: CAMPO_DIARIAS };
+    const r = correlacaoDe(colunaDe(c.base, par.x), colunaDe(c.base, par.y))!;
+    const calc = escrever(
+      abaDe(c.caderno, ABA_CALCULOS),
+      linhaDoRotulo(c.blocos, ROTULO_ESCOLHIDO),
+      1,
+      `=${String(r).replace('.', ',')}`,
+    );
+    expect(meta('escolheu-e-calculou').feita({
+      ...c, parEscolhido: par, caderno: comAba(c.caderno, calc),
+    })).toBe(false);
+  });
+
+  /*
+    ── Os três campos escritos são três, e não um repetido ────────────────
+
+    Repetir o mesmo texto é o sinal de que um dos dois não foi pensado — a
+    decisão dos dois campos do requisito 5.6 da CC-ES009.
+  */
+  it('o mesmo texto nos campos não fecha os três', () => {
+    const c = pronto();
+    const mesmo = c.textos[CHAVE_SUGERE];
+    const colado = { ...c, textos: { ...c.textos, [CHAVE_OUTRA]: mesmo, [CHAVE_DADO]: mesmo } };
+    expect(meta('disse-o-que-sugere').feita(colado)).toBe(true);
+    expect(meta('disse-outra-explicacao').feita(colado)).toBe(false);
+    expect(meta('disse-que-dado-decidiria').feita(colado)).toBe(false);
+  });
+
+  /*
+    E o terceiro campo se compara com **os dois** anteriores, e não só com o
+    vizinho. Colar nele o texto do primeiro deixa ele diferente do segundo, e
+    sem a segunda comparação a meta fecharia — a mutação que apaga
+    `!== CHAVE_SUGERE` não derrubava nada, porque o caso de cima cola o mesmo
+    texto nos três e reprova pela outra conta.
+
+    O gesto é o que alguém de fato faz: escreve o que o r sugere, pensa numa
+    explicação alternativa de verdade, e no terceiro campo repete a primeira
+    frase porque já não sabe o que escrever.
+  */
+  it('o terceiro campo repetindo o primeiro não fecha', () => {
+    const c = pronto();
+    const repetido = {
+      ...c, textos: { ...c.textos, [CHAVE_DADO]: c.textos[CHAVE_SUGERE] },
+    };
+    expect(meta('disse-outra-explicacao').feita(repetido)).toBe(true);
+    expect(meta('disse-que-dado-decidiria').feita(repetido)).toBe(false);
+  });
+
+  /*
+    ── E dois dos quatro campos **não** pedem número, de propósito ─────────
+
+    "Que outra explicação cabe no mesmo padrão" e "que dado decidiria entre
+    elas" são histórias de causa, e são qualitativas por natureza. Cobrar
+    número ali reprovaria o certo — e foi o que a trava de "fecha com a
+    solução de referência" pegou, porque a minha explicação de causa não tinha
+    um único algarismo.
+  */
+  it('a explicação de causa fecha sem citar número, e a do r não', () => {
+    const c = pronto();
+    const semNumero = 'Pode ser que a distância de casa explique as duas coisas, '
+      + 'e que a idade não cause nada disso por conta própria.';
+    expect(meta('disse-outra-explicacao').feita({
+      ...c, textos: { ...c.textos, [CHAVE_OUTRA]: semNumero },
+    })).toBe(true);
+    /* Mas o que a relação **sugere** fala de um número que está na tela. */
+    expect(meta('disse-o-que-sugere').feita({
+      ...c, textos: { ...c.textos, [CHAVE_SUGERE]: semNumero },
+    })).toBe(false);
   });
 });
 

@@ -45,7 +45,7 @@
  */
 
 import type { Formulario } from './formulario';
-import { type Caderno, type Planilha, escrever } from './planilha';
+import { type Caderno, type Planilha, escrever, valorCalculado } from './planilha';
 import {
   CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_IDADE, baseDoAcampamento, camposDaBase,
 } from './baseDoAcampamento';
@@ -58,8 +58,8 @@ import {
 import {
   colunaDe, correlacaoDe, inclinacaoDe, intercepcaoDe, previsaoDe, rquadDe,
 } from './analiseDeDados';
-import { abaDe, comAba } from './cadernoDoClube';
-import { nomeDaColuna } from './formulas';
+import { abaDe, comAba, escritoEm, usaFuncao } from './cadernoDoClube';
+import { nomeDaColuna, referenciasDe } from './formulas';
 import {
   type FormaDeEnviesar,
   COLETAS, POPULACOES, populacaoCerta,
@@ -120,6 +120,15 @@ export interface ContextoDaEstatistica {
   independente?: string;
   /** Módulo 6: qual par ela disse que a reta descreve pior. */
   piorAjuste?: string;
+  /**
+   * Módulo 7: o par que ela **escolheu** olhar.
+   *
+   * É o requisito 6 — "aplicar a regressão a dado próprio" —, e "próprio" aqui
+   * quer dizer escolhido por ela. A mecânica o requisito 5 já mediu; o que
+   * este mede é o raciocínio escrito, e raciocínio só existe sobre um par que
+   * alguém escolheu.
+   */
+  parEscolhido?: { x: string; y: string };
   /** O que ela escreveu, por chave. */
   textos: Record<string, string>;
 }
@@ -131,14 +140,29 @@ const classificada = (c: ContextoDaEstatistica, id: string) => c.classificacoes[
 const texto = (c: ContextoDaEstatistica, chave: string) => (c.textos[chave] ?? '').trim();
 
 /**
- * Uma frase escrita, e com conta dentro.
+ * Uma frase escrita, e não duas palavras.
  *
- * É a conta de "respondida com o dado" da CC-ES009: a plataforma não lê
- * português, então o que ela pode cobrar é que haja frase — e não duas
- * palavras — e que ela cite número. Uma explicação de risco sem nem o
- * intervalo nem o número absurdo é uma explicação de nada em particular.
+ * A plataforma não lê português, então o que ela pode cobrar é que haja frase.
+ * É a conta dos campos escritos da CC-ES009, e o piso é o que separa "não
+ * serve" de uma explicação.
  */
-const frasePropria = (t: string) => t.length >= 60 && /\d/.test(t);
+const frasePropria = (t: string) => t.length >= 60;
+
+/**
+ * Uma frase escrita **e com número dentro**, e são duas contas diferentes de
+ * propósito.
+ *
+ * Esta vale onde o que se explica **é** um número que está na tela: o risco da
+ * extrapolação, que sem citar o intervalo ou o valor absurdo é uma explicação
+ * de nada em particular; e o que a relação sugere, que sem o r é uma opinião.
+ *
+ * E ela **não** vale nos outros dois campos do requisito 6. "Que outra
+ * explicação cabe no mesmo padrão" e "que dado decidiria entre elas" são
+ * histórias de causa, e são qualitativas por natureza — a resposta certa pode
+ * não ter um único algarismo. Cobrar número ali reprovaria o certo, que é a
+ * trava medindo vocabulário em vez de papel.
+ */
+const frasePropriaComNumero = (t: string) => frasePropria(t) && /\d/.test(t);
 
 /** O que a coleta **é**, na forma em que a pessoa a marca. */
 const certaPara = (forma: FormaDeEnviesar | null): ClassificacaoDaColeta =>
@@ -685,7 +709,7 @@ export const METAS_DA_PREVISAO: Meta[] = [
       número absurdo é uma explicação de nada em particular — e um campo de
       texto sem conta nenhuma fecharia com "não serve".
     */
-    feita: c => frasePropria(texto(c, 'risco-da-extrapolacao')),
+    feita: c => frasePropriaComNumero(texto(c, 'risco-da-extrapolacao')),
   },
 ];
 
@@ -765,6 +789,157 @@ export const METAS_DO_AJUSTE: Meta[] = [
   },
 ];
 
+/* ── Módulo 7: a regressão no par que você escolheu ───────────────────────── */
+
+export const ROTULO_ESCOLHIDO = 'O par que eu escolhi';
+
+/** As colunas entre as quais o desbravador pode escolher o par dele. */
+export const COLUNAS_PARA_ESCOLHER = [
+  CAMPO_IDADE, CAMPO_ALTURA, CAMPO_ACAMPAMENTOS, CAMPO_DIARIAS,
+];
+
+/**
+ * O bloco do par escolhido: uma linha, e o que ela espera **não se sabe aqui**.
+ *
+ * `BlocoDeContas.esperado` recebe a base e o rótulo, e não o contexto — então
+ * ele não tem como saber que par a pessoa escolheu. Devolver `null` seria dizer
+ * "esta célula deve dar erro", que é outra coisa.
+ *
+ * Por isso esta meta não passa por `linhaConfere`: ela lê a célula escrita e
+ * confere contra a escolha. A disciplina continua a mesma — **a função e o
+ * resultado**, e uma referência de verdade —, e o comentário existe para que
+ * ninguém a "arrume" para dentro do caminho comum e perca a conta do par.
+ */
+export const blocoDoEscolhido = (): BlocoDeContas => ({
+  titulo: 'A relação que eu quis olhar',
+  rotulos: [ROTULO_ESCOLHIDO],
+  colunas: [COL_R],
+  funcoes: () => ['CORREL'],
+  /* Nunca lido por meta nenhuma: ver o comentário acima. */
+  esperado: () => null,
+});
+
+export const CHAVE_SUGERE = 'o-que-sugere';
+export const CHAVE_OUTRA = 'outra-explicacao';
+export const CHAVE_DADO = 'dado-que-decidiria';
+
+/** A célula do r do par escolhido, como ela está escrita. */
+function escritoNoEscolhido(c: ContextoDaEstatistica): string {
+  const linha = linhaDoRotulo(c.blocos, ROTULO_ESCOLHIDO);
+  if (linha < 0) return '';
+  return escritoEm(abaDe(c.caderno, ABA_CALCULOS), linha, 1);
+}
+
+/**
+ * O r do par escolhido, calculado e conferindo.
+ *
+ * Confere as três coisas que o caminho comum confere, e por isso: a **função**,
+ * porque é ela que a lição ensina; a **referência**, porque `=0,62` começa por
+ * igual e não acompanha nada; e o **resultado**, contra o par que a pessoa
+ * disse ter escolhido — sem isso, a fórmula de um par e a escolha de outro
+ * fechariam a meta juntas.
+ */
+function rDoEscolhidoConfere(c: ContextoDaEstatistica): boolean {
+  const par = c.parEscolhido;
+  if (!par || par.x === par.y) return false;
+  const escrito = escritoNoEscolhido(c);
+  if (!usaFuncao(escrito, 'CORREL')) return false;
+  /*
+    A guarda da referência fica, e hoje ela é inalcançável **por causa da de
+    cima**: um `CORREL` que chegue ao número certo tem de ler as duas colunas,
+    e ler coluna é referenciar. A mutação que a apaga não derruba teste nenhum,
+    e é assim que se sabe.
+
+    Ela não sai por isso. Em `contaConfere`, que é o caminho comum das outras
+    seis lições, `funcoes` pode vir vazia — é o caso da razão entre média e
+    mediana, onde não há função a cobrar e o `=1,43` digitado só é pego aqui.
+    Duas das três contas aqui e três lá fariam quem lê perguntar qual lição
+    perdeu a sua, e é a decisão do `requisitos` separado em
+    `ConquistasNasVeredas`: dois nomes para o mesmo número hoje, e a escolha à
+    vista em vez de escondida numa linha com cara de erro de digitação.
+
+    O dia em que `formulas.ts` aceitar faixa escrita à mão — `{1;2;3}` —, ela
+    volta a ter o que pegar sozinha.
+  */
+  if (referenciasDe(escrito).length === 0) return false;
+  const esperado = correlacaoDe(colunaDe(c.base, par.x), colunaDe(c.base, par.y));
+  if (esperado === null) return false;
+  const linha = linhaDoRotulo(c.blocos, ROTULO_ESCOLHIDO);
+  const v = valorCalculado(abaDe(c.caderno, ABA_CALCULOS), linha, 1, c.caderno);
+  return v.tipo === 'numero' && Math.abs(v.n - esperado) < 1e-9;
+}
+
+export const METAS_DO_ESCOLHIDO: Meta[] = [
+  {
+    id: 'escolheu-e-calculou',
+    titulo: 'Escolher duas colunas e medir a relação entre elas',
+    detalhe:
+      'Agora é você que decide o que olhar. Escolha duas colunas da base e '
+      + 'calcule o r delas — o resto desta lição é sobre o que você vai dizer '
+      + 'a respeito desse número.',
+    onde: 'Na tela da lição, escolhendo as duas colunas; e na aba Cálculos, na linha do par.',
+    passos: [
+      'Escolha as duas colunas no alto da tela.',
+      'Na aba Cálculos, escreva =CORREL( com as faixas das duas que você escolheu.',
+      'Pode ser um par que as lições anteriores não usaram — a ideia é olhar '
+        + 'uma relação que ninguém te apontou.',
+    ],
+    feita: rDoEscolhidoConfere,
+  },
+  {
+    id: 'disse-o-que-sugere',
+    titulo: 'Escrever o que a relação sugere',
+    detalhe:
+      'O número não fala. Diga em palavras o que ele está sugerindo sobre as '
+      + 'duas colunas que você escolheu.',
+    onde: 'No caderno da análise, no primeiro campo.',
+    passos: [
+      'Diga se as duas andam juntas ou em sentidos contrários.',
+      'Diga o quanto — e use o r que você calculou para dizer isso.',
+    ],
+    feita: c => frasePropriaComNumero(texto(c, CHAVE_SUGERE)),
+  },
+  {
+    id: 'disse-outra-explicacao',
+    titulo: 'Escrever outra explicação possível para o mesmo padrão',
+    detalhe:
+      'Esta é a metade que o módulo 3 preparou: o mesmo padrão quase sempre '
+      + 'aceita mais de uma história. Pense numa que não seja "uma causa a '
+      + 'outra".',
+    onde: 'No caderno da análise, no segundo campo.',
+    passos: [
+      'Pense se há uma terceira coisa que puxaria as duas.',
+      'Pense se a direção poderia ser a contrária da que parece.',
+      'Pense se o padrão poderia vir de quem respondeu, e não do que foi medido.',
+    ],
+    /*
+      Diferente do primeiro campo, e não só preenchida. Repetir o mesmo texto
+      nos dois é o sinal de que um dos dois não foi pensado — é a decisão dos
+      dois campos do requisito 5.6 da CC-ES009 e das duas justificativas dos
+      valores atípicos de lá.
+    */
+    feita: c => frasePropria(texto(c, CHAVE_OUTRA))
+      && texto(c, CHAVE_OUTRA) !== texto(c, CHAVE_SUGERE),
+  },
+  {
+    id: 'disse-que-dado-decidiria',
+    titulo: 'Escrever que dado a mais decidiria entre as duas',
+    detalhe:
+      'Duas explicações para o mesmo padrão não se resolvem discutindo: '
+      + 'resolvem-se medindo mais uma coisa. Qual?',
+    onde: 'No caderno da análise, no terceiro campo.',
+    passos: [
+      'Olhe as duas histórias que você escreveu.',
+      'Pergunte: que número eu teria de ter para saber qual das duas é?',
+      'Pode ser uma coluna que a base não tem — e aí a resposta honesta é que '
+        + 'esta base não decide.',
+    ],
+    feita: c => frasePropria(texto(c, CHAVE_DADO))
+      && texto(c, CHAVE_DADO) !== texto(c, CHAVE_OUTRA)
+      && texto(c, CHAVE_DADO) !== texto(c, CHAVE_SUGERE),
+  },
+];
+
 /* ── O registro ───────────────────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs010 = 'planilha' | 'plataforma';
@@ -776,7 +951,8 @@ export type ProgramaDaCcEs010 = 'planilha' | 'plataforma';
   cairia calada na primeira.
 */
 export type LicaoDaCcEs010 =
-  | 'amostra' | 'correlacao' | 'espuria' | 'reta' | 'prever' | 'ajuste';
+  | 'amostra' | 'correlacao' | 'espuria' | 'reta' | 'prever' | 'ajuste'
+  | 'escolhido';
 
 export interface LicaoDeEstatistica {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -886,6 +1062,11 @@ export const LICOES_DA_CC_ES010: Record<LicaoDaCcEs010, LicaoDeEstatistica> = {
     inicial: () => contextoInicial([blocoDoAjuste(PARES)]),
     metas: METAS_DO_AJUSTE,
   },
+  escolhido: {
+    programa: 'planilha',
+    inicial: () => contextoInicial([blocoDoEscolhido()]),
+    metas: METAS_DO_ESCOLHIDO,
+  },
 };
 
 /** A solução de referência de cada lição, para a trava provar que ela fecha. */
@@ -984,6 +1165,42 @@ export const SOLUCOES_DA_CC_ES010: Record<
       ...c,
       caderno: comAba(c.caderno, calc),
       piorAjuste: piorAjusteDa(c.base).id,
+    };
+  },
+  escolhido: (c) => {
+    /*
+      A solução escolhe um par que as lições anteriores **não** usaram: o
+      exercício é olhar uma relação que ninguém apontou, e repetir o par do
+      módulo 2 provaria o gesto e não a escolha.
+    */
+    const par = { x: CAMPO_IDADE, y: CAMPO_DIARIAS };
+    const calc = escrever(
+      abaDe(c.caderno, ABA_CALCULOS),
+      linhaDoRotulo(c.blocos, ROTULO_ESCOLHIDO),
+      1,
+      `=CORREL(${faixaNaBase(c.base, par.x)};${faixaNaBase(c.base, par.y)})`,
+    );
+    return {
+      ...c,
+      caderno: comAba(c.caderno, calc),
+      parEscolhido: par,
+      textos: {
+        ...c.textos,
+        [CHAVE_SUGERE]:
+          'O r entre idade e diárias deu 0,33, que é baixo: quem é mais velho '
+          + 'tende a dormir um pouco mais noites no acampamento, mas muito '
+          + 'pouco — a relação existe e é fraca.',
+        [CHAVE_OUTRA]:
+          'Pode não ser a idade. Talvez quem mora longe durma todas as noites '
+          + 'e quem mora perto vá e volte, e os que moram longe sejam por acaso '
+          + 'os mais velhos. A distância explicaria as duas coisas sem a idade '
+          + 'causar nada.',
+        [CHAVE_DADO]:
+          'Precisaria da distância entre a casa de cada um e o lugar do '
+          + 'acampamento. Com ela eu olharia se a relação entre idade e diárias '
+          + 'continua de pé dentro de quem mora igualmente longe. Esta base não '
+          + 'tem essa coluna, então ela não decide.',
+      },
     };
   },
   espuria: (c) => {
