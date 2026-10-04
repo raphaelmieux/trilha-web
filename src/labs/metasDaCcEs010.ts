@@ -71,6 +71,10 @@ import {
   LEITURAS_DO_ACASO, PROVIDENCIAS, SORTEIOS_MINIMOS,
   leituraDoAcasoCerta, providenciasQueAumentam,
 } from './acasoEntreGrupos';
+import {
+  type GrauDeConfianca, type PesoDoAchado,
+  ACHADOS, GRAUS, grauCoerente,
+} from './confiancaNaConclusao';
 
 /* ── A forma de uma meta ──────────────────────────────────────────────────── */
 
@@ -149,6 +153,10 @@ export interface ContextoDaEstatistica {
   leituraDoAcaso?: string;
   /** Módulo 9: que providências ela escolheu, por id. */
   providencias: string[];
+  /** Módulo 10: como ela classificou cada achado, por id. */
+  pesos: Record<string, PesoDoAchado | undefined>;
+  /** Módulo 10: o grau de confiança que ela declarou. */
+  grau?: GrauDeConfianca;
   /** O que ela escreveu, por chave. */
   textos: Record<string, string>;
 }
@@ -1304,6 +1312,85 @@ export const METAS_DO_ACASO: Meta[] = [
   },
 ];
 
+/* ── Módulo 10: o grau de confiança declarado ─────────────────────────────── */
+
+export const CHAVE_RAZOES = 'razoes-do-grau';
+
+export const METAS_DA_CONFIANCA: Meta[] = [
+  /*
+    A divisão em duas é a do módulo 1, pelo motivo escrito lá: "todo achado
+    classificado" vermelha diz "continue", e "classificação certa" vermelha diz
+    "volte e releia um deles". Uma meta só diria as duas coisas com a mesma cor.
+  */
+  {
+    id: 'classificou-todos-os-achados',
+    titulo: 'Dizer, de cada achado, se ele sustenta ou se ele limita',
+    detalhe:
+      'A apresentação completa é a dos oito. Toda apresentação de dados do '
+      + 'mundo abre com o que sustenta e deixa os limites para a pergunta que '
+      + 'talvez não venha.',
+    onde: 'Na tela da lição, em cada achado.',
+    passos: [
+      'Leia o achado e pergunte: isto é um número a meu favor, ou é um aviso '
+        + 'de até onde eu posso ir?',
+      'Nenhum dos oito é enfeite — cada um saiu de um módulo que você fez.',
+      'Classifique os oito antes de olhar o grau: é a classificação que decide '
+        + 'quais graus sobram.',
+    ],
+    feita: c => ACHADOS.every(a => c.pesos[a.id] !== undefined),
+  },
+  {
+    id: 'as-classificacoes-certas',
+    titulo: 'E acertar as oito',
+    detalhe:
+      'Sete se classificam na primeira olhada. O oitavo é o r² que subiu de '
+      + '0,83 para 0,94 quando você tirou o valor atípico — e a leitura '
+      + 'natural dele é a errada.',
+    onde: 'Nos mesmos oito achados.',
+    passos: [
+      'Um ajuste que melhorou parece sustento, e é limite: o que subiu foi a '
+        + 'confiança aparente, não o acerto.',
+      'O mesmo resultado do módulo 8 aparece duas vezes na lista, uma de cada '
+        + 'lado — de propósito, porque um resultado tem os dois.',
+      'Amostra, causa, extrapolação e acaso limitam. Força da relação, direção '
+        + 'clara e conclusão que não depende de uma pessoa sustentam.',
+    ],
+    feita: c => ACHADOS.every(a => c.pesos[a.id] === a.peso),
+  },
+  {
+    id: 'declarou-um-grau-que-se-sustenta',
+    titulo: 'Declarar o grau de confiança, e um que os seus achados sustentem',
+    detalhe:
+      'É o requisito com todas as letras: declarar **expressamente** de quanto '
+      + 'você confia. Dois dos quatro graus esta análise não sustenta, e o '
+      + 'cartão de cada um diz a que ele compromete você.',
+    onde: 'Na tela da lição, nos quatro graus.',
+    passos: [
+      '"Alta" só se sustenta se nenhum achado estiver limitando — e você '
+        + 'acabou de nomear cinco que limitam.',
+      '"Nenhuma" só se sustenta se nada estiver sustentando, e aí não haveria '
+        + 'o que apresentar.',
+      'Entre as outras duas, a escolha é sua: a plataforma não tem como dizer '
+        + 'qual, e fingir que tem seria ela respondendo no seu lugar.',
+    ],
+    feita: c => c.grau !== undefined && grauCoerente(c.grau),
+  },
+  {
+    id: 'escreveu-as-razoes',
+    titulo: 'Escrever as razões dessa avaliação',
+    detalhe:
+      'O grau sozinho é uma palavra. As razões são o que o examinador vai '
+      + 'ouvir, e elas saem dos seus achados — com os números deles.',
+    onde: 'No caderno da análise.',
+    passos: [
+      'Diga o que sustenta a sua conclusão, com o número.',
+      'Diga o que a limita, com o número.',
+      'Diga, por causa dos dois, por que o grau é esse e não o de cima.',
+    ],
+    feita: c => frasePropriaComNumero(texto(c, CHAVE_RAZOES)),
+  },
+];
+
 /* ── O registro ───────────────────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs010 = 'planilha' | 'plataforma';
@@ -1318,7 +1405,8 @@ export type LicaoDaCcEs010 =
   | 'amostra' | 'correlacao' | 'espuria' | 'reta' | 'prever' | 'ajuste'
   | 'escolhido'
   | 'exclusao'
-  | 'acaso';
+  | 'acaso'
+  | 'confianca';
 
 export interface LicaoDeEstatistica {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -1342,6 +1430,7 @@ export function contextoInicial(
     classificacoes: {},
     sorteios: [],
     providencias: [],
+    pesos: {},
     textos: {},
   };
 }
@@ -1474,6 +1563,13 @@ export const LICOES_DA_CC_ES010: Record<LicaoDaCcEs010, LicaoDeEstatistica> = {
     programa: 'plataforma',
     inicial: contextoInicial,
     metas: METAS_DO_ACASO,
+  },
+  confianca: {
+    /* Tela da plataforma: não há botão de planilha nenhuma que declare grau de
+       confiança, e o que ela ofereceria é digitar a palavra numa célula. */
+    programa: 'plataforma',
+    inicial: contextoInicial,
+    metas: METAS_DA_CONFIANCA,
   },
 };
 
@@ -1687,6 +1783,33 @@ export const SOLUCOES_DA_CC_ES010: Record<
       },
     };
   },
+  confianca: (c) => {
+    const pesos: Record<string, PesoDoAchado> = {};
+    for (const a of ACHADOS) pesos[a.id] = a.peso;
+    return {
+      ...c,
+      pesos,
+      /*
+        "Média" e não "baixa", e a escolha é defensável: a relação entre idade
+        e altura é forte, sobrevive à exclusão do atípico e tem direção clara.
+        O que ela não é é livre de limites, e é por isso que não é "alta".
+      */
+      grau: 'media',
+      textos: {
+        ...c.textos,
+        [CHAVE_RAZOES]:
+          'Confio de forma média. A favor: o r entre idade e altura é 0,91, o '
+          + 'r² é 0,83, a direção é clara e tirar o valor atípico não mudou o '
+          + 'que a reta afirma (8,4 contra 8,0 centímetros por ano). Contra: a '
+          + 'base veio de um formulário divulgado no grupo do clube, então ela '
+          + 'não é o clube; a relação entre altura e acampamentos é explicada '
+          + 'pela idade e não por si; a reta prevê 2,58 m aos 25 anos, que é '
+          + 'extrapolação; e a diferença entre Arara e Águia aparece por '
+          + 'sorteio uma vez em sete. Não é "alta" porque esses quatro limites '
+          + 'existem e eu sei nomeá-los.',
+      },
+    };
+  },
   espuria: (c) => {
     let calc = abaDe(c.caderno, ABA_CALCULOS);
     for (const par of PARES) {
@@ -1713,3 +1836,7 @@ export const LEITURAS_DO_ACASO_DA_LICAO = LEITURAS_DO_ACASO;
 
 /** As sete providências, na ordem em que a tela as desenha. */
 export const PROVIDENCIAS_DA_LICAO = PROVIDENCIAS;
+
+/** Os oito achados e os quatro graus, na ordem em que a tela os desenha. */
+export const ACHADOS_DA_LICAO = ACHADOS;
+export const GRAUS_DA_LICAO = GRAUS;

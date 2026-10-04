@@ -12,8 +12,11 @@ import {
   CHAVE_EFEITO, COLUNA_AUXILIAR, DESCOBERTA_FILTRO,
   ROTULO_INCL_SEM, ROTULO_INCL_TODOS, ROTULO_R2_SEM, ROTULO_R2_TODOS,
   comColunaAuxiliar, formulaSemAtipico, linhasAtipicasDoPar, semAtipicos,
-  CHAVE_ACASO, diferencaReal,
+  CHAVE_ACASO, CHAVE_RAZOES, diferencaReal,
 } from './metasDaCcEs010';
+import {
+  ACHADOS, GRAUS, achadoDe, achadosQueLimitam, grauCoerente, grausCoerentes,
+} from './confiancaNaConclusao';
 import {
   CAMPO_DA_MEDIDA, CAMPO_DO_GRUPO, GRUPO_A, GRUPO_B,
   LEITURAS_DO_ACASO, PROVIDENCIAS, SORTEIOS_MINIMOS, SORTEIOS_POR_VEZ,
@@ -1242,6 +1245,167 @@ describe('o módulo 9 mostra o acaso alcançando a diferença', () => {
     expect(leituraDoAcasoCerta()).toBe('o-acaso-alcanca');
     expect([...providenciasQueAumentam()].sort())
       .toEqual(['decidir-antes', 'mais-gente', 'repetir-a-coleta']);
+  });
+});
+
+/*
+  ── O módulo 10: o grau de confiança declarado ───────────────────────────
+
+  Requisito 9: apresentar a análise completa declarando **expressamente** o
+  grau de confiança que se deposita na conclusão, e as razões dessa avaliação.
+  Não é a defesa da CC-ES009 — lá o examinador contesta; aqui ninguém
+  contestou ainda, e o que se cobra é dizer de quanto se confia antes de
+  alguém perguntar.
+*/
+describe('o módulo 10 cobra o grau e as razões dele', () => {
+  const abrir = () => LICOES_DA_CC_ES010.confianca.inicial();
+  const meta = (id: string) => LICOES_DA_CC_ES010.confianca.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES_DA_CC_ES010.confianca(abrir());
+
+  it('a solução de referência fecha as quatro', () => {
+    const c = pronto();
+    for (const m of LICOES_DA_CC_ES010.confianca.metas) {
+      expect(m.feita(c), `"${m.titulo}" não fecha`).toBe(true);
+    }
+  });
+
+  /*
+    ── Qual é a classificação certa, dita aqui ────────────────────────────
+
+    "Cada achado tem um peso" não diz **qual**. Virar o achado difícil — o r²
+    que subiu de 0,83 para 0,94 ao excluir o atípico — de limite para sustento
+    é uma mutação que se sustenta sozinha: a lista continua com oito pesos, a
+    solução de referência copia os pesos da lista, e tudo fecha. O que sobra é
+    a lição ensinando que um ajuste conseguido excluindo gente é motivo para
+    confiar mais.
+
+    É a decisão de `populacaoCerta()` e da leitura certa do módulo 9.
+  */
+  it('o r² que subiu ao excluir é um limite, e os oito pesos são estes', () => {
+    expect(achadoDe('r2-inflado')!.peso).toBe('limita');
+    expect([...achadosQueLimitam()].sort()).toEqual([
+      'amostra-enviesada', 'diferenca-pode-ser-acaso', 'extrapolar-mente',
+      'nao-e-causa', 'r2-inflado',
+    ]);
+  });
+
+  /*
+    ── O mesmo resultado aparece dos dois lados, e é de propósito ─────────
+
+    O módulo 8 produziu duas coisas: a reta não mudou (sustento) e o r² subiu
+    (limite). Com só uma delas na lista, a pessoa aprenderia que um resultado
+    pesa para um lado — e o que esta lição ensina é que ele tem os dois.
+  */
+  it('o módulo 8 entra com um sustento e um limite', () => {
+    const doOito = ACHADOS.filter(a => a.deOnde.includes('8'));
+    expect(doOito.map(a => a.peso).sort()).toEqual(['limita', 'sustenta']);
+  });
+
+  it('há limites e há sustentos, e mais limites do que sustentos', () => {
+    /* As duas espécies têm de existir, senão `grauCoerente` degenera: sem
+       limite, "alta" passa; sem sustento, "nenhuma" passa. E os limites são
+       mais porque esta base é assim — inventar sustento para equilibrar seria
+       inventar confiança. */
+    const limitam = ACHADOS.filter(a => a.peso === 'limita');
+    const sustentam = ACHADOS.filter(a => a.peso === 'sustenta');
+    expect(sustentam.length).toBeGreaterThan(0);
+    expect(limitam.length).toBeGreaterThan(sustentam.length);
+  });
+
+  it('cada achado diz de onde saiu e por que pesa, e a tela acha todos', () => {
+    expect(new Set(ACHADOS.map(a => a.id)).size).toBe(ACHADOS.length);
+    for (const a of ACHADOS) {
+      expect(a.porque.trim().length, `"${a.id}" não diz por quê`).toBeGreaterThan(40);
+      expect(a.deOnde.trim().length, `"${a.id}" não diz de onde saiu`).toBeGreaterThan(0);
+      expect(achadoDe(a.id)).toBe(a);
+    }
+  });
+
+  /*
+    E a frase do achado **não** entrega o peso dele: um "mas isto limita a
+    conclusão" escrito ali dentro faria a classificação virar leitura. É a
+    regra da descrição das coletas do módulo 1 e do aviso do digitalizador da
+    CC-ES004.
+  */
+  it('nenhuma frase de achado entrega se ele sustenta ou limita', () => {
+    for (const a of ACHADOS) {
+      const f = a.frase.toLowerCase();
+      for (const palavra of ['limita', 'sustenta', 'a favor', 'contra a conclus']) {
+        expect(f, `a frase de "${a.id}" entrega o peso ao dizer "${palavra}"`)
+          .not.toContain(palavra);
+      }
+    }
+  });
+
+  it('classificar os oito fecha a primeira meta; errar um não fecha a segunda', () => {
+    const c = pronto();
+    expect(meta('classificou-todos-os-achados').feita(c)).toBe(true);
+
+    const errado = ACHADOS.find(a => a.id === 'r2-inflado')!;
+    const comUmErro = {
+      ...c, pesos: { ...c.pesos, [errado.id]: 'sustenta' as const },
+    };
+    expect(meta('classificou-todos-os-achados').feita(comUmErro)).toBe(true);
+    expect(meta('as-classificacoes-certas').feita(comUmErro)).toBe(false);
+  });
+
+  it('deixar um sem classificar não fecha nem a primeira', () => {
+    const c = pronto();
+    const faltando = { ...c, pesos: { ...c.pesos, [ACHADOS[0].id]: undefined } };
+    expect(meta('classificou-todos-os-achados').feita(faltando)).toBe(false);
+  });
+
+  /*
+    ── Dois dos quatro graus esta análise não sustenta ────────────────────
+
+    E a conta sai da lista de achados, não de dois ids escritos à mão: "alta"
+    exige que nada limite, "nenhuma" exige que nada sustente. Entre "média" e
+    "baixa" a escolha é de quem analisou, e a plataforma não tem como dizer
+    qual — fingir que tem seria a tela respondendo o requisito.
+  */
+  it('os graus que se sustentam são média e baixa', () => {
+    expect([...grausCoerentes()].sort()).toEqual(['baixa', 'media']);
+    expect(grauCoerente('alta')).toBe(false);
+    expect(grauCoerente('nenhuma')).toBe(false);
+  });
+
+  it('declarar "alta" não fecha, e não declarar nada também não', () => {
+    const c = pronto();
+    expect(meta('declarou-um-grau-que-se-sustenta').feita({ ...c, grau: 'alta' })).toBe(false);
+    expect(meta('declarou-um-grau-que-se-sustenta').feita({ ...c, grau: 'nenhuma' })).toBe(false);
+    expect(meta('declarou-um-grau-que-se-sustenta').feita({ ...c, grau: undefined })).toBe(false);
+    /* E as duas que se sustentam fecham as duas: a escolha entre elas é dela. */
+    for (const g of grausCoerentes()) {
+      expect(meta('declarou-um-grau-que-se-sustenta').feita({ ...c, grau: g }),
+        `"${g}" não fecha`).toBe(true);
+    }
+  });
+
+  it('cada grau diz a que ele compromete quem o declara', () => {
+    /* Sem esse lado, a fileira é quatro palavras parecidas e a escolha vira
+       clicar na primeira — é a decisão dos quatro níveis de calendário da
+       CC-ES007. */
+    expect(GRAUS).toHaveLength(4);
+    for (const g of GRAUS) {
+      expect(g.compromisso.trim().length, `"${g.id}" não diz a que compromete`)
+        .toBeGreaterThan(40);
+    }
+  });
+
+  it('as razões precisam de frase e de número', () => {
+    const c = pronto();
+    expect(meta('escreveu-as-razoes').feita({
+      ...c, textos: { ...c.textos, [CHAVE_RAZOES]: 'confio mais ou menos' },
+    })).toBe(false);
+    expect(meta('escreveu-as-razoes').feita({
+      ...c,
+      textos: {
+        ...c.textos,
+        [CHAVE_RAZOES]: 'Confio de forma média porque a relação é forte e a '
+          + 'amostra não é o clube inteiro, então há limite a declarar.',
+      },
+    })).toBe(false);
+    expect(meta('escreveu-as-razoes').feita(c)).toBe(true);
   });
 });
 
