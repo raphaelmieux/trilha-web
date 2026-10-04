@@ -56,7 +56,9 @@ import {
   assinaturaDaBase, linhaConfere, linhaDoRotulo,
 } from './metasDaCcEs009';
 import {
+  type Aleatorio,
   cercaDe, colunaDe, correlacaoDe, inclinacaoDe, intercepcaoDe, previsaoDe, rquadDe,
+  sortearEntreGrupos,
 } from './analiseDeDados';
 import { abaDe, comAba, escritoEm, usaFuncao } from './cadernoDoClube';
 import { nomeDaColuna, referenciasDe } from './formulas';
@@ -64,6 +66,11 @@ import {
   type FormaDeEnviesar,
   COLETAS, POPULACOES, populacaoCerta,
 } from './amostraDoClube';
+import {
+  CAMPO_DA_MEDIDA, CAMPO_DO_GRUPO, GRUPO_A, GRUPO_B,
+  LEITURAS_DO_ACASO, PROVIDENCIAS, SORTEIOS_MINIMOS,
+  leituraDoAcasoCerta, providenciasQueAumentam,
+} from './acasoEntreGrupos';
 
 /* ── A forma de uma meta ──────────────────────────────────────────────────── */
 
@@ -129,6 +136,19 @@ export interface ContextoDaEstatistica {
    * alguém escolheu.
    */
   parEscolhido?: { x: string; y: string };
+  /**
+   * Módulo 9: as diferenças que os embaralhos dela produziram, acumuladas.
+   *
+   * As diferenças, e não um par de contadores: a frequência e "chegou na real
+   * alguma vez?" saem as duas daqui, e dois números guardados ao lado seriam
+   * segunda fonte para o que esta lista já diz. É o registro do que a pessoa
+   * de fato viu.
+   */
+  sorteios: number[];
+  /** Módulo 9: que leitura ela deu ao resultado do embaralho. */
+  leituraDoAcaso?: string;
+  /** Módulo 9: que providências ela escolheu, por id. */
+  providencias: string[];
   /** O que ela escreveu, por chave. */
   textos: Record<string, string>;
 }
@@ -1189,6 +1209,101 @@ export const METAS_DA_EXCLUSAO: Meta[] = [
   },
 ];
 
+/* ── Módulo 9: o acaso entre dois grupos ──────────────────────────────────── */
+
+export const CHAVE_ACASO = 'por-que-pode-ser-acaso';
+
+/**
+ * A diferença que a base de verdade mostra entre as duas unidades.
+ *
+ * Sai do **mesmo** `sortearEntreGrupos` que o desbravador aciona, com zero
+ * embaralhos: uma segunda conta da diferença real aqui divergiria da dele no
+ * primeiro ajuste, e a divergência apareceria como uma meta que não fecha com
+ * a tela mostrando o número certo.
+ */
+export const diferencaReal = (base: Formulario) => sortearEntreGrupos(
+  base, CAMPO_DO_GRUPO, CAMPO_DA_MEDIDA, GRUPO_A, GRUPO_B, 0,
+).real;
+
+export const METAS_DO_ACASO: Meta[] = [
+  {
+    id: 'embaralhou-e-viu-acontecer',
+    titulo: 'Embaralhar quem é de qual unidade e ver a diferença aparecer',
+    detalhe:
+      'Nada muda na base: os números continuam os mesmos, e só quem é de qual '
+      + 'unidade é sorteado de novo. Embaralhe algumas levas e olhe quantas '
+      + 'vezes a diferença chega ao tamanho da de verdade.',
+    onde: 'Na tela da lição, no botão de embaralhar.',
+    passos: [
+      'Embaralhe uma leva e olhe a lista de diferenças que saiu.',
+      'Embaralhe outra: uma leva só deixa você ler "aconteceu" ou "não '
+        + 'aconteceu", e o que há para ler é uma frequência.',
+      'Conte quantas chegaram no tamanho da diferença de verdade.',
+    ],
+    /*
+      Duas contas, e nenhuma substitui a outra. **Quantos** embaralhos, porque
+      um sorteio não é frequência; e **ter chegado** na diferença real ao
+      menos uma vez, porque é isso que a lição manda ver acontecer — e ler
+      sobre o acaso não é a mesma coisa que vê-lo chegar lá.
+    */
+    feita: c => c.sorteios.length >= SORTEIOS_MINIMOS
+      && c.sorteios.some(d => d >= diferencaReal(c.base) - 1e-9),
+  },
+  {
+    id: 'leu-o-que-o-embaralho-diz',
+    titulo: 'Dizer o que esse resultado significa',
+    detalhe:
+      'O número que saiu do embaralho responde a uma pergunta bem específica, '
+      + 'e três das quatro frases abaixo respondem a outra.',
+    onde: 'Na tela da lição, nas quatro leituras.',
+    passos: [
+      'Olhe a frequência que você obteve.',
+      'Pergunte de que ela é a frequência: do sorteio, ou das unidades?',
+      'Uma das quatro fala do sorteio. As outras três falam de coisas que o '
+        + 'embaralho não mediu.',
+    ],
+    feita: c => c.leituraDoAcaso === leituraDoAcasoCerta(),
+  },
+  {
+    id: 'escreveu-por-que-pode-ser-acaso',
+    titulo: 'Escrever por que uma diferença entre dois grupos pode ser do acaso',
+    detalhe:
+      'Com as suas palavras, e com o número que você obteve. Esta é a metade '
+      + 'do requisito que a escolha de cima não cobre: explicar.',
+    onde: 'No caderno da análise.',
+    passos: [
+      'Diga quantas pessoas tem cada um dos dois grupos.',
+      'Diga o que você viu o embaralho fazer, com a frequência.',
+      'Diga o que isso tira da conclusão que alguém levaria para a reunião.',
+    ],
+    feita: c => frasePropriaComNumero(texto(c, CHAVE_ACASO)),
+  },
+  {
+    id: 'escolheu-as-tres-providencias',
+    titulo: 'Escolher as três providências que aumentariam a confiança',
+    detalhe:
+      'São sete na lista, e quatro delas só parecem aumentar. Nenhuma das '
+      + 'quatro é bobagem — todas são coisas que se fazem de boa fé achando '
+      + 'que ajudam.',
+    onde: 'Na tela da lição, na lista de providências.',
+    passos: [
+      'De cada uma, pergunte: isto acrescenta dado, ou arruma o que já tenho?',
+      'Uma delas é o módulo 8 desta vereda aparecendo de novo.',
+      'Outra é conferir a aritmética, que já estava certa.',
+    ],
+    /*
+      Conjunto **igual**, e não conjunto que contém: exigir só que as três
+      certas estejam marcadas deixaria "marque todas as sete" passar com
+      louvor. É a conta dos indícios da CC-ES005, pelo motivo escrito lá.
+    */
+    feita: (c) => {
+      const certas = providenciasQueAumentam();
+      const marcadas = new Set(c.providencias);
+      return marcadas.size === certas.length && certas.every(id => marcadas.has(id));
+    },
+  },
+];
+
 /* ── O registro ───────────────────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs010 = 'planilha' | 'plataforma';
@@ -1202,7 +1317,8 @@ export type ProgramaDaCcEs010 = 'planilha' | 'plataforma';
 export type LicaoDaCcEs010 =
   | 'amostra' | 'correlacao' | 'espuria' | 'reta' | 'prever' | 'ajuste'
   | 'escolhido'
-  | 'exclusao';
+  | 'exclusao'
+  | 'acaso';
 
 export interface LicaoDeEstatistica {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -1224,6 +1340,8 @@ export function contextoInicial(
     blocos,
     descobertas: [],
     classificacoes: {},
+    sorteios: [],
+    providencias: [],
     textos: {},
   };
 }
@@ -1346,7 +1464,40 @@ export const LICOES_DA_CC_ES010: Record<LicaoDaCcEs010, LicaoDeEstatistica> = {
     ),
     metas: METAS_DA_EXCLUSAO,
   },
+  acaso: {
+    /*
+      Tela da plataforma, e não planilha. Embaralhar rótulos deixando as
+      medidas onde estão é, numa planilha, ordenar **só** a coluna da chave —
+      o gesto que a CC-ES003 existe para proibir e que `ordenar` recusa de
+      propósito. A lição teria de ensinar o errado para mostrar o certo.
+    */
+    programa: 'plataforma',
+    inicial: contextoInicial,
+    metas: METAS_DO_ACASO,
+  },
 };
+
+/**
+ * Um sorteio reprodutível, para a solução de referência não depender de sorte.
+ *
+ * `sortearEntreGrupos` recebe o sorteio por parâmetro justamente por isto: com
+ * `Math.random`, a trava de "a solução fecha" passaria a falhar sozinha nas
+ * vezes em que nenhum dos cinquenta embaralhos chegasse na diferença real —
+ * uma vez em duas mil e quinhentas nesta base. "Flake" é o que ensina a
+ * reexecutar em vez de ler.
+ *
+ * E a semente fixa tem um efeito que é desejado: se a base mudar de um jeito
+ * que torne a diferença real inalcançável pelo acaso, esta solução deixa de
+ * fechar — que é a falha certa, porque a lição inteira passaria a ensinar uma
+ * coisa que a base não mostra mais.
+ */
+function aleatorioSemeado(semente: number): Aleatorio {
+  let s = semente;
+  return () => {
+    s = (s * 1103515245 + 12345) % 2147483648;
+    return s / 2147483648;
+  };
+}
 
 /** A solução de referência de cada lição, para a trava provar que ela fecha. */
 export const SOLUCOES_DA_CC_ES010: Record<
@@ -1513,6 +1664,29 @@ export const SOLUCOES_DA_CC_ES010: Record<
       },
     };
   },
+  acaso: (c) => {
+    const { sorteadas } = sortearEntreGrupos(
+      c.base, CAMPO_DO_GRUPO, CAMPO_DA_MEDIDA, GRUPO_A, GRUPO_B,
+      SORTEIOS_MINIMOS, aleatorioSemeado(20261004),
+    );
+    return {
+      ...c,
+      sorteios: sorteadas,
+      leituraDoAcaso: leituraDoAcasoCerta(),
+      providencias: providenciasQueAumentam(),
+      textos: {
+        ...c.textos,
+        [CHAVE_ACASO]:
+          'A Arara tem 7 inscritos e a Águia tem 8, e com grupos desse tamanho '
+          + 'trocar duas pessoas de lado já muda a média. Embaralhando quem é '
+          + 'de qual unidade, sem mexer em nenhum número, uma diferença tão '
+          + 'grande quanto a de verdade (2,59 acampamentos) apareceu cerca de '
+          + 'uma vez em sete. Então 4,71 contra 2,13 não autoriza dizer que a '
+          + 'Arara acampa mais: a diferença existe e não distingue as '
+          + 'unidades.',
+      },
+    };
+  },
   espuria: (c) => {
     let calc = abaDe(c.caderno, ABA_CALCULOS);
     for (const par of PARES) {
@@ -1533,3 +1707,9 @@ const rotuloDoCampo = (campoId: string) =>
 
 /** As populações que a tela oferece, na ordem em que ela as desenha. */
 export const POPULACOES_DA_LICAO = POPULACOES;
+
+/** As quatro leituras do embaralho, na ordem em que a tela as desenha. */
+export const LEITURAS_DO_ACASO_DA_LICAO = LEITURAS_DO_ACASO;
+
+/** As sete providências, na ordem em que a tela as desenha. */
+export const PROVIDENCIAS_DA_LICAO = PROVIDENCIAS;

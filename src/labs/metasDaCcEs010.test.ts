@@ -12,7 +12,13 @@ import {
   CHAVE_EFEITO, COLUNA_AUXILIAR, DESCOBERTA_FILTRO,
   ROTULO_INCL_SEM, ROTULO_INCL_TODOS, ROTULO_R2_SEM, ROTULO_R2_TODOS,
   comColunaAuxiliar, formulaSemAtipico, linhasAtipicasDoPar, semAtipicos,
+  CHAVE_ACASO, diferencaReal,
 } from './metasDaCcEs010';
+import {
+  CAMPO_DA_MEDIDA, CAMPO_DO_GRUPO, GRUPO_A, GRUPO_B,
+  LEITURAS_DO_ACASO, PROVIDENCIAS, SORTEIOS_MINIMOS, SORTEIOS_POR_VEZ,
+  leituraDoAcasoCerta, providenciaDe, providenciasQueAumentam,
+} from './acasoEntreGrupos';
 import { COLETAS, populacaoCerta } from './amostraDoClube';
 import { CAMPO_ALTURA, CAMPO_IDADE, camposDaBase } from './baseDoAcampamento';
 import { CAMPO_DIARIAS } from './formulario';
@@ -25,6 +31,7 @@ import { escrever, valorCalculado } from './planilha';
 import { nomeDaColuna } from './formulas';
 import {
   colunaDe, correlacaoDe, inclinacaoDe, maximo, minimo, previsaoDe, rquadDe,
+  sortearEntreGrupos,
 } from './analiseDeDados';
 
 /*
@@ -1030,6 +1037,211 @@ describe('o módulo 8 compara as duas análises', () => {
     for (const m of LICOES_DA_CC_ES010.exclusao.metas) {
       expect(m.feita(c), `"${m.titulo}" abre verde`).toBe(false);
     }
+  });
+});
+
+/*
+  ── O módulo 9: o acaso entre dois grupos ────────────────────────────────
+
+  Requisito 8: explicar por que uma diferença observada entre dois grupos pode
+  ser efeito do acaso, e descrever **sem cálculo formal** três providências que
+  aumentariam a confiança na conclusão.
+*/
+describe('o módulo 9 mostra o acaso alcançando a diferença', () => {
+  const abrir = () => LICOES_DA_CC_ES010.acaso.inicial();
+  const meta = (id: string) => LICOES_DA_CC_ES010.acaso.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES_DA_CC_ES010.acaso(abrir());
+
+  /* Um sorteio reprodutível, pelo motivo escrito do outro lado: a trava não
+     pode depender de sorte. */
+  const semeado = (semente: number) => {
+    let s = semente;
+    return () => {
+      s = (s * 1103515245 + 12345) % 2147483648;
+      return s / 2147483648;
+    };
+  };
+
+  /*
+    ── A premissa que carrega a lição inteira ─────────────────────────────
+
+    Ela só funciona se o acaso **alcançar** a diferença real com alguma
+    frequência: a meta pede ver isso acontecer, e a leitura certa diz "cerca de
+    uma vez em sete". Numa base em que a diferença fosse inalcançável, a lição
+    continuaria dizendo isso com o embaralho nunca chegando lá — e a meta
+    ficaria impossível de fechar sem nada na tela explicando.
+
+    É a trava de `exemplosDaAnalise.test.ts`: o número que a lição afirma é
+    conferido contra a base, e não contra ele mesmo.
+  */
+  it('o acaso alcança a diferença real perto de uma vez em sete', () => {
+    const { real, tantoOuMais, sorteadas } = sortearEntreGrupos(
+      abrir().base, CAMPO_DO_GRUPO, CAMPO_DA_MEDIDA, GRUPO_A, GRUPO_B,
+      4000, semeado(97531),
+    );
+    expect(real).toBeGreaterThan(0);
+    const frequencia = tantoOuMais / sorteadas.length;
+    expect(frequencia, 'o acaso quase nunca alcança: a lição não tem o que mostrar')
+      .toBeGreaterThan(0.08);
+    expect(frequencia, 'o acaso alcança sempre: a diferença real não tem nada de diferença')
+      .toBeLessThan(0.25);
+  });
+
+  it('a diferença real sai do mesmo motor que o desbravador aciona', () => {
+    /* Uma segunda conta da diferença real divergiria da dele no primeiro
+       ajuste, e a divergência apareceria como meta que não fecha com a tela
+       mostrando o número certo. */
+    const b = abrir().base;
+    const { real } = sortearEntreGrupos(b, CAMPO_DO_GRUPO, CAMPO_DA_MEDIDA, GRUPO_A, GRUPO_B, 0);
+    expect(diferencaReal(b)).toBe(real);
+  });
+
+  it('a solução de referência fecha as quatro', () => {
+    const c = pronto();
+    for (const m of LICOES_DA_CC_ES010.acaso.metas) {
+      expect(m.feita(c), `"${m.titulo}" não fecha`).toBe(true);
+    }
+  });
+
+  /*
+    ── Uma leva não é frequência ──────────────────────────────────────────
+
+    Com um sorteio só, a pessoa lê "aconteceu" ou "não aconteceu" onde o que há
+    é "uma vez em sete" — e é por isso que a meta cobra duas levas, e não uma.
+  */
+  it('uma leva só não fecha, mesmo com a diferença real alcançada', () => {
+    const c = abrir();
+    const real = diferencaReal(c.base);
+    const umaLeva = Array.from({ length: SORTEIOS_POR_VEZ }, () => real);
+    expect(SORTEIOS_POR_VEZ).toBeLessThan(SORTEIOS_MINIMOS);
+    expect(meta('embaralhou-e-viu-acontecer').feita({ ...c, sorteios: umaLeva })).toBe(false);
+  });
+
+  /*
+    E embaralhar muito **sem nunca chegar** também não fecha: é a outra metade
+    da conta, e ela é a lição. Ler sobre o acaso não é a mesma coisa que vê-lo
+    chegar lá.
+  */
+  it('muitos embaralhos que nunca alcançam a diferença não fecham', () => {
+    const c = abrir();
+    const real = diferencaReal(c.base);
+    const nunca = Array.from({ length: SORTEIOS_MINIMOS * 4 }, () => real / 2);
+    expect(meta('embaralhou-e-viu-acontecer').feita({ ...c, sorteios: nunca })).toBe(false);
+  });
+
+  /*
+    ── As três erradas erram em três direções, e nenhuma é bobagem ────────
+
+    Uma atribui a diferença ao acaso (o embaralho mostra que ele **consegue**,
+    não que foi ele); uma troca o sujeito da frequência pela unidade, que é o
+    erro mais comum que existe com este tipo de número; e uma nega a diferença
+    medida. Com as três errando para o mesmo lado, acertar seria eliminar uma
+    direção em vez de ler o número.
+  */
+  it('exatamente uma leitura está certa, e as outras três dizem por que erram', () => {
+    expect(LEITURAS_DO_ACASO.filter(l => l.certa)).toHaveLength(1);
+    for (const l of LEITURAS_DO_ACASO) {
+      expect(l.porque.trim().length, `"${l.id}" não diz por quê`).toBeGreaterThan(40);
+    }
+    const c = pronto();
+    for (const l of LEITURAS_DO_ACASO) {
+      if (l.certa) continue;
+      expect(meta('leu-o-que-o-embaralho-diz').feita({ ...c, leituraDoAcaso: l.id }),
+        `"${l.id}" fecha a meta`).toBe(false);
+    }
+  });
+
+  /*
+    ── A certa não se acha pela forma da frase ────────────────────────────
+
+    Duas contas, e as duas pegaram a primeira versão desta lista. A palavra:
+    só a certa nomeava o sorteio, e aí ela se acha sem ler nenhuma das quatro.
+    E o tamanho: é a conta de `qualidade.test.ts` aplicada a uma lista que as
+    travas das provas não enxergam — quem não estudou escolhe a mais comprida,
+    e numa lista de quatro isso acerta sozinho.
+  */
+  it('a certa não é a única a nomear o sorteio, nem a mais comprida', () => {
+    const nomeiam = LEITURAS_DO_ACASO.filter(l => /sorte|embaralh/i.test(l.frase));
+    expect(nomeiam.length, 'só a certa fala de sorteio, e isso a entrega')
+      .toBeGreaterThan(1);
+
+    const certa = LEITURAS_DO_ACASO.find(l => l.certa)!;
+    const maiorErrada = Math.max(
+      ...LEITURAS_DO_ACASO.filter(l => !l.certa).map(l => l.frase.length),
+    );
+    expect(certa.frase.length, 'a certa se lê pelo tamanho').toBeLessThanOrEqual(maiorErrada);
+  });
+
+  /*
+    ── Três providências, e o conjunto é igual e não contido ──────────────
+
+    Exigir só que as três certas estejam marcadas deixaria "marque todas as
+    sete" passar com louvor. É a conta dos indícios da CC-ES005.
+  */
+  it('exatamente três providências aumentam, e são mais as que não', () => {
+    const certas = PROVIDENCIAS.filter(p => p.aumenta);
+    expect(certas).toHaveLength(3);
+    expect(PROVIDENCIAS.length - certas.length).toBeGreaterThan(certas.length);
+    for (const p of PROVIDENCIAS) {
+      expect(p.porque.trim().length, `"${p.id}" não diz por quê`).toBeGreaterThan(40);
+    }
+    expect(new Set(PROVIDENCIAS.map(p => p.id)).size).toBe(PROVIDENCIAS.length);
+    /* E a tela acha cada uma pelo id, que é como ela mostra o `porque` depois
+       da escolha — a conta que `coletaDe` já tem do lado do módulo 1. */
+    for (const p of PROVIDENCIAS) expect(providenciaDe(p.id)).toBe(p);
+  });
+
+  it('marcar todas as sete não fecha, e marcar duas certas também não', () => {
+    const c = pronto();
+    const todas = { ...c, providencias: PROVIDENCIAS.map(p => p.id) };
+    expect(meta('escolheu-as-tres-providencias').feita(todas)).toBe(false);
+    const duas = { ...c, providencias: providenciasQueAumentam().slice(0, 2) };
+    expect(meta('escolheu-as-tres-providencias').feita(duas)).toBe(false);
+  });
+
+  it('trocar uma certa por uma errada não fecha', () => {
+    const c = pronto();
+    const errada = PROVIDENCIAS.find(p => !p.aumenta)!.id;
+    const trocada = {
+      ...c,
+      providencias: [...providenciasQueAumentam().slice(0, 2), errada],
+    };
+    expect(meta('escolheu-as-tres-providencias').feita(trocada)).toBe(false);
+  });
+
+  it('o escrito precisa de número, e de frase', () => {
+    const c = pronto();
+    expect(meta('escreveu-por-que-pode-ser-acaso').feita({
+      ...c, textos: { ...c.textos, [CHAVE_ACASO]: 'pode ser acaso' },
+    })).toBe(false);
+    expect(meta('escreveu-por-que-pode-ser-acaso').feita({
+      ...c,
+      textos: {
+        ...c.textos,
+        [CHAVE_ACASO]: 'Os dois grupos são pequenos e o embaralho chega na mesma '
+          + 'diferença sem nenhum dado ter mudado de lugar.',
+      },
+    })).toBe(false);
+    expect(meta('escreveu-por-que-pode-ser-acaso').feita(c)).toBe(true);
+  });
+
+  /*
+    ── Qual é a resposta certa, dito aqui ─────────────────────────────────
+
+    "Exatamente uma está certa" não diz **qual**: trocar a marca da leitura
+    certa para a frase do erro de valor-p é uma mutação que se sustenta sozinha
+    — a lista continua com uma certa, a solução de referência marca aquela, e
+    tudo fecha. O que sobra é a lição ensinando o erro mais comum que existe
+    com este tipo de número como se fosse a leitura boa.
+
+    Então a trava declara a resposta, como `populacaoCerta()` faz do lado do
+    módulo 1. Vale o mesmo para as providências: dar `aumenta` à de refazer a
+    conta e tirá-lo da de repetir a coleta mantém três certas e fecha tudo.
+  */
+  it('a leitura certa é a do sorteio, e as providências certas são estas três', () => {
+    expect(leituraDoAcasoCerta()).toBe('o-acaso-alcanca');
+    expect([...providenciasQueAumentam()].sort())
+      .toEqual(['decidir-antes', 'mais-gente', 'repetir-a-coleta']);
   });
 });
 
