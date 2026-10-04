@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   agrupadoPor, amplitude, atipicosDe, cercaDe, classesDe, colunaDe, desvioPadrao,
   frequenciasDe, maximo, media, medidaDa, medidaPorGrupo, mediana, minimo, moda,
-  numerosDe, repeticoesDaModa, sortearEntreGrupos, taxa,
+  correlacaoDe, numerosDe, repeticoesDaModa, sortearEntreGrupos, taxa,
 } from './analiseDeDados';
 import { ehErro } from './formulas';
 import type { Formulario, Resposta } from './formulario';
@@ -289,6 +289,59 @@ describe('sobre a base inteira', () => {
       respostas: [...formulario.respostas, resposta('r6', 'C', 'não sei')],
     };
     expect(medidaPorGrupo(semNumero, 'grupo', 'valor', 'MÉDIA').get('C')).toBeNull();
+  });
+});
+
+/*
+  ── A correlação vem do mesmo motor ────────────────────────────────────────
+
+  O número que a trava espera e o que a fórmula do desbravador devolve são a
+  mesma `CORREL`. Dois avaliadores na mesma base seriam os dois "Word" outra
+  vez, com a divergência aparecendo como número plausível — a pior forma de
+  aparecer.
+*/
+describe('a correlação entre duas colunas', () => {
+  it('é 1 numa reta perfeita e −1 na reta que desce', () => {
+    expect(correlacaoDe(['1', '2', '3', '4'], ['3', '5', '7', '9'])).toBe(1);
+    expect(correlacaoDe(['1', '2', '3', '4'], ['9', '7', '5', '3'])).toBe(-1);
+  });
+
+  /*
+    Simétrica: a correlação não tem lado. É o que a separa da inclinação, e é
+    por isso que trocar as duas faixas nela não muda nada.
+
+    Disto segue que trocar a ordem dentro de `correlacaoDe` é uma mutação
+    **equivalente**: ela não muda resposta nenhuma, e nenhuma trava pode pegá-la.
+    O teste diz isso em vez de caçá-la, como o `melhorTaxa` da CC-ES009 — e o
+    que se fixa aqui é a simetria, que é a propriedade de verdade. Quem um dia
+    quiser "consertar" aquela ordem lê esta asserção e descobre que não há o
+    que consertar.
+  */
+  it('não muda quando as duas colunas trocam de lugar', () => {
+    const a = ['13', '12', '14', '11'];
+    const b = ['1,58', '1,51', '1,62', '1,44'];
+    expect(correlacaoDe(b, a)).toBe(correlacaoDe(a, b));
+  });
+
+  /*
+    E ela herda do motor o que o motor ignora, que é o que separa este caminho
+    de um `Number(v)` escrito à mão: número com ponto é texto em planilha
+    pt-BR, e o par cai **inteiro** quando um dos lados não é número.
+  */
+  it('descarta o par inteiro quando um lado não é número para a planilha', () => {
+    /* `1.5` com ponto é texto aqui, então o par (2; 1.5) cai e sobram três
+       pontos — que continuam na reta. */
+    expect(correlacaoDe(['1', '2', '3', '4'], ['3', '1.5', '7', '9'])).toBe(1);
+  });
+
+  it('recusa em vez de devolver zero quando não dá para perguntar', () => {
+    /* Coluna que não varia: `#DIV/0!` no motor, `null` aqui. Zero diria "não
+       há relação", que é uma afirmação sobre os dados. */
+    expect(correlacaoDe(['1', '2', '3'], ['5', '5', '5'])).toBeNull();
+    /* Tamanhos diferentes: `#N/D`. Cortar no menor responderia sobre parte dos
+       pares sem dizer que parte. */
+    expect(correlacaoDe(['1', '2', '3'], ['3', '5'])).toBeNull();
+    expect(correlacaoDe([], [])).toBeNull();
   });
 });
 

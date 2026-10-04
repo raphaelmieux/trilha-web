@@ -50,6 +50,60 @@ export function numeroDaMedida(v: Valor): number | null {
 
 const medida = (valores: string[], funcao: string) => numeroDaMedida(medidaDa(valores, funcao));
 
+/**
+ * Uma função de **duas** colunas, pelo mesmo motor.
+ *
+ * `medidaDa` monta uma grade de uma coluna; a família da regressão precisa de
+ * duas. Montá-la aqui é o que faz o número que a trava espera sair da mesma
+ * `CORREL` que a fórmula do desbravador chama — dois avaliadores na mesma base
+ * seriam os dois "Word" outra vez, com a divergência aparecendo como número
+ * plausível.
+ *
+ * **A ordem dos argumentos é a do Excel, e ela passa reta por aqui.** `CORREL`
+ * é simétrica; `INCLINAÇÃO`, `INTERCEPÇÃO` e `RQUAD` recebem o y primeiro.
+ * Um atalho que "arrumasse" isso trocando os parâmetros desfaria em silêncio a
+ * armadilha que o motor guarda de propósito — e a reta ao contrário sai com
+ * cara de reta certa.
+ */
+export function daDupla(primeira: string[], segunda: string[], funcao: string): Valor {
+  /*
+    Cada faixa vai com o **tamanho de verdade** da coluna dela, e não com o
+    maior dos dois.
+
+    A primeira versão igualava os dois ao maior e preenchia o que faltava com
+    branco. O motor passava a ver duas faixas do mesmo tamanho, descartava os
+    pares em que um lado estava em branco, e devolvia a correlação do pedaço
+    comum — um número plausível no lugar de uma recusa. É exatamente o "cortar
+    no menor" que o motor recusa de propósito: ele responderia sobre parte dos
+    pares sem dizer que parte.
+
+    Escritas com o tamanho real, a regra de `#N/D` do motor vale aqui também,
+    sem uma segunda guarda que pudesse discordar dela.
+  */
+  const bruto: Bruto = (linha, coluna) => {
+    if (coluna === 0) return primeira[linha] ?? '';
+    if (coluna === 1) return segunda[linha] ?? '';
+    return '';
+  };
+  const ate = (n: number) => Math.max(n, 1);
+  return valorDaFormula(
+    bruto,
+    `=${funcao}(A1:A${ate(primeira.length)};B1:B${ate(segunda.length)})`,
+  );
+}
+
+/**
+ * O coeficiente de correlação entre duas colunas.
+ *
+ * `null` quando o motor não devolve número — faixas de tamanhos diferentes são
+ * `#N/D` e coluna que não varia é `#DIV/0!`, e os dois viram `null` aqui pela
+ * mesma razão que a moda sem repetição: devolver zero afirmaria "não há
+ * relação", que é uma afirmação sobre os dados, e a recusa diz "não dá para
+ * perguntar isto aqui".
+ */
+export const correlacaoDe = (a: string[], b: string[]) =>
+  numeroDaMedida(daDupla(a, b, 'CORREL'));
+
 export const media = (valores: string[]) => medida(valores, 'MÉDIA');
 export const mediana = (valores: string[]) => medida(valores, 'MED');
 export const maximo = (valores: string[]) => medida(valores, 'MÁXIMO');
