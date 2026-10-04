@@ -9,6 +9,7 @@ import {
   GradeDoExcel, DesenhoDoGrafico,
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
+import { CampoLongo, Cartao, Escolha } from '../labs/caderno';
 import {
   type Caderno, type ComoResumir, type Historico, type Planilha,
   type TabelaDinamica, type TipoDeGrafico,
@@ -766,93 +767,6 @@ const NOME_DO_VEREDITO: Record<Veredito, string> = {
   defendo: 'Defendo com os dados',
   reconheco: 'Reconheço o limite',
 };
-
-function Cartao({ titulo, abaixo, children }: {
-  titulo: string; abaixo?: string; children: React.ReactNode;
-}) {
-  return (
-    <section className="card p-4">
-      <h2 className="text-base font-bold mb-1">{titulo}</h2>
-      {abaixo && (
-        <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>{abaixo}</p>
-      )}
-      {children}
-    </section>
-  );
-}
-
-/*
-  O campo longo diz quanto já tem escrito, e quanto falta.
-
-  Ele não é enfeite: as metas deste módulo medem tamanho — quarenta letras para
-  uma justificativa, uma página para a conclusão —, e uma tarefa que fica
-  vermelha sem dizer por que mede paciência. O contador relata o número; quem
-  decide o que escrever é quem escreve.
-*/
-function CampoLongo({ rotulo, ajuda, valor, minimo, maximo, aoEscrever }: {
-  rotulo: string;
-  ajuda?: string;
-  valor: string;
-  minimo: number;
-  maximo?: number;
-  aoEscrever: (t: string) => void;
-}) {
-  const quantas = valor.trim().length;
-  const curto = quantas < minimo;
-  const comprido = maximo !== undefined && quantas > maximo;
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-semibold">{rotulo}</span>
-      {ajuda && (
-        <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{ajuda}</span>
-      )}
-      <textarea
-        className="input-field text-sm" rows={maximo === undefined ? 3 : 8}
-        value={valor} onChange={e => aoEscrever(e.target.value)}
-      />
-      <span className="text-xs" style={{
-        color: curto || comprido ? 'var(--color-warning)' : 'var(--color-text-dim)',
-      }}>
-        {quantas} {maximo === undefined ? `de ${minimo} letras no mínimo` : `de ${maximo} letras no máximo`}
-      </span>
-    </label>
-  );
-}
-
-/** Uma escolha entre alternativas, com o porquê de cada errada. */
-function Escolha<T extends string>({ opcoes, escolhida, aoEscolher, porque }: {
-  opcoes: { id: T; rotulo: string; abaixo?: string }[];
-  escolhida: T | undefined;
-  aoEscolher: (id: T) => void;
-  porque?: string | null;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      {opcoes.map(o => (
-        <button
-          key={o.id} type="button"
-          onClick={() => aoEscolher(o.id)}
-          aria-pressed={escolhida === o.id}
-          className="text-left text-sm rounded-lg px-3 py-2"
-          style={{
-            border: `1px solid ${escolhida === o.id ? 'var(--color-primary)' : 'var(--color-border)'}`,
-            background: escolhida === o.id ? 'var(--color-bg-hover)' : 'transparent',
-          }}
-        >
-          <span className="font-semibold">{o.rotulo}</span>
-          {o.abaixo && (
-            <span className="block text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-              {o.abaixo}
-            </span>
-          )}
-        </button>
-      ))}
-      {porque && (
-        <p className="text-sm mt-1" style={{ color: 'var(--color-warning)' }}>{porque}</p>
-      )}
-    </div>
-  );
-}
 
 /*
   As alternativas do módulo 4, e por que as erradas erram.
