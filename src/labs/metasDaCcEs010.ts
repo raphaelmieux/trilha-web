@@ -53,10 +53,10 @@ import { CAMPO_DIARIAS } from './formulario';
 import {
   type BlocoDeContas,
   ABA_CALCULOS, ABA_RESPOSTAS, cadernoDaAnalise, colunaDoCampo, faixaDoCampo,
-  linhaConfere, linhaDoRotulo,
+  assinaturaDaBase, linhaConfere, linhaDoRotulo,
 } from './metasDaCcEs009';
 import {
-  colunaDe, correlacaoDe, inclinacaoDe, intercepcaoDe, previsaoDe, rquadDe,
+  cercaDe, colunaDe, correlacaoDe, inclinacaoDe, intercepcaoDe, previsaoDe, rquadDe,
 } from './analiseDeDados';
 import { abaDe, comAba, escritoEm, usaFuncao } from './cadernoDoClube';
 import { nomeDaColuna, referenciasDe } from './formulas';
@@ -138,6 +138,18 @@ export interface ContextoDaEstatistica {
 const classificada = (c: ContextoDaEstatistica, id: string) => c.classificacoes[id] !== undefined;
 
 const texto = (c: ContextoDaEstatistica, chave: string) => (c.textos[chave] ?? '').trim();
+
+/**
+ * A linha da aba de cálculos confere: a função que o bloco declara, uma
+ * referência de verdade, e o resultado.
+ *
+ * As três contas moram em `linhaConfere`, na CC-ES009, e o atalho existe para
+ * que as nove metas que a chamam digam o que estão perguntando em vez de
+ * repetir quatro argumentos — a decisão que `metasDaCcEs009` tomou do lado
+ * dele quando esta vereda precisou da mesma regra.
+ */
+const linhaCompleta = (c: ContextoDaEstatistica, rotulo: string) =>
+  linhaConfere(c.caderno, c.blocos, c.base, rotulo);
 
 /**
  * Uma frase escrita, e não duas palavras.
@@ -407,7 +419,7 @@ export const METAS_DA_CORRELACAO: Meta[] = [
       `Ponto e vírgula, e depois a coluna ${letraDo(PAR_DO_MODULO_2.y)} do mesmo jeito.`,
       'Nesta função a ordem das duas faixas não importa: a correlação não tem lado.',
     ],
-    feita: c => linhaConfere(c.caderno, c.blocos, c.base, PAR_DO_MODULO_2.rotulo),
+    feita: c => linhaCompleta(c, PAR_DO_MODULO_2.rotulo),
   },
   {
     id: 'interpretou-o-valor',
@@ -481,7 +493,7 @@ export const METAS_DA_ESPURIA: Meta[] = [
       'Deixe os três à vista ao mesmo tempo — é a comparação que ensina, e não '
         + 'cada número sozinho.',
     ],
-    feita: c => PARES.every(par => linhaConfere(c.caderno, c.blocos, c.base, par.rotulo)),
+    feita: c => PARES.every(par => linhaCompleta(c, par.rotulo)),
   },
   {
     id: 'achou-a-espuria',
@@ -607,8 +619,8 @@ export const METAS_DA_RETA: Meta[] = [
         + 'sobre y — outro número, com a mesma cara de certo.',
     ],
     feita: c => tendenciaNoGrafico(c) === 'com-equacao'
-      && linhaConfere(c.caderno, c.blocos, c.base, ROTULO_INCLINACAO)
-      && linhaConfere(c.caderno, c.blocos, c.base, ROTULO_INTERCEPCAO),
+      && linhaCompleta(c, ROTULO_INCLINACAO)
+      && linhaCompleta(c, ROTULO_INTERCEPCAO),
   },
 ];
 
@@ -675,7 +687,7 @@ export const METAS_DA_PREVISAO: Meta[] = [
       `Escreva =PREVISÃO(${IDADE_DENTRO}; e depois as duas faixas, o y primeiro.`,
       'É a mesma ordem da inclinação: a explicada antes da que explica.',
     ],
-    feita: c => linhaConfere(c.caderno, c.blocos, c.base, rotuloDaPrevisao(IDADE_DENTRO)),
+    feita: c => linhaCompleta(c, rotuloDaPrevisao(IDADE_DENTRO)),
   },
   {
     id: 'previu-muito-fora',
@@ -688,7 +700,7 @@ export const METAS_DA_PREVISAO: Meta[] = [
       `A mesma fórmula, trocando ${IDADE_DENTRO} por ${IDADE_FORA}.`,
       'Olhe o número que saiu. Compare com a altura da pessoa mais alta que você conhece.',
     ],
-    feita: c => linhaConfere(c.caderno, c.blocos, c.base, rotuloDaPrevisao(IDADE_FORA)),
+    feita: c => linhaCompleta(c, rotuloDaPrevisao(IDADE_FORA)),
   },
   {
     id: 'escreveu-o-risco',
@@ -768,7 +780,7 @@ export const METAS_DO_AJUSTE: Meta[] = [
         + 'hábito evita errar nas duas em que ela muda.',
       'Faça os três, para poder comparar.',
     ],
-    feita: c => PARES.every(par => linhaConfere(c.caderno, c.blocos, c.base, par.rotulo)),
+    feita: c => PARES.every(par => linhaCompleta(c, par.rotulo)),
   },
   {
     id: 'achou-o-pior-ajuste',
@@ -940,6 +952,243 @@ export const METAS_DO_ESCOLHIDO: Meta[] = [
   },
 ];
 
+/* ── Módulo 8: refazer sem os atípicos ────────────────────────────────────── */
+
+export const ROTULO_INCL_TODOS = 'Inclinação com todos';
+export const ROTULO_INCL_SEM = 'Inclinação sem o atípico';
+export const ROTULO_R2_TODOS = 'r² com todos';
+export const ROTULO_R2_SEM = 'r² sem o atípico';
+
+const FUNCAO_DA_EXCLUSAO: Record<string, string> = {
+  [ROTULO_INCL_TODOS]: 'INCLINAÇÃO',
+  [ROTULO_INCL_SEM]: 'INCLINAÇÃO',
+  [ROTULO_R2_TODOS]: 'RQUAD',
+  [ROTULO_R2_SEM]: 'RQUAD',
+};
+
+export const DESCOBERTA_FILTRO = 'esconder-nao-exclui';
+export const CHAVE_EFEITO = 'efeito-da-exclusao';
+
+/**
+ * A coluna livre ao lado da base, onde a cópia sem o atípico cabe.
+ *
+ * Ela sai do número de campos, e não de um 11 escrito à mão: campo novo na
+ * base empurraria a auxiliar para cima de um dado, e `assinaturaDaBase` — que
+ * lê de zero até `camposDaBase().length` — passaria a acusar mexida na base
+ * por causa de uma coluna de trabalho.
+ */
+export const COLUNA_AUXILIAR = camposDaBase().length + 1;
+
+/** A faixa da coluna auxiliar, do jeito que ela se escreve na fórmula. */
+export const faixaAuxiliar = (base: Formulario) => {
+  const letra = nomeDaColuna(COLUNA_AUXILIAR);
+  const linhas = base.respostas.length;
+  return `${ABA_RESPOSTAS}!${letra}2:${letra}${linhas + 1}`;
+};
+
+/**
+ * As linhas que a cerca de Tukey deixa de fora, em qualquer das duas colunas
+ * do par.
+ *
+ * Nas **duas**, e não só na dependente: um valor absurdo de idade estragaria a
+ * reta do mesmo jeito, e olhar um lado só deixaria metade dos atípicos dentro
+ * da conta que a lição manda refazer sem eles.
+ */
+export function linhasAtipicasDoPar(base: Formulario, par: ParDeColunas): number[] {
+  const colunas = [colunaDe(base, par.x), colunaDe(base, par.y)];
+  const cercas = colunas.map(cercaDe);
+  const fora: number[] = [];
+  for (let i = 0; i < colunas[0].length; i++) {
+    const atipica = colunas.some((col, k) => {
+      const cerca = cercas[k];
+      if (!cerca) return false;
+      const n = Number(String(col[i]).replace(',', '.'));
+      return Number.isFinite(n) && (n < cerca.piso || n > cerca.teto);
+    });
+    if (atipica) fora.push(i);
+  }
+  return fora;
+}
+
+/** O par de colunas sem as linhas atípicas, na ordem em que a base as traz. */
+export function semAtipicos(base: Formulario, par: ParDeColunas) {
+  const fora = new Set(linhasAtipicasDoPar(base, par));
+  const x = colunaDe(base, par.x);
+  const y = colunaDe(base, par.y);
+  const xs: string[] = [];
+  const ys: string[] = [];
+  for (let i = 0; i < x.length; i++) {
+    if (fora.has(i)) continue;
+    xs.push(x[i]);
+    ys.push(y[i]);
+  }
+  return { xs, ys };
+}
+
+/**
+ * O bloco da comparação: quatro linhas, e as duas de cima chegam escritas.
+ *
+ * "Comparar os dois resultados" é o requisito 7 com todas as letras, e
+ * comparação precisa dos dois lados à vista — num bloco, e não em duas telas.
+ * As de cima vêm prontas porque os módulos 4 e 6 as produziram: começar
+ * mandando refazê-las ensinaria que o trabalho anterior não conta.
+ *
+ * E é por isso que meta nenhuma lê as duas de cima sozinhas. Elas estão certas
+ * no segundo zero, e uma meta sobre elas abriria verde.
+ */
+export function blocoDaExclusao(par: ParDeColunas): BlocoDeContas {
+  return {
+    titulo: `A reta de ${par.rotulo}, com e sem`,
+    rotulos: [ROTULO_INCL_TODOS, ROTULO_INCL_SEM, ROTULO_R2_TODOS, ROTULO_R2_SEM],
+    colunas: ['Valor'],
+    funcoes: linha => [FUNCAO_DA_EXCLUSAO[linha]],
+    esperado: (base, linha) => {
+      const ys = colunaDe(base, par.y);
+      const xs = colunaDe(base, par.x);
+      const sem = semAtipicos(base, par);
+      switch (linha) {
+        case ROTULO_INCL_TODOS: return inclinacaoDe(ys, xs);
+        case ROTULO_INCL_SEM: return inclinacaoDe(sem.ys, sem.xs);
+        case ROTULO_R2_TODOS: return rquadDe(ys, xs);
+        case ROTULO_R2_SEM: return rquadDe(sem.ys, sem.xs);
+        default: return null;
+      }
+    },
+  };
+}
+
+/**
+ * A fórmula de "sem o atípico": a coluna auxiliar no lugar do y.
+ *
+ * `INCLINAÇÃO` e `RQUAD` recebem o y primeiro, como na lição do módulo 4 — e
+ * aqui o y é a cópia sem o atípico. O x continua a coluna inteira: o par cai
+ * inteiro quando falta um número de qualquer um dos dois lados, então apagar
+ * um lado é apagar o par. É a regra de `paresDe`, e é a do Excel.
+ */
+export const formulaSemAtipico = (base: Formulario, par: ParDeColunas, funcao: string) =>
+  `=${funcao}(${faixaAuxiliar(base)};${faixaNaBase(base, par.x)})`;
+
+/**
+ * A coluna auxiliar montada: a coluna do y copiada, menos as linhas atípicas.
+ *
+ * É o gesto que a lição ensina — copiar a coluna para um lado livre e limpar a
+ * célula da linha que a cerca apontou. Ela mora na aba da base, que é onde uma
+ * coluna de trabalho mora numa planilha de verdade, e **fora** da região que
+ * `assinaturaDaBase` lê: coluna de trabalho não é mexer no dado.
+ */
+export function comColunaAuxiliar(
+  c: ContextoDaEstatistica, par: ParDeColunas,
+): ContextoDaEstatistica {
+  const fora = new Set(linhasAtipicasDoPar(c.base, par));
+  const letra = nomeDaColuna(colunaDoCampo(par.y));
+  let resp = abaDe(c.caderno, ABA_RESPOSTAS);
+  for (let i = 0; i < c.base.respostas.length; i++) {
+    resp = escrever(resp, i + 1, COLUNA_AUXILIAR, fora.has(i) ? '' : `=${letra}${i + 2}`);
+  }
+  return { ...c, caderno: comAba(c.caderno, resp) };
+}
+
+/**
+ * A base continua inteira, e aqui isto não é zelo: é a trava do atalho.
+ *
+ * Apagar a linha do atípico e escrever a fórmula da faixa inteira devolve
+ * exatamente o número "sem" — com a fórmula parecendo a de "com todos". A
+ * comparação do requisito 7 deixaria de existir, e as duas linhas de cima
+ * passariam a falar de uma base que já não está lá. É `assinaturaDaBase` da
+ * CC-ES009, que lê a região da base como **conjunto**: classificar não
+ * aparece, porque ordem de linha não é dado, e apagar, digitar por cima e
+ * limpar aparecem os três.
+ */
+function baseInteira(c: ContextoDaEstatistica): boolean {
+  const agora = abaDe(c.caderno, ABA_RESPOSTAS);
+  const antes = abaDe(c.cadernoAntes, ABA_RESPOSTAS);
+  if (!agora || !antes) return false;
+  return assinaturaDaBase(agora) === assinaturaDaBase(antes);
+}
+
+/*
+  A letra da coluna sai de `colunaDoCampo`, e não escrita à mão.
+
+  Ela já saiu errada uma vez: o passo dizia `=F2` e a altura é a **G** — campo
+  novo na base move a letra, e um passo a passo que nomeia a coluna errada
+  manda o desbravador copiar a coluna errada e conferir o número contra ela.
+*/
+const LETRA_DO_Y = nomeDaColuna(colunaDoCampo(PAR_DO_MODULO_2.y));
+
+export const METAS_DA_EXCLUSAO: Meta[] = [
+  {
+    id: 'viu-que-esconder-nao-exclui',
+    titulo: 'Descobrir que esconder a linha não a tira da conta',
+    detalhe:
+      'O primeiro jeito que todo mundo tenta é o filtro. Filtre a coluna da '
+      + 'altura e olhe a inclinação de cima: ela não se move. Filtro é de '
+      + 'tela — a linha escondida continua na conta.',
+    onde: 'Na aba Respostas, na setinha de filtro da coluna da altura.',
+    passos: [
+      'Clique na setinha de filtro da coluna Altura e escolha um valor só.',
+      'A tela passa a mostrar quase nada — e a linha "Inclinação com todos", '
+        + 'na aba Cálculos, continua exatamente no mesmo número.',
+      'É a mesma coisa que a SOMA faz na CC-ES003: a linha escondida continua '
+        + 'lá. E é por isso que excluir de verdade pede outro caminho.',
+    ],
+    feita: c => c.descobertas.includes(DESCOBERTA_FILTRO),
+  },
+  {
+    id: 'refez-a-reta-sem-o-atipico',
+    titulo: 'Refazer a inclinação sem o valor atípico',
+    detalhe:
+      'Agora exclua de verdade: uma cópia da coluna numa coluna livre, sem o '
+      + 'valor que a cerca apontou, e a inclinação sobre ela.',
+    onde: 'Na aba Respostas, numa coluna livre; e na aba Cálculos, na linha "sem o atípico".',
+    passos: [
+      `Na aba Respostas, numa coluna vazia à direita, escreva =${LETRA_DO_Y}2 `
+        + 'e arraste até a última linha.',
+      'Limpe a célula da linha do valor atípico, e **só** a dela.',
+      'Na aba Cálculos, escreva =INCLINAÇÃO( com a coluna nova e a coluna da '
+        + 'idade inteira.',
+      'Você só apaga um dos dois lados: o par cai inteiro quando falta um '
+        + 'número de qualquer um deles, e é assim que a planilha de verdade '
+        + 'faz.',
+      'Quem quiser que a conta sobreviva a uma base que muda escreve '
+        + `=SE(E(${LETRA_DO_Y}2>=1,135;${LETRA_DO_Y}2<=1,915);${LETRA_DO_Y}2;"") `
+        + `no lugar de =${LETRA_DO_Y}2.`,
+    ],
+    feita: c => baseInteira(c) && linhaCompleta(c, ROTULO_INCL_SEM),
+  },
+  {
+    id: 'refez-o-ajuste-sem-o-atipico',
+    titulo: 'Refazer o r² sem o valor atípico',
+    detalhe:
+      'A inclinação diz o que a reta afirma; o r² diz quanto se pode confiar '
+      + 'nela. Os dois precisam ser refeitos, senão a comparação fica só com '
+      + 'metade.',
+    onde: 'Na aba Cálculos, na linha "r² sem o atípico".',
+    passos: [
+      'Use a mesma coluna nova que você acabou de montar.',
+      'Escreva =RQUAD( com ela e com a coluna da idade.',
+      'Compare com o r² de cima antes de seguir.',
+    ],
+    feita: c => baseInteira(c) && linhaCompleta(c, ROTULO_R2_SEM),
+  },
+  {
+    id: 'relatou-o-efeito',
+    titulo: 'Relatar o efeito da exclusão sobre a conclusão',
+    detalhe:
+      'Esta é a metade que o requisito cobra: não é excluir, é dizer o que a '
+      + 'exclusão fez. Olhe os quatro números e escreva se a conclusão mudou, '
+      + 'e o quanto.',
+    onde: 'No caderno da análise.',
+    passos: [
+      'Compare as duas inclinações: o que a reta afirma mudou muito?',
+      'Compare os dois r²: a reta passou a descrever melhor?',
+      'Diga as duas coisas na mesma frase, com os números.',
+      'E diga quem é a pessoa que saiu da conta: ela é do clube, e continua '
+        + 'sendo.',
+    ],
+    feita: c => frasePropriaComNumero(texto(c, CHAVE_EFEITO)),
+  },
+];
+
 /* ── O registro ───────────────────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs010 = 'planilha' | 'plataforma';
@@ -952,7 +1201,8 @@ export type ProgramaDaCcEs010 = 'planilha' | 'plataforma';
 */
 export type LicaoDaCcEs010 =
   | 'amostra' | 'correlacao' | 'espuria' | 'reta' | 'prever' | 'ajuste'
-  | 'escolhido';
+  | 'escolhido'
+  | 'exclusao';
 
 export interface LicaoDeEstatistica {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -1014,6 +1264,28 @@ function comDispersaoPronta(c: ContextoDaEstatistica): ContextoDaEstatistica {
   return { ...c, caderno, cadernoAntes: caderno };
 }
 
+/**
+ * A pasta com a reta e o ajuste do par do módulo 2 **já calculados**.
+ *
+ * O módulo 8 compara, e comparação precisa dos dois lados. As duas linhas de
+ * cima são o que os módulos 4 e 6 produziram, e refazê-las aqui ensinaria que
+ * o trabalho anterior não conta — é o campo `documento` da CC-ES002 e o
+ * `caderno` da CC-ES003.
+ *
+ * Os **dois** campos da pasta, como em `comDispersaoPronta`: mexendo só em
+ * `caderno`, o que a lição entrega contaria como trabalho de quem abriu.
+ */
+function comRetaEAjustePronto(c: ContextoDaEstatistica): ContextoDaEstatistica {
+  const par = PAR_DO_MODULO_2;
+  let calc = abaDe(c.caderno, ABA_CALCULOS);
+  calc = escrever(calc, linhaDoRotulo(c.blocos, ROTULO_INCL_TODOS), 1,
+    formulaDaReta(c.base, par, 'INCLINAÇÃO'));
+  calc = escrever(calc, linhaDoRotulo(c.blocos, ROTULO_R2_TODOS), 1,
+    formulaDoAjuste(c.base, par));
+  const caderno = comAba(c.caderno, calc);
+  return { ...c, caderno, cadernoAntes: caderno };
+}
+
 export const LICOES_DA_CC_ES010: Record<LicaoDaCcEs010, LicaoDeEstatistica> = {
   amostra: {
     /*
@@ -1066,6 +1338,13 @@ export const LICOES_DA_CC_ES010: Record<LicaoDaCcEs010, LicaoDeEstatistica> = {
     programa: 'planilha',
     inicial: () => contextoInicial([blocoDoEscolhido()]),
     metas: METAS_DO_ESCOLHIDO,
+  },
+  exclusao: {
+    programa: 'planilha',
+    inicial: () => comRetaEAjustePronto(
+      contextoInicial([blocoDaExclusao(PAR_DO_MODULO_2)]),
+    ),
+    metas: METAS_DA_EXCLUSAO,
   },
 };
 
@@ -1200,6 +1479,37 @@ export const SOLUCOES_DA_CC_ES010: Record<
           + 'acampamento. Com ela eu olharia se a relação entre idade e diárias '
           + 'continua de pé dentro de quem mora igualmente longe. Esta base não '
           + 'tem essa coluna, então ela não decide.',
+      },
+    };
+  },
+  exclusao: (c) => {
+    /*
+      A solução faz o caminho inteiro, e não o fim dele: monta a coluna
+      auxiliar, escreve as duas contas sobre ela, e **passa pela descoberta do
+      filtro**. Solução que pula o meio prova o fim e não prova o caminho — é
+      a lição que a CC-ES004 pagou para aprender na lição de assinar.
+    */
+    const par = PAR_DO_MODULO_2;
+    const comAuxiliar = comColunaAuxiliar(c, par);
+    let calc = abaDe(comAuxiliar.caderno, ABA_CALCULOS);
+    calc = escrever(calc, linhaDoRotulo(c.blocos, ROTULO_INCL_SEM), 1,
+      formulaSemAtipico(c.base, par, 'INCLINAÇÃO'));
+    calc = escrever(calc, linhaDoRotulo(c.blocos, ROTULO_R2_SEM), 1,
+      formulaSemAtipico(c.base, par, 'RQUAD'));
+    return {
+      ...comAuxiliar,
+      caderno: comAba(comAuxiliar.caderno, calc),
+      descobertas: [...c.descobertas, DESCOBERTA_FILTRO],
+      textos: {
+        ...c.textos,
+        [CHAVE_EFEITO]:
+          'Tirar o valor atípico quase não mudou o que a reta afirma: ela '
+          + 'dizia 8,4 centímetros por ano de idade e passou a dizer 8,0, e a '
+          + 'altura prevista para 13 anos andou meio centímetro. O que mudou '
+          + 'foi o r², que subiu de 0,83 para 0,94 — a reta passou a parecer '
+          + 'muito mais certa sem ter ficado mais certa. E quem saiu da conta '
+          + 'é o desbravador de 11 anos com 1,05 m, que é do clube e continua '
+          + 'sendo.',
       },
     };
   },

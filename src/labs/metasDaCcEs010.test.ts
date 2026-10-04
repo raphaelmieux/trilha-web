@@ -9,16 +9,22 @@ import {
   formulaDaPrevisao, formulaDaReta, formulaDoR, parEspurio, piorAjusteDa,
   rDoPar, rotuloDaPrevisao,
   CHAVE_DADO, CHAVE_OUTRA, CHAVE_SUGERE, ROTULO_ESCOLHIDO,
+  CHAVE_EFEITO, COLUNA_AUXILIAR, DESCOBERTA_FILTRO,
+  ROTULO_INCL_SEM, ROTULO_INCL_TODOS, ROTULO_R2_SEM, ROTULO_R2_TODOS,
+  comColunaAuxiliar, formulaSemAtipico, linhasAtipicasDoPar, semAtipicos,
 } from './metasDaCcEs010';
 import { COLETAS, populacaoCerta } from './amostraDoClube';
-import { CAMPO_ALTURA, CAMPO_IDADE } from './baseDoAcampamento';
+import { CAMPO_ALTURA, CAMPO_IDADE, camposDaBase } from './baseDoAcampamento';
 import { CAMPO_DIARIAS } from './formulario';
-import { ABA_CALCULOS, ABA_RESPOSTAS, faixaDoCampo, linhaDoRotulo } from './metasDaCcEs009';
+import {
+  ABA_CALCULOS, ABA_RESPOSTAS, assinaturaDaBase, colunaDoCampo,
+  faixaDoCampo, linhaDoRotulo,
+} from './metasDaCcEs009';
 import { abaDe, comAba } from './cadernoDoClube';
-import { escrever } from './planilha';
+import { escrever, valorCalculado } from './planilha';
 import { nomeDaColuna } from './formulas';
 import {
-  colunaDe, correlacaoDe, maximo, minimo, previsaoDe, rquadDe,
+  colunaDe, correlacaoDe, inclinacaoDe, maximo, minimo, previsaoDe, rquadDe,
 } from './analiseDeDados';
 
 /*
@@ -801,6 +807,229 @@ describe('o módulo 7 confere a escolha, e não só a fórmula', () => {
     expect(meta('disse-o-que-sugere').feita({
       ...c, textos: { ...c.textos, [CHAVE_SUGERE]: semNumero },
     })).toBe(false);
+  });
+});
+
+/*
+  ── O módulo 8: refazer sem os atípicos ──────────────────────────────────
+
+  Requisito 7. "Refazer a análise excluindo os valores atípicos e comparar os
+  dois resultados, relatando o efeito da exclusão sobre a conclusão" — e as
+  três metades estão aí: excluir, comparar, relatar.
+*/
+describe('o módulo 8 compara as duas análises', () => {
+  const abrir = () => LICOES_DA_CC_ES010.exclusao.inicial();
+  const meta = (id: string) => LICOES_DA_CC_ES010.exclusao.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES_DA_CC_ES010.exclusao(abrir());
+  const par = PAR_DO_MODULO_2;
+  const valorDaLinha = (c: ContextoDaEstatistica, rotulo: string) => valorCalculado(
+    abaDe(c.caderno, ABA_CALCULOS), linhaDoRotulo(c.blocos, rotulo), 1, c.caderno,
+  );
+
+  /*
+    ── O que a lição afirma, conferido contra a base ──────────────────────
+
+    É a trava de `exemplosDaAnalise.test.ts`, e aqui ela guarda a **premissa**
+    da lição e não um número escrito na prosa: o relato de referência diz que
+    a exclusão quase não mudou o que a reta afirma e mudou muito o quanto ela
+    parece certa. Se a base deixasse de ser assim, a lição continuaria
+    ensinando isso com os números dizendo outra coisa — e nada estouraria.
+  */
+  it('o par tem atípico, e tirá-lo mexe pouco na reta e muito no ajuste', () => {
+    const fora = linhasAtipicasDoPar(abrir().base, par);
+    expect(fora.length, 'sem atípico no par, o requisito 7 não tem o que excluir')
+      .toBeGreaterThan(0);
+
+    const b = abrir().base;
+    const ys = colunaDe(b, par.y);
+    const xs = colunaDe(b, par.x);
+    const sem = semAtipicos(b, par);
+    const inclTodos = inclinacaoDe(ys, xs)!;
+    const inclSem = inclinacaoDe(sem.ys, sem.xs)!;
+    const r2Todos = rquadDe(ys, xs)!;
+    const r2Sem = rquadDe(sem.ys, sem.xs)!;
+
+    /* A reta afirma quase a mesma coisa: menos de um décimo de diferença. */
+    expect(Math.abs(inclSem - inclTodos) / inclTodos).toBeLessThan(0.1);
+    /* E ela passa a parecer bem mais certa: o r² sobe de verdade. */
+    expect(r2Sem - r2Todos).toBeGreaterThan(0.05);
+  });
+
+  /*
+    ── Olhar as duas colunas, e não só a dependente ───────────────────────
+
+    Hoje a base só tem atípico na altura, então uma versão que olhasse apenas
+    a coluna do y daria a mesma resposta — e seria uma conta estruturalmente
+    incapaz de achar um atípico de idade. O par invertido exercita o outro
+    lado: a mesma linha tem de ser achada quando o atípico está no x.
+  */
+  it('acha o atípico nos dois lados do par', () => {
+    const b = abrir().base;
+    const invertido = { ...par, x: par.y, y: par.x };
+    expect(linhasAtipicasDoPar(b, invertido)).toEqual(linhasAtipicasDoPar(b, par));
+  });
+
+  it('a solução de referência fecha as quatro', () => {
+    const c = pronto();
+    for (const m of LICOES_DA_CC_ES010.exclusao.metas) {
+      expect(m.feita(c), `"${m.titulo}" não fecha`).toBe(true);
+    }
+  });
+
+  /*
+    ── A coluna auxiliar é trabalho, e não mexida na base ─────────────────
+
+    `assinaturaDaBase` lê de zero até `camposDaBase().length`, e a auxiliar
+    nasce logo depois. Posta uma coluna antes, montar a coluna de trabalho
+    acusaria mexida na base e as duas metas de "sem o atípico" ficariam
+    impossíveis de fechar — com a planilha certa na tela.
+  */
+  it('montar a coluna auxiliar não conta como mexer na base', () => {
+    expect(COLUNA_AUXILIAR).toBeGreaterThan(camposDaBase().length);
+    const c = comColunaAuxiliar(abrir(), par);
+    expect(assinaturaDaBase(abaDe(c.caderno, ABA_RESPOSTAS)!))
+      .toBe(assinaturaDaBase(abaDe(c.cadernoAntes, ABA_RESPOSTAS)!));
+  });
+
+  /*
+    ── Apagar a linha é o atalho, e ele não fecha ─────────────────────────
+
+    Sem a base inteira como condição, apagar a linha do atípico e escrever a
+    fórmula da **faixa inteira** devolve exatamente o número "sem" — com a
+    fórmula parecendo a de "com todos". A comparação do requisito 7 deixaria de
+    existir e as duas linhas de cima passariam a falar de uma base que já não
+    está lá.
+  */
+  it('apagar a linha do atípico não fecha as metas de "sem"', () => {
+    const c = abrir();
+    const fora = linhasAtipicasDoPar(c.base, par);
+    let resp = abaDe(c.caderno, ABA_RESPOSTAS)!;
+    for (const i of fora) {
+      for (let col = 0; col <= camposDaBase().length; col++) resp = escrever(resp, i + 1, col, '');
+    }
+    let calc = abaDe(c.caderno, ABA_CALCULOS);
+    calc = escrever(calc, linhaDoRotulo(c.blocos, ROTULO_INCL_SEM), 1,
+      formulaDaReta(c.base, par, 'INCLINAÇÃO'));
+    const apagado = {
+      ...c, caderno: comAba(comAba(c.caderno, resp), calc),
+    };
+    expect(meta('refez-a-reta-sem-o-atipico').feita(apagado)).toBe(false);
+  });
+
+  /*
+    ── O filtro não exclui, e é a premissa da primeira meta ───────────────
+
+    A lição manda ver a inclinação **não se mover** com a coluna filtrada. Se
+    um dia o filtro passasse a mexer na conta, a lição estaria ensinando o
+    contrário do que a tela mostra — e a descoberta viraria uma afirmação
+    falsa sobre o programa. É a mesma conta que a CC-ES003 cobra da SOMA.
+  */
+  it('filtrar a coluna não move a inclinação de "com todos"', () => {
+    const c = abrir();
+    const resp = abaDe(c.caderno, ABA_RESPOSTAS)!;
+    const filtrada: typeof resp = {
+      ...resp,
+      filtro: { coluna: colunaDoCampo(par.y), valor: colunaDe(c.base, par.y)[0] },
+    };
+    const comFiltro = { ...c, caderno: comAba(c.caderno, filtrada) };
+    /* A linha de cima chega escrita, e continua certa com o filtro aplicado:
+       é o que a descoberta manda a pessoa olhar. */
+    expect(valorDaLinha(comFiltro, ROTULO_INCL_TODOS)).toEqual(valorDaLinha(c, ROTULO_INCL_TODOS));
+  });
+
+  it('a descoberta do filtro não sai do estado da planilha', () => {
+    /* Ela é do desbravador olhando, como as duas do módulo 6 da CC-ES004:
+       aplicar o filtro é um clique, e contar o clique premiaria o clique e não
+       a descoberta. */
+    const c = pronto();
+    expect(meta('viu-que-esconder-nao-exclui').feita({ ...c, descobertas: [] })).toBe(false);
+    expect(c.descobertas).toContain(DESCOBERTA_FILTRO);
+
+    /* E o contrário também: o filtro aplicado, sozinho, não fecha nada. */
+    const zero = abrir();
+    const resp = abaDe(zero.caderno, ABA_RESPOSTAS)!;
+    const soFiltrado = {
+      ...zero,
+      caderno: comAba(zero.caderno, {
+        ...resp, filtro: { coluna: colunaDoCampo(par.y), valor: colunaDe(zero.base, par.y)[0] },
+      }),
+    };
+    expect(meta('viu-que-esconder-nao-exclui').feita(soFiltrado)).toBe(false);
+  });
+
+  /*
+    ── Apagar os dois lados é desnecessário, e dizê-lo é a lição ──────────
+
+    `formulaSemAtipico` troca **só** o y pela coluna auxiliar e deixa o x
+    inteiro. O par cai inteiro quando falta um número de um dos lados, então os
+    dois resultados têm de bater — o da fórmula, que o desbravador escreve, e o
+    de `semAtipicos`, que a trava calcula. Dois números diferentes aqui seriam
+    o motor e a meta discordando, que é a divergência que aparece como tarefa
+    que não fecha com a planilha certa na tela.
+  */
+  it('apagar um lado só basta: a fórmula bate com a conta', () => {
+    const c = comColunaAuxiliar(abrir(), par);
+    const calc = escrever(
+      abaDe(c.caderno, ABA_CALCULOS),
+      linhaDoRotulo(c.blocos, ROTULO_INCL_SEM),
+      1,
+      formulaSemAtipico(c.base, par, 'INCLINAÇÃO'),
+    );
+    const sem = semAtipicos(c.base, par);
+    const v = valorCalculado(calc, linhaDoRotulo(c.blocos, ROTULO_INCL_SEM), 1,
+      comAba(c.caderno, calc));
+    expect(v.tipo).toBe('numero');
+    expect(v.tipo === 'numero' && Math.abs(v.n - inclinacaoDe(sem.ys, sem.xs)!))
+      .toBeLessThan(1e-9);
+  });
+
+  /*
+    ── A reta e o ajuste são duas metas, e de propósito ───────────────────
+
+    A inclinação diz o que a reta **afirma**; o r² diz quanto se pode confiar
+    nela — e o relato da lição fala das duas, porque é a distância entre elas
+    que é o assunto. Colapsadas numa meta só, refazer metade fecharia a tarefa
+    e o relato ficaria sem um dos dois números para citar.
+  */
+  it('refazer só a inclinação não fecha a meta do r²', () => {
+    const c = comColunaAuxiliar(abrir(), par);
+    const calc = escrever(
+      abaDe(c.caderno, ABA_CALCULOS),
+      linhaDoRotulo(c.blocos, ROTULO_INCL_SEM),
+      1,
+      formulaSemAtipico(c.base, par, 'INCLINAÇÃO'),
+    );
+    const meio = { ...c, caderno: comAba(c.caderno, calc) };
+    expect(meta('refez-a-reta-sem-o-atipico').feita(meio)).toBe(true);
+    expect(meta('refez-o-ajuste-sem-o-atipico').feita(meio)).toBe(false);
+    expect(valorDaLinha(meio, ROTULO_R2_SEM).tipo).not.toBe('numero');
+  });
+
+  it('o relato precisa de número, e não de duas palavras', () => {
+    const c = pronto();
+    const vago = { ...c, textos: { ...c.textos, [CHAVE_EFEITO]: 'mudou pouco' } };
+    expect(meta('relatou-o-efeito').feita(vago)).toBe(false);
+    const semNumero = {
+      ...c,
+      textos: {
+        ...c.textos,
+        [CHAVE_EFEITO]: 'A reta ficou quase igual e o ajuste melhorou bastante, '
+          + 'então ela passou a parecer mais certa do que de fato é.',
+      },
+    };
+    expect(meta('relatou-o-efeito').feita(semNumero)).toBe(false);
+  });
+
+  /* As duas linhas de cima chegam escritas, e meta nenhuma as lê sozinhas. */
+  it('as linhas de "com todos" chegam certas, e nenhuma meta abre por elas', () => {
+    const c = abrir();
+    for (const rotulo of [ROTULO_INCL_TODOS, ROTULO_R2_TODOS]) {
+      const v = valorDaLinha(c, rotulo);
+      expect(v.tipo, `"${rotulo}" não chega calculada`).toBe('numero');
+    }
+    for (const m of LICOES_DA_CC_ES010.exclusao.metas) {
+      expect(m.feita(c), `"${m.titulo}" abre verde`).toBe(false);
+    }
   });
 });
 
