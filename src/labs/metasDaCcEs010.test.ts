@@ -4,7 +4,8 @@ import {
   LICOES_DA_CC_ES010, SOLUCOES_DA_CC_ES010,
 } from './metasDaCcEs010';
 import {
-  LEITURAS_DE_R, PARES, PAR_DO_MODULO_2, rDoPar,
+  CANDIDATAS_A_ESCONDIDA, LEITURAS_DE_R, PARES, PAR_DO_MODULO_2,
+  formulaDoR, parEspurio, rDoPar,
 } from './metasDaCcEs010';
 import { COLETAS, populacaoCerta } from './amostraDoClube';
 import { ABA_CALCULOS, ABA_RESPOSTAS, linhaDoRotulo } from './metasDaCcEs009';
@@ -311,6 +312,86 @@ describe('os pares da base', () => {
       Math.abs(correlacaoDe(colunaDe(base, espurio.escondida!), colunaDe(base, campo))!);
     expect(comEscondida(espurio.x)).toBeGreaterThan(Math.abs(r));
     expect(comEscondida(espurio.y)).toBeGreaterThan(Math.abs(r));
+  });
+});
+
+/*
+  ── O módulo 3 é o requisito 3, e ele tem de poder errar ─────────────────
+*/
+describe('o módulo 3 recusa o chute', () => {
+  const abrir = () => LICOES_DA_CC_ES010.espuria.inicial();
+  const meta = (id: string) => LICOES_DA_CC_ES010.espuria.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES_DA_CC_ES010.espuria(abrir());
+
+  it('a solução de referência fecha as três', () => {
+    const c = pronto();
+    for (const m of LICOES_DA_CC_ES010.espuria.metas) {
+      expect(m.feita(c), `"${m.titulo}" não fecha`).toBe(true);
+    }
+  });
+
+  /*
+    Apontar qualquer um dos dois pares com leitura causal defensável não fecha.
+    Sem esta, a meta aprovaria quem chutou — e a lição inteira é a diferença
+    entre os três.
+  */
+  it('apontar um par com causa defensável não fecha', () => {
+    const c = pronto();
+    for (const par of PARES) {
+      if (par.espuria) continue;
+      expect(
+        meta('achou-a-espuria').feita({ ...c, parApontado: par.id }),
+        `apontar "${par.id}" fechou a meta`,
+      ).toBe(false);
+    }
+  });
+
+  it('nomear outra coluna como escondida não fecha', () => {
+    const c = pronto();
+    for (const campo of CANDIDATAS_A_ESCONDIDA) {
+      if (campo === parEspurio().escondida) continue;
+      expect(
+        meta('nomeou-a-escondida').feita({ ...c, colunaEscondida: campo }),
+        `nomear "${campo}" fechou a meta`,
+      ).toBe(false);
+    }
+  });
+
+  /*
+    E a escolha não é uma moeda: as candidatas incluem as duas colunas do
+    próprio par e uma quantitativa que não explica nada. Com só as que sobram
+    do par, acertar por sorte seria meio a meio.
+  */
+  it('há mais de duas candidatas a coluna escondida', () => {
+    expect(CANDIDATAS_A_ESCONDIDA.length).toBeGreaterThan(2);
+    expect(CANDIDATAS_A_ESCONDIDA).toContain(parEspurio().escondida);
+  });
+
+  it('exige os três r calculados, e não só o do par espúrio', () => {
+    /*
+      É comparando que se vê qual sobra sem explicação própria. Com um r só, a
+      lição mandaria apontar o espúrio sem nada na tela para sustentar a
+      escolha — e aí ela mediria ter lido o enunciado.
+    */
+    const c = abrir();
+    const so = escrever(
+      abaDe(c.caderno, ABA_CALCULOS),
+      linhaDoRotulo(c.blocos, parEspurio().rotulo),
+      1,
+      formulaDoR(c.base, parEspurio()),
+    );
+    expect(meta('as-tres-correlacoes').feita({ ...c, caderno: comAba(c.caderno, so) }))
+      .toBe(false);
+  });
+
+  it('a aba de cálculos abre com os três pares à mesa', () => {
+    /* Um bloco de um par só deixaria a primeira meta impossível de fechar, com
+       o motor inteiramente correto — a lição de assinar da CC-ES004. */
+    const c = abrir();
+    for (const par of PARES) {
+      expect(linhaDoRotulo(c.blocos, par.rotulo), `"${par.rotulo}" não está na aba`)
+        .toBeGreaterThanOrEqual(0);
+    }
   });
 });
 

@@ -49,6 +49,7 @@ import { type Caderno, type Planilha, escrever } from './planilha';
 import {
   CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_IDADE, baseDoAcampamento, camposDaBase,
 } from './baseDoAcampamento';
+import { CAMPO_DIARIAS } from './formulario';
 import {
   type BlocoDeContas,
   ABA_CALCULOS, ABA_RESPOSTAS, cadernoDaAnalise, colunaDoCampo, faixaDoCampo,
@@ -109,6 +110,10 @@ export interface ContextoDaEstatistica {
   populacao?: string;
   /** Módulo 2: que leitura ela deu ao valor de r. */
   leituraDeR?: string;
+  /** Módulo 3: que par ela apontou como espúrio. */
+  parApontado?: string;
+  /** Módulo 3: que coluna ela disse que explica os dois lados dele. */
+  colunaEscondida?: string;
   /** O que ela escreveu, por chave. */
   textos: Record<string, string>;
 }
@@ -407,6 +412,72 @@ function dispersaoFeita(c: ContextoDaEstatistica, par: ParDeColunas): boolean {
   return topo <= 1 && base >= c.base.respostas.length;
 }
 
+/* ── Módulo 3: correlação não é causa ─────────────────────────────────────── */
+
+/**
+ * As colunas que podem ser a terceira variável.
+ *
+ * As quantitativas da base, e não só as duas do par: oferecer só as que sobram
+ * do par reduziria a escolha a uma moeda. Diárias está aqui porque ela é
+ * quantitativa e **não** explica nada — é a candidata que convida a olhar o
+ * número em vez de chutar.
+ */
+export const CANDIDATAS_A_ESCONDIDA = [
+  CAMPO_IDADE, CAMPO_ALTURA, CAMPO_ACAMPAMENTOS, CAMPO_DIARIAS,
+];
+
+export const METAS_DA_ESPURIA: Meta[] = [
+  {
+    id: 'as-tres-correlacoes',
+    titulo: 'Calcular o r dos três pares',
+    detalhe:
+      'Um r sozinho não diz se a relação é de causa. Três, lado a lado, dizem '
+      + 'muito: é comparando que se vê qual delas sobra sem explicação própria.',
+    onde: 'Na aba Cálculos, nas três linhas do bloco de correlação.',
+    passos: [
+      'Escreva =CORREL( para cada um dos três pares, como no módulo anterior.',
+      'Deixe os três à vista ao mesmo tempo — é a comparação que ensina, e não '
+        + 'cada número sozinho.',
+    ],
+    feita: c => PARES.every(par => linhaConfere(c.caderno, c.blocos, c.base, par.rotulo)),
+  },
+  {
+    id: 'achou-a-espuria',
+    titulo: 'Apontar o par em que nenhuma das duas mexe na outra',
+    detalhe:
+      'Em dois dos três pares dá para contar uma história de causa que se '
+      + 'sustenta. Num deles, não: pense no que teria de acontecer para uma '
+      + 'mexer na outra, e veja que não acontece em nenhum dos dois sentidos.',
+    onde: 'Na tela da lição, no bloco "Qual destas três não é causa".',
+    passos: [
+      'Para cada par, tente a frase "se eu aumentasse esta, a outra mudaria?".',
+      'Faça a pergunta nos dois sentidos: a de cima mexe na de baixo? E ao contrário?',
+      'Num dos três, as duas respostas são não — e o r continua alto.',
+    ],
+    feita: c => c.parApontado === parEspurio().id,
+  },
+  {
+    id: 'nomeou-a-escondida',
+    titulo: 'Nomear a coluna que explica os dois lados',
+    detalhe:
+      'Correlação sem causa quase nunca é coincidência: costuma haver uma '
+      + 'terceira coisa puxando as duas. Ela está na base, numa coluna ao lado.',
+    onde: 'Na tela da lição, no bloco "Quem explica as duas".',
+    passos: [
+      'Olhe os outros dois r que você acabou de calcular.',
+      'Uma das colunas aparece nos dois, e com r mais alto do que o do par espúrio.',
+      'É ela: as duas coisas do par sobem porque **essa** sobe.',
+    ],
+    /*
+      Apontar a coluna é uma escolha entre quatro, e a prova está na tela: os
+      outros dois r, que a primeira meta já exigiu, mostram a idade ligada às
+      duas pontas com força maior do que elas têm entre si. A meta não refaz
+      esse raciocínio — ela cobra o nome, com a evidência já calculada ao lado.
+    */
+    feita: c => c.colunaEscondida === parEspurio().escondida,
+  },
+];
+
 /* ── O registro ───────────────────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs010 = 'planilha' | 'plataforma';
@@ -417,7 +488,7 @@ export type ProgramaDaCcEs010 = 'planilha' | 'plataforma';
   da CC-ES003 e da CC-ES008: com um ternário ou um `if` em escada, a lição nova
   cairia calada na primeira.
 */
-export type LicaoDaCcEs010 = 'amostra' | 'correlacao';
+export type LicaoDaCcEs010 = 'amostra' | 'correlacao' | 'espuria';
 
 export interface LicaoDeEstatistica {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -461,6 +532,13 @@ export const LICOES_DA_CC_ES010: Record<LicaoDaCcEs010, LicaoDeEstatistica> = {
        do `aoBuscar` do Explorador. */
     inicial: () => contextoInicial([blocoDosPares([PAR_DO_MODULO_2])]),
     metas: METAS_DA_CORRELACAO,
+  },
+  espuria: {
+    programa: 'planilha',
+    /* Os três pares, porque o que esta lição manda ver é a comparação entre
+       eles — e não cada número sozinho. */
+    inicial: () => contextoInicial([blocoDosPares(PARES)]),
+    metas: METAS_DA_ESPURIA,
   },
 };
 
@@ -510,6 +588,19 @@ export const SOLUCOES_DA_CC_ES010: Record<
       ...c,
       caderno: comAba(comAba(c.caderno, calc), comGrafico),
       leituraDeR: leituraCerta(),
+    };
+  },
+  espuria: (c) => {
+    let calc = abaDe(c.caderno, ABA_CALCULOS);
+    for (const par of PARES) {
+      calc = escrever(calc, linhaDoRotulo(c.blocos, par.rotulo), 1, formulaDoR(c.base, par));
+    }
+    const espurio = parEspurio();
+    return {
+      ...c,
+      caderno: comAba(c.caderno, calc),
+      parApontado: espurio.id,
+      colunaEscondida: espurio.escondida,
     };
   },
 };
