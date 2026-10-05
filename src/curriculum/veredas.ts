@@ -537,6 +537,31 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      A CC-ES010, que abre a mesma planilha e o mesmo caderno.
+
+      Sete das dez lições acontecem na pasta de trabalho; três não acontecem
+      em programa nenhum — classificar uma coleta, embaralhar quem é de qual
+      unidade e declarar um grau de confiança. A do embaralho tem uma razão a
+      mais: fazê-lo numa planilha é ordenar **só** a coluna da chave, que é o
+      gesto que a CC-ES003 existe para proibir. A lição teria de ensinar o
+      errado para mostrar o certo.
+
+      É um `tipo` próprio e não um `licao` a mais dentro de `'analise'`: as
+      duas veredas são vizinhas e compartilham as peças — a janela do Excel, o
+      caderno, o motor de fórmula —, mas as metas, o contexto e o registro de
+      lições são outros. Uma união dos dois obrigaria cada leitor a lembrar de
+      qual vereda aquela lição é.
+    */
+    id: string;
+    tipo: 'estatistica';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcEs010').LicaoDaCcEs010;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não

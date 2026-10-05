@@ -9,9 +9,11 @@ import PlanilhaLab from './PlanilhaLab';
 import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
 import LaboratorioDeDados from '../components/LaboratorioDeDados';
 import LaboratorioDaAnalise from '../components/LaboratorioDaAnalise';
+import LaboratorioDaEstatistica from '../components/LaboratorioDaEstatistica';
 import { CADERNOS_DA_CC_ES003 } from './cadernosDaCcEs003';
 import { LICOES_DA_CC_ES008 } from './metasDaCcEs008';
 import { LICOES_DA_CC_ES009 } from './metasDaCcEs009';
+import { LICOES_DA_CC_ES010 } from './metasDaCcEs010';
 import type { LicaoDeVereda, Vereda } from '../curriculum/veredas';
 
 /*
@@ -114,6 +116,19 @@ const LABORATORIOS: Record<string, () => React.ReactElement> = {
         licao: 'centro',
         verificacoes: LICOES_DA_CC_ES009.centro.metas.map(m => m.id),
       } as Extract<LicaoDeVereda, { tipo: 'analise' }>}
+      aoVencer={async () => {}} aoSair={() => {}} />
+  ),
+  'components/LaboratorioDaEstatistica.tsx': () => (
+    <LaboratorioDaEstatistica
+      vereda={{ code: 'CC-ES010' } as Vereda}
+      licao={{
+        id: 'lab-correlacao',
+        tipo: 'estatistica',
+        titulo: 'Lição de teste',
+        resumo: '',
+        licao: 'correlacao',
+        verificacoes: LICOES_DA_CC_ES010.correlacao.metas.map(m => m.id),
+      } as Extract<LicaoDeVereda, { tipo: 'estatistica' }>}
       aoVencer={async () => {}} aoSair={() => {}} />
   ),
 };

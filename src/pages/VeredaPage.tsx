@@ -25,6 +25,7 @@ import LaboratorioDaNuvem from '../components/LaboratorioDaNuvem';
 import LaboratorioDeComunicacao from '../components/LaboratorioDeComunicacao';
 import LaboratorioDeDados from '../components/LaboratorioDeDados';
 import LaboratorioDaAnalise from '../components/LaboratorioDaAnalise';
+import LaboratorioDaEstatistica from '../components/LaboratorioDaEstatistica';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
 import LaboratorioDoRelatorio from '../components/LaboratorioDoRelatorio';
@@ -394,6 +395,22 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'analise' && profile?.id) {
     return (
       <LaboratorioDaAnalise vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /*
+    E a CC-ES010 abre as mesmas duas telas, com outro conteúdo.
+
+    A planilha é a mesma janela e o caderno é o mesmo caderno — as peças dele
+    saíram de `LaboratorioDaAnalise` para `labs/caderno.tsx` justamente por
+    isso. O que muda são as metas, o contexto e o registro de lições, e é por
+    isso que o tipo é outro: uma união dos dois obrigaria cada leitor a
+    lembrar de qual vereda aquela lição é.
+  */
+  if (licaoAberta?.tipo === 'estatistica' && profile?.id) {
+    return (
+      <LaboratorioDaEstatistica vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

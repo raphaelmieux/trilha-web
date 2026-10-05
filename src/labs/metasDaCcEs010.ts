@@ -680,6 +680,8 @@ function tendenciaNoGrafico(c: ContextoDaEstatistica): 'sem' | 'tracada' | 'com-
  * a visse concluiria que a reta funciona fora do intervalo. O absurdo tem de
  * ser absurdo.
  */
+export const CHAVE_RISCO = 'risco-da-extrapolacao';
+
 export const IDADE_DENTRO = 13;
 export const IDADE_FORA = 25;
 
@@ -749,7 +751,7 @@ export const METAS_DA_PREVISAO: Meta[] = [
       número absurdo é uma explicação de nada em particular — e um campo de
       texto sem conta nenhuma fecharia com "não serve".
     */
-    feita: c => frasePropriaComNumero(texto(c, 'risco-da-extrapolacao')),
+    feita: c => frasePropriaComNumero(texto(c, CHAVE_RISCO)),
   },
 ];
 
@@ -1672,7 +1674,7 @@ export const SOLUCOES_DA_CC_ES010: Record<
       caderno: comAba(c.caderno, calc),
       textos: {
         ...c.textos,
-        'risco-da-extrapolacao':
+        [CHAVE_RISCO]:
           'A base só tem gente de 10 a 15 anos. Fora desse intervalo a reta '
           + 'nunca foi testada: ninguém de 25 anos foi medido para dizer se ela '
           + 'continua valendo. Ela respondeu 2,58 m, que é mais alto do que '
@@ -1825,7 +1827,7 @@ export const SOLUCOES_DA_CC_ES010: Record<
   },
 };
 
-const rotuloDoCampo = (campoId: string) =>
+export const rotuloDoCampo = (campoId: string) =>
   camposDaBase().find(c => c.id === campoId)?.rotulo ?? campoId;
 
 /** As populações que a tela oferece, na ordem em que ela as desenha. */
