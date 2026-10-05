@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
   APRESENTACAO_INICIAL, METAS_DA_APRESENTACAO, SLIDE_DAS_FOTOS, SLIDE_DO_LAYOUT,
+} from './apresentacaoDoClube';
+import {
   NOMES_DOS_LAYOUTS, NOMES_DOS_MODELOS, umSlide, vazio,
   type Apresentacao, type Slide,
-} from './apresentacaoDoClube';
+} from './apresentacao';
 
 /*
   O laboratório de apresentações abre com tudo por fazer.

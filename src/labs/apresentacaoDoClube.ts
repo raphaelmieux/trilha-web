@@ -27,51 +27,10 @@
  * vira muro; esta mostra o estrago onde ele acontece.
  */
 
-export type Modelo = 'branco' | 'madison' | 'facetas' | 'berlim';
-export type Layout = 'titulo' | 'titulo-conteudo' | 'duas-partes' | 'so-titulo' | 'em-branco';
-export type Midia = 'nenhuma' | 'vinculada' | 'incorporada';
-
-export interface Imagem {
-  id: string;
-  legenda: string;
-  /** Largura em por cento do slide. A altura sai da proporção, sempre. */
-  largura: number;
-}
-
-export interface Slide {
-  id: string;
-  titulo: string;
-  /** Os tópicos do corpo. Slide de título não tem nenhum. */
-  topicos: string[];
-  layout: Layout;
-  imagens: Imagem[];
-  /** As imagens foram alinhadas pelo comando, e não arrastadas pelo olho. */
-  imagensAlinhadas: boolean;
-  video: Midia;
-  audio: Midia;
-}
-
-export interface Apresentacao {
-  modelo: Modelo;
-  slides: Slide[];
-  /** Os slides exportados em PDF, ou `null` enquanto ninguém exportou. */
-  pdf: string[] | null;
-}
-
-export const NOMES_DOS_MODELOS: Record<Modelo, string> = {
-  branco: 'Apresentação em Branco',
-  madison: 'Madison',
-  facetas: 'Facetas',
-  berlim: 'Berlim',
-};
-
-export const NOMES_DOS_LAYOUTS: Record<Layout, string> = {
-  'titulo': 'Slide de Título',
-  'titulo-conteudo': 'Título e Conteúdo',
-  'duas-partes': 'Duas Partes de Conteúdo',
-  'so-titulo': 'Somente Título',
-  'em-branco': 'Em Branco',
-};
+import {
+  umSlide, vazio,
+  type Apresentacao, type Layout, type Slide,
+} from './apresentacao';
 
 const slide = (id: string, titulo: string, topicos: string[], layout: Layout): Slide =>
   ({ id, titulo, topicos, layout, imagens: [], imagensAlinhadas: false, video: 'nenhuma', audio: 'nenhuma' });
@@ -117,13 +76,6 @@ export const APRESENTACAO_INICIAL: Apresentacao = {
 export const SLIDE_DAS_FOTOS = 's5';
 /** O slide de tópicos que está no layout errado. */
 export const SLIDE_DO_LAYOUT = 's2';
-
-export const umSlide = (a: Apresentacao, id: string) => a.slides.find(s => s.id === id);
-
-/** Um slide sem título e sem nada dentro — o que sobra de um Ctrl+M sem querer. */
-export const vazio = (s: Slide) =>
-  !s.titulo.trim() && s.topicos.length === 0 && s.imagens.length === 0
-  && s.video === 'nenhuma' && s.audio === 'nenhuma';
 
 export interface MetaDaApresentacao {
   id: string;

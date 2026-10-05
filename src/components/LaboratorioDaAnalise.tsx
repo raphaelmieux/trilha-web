@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   ArrowDownAZ, ArrowUpZA, BarChart3, NotebookPen, RefreshCw, Sigma, Table2,
-  Undo2, Redo2, Grid3x3,
+  Undo2, Redo2, Grid3x3, Scale3d,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
@@ -9,6 +9,12 @@ import {
   GradeDoExcel, DesenhoDoGrafico,
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
+import { CampoLongo, Cartao, Escolha } from '../labs/caderno';
+import {
+  type CasoEnganoso,
+  CASOS_ENGANOSOS, NOME_DO_RECURSO, O_QUE_O_RECURSO_FAZ, RECURSOS,
+  alturaHonesta, alturaTorta,
+} from '../labs/graficosEnganosos';
 import {
   type Caderno, type ComoResumir, type Historico, type Planilha,
   type TabelaDinamica, type TipoDeGrafico,
@@ -17,7 +23,7 @@ import {
   NOME_DO_RESUMO,
 } from '../labs/planilha';
 import { abaDe, comAba, escritoEm, mostradoEm } from '../labs/cadernoDoClube';
-import { nomeDaColuna } from '../labs/formulas';
+import { mostrarNumero, nomeDaColuna } from '../labs/formulas';
 import {
   type ContextoDaAnalise, type Julgamento, type LicaoDaCcEs009,
   type Meta, type ProgramaDaCcEs009, type Veredito,
@@ -30,6 +36,7 @@ import {
   VIU_A_COLUNA_QUE_ENGANA, VIU_A_CONTA_SE_REFAZER, VIU_QUE_A_MODA_NAO_SERVE,
   VIU_QUE_MEDIDA_NAO_SE_CONTA,
   assinaturaDaBase, candidatosDasPontas, chaveDaResposta, chaveDoCandidato,
+  chaveDoHonesto,
   colunaDoBloco, colunaDoCampo, linhaDoRotulo, melhorTaxa, unidadeMaisExperiente,
 } from '../labs/metasDaCcEs009';
 import {
@@ -767,93 +774,6 @@ const NOME_DO_VEREDITO: Record<Veredito, string> = {
   reconheco: 'Reconheço o limite',
 };
 
-function Cartao({ titulo, abaixo, children }: {
-  titulo: string; abaixo?: string; children: React.ReactNode;
-}) {
-  return (
-    <section className="card p-4">
-      <h2 className="text-base font-bold mb-1">{titulo}</h2>
-      {abaixo && (
-        <p className="text-sm mb-3" style={{ color: 'var(--color-text-muted)' }}>{abaixo}</p>
-      )}
-      {children}
-    </section>
-  );
-}
-
-/*
-  O campo longo diz quanto já tem escrito, e quanto falta.
-
-  Ele não é enfeite: as metas deste módulo medem tamanho — quarenta letras para
-  uma justificativa, uma página para a conclusão —, e uma tarefa que fica
-  vermelha sem dizer por que mede paciência. O contador relata o número; quem
-  decide o que escrever é quem escreve.
-*/
-function CampoLongo({ rotulo, ajuda, valor, minimo, maximo, aoEscrever }: {
-  rotulo: string;
-  ajuda?: string;
-  valor: string;
-  minimo: number;
-  maximo?: number;
-  aoEscrever: (t: string) => void;
-}) {
-  const quantas = valor.trim().length;
-  const curto = quantas < minimo;
-  const comprido = maximo !== undefined && quantas > maximo;
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-semibold">{rotulo}</span>
-      {ajuda && (
-        <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{ajuda}</span>
-      )}
-      <textarea
-        className="input-field text-sm" rows={maximo === undefined ? 3 : 8}
-        value={valor} onChange={e => aoEscrever(e.target.value)}
-      />
-      <span className="text-xs" style={{
-        color: curto || comprido ? 'var(--color-warning)' : 'var(--color-text-dim)',
-      }}>
-        {quantas} {maximo === undefined ? `de ${minimo} letras no mínimo` : `de ${maximo} letras no máximo`}
-      </span>
-    </label>
-  );
-}
-
-/** Uma escolha entre alternativas, com o porquê de cada errada. */
-function Escolha<T extends string>({ opcoes, escolhida, aoEscolher, porque }: {
-  opcoes: { id: T; rotulo: string; abaixo?: string }[];
-  escolhida: T | undefined;
-  aoEscolher: (id: T) => void;
-  porque?: string | null;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      {opcoes.map(o => (
-        <button
-          key={o.id} type="button"
-          onClick={() => aoEscolher(o.id)}
-          aria-pressed={escolhida === o.id}
-          className="text-left text-sm rounded-lg px-3 py-2"
-          style={{
-            border: `1px solid ${escolhida === o.id ? 'var(--color-primary)' : 'var(--color-border)'}`,
-            background: escolhida === o.id ? 'var(--color-bg-hover)' : 'transparent',
-          }}
-        >
-          <span className="font-semibold">{o.rotulo}</span>
-          {o.abaixo && (
-            <span className="block text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-              {o.abaixo}
-            </span>
-          )}
-        </button>
-      ))}
-      {porque && (
-        <p className="text-sm mt-1" style={{ color: 'var(--color-warning)' }}>{porque}</p>
-      )}
-    </div>
-  );
-}
-
 /*
   As alternativas do módulo 4, e por que as erradas erram.
 
@@ -893,9 +813,61 @@ const POR_QUE_A_ALTURA_PRECISA_DE_CLASSE = [
   },
 ] as const;
 
+/**
+ * As barras de um caso enganoso, no desenho torto ou no honesto.
+ *
+ * O **mesmo** dado nos dois: o que muda é de onde sai a altura. No torto ela
+ * sai de `alturaTorta`, que respeita a altura em que a barra foi publicada
+ * quando ela discorda do número; no honesto, sempre da proporção do valor.
+ *
+ * Duas das três barras tortas não discordam do número, e é de propósito: o
+ * engano delas não está na altura, está no que entrou no gráfico. Desenhá-las
+ * diferentes no torto inventaria uma distorção que o caso não tem.
+ */
+function BarrasDoCaso({ caso, honesto }: { caso: CasoEnganoso; honesto: boolean }) {
+  const altura = (b: typeof caso.barras[number]) =>
+    (honesto ? alturaHonesta(caso, b) : alturaTorta(caso, b));
+  return (
+    <div
+      className="flex items-end gap-2 mb-3"
+      style={{ height: 140 }}
+      role="figure"
+      aria-label={`${caso.titulo} — ${honesto ? 'desenhado em proporção' : 'como foi publicado'}`}
+    >
+      {caso.barras.map(b => (
+        <div key={b.rotulo} className="flex-1 flex flex-col items-center justify-end h-full">
+          <span className="text-xs mb-1" style={{ color: 'var(--color-text-muted)' }}>
+            {mostrarNumero(b.valor)}
+            {caso.unidade === '%' ? '%' : ''}
+          </span>
+          <div
+            style={{
+              width: '100%',
+              height: `${Math.max(2, altura(b) * 100)}%`,
+              background: b.emFoco ? 'var(--color-primary)' : 'var(--color-text-dim)',
+              borderRadius: '3px 3px 0 0',
+            }}
+          />
+          <span className="text-xs mt-1">{b.rotulo}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function TelaDoCaderno(c: Comum) {
   const x = c.contexto;
   const [porque, setPorque] = useState<string | null>(null);
+  /*
+    Qual gráfico já foi redesenhado em proporção.
+
+    Mora na tela, e não no contexto: é o estado de um botão de alternar, e
+    o que o contexto guarda é a **descoberta** — que é monotônica e viaja
+    com o Ctrl+Z, como a do filtro. Duas fontes para a mesma coisa
+    divergiriam, e aqui elas respondem a perguntas diferentes: uma é 'está
+    desenhado assim agora', a outra é 'esta pessoa já viu'.
+  */
+  const [honestos, setHonestos] = useState<string[]>([]);
   const campos = camposDaBase();
 
   const texto = (chave: string) => x.textos[chave] ?? '';
@@ -1278,6 +1250,68 @@ function TelaDoCaderno(c: Comum) {
       */
       case 'centro':
         return null;
+
+      case 'enganosos':
+        return (
+          <>
+            {CASOS_ENGANOSOS.map(caso => (
+              <Cartao
+                key={caso.id}
+                titulo={caso.titulo}
+                abaixo={`${caso.veiculo} — ${caso.quando}`}
+              >
+                {/*
+                  O gráfico é **reconstruído** dos números da fonte primária, e
+                  não uma captura de tela: imagem de jornal e de emissora é obra
+                  de terceiro, e a plataforma é AGPL. E é melhor assim — com os
+                  números aqui, o botão desenha o torto e o honesto a partir do
+                  mesmo dado, que é o que a lição quer mostrar.
+                */}
+                <BarrasDoCaso caso={caso} honesto={honestos.includes(caso.id)} />
+                <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                  O que ele faz parecer: {caso.oQueParece}
+                </p>
+                <button
+                  type="button"
+                  className="btn-secondary text-sm mb-3"
+                  onClick={() => {
+                    setHonestos(h => (h.includes(caso.id) ? h : [...h, caso.id]));
+                    c.anotarVisto(chaveDoHonesto(caso.id));
+                  }}
+                >
+                  <Scale3d className="w-4 h-4" />
+                  {honestos.includes(caso.id)
+                    ? 'Desenhado em proporção'
+                    : 'Desenhar em proporção'}
+                </button>
+                {honestos.includes(caso.id) && (
+                  <p className="text-sm mb-3">{caso.honesto}</p>
+                )}
+                <Escolha
+                  opcoes={RECURSOS.map(r => ({
+                    id: r, rotulo: NOME_DO_RECURSO[r], abaixo: O_QUE_O_RECURSO_FAZ[r],
+                  }))}
+                  escolhida={x.recursos[caso.id]}
+                  aoEscolher={id => c.mudar(k => ({
+                    ...k, recursos: { ...k.recursos, [caso.id]: id },
+                  }))}
+                  /*
+                    O porquê aparece **depois** da escolha, e nunca antes: na
+                    tela desde o começo, ele responde qual é o recurso. E a
+                    errata vem com ele, porque ela é a confirmação de que o caso
+                    é real — não a resposta.
+                  */
+                  porque={x.recursos[caso.id]
+                    ? [caso.porque, caso.errata].filter(Boolean).join(' ')
+                    : null}
+                />
+                <p className="text-xs mt-2" style={{ color: 'var(--color-text-dim)' }}>
+                  Números conferidos na fonte primária: {caso.fonte}.
+                </p>
+              </Cartao>
+            ))}
+          </>
+        );
 
       default: {
         const nunca: never = c.qual;

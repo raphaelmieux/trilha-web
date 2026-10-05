@@ -16,6 +16,7 @@ import {
   CONTESTACOES, LETRAS_DA_PAGINA, chaveDaResposta,
   cadernoDaAnalise, colunaDaMedida, colunaDoBloco, colunaDoCampo, contextoInicial,
   esperadoDe, faixaDoCampo, formulaDaMedida, linhaDoRotulo,
+  chaveDoHonesto,
 } from './metasDaCcEs009';
 import {
   CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_CAMISETA, CAMPO_IDADE,
@@ -28,6 +29,10 @@ import {
 import { abaDe, comAba, escritoEm, mostradoEm, valorEm } from './cadernoDoClube';
 import { colunaDe, medidaPorGrupo, repeticoesDaModa } from './analiseDeDados';
 import { CAMPO_NOME as CAMPO_NOME_DA_BASE, CAMPO_UNIDADE, respostasReais } from './formulario';
+import {
+  CASOS_ENGANOSOS, NOME_DO_RECURSO, RECURSOS,
+  alturaHonesta, alturaTorta, emFoco, porCemMil, temPopulacao,
+} from './graficosEnganosos';
 import { nomeDaColuna } from './formulas';
 
 /* ── A solução de referência ──────────────────────────────────────────────── */
@@ -102,6 +107,19 @@ const SOLUCOES: Record<LicaoDaCcEs009, (c: ContextoDaAnalise) => ContextoDaAnali
   adesao: comAAdesao,
   atipicos: comOsAtipicos,
   graficos: comOsGraficos,
+  /*
+    O módulo 9: o recurso certo em cada um dos três, e o honesto visto nos três.
+
+    A solução **passa pelo meio do caminho** — ela aponta os recursos e anota
+    as três descobertas, porque é isso que o desbravador faz. Carimbar só as
+    classificações provaria o fim e não o caminho, e é o que deixou a lição de
+    assinar da CC-ES004 impossível de vencer.
+  */
+  enganosos: c => ({
+    ...c,
+    recursos: Object.fromEntries(CASOS_ENGANOSOS.map(caso => [caso.id, caso.recurso])),
+    descobertas: [...c.descobertas, ...CASOS_ENGANOSOS.map(caso => chaveDoHonesto(caso.id))],
+  }),
   conclusao: comAConclusao,
   defesa: comADefesa,
 };
@@ -357,6 +375,165 @@ function formulaDaClasse(faixa: string, rotulo: string): string {
 const licoes = Object.entries(LICOES_DA_CC_ES009) as [LicaoDaCcEs009, typeof LICOES_DA_CC_ES009[LicaoDaCcEs009]][];
 
 /* ── As duas travas que carregam todas as outras ──────────────────────────── */
+
+/*
+  ── O módulo 9: os três gráficos enganosos reais ─────────────────────────
+
+  Requisito 7. Os três foram publicados de verdade e os números deles são
+  verdadeiros: o que esta trava guarda é que cada caso continue tendo o
+  defeito que a lição diz que ele tem — e isso é premissa, não redação. Um
+  caso cujos números deixassem de sustentar a afirmação seria uma lição sobre
+  um gráfico que não existe, numa vereda cuja matéria é desconfiar do que lhe
+  mostram.
+*/
+describe('os três gráficos enganosos', () => {
+  const licao = LICOES_DA_CC_ES009.enganosos;
+  const meta = (id: string) => licao.metas.find(m => m.id === id)!;
+  const pronto = () => SOLUCOES.enganosos(licao.inicial());
+
+  it('são três casos, com três recursos diferentes', () => {
+    /* Com dois casos do mesmo tipo, acertar os dois seria acertar um — e o
+       requisito pede apontar o recurso **em cada um**. */
+    expect(CASOS_ENGANOSOS).toHaveLength(3);
+    const recursos = CASOS_ENGANOSOS.map(c => c.recurso);
+    expect(new Set(recursos).size).toBe(3);
+    for (const r of recursos) expect(RECURSOS).toContain(r);
+  });
+
+  it('a lista oferece quatro recursos, e um deles não é usado por nenhum caso', () => {
+    /* São quatro e os casos são três, e é o enunciado. Tirar o quarto deixaria
+       a escolha entre três, e cada acerto valeria menos. */
+    expect(RECURSOS).toHaveLength(4);
+    const usados = new Set(CASOS_ENGANOSOS.map(c => c.recurso));
+    expect(RECURSOS.filter(r => !usados.has(r))).toHaveLength(1);
+    for (const r of RECURSOS) expect(NOME_DO_RECURSO[r].length).toBeGreaterThan(3);
+  });
+
+  it('cada caso diz quem publicou, quando, e de onde vieram os números', () => {
+    /* A fonte é a **primária**, e não o veículo: é ela que torna o caso
+       utilizável, e foi ela que corrigiu o 5,92% que as críticas ao gráfico da
+       GloboNews escreveram para 2010. */
+    for (const c of CASOS_ENGANOSOS) {
+      expect(c.veiculo.length, `${c.id} não diz quem publicou`).toBeGreaterThan(10);
+      expect(c.quando.length, `${c.id} não diz quando`).toBeGreaterThan(8);
+      expect(c.fonte.length, `${c.id} não diz de onde vieram os números`).toBeGreaterThan(15);
+      expect(c.porque.length, `${c.id} não diz por que o recurso é aquele`).toBeGreaterThan(60);
+      expect(c.honesto.length, `${c.id} não diz o que o desenho honesto mostra`).toBeGreaterThan(60);
+    }
+    expect(new Set(CASOS_ENGANOSOS.map(c => c.id)).size).toBe(3);
+  });
+
+  /*
+    E o que o gráfico **faz parecer** não nomeia o recurso. Dito ali, a
+    classificação deixa de ser decisão e vira leitura — é a regra da descrição
+    das coletas da CC-ES010 e do aviso do digitalizador da CC-ES004.
+  */
+  it('a isca de cada caso não nomeia o recurso', () => {
+    const palavras = ['eixo', 'escala', 'truncad', 'recorte', 'incompar', 'proporç'];
+    for (const c of CASOS_ENGANOSOS) {
+      const texto = c.oQueParece.toLowerCase();
+      for (const palavra of palavras) {
+        expect(texto, `"${c.id}" entrega o recurso ao dizer "${palavra}"`)
+          .not.toContain(palavra);
+      }
+    }
+  });
+
+  it('cada caso tem exatamente uma barra em foco', () => {
+    for (const c of CASOS_ENGANOSOS) {
+      expect(c.barras.filter(b => b.emFoco), `${c.id} não tem uma barra em foco só`)
+        .toHaveLength(1);
+      expect(emFoco(c)).toBeTruthy();
+    }
+  });
+
+  /*
+    ── As premissas, uma por caso ─────────────────────────────────────────
+
+    Cada uma é o defeito que a lição afirma. Sem ela o caso continua desenhando
+    e deixa de ensinar, e nenhuma conta reclamaria.
+  */
+  it('o caso da escala tem dois valores iguais desenhados em alturas diferentes', () => {
+    const caso = CASOS_ENGANOSOS.find(c => c.recurso === 'escala-inadequada')!;
+    const iguais = caso.barras.filter(b => b.valor === emFoco(caso).valor);
+    expect(iguais.length, 'nenhuma outra barra vale o mesmo que a em foco')
+      .toBeGreaterThanOrEqual(2);
+    const alturas = new Set(iguais.map(b => alturaTorta(caso, b)));
+    expect(alturas.size, 'os valores iguais foram desenhados na mesma altura').toBe(2);
+
+    /* E a maior barra desenhada não é a do maior valor, que é o caso inteiro. */
+    const maisAlta = [...caso.barras].sort((a, b) => alturaTorta(caso, b) - alturaTorta(caso, a))[0];
+    const maiorValorDaVez = [...caso.barras].sort((a, b) => b.valor - a.valor)[0];
+    expect(maisAlta.rotulo).not.toBe(maiorValorDaVez.rotulo);
+
+    /* Desenhado honesto, o maior valor volta a ser a barra mais alta. */
+    const honestaMaisAlta = [...caso.barras]
+      .sort((a, b) => alturaHonesta(caso, b) - alturaHonesta(caso, a))[0];
+    expect(honestaMaisAlta.rotulo).toBe(maiorValorDaVez.rotulo);
+  });
+
+  it('o caso do recorte esconde um acumulado muito maior que o do dia', () => {
+    const caso = CASOS_ENGANOSOS.find(c => c.recurso === 'recorte-do-periodo')!;
+    const dia = emFoco(caso).valor;
+    const total = Math.max(...caso.barras.map(b => b.valor));
+    expect(total / dia, 'o acumulado não é muito maior que o do dia')
+      .toBeGreaterThan(30);
+  });
+
+  it('no caso da base, quem lidera em absoluto é o último por habitante', () => {
+    const caso = CASOS_ENGANOSOS.find(c => c.recurso === 'base-incomparavel')!;
+    expect(temPopulacao(caso), 'o caso da base incomparável não traz população').toBe(true);
+    const foco = emFoco(caso);
+    /* Primeiro em absoluto... */
+    expect(Math.max(...caso.barras.map(b => b.valor))).toBe(foco.valor);
+    /* ...e último por habitante, que é a afirmação da lição. */
+    const taxas = caso.barras.map(b => ({ rotulo: b.rotulo, taxa: porCemMil(b)! }));
+    const ordenadas = [...taxas].sort((a, b) => b.taxa - a.taxa);
+    expect(ordenadas[ordenadas.length - 1].rotulo).toBe(foco.rotulo);
+    /* E o primeiro por habitante tem bem menos mortes do que ele. */
+    const campeao = caso.barras.find(b => b.rotulo === ordenadas[0].rotulo)!;
+    expect(campeao.valor).toBeLessThan(foco.valor / 2);
+  });
+
+  it('a solução de referência fecha as três', () => {
+    const c = pronto();
+    for (const m of licao.metas) expect(m.feita(c), `"${m.titulo}" não fecha`).toBe(true);
+  });
+
+  it('classificar os três fecha a primeira meta; errar um não fecha a segunda', () => {
+    const c = pronto();
+    const errado = RECURSOS.find(r => r !== CASOS_ENGANOSOS[0].recurso)!;
+    const comUmErro = {
+      ...c, recursos: { ...c.recursos, [CASOS_ENGANOSOS[0].id]: errado },
+    };
+    expect(meta('todo-grafico-classificado').feita(comUmErro)).toBe(true);
+    expect(meta('os-recursos-certos').feita(comUmErro)).toBe(false);
+  });
+
+  it('deixar um sem classificar não fecha nem a primeira', () => {
+    const c = pronto();
+    const faltando = {
+      ...c, recursos: { ...c.recursos, [CASOS_ENGANOSOS[2].id]: undefined },
+    };
+    expect(meta('todo-grafico-classificado').feita(faltando)).toBe(false);
+  });
+
+  /*
+    E ver o honesto é outra coisa que classificar. Sem esta meta, a lição
+    fecharia escolhendo três palavras sem nunca olhar o que os mesmos números
+    desenham — que é a metade que ensina.
+  */
+  it('acertar os três recursos não fecha a meta de ter visto o honesto', () => {
+    const c = pronto();
+    expect(meta('viu-os-tres-honestos').feita({ ...c, descobertas: [] })).toBe(false);
+    const doisDeTres = {
+      ...c,
+      descobertas: CASOS_ENGANOSOS.slice(0, 2).map(caso => chaveDoHonesto(caso.id)),
+    };
+    expect(meta('os-recursos-certos').feita(doisDeTres)).toBe(true);
+    expect(meta('viu-os-tres-honestos').feita(doisDeTres)).toBe(false);
+  });
+});
 
 describe('nenhuma meta abre verde', () => {
   /*

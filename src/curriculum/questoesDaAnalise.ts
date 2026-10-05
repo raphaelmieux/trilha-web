@@ -690,6 +690,87 @@ export const QUESTOES_DA_ANALISE: Record<string, Question[]> = {
   ],
 
   /* ──────────────────────────────────────────────────────────────────────
+     Módulo 9 — Os quatro recursos que distorcem (requisito 7)
+     ────────────────────────────────────────────────────────────────────── */
+  'm9-teoria': [
+    {
+      id: 'ES9-M9-Q1', type: 'multiple_choice',
+      prompt: 'O que a maioria dos gráficos enganosos tem em comum?',
+      data: { options: [
+        { id: 'a', text: 'Os números escritos neles estão certos.', correct: true },
+        { id: 'b', text: 'Foram feitos para enganar de propósito.', porque: 'Muitos são descuido. O efeito sobre quem lê é o mesmo, e a intenção não se confere num gráfico.' },
+        { id: 'c', text: 'Usam cores chamativas.', porque: 'Cor não distorce leitura de quantidade. Os quatro recursos mexem em altura, em escala ou no que entrou no gráfico.' },
+        { id: 'd', text: 'Não citam a fonte dos dados.', porque: 'Vários citam, e a fonte estava certa. O caso da inflação de 2013 trazia os números do IBGE.' },
+      ]},
+      explanation: 'É isso que torna o gráfico enganoso difícil: procurar o erro na conta não funciona, porque a conta está certa. O que engana é o desenho.',
+    },
+    {
+      id: 'ES9-M9-Q2', type: 'multiple_choice',
+      prompt: 'Num gráfico de barras, a barra do número menor saiu mais alta que a do maior. Que recurso é esse?',
+      data: { options: [
+        { id: 'a', text: 'Escala inadequada.', correct: true },
+        { id: 'b', text: 'Eixo truncado.', porque: 'No eixo truncado a ordem continua certa: a barra maior é a do número maior, e só a diferença entre elas fica exagerada.' },
+        { id: 'c', text: 'Base incomparável.', porque: 'Nesse, o problema é o que entrou no gráfico, e não a altura: os desenhos estão em proporção.' },
+        { id: 'd', text: 'Recorte conveniente do período.', porque: 'Nesse, o desenho também está em proporção. O que engana é o pedaço do tempo escolhido.' },
+      ]},
+      explanation: 'Olhe a ordem: se uma barra menor está mais alta que uma maior, não é o eixo — é o desenho que não leu a tabela.',
+    },
+    {
+      id: 'ES9-M9-Q3', type: 'multiple_choice',
+      prompt: 'Como se distingue eixo truncado de escala inadequada?',
+      data: { options: [
+        { id: 'a', text: 'Pela ordem das alturas.', correct: true },
+        { id: 'b', text: 'Pelo tipo de gráfico usado.', porque: 'Os dois aparecem em barras, em linhas e em colunas. O tipo não decide.' },
+        { id: 'c', text: 'Pelo tamanho da diferença entre os valores.', porque: 'Os dois podem aparecer com diferenças grandes ou pequenas. O tamanho da diferença é o que o primeiro exagera, e não o que o identifica.' },
+        { id: 'd', text: 'Pela presença da fonte no rodapé.', porque: 'Fonte citada não impede nenhum dos dois: o gráfico da inflação de 2013 citava o IBGE.' },
+      ]},
+      explanation: 'No truncado a ordem está certa e as diferenças parecem grandes demais. Na escala inadequada a ordem está errada.',
+    },
+    {
+      id: 'ES9-M9-Q4', type: 'multiple_choice',
+      prompt: 'São Paulo encabeça praticamente todo gráfico absoluto do Brasil — de mortes, de nascimentos, de carros. Por quê?',
+      data: { options: [
+        { id: 'a', text: 'É onde vive mais gente.', correct: true },
+        { id: 'b', text: 'Porque é o estado mais rico.', porque: 'Riqueza explicaria alguns desses gráficos e não todos. Nascimentos e mortes acompanham população.' },
+        { id: 'c', text: 'Porque os dados de São Paulo são mais bem coletados.', porque: 'Coleta melhor afetaria a contagem, e não a ordem de grandeza: nenhum estado de 4 milhões alcançaria um de 46 só por contar melhor.' },
+        { id: 'd', text: 'Porque os gráficos são feitos em São Paulo.', porque: 'Onde o gráfico foi feito não muda o número. O que o muda é quantas pessoas há para contar.' },
+      ]},
+      explanation: 'É a base incomparável: comparar grupos de tamanhos muito diferentes em número absoluto. A comparação que diz algo é por habitante.',
+    },
+    {
+      id: 'ES9-M9-Q5', type: 'multiple_choice',
+      prompt: 'Um painel passou a mostrar apenas as mortes das últimas 24 horas, e tirou da tela o total acumulado. Que recurso é esse?',
+      data: { options: [
+        { id: 'a', text: 'Recorte conveniente do período.', correct: true },
+        { id: 'b', text: 'Base incomparável.', porque: 'A base é a mesma: o mesmo país, a mesma série. O que mudou foi o pedaço de tempo que apareceu.' },
+        { id: 'c', text: 'Escala inadequada.', porque: 'Não há barra fora de proporção: o número do dia é verdadeiro e está desenhado certo.' },
+        { id: 'd', text: 'Eixo truncado.', porque: 'O eixo pode até começar em zero. O que engana não está no eixo, está no que ficou de fora.' },
+      ]},
+      explanation: 'Cada número do recorte é verdadeiro, e o que ficou de fora é o que mudava a leitura: 904 mortes no dia, 35.930 acumuladas.',
+    },
+    {
+      id: 'ES9-M9-Q6', type: 'true_false',
+      prompt: 'Um eixo que não começa em zero é sempre desonesto.',
+      data: { options: [
+        { id: 'f', text: 'Falso', correct: true },
+        { id: 'v', text: 'Verdadeiro', porque: 'Num gráfico de temperatura corporal, começar em zero esconderia tudo o que importa. O que o eixo truncado exige é estar escrito, para quem lê saber que a altura não é proporção.' },
+      ]},
+      explanation: 'O problema não é truncar: é truncar sem dizer, e deixar quem lê achar que a altura é proporcional.',
+    },
+    {
+      id: 'ES9-M9-Q7', type: 'multiple_choice',
+      prompt: 'Qual é o teste para desconfiar de um recorte de período?',
+      data: { options: [
+        { id: 'a', text: 'Perguntar o que vem antes e depois do pedaço mostrado.', correct: true },
+        { id: 'b', text: 'Conferir se o eixo horizontal começa em zero.', porque: 'Eixo de tempo não começa em zero: ele começa numa data. Qual data é justamente o que se investiga.' },
+        { id: 'c', text: 'Verificar se a fonte dos dados está citada.', porque: 'A fonte pode estar citada e completa, e o gráfico mostrar só um trecho dela.' },
+        { id: 'd', text: 'Contar quantos pontos o gráfico tem.', porque: 'Um recorte pode ter muitos pontos. O que importa é onde ele começa e termina, e não quantos cabem no meio.' },
+      ]},
+      explanation: 'Se o gráfico começa num ano específico sem motivo declarado, procure a série inteira: o motivo costuma estar no que ficou de fora.',
+    },
+  ],
+
+  /* ──────────────────────────────────────────────────────────────────────
      Módulo 10 — A conclusão (requisito 8)
      ────────────────────────────────────────────────────────────────────── */
   'm10-teoria': [

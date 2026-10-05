@@ -485,12 +485,26 @@ interface Ctx {
   bruto: Bruto;
   visitando: Set<string>;
   cache: Map<string, Valor>;
+  /**
+   * A aba da célula que está sendo avaliada **agora**, e não a de quem pediu.
+   *
+   * É o que faz `=G2` escrito em `Respostas!L2` ler `Respostas!G2` mesmo
+   * quando quem mandou calcular foi uma fórmula da aba Cálculos. Sem isto a
+   * referência sem aba resolvia contra a aba de **origem** da leitura: uma
+   * coluna auxiliar lida de outra aba virava uma coluna de células vazias, e o
+   * que se via era `#DIV/0!` numa conta certa — ou, pior, um `SOMA` devolvendo
+   * zero com cara de total.
+   */
+  aba?: string;
 }
 
 const chave = (l: number, c: number, aba?: string) => `${aba ?? ''}:${l}:${c}`;
 
 function celula(ctx: Ctx, linha: number, coluna: number, aba?: string): Valor {
-  const k = chave(linha, coluna, aba);
+  /* Referência sem aba é "a aba desta célula", e a desta célula é a do
+     contexto — não a de quem começou a leitura. */
+  const alvo = aba ?? ctx.aba;
+  const k = chave(linha, coluna, alvo);
   const guardado = ctx.cache.get(k);
   if (guardado) return guardado;
 
@@ -501,7 +515,7 @@ function celula(ctx: Ctx, linha: number, coluna: number, aba?: string): Valor {
   */
   if (ctx.visitando.has(k)) return erro('circular');
 
-  const bruto = ctx.bruto(linha, coluna, aba) ?? '';
+  const bruto = ctx.bruto(linha, coluna, alvo) ?? '';
   if (!ehFormula(bruto)) {
     const v = valorDoBruto(bruto);
     ctx.cache.set(k, v);
@@ -511,7 +525,9 @@ function celula(ctx: Ctx, linha: number, coluna: number, aba?: string): Valor {
   ctx.visitando.add(k);
   let v: Valor;
   try {
-    v = avaliarTexto(ctx, bruto.trimStart().slice(1));
+    /* `visitando` e `cache` seguem sendo os mesmos objetos: o que muda de mão
+       é só qual aba as referências sem nome enxergam daqui para dentro. */
+    v = avaliarTexto({ ...ctx, aba: alvo }, bruto.trimStart().slice(1));
   } finally {
     ctx.visitando.delete(k);
   }
@@ -1104,8 +1120,15 @@ function procv(ctx: Ctx, args: No[]): Valor {
 /* ── A porta de entrada ───────────────────────────────────────────────────── */
 
 /** O valor da célula, calculando a fórmula que houver nela. */
-export function valorDaCelula(bruto: Bruto, linha: number, coluna: number): Valor {
-  return celula({ bruto, visitando: new Set(), cache: new Map() }, linha, coluna);
+export function valorDaCelula(
+  bruto: Bruto, linha: number, coluna: number, aba?: string,
+): Valor {
+  /*
+    `aba` é o nome da aba desta célula, e quem o tem é a pasta de trabalho.
+    Laboratório de uma planilha só não passa nada, e aí referência sem nome
+    continua caindo na única aba que existe — que é o que o acessador já faz.
+  */
+  return celula({ bruto, visitando: new Set(), cache: new Map(), aba }, linha, coluna);
 }
 
 /** O valor de uma fórmula solta, sem célula de origem — serve aos exemplos da teoria. */

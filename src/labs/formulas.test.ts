@@ -426,6 +426,38 @@ describe('a fórmula pode ler outra aba', () => {
     expect(mostrar(valorDaCelula(soUma, 0, 0))).toBe('0');
   });
 
+  /*
+    ── A coluna auxiliar lida de outra aba ────────────────────────────────
+
+    O requisito 7 da CC-ES010 manda refazer a análise **excluindo** os valores
+    atípicos, e o jeito de excluir numa planilha sem destruir o dado é uma
+    coluna auxiliar: a coluna copiada, menos as linhas que a cerca apontou. Ela
+    mora ao lado da base, e as células dela são `=G2` — referência sem nome de
+    aba, que é como toda planilha do mundo escreve uma cópia de coluna.
+
+    Lida de outra aba, essa referência resolvia contra a aba de **origem da
+    leitura**. A coluna auxiliar virava uma coluna de células vazias, e a
+    `INCLINAÇÃO` sobre ela saía `#DIV/0!` numa conta perfeitamente certa — num
+    `SOMA`, sairia **zero** com cara de total, que é a forma de errar que esta
+    casa mais teme.
+
+    Agora quem decide é a aba da célula que está sendo avaliada, e não a de
+    quem pediu a leitura.
+  */
+  it('a referência sem aba, dentro de outra aba, lê a aba dela', () => {
+    const comAuxiliar = (l: number, c: number, aba?: string) => {
+      const dados: Record<string, string[][]> = {
+        /* A coluna C é a cópia de A, e a linha do meio foi limpada. */
+        Dados: [['x', '', 'sem o atípico'], ['1', '', '=A2'], ['9', '', ''], ['4', '', '=A4']],
+        Calculos: [['=SOMA(Dados!C2:C4)'], ['=MÉDIA(Dados!C2:C4)']],
+      };
+      return dados[aba ?? 'Calculos']?.[l]?.[c] ?? '';
+    };
+    expect(mostrar(valorDaCelula(comAuxiliar, 0, 0, 'Calculos'))).toBe('5');
+    /* E a média é sobre os dois que sobraram, não sobre os três. */
+    expect(mostrar(valorDaCelula(comAuxiliar, 1, 0, 'Calculos'))).toBe('2,50');
+  });
+
   it('o nome antes do parêntese continua sendo função, e não aba', () => {
     /* `SOMA` casa com a mesma expressão de nome que `Respostas`. O que separa
        os dois é a exclamação, e não o que vem depois. */

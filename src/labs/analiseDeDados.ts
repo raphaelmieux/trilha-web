@@ -50,6 +50,112 @@ export function numeroDaMedida(v: Valor): number | null {
 
 const medida = (valores: string[], funcao: string) => numeroDaMedida(medidaDa(valores, funcao));
 
+/**
+ * Uma função de **duas** colunas, pelo mesmo motor.
+ *
+ * `medidaDa` monta uma grade de uma coluna; a família da regressão precisa de
+ * duas. Montá-la aqui é o que faz o número que a trava espera sair da mesma
+ * `CORREL` que a fórmula do desbravador chama — dois avaliadores na mesma base
+ * seriam os dois "Word" outra vez, com a divergência aparecendo como número
+ * plausível.
+ *
+ * **A ordem dos argumentos é a do Excel, e ela passa reta por aqui.** `CORREL`
+ * é simétrica; `INCLINAÇÃO`, `INTERCEPÇÃO` e `RQUAD` recebem o y primeiro.
+ * Um atalho que "arrumasse" isso trocando os parâmetros desfaria em silêncio a
+ * armadilha que o motor guarda de propósito — e a reta ao contrário sai com
+ * cara de reta certa.
+ */
+export function daDupla(primeira: string[], segunda: string[], funcao: string): Valor {
+  /*
+    Cada faixa vai com o **tamanho de verdade** da coluna dela, e não com o
+    maior dos dois.
+
+    A primeira versão igualava os dois ao maior e preenchia o que faltava com
+    branco. O motor passava a ver duas faixas do mesmo tamanho, descartava os
+    pares em que um lado estava em branco, e devolvia a correlação do pedaço
+    comum — um número plausível no lugar de uma recusa. É exatamente o "cortar
+    no menor" que o motor recusa de propósito: ele responderia sobre parte dos
+    pares sem dizer que parte.
+
+    Escritas com o tamanho real, a regra de `#N/D` do motor vale aqui também,
+    sem uma segunda guarda que pudesse discordar dela.
+  */
+  const bruto: Bruto = (linha, coluna) => {
+    if (coluna === 0) return primeira[linha] ?? '';
+    if (coluna === 1) return segunda[linha] ?? '';
+    return '';
+  };
+  const ate = (n: number) => Math.max(n, 1);
+  return valorDaFormula(
+    bruto,
+    `=${funcao}(A1:A${ate(primeira.length)};B1:B${ate(segunda.length)})`,
+  );
+}
+
+/**
+ * O coeficiente de correlação entre duas colunas.
+ *
+ * `null` quando o motor não devolve número — faixas de tamanhos diferentes são
+ * `#N/D` e coluna que não varia é `#DIV/0!`, e os dois viram `null` aqui pela
+ * mesma razão que a moda sem repetição: devolver zero afirmaria "não há
+ * relação", que é uma afirmação sobre os dados, e a recusa diz "não dá para
+ * perguntar isto aqui".
+ */
+export const correlacaoDe = (a: string[], b: string[]) =>
+  numeroDaMedida(daDupla(a, b, 'CORREL'));
+
+/**
+ * A inclinação da reta de **y sobre x**, e a ordem é a do Excel.
+ *
+ * `INCLINAÇÃO` recebe o y primeiro, e os parâmetros aqui têm esse nome
+ * justamente para que quem chame não tenha de lembrar: `inclinacaoDe(ys, xs)`.
+ * Um ajudante que recebesse `(xs, ys)` e trocasse por dentro seria o lugar
+ * perfeito para a armadilha se perder — a reta ao contrário sai com cara de
+ * reta certa, e quem escreveu a fórmula na célula continuaria errando sem
+ * nada acusar.
+ */
+export const inclinacaoDe = (ys: string[], xs: string[]) =>
+  numeroDaMedida(daDupla(ys, xs, 'INCLINAÇÃO'));
+
+/** O ponto em que a reta corta o eixo vertical. Mesma ordem: o y primeiro. */
+export const intercepcaoDe = (ys: string[], xs: string[]) =>
+  numeroDaMedida(daDupla(ys, xs, 'INTERCEPÇÃO'));
+
+/**
+ * O quadrado da correlação: quanto da variação de y a reta explica.
+ *
+ * Mesma ordem das outras duas, e **não** uma conta à parte: ele é o quadrado
+ * de `CORREL`, e duas implementações da mesma coisa divergiriam no primeiro
+ * ajuste — com a divergência aparecendo como dois números plausíveis para a
+ * mesma qualidade de ajuste.
+ */
+export const rquadDe = (ys: string[], xs: string[]) =>
+  numeroDaMedida(daDupla(ys, xs, 'RQUAD'));
+
+/**
+ * O valor que a reta prevê para um x, pela mesma reta.
+ *
+ * Ela responde para **qualquer** x, inclusive muito fora do intervalo
+ * observado, e responde com a mesma cara de certeza — é por ela que o
+ * requisito 5.4 acontece. Uma guarda aqui que recusasse o x de fora seria a
+ * plataforma protegendo de um erro que a planilha do clube não protege, e
+ * apagaria a lição.
+ */
+export function previsaoDe(x: number, ys: string[], xs: string[]): number | null {
+  const n = Math.max(ys.length, xs.length);
+  const bruto: Bruto = (linha, coluna) => {
+    if (coluna === 0) return ys[linha] ?? '';
+    if (coluna === 1) return xs[linha] ?? '';
+    return '';
+  };
+  const ate = (m: number) => Math.max(m, 1);
+  const v = valorDaFormula(
+    bruto,
+    `=PREVISÃO(${String(x).replace('.', ',')};A1:A${ate(ys.length)};B1:B${ate(xs.length)})`,
+  );
+  return n === 0 ? null : numeroDaMedida(v);
+}
+
 export const media = (valores: string[]) => medida(valores, 'MÉDIA');
 export const mediana = (valores: string[]) => medida(valores, 'MED');
 export const maximo = (valores: string[]) => medida(valores, 'MÁXIMO');
@@ -376,4 +482,98 @@ export function medidaPorGrupo(
     fora.set(grupo, ehErro(v) ? null : numeroDaMedida(v));
   }
   return fora;
+}
+
+/* ── O acaso entre dois grupos ────────────────────────────────────────────── */
+
+/**
+ * O que um embaralhamento devolve.
+ *
+ * `sorteadas` vem na ordem em que saiu, e não ordenada: a tela desenha a
+ * nuvem delas com a real marcada, e ordenar aqui jogaria fora a única coisa
+ * que diz que foram sorteios independentes.
+ */
+export interface SorteioDeGrupos {
+  /** A diferença que a base de verdade mostra entre os dois grupos. */
+  real: number;
+  /** A diferença que cada embaralhamento produziu. */
+  sorteadas: number[];
+  /** Quantas delas foram tão grandes quanto a real, ou maiores. */
+  tantoOuMais: number;
+}
+
+/** De onde vem o sorteio. Injetável para a trava não depender de sorte. */
+export type Aleatorio = () => number;
+
+/**
+ * Embaralha quem é de qual grupo e devolve a diferença que cada sorteio dá.
+ *
+ * É o requisito 8 da CC-ES010 — "explicar por que uma diferença observada
+ * entre dois grupos pode ser efeito do acaso" — **sem cálculo formal**. Não há
+ * teste de hipótese aqui, e não vai haver: o que a pessoa faz é sortear de
+ * novo quem é de qual unidade e olhar uma diferença tão grande quanto a real
+ * aparecer sem que um único dado tenha mudado. Quem viu isso acontecer não
+ * precisa de valor-p para desconfiar de uma diferença entre dois grupos de
+ * sete pessoas; quem só leu a definição, precisa.
+ *
+ * ── Três coisas erram calado se escritas do jeito óbvio ─────────────────
+ *
+ * **Os rótulos se permutam; as medidas ficam onde estão.** É isso que a lição
+ * descreve, e é o que mantém a conta honesta: sortear rótulos **novos** — seis
+ * nomes ao acaso para cada linha — mudaria o tamanho dos grupos junto, e aí a
+ * diferença passaria a variar por dois motivos ao mesmo tempo. Com a permuta,
+ * Arara continua com sete pessoas e Águia com oito em todo sorteio, e o único
+ * que mudou foi **quem**.
+ *
+ * **A diferença é em módulo.** "Tão grande quanto" é sobre tamanho: um sorteio
+ * que põe Águia na frente por 2,6 é tão surpreendente quanto um que põe Arara,
+ * e contar só os do mesmo sinal responderia metade da pergunta — dando a
+ * metade que faz o acaso parecer mais raro do que é.
+ *
+ * **O sorteio entra por parâmetro.** Com `Math.random()` escrito aqui dentro,
+ * a trava passaria a depender de sorte: ela é 14,6% nesta base, então um teste
+ * que exigisse ver um sorteio grande falharia sozinho uma vez em sete, e
+ * "flake" é o que ensina a reexecutar em vez de ler.
+ */
+export function sortearEntreGrupos(
+  base: Formulario,
+  campoDoGrupo: string,
+  campoDaMedida: string,
+  grupoA: string,
+  grupoB: string,
+  vezes: number,
+  aleatorio: Aleatorio = Math.random,
+): SorteioDeGrupos {
+  const linhas = respostasReais(base);
+  const rotulos = linhas.map(r => valorDa(r, campoDoGrupo));
+  const medidas = linhas.map(r => valorDa(r, campoDaMedida));
+
+  const diferenca = (quais: string[]): number => {
+    const de = (g: string) => medidas.filter((_, i) => quais[i] === g);
+    const a = medidaDa(de(grupoA), 'MÉDIA');
+    const b = medidaDa(de(grupoB), 'MÉDIA');
+    /* Grupo vazio não tem média, e `medidaDa` devolve erro — que é o certo, e
+       aqui vira diferença zero: um sorteio que não achou ninguém num dos dois
+       lados não diz nada sobre tamanho de diferença. */
+    if (ehErro(a) || ehErro(b)) return 0;
+    return Math.abs((numeroDaMedida(a) ?? 0) - (numeroDaMedida(b) ?? 0));
+  };
+
+  const real = diferenca(rotulos);
+  const sorteadas: number[] = [];
+  for (let v = 0; v < vezes; v++) {
+    const mexidos = [...rotulos];
+    for (let k = mexidos.length - 1; k > 0; k--) {
+      const j = Math.floor(aleatorio() * (k + 1));
+      [mexidos[k], mexidos[j]] = [mexidos[j], mexidos[k]];
+    }
+    sorteadas.push(diferenca(mexidos));
+  }
+
+  /* A margem existe porque as duas médias passam pelo motor de fórmula e
+     voltam em ponto flutuante: a diferença de um sorteio que caiu exatamente
+     na real sai 2,5892857142857135 contra 2,589285714285714, e um `>=` cru
+     deixaria esse de fora sem nada explicando. */
+  const tantoOuMais = sorteadas.filter(d => d >= real - 1e-9).length;
+  return { real, sorteadas, tantoOuMais };
 }

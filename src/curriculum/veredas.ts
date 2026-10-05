@@ -13,6 +13,7 @@ import { MODULOS_DO_COMPARTILHADO } from './trabalhoCompartilhado';
 import { MODULOS_DA_COMUNICACAO } from './comunicacaoEAgenda';
 import { MODULOS_DE_DADOS } from './dadosEFormularios';
 import { MODULOS_DA_ANALISE } from './analiseDeDados';
+import { MODULOS_DA_ESTATISTICA } from './analiseEstatistica';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -537,6 +538,31 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      A CC-ES010, que abre a mesma planilha e o mesmo caderno.
+
+      Sete das dez lições acontecem na pasta de trabalho; três não acontecem
+      em programa nenhum — classificar uma coleta, embaralhar quem é de qual
+      unidade e declarar um grau de confiança. A do embaralho tem uma razão a
+      mais: fazê-lo numa planilha é ordenar **só** a coluna da chave, que é o
+      gesto que a CC-ES003 existe para proibir. A lição teria de ensinar o
+      errado para mostrar o certo.
+
+      É um `tipo` próprio e não um `licao` a mais dentro de `'analise'`: as
+      duas veredas são vizinhas e compartilham as peças — a janela do Excel, o
+      caderno, o motor de fórmula —, mas as metas, o contexto e o registro de
+      lições são outros. Uma união dos dois obrigaria cada leitor a lembrar de
+      qual vereda aquela lição é.
+    */
+    id: string;
+    tipo: 'estatistica';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcEs010').LicaoDaCcEs010;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
@@ -996,7 +1022,6 @@ export const VEREDAS: Vereda[] = [
     */
     origem: 'CC-ES008',
     preRequisitos: ['cc-es008'],
-    emConstrucao: true,
     /*
       Sem quadro de resultado: os exemplos desta vereda são tabelas de números
       e desenhos de gráfico em texto, e não há o que executar. Ligá-lo
@@ -1006,9 +1031,38 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: false,
     modulos: MODULOS_DA_ANALISE,
   },
-  anunciada('CC-ES010', 'Análise Estatística', 'Escritório',
-    'Correlação não é causa: amostra, tendência e o tamanho da própria incerteza.',
-    ['cc-es009']),
+  {
+    id: 'cc-es010',
+    code: 'CC-ES010',
+    name: 'Análise Estatística',
+    familia: 'Escritório',
+    description: 'Correlação não é causa: amostra, tendência e o tamanho da própria incerteza.',
+    /*
+      Em construção, e **com conteúdo** — que é legítimo e está escrito na
+      regra: vereda leva vários dias para ficar pronta, e as travas olham para
+      `veredasComConteudo()` justamente para que laboratório que abre resolvido
+      e questão repetida reprovem enquanto se escreve, e não no dia de abrir.
+
+      E ela não poderia abrir hoje mesmo pronta: a exigência dela é a CC-ES009,
+      que também está em construção, e `veredas.test.ts` reprova vereda aberta
+      cuja chave está numa que ainda não abriu — com razão, porque a pessoa
+      encontraria o cartão cinza dizendo "conclua" uma coisa que não existe.
+
+      ── O que carrega esta vereda é o número confiante ──────────────────
+      A da CC-ES009 era o número plausível. Aqui a `PREVISÃO` responde 2,58 m
+      para alguém de 25 anos sem hesitar; o r² sobe de 0,83 para 0,94 quando se
+      exclui um desbravador, e o que subiu foi a aparência de certeza; e a
+      diferença de 2,59 acampamentos entre a Arara e a Águia aparece sozinha,
+      por sorteio, uma vez em sete. Nenhuma dessas telas dá erro, e nenhuma
+      delas hesita.
+    */
+    origem: 'CC-ES009',
+    preRequisitos: ['cc-es009'],
+    /* Sem quadro de resultado, como na CC-ES009: os exemplos são tabelas de
+       números e nuvens desenhadas em texto, e não há o que executar. */
+    mostraResultado: false,
+    modulos: MODULOS_DA_ESTATISTICA,
+  },
   anunciada('CC-ES011', 'Apresentações', 'Escritório',
     'Slide mestre, hierarquia e cinco minutos: menos slide e mais gente entendendo.',
     ['cc-es002']),

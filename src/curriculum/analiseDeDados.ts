@@ -636,6 +636,78 @@ const A_DEFESA: TopicoDeVereda[] = [
  * ter conteúdo: laboratório que abre resolvido e questão repetida reprovam
  * desde já, e não no dia da abertura.
  */
+/* ── Módulo 9 — Os quatro recursos que distorcem (requisito 7) ────────────── */
+
+const RECURSOS_QUE_DISTORCEM: TopicoDeVereda[] = [
+  t(
+    'o-numero-certo-no-desenho-errado',
+    'Quase todo gráfico enganoso usa números verdadeiros',
+    'É isso que o torna difícil: não há o que conferir na conta, porque a conta está certa.',
+    [
+      'Um gráfico mente de um jeito diferente de uma frase. A frase afirma algo falso e dá para checar. O gráfico escreve os números certos e **desenha** outra coisa — e o que a pessoa leva embora é o desenho, não a tabela.',
+      'Por isso procurar o erro na conta não funciona. Nos três casos que você vai analisar, nenhum número está errado: o IPCA era aquele, as mortes do dia eram aquelas, as mortes por estado eram aquelas. O que está errado é a altura, o pedaço escolhido ou o que foi posto lado a lado.',
+      'São quatro recursos, e eles cobrem quase tudo o que se vê: **eixo truncado**, **escala inadequada**, **base incomparável** e **recorte conveniente do período**. Saber o nome deles é o que faz alguém reconhecer o próximo.',
+    ],
+    `Os quatro, em uma linha cada
+
+  EIXO TRUNCADO       o eixo não começa em zero, e 1% vira um paredão
+  ESCALA INADEQUADA   a altura não lê o número: 5,91 sai maior que 6,50
+  BASE INCOMPARÁVEL   compara-se grupo de 46 milhões com grupo de 4
+  RECORTE DO PERÍODO  mostra-se o dia, e o acumulado sai da tela
+
+  Em todos os quatro, os números escritos estão certos.`,
+    'Nenhum dos quatro dá erro em lugar nenhum. Um gráfico errado continua sendo um gráfico, e é por isso que ele atravessa a redação, a reunião e o grupo da família sem ninguém reclamar.',
+    ['gráfico enganoso', 'recurso de distorção'],
+  ),
+  t(
+    'eixo-e-escala',
+    'O eixo truncado exagera a diferença; a escala inadequada inverte',
+    'Os dois mexem na altura, e não são o mesmo defeito.',
+    [
+      '**Eixo truncado** é o eixo que não começa em zero. As alturas continuam em ordem — a barra maior é a do número maior —, só que a diferença entre elas fica muito maior do que é. Uma variação de 1,4% desenhada num eixo que vai de 4,18 a 4,30 vira uma barra quatro vezes a outra.',
+      '**Escala inadequada** é pior e mais raro: a altura deixa de ler o número. A barra do número menor sai mais alta que a do maior, ou duas barras de valor idêntico saem de alturas diferentes. Aqui não há exagero — há contradição.',
+      'O jeito de distinguir é olhar a **ordem**. Se as barras estão na ordem certa e as diferenças parecem grandes demais, procure onde o eixo começa. Se uma barra menor está mais alta que uma maior, não é o eixo: é o desenho que não leu a tabela.',
+    ],
+    `A mesma tabela, três desenhos
+
+  Valores: A = 5,84   B = 6,50   C = 5,91
+
+  EIXO EM ZERO          EIXO EM 5,5           ESCALA QUEBRADA
+    A ██████              A ██                   A ████
+    B ███████             B ██████████           B ██████
+    C ██████              C ████                 C ██████████
+
+  No primeiro, as três quase empatam — e quase empatam mesmo.
+  No segundo, B parece cinco vezes A. A ordem está certa.
+  No terceiro, C é o mais alto e é o segundo menor valor.`,
+    'Eixo truncado não é sempre desonesto: num gráfico de temperatura corporal, começar em zero esconderia tudo o que importa. O que ele exige é estar **escrito**, para quem lê saber que a altura não é proporção.',
+    ['eixo truncado', 'escala inadequada'],
+  ),
+  t(
+    'base-e-recorte',
+    'A base incomparável põe lado a lado o que não se compara; o recorte escolhe o pedaço',
+    'Os dois têm o desenho impecável, e é o que entrou nele que engana.',
+    [
+      '**Base incomparável** é comparar coisas de tamanhos muito diferentes como se fossem iguais. Um estado com 46 milhões de habitantes encabeça todo gráfico absoluto deste país — de mortes, de nascimentos, de carros, de escolas — porque é onde vive mais gente. A comparação que diz alguma coisa é por habitante.',
+      'Ela também aparece em medidas de naturezas diferentes na mesma escala: variação de um trimestre contra o anterior ao lado de variação de um ano contra o outro, ou número absoluto ao lado de porcentagem. Os dois são números; eles não são a mesma coisa.',
+      '**Recorte conveniente do período** é mostrar o pedaço do tempo que convém. Cada número do recorte é verdadeiro, e o que ficou de fora é o que mudava a leitura: as mortes de um dia são verdadeiras, e o acumulado é quarenta vezes aquilo.',
+    ],
+    `Base incomparável, com os números de 8 de junho de 2020
+
+           mortes   habitantes      por 100 mil
+    SP      9.188   46.289.333          19,85
+    AM      2.271    4.207.714          53,97
+
+  No gráfico absoluto, SP tem quatro vezes as mortes do AM.
+  Por habitante, o AM tem 2,7 vezes a taxa de SP.
+
+  As duas contas estão certas, e elas respondem
+  a perguntas diferentes.`,
+    'O teste do recorte é perguntar o que vem **antes** e **depois** do pedaço mostrado. Se o gráfico começa num ano específico sem motivo declarado, procure a série inteira: o motivo costuma estar no que ficou de fora.',
+    ['base incomparável', 'recorte do período', 'taxa por habitante'],
+  ),
+];
+
 export const MODULOS_DA_ANALISE: ModuloDeVereda[] = [
   {
     id: 'm1',
@@ -802,6 +874,27 @@ export const MODULOS_DA_ANALISE: ModuloDeVereda[] = [
         titulo: 'Três perguntas, três gráficos',
         resumo: 'Um por aba, com os eixos escritos e a escolha justificada.',
         verificacoes: ['os-tres-graficos', 'os-eixos-escritos', 'as-tres-justificativas'],
+      },
+    ],
+  },
+  {
+    id: 'm9',
+    titulo: 'Três gráficos enganosos reais',
+    resumo: 'Números verdadeiros, desenhos que mentem — e os quatro recursos que fazem isso.',
+    licoes: [
+      {
+        id: 'm9-teoria', tipo: 'teoria',
+        questoes: QUESTOES_DA_ANALISE['m9-teoria'],
+        perguntas: 4,
+        titulo: 'Como um gráfico mente com números certos',
+        resumo: 'Eixo truncado, escala inadequada, base incomparável e recorte do período.',
+        topicos: RECURSOS_QUE_DISTORCEM,
+      },
+      {
+        id: 'm9-lab', tipo: 'analise', licao: 'enganosos',
+        titulo: 'Analisando três gráficos que foram publicados',
+        resumo: 'Da GloboNews, do Ministério da Saúde e do ranking de mortes por estado.',
+        verificacoes: ['todo-grafico-classificado', 'os-recursos-certos', 'viu-os-tres-honestos'],
       },
     ],
   },
