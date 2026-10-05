@@ -462,6 +462,16 @@ export const limparFormatacaoDireta = (s: Slide): Slide => {
   return resto;
 };
 
-/** Todo o texto digitado nos slides, que é o que não pode mudar. */
-export const textoDaApresentacao = (a: Apresentacao) =>
-  a.slides.map(s => [s.titulo, ...s.topicos, ...s.caixas.map(c => c.texto)].join('\n')).join('\n--\n');
+/**
+ * Todo o texto digitado nos slides, que é o que não pode mudar.
+ *
+ * Pedaço vazio não entra: um título em branco é a ausência de texto, e não um
+ * texto. Sem isso, pôr a caixa à mão no espaço reservado do layout — que move
+ * o texto e não muda uma palavra dele — mudaria esta cadeia, porque o título
+ * vazio do slide em branco deixa de estar lá. A condição "sem alterar uma
+ * palavra" acusaria justamente quem cumpriu o requisito 4.2.
+ */
+export const textoDaApresentacao = (a: Apresentacao) => a.slides
+  .map(s => [s.titulo, ...s.topicos, ...s.caixas.map(c => c.texto)]
+    .map(t => t.trim()).filter(t => t !== '').join('\n'))
+  .join('\n--\n');
