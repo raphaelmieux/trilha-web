@@ -494,7 +494,7 @@ export default function InsercaoTextoLab({
                       <p style={{ fontSize: 11, color: '#605E5C', marginBottom: 6 }}>
                         Escolha o tamanho da tabela
                       </p>
-                      <div className="ins-grade">
+                      <div>
                         {Array.from({ length: 4 }, (_, l) => (
                           <div key={l} className="ins-grade-linha">
                             {Array.from({ length: 5 }, (_, c) => (

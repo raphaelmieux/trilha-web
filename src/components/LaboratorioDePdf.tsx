@@ -387,7 +387,7 @@ export default function LaboratorioDePdf({ vereda, licao, aoVencer, aoSair }: {
                     : (atual.length === 1 && atual[0] === id ? [] : [id])));
                 }}
               />
-              <div className="pdf-papel">
+              <div>
                 {doc.paginas[pagina] && (
                   <Folha
                     pagina={doc.paginas[pagina]}
@@ -483,11 +483,11 @@ function TelaDoScanner({ scanner, aoMudar, aoSalvar, aoFechar }: {
   };
 
   return (
-    <div className="scan-fundo">
-      <div className="scan-app">
+    <div>
+      <div>
         <TopoDoScanner titulo="Digitalizar" etapa={ETAPA[scanner.etapa]} />
 
-        <div className="scan-mesa">
+        <div>
           <PapelNaMesa linhas={RECIBO} captura={captura}>
             {scanner.etapa === 'recorte' && (
               <CantosDeRecorte

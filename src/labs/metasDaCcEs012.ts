@@ -706,7 +706,7 @@ const METAS_DAS_INSTRUCOES: MetaDoProjeto[] = [
     id: 'instrucoes-completas',
     titulo: 'As instruções respondem às quatro coisas',
     detalhe: 'Por onde começar, o que trocar a cada ano, o que não mexer, e como transferir o acesso. A terceira é a que ninguém escreve, e é a que evita alguém apagar o vínculo sem saber que era ele que fazia o conjunto funcionar.',
-    onde: 'Instruções de uso',
+    onde: 'Repositório → Descrição da pasta',
     passos: [
       'Escreva por onde a próxima diretoria começa.',
       'Diga o que se troca a cada ano.',
@@ -741,8 +741,8 @@ const METAS_DOS_QUINZE_MINUTOS: MetaDoProjeto[] = [
   {
     id: 'numeros-do-regulamento-vinculados',
     titulo: 'Os números do regulamento leem a planilha',
-    detalhe: 'Eles estão certos hoje, e é isso que os torna o pior dos quatro jeitos: um número digitado não se refaz nunca e nada na tela diz que ele é de ontem. O gráfico pelo menos se vê que é um retrato.',
-    onde: 'Colar especial → Colar vínculo',
+    detalhe: 'Eles estão certos hoje, e é isso que os torna o pior dos quatro jeitos: um número digitado não se refaz nunca e nada na tela diz que ele é de ontem. O gráfico pelo menos se vê que é um retrato. No Word o gesto é Colar Especial → Colar Vínculo; aqui o painel do conjunto mostra de onde cada número devia vir.',
+    onde: 'O conjunto → de onde vem cada número',
     passos: [
       'No regulamento, troque os dois números digitados por vínculos.',
       'Confira que eles passaram a dizer o que a planilha diz.',
@@ -869,7 +869,7 @@ export const LICOES_DA_CC_ES012: Record<LicaoDaCcEs012, LicaoDoProjeto> = {
   },
   dossie: { projeto: DEPOIS_DA_APRESENTACAO, programa: 'pdf', metas: METAS_DO_DOSSIE },
   repositorio: { projeto: DEPOIS_DO_DOSSIE, programa: 'nuvem', metas: METAS_DO_REPOSITORIO },
-  instrucoes: { projeto: DEPOIS_DO_REPOSITORIO, programa: 'word', metas: METAS_DAS_INSTRUCOES },
+  instrucoes: { projeto: DEPOIS_DO_REPOSITORIO, programa: 'nuvem', metas: METAS_DAS_INSTRUCOES },
   'quinze-minutos': {
     projeto: DEPOIS_DAS_INSTRUCOES, programa: 'plataforma', metas: METAS_DOS_QUINZE_MINUTOS,
   },
