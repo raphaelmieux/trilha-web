@@ -23,10 +23,23 @@
 
 import {
   type Caderno, type Celula, type Faixa, type Planilha,
-  vazia, refazerMesclagens, LARGURA_PADRAO, ALTURA_PADRAO,
-  COLUNAS_DA_GRADE, LINHAS_DA_GRADE,
+  vazia, refazerMesclagens, ALTURA_PADRAO, planilhaDe,
 } from './planilha';
 import { mostrar, valorDaCelula, type Valor } from './formulas';
+
+/*
+  `planilhaDe` desceu para `planilha.ts` e continua saindo daqui.
+
+  Ela é o construtor do **modelo** — a grade, as larguras, a folga que toda aba
+  tem —, e morava aqui junto do caderno de um exercício: a CC-ES011 precisa de
+  uma planilha de custos, e importá-la da CC-ES003 seria o laboratório de uma
+  vereda dependendo do caderno de outra. É o mesmo encaixe que `planilha.ts`
+  tinha com `metasDaAp043.ts`, e desceu pelo mesmo motivo.
+
+  A reexportação fica porque seis arquivos já a importam daqui, e é a decisão
+  do `LIMIAR_DOMINIO`, que continua sendo reexportado de `progress.ts`.
+*/
+export { planilhaDe };
 
 /* ── Os dados do clube ────────────────────────────────────────────────────── */
 
@@ -88,56 +101,6 @@ export const TOTAL_DE_DIARIAS = INSCRITOS.reduce((s, i) => s + i.diarias, 0);
 export const TOTAL_ARRECADADO = TOTAL_DE_DIARIAS * VALOR_DA_DIARIA;
 
 /* ── Peças de montar aba ──────────────────────────────────────────────────── */
-
-/**
- * Quanto sobra embaixo e à direita do que a aba já guarda.
- *
- * É onde se escreve o que vem **depois** dos dados — um total, uma
- * conferência, a coluna de taxa ao lado da de contagem. Sem folga, a última
- * linha escrita seria a última linha da aba, e o exercício que manda somar
- * embaixo não teria onde.
- */
-const FOLGA_DA_ABA = 6;
-
-/**
- * A grade de uma aba, com o conteúdo escrito a partir de A1.
- *
- * ── A aba é tão grande quanto o que ela guarda ───────────────────────────
- * Vinte e seis linhas por doze colunas bastaram até aqui, e a base da CC-ES009
- * tem quarenta e oito respostas. Escritas numa grade de vinte e seis, vinte e
- * três delas **simplesmente não existiriam** — e nada estouraria: a aba abriria
- * bonita, a `SOMA` somaria o que coubesse, e toda conta da vereda sairia sobre
- * metade do clube. Plausível e menor, que é o defeito que esta casa inteira
- * persegue.
- *
- * A grade da tela desenha `celulas` e `larguras`, e não estas constantes, então
- * a aba maior aparece inteira sem que nada mude no componente. E quem cabe em
- * vinte e seis por doze continua exatamente com vinte e seis por doze: nenhuma
- * aba já escrita muda de tamanho.
- */
-export function planilhaDe(nome: string, conteudo: string[][], extras: Partial<Planilha> = {}): Planilha {
-  const linhas = Math.max(LINHAS_DA_GRADE, conteudo.length + FOLGA_DA_ABA);
-  const colunas = Math.max(
-    COLUNAS_DA_GRADE,
-    conteudo.reduce((maior, l) => Math.max(maior, l.length), 0) + FOLGA_DA_ABA,
-  );
-  return {
-    celulas: Array.from({ length: linhas }, (_, l) =>
-      Array.from({ length: colunas }, (_, c) => vazia(conteudo[l]?.[c] ?? ''))),
-    larguras: new Array(colunas).fill(LARGURA_PADRAO),
-    alturas: new Array(linhas).fill(ALTURA_PADRAO),
-    layout: 'nenhum',
-    nome,
-    tabela: null,
-    congeladas: 0,
-    filtro: null,
-    ordenacao: null,
-    regras: [],
-    grafico: null,
-    resumo: null,
-    ...extras,
-  };
-}
 
 /** Aplica uma mudança célula a célula, sem tocar no resto da grade. */
 export function comCelulas(p: Planilha, mudar: (cel: Celula, l: number, c: number) => Celula): Planilha {

@@ -3,7 +3,7 @@ import {
   APRESENTACAO_INICIAL, METAS_DA_APRESENTACAO, SLIDE_DAS_FOTOS, SLIDE_DO_LAYOUT,
 } from './apresentacaoDoClube';
 import {
-  NOMES_DOS_LAYOUTS, NOMES_DOS_MODELOS, umSlide, vazio,
+  NOMES_DOS_LAYOUTS, NOMES_DOS_MODELOS, imagemInserida, slideNovo, umSlide, vazio,
   type Apresentacao, type Slide,
 } from './apresentacao';
 
@@ -83,8 +83,8 @@ function apresentacaoPronta(): Apresentacao {
   a = mudar(a, SLIDE_DO_LAYOUT, { layout: 'titulo-conteudo' });
   a = mudar(a, SLIDE_DAS_FOTOS, {
     imagens: [
-      { id: 'i1', legenda: 'fogueira.jpg', largura: 40 },
-      { id: 'i2', legenda: 'barracas.jpg', largura: 40 },
+      imagemInserida('i1', 'fogueira.jpg', 4032, 3024),
+      imagemInserida('i2', 'barracas.jpg', 4032, 3024),
     ],
     imagensAlinhadas: true,
   });
@@ -97,9 +97,7 @@ function apresentacaoPronta(): Apresentacao {
   const fotos = semVazio.find(s => s.id === SLIDE_DAS_FOTOS)!;
   const comCopia = [...semVazio, { ...fotos, id: 'copia' }];
   const comNovo = [...comCopia, {
-    id: 'novo', titulo: 'O versículo do acampamento', topicos: [],
-    layout: 'titulo-conteudo' as const, imagens: [], imagensAlinhadas: false,
-    video: 'nenhuma' as const, audio: 'nenhuma' as const,
+    ...slideNovo('novo', 'titulo-conteudo'), titulo: 'O versículo do acampamento',
   }];
   const encerramento = comNovo.find(s => s.titulo === 'Até lá!')!;
   const slides = [...comNovo.filter(s => s !== encerramento), encerramento];
@@ -129,10 +127,7 @@ describe('criar, duplicar, reorganizar e excluir são cobrados um a um', () => {
     const a = apresentacaoPronta();
     const comVazio: Apresentacao = {
       ...a,
-      slides: [...a.slides, {
-        id: 'v', titulo: '', topicos: [], layout: 'em-branco',
-        imagens: [], imagensAlinhadas: false, video: 'nenhuma', audio: 'nenhuma',
-      }],
+      slides: [...a.slides, slideNovo('v', 'em-branco')],
     };
     expect(meta.feita(comVazio)).toBe(false);
   });
@@ -162,10 +157,9 @@ describe('criar, duplicar, reorganizar e excluir são cobrados um a um', () => {
     const a = APRESENTACAO_INICIAL;
     const trocaSeca: Apresentacao = {
       ...a,
-      slides: [...a.slides.slice(0, 4), {
-        id: 'x', titulo: 'Slide qualquer', topicos: [], layout: 'so-titulo',
-        imagens: [], imagensAlinhadas: false, video: 'nenhuma', audio: 'nenhuma',
-      }, a.slides[5]],
+      slides: [...a.slides.slice(0, 4),
+        { ...slideNovo('x', 'so-titulo'), titulo: 'Slide qualquer' },
+        a.slides[5]],
     };
     expect(trocaSeca.slides).toHaveLength(a.slides.length);
     expect(meta.feita(trocaSeca)).toBe(false);
@@ -229,10 +223,8 @@ describe('o PDF envelhece quando a apresentação continua', () => {
 
     const depois: Apresentacao = {
       ...a,
-      slides: [...a.slides, {
-        id: 'tardio', titulo: 'Um aviso a mais', topicos: [], layout: 'so-titulo',
-        imagens: [], imagensAlinhadas: false, video: 'nenhuma', audio: 'nenhuma',
-      }],
+      slides: [...a.slides,
+        { ...slideNovo('tardio', 'so-titulo'), titulo: 'Um aviso a mais' }],
     };
     expect(meta.feita(depois)).toBe(false);
     expect(meta.feita({ ...depois, pdf: depois.slides.map(s => s.id) })).toBe(true);

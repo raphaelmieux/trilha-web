@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import postcss from 'postcss';
-import tailwind from 'tailwindcss';
+import { ORCAMENTO_DA_FOLHA, folhaPublicada } from '../../lib/folhaPublicada';
 
 /*
   O seletor de cores do Scratch precisa ficar por cima do aplicativo.
@@ -31,15 +28,7 @@ import tailwind from 'tailwindcss';
   baixo, e é este teste que garante que a de cima acompanhou.
 */
 
-const RAIZ = resolve(__dirname, '../../..');
-
-const folha = async (): Promise<string> => {
-  const css = readFileSync(resolve(RAIZ, 'src/index.css'), 'utf8');
-  const { css: saida } = await postcss([
-    tailwind({ config: resolve(RAIZ, 'tailwind.config.js') }),
-  ]).process(css, { from: resolve(RAIZ, 'src/index.css') });
-  return saida;
-};
+const folha = folhaPublicada;
 
 /** O z-index que a folha publicada dá a um seletor. */
 function zDe(css: string, seletor: string): number | undefined {
@@ -50,7 +39,7 @@ function zDe(css: string, seletor: string): number | undefined {
   return z ? Number(z[1]) : undefined;
 }
 
-describe('o seletor de cores do Scratch fica acima da casca', () => {
+describe('o seletor de cores do Scratch fica acima da casca', { timeout: ORCAMENTO_DA_FOLHA }, () => {
   it('o popover do editor de pintura sobrepõe o #root', async () => {
     const css = await folha();
     const raiz = zDe(css, '#root');

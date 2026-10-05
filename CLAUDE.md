@@ -3457,6 +3457,122 @@ como `type` e recusada por `Json` como `interface`. Trocar de volta parece
 inofensivo e quebra a gravação do rascunho. Está anotado em `ConferenciaEtapa`,
 `RespostaEtapa` e `ParDeLigar`.
 
+**A janela do PowerPoint saiu antes da cópia, e o palco já era a cópia.** Ela
+morava dentro de `ApresentacaoLab.tsx` — barra de título, as onze guias, a
+faixa, a tira de slides, o palco, os bastidores —, tudo privado ao requisito 9
+da AP044. A CC-ES011 é a vereda de Apresentações e precisa dela, então
+`powerpoint.tsx` saiu pela decisão de `word.tsx`, `excel.tsx`, `explorer.tsx`,
+`leitorDePdf.tsx` e `correio.tsx`.
+
+E dentro dela o palco já era um **segundo desenho** do mesmo slide, já
+divergido: ele fixava `alignItems: 'flex-start'` onde a tira lê
+`imagensAlinhadas`, então um par de fotos desalinhadas aparecia diferente nos
+dois lugares. Ele era um segundo desenho só porque precisava de um título
+digitável — `FolhaDoSlide` recebe `aoEscreverNoTitulo`, que é a regra do
+`aoBuscar` do Explorador, e palco, tira e prévia voltaram a ser um.
+
+O modelo desceu junto, para `apresentacao.ts`: `Modelo`, `Layout`, `Slide` e as
+cores dos temas moravam ao lado da apresentação de partida e das sete metas da
+AP044, então o tipo de um slide dependia das metas de um exercício. É o encaixe
+que `planilha.ts` tinha com `metasDaAp043.ts`. Na mesma volta `planilhaDe`
+desceu de `cadernoDoClube.ts` para `planilha.ts`, porque uma planilha de custos
+na CC-ES011 a importaria do caderno da CC-ES003.
+
+**O slide mestre é o estilo da CC-ES002 pelo outro lado, e a direta vence os
+dois.** É por isso que o requisito 1 exige aquela vereda. A aparência sai de
+`SlideMestre` e a formatação aplicada à mão vence ela ao desenhar — e é essa
+precedência que faz a lição existir: mexe-se no mestre, **nada muda na tela**,
+porque a direta continua lá ganhando. Limpar Formatação não encosta no texto, e
+redigitar o slide "também resolve", que é como se perde um slide inteiro sem
+perceber. `FolhaDoSlide` recebe o mestre, e não uma tabela de cores: uma fonte
+só de aparência, em vez de duas.
+
+**O desalinho não existe num slide: existe na diferença entre dois.** Quem
+desenha caixa de texto à mão acerta a posição de um e erra a do seguinte por
+alguns milímetros; abra qualquer um, está bonito; passe de um para o outro, o
+título pula. Por isso `desalinhoDasCaixas` mede a **diferença** e nunca a
+posição: medir um slide aprovaria uma apresentação inteira torta desde que o
+primeiro estivesse bom, que é exatamente como ela chega. E a descoberta sai de
+ver dois slides seguidos, e não de entrar na apresentação — marcá-la na entrada
+premiaria o clique e não a observação.
+
+**A folha desenha igual com imagem boa ou ruim, e é essa a premissa.** Resolução
+não aparece no desenho: a foto pequena esticada fica bonita no monitor e
+serrilhada no telão, que é por que tanta apresentação chega assim. É a decisão
+de `leitorDePdf.tsx` — a folha desenha igual com texto dentro ou sem —, e se a
+tela marcasse qual é qual o requisito 4.3 não teria o que demonstrar. Quem
+relata a medida é o programa, onde o PowerPoint a relata: o painel de
+Acessibilidade, em Revisão, que escreve "contraste insuficiente" e nunca se a
+tarefa está cumprida.
+
+**E o ppi da caixa Compactar Imagens é por polegada de slide, não por pixel de
+tela.** A primeira conta aqui dividia por 96, e dava 1760 pixels onde o
+PowerPoint dá 1173. `POLEGADAS_DO_SLIDE` — 960 pontos a 72 por polegada — é a
+ponte entre os dois números que o requisito fala, e com ela os três valores que
+a caixa oferece custam coisas diferentes: 96 ppi serrilha, 150 e 220 não. Sem
+ela, a escolha seria um número que não muda nada.
+
+**O corpo do slide é uma caixa de texto só, e foi a trava que clica quem
+cobrou.** Ele era um campo por tópico, e aí **não havia gesto nenhum para
+apagar um**: a meta de seis tópicos por slide era impossível de fechar com o
+motor inteiramente correto, que é pior do que uma tarefa que abre verde — uma
+dá uma tarefa de graça, a outra deixa quem fez tudo certo olhando uma lista
+vermelha sem nada na tela explicando. Uma caixa só é o que um espaço reservado
+de conteúdo é, e dela o apagar sai de graça. As linhas vazias **do fim** saem,
+porque Enter no fim da lista cria uma que ninguém vê; as do meio ficam, porque
+linha em branco entre dois tópicos é escolha de quem escreve.
+
+**As dez informações essenciais são declaradas, e há duas maneiras de carregar
+uma.** Medir "perda de conteúdo essencial" lendo a prosa seria máquina frágil
+que um dia para de achar o que procura e aprova tudo calada. Declaradas, a
+lição pode **dizer** quais são — que é o que um examinador faz: ele não pede
+para adivinhar o que considera essencial. E o custo deixa de ser texto no
+módulo 7, quando a tabela digitada vira gráfico: procurar as dez no texto
+acusaria de perda justamente quem cumpriu o requisito 4.4, então `peloGrafico`
+é um campo e não uma exceção escondida numa condição.
+
+**O telão com a luz da sala é da plataforma; o modo do apresentador é do
+programa.** Nenhum programa simula projetor, então o botão que acende a luz
+mora no painel de tarefas, onde as coisas da plataforma moram — é a decisão do
+caderno da CC-ES009. O modo do apresentador é do PowerPoint e fica na faixa. A
+mesma régua separou o caderno, que recebe a classificação dos três erros, a
+justificativa de cada corte e a abertura da fala: três coisas que o PowerPoint
+não tem onde guardar.
+
+**E o painel desce para baixo do palco no celular, inteiro.** Ele é o único
+lugar onde o programa relata o contraste, que é o caminho do requisito 2.5:
+esconder o painel tiraria a tarefa da tela estreita. É a regra de sempre —
+reduzir a tela nunca reduz o que dá para fazer nela —, e é o que a margem de
+revisão da CC-ES002 faz do lado dela.
+
+**Cortar slide e cortar palavra são duas contas, e as minhas duas soluções de
+referência erraram as duas.** A que encurtava cada tópico nas oito primeiras
+palavras jogou fora o "dezenove horas" da saída do ônibus; a que tirava tópicos
+até o slide caber em vinte palavras jogou fora a Chácara Recanto Verde e o Pix.
+Cortar palavra é **reescrever a linha mais curta**, e não apagar a linha — por
+isso as dez essenciais viajam conjugadas com as metas que encurtam, e não só
+com a do corte. E o corte entrega slides acima do orçamento de propósito: se
+ele já resolvesse as vinte palavras, o módulo 10 abriria verde.
+
+**Trava que mede vocabulário em vez de papel reprova o certo.**
+`desenhoDoGrafico.test.ts` procurava o nome `DesenhoDoGrafico` em qualquer
+lugar de um arquivo de tela, e reprovou `powerpoint.tsx` por um **comentário**
+que diz de onde o desenho vem. Aquela janela não desenha gráfico nenhum. Hoje a
+varredura procura a chamada de JSX no código já sem comentários, e a guarda do
+apagador olha para o resto do arquivo. O jeito de satisfazer a versão antiga
+seria apagar do comentário o nome do lugar onde o desenho mora, que é o defeito
+que o aviso do digitalizador já teve.
+
+**Trava cujo custo cresce com o repositório falha com cara de acaso.** Três
+delas leem a folha **publicada** — a da marca, a do fundo e a do seletor de
+cores do Scratch —, e compor a folha roda o Tailwind sobre o `content` inteiro.
+A da marca a compunha duas vezes, uma por `it`, e no dia em que a CC-ES011
+entrou as duas passagens cruzaram o limite de cinco segundos: vermelha sem
+ninguém ter mexido na folha, passando numa máquina e perdendo noutra, e sem
+ninguém desconfiar do código. `folhaPublicada` a compõe uma vez e a guarda, e
+as três declaram o orçamento, porque ele é de um passo de build e não de uma
+asserção.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -3824,6 +3940,25 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/exemplosDaAnalise.test.ts` | base em que a moda descreve gente nas duas colunas, ou em que a média engana em todas |
 | `src/curriculum/exemplosDaAnalise.test.ts` | base em que quem mais deixou de fora não é quem mobilizou melhor, que apaga o requisito 4 |
 | `src/curriculum/qualidade.test.ts` | vereda cuja alternativa correta se lê pelo tamanho, medida sozinha |
+| `src/labs/apresentacao.test.ts` | formatação direta perdendo do mestre, que faz o requisito 4.1 parecer cumprido no primeiro clique |
+| `src/labs/apresentacao.test.ts` | nota do apresentador entrando na conta de palavras, ou caixa à mão saindo dela |
+| `src/labs/apresentacao.test.ts` | desalinho medido pela posição de um slide em vez da diferença entre dois |
+| `src/labs/apresentacao.test.ts` | layout aplicado que deixa a caixa à mão por cima, com o texto duas vezes na tela |
+| `src/labs/apresentacao.test.ts` | compactar ampliando a foto pequena, ou os três valores de ppi dando no mesmo |
+| `src/labs/metasDaCcEs011.test.ts` | meta da CC-ES011 que abre verde, ou que a solução de referência não fecha |
+| `src/labs/metasDaCcEs011.test.ts` | apresentação de partida sem o defeito que a lição manda consertar |
+| `src/labs/metasDaCcEs011.test.ts` | título redigitado valendo por formatação limpa |
+| `src/labs/metasDaCcEs011.test.ts` | preto no título ou cinza no corpo resolvendo a conta e jogando a identidade fora |
+| `src/labs/metasDaCcEs011.test.ts` | gráfico colado como imagem valendo por acompanhar a planilha |
+| `src/labs/metasDaCcEs011.test.ts` | nota que copia o próprio tópico, ou a fala colada no slide |
+| `src/labs/metasDaCcEs011.test.ts` | oito slides alcançados excluindo, ou nove tópicos empilhados num |
+| `src/labs/metasDaCcEs011.test.ts` | corte que perde o local, com o gráfico dos custos no lugar |
+| `src/components/LaboratorioDeApresentacao.test.tsx` | lição da CC-ES011 impossível de vencer clicando |
+| `src/components/LaboratorioDeApresentacao.test.tsx` | corpo do slide sem gesto para apagar um tópico |
+| `src/components/LaboratorioDeApresentacao.test.tsx` | tom do seletor de cor divergindo do que o modelo mede como legível |
+| `src/components/LaboratorioDeApresentacao.test.tsx` | painel de acessibilidade que julga a tarefa em vez de relatar a medida |
+| `src/labs/roteiroDaApresentacao.test.ts` | roteiro que julga a apresentação, ou que transcreve a nota |
+| `src/curriculum/qualidade.test.ts` | questão da CC-ES011 cuja correta se lê pelo tamanho, medida na vereda sozinha |
 | `src/labs/diagramaDoComputador.test.ts` | meta do diagrama da AP045 que abre verde, seta ao contrário passando porque outro caminho chega, ou mover peça invalidando a simulação |
 | `src/labs/pesquisaDoBug.test.ts` | página que responde às quatro perguntas sozinha, primeiro resultado confiável, ou ficha de fonte ruim valendo no caderno |
 | `src/labs/relatorioDePesquisa.test.ts` | etapa de fato sem ficha citada, cópia sem aspas passando, ou referências contando palavras |

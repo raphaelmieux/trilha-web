@@ -14,6 +14,7 @@ import {
 } from './powerpoint';
 import {
   CORES_DO_MODELO, NOMES_DOS_LAYOUTS, NOMES_DOS_MODELOS, vazio,
+  imagemInserida, mestreDoModelo, slideNovo,
   type Apresentacao, type Slide, type Layout, type Modelo, type Midia,
 } from './apresentacao';
 import { APRESENTACAO_INICIAL, METAS_DA_APRESENTACAO } from './apresentacaoDoClube';
@@ -54,8 +55,19 @@ import type { PropsDeLaboratorio as Props } from './tipos';
 /** As guias que respondem neste exercício; a fileira inteira é do programa. */
 const USAVEIS = ['Página Inicial', 'Inserir', 'Design'];
 
-/** Os arquivos que o computador do clube tem, para os diálogos de inserir. */
-const FOTOS = ['fogueira.jpg', 'barracas.jpg', 'caminhada.jpg'];
+/**
+ * Os arquivos que o computador do clube tem, para os diálogos de inserir.
+ *
+ * As fotos saíram do celular de quem foi ao acampamento, e é por isso que elas
+ * têm doze megapixels: é o tamanho que uma foto de celular tem. A AP044 não
+ * mede isso — quem mede é o requisito 4.3 da CC-ES011 —, mas inventar um
+ * tamanho pequeno aqui faria o arquivo do clube pesar o que ele não pesa.
+ */
+const FOTOS: [string, number, number][] = [
+  ['fogueira.jpg', 4032, 3024],
+  ['barracas.jpg', 4032, 3024],
+  ['caminhada.jpg', 3024, 4032],
+];
 const VIDEOS = ['abertura-2025.mp4'];
 const AUDIOS = ['hino-do-clube.mp3'];
 
@@ -67,9 +79,6 @@ const AUDIOS = ['hino-do-clube.mp3'];
 */
 const CAMINHO_DO_VIDEO = `C:\\Users\\clube\\Vídeos\\${VIDEOS[0]}`;
 const CAMINHO_DO_AUDIO = `C:\\Users\\clube\\Música\\${AUDIOS[0]}`;
-
-const novoSlide = (id: string, layout: Layout): Slide =>
-  ({ id, titulo: '', topicos: [], layout, imagens: [], imagensAlinhadas: false, video: 'nenhuma', audio: 'nenhuma' });
 
 export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
   const [ap, setAp] = useState<Apresentacao>(APRESENTACAO_INICIAL);
@@ -83,7 +92,7 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
   const [gravando, setGravando] = useState(false);
 
   const slide = ap.slides[Math.min(atual, ap.slides.length - 1)];
-  const cores = CORES_DO_MODELO[ap.modelo];
+  const mestre = ap.mestre;
 
   const tarefas = METAS_DA_APRESENTACAO.map(m => ({
     id: m.id, titulo: m.titulo, detalhe: m.detalhe, onde: m.onde,
@@ -104,7 +113,9 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
 
   const escolherModelo = (m: Modelo) => {
     fecharMenu();
-    setAp(a => ({ ...a, modelo: m }));
+    /* Escolher um tema **reescreve o mestre**, que é o que um tema é: as
+       cores dele passam a valer para todos os slides de uma vez. */
+    setAp(a => ({ ...a, modelo: m, mestre: mestreDoModelo(m) }));
     setAviso(m === 'branco'
       ? 'De volta ao branco.'
       : `Modelo ${NOMES_DOS_MODELOS[m]} aplicado. Repare na tira lateral: os ${ap.slides.length} slides mudaram juntos, e não um por um.`);
@@ -114,7 +125,7 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
 
   const criarSlide = (layout: Layout) => {
     fecharMenu();
-    const novo = novoSlide(`n${Date.now()}`, layout);
+    const novo = slideNovo(`n${Date.now()}`, layout);
     setAp(a => ({ ...a, slides: [...a.slides.slice(0, atual + 1), novo, ...a.slides.slice(atual + 1)] }));
     setAtual(atual + 1);
     setAviso('Slide criado. Ele nasce dentro do modelo, com as caixas do layout escolhido — clique no título para escrever nele.');
@@ -159,10 +170,10 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
 
   // ── Inserir ────────────────────────────────────────────────────────────
 
-  const inserirFoto = (nome: string) => {
+  const inserirFoto = ([nome, px, py]: [string, number, number]) => {
     fecharMenu();
     mudarSlide(slide.id, {
-      imagens: [...slide.imagens, { id: `img${Date.now()}`, legenda: nome, largura: 40 }],
+      imagens: [...slide.imagens, imagemInserida(`img${Date.now()}`, nome, px, py)],
       /* Foto nova desfaz o alinhamento: ela entra onde o programa a põe, e não
          onde as outras estão. É o que acontece no PowerPoint. */
       imagensAlinhadas: false,
@@ -280,7 +291,7 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
    */
   const desenharSlide = (s: Slide, mini = false) => (
     <FolhaDoSlide
-      slide={s} cores={cores} mini={mini}
+      slide={s} mestre={mestre} mini={mini}
       caminhoDoVideo={CAMINHO_DO_VIDEO} nomeDoAudio={AUDIOS[0]}
       caminhoDoAudio={CAMINHO_DO_AUDIO}
     />
@@ -373,7 +384,11 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
                       </BotaoDoPowerPoint>
                       <MenuDoPowerPoint aberto={menu === 'imagens'}>
                         <p style={{ fontSize: 10.5, color: '#605E5C', padding: '4px 10px 2px' }}>Este Dispositivo…</p>
-                        {FOTOS.map(f => <ItemDeMenuDoPowerPoint key={f} aoClicar={() => inserirFoto(f)}>{f}</ItemDeMenuDoPowerPoint>)}
+                        {FOTOS.map(f => (
+                          <ItemDeMenuDoPowerPoint key={f[0]} aoClicar={() => inserirFoto(f)}>
+                            {f[0]}
+                          </ItemDeMenuDoPowerPoint>
+                        ))}
                       </MenuDoPowerPoint>
                     </div>
                     <BotaoDoPowerPoint dica="Formas" aoClicar={() => naoFazParte('Formas')}><SquareIcon className="w-4 h-4" /></BotaoDoPowerPoint>
@@ -457,7 +472,7 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
               <div className="pp-palco" onClick={ev => ev.stopPropagation()}>
                 <div style={{ width: '100%', maxWidth: 620 }}>
                   <FolhaDoSlide
-                    slide={slide} cores={cores}
+                    slide={slide} mestre={mestre}
                     rotuloDoTitulo={`Título do slide ${atual + 1}`}
                     aoEscreverNoTitulo={titulo => mudarSlide(slide.id, { titulo })}
                     caminhoDoVideo={CAMINHO_DO_VIDEO}

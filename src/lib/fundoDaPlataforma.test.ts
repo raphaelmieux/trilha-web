@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import postcss, { type Root, type AtRule } from 'postcss';
-import tailwind from 'tailwindcss';
+import { ORCAMENTO_DA_FOLHA, folhaPublicada } from './folhaPublicada';
 
 /*
   O fundo da plataforma é a única peça de tela que vive em dois arquivos.
@@ -152,13 +152,14 @@ function sobrepor(frente: Cor, alfa: number, fundo: Cor): Cor {
 
 let css: Root;
 
+/*
+  O orçamento é declarado, e é de um passo de build: compor a folha varre o
+  `content` inteiro do Tailwind, e isso cresce com o repositório. É a mesma
+  razão de `folhaPublicada` guardar o resultado.
+*/
 beforeAll(async () => {
-  const fonte = readFileSync(resolve(RAIZ, 'src/index.css'), 'utf8');
-  const { css: saida } = await postcss([
-    tailwind({ config: resolve(RAIZ, 'tailwind.config.js') }),
-  ]).process(fonte, { from: resolve(RAIZ, 'src/index.css') });
-  css = postcss.parse(saida);
-});
+  css = postcss.parse(await folhaPublicada());
+}, ORCAMENTO_DA_FOLHA);
 
 describe('a marcação do fundo e a folha falam da mesma coisa', () => {
   it('toda camada escrita no index.html é estilizada, e toda regra tem camada', () => {

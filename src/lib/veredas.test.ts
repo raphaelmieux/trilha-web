@@ -47,6 +47,7 @@ import { LICOES_DA_CC_ES007 } from '../labs/metasDaCcEs007';
 import { LICOES_DA_CC_ES008 } from '../labs/metasDaCcEs008';
 import { LICOES_DA_CC_ES009 } from '../labs/metasDaCcEs009';
 import { LICOES_DA_CC_ES010 } from '../labs/metasDaCcEs010';
+import { METAS_DA_LICAO } from '../labs/metasDaCcEs011';
 
 /*
   Os laboratórios de Word partem de documentos diferentes, e a trava precisa
@@ -524,6 +525,10 @@ describe('os modelos dos laboratórios da vereda', () => {
           LICOES_DA_CC_ES009[l.licao].metas.map(m => [m.id, m.passos]));
         case 'estatistica': return Object.fromEntries(
           LICOES_DA_CC_ES010[l.licao].metas.map(m => [m.id, m.passos]));
+        /* E a CC-ES011 pelo mesmo motivo, com o PowerPoint e o caderno. Quem
+           responde pelos passos continua sendo a meta. */
+        case 'apresentacao': return Object.fromEntries(
+          METAS_DA_LICAO[l.licao].map(m => [m.id, m.passos]));
         case 'laboratorio': return passosDe(l.linguagem);
         /* Teoria e redação não têm verificação com passo a passo. */
         case 'teoria': case 'redacao': return null;

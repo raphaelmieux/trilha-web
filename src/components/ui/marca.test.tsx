@@ -2,9 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
-import postcss from 'postcss';
-import tailwind from 'tailwindcss';
 import BrandMark, { MarcaEmTexto } from './BrandMark';
+import { ORCAMENTO_DA_FOLHA, folhaPublicada } from '../../lib/folhaPublicada';
 import { comMarca } from './comMarca';
 import { MARCAS, NOME, MIOLO, PARENTESES, VERMELHO_DA_MARCA, partirNaMarca } from '../../lib/marca';
 
@@ -151,23 +150,23 @@ describe('a marca desenhada', () => {
   A folha publicada, e não o arquivo de origem — a mesma razão do
   `seletorDeCores.test.ts`: quem pinta no navegador é o que sai do Tailwind.
 */
-const folha = async (): Promise<string> => {
-  const css = readFileSync(resolve(RAIZ, 'src/index.css'), 'utf8');
-  const { css: saida } = await postcss([
-    tailwind({ config: resolve(RAIZ, 'tailwind.config.js') }),
-  ]).process(css, { from: resolve(RAIZ, 'src/index.css') });
-  return saida;
-};
-
 /** O corpo da primeira regra com este seletor, na folha publicada. */
 function regra(css: string, seletor: string): string | undefined {
   const escapado = seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return css.match(new RegExp(`(^|\\})\\s*${escapado}\\s*\\{([^}]*)\\}`, 'm'))?.[2];
 }
 
-describe('o vermelho da marca na folha publicada', () => {
+/*
+  O orçamento é declarado, e é de um passo de build.
+
+  Compor a folha varre o `content` inteiro do Tailwind, e isso cresce com o
+  repositório: o limite de cinco segundos de um `it` foi alcançado no dia em
+  que a CC-ES011 entrou, e a trava ficou vermelha sem ninguém ter mexido na
+  folha. `folhaPublicada` a guarda, e aqui o tempo é dito em voz alta.
+*/
+describe('o vermelho da marca na folha publicada', { timeout: ORCAMENTO_DA_FOLHA }, () => {
   it('os parênteses saem do token da marca, e não de um hexadecimal solto', async () => {
-    const corpo = regra(await folha(), '.marca-parenteses');
+    const corpo = regra(await folhaPublicada(), '.marca-parenteses');
     expect(corpo,
       'a regra de `.marca-parenteses` sumiu da folha publicada — sem ela os '
       + 'parênteses saem da mesma cor do resto do nome, em toda tela de uma vez.',
@@ -178,7 +177,7 @@ describe('o vermelho da marca na folha publicada', () => {
   /* O cursor era `currentColor`, que na barra fixa é branco. Vermelho é o
      pedido, e é o que combina com os parênteses que ele acabou de digitar. */
   it('o cursor da digitação é do mesmo vermelho', async () => {
-    const css = await folha();
+    const css = await folhaPublicada();
     expect(regra(css, '.marca-texto')).toMatch(/border-right:[^;]*var\(--color-primary\)/);
     expect(css).toMatch(/@keyframes marca-cursor\s*\{[^}]*\{[^}]*var\(--color-primary\)/);
   });
@@ -190,7 +189,7 @@ describe('o vermelho da marca na folha publicada', () => {
     ficha impressa com a tela.
   */
   it('o vermelho do PDF é o mesmo `--color-primary` da tela', async () => {
-    const raiz = regra(await folha(), ':root');
+    const raiz = regra(await folhaPublicada(), ':root');
     const token = raiz?.match(/--color-primary:\s*(#[0-9a-fA-F]{6})/)?.[1];
     expect(token, '`--color-primary` sumiu de `:root`').toBeTypeOf('string');
 
