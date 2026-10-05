@@ -1,6 +1,9 @@
 import type React from 'react';
 import { Link2, Minus, Music, Play, Presentation, Square as SquareIcon, X } from 'lucide-react';
-import type { CoresDoModelo, Slide } from './apresentacao';
+import {
+  PX_POR_PONTO, aparenciaDoSlide,
+  type GraficoNoSlide, type Slide, type SlideMestre,
+} from './apresentacao';
 
 /**
  * A janela do PowerPoint.
@@ -115,6 +118,20 @@ export const CSS_POWERPOINT = `
   font: inherit; color: inherit; text-align: inherit; padding: 1px 3px;
 }
 .pp-titulo-campo:hover { border-color: #A6A6A6; }
+/*
+  A caixa desenhada à mão fica onde ela ficou, por cima do slide.
+
+  Posição absoluta porque é isso que uma caixa de texto solta é — e é a
+  posição de cada uma que o requisito 4.2 da CC-ES011 cobra. O espaço
+  reservado do layout não tem posição própria nenhuma, e é essa a diferença.
+*/
+.pp-caixa { position: absolute; white-space: pre-wrap; }
+.pp-logo {
+  position: absolute; right: 2.5%; bottom: 4%; background: rgba(0,0,0,.08);
+  letter-spacing: .06em; text-transform: uppercase; font-weight: 600;
+}
+.pp-numero { position: absolute; right: 2.5%; bottom: 1.5%; opacity: .75; }
+.pp-grafico { width: 100%; }
 .pp-titulo-campo:focus { outline: none; border-color: #B7472A; border-style: solid; }
 .pp-status {
   background: #B7472A; color: #FFFFFF; font-size: 11.5px;
@@ -310,6 +327,7 @@ export function ItemDeMenuDoPowerPoint({ aoClicar, ativo, children }: {
   );
 }
 
+
 /**
  * O slide desenhado — no palco, e menor na tira lateral e na prévia.
  *
@@ -317,6 +335,24 @@ export function ItemDeMenuDoPowerPoint({ aoClicar, ativo, children }: {
  * a miniatura seja o slide e não uma segunda representação dele. Duas
  * representações divergiriam, e a tira passaria a mostrar um slide que o palco
  * não mostra.
+ *
+ * ── Quem manda na aparência é o mestre ──────────────────────────────────
+ * Fonte, tamanho, cor e fundo saem de `SlideMestre`, e por cima dele vem a
+ * formatação aplicada à mão — nessa ordem, como no PowerPoint. É essa
+ * precedência que faz o requisito 4.1 existir: mexer no mestre e nada mudar na
+ * tela significa que a direta continua lá, ganhando.
+ *
+ * ── A folha desenha igual, com imagem boa ou ruim ────────────────────────
+ * Resolução não aparece no desenho, e **é essa a premissa**: a foto pequena
+ * esticada fica bonita na tela do computador e serrilhada no telão, que é por
+ * que tanta apresentação chega assim. É a decisão de `leitorDePdf.tsx` — a
+ * folha desenha igual com texto dentro ou sem —, pelo motivo escrito lá: se a
+ * tela marcasse qual é qual, o requisito 4.3 não teria o que demonstrar.
+ * Quem relata a medida é o programa, onde o PowerPoint a relata.
+ *
+ * ── E as notas não aparecem aqui ────────────────────────────────────────
+ * Elas são o que se fala, e o telão não as mostra. Desenhá-las no slide
+ * apagaria a distinção inteira do requisito 2.4.
  *
  * Os caminhos do vídeo e do áudio vinculados vêm de fora, porque são arquivos
  * do computador do exercício — e é neles que a diferença entre incorporar e
@@ -330,30 +366,60 @@ export function ItemDeMenuDoPowerPoint({ aoClicar, ativo, children }: {
  * primeiro ajuste — a tira passaria a mostrar um slide que o palco não mostra.
  */
 export function FolhaDoSlide({
-  slide, cores, mini, caminhoDoVideo, nomeDoAudio, caminhoDoAudio,
-  aoEscreverNoTitulo, rotuloDoTitulo,
+  slide, mestre, mini, numero, caminhoDoVideo, nomeDoAudio, caminhoDoAudio,
+  aoEscreverNoTitulo, rotuloDoTitulo, desenharGrafico,
 }: {
   slide: Slide;
-  cores: CoresDoModelo;
+  mestre: SlideMestre;
   mini?: boolean;
+  /** O número deste slide, para o campo do pé — que é campo, e não digitado. */
+  numero?: number;
   caminhoDoVideo?: string;
   nomeDoAudio?: string;
   caminhoDoAudio?: string;
   aoEscreverNoTitulo?: (texto: string) => void;
   rotuloDoTitulo?: string;
+  /**
+   * O gráfico, desenhado por quem tem os números.
+   *
+   * A folha não sabe desenhar gráfico, e é de propósito: quem desenha é o
+   * `DesenhoDoGrafico` de `excel.tsx`, que é o mesmo desenho que a planilha
+   * faz. Dois desenhos para o mesmo gráfico divergiriam, e o slide passaria a
+   * mostrar uma coisa e a planilha outra.
+   */
+  desenharGrafico?: (g: GraficoNoSlide) => React.ReactNode;
 }) {
   const f = mini ? 0.28 : 1;
   const s = slide;
+  const pt = (pontos: number) => pontos * PX_POR_PONTO * f;
+  const doTitulo = aparenciaDoSlide(mestre, 'titulo', s.diretoNoTitulo);
+  const doCorpo = aparenciaDoSlide(mestre, 'corpo', s.diretoNoCorpo);
+  const estilo = (a: ReturnType<typeof aparenciaDoSlide>) => ({
+    color: a.cor,
+    fontSize: pt(a.tamanho),
+    fontWeight: a.negrito ? 600 : 400,
+    fontStyle: a.italico ? 'italic' as const : 'normal' as const,
+    ...(a.fonte ? { fontFamily: a.fonte } : {}),
+  });
+
   return (
-    <div className="pp-slide" style={{ background: cores.fundo }}>
-      {cores.faixa !== 'transparent' && (
+    <div className="pp-slide" style={{ background: mestre.corDoFundo }}>
+      {mestre.corDaFaixa !== 'transparent' && (
         <div style={{
-          position: 'absolute', left: 0, right: 0, top: 0, height: 6 * f, background: cores.faixa,
+          position: 'absolute', left: 0, right: 0, top: 0, height: 6 * f,
+          background: mestre.corDaFaixa,
         }} />
+      )}
+      {mestre.logo && (
+        <span className="pp-logo" style={{
+          fontSize: 9 * f, padding: `${2 * f}px ${5 * f}px`, borderRadius: 2 * f,
+        }}>
+          Pioneiros
+        </span>
       )}
       {s.layout !== 'em-branco' && (
         <p style={{
-          color: cores.titulo, fontSize: 26 * f, fontWeight: 600, lineHeight: 1.15,
+          ...estilo(doTitulo), lineHeight: 1.15,
           padding: `${(s.layout === 'titulo' ? 60 : 26) * f}px ${28 * f}px ${8 * f}px`,
           textAlign: s.layout === 'titulo' ? 'center' : 'left',
         }}>
@@ -371,13 +437,37 @@ export function FolhaDoSlide({
       )}
       {s.topicos.length > 0 && (
         <ul style={{
-          color: cores.texto, fontSize: 15 * f, padding: `0 ${34 * f}px`,
+          ...estilo(doCorpo), padding: `0 ${34 * f}px`,
           textAlign: s.layout === 'titulo' ? 'center' : 'left',
           listStyle: s.layout === 'titulo' ? 'none' : 'disc',
           lineHeight: 1.5,
         }}>
           {s.topicos.map((t, i) => <li key={i} style={{ marginBottom: 3 * f }}>{t}</li>)}
         </ul>
+      )}
+      {/*
+        As caixas desenhadas à mão, cada uma onde ela ficou.
+
+        Elas vão por cima, em posição absoluta, porque é isso que uma caixa de
+        texto solta é — e é a posição de cada uma que o requisito 4.2 cobra.
+      */}
+      {s.caixas.map(c => (
+        <div
+          key={c.id} className="pp-caixa"
+          style={{
+            left: `${c.x}%`, top: `${c.y}%`, width: `${c.largura}%`,
+            ...estilo(c.papel === 'titulo' ? doTitulo : doCorpo),
+            fontSize: pt(c.tamanho),
+            lineHeight: c.papel === 'titulo' ? 1.15 : 1.4,
+          }}
+        >
+          {c.texto}
+        </div>
+      ))}
+      {s.grafico && desenharGrafico && (
+        <div className="pp-grafico" style={{ padding: `${4 * f}px ${28 * f}px` }}>
+          {desenharGrafico(s.grafico)}
+        </div>
       )}
       {s.imagens.length > 0 && (
         <div style={{
@@ -420,7 +510,7 @@ export function FolhaDoSlide({
         <div style={{ padding: `0 ${28 * f}px ${6 * f}px` }}>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10 * f,
-            color: cores.texto, border: '1px solid #A6A6A6', borderRadius: 999,
+            color: doCorpo.cor, border: '1px solid #A6A6A6', borderRadius: 999,
             padding: `${2 * f}px ${8 * f}px`,
           }}>
             <Music style={{ width: 10 * f, height: 10 * f }} /> {mini ? '' : nomeDoAudio}
@@ -431,6 +521,18 @@ export function FolhaDoSlide({
             </p>
           )}
         </div>
+      )}
+      {/*
+        O número do slide no pé: campo, e não número digitado.
+
+        É a mesma distinção do requisito 4.4 da CC-ES002, e aqui ela é do
+        mestre: o campo mostra a posição de cada slide, e quem digita "3" fica
+        com três na apresentação inteira.
+      */}
+      {mestre.numeroNoPe && numero !== undefined && (
+        <span className="pp-numero" style={{ fontSize: 9 * f, color: doCorpo.cor }}>
+          {numero}
+        </span>
       )}
     </div>
   );

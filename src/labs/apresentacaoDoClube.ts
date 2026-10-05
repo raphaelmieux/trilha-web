@@ -28,12 +28,12 @@
  */
 
 import {
-  umSlide, vazio,
+  mestreDoModelo, slideNovo, umSlide, vazio,
   type Apresentacao, type Layout, type Slide,
 } from './apresentacao';
 
 const slide = (id: string, titulo: string, topicos: string[], layout: Layout): Slide =>
-  ({ id, titulo, topicos, layout, imagens: [], imagensAlinhadas: false, video: 'nenhuma', audio: 'nenhuma' });
+  ({ ...slideNovo(id, layout), titulo, topicos });
 
 /**
  * A apresentação como ela chega: escrita, e sem uma decisão tomada.
@@ -47,6 +47,7 @@ const slide = (id: string, titulo: string, topicos: string[], layout: Layout): S
  */
 export const APRESENTACAO_INICIAL: Apresentacao = {
   modelo: 'branco',
+  mestre: mestreDoModelo('branco'),
   slides: [
     slide('s1', 'Acampamento de Inverno', ['Clube de Desbravadores Pioneiros'], 'titulo'),
     /* Layout errado: os quatro tópicos estão numa caixa de subtítulo, que é o
