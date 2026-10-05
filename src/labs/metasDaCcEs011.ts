@@ -413,9 +413,15 @@ export function ideiasPerdidas(a: Apresentacao): IdeiaEssencial[] {
   ));
 }
 
-/** O maior número de tópicos num slide, que é o teto da hierarquia. */
+/**
+ * O maior número de tópicos num slide, que é o teto da hierarquia.
+ *
+ * Tópico vazio não conta: o corpo do slide é uma caixa de texto só, e uma linha
+ * em branco no meio da lista é escolha de quem escreve. Contá-la faria o teto
+ * de seis estourar por uma linha que ninguém vê.
+ */
 const maisTopicosNumSlide = (a: Apresentacao) =>
-  a.slides.reduce((m, s) => Math.max(m, s.topicos.length), 0);
+  a.slides.reduce((m, s) => Math.max(m, s.topicos.filter(t => t.trim() !== '').length), 0);
 
 /** A frase mais comprida que alguém pôs num tópico. */
 const maisPalavrasNumTopico = (a: Apresentacao) => a.slides

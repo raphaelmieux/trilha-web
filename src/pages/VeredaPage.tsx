@@ -25,6 +25,7 @@ import LaboratorioDaNuvem from '../components/LaboratorioDaNuvem';
 import LaboratorioDeComunicacao from '../components/LaboratorioDeComunicacao';
 import LaboratorioDeDados from '../components/LaboratorioDeDados';
 import LaboratorioDaAnalise from '../components/LaboratorioDaAnalise';
+import LaboratorioDeApresentacao from '../components/LaboratorioDeApresentacao';
 import LaboratorioDaEstatistica from '../components/LaboratorioDaEstatistica';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
@@ -411,6 +412,21 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'estatistica' && profile?.id) {
     return (
       <LaboratorioDaEstatistica vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /*
+    E a CC-ES011 abre o PowerPoint, e numa lição a planilha ao lado.
+
+    Dez lições, uma apresentação: `licao` diz de que estado dela se parte, que é
+    o campo `documento` da CC-ES002 e o `caderno` da CC-ES003. Três delas abrem
+    também o caderno da plataforma — classificar os três erros, justificar cada
+    corte e escrever a abertura da fala não são gestos que o PowerPoint tenha.
+  */
+  if (licaoAberta?.tipo === 'apresentacao' && profile?.id) {
+    return (
+      <LaboratorioDeApresentacao vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

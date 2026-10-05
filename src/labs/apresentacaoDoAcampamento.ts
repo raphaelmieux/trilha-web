@@ -258,7 +258,7 @@ export const APRESENTACAO_DO_ACAMPAMENTO: Apresentacao = {
     {
       ...escrito('s16', 'Dúvidas', [
         'Fale com a liderança da sua unidade, ou com a secretaria do clube no sábado à tarde',
-      ], 'so-titulo'),
+      ]),
       imagens: [umaImagemDoClube('s16-foto', 'chegada.jpg', 38)],
     },
   ],

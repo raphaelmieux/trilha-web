@@ -85,14 +85,28 @@ function semComentarios(fonte: string): string {
   return fora;
 }
 
-/** Todo módulo de tela que desenha gráfico, lido do repositório. */
+/**
+ * Todo módulo de tela que desenha gráfico, lido do repositório.
+ *
+ * A busca é pela **chamada de JSX** no código já sem comentários, e não pelo
+ * nome em qualquer lugar do arquivo. A primeira versão procurava o nome cru, e
+ * reprovou `powerpoint.tsx` no dia em que um comentário dele passou a dizer de
+ * onde o desenho vem: "quem desenha é o `DesenhoDoGrafico` de `excel.tsx`" é
+ * prosa verdadeira, e aquela janela não desenha gráfico nenhum.
+ *
+ * É o defeito que a trava do aviso do digitalizador já teve, e o conserto é o
+ * mesmo: trava que mede vocabulário em vez de papel reprova o certo e ensina a
+ * contorná-la — e o jeito de contorná-la aqui seria apagar do comentário o
+ * nome do lugar onde o desenho mora, que é o contrário do que esta casa quer.
+ */
 function quemDesenhaGrafico(): string[] {
   const achados: string[] = [];
   for (const pasta of PASTAS) {
     for (const nome of readdirSync(pasta)) {
       if (!nome.endsWith('.tsx') || nome.includes('.test.')) continue;
-      const fonte = readFileSync(join(pasta, nome), 'utf8');
-      if (/\bDesenhoDoGrafico\b/.test(fonte) && nome !== 'excel.tsx') achados.push(join(pasta, nome));
+      if (nome === 'excel.tsx') continue;
+      const codigo = semComentarios(readFileSync(join(pasta, nome), 'utf8'));
+      if (/<DesenhoDoGrafico/.test(codigo)) achados.push(join(pasta, nome));
     }
   }
   return achados.sort();
@@ -132,12 +146,13 @@ describe('o desenho do gráfico mora num lugar só', () => {
 
     for (const tela of telas) {
       const codigo = semComentarios(readFileSync(tela, 'utf8'));
-      /* A guarda do apagador: se ele engolisse o arquivo, esta trava aprovaria
-         qualquer coisa calada. O nome que sobra é uma chamada de JSX, e não
-         prosa — some junto com o código se o corte sair errado. É a mesma
-         guarda que `marca.test.tsx` tem, pelo mesmo motivo. */
+      /* A guarda do apagador: se ele engolisse o arquivo, a varredura acharia
+         zero telas e a lista vazia já reprovaria acima. O que sobra a conferir
+         é que ele não comeu o **resto** — um corte que deixasse só a chamada
+         de JSX aprovaria qualquer coisa calada. É a mesma guarda que
+         `marca.test.tsx` tem, pelo mesmo motivo. */
       expect(codigo, `${tela} — o apagador de comentários comeu o arquivo`)
-        .toMatch(/<DesenhoDoGrafico/);
+        .toMatch(/export default function|export function/);
 
       /* Desenhar é chamar o componente de `excel.tsx`. Quem escrever de novo o
          `<polyline>`, o `<path>` de fatia ou o `conic-gradient` está abrindo a

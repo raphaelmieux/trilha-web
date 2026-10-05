@@ -563,6 +563,27 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      A CC-ES011, que abre o PowerPoint — e, numa lição, a planilha ao lado.
+
+      Dez lições, uma apresentação. `licao` diz de que estado dela se parte, que
+      é o campo `documento` da CC-ES002 e o `caderno` da CC-ES003: quem abre o
+      módulo 6 reencontra os slides que o módulo 2 arrumou.
+
+      Três lições abrem também o caderno da plataforma — classificar os três
+      erros, justificar cada corte e escrever a abertura da fala não são gestos
+      que o PowerPoint tenha, e inventá-los dentro da faixa seria pôr coisa
+      nossa dentro do programa imitado. É a decisão do caderno da CC-ES009.
+    */
+    id: string;
+    tipo: 'apresentacao';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcEs011').LicaoDaCcEs011;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
