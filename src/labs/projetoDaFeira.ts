@@ -478,12 +478,14 @@ export const NUVEM_DA_FEIRA: Nuvem = {
  */
 export const NUMEROS_DA_FEIRA: NumeroNoConjunto[] = [
   {
-    id: 'n-unidades', peca: 'documento', alvo: BLOCO_DAS_UNIDADES, como: 'digitado',
+    id: 'n-unidades', peca: 'documento', alvo: BLOCO_DAS_UNIDADES,
+    trecho: 'b-unidades-n', como: 'digitado',
     de: { planilha: NOME_DA_ABA_DE_CONTROLE, linha: LINHA_DAS_UNIDADES, coluna: 1 },
     retrato: 4,
   },
   {
-    id: 'n-custo', peca: 'documento', alvo: BLOCO_DO_CUSTO, como: 'digitado',
+    id: 'n-custo', peca: 'documento', alvo: BLOCO_DO_CUSTO,
+    trecho: 'b-custo-n', como: 'digitado',
     de: { planilha: NOME_DA_ABA_DE_CONTROLE, linha: LINHA_DO_CUSTO, coluna: 1 },
     retrato: CUSTO_POR_UNIDADE,
   },

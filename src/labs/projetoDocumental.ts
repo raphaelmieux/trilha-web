@@ -23,7 +23,7 @@
  * chegam ao mesmo lugar na tela, com o mesmo número, e param ali para sempre.
  */
 
-import { type Doc } from './documento';
+import { type Doc, paragrafos, textoDoTrecho } from './documento';
 import { type Formulario, cabecalhoDe, linhasDe } from './formulario';
 import { type Formato, mostrar, mostrarNumero, num, type Valor } from './formulas';
 import {
@@ -106,6 +106,26 @@ export type ComoChegou = 'digitado' | 'imagem' | 'incorporado' | 'vinculado';
 export const acompanhaAFonte = (como: ComoChegou) => como === 'vinculado';
 
 /**
+ * Como o número chegou, perguntando a quem guarda a resposta.
+ *
+ * Na apresentação quem guarda é o **gráfico**, em `GraficoNoSlide.como`: é lá
+ * que a CC-ES011 o pôs e é de lá que a janela do PowerPoint o desenha. O campo
+ * `como` do número continua existindo para as peças que não têm onde guardá-lo
+ * — o número digitado no meio de um parágrafo não é um objeto que carregue
+ * nada.
+ *
+ * Duas cópias do mesmo fato divergem no primeiro ajuste, e divergiram: a
+ * derivação que vincula o gráfico mudava o slide e deixava o número do
+ * conjunto dizendo `imagem`, então o requisito 8 nunca fechava — com o gráfico
+ * certo na tela, lendo a planilha, e a conta do conjunto dizendo que ele era
+ * uma figura.
+ */
+export function comoChegou(p: ProjetoDocumental, n: NumeroNoConjunto): ComoChegou {
+  if (n.peca !== 'apresentacao') return n.como;
+  return p.apresentacao.slides.find(s => s.grafico?.id === n.alvo)?.grafico?.como ?? n.como;
+}
+
+/**
  * O que cada maneira faz e o que ela **não** faz.
  *
  * Cada opção traz escrito o lado que ela não cobre, como os três métodos de
@@ -145,6 +165,15 @@ export interface NumeroNoConjunto {
   id: string;
   peca: Exclude<TipoDePeca, 'planilha' | 'formulario'>;
   alvo: string;
+  /**
+   * No documento, o trecho que guarda o número dentro do parágrafo.
+   *
+   * Dois campos para um lugar, e é de propósito: `alvo` é o parágrafo, que é
+   * o que as metas nomeiam, e este é o pedaço de texto que se troca. Resolver
+   * por busca — procurar o retrato dentro da frase e substituí-lo — erraria no
+   * dia em que o parágrafo citasse dois números, e erraria trocando o errado.
+   */
+  trecho?: string;
   como: ComoChegou;
   /** Onde ele devia ler: a aba da planilha de controle e a célula. */
   de: { planilha: string; linha: number; coluna: number };
@@ -337,7 +366,7 @@ export function valorNaFonte(
  * ali e o que se lê —, e a distância entre as duas é a lição.
  */
 export function valorMostrado(p: ProjetoDocumental, n: NumeroNoConjunto): number {
-  if (!acompanhaAFonte(n.como)) return n.retrato;
+  if (!acompanhaAFonte(comoChegou(p, n))) return n.retrato;
   return valorNaFonte(p, n.de) ?? n.retrato;
 }
 
@@ -358,7 +387,7 @@ export function numerosDesatualizados(p: ProjetoDocumental): NumeroNoConjunto[] 
 
 /** Os números que não acompanham a fonte, divergindo hoje ou não. */
 export const numerosQueNaoAcompanham = (p: ProjetoDocumental): NumeroNoConjunto[] =>
-  p.numeros.filter(n => !acompanhaAFonte(n.como));
+  p.numeros.filter(n => !acompanhaAFonte(comoChegou(p, n)));
 
 /**
  * Passa um número para vinculado, e refaz o retrato dele.
@@ -374,6 +403,23 @@ export function vincular(p: ProjetoDocumental, id: string): ProjetoDocumental {
       ? { ...n, como: 'vinculado' as ComoChegou, retrato: valorNaFonte(p, n.de) ?? n.retrato }
       : n)),
   };
+}
+
+/**
+ * O documento como ele **se lê**, com os números vinculados resolvidos.
+ *
+ * É a distinção que a CC-ES002 já faz entre `textoDoBloco` — o que foi
+ * digitado — e `textoDoTrecho` — o que se lê. Aqui ela decide o que entra no
+ * PDF: o dossiê guarda o que a folha mostra, e um dossiê gerado a partir do
+ * texto digitado sairia com o número de ontem **mesmo depois** de o vínculo
+ * estar funcionando. O defeito apareceria como um dossiê errado ao lado de um
+ * conjunto certo, que é a pior forma de aparecer.
+ */
+export function textoComoSeLe(p: ProjetoDocumental): string[] {
+  return paragrafos(p.documento).map(bloco => bloco.trechos.map(t => {
+    const n = p.numeros.find(x => x.alvo === bloco.id && x.trecho === t.id);
+    return n ? escreverNumero(valorMostrado(p, n)) : textoDoTrecho(p.documento, t);
+  }).join(''));
 }
 
 /* ── A aparência de cada peça, e o requisito 3.6 ──────────────────────────── */
@@ -396,14 +442,13 @@ export interface AparenciaDaPeca {
 export function aparenciaDe(p: ProjetoDocumental, peca: TipoDePeca): AparenciaDaPeca {
   switch (peca) {
     case 'documento': {
-      const cor = p.documento.estilos?.['Título 1']?.cor;
-      /* O documento guarda a família, e não o nome. Quem traduz é
+      /* O documento guarda a **família**, e não o nome da fonte. Quem traduz é
          FAMILIA_DA_FONTE, pelo motivo escrito lá. */
       const familia = p.documento.fonte;
       const nome = familia === undefined ? undefined
         : Object.keys(FAMILIA_DA_FONTE).find(f => FAMILIA_DA_FONTE[f] === familia
           && (f === p.identidade.fonteDoCorpo || f === p.identidade.fonteDosTitulos));
-      return { corpo: nome ?? (familia && `(${familia})`), cor };
+      return { corpo: nome, cor: p.documento.estilos?.['Título 1']?.cor };
     }
     case 'apresentacao':
       return {
@@ -412,14 +457,13 @@ export function aparenciaDe(p: ProjetoDocumental, peca: TipoDePeca): AparenciaDa
         cor: p.apresentacao.mestre.corDoTitulo,
       };
     case 'formulario':
-      return p.formulario.aparencia
-        ? { titulo: p.formulario.aparencia.fonte, cor: p.formulario.aparencia.cor }
-        : {};
-    case 'planilha': {
-      const aba = abaDeControle(p);
-      const topo = aba?.celulas[0]?.[0];
-      return topo ? { cor: topo.cor } : {};
-    }
+      return { titulo: p.formulario.aparencia?.fonte, cor: p.formulario.aparencia?.cor };
+    case 'planilha':
+      /* A célula não guarda fonte: o `Celula` tem cor e negrito, que é o que a
+         guia Início oferece por célula. Então a planilha carrega a cor e mais
+         nada, e perguntar pela fonte dela seria perguntar por um campo que o
+         programa imitado não tem. */
+      return { cor: abaDeControle(p)?.celulas[0]?.[0]?.cor };
     case 'dossie':
       return {};
   }
@@ -440,12 +484,20 @@ export function pecasForaDaIdentidade(p: ProjetoDocumental): TipoDePeca[] {
   const fora: TipoDePeca[] = [];
   for (const peca of ['documento', 'planilha', 'formulario', 'apresentacao'] as const) {
     const a = aparenciaDe(p, peca);
-    const tituloErrado = a.titulo !== undefined && a.titulo !== p.identidade.fonteDosTitulos;
-    const corpoErrado = a.corpo !== undefined && a.corpo !== p.identidade.fonteDoCorpo
-      && a.corpo !== p.identidade.fonteDosTitulos;
-    /* A cor é a única que toda peça pode carregar, então ausente é divergente:
-       é assim que as cinco chegam, e é o que a lição manda consertar. */
-    if (a.cor !== p.identidade.cor || tituloErrado || corpoErrado) fora.push(peca);
+    /* A pergunta é por campo que a peça **pode** carregar: chave presente com
+       valor `undefined` é "pode e não carrega", e isso é divergir. Chave
+       ausente é "não tem onde guardar", e aí não há o que comparar.
+       Tratar `undefined` como "não diverge" deixaria o requisito 3.6 verde no
+       segundo zero para a peça que chega sem identidade nenhuma — e as cinco
+       chegam assim. É o "zero link não é zero link quebrado" aplicado à
+       coerência. */
+    const confere = (chave: keyof AparenciaDaPeca, esperado: string) =>
+      !(chave in a) || a[chave] === esperado;
+    const fonteDoCorpoVale = !('corpo' in a)
+      || a.corpo === p.identidade.fonteDoCorpo || a.corpo === p.identidade.fonteDosTitulos;
+    if (!confere('titulo', p.identidade.fonteDosTitulos)
+      || !confere('cor', p.identidade.cor)
+      || !fonteDoCorpoVale) fora.push(peca);
   }
   return fora;
 }
@@ -552,10 +604,16 @@ export function acessosForaDaFuncao(p: ProjetoDocumental): {
   return p.pastas.map(pasta => {
     const daFuncao = p.equipe.filter(e => e.funcao === pasta.funcao).map(e => e.quem);
     const todos = [...new Set(p.equipe.map(e => e.quem))];
-    const sobrando = todos.filter(quem => !daFuncao.includes(quem)
+    /* O dono fica de fora das duas contas. Ele não tem um acesso **concedido**
+       — ele é dono —, e acusá-lo de acesso a mais acusaria quem criou a pasta
+       de ter criado a pasta. De quem é o conjunto é o requisito 7, e não o 5;
+       lá a propriedade passa para a conta que fica no clube. */
+    const dono = p.nuvem.arquivos.find(a => a.id === pasta.id)?.dono;
+    const sobrando = todos.filter(quem => !daFuncao.includes(quem) && quem !== dono
       && papelAlcanca(papelDe(p.nuvem, pasta.id, quem) ?? 'leitor', pasta.minimo)
       && papelDe(p.nuvem, pasta.id, quem) !== undefined);
     const faltando = daFuncao.filter(quem => {
+      if (quem === dono) return false;
       const papel = papelDe(p.nuvem, pasta.id, quem);
       return papel === undefined || !papelAlcanca(papel, pasta.minimo);
     });
