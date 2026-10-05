@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
-  CSS_EXCEL, BarraDeTituloDoExcel, GuiasDoExcel, AbasDoExcel, GradeDoExcel,
+  CSS_EXCEL, BarraDeFormulas, BarraDeTituloDoExcel, GuiasDoExcel, AbasDoExcel, GradeDoExcel,
 } from './excel';
 import { useGradeDoExcel } from './gradeDoExcel';
 import {
@@ -634,21 +634,12 @@ export default function PlanilhaLab({
           </Grupo>
         </div>
 
-        {/* Caixa de nome e barra de fórmulas */}
-        <div className="pl-formula">
-          <span className="pl-nome" aria-label="Caixa de nome">{nomeDaFaixa(faixa)}</span>
-          <span className="pl-fx">fx</span>
-          {/* O que a barra faz mora no gancho, junto da edição na célula: as
-              duas dividem o mesmo `barra`, o mesmo `editando` e a mesma guarda
-              de cancelamento, e escrever uma delas por fora custaria justamente
-              essa guarda. Os dois defeitos que esta barra já teve estão
-              anotados lá. */}
-          <input
-            className="pl-entrada"
-            {...g.propsDaBarra}
-            placeholder="Escreva aqui, ou uma fórmula começando por ="
-          />
-        </div>
+        {/* Caixa de nome e barra de fórmulas, de `excel.tsx`: ela estava escrita
+            nos cinco laboratórios de planilha. O que ela **faz** mora no
+            gancho, junto da edição na célula — as duas dividem o mesmo
+            `barra`, o mesmo `editando` e a mesma guarda de cancelamento, e os
+            dois defeitos que esta barra já teve estão anotados lá. */}
+        <BarraDeFormulas nome={nomeDaFaixa(faixa)} props={g.propsDaBarra} />
 
         {/* A grade */}
         {/* A caixa da grade recebe o teclado: `tabIndex` a torna focável, e o
@@ -750,7 +741,7 @@ export default function PlanilhaLab({
             É a fileira que mais diz "isto é uma planilha", e ela não existia:
             o nome da planilha aparecia solto na barra de status, onde ninguém
             procura por ele. */}
-        <AbasDoExcel nome="Planilha1" aoAvisar={avisar} />
+        <AbasDoExcel nomes={['Planilha1']} aoAvisar={avisar} />
 
         {/* Barra de status.
 

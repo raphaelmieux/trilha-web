@@ -421,10 +421,70 @@ export function BotaoDoExcel({ dica, aoClicar, ativo, children }: {
  * desenho: o nome da planilha aparecia solto na barra de status, onde ninguém
  * procura por ele.
  */
-export function AbasDoExcel({ nome, aoAvisar }: { nome: string; aoAvisar: (r: string) => void }) {
+/**
+ * A fileira de abas do pé.
+ *
+ * Ela estava escrita **cinco** vezes: aqui, para a pasta de uma planilha só, e
+ * à mão dentro de quatro laboratórios, para as de várias. As cinco já tinham
+ * divergido no lugar mais visível — o botão "+" aparecia em duas e faltava nas
+ * outras três, e a mesma suíte mostrava dois Excel diferentes conforme a
+ * lição. Agora é uma, e é a decisão de `word.tsx` e de `explorer.tsx`, pelo
+ * motivo escrito nos dois.
+ *
+ * `aoTrocar` entra pela **presença do setter**, como o `aoBuscar` do
+ * Explorador: sem ele a pasta é de uma planilha só e as abas não trocam de
+ * nada — prometer o gesto numa pasta com uma aba seria prometer um clique que
+ * não muda nada. O "+" fica sempre, porque o programa tem todos os comandos o
+ * tempo todo.
+ */
+/**
+ * A barra de fórmulas: a caixa de nome, o `fx`, e o campo.
+ *
+ * Ela estava escrita **cinco** vezes, uma em cada laboratório de planilha, e
+ * as cinco idênticas — o que é sorte, e não garantia: `propsDaBarra` já mora
+ * no gancho justamente porque o que a barra **faz** não pode divergir, e o
+ * que ela **é** continuava solto. É a decisão de `AbasDoExcel` logo abaixo e
+ * de `word.tsx`, pelo motivo escrito nos dois.
+ *
+ * O que a barra faz continua no gancho, junto da edição na célula: as duas
+ * dividem o mesmo `barra`, o mesmo `editando` e a mesma guarda de
+ * cancelamento, e escrever uma delas por fora custaria justamente essa
+ * guarda.
+ */
+export function BarraDeFormulas({ nome, props }: {
+  /** O nome da faixa selecionada, por `nomeDaFaixa`. */
+  nome: string;
+  props: React.ComponentProps<'input'>;
+}) {
+  return (
+    <div className="pl-formula">
+      <span className="pl-nome" aria-label="Caixa de nome">{nome}</span>
+      <span className="pl-fx">fx</span>
+      <input
+        className="pl-entrada"
+        aria-label="Barra de fórmulas"
+        placeholder="Escreva aqui, ou uma fórmula começando por ="
+        {...props} />
+    </div>
+  );
+}
+
+export function AbasDoExcel({ nomes, ativa = 0, aoTrocar, aoAvisar }: {
+  nomes: readonly string[];
+  ativa?: number;
+  aoTrocar?: (i: number) => void;
+  aoAvisar: (r: string) => void;
+}) {
   return (
     <div className="pl-abas">
-      <button type="button" className="pl-aba" aria-current="true">{nome}</button>
+      {nomes.map((nome, i) => (
+        <button
+          key={nome} type="button" className="pl-aba" aria-current={i === ativa}
+          onClick={aoTrocar ? () => aoTrocar(i) : undefined}
+        >
+          {nome}
+        </button>
+      ))}
       <button type="button" className="pl-aba-mais" title="Nova planilha" aria-label="Nova planilha"
         onClick={() => aoAvisar('Acrescentar planilhas existe no programa de verdade, e não faz parte deste exercício.')}>
         +

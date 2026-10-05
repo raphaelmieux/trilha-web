@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
-  CSS_EXCEL, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel,
+  CSS_EXCEL, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel,
   GradeDoExcel, DesenhoDoGrafico,
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
@@ -557,15 +557,7 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
           )}
         </div>
 
-        <div className="pl-formula">
-          <span className="pl-nome" aria-label="Caixa de nome">{nomeDaFaixa(faixa)}</span>
-          <span className="pl-fx">fx</span>
-          <input
-            className="pl-entrada"
-            {...grade.propsDaBarra}
-            placeholder="Escreva aqui, ou uma fórmula começando por ="
-          />
-        </div>
+        <BarraDeFormulas nome={nomeDaFaixa(faixa)} props={grade.propsDaBarra} />
 
         <GradeDoExcel
           {...grade.props}
@@ -595,21 +587,15 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
           </div>
         )}
 
-        <div className="pl-abas">
-          {cad.planilhas.map((q, i) => (
-            <button
-              key={q.nome} type="button" className="pl-aba" aria-current={i === cad.ativa}
-              onClick={() => {
-                mudarCaderno(k => ({ ...k, ativa: i }));
-                setFaixa({ l1: 0, c1: 0, l2: 0, c2: 0 });
-                setEditando(null);
-                setBarra('');
-              }}
-            >
-              {q.nome}
-            </button>
-          ))}
-        </div>
+        <AbasDoExcel
+          nomes={cad.planilhas.map(q => q.nome)} ativa={cad.ativa} aoAvisar={avisar}
+          aoTrocar={i => {
+            mudarCaderno(k => ({ ...k, ativa: i }));
+            setFaixa({ l1: 0, c1: 0, l2: 0, c2: 0 });
+            setEditando(null);
+            setBarra('');
+          }}
+        />
 
         {/* A régua conta o que o filtro deixou à vista, como a do Excel — e é
             por ela que se descobre que a moda da altura descreve duas pessoas

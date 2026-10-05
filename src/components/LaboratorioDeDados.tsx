@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
-  CSS_EXCEL, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
+  CSS_EXCEL, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
 import {
@@ -700,15 +700,7 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
               )}
             </div>
 
-            <div className="pl-formula">
-              <span className="pl-nome" aria-label="Caixa de nome">{nomeDaFaixa(faixa)}</span>
-              <span className="pl-fx">fx</span>
-              <input
-                className="pl-entrada"
-                {...grade.propsDaBarra}
-                placeholder="Escreva aqui, ou uma fórmula começando por ="
-              />
-            </div>
+            <BarraDeFormulas nome={nomeDaFaixa(faixa)} props={grade.propsDaBarra} />
 
             <GradeDoExcel
               {...grade.props}
@@ -721,16 +713,10 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
               aoAjustarAoConteudo={grade.aoAjustarAoConteudo}
             />
 
-            <div className="pl-abas">
-              {cad.planilhas.map((q, i) => (
-                <button
-                  key={q.nome} type="button" className="pl-aba" aria-current={i === cad.ativa}
-                  onClick={() => trocarAba(i)}
-                >
-                  {q.nome}
-                </button>
-              ))}
-            </div>
+            <AbasDoExcel
+              nomes={cad.planilhas.map(q => q.nome)} ativa={cad.ativa}
+              aoTrocar={trocarAba} aoAvisar={avisar}
+            />
 
             <div className="pl-status">
               <span>Pronto</span>
