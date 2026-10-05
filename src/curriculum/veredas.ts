@@ -1022,7 +1022,6 @@ export const VEREDAS: Vereda[] = [
     */
     origem: 'CC-ES008',
     preRequisitos: ['cc-es008'],
-    emConstrucao: true,
     /*
       Sem quadro de resultado: os exemplos desta vereda são tabelas de números
       e desenhos de gráfico em texto, e não há o que executar. Ligá-lo
@@ -1059,7 +1058,6 @@ export const VEREDAS: Vereda[] = [
     */
     origem: 'CC-ES009',
     preRequisitos: ['cc-es009'],
-    emConstrucao: true,
     /* Sem quadro de resultado, como na CC-ES009: os exemplos são tabelas de
        números e nuvens desenhadas em texto, e não há o que executar. */
     mostraResultado: false,
