@@ -175,6 +175,20 @@ export interface Formulario {
   campos: Campo[];
   aceitandoRespostas: boolean;
   respostas: Resposta[];
+  /**
+   * O tema do formulário: a fonte do cabeçalho e a cor.
+   *
+   * É o que a caixa de personalização do construtor oferece, e nada além —
+   * nem CSS, nem imagem de fundo: abrir a porta para qualquer propriedade
+   * daria ao laboratório poderes que o programa imitado não tem, que é a
+   * decisão de `AjusteDeEstilo` na CC-ES002.
+   *
+   * Opcional porque um formulário nasce sem tema escolhido, e porque a
+   * CC-ES008 nunca fala dele. Ela entrou para a CC-ES012, onde o requisito
+   * 3.6 pede aparência coerente entre as cinco peças: `undefined` é "ninguém
+   * escolheu", e é assim que o formulário chega lá.
+   */
+  aparencia?: { fonte: string; cor: string };
 }
 
 export const campoPorId = (f: Formulario, id: string): Campo | undefined =>

@@ -69,6 +69,18 @@ export interface Celula {
   /** Coberta por uma mesclagem à esquerda: não se desenha. */
   coberta: boolean;
   negrito: boolean;
+  /**
+   * A cor da fonte, que é o botão de cor do grupo Fonte, na guia Início.
+   *
+   * Opcional porque é assim que uma planilha nasce: sem cor escolhida, o Excel
+   * desenha no preto do tema. Ela entrou para a CC-ES012, onde o requisito 3.6
+   * pede aparência coerente entre as cinco peças — e a planilha precisava ter
+   * onde carregar a cor do conjunto, como o documento tem `estilos` e a
+   * apresentação tem o mestre. `undefined` é "ninguém escolheu", e não é a
+   * mesma coisa que preto escolhido: é a distinção que faz a conta do 3.6
+   * acusar a planilha que chega sem identidade nenhuma.
+   */
+  cor?: string;
 }
 
 export interface Planilha {
