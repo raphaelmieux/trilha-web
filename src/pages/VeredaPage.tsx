@@ -26,6 +26,7 @@ import LaboratorioDeComunicacao from '../components/LaboratorioDeComunicacao';
 import LaboratorioDeDados from '../components/LaboratorioDeDados';
 import LaboratorioDaAnalise from '../components/LaboratorioDaAnalise';
 import LaboratorioDeApresentacao from '../components/LaboratorioDeApresentacao';
+import LaboratorioDoProjeto from '../components/LaboratorioDoProjeto';
 import LaboratorioDaEstatistica from '../components/LaboratorioDaEstatistica';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
@@ -427,6 +428,22 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'apresentacao' && profile?.id) {
     return (
       <LaboratorioDeApresentacao vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /*
+    E a CC-ES012 abre **seis** programas, um por lição: o Word, o Excel, o
+    construtor de formulários, o PowerPoint, o leitor de PDF e a nuvem — mais
+    duas telas da plataforma, para a proposta e para a demonstração.
+
+    Quem escolhe a superfície é o `Record` de `LaboratorioDoProjeto`, e não um
+    `if` por programa aqui: a décima primeira lição não compila até alguém dizer
+    em que tela ela abre.
+  */
+  if (licaoAberta?.tipo === 'projeto' && profile?.id) {
+    return (
+      <LaboratorioDoProjeto vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }
