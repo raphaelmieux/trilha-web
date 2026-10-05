@@ -1,17 +1,22 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Presentation, LayoutTemplate, Copy, Trash2, Plus, ChevronUp, ChevronDown,
+  LayoutTemplate, Copy, Trash2, Plus, ChevronUp, ChevronDown,
   Image as ImageIcon, Video, Music, Layers,
-  FileDown, FileText, Minus, Square as SquareIcon, X, Play, Type,
-  FileCheck2, RotateCcw, ArrowLeft, Link2,
+  FileDown, FileText, Square as SquareIcon, Type,
+  FileCheck2, RotateCcw, ArrowLeft,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
-  APRESENTACAO_INICIAL, METAS_DA_APRESENTACAO, NOMES_DOS_LAYOUTS, NOMES_DOS_MODELOS,
-  vazio,
+  CSS_POWERPOINT, BarraDeTituloDoPowerPoint, GuiasDoPowerPoint,
+  GrupoDoPowerPoint, BotaoDoPowerPoint, MenuDoPowerPoint, ItemDeMenuDoPowerPoint,
+  FolhaDoSlide,
+} from './powerpoint';
+import {
+  CORES_DO_MODELO, NOMES_DOS_LAYOUTS, NOMES_DOS_MODELOS, vazio,
   type Apresentacao, type Slide, type Layout, type Modelo, type Midia,
-} from './apresentacaoDoClube';
+} from './apresentacao';
+import { APRESENTACAO_INICIAL, METAS_DA_APRESENTACAO } from './apresentacaoDoClube';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
@@ -41,28 +46,27 @@ import type { PropsDeLaboratorio as Props } from './tipos';
  * PowerPoint de verdade relata, e é a única diferença visível antes do dia da
  * apresentação. A outra aparece longe de casa, com o quadro preto.
  *
- * O modelo, o critério e o passo a passo moram em `apresentacaoDoClube.ts`.
+ * A janela mora em `powerpoint.tsx` e o modelo de uma apresentação em
+ * `apresentacao.ts`; o que a AP044 cobra e de onde ela parte, em
+ * `apresentacaoDoClube.ts`.
  */
 
-const GUIAS = [
-  'Arquivo', 'Página Inicial', 'Inserir', 'Desenhar', 'Design', 'Transições',
-  'Animações', 'Apresentação de Slides', 'Revisão', 'Exibir', 'Ajuda',
-] as const;
-
+/** As guias que respondem neste exercício; a fileira inteira é do programa. */
 const USAVEIS = ['Página Inicial', 'Inserir', 'Design'];
-
-/** As cores de cada modelo, que é o que muda nos seis slides de uma vez. */
-const CORES_DO_MODELO: Record<Modelo, { fundo: string; titulo: string; texto: string; faixa: string }> = {
-  branco: { fundo: '#FFFFFF', titulo: '#262626', texto: '#404040', faixa: 'transparent' },
-  madison: { fundo: '#F4F1EA', titulo: '#7B3F00', texto: '#3D3128', faixa: '#C9A227' },
-  facetas: { fundo: '#FFFFFF', titulo: '#1F6F63', texto: '#2E4A45', faixa: '#7FBFA8' },
-  berlim: { fundo: '#1B1B1B', titulo: '#FFFFFF', texto: '#D6D6D6', faixa: '#E8562A' },
-};
 
 /** Os arquivos que o computador do clube tem, para os diálogos de inserir. */
 const FOTOS = ['fogueira.jpg', 'barracas.jpg', 'caminhada.jpg'];
 const VIDEOS = ['abertura-2025.mp4'];
 const AUDIOS = ['hino-do-clube.mp3'];
+
+/*
+  E onde eles moram, que é o que o vínculo guarda em vez do arquivo.
+
+  O caminho é deste computador, e não do programa: é por isso que ele vem do
+  laboratório e não de `powerpoint.tsx`.
+*/
+const CAMINHO_DO_VIDEO = `C:\\Users\\clube\\Vídeos\\${VIDEOS[0]}`;
+const CAMINHO_DO_AUDIO = `C:\\Users\\clube\\Música\\${AUDIOS[0]}`;
 
 const novoSlide = (id: string, layout: Layout): Slide =>
   ({ id, titulo: '', topicos: [], layout, imagens: [], imagensAlinhadas: false, video: 'nenhuma', audio: 'nenhuma' });
@@ -266,120 +270,21 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
     </div>
   );
 
-  const Bt = ({ dica, rotulo, aoClicar, children, empilhado, ativo }: {
-    dica: string; rotulo?: string; aoClicar: () => void;
-    children: React.ReactNode; empilhado?: boolean; ativo?: boolean;
-  }) => (
-    <button type="button" title={dica} aria-label={dica} aria-pressed={ativo}
-      onClick={aoClicar} className="pp-bt"
-      style={{
-        background: ativo ? '#F7DDD7' : 'transparent',
-        border: ativo ? '1px solid #E0B6AC' : '1px solid transparent',
-        ...(empilhado ? { flexDirection: 'column' as const, height: 'auto', padding: '3px 8px', gap: 2 } : {}),
-      }}>
-      {children}
-      {rotulo && <span style={{ fontSize: 10.5 }}>{rotulo}</span>}
-    </button>
+  /**
+   * O slide desenhado — no palco e, menor, na tira lateral e no PDF.
+   *
+   * Quem desenha é `FolhaDoSlide`, de `powerpoint.tsx`: o desenho é do
+   * programa. O caminho do vídeo e o do áudio vêm daqui porque são arquivos
+   * **deste** computador, e é neles que a diferença entre incorporar e
+   * vincular aparece antes do dia da apresentação.
+   */
+  const desenharSlide = (s: Slide, mini = false) => (
+    <FolhaDoSlide
+      slide={s} cores={cores} mini={mini}
+      caminhoDoVideo={CAMINHO_DO_VIDEO} nomeDoAudio={AUDIOS[0]}
+      caminhoDoAudio={CAMINHO_DO_AUDIO}
+    />
   );
-
-  const Grupo = ({ nome, children }: { nome: string; children: React.ReactNode }) => (
-    <div className="pp-grupo">
-      <div className="pp-grupo-corpo">{children}</div>
-      <div className="pp-grupo-nome">{nome}</div>
-    </div>
-  );
-
-  const Menu = ({ id, children }: { id: string; children: React.ReactNode }) => (
-    menu === id ? <div className="pp-menu" role="menu">{children}</div> : null
-  );
-
-  const ItemMenu = ({ aoClicar, ativo, children }: {
-    aoClicar: () => void; ativo?: boolean; children: React.ReactNode;
-  }) => (
-    <button type="button" role="menuitem" onClick={aoClicar} className="pp-menu-item"
-      style={{ background: ativo ? '#F7DDD7' : 'transparent' }}>{children}</button>
-  );
-
-  /** O slide desenhado — no palco e, menor, na tira lateral e no PDF. */
-  const desenharSlide = (s: Slide, mini = false) => {
-    const f = mini ? 0.28 : 1;
-    return (
-      <div className="pp-slide" style={{ background: cores.fundo }}>
-        {cores.faixa !== 'transparent' && (
-          <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 6 * f, background: cores.faixa }} />
-        )}
-        {s.layout !== 'em-branco' && (
-          <p style={{
-            color: cores.titulo, fontSize: 26 * f, fontWeight: 600, lineHeight: 1.15,
-            padding: `${(s.layout === 'titulo' ? 60 : 26) * f}px ${28 * f}px ${8 * f}px`,
-            textAlign: s.layout === 'titulo' ? 'center' : 'left',
-          }}>
-            {s.titulo || (mini ? '' : 'Clique para adicionar um título')}
-          </p>
-        )}
-        {s.topicos.length > 0 && (
-          <ul style={{
-            color: cores.texto, fontSize: 15 * f, padding: `0 ${34 * f}px`,
-            textAlign: s.layout === 'titulo' ? 'center' : 'left',
-            listStyle: s.layout === 'titulo' ? 'none' : 'disc',
-            lineHeight: 1.5,
-          }}>
-            {s.topicos.map((t, i) => <li key={i} style={{ marginBottom: 3 * f }}>{t}</li>)}
-          </ul>
-        )}
-        {s.imagens.length > 0 && (
-          <div style={{
-            display: 'flex', gap: 10 * f, padding: `${10 * f}px ${28 * f}px`,
-            alignItems: s.imagensAlinhadas ? 'flex-start' : 'baseline',
-          }}>
-            {s.imagens.map((img, i) => (
-              <div key={img.id} style={{
-                width: `${img.largura}%`, aspectRatio: '4 / 3', background: '#C9C9C9',
-                border: '1px solid #A6A6A6', display: 'grid', placeItems: 'center',
-                color: '#5A5A5A', fontSize: 9 * f,
-                /* Sem alinhar, a segunda entra alguns pixels abaixo — que é o
-                   "quase" que se vê projetado. */
-                marginTop: s.imagensAlinhadas ? 0 : i * 9 * f,
-              }}>
-                {mini ? '' : img.legenda}
-              </div>
-            ))}
-          </div>
-        )}
-        {s.video !== 'nenhuma' && (
-          <div style={{ padding: `${6 * f}px ${28 * f}px` }}>
-            <div style={{
-              background: '#111', color: '#FFF', aspectRatio: '16 / 9', width: `${52}%`,
-              display: 'grid', placeItems: 'center',
-            }}>
-              <Play style={{ width: 18 * f, height: 18 * f }} />
-            </div>
-            {!mini && s.video === 'vinculada' && (
-              <p style={{ fontSize: 9.5, color: '#A4262C', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
-                <Link2 className="w-3 h-3" /> Vinculado a C:\Users\clube\Vídeos\{VIDEOS[0]}
-              </p>
-            )}
-          </div>
-        )}
-        {s.audio !== 'nenhuma' && (
-          <div style={{ padding: `0 ${28 * f}px ${6 * f}px` }}>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10 * f,
-              color: cores.texto, border: '1px solid #A6A6A6', borderRadius: 999,
-              padding: `${2 * f}px ${8 * f}px`,
-            }}>
-              <Music style={{ width: 10 * f, height: 10 * f }} /> {mini ? '' : AUDIOS[0]}
-            </span>
-            {!mini && s.audio === 'vinculada' && (
-              <p style={{ fontSize: 9.5, color: '#A4262C', marginTop: 2 }}>
-                Vinculado a C:\Users\clube\Música\{AUDIOS[0]}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
 
   return (
     <LaboratorioEmTelaCheia
@@ -392,246 +297,126 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
       acoes={acoes}
       rodape={26}
     >
-      <style>{`
-        .pp-janela {
-          background: #F3F2F1; color: #201F1E; flex: 1;
-          display: flex; flex-direction: column; min-height: 0;
-          font-family: system-ui, 'Segoe UI', Roboto, sans-serif; font-size: 12.5px;
-        }
-        .pp-titulo {
-          background: #B7472A; color: #FFFFFF; display: flex; align-items: center;
-          gap: 10px; padding: 6px 10px; font-size: 12px;
-        }
-        .pp-guias {
-          display: flex; gap: 2px; padding: 0 8px; background: #F9F8F7;
-          border-bottom: 1px solid #E1DFDD; overflow-x: auto;
-        }
-        .pp-guia {
-          padding: 6px 10px 7px; font-size: 12.5px; white-space: nowrap;
-          border: none; background: none; color: #201F1E; cursor: pointer;
-          border-bottom: 2px solid transparent;
-        }
-        .pp-guia:hover { background: #EDEBE9; }
-        .pp-guia[aria-selected="true"] { color: #B7472A; border-bottom-color: #B7472A; font-weight: 600; }
-        .pp-faixa {
-          display: flex; align-items: stretch; padding: 4px 6px 2px;
-          background: #F3F2F1; border-bottom: 1px solid #E1DFDD; overflow-x: auto;
-        }
-        .pp-grupo {
-          display: flex; flex-direction: column; justify-content: space-between;
-          padding: 0 8px; border-right: 1px solid #E1DFDD; min-width: max-content;
-        }
-        .pp-grupo-corpo { display: flex; align-items: flex-start; gap: 3px; padding: 2px 0 4px; }
-        .pp-grupo-nome { font-size: 10px; color: #605E5C; text-align: center; padding-bottom: 3px; }
-        .pp-bt {
-          height: 26px; padding: 0 6px; border-radius: 3px; cursor: pointer;
-          display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-          color: #201F1E; font-size: 12px;
-        }
-        .pp-bt:hover { background: #EDEBE9 !important; }
-        .pp-menu {
-          position: absolute; z-index: 30; top: 100%; left: 0; margin-top: 2px;
-          background: #FFFFFF; border: 1px solid #C8C6C4; border-radius: 3px;
-          box-shadow: 0 6px 18px rgba(0,0,0,.22); min-width: 220px; padding: 4px; text-align: left;
-        }
-        .pp-menu-item {
-          display: block; width: 100%; text-align: left; padding: 6px 10px;
-          font-size: 12.5px; border: none; border-radius: 2px; cursor: pointer; color: #201F1E;
-        }
-        .pp-menu-item:hover { background: #EDEBE9 !important; }
-        .pp-corpo { flex: 1; min-height: 0; display: flex; background: #F3F2F1; }
-        .pp-tira {
-          width: 168px; flex: none; background: #EDEBE9; border-right: 1px solid #C8C6C4;
-          padding: 8px 6px; overflow-y: auto;
-        }
-        .pp-tira-item {
-          display: flex; gap: 6px; align-items: flex-start; width: 100%;
-          background: none; border: none; cursor: pointer; padding: 3px 0 7px;
-          color: #605E5C; font-size: 11px;
-        }
-        .pp-tira-moldura { flex: 1; border: 2px solid transparent; }
-        .pp-tira-item[aria-current="true"] .pp-tira-moldura { border-color: #B7472A; }
-        .pp-palco { flex: 1; min-width: 0; overflow: auto; padding: 16px; display: flex; justify-content: center; }
-        .pp-slide {
-          position: relative; aspect-ratio: 16 / 9; width: 100%;
-          box-shadow: 0 1px 5px rgba(0,0,0,.3); overflow: hidden;
-        }
-        .pp-palco .pp-slide { max-width: 620px; }
-        .pp-titulo-campo {
-          background: transparent; border: 1px dashed transparent; width: 100%;
-          font: inherit; color: inherit; text-align: inherit; padding: 1px 3px;
-        }
-        .pp-titulo-campo:hover { border-color: #A6A6A6; }
-        .pp-titulo-campo:focus { outline: none; border-color: #B7472A; border-style: solid; }
-        .pp-status {
-          background: #B7472A; color: #FFFFFF; font-size: 11.5px;
-          padding: 4px 10px; display: flex; gap: 14px; align-items: center;
-        }
-        .pp-bastidores { flex: 1; min-height: 0; display: flex; background: #FFFFFF; }
-        .pp-rail {
-          width: 190px; flex: none; background: #B7472A; color: #FFFFFF; padding: 12px 0; overflow-y: auto;
-        }
-        .pp-rail button {
-          display: block; width: 100%; text-align: left; padding: 8px 18px;
-          font-size: 13px; color: #FFFFFF; background: none; border: none; cursor: pointer;
-        }
-        .pp-rail button:hover { background: rgba(255,255,255,.16); }
-        .pp-bast-corpo { flex: 1; min-width: 0; overflow: auto; padding: 20px 26px; color: #201F1E; }
-        .pp-leitor { flex: 1; min-height: 0; display: flex; flex-direction: column; background: #525659; }
-        .pp-leitor-barra {
-          background: #323639; color: #FFFFFF; padding: 6px 10px; font-size: 12px;
-          display: flex; align-items: center; gap: 10px;
-        }
-        .pp-leitor-corpo { flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
-        .pp-leitor-corpo .pp-slide { max-width: 520px; }
-      `}</style>
+      <style>{CSS_POWERPOINT}</style>
 
       <div className="pp-janela" onClick={fecharMenu}>
-        <div className="pp-titulo">
-          <Presentation className="w-4 h-4" />
-          <span style={{ fontWeight: 600 }}>Acampamento de Inverno</span>
-          <span style={{ opacity: .85 }}>— PowerPoint</span>
-          <span className="ml-auto flex items-center gap-3" style={{ opacity: .9 }}>
-            <button type="button" aria-label="Minimizar" onClick={() => naoFazParte('Minimizar')}>
-              <Minus className="w-3 h-3" />
-            </button>
-            <button type="button" aria-label="Maximizar" onClick={() => avisar('O PowerPoint já está ocupando a tela inteira.')}>
-              <SquareIcon className="w-2.5 h-2.5" />
-            </button>
-            <button type="button" aria-label="Fechar" onClick={() => naoFazParte('Fechar o PowerPoint')}>
-              <X className="w-3 h-3" />
-            </button>
-          </span>
-        </div>
+        <BarraDeTituloDoPowerPoint
+          arquivo="Acampamento de Inverno" aoAvisar={avisar} aoNaoFazParte={naoFazParte}
+        />
 
         {tela === 'normal' && (
           <>
-            <div className="pp-guias" role="tablist">
-              {GUIAS.map(nome => (
-                nome === 'Arquivo' ? (
-                  <button key={nome} type="button" className="pp-guia"
-                    style={{ background: '#B7472A', color: '#FFFFFF', borderRadius: '3px 3px 0 0' }}
-                    onClick={ev => { ev.stopPropagation(); setTela('bastidores'); fecharMenu(); }}>
-                    Arquivo
-                  </button>
-                ) : USAVEIS.includes(nome) ? (
-                  <button key={nome} type="button" role="tab" aria-selected={guia === nome}
-                    className="pp-guia" onClick={ev => { ev.stopPropagation(); setGuia(nome); fecharMenu(); }}>
-                    {nome}
-                  </button>
-                ) : (
-                  <button key={nome} type="button" className="pp-guia" style={{ color: '#8A8886' }}
-                    onClick={ev => { ev.stopPropagation(); naoFazParte(`A guia ${nome}`); }}>
-                    {nome}
-                  </button>
-                )
-              ))}
-            </div>
+            <GuiasDoPowerPoint
+              atual={guia} usaveis={USAVEIS}
+              aoTrocar={nome => { setGuia(nome); fecharMenu(); }}
+              aoNaoFazParte={naoFazParte}
+              aoAbrirArquivo={() => { setTela('bastidores'); fecharMenu(); }}
+            />
 
             <div className="pp-faixa" style={{ overflowX: menu ? 'visible' : 'auto' }}
               onClick={ev => ev.stopPropagation()}>
               {guia === 'Página Inicial' && (
                 <>
-                  <Grupo nome="Slides">
+                  <GrupoDoPowerPoint nome="Slides">
                     <div style={{ position: 'relative' }}>
-                      <Bt dica="Novo Slide" rotulo="Novo Slide" empilhado aoClicar={() => abrir('novo')}>
+                      <BotaoDoPowerPoint dica="Novo Slide" rotulo="Novo Slide" empilhado aoClicar={() => abrir('novo')}>
                         <Plus className="w-5 h-5" />
-                      </Bt>
-                      <Menu id="novo">
+                      </BotaoDoPowerPoint>
+                      <MenuDoPowerPoint aberto={menu === 'novo'}>
                         {(Object.keys(NOMES_DOS_LAYOUTS) as Layout[]).map(l => (
-                          <ItemMenu key={l} aoClicar={() => criarSlide(l)}>{NOMES_DOS_LAYOUTS[l]}</ItemMenu>
+                          <ItemDeMenuDoPowerPoint key={l} aoClicar={() => criarSlide(l)}>{NOMES_DOS_LAYOUTS[l]}</ItemDeMenuDoPowerPoint>
                         ))}
-                      </Menu>
+                      </MenuDoPowerPoint>
                     </div>
                     <div style={{ position: 'relative' }}>
-                      <Bt dica="Layout" rotulo="Layout" empilhado aoClicar={() => abrir('layout')}>
+                      <BotaoDoPowerPoint dica="Layout" rotulo="Layout" empilhado aoClicar={() => abrir('layout')}>
                         <LayoutTemplate className="w-5 h-5" />
-                      </Bt>
-                      <Menu id="layout">
+                      </BotaoDoPowerPoint>
+                      <MenuDoPowerPoint aberto={menu === 'layout'}>
                         {(Object.keys(NOMES_DOS_LAYOUTS) as Layout[]).map(l => (
-                          <ItemMenu key={l} ativo={slide.layout === l} aoClicar={() => trocarLayout(l)}>
+                          <ItemDeMenuDoPowerPoint key={l} ativo={slide.layout === l} aoClicar={() => trocarLayout(l)}>
                             {NOMES_DOS_LAYOUTS[l]}
-                          </ItemMenu>
+                          </ItemDeMenuDoPowerPoint>
                         ))}
-                      </Menu>
+                      </MenuDoPowerPoint>
                     </div>
-                    <Bt dica="Duplicar Slide" aoClicar={duplicarSlide}><Copy className="w-4 h-4" /></Bt>
-                    <Bt dica="Excluir Slide" aoClicar={excluirSlide}><Trash2 className="w-4 h-4" /></Bt>
-                    <Bt dica="Mover Slide para Cima" aoClicar={() => mover(-1)}><ChevronUp className="w-4 h-4" /></Bt>
-                    <Bt dica="Mover Slide para Baixo" aoClicar={() => mover(1)}><ChevronDown className="w-4 h-4" /></Bt>
-                  </Grupo>
-                  <Grupo nome="Fonte">
-                    <Bt dica="Fonte" aoClicar={() => naoFazParte('A caixa de fonte')}><Type className="w-4 h-4" /></Bt>
-                  </Grupo>
-                  <Grupo nome="Desenho">
+                    <BotaoDoPowerPoint dica="Duplicar Slide" aoClicar={duplicarSlide}><Copy className="w-4 h-4" /></BotaoDoPowerPoint>
+                    <BotaoDoPowerPoint dica="Excluir Slide" aoClicar={excluirSlide}><Trash2 className="w-4 h-4" /></BotaoDoPowerPoint>
+                    <BotaoDoPowerPoint dica="Mover Slide para Cima" aoClicar={() => mover(-1)}><ChevronUp className="w-4 h-4" /></BotaoDoPowerPoint>
+                    <BotaoDoPowerPoint dica="Mover Slide para Baixo" aoClicar={() => mover(1)}><ChevronDown className="w-4 h-4" /></BotaoDoPowerPoint>
+                  </GrupoDoPowerPoint>
+                  <GrupoDoPowerPoint nome="Fonte">
+                    <BotaoDoPowerPoint dica="Fonte" aoClicar={() => naoFazParte('A caixa de fonte')}><Type className="w-4 h-4" /></BotaoDoPowerPoint>
+                  </GrupoDoPowerPoint>
+                  <GrupoDoPowerPoint nome="Desenho">
                     <div style={{ position: 'relative' }}>
-                      <Bt dica="Organizar" rotulo="Organizar" empilhado aoClicar={() => abrir('organizar')}>
+                      <BotaoDoPowerPoint dica="Organizar" rotulo="Organizar" empilhado aoClicar={() => abrir('organizar')}>
                         <Layers className="w-5 h-5" />
-                      </Bt>
-                      <Menu id="organizar">
+                      </BotaoDoPowerPoint>
+                      <MenuDoPowerPoint aberto={menu === 'organizar'}>
                         <p style={{ fontSize: 10.5, color: '#605E5C', padding: '4px 10px 2px' }}>Posicionar Objetos</p>
-                        <ItemMenu aoClicar={alinharImagens}>Alinhar › Alinhar em Cima</ItemMenu>
-                        <ItemMenu aoClicar={() => naoFazParte('Trazer para a Frente')}>Trazer para a Frente</ItemMenu>
-                        <ItemMenu aoClicar={() => naoFazParte('Agrupar')}>Agrupar</ItemMenu>
-                      </Menu>
+                        <ItemDeMenuDoPowerPoint aoClicar={alinharImagens}>Alinhar › Alinhar em Cima</ItemDeMenuDoPowerPoint>
+                        <ItemDeMenuDoPowerPoint aoClicar={() => naoFazParte('Trazer para a Frente')}>Trazer para a Frente</ItemDeMenuDoPowerPoint>
+                        <ItemDeMenuDoPowerPoint aoClicar={() => naoFazParte('Agrupar')}>Agrupar</ItemDeMenuDoPowerPoint>
+                      </MenuDoPowerPoint>
                     </div>
-                  </Grupo>
+                  </GrupoDoPowerPoint>
                 </>
               )}
 
               {guia === 'Inserir' && (
                 <>
-                  <Grupo nome="Imagens">
+                  <GrupoDoPowerPoint nome="Imagens">
                     <div style={{ position: 'relative' }}>
-                      <Bt dica="Imagens" rotulo="Imagens" empilhado aoClicar={() => abrir('imagens')}>
+                      <BotaoDoPowerPoint dica="Imagens" rotulo="Imagens" empilhado aoClicar={() => abrir('imagens')}>
                         <ImageIcon className="w-5 h-5" />
-                      </Bt>
-                      <Menu id="imagens">
+                      </BotaoDoPowerPoint>
+                      <MenuDoPowerPoint aberto={menu === 'imagens'}>
                         <p style={{ fontSize: 10.5, color: '#605E5C', padding: '4px 10px 2px' }}>Este Dispositivo…</p>
-                        {FOTOS.map(f => <ItemMenu key={f} aoClicar={() => inserirFoto(f)}>{f}</ItemMenu>)}
-                      </Menu>
+                        {FOTOS.map(f => <ItemDeMenuDoPowerPoint key={f} aoClicar={() => inserirFoto(f)}>{f}</ItemDeMenuDoPowerPoint>)}
+                      </MenuDoPowerPoint>
                     </div>
-                    <Bt dica="Formas" aoClicar={() => naoFazParte('Formas')}><SquareIcon className="w-4 h-4" /></Bt>
-                  </Grupo>
-                  <Grupo nome="Mídia">
+                    <BotaoDoPowerPoint dica="Formas" aoClicar={() => naoFazParte('Formas')}><SquareIcon className="w-4 h-4" /></BotaoDoPowerPoint>
+                  </GrupoDoPowerPoint>
+                  <GrupoDoPowerPoint nome="Mídia">
                     <div style={{ position: 'relative' }}>
-                      <Bt dica="Vídeo" rotulo="Vídeo" empilhado aoClicar={() => abrir('video')}>
+                      <BotaoDoPowerPoint dica="Vídeo" rotulo="Vídeo" empilhado aoClicar={() => abrir('video')}>
                         <Video className="w-5 h-5" />
-                      </Bt>
-                      <Menu id="video">
+                      </BotaoDoPowerPoint>
+                      <MenuDoPowerPoint aberto={menu === 'video'}>
                         <p style={{ fontSize: 10.5, color: '#605E5C', padding: '4px 10px 2px' }}>
                           {VIDEOS[0]} — como inserir?
                         </p>
-                        <ItemMenu aoClicar={() => inserirMidia('video', 'incorporada')}>
+                        <ItemDeMenuDoPowerPoint aoClicar={() => inserirMidia('video', 'incorporada')}>
                           Inserir <span style={{ color: '#605E5C' }}>(o arquivo vai junto)</span>
-                        </ItemMenu>
-                        <ItemMenu aoClicar={() => inserirMidia('video', 'vinculada')}>
+                        </ItemDeMenuDoPowerPoint>
+                        <ItemDeMenuDoPowerPoint aoClicar={() => inserirMidia('video', 'vinculada')}>
                           Vincular ao Arquivo <span style={{ color: '#605E5C' }}>(guarda só o endereço)</span>
-                        </ItemMenu>
-                      </Menu>
+                        </ItemDeMenuDoPowerPoint>
+                      </MenuDoPowerPoint>
                     </div>
                     <div style={{ position: 'relative' }}>
-                      <Bt dica="Áudio" rotulo="Áudio" empilhado aoClicar={() => abrir('audio')}>
+                      <BotaoDoPowerPoint dica="Áudio" rotulo="Áudio" empilhado aoClicar={() => abrir('audio')}>
                         <Music className="w-5 h-5" />
-                      </Bt>
-                      <Menu id="audio">
+                      </BotaoDoPowerPoint>
+                      <MenuDoPowerPoint aberto={menu === 'audio'}>
                         <p style={{ fontSize: 10.5, color: '#605E5C', padding: '4px 10px 2px' }}>
                           {AUDIOS[0]} — como inserir?
                         </p>
-                        <ItemMenu aoClicar={() => inserirMidia('audio', 'incorporada')}>
+                        <ItemDeMenuDoPowerPoint aoClicar={() => inserirMidia('audio', 'incorporada')}>
                           Inserir <span style={{ color: '#605E5C' }}>(o arquivo vai junto)</span>
-                        </ItemMenu>
-                        <ItemMenu aoClicar={() => inserirMidia('audio', 'vinculada')}>
+                        </ItemDeMenuDoPowerPoint>
+                        <ItemDeMenuDoPowerPoint aoClicar={() => inserirMidia('audio', 'vinculada')}>
                           Vincular ao Arquivo <span style={{ color: '#605E5C' }}>(guarda só o endereço)</span>
-                        </ItemMenu>
-                      </Menu>
+                        </ItemDeMenuDoPowerPoint>
+                      </MenuDoPowerPoint>
                     </div>
-                  </Grupo>
+                  </GrupoDoPowerPoint>
                 </>
               )}
 
               {guia === 'Design' && (
-                <Grupo nome="Temas">
+                <GrupoDoPowerPoint nome="Temas">
                   {(Object.keys(NOMES_DOS_MODELOS) as Modelo[]).map(m => (
                     <button key={m} type="button" className="pp-bt"
                       aria-label={`Tema ${NOMES_DOS_MODELOS[m]}`} aria-pressed={ap.modelo === m}
@@ -653,7 +438,7 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
                       <span style={{ fontSize: 10 }}>{NOMES_DOS_MODELOS[m]}</span>
                     </button>
                   ))}
-                </Grupo>
+                </GrupoDoPowerPoint>
               )}
             </div>
 
@@ -671,72 +456,14 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
 
               <div className="pp-palco" onClick={ev => ev.stopPropagation()}>
                 <div style={{ width: '100%', maxWidth: 620 }}>
-                  <div className="pp-slide" style={{ background: cores.fundo }}>
-                    {cores.faixa !== 'transparent' && (
-                      <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 6, background: cores.faixa }} />
-                    )}
-                    {slide.layout !== 'em-branco' && (
-                      <div style={{
-                        padding: `${slide.layout === 'titulo' ? 60 : 26}px 28px 8px`,
-                        textAlign: slide.layout === 'titulo' ? 'center' : 'left',
-                      }}>
-                        <input className="pp-titulo-campo" value={slide.titulo}
-                          placeholder="Clique para adicionar um título"
-                          aria-label={`Título do slide ${atual + 1}`}
-                          style={{ color: cores.titulo, fontSize: 26, fontWeight: 600 }}
-                          onChange={e => mudarSlide(slide.id, { titulo: e.target.value })} />
-                      </div>
-                    )}
-                    {slide.topicos.length > 0 && (
-                      <ul style={{
-                        color: cores.texto, fontSize: 15, padding: '0 34px',
-                        textAlign: slide.layout === 'titulo' ? 'center' : 'left',
-                        listStyle: slide.layout === 'titulo' ? 'none' : 'disc',
-                        lineHeight: 1.5,
-                      }}>
-                        {slide.topicos.map((t, i) => <li key={i} style={{ marginBottom: 3 }}>{t}</li>)}
-                      </ul>
-                    )}
-                    {slide.imagens.length > 0 && (
-                      <div style={{ display: 'flex', gap: 10, padding: '10px 28px', alignItems: 'flex-start' }}>
-                        {slide.imagens.map((img, i) => (
-                          <div key={img.id} style={{
-                            width: `${img.largura}%`, aspectRatio: '4 / 3', background: '#C9C9C9',
-                            border: '1px solid #A6A6A6', display: 'grid', placeItems: 'center',
-                            color: '#5A5A5A', fontSize: 10,
-                            marginTop: slide.imagensAlinhadas ? 0 : i * 9,
-                          }}>{img.legenda}</div>
-                        ))}
-                      </div>
-                    )}
-                    {slide.video !== 'nenhuma' && (
-                      <div style={{ padding: '6px 28px' }}>
-                        <div style={{ background: '#111', color: '#FFF', aspectRatio: '16 / 9', width: '52%', display: 'grid', placeItems: 'center' }}>
-                          <Play className="w-5 h-5" />
-                        </div>
-                        {slide.video === 'vinculada' && (
-                          <p style={{ fontSize: 9.5, color: '#A4262C', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
-                            <Link2 className="w-3 h-3" /> Vinculado a C:\Users\clube\Vídeos\{VIDEOS[0]}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    {slide.audio !== 'nenhuma' && (
-                      <div style={{ padding: '0 28px 6px' }}>
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10,
-                          color: cores.texto, border: '1px solid #A6A6A6', borderRadius: 999, padding: '2px 8px',
-                        }}>
-                          <Music className="w-2.5 h-2.5" /> {AUDIOS[0]}
-                        </span>
-                        {slide.audio === 'vinculada' && (
-                          <p style={{ fontSize: 9.5, color: '#A4262C', marginTop: 2 }}>
-                            Vinculado a C:\Users\clube\Música\{AUDIOS[0]}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <FolhaDoSlide
+                    slide={slide} cores={cores}
+                    rotuloDoTitulo={`Título do slide ${atual + 1}`}
+                    aoEscreverNoTitulo={titulo => mudarSlide(slide.id, { titulo })}
+                    caminhoDoVideo={CAMINHO_DO_VIDEO}
+                    nomeDoAudio={AUDIOS[0]}
+                    caminhoDoAudio={CAMINHO_DO_AUDIO}
+                  />
                   <p style={{ fontSize: 11, color: '#605E5C', marginTop: 6 }}>
                     Layout: {NOMES_DOS_LAYOUTS[slide.layout]}
                     {vazio(slide) && ' — este slide está vazio'}
