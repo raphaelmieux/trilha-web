@@ -48,6 +48,7 @@ import {
 import { abaDe, comAba, escritoEm, planilhaDe, usaFuncao } from './cadernoDoClube';
 import { escrever, resumoEmDia, valorCalculado } from './planilha';
 import { mostrarNumero, nomeDaColuna, numeroDoTexto, referenciasDe } from './formulas';
+import { type RecursoDeDistorcao, CASOS_ENGANOSOS } from './graficosEnganosos';
 
 /* ── A forma de uma meta ──────────────────────────────────────────────────── */
 
@@ -152,6 +153,15 @@ export interface ContextoDaAnalise {
   colunasDaPergunta: string[];
   /** O que ela decidiu sobre cada contestação do examinador, no módulo 11. */
   vereditos: Record<string, Veredito>;
+  /**
+   * Que recurso de distorção ela apontou em cada gráfico real, no módulo 9.
+   *
+   * `undefined` é "ainda não classifiquei", e é por isso que a chave guarda o
+   * recurso e não um booleano: "não apontei" e "apontei o errado" são duas
+   * coisas, e colapsá-las faria a meta de "todo gráfico classificado" fechar
+   * sozinha com a lista em branco.
+   */
+  recursos: Record<string, RecursoDeDistorcao | undefined>;
   /** O que ela escreveu: a justificativa do atípico, a conclusão, a defesa. */
   textos: Record<string, string>;
 }
@@ -1713,13 +1723,75 @@ export const METAS_DA_DEFESA: Meta[] = [
   },
 ];
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Módulo 9 — Os três gráficos enganosos reais (requisito 7)
+   ────────────────────────────────────────────────────────────────────── */
+
+/**
+ * O que o desbravador precisa ter visto: o mesmo dado, desenhado honesto.
+ *
+ * Ela não sai de um botão "eu vi": sai de ligar o desenho em proporção em cada
+ * um dos três e olhar o que acontece. É o gesto que a lição ensina, e é a
+ * única coisa aqui que a classificação não entrega — classificar é escolha, e
+ * ver é outra coisa.
+ */
+export const chaveDoHonesto = (id: string) => `viu-honesto-${id}`;
+
+export const METAS_DOS_ENGANOSOS: Meta[] = [
+  {
+    id: 'todo-grafico-classificado',
+    titulo: 'Apontar o recurso usado em cada um dos três',
+    detalhe:
+      'Os três foram publicados de verdade, e os números deles são '
+      + 'verdadeiros. O que distorce é outra coisa, e em cada um é uma.',
+    onde: 'Na tela da lição, em cada um dos três gráficos.',
+    passos: [
+      'Leia o que o gráfico faz parecer, e pergunte: o que sustenta essa impressão?',
+      'Compare o que está escrito com o que está desenhado.',
+      'São quatro recursos na lista, e cada gráfico usa exatamente um.',
+    ],
+    feita: c => CASOS_ENGANOSOS.every(caso => c.recursos[caso.id] !== undefined),
+  },
+  {
+    id: 'os-recursos-certos',
+    titulo: 'E acertar os três',
+    detalhe:
+      'Um é a altura que não lê o número, um é o pedaço do tempo que convém, e '
+      + 'um é comparar estados de tamanhos muito diferentes.',
+    onde: 'Nos mesmos três gráficos.',
+    passos: [
+      'No da inflação, duas barras valem o mesmo número e saíram de alturas diferentes.',
+      'No da covid, o número do dia é verdadeiro e o acumulado saiu da tela.',
+      'No das mortes por estado, São Paulo tem 46 milhões de habitantes e o Amazonas tem 4.',
+    ],
+    feita: c => CASOS_ENGANOSOS.every(caso => c.recursos[caso.id] === caso.recurso),
+  },
+  {
+    id: 'viu-os-tres-honestos',
+    titulo: 'Ver o mesmo dado desenhado honestamente, nos três',
+    detalhe:
+      'É a metade que a classificação não dá: o gráfico certo sai dos mesmos '
+      + 'números, e é vendo os dois lado a lado que se aprende a desconfiar do '
+      + 'primeiro.',
+    onde: 'Em cada gráfico, no botão de desenhar em proporção.',
+    passos: [
+      'Ligue o desenho honesto no gráfico da inflação: as barras de 2010 e 2013 '
+        + 'ficam do mesmo tamanho, porque são o mesmo número.',
+      'Ligue no da covid: a barra do acumulado é quarenta vezes a do dia.',
+      'Ligue no das mortes por estado: por 100 mil habitantes, São Paulo cai '
+        + 'para o décimo lugar.',
+    ],
+    feita: c => CASOS_ENGANOSOS.every(caso => viu(c, chaveDoHonesto(caso.id))),
+  },
+];
+
 /* ── O registro das lições ───────────────────────────────────────────────── */
 
 export type ProgramaDaCcEs009 = 'planilha' | 'plataforma';
 
 export type LicaoDaCcEs009 =
   | 'tipos' | 'centro' | 'engano' | 'frequencias' | 'comparacao' | 'adesao'
-  | 'atipicos' | 'graficos' | 'conclusao' | 'defesa';
+  | 'atipicos' | 'graficos' | 'enganosos' | 'conclusao' | 'defesa';
 
 export interface LicaoDeAnalise {
   /** Em que programa a lição **começa**. Um gesto pode levar ao outro. */
@@ -1739,7 +1811,7 @@ export function contextoInicial(
   return {
     base, caderno, cadernoAntes: caderno, blocos,
     descobertas: [], marcacoes: {}, julgamentos: {},
-    colunasDaPergunta: [], vereditos: {}, textos: {},
+    colunasDaPergunta: [], vereditos: {}, recursos: {}, textos: {},
   };
 }
 
@@ -1795,6 +1867,17 @@ export const LICOES_DA_CC_ES009: Record<LicaoDaCcEs009, LicaoDeAnalise> = {
        mediria de novo o que já foi medido. */
     inicial: () => contextoInicial([BLOCO_DAS_MEDIDAS], false, true),
     metas: METAS_DOS_GRAFICOS,
+  },
+  enganosos: {
+    /*
+      Tela da plataforma: os três gráficos são de fora, e não há planilha em que
+      eles morem. Pôr os números numa aba para o desbravador "refazer" mudaria o
+      exercício — o requisito pede analisar o que alguém publicou, e não
+      reproduzir a conta.
+    */
+    programa: 'plataforma',
+    inicial: () => contextoInicial(),
+    metas: METAS_DOS_ENGANOSOS,
   },
   conclusao: {
     programa: 'plataforma',

@@ -19,6 +19,7 @@ import {
   baseDoAcampamento, camposDaBase,
 } from '../labs/baseDoAcampamento';
 import { colunaDe, repeticoesDaModa } from '../labs/analiseDeDados';
+import { CASOS_ENGANOSOS, NOME_DO_RECURSO } from '../labs/graficosEnganosos';
 import { CAMPO_NOME as CAMPO_NOME_DA_BASE, CAMPO_UNIDADE } from '../labs/formulario';
 import { nomeDaColuna } from '../labs/formulas';
 import type { LicaoDeVereda, Vereda } from '../curriculum/veredas';
@@ -485,6 +486,66 @@ describe('as lições da CC-ES009 se vencem clicando', () => {
       preencher(`Aba ${pergunta.aba}`, FRASE(`Este desenho responde "${pergunta.pergunta}"`));
     }
     expect(abertas(), 'a lição dos gráficos não fecha clicando').toBe(0);
+  });
+
+  it('módulo 9 — os enganosos: três recursos e os três honestos vistos', () => {
+    montar('enganosos');
+    expect(abertas()).toBe(3);
+
+    for (const caso of CASOS_ENGANOSOS) {
+      const cartao = [...container.querySelectorAll('section.card')]
+        .find(s => (s.textContent ?? '').includes(caso.titulo))!;
+      expect(cartao, `o cartão de "${caso.id}" não está na tela`).toBeTruthy();
+
+      /*
+        O gráfico é desenhado, e não uma captura: o `role="figure"` muda de
+        rótulo quando o botão redesenha em proporção, e é por ele que se lê
+        qual dos dois está na tela.
+      */
+      const figura = () => cartao.querySelector('[role="figure"]')!.getAttribute('aria-label');
+      expect(figura()).toContain('como foi publicado');
+
+      /* O porquê não está na tela antes da escolha: ele é a resposta. */
+      expect(cartao.textContent, `"${caso.id}" entrega o porquê antes da escolha`)
+        .not.toContain(caso.porque.slice(0, 30));
+
+      clicar([...cartao.querySelectorAll('button')]
+        .find(b => b.textContent?.includes('Desenhar em proporção')));
+      expect(figura()).toContain('desenhado em proporção');
+      expect(cartao.textContent).toContain(caso.honesto.slice(0, 30));
+
+      clicar([...cartao.querySelectorAll('button[aria-pressed]')]
+        .find(b => b.textContent?.startsWith(NOME_DO_RECURSO[caso.recurso])));
+      expect(cartao.textContent).toContain(caso.porque.slice(0, 30));
+    }
+
+    expect(abertas(), 'a lição dos gráficos enganosos não fecha clicando').toBe(0);
+  });
+
+  /*
+    E o desenho em proporção muda de verdade as alturas, no caso em que o
+    desenho publicado discordava dos números. Sem isso o botão seria um rótulo
+    que troca de texto, e a meta de "viu o honesto" mediria um clique.
+  */
+  it('o botão de proporção redesenha as barras do caso da escala', () => {
+    montar('enganosos');
+    const caso = CASOS_ENGANOSOS.find(c => c.recurso === 'escala-inadequada')!;
+    const cartao = () => [...container.querySelectorAll('section.card')]
+      .find(s => (s.textContent ?? '').includes(caso.titulo))!;
+    const alturas = () => [...cartao().querySelectorAll('[role="figure"] > div > div')]
+      .map(d => (d as HTMLElement).style.height);
+
+    const antes = alturas();
+    clicar([...cartao().querySelectorAll('button')]
+      .find(b => b.textContent?.includes('Desenhar em proporção')));
+    const depois = alturas();
+    expect(depois, 'as alturas não mudaram ao desenhar em proporção').not.toEqual(antes);
+
+    /* E a barra mais alta passa a ser a do maior valor. */
+    const maior = [...caso.barras].sort((a, b) => b.valor - a.valor)[0];
+    const indice = caso.barras.findIndex(b => b.rotulo === maior.rotulo);
+    const pico = depois.indexOf(depois.reduce((a, b) => (parseFloat(b) > parseFloat(a) ? b : a)));
+    expect(pico).toBe(indice);
   });
 
   it('módulo 10 — a conclusão: a pergunta, as colunas, a resposta e os limites', () => {
