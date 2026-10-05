@@ -14,6 +14,7 @@ import { MODULOS_DA_COMUNICACAO } from './comunicacaoEAgenda';
 import { MODULOS_DE_DADOS } from './dadosEFormularios';
 import { MODULOS_DA_ANALISE } from './analiseDeDados';
 import { MODULOS_DA_ESTATISTICA } from './analiseEstatistica';
+import { MODULOS_DAS_APRESENTACOES } from './apresentacoes';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -1084,9 +1085,35 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: false,
     modulos: MODULOS_DA_ESTATISTICA,
   },
-  anunciada('CC-ES011', 'Apresentações', 'Escritório',
-    'Slide mestre, hierarquia e cinco minutos: menos slide e mais gente entendendo.',
-    ['cc-es002']),
+  {
+    id: 'cc-es011',
+    code: 'CC-ES011',
+    name: 'Apresentações',
+    familia: 'Escritório',
+    description: 'Slide mestre, hierarquia e cinco minutos: menos slide e mais gente entendendo.',
+    /*
+      ── O que carrega esta vereda é o defeito que desenha bonito ─────────
+      O mestre em que se mexe e nada muda na tela, porque a formatação à mão
+      continua lá ganhando. O ouro do emblema a 2,42:1, escolhido pelo emblema
+      e não pela leitura. O logo de 320 pixels esticado em metade do slide, que
+      no monitor fica bom. Os custos digitados antes de a planilha mudar. O
+      título que pula três milímetros e só se vê passando os slides. Nenhuma
+      dessas telas dá erro, e cada uma delas é uma apresentação inteira
+      entregue assim.
+
+      ── E por que ela exige a CC-ES002 ──────────────────────────────────
+      Está no requisito 1, e o motivo é o requisito 4.1: o slide mestre é o
+      estilo visto de outro ângulo, e a formatação direta vence os dois do
+      mesmo jeito. Quem já trocou direta por estilo num documento reconhece o
+      problema na primeira tentativa de mexer no mestre e nada mudar.
+    */
+    origem: 'CC-ES002',
+    preRequisitos: ['cc-es002'],
+    /* Sem quadro de resultado: os exemplos são slides desenhados em texto e
+       medidas de contraste, e não há o que executar. */
+    mostraResultado: false,
+    modulos: MODULOS_DAS_APRESENTACOES,
+  },
   anunciada('CC-ES012', 'Projeto Documental', 'Escritório',
     'O conjunto inteiro de uma atividade real, e um dado que se propaga por todas as peças.',
     ['cc-es004', 'cc-es007', 'cc-es011']),
