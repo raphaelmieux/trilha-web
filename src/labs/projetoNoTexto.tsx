@@ -20,12 +20,21 @@ import { BLOCOS_DO_MAPA, comIdentidadeNoDocumento } from './metasDaCcEs012';
 import { FAMILIA_DA_FONTE } from './projetoDocumental';
 import type { PropsDaSuperficie } from './projetoNaPlataforma';
 
-const USAVEIS = ['Página Inicial', 'Inserir', 'Referências', 'Revisão', 'Exibir'];
+/*
+  Os nomes são os do **Word**, e não os do Excel.
+
+  A primeira guia do Word é "Início"; a do Excel é "Página Inicial". Escrever
+  a do Excel aqui não estoura nada: a guia sai desenhada em cinza, avisando que
+  não faz parte do exercício, e a faixa fica **vazia** — porque a condição que
+  escolhe o grupo compara com um nome que nenhuma guia tem. Foi a trava que
+  clica quem achou.
+*/
+const USAVEIS = ['Início', 'Inserir', 'Referências', 'Revisão', 'Exibir'];
 
 /* ── Módulo 2: o regulamento ──────────────────────────────────────────────── */
 
 export function RegulamentoNoWord({ ctx, mudar, avisar }: PropsDaSuperficie) {
-  const [guia, setGuia] = useState('Página Inicial');
+  const [guia, setGuia] = useState('Início');
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const doc = ctx.p.documento;
   const temMapa = doc.blocos.some(b => b.id === 'b-mapa');
@@ -36,7 +45,7 @@ export function RegulamentoNoWord({ ctx, mudar, avisar }: PropsDaSuperficie) {
       <GuiasDoWord atual={guia} usaveis={USAVEIS} aoTrocar={setGuia} aoAvisar={avisar} />
 
       <div className="wd-faixa">
-        {guia === 'Página Inicial' && (
+        {guia === 'Início' && (
           <>
             <GrupoDaFaixa nome="Fonte">
               <BotaoDaFaixa
@@ -104,7 +113,7 @@ export function RegulamentoNoWord({ ctx, mudar, avisar }: PropsDaSuperficie) {
         {guia === 'Inserir' && (
           <GrupoDaFaixa nome="Texto">
             <BotaoDaFaixa
-              dica='Escrever a seção "Onde está cada peça"'
+              dica="Escrever a seção Onde está cada peça"
               rotulo="Seção nova" empilhado
               aoClicar={() => {
                 if (temMapa) { avisar('A seção já está no documento.'); return; }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Sheet } from 'lucide-react';
+import { FileText, type LucideIcon } from 'lucide-react';
 
 /*
  * O Bloco de Notas, e a barra de tarefas que o põe ao lado da planilha.
@@ -126,24 +126,41 @@ export const CSS_DO_BLOCO_DE_NOTAS = `
 
 export type ProgramaAberto = 'planilha' | 'texto';
 
-export function BarraDeTarefas({ atual, aoTrocar }: {
-  atual: ProgramaAberto;
-  aoTrocar: (p: ProgramaAberto) => void;
+/*
+  Quais programas estão abertos é decisão do **exercício**, e por isso a lista
+  mora no laboratório e não aqui: é a mesma divisão de `explorer.tsx` — o que é
+  do programa fica na janela, o que é do exercício fica em quem a veste.
+*/
+export interface ProgramaNaBarra<T extends string> {
+  id: T;
+  nome: string;
+  icone: LucideIcon;
+}
+
+/**
+ * A barra de tarefas, com os programas que o laboratório abriu.
+ *
+ * A lista é **parâmetro**, e não os dois nomes escritos aqui dentro: a
+ * CC-ES008 abre a planilha e o Bloco de Notas, e a CC-ES012 abre o construtor
+ * de formulários e a planilha. Com os nomes fixos, a segunda vereda escreveria
+ * a própria barra — e duas barras de tarefas divergem no primeiro ajuste, do
+ * jeito que as cinco fileiras de abas do Excel divergiram no botão "+".
+ */
+export function BarraDeTarefas<T extends string>({ programas, atual, aoTrocar }: {
+  programas: ProgramaNaBarra<T>[];
+  atual: T;
+  aoTrocar: (p: T) => void;
 }) {
   return (
     <div className="bn-tarefas" role="toolbar" aria-label="Barra de tarefas">
-      <button
-        type="button" className="bn-tarefa" aria-current={atual === 'planilha'}
-        onClick={() => aoTrocar('planilha')}
-      >
-        <Sheet size={15} aria-hidden /> Excel
-      </button>
-      <button
-        type="button" className="bn-tarefa" aria-current={atual === 'texto'}
-        onClick={() => aoTrocar('texto')}
-      >
-        <FileText size={15} aria-hidden /> Bloco de Notas
-      </button>
+      {programas.map(({ id, nome, icone: Icone }) => (
+        <button
+          key={id} type="button" className="bn-tarefa" aria-current={atual === id}
+          onClick={() => aoTrocar(id)}
+        >
+          <Icone size={15} aria-hidden /> {nome}
+        </button>
+      ))}
     </div>
   );
 }

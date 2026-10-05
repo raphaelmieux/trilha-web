@@ -585,6 +585,29 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O conjunto documental da CC-ES012, e por que ele é um tipo e não seis.
+
+      Ela é a única vereda que abre **seis** programas: o Word, o Excel, o
+      construtor de formulários, o PowerPoint, o leitor de PDF e a nuvem. Um
+      tipo por programa daria seis variantes quase iguais aqui, e o que muda
+      entre elas não é o que a lição **é** — é em qual janela ela abre, e isso
+      já está escrito em `LICOES_DA_CC_ES012`. É a decisão do `licao` da
+      CC-ES005, que foi a primeira vereda com três programas.
+
+      Dez lições, um conjunto. `licao` diz de que estado dele se parte, que é o
+      campo `documento` da CC-ES002 e o `caderno` da CC-ES003: quem abre o
+      módulo 6 reencontra a planilha que o módulo 5 passou a alimentar.
+    */
+    id: string;
+    tipo: 'projeto';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcEs012').LicaoDaCcEs012;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não

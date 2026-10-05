@@ -14,7 +14,9 @@
  */
 
 import { useState } from 'react';
-import { Download, Scissors, Palette, Hash, Table2 } from 'lucide-react';
+import { Download, Scissors, Palette, Hash, Sheet, Table2 } from 'lucide-react';
+import { BarraDeTarefas, type ProgramaNaBarra } from './blocoDeNotas';
+import { ControleNoExcel } from './projetoNaPlanilha';
 import {
   CartaoDeCabecalho, CartaoDoConstrutor, CorpoDoConstrutor, IconeDoTipo,
   ListaDeOpcoes, PeDoCartao, SeletorDeTipo, TopoDoConstrutor,
@@ -28,6 +30,14 @@ import {
 } from './projetoDocumental';
 import { planilhaPorNome } from './planilha';
 import type { PropsDaSuperficie } from './projetoNaPlataforma';
+
+/** Os dois programas que o módulo 5 abre. */
+type ProgramaDoModulo5 = 'formulario' | 'planilha';
+
+const DOIS_PROGRAMAS: ProgramaNaBarra<ProgramaDoModulo5>[] = [
+  { id: 'formulario', nome: 'Formulários', icone: Table2 },
+  { id: 'planilha', nome: 'Excel', icone: Sheet },
+];
 
 function CartaoDoCampo({ campo, ativo, aoAtivar, aoTrocarTipo }: {
   campo: Campo; ativo: boolean; aoAtivar: () => void;
@@ -146,7 +156,7 @@ export function FormularioDaFeira({ ctx, mudar, avisar }: PropsDaSuperficie) {
 
 /* ── Módulo 5: do formulário para a planilha ──────────────────────────────── */
 
-export function ImportacaoDasRespostas({ ctx, mudar, avisar }: PropsDaSuperficie) {
+function ConstrutorNaImportacao({ ctx, mudar, avisar }: PropsDaSuperficie) {
   const [aba, setAba] = useState<AbaDoConstrutor>('respostas');
   const f = ctx.p.formulario;
   const linhas = respostasEmLinhas(f);
@@ -196,6 +206,34 @@ export function ImportacaoDasRespostas({ ctx, mudar, avisar }: PropsDaSuperficie
           {naAba && faltam === 0 && ' As fórmulas da aba Controle podem ler daqui.'}
         </p>
       </CorpoDoConstrutor>
+    </div>
+  );
+}
+
+/* ── O módulo 5 abre dois programas, e por isso tem barra de tarefas ─────── */
+
+/**
+ * O construtor e a planilha, com a barra de tarefas entre os dois.
+ *
+ * Duas das três metas do módulo 5 são fórmulas na aba Controle, e a lição
+ * **começa** no construtor, que é onde as respostas chegam. Com uma tela só,
+ * ela ficava impossível de vencer com o motor inteiramente correto — foi a
+ * trava que clica quem achou, e é o defeito que ela existe para achar.
+ *
+ * Dois programas abertos querem dizer barra de tarefas, e não sanfona: é a
+ * regra do laboratório de compactar da AP041, e o arranjo que a CC-ES008 já
+ * usa para ir da planilha ao editor de texto.
+ */
+export function ImportacaoDasRespostas(props: PropsDaSuperficie) {
+  const [aberto, setAberto] = useState<ProgramaDoModulo5>('formulario');
+  return (
+    <div className="bn-area">
+      <div className="bn-palco">
+        {aberto === 'formulario'
+          ? <ConstrutorNaImportacao {...props} />
+          : <ControleNoExcel {...props} />}
+      </div>
+      <BarraDeTarefas programas={DOIS_PROGRAMAS} atual={aberto} aoTrocar={setAberto} />
     </div>
   );
 }

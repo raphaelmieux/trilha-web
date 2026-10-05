@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Bold, ArrowDownAZ, ArrowUpZA, RefreshCw, Rows3, Columns3, Table2, PieChart,
-  Sigma, Undo2, Redo2, Trash2, Save,
+  Sigma, Undo2, Redo2, Trash2, Save, Sheet, FileText,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
@@ -10,6 +10,7 @@ import {
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
 import {
   BlocoDeNotas, BarraDeTarefas, CSS_DO_BLOCO_DE_NOTAS,
+  type ProgramaAberto, type ProgramaNaBarra,
 } from '../labs/blocoDeNotas';
 import {
   CSS_DO_CONSTRUTOR, TopoDoConstrutor, CorpoDoConstrutor, CartaoDeCabecalho,
@@ -411,6 +412,12 @@ const GUIAS_USAVEIS = ['Página Inicial', 'Inserir', 'Dados'] as const;
  * no meio do flex da moldura é uma div sem altura, e a janela deixa de chegar
  * ao fim da tela.
  */
+/** Os dois programas que esta vereda abre: a planilha e o editor de texto. */
+const DOIS_PROGRAMAS: ProgramaNaBarra<ProgramaAberto>[] = [
+  { id: 'planilha', nome: 'Excel', icone: Sheet },
+  { id: 'texto', nome: 'Bloco de Notas', icone: FileText },
+];
+
 function Area({ barra, children }: { barra?: React.ReactNode; children: React.ReactNode }) {
   if (!barra) return <>{children}</>;
   /* A barra é irmã do palco, e não filha dele: dentro, ela rolaria junto com a
@@ -633,7 +640,8 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
         não há altura nenhuma para estourar.
       */}
       <Area barra={c.comBarraDeTarefas && (
-        <BarraDeTarefas atual="planilha" aoTrocar={t => t === 'texto' && c.irPara('texto')} />
+        <BarraDeTarefas programas={DOIS_PROGRAMAS} atual="planilha"
+          aoTrocar={t => t === 'texto' && c.irPara('texto')} />
       )}>
           <div className="pl-janela">
             <BarraDeTituloDoExcel arquivo="Inscrições 2026" aoAvisar={avisar} />
@@ -865,7 +873,8 @@ function TelaDoTexto(c: Comum) {
             aoAbrir={abrir}
           />
         </div>
-        <BarraDeTarefas atual="texto" aoTrocar={t => t === 'planilha' && c.irPara('planilha')} />
+        <BarraDeTarefas programas={DOIS_PROGRAMAS} atual="texto"
+          aoTrocar={t => t === 'planilha' && c.irPara('planilha')} />
       </div>
     </Moldura>
   );

@@ -39,21 +39,33 @@ export function ControleNoExcel({ ctx, mudar, avisar }: PropsDaSuperficie) {
   const p = planilhaAtiva(cad);
   const [guia, setGuia] = useState('Página Inicial');
 
-  /** Toda mudança passa por aqui: entra no histórico e sobe para o conjunto. */
-  const aplicar = (f: (c: Caderno) => Caderno) => setHist(h => {
-    const novo = registrar(h, f(h.presente));
+  /**
+   * Toda mudança passa por aqui: entra no histórico e sobe para o conjunto.
+   *
+   * O novo caderno se calcula **fora** do atualizador, e não dentro dele.
+   * Chamar um `setState` de dentro do atualizador de outro é efeito colateral
+   * num lugar onde o React não promete passar uma vez só: ele pode rodar o
+   * atualizador de novo e jogar o resultado fora, e o `mudar` iria junto.
+   *
+   * Nenhuma trava daqui separa as duas formas — a que clica passa com as duas,
+   * e está escrito para não dizer que ela achou isto. O que decide é a regra
+   * do React, e não um teste: a forma de dentro funciona por acaso, e o acaso
+   * muda com a versão.
+   */
+  const aplicar = (f: (c: Caderno) => Caderno) => {
+    const novo = registrar(hist, f(hist.presente));
+    setHist(novo);
     mudar(c => ({ ...c, p: { ...c.p, controle: novo.presente } }));
-    return novo;
-  });
+  };
 
   const mudarPlanilha = (f: (pl: Planilha) => Planilha) =>
     aplicar(c => trocarAtiva(c, f(planilhaAtiva(c))));
 
-  const andarNoHistorico = (quem: typeof desfazer) => setHist(h => {
-    const novo = quem(h);
+  const andarNoHistorico = (quem: typeof desfazer) => {
+    const novo = quem(hist);
+    setHist(novo);
     mudar(c => ({ ...c, p: { ...c.p, controle: novo.presente } }));
-    return novo;
-  });
+  };
 
   const g = useGradeDoExcel({
     planilha: p,
