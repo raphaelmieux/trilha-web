@@ -1,0 +1,47 @@
+# O plano gratuito do Supabase pausa o projeto depois de cerca de sete dias sem
+# atividade, e o frontend (estático, no Pages) continua abrindo normalmente:
+# a plataforma parece no ar e todo login e toda consulta falham. Este workflow
+# faz uma leitura real no banco a cada dois dias, o que conta como atividade.
+#
+# Usa só a chave anon, que já é pública, e a leitura pública de `specialties`.
+# Se a resposta não for 200, a execução reprova de propósito: é o aviso por
+# e-mail do GitHub de que o projeto já está pausado ou de que a leitura mudou.
+#
+# Agendamento só roda a partir do branch padrão, e o GitHub desliga agendamentos
+# de repositório público sem nenhum push por 60 dias. Se isso acontecer, reative
+# em Actions > Keep Supabase alive > Enable workflow.
+
+name: Keep Supabase alive
+
+on:
+  schedule:
+    # Dia par do mês, 09:17 UTC: fora da hora cheia, onde o GitHub atrasa mais.
+    - cron: '17 9 */2 * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      URL: ${{ secrets.VITE_SUPABASE_URL }}
+      KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+    steps:
+      - name: Ler uma linha do banco
+        run: |
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "::error::VITE_SUPABASE_URL ou VITE_SUPABASE_ANON_KEY não está definido nos segredos do repositório."
+            exit 1
+          fi
+          status=$(curl -sS -o resposta.json -w '%{http_code}' --retry 3 --retry-delay 10 \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+            "$URL/rest/v1/specialties?select=code&limit=1")
+          echo "HTTP $status"
+          if [ "$status" != "200" ]; then
+            echo "::error::O banco respondeu HTTP $status. Se for 5xx ou erro de conexão, o projeto provavelmente está pausado: abra o painel do Supabase e use Restore project."
+            exit 1
+          fi
+          # 200 com lista vazia também reprova: leitura que não devolve nada não prova que o banco acordou.
+          jq -e 'length > 0' resposta.json > /dev/null
