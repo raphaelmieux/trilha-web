@@ -3733,6 +3733,96 @@ caracteres de vantagem — 8,6% das setenta. Diluída no corpus isso não diz na
 sobre o arquivo novo, e é por isso que `qualidade.test.ts` mede cada vereda
 sozinha. As seis voltaram a ser afirmações curtas, e a conta foi a zero.
 
+**A CC-ES013 é a primeira vereda em que a base chega suja, e a bruta continua
+bruta.** A CC-ES009 e a CC-ES010 entregam a base fechada e arrumada: lá, mexer no
+dado é o atalho que as duas existem para recusar. Aqui arrumá-la é o trabalho —
+é o requisito 4 —, com uma condição que as anteriores não tinham como cobrar: o
+requisito 9 pede a bruta **e** a tratada na entrega, e só entrega a bruta quem
+limpou numa cópia. Por isso toda meta de limpeza viaja conjugada com
+`brutaIntacta`, que compara a grade inteira — inclusive uma `CONT.VALORES`
+escrita ao lado para conferir os sessenta, que já a deixa de ser como chegou.
+
+**A base é o clube da CC-ES009, com folga de um.** Os mesmos sessenta e um
+membros, com os nomes, as unidades e as idades de lá, cruzados com um
+questionário de transporte — e a trava confere a idade de cada inscrito contra
+a base do acampamento. A folga curta é a lição do requisito 4 encostando no 3:
+excluir as quatro linhas de quem não respondeu derruba a base para cinquenta e
+sete, abaixo do mínimo, e joga fora quatro presenças verdadeiras. As quatro
+perdem as **duas** colunas do questionário juntas, e é isso que deixa a média
+por grupo de `SOMASE ÷ CONT.SE` certa sem `MÉDIASE` — quem não tem grupo não
+entra na soma nem na contagem de grupo nenhum.
+
+**O certo e os defeitos se escrevem separados, e a bruta sai dos dois.**
+`MEMBROS` é a base como devia ser; `DEFEITOS` é o que a exportação fez com ela.
+Escrever a bruta e a tratada à mão seriam duas cópias da mesma gente, e a
+primeira correção de um nome numa delas faria a trava cobrar um conserto que
+não existe. E é `DEFEITOS` que diz o que cada conserto devia produzir —
+inclusive quando o conserto certo é a célula **vazia**. A tratada se confere
+por **pessoa**, nome e unidade, e não por linha: classificar a tratada é
+legítimo, e há duas Ana Clara Ribeiro.
+
+**Os quatro comandos de limpeza têm o caminho errado que o Excel tem.** Mover ou
+Copiar com a caixa "Criar uma cópia" desmarcada, como ela nasce, só troca a aba
+de lugar. Substituir Tudo com uma célula só selecionada procura na planilha
+inteira, e sem "célula inteira" transforma o Pedro Aguiar em Pedro Águiar — com
+a contagem de trocas parecendo a esperada. Remover Duplicatas compara o que
+está escrito, então antes de padronizar não acha a Carla repetida, e com só o
+nome marcado apaga uma das Anas. E o cabeçalho "Distância (km)" também tem
+"km": quem seleciona a coluna pela letra apaga o do título junto.
+
+Nenhum deles avisa, porque o Excel não avisa; quem avisa é a lista de tarefas.
+E o último custou uma decisão: a aba tratada era achada pelo cabeçalho inteiro,
+e o "km" apagado a fazia deixar de ser reconhecida — todas as metas da lição
+apagavam sem nada na tela explicando. Hoje ela é achada pelo "Nome" em A1, e o
+cabeçalho intacto é uma conta própria, que diz o que aconteceu.
+
+**Dois impossíveis, duas decisões.** O 1.250 da Isabela é o único defeito que a
+planilha aceita como número — mil duzentos e cinquenta — e puxa a média da
+distância da bruta de seis para trinta quilômetros sem nenhuma célula com cara
+de errada. Ele tem evidência do certo: ela vem a pé, e a mesma coluna tem outros
+números com ponto no lugar da vírgula. O 41 da Ana Clara não tem — pode ser 11
+ou 14 —, e o conserto certo é a célula vazia com a linha mantida. Adivinhar 14
+reprova, e apagar a linha também.
+
+**A conta confere a aba que ela lê, e não só o resultado.** A mediana da
+presença sai **igual** na bruta e na tratada — a bruta só tem a linha repetida
+a mais. Conferindo só o número, a conta sobre a base suja passaria, e é
+justamente a que a limpeza existe para não deixar alguém fazer. É a terceira
+metade da regra da CC-ES003 e da CC-ES009: a função, a aba e o resultado.
+
+**O gráfico lia a conta que atravessa a aba contra a própria aba.**
+`pontosDoGrafico` e `pontosDaDispersao` liam pela `valorDaGrade`, cujo acessador
+ignora o nome antes da exclamação: uma tabela de `CONT.SE(Tratada!D2:D62;A2)`
+resolvia a conta contra a própria aba de resumo, e o gráfico desenhava barras
+plausíveis e erradas ao lado de células que mostravam o certo — porque a grade
+já recebia a pasta e o desenho não. É o defeito que `contaConfere` da CC-ES009
+registrou do lado da conferência, agora do lado do desenho. Os dois leem por
+`valorCalculado` com a pasta junto, e sem a pasta a referência a outra aba lê
+vazio, que é o que a célula também lê.
+
+**O painel cobra a pergunta no título, e o tipo sai dela.** As regras de tipo
+são as da CC-ES009, e não critério novo: linha nunca, porque a base não tem
+tempo; pizza só sobre uma coluna de "Quantos", porque média não soma todo
+nenhum; dispersão só sobre as duas medidas da tratada. As duas abas de resumo
+que faltam chegam prontas, pela decisão do módulo 6 da CC-ES004 — as contas
+delas são `CONT.SE` e `SOMASE`, que o módulo 6 já mediu.
+
+**O rascunho da conclusão tinha 560 palavras, e a lição era sobre cortá-lo.** A
+meta das duas páginas abria vermelha só porque a parte do "não permitem
+afirmar" estava vazia; o rascunho cabia, e a lição de "duas páginas é o limite"
+não tinha o que ensinar. Nenhuma trava de motor sentiu — quem viu foi a trava
+que clica, lendo a régua de palavras. Hoje o rascunho reconta a limpeza e o
+painel, que é como a primeira versão de todo relatório sai, e a premissa tem
+trava própria.
+
+**Duas conjunções das metas eram redundantes, e a mutação as achou.**
+`nomesIntactos` repetia o que `colunaCerta` já cobra — a linha precisa designar
+alguém que existe, e o Pedro Águiar não existe —, e `todoMundoNaBase` nas metas
+dos impossíveis e das ausências repetia o que as próprias contas já exigiam da
+linha delas. Saíram, e a guarda contra apagar alguém por engano foi para onde
+ela significa alguma coisa: o "sem estragar o resto" da primeira meta de
+número, que agora conta as sessenta e uma pessoas.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -4145,6 +4235,18 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDoProjeto.test.tsx` | transferência pendurada na linha do dono, onde o seletor a descarta |
 | `src/labs/classesDoPrograma.test.ts` | classe de programa imitado usada na tela e definida em folha nenhuma |
 | `src/labs/gradeDoExcel.test.tsx` | laboratório de planilha novo fora da mesa, teclando diferente dos outros |
+| `src/labs/planilha.test.ts` | Mover ou Copiar que copia sem a caixa marcada, ou Substituir que ignora a seleção |
+| `src/labs/planilha.test.ts` | Remover Duplicatas que acha a linha antes de padronizar, ou que junta homônimos com todas as colunas marcadas |
+| `src/labs/planilha.test.ts` | gráfico que resolve a conta de outra aba contra a própria aba |
+| `src/labs/chamadaDoClube.test.ts` | base da CC-ES013 sem um defeito de cada família, ou com folga que deixa excluir as linhas sem questionário |
+| `src/labs/chamadaDoClube.test.ts` | tratada conferida por posição em vez de pessoa, ou ausência preenchida com a média passando |
+| `src/labs/metasDaCcEs013.test.ts` | meta da CC-ES013 que abre verde, que a derivação não fecha, ou que a lição seguinte desfaz |
+| `src/labs/metasDaCcEs013.test.ts` | conta sobre a bruta valendo pela da tratada, porque a mediana sai igual |
+| `src/labs/metasDaCcEs013.test.ts` | idade adivinhada valendo por impossível tratado, ou o "km" do cabeçalho apagado sem reprovar |
+| `src/labs/metasDaCcEs013.test.ts` | pizza de médias ou linha numa base sem tempo fechando o painel |
+| `src/labs/metasDaCcEs013.test.ts` | bruta editada entregue no lugar da que ninguém abriu, ou pasta compartilhada para editar |
+| `src/components/LaboratorioDoProjetoDeDados.test.tsx` | lição da CC-ES013 impossível de vencer clicando, ou caminho errado do Excel que a tela tornou impossível |
+| `src/curriculum/exemplosDoProjetoDeDados.test.ts` | número da teoria ou das questões da CC-ES013 que a base não devolve |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |
@@ -4181,3 +4283,15 @@ passando por não ter olhado, que é exatamente o que ela existe para impedir, c
 a cara de uma trava funcionando. Ela continua não reprovando — o 401 já deixa a
 execução vermelha lá em cima —, mas agora escreve que **não leu**, e a execução
 deixa de afirmar nada sobre o painel.
+
+**E a diferença dos tipos sai onde a API alcança.** A conferência dos tipos
+escrevia a diferença no log do job e publicava o arquivo corrigido como
+artifact — e os dois são servidos de um host de armazenamento fora de
+`api.github.com`, que é o único que alguns clientes alcançam: o celular, e um
+agente trabalhando pela API. Para eles a execução dizia que os tipos tinham
+divergido e nada sobre como, e o conserto que o passo existe para entregar não
+chegava. Aconteceu no merge da CC-ES012: o Supabase atualizou o PostgREST do
+projeto de 14.5 para 14.15, o gerador carimba a versão em `__InternalSupabase`,
+e a divergência era essa linha só — mas só deu para saber depois que a
+diferença passou a sair também como anotação, que a API de Checks devolve como
+toda outra mensagem do workflow.
