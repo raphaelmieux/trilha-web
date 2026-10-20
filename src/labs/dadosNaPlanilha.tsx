@@ -93,11 +93,15 @@ const CSS_DA_LIMPEZA = `
 }
 .pl-elementos legend { font-size: 11px; font-weight: 700; color: #1A1A1A; padding: 0 4px; }
 .pl-elementos label { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #1A1A1A; cursor: pointer; }
-.pl-elementos input[type="text"], .pl-elementos select {
+.pl-formatar { margin: 6px 0 0; font-size: 12px; color: #1A1A1A; }
+.pl-formatar summary { cursor: pointer; font-weight: 700; color: #1A1A1A; padding: 4px 0; }
+.pl-formatar-campos { display: flex; flex-direction: column; gap: 6px; padding: 4px 0 2px; }
+.pl-formatar-campos label { display: flex; flex-direction: column; gap: 2px; color: #1A1A1A; }
+.pl-formatar-campos input, .pl-formatar-campos select {
+  width: 100%; box-sizing: border-box;
   border: 1px solid #C8C6C4; border-radius: 2px; padding: 3px 6px;
-  font: inherit; font-size: 12px; background: #FFFFFF; color: #201F1E; min-width: 0;
+  font: inherit; background: #FFFFFF; color: #201F1E;
 }
-.pl-elementos input[type="text"] { width: min(320px, 70vw); }
 `;
 
 type Dialogo =
@@ -320,44 +324,51 @@ export function AnaliseNoExcel({ ctx, mudar, avisar }: PropsDaSuperficieDeDados)
             escrever. Refazer o gráfico para trocar uma palavra do título
             perderia a faixa que a pessoa selecionou.
           */}
-          <fieldset className="pl-elementos">
-            <legend>Formatar Gráfico</legend>
-            <label>
-              Título
-              <input type="text" aria-label="Título do gráfico" value={p.grafico.titulo}
-                onChange={e => mudarGrafico(gr => ({ ...gr, titulo: e.target.value }))} />
-            </label>
-            <label>
-              Tipo
-              <select aria-label="Alterar Tipo de Gráfico" value={p.grafico.tipo}
-                onChange={e => {
-                  const tipo = e.target.value as TipoDeGrafico;
-                  mudarGrafico(gr => ({ ...gr, tipo }));
-                  avisar(`${NOME_DO_GRAFICO[tipo]} — ${O_QUE_O_GRAFICO_RESPONDE[tipo]}`);
-                }}>
-                {Object.entries(NOME_DO_GRAFICO).map(([k, r]) => <option key={k} value={k}>{r}</option>)}
-              </select>
-            </label>
-            {p.grafico.tipo !== 'pizza' && (
-              <>
-                <label>
-                  Eixo horizontal
-                  <input type="text" aria-label="Eixo horizontal" value={p.grafico.eixoX}
-                    onChange={e => mudarGrafico(gr => ({ ...gr, eixoX: e.target.value }))} />
-                </label>
-                <label>
-                  Eixo vertical
-                  <input type="text" aria-label="Eixo vertical" value={p.grafico.eixoY}
-                    onChange={e => mudarGrafico(gr => ({ ...gr, eixoY: e.target.value }))} />
-                </label>
-              </>
-            )}
-            <button type="button" className="pl-dialogo-bt" onClick={() => {
-              mudarPlanilha(q => ({ ...q, grafico: null }));
-            }}>
-              <Trash2 className="w-3 h-3" style={{ display: 'inline' }} /> Excluir gráfico
-            </button>
-          </fieldset>
+          {/*
+            Recolhida, como o painel de formatação do Excel, que só abre
+            quando se pede: aberta o tempo todo, ela cobriria metade da grade
+            na tela pequena.
+          */}
+          <details className="pl-formatar">
+            <summary>Formatar gráfico</summary>
+            <div className="pl-formatar-campos">
+              <label>
+                Título
+                <input type="text" aria-label="Título do gráfico" value={p.grafico.titulo}
+                  onChange={e => mudarGrafico(gr => ({ ...gr, titulo: e.target.value }))} />
+              </label>
+              <label>
+                Tipo
+                <select aria-label="Alterar Tipo de Gráfico" value={p.grafico.tipo}
+                  onChange={e => {
+                    const tipo = e.target.value as TipoDeGrafico;
+                    mudarGrafico(gr => ({ ...gr, tipo }));
+                    avisar(`${NOME_DO_GRAFICO[tipo]} — ${O_QUE_O_GRAFICO_RESPONDE[tipo]}`);
+                  }}>
+                  {Object.entries(NOME_DO_GRAFICO).map(([k, r]) => <option key={k} value={k}>{r}</option>)}
+                </select>
+              </label>
+              {p.grafico.tipo !== 'pizza' && (
+                <>
+                  <label>
+                    Eixo horizontal
+                    <input type="text" aria-label="Eixo horizontal" value={p.grafico.eixoX}
+                      onChange={e => mudarGrafico(gr => ({ ...gr, eixoX: e.target.value }))} />
+                  </label>
+                  <label>
+                    Eixo vertical
+                    <input type="text" aria-label="Eixo vertical" value={p.grafico.eixoY}
+                      onChange={e => mudarGrafico(gr => ({ ...gr, eixoY: e.target.value }))} />
+                  </label>
+                </>
+              )}
+              <button type="button" className="pl-dialogo-bt" onClick={() => {
+                mudarPlanilha(q => ({ ...q, grafico: null }));
+              }}>
+                <Trash2 className="w-3 h-3" style={{ display: 'inline' }} /> Excluir gráfico
+              </button>
+            </div>
+          </details>
           {/* A linha de tendência é elemento de dispersão: é onde ela significa
               alguma coisa aqui, e o Excel não a oferece na pizza. */}
           {p.grafico.tipo === 'dispersao' && (

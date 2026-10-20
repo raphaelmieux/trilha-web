@@ -33,7 +33,11 @@ export const GUIAS_DO_EXCEL = [
   isso do mesmo jeito, e é o arranjo que ele precisa reconhecer.
 */
 export const CSS_EXCEL = `
+/* Posicionada, porque a caixa do gráfico ancora nela. Sem isto o gráfico
+   ancorava na moldura da tela inteira, e o right: 16px dele o punha em cima
+   do painel de tarefas — cobrindo a tarefa que mandava fazer o gráfico. */
 .pl-janela {
+  position: relative;
   background: #F3F2F1; color: #201F1E;
   flex: 1; display: flex; flex-direction: column; min-height: 0;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;

@@ -695,7 +695,7 @@ const METAS_DO_PAINEL: MetaDoProjetoDeDados[] = [
     id: 'cada-um-uma-pergunta',
     titulo: 'Cada gráfico tem uma pergunta como título, e as quatro são diferentes',
     detalhe: '"Presença por unidade" é um assunto. "Alguma unidade falta mais que as outras?" é uma pergunta, e quem olha o gráfico sabe o que procurar nele.',
-    onde: 'O título de cada gráfico',
+    onde: 'O gráfico → Formatar gráfico → Título',
     passos: [
       'Reescreva cada título como a pergunta que o gráfico responde.',
       'Confira que não há duas perguntas iguais.',
@@ -1244,7 +1244,7 @@ const DEPOIS_DA_RELACAO: ProjetoDeDados = {
   caderno: comCorrelacao(comDispersao(DEPOIS_DOS_GRUPOS.caderno)),
   textos: {
     ...DEPOIS_DOS_GRUPOS.textos,
-    [CHAVE_RELACAO_SUGERE]: 'A correlação é de -0,70: quem mora mais longe tende a ir a menos reuniões, e a reta perde perto de meia reunião a cada quilômetro.',
+    [CHAVE_RELACAO_SUGERE]: 'A correlação é de -0,70: quem mora mais longe tende a ir a menos reuniões, e a reta perde mais de meia reunião a cada quilômetro.',
     [CHAVE_RELACAO_NAO_PROVA]: 'Não prova que a distância causa a falta. Quem mora longe também pega ônibus, e quem vem de carona mora tão longe quanto e falta pouco: o transporte pode ser o que pesa.',
   },
 };

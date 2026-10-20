@@ -16,6 +16,7 @@ import { MODULOS_DA_ANALISE } from './analiseDeDados';
 import { MODULOS_DA_ESTATISTICA } from './analiseEstatistica';
 import { MODULOS_DAS_APRESENTACOES } from './apresentacoes';
 import { MODULOS_DO_PROJETO } from './projetoDocumental';
+import { MODULOS_DO_PROJETO_DE_DADOS } from './projetoDeDados';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -1197,9 +1198,33 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: false,
     modulos: MODULOS_DO_PROJETO,
   },
-  anunciada('CC-ES013', 'Projeto de Dados', 'Escritório',
-    'Uma pergunta, uma base, uma resposta — apresentada a quem vai decidir com ela.',
-    ['cc-es010', 'cc-es011']),
+  {
+    id: 'cc-es013',
+    code: 'CC-ES013',
+    name: 'Projeto de Dados',
+    familia: 'Escritório',
+    description: 'Uma pergunta, uma base, uma resposta — apresentada a quem vai decidir com ela.',
+    /*
+      ── A vereda de integração do lado dos números ───────────────────────
+      As contas já foram ensinadas: as medidas e os grupos na CC-ES009, a
+      dispersão e a reta na CC-ES010, a fala de dez minutos na CC-ES011. O que
+      esta ensina é a costura: uma pergunta feita antes de olhar o dado, uma
+      base que chega suja e é limpa sem deixar de existir como chegou, e uma
+      resposta que vai para quem decide.
+
+      ── E por que ela exige duas ──────────────────────────────────────────
+      Está no requisito 1. A CC-ES010 responde pela relação entre duas
+      variáveis do requisito 5.3 — e pela correlação que não é causa, que é o
+      que muda a recomendação aqui. A CC-ES011 responde pela apresentação de
+      dez minutos do requisito 8. A CC-ES009 vem junto, porque a CC-ES010 a
+      exige; nomeá-la aqui seria uma segunda fonte para a mesma corrente.
+    */
+    preRequisitos: ['cc-es010', 'cc-es011'],
+    /* Sem quadro de resultado: os exemplos são trechos de base, contas e
+       roteiros, e não há o que executar. */
+    mostraResultado: false,
+    modulos: MODULOS_DO_PROJETO_DE_DADOS,
+  },
 
   /* ── Design ──────────────────────────────────────────────────────────────
      Seis veredas, e a família que a plataforma ainda não sabe ensinar: quatro
