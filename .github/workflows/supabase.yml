@@ -274,10 +274,32 @@ jobs:
             exit 1
           fi
 
-          if diff -u /tmp/versionado-corpo.ts /tmp/gerado-corpo.ts; then
+          if diff -u /tmp/versionado-corpo.ts /tmp/gerado-corpo.ts > /tmp/tipos.diff; then
             echo "src/types/database.ts matches the schema."
             exit 0
           fi
+          cat /tmp/tipos.diff
+
+          # The diff also goes out as an annotation. The job log and the
+          # artifact are both served from a storage host outside api.github.com,
+          # and that is the only host some clients reach — a phone, an agent
+          # working through the API. With the diff only in the log, the run said
+          # "the types drifted" to them and nothing about how; the annotation is
+          # read through the Checks API like every other message in this file.
+          #
+          # Escaped the way workflow commands require, and capped below the
+          # annotation size limit. A diff past the cap is said to be cut, so a
+          # partial one is never mistaken for the whole change.
+          limite=60000
+          trecho=$(head -c "$limite" /tmp/tipos.diff)
+          if [ "$(wc -c < /tmp/tipos.diff)" -gt "$limite" ]; then
+            trecho="$trecho
+          [cut at $limite bytes — the full diff is in the job log and the artifact]"
+          fi
+          trecho=${trecho//'%'/'%25'}
+          trecho=${trecho//$'\r'/'%0D'}
+          trecho=${trecho//$'\n'/'%0A'}
+          echo "::warning title=Diff of src/types/database.ts against the schema::$trecho"
 
           # A drop-in replacement, header included, published as an artifact so
           # the fix is a download and a commit from the browser — no local CLI,
