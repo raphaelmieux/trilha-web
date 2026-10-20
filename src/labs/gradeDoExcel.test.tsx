@@ -16,6 +16,8 @@ import { LICOES_DA_CC_ES009 } from './metasDaCcEs009';
 import { LICOES_DA_CC_ES010 } from './metasDaCcEs010';
 import { LICOES_DA_CC_ES012, contextoDe } from './metasDaCcEs012';
 import { ControleNoExcel } from './projetoNaPlanilha';
+import { AnaliseNoExcel } from './dadosNaPlanilha';
+import { LICOES_DA_CC_ES013, contextoDe as contextoDaCcEs013 } from './metasDaCcEs013';
 import type { LicaoDeVereda, Vereda } from '../curriculum/veredas';
 
 /*
@@ -136,6 +138,11 @@ const LABORATORIOS: Record<string, () => React.ReactElement> = {
   'labs/projetoNaPlanilha.tsx': () => (
     <ControleNoExcel
       ctx={contextoDe(LICOES_DA_CC_ES012.planilha.projeto)}
+      mudar={() => {}} avisar={() => {}} />
+  ),
+  'labs/dadosNaPlanilha.tsx': () => (
+    <AnaliseNoExcel
+      ctx={contextoDaCcEs013(LICOES_DA_CC_ES013.grafia.projeto)}
       mudar={() => {}} avisar={() => {}} />
   ),
 };

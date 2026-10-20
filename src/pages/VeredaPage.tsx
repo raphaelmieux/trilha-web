@@ -27,6 +27,7 @@ import LaboratorioDeDados from '../components/LaboratorioDeDados';
 import LaboratorioDaAnalise from '../components/LaboratorioDaAnalise';
 import LaboratorioDeApresentacao from '../components/LaboratorioDeApresentacao';
 import LaboratorioDoProjeto from '../components/LaboratorioDoProjeto';
+import LaboratorioDoProjetoDeDados from '../components/LaboratorioDoProjetoDeDados';
 import LaboratorioDaEstatistica from '../components/LaboratorioDaEstatistica';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
@@ -444,6 +445,15 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'projeto' && profile?.id) {
     return (
       <LaboratorioDoProjeto vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /* A CC-ES013 pelo mesmo caminho: a planilha, a nuvem e a tela da
+     plataforma, e quem escolhe é o `Record` de `LaboratorioDoProjetoDeDados`. */
+  if (licaoAberta?.tipo === 'projeto-de-dados' && profile?.id) {
+    return (
+      <LaboratorioDoProjetoDeDados vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

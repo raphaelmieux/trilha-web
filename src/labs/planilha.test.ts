@@ -7,6 +7,8 @@ import {
   historicoDe, registrar, desfazer, refazer, PASSOS_GUARDADOS,
   linhaEscondida, estiloCondicional, ordenar, preencherAbaixo, preencherADireita,
   valorDaGrade, planilhaAtiva, trocarAtiva, planilhaPorNome,
+  moverOuCopiar, renomearAba, substituir, removerDuplicatas, planilhaDe,
+  pontosDoGrafico, pontosDaDispersao,
 } from './planilha';
 import { mostrar } from './formulas';
 
@@ -459,5 +461,174 @@ describe('a alça também anda para o lado', () => {
   it('e para a esquerda ou para lugar nenhum não muda nada', () => {
     const base = comTabela([['1', '2']]);
     expect(preencherADireita(base, { l: 0, c: 1 }, 0)).toBe(base);
+  });
+});
+
+/*
+  Os comandos de pasta e de limpeza da CC-ES013.
+
+  Cada um tem um caminho errado que o Excel de verdade tem, e a trava confere
+  que ele continua existindo: uma simulação que só soubesse fazer o certo
+  ensinaria que o programa protege de um erro que ele não protege.
+*/
+describe('mover ou copiar uma aba', () => {
+  const pasta = () => ({
+    planilhas: [planilhaDe('Bruta', [['x']]), planilhaDe('Notas', [['y']])],
+    ativa: 0,
+  });
+
+  it('com a caixa marcada, nasce uma cópia ao lado, com outro nome, e ela fica ativa', () => {
+    const cad = moverOuCopiar(pasta(), 0, 1, true);
+    expect(cad.planilhas.map(p => p.nome)).toEqual(['Bruta', 'Bruta (2)', 'Notas']);
+    expect(cad.ativa).toBe(1);
+    expect(moverOuCopiar(cad, 0, 1, true).planilhas.map(p => p.nome))
+      .toEqual(['Bruta', 'Bruta (3)', 'Bruta (2)', 'Notas']);
+  });
+
+  it('a cópia não divide célula com a original: escrever numa não muda a outra', () => {
+    const cad = moverOuCopiar(pasta(), 0, 1, true);
+    const mexida = trocarAtiva(cad, escrever(planilhaAtiva(cad), 0, 0, 'mudou'));
+    expect(cel(planilhaPorNome(mexida, 'Bruta')!, 0, 0)).toBe('x');
+  });
+
+  it('com a caixa desmarcada, ela só troca de lugar — e nenhuma cópia existe', () => {
+    const cad = moverOuCopiar(pasta(), 0, 2, false);
+    expect(cad.planilhas.map(p => p.nome)).toEqual(['Notas', 'Bruta']);
+    expect(planilhaAtiva(cad).nome).toBe('Bruta');
+  });
+});
+
+describe('renomear uma aba', () => {
+  const pasta = { planilhas: [planilhaDe('Bruta', []), planilhaDe('Bruta (2)', [])], ativa: 1 };
+
+  it('troca o nome', () => {
+    const cad = renomearAba(pasta, 1, '  Tratada ');
+    expect(typeof cad === 'string' ? cad : cad.planilhas[1].nome).toBe('Tratada');
+  });
+
+  it('recusa com uma frase, e cada recusa diz o seu porquê', () => {
+    const vazio = renomearAba(pasta, 1, '   ');
+    const repetido = renomearAba(pasta, 1, 'bruta');
+    const proibido = renomearAba(pasta, 1, 'Dados/2026');
+    const longo = renomearAba(pasta, 1, 'x'.repeat(32));
+    for (const r of [vazio, repetido, proibido, longo]) expect(typeof r).toBe('string');
+    expect(new Set([vazio, repetido, proibido, longo]).size).toBe(4);
+  });
+});
+
+describe('localizar e substituir', () => {
+  const base = () => planilhaDe('T', [
+    ['Nome', 'Unidade'],
+    ['Gabriela Souza', 'aguia'],
+    ['Alice Rangel', 'AGUIA'],
+    ['Carla Menezes', 'Águia'],
+    ['Pedro Aguiar', 'Falcão'],
+  ]);
+  const sem = { maiusculas: false, inteira: false };
+
+  it('sem maiúsculas acha AGUIA e aguia, e não acha Águia: acento é outra letra', () => {
+    const { planilha, trocas } = substituir(base(), 'aguia', 'Águia', { maiusculas: false, inteira: true });
+    expect(trocas).toBe(2);
+    expect([1, 2, 3].map(l => cel(planilha, l, 1))).toEqual(['Águia', 'Águia', 'Águia']);
+  });
+
+  it('com maiúsculas, só o que está escrito igualzinho', () => {
+    expect(substituir(base(), 'aguia', 'Águia', { maiusculas: true, inteira: true }).trocas).toBe(1);
+  });
+
+  it('sem célula inteira e na planilha toda, o Pedro Aguiar vira Águiar — sem aviso', () => {
+    const { planilha } = substituir(base(), 'aguia', 'Águia', sem);
+    expect(cel(planilha, 4, 0)).toBe('Pedro Águiar');
+  });
+
+  it('com a coluna selecionada, o alcance é a seleção, e o nome fica de pé', () => {
+    const { planilha } = substituir(base(), 'aguia', 'Águia', sem, { l1: 1, c1: 1, l2: 4, c2: 1 });
+    expect(cel(planilha, 4, 0)).toBe('Pedro Aguiar');
+    expect(cel(planilha, 1, 1)).toBe('Águia');
+  });
+
+  it('uma célula só selecionada quer dizer a planilha inteira, como no Excel', () => {
+    const { planilha } = substituir(base(), 'aguia', 'Águia', sem, { l1: 1, c1: 1, l2: 1, c2: 1 });
+    expect(cel(planilha, 4, 0)).toBe('Pedro Águiar');
+  });
+
+  it('$& no campo de substituir é texto, e não padrão', () => {
+    const { planilha } = substituir(base(), 'Falcão', 'R$&', { maiusculas: true, inteira: true });
+    expect(cel(planilha, 4, 1)).toBe('R$&');
+  });
+
+  it('procurar o vazio não troca nada', () => {
+    expect(substituir(base(), '', 'x', sem).trocas).toBe(0);
+  });
+});
+
+describe('remover duplicatas', () => {
+  const comTabela = (linhas: string[][]) => planilhaDe('T', linhas, {
+    tabela: { l1: 0, c1: 0, l2: linhas.length - 1, c2: linhas[0].length - 1 },
+  });
+  const tudo = [0, 1, 2];
+
+  it('antes de padronizar a grafia, não acha a linha repetida', () => {
+    const p = comTabela([
+      ['Nome', 'Unidade', 'Idade'],
+      ['Carla Menezes', 'Águia', '14'],
+      ['Carla Menezes', 'aguia', '14'],
+    ]);
+    expect(removerDuplicatas(p, tudo).removidas).toBe(0);
+  });
+
+  it('maiúscula não separa duas linhas; a de cima fica, a de baixo sai, e a tabela encolhe', () => {
+    const p = comTabela([
+      ['Nome', 'Unidade', 'Idade'],
+      ['Carla Menezes', 'Águia', '14'],
+      ['Bruno Costa', 'Falcão', '12'],
+      ['carla menezes', 'ÁGUIA', '14'],
+      ['Lara Cunha', 'Águia', '13'],
+    ]);
+    const { planilha, removidas } = removerDuplicatas(p, tudo);
+    expect(removidas).toBe(1);
+    expect([1, 2, 3].map(l => cel(planilha, l, 0))).toEqual(['Carla Menezes', 'Bruno Costa', 'Lara Cunha']);
+    expect(cel(planilha, 4, 0)).toBe('');
+    expect(planilha.tabela?.l2).toBe(3);
+  });
+
+  it('desmarcar tudo menos o nome apaga a homônima, que é outra pessoa', () => {
+    const p = comTabela([
+      ['Nome', 'Unidade', 'Idade'],
+      ['Ana Clara Ribeiro', 'Tucano', ''],
+      ['Ana Clara Ribeiro', 'Arara', '10'],
+    ]);
+    expect(removerDuplicatas(p, tudo).removidas).toBe(0);
+    expect(removerDuplicatas(p, [0]).removidas).toBe(1);
+  });
+});
+
+describe('o gráfico lê a conta que atravessa a aba', () => {
+  /*
+    A tabela de resumo mora numa aba e lê a base de outra: é o arranjo de toda
+    vereda de análise. O desenho lia cada célula como se a pasta tivesse uma aba
+    só, e `Base!B2` virava a B2 da própria aba de resumo — um número plausível
+    e errado no gráfico, ao lado de uma célula que mostrava o certo.
+  */
+  const base = planilhaDe('Base', [['Modo', 'Presenças'], ['Carona', '17'], ['Ônibus', '10'], ['Carona', '15']]);
+  const resumo = planilhaDe('Resumo', [
+    ['Modo', 'Quantos'],
+    ['Carona', '=CONT.SE(Base!A2:A4;A2)'],
+    ['Ônibus', '=CONT.SE(Base!A2:A4;A3)'],
+  ], { grafico: { tipo: 'colunas', titulo: 't', eixoX: 'x', eixoY: 'y', faixa: { l1: 1, c1: 0, l2: 2, c2: 1 } } });
+  const cad = { planilhas: [base, resumo], ativa: 1 };
+
+  it('com a pasta, desenha o que a célula mostra', () => {
+    expect(pontosDoGrafico(resumo, cad)).toEqual([
+      { rotulo: 'Carona', valor: 2 }, { rotulo: 'Ônibus', valor: 1 },
+    ]);
+  });
+
+  it('a dispersão também', () => {
+    const pares = planilhaDe('Pares', [['=Base!B2', '1'], ['=Base!B3', '2']], {
+      grafico: { tipo: 'dispersao', titulo: 't', eixoX: 'x', eixoY: 'y', faixa: { l1: 0, c1: 0, l2: 1, c2: 1 } },
+    });
+    expect(pontosDaDispersao(pares, { planilhas: [base, pares], ativa: 1 }))
+      .toEqual([{ x: 17, y: 1 }, { x: 10, y: 2 }]);
   });
 });

@@ -193,8 +193,17 @@ export interface EixoDoGrafico {
  * sumir do gráfico, e um gráfico em que a categoria vazia não aparece afirma
  * que ela não existe. É o "zero link não é zero link quebrado" aplicado ao
  * desenho, e era o que o código anterior fazia com `valor > 0`.
+ *
+ * O valor sai por `valorCalculado`, com a pasta junto quando ela vem — e não
+ * por `valorDaGrade`, que lia cada célula como se a pasta tivesse uma aba só.
+ * O acessador dela ignorava o nome antes da exclamação, então uma tabela de
+ * `CONT.SE(Tratada!D2:D62;A2)` resolvia a conta contra a **própria** aba de
+ * resumo: o gráfico desenhava números plausíveis e errados ao lado de uma
+ * célula que mostrava o certo, porque a grade já recebia a pasta e o desenho
+ * não. Sem a pasta, a referência a outra aba lê vazio — que é o que a célula
+ * também lê sem ela.
  */
-export function pontosDoGrafico(p: Planilha): PontoDoGrafico[] {
+export function pontosDoGrafico(p: Planilha, caderno?: Caderno): PontoDoGrafico[] {
   const g = p.grafico;
   if (!g) return [];
   const n = normalizar(g.faixa);
@@ -203,7 +212,7 @@ export function pontosDoGrafico(p: Planilha): PontoDoGrafico[] {
     const rotulo = (p.celulas[l]?.[n.esq]?.texto ?? '').trim();
     if (rotulo === '') continue;
     for (let c = n.dir; c > n.esq; c--) {
-      const v = valorDaGrade(p, l, c);
+      const v = valorCalculado(p, l, c, caderno);
       if (v.tipo === 'numero') { pontos.push({ rotulo, valor: v.n }); break; }
     }
   }
@@ -235,14 +244,14 @@ export interface PontoDeDispersao {
  * regra de `paresDe` em `formulas.ts` e pelo mesmo motivo: descartar meio par
  * desalinharia todos os seguintes.
  */
-export function pontosDaDispersao(p: Planilha): PontoDeDispersao[] {
+export function pontosDaDispersao(p: Planilha, caderno?: Caderno): PontoDeDispersao[] {
   const g = p.grafico;
   if (!g) return [];
   const n = normalizar(g.faixa);
   const pares: PontoDeDispersao[] = [];
   for (let l = n.topo; l <= n.base; l++) {
-    const x = valorDaGrade(p, l, n.esq);
-    const y = valorDaGrade(p, l, n.dir);
+    const x = valorCalculado(p, l, n.esq, caderno);
+    const y = valorCalculado(p, l, n.dir, caderno);
     if (x.tipo !== 'numero' || y.tipo !== 'numero') continue;
     pares.push({ x: x.n, y: y.n });
   }
@@ -1043,3 +1052,184 @@ export function planilhaDe(nome: string, conteudo: string[][], extras: Partial<P
   };
 }
 
+
+/* ── Abas: mover, copiar, renomear ────────────────────────────────────────── */
+
+/**
+ * O nome que o Excel dá à cópia: `Bruta (2)`, e `Bruta (3)` se esse já existir.
+ *
+ * A cópia nunca nasce com o nome da original, e não é capricho: duas abas com o
+ * mesmo nome fariam `Bruta!E2` apontar para qualquer uma das duas.
+ */
+export function nomeDaCopia(cad: Caderno, nome: string): string {
+  for (let n = 2; ; n++) {
+    const candidato = `${nome} (${n})`;
+    if (!cad.planilhas.some(p => p.nome === candidato)) return candidato;
+  }
+}
+
+/**
+ * "Mover ou Copiar", com a caixa "Criar uma cópia" marcada ou não.
+ *
+ * São um comando só no Excel, e a diferença é uma caixinha que nasce
+ * **desmarcada**: quem quer guardar a base bruta e trabalhar numa cópia e
+ * esquece a caixa só troca a aba de lugar, e continua limpando o original. Por
+ * isso aqui também é uma função só, e copiar é um parâmetro dela — duas
+ * funções separadas apagariam o caminho errado que o programa de verdade tem.
+ *
+ * `antesDe` é o índice da aba diante da qual a escolhida vai parar, e
+ * `cad.planilhas.length` quer dizer "mover para o final". A cópia fica ativa,
+ * como no Excel: é nela que se vai trabalhar.
+ */
+export function moverOuCopiar(cad: Caderno, indice: number, antesDe: number, copia: boolean): Caderno {
+  const origem = cad.planilhas[indice];
+  if (!origem) return cad;
+  const nova: Planilha = copia
+    ? { ...origem, nome: nomeDaCopia(cad, origem.nome), celulas: origem.celulas.map(l => l.map(c => ({ ...c }))) }
+    : origem;
+  const resto = copia ? [...cad.planilhas] : cad.planilhas.filter((_, i) => i !== indice);
+  /* Movendo, a aba sai antes de entrar, e o índice de destino anda uma casa
+     para trás quando ela estava à esquerda dele. */
+  const destino = Math.max(0, Math.min(resto.length, !copia && indice < antesDe ? antesDe - 1 : antesDe));
+  const planilhas = [...resto.slice(0, destino), nova, ...resto.slice(destino)];
+  return { planilhas, ativa: destino };
+}
+
+/** O que o Excel recusa num nome de aba. */
+const PROIBIDOS_NO_NOME = /[\\/?*[\]:]/;
+export const TAMANHO_MAXIMO_DO_NOME = 31;
+
+/**
+ * Renomeia, ou diz por que não.
+ *
+ * Devolve o motivo em texto quando recusa, e não `null`: o Excel recusa com
+ * uma frase, e a frase é o que ensina — "já existe uma aba com esse nome" não
+ * é a mesma coisa que "esse caractere não pode".
+ *
+ * A comparação de nome repetido ignora maiúsculas, que é o que o Excel faz:
+ * `tratada` e `Tratada` seriam a mesma aba para quem escreve uma fórmula.
+ */
+export function renomearAba(cad: Caderno, indice: number, nome: string): Caderno | string {
+  const limpo = nome.trim();
+  if (limpo === '') return 'O nome da planilha não pode ficar em branco.';
+  if (limpo.length > TAMANHO_MAXIMO_DO_NOME) return `O nome da planilha tem no máximo ${TAMANHO_MAXIMO_DO_NOME} caracteres.`;
+  if (PROIBIDOS_NO_NOME.test(limpo)) return 'O nome da planilha não pode ter \\ / ? * [ ] nem dois-pontos.';
+  const igual = cad.planilhas.findIndex((p, i) =>
+    i !== indice && p.nome.toLocaleLowerCase('pt-BR') === limpo.toLocaleLowerCase('pt-BR'));
+  if (igual >= 0) return 'Esse nome já está sendo usado por outra planilha desta pasta.';
+  return {
+    ...cad,
+    planilhas: cad.planilhas.map((p, i) => (i === indice ? { ...p, nome: limpo } : p)),
+  };
+}
+
+/* ── Localizar e Substituir ───────────────────────────────────────────────── */
+
+export interface OpcoesDeSubstituir {
+  /** "Diferenciar maiúsculas de minúsculas". Desmarcada, `aguia` acha `AGUIA`. */
+  maiusculas: boolean;
+  /** "Coincidir conteúdo da célula inteira". Desmarcada, acha dentro do texto. */
+  inteira: boolean;
+}
+
+const escaparParaRegex = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Substituir Tudo, com as duas caixas do Excel.
+ *
+ * ── O alcance é a seleção, quando há seleção ─────────────────────────────
+ * Com uma célula só selecionada o Excel procura na planilha inteira; com uma
+ * faixa, só dentro dela. É a diferença entre trocar "aguia" na coluna Unidade
+ * e trocar "aguia" no clube inteiro — e o clube inteiro tem um Pedro Aguiar.
+ * Sem "célula inteira" e sem a coluna selecionada, ele vira Pedro Águiar, de
+ * uma vez, sem aviso, e a contagem que o Excel devolve ("Fizemos 4
+ * substituições") parece exatamente a esperada.
+ *
+ * ── Maiúsculas não é acento ──────────────────────────────────────────────
+ * Desmarcada a primeira caixa, `aguia` acha `AGUIA` e `Aguia`, e **não** acha
+ * `Águia`: o acento é outra letra. É assim no Excel, e é o que torna uma
+ * passada só insuficiente para `onibus`, `Onibus` e `ônibus`.
+ *
+ * A fórmula é texto como outro qualquer para este comando, e é procurada
+ * também: é o "Examinar: Fórmulas" que o Excel traz por padrão.
+ */
+export function substituir(
+  p: Planilha, de: string, para: string, opcoes: OpcoesDeSubstituir, faixa?: Faixa,
+): { planilha: Planilha; trocas: number } {
+  if (de === '') return { planilha: p, trocas: 0 };
+  const alcance = faixa && !umaCelulaSo(faixa) ? normalizar(faixa) : null;
+  const dentro = (l: number, c: number) =>
+    !alcance || (l >= alcance.topo && l <= alcance.base && c >= alcance.esq && c <= alcance.dir);
+  const padrao = new RegExp(escaparParaRegex(de), opcoes.maiusculas ? 'g' : 'gi');
+  const igualInteira = (t: string) =>
+    (opcoes.maiusculas ? t === de : t.toLocaleLowerCase('pt-BR') === de.toLocaleLowerCase('pt-BR'));
+
+  let trocas = 0;
+  const celulas = p.celulas.map((linha, l) => linha.map((cel, c) => {
+    if (!dentro(l, c) || cel.texto === '') return cel;
+    if (opcoes.inteira) {
+      if (!igualInteira(cel.texto)) return cel;
+      trocas += 1;
+      return { ...cel, texto: para };
+    }
+    const achadas = cel.texto.match(padrao)?.length ?? 0;
+    if (achadas === 0) return cel;
+    trocas += achadas;
+    /* Função, e não texto, no segundo argumento: `$&` e `$1` escritos em "Substituir
+       por" são texto para o Excel, e o `replace` do JavaScript os leria como padrão. */
+    return { ...cel, texto: cel.texto.replace(padrao, () => para) };
+  }));
+  return { planilha: { ...p, celulas }, trocas };
+}
+
+/* ── Remover Duplicatas ───────────────────────────────────────────────────── */
+
+/**
+ * Remover Duplicatas, sobre a tabela declarada e nas colunas marcadas.
+ *
+ * ── Compara o que está escrito ───────────────────────────────────────────
+ * Sem maiúsculas — "Carona" e "carona" são o mesmo valor para o Excel —, e com
+ * acento: "aguia" e "Águia" não são. Por isso rodar o comando **antes** de
+ * padronizar a grafia não acha a linha repetida, e responde que não há
+ * duplicata nenhuma — a resposta que ninguém confere duas vezes.
+ *
+ * ── As colunas marcadas são a definição de "igual" ───────────────────────
+ * A caixa abre com todas marcadas. Desmarcar tudo menos o nome é o atalho que
+ * parece esperto e apaga gente: duas pessoas diferentes com o mesmo nome viram
+ * uma, e a que sumiu sumiu da base inteira.
+ *
+ * Fica a primeira de cada grupo, as de baixo sobem, e a tabela declarada
+ * encolhe junto — senão ela continuaria cobrindo as linhas vazias que sobraram
+ * embaixo, e Classificar levaria as vazias para o topo.
+ */
+export function removerDuplicatas(p: Planilha, colunas: number[]): { planilha: Planilha; removidas: number } {
+  if (!p.tabela || colunas.length === 0) return { planilha: p, removidas: 0 };
+  const t = normalizar(p.tabela);
+  const chave = (l: number) => colunas
+    .map(c => (p.celulas[l]?.[c]?.texto ?? '').toLocaleLowerCase('pt-BR'))
+    .join('\u0000');
+
+  const vistas = new Set<string>();
+  const ficam: number[] = [];
+  for (let l = t.topo + 1; l <= t.base; l++) {
+    const k = chave(l);
+    if (vistas.has(k)) continue;
+    vistas.add(k);
+    ficam.push(l);
+  }
+  const removidas = t.base - t.topo - ficam.length;
+  if (removidas === 0) return { planilha: p, removidas: 0 };
+
+  const celulas = p.celulas.map(linha => linha.map(cel => ({ ...cel })));
+  ficam.forEach((origem, i) => {
+    const destino = t.topo + 1 + i;
+    for (let c = t.esq; c <= t.dir; c++) celulas[destino][c] = { ...p.celulas[origem][c] };
+  });
+  for (let l = t.topo + 1 + ficam.length; l <= t.base; l++) {
+    for (let c = t.esq; c <= t.dir; c++) celulas[l][c] = { ...celulas[l][c], texto: '' };
+  }
+  return {
+    planilha: { ...p, celulas, tabela: { l1: t.topo, c1: t.esq, l2: t.base - removidas, c2: t.dir } },
+    removidas,
+  };
+}

@@ -609,6 +609,27 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O projeto de dados da CC-ES013, e por que ele não é o `projeto` da
+      CC-ES012.
+
+      As duas são veredas de integração, e as duas partem de uma proposta
+      aprovada; o que elas guardam é outra coisa. A CC-ES012 guarda cinco peças
+      de cinco programas e o vínculo entre elas; esta guarda uma base — bruta e
+      tratada —, o diário de limpeza, as contas e a conclusão. Um tipo só com as
+      duas dentro faria cada leitor perguntar de qual projeto se trata, e é a
+      união de duas formas para coisas diferentes que a exigência de vereda em
+      lista já recusou.
+    */
+    id: string;
+    tipo: 'projeto-de-dados';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcEs013').LicaoDaCcEs013;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
