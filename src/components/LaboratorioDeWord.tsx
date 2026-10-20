@@ -194,7 +194,11 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
     (menu === id ? <div className="wd-menu" onClick={ev => ev.stopPropagation()}>{children}</div> : null);
 
   const ItemMenu = ({ aoClicar, children }: { aoClicar: () => void; children: React.ReactNode }) => (
-    <button type="button" className="wd-item" onClick={aoClicar}>{children}</button>
+    <button
+      type="button" role="menuitem" className="wd-menu-item" onClick={aoClicar}
+    >
+      {children}
+    </button>
   );
 
   const acoes = (

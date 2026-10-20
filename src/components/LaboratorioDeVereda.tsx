@@ -185,7 +185,7 @@ export default function LaboratorioDeVereda({ vereda, licao, userId, aoVencer, a
 
             <AlternadorDaIde vendo={vendo} aoTrocar={setVendo} />
 
-            <div className="ide-codigo-e-previa" style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+            <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
               <div className={`ide-lado-codigo${vendo === 'previa' ? ' escondido' : ''}`}>
                 {lendoMarcacao ? (
                   <EditorDeCodigo

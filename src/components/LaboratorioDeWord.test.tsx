@@ -116,7 +116,11 @@ const guia = (nome: string) =>
     && b.className.includes('wd-guia'));
 
 const itemDeMenu = (texto: string) =>
-  [...container.querySelectorAll('.wd-item')].find(b => b.textContent?.trim().startsWith(texto));
+  /* `.wd-menu-item` é a classe que `word.tsx` de fato define, e a que os
+     outros quatro laboratórios de Word usam. Este era o único com `.wd-item`,
+     que não existia em folha nenhuma — e o teste procurava por ela, então a
+     trava estava amarrada ao defeito. */
+  [...container.querySelectorAll('.wd-menu-item')].find(b => b.textContent?.trim().startsWith(texto));
 
 const botaoDeConcluir = () =>
   [...container.querySelectorAll('button')]

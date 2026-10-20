@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
-  CSS_EXCEL, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
+  CSS_EXCEL, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
   DesenhoDoGrafico,
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
@@ -401,15 +401,7 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
           )}
         </div>
 
-        <div className="pl-formula">
-          <span className="pl-nome" aria-label="Caixa de nome">{nomeDaFaixa(faixa)}</span>
-          <span className="pl-fx">fx</span>
-          <input
-            className="pl-entrada"
-            aria-label="Barra de fórmulas"
-            placeholder="Escreva aqui, ou uma fórmula começando por ="
-            {...g.propsDaBarra} />
-        </div>
+        <BarraDeFormulas nome={nomeDaFaixa(faixa)} props={g.propsDaBarra} />
 
         <GradeDoExcel
           {...g.props}
@@ -434,22 +426,14 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
           </div>
         )}
 
-        <div className="pl-abas">
-          {cad.planilhas.map((q, i) => (
-            <button key={q.nome} type="button" className="pl-aba" aria-current={i === cad.ativa}
-              onClick={() => {
-                setHist(h => ({ ...h, presente: { ...h.presente, ativa: i } }));
-                setFaixa({ l1: 0, c1: 0, l2: 0, c2: 0 });
-                setEditando(null);
-              }}>
-              {q.nome}
-            </button>
-          ))}
-          <button type="button" className="pl-aba-mais" title="Nova planilha" aria-label="Nova planilha"
-            onClick={() => avisar('Acrescentar planilhas existe no programa de verdade, e não faz parte deste exercício.')}>
-            +
-          </button>
-        </div>
+        <AbasDoExcel
+          nomes={cad.planilhas.map(q => q.nome)} ativa={cad.ativa} aoAvisar={avisar}
+          aoTrocar={i => {
+            setHist(h => ({ ...h, presente: { ...h.presente, ativa: i } }));
+            setFaixa({ l1: 0, c1: 0, l2: 0, c2: 0 });
+            setEditando(null);
+          }}
+        />
 
         <div className="pl-status">
           <span>Pronto</span>

@@ -485,7 +485,7 @@ export default function PlanilhaAvancadaLab({ specialtyCode, lessonCode, lessonT
           </div>
         </div>
 
-        <AbasDoExcel nome="Inscritos" aoAvisar={avisar} />
+        <AbasDoExcel nomes={['Inscritos']} aoAvisar={avisar} />
 
         {/*
           A barra de status soma o que está à vista, como a do Excel.

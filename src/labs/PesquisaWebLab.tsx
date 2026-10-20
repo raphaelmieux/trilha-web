@@ -268,7 +268,7 @@ export default function PesquisaWebLab({ specialtyCode, lessonCode, lessonTitle,
             )}
 
             {tela.tipo === 'resultados' && (
-              <div className="pw-resultados">
+              <div>
                 <form className="pw-busca pw-busca-topo" role="search" onSubmit={e => { e.preventDefault(); pesquisar(texto); }}>
                   <Search className="w-4 h-4" aria-hidden />
                   <input aria-label="Pesquisar" value={texto} onChange={e => setTexto(e.target.value)} />

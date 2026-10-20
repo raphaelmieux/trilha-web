@@ -3573,6 +3573,166 @@ ninguém desconfiar do código. `folhaPublicada` a compõe uma vez e a guarda, e
 as três declaram o orçamento, porque ele é de um passo de build e não de uma
 asserção.
 
+**O vínculo entre duas peças não é de nenhuma das duas.** A CC-ES012 é a
+vereda de integração: as cinco peças que o requisito 3 pede já foram
+ensinadas, cada uma na vereda que o requisito 1 exige antes dela. O que ela
+ensina é o que nenhuma podia ensinar sozinha — que as cinco são um conjunto, e
+que um conjunto tem **uma** fonte da verdade.
+
+Guardar o vínculo no documento faria `documento.ts` importar `planilha.ts`, e
+a CC-ES002 passaria a depender da CC-ES003 por causa de uma vereda que vem
+depois das duas. Guardá-lo na planilha seria pior: ela não sabe quem a lê, e é
+isso que a torna fonte. Ele é do **conjunto**, e mora em `projetoDocumental.ts`.
+
+**E as peças chegam quase prontas, de propósito.** Produzi-las é o que as
+veredas do requisito 1 mediram, uma a uma, e repetir a tarefa aqui mediria de
+novo o que já foi medido — é a decisão do módulo 6 da CC-ES004. O que falta em
+cada uma é o que a faz parte de um conjunto: o documento não carrega a
+identidade nem diz onde estão as outras quatro; a planilha calcula sobre
+números digitados; o formulário coleta num formato que a planilha não lê sem
+alguém redigitar; o gráfico da apresentação é figura colada; o dossiê não
+existe. Nenhuma dessas faltas aparece olhando a peça sozinha, e é isso que
+torna cinco arquivos soltos indistinguíveis de um conjunto. Por isso são
+**premissas**, com trava própria: consertar uma por engano apagaria a lição
+daquele módulo sem reprovar nada.
+
+**`incorporado` lê diferente aqui, e não é contradição.** `ComoChegou` alarga a
+`VindoDaPlanilha` da CC-ES011, e o quarto valor é o que o comentário dela nomeia
+como "o que nenhuma delas é": digitar o número na peça. Lá `incorporado` é "a
+única que acompanha e viaja sozinha", e continua sendo — para a pergunta de lá,
+que é "o quadro mostra os números do ano passado?". A pergunta daqui é outra:
+"mexer na planilha de controle chega até ele?". Não chega: o que ele acompanha é
+a cópia que viaja dentro dele, que é uma segunda fonte. As duas leituras são
+verdadeiras, e a distância entre elas é a vereda inteira.
+
+**O `como` do gráfico é do gráfico, e virou segunda fonte por um dia.**
+`GraficoNoSlide.como` é onde a CC-ES011 o pôs e de onde a janela do PowerPoint
+o desenha; o conjunto guardava uma cópia no número. A derivação do módulo 6
+vinculava o gráfico e deixava o número dizendo `imagem`, então o requisito 8
+nunca fechava — com o gráfico certo na tela, lendo a planilha, e a conta do
+conjunto chamando-o de figura. `comoChegou` pergunta a quem guarda a resposta.
+
+**A conta da identidade pergunta por campo que a peça pode carregar.** Ela
+perguntava por valor — "`undefined` não diverge" —, e aí um documento com a cor
+certa e **nenhuma** fonte passava. Chave presente com `undefined` é "pode e não
+carrega", e isso é divergir; chave ausente é "não tem onde guardar", e aí não há
+o que comparar. A planilha carrega cor e mais nada, porque `Celula` tem cor e
+negrito, que é o que a guia Início oferece por célula.
+
+**O dono não é um acesso concedido.** `papelDe` inclui a propriedade, então
+quem criou a pasta sempre "tem acesso" a ela e aparecia como fora da função — a
+conta acusava a pessoa de ter criado a pasta. De quem é o conjunto é o
+requisito 7, e é lá que a propriedade passa para a conta que fica no clube.
+
+**Permissão por função é disciplina, e o que a torna conferível é a equipe
+declarada.** A nuvem compartilha com pessoas: ela não sabe quem é tesoureiro.
+"Por função" se confere comparando quem tem acesso a uma pasta com quem exerce
+a função que ela serve — e as duas direções custam, por motivos diferentes:
+acesso a mais é a pasta de contas aberta para quem não é dela, acesso a menos é
+a tesoureira pedindo o arquivo por mensagem e criando a cópia que diverge.
+
+**O dossiê é o que sai do clube, e o que sai é decisão.** O requisito 3.5 pede
+reunir as peças **destinadas a distribuição**, e não as cinco. Juntar a planilha
+de controle "porque faz parte do conjunto" entrega às famílias o que o clube
+gasta e o nome de cada conselheiro. E reunir se conta por **origem**: o mesmo
+documento combinado três vezes dá um arquivo de três páginas sem ter reunido
+nada — o número está certo, e não é o número que a tarefa queria.
+
+**A conta do total simula a mudança, porque nenhuma outra o separa.** `=240`
+começa por igual, devolve o valor certo e não acompanha nada — é a família do
+`=820+910+1180` da CC-ES003, e nenhuma conta sobre o estado de agora o distingue
+de `=B3*B5`. A planilha alterada é descartada, pela razão escrita no módulo 2 da
+CC-ES003.
+
+**Conjunção redundante não mede nada, e mede errado onde as duas discordam.** A
+meta do acesso por função carregava um segundo "a diretoria ainda acha o
+conjunto", lido da lista de acesso da raiz. `acessosForaDaFuncao` já cobra isso,
+porque a diretoria é a função que a raiz serve — e no dia em que a raiz fosse
+dela, o dono não aparece na lista de acesso e a conjunção reprovaria um
+repositório certo. Quem mostrou foi a mutação: ela sobreviveu.
+
+**Classe de programa imitado usada na tela e definida em folha nenhuma.**
+`.btn-ghost` é o caso que esta casa já pagou: três laboratórios o usavam e ele
+não existia em folha nenhuma — saía como texto solto, sem área de clique, sem
+erro no console. Escrevendo a CC-ES012 eu inventei oito nomes plausíveis
+(`fb-barra-lab`, `fb-bt-lab`, `fb-tabela-respostas`, `fb-recado`,
+`fb-tipo-fixo`, `pp-mini`, `pp-mini-numero`, `pp-regua`), com `tsc` e lint
+verdes nos oito: no navegador a tela desenha quase certo, a barra sem fundo e a
+tabela sem borda, e ninguém estranha porque ninguém sabe como devia ser.
+
+`classesDoPrograma.test.ts` cobra isso. As do Tailwind ficam de fora — são
+geradas e são milhares —, e o prefixo sai das folhas, para a janela nova ser
+coberta no dia em que nascer. O sufixo numérico é pulado porque o prefixo da
+planilha é `pl-`, que é também o `padding-left` do Tailwind: `pl-4` e `pl-bt`
+dividem o prefixo e só um dos dois mora numa folha escrita à mão.
+
+Ela achou oito pré-existentes, cada uma usada uma vez só. Sete eram embrulhos
+cujo layout vem das peças de dentro, então a classe não pintava nada — e tirar
+uma classe que folha nenhuma casa não muda o que se desenha, que é o único
+conserto provável sem navegador. A oitava não era neutra: `wd-item` era item de
+menu do Word, e `.wd-menu-item` é a classe que `word.tsx` define e que os outros
+quatro laboratórios de Word usam. Aquele laboratório tinha nome próprio,
+pintando nada, e o teste dele procurava por esse nome — a trava estava amarrada
+ao defeito.
+
+**A fileira de abas e a barra de fórmulas do Excel estavam escritas cinco vezes
+cada.** A fileira morava em `excel.tsx` para a pasta de uma planilha só e à mão
+dentro de quatro laboratórios para as de várias; a barra morava nos cinco e em
+lugar nenhum. E as fileiras já tinham divergido no lugar mais visível: o botão
+"+" aparecia em duas e faltava nas outras três, então a mesma suíte mostrava
+dois Excel conforme a lição. `aoTrocar` entra pela presença do setter, como o
+`aoBuscar` do Explorador: sem ele a pasta é de uma planilha só, e prometer o
+gesto numa pasta de uma aba seria prometer um clique que não muda nada.
+
+A `BarraDeTarefas` foi a terceira: ela tinha os dois nomes escritos dentro, e a
+CC-ES012 abre o construtor de formulários com a planilha. A lista é parâmetro
+agora, e mora no **laboratório** — quais programas estão abertos é decisão do
+exercício, e não da janela.
+
+**A primeira guia do Word é "Início"; a do Excel é "Página Inicial".** Escrever
+a do Excel na lista de guias usáveis do Word não estoura nada: a guia sai
+desenhada em cinza, avisando que não faz parte do exercício, e a faixa fica
+**vazia** — porque a condição que escolhe o grupo compara com um nome que
+nenhuma guia tem. Foi a trava que clica quem achou.
+
+**Lição cujas metas moram em dois programas precisa dos dois abertos.** Duas das
+três metas do módulo 5 são fórmulas na aba Controle, e a lição começa no
+construtor, que é onde as respostas chegam. Com uma tela só ela era impossível
+de vencer com o motor inteiramente correto — e a asserção fraca da trava que
+clica ("fechou ao menos uma") escondia isso. Dois programas abertos querem dizer
+barra de tarefas, que é a regra do laboratório de compactar da AP041.
+
+**A transferência de propriedade sai da linha de quem recebe.** `SeletorDePapel`
+desenha "Proprietário" na linha do dono e **descarta** o `aoTransferir`: no
+Drive se transfere da linha de quem recebe, e é por isso que só se transfere
+para quem já tem acesso. Pendurado na linha do dono, o único gesto que o
+requisito 7 pede não desenhava nada. A caixa ganhou o passo de dar acesso que a
+ordem de verdade exige.
+
+**`setState` dentro do atualizador de outro não tem promessa.** O React pode
+rodar o atualizador de novo e jogar o resultado fora, e o efeito colateral vai
+junto. Nenhuma trava daqui separa as duas formas — a que clica passa com as
+duas —, e é por isso que o comentário em `projetoNaPlanilha.tsx` diz que ela
+não achou isto: o que decide é a regra, e não um teste.
+
+**Seis superfícies e uma moldura.** As outras veredas abrem **um** programa, e
+por isso cabem num componente. Esta abre seis, e um componente com os seis
+dentro passaria de duas mil linhas e teria seis assuntos. Cada superfície mora
+no arquivo da janela que ela veste; o que fica na moldura é o estado do
+conjunto, a lista de tarefas, o aviso e o despacho — que é um `Record`, então a
+décima primeira lição não compila até alguém dizer em que tela ela abre.
+
+E os nomes de programa imitado são os **mesmos** das outras veredas — `word`,
+`excel`, `powerpoint`, `leitor-de-pdf`, `nuvem`, `formulario-na-web` —, porque a
+lembrança do aviso de tela pequena é por programa: nome próprio por vereda daria
+seis avisos a quem já tinha dispensado os seis.
+
+**A vantagem da correta se mede na vereda antes de abrir.** A CC-ES012 abriu com
+seis questões em que a correta se lia pelo tamanho, a pior com dezenove
+caracteres de vantagem — 8,6% das setenta. Diluída no corpus isso não diz nada
+sobre o arquivo novo, e é por isso que `qualidade.test.ts` mede cada vereda
+sozinha. As seis voltaram a ser afirmações curtas, e a conta foi a zero.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -3963,6 +4123,28 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/pesquisaDoBug.test.ts` | página que responde às quatro perguntas sozinha, primeiro resultado confiável, ou ficha de fonte ruim valendo no caderno |
 | `src/labs/relatorioDePesquisa.test.ts` | etapa de fato sem ficha citada, cópia sem aspas passando, ou referências contando palavras |
 | `src/labs/laboratoriosDaAp045.test.tsx` | laboratório da AP045 impossível de vencer clicando, ou pesquisa que diz se a página é confiável |
+| `src/labs/projetoDocumental.test.ts` | número cuja fonte sumiu dado por desatualizado, que manda consertar o que alguém apagou |
+| `src/labs/projetoDocumental.test.ts` | `incorporado` acompanhando a planilha de controle, que é a leitura da CC-ES011 fora de lugar |
+| `src/labs/projetoDocumental.test.ts` | peça sem identidade nenhuma dada por coerente, que abre o 3.6 verde |
+| `src/labs/projetoDocumental.test.ts` | dono acusado de acesso a mais na pasta que ele criou |
+| `src/labs/projetoDocumental.test.ts` | resposta digitada à mão contando como importada, que é a redigitação que o 4 proíbe |
+| `src/labs/projetoDocumental.test.ts` | nome de pasta que a CC-ES001 recusa passando aqui, que são duas contas do mesmo padrão |
+| `src/labs/projetoDaFeira.test.ts` | peça que chega com o defeito já consertado, apagando a lição do módulo sem reprovar nada |
+| `src/labs/projetoDaFeira.test.ts` | pasta do projeto que chega com data e versão, que tira a lição daquela pasta |
+| `src/labs/projetoDaFeira.test.ts` | formulário sem resposta que a SOMA pule, que apaga o custo de trocar o tipo do campo |
+| `src/labs/metasDaCcEs012.test.ts` | meta da CC-ES012 que abre verde, ou que a derivação da lição seguinte não fecha |
+| `src/labs/metasDaCcEs012.test.ts` | proposta aprovada depois de a execução começar fechando a lição |
+| `src/labs/metasDaCcEs012.test.ts` | total escrito como `=240`, que começa por igual e não acompanha |
+| `src/labs/metasDaCcEs012.test.ts` | seção nova com o sumário velho, ou seções apagadas para o sumário bater |
+| `src/labs/metasDaCcEs012.test.ts` | planilha de controle juntada no dossiê, ou peça juntada duas vezes valendo por duas |
+| `src/labs/metasDaCcEs012.test.ts` | transferência que faz quem entrega perder o próprio acesso |
+| `src/labs/metasDaCcEs012.test.ts` | dossiê gerado antes da mudança valendo por refeito |
+| `src/components/LaboratorioDoProjeto.test.tsx` | lição da CC-ES012 impossível de vencer clicando, ou aberta na janela de outra |
+| `src/components/LaboratorioDoProjeto.test.tsx` | guia nomeada pelo nome da guia de outro programa, que deixa a faixa vazia |
+| `src/components/LaboratorioDoProjeto.test.tsx` | lição com metas em dois programas sem caminho entre eles |
+| `src/components/LaboratorioDoProjeto.test.tsx` | transferência pendurada na linha do dono, onde o seletor a descarta |
+| `src/labs/classesDoPrograma.test.ts` | classe de programa imitado usada na tela e definida em folha nenhuma |
+| `src/labs/gradeDoExcel.test.tsx` | laboratório de planilha novo fora da mesa, teclando diferente dos outros |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

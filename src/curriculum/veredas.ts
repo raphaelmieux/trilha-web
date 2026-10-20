@@ -15,6 +15,7 @@ import { MODULOS_DE_DADOS } from './dadosEFormularios';
 import { MODULOS_DA_ANALISE } from './analiseDeDados';
 import { MODULOS_DA_ESTATISTICA } from './analiseEstatistica';
 import { MODULOS_DAS_APRESENTACOES } from './apresentacoes';
+import { MODULOS_DO_PROJETO } from './projetoDocumental';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -585,6 +586,29 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O conjunto documental da CC-ES012, e por que ele é um tipo e não seis.
+
+      Ela é a única vereda que abre **seis** programas: o Word, o Excel, o
+      construtor de formulários, o PowerPoint, o leitor de PDF e a nuvem. Um
+      tipo por programa daria seis variantes quase iguais aqui, e o que muda
+      entre elas não é o que a lição **é** — é em qual janela ela abre, e isso
+      já está escrito em `LICOES_DA_CC_ES012`. É a decisão do `licao` da
+      CC-ES005, que foi a primeira vereda com três programas.
+
+      Dez lições, um conjunto. `licao` diz de que estado dele se parte, que é o
+      campo `documento` da CC-ES002 e o `caderno` da CC-ES003: quem abre o
+      módulo 6 reencontra a planilha que o módulo 5 passou a alimentar.
+    */
+    id: string;
+    tipo: 'projeto';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcEs012').LicaoDaCcEs012;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
@@ -1114,9 +1138,44 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: false,
     modulos: MODULOS_DAS_APRESENTACOES,
   },
-  anunciada('CC-ES012', 'Projeto Documental', 'Escritório',
-    'O conjunto inteiro de uma atividade real, e um dado que se propaga por todas as peças.',
-    ['cc-es004', 'cc-es007', 'cc-es011']),
+  {
+    id: 'cc-es012',
+    code: 'CC-ES012',
+    name: 'Projeto Documental',
+    familia: 'Escritório',
+    description: 'O conjunto inteiro de uma atividade real, e um dado que se propaga por todas as peças.',
+    /*
+      ── A vereda de integração, e a única que não ensina programa ─────────
+      As cinco peças que o requisito 3 pede já foram ensinadas, cada uma na
+      vereda que o requisito 1 exige antes desta. O que esta ensina é o que
+      nenhuma delas podia ensinar sozinha: que as cinco são um conjunto, e que
+      um conjunto tem **uma** fonte da verdade.
+
+      ── O que carrega esta vereda é o conjunto que funciona ───────────────
+      Cinco arquivos soltos na mesma pasta abrem bonitos e imprimem certo. O
+      total digitado está certo no dia em que foi escrito. O gráfico colado
+      mostra o número de quando foi colado. O dossiê gerado antes da mudança
+      imprime perfeitamente. A pasta com o acesso que sobrou de março não
+      acusa nada. Nenhuma dessas telas dá erro, e o conjunto inteiro conta
+      dois números para a mesma feira.
+
+      ── E por que ela exige três veredas ─────────────────────────────────
+      Está no requisito 1, e cada uma responde por uma peça: a CC-ES004 pelo
+      dossiê pesquisável, a CC-ES007 pela comunicação que o conjunto serve, e
+      a CC-ES011 pela apresentação de divulgação — que é onde a diferença
+      entre figura colada e gráfico vinculado foi ensinada pela primeira vez,
+      e aqui recebe a leitura que a torna decisiva.
+
+      A lista é de três porque é o que o requisito pede, e `veredasQueFaltamAntes`
+      nomeia as que faltam: com três exigências, dizer "conclua a anterior"
+      manda a pessoa concluir uma e voltar para descobrir que falta outra.
+    */
+    preRequisitos: ['cc-es004', 'cc-es007', 'cc-es011'],
+    /* Sem quadro de resultado: os exemplos são tabelas de comparação e
+       caminhos de pasta, e não há o que executar. */
+    mostraResultado: false,
+    modulos: MODULOS_DO_PROJETO,
+  },
   anunciada('CC-ES013', 'Projeto de Dados', 'Escritório',
     'Uma pergunta, uma base, uma resposta — apresentada a quem vai decidir com ela.',
     ['cc-es010', 'cc-es011']),
