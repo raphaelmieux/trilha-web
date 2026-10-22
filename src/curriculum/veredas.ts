@@ -650,6 +650,24 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O editor de design da CC-DG002, com as ferramentas de vetor.
+
+      É a mesma janela da CC-DG001 — e por isso podia ser o mesmo tipo —, mas o
+      que viaja com a lição é outro: a pasta de arquivos exportados, que o
+      editor de texto abre, e o caderno dos usos. Um tipo só com os dois
+      contextos dentro faria cada leitor perguntar de qual vereda se trata, que
+      é a união de duas formas que a exigência de vereda em lista já recusou.
+    */
+    id: string;
+    tipo: 'vetorial';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcDg002').LicaoDaCcDg002;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não

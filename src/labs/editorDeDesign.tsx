@@ -819,7 +819,7 @@ export function EditorDeDesign({
   );
 
   const item = (rotulo: string, acao: () => void, atalho?: string, marcado?: boolean) => (
-    <button type="button" className="dz-menu-item" role={marcado === undefined ? 'menuitem' : 'menuitemcheckbox'}
+    <button key={rotulo} type="button" className="dz-menu-item" role={marcado === undefined ? 'menuitem' : 'menuitemcheckbox'}
       aria-checked={marcado} onClick={() => { acao(); setMenu(null); }}>
       <span>{rotulo}</span>{atalho && <span className="dz-menu-atalho">{atalho}</span>}
     </button>

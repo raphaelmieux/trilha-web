@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FileText, type LucideIcon } from 'lucide-react';
 
 /*
@@ -98,6 +98,7 @@ export const CSS_DO_BLOCO_DE_NOTAS = `
   white-space: pre; color: #1B1B1B; background: #FFFFFF;
 }
 .bn-vazio { color: #605E5C; font-style: italic; }
+.bn-editavel { border: none; resize: none; outline: none; width: 100%; }
 
 .bn-status {
   display: flex; align-items: center; gap: 14px;
@@ -172,15 +173,36 @@ export interface ArquivoDeTexto {
   conteudo: string;
 }
 
-export function BlocoDeNotas({ aberto, naPasta, aoAbrir }: {
+export function BlocoDeNotas({ aberto, naPasta, aoAbrir, aoSalvar, pasta = 'Downloads' }: {
   /** O arquivo aberto, ou `null` para a janela sem título, que é como ele abre. */
   aberto: ArquivoDeTexto | null;
   /** O que existe na pasta de downloads. Vazia, a caixa de abrir diz isso. */
   naPasta: ArquivoDeTexto[];
   aoAbrir: (nome: string) => void;
+  /**
+   * Salvar o que se escreveu. Com ele o arquivo se edita; sem ele, abre só de
+   * leitura.
+   *
+   * É a regra da presença do setter, a do `aoBuscar` do Explorador. O CSV da
+   * CC-ES008 abre só de leitura pelo motivo escrito no topo deste arquivo; o
+   * SVG da CC-DG002 abre para escrever, porque mudar uma coordenada à mão **é**
+   * o requisito 7 de lá. Um editor que aceitasse digitação no CSV fecharia
+   * aquela tarefa sem nada ter sido provocado; um que recusasse no SVG tiraria
+   * o único caminho até esta.
+   */
+  aoSalvar?: (nome: string, conteudo: string) => void;
+  /** O nome da pasta que a caixa de abrir mostra. */
+  pasta?: string;
 }) {
   const [menu, setMenu] = useState<string | null>(null);
   const [caixa, setCaixa] = useState(false);
+  const [rascunho, setRascunho] = useState(aberto?.conteudo ?? '');
+  /* O rascunho é do arquivo aberto: abrir outro, ou o mesmo salvo por fora,
+     troca o que está no campo. */
+  useEffect(() => { setRascunho(aberto?.conteudo ?? ''); }, [aberto?.nome, aberto?.conteudo]);
+  const editavel = !!aoSalvar && !!aberto;
+  const mudado = editavel && rascunho !== aberto!.conteudo;
+  const salvar = () => { if (editavel && mudado) aoSalvar!(aberto!.nome, rascunho); };
 
   const linhas = aberto ? aberto.conteudo.replace(/\n$/, '').split('\n') : [];
 
@@ -213,12 +235,30 @@ export function BlocoDeNotas({ aberto, naPasta, aoAbrir }: {
               >
                 Abrir…
               </button>
+              {aoSalvar && (
+                <button
+                  type="button" className="bn-item" role="menuitem" disabled={!mudado}
+                  onClick={() => { setMenu(null); salvar(); }}
+                >
+                  Salvar (Ctrl+S)
+                </button>
+              )}
             </div>
           </>
         )}
       </div>
 
-      {aberto
+      {aberto && editavel
+        ? (
+          <textarea
+            className="bn-texto bn-editavel" aria-label={`Conteúdo de ${aberto.nome}`} spellCheck={false}
+            value={rascunho} onChange={e => setRascunho(e.target.value)}
+            onKeyDown={e => {
+              if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); salvar(); }
+            }}
+          />
+        )
+        : aberto
         ? (
           <pre className="bn-texto" aria-label={`Conteúdo de ${aberto.nome}`}>
             {aberto.conteudo}
@@ -236,7 +276,8 @@ export function BlocoDeNotas({ aberto, naPasta, aoAbrir }: {
         {/* Só de leitura, e a régua diz isso: o arquivo é o retrato que saiu da
             planilha, e consertar dentro dele deixaria a planilha e o arquivo
             discordando — é o PDF que congela, da CC-ES004. */}
-        {aberto && <span style={{ marginLeft: 'auto' }}>Somente leitura</span>}
+        {aberto && !editavel && <span style={{ marginLeft: 'auto' }}>Somente leitura</span>}
+        {editavel && <span style={{ marginLeft: 'auto' }}>{mudado ? 'Não salvo' : 'Salvo'}</span>}
       </div>
 
       {caixa && (
@@ -255,11 +296,11 @@ export function BlocoDeNotas({ aberto, naPasta, aoAbrir }: {
             }}
           >
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4, color: '#1B1B1B' }}>Abrir</h3>
-            <p style={{ fontSize: 12, color: '#605E5C', marginBottom: 10 }}>Downloads</p>
+            <p style={{ fontSize: 12, color: '#605E5C', marginBottom: 10 }}>{pasta}</p>
             {naPasta.length === 0
               ? (
                 <p style={{ fontSize: 12.5, color: '#605E5C' }}>
-                  A pasta está vazia. Exporte a planilha antes.
+                  A pasta está vazia. Exporte o arquivo antes.
                 </p>
               )
               : naPasta.map(a => (
