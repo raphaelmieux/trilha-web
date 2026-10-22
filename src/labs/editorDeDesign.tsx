@@ -11,8 +11,10 @@ import {
   alinhar, alturaDe, alturaDaLinha, cmykDe, colarEstilo, contrasteDoTexto, contrasteMinimo, copiarEstilo,
   distribuir, duplicarPrancha, ehHex, ehTextoGrande, excluir, foraDaGama, fundosDoTexto, hexDeHsl,
   hslDe, idNovo, linhasDoTexto, mudarObjetos, mudarOrdem, mudarPrancha, provaDeImpressao, umaPrancha,
+  EXTREMIDADE_NO_SVG, moverObjeto, posicionar, redimensionar,
   type Arte, type Borda, type EstiloCopiado, type Familia, type Objeto, type Papel, type Prancha, type Texto,
 } from './design';
+import { dDosContornos } from './vetor';
 import { contrastRatio, hexToRgb } from '../lib/imageTools';
 
 /**
@@ -245,10 +247,26 @@ export function DesenhoDaPrancha({
   );
 }
 
-function DesenhoDoObjeto({ o, escala: k, cor, selecionado, aoApertar }: {
+function DesenhoDoObjeto({ o, escala: k, cor, selecionado, aoApertar, alvo }: {
   o: Objeto; escala: number; cor: (h: string) => string; selecionado: boolean;
   aoApertar?: (id: string, e: React.PointerEvent) => void;
+  /** Quem o clique seleciona: o próprio objeto, ou o grupo em que ele está. */
+  alvo?: string;
 }) {
+  const quem = alvo ?? o.id;
+  /* O grupo não tem tinta: desenha os filhos, e o clique em qualquer um deles
+     seleciona o grupo inteiro — que é o que um grupo é. Entrar nele para mexer
+     num filho se faz pela lista de camadas. */
+  if (o.tipo === 'grupo') {
+    return (
+      <>
+        {o.filhos.map(f => (
+          <DesenhoDoObjeto key={f.id} o={f} escala={k} cor={cor} selecionado={selecionado}
+            aoApertar={aoApertar} alvo={quem} />
+        ))}
+      </>
+    );
+  }
   /* A posição vai inline, e não só na folha: a tela de análise é da
      plataforma e desenha a peça sem a folha do editor, e uma peça desenhada
      sem posição sai com todos os blocos empilhados um embaixo do outro. */
@@ -262,8 +280,30 @@ function DesenhoDoObjeto({ o, escala: k, cor, selecionado, aoApertar }: {
     'data-selecionado': selecionado ? 'true' : undefined,
     role: aoApertar ? 'button' : undefined,
     'aria-label': aoApertar ? `Camada: ${o.nome}` : undefined,
-    onPointerDown: aoApertar ? (e: React.PointerEvent) => { e.stopPropagation(); aoApertar(o.id, e); } : undefined,
+    onPointerDown: aoApertar ? (e: React.PointerEvent) => { e.stopPropagation(); aoApertar(quem, e); } : undefined,
   };
+  if (o.tipo === 'caminho' || o.tipo === 'referencia') {
+    /* O caminho se desenha num SVG do tamanho da caixa, com folga para o
+       traço, e com as coordenadas da prancha no viewBox: os números do d são
+       os mesmos que o arquivo exportado vai ter. */
+    const folga = o.tipo === 'caminho' && o.traco ? o.traco.espessura : 0;
+    const [vx, vy, vl, va] = [o.x - folga, o.y - folga, o.largura + 2 * folga, o.altura + 2 * folga];
+    const traco = o.tipo === 'caminho' ? o.traco : null;
+    return (
+      <svg {...comum}
+        style={{ ...caixa, left: vx * k, top: vy * k, width: vl * k, height: va * k, overflow: 'visible', pointerEvents: 'none' }}
+        viewBox={`${vx} ${vy} ${Math.max(vl, 0.01)} ${Math.max(va, 0.01)}`} preserveAspectRatio="none">
+        <path d={dDosContornos(o.contornos)} fillRule="evenodd"
+          style={{ pointerEvents: aoApertar && o.tipo === 'caminho' ? 'visiblePainted' : 'none' }}
+          onPointerDown={comum.onPointerDown}
+          fill={o.tipo === 'referencia' ? '#1F2A24' : o.preenchimento ? cor(o.preenchimento) : 'none'}
+          fillOpacity={o.tipo === 'referencia' ? o.opacidade : undefined}
+          stroke={traco ? cor(traco.cor) : 'none'} strokeWidth={traco?.espessura}
+          strokeLinecap={traco ? EXTREMIDADE_NO_SVG[traco.extremidade] as 'butt' | 'round' | 'square' : undefined}
+          strokeLinejoin="round" />
+      </svg>
+    );
+  }
   if (o.tipo === 'texto') {
     return (
       <div {...comum} style={{
@@ -286,9 +326,14 @@ function DesenhoDoObjeto({ o, escala: k, cor, selecionado, aoApertar }: {
       </div>
     );
   }
+  const traco = o.traco;
   return (
     <div {...comum} style={{
       ...caixa, background: cor(o.preenchimento), borderRadius: o.tipo === 'elipse' ? '50%' : 0,
+      /* O traço centrado na borda, como no SVG: metade para fora, metade para
+         dentro. Com border do CSS ele sairia todo para dentro, e a forma com
+         traço grosso pareceria menor do que a medida diz. */
+      boxShadow: traco ? `0 0 0 ${(traco.espessura / 2) * k}px ${cor(traco.cor)}, inset 0 0 0 ${(traco.espessura / 2) * k}px ${cor(traco.cor)}` : undefined,
     }} />
   );
 }
@@ -452,7 +497,7 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
     const dy = Math.round((e.clientY - a.y) / escala);
     if (!a.moveu && Math.abs(dx) + Math.abs(dy) < 2) return;
     a.moveu = true;
-    mudar(mudarPrancha(a.origem, p.id, q => mudarObjetos(q, selecao, o => ({ ...o, x: o.x + dx, y: o.y + dy }))));
+    mudar(mudarPrancha(a.origem, p.id, q => mudarObjetos(q, selecao, o => moverObjeto(o, dx, dy))));
   };
 
   const soltar = () => {
@@ -478,7 +523,7 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
     if (seta[e.key] && selecao.length > 0) {
       e.preventDefault();
       const [dx, dy] = seta[e.key];
-      nosSelecionados(o => ({ ...o, x: o.x + dx, y: o.y + dy }));
+      nosSelecionados(o => moverObjeto(o, dx, dy));
     }
   };
 
@@ -728,12 +773,12 @@ function Propriedades({ prancha, selecionados: os, mudarSelecionados, mudarPranc
           <span>{os.length === 1 ? os[0].nome : `${os.length} objetos`}</span>
         </div>
         <div className="dz-campos">
-          <CampoNumero rotulo="X" valor={comum(os, o => o.x)} aoMudar={n => set(o => ({ ...o, x: Math.round(n) }))} />
-          <CampoNumero rotulo="Y" valor={comum(os, o => o.y)} aoMudar={n => set(o => ({ ...o, y: Math.round(n) }))} />
+          <CampoNumero rotulo="X" valor={comum(os, o => o.x)} aoMudar={n => set(o => posicionar(o, Math.round(n), o.y))} />
+          <CampoNumero rotulo="Y" valor={comum(os, o => o.y)} aoMudar={n => set(o => posicionar(o, o.x, Math.round(n)))} />
           <CampoNumero rotulo="L" valor={comum(os, o => o.largura)} minimo={8}
-            aoMudar={n => set(o => ({ ...o, largura: Math.round(n) }))} />
+            aoMudar={n => set(o => redimensionar(o, Math.round(n), undefined))} />
           <CampoNumero rotulo="A" valor={comum(os, o => alturaDe(o))} minimo={4} desligado={!comAltura}
-            aoMudar={n => set(o => (o.tipo === 'texto' ? o : { ...o, altura: Math.round(n) }))} />
+            aoMudar={n => set(o => redimensionar(o, undefined, Math.round(n)))} />
         </div>
         {!comAltura && <p className="dz-nota" style={{ marginTop: 6 }}>A altura de um texto sai das linhas dele.</p>}
       </div>

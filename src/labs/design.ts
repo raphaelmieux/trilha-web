@@ -24,6 +24,10 @@
  */
 
 import { contrastRatio, hexToRgb } from '../lib/imageTools';
+import {
+  booleana, caixaDosContornos, contornoDaElipse, contornoDoRetangulo, escalar, transladar,
+  type Booleana, type Contorno,
+} from './vetor';
 
 /* ── As famílias ─────────────────────────────────────────────────────────── */
 
@@ -37,7 +41,7 @@ import { contrastRatio, hexToRgb } from '../lib/imageTools';
  */
 export type Familia =
   | 'Georgia' | 'Times New Roman' | 'Arial' | 'Verdana' | 'Trebuchet MS'
-  | 'Courier New' | 'Impact' | 'Comic Sans MS' | 'Brush Script MT';
+  | 'Courier New' | 'Impact' | 'Comic Sans MS' | 'Brush Script MT' | 'Space Mono';
 
 export type Classificacao = 'serifada' | 'sem-serifa' | 'monoespacada' | 'decorativa';
 
@@ -73,6 +77,10 @@ export const FAMILIAS: Record<Familia, DadosDaFamilia> = {
   'Impact': { classificacao: 'decorativa', pilha: 'Impact, "Arial Black", sans-serif', largura: 0.45 },
   'Comic Sans MS': { classificacao: 'decorativa', pilha: '"Comic Sans MS", "Comic Neue", cursive', largura: 0.53 },
   'Brush Script MT': { classificacao: 'decorativa', pilha: '"Brush Script MT", cursive', largura: 0.42 },
+  /* A única cujo arquivo a plataforma carrega, e por isso a única que se
+     converte em curvas: converter precisa do desenho de cada letra, e o
+     desenho mora no arquivo da fonte. É o que `textoEmCurvas.ts` explica. */
+  'Space Mono': { classificacao: 'monoespacada', pilha: '"Space Mono", ui-monospace, monospace', largura: 0.61 },
 };
 
 export const LISTA_DE_FAMILIAS = Object.keys(FAMILIAS) as Familia[];
@@ -114,10 +122,69 @@ export interface Texto extends Base {
   alinhamento: Alinhamento;
 }
 
+/** As três extremidades de traço que todo editor oferece. */
+export type Extremidade = 'reta' | 'redonda' | 'quadrada';
+export const NOME_DA_EXTREMIDADE: Record<Extremidade, string> = {
+  reta: 'Reta', redonda: 'Redonda', quadrada: 'Quadrada',
+};
+/** O nome que o SVG dá a cada uma, que é o que se lê no arquivo. */
+export const EXTREMIDADE_NO_SVG: Record<Extremidade, string> = { reta: 'butt', redonda: 'round', quadrada: 'square' };
+
+export interface Traco {
+  cor: string;
+  espessura: number;
+  extremidade: Extremidade;
+}
+
 export interface Forma extends Base {
   tipo: 'retangulo' | 'elipse';
   altura: number;
   preenchimento: string;
+  /** A linha em volta. Ausente nas peças da CC-DG001, que não falam dela. */
+  traco?: Traco | null;
+}
+
+/**
+ * O caminho: contornos de nós e alças, com preenchimento e traço.
+ *
+ * `x`, `y`, `largura` e `altura` são a caixa dos contornos, guardada para que
+ * o resto do editor — alinhar, a margem, a lista de propriedades — leia todo
+ * objeto do mesmo jeito. Quem mexe nos contornos refaz a caixa por
+ * `comCaixaRefeita`; quem mexe na caixa move ou escala os contornos.
+ *
+ * Preenchimento nulo é "sem preenchimento", e não transparente: num caminho
+ * aberto, preencher fecha a forma por uma reta invisível entre as pontas, e o
+ * desenho ganha uma mancha que ninguém desenhou.
+ */
+export interface Caminho extends Base {
+  tipo: 'caminho';
+  altura: number;
+  contornos: Contorno[];
+  preenchimento: string | null;
+  traco: Traco | null;
+}
+
+/** O grupo: objetos que se movem juntos, com um nome na lista de camadas. */
+export interface Grupo extends Base {
+  tipo: 'grupo';
+  altura: number;
+  filhos: Objeto[];
+}
+
+/**
+ * A imagem de referência: o logotipo que o examinador entregou, posto por
+ * baixo para servir de guia.
+ *
+ * Ela é **imagem**, e não vetor: não se converte, não se desagrupa, não entra
+ * numa booleana. Os contornos dela existem só para a conta que compara o que
+ * a pessoa desenhou com o que foi pedido — se fossem vetor na tela, reproduzir
+ * o logotipo seria duplicar a referência.
+ */
+export interface Referencia extends Base {
+  tipo: 'referencia';
+  altura: number;
+  contornos: Contorno[];
+  opacidade: number;
 }
 
 /**
@@ -134,7 +201,7 @@ export interface Foto extends Base {
   tons: [string, string];
 }
 
-export type Objeto = Texto | Forma | Foto;
+export type Objeto = Texto | Forma | Foto | Caminho | Grupo | Referencia;
 
 export interface Prancha {
   id: string;
@@ -161,8 +228,21 @@ export interface Arte {
   paleta: Paleta;
 }
 
-export const textos = (p: Prancha): Texto[] => p.objetos.filter((o): o is Texto => o.tipo === 'texto');
-export const umObjeto = (p: Prancha, id: string) => p.objetos.find(o => o.id === id);
+/**
+ * Todo objeto da prancha, com os de dentro dos grupos, na ordem em que se
+ * pintam — o grupo vem antes dos filhos, e os filhos onde o grupo está.
+ *
+ * É por ela que as contas da CC-DG001 continuam valendo com grupos: um texto
+ * dentro de um grupo continua sendo um texto da peça, e o fundo dele continua
+ * sendo o que se pinta antes.
+ */
+export function achatarObjetos(os: Objeto[]): Objeto[] {
+  return os.flatMap(o => (o.tipo === 'grupo' ? [o, ...achatarObjetos(o.filhos)] : [o]));
+}
+
+export const textos = (p: Prancha): Texto[] =>
+  achatarObjetos(p.objetos).filter((o): o is Texto => o.tipo === 'texto');
+export const umObjeto = (p: Prancha, id: string) => achatarObjetos(p.objetos).find(o => o.id === id);
 export const umaPrancha = (a: Arte, id: string) => a.pranchas.find(p => p.id === id);
 
 /* ── O texto quebra em linhas, e a altura sai delas ──────────────────────── */
@@ -236,11 +316,16 @@ export function fundosDoTexto(p: Prancha, t: Texto): string[] {
   const c = caixaDe(t);
   const cx = c.x + c.largura / 2;
   const cy = c.y + c.altura / 2;
-  const indice = p.objetos.findIndex(o => o.id === t.id);
+  const pintados = achatarObjetos(p.objetos);
+  const indice = pintados.findIndex(o => o.id === t.id);
   for (let i = indice - 1; i >= 0; i--) {
-    const o = p.objetos[i];
-    if (o.tipo === 'texto') continue;
+    const o = pintados[i];
+    if (o.tipo === 'texto' || o.tipo === 'grupo' || o.tipo === 'referencia') continue;
     if (!contem(caixaDe(o), cx, cy)) continue;
+    if (o.tipo === 'caminho') {
+      if (!o.preenchimento) continue;
+      return [o.preenchimento];
+    }
     return o.tipo === 'foto' ? [...o.tons] : [o.preenchimento];
   }
   return [p.fundo];
@@ -608,8 +693,74 @@ export function comoDeuteranope(hex: string): string {
 export const mudarPrancha = (a: Arte, id: string, f: (p: Prancha) => Prancha): Arte =>
   ({ ...a, pranchas: a.pranchas.map(p => (p.id === id ? f(p) : p)) });
 
-export const mudarObjetos = (p: Prancha, ids: string[], f: (o: Objeto) => Objeto): Prancha =>
-  ({ ...p, objetos: p.objetos.map(o => (ids.includes(o.id) ? f(o) : o)) });
+/**
+ * Mudar os objetos de uma lista de ids, onde quer que eles estejam — dentro
+ * de grupo inclusive. O grupo que teve um filho mudado refaz a própria caixa.
+ */
+export function mudarObjetos(p: Prancha, ids: string[], f: (o: Objeto) => Objeto): Prancha {
+  const mudar = (os: Objeto[]): Objeto[] => os.map(o => {
+    if (ids.includes(o.id)) return f(o);
+    if (o.tipo !== 'grupo') return o;
+    const filhos = mudar(o.filhos);
+    return filhos.every((x, i) => x === o.filhos[i]) ? o : comCaixaRefeita({ ...o, filhos });
+  });
+  return { ...p, objetos: mudar(p.objetos) };
+}
+
+/* ── Mover, posicionar e medir o que não é retângulo ─────────────────────── */
+
+/** A caixa refeita a partir do que o objeto tem dentro. */
+export function comCaixaRefeita<O extends Objeto>(o: O): O {
+  if (o.tipo === 'caminho' || o.tipo === 'referencia') {
+    const c = caixaDosContornos(o.contornos);
+    return { ...o, x: c.x, y: c.y, largura: c.largura, altura: c.altura };
+  }
+  if (o.tipo === 'grupo') {
+    const cs = o.filhos.map(caixaDe);
+    if (cs.length === 0) return o;
+    const x = Math.min(...cs.map(c => c.x));
+    const y = Math.min(...cs.map(c => c.y));
+    return {
+      ...o, x, y,
+      largura: Math.max(...cs.map(c => c.x + c.largura)) - x,
+      altura: Math.max(...cs.map(c => c.y + c.altura)) - y,
+    };
+  }
+  return o;
+}
+
+/** Mover um objeto, levando o que ele tem dentro. */
+export function moverObjeto(o: Objeto, dx: number, dy: number): Objeto {
+  if (dx === 0 && dy === 0) return o;
+  if (o.tipo === 'caminho' || o.tipo === 'referencia') {
+    return { ...o, x: o.x + dx, y: o.y + dy, contornos: transladar(o.contornos, dx, dy) };
+  }
+  if (o.tipo === 'grupo') {
+    return { ...o, x: o.x + dx, y: o.y + dy, filhos: o.filhos.map(f => moverObjeto(f, dx, dy)) };
+  }
+  return { ...o, x: o.x + dx, y: o.y + dy };
+}
+
+export const posicionar = (o: Objeto, x: number, y: number) => moverObjeto(o, x - o.x, y - o.y);
+
+/**
+ * Mudar largura e altura pela caixa.
+ *
+ * O caminho escala a partir do canto de cima à esquerda, que é o que a caixa
+ * de propriedades faz em todo editor. O grupo não se redimensiona por aqui:
+ * escalar um grupo com texto dentro pediria escolher entre esticar a letra e
+ * mudar o corpo, e as duas respostas são erradas em metade dos casos.
+ */
+export function redimensionar(o: Objeto, largura: number | undefined, altura: number | undefined): Objeto {
+  if (o.tipo === 'grupo') return o;
+  if (o.tipo === 'texto') return largura === undefined ? o : { ...o, largura };
+  if (o.tipo === 'caminho' || o.tipo === 'referencia') {
+    const sx = largura === undefined || o.largura === 0 ? 1 : largura / o.largura;
+    const sy = altura === undefined || o.altura === 0 ? 1 : altura / o.altura;
+    return comCaixaRefeita({ ...o, contornos: escalar(o.contornos, { x: o.x, y: o.y }, sx, sy) });
+  }
+  return { ...o, largura: largura ?? o.largura, altura: altura ?? o.altura };
+}
 
 export type Borda = 'esquerda' | 'centro-h' | 'direita' | 'topo' | 'meio-v' | 'base';
 
@@ -633,12 +784,12 @@ export function alinhar(p: Prancha, ids: string[], borda: Borda): Prancha {
   return mudarObjetos(p, ids, o => {
     const c = caixaDe(o);
     switch (borda) {
-      case 'esquerda': return { ...o, x: ref.x };
-      case 'centro-h': return { ...o, x: Math.round(ref.x + ref.largura / 2 - c.largura / 2) };
-      case 'direita': return { ...o, x: ref.x + ref.largura - c.largura };
-      case 'topo': return { ...o, y: ref.y };
-      case 'meio-v': return { ...o, y: Math.round(ref.y + ref.altura / 2 - c.altura / 2) };
-      case 'base': return { ...o, y: ref.y + ref.altura - c.altura };
+      case 'esquerda': return posicionar(o, ref.x, o.y);
+      case 'centro-h': return posicionar(o, Math.round(ref.x + ref.largura / 2 - c.largura / 2), o.y);
+      case 'direita': return posicionar(o, ref.x + ref.largura - c.largura, o.y);
+      case 'topo': return posicionar(o, o.x, ref.y);
+      case 'meio-v': return posicionar(o, o.x, Math.round(ref.y + ref.altura / 2 - c.altura / 2));
+      case 'base': return posicionar(o, o.x, ref.y + ref.altura - c.altura);
     }
   });
 }
@@ -668,12 +819,12 @@ export function distribuir(p: Prancha, ids: string[], eixo: 'vertical' | 'horizo
     novas.set(o.id, Math.round(cursor));
     cursor += tam(o) + vao;
   }
-  return mudarObjetos(p, ids, o => (vert ? { ...o, y: novas.get(o.id)! } : { ...o, x: novas.get(o.id)! }));
+  return mudarObjetos(p, ids, o => (vert ? posicionar(o, o.x, novas.get(o.id)!) : posicionar(o, novas.get(o.id)!, o.y)));
 }
 
 export interface EstiloCopiado {
   texto?: Pick<Texto, 'familia' | 'peso' | 'corpo' | 'entrelinha' | 'cor'>;
-  forma?: Pick<Forma, 'preenchimento'>;
+  forma?: { preenchimento: string | null; traco: Traco | null };
 }
 
 export function copiarEstilo(o: Objeto): EstiloCopiado {
@@ -681,36 +832,145 @@ export function copiarEstilo(o: Objeto): EstiloCopiado {
     const { familia, peso, corpo, entrelinha, cor } = o;
     return { texto: { familia, peso, corpo, entrelinha, cor } };
   }
-  if (o.tipo === 'foto') return {};
-  return { forma: { preenchimento: o.preenchimento } };
+  if (o.tipo === 'retangulo' || o.tipo === 'elipse') return { forma: { preenchimento: o.preenchimento, traco: o.traco ?? null } };
+  if (o.tipo === 'caminho') return { forma: { preenchimento: o.preenchimento, traco: o.traco } };
+  return {};
 }
 
-/** Colar estilo vale para o tipo que o estilo veio: texto em texto, forma em forma. */
+/**
+ * Colar estilo vale para o tipo que o estilo veio: texto em texto, forma em
+ * forma. O caminho conta como forma — traço e preenchimento são os mesmos —, e
+ * a forma retangular não aceita "sem preenchimento", que é coisa de caminho.
+ */
 export function colarEstilo(p: Prancha, ids: string[], e: EstiloCopiado): Prancha {
   return mudarObjetos(p, ids, o => {
     if (o.tipo === 'texto' && e.texto) return { ...o, ...e.texto };
-    if ((o.tipo === 'retangulo' || o.tipo === 'elipse') && e.forma) return { ...o, ...e.forma };
+    if ((o.tipo === 'retangulo' || o.tipo === 'elipse') && e.forma) {
+      return { ...o, preenchimento: e.forma.preenchimento ?? o.preenchimento, traco: e.forma.traco };
+    }
+    if (o.tipo === 'caminho' && e.forma) return { ...o, ...e.forma };
     return o;
   });
 }
 
-/** Trazer para frente ou mandar para trás, um degrau. */
+/** Trazer para frente ou mandar para trás, um degrau, entre os irmãos. */
 export function mudarOrdem(p: Prancha, id: string, para: 'frente' | 'tras'): Prancha {
-  const i = p.objetos.findIndex(o => o.id === id);
-  const j = para === 'frente' ? i + 1 : i - 1;
-  if (i < 0 || j < 0 || j >= p.objetos.length) return p;
-  const objetos = [...p.objetos];
-  [objetos[i], objetos[j]] = [objetos[j], objetos[i]];
-  return { ...p, objetos };
+  const trocar = (os: Objeto[]): Objeto[] => {
+    const i = os.findIndex(o => o.id === id);
+    if (i < 0) return os.map(o => (o.tipo === 'grupo' ? { ...o, filhos: trocar(o.filhos) } : o));
+    const j = para === 'frente' ? i + 1 : i - 1;
+    if (j < 0 || j >= os.length) return os;
+    const novos = [...os];
+    [novos[i], novos[j]] = [novos[j], novos[i]];
+    return novos;
+  };
+  return { ...p, objetos: trocar(p.objetos) };
 }
 
-export const excluir = (p: Prancha, ids: string[]): Prancha =>
-  ({ ...p, objetos: p.objetos.filter(o => !ids.includes(o.id)) });
+/** Excluir onde quer que esteja; o grupo que fica vazio sai junto. */
+export function excluir(p: Prancha, ids: string[]): Prancha {
+  const tirar = (os: Objeto[]): Objeto[] => os.flatMap((o): Objeto[] => {
+    if (ids.includes(o.id)) return [];
+    if (o.tipo !== 'grupo') return [o];
+    const filhos = tirar(o.filhos);
+    if (filhos.length === 0) return [];
+    return [filhos.length === o.filhos.length ? o : comCaixaRefeita({ ...o, filhos })];
+  });
+  return { ...p, objetos: tirar(p.objetos) };
+}
 
 /** Um id que a prancha ainda não usa. */
 export function idNovo(a: Arte, prefixo: string): string {
-  const usados = new Set(a.pranchas.flatMap(p => [p.id, ...p.objetos.map(o => o.id)]));
+  const usados = new Set(a.pranchas.flatMap(p => [p.id, ...achatarObjetos(p.objetos).map(o => o.id)]));
   for (let i = 1; ; i++) if (!usados.has(`${prefixo}-${i}`)) return `${prefixo}-${i}`;
+}
+
+/* ── Agrupar, converter e combinar ───────────────────────────────────────── */
+
+/**
+ * Agrupar irmãos: só objetos do mesmo nível entram no mesmo grupo, e o grupo
+ * fica onde estava o de cima — é o que mantém a ordem em que eles se pintam.
+ */
+export function agrupar(p: Prancha, ids: string[], id: string, nome = 'Grupo'): Prancha {
+  const juntar = (os: Objeto[]): Objeto[] => {
+    const dentro = os.filter(o => ids.includes(o.id));
+    if (dentro.length === ids.length && dentro.length >= 2) {
+      const ultimo = Math.max(...dentro.map(o => os.indexOf(o)));
+      const grupo = comCaixaRefeita<Grupo>({ id, nome, tipo: 'grupo', x: 0, y: 0, largura: 0, altura: 0, filhos: dentro });
+      return os.flatMap((o, i) => (i === ultimo ? [grupo] : ids.includes(o.id) ? [] : [o]));
+    }
+    return os.map(o => (o.tipo === 'grupo' ? { ...o, filhos: juntar(o.filhos) } : o));
+  };
+  return { ...p, objetos: juntar(p.objetos) };
+}
+
+/** Desagrupar: os filhos voltam para o lugar do grupo, na mesma ordem. */
+export function desagrupar(p: Prancha, id: string): Prancha {
+  const soltar = (os: Objeto[]): Objeto[] => os.flatMap((o): Objeto[] => {
+    if (o.id === id && o.tipo === 'grupo') return o.filhos;
+    return o.tipo === 'grupo' ? [{ ...o, filhos: soltar(o.filhos) }] : [o];
+  });
+  return { ...p, objetos: soltar(p.objetos) };
+}
+
+/**
+ * Converter uma forma em caminho: o retângulo vira quatro nós de canto, a
+ * elipse vira quatro nós suaves. O texto não passa por aqui — o desenho das
+ * letras mora no arquivo da fonte, e quem o lê é `textoEmCurvas.ts`.
+ */
+export function emCaminho(o: Objeto): Caminho | null {
+  if (o.tipo === 'caminho') return o;
+  if (o.tipo !== 'retangulo' && o.tipo !== 'elipse') return null;
+  const contorno = o.tipo === 'retangulo'
+    ? contornoDoRetangulo(o.x, o.y, o.largura, o.altura)
+    : contornoDaElipse(o.x, o.y, o.largura, o.altura);
+  return {
+    id: o.id, nome: o.nome, tipo: 'caminho', x: o.x, y: o.y, largura: o.largura, altura: o.altura,
+    contornos: [contorno], preenchimento: o.preenchimento, traco: o.traco ?? null,
+  };
+}
+
+export const NOME_DA_BOOLEANA: Record<Booleana, string> = {
+  uniao: 'Unir', subtracao: 'Subtrair', intersecao: 'Intersectar',
+};
+
+/**
+ * União, subtração e interseção entre objetos irmãos.
+ *
+ * Os objetos se combinam **na ordem da pilha**: o de baixo é a base, e os de
+ * cima entram nela — somados, subtraídos ou intersectados. Na subtração é o de
+ * baixo que perde o pedaço, que é a regra do Figma e do Inkscape. O resultado
+ * herda o nome, o preenchimento e o traço do de baixo, e fica no lugar dele.
+ */
+export function combinar(p: Prancha, ids: string[], op: Booleana): Prancha {
+  const irmaos = (os: Objeto[]): Objeto[] | null => {
+    if (ids.every(id => os.some(o => o.id === id))) return os;
+    for (const o of os) {
+      if (o.tipo !== 'grupo') continue;
+      const achado = irmaos(o.filhos);
+      if (achado) return achado;
+    }
+    return null;
+  };
+  const lista = irmaos(p.objetos);
+  if (!lista || ids.length < 2) return p;
+  const ordem = lista.filter(o => ids.includes(o.id));
+  const caminhos = ordem.map(emCaminho);
+  if (caminhos.some(c => !c)) return p;
+  const [base, ...resto] = caminhos as Caminho[];
+  let contornos = base.contornos;
+  if (op === 'subtracao') {
+    const tirar = resto.reduce<Contorno[]>((acc, c) => (acc.length ? booleana(acc, c.contornos, 'uniao') : c.contornos), []);
+    contornos = booleana(contornos, tirar, 'subtracao');
+  } else {
+    for (const c of resto) contornos = booleana(contornos, c.contornos, op);
+  }
+  const resultado = comCaixaRefeita<Caminho>({ ...base, contornos });
+  const trocar = (os: Objeto[]): Objeto[] => {
+    if (os !== lista) return os.map(o => (o.tipo === 'grupo' ? comCaixaRefeita({ ...o, filhos: trocar(o.filhos) }) : o));
+    return os.flatMap(o => (o.id === base.id ? [resultado] : ids.includes(o.id) ? [] : [o]));
+  };
+  return { ...p, objetos: trocar(p.objetos) };
 }
 
 /**
@@ -728,10 +988,17 @@ export function duplicarPrancha(a: Arte, id: string): Arte {
     ...origem,
     id: novoId,
     nome: `${origem.nome} (cópia)`,
-    objetos: origem.objetos.map(o => ({ ...o, id: `${novoId}-${o.id}` })),
+    objetos: comIdsNovos(origem.objetos, `${novoId}-`),
   };
   const i = a.pranchas.findIndex(p => p.id === id);
   return { ...a, pranchas: [...a.pranchas.slice(0, i + 1), copia, ...a.pranchas.slice(i + 1)] };
+}
+
+/** Os mesmos objetos, com um prefixo nos ids — os dos filhos de grupo também. */
+function comIdsNovos(os: Objeto[], prefixo: string): Objeto[] {
+  return os.map(o => (o.tipo === 'grupo'
+    ? { ...o, id: `${prefixo}${o.id}`, filhos: comIdsNovos(o.filhos, prefixo) }
+    : { ...o, id: `${prefixo}${o.id}` }));
 }
 
 /** O texto que a prancha carrega, como conjunto: é o que "sem perder informação" mede. */
@@ -741,15 +1008,18 @@ export const textoDaPrancha = (p: Prancha) =>
 export const mesmoTexto = (a: Prancha, b: Prancha) =>
   JSON.stringify(textoDaPrancha(a)) === JSON.stringify(textoDaPrancha(b));
 
+const semIds = (os: Objeto[]): unknown[] => os.map(o => {
+  const resto: Record<string, unknown> = { ...o };
+  delete resto.id;
+  delete resto.nome;
+  if (o.tipo === 'grupo') resto.filhos = semIds(o.filhos);
+  return resto;
+});
+
 /** Prancha idêntica à outra, sem contar os ids: é a versão anterior guardada. */
 export function mesmaPeca(a: Prancha, b: Prancha): boolean {
   const semId = (p: Prancha) => JSON.stringify(
-    [p.largura, p.altura, p.fundo.toLowerCase(), p.objetos.map(o => {
-      const resto: Record<string, unknown> = { ...o };
-      delete resto.id;
-      delete resto.nome;
-      return resto;
-    })],
+    [p.largura, p.altura, p.fundo.toLowerCase(), semIds(p.objetos)],
   );
   return semId(a) === semId(b);
 }
