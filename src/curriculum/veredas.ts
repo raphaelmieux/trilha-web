@@ -631,6 +631,24 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O editor de design da CC-DG001, e por que ele é um tipo e não cinco.
+
+      É o arranjo da CC-ES005: o que muda de uma lição para outra não é o que
+      ela **é**, é de que prancha ela parte e o que cobra — e isso já está
+      escrito em `LICOES_DA_CC_DG001`. A família de Design inteira vai abrir a
+      mesma janela; cada vereda dela ganha o seu `licao`, e não um `tipo` por
+      exercício.
+    */
+    id: string;
+    tipo: 'design';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcDg001').LicaoDaCcDg001;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não

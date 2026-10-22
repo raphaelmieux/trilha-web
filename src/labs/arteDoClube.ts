@@ -227,7 +227,7 @@ export const BATISMO_PECA = peca(BATISMO, 'Convite do batismo', [
 export const CAMPORI = 'campori';
 export const CAMPORI_PECA = peca(CAMPORI, 'Convocação do campori', [
   foto('foto', 'Foto da fogueira', 'fogueira', 0, 0, LARGURA, 300, ['#2B1A10', '#F4C27A']),
-  texto('titulo', 'Título', 'Campori Regional', 40, 150, 400, { corpo: 44, peso: 700, cor: BRANCO, entrelinha: 1.15 }),
+  texto('titulo', 'Título', 'Campori Regional', 40, 214, 400, { corpo: 44, peso: 700, cor: BRANCO, entrelinha: 1.15 }),
   texto('data', 'Data', '5 a 9 de novembro, em Formosa (GO)', 40, 332, 400, { corpo: 20, peso: 700 }),
   texto('descricao', 'Descrição',
     'Cinco dias de acampamento com clubes de todo o Distrito Federal. Vagas limitadas a quarenta por clube.',

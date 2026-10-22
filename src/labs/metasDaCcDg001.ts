@@ -52,6 +52,11 @@ export const NOME_DO_PRINCIPIO: Record<Principio, string> = {
   hierarquia: 'Hierarquia', contraste: 'Contraste', alinhamento: 'Alinhamento',
 };
 
+/** Com o artigo, porque hierarquia é feminina e os outros dois não. */
+export const PRINCIPIO_COM_ARTIGO: Record<Principio, string> = {
+  hierarquia: 'a hierarquia', contraste: 'o contraste', alinhamento: 'o alinhamento',
+};
+
 export type Veredito = 'funciona' | 'falha';
 
 export interface NotaDoPrincipio {
@@ -541,7 +546,7 @@ const notaCerta = (p: Prancha, principio: Principio, n: NotaDoPrincipio) => {
 
 const metaDoPrincipio = (principio: Principio, onde: string): MetaDoDesign => ({
   id: `analise-de-${principio}`,
-  titulo: `Analisar o ${NOME_DO_PRINCIPIO[principio].toLowerCase()} das três peças`,
+  titulo: `Analisar ${PRINCIPIO_COM_ARTIGO[principio]} das três peças`,
   detalhe: `Em cada peça: se funciona ou falha, em que elemento isso se vê — clicando nele —, e uma frase de pelo menos ${PALAVRAS_DA_NOTA} palavras. Quando falha, o elemento apontado tem de ser o que falha.`,
   onde,
   passos: [
