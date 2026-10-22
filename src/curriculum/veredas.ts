@@ -18,6 +18,7 @@ import { MODULOS_DAS_APRESENTACOES } from './apresentacoes';
 import { MODULOS_DO_PROJETO } from './projetoDocumental';
 import { MODULOS_DO_PROJETO_DE_DADOS } from './projetoDeDados';
 import { MODULOS_DOS_FUNDAMENTOS } from './fundamentosVisuais';
+import { MODULOS_DO_DESENHO_VETORIAL } from './desenhoVetorial';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -1297,9 +1298,30 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: false,
     modulos: MODULOS_DOS_FUNDAMENTOS,
   },
-  anunciada('CC-DG002', 'Desenho Vetorial', 'Design',
-    'Nó, alça e curva de Bézier: desenho que não perde qualidade em tamanho nenhum.',
-    ['cc-dg001']),
+  {
+    id: 'cc-dg002',
+    code: 'CC-DG002',
+    name: 'Desenho Vetorial',
+    familia: 'Design',
+    description: 'Nó, alça e curva de Bézier: desenho que não perde qualidade em tamanho nenhum.',
+    preRequisitos: ['cc-dg001'],
+    /*
+      ── O que carrega esta vereda é o desenho que se refaz ─────────────────
+      Um vetor é uma receita, e a vereda inteira mostra a receita: a lua que
+      é um círculo menos outro, a curva que são quatro pontos, o nome do clube
+      que vira caminho para não depender da fonte de ninguém, e por fim o SVG
+      aberto no editor de texto, onde um número mudado à mão move o chão do
+      ícone. Os nove laboratórios abrem o mesmo editor da CC-DG001, com as
+      ferramentas de vetor que esta vereda trouxe para ele.
+
+      ── E por que ela exige a CC-DG001 ──────────────────────────────────
+      É o requisito 1, e não só formalidade: alinhar e distribuir, contraste
+      e legibilidade em tamanho pequeno são princípios que esta vereda usa sem
+      ensinar de novo.
+    */
+    mostraResultado: false,
+    modulos: MODULOS_DO_DESENHO_VETORIAL,
+  },
   anunciada('CC-DG003', 'Imagem Digital', 'Design',
     'Pixel, resolução e camada: tratar foto e saber o que cada formato joga fora.',
     ['cc-dg001']),
