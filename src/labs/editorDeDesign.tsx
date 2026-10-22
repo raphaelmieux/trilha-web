@@ -330,6 +330,14 @@ function DesenhoDoObjeto({ o, escala: k, cor, selecionado, aoApertar, alvo }: {
       </div>
     );
   }
+  if (o.tipo === 'foto' && o.resolucao) {
+    return (
+      <svg {...comum} style={{ ...caixa }} viewBox={`0 0 ${o.resolucao} ${o.resolucao}`} preserveAspectRatio="none"
+        shapeRendering="crispEdges">
+        {pontosDaFoto(o.resolucao, o.tons).map(([x, y, c], i) => <rect key={i} x={x} y={y} width={1} height={1} fill={cor(c)} />)}
+      </svg>
+    );
+  }
   if (o.tipo === 'foto') {
     const Icone = MOTIVO[o.motivo];
     return (
@@ -351,6 +359,32 @@ function DesenhoDoObjeto({ o, escala: k, cor, selecionado, aoApertar, alvo }: {
       boxShadow: traco ? `0 0 0 ${(traco.espessura / 2) * k}px ${cor(traco.cor)}, inset 0 0 0 ${(traco.espessura / 2) * k}px ${cor(traco.cor)}` : undefined,
     }} />
   );
+}
+
+/**
+ * Os pontos de uma foto de baixa resolução: céu, sol e serra, com os dois tons
+ * dela misturados.
+ *
+ * Determinística — a mesma foto desenha os mesmos pontos sempre —, e é um
+ * desenho e não ruído: a lição manda ampliar e ver a borda da serra virar
+ * escada, e borda de ruído não se distingue de escada nenhuma.
+ */
+function pontosDaFoto(n: number, [escuro, claro]: [string, string]): [number, number, string][] {
+  const mistura = (t: number) => {
+    const [a, b] = [hexToRgb(escuro)!, hexToRgb(claro)!];
+    const c = (x: number, y: number) => Math.round(x + (y - x) * t).toString(16).padStart(2, '0');
+    return `#${c(a.r, b.r)}${c(a.g, b.g)}${c(a.b, b.b)}`;
+  };
+  const pts: [number, number, string][] = [];
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      const serra = n * 0.55 + Math.abs(((x / n) * 4) % 2 - 1) * n * 0.2;
+      const sol = Math.hypot(x - n * 0.72, y - n * 0.28) < n * 0.12;
+      const t = y > serra ? 0.15 : sol ? 1 : 0.55 + 0.4 * (1 - y / n);
+      pts.push([x, y, mistura(t)]);
+    }
+  }
+  return pts;
 }
 
 /* ── A janela ─────────────────────────────────────────────────────────────── */

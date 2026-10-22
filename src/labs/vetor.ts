@@ -227,6 +227,40 @@ export function booleana(a: Contorno[], b: Contorno[], op: Booleana): Contorno[]
 
 const arred = (n: number) => Math.round(n * 100) / 100;
 
+/* ── Comparar desenhos ────────────────────────────────────────────────────── */
+
+/**
+ * Quanto dois desenhos coincidem: a área em comum sobre a área que os dois
+ * cobrem juntos. Um é o mesmo desenho; zero é nenhum ponto em comum.
+ *
+ * É a medida com que se confere uma reprodução. Ela não pergunta quantos nós
+ * a pessoa usou nem em que ordem desenhou — só se a forma que saiu é a pedida,
+ * que é o que o examinador olha.
+ */
+export function coincidencia(a: Contorno[], b: Contorno[]): number {
+  const [ma, mb] = [comoMultipoligono(a), comoMultipoligono(b)];
+  if (ma.length === 0 || mb.length === 0) return 0;
+  const area = (m: MultiPolygon) => m.reduce((s, poli) => s + poli.reduce((t, anelP, i) => {
+    const v = Math.abs(areaComSinal(anelP.map(([x, y]) => ({ x, y }))));
+    return i === 0 ? t + v : t - v;
+  }, 0), 0);
+  const uniao = area(polygonClipping.union(ma, mb));
+  return uniao === 0 ? 0 : area(polygonClipping.intersection(ma, mb)) / uniao;
+}
+
+/**
+ * O desenho levado para o canto, com a largura valendo um.
+ *
+ * Escala uniforme, a mesma nos dois eixos: é o que deixa comparar uma
+ * reprodução feita em outro tamanho — e é o que faz a proporção errada
+ * aparecer como forma diferente, em vez de ser corrigida pela comparação.
+ */
+export function normalizar(cs: Contorno[]): Contorno[] {
+  const c = caixaDosContornos(cs);
+  if (c.largura === 0) return cs;
+  return escalar(transladar(cs, -c.x, -c.y), { x: 0, y: 0 }, 1 / c.largura, 1 / c.largura);
+}
+
 /* ── Os nós ───────────────────────────────────────────────────────────────── */
 
 const somar = (p: Ponto, dx: number, dy: number): Ponto => ({ x: p.x + dx, y: p.y + dy });

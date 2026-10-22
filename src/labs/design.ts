@@ -199,6 +199,12 @@ export interface Foto extends Base {
   altura: number;
   motivo: 'fogueira' | 'barracas' | 'trilha' | 'piscina';
   tons: [string, string];
+  /**
+   * Quantos pontos de largura a imagem tem, quando ela é imagem de pontos de
+   * verdade. Ampliada além disso, cada ponto vira um quadrado — que é a
+   * lição do requisito 3 da CC-DG002 posta na tela, e não descrita.
+   */
+  resolucao?: number;
 }
 
 export type Objeto = Texto | Forma | Foto | Caminho | Grupo | Referencia;
@@ -883,6 +889,36 @@ export function excluir(p: Prancha, ids: string[]): Prancha {
 export function idNovo(a: Arte, prefixo: string): string {
   const usados = new Set(a.pranchas.flatMap(p => [p.id, ...achatarObjetos(p.objetos).map(o => o.id)]));
   for (let i = 1; ; i++) if (!usados.has(`${prefixo}-${i}`)) return `${prefixo}-${i}`;
+}
+
+/**
+ * A área que o objeto pinta, como contornos.
+ *
+ * Forma e caminho preenchidos pintam o que contornam; o caminho sem
+ * preenchimento pinta só o traço, que não entra aqui; o grupo pinta o que os
+ * filhos pintam. Texto, foto e referência ficam de fora: a conta que usa isto
+ * compara desenho vetorial com desenho vetorial.
+ */
+export function silhueta(o: Objeto): Contorno[] {
+  if (o.tipo === 'grupo') return uniaoDe(o.filhos.map(silhueta));
+  switch (o.tipo) {
+    case 'retangulo': return [contornoDoRetangulo(o.x, o.y, o.largura, o.altura)];
+    case 'elipse': return [contornoDaElipse(o.x, o.y, o.largura, o.altura)];
+    case 'caminho': return o.preenchimento ? o.contornos.filter(c => c.fechado) : [];
+    default: return [];
+  }
+}
+
+/**
+ * A área que vários objetos pintam juntos: a união das silhuetas.
+ *
+ * União, e não a lista das silhuetas: dois objetos que se sobrepõem pintam a
+ * parte comum uma vez, e juntá-los pela regra par-ímpar abriria um buraco
+ * justamente onde a tinta é mais grossa.
+ */
+export function uniaoDe(silhuetas: Contorno[][]): Contorno[] {
+  return silhuetas.filter(s => s.length > 0).reduce<Contorno[]>(
+    (acc, s) => (acc.length === 0 ? s : booleana(acc, s, 'uniao')), []);
 }
 
 /* ── Agrupar, converter e combinar ───────────────────────────────────────── */
