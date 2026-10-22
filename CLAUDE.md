@@ -3823,6 +3823,72 @@ linha delas. Saíram, e a guarda contra apagar alguém por engano foi para onde
 ela significa alguma coisa: o "sem estragar o resto" da primeira meta de
 número, que agora conta as sessenta e uma pessoas.
 
+**O editor de design é um arranjo, e não uma marca.** A família de Design
+abre um programa de desenho em quatro das seis veredas, e o desbravador pode
+encontrar o Canva, o Figma ou o Inkscape. O que os três têm em comum é o
+arranjo — prancha no meio, pranchas e camadas à esquerda, propriedades à
+direita, barra de alinhar em cima —, e é ele que `editorDeDesign.tsx` desenha.
+É a decisão do editor de código, pelo motivo escrito lá. A janela nasceu na
+CC-DG001, **antes** de a cópia existir, pela decisão de `word.tsx`.
+
+Ela guarda só o estado **da tela** — prancha à vista, seleção, menu aberto,
+simulação de visão — e o histórico do Ctrl+Z, que é do programa em todo
+programa. O arquivo é do laboratório: chega por `arte` e sai por `mudar`. O que
+a pessoa viu sai por `aoVer` e `aoMedir`, e quem decide se aquilo conta para
+alguma tarefa é o laboratório. Os dois avisos vão por ref: com a função na
+lista de dependências, o efeito avisaria de novo a cada desenho.
+
+**Cada princípio é uma conta, e a análise usa a mesma.** Hierarquia,
+contraste, alinhamento, proximidade, repetição e espaço negativo são funções
+de `design.ts`, e a lição que manda **criar** hierarquia no cartaz e a que
+manda **julgar** a hierarquia de três peças prontas chamam a mesma. Uma conta
+por lição divergiria na primeira, e a peça "bem resolvida" da análise passaria
+a ser julgada por uma régua que o laboratório de refazer não usa. Por isso o
+veredito da análise não está escrito à mão em lugar nenhum: a lição guarda a
+classe de cada peça, e `arteDoClube.test.ts` confere que a bem resolvida passa
+nos três, que a mal resolvida falha nos três, e que a discutível falha em um.
+
+E quando falha, o elemento apontado tem de ser **o que falha**. Dizer que o
+contraste do campori falha apontando o rodapé acerta a conclusão e erra o
+lugar, e o lugar é o que se mostra ao examinador.
+
+**O texto quebra pelo modelo.** `linhasDoTexto` quebra cada bloco com a
+largura média do caractere de cada família, e o editor desenha **essas**
+linhas, uma por elemento. Deixar o navegador quebrar daria uma altura na tela e
+outra na conta, e a lição de proximidade mediria vãos que a pessoa não está
+vendo. A largura por família é medida e não chutada: sem ela, trocar Times por
+Verdana não mudaria a altura do bloco, e a lição de tipografia — que é sobre
+isso — teria uma prancha que não reage.
+
+**A simulação de daltonismo é a de Machado, em luz linear.** A matriz de
+deuteranopia que circula pela internet, aplicada direto ao hexadecimal,
+escurece o verde e clareia o vermelho: o par da escala da cantina, que quem tem
+deuteranopia de fato confunde, saía da simulação a 3:1 — a lição mostrando o
+problema resolvido justamente onde ele mora. É linear também que o
+`feColorMatrix` trabalha por padrão, então o mesmo número serve à conta e ao
+filtro da tela, e `arteDoClube.test.ts` confere que o verde e o vermelho de lá
+viram a mesma cor depois dela.
+
+**A prova de impressão é um modelo, e diz que é.** A fronteira de verdade do
+que a tinta alcança depende do papel e da máquina. `foraDaGama` marca as cores
+muito saturadas e de luminosidade média nas regiões em que a luz vai mais
+longe que a tinta, que é o aviso que os programas de edição dão; a teoria
+escreve que a prova é aproximação, e o que ela garante é dizer **qual** cor vai
+perder o brilho.
+
+**A peça desenhada leva a posição inline.** A tela de análise é da plataforma
+e desenha a peça sem a folha do editor; com a posição só na folha, o campori
+saiu com todos os blocos empilhados embaixo da foto. Quem viu foi o Chromium —
+no jsdom não há layout para empilhar. Da mesma olhada: o título do campori
+estava na metade escura da foto e se lia, e a peça "discutível" parecia bem
+resolvida. Desceu para a metade das chamas, que é onde a medida dizia que ele
+some.
+
+**O medidor relata, e mede o que está à vista.** Ele grava a medida quando
+mostra um texto, e não num botão a mais: abrir o plugin e clicar no texto é
+medir, como num medidor de verdade. E diz a razão, o mínimo para aquele
+tamanho de letra e se fica acima ou abaixo — nunca "tarefa cumprida".
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -4247,6 +4313,15 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaCcEs013.test.ts` | bruta editada entregue no lugar da que ninguém abriu, ou pasta compartilhada para editar |
 | `src/components/LaboratorioDoProjetoDeDados.test.tsx` | lição da CC-ES013 impossível de vencer clicando, ou caminho errado do Excel que a tela tornou impossível |
 | `src/curriculum/exemplosDoProjetoDeDados.test.ts` | número da teoria ou das questões da CC-ES013 que a base não devolve |
+| `src/labs/design.test.ts` | medida de princípio que lê a forma acima do texto como fundo dele, ou foto valendo pelo melhor tom |
+| `src/labs/arteDoClube.test.ts` | peça da análise cujo veredito escrito diverge do que as medidas dão, ou peça que chega já consertada |
+| `src/labs/arteDoClube.test.ts` | verde e vermelho da escala que continuam distintos na simulação de deuteranopia |
+| `src/labs/metasDaCcDg001.test.ts` | meta da CC-DG001 que abre verde, ou que a solução de referência não fecha |
+| `src/labs/metasDaCcDg001.test.ts` | elemento apontado que não é o que falha, ou "falha" em tudo valendo por análise |
+| `src/labs/metasDaCcDg001.test.ts` | refazer sem guardar a de antes, ou apagando uma linha do convite |
+| `src/components/LaboratorioDeDesign.test.tsx` | lição da CC-DG001 impossível de vencer clicando no editor |
+| `src/components/LaboratorioDeDesign.test.tsx` | medidor de contraste que escreve sobre a tarefa em vez da medida |
+| `src/curriculum/exemplosDosFundamentos.test.ts` | razão de contraste da teoria da CC-DG001 que o medidor não devolve |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |
