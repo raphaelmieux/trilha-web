@@ -28,6 +28,7 @@ import LaboratorioDaAnalise from '../components/LaboratorioDaAnalise';
 import LaboratorioDeApresentacao from '../components/LaboratorioDeApresentacao';
 import LaboratorioDoProjeto from '../components/LaboratorioDoProjeto';
 import LaboratorioDoProjetoDeDados from '../components/LaboratorioDoProjetoDeDados';
+import LaboratorioDeDesign from '../components/LaboratorioDeDesign';
 import LaboratorioDaEstatistica from '../components/LaboratorioDaEstatistica';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
@@ -454,6 +455,15 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'projeto-de-dados' && profile?.id) {
     return (
       <LaboratorioDoProjetoDeDados vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /* A CC-DG001: o editor de design e a tela de análise, e quem escolhe é o
+     registro de `LaboratorioDeDesign`. */
+  if (licaoAberta?.tipo === 'design' && profile?.id) {
+    return (
+      <LaboratorioDeDesign vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

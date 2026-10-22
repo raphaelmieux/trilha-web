@@ -17,6 +17,7 @@ import { MODULOS_DA_ESTATISTICA } from './analiseEstatistica';
 import { MODULOS_DAS_APRESENTACOES } from './apresentacoes';
 import { MODULOS_DO_PROJETO } from './projetoDocumental';
 import { MODULOS_DO_PROJETO_DE_DADOS } from './projetoDeDados';
+import { MODULOS_DOS_FUNDAMENTOS } from './fundamentosVisuais';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -631,6 +632,24 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O editor de design da CC-DG001, e por que ele é um tipo e não cinco.
+
+      É o arranjo da CC-ES005: o que muda de uma lição para outra não é o que
+      ela **é**, é de que prancha ela parte e o que cobra — e isso já está
+      escrito em `LICOES_DA_CC_DG001`. A família de Design inteira vai abrir a
+      mesma janela; cada vereda dela ganha o seu `licao`, e não um `tipo` por
+      exercício.
+    */
+    id: string;
+    tipo: 'design';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcDg001').LicaoDaCcDg001;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
@@ -1227,16 +1246,39 @@ export const VEREDAS: Vereda[] = [
   },
 
   /* ── Design ──────────────────────────────────────────────────────────────
-     Seis veredas, e a família que a plataforma ainda não sabe ensinar: quatro
-     delas pedem um editor vetorial, um editor de imagem por pontos e uma tela
-     de diagramação — três programas que nenhum laboratório daqui imita hoje.
+     Seis veredas, e quatro delas pedem um editor vetorial, um editor de imagem
+     por pontos e uma tela de diagramação. O editor de design nasceu na
+     CC-DG001, em `editorDeDesign.tsx`, e é a janela que as seguintes vão
+     estender — e não copiar.
 
      Nasce das duas especialidades de Artes e Habilidades Manuais que chegaram
      junto, HM079 e HM090, e é o caminho preparatório delas: quem percorre
      Fundamentos Visuais e Desenho Vetorial chega na ficha oficial sabendo o
      que ela cobra. */
-  anunciada('CC-DG001', 'Fundamentos Visuais', 'Design',
-    'Hierarquia, contraste, alinhamento, cor e tipografia — antes de abrir programa nenhum.'),
+  {
+    id: 'cc-dg001',
+    code: 'CC-DG001',
+    name: 'Fundamentos Visuais',
+    familia: 'Design',
+    description: 'Hierarquia, contraste, alinhamento, cor e tipografia — e a régua para medir cada um.',
+    /*
+      ── O que carrega esta vereda é a peça que funciona e não se lê ───────
+      O cartaz com toda a informação certa e nenhuma ordem. A linha a sete
+      pixels das outras. O cinza que parece igual ao vizinho e não passa no
+      medidor. A escala em que só a cor diz quem vem, e que vira um borrão
+      marrom para uma em cada doze pessoas com cromossomo XY. Nenhuma dessas
+      peças dá erro, e é por isso que cada princípio virou uma conta em
+      `design.ts` — a lição que manda criar e a que manda julgar usam a mesma.
+
+      ── E por que ela não exige nada ────────────────────────────────────
+      É a porta da família, e o requisito oficial não pede vereda antes dela.
+      Sem `origem` também: ela prepara a ficha da HM079, e não sai dela.
+    */
+    /* Sem quadro de resultado: os exemplos são peças descritas e medidas de
+       contraste, e não há o que executar. */
+    mostraResultado: false,
+    modulos: MODULOS_DOS_FUNDAMENTOS,
+  },
   anunciada('CC-DG002', 'Desenho Vetorial', 'Design',
     'Nó, alça e curva de Bézier: desenho que não perde qualidade em tamanho nenhum.',
     ['cc-dg001']),
