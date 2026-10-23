@@ -29,6 +29,7 @@ import LaboratorioDeApresentacao from '../components/LaboratorioDeApresentacao';
 import LaboratorioDoProjeto from '../components/LaboratorioDoProjeto';
 import LaboratorioDoProjetoDeDados from '../components/LaboratorioDoProjetoDeDados';
 import LaboratorioDeDesign from '../components/LaboratorioDeDesign';
+import LaboratorioVetorial from '../components/LaboratorioVetorial';
 import LaboratorioDaEstatistica from '../components/LaboratorioDaEstatistica';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
@@ -464,6 +465,14 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'design' && profile?.id) {
     return (
       <LaboratorioDeDesign vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /* A CC-DG002: o mesmo editor, com a pasta de arquivos e o editor de texto. */
+  if (licaoAberta?.tipo === 'vetorial' && profile?.id) {
+    return (
+      <LaboratorioVetorial vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

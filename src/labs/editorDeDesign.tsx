@@ -3,16 +3,27 @@ import type React from 'react';
 import {
   AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical,
   AlignHorizontalDistributeCenter, AlignStartHorizontal, AlignStartVertical,
-  AlignVerticalDistributeCenter, BringToFront, Copy, Flame, Layers, Mountain,
-  MousePointer2, Paintbrush, Redo2, SendToBack, Square, Tent, Trash2, Type, Undo2, Waves,
+  AlignVerticalDistributeCenter, BringToFront, Circle, Copy, Flame, Group, Layers, Mountain,
+  MousePointer2, Paintbrush, PenTool, Redo2, SendToBack, Spline, Square, SquaresIntersect,
+  SquaresSubtract, SquaresUnite, Tent, Trash2, Triangle, Type, Undo2, Ungroup, Waves,
 } from 'lucide-react';
+import type { Font } from 'opentype.js';
 import {
   FAMILIAS, LISTA_DE_FAMILIAS, MATRIZ_DA_DEUTERANOPIA, NOME_DA_CLASSIFICACAO, NOME_DO_PAPEL, PAPEIS,
   alinhar, alturaDe, alturaDaLinha, cmykDe, colarEstilo, contrasteDoTexto, contrasteMinimo, copiarEstilo,
   distribuir, duplicarPrancha, ehHex, ehTextoGrande, excluir, foraDaGama, fundosDoTexto, hexDeHsl,
   hslDe, idNovo, linhasDoTexto, mudarObjetos, mudarOrdem, mudarPrancha, provaDeImpressao, umaPrancha,
-  type Arte, type Borda, type EstiloCopiado, type Familia, type Objeto, type Papel, type Prancha, type Texto,
+  EXTREMIDADE_NO_SVG, NOME_DA_EXTREMIDADE, agrupar, combinar, comCaixaRefeita, desagrupar, emCaminho,
+  moverObjeto, posicionar, redimensionar, umObjeto,
+  type Arte, type Borda, type Caminho, type EstiloCopiado, type Extremidade, type Familia, type Objeto,
+  type Papel, type Prancha, type Texto, type Traco,
 } from './design';
+import {
+  contornoDoPoligono, dDoContorno, dDosContornos, moverAlca, moverNo, trocarTipo,
+  type Booleana, type Contorno, type No, type Ponto,
+} from './vetor';
+import { FAMILIA_CONVERTIVEL, carregarFonte, podeConverter, textoEmCaminho } from './textoEmCurvas';
+import { pranchaDoSvg, svgDaPrancha } from './svg';
 import { contrastRatio, hexToRgb } from '../lib/imageTools';
 
 /**
@@ -156,6 +167,12 @@ export const CSS_DO_EDITOR_DE_DESIGN = `
 .dz-cor { border: 1px solid #3A3C42; border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
 .dz-cor-cabeca { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #FFFFFF; }
 .dz-medida { font-size: 22px; font-weight: 700; color: #FFFFFF; font-variant-numeric: tabular-nums; }
+.dz-prancha-e-guias { position: relative; flex: none; }
+.dz-guias { position: absolute; left: 0; top: 0; overflow: visible; }
+.dz-recado { padding: 8px 10px; border-bottom: 1px solid #3A3C42; margin: 0; }
+.dz-caixa { flex-direction: row; align-items: center; gap: 6px; color: #C7C9CE; }
+.dz-tamanhos { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 8px; }
+.dz-tamanho { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: #9A9DA5; }
 .dz-status {
   height: 24px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 10px;
   background: #2B2D31; border-top: 1px solid #3A3C42; color: #9A9DA5; font-size: 11px;
@@ -245,10 +262,26 @@ export function DesenhoDaPrancha({
   );
 }
 
-function DesenhoDoObjeto({ o, escala: k, cor, selecionado, aoApertar }: {
+function DesenhoDoObjeto({ o, escala: k, cor, selecionado, aoApertar, alvo }: {
   o: Objeto; escala: number; cor: (h: string) => string; selecionado: boolean;
   aoApertar?: (id: string, e: React.PointerEvent) => void;
+  /** Quem o clique seleciona: o próprio objeto, ou o grupo em que ele está. */
+  alvo?: string;
 }) {
+  const quem = alvo ?? o.id;
+  /* O grupo não tem tinta: desenha os filhos, e o clique em qualquer um deles
+     seleciona o grupo inteiro — que é o que um grupo é. Entrar nele para mexer
+     num filho se faz pela lista de camadas. */
+  if (o.tipo === 'grupo') {
+    return (
+      <>
+        {o.filhos.map(f => (
+          <DesenhoDoObjeto key={f.id} o={f} escala={k} cor={cor} selecionado={selecionado}
+            aoApertar={aoApertar} alvo={quem} />
+        ))}
+      </>
+    );
+  }
   /* A posição vai inline, e não só na folha: a tela de análise é da
      plataforma e desenha a peça sem a folha do editor, e uma peça desenhada
      sem posição sai com todos os blocos empilhados um embaixo do outro. */
@@ -262,8 +295,30 @@ function DesenhoDoObjeto({ o, escala: k, cor, selecionado, aoApertar }: {
     'data-selecionado': selecionado ? 'true' : undefined,
     role: aoApertar ? 'button' : undefined,
     'aria-label': aoApertar ? `Camada: ${o.nome}` : undefined,
-    onPointerDown: aoApertar ? (e: React.PointerEvent) => { e.stopPropagation(); aoApertar(o.id, e); } : undefined,
+    onPointerDown: aoApertar ? (e: React.PointerEvent) => { e.stopPropagation(); aoApertar(quem, e); } : undefined,
   };
+  if (o.tipo === 'caminho' || o.tipo === 'referencia') {
+    /* O caminho se desenha num SVG do tamanho da caixa, com folga para o
+       traço, e com as coordenadas da prancha no viewBox: os números do d são
+       os mesmos que o arquivo exportado vai ter. */
+    const folga = o.tipo === 'caminho' && o.traco ? o.traco.espessura : 0;
+    const [vx, vy, vl, va] = [o.x - folga, o.y - folga, o.largura + 2 * folga, o.altura + 2 * folga];
+    const traco = o.tipo === 'caminho' ? o.traco : null;
+    return (
+      <svg {...comum}
+        style={{ ...caixa, left: vx * k, top: vy * k, width: vl * k, height: va * k, overflow: 'visible', pointerEvents: 'none' }}
+        viewBox={`${vx} ${vy} ${Math.max(vl, 0.01)} ${Math.max(va, 0.01)}`} preserveAspectRatio="none">
+        <path d={dDosContornos(o.contornos)} fillRule="evenodd"
+          style={{ pointerEvents: aoApertar && o.tipo === 'caminho' ? 'visiblePainted' : 'none' }}
+          onPointerDown={comum.onPointerDown}
+          fill={o.tipo === 'referencia' ? '#1F2A24' : o.preenchimento ? cor(o.preenchimento) : 'none'}
+          fillOpacity={o.tipo === 'referencia' ? o.opacidade : undefined}
+          stroke={traco ? cor(traco.cor) : 'none'} strokeWidth={traco?.espessura}
+          strokeLinecap={traco ? EXTREMIDADE_NO_SVG[traco.extremidade] as 'butt' | 'round' | 'square' : undefined}
+          strokeLinejoin="round" />
+      </svg>
+    );
+  }
   if (o.tipo === 'texto') {
     return (
       <div {...comum} style={{
@@ -273,6 +328,14 @@ function DesenhoDoObjeto({ o, escala: k, cor, selecionado, aoApertar }: {
       }}>
         {linhasDoTexto(o).map((l, i) => <div key={i}>{l || ' '}</div>)}
       </div>
+    );
+  }
+  if (o.tipo === 'foto' && o.resolucao) {
+    return (
+      <svg {...comum} style={{ ...caixa }} viewBox={`0 0 ${o.resolucao} ${o.resolucao}`} preserveAspectRatio="none"
+        shapeRendering="crispEdges">
+        {pontosDaFoto(o.resolucao, o.tons).map(([x, y, c], i) => <rect key={i} x={x} y={y} width={1} height={1} fill={cor(c)} />)}
+      </svg>
     );
   }
   if (o.tipo === 'foto') {
@@ -286,14 +349,56 @@ function DesenhoDoObjeto({ o, escala: k, cor, selecionado, aoApertar }: {
       </div>
     );
   }
+  const traco = o.traco;
   return (
     <div {...comum} style={{
       ...caixa, background: cor(o.preenchimento), borderRadius: o.tipo === 'elipse' ? '50%' : 0,
+      /* O traço centrado na borda, como no SVG: metade para fora, metade para
+         dentro. Com border do CSS ele sairia todo para dentro, e a forma com
+         traço grosso pareceria menor do que a medida diz. */
+      boxShadow: traco ? `0 0 0 ${(traco.espessura / 2) * k}px ${cor(traco.cor)}, inset 0 0 0 ${(traco.espessura / 2) * k}px ${cor(traco.cor)}` : undefined,
     }} />
   );
 }
 
+/**
+ * Os pontos de uma foto de baixa resolução: céu, sol e serra, com os dois tons
+ * dela misturados.
+ *
+ * Determinística — a mesma foto desenha os mesmos pontos sempre —, e é um
+ * desenho e não ruído: a lição manda ampliar e ver a borda da serra virar
+ * escada, e borda de ruído não se distingue de escada nenhuma.
+ */
+function pontosDaFoto(n: number, [escuro, claro]: [string, string]): [number, number, string][] {
+  const mistura = (t: number) => {
+    const [a, b] = [hexToRgb(escuro)!, hexToRgb(claro)!];
+    const c = (x: number, y: number) => Math.round(x + (y - x) * t).toString(16).padStart(2, '0');
+    return `#${c(a.r, b.r)}${c(a.g, b.g)}${c(a.b, b.b)}`;
+  };
+  const pts: [number, number, string][] = [];
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      const serra = n * 0.55 + Math.abs(((x / n) * 4) % 2 - 1) * n * 0.2;
+      const sol = Math.hypot(x - n * 0.72, y - n * 0.28) < n * 0.12;
+      const t = y > serra ? 0.15 : sol ? 1 : 0.55 + 0.4 * (1 - y / n);
+      pts.push([x, y, mistura(t)]);
+    }
+  }
+  return pts;
+}
+
 /* ── A janela ─────────────────────────────────────────────────────────────── */
+
+export interface ArquivoExportado {
+  nome: string;
+  tipo: 'svg' | 'png';
+  /** A prancha de onde ele saiu. */
+  prancha: string;
+  /** O texto do SVG. O PNG não guarda pixels: guarda a medida, que é o que a lição confere. */
+  conteudo: string;
+  largura: number;
+  altura: number;
+}
 
 export interface PropsDoEditor {
   arte: Arte;
@@ -301,46 +406,91 @@ export interface PropsDoEditor {
   /** A prancha à vista quando a janela abre. */
   pranchaInicial: string;
   nomeDoArquivo?: string;
-  /** O que a pessoa viu: `prova:<prancha>` ou `visao:<modo>:<prancha>`. */
+  /**
+   * O que a pessoa viu: `prova:<prancha>`, `visao:<modo>:<prancha>`,
+   * `zoom:<fator>:<prancha>`, `tamanhos:<prancha>` ou `reabriu:<arquivo>:<prancha>`.
+   */
   aoVer?: (chave: string) => void;
   /** Um texto que o medidor de contraste mediu. */
   aoMedir?: (prancha: string, texto: string) => void;
+  /**
+   * Para onde vai o que se exporta. Sem ele o menu Arquivo não aparece: é a
+   * regra do `aoBuscar` do Explorador — um menu que prometesse exportar e não
+   * levasse a lugar nenhum ensinaria a desconfiar do programa.
+   */
+  aoExportar?: (arquivo: ArquivoExportado) => void;
+  /** Os SVG que se podem reabrir, com o conteúdo de agora. */
+  svgsParaReabrir?: { nome: string; conteudo: string }[];
+  /** O recado que o programa dá quando um comando não pode agir. */
+  aoAvisar?: (texto: string) => void;
+  /** Quem lê o arquivo da fonte, para converter texto em curvas. */
+  carregarFonte?: () => Promise<Font>;
 }
 
-type Ferramenta = 'selecionar' | 'texto' | 'retangulo';
-type Aba = 'propriedades' | 'cores' | 'medidor';
-type Menu = 'editar' | 'exibir' | 'plugins' | null;
+type Ferramenta = 'selecionar' | 'texto' | 'retangulo' | 'elipse' | 'triangulo' | 'caneta' | 'nos';
+type Aba = 'propriedades' | 'cores' | 'medidor' | 'tamanhos';
+type Menu = 'arquivo' | 'editar' | 'objeto' | 'exibir' | 'plugins' | null;
+
+/** O nó que a ferramenta de nós tem na mão: em que contorno, e qual. */
+export interface NoEscolhido { c: number; n: number }
 
 const fmt = (n: number, casas = 1) => n.toLocaleString('pt-BR', { maximumFractionDigits: casas, minimumFractionDigits: casas });
 
-export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'Arquivo do clube', aoVer, aoMedir }: PropsDoEditor) {
+export const ZOOMS = [1, 2, 4, 8] as const;
+/** Os três tamanhos em que um ícone se confere: o da barra de tarefas, o da lista, o do atalho. */
+export const TAMANHOS_DO_ICONE = [64, 32, 16] as const;
+
+const noDeCanto = (x: number, y: number): No => ({ x, y, entrada: null, saida: null, tipo: 'canto' });
+
+export function EditorDeDesign({
+  arte, mudar, pranchaInicial, nomeDoArquivo = 'Arquivo do clube', aoVer, aoMedir,
+  aoExportar, svgsParaReabrir, aoAvisar, carregarFonte: lerFonte = carregarFonte,
+}: PropsDoEditor) {
   const [ativa, setAtiva] = useState(pranchaInicial);
   const [selecao, setSelecao] = useState<string[]>([]);
   const [ferramenta, setFerramenta] = useState<Ferramenta>('selecionar');
   const [aba, setAba] = useState<Aba>('propriedades');
   const [medidorAberto, setMedidorAberto] = useState(false);
+  const [tamanhosAbertos, setTamanhosAbertos] = useState(false);
   const [menu, setMenu] = useState<Menu>(null);
   const [visao, setVisao] = useState<Visao>('normal');
   const [prova, setProva] = useState(false);
+  const [zoom, setZoom] = useState<number>(1);
   const [estilo, setEstilo] = useState<EstiloCopiado | null>(null);
   const [desfazer, setDesfazer] = useState<Arte[]>([]);
   const [refazer, setRefazer] = useState<Arte[]>([]);
   const [escala, setEscala] = useState(1);
+  const [noEscolhido, setNoEscolhido] = useState<NoEscolhido | null>(null);
+  const [rascunho, setRascunho] = useState<Contorno | null>(null);
+  const [recado, setRecado] = useState('');
   const mesaRef = useRef<HTMLDivElement>(null);
   const arraste = useRef<{ x: number; y: number; origem: Arte; moveu: boolean } | null>(null);
+  const arrasteDoNo = useRef<{ alvo: 'no' | 'entrada' | 'saida'; origem: Arte; moveu: boolean } | null>(null);
+  const arrasteDaCaneta = useRef<number | null>(null);
+  /* O arquivo de agora, para o que termina depois de esperar: a conversão em
+     curvas espera a fonte chegar, e o `arte` da closure seria o de antes. */
+  const arteAgora = useRef(arte);
+  arteAgora.current = arte;
 
+  const k = escala * zoom;
   const p = umaPrancha(arte, ativa) ?? arte.pranchas[0];
   const selecionados = useMemo(
-    () => selecao.map(id => p.objetos.find(o => o.id === id)).filter((o): o is Objeto => !!o),
+    () => selecao.map(id => umObjeto(p, id)).filter((o): o is Objeto => !!o),
     [selecao, p],
   );
+  const caminhoNaMao = ferramenta === 'nos' && selecionados.length === 1 && selecionados[0].tipo === 'caminho'
+    ? selecionados[0] : null;
 
   /* A seleção é podada contra a prancha à vista: o id de um objeto excluído
      continuaria lá, e o comando seguinte agiria sobre o que ninguém vê. É a
      regra de selecao.ts do Explorador. */
   useEffect(() => {
-    setSelecao(s => s.filter(id => p.objetos.some(o => o.id === id)));
+    setSelecao(s => s.filter(id => umObjeto(p, id)));
   }, [p]);
+
+  /* O nó escolhido é do caminho escolhido: trocar de caminho, ou de
+     ferramenta, solta o nó. */
+  useEffect(() => { setNoEscolhido(null); }, [caminhoNaMao?.id, ferramenta]);
 
   /* A prancha cabe na mesa: a escala sai da largura dela, e o navegador sem
      ResizeObserver — o de teste — desenha em tamanho natural. */
@@ -361,13 +511,23 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
   /* Os avisos ao laboratório vão por ref: quem os passa costuma passar uma
      função nova a cada desenho, e com ela na lista de dependências o efeito
      correria a cada desenho — avisando de novo o que já avisou. */
-  const avisos = useRef({ aoVer, aoMedir });
-  avisos.current = { aoVer, aoMedir };
+  const avisos = useRef({ aoVer, aoMedir, aoAvisar });
+  avisos.current = { aoVer, aoMedir, aoAvisar };
+
+  const avisar = (texto: string) => {
+    setRecado(texto);
+    avisos.current.aoAvisar?.(texto);
+  };
 
   useEffect(() => {
     if (prova) avisos.current.aoVer?.(`prova:${p.id}`);
     if (visao !== 'normal') avisos.current.aoVer?.(`visao:${visao}:${p.id}`);
-  }, [prova, visao, p.id]);
+    if (zoom > 1) avisos.current.aoVer?.(`zoom:${zoom}:${p.id}`);
+  }, [prova, visao, zoom, p.id]);
+
+  useEffect(() => {
+    if (tamanhosAbertos && aba === 'tamanhos') avisos.current.aoVer?.(`tamanhos:${p.id}`);
+  }, [tamanhosAbertos, aba, p.id]);
 
   const textoSelecionado = selecionados.length === 1 && selecionados[0].tipo === 'texto' ? selecionados[0] : null;
   const idMedido = medidorAberto && aba === 'medidor' ? textoSelecionado?.id : undefined;
@@ -380,6 +540,7 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
   const aplicar = (nova: Arte, origem: Arte = arte) => {
     setDesfazer(h => [...h.slice(-49), origem]);
     setRefazer([]);
+    setRecado('');
     mudar(nova);
   };
   const naPrancha = (f: (q: Prancha) => Prancha) => aplicar(mudarPrancha(arte, p.id, f));
@@ -400,6 +561,29 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
     mudar(proximo);
   };
 
+  const converterEmCurvas = async () => {
+    if (selecionados.length === 0) { avisar('Selecione o que converter.'); return; }
+    const textosNaSelecao = selecionados.filter((o): o is Texto => o.tipo === 'texto');
+    const semArquivo = textosNaSelecao.find(t => !podeConverter(t));
+    if (semArquivo) {
+      avisar(`O arquivo da fonte ${semArquivo.familia} não está neste computador, e converter precisa do desenho das letras. A fonte instalada aqui é a ${FAMILIA_CONVERTIVEL}.`);
+      return;
+    }
+    if (selecionados.some(o => o.tipo === 'foto' || o.tipo === 'referencia' || o.tipo === 'grupo')) {
+      avisar('Imagem e grupo não se convertem em curvas: só forma e texto.');
+      return;
+    }
+    let fonte: Font | null = null;
+    if (textosNaSelecao.length > 0) {
+      try { fonte = await lerFonte(); } catch { avisar('O arquivo da fonte não carregou. Tente de novo.'); return; }
+    }
+    const ids = selecionados.map(o => o.id);
+    const agora = arteAgora.current;
+    aplicar(mudarPrancha(agora, p.id, q => mudarObjetos(q, ids, o => (
+      o.tipo === 'texto' ? textoEmCaminho(fonte!, o) : emCaminho(o) ?? o
+    ))), agora);
+  };
+
   const comandos = {
     alinhar: (b: Borda) => selecao.length > 0 && naPrancha(q => alinhar(q, selecao, b)),
     distribuir: (eixo: 'vertical' | 'horizontal') => selecao.length >= 3 && naPrancha(q => distribuir(q, selecao, eixo)),
@@ -414,21 +598,160 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
       setAtiva(nova.pranchas[nova.pranchas.findIndex(x => x.id === p.id) + 1].id);
       setSelecao([]);
     },
-    tudo: () => setSelecao(p.objetos.map(o => o.id)),
+    tudo: () => setSelecao(p.objetos.filter(o => o.tipo !== 'referencia').map(o => o.id)),
+    combinar: (op: Booleana) => {
+      if (selecao.length < 2) { avisar('Selecione duas formas ou mais para combinar.'); return; }
+      const q = combinar(p, selecao, op);
+      if (q === p) { avisar('Só formas do mesmo nível se combinam: texto, imagem e grupo não entram.'); return; }
+      naPrancha(() => q);
+      setSelecao(selecao.filter(id => umObjeto(q, id)));
+    },
+    agrupar: () => {
+      if (selecao.length < 2) { avisar('Selecione dois objetos ou mais para agrupar.'); return; }
+      const id = idNovo(arte, 'grupo');
+      const q = agrupar(p, selecao, id);
+      if (!umObjeto(q, id)) { avisar('Só objetos do mesmo nível entram no mesmo grupo.'); return; }
+      naPrancha(() => q);
+      setSelecao([id]);
+    },
+    desagrupar: () => {
+      const g = selecionados.length === 1 && selecionados[0].tipo === 'grupo' ? selecionados[0] : null;
+      if (!g) { avisar('Selecione um grupo para desagrupar.'); return; }
+      naPrancha(q => desagrupar(q, g.id));
+      setSelecao(g.filhos.map(f => f.id));
+    },
+    exportar: (tipo: 'svg' | 'png') => {
+      if (!aoExportar) return;
+      const base = p.nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      aoExportar({
+        nome: `${base}.${tipo}`, tipo, prancha: p.id,
+        conteudo: tipo === 'svg' ? svgDaPrancha(p) : '', largura: p.largura, altura: p.altura,
+      });
+    },
+    reabrir: (arquivo: { nome: string; conteudo: string }) => {
+      const lida = pranchaDoSvg(arquivo.conteudo, p);
+      if ('erro' in lida) { avisar(lida.erro); return; }
+      naPrancha(() => lida.prancha);
+      setSelecao([]);
+      avisos.current.aoVer?.(`reabriu:${arquivo.nome}:${p.id}`);
+    },
   };
 
   const criar = (x: number, y: number) => {
+    const [px, py] = [Math.round(x), Math.round(y)];
     const id = idNovo(arte, ferramenta === 'texto' ? 'texto' : 'forma');
     const novo: Objeto = ferramenta === 'texto'
       ? {
-        id, nome: 'Texto', tipo: 'texto', texto: 'Texto', x: Math.round(x), y: Math.round(y), largura: 200,
+        id, nome: 'Texto', tipo: 'texto', texto: 'Texto', x: px, y: py, largura: 200,
         familia: 'Arial', peso: 400, corpo: 16, entrelinha: 1.4, cor: '#1F2A24', alinhamento: 'esquerda',
       }
-      : { id, nome: 'Retângulo', tipo: 'retangulo', x: Math.round(x), y: Math.round(y), largura: 120, altura: 60, preenchimento: '#D9D9D9' };
+      : ferramenta === 'elipse'
+        ? { id, nome: 'Elipse', tipo: 'elipse', x: px, y: py, largura: 100, altura: 100, preenchimento: '#D9D9D9' }
+        : ferramenta === 'triangulo'
+          ? comCaixaRefeita<Caminho>({
+            id, nome: 'Triângulo', tipo: 'caminho', x: 0, y: 0, largura: 0, altura: 0,
+            contornos: [contornoDoPoligono([{ x: px + 50, y: py }, { x: px + 100, y: py + 100 }, { x: px, y: py + 100 }])],
+            preenchimento: '#D9D9D9', traco: null,
+          })
+          : { id, nome: 'Retângulo', tipo: 'retangulo', x: px, y: py, largura: 120, altura: 60, preenchimento: '#D9D9D9' };
     naPrancha(q => ({ ...q, objetos: [...q.objetos, novo] }));
     setSelecao([id]);
     setFerramenta('selecionar');
     setAba('propriedades');
+  };
+
+  /* ── A caneta ── */
+
+  /**
+   * Terminar o caminho da caneta. Fechado ganha preenchimento; aberto, não —
+   * preencher um caminho aberto fecharia a forma por uma reta que ninguém
+   * desenhou.
+   */
+  const terminarRascunho = (fechar: boolean) => {
+    if (!rascunho || rascunho.nos.length < 2) { setRascunho(null); return; }
+    const contorno = { ...rascunho, fechado: fechar && rascunho.nos.length >= 3 };
+    const id = idNovo(arte, 'caminho');
+    const novo = comCaixaRefeita<Caminho>({
+      id, nome: 'Caminho', tipo: 'caminho', x: 0, y: 0, largura: 0, altura: 0, contornos: [contorno],
+      preenchimento: contorno.fechado ? '#D9D9D9' : null,
+      traco: { cor: '#1F2A24', espessura: 2, extremidade: 'reta' },
+    });
+    naPrancha(q => ({ ...q, objetos: [...q.objetos, novo] }));
+    setRascunho(null);
+    setSelecao([id]);
+    setFerramenta('selecionar');
+  };
+
+  const pontoDoPonteiro = (e: React.PointerEvent): Ponto => {
+    const r = (e.currentTarget as Element).getBoundingClientRect();
+    return { x: Math.round((e.clientX - r.left) / k), y: Math.round((e.clientY - r.top) / k) };
+  };
+
+  const canetaApertou = (e: React.PointerEvent) => {
+    const { x, y } = pontoDoPonteiro(e);
+    if (!rascunho) {
+      setRascunho({ nos: [noDeCanto(x, y)], fechado: false });
+      arrasteDaCaneta.current = 0;
+      return;
+    }
+    const primeiro = rascunho.nos[0];
+    if (rascunho.nos.length >= 3 && Math.hypot(primeiro.x - x, primeiro.y - y) <= 8 / k) {
+      terminarRascunho(true);
+      return;
+    }
+    setRascunho({ ...rascunho, nos: [...rascunho.nos, noDeCanto(x, y)] });
+    arrasteDaCaneta.current = rascunho.nos.length;
+  };
+
+  /* Arrastar ao pôr o nó puxa as alças: a de saída vai para onde o ponteiro
+     está, e a de entrada para o lado oposto — é o gesto da caneta em todo
+     editor vetorial, e é o que faz a curva sair suave em vez de quina. */
+  const canetaArrastou = (e: React.PointerEvent) => {
+    const i = arrasteDaCaneta.current;
+    if (i === null || !rascunho) return;
+    const { x, y } = pontoDoPonteiro(e);
+    const n = rascunho.nos[i];
+    if (!n || Math.hypot(x - n.x, y - n.y) < 2) return;
+    const nos = rascunho.nos.map((m, j) => (j !== i ? m : {
+      ...m, tipo: 'suave' as const, saida: { x, y }, entrada: { x: 2 * m.x - x, y: 2 * m.y - y },
+    }));
+    setRascunho({ ...rascunho, nos });
+  };
+
+  /* ── Os nós ── */
+
+  const mexerNoCaminho = (origem: Arte, f: (c: Contorno) => Contorno, contorno: number) => {
+    if (!caminhoNaMao) return origem;
+    return mudarPrancha(origem, p.id, q => mudarObjetos(q, [caminhoNaMao.id], o => (o.tipo !== 'caminho' ? o
+      : comCaixaRefeita({ ...o, contornos: o.contornos.map((c, i) => (i === contorno ? f(c) : c)) }))));
+  };
+
+  const apertouNo = (alvo: 'no' | 'entrada' | 'saida', escolhido: NoEscolhido, e: React.PointerEvent) => {
+    e.stopPropagation();
+    setNoEscolhido(escolhido);
+    arrasteDoNo.current = { alvo, origem: arte, moveu: false };
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+  };
+
+  const arrastouNo = (e: React.PointerEvent) => {
+    const a = arrasteDoNo.current;
+    if (!a || !noEscolhido) return;
+    const { x, y } = pontoDoPonteiro(e);
+    a.moveu = true;
+    const { c, n } = noEscolhido;
+    mudar(mexerNoCaminho(a.origem, contorno => (a.alvo === 'no'
+      ? moverNo(contorno, n, x, y) : moverAlca(contorno, n, a.alvo as 'entrada' | 'saida', x, y)), c));
+  };
+
+  const soltouNo = () => {
+    const a = arrasteDoNo.current;
+    arrasteDoNo.current = null;
+    if (a?.moveu) { setDesfazer(h => [...h.slice(-49), a.origem]); setRefazer([]); }
+  };
+
+  const mudarNoEscolhido = (f: (c: Contorno, n: number) => Contorno) => {
+    if (!noEscolhido) return;
+    aplicar(mexerNoCaminho(arte, c => f(c, noEscolhido.n), noEscolhido.c));
   };
 
   /* ── O ponteiro na prancha ── */
@@ -448,11 +771,11 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
   const mover = (e: React.PointerEvent) => {
     const a = arraste.current;
     if (!a) return;
-    const dx = Math.round((e.clientX - a.x) / escala);
-    const dy = Math.round((e.clientY - a.y) / escala);
+    const dx = Math.round((e.clientX - a.x) / k);
+    const dy = Math.round((e.clientY - a.y) / k);
     if (!a.moveu && Math.abs(dx) + Math.abs(dy) < 2) return;
     a.moveu = true;
-    mudar(mudarPrancha(a.origem, p.id, q => mudarObjetos(q, selecao, o => ({ ...o, x: o.x + dx, y: o.y + dy }))));
+    mudar(mudarPrancha(a.origem, p.id, q => mudarObjetos(q, selecao, o => moverObjeto(o, dx, dy))));
   };
 
   const soltar = () => {
@@ -466,9 +789,12 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
     const alvo = e.target as HTMLElement;
     if (alvo.closest('input, textarea, select')) return;
     const ctrl = e.ctrlKey || e.metaKey;
+    if (rascunho && e.key === 'Enter') { e.preventDefault(); terminarRascunho(false); return; }
+    if (rascunho && e.key === 'Escape') { e.preventDefault(); setRascunho(null); return; }
     if (ctrl && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) avancar(); else voltar(); return; }
     if (ctrl && e.key.toLowerCase() === 'y') { e.preventDefault(); avancar(); return; }
     if (ctrl && e.key.toLowerCase() === 'a') { e.preventDefault(); comandos.tudo(); return; }
+    if (ctrl && e.key.toLowerCase() === 'g') { e.preventDefault(); if (e.shiftKey) comandos.desagrupar(); else comandos.agrupar(); return; }
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); comandos.excluir(); return; }
     if (e.key === 'Escape') { setSelecao([]); setMenu(null); return; }
     const passo = e.shiftKey ? 10 : 1;
@@ -478,7 +804,7 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
     if (seta[e.key] && selecao.length > 0) {
       e.preventDefault();
       const [dx, dy] = seta[e.key];
-      nosSelecionados(o => ({ ...o, x: o.x + dx, y: o.y + dy }));
+      nosSelecionados(o => moverObjeto(o, dx, dy));
     }
   };
 
@@ -493,13 +819,22 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
   );
 
   const item = (rotulo: string, acao: () => void, atalho?: string, marcado?: boolean) => (
-    <button type="button" className="dz-menu-item" role={marcado === undefined ? 'menuitem' : 'menuitemcheckbox'}
+    <button key={rotulo} type="button" className="dz-menu-item" role={marcado === undefined ? 'menuitem' : 'menuitemcheckbox'}
       aria-checked={marcado} onClick={() => { acao(); setMenu(null); }}>
       <span>{rotulo}</span>{atalho && <span className="dz-menu-atalho">{atalho}</span>}
     </button>
   );
 
+  const ferramentaBt = (rotulo: string, Icone: typeof Type, f: Ferramenta) =>
+    bt(rotulo, Icone, () => { setFerramenta(f); setRascunho(null); }, { ativo: ferramenta === f });
+
   const abrirMedidor = () => { setMedidorAberto(true); setAba('medidor'); };
+  const abrirTamanhos = () => { setTamanhosAbertos(true); setAba('tamanhos'); };
+  const menus: Menu[] = [...(aoExportar ? ['arquivo' as const] : []), 'editar', 'objeto', 'exibir', 'plugins'];
+  const NOME_DO_MENU: Record<Exclude<Menu, null>, string> = {
+    arquivo: 'Arquivo', editar: 'Editar', objeto: 'Objeto', exibir: 'Exibir', plugins: 'Plugins',
+  };
+  const sobreposicao = ferramenta === 'caneta' || !!caminhoNaMao;
 
   return (
     <div className="dz-janela" onKeyDown={teclas}>
@@ -515,14 +850,23 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
       </div>
 
       <div className="dz-menus" role="menubar">
-        {(['editar', 'exibir', 'plugins'] as const).map(m => (
+        {menus.map(m => m && (
           <div key={m} className="dz-menu-ancora">
             <button type="button" className="dz-menu-botao" aria-haspopup="menu" aria-expanded={menu === m}
               onClick={() => setMenu(menu === m ? null : m)}>
-              {m === 'editar' ? 'Editar' : m === 'exibir' ? 'Exibir' : 'Plugins'}
+              {NOME_DO_MENU[m]}
             </button>
             {menu === m && (
               <div className="dz-menu" role="menu">
+                {m === 'arquivo' && <>
+                  {item('Exportar como SVG', () => comandos.exportar('svg'))}
+                  {item('Exportar como PNG', () => comandos.exportar('png'))}
+                  {svgsParaReabrir && svgsParaReabrir.length > 0 && <>
+                    <div className="dz-menu-divisoria" />
+                    <div className="dz-menu-rotulo">Abrir SVG</div>
+                    {svgsParaReabrir.map(a => item(a.nome, () => comandos.reabrir(a)))}
+                  </>}
+                </>}
                 {m === 'editar' && <>
                   {item('Desfazer', voltar, 'Ctrl+Z')}
                   {item('Refazer', avancar, 'Ctrl+Y')}
@@ -534,7 +878,22 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
                   <div className="dz-menu-divisoria" />
                   {item('Duplicar prancha', comandos.duplicarPrancha)}
                 </>}
+                {m === 'objeto' && <>
+                  {item('Unir', () => comandos.combinar('uniao'))}
+                  {item('Subtrair', () => comandos.combinar('subtracao'))}
+                  {item('Intersectar', () => comandos.combinar('intersecao'))}
+                  <div className="dz-menu-divisoria" />
+                  {item('Agrupar', comandos.agrupar, 'Ctrl+G')}
+                  {item('Desagrupar', comandos.desagrupar, 'Ctrl+Shift+G')}
+                  <div className="dz-menu-divisoria" />
+                  {item('Converter em curvas', () => { void converterEmCurvas(); })}
+                </>}
                 {m === 'exibir' && <>
+                  <div className="dz-menu-rotulo">Zoom</div>
+                  {ZOOMS.map(z => item(`${z * 100}%`, () => setZoom(z), undefined, zoom === z))}
+                  <div className="dz-menu-divisoria" />
+                  {item('Ver em 64, 32 e 16 px', abrirTamanhos)}
+                  <div className="dz-menu-divisoria" />
                   <div className="dz-menu-rotulo">Simular visão</div>
                   {item('Normal', () => setVisao('normal'), undefined, visao === 'normal')}
                   {item('Deuteranopia (verde e vermelho)', () => setVisao('deuteranopia'), undefined, visao === 'deuteranopia')}
@@ -550,9 +909,13 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
       </div>
 
       <div className="dz-barra" role="toolbar" aria-label="Ferramentas">
-        {bt('Selecionar (V)', MousePointer2, () => setFerramenta('selecionar'), { ativo: ferramenta === 'selecionar' })}
-        {bt('Texto (T)', Type, () => setFerramenta('texto'), { ativo: ferramenta === 'texto' })}
-        {bt('Retângulo (R)', Square, () => setFerramenta('retangulo'), { ativo: ferramenta === 'retangulo' })}
+        {ferramentaBt('Selecionar (V)', MousePointer2, 'selecionar')}
+        {ferramentaBt('Editar nós (A)', Spline, 'nos')}
+        {ferramentaBt('Caneta (P)', PenTool, 'caneta')}
+        {ferramentaBt('Texto (T)', Type, 'texto')}
+        {ferramentaBt('Retângulo (R)', Square, 'retangulo')}
+        {ferramentaBt('Elipse (E)', Circle, 'elipse')}
+        {ferramentaBt('Triângulo', Triangle, 'triangulo')}
         <span className="dz-separador" />
         {bt('Alinhar à esquerda', AlignStartVertical, () => comandos.alinhar('esquerda'), { desligado: selecao.length === 0 })}
         {bt('Centralizar na horizontal', AlignCenterVertical, () => comandos.alinhar('centro-h'), { desligado: selecao.length === 0 })}
@@ -563,6 +926,12 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
         <span className="dz-separador" />
         {bt('Distribuir verticalmente', AlignVerticalDistributeCenter, () => comandos.distribuir('vertical'), { desligado: selecao.length < 3 })}
         {bt('Distribuir horizontalmente', AlignHorizontalDistributeCenter, () => comandos.distribuir('horizontal'), { desligado: selecao.length < 3 })}
+        <span className="dz-separador" />
+        {bt('Unir', SquaresUnite, () => comandos.combinar('uniao'), { desligado: selecao.length < 2 })}
+        {bt('Subtrair', SquaresSubtract, () => comandos.combinar('subtracao'), { desligado: selecao.length < 2 })}
+        {bt('Intersectar', SquaresIntersect, () => comandos.combinar('intersecao'), { desligado: selecao.length < 2 })}
+        {bt('Agrupar (Ctrl+G)', Group, comandos.agrupar, { desligado: selecao.length < 2 })}
+        {bt('Desagrupar (Ctrl+Shift+G)', Ungroup, comandos.desagrupar, { desligado: !(selecionados.length === 1 && selecionados[0].tipo === 'grupo') })}
         <span className="dz-separador" />
         {bt('Copiar estilo', Copy, comandos.copiarEstilo, { desligado: selecionados.length !== 1 })}
         {bt('Colar estilo', Paintbrush, comandos.colarEstilo, { desligado: !estilo || selecao.length === 0 })}
@@ -577,7 +946,7 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
             <div className="dz-secao-titulo"><span>Pranchas</span></div>
             {arte.pranchas.map(q => (
               <button key={q.id} type="button" className="dz-lista-item" aria-current={q.id === p.id}
-                onClick={() => { setAtiva(q.id); setSelecao([]); }}>
+                onClick={() => { setAtiva(q.id); setSelecao([]); setRascunho(null); }}>
                 {q.nome}
               </button>
             ))}
@@ -587,26 +956,66 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
           </div>
           <div className="dz-secao">
             <div className="dz-secao-titulo"><span>Camadas</span></div>
-            {[...p.objetos].reverse().map(o => (
-              <button key={o.id} type="button" className="dz-lista-item" aria-selected={selecao.includes(o.id)}
-                onClick={e => setSelecao(e.shiftKey || e.ctrlKey || e.metaKey
-                  ? (selecao.includes(o.id) ? selecao.filter(s => s !== o.id) : [...selecao, o.id])
-                  : [o.id])}>
-                {o.tipo === 'texto' ? <Type className="w-3 h-3" aria-hidden="true" /> : <Square className="w-3 h-3" aria-hidden="true" />}
-                {o.nome}
-              </button>
-            ))}
+            <ListaDeCamadas objetos={p.objetos} selecao={selecao} profundidade={0}
+              aoEscolher={(id, somar) => setSelecao(somar
+                ? (selecao.includes(id) ? selecao.filter(s => s !== id) : [...selecao, id])
+                : [id])} />
           </div>
         </div>
 
         <div className="dz-mesa" ref={mesaRef} tabIndex={0} aria-label="Mesa de trabalho"
           onPointerMove={mover} onPointerUp={soltar} onPointerCancel={soltar}
           onPointerDown={e => { if (e.target === e.currentTarget) setSelecao([]); }}>
-          <DesenhoDaPrancha
-            prancha={p} escala={escala} selecionados={selecao} visao={visao} prova={prova}
-            aoApertar={(id, e) => { if (ferramenta === 'selecionar') apertar(id, e); }}
-            aoApertarVazio={(x, y) => { if (ferramenta === 'selecionar') setSelecao([]); else criar(x, y); }}
-          />
+          <div className="dz-prancha-e-guias" style={{ width: p.largura * k, height: p.altura * k }}>
+            <DesenhoDaPrancha
+              prancha={p} escala={k} selecionados={selecao} visao={visao} prova={prova}
+              aoApertar={(id, e) => { if (ferramenta === 'selecionar' || ferramenta === 'nos') apertar(id, e); }}
+              aoApertarVazio={(x, y) => {
+                if (ferramenta === 'selecionar' || ferramenta === 'nos') setSelecao([]);
+                else if (ferramenta !== 'caneta') criar(x, y);
+              }}
+            />
+            {sobreposicao && (
+              <svg className="dz-guias" aria-label={ferramenta === 'caneta' ? 'Área da caneta' : 'Nós do caminho'}
+                viewBox={`0 0 ${p.largura} ${p.altura}`} width={p.largura * k} height={p.altura * k}
+                onPointerDown={ferramenta === 'caneta' ? canetaApertou : undefined}
+                onPointerMove={e => { canetaArrastou(e); arrastouNo(e); }}
+                onPointerUp={() => { arrasteDaCaneta.current = null; soltouNo(); }}
+                style={{ pointerEvents: ferramenta === 'caneta' ? 'all' : 'none' }}>
+                {rascunho && (
+                  <>
+                    <path d={dDoContorno(rascunho)} fill="none" stroke="#3D6FE0" strokeWidth={1.5 / k} />
+                    {rascunho.nos.map((n, i) => (
+                      <rect key={i} x={n.x - 3 / k} y={n.y - 3 / k} width={6 / k} height={6 / k}
+                        fill={i === 0 ? '#3D6FE0' : '#FFFFFF'} stroke="#3D6FE0" strokeWidth={1 / k} />
+                    ))}
+                  </>
+                )}
+                {caminhoNaMao && caminhoNaMao.tipo === 'caminho' && caminhoNaMao.contornos.map((c, ci) => c.nos.map((n, ni) => {
+                  const escolhido = noEscolhido?.c === ci && noEscolhido.n === ni;
+                  return (
+                    <g key={`${ci}-${ni}`}>
+                      {escolhido && (['entrada', 'saida'] as const).map(lado => n[lado] && (
+                        <g key={lado}>
+                          <line x1={n.x} y1={n.y} x2={n[lado]!.x} y2={n[lado]!.y} stroke="#3D6FE0" strokeWidth={1 / k} />
+                          <circle cx={n[lado]!.x} cy={n[lado]!.y} r={4 / k} fill="#FFFFFF" stroke="#3D6FE0" strokeWidth={1 / k}
+                            role="button" aria-label={`Alça de ${lado === 'entrada' ? 'entrada' : 'saída'} do nó ${ni + 1}`}
+                            style={{ pointerEvents: 'all', cursor: 'move' }}
+                            onPointerDown={e => apertouNo(lado, { c: ci, n: ni }, e)} />
+                        </g>
+                      ))}
+                      <rect x={n.x - 4 / k} y={n.y - 4 / k} width={8 / k} height={8 / k}
+                        fill={escolhido ? '#3D6FE0' : '#FFFFFF'} stroke="#3D6FE0" strokeWidth={1 / k}
+                        transform={n.tipo === 'suave' ? `rotate(45 ${n.x} ${n.y})` : undefined}
+                        role="button" aria-label={`Nó ${ni + 1}${c.nos.length && caminhoNaMao.contornos.length > 1 ? ` do contorno ${ci + 1}` : ''}`}
+                        style={{ pointerEvents: 'all', cursor: 'move' }}
+                        onPointerDown={e => apertouNo('no', { c: ci, n: ni }, e)} />
+                    </g>
+                  );
+                }))}
+              </svg>
+            )}
+          </div>
         </div>
 
         <div className="dz-direita">
@@ -616,28 +1025,78 @@ export function EditorDeDesign({ arte, mudar, pranchaInicial, nomeDoArquivo = 'A
             {medidorAberto && (
               <button type="button" role="tab" className="dz-aba" aria-selected={aba === 'medidor'} onClick={() => setAba('medidor')}>Contraste</button>
             )}
+            {tamanhosAbertos && (
+              <button type="button" role="tab" className="dz-aba" aria-selected={aba === 'tamanhos'} onClick={() => setAba('tamanhos')}>Tamanhos</button>
+            )}
           </div>
+          {recado && <p className="dz-aviso dz-recado" role="status">{recado}</p>}
           {aba === 'propriedades' && (
             <Propriedades prancha={p} selecionados={selecionados}
               mudarSelecionados={nosSelecionados}
-              mudarPranchaAtiva={f => naPrancha(f)} />
+              mudarPranchaAtiva={f => naPrancha(f)}
+              no={caminhoNaMao && noEscolhido && caminhoNaMao.tipo === 'caminho'
+                ? caminhoNaMao.contornos[noEscolhido.c]?.nos[noEscolhido.n] ?? null : null}
+              mudarNo={mudarNoEscolhido} />
           )}
           {aba === 'cores' && (
             <CoresDoDocumento arte={arte} prova={prova}
               mudarPaleta={(papel, hex) => aplicar({ ...arte, paleta: { ...arte.paleta, [papel]: hex } })} />
           )}
           {aba === 'medidor' && <MedidorDeContraste prancha={p} texto={textoSelecionado} />}
+          {aba === 'tamanhos' && (
+            <div className="dz-secao">
+              <div className="dz-secao-titulo"><span>Em três tamanhos</span></div>
+              <div className="dz-tamanhos">
+                {TAMANHOS_DO_ICONE.map(t => (
+                  <figure key={t} className="dz-tamanho">
+                    <DesenhoDaPrancha prancha={p} escala={t / p.largura} rotulo={`${p.nome} em ${t} pixels`} />
+                    <figcaption>{t} px</figcaption>
+                  </figure>
+                ))}
+              </div>
+              <p className="dz-nota">Cada pixel do de 16 é um quadrado de {fmt(p.largura / 16, 0)} unidades da prancha.</p>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="dz-status">
         <span>{p.nome} · {p.largura} × {p.altura} px</span>
         <span>{selecao.length === 0 ? 'Nada selecionado' : selecao.length === 1 ? '1 selecionado' : `${selecao.length} selecionados`}</span>
-        <span>Zoom {Math.round(escala * 100)}%</span>
+        <span>Zoom {Math.round(k * 100)}%</span>
+        {rascunho && <span>Caneta: clique para pôr nós, arraste para curvar, Enter termina, clique no primeiro fecha</span>}
         {visao !== 'normal' && <span>Simulando: {visao === 'deuteranopia' ? 'deuteranopia' : 'tons de cinza'}</span>}
         {prova && <span>Prova de impressão</span>}
       </div>
     </div>
+  );
+}
+
+/** A lista de camadas, com os filhos de cada grupo recuados embaixo dele. */
+function ListaDeCamadas({ objetos, selecao, profundidade, aoEscolher }: {
+  objetos: Objeto[]; selecao: string[]; profundidade: number;
+  aoEscolher: (id: string, somar: boolean) => void;
+}) {
+  return (
+    <>
+      {[...objetos].reverse().map(o => (
+        <div key={o.id}>
+          <button type="button" className="dz-lista-item" aria-selected={selecao.includes(o.id)}
+            style={{ paddingLeft: 6 + profundidade * 14 }}
+            disabled={o.tipo === 'referencia'}
+            onClick={e => aoEscolher(o.id, e.shiftKey || e.ctrlKey || e.metaKey)}>
+            {o.tipo === 'texto' ? <Type className="w-3 h-3" aria-hidden="true" />
+              : o.tipo === 'grupo' ? <Group className="w-3 h-3" aria-hidden="true" />
+                : o.tipo === 'caminho' ? <Spline className="w-3 h-3" aria-hidden="true" />
+                  : <Square className="w-3 h-3" aria-hidden="true" />}
+            {o.nome}{o.tipo === 'referencia' ? ' (bloqueada)' : ''}
+          </button>
+          {o.tipo === 'grupo' && (
+            <ListaDeCamadas objetos={o.filhos} selecao={selecao} profundidade={profundidade + 1} aoEscolher={aoEscolher} />
+          )}
+        </div>
+      ))}
+    </>
   );
 }
 
@@ -693,11 +1152,14 @@ function CampoCor({ rotulo, valor, aoMudar }: { rotulo: string; valor: string | 
   );
 }
 
-function Propriedades({ prancha, selecionados: os, mudarSelecionados, mudarPranchaAtiva }: {
+function Propriedades({ prancha, selecionados: os, mudarSelecionados, mudarPranchaAtiva, no, mudarNo }: {
   prancha: Prancha;
   selecionados: Objeto[];
   mudarSelecionados: (f: (o: Objeto) => Objeto) => void;
   mudarPranchaAtiva: (f: (p: Prancha) => Prancha) => void;
+  /** O nó que a ferramenta de nós tem na mão, quando tem. */
+  no?: No | null;
+  mudarNo?: (f: (c: Contorno, n: number) => Contorno) => void;
 }) {
   if (os.length === 0) {
     return (
@@ -716,8 +1178,12 @@ function Propriedades({ prancha, selecionados: os, mudarSelecionados, mudarPranc
 
   const ts = os.filter((o): o is Texto => o.tipo === 'texto');
   const soTextos = ts.length === os.length;
-  const formas = os.filter(o => o.tipo === 'retangulo' || o.tipo === 'elipse');
-  const comAltura = os.every(o => o.tipo !== 'texto');
+  const formas = os.filter(o => o.tipo === 'retangulo' || o.tipo === 'elipse' || o.tipo === 'caminho');
+  const comAltura = os.every(o => o.tipo !== 'texto' && o.tipo !== 'grupo');
+  const soCaminhos = os.every(o => o.tipo === 'caminho');
+  /* O caminho e o grupo têm a caixa dos contornos, que raramente é inteira:
+     duas casas, como o arquivo exportado escreve. */
+  const curto = (n: number) => Math.round(n * 100) / 100;
   const set = (f: (o: Objeto) => Objeto) => mudarSelecionados(f);
   const doTexto = (f: (t: Texto) => Texto) => set(o => (o.tipo === 'texto' ? f(o) : o));
 
@@ -728,12 +1194,17 @@ function Propriedades({ prancha, selecionados: os, mudarSelecionados, mudarPranc
           <span>{os.length === 1 ? os[0].nome : `${os.length} objetos`}</span>
         </div>
         <div className="dz-campos">
-          <CampoNumero rotulo="X" valor={comum(os, o => o.x)} aoMudar={n => set(o => ({ ...o, x: Math.round(n) }))} />
-          <CampoNumero rotulo="Y" valor={comum(os, o => o.y)} aoMudar={n => set(o => ({ ...o, y: Math.round(n) }))} />
-          <CampoNumero rotulo="L" valor={comum(os, o => o.largura)} minimo={8}
-            aoMudar={n => set(o => ({ ...o, largura: Math.round(n) }))} />
-          <CampoNumero rotulo="A" valor={comum(os, o => alturaDe(o))} minimo={4} desligado={!comAltura}
-            aoMudar={n => set(o => (o.tipo === 'texto' ? o : { ...o, altura: Math.round(n) }))} />
+          {os.length === 1 && (
+            <CampoTexto rotulo="Nome da camada" valor={os[0].nome}
+              aoMudar={nome => set(o => ({ ...o, nome }))} />
+          )}
+          <CampoNumero rotulo="X" valor={comum(os, o => curto(o.x))} aoMudar={n => set(o => posicionar(o, n, o.y))} />
+          <CampoNumero rotulo="Y" valor={comum(os, o => curto(o.y))} aoMudar={n => set(o => posicionar(o, o.x, n))} />
+          <CampoNumero rotulo="L" valor={comum(os, o => curto(o.largura))} minimo={1}
+            desligado={os.some(o => o.tipo === 'grupo')}
+            aoMudar={n => set(o => redimensionar(o, n, undefined))} />
+          <CampoNumero rotulo="A" valor={comum(os, o => curto(alturaDe(o)))} minimo={1} desligado={!comAltura}
+            aoMudar={n => set(o => redimensionar(o, undefined, n))} />
         </div>
         {!comAltura && <p className="dz-nota" style={{ marginTop: 6 }}>A altura de um texto sai das linhas dele.</p>}
       </div>
@@ -789,16 +1260,87 @@ function Propriedades({ prancha, selecionados: os, mudarSelecionados, mudarPranc
         </div>
       )}
 
+      {no && mudarNo && (
+        <div className="dz-secao" aria-label="Nó escolhido">
+          <div className="dz-secao-titulo"><span>Nó escolhido</span></div>
+          <div className="dz-campos">
+            <CampoNumero rotulo="X do nó" valor={curto(no.x)} aoMudar={x => mudarNo((c, n) => moverNo(c, n, x, c.nos[n].y))} />
+            <CampoNumero rotulo="Y do nó" valor={curto(no.y)} aoMudar={y => mudarNo((c, n) => moverNo(c, n, c.nos[n].x, y))} />
+            <div className="dz-campo dz-campo-largo">
+              Tipo do nó
+              <span className="dz-segmentos">
+                <button type="button" className="dz-bt" aria-pressed={no.tipo === 'canto'}
+                  onClick={() => mudarNo((c, n) => trocarTipo(c, n, 'canto'))}>Canto</button>
+                <button type="button" className="dz-bt" aria-pressed={no.tipo === 'suave'}
+                  onClick={() => mudarNo((c, n) => trocarTipo(c, n, 'suave'))}>Suave</button>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {formas.length === os.length && (
         <div className="dz-secao">
-          <div className="dz-secao-titulo"><span>Preenchimento</span></div>
+          <div className="dz-secao-titulo"><span>Preenchimento e traço</span></div>
           <div className="dz-campos">
-            <CampoCor rotulo="Preenchimento" valor={comum(os, o => (o.tipo === 'retangulo' || o.tipo === 'elipse' ? o.preenchimento : undefined))}
-              aoMudar={hex => set(o => (o.tipo === 'retangulo' || o.tipo === 'elipse' ? { ...o, preenchimento: hex } : o))} />
+            <CampoCor rotulo="Preenchimento" valor={comum(os, o => (
+              o.tipo === 'retangulo' || o.tipo === 'elipse' || o.tipo === 'caminho' ? o.preenchimento ?? undefined : undefined))}
+              aoMudar={hex => set(o => (o.tipo === 'retangulo' || o.tipo === 'elipse' || o.tipo === 'caminho' ? { ...o, preenchimento: hex } : o))} />
+            {soCaminhos && (
+              <label className="dz-campo dz-campo-largo dz-caixa">
+                <input type="checkbox" checked={os.every(o => o.tipo === 'caminho' && o.preenchimento === null)}
+                  onChange={e => set(o => (o.tipo === 'caminho'
+                    ? { ...o, preenchimento: e.target.checked ? null : o.preenchimento ?? '#D9D9D9' } : o))} />
+                Sem preenchimento
+              </label>
+            )}
+            <label className="dz-campo dz-campo-largo dz-caixa">
+              <input type="checkbox" checked={os.every(o => tracoDe(o))}
+                onChange={e => set(o => comTraco(o, e.target.checked ? { cor: '#1F2A24', espessura: 2, extremidade: 'reta' } : null))} />
+              Traço
+            </label>
+            {os.every(o => tracoDe(o)) && <>
+              <CampoCor rotulo="Cor do traço" valor={comum(os, o => tracoDe(o)?.cor)}
+                aoMudar={cor => set(o => comTraco(o, { ...tracoDe(o)!, cor }))} />
+              <CampoNumero rotulo="Espessura do traço" valor={comum(os, o => tracoDe(o)?.espessura)} minimo={0.5}
+                aoMudar={espessura => set(o => comTraco(o, { ...tracoDe(o)!, espessura }))} />
+              <label className="dz-campo">
+                Extremidade
+                <select className="dz-entrada" aria-label="Extremidade do traço"
+                  value={comum(os, o => tracoDe(o)?.extremidade) ?? ''}
+                  onChange={e => set(o => comTraco(o, { ...tracoDe(o)!, extremidade: e.target.value as Extremidade }))}>
+                  {comum(os, o => tracoDe(o)?.extremidade) === undefined && <option value="">Várias</option>}
+                  {(Object.keys(NOME_DA_EXTREMIDADE) as Extremidade[]).map(x => (
+                    <option key={x} value={x}>{NOME_DA_EXTREMIDADE[x]}</option>
+                  ))}
+                </select>
+              </label>
+            </>}
           </div>
         </div>
       )}
     </>
+  );
+}
+
+const tracoDe = (o: Objeto): Traco | null =>
+  (o.tipo === 'retangulo' || o.tipo === 'elipse' || o.tipo === 'caminho' ? o.traco ?? null : null);
+
+const comTraco = (o: Objeto, traco: Traco | null): Objeto =>
+  (o.tipo === 'retangulo' || o.tipo === 'elipse' || o.tipo === 'caminho' ? { ...o, traco } : o);
+
+/** Um campo de texto de uma linha, gravado ao sair: um passo do Ctrl+Z por nome, e não por letra. */
+function CampoTexto({ rotulo, valor, aoMudar }: { rotulo: string; valor: string; aoMudar: (v: string) => void }) {
+  const [rascunho, setRascunho] = useState(valor);
+  useEffect(() => { setRascunho(valor); }, [valor]);
+  const confirmar = () => { if (rascunho.trim() && rascunho !== valor) aoMudar(rascunho.trim()); else setRascunho(valor); };
+  return (
+    <label className="dz-campo dz-campo-largo">
+      {rotulo}
+      <input className="dz-entrada" aria-label={rotulo} value={rascunho}
+        onChange={e => setRascunho(e.target.value)} onBlur={confirmar}
+        onKeyDown={e => { if (e.key === 'Enter') confirmar(); }} />
+    </label>
   );
 }
 

@@ -6,7 +6,8 @@ import {
   hierarquiaFunciona, hslDe, linhasDoTexto, margemMinima, maiorVaoInterno, mesmaForma,
   mesmaPeca, mesmoEstilo, mesmoTexto, niveisDe, nivelDoCorpo, provaDeImpressao,
   proximidadeFunciona, quemEstragaAHierarquia, sangra, textosSobrepostos, textosSoltos,
-  umObjeto, umaPrancha,
+  umObjeto, umaPrancha, combinar, agrupar, desagrupar, mudarObjetos, moverObjeto, excluir, textos,
+  emCaminho, redimensionar, alturaDe,
   type Arte, type Forma, type Foto, type Prancha, type Texto,
 } from './design';
 import { hexToRgb } from '../lib/imageTools';
@@ -285,5 +286,82 @@ describe('duplicar a prancha', () => {
   it('duas cópias não colidem', () => {
     const a = duplicarPrancha(duplicarPrancha(arte, 'p'), 'p');
     expect(new Set(a.pranchas.map(p => p.id)).size).toBe(3);
+  });
+});
+
+describe('caminhos, grupos e booleanas', () => {
+  const quadrado = (id: string, x: number): Forma => ret(id, { x, y: 0, largura: 100, altura: 100, preenchimento: '#C13516' });
+
+  it('combinar une na ordem da pilha, e o resultado herda o de baixo', () => {
+    const p = prancha([quadrado('a', 0), { ...quadrado('b', 50), preenchimento: '#000000' }]);
+    const q = combinar(p, ['a', 'b'], 'uniao');
+    expect(q.objetos).toHaveLength(1);
+    const r = q.objetos[0];
+    expect(r.tipo).toBe('caminho');
+    expect(r.id).toBe('a');
+    expect(r.tipo === 'caminho' && r.preenchimento).toBe('#C13516');
+    expect(r.largura).toBe(150);
+  });
+
+  it('subtrair tira de cima o que está embaixo, e não o contrário', () => {
+    const p = prancha([quadrado('a', 0), quadrado('b', 50)]);
+    const r = combinar(p, ['a', 'b'], 'subtracao').objetos[0];
+    expect(r.x).toBe(0);
+    expect(r.largura).toBe(50);
+  });
+
+  it('a seleção na ordem do clique não muda quem é a base', () => {
+    const p = prancha([quadrado('a', 0), quadrado('b', 50)]);
+    expect(combinar(p, ['b', 'a'], 'subtracao').objetos[0].x).toBe(0);
+  });
+
+  it('texto não entra em booleana', () => {
+    const p = prancha([quadrado('a', 0), tx('t', 0)]);
+    expect(combinar(p, ['a', 't'], 'uniao')).toBe(p);
+  });
+
+  it('agrupar põe o grupo onde estava o de cima, e desagrupar devolve na ordem', () => {
+    const p = prancha([quadrado('a', 0), tx('t', 300), quadrado('b', 200)]);
+    const g = agrupar(p, ['a', 'b'], 'g', 'Os dois');
+    expect(g.objetos.map(o => o.id)).toEqual(['t', 'g']);
+    const grupo = g.objetos[1];
+    expect(grupo.tipo === 'grupo' && grupo.filhos.map(f => f.id)).toEqual(['a', 'b']);
+    expect(grupo.largura).toBe(300);
+    expect(desagrupar(g, 'g').objetos.map(o => o.id)).toEqual(['t', 'a', 'b']);
+  });
+
+  it('mover o grupo leva os filhos, e mexer num filho refaz a caixa do grupo', () => {
+    const g = agrupar(prancha([quadrado('a', 0), quadrado('b', 200)]), ['a', 'b'], 'g');
+    const movido = mudarObjetos(g, ['g'], o => moverObjeto(o, 10, 5));
+    expect(umObjeto(movido, 'a')!.x).toBe(10);
+    const filhoMovido = mudarObjetos(g, ['b'], o => moverObjeto(o, 100, 0));
+    expect(umObjeto(filhoMovido, 'g')!.largura).toBe(400);
+  });
+
+  it('excluir o último filho leva o grupo junto', () => {
+    const g = agrupar(prancha([quadrado('a', 0), quadrado('b', 200)]), ['a', 'b'], 'g');
+    expect(excluir(g, ['a', 'b']).objetos).toEqual([]);
+  });
+
+  it('os textos de dentro do grupo continuam sendo textos da peça', () => {
+    const g = agrupar(prancha([tx('t1', 0), tx('t2', 40)]), ['t1', 't2'], 'g');
+    expect(textos(g).map(t => t.id)).toEqual(['t1', 't2']);
+  });
+
+  it('redimensionar um caminho escala os nós, a partir do canto', () => {
+    const c = emCaminho(quadrado('a', 20))!;
+    const r = redimensionar(c, 50, undefined);
+    expect(r.x).toBe(20);
+    expect(r.largura).toBe(50);
+    expect(alturaDe(r)).toBe(100);
+  });
+
+  it('duplicar a prancha renomeia os filhos de grupo também', () => {
+    const g = agrupar(prancha([quadrado('a', 0), quadrado('b', 200)]), ['a', 'b'], 'g');
+    const arte: Arte = { pranchas: [g], paleta: { fundo: null, texto: null, destaque: null, apoio: null, neutro: null } };
+    const d = duplicarPrancha(arte, 'p');
+    const copia = d.pranchas[1];
+    expect(umObjeto(copia, 'a')).toBeUndefined();
+    expect(mesmaPeca(copia, g)).toBe(true);
   });
 });

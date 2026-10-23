@@ -3889,6 +3889,83 @@ mostra um texto, e não num botão a mais: abrir o plugin e clicar no texto é
 medir, como num medidor de verdade. E diz a razão, o mínimo para aquele
 tamanho de letra e se fica acima ou abaixo — nunca "tarefa cumprida".
 
+**A CC-DG002 desenha forma nova, e o editor ganhou o vetor de verdade.** A
+CC-DG001 arruma peças que chegam prontas; esta desenha. As ferramentas entraram
+na janela compartilhada, e não num segundo editor — a caneta, a edição de nós,
+as três booleanas, o grupo, o traço com extremidade e o texto em curvas —,
+porque a vereda de identidade visual vai abrir o mesmo programa. O modelo mora
+em `vetor.ts`: nó com as alças em coordenada absoluta, curva cúbica, e nada
+mais. Alça relativa ao nó economizaria uma soma e obrigaria cada leitor a
+lembrar de que lado ela está.
+
+**As booleanas achatam a curva antes de cortar.** Recortar curva contra curva
+de forma exata é um problema que nenhuma biblioteca compatível com a AGPL
+resolve; o `polygon-clipping` (MIT) recorta polígonos. O contorno é achatado em
+dezesseis passos por curva, e o resultado volta como nós de canto. Na tela não
+se vê, e o que a lição mede é a silhueta, não os nós: quem passa uma lua pela
+subtração recebe a lua certa. O preço é que ela sai com mais nós que a de um
+programa comercial, e `semPontosNaReta` tira os que sobram no meio das retas,
+que são os únicos que se veriam ao editar.
+
+**Subtrair corta a de baixo pela de cima, e o clique não decide.** No
+Illustrator e no Inkscape é a ordem das camadas que manda, e a lição de lua
+existe para mostrar isso: quem selecionou na ordem "certa" e viu a lua sumir
+precisa aprender a olhar a lista, e não a clicar de novo noutra ordem.
+
+**A forma que a meta cobra se compara por silhueta normalizada.** Desenhar a
+lua um pouco maior ou noutro canto da prancha não é errar a lua, e conferir por
+coordenada reprovaria quem desenhou certo em outro lugar. `coincidencia` é a
+razão entre interseção e união das duas silhuetas, depois de levar cada uma à
+origem e à mesma largura — escala **uniforme**, senão esticar passaria por
+manter a proporção, que é o requisito 5 inteiro. O limiar do logotipo, 0,8, é
+medido: um traçado humano erra dois a quatro pixels por borda, e isso dá 0,85.
+Um limiar de 0,95 faria a lição medir mão firme.
+
+**O texto vira curva letra por letra, e não pela linha inteira.** O `opentype.js`
+(MIT) desenha a linha aplicando as substituições da fonte, e a Space Mono traz
+uma que ele não implementa — o caminho da linha inteira estoura. `charToGlyph`
+por letra não passa por elas, e uma fonte monoespaçada não tem ligadura que
+mude o desenho. E os contornos de fonte TrueType nem sempre trazem o comando de
+fechar: um novo `M` fecha o anterior, e o fim fecha o último, senão o O sai sem
+o furo.
+
+**Só converte a fonte cujo arquivo a plataforma tem.** É a Space Mono, que já
+mora em `public/assets/fonts/` para o PDF. Converter Arial pediria embutir a
+Arial, que não é livre; o editor recusa dizendo que o arquivo da fonte não está
+no computador, que é exatamente o que um programa de verdade diz — e é a lição
+do módulo 6 acontecendo do lado de cá.
+
+**O nome do clube em curvas é gravado, e uma trava refaz a conta.** As metas
+precisam do caminho que a conversão produz para provar que a meta fecha, e
+converter no teste de motor exige baixar e analisar a fonte em cada execução.
+`nomeDoClubeEmCurvas.ts` guarda o `d` que a fonte de verdade desenha, e
+`nomeDoClubeEmCurvas.test.ts` converte de novo e compara: trocar a fonte ou o
+texto sem regerar o arquivo reprova ali, e não em silêncio numa meta.
+
+**O SVG exportado é para ser lido.** Um elemento por linha, o `id` e o nome da
+camada em cada um, números curtos e caminhos em comandos absolutos. É o
+requisito 7: abrir no editor de texto e **achar** a forma. Um SVG minificado
+numa linha só, que é o que muito programa exporta, faria a lição ser sobre
+achar agulha. A guia do examinador não sai no arquivo, porque é dele e não do
+desenho.
+
+E ler o arquivo de volta **recusa** o que não entende, dizendo em qual
+elemento. Abrir vazio seria a pior resposta possível a quem acabou de apagar
+uma aspa: o desenho some, e a pessoa conclui que mudar o número apagou tudo.
+
+**O editor de texto edita só quando o laboratório deixa.** `aoSalvar` liga o
+modo de escrever, pela regra do `aoBuscar` do Explorador: na CC-ES008 o CSV
+continua só de leitura, pelo motivo escrito lá, e aqui o SVG se escreve. Os dois
+leem a mesma pasta do laboratório, e é essa travessia que mostra o efeito do
+número mudado. Exportar de novo **escreve por cima**, como em todo sistema: a
+mudança feita à mão some, e a teoria diz isso.
+
+**A caneta e os nós medem a prancha pela caixa dela.** No jsdom a caixa mede
+zero, e a trava que clica passa com coordenada de prancha direta. Quem conferiu
+a escala foi o Chromium, a 390 px de largura com o zoom em 84% — e o primeiro
+roteiro errou por clicar fora da tela depois de o campo de Y rolar a mesa, não
+por defeito do editor.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -4322,6 +4399,17 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDeDesign.test.tsx` | lição da CC-DG001 impossível de vencer clicando no editor |
 | `src/components/LaboratorioDeDesign.test.tsx` | medidor de contraste que escreve sobre a tarefa em vez da medida |
 | `src/curriculum/exemplosDosFundamentos.test.ts` | razão de contraste da teoria da CC-DG001 que o medidor não devolve |
+| `src/labs/vetor.test.ts` | subtração que ignora a ordem, booleana que deixa nó no meio da reta, ou nó suave que solta a alça oposta |
+| `src/labs/vetor.test.ts` | SVG que abre vazio no que não entende, ou número mudado que move mais de um nó |
+| `src/labs/svg.test.ts` | SVG exportado numa linha só, sem o nome da camada, ou levando a guia do examinador |
+| `src/labs/textoEmCurvas.test.ts` | letra convertida fora da caixa do texto, O sem furo, ou fonte sem arquivo convertida assim mesmo |
+| `src/labs/nomeDoClubeEmCurvas.test.ts` | nome em curvas gravado que diverge do que a fonte desenha hoje |
+| `src/labs/editorDeDesign.test.tsx` | caneta, nós, booleanas, grupo ou conversão que não chegam ao desenho pela janela |
+| `src/labs/metasDaCcDg002.test.ts` | meta da CC-DG002 que abre verde, ou que a solução de referência não fecha |
+| `src/labs/metasDaCcDg002.test.ts` | logotipo esticado passando por proporcional, ou detalhe de meio pixel passando em 16 |
+| `src/labs/metasDaCcDg002.test.ts` | SVG mexido e não reaberto valendo por efeito visto, ou reaberto e desfeito no desenho |
+| `src/components/LaboratorioVetorial.test.tsx` | lição da CC-DG002 impossível de vencer clicando, cópia convertida no lugar da original, ou SVG salvo sem mudança valendo por mexido |
+| `src/curriculum/exemplosDoDesenhoVetorial.test.ts` | número da teoria da CC-DG002 que o motor não devolve, ou linha de SVG que o editor não exporta |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |
