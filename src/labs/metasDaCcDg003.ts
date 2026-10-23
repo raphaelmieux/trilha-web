@@ -578,7 +578,7 @@ export interface LicaoDeFoto {
 const partida = (documento: Documento | null, pasta: ArquivoNaPasta[]): ContextoDaFoto =>
   ({ documento, pasta, descobertas: [], caderno: CADERNO_VAZIO });
 
-let originais: { editada?: ArquivoNaPasta; crua?: ArquivoNaPasta; miniatura?: ArquivoNaPasta; lenco?: ArquivoNaPasta } = {};
+const originais: { editada?: ArquivoNaPasta; crua?: ArquivoNaPasta; miniatura?: ArquivoNaPasta; lenco?: ArquivoNaPasta } = {};
 export const arquivoDaEditada = () => (originais.editada ??= arquivoOriginal(NOME_DA_EDITADA, imagemDo(fotoLimpa())));
 export const arquivoDaCrua = () => (originais.crua ??= arquivoOriginal(NOME_DA_FOTO, imagemDo(fotoCrua())));
 const arquivoDaMiniatura = () => (originais.miniatura ??= arquivoOriginal(NOME_DA_MINIATURA, miniatura(), 90));
