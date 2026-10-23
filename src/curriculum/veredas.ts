@@ -669,6 +669,20 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O editor de foto da CC-DG003. É outro programa — pontos, e não formas —,
+      e o que viaja com a lição é um documento com camadas e a pasta do que se
+      exportou; um tipo próprio pelo motivo escrito no 'vetorial'.
+    */
+    id: string;
+    tipo: 'foto';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcDg003').LicaoDaCcDg003;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
