@@ -4,7 +4,7 @@ import { Image as IconeDeImagem, MousePointer2, Redo2, Type, Undo2 } from 'lucid
 import {
   PONTO_EM_MM, PPI_DE_IMPRESSAO, SANGRIA_DA_GRAFICA, cabecalhoDaPagina, colunasDa, efetivo, estiloDe,
   exportarPdf, fluxo, guiasVerticais, imagemDe, margensDa, numeroDaPagina, ppiEfetivo, temFormatacaoDireta,
-  type Documento, type Malha, type OpcoesDoPdf, type Pdf, type QuadroDeImagem, type QuadroDeTexto, type TextoSolto,
+  type Documento, type Malha, type OpcoesDoPdf, type Papel, type Pdf, type QuadroDeImagem, type QuadroDeTexto, type TextoSolto,
 } from './diagramacao';
 import { FAMILIAS, provaDeImpressao } from './design';
 
@@ -377,7 +377,7 @@ export function Diagramador({ documento: d, mudar, paginaInicial = 0, aoVer, aoA
                   <div key={q.id} className="dg-imagem" style={caixa(q)} aria-label={`Imagem ${img?.nome ?? q.imagem}`}
                     aria-selected={selecao?.id === q.id} onPointerDown={escolher({ tipo: 'imagem', id: q.id })}>
                     <span>{img?.nome}</span>
-                    <span className="dg-imagem-ppi" data-baixo={ppi < PPI_DE_IMPRESSAO}>{ppi} ppi</span>
+                    <span className="dg-imagem-ppi" data-baixo={ppi < PPI_DE_IMPRESSAO}>{Number.isFinite(ppi) ? `${ppi} ppi` : 'vetor'}</span>
                   </div>
                 );
               })}
@@ -427,8 +427,10 @@ export function Diagramador({ documento: d, mudar, paginaInicial = 0, aoVer, aoA
                 const ppi = Math.round(ppiEfetivo(d, q));
                 return (
                   <>
-                    <p className="dg-nota">{img?.nome} · {img?.largura} × {img?.altura} pixels · {img?.modo.toUpperCase()}</p>
-                    <p className={ppi < PPI_DE_IMPRESSAO ? 'dg-aviso' : 'dg-nota'}>ppi efetivo: {ppi}</p>
+                    <p className="dg-nota">{img?.nome} · {img?.modo === 'vetor' ? 'desenho vetorial' : `${img?.largura} × ${img?.altura} pixels · ${img?.modo.toUpperCase()}`}</p>
+                    <p className={ppi < PPI_DE_IMPRESSAO ? 'dg-aviso' : 'dg-nota'}>
+                      {Number.isFinite(ppi) ? `ppi efetivo: ${ppi}` : 'Vetor: nítido em qualquer tamanho'}
+                    </p>
                     <button type="button" className="dg-botao-claro" onClick={() => mudarSelecionado(r => ({ altura: arredonda(r.largura * (img?.altura ?? 1) / (img?.largura ?? 1)) }))}>
                       Ajustar altura à foto
                     </button>
@@ -534,6 +536,21 @@ function DialogoDaMestre({ mestre, aoFechar, aoConfirmar }: { mestre: Documento[
 }
 
 function EditorDeMateria({ documento: d, aoMudar, aoFechar }: { documento: Documento; aoMudar: (d: Documento) => void; aoFechar: () => void }) {
+  const [texto, setTexto] = useState('');
+  const [estiloNovo, setEstiloNovo] = useState(d.estilos.find(e => e.id === 'corpo')?.id ?? d.estilos[0]?.id ?? '');
+  /* O parágrafo novo entra no fim da matéria, e o papel sai do estilo
+     escolhido: é o que todo programa de diagramação faz quando se digita
+     depois do último ponto. */
+  const acrescentar = () => {
+    const limpo = texto.trim();
+    if (!limpo) return;
+    const usados = new Set(d.historia.map(p => p.id));
+    let n = 1;
+    while (usados.has(`novo-${n}`)) n++;
+    const papel: Papel = estiloNovo === 'titulo' || estiloNovo === 'legenda' ? estiloNovo : 'corpo';
+    aoMudar({ ...d, historia: [...d.historia, { id: `novo-${n}`, papel, estilo: estiloNovo, texto: limpo }] });
+    setTexto('');
+  };
   return (
     <div className="dg-fundo-do-dialogo" onPointerDown={e => { if (e.target === e.currentTarget) aoFechar(); }}>
       <div className="dg-dialogo" role="dialog" aria-label="Editar matéria" style={{ width: 'min(720px, 100%)' }}>
@@ -559,6 +576,14 @@ function EditorDeMateria({ documento: d, aoMudar, aoFechar }: { documento: Docum
               </div>
             );
           })}
+        </div>
+        <div className="dg-materia-linha" style={{ marginTop: 8 }}>
+          <input className="dg-entrada" aria-label="Texto do parágrafo novo" placeholder="Escreva um parágrafo novo…" value={texto}
+            onChange={e => setTexto(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') acrescentar(); }} />
+          <select className="dg-entrada" aria-label="Estilo do parágrafo novo" value={estiloNovo} onChange={e => setEstiloNovo(e.target.value)}>
+            {d.estilos.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
+          </select>
+          <button type="button" className="dg-botao-claro" disabled={!texto.trim()} onClick={acrescentar}>Acrescentar</button>
         </div>
         <div className="dg-dialogo-acoes">
           <button type="button" className="dg-botao" onClick={aoFechar}>Fechar</button>
