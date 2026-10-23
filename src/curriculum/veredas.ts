@@ -714,6 +714,20 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O projeto da CC-DG006: as janelas das veredas de Design abertas sobre o
+      mesmo projeto, mais o caderno e a nuvem. Um tipo próprio pelo motivo
+      escrito no 'vetorial' — o estado é outro, e é do projeto inteiro.
+    */
+    id: string;
+    tipo: 'projeto-de-design';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcDg006').LicaoDaCcDg006;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não

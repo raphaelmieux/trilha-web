@@ -536,6 +536,11 @@ export interface LicaoDoProjetoDeDesign {
   prancha?: string;
   /** Se a lição tem o caderno ao lado do programa. */
   caderno: boolean;
+  /**
+   * Abre no caderno, e não no programa. O retorno começa pelo que as pessoas
+   * disseram, e só então vai ao post: mudar antes de ler é mudar no escuro.
+   */
+  abreNoCaderno?: boolean;
   contexto: () => ContextoDoProjetoDeDesign;
   metas: MetaDoProjetoDeDesign[];
 }
@@ -612,7 +617,7 @@ export const LICOES_DA_CC_DG006: Record<LicaoDaCcDg006, LicaoDoProjetoDeDesign> 
   digital: { programa: 'design', prancha: PRANCHA_DO_POST, caderno: false, contexto: contextoDe('digital'), metas: METAS_DA_DIGITAL },
   processo: { programa: 'plataforma', caderno: true, contexto: contextoDe('processo'), metas: METAS_DO_PROCESSO },
   arquivos: { programa: 'nuvem', caderno: false, contexto: contextoDe('arquivos'), metas: METAS_DA_ENTREGA },
-  retorno: { programa: 'design', prancha: PRANCHA_DO_POST, caderno: true, contexto: contextoDe('retorno'), metas: METAS_DO_RETORNO },
+  retorno: { programa: 'design', prancha: PRANCHA_DO_POST, caderno: true, abreNoCaderno: true, contexto: contextoDe('retorno'), metas: METAS_DO_RETORNO },
   apresentacao: { programa: 'plataforma', caderno: true, contexto: contextoDe('apresentacao'), metas: METAS_DA_APRESENTACAO },
 };
 

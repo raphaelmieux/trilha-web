@@ -129,9 +129,12 @@ const texto = (id: string, nome: string, t: string, x: number, y: number, largur
   cor: TINTA, alinhamento: 'esquerda', ...extra,
 });
 
+/* Sem `resolucao`: ela é para a imagem de poucos pontos, que o editor desenha
+   ponto a ponto para mostrar o serrilhado. A foto tratada tem pontos de sobra
+   para o post, e desenhá-la ponto a ponto seriam dois milhões de quadrados. */
 const fotoDoPost = (id: string, altura: number, largura = 1080): Foto => ({
   id, nome: NOME_DA_TRATADA, tipo: 'foto', x: 0, y: 0, largura, altura,
-  motivo: 'barracas', tons: ['#24412F', '#DCE6D2'], resolucao: RECORTE_DE_REFERENCIA.l,
+  motivo: 'barracas', tons: ['#24412F', '#DCE6D2'],
 });
 
 /**

@@ -333,3 +333,19 @@ describe('no celular a janela deita, e nenhum lugar some', () => {
     expect(celular).not.toContain('.nv-pontos');
   });
 });
+
+describe('a caixa no celular', () => {
+  it('sobe para longe da cápsula de tarefas, e a regra que a sobe vem depois da que a centra', () => {
+    /*
+      As duas regras têm a mesma especificidade, então quem decide é a ordem na
+      folha: escrita antes, a que sobe não vale nada, e a caixa de "Mover"
+      continua com o Concluído debaixo da cápsula — sem nada estourar. É a
+      trava do diálogo do Explorador, na janela da nuvem.
+    */
+    const centra = CSS_DA_NUVEM.indexOf('.nv-fundo {');
+    const sobe = CSS_DA_NUVEM.indexOf('.nv-fundo { align-items: flex-start;');
+    expect(centra).toBeGreaterThan(-1);
+    expect(sobe, 'a regra que sobe a caixa no celular saiu da folha').toBeGreaterThan(-1);
+    expect(sobe, 'a regra que sobe a caixa foi escrita antes da que a centra, e perdeu').toBeGreaterThan(centra);
+  });
+});
