@@ -234,6 +234,10 @@ export const CSS_DA_NUVEM = `
   .nv-cabecalho, .nv-linha { grid-template-columns: 1fr 40px; }
   .nv-cabecalho > :nth-child(2), .nv-cabecalho > :nth-child(3),
   .nv-linha > [data-coluna="dono"], .nv-linha > [data-coluna="quando"] { display: none; }
+  /* A cápsula de tarefas mora no canto de baixo do celular, e a caixa
+     centrada punha o botão de confirmar debaixo dela. Esta regra precisa vir
+     depois da que centra: as duas têm a mesma especificidade. */
+  .nv-fundo { align-items: flex-start; padding-top: 24px; }
 }
 `;
 

@@ -1060,6 +1060,30 @@ export function mesmaPeca(a: Prancha, b: Prancha): boolean {
   return semId(a) === semId(b);
 }
 
+/* ── O tamanho da prancha ────────────────────────────────────────────────── */
+
+/**
+ * Os tamanhos que todo editor oferece ao criar ou redimensionar uma peça.
+ *
+ * São os do meio, e não números soltos: a peça digital da CC-DG006 se adapta
+ * à proporção do lugar em que vai circular, e o lugar se escolhe pelo nome. A
+ * lista não traz o A5 em pixels de propósito — ele é do papel, e a peça que
+ * chega nessa proporção ao celular é a que a lição existe para refazer.
+ */
+export const TAMANHOS_DE_PRANCHA: { nome: string; largura: number; altura: number }[] = [
+  { nome: 'Post quadrado', largura: 1080, altura: 1080 },
+  { nome: 'Post retrato', largura: 1080, altura: 1350 },
+  { nome: 'Story', largura: 1080, altura: 1920 },
+  { nome: 'Capa de vídeo', largura: 1280, altura: 720 },
+];
+
+/**
+ * A prancha em outro tamanho. Os objetos ficam onde estavam, como nos
+ * editores de verdade sem o redimensionamento mágico: o que sobra para fora
+ * aparece cortado, e rearranjar é o trabalho de adaptar.
+ */
+export const comTamanho = (p: Prancha, largura: number, altura: number): Prancha => ({ ...p, largura, altura });
+
 /* ── Escalar por igual, recolorir, colar e criar prancha ──────────────────── */
 
 /**

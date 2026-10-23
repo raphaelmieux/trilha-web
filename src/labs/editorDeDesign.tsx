@@ -14,7 +14,7 @@ import {
   distribuir, duplicarPrancha, ehHex, ehTextoGrande, excluir, foraDaGama, fundosDoTexto, hexDeHsl,
   hslDe, idNovo, linhasDoTexto, mudarObjetos, mudarOrdem, mudarPrancha, provaDeImpressao, umaPrancha,
   EXTREMIDADE_NO_SVG, NOME_DA_EXTREMIDADE, agrupar, combinar, comCaixaRefeita, desagrupar, emCaminho,
-  copiasParaColar, escalarPorIgual, moverObjeto, novaPrancha, posicionar, recolorir, redimensionar, tintasDe, umObjeto,
+  TAMANHOS_DE_PRANCHA, comTamanho, copiasParaColar, escalarPorIgual, moverObjeto, novaPrancha, posicionar, recolorir, redimensionar, tintasDe, umObjeto,
   type Arte, type Borda, type Caminho, type EstiloCopiado, type Extremidade, type Familia, type Objeto,
   type Papel, type Prancha, type Texto, type Traco,
 } from './design';
@@ -1213,6 +1213,21 @@ function Propriedades({ prancha, selecionados: os, mudarSelecionados, mudarPranc
             aoMudar={nome => mudarPranchaAtiva(q => ({ ...q, nome: nome.trim() || q.nome }))} />
           <CampoCor rotulo="Fundo da prancha" valor={prancha.fundo}
             aoMudar={hex => mudarPranchaAtiva(q => ({ ...q, fundo: hex }))} />
+          <label className="dz-campo dz-campo-largo">
+            Tamanho da prancha
+            <select className="dz-entrada" aria-label="Tamanho da prancha" value={`${prancha.largura}x${prancha.altura}`}
+              onChange={e => {
+                const [l, a] = e.target.value.split('x').map(Number);
+                mudarPranchaAtiva(q => comTamanho(q, l, a));
+              }}>
+              {!TAMANHOS_DE_PRANCHA.some(t => t.largura === prancha.largura && t.altura === prancha.altura) && (
+                <option value={`${prancha.largura}x${prancha.altura}`}>Personalizado · {prancha.largura} × {prancha.altura}</option>
+              )}
+              {TAMANHOS_DE_PRANCHA.map(t => (
+                <option key={t.nome} value={`${t.largura}x${t.altura}`}>{t.nome} · {t.largura} × {t.altura}</option>
+              ))}
+            </select>
+          </label>
         </div>
         <p className="dz-nota" style={{ marginTop: 8 }}>
           Clique num objeto da prancha, ou na lista de camadas, para ver as propriedades dele. Shift + clique soma à seleção.
