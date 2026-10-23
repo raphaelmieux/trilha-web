@@ -699,6 +699,20 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      A diagramação da CC-DG005: o programa de diagramação e o caderno, com o
+      boletim do clube que viaja de uma lição para a seguinte. Um tipo próprio
+      pelo motivo escrito no 'vetorial' — o documento é outro.
+    */
+    id: string;
+    tipo: 'diagramacao';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcDg005').LicaoDaCcDg005;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
