@@ -3,7 +3,7 @@ import type React from 'react';
 import {
   AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical,
   AlignHorizontalDistributeCenter, AlignStartHorizontal, AlignStartVertical,
-  AlignVerticalDistributeCenter, BringToFront, Circle, Copy, Flame, Group, Layers, Mountain,
+  AlignVerticalDistributeCenter, BringToFront, Circle, Copy, FilePlus2, Flame, Group, Layers, Mountain,
   MousePointer2, Paintbrush, PenTool, Redo2, SendToBack, Spline, Square, SquaresIntersect,
   SquaresSubtract, SquaresUnite, Tent, Trash2, Triangle, Type, Undo2, Ungroup, Waves,
 } from 'lucide-react';
@@ -14,7 +14,7 @@ import {
   distribuir, duplicarPrancha, ehHex, ehTextoGrande, excluir, foraDaGama, fundosDoTexto, hexDeHsl,
   hslDe, idNovo, linhasDoTexto, mudarObjetos, mudarOrdem, mudarPrancha, provaDeImpressao, umaPrancha,
   EXTREMIDADE_NO_SVG, NOME_DA_EXTREMIDADE, agrupar, combinar, comCaixaRefeita, desagrupar, emCaminho,
-  moverObjeto, posicionar, redimensionar, umObjeto,
+  copiasParaColar, escalarPorIgual, moverObjeto, novaPrancha, posicionar, recolorir, redimensionar, tintasDe, umObjeto,
   type Arte, type Borda, type Caminho, type EstiloCopiado, type Extremidade, type Familia, type Objeto,
   type Papel, type Prancha, type Texto, type Traco,
 } from './design';
@@ -457,6 +457,10 @@ export function EditorDeDesign({
   const [prova, setProva] = useState(false);
   const [zoom, setZoom] = useState<number>(1);
   const [estilo, setEstilo] = useState<EstiloCopiado | null>(null);
+  /* A área de transferência é do programa, e não do sistema: guarda objetos,
+     e não texto. Mora no editor e vale entre pranchas — é por ela que a
+     assinatura de uma marca chega às peças em que ela é aplicada. */
+  const [copiados, setCopiados] = useState<{ de: string; objetos: Objeto[] } | null>(null);
   const [desfazer, setDesfazer] = useState<Arte[]>([]);
   const [refazer, setRefazer] = useState<Arte[]>([]);
   const [escala, setEscala] = useState(1);
@@ -599,6 +603,34 @@ export function EditorDeDesign({
       setSelecao([]);
     },
     tudo: () => setSelecao(p.objetos.filter(o => o.tipo !== 'referencia').map(o => o.id)),
+    copiar: () => {
+      const topo = p.objetos.filter(o => selecao.includes(o.id) && o.tipo !== 'referencia');
+      const soltos = selecionados.filter(o => o.tipo !== 'referencia' && !topo.some(t => t.id === o.id));
+      const os = [...topo, ...soltos];
+      if (os.length === 0) { avisar('Selecione o que copiar.'); return; }
+      setCopiados({ de: p.id, objetos: os });
+    },
+    /* Colar na mesma prancha desloca a cópia, para ela não cair em cima da
+       original e parecer que nada aconteceu; em outra prancha, ela cai no
+       mesmo lugar, que é o que se quer quando a peça tem o mesmo tamanho. */
+    colar: (origem = copiados) => {
+      if (!origem) { avisar('Nada copiado ainda.'); return; }
+      const desloca = origem.de === p.id ? 12 : 0;
+      const novos = copiasParaColar(arte, origem.objetos).map(o => moverObjeto(o, desloca, desloca));
+      naPrancha(q => ({ ...q, objetos: [...q.objetos, ...novos] }));
+      setSelecao(novos.map(o => o.id));
+    },
+    duplicar: () => {
+      const os = p.objetos.filter(o => selecao.includes(o.id) && o.tipo !== 'referencia');
+      if (os.length === 0) { avisar('Selecione o que duplicar.'); return; }
+      comandos.colar({ de: p.id, objetos: os });
+    },
+    novaPrancha: () => {
+      const nova = novaPrancha(arte, p.id);
+      aplicar(nova);
+      setAtiva(nova.pranchas[nova.pranchas.findIndex(x => x.id === p.id) + 1].id);
+      setSelecao([]);
+    },
     combinar: (op: Booleana) => {
       if (selecao.length < 2) { avisar('Selecione duas formas ou mais para combinar.'); return; }
       const q = combinar(p, selecao, op);
@@ -794,6 +826,9 @@ export function EditorDeDesign({
     if (ctrl && e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) avancar(); else voltar(); return; }
     if (ctrl && e.key.toLowerCase() === 'y') { e.preventDefault(); avancar(); return; }
     if (ctrl && e.key.toLowerCase() === 'a') { e.preventDefault(); comandos.tudo(); return; }
+    if (ctrl && e.key.toLowerCase() === 'c') { e.preventDefault(); comandos.copiar(); return; }
+    if (ctrl && e.key.toLowerCase() === 'v') { e.preventDefault(); comandos.colar(); return; }
+    if (ctrl && e.key.toLowerCase() === 'd') { e.preventDefault(); comandos.duplicar(); return; }
     if (ctrl && e.key.toLowerCase() === 'g') { e.preventDefault(); if (e.shiftKey) comandos.desagrupar(); else comandos.agrupar(); return; }
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); comandos.excluir(); return; }
     if (e.key === 'Escape') { setSelecao([]); setMenu(null); return; }
@@ -871,11 +906,16 @@ export function EditorDeDesign({
                   {item('Desfazer', voltar, 'Ctrl+Z')}
                   {item('Refazer', avancar, 'Ctrl+Y')}
                   <div className="dz-menu-divisoria" />
+                  {item('Copiar', comandos.copiar, 'Ctrl+C')}
+                  {item('Colar', () => comandos.colar(), 'Ctrl+V')}
+                  {item('Duplicar', comandos.duplicar, 'Ctrl+D')}
                   {item('Selecionar tudo', comandos.tudo, 'Ctrl+A')}
+                  <div className="dz-menu-divisoria" />
                   {item('Copiar estilo', comandos.copiarEstilo)}
                   {item('Colar estilo', comandos.colarEstilo)}
                   {item('Excluir', comandos.excluir, 'Del')}
                   <div className="dz-menu-divisoria" />
+                  {item('Nova prancha', comandos.novaPrancha)}
                   {item('Duplicar prancha', comandos.duplicarPrancha)}
                 </>}
                 {m === 'objeto' && <>
@@ -950,6 +990,9 @@ export function EditorDeDesign({
                 {q.nome}
               </button>
             ))}
+            <button type="button" className="dz-bt dz-bt-largo" onClick={comandos.novaPrancha}>
+              <FilePlus2 className="w-3.5 h-3.5" aria-hidden="true" /> Nova prancha
+            </button>
             <button type="button" className="dz-bt dz-bt-largo" onClick={comandos.duplicarPrancha}>
               <Copy className="w-3.5 h-3.5" aria-hidden="true" /> Duplicar prancha
             </button>
@@ -1166,6 +1209,8 @@ function Propriedades({ prancha, selecionados: os, mudarSelecionados, mudarPranc
       <div className="dz-secao">
         <div className="dz-secao-titulo"><span>Prancha</span></div>
         <div className="dz-campos">
+          <CampoTexto rotulo="Nome da prancha" valor={prancha.nome}
+            aoMudar={nome => mudarPranchaAtiva(q => ({ ...q, nome: nome.trim() || q.nome }))} />
           <CampoCor rotulo="Fundo da prancha" valor={prancha.fundo}
             aoMudar={hex => mudarPranchaAtiva(q => ({ ...q, fundo: hex }))} />
         </div>
@@ -1201,13 +1246,32 @@ function Propriedades({ prancha, selecionados: os, mudarSelecionados, mudarPranc
           <CampoNumero rotulo="X" valor={comum(os, o => curto(o.x))} aoMudar={n => set(o => posicionar(o, n, o.y))} />
           <CampoNumero rotulo="Y" valor={comum(os, o => curto(o.y))} aoMudar={n => set(o => posicionar(o, o.x, n))} />
           <CampoNumero rotulo="L" valor={comum(os, o => curto(o.largura))} minimo={1}
-            desligado={os.some(o => o.tipo === 'grupo')}
-            aoMudar={n => set(o => redimensionar(o, n, undefined))} />
+            aoMudar={n => set(o => (o.tipo === 'grupo'
+              ? (o.largura > 0 ? escalarPorIgual(o, n / o.largura) : o)
+              : redimensionar(o, n, undefined)))} />
           <CampoNumero rotulo="A" valor={comum(os, o => curto(alturaDe(o)))} minimo={1} desligado={!comAltura}
             aoMudar={n => set(o => redimensionar(o, undefined, n))} />
         </div>
-        {!comAltura && <p className="dz-nota" style={{ marginTop: 6 }}>A altura de um texto sai das linhas dele.</p>}
+        {!comAltura && (
+          <p className="dz-nota" style={{ marginTop: 6 }}>
+            {os.some(o => o.tipo === 'grupo')
+              ? 'O grupo cresce por igual: mudar a largura leva a altura, a letra e o traço junto.'
+              : 'A altura de um texto sai das linhas dele.'}
+          </p>
+        )}
       </div>
+
+      {os.some(o => o.tipo === 'grupo') && (
+        <div className="dz-secao">
+          <div className="dz-secao-titulo"><span>Cores do grupo</span></div>
+          <div className="dz-campos">
+            <CampoCor rotulo="Recolorir tudo"
+              valor={(() => { const ts = [...new Set(os.flatMap(tintasDe))]; return ts.length === 1 ? ts[0].toUpperCase() : undefined; })()}
+              aoMudar={hex => set(o => recolorir(o, hex))} />
+          </div>
+          <p className="dz-nota" style={{ marginTop: 6 }}>Pinta preenchimento, traço e letra de uma cor só.</p>
+        </div>
+      )}
 
       {soTextos && (
         <div className="dz-secao">

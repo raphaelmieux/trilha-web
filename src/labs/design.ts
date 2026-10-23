@@ -26,7 +26,7 @@
 import { contrastRatio, hexToRgb } from '../lib/imageTools';
 import {
   booleana, caixaDosContornos, contornoDaElipse, contornoDoRetangulo, escalar, transladar,
-  type Booleana, type Contorno,
+  type Booleana, type Contorno, type Ponto,
 } from './vetor';
 
 /* ── As famílias ─────────────────────────────────────────────────────────── */
@@ -1058,4 +1058,105 @@ export function mesmaPeca(a: Prancha, b: Prancha): boolean {
     [p.largura, p.altura, p.fundo.toLowerCase(), semIds(p.objetos)],
   );
   return semId(a) === semId(b);
+}
+
+/* ── Escalar por igual, recolorir, colar e criar prancha ──────────────────── */
+
+/**
+ * Escalar um objeto por igual, a partir do canto de cima à esquerda.
+ *
+ * É o gesto que o grupo pede: a assinatura de uma marca vai do crachá à faixa,
+ * e ela só continua sendo a mesma marca se tudo crescer na mesma razão — a
+ * letra junto, e o traço junto. Por isso o fator é um só: `redimensionar`
+ * recusa o grupo justamente porque largura e altura soltas obrigariam a
+ * escolher entre esticar a letra e mudar o corpo.
+ */
+export function escalarPorIgual(o: Objeto, fator: number, origem: Ponto = { x: o.x, y: o.y }): Objeto {
+  const px = (x: number) => origem.x + (x - origem.x) * fator;
+  const py = (y: number) => origem.y + (y - origem.y) * fator;
+  const traco = (t: Traco | null | undefined) => (t ? { ...t, espessura: t.espessura * fator } : t);
+  switch (o.tipo) {
+    case 'grupo':
+      return comCaixaRefeita({ ...o, filhos: o.filhos.map(f => escalarPorIgual(f, fator, origem)) });
+    case 'caminho':
+      return comCaixaRefeita({ ...o, contornos: escalar(o.contornos, origem, fator, fator), traco: traco(o.traco) ?? null });
+    case 'referencia':
+      return comCaixaRefeita({ ...o, contornos: escalar(o.contornos, origem, fator, fator) });
+    case 'texto':
+      return { ...o, x: px(o.x), y: py(o.y), largura: o.largura * fator, corpo: o.corpo * fator };
+    case 'retangulo':
+    case 'elipse':
+      return { ...o, x: px(o.x), y: py(o.y), largura: o.largura * fator, altura: o.altura * fator, traco: traco(o.traco) };
+    case 'foto':
+      return { ...o, x: px(o.x), y: py(o.y), largura: o.largura * fator, altura: o.altura * fator };
+  }
+}
+
+/**
+ * Pintar tudo de uma cor só: preenchimento, traço e letra.
+ *
+ * É o caminho mais curto até a versão monocromática, e o que todo editor
+ * vetorial oferece com algum nome. O que não tem cor própria — a foto, a
+ * referência — fica como está, e o "sem preenchimento" continua sem: pintar
+ * um caminho aberto fecharia a forma por uma reta que ninguém desenhou.
+ */
+export function recolorir(o: Objeto, cor: string): Objeto {
+  switch (o.tipo) {
+    case 'grupo': return { ...o, filhos: o.filhos.map(f => recolorir(f, cor)) };
+    case 'texto': return { ...o, cor };
+    case 'caminho': return { ...o, preenchimento: o.preenchimento === null ? null : cor, traco: o.traco ? { ...o.traco, cor } : null };
+    case 'retangulo':
+    case 'elipse': return { ...o, preenchimento: cor, traco: o.traco ? { ...o.traco, cor } : o.traco };
+    default: return o;
+  }
+}
+
+/**
+ * Cópias que se podem colar no arquivo: os mesmos objetos, com ids que o
+ * arquivo ainda não usa — os dos filhos de grupo também. Colar com os ids da
+ * origem faria selecionar a cópia selecionar a original junto, que é o
+ * defeito que `duplicarPrancha` já evita.
+ */
+export function copiasParaColar(a: Arte, os: Objeto[]): Objeto[] {
+  const usados = new Set(a.pranchas.flatMap(p => [p.id, ...achatarObjetos(p.objetos).map(o => o.id)]));
+  const novo = (base: string) => {
+    const raiz = base.replace(/-copia-\d+$/, '');
+    for (let i = 1; ; i++) {
+      const id = `${raiz}-copia-${i}`;
+      if (!usados.has(id)) { usados.add(id); return id; }
+    }
+  };
+  const copiar = (o: Objeto): Objeto => (o.tipo === 'grupo'
+    ? { ...o, id: novo(o.id), filhos: o.filhos.map(copiar) }
+    : { ...o, id: novo(o.id) });
+  return os.map(copiar);
+}
+
+/** Uma prancha em branco, do tamanho da que está à vista, logo depois dela. */
+export function novaPrancha(a: Arte, depoisDe: string): Arte {
+  const origem = umaPrancha(a, depoisDe) ?? a.pranchas[a.pranchas.length - 1];
+  const id = idNovo(a, 'prancha');
+  const n = a.pranchas.length + 1;
+  const nova: Prancha = { id, nome: `Prancha ${n}`, largura: origem.largura, altura: origem.altura, fundo: '#FFFFFF', objetos: [] };
+  const i = a.pranchas.findIndex(p => p.id === origem.id);
+  return { ...a, pranchas: [...a.pranchas.slice(0, i + 1), nova, ...a.pranchas.slice(i + 1)] };
+}
+
+/**
+ * As tintas que um objeto pinta, sem repetição e em minúsculas: o
+ * preenchimento, o traço e a letra — e as dos filhos, num grupo. A foto e a
+ * referência não entram: não têm tinta escolhida por ninguém.
+ */
+export function tintasDe(o: Objeto): string[] {
+  const todas = (x: Objeto): string[] => {
+    switch (x.tipo) {
+      case 'grupo': return x.filhos.flatMap(todas);
+      case 'texto': return [x.cor];
+      case 'caminho': return [x.preenchimento, x.traco?.cor].filter((c): c is string => !!c);
+      case 'retangulo':
+      case 'elipse': return [x.preenchimento, x.traco?.cor].filter((c): c is string => !!c);
+      default: return [];
+    }
+  };
+  return [...new Set(todas(o).map(c => c.toLowerCase()))];
 }
