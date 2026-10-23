@@ -684,6 +684,20 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      A identidade visual da CC-DG004: o editor de design e o caderno de
+      projeto, com o estado da marca que viaja de uma lição para a seguinte.
+      Um tipo próprio pelo motivo escrito no 'vetorial' — o contexto é outro.
+    */
+    id: string;
+    tipo: 'identidade';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcDg004').LicaoDaCcDg004;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não

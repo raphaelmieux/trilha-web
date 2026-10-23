@@ -31,6 +31,7 @@ import LaboratorioDoProjetoDeDados from '../components/LaboratorioDoProjetoDeDad
 import LaboratorioDeDesign from '../components/LaboratorioDeDesign';
 import LaboratorioVetorial from '../components/LaboratorioVetorial';
 import LaboratorioDeFoto from '../components/LaboratorioDeFoto';
+import LaboratorioDeIdentidade from '../components/LaboratorioDeIdentidade';
 import LaboratorioDaEstatistica from '../components/LaboratorioDaEstatistica';
 import LaboratorioDeWord from '../components/LaboratorioDeWord';
 import LaboratorioDaCircular from '../components/LaboratorioDaCircular';
@@ -482,6 +483,13 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'foto' && profile?.id) {
     return (
       <LaboratorioDeFoto vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  if (licaoAberta?.tipo === 'identidade' && profile?.id) {
+    return (
+      <LaboratorioDeIdentidade vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

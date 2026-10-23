@@ -53,6 +53,7 @@ import { metasDa as metasDaCcEs013 } from '../labs/metasDaCcEs013';
 import { metasDa as metasDaCcDg001 } from '../labs/metasDaCcDg001';
 import { metasDa as metasDaCcDg002 } from '../labs/metasDaCcDg002';
 import { metasDa as metasDaCcDg003 } from '../labs/metasDaCcDg003';
+import { metasDa as metasDaCcDg004 } from '../labs/metasDaCcDg004';
 
 /*
   Os laboratórios de Word partem de documentos diferentes, e a trava precisa
@@ -552,6 +553,8 @@ describe('os modelos dos laboratórios da vereda', () => {
           metasDaCcDg002(l.licao).map(m => [m.id, m.passos]));
         case 'foto': return Object.fromEntries(
           metasDaCcDg003(l.licao).map(m => [m.id, m.passos]));
+        case 'identidade': return Object.fromEntries(
+          metasDaCcDg004(l.licao).map(m => [m.id, m.passos]));
         case 'laboratorio': return passosDe(l.linguagem);
         /* Teoria e redação não têm verificação com passo a passo. */
         case 'teoria': case 'redacao': return null;
