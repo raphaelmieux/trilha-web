@@ -4091,6 +4091,56 @@ um, qual seguiu, e um motivo **próprio** para cada descarte — a mesma frase
 nove vezes não justifica nenhum. Na defesa, o descarte contado não pode ser o
 que seguiu, e o que ele ensinou não pode ser o motivo do caderno copiado.
 
+**A CC-DG005 diagrama em milímetros, e o motor é dela.** O editor de design
+mede em pixels de tela, e uma gráfica fala em milímetros, pontos e ppi: a
+sangria são 3 mm, a letra do corpo é 9,5 pontos, a foto pede 300 ppi no
+tamanho impresso. `diagramacao.ts` é outro modelo — malha, estilos de
+parágrafo, quadros encadeados, página-mestre e o PDF com as opções da
+gráfica —, e `diagramador.tsx` é outra janela, pela razão do editor de foto:
+são pontos de outro programa, e não a janela de design com mais botões.
+
+**O texto corre de quadro em quadro, e é por isso que o excedente existe.** A
+matéria é uma só, os quadros têm ordem, e o fluxo quebra cada parágrafo na
+largura do quadro com a largura média da família — a mesma decisão do
+`linhasDoTexto` da CC-DG001, para a conta e a tela verem as mesmas linhas.
+A foto **empurra** o texto: o quadro pula a faixa que ela ocupa, mais dois
+milímetros de contorno. Sem isso, pôr a fogueira nas duas colunas não
+mudaria nada no fluxo, e o "+" vermelho do módulo 3 seria enfeite. A matéria
+foi medida para caber em seis quadros e não em cinco com a fogueira posta:
+o quadro que falta na página 4 é a lição, e uma matéria curta demais a
+apagaria sem reprovar nada.
+
+**O ppi efetivo é do tamanho posto, e a escala é a de preencher.** A foto
+enche o quadro sem distorcer, então a escala é a maior das duas razões e o
+que sobra é cortado. Com a menor, um quadro largo e baixo daria à foto mais
+ppi do que ela tem no papel. É a conta da CC-DG003 aplicada à página, e os
+dois números da foto da unidade — 137 na largura da página, 285 numa
+coluna — são a lição de resolução inteira.
+
+**Número digitado e número de campo convivem, e é o defeito do módulo 4.**
+Ligar o número automático na mestre não apaga os três que alguém digitou, e
+a página sai com dois números um em cima do outro. A meta cobra as duas
+metades — o campo ligado **e** nenhum digitado —, e a capa sem mestre é uma
+terceira, porque com a mestre A ela sai com o número 1 por cima da foto.
+
+**O PDF é retrato, e a sangria dele não inventa foto.** Exportar com 3 mm de
+sangria um documento sem sangria dá 3 mm de branco em volta da capa: a meta
+lê a sangria do PDF **e** a do documento. E o retrato envelhece como o da
+CC-ES002: o PDF de antes de uma correção não vale pelo de depois.
+
+**A gráfica é tela da plataforma, e a tabela dela é para aprender a ler.** O
+requisito 5 manda consultar uma gráfica de verdade, e a plataforma não tem
+como ver a resposta. A tabela de serviços da Gráfica Cerrado mistura o que se
+pede do arquivo com o que ela não aceita, e a meta compara por **conjunto
+igual**: marcar todas as exigências da lista passaria por quem leu, e não
+leu. A gramatura vale por faixa, e não por um número — capa em 250 ou 300,
+miolo em 75, 90 ou 120 —, porque a tabela oferece mais de um papel certo.
+
+**A prova de cores reaproveita o `foraDaGama` da CC-DG001.** É o mesmo
+modelo, com o mesmo aviso de que é aproximação, e as cores que perdem o
+brilho na prova são as que ele marca. Escrever outra lista à mão para esta
+vereda daria duas respostas para a mesma pergunta.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -4552,6 +4602,12 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaCcDg004.test.ts` | três usos incorretos do mesmo jeito valendo por três, ou vizinhas do manual contadas como invasão |
 | `src/components/LaboratorioDeIdentidade.test.tsx` | lição da CC-DG004 impossível de vencer clicando, ou colar sem copiar que cola alguma coisa |
 | `src/curriculum/exemplosDaIdentidadeVisual.test.ts` | contraste, paleta ou tamanho mínimo da teoria da CC-DG004 que o motor não devolve |
+| `src/labs/diagramacao.test.ts` | foto que não empurra o texto, ou sangria do PDF inventando a foto que o documento não sangrou |
+| `src/labs/metasDaCcDg005.test.ts` | meta da CC-DG005 que abre verde, ou que a solução de referência não fecha |
+| `src/labs/metasDaCcDg005.test.ts` | número automático com os digitados ainda lá, ou PDF velho valendo pelo novo |
+| `src/labs/metasDaCcDg005.test.ts` | marcar todas as exigências da gráfica valendo por ter lido a tabela |
+| `src/components/LaboratorioDeDiagramacao.test.tsx` | lição da CC-DG005 impossível de vencer clicando, ou Exportar PDF na lição que não exporta |
+| `src/curriculum/exemplosDaDiagramacao.test.ts` | milímetro, ppi ou cor da teoria da CC-DG005 que o motor não devolve |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

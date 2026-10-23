@@ -21,6 +21,7 @@ import { MODULOS_DOS_FUNDAMENTOS } from './fundamentosVisuais';
 import { MODULOS_DO_DESENHO_VETORIAL } from './desenhoVetorial';
 import { MODULOS_DA_IMAGEM_DIGITAL } from './imagemDigital';
 import { MODULOS_DA_IDENTIDADE_VISUAL } from './identidadeVisual';
+import { MODULOS_DA_DIAGRAMACAO } from './diagramacaoEImpressao';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -694,6 +695,20 @@ export type LicaoDeVereda =
     titulo: string;
     resumo: string;
     licao: import('../labs/metasDaCcDg004').LicaoDaCcDg004;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
+      A diagramação da CC-DG005: o programa de diagramação e o caderno, com o
+      boletim do clube que viaja de uma lição para a seguinte. Um tipo próprio
+      pelo motivo escrito no 'vetorial' — o documento é outro.
+    */
+    id: string;
+    tipo: 'diagramacao';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcDg005').LicaoDaCcDg005;
     /** Os ids das metas, na lista daquela lição. */
     verificacoes: string[];
   }
@@ -1398,9 +1413,28 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: false,
     modulos: MODULOS_DA_IDENTIDADE_VISUAL,
   },
-  anunciada('CC-DG005', 'Diagramação e Impressão', 'Design',
-    'Malha, sangria e marca de corte: o que a gráfica exige e o que a tela não mostra.',
-    ['cc-dg004']),
+  {
+    id: 'cc-dg005',
+    code: 'CC-DG005',
+    name: 'Diagramação e Impressão',
+    familia: 'Design',
+    description: 'Malha, sangria e marca de corte: o que a gráfica exige e o que a tela não mostra.',
+    preRequisitos: ['cc-dg004'],
+    /*
+      ── O que carrega esta vereda é um boletim só ────────────────────────
+      O boletim de inverno do clube, quatro páginas A5, montado da malha ao
+      PDF que a gráfica aceita: cada lição parte de onde a anterior chegou.
+      Cinco lições abrem o programa de diagramação; a gráfica é tela da
+      plataforma, porque a tabela de serviços é de outro site, e o caderno
+      guarda o que o programa não tem onde guardar.
+
+      ── O que fica fora ─────────────────────────────────────────────────
+      Imprimir, consultar uma gráfica de verdade e apresentar a peça
+      impressa ao examinador. A plataforma prepara os três.
+    */
+    mostraResultado: false,
+    modulos: MODULOS_DA_DIAGRAMACAO,
+  },
   anunciada('CC-DG006', 'Projeto de Design', 'Design',
     'Uma demanda real do clube, no papel e na tela, com o retorno de cinco pessoas do público.',
     ['cc-dg005']),
