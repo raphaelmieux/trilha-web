@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act } from 'react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
-import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
+import LaboratorioEmTelaCheia, { FUNDO_DA_PLATAFORMA, FUNDO_DO_PROGRAMA } from './LaboratorioEmTelaCheia';
 
 /*
   O aviso de tela pequena promete três coisas ao desbravador: que aparece, que
@@ -190,5 +192,40 @@ describe('o passo a passo de quem travou', () => {
     correr(95_000);
     expect(container.textContent).not.toContain('Travou?');
     desmontar();
+  });
+});
+
+describe('o fundo atrás do conteúdo', () => {
+  /* Os cartões da plataforma são translúcidos e o texto deles é quase
+     branco: sobre a mesa clara de um programa eles somem. A cor é a base do
+     moiré, que é contra o que a escala de texto foi medida. */
+  const fundo = (imitaPrograma: boolean) => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    root = createRoot(container);
+    act(() => {
+      root.render(
+        <MemoryRouter>
+          <LaboratorioEmTelaCheia trilha="CC-ES009" voltarPara="/vereda/CC-ES009" titulo="Caderno"
+            programa="caderno" imitaPrograma={imitaPrograma} tarefas={[{ id: 't1', titulo: 'Escrever', feita: false }]}>
+            <p>conteúdo</p>
+          </LaboratorioEmTelaCheia>
+        </MemoryRouter>,
+      );
+    });
+    const cor = (container.querySelector('.fixed.inset-0') as HTMLElement).style.background;
+    desmontar();
+    return cor;
+  };
+
+  it('tela da plataforma vai sobre a base escura, e programa sobre a mesa clara', () => {
+    expect(fundo(false)).toBe(FUNDO_DA_PLATAFORMA);
+    expect(fundo(true)).toBe('rgb(230, 230, 230)');
+    expect(FUNDO_DO_PROGRAMA.toLowerCase()).toBe('#e6e6e6');
+  });
+
+  it('a base escura é a do moiré da folha', () => {
+    const folha = readFileSync(resolve(__dirname, '../index.css'), 'utf8');
+    expect(folha).toContain(`background: ${FUNDO_DA_PLATAFORMA};`);
   });
 });

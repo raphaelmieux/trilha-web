@@ -3966,6 +3966,78 @@ a escala foi o Chromium, a 390 px de largura com o zoom em 84% — e o primeiro
 roteiro errou por clicar fora da tela depois de o campo de Y rolar a mesa, não
 por defeito do editor.
 
+**A CC-DG003 trata foto, e o motor é de pixel de verdade.** Ela abre outro
+programa — pontos, e não formas —, e por isso o editor de foto é arquivo
+próprio, `editorDeFoto.tsx`, e não a janela de design com mais botões. O motor,
+`raster.ts`, é feito de funções puras sobre `Uint8ClampedArray`: girar,
+recortar, reamostrar, ajustar, carimbar, selecionar por cor, máscara. Nada
+nele toca canvas, e é por isso que as metas se conferem sem navegador.
+
+**A perda se mede, e não se declara.** O JPG daqui é um JPG pequeno de
+verdade — blocos de 8×8, a transformada do cosseno, as tabelas do anexo K,
+cor em 4:2:0 —, e o tamanho sai dos coeficientes que sobram. A "perda
+perceptível" é uma semelhança estrutural em janelas de 8×8. Sem isso, "reduzir
+sessenta por cento sem perda perceptível" seria um número escolhido por nós,
+e baixar a qualidade até 5 passaria pela tarefa. O WEBP é premissa
+declarada — o JPG vezes `FRACAO_DO_WEBP` mais o canal alfa — porque o
+formato de verdade não cabe aqui, e a trava confere que a premissa continua
+dizendo o que a lição diz.
+
+**A foto leva a cena consigo.** Girar e recortar mudam onde está a barraca na
+grade de pixels, e as metas precisam achá-la depois — "a barraca inteira no
+quadro", "só a garrafa saiu". Cada imagem carrega o `mapa` afim da cena, que
+os dois gestos compõem, como uma câmera grava a orientação no arquivo. Medir
+por coordenada fixa reprovaria quem recortou com dez pixels de diferença.
+
+**A foto chega com todos os defeitos, e cada lição parte do conserto da
+anterior.** Torta, escura, acinzentada, azulada e com uma garrafa no chão, como
+o celular a tira. O módulo 3 recebe a foto nivelada e o 4 a ajustada — mandar
+refazer o recorte para poder ajustar a luz ensinaria que o trabalho anterior
+não conta. É o campo `documento` da CC-ES002 outra vez.
+
+**Três medidas que erravam pelo caminho óbvio.** O horizonte se lê em duas
+colunas perto das bordas, e não no meio — no meio fica a copa da árvore, e a
+sonda achava folha em vez de serra. O remendo se distingue pela **aspereza do
+miolo** da área da garrafa contra a da grama: o desvio de uma caixa inteira
+aprovava a mancha de pincel verde, porque a borda dela com a grama já dava
+variação. E "o resto intacto" **conta pixels mudados**, e não a diferença
+média: espalhada pela foto inteira, a média diluía uma pincelada de duzentos
+pixels até ela sumir.
+
+**A luz não tem teto, e o estouro é que é.** "Clarear até a luz da tarde" tem
+mínimo e não tem máximo, porque quem passa do ponto passa estourando, e o
+estouro já tem conta própria. Um teto de luminosidade média reprovaria uma foto
+certa de dia claro.
+
+**O diálogo de exportar não avisa que o JPG perde a transparência.** O
+programa de verdade avisa em letra miúda, às vezes; o daqui não avisa, porque é
+a lição do módulo 6 inteira: o fundo voltar branco no cartaz é o que se
+descobre exportando. Avisar poria a resposta na nossa tela, que é a regra do
+painel de Problemas e da régua de status.
+
+**A pasta é do laboratório, e exportar com o mesmo nome escreve por cima.** É
+o que torna verdadeira a tarefa de guardar o original — e o módulo 8 e o 10
+cobram que ele continue lá. O diálogo diz que o nome existe e troca o botão
+para "Substituir", como todo sistema; não impede.
+
+**De quem é uma imagem se decide no caderno, e não no editor.** O requisito 6
+é a decisão antes de baixar, e nenhum programa de foto tem onde guardá-la. Por
+isso o módulo 9 é tela da plataforma inteira, como o módulo 8 da CC-ES008.
+
+**Tela da plataforma dentro da moldura ia sobre a mesa clara.** A moldura
+pintava tudo de `#E6E6E6`, que é a mesa de um programa de escritório e fica
+coberta pela janela imitada. Tela da plataforma não cobre nada: os cartões são
+translúcidos e o texto é quase branco, medido contra a base do moiré. Sobre o
+cinza claro eles viravam um véu com letra branca — o caderno da CC-ES009, o da
+CC-DG002 e o módulo 8 da CC-ES008 saíram assim por semanas, e nada estourou.
+Quem viu foi o Chromium, abrindo o caderno desta vereda. Com `imitaPrograma`
+falso o fundo agora é a base do moiré, e a trava amarra a cor à folha.
+
+**No celular o corpo do editor rola inteiro.** Numa coluna de flex a barra de
+ferramentas, que rola de lado, aceitava altura zero e sumia, e o painel de
+ajustes empurrava a foto para cima dela. Nenhuma faixa encolhe ali: a mesa tem
+altura própria, e o resto desce.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -4410,6 +4482,15 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaCcDg002.test.ts` | SVG mexido e não reaberto valendo por efeito visto, ou reaberto e desfeito no desenho |
 | `src/components/LaboratorioVetorial.test.tsx` | lição da CC-DG002 impossível de vencer clicando, cópia convertida no lugar da original, ou SVG salvo sem mudança valendo por mexido |
 | `src/curriculum/exemplosDoDesenhoVetorial.test.ts` | número da teoria da CC-DG002 que o motor não devolve, ou linha de SVG que o editor não exporta |
+| `src/labs/raster.test.ts` | carimbo que pinta liso como o pincel, ou máscara que não acompanha o giro e o recorte |
+| `src/labs/raster.test.ts` | premissa de formato que deixa a foto leve em PNG, o JPG com transparência, ou o WEBP maior que o JPG |
+| `src/labs/metasDaCcDg003.test.ts` | meta da CC-DG003 que abre verde, ou que a solução de referência não fecha |
+| `src/labs/metasDaCcDg003.test.ts` | mancha de pincel verde valendo por carimbo, ou contraste estourado valendo por devolvido |
+| `src/labs/metasDaCcDg003.test.ts` | escudo exportado em JPG valendo por transparente, ou ppi subido reamostrando valendo por impressão |
+| `src/labs/metasDaCcDg003.test.ts` | otimizada exportada por cima do original, ou qualidade 20 valendo por sem perda |
+| `src/components/LaboratorioDeFoto.test.tsx` | lição da CC-DG003 impossível de vencer clicando, ou varinha que soma sem Shift |
+| `src/components/LaboratorioEmTelaCheia.test.tsx` | tela da plataforma pintada sobre a mesa clara de programa, onde o cartão translúcido some |
+| `src/curriculum/exemplosDaImagemDigital.test.ts` | pixel, centímetro ou quilobyte da teoria da CC-DG003 que o motor não devolve |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

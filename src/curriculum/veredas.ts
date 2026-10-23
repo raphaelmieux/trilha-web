@@ -19,6 +19,7 @@ import { MODULOS_DO_PROJETO } from './projetoDocumental';
 import { MODULOS_DO_PROJETO_DE_DADOS } from './projetoDeDados';
 import { MODULOS_DOS_FUNDAMENTOS } from './fundamentosVisuais';
 import { MODULOS_DO_DESENHO_VETORIAL } from './desenhoVetorial';
+import { MODULOS_DA_IMAGEM_DIGITAL } from './imagemDigital';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -664,6 +665,20 @@ export type LicaoDeVereda =
     titulo: string;
     resumo: string;
     licao: import('../labs/metasDaCcDg002').LicaoDaCcDg002;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
+      O editor de foto da CC-DG003. É outro programa — pontos, e não formas —,
+      e o que viaja com a lição é um documento com camadas e a pasta do que se
+      exportou; um tipo próprio pelo motivo escrito no 'vetorial'.
+    */
+    id: string;
+    tipo: 'foto';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcDg003').LicaoDaCcDg003;
     /** Os ids das metas, na lista daquela lição. */
     verificacoes: string[];
   }
@@ -1322,9 +1337,28 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: false,
     modulos: MODULOS_DO_DESENHO_VETORIAL,
   },
-  anunciada('CC-DG003', 'Imagem Digital', 'Design',
-    'Pixel, resolução e camada: tratar foto e saber o que cada formato joga fora.',
-    ['cc-dg001']),
+  {
+    id: 'cc-dg003',
+    code: 'CC-DG003',
+    name: 'Imagem Digital',
+    familia: 'Design',
+    description: 'Pixel, resolução e camada: tratar foto e saber o que cada formato joga fora.',
+    preRequisitos: ['cc-dg001'],
+    /*
+      ── O que carrega esta vereda é a foto que se conserta ────────────────
+      A do acampamento chega como o celular a tirou — torta, escura,
+      acinzentada, azulada e com uma garrafa no chão —, e cada lição conserta
+      uma coisa a partir do conserto da anterior. Nove lições abrem o editor
+      de foto, que é outro programa: pontos, e não formas. A décima é o
+      caderno, porque de quem é uma imagem se decide antes de baixar.
+
+      ── E por que ela exige a CC-DG001 ──────────────────────────────────
+      É o requisito 1: contraste, enquadramento e o que o olho lê primeiro
+      são princípios que esta vereda usa sem ensinar de novo.
+    */
+    mostraResultado: false,
+    modulos: MODULOS_DA_IMAGEM_DIGITAL,
+  },
   anunciada('CC-DG004', 'Identidade Visual', 'Design',
     'Uma marca que funciona numa cor só e do tamanho de uma unha, com manual escrito.',
     ['cc-dg002', 'cc-dg003']),

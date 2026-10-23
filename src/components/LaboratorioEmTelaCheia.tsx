@@ -196,6 +196,19 @@ export const CSS_DA_MOLDURA = `
 .lab-painel-claro .btn-ghost:hover:not(:disabled) { background: #EDEBE9; color: #1F3F70; }
 `;
 
+/*
+  O que fica atrás do conteúdo, e ele depende de quem está desenhando.
+
+  O cinza claro é a mesa de um programa de escritório, e o programa imitado
+  pinta a própria janela por cima dele. Tela da plataforma não pinta nada: os
+  cartões dela são translúcidos, com texto quase branco, e foram medidos contra
+  a base do moiré. Sobre o cinza claro eles viravam um véu cinza com letra
+  branca — o caderno da CC-ES009, o da CC-DG002 e o módulo 8 da CC-ES008 saíam
+  ilegíveis, e nada estourava. Quem viu foi o Chromium.
+*/
+export const FUNDO_DO_PROGRAMA = '#E6E6E6';
+export const FUNDO_DA_PLATAFORMA = 'rgb(29, 29, 29)';
+
 export default function LaboratorioEmTelaCheia({
   trilha, voltarPara, titulo, programa, imitaPrograma = true,
   tarefas, aviso, children, acoes, rodape = 0,
@@ -278,7 +291,7 @@ export default function LaboratorioEmTelaCheia({
   );
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: '#E6E6E6' }}>
+    <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: imitaPrograma ? FUNDO_DO_PROGRAMA : FUNDO_DA_PLATAFORMA }}>
       <style>{CSS_DA_MOLDURA}</style>
       <div className="flex-1 flex min-h-0">
         {/* O programa imitado */}
