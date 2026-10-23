@@ -4038,6 +4038,59 @@ ferramentas, que rola de lado, aceitava altura zero e sumia, e o painel de
 ajustes empurrava a foto para cima dela. Nenhuma faixa encolhe ali: a mesa tem
 altura própria, e o resto desce.
 
+**A CC-DG004 constrói uma marca só, e é a da unidade Ipê.** O requisito 4
+manda criar a identidade de uma unidade, projeto ou evento, e as nove lições
+são etapas da mesma marca: o conceito, os dez rascunhos, o símbolo, as três
+versões, a paleta, a proteção, as aplicações, o manual e a defesa. Cada lição
+parte de onde a anterior chegou — o arranjo do `discoDoClube()` da CC-ES001
+e do caderno da CC-ES003, pelo motivo escrito lá. A marca que a pessoa
+defende diante do examinador é a dela; o que a vereda ensina é o caminho.
+
+A copa é roxa, e não amarela. O ipê-amarelo seria o mais famoso, e amarelo
+sobre branco dá 1,8:1: a versão colorida não passaria na conta de contraste da
+marca no crachá, e a lição de versões teria de começar pedindo outra cor.
+
+**A marca se acha pelo nome do logotipo.** Ela é um grupo com o texto "Ipê" e
+pelo menos uma forma. Reconhecer pela silhueta falharia justamente nos usos
+incorretos, que são a marca deformada; reconhecer pelo id falharia em toda
+cópia colada, que ganha id novo. E um grupo com uma marca dentro é peça, e não
+marca: a assinatura agrupada com o título de um cartaz continua sendo achada.
+
+**Uso incorreto é medida, e não rótulo.** Esticada (a proporção do símbolo muda
+mais de 4%), cor fora da paleta (preto e branco valem sempre), sem contraste
+(a régua da marca é 3:1, a do texto grande), fonte trocada e vizinho na área
+de proteção. Um "X" desenhado ao lado de uma marca intacta não ilustra nada.
+Na página dos incorretos as marcas ficam lado a lado e invadiriam a área uma
+da outra — cada exemplo ganharia de graça o defeito da proteção —, então ali
+a vizinha não conta como invasão.
+
+**A área de proteção é fração da altura do símbolo, e o fundo não invade.** Em
+pixels ela serviria a um tamanho só. O que cobre a área inteira é fundo — a
+cor da camiseta, a foto do post — e a marca pousa nele; o que entra pela
+metade é vizinho. A borda da peça também conta.
+
+**O tamanho mínimo declarado fica entre o medido e o dobro dele.** O medido é
+o maior entre a largura em que a letra chega a 7 pixels e a em que a parte
+mais fina do símbolo chega a 1,5; na Ipê é a letra que manda, com 38. Abaixo
+do medido o mínimo permitiria uma marca ilegível; acima do dobro, proibiria a
+marca no crachá, onde ela cabia.
+
+**O editor ganhou copiar e colar, e o grupo passou a escalar.** Aplicar uma
+marca é levar a mesma assinatura de prancha em prancha em tamanhos e cores
+diferentes, e o editor não fazia nem uma coisa nem outra. Colar na mesma
+prancha desloca a cópia doze pixels, senão ela some em cima da original e
+parece que nada aconteceu. O grupo escala **por igual** pela largura — a letra
+e o traço vão junto —, e `redimensionar` continua recusando o grupo: largura e
+altura soltas obrigariam a escolher entre esticar a letra e mudar o corpo.
+"Recolorir tudo" é o caminho até a versão de uma cor, e "Nova prancha" com
+"Nome da prancha" é o caminho até as páginas do manual.
+
+**Os rascunhos são à mão, e a plataforma só os registra.** Ela não tem como ver
+papel. O que o caderno guarda é o que o requisito 7 pergunta: a ideia de cada
+um, qual seguiu, e um motivo **próprio** para cada descarte — a mesma frase
+nove vezes não justifica nenhum. Na defesa, o descarte contado não pode ser o
+que seguiu, e o que ele ensinou não pode ser o motivo do caderno copiado.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -4491,6 +4544,14 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDeFoto.test.tsx` | lição da CC-DG003 impossível de vencer clicando, ou varinha que soma sem Shift |
 | `src/components/LaboratorioEmTelaCheia.test.tsx` | tela da plataforma pintada sobre a mesa clara de programa, onde o cartão translúcido some |
 | `src/curriculum/exemplosDaImagemDigital.test.ts` | pixel, centímetro ou quilobyte da teoria da CC-DG003 que o motor não devolve |
+| `src/labs/identidade.test.ts` | colorida que se lê na camiseta escura, ou negativa que vale sobre fundo claro |
+| `src/labs/identidade.test.ts` | estrago que acusa defeito que não é o dele, ou fundo inteiro contado como invasão |
+| `src/labs/metasDaCcDg004.test.ts` | meta da CC-DG004 que abre verde, ou que a solução de referência não fecha |
+| `src/labs/metasDaCcDg004.test.ts` | "todo mundo" valendo por público, ou o mesmo motivo nove vezes valendo por nove descartes |
+| `src/labs/metasDaCcDg004.test.ts` | versão feita pintando a original, ou mínimo declarado abaixo do que se lê |
+| `src/labs/metasDaCcDg004.test.ts` | três usos incorretos do mesmo jeito valendo por três, ou vizinhas do manual contadas como invasão |
+| `src/components/LaboratorioDeIdentidade.test.tsx` | lição da CC-DG004 impossível de vencer clicando, ou colar sem copiar que cola alguma coisa |
+| `src/curriculum/exemplosDaIdentidadeVisual.test.ts` | contraste, paleta ou tamanho mínimo da teoria da CC-DG004 que o motor não devolve |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

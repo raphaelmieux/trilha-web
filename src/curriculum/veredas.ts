@@ -20,6 +20,7 @@ import { MODULOS_DO_PROJETO_DE_DADOS } from './projetoDeDados';
 import { MODULOS_DOS_FUNDAMENTOS } from './fundamentosVisuais';
 import { MODULOS_DO_DESENHO_VETORIAL } from './desenhoVetorial';
 import { MODULOS_DA_IMAGEM_DIGITAL } from './imagemDigital';
+import { MODULOS_DA_IDENTIDADE_VISUAL } from './identidadeVisual';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -1373,9 +1374,30 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: false,
     modulos: MODULOS_DA_IMAGEM_DIGITAL,
   },
-  anunciada('CC-DG004', 'Identidade Visual', 'Design',
-    'Uma marca que funciona numa cor só e do tamanho de uma unha, com manual escrito.',
-    ['cc-dg002', 'cc-dg003']),
+  {
+    id: 'cc-dg004',
+    code: 'CC-DG004',
+    name: 'Identidade Visual',
+    familia: 'Design',
+    description: 'Uma marca que funciona numa cor só e do tamanho de uma unha, com manual escrito.',
+    preRequisitos: ['cc-dg002', 'cc-dg003'],
+    /*
+      ── O que carrega esta vereda é uma marca só ─────────────────────────
+      A da unidade Ipê, do conceito ao manual: os rascunhos, o símbolo em
+      vetor, as três versões, a paleta, a área de proteção, as aplicações e
+      os usos incorretos são da mesma marca, cada lição partindo de onde a
+      anterior chegou. Seis lições abrem o editor de design; o conceito, os
+      rascunhos e a defesa são tela da plataforma, porque nenhum programa de
+      desenho tem onde guardá-los.
+
+      ── E por que ela exige duas veredas ────────────────────────────────
+      É o requisito 1: o símbolo é vetor, e as peças misturam foto. Sem a
+      CC-DG002 não há símbolo que escale; sem a CC-DG003, o post sobre a foto
+      do acampamento não tem como ser entendido.
+    */
+    mostraResultado: false,
+    modulos: MODULOS_DA_IDENTIDADE_VISUAL,
+  },
   anunciada('CC-DG005', 'Diagramação e Impressão', 'Design',
     'Malha, sangria e marca de corte: o que a gráfica exige e o que a tela não mostra.',
     ['cc-dg004']),
