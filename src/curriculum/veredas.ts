@@ -22,6 +22,7 @@ import { MODULOS_DO_DESENHO_VETORIAL } from './desenhoVetorial';
 import { MODULOS_DA_IMAGEM_DIGITAL } from './imagemDigital';
 import { MODULOS_DA_IDENTIDADE_VISUAL } from './identidadeVisual';
 import { MODULOS_DA_DIAGRAMACAO } from './diagramacaoEImpressao';
+import { MODULOS_DO_PROJETO_DE_DESIGN } from './projetoDeDesign';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
@@ -1449,9 +1450,31 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: false,
     modulos: MODULOS_DA_DIAGRAMACAO,
   },
-  anunciada('CC-DG006', 'Projeto de Design', 'Design',
-    'Uma demanda real do clube, no papel e na tela, com o retorno de cinco pessoas do público.',
-    ['cc-dg005']),
+  {
+    id: 'cc-dg006',
+    code: 'CC-DG006',
+    name: 'Projeto de Design',
+    familia: 'Design',
+    description: 'Uma demanda real do clube, no papel e na tela, com o retorno de cinco pessoas do público.',
+    preRequisitos: ['cc-dg005'],
+    /*
+      ── O que carrega esta vereda é um projeto só ────────────────────────
+      O convite do Acampamento das Famílias, da proposta à apresentação:
+      cada lição parte de onde a anterior chegou. Nenhum programa novo — o
+      símbolo e o post no editor de design, a foto no editor de pontos, o
+      convite no programa de diagramação, e a entrega na nuvem. A proposta,
+      o processo, o retorno e a apresentação são tela da plataforma, porque
+      nenhum programa de design tem onde guardá-los.
+
+      ── O que fica fora ─────────────────────────────────────────────────
+      Escolher a demanda de verdade, desenhar os rascunhos no papel, mostrar
+      a peça a cinco pessoas e apresentar com ela impressa na mão. A
+      plataforma percorre o caminho sobre um exemplo, para que o projeto de
+      cada um não seja a primeira vez de nada.
+    */
+    mostraResultado: false,
+    modulos: MODULOS_DO_PROJETO_DE_DESIGN,
+  },
 
   /* ── Front-end ── */
   {

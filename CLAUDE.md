@@ -4141,6 +4141,49 @@ modelo, com o mesmo aviso de que é aproximação, e as cores que perdem o
 brilho na prova são as que ele marca. Escrever outra lista à mão para esta
 vereda daria duas respostas para a mesma pergunta.
 
+**A CC-DG006 não ensina programa nenhum, e por isso não tem janela nova.**
+As quatro peças do requisito 3 já foram ensinadas, cada uma na vereda que o
+requisito 1 exige antes: o símbolo no editor de vetor, a foto no editor de
+pontos, o convite no programa de diagramação e o post no editor de design.
+O que ela ensina é o que liga as quatro, e `projetoDeDesign.ts` guarda só
+isso — a proposta aprovada antes, o símbolo que é o mesmo nas duas peças, a
+origem de cada imagem, as versões, a pasta e o retorno. É a decisão do
+`projetoDocumental.ts` da CC-ES012, pelo motivo escrito lá. As janelas ganharam
+o que todo programa de verdade tem e o projeto precisou: a prancha muda de
+tamanho para os formatos do feed, e o diagramador põe imagem vetorial e
+acrescenta parágrafo.
+
+**A versão descartada sai do arquivo, e não de uma lista.** O requisito 4 pede
+apresentar as versões descartadas e a razão de cada uma, e uma lista escrita à
+parte seria contar um processo, e não mostrá-lo. As versões são as pranchas
+do arquivo que não são as duas peças finais: a primeira ideia do símbolo e o
+post encolhido, que só existem porque alguém duplicou antes de refazer — e é
+por isso que a meta do post cobra a prancha guardada.
+
+**O post encolhido é o convite com outra largura, e é a lição inteira.**
+Proporção de folha A5, que nenhum feed usa; a letra do papel, que no celular
+chega a sete pixels; e o parágrafo inteiro. O post adaptado perde a hora no
+corte — e é a hora que o público aponta no módulo 8. Essa premissa tem trava
+própria: um post de referência que já trouxesse a hora apagaria o retorno sem
+reprovar meta nenhuma.
+
+**O retorno muda a peça, e o registro sozinho não fecha.** Cada comentário que
+pede mudança traz a conta que diz se a peça o atende; elogio, gosto e opinião
+de quem não é do público não trazem conta nenhuma, e por isso não fecham a
+meta. Registrar "pus a hora" sem pôr não muda o post, e pôr a hora num
+parágrafo que estoura as trinta palavras quebra o que a lição anterior fechou.
+
+**Foto com `resolucao` é desenhada ponto a ponto.** O campo existe para a
+imagem de poucos pontos da CC-DG002, cujo serrilhado é a lição. Posto numa
+foto de 1640 pontos, o editor tentou desenhar dois milhões e setecentos mil
+quadrados e o teste que clica morreu sem memória. A foto do post não o leva.
+
+**O diálogo da nuvem também sobe no celular.** A caixa de mover ficava
+centrada com o Concluído debaixo da cápsula de tarefas — o defeito que a
+CC-ES001 e a CC-ES004 já tinham corrigido nas janelas delas, e que a nuvem
+ainda carregava desde a CC-ES006. A regra que sobe vem depois da que centra,
+e `nuvem.test.tsx` confere a ordem.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -4608,6 +4651,13 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaCcDg005.test.ts` | marcar todas as exigências da gráfica valendo por ter lido a tabela |
 | `src/components/LaboratorioDeDiagramacao.test.tsx` | lição da CC-DG005 impossível de vencer clicando, ou Exportar PDF na lição que não exporta |
 | `src/curriculum/exemplosDaDiagramacao.test.ts` | milímetro, ppi ou cor da teoria da CC-DG005 que o motor não devolve |
+| `src/labs/acampamentoDasFamilias.test.ts` | peça de partida da CC-DG006 sem o defeito que a lição conserta, ou post adaptado que já traz o que o público vai pedir |
+| `src/labs/metasDaCcDg006.test.ts` | meta da CC-DG006 que abre verde, que a referência não fecha, ou que a lição seguinte desfaz |
+| `src/labs/metasDaCcDg006.test.ts` | aprovar depois de começar, apagar o clipart sem desenhar, exportar a foto por cima do original |
+| `src/labs/metasDaCcDg006.test.ts` | post refeito sem guardar o encolhido, pasta toda em finais, ou comentário de gosto valendo por mudança |
+| `src/components/LaboratorioDoProjetoDeDesign.test.tsx` | lição da CC-DG006 impossível de vencer clicando, em qualquer das cinco telas |
+| `src/labs/nuvem.test.tsx` | caixa da nuvem centrada no celular, com o confirmar debaixo da cápsula de tarefas |
+| `src/curriculum/exemplosDoProjetoDeDesign.test.ts` | proporção, letra do celular, símbolo pequeno ou frase do convite que a teoria cita e o motor não devolve |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |
