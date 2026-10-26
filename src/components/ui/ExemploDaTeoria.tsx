@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { realcarLinhas, realcarLinhasCss, realcarLinhasPython } from '../../labs/realce';
+import { realcarLinhas, realcarLinhasCss, realcarLinhasPython, realcarLinhasSql } from '../../labs/realce';
+import { lerResultado } from '../../labs/sqlite';
 import { CORES_DO_REALCE } from '../../labs/ide';
 import { lerExemploDeBlocos, COR_DA_CATEGORIA } from '../../labs/blocosDoScratch';
 import { TextoDeBloco } from './BandeiraVerde';
@@ -85,6 +86,14 @@ const CSS_EXEMPLO = `
     font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
     font-size: 12.5px; line-height: 19px; white-space: pre-wrap;
   }
+  /* A tabela do resultado de SQL, com as cores da grade do editor de banco. */
+  .ex-grade-rolo { overflow-x: auto; background: #181818; padding: 6px; }
+  .ex-grade { border-collapse: collapse; font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: 12px; }
+  .ex-grade th { background: #2D2D2D; color: #E0E0E0; text-align: left; font-weight: 600; padding: 3px 9px;
+    border: 1px solid #3A3A3A; white-space: nowrap; }
+  .ex-grade td { padding: 3px 9px; border: 1px solid #2E2E2E; color: #D4D4D4; white-space: nowrap; }
+  .ex-grade .ex-nulo { font-style: italic; color: #9A9A9A; }
+  .ex-erro { color: #F6B0A4; min-height: 0; }
   /* O exemplo em texto puro: papel claro, tinta escura, e nada de tema. */
   .ex-codigo.claro { background: #F9F9F9; color: #1B1B1B; }
   .ex-vazia { height: 8px; }
@@ -306,6 +315,46 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
             <div className="ex-caixa">
               <p className="ex-caixa-topo">E o programa mostra</p>
               <pre className="ex-saida">{topico.exemploSaida || '(o programa não escreve nada)'}</pre>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  if (como === 'sql') {
+    /*
+      Em SQL o resultado é uma tabela, e se desenha como a grade do editor de
+      banco a desenha: cabeçalho, uma linha por registro, NULL apagado. Quando o
+      exemplo mostra uma recusa, o quadro é a mensagem, com a linha — que é o
+      que o painel de Mensagens do laboratório mostra.
+    */
+    const saida = mostraResultado ? topico.exemploSaida : undefined;
+    const erro = saida?.startsWith('Erro') ? saida : null;
+    const tabela = saida !== undefined && !erro ? lerResultado(saida) : null;
+    return (
+      <>
+        <style>{CSS_EXEMPLO}</style>
+        <div className={saida !== undefined ? 'ex-dupla' : ''}>
+          <div className="ex-caixa">
+            <p className="ex-caixa-topo">Você escreve, no editor de banco</p>
+            <Codigo linhas={realcarLinhasSql(topico.exemplo)} />
+          </div>
+          {saida !== undefined && (
+            <div className="ex-caixa">
+              <p className="ex-caixa-topo">{erro ? 'E o banco recusa' : 'E o banco devolve'}</p>
+              {erro ? <pre className="ex-saida ex-erro">{erro}</pre> : (
+                <div className="ex-grade-rolo">
+                  <table className="ex-grade">
+                    <thead><tr>{tabela!.colunas.map((c, i) => <th key={i} scope="col">{c}</th>)}</tr></thead>
+                    <tbody>
+                      {tabela!.linhas.map((l, i) => (
+                        <tr key={i}>{l.map((v, j) => <td key={j} className={v === 'NULL' ? 'ex-nulo' : undefined}>{v}</td>)}</tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </div>

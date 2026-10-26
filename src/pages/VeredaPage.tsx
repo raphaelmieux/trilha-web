@@ -42,6 +42,7 @@ import LaboratorioDoRelatorioAnual from '../components/LaboratorioDoRelatorioAnu
 import LaboratorioDaRevisao from '../components/LaboratorioDaRevisao';
 import LaboratorioDaEntrega from '../components/LaboratorioDaEntrega';
 import LaboratorioDePython from '../components/LaboratorioDePython';
+import LaboratorioDeBanco from '../components/LaboratorioDeBanco';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import ProgressBar from '../components/ui/ProgressBar';
 import MarcaDaLicao from '../components/ui/MarcaDaLicao';
@@ -499,6 +500,15 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'projeto-de-design' && profile?.id) {
     return (
       <LaboratorioDoProjetoDeDesign vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /* A CC005: o editor de banco e o modelador de tabelas. O módulo 9 é o
+     laboratório de Python, com o banco na pasta, e passa pelo caminho dele. */
+  if (licaoAberta?.tipo === 'banco' && profile?.id) {
+    return (
+      <LaboratorioDeBanco vereda={vereda} licao={licaoAberta} userId={profile.id}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

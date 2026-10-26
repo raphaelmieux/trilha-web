@@ -28,7 +28,11 @@ import {
   ANALISADOR, apararTraceback, erroDeSintaxeEmTexto, preparoDaAnalise,
   type NoDoEsboco, type SaidaDaAnalise,
 } from './pythonAnalise';
-import { preambuloDoProjeto } from './projetoDePython';
+import { preambuloDoProjeto, PASTA_DO_PROJETO } from './projetoDePython';
+import {
+  programaDoSql, programaQueCriaOArquivo, programaQueLeOArquivo,
+  type EstadoDoBanco, type ExecucaoDeSql,
+} from './sqlite';
 
 interface Pyodide {
   runPython: (codigo: string) => unknown;
@@ -41,15 +45,26 @@ export type PedidoAoPython =
   /* `arquivos` é o que já existe na pasta do programa: o CSV que a lição
      entrega para ser lido, e o segundo arquivo-fonte que ele importa. Ausente
      nos laboratórios de um arquivo só, que é como a CC002 inteira funciona. */
-  | { tipo: 'rodar'; codigo: string; entrada: string[]; arquivos?: Record<string, string> }
+  | {
+    tipo: 'rodar'; codigo: string; entrada: string[]; arquivos?: Record<string, string>;
+    /* O banco da CC005: gravado em arquivo na pasta antes de o programa rodar,
+       e lido de volta depois, por uma conexão nova. */
+    banco?: BancoNaPasta;
+  }
+  /* Um arquivo .sql executado sobre o banco da lição, que é refeito a cada vez. */
+  | { tipo: 'sql'; semente: string; script: string }
   /* A análise vê o projeto inteiro: duas contas do requisito 8 — a função
      reaproveitada e as três funções — têm a definição num arquivo e as
      chamadas no outro, e cada metade sozinha responde "não". */
   | { tipo: 'analisar'; codigo: string; arquivo?: string; fontes?: Record<string, string> };
 
+/** O arquivo de banco que mora na pasta do programa, e de que ele parte. */
+export interface BancoNaPasta { arquivo: string; semente: string }
+
 export type RespostaDoPython =
   | { tipo: 'pronto' }
-  | { tipo: 'resultado'; saida: string; erro: string | null }
+  | { tipo: 'resultado'; saida: string; erro: string | null; banco?: EstadoDoBanco | null }
+  | { tipo: 'sql'; execucao: ExecucaoDeSql }
   | { tipo: 'analise'; achados: Record<string, boolean>; erro: string | null;
     esboco: NoDoEsboco[]; chamadas: string[] }
   | { tipo: 'falha'; mensagem: string };
@@ -65,7 +80,7 @@ async function carregar(): Promise<Pyodide> {
 }
 
 async function rodar(
-  codigo: string, entrada: string[], arquivos?: Record<string, string>,
+  codigo: string, entrada: string[], arquivos?: Record<string, string>, banco?: BancoNaPasta,
 ): Promise<RespostaDoPython> {
   const py = await carregar();
   let saida = '';
@@ -82,12 +97,34 @@ async function rodar(
       procurar no lugar errado. Dentro, o erro chega como erro de execução,
       escrito no painel de saída onde a pessoa está olhando.
     */
-    if (arquivos) py.runPython(preambuloDoProjeto(arquivos));
+    if (arquivos || banco) py.runPython(preambuloDoProjeto(arquivos ?? {}));
+    if (banco) py.runPython(programaQueCriaOArquivo(`${PASTA_DO_PROJETO}/${banco.arquivo}`, banco.semente));
     py.runPython(codigo);
-    return { tipo: 'resultado', saida, erro: null };
+    return { tipo: 'resultado', saida, erro: null, banco: lerBanco(py, banco) };
   } catch (e) {
-    return { tipo: 'resultado', saida, erro: apararTraceback(String((e as Error)?.message ?? e)) };
+    /* O banco se lê mesmo quando o programa estoura: o que ele gravou antes do
+       erro continua no arquivo, e é isso que a pessoa vai encontrar. */
+    return {
+      tipo: 'resultado', saida, erro: apararTraceback(String((e as Error)?.message ?? e)),
+      banco: lerBanco(py, banco),
+    };
   }
+}
+
+function lerBanco(py: Pyodide, banco?: BancoNaPasta): EstadoDoBanco | null | undefined {
+  if (!banco) return undefined;
+  try {
+    return JSON.parse(py.runPython(programaQueLeOArquivo(`${PASTA_DO_PROJETO}/${banco.arquivo}`)) as string);
+  } catch {
+    /* Um arquivo que o programa corrompeu não é um banco: a verificação o lê
+       como ausente, que é o que ele é para quem for abri-lo. */
+    return null;
+  }
+}
+
+async function sql(semente: string, script: string): Promise<RespostaDoPython> {
+  const py = await carregar();
+  return { tipo: 'sql', execucao: JSON.parse(py.runPython(programaDoSql(semente, script)) as string) };
 }
 
 async function analisar(
@@ -131,8 +168,10 @@ self.onmessage = async (ev: MessageEvent<PedidoAoPython>) => {
   const pedido = ev.data;
   try {
     const r = pedido.tipo === 'rodar'
-      ? await rodar(pedido.codigo, pedido.entrada, pedido.arquivos)
-      : await analisar(pedido.codigo, pedido.arquivo, pedido.fontes);
+      ? await rodar(pedido.codigo, pedido.entrada, pedido.arquivos, pedido.banco)
+      : pedido.tipo === 'sql'
+        ? await sql(pedido.semente, pedido.script)
+        : await analisar(pedido.codigo, pedido.arquivo, pedido.fontes);
     (self as unknown as Worker).postMessage(r);
   } catch (e) {
     (self as unknown as Worker).postMessage({

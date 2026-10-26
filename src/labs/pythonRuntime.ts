@@ -1,4 +1,5 @@
-import type { PedidoAoPython, RespostaDoPython } from './pythonWorker';
+import type { BancoNaPasta, PedidoAoPython, RespostaDoPython } from './pythonWorker';
+import type { EstadoDoBanco, ExecucaoDeSql } from './sqlite';
 import type { NoDoEsboco } from './pythonAnalise';
 
 /**
@@ -29,7 +30,17 @@ export interface ResultadoDeExecucao {
   erro: string | null;
   /** Ligado quando o prazo acabou e o worker foi encerrado. */
   semFim: boolean;
+  /**
+   * O banco da pasta, lido depois do programa por uma conexão nova. Ausente
+   * quando a lição não tem banco; `null` quando o arquivo não pôde ser lido.
+   */
+  banco?: EstadoDoBanco | null;
 }
+
+/** Ou o resultado do arquivo .sql, ou o motivo de não haver um. */
+export type ResultadoDoSql =
+  | { ok: true; execucao: ExecucaoDeSql }
+  | { ok: false; mensagem: string; semFim: boolean };
 
 export interface Analise {
   achados: Record<string, boolean>;
@@ -149,12 +160,12 @@ export class Python {
    * refeita a cada execução — o porquê está em `projetoDePython.ts`.
    */
   async rodar(
-    codigo: string, entrada: string[], arquivos?: Record<string, string>,
+    codigo: string, entrada: string[], arquivos?: Record<string, string>, banco?: BancoNaPasta,
   ): Promise<ResultadoDeExecucao> {
     const prazo = this.prazo();
-    const r = await this.pedir({ tipo: 'rodar', codigo, entrada, arquivos }, prazo);
+    const r = await this.pedir({ tipo: 'rodar', codigo, entrada, arquivos, banco }, prazo);
     if (r.tipo === 'resultado') {
-      return { saida: cortar(r.saida), erro: r.erro, semFim: false };
+      return { saida: cortar(r.saida), erro: r.erro, semFim: false, banco: r.banco };
     }
     if (r.tipo === 'falha' && r.mensagem === 'prazo') {
       return { saida: '', erro: avisoSemFim(prazo), semFim: true };
@@ -164,6 +175,26 @@ export class Python {
       erro: r.tipo === 'falha' ? r.mensagem : 'Resposta inesperada do ambiente Python.',
       semFim: false,
     };
+  }
+
+  /**
+   * Executa um arquivo .sql sobre o banco da lição.
+   *
+   * O banco é refeito a cada chamada, a partir da `semente` — o porquê está
+   * em `sqlite.ts`. Um SQL também pode não terminar (uma consulta recursiva
+   * sem fim), e o prazo é o mesmo do Python, pela mesma razão.
+   */
+  async sql(semente: string, script: string): Promise<ResultadoDoSql> {
+    const prazo = this.prazo();
+    const r = await this.pedir({ tipo: 'sql', semente, script }, prazo);
+    if (r.tipo === 'sql') return { ok: true, execucao: r.execucao };
+    if (r.tipo === 'falha' && r.mensagem === 'prazo') {
+      return {
+        ok: false, semFim: true,
+        mensagem: `A consulta não terminou e foi encerrada depois de ${Math.round(prazo / 1000)} segundos.`,
+      };
+    }
+    return { ok: false, semFim: false, mensagem: r.tipo === 'falha' ? r.mensagem : 'Resposta inesperada do banco.' };
   }
 
   /**

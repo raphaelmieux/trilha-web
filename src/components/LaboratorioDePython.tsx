@@ -154,13 +154,13 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
       /* Sem árvore não há o que rodar: o Python recusaria com o mesmo erro, e
          mostrá-lo duas vezes só faria a pessoa acreditar que são dois. */
       ? { saida: '', erro: analise.erro, semFim: false }
-      : await py.rodar(fonte, linhas, doProjeto.length ? naPasta : undefined);
+      : await py.rodar(fonte, linhas, doProjeto.length ? naPasta : undefined, licao.banco);
 
     setExecucao(r);
     setCodigoRodado(fonte);
     setExtrasRodados(extras);
     setRodando(false);
-  }, [codigo, entrada, rodando, doProjeto, extras, licao.arquivo]);
+  }, [codigo, entrada, rodando, doProjeto, extras, licao.arquivo, licao.banco]);
 
   const parar = () => { python.current?.encerrar(); setRodando(false); };
 
@@ -180,9 +180,10 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
       codigo, achados, erroDeAnalise, execucao,
       saidaEsperada: licao.saidaEsperada,
       falhas, classificacao,
+      registroEsperado: licao.registroEsperado, saidaContem: licao.saidaContem,
     }, licao.verificacoes),
     [codigo, achados, erroDeAnalise, execucao, licao.saidaEsperada, licao.verificacoes,
-      falhas, classificacao]);
+      falhas, classificacao, licao.registroEsperado, licao.saidaContem]);
 
   const passaram = resultados.filter(r => r.passed).length;
   /* Entregar exige que os resultados sejam do código que está na tela. Sem

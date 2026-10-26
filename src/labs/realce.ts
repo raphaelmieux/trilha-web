@@ -315,3 +315,83 @@ export function realcarLinhasPython(codigo: string): string[] {
 
   return saida.split('\n');
 }
+
+/*
+ * O SQL.
+ *
+ * As palavras que esta vereda ensina saem em azul, maiúsculas ou não — o
+ * banco não distingue, e um realce que só pintasse a forma maiúscula
+ * ensinaria que a minúscula está errada. As funções de agregação saem na cor
+ * das embutidas do Python, porque são o mesmo tipo de coisa: um nome que o
+ * banco já traz. Texto entre aspas simples é dado; entre aspas duplas é nome
+ * de coluna, e por isso sai como nome, e não como texto.
+ */
+const CHAVES_SQL = new Set([
+  'select', 'from', 'where', 'and', 'or', 'not', 'null', 'is', 'in', 'like', 'between',
+  'order', 'by', 'asc', 'desc', 'group', 'having', 'limit', 'as', 'distinct',
+  'join', 'left', 'inner', 'on', 'insert', 'into', 'values', 'update', 'set',
+  'delete', 'create', 'table', 'drop', 'alter', 'add', 'column', 'primary', 'key',
+  'foreign', 'references', 'unique', 'default', 'integer', 'text', 'real', 'date',
+  'begin', 'commit', 'rollback', 'pragma', 'case', 'when', 'then', 'else', 'end',
+]);
+const FUNCOES_SQL = new Set(['count', 'sum', 'avg', 'min', 'max', 'round', 'length', 'upper', 'lower']);
+
+export function realcarLinhasSql(codigo: string): string[] {
+  let saida = '';
+  let i = 0;
+  while (i < codigo.length) {
+    const resto = codigo.slice(i);
+    if (resto.startsWith('--')) {
+      const fim = codigo.indexOf('\n', i);
+      const ate = fim === -1 ? codigo.length : fim;
+      saida += pinta('com', codigo.slice(i, ate));
+      i = ate;
+      continue;
+    }
+    if (resto.startsWith('/*')) {
+      const fim = codigo.indexOf('*/', i + 2);
+      const ate = fim === -1 ? codigo.length : fim + 2;
+      saida += pinta('com', codigo.slice(i, ate));
+      i = ate;
+      continue;
+    }
+    const c = resto[0];
+    if (c === "'" || c === '"') {
+      /* A aspa dobrada é a aspa de dentro: 'D''Ávila' é um texto só. */
+      let j = i + 1;
+      while (j < codigo.length) {
+        if (codigo[j] === c) {
+          if (codigo[j + 1] === c) { j += 2; continue; }
+          break;
+        }
+        j += 1;
+      }
+      const ate = Math.min(j + 1, codigo.length);
+      saida += pinta(c === "'" ? 'val' : 'txt', codigo.slice(i, ate));
+      i = ate;
+      continue;
+    }
+    const numero = /^\d+(\.\d+)?/.exec(resto);
+    if (numero) {
+      saida += pinta('val', numero[0]);
+      i += numero[0].length;
+      continue;
+    }
+    const palavra = /^[A-Za-z_À-ÿ][\wÀ-ÿ]*/.exec(resto);
+    if (palavra) {
+      const p = palavra[0].toLowerCase();
+      saida += pinta(CHAVES_SQL.has(p) ? 'tag' : FUNCOES_SQL.has(p) ? 'attr' : 'txt', palavra[0]);
+      i += palavra[0].length;
+      continue;
+    }
+    const pontuacao = /^[(),;.=<>!*+\-/%]+/.exec(resto);
+    if (pontuacao) {
+      saida += pinta('pon', pontuacao[0]);
+      i += pontuacao[0].length;
+      continue;
+    }
+    saida += pinta('txt', c);
+    i += 1;
+  }
+  return saida.split('\n');
+}

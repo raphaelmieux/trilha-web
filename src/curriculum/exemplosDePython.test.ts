@@ -2,6 +2,9 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { createRequire } from 'node:module';
 import { VEREDAS } from './veredas';
 import { mesmaSaida } from '../lib/pythonValidator';
+import { preambuloDoProjeto, PASTA_DO_PROJETO } from '../labs/projetoDePython';
+import { programaQueCriaOArquivo } from '../labs/sqlite';
+import { SEMENTE_DO_CLUBE } from '../labs/bancoDoClube';
 import type { TopicoDeVereda } from './veredas';
 
 /*
@@ -42,7 +45,14 @@ beforeAll(async () => {
 }, 120000);
 
 /** Roda o exemplo do jeito que o laboratório roda: entrada decidida antes. */
-function rodar(codigo: string, entrada: string[]): { saida: string; erro: string | null } {
+function rodar(codigo: string, entrada: string[], comBanco = false): { saida: string; erro: string | null } {
+  /* Os exemplos da CC005 abrem o clube.db, e ele precisa estar na pasta — a
+     mesma que o laboratório monta, refeita a cada exemplo para um não ver o
+     que o anterior gravou. */
+  if (comBanco) {
+    py.runPython(preambuloDoProjeto({}));
+    py.runPython(programaQueCriaOArquivo(`${PASTA_DO_PROJETO}/clube.db`, SEMENTE_DO_CLUBE));
+  }
   let saida = '';
   let i = 0;
   py.setStdin({ stdin: () => (i < entrada.length ? entrada[i++] : '') });
@@ -83,7 +93,7 @@ describe('os exemplos de Python das lições', () => {
     const divergentes: string[] = [];
     for (const [code, t] of exemplosDePython()) {
       if (t.exemploSaida === undefined) continue;
-      const r = rodar(t.exemplo, t.exemploEntrada ?? []);
+      const r = rodar(t.exemplo, t.exemploEntrada ?? [], code === 'CC005');
       if (r.erro) {
         divergentes.push(`${code}/${t.id}: parou com erro — ${r.erro.split('\n').pop()}`);
         continue;

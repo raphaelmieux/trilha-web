@@ -4,7 +4,8 @@ import { VEREDAS } from './veredas';
 import { preparoDaAnalise, ANALISADOR, type SaidaDaAnalise } from '../labs/pythonAnalise';
 import { validarPython } from '../lib/pythonValidator';
 import { classificacaoInicial, type Classificacao } from '../labs/falhasDePython';
-import { preambuloDoProjeto } from '../labs/projetoDePython';
+import { preambuloDoProjeto, PASTA_DO_PROJETO } from '../labs/projetoDePython';
+import { programaQueCriaOArquivo, programaQueLeOArquivo, type EstadoDoBanco } from '../labs/sqlite';
 import type { LicaoDeVereda } from './veredas';
 
 /*
@@ -71,6 +72,7 @@ function conferir(
 
   let saida = '';
   let erro: string | null = null;
+  let banco: EstadoDoBanco | null | undefined;
   if (!analise.ok) {
     /* Sem árvore não há o que rodar: o Python recusaria com o mesmo erro. */
     erro = analise.erro.msg;
@@ -90,10 +92,17 @@ function conferir(
         também o que garante que o disco comece igual a cada solução
         conferida: uma instância só do Pyodide serve a todas.
       */
-      if (Object.keys(naPasta).length) py.runPython(preambuloDoProjeto(naPasta));
+      if (Object.keys(naPasta).length || licao.banco) py.runPython(preambuloDoProjeto(naPasta));
+      /* O banco do módulo 9 da CC005, gravado como o worker o grava e lido
+         depois por uma conexão nova — é essa leitura que separa quem fez
+         commit de quem não fez. */
+      if (licao.banco) py.runPython(programaQueCriaOArquivo(`${PASTA_DO_PROJETO}/${licao.banco.arquivo}`, licao.banco.semente));
       py.runPython(codigo);
     } catch (e) {
       erro = String((e as Error)?.message ?? e);
+    }
+    if (licao.banco) {
+      banco = JSON.parse(py.runPython(programaQueLeOArquivo(`${PASTA_DO_PROJETO}/${licao.banco.arquivo}`)) as string);
     }
   }
 
@@ -101,10 +110,12 @@ function conferir(
     codigo,
     achados: analise.ok ? analise.achados : {},
     erroDeAnalise: analise.ok ? null : analise.erro.msg,
-    execucao: { saida, erro, semFim: false },
+    execucao: { saida, erro, semFim: false, banco },
     saidaEsperada: licao.saidaEsperada,
     falhas: licao.falhas,
     classificacao,
+    registroEsperado: licao.registroEsperado,
+    saidaContem: licao.saidaContem,
   }, licao.verificacoes);
 }
 
@@ -366,6 +377,23 @@ with open("presenca.txt", encoding="utf-8") as arquivo:
     for linha in arquivo:
         print(linha.strip())
 `,
+
+  /* O cadastro do Pedro: a consulta do Falcão, o INSERT com ? e o commit. O
+     apóstrofo do nome é o que separa este programa do que cola o texto. */
+  'CC005/m9-lab': `import sqlite3
+
+conexao = sqlite3.connect("clube.db")
+
+for (nome,) in conexao.execute("SELECT nome FROM membros WHERE unidade_id = ? ORDER BY nome", (1,)).fetchall():
+    print(nome)
+
+conexao.execute(
+    "INSERT INTO membros (nome, idade, unidade_id) VALUES (?, ?, ?)",
+    ("Pedro D'Ávila", 11, 6),
+)
+conexao.commit()
+conexao.close()
+`,
 };
 
 /*
@@ -472,5 +500,55 @@ describe('os laboratórios de Python das veredas', () => {
       .filter(([, l]) => !l.modelo.trimStart().startsWith('#') || l.modelo.length < 120)
       .map(([code, l]) => `${code}/${l.id}`);
     expect(mudos).toEqual([]);
+  });
+});
+
+/*
+  O módulo 9 da CC005, pelos dois caminhos errados que ele existe para pegar.
+
+  Sem o commit, o programa vê o registro novo na própria consulta e o arquivo
+  não tem nada — e a única trava que separa os dois é ler o arquivo por uma
+  conexão nova. E o comando colado com f-string quebra no apóstrofo do nome:
+  sem o ?, o cadastro do Pedro não acontece.
+*/
+describe('o cadastro do Pedro da CC005, pelo caminho errado', () => {
+  const licao = laboratorios().find(([code, l]) => code === 'CC005' && l.id === 'm9-lab')![1];
+  const verdes = (codigo: string) => conferir(licao, codigo, {}).filter(r => r.passed).map(r => r.id);
+
+  it('sem commit, o registro não fica no arquivo', () => {
+    const sem = SOLUCOES['CC005/m9-lab'].replace('conexao.commit()\n', '');
+    expect(verdes(sem)).not.toContain('gravouNoBanco');
+    expect(verdes(sem)).toContain('usaParametros');
+  });
+
+  it('o comando colado com f-string quebra no apóstrofo', () => {
+    const colado = SOLUCOES['CC005/m9-lab'].replace(`conexao.execute(
+    "INSERT INTO membros (nome, idade, unidade_id) VALUES (?, ?, ?)",
+    ("Pedro D'Ávila", 11, 6),
+)`, `nome = "Pedro D'Ávila"
+conexao.execute(f"INSERT INTO membros (nome, idade, unidade_id) VALUES ('{nome}', 11, 6)")`);
+    expect(colado).toContain('f"INSERT');
+    const v = verdes(colado);
+    expect(v).not.toContain('gravouNoBanco');
+    expect(v).not.toContain('usaParametros');
+  });
+
+  it('o apóstrofo dobrado à mão grava, e mesmo assim não passa os valores separados', () => {
+    const dobrado = SOLUCOES['CC005/m9-lab'].replace(`conexao.execute(
+    "INSERT INTO membros (nome, idade, unidade_id) VALUES (?, ?, ?)",
+    ("Pedro D'Ávila", 11, 6),
+)`, `conexao.execute("INSERT INTO membros (nome, idade, unidade_id) VALUES ('Pedro D''Ávila', 11, 6)")`);
+    const v = verdes(dobrado);
+    expect(v).toContain('gravouNoBanco');
+    expect(v).not.toContain('usaParametros');
+  });
+
+  it('cadastrar duas vezes não é um cadastro', () => {
+    const duas = SOLUCOES['CC005/m9-lab'].replace('conexao.commit()', `conexao.execute(
+    "INSERT INTO membros (nome, idade, unidade_id) VALUES (?, ?, ?)",
+    ("Pedro D'Ávila", 11, 6),
+)
+conexao.commit()`);
+    expect(verdes(duas)).not.toContain('gravouNoBanco');
   });
 });

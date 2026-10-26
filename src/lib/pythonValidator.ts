@@ -1,4 +1,5 @@
 import type { ResultadoDeExecucao } from '../labs/pythonRuntime';
+import { registros, tabelaDe, type Valor } from '../labs/sqlite';
 import {
   resumoDaClassificacao, type Classificacao, type FalhaPlantada,
 } from '../labs/falhasDePython';
@@ -49,7 +50,14 @@ export interface ContextoDePython {
   falhas?: FalhaPlantada[];
   /** O que a pessoa marcou para cada falha, até agora. */
   classificacao?: Classificacao;
+  /** Só para o laboratório com banco: o registro que o programa precisa gravar. */
+  registroEsperado?: RegistroEsperado;
+  /** Só para o laboratório com banco: o que a consulta tem de pôr na saída. */
+  saidaContem?: string[];
 }
+
+/** Uma linha que o programa tem de deixar gravada no arquivo do banco. */
+export interface RegistroEsperado { tabela: string; valores: Record<string, Valor> }
 
 interface Spec {
   id: string;
@@ -275,6 +283,53 @@ const SPECS: Spec[] = [
   daArvore('importaDoProjeto', 'O programa dividido em dois arquivos',
     'from chamada import contar — o nome do módulo é o do arquivo, sem o .py.',
     'O arquivo principal não importa nada do outro. Um segundo arquivo que ninguém importa é um arquivo ao lado, e não um programa em partes.'),
+  /*
+    As quatro do módulo 9 da CC005, que é o requisito 7 inteiro.
+
+    Conectar e usar parâmetro leem a árvore; as outras duas leem o que de fato
+    aconteceu. A gravação é conferida no **arquivo**, por uma conexão nova
+    aberta depois de o programa terminar — é ela que separa quem inseriu de quem
+    inseriu e gravou: sem o commit, o programa vê o registro novo na própria
+    consulta e o arquivo não tem nada.
+  */
+  daArvore('conectaAoBanco', 'Conecta ao banco do clube',
+    'sqlite3.connect("clube.db") abre o arquivo, e devolve a conexão por onde tudo passa.',
+    'Nenhuma chamada de sqlite3.connect. O import sozinho não abre banco nenhum.'),
+  daArvore('usaParametros', 'Passa os valores separados do comando',
+    'cursor.execute("... VALUES (?, ?, ?)", (nome, idade, unidade)) — o ponto de interrogação guarda o lugar, e o valor vai na tupla.',
+    'Nenhum comando com ? e os valores ao lado, ou algum comando montado colando texto. Um nome com apóstrofo quebra o comando colado.'),
+  {
+    id: 'mostraDoBanco',
+    label: 'Mostra o que a consulta trouxe',
+    hint: 'Percorra o que o fetchall devolveu e imprima uma linha para cada registro.',
+    run: ctx => {
+      if (!ctx.execucao) return { passed: false, detail: 'O programa ainda não foi executado.' };
+      if (ctx.execucao.erro) return { passed: false, detail: 'O programa parou com erro. A mensagem está no painel de saída.' };
+      const faltam = (ctx.saidaContem ?? []).filter(t => !ctx.execucao!.saida.includes(t));
+      if (!ctx.saidaContem?.length) return { passed: false, detail: 'Este laboratório não diz o que a saída deve mostrar.' };
+      return faltam.length === 0
+        ? { passed: true }
+        : { passed: false, detail: `A saída não mostra ${faltam.length === 1 ? faltam[0] : `${faltam.length} dos nomes esperados`}.` };
+    },
+  },
+  {
+    id: 'gravouNoBanco',
+    label: 'O registro novo ficou gravado no arquivo',
+    hint: 'Depois do INSERT, conexao.commit(). Sem ele, a inserção some quando o programa termina.',
+    run: ctx => {
+      const esperado = ctx.registroEsperado;
+      if (!esperado) return { passed: false, detail: 'Este laboratório não diz o que gravar.' };
+      if (!ctx.execucao) return { passed: false, detail: 'O programa ainda não foi executado.' };
+      const banco = ctx.execucao.banco;
+      if (!banco) return { passed: false, detail: 'O arquivo do banco não pôde ser lido depois do programa.' };
+      const achados = registros(tabelaDe(banco, esperado.tabela))
+        .filter(r => Object.entries(esperado.valores).every(([k, v]) => r[k.toLowerCase()] === v));
+      if (achados.length === 1) return { passed: true };
+      return achados.length > 1
+        ? { passed: false, detail: 'O registro ficou gravado mais de uma vez.' }
+        : { passed: false, detail: 'O arquivo não tem o registro. Se ele aparece na consulta do próprio programa e some do arquivo, faltou o commit.' };
+    },
+  },
   {
     id: 'quarentaLinhas',
     label: 'Pelo menos 40 linhas de programa',
@@ -294,7 +349,7 @@ const POR_ID = new Map(SPECS.map(s => [s.id, s]));
 export const IDS_DE_PYTHON = SPECS.map(s => s.id);
 
 /** Os ids que precisam da árvore, e por isso de uma análise antes. */
-const FORA_DA_ARVORE = ['roda', 'saidaEsperada', 'quarentaLinhas', 'classificouAsFalhas'];
+const FORA_DA_ARVORE = ['roda', 'saidaEsperada', 'quarentaLinhas', 'classificouAsFalhas', 'mostraDoBanco', 'gravouNoBanco'];
 export const IDS_DA_ARVORE = SPECS.filter(s => !FORA_DA_ARVORE.includes(s.id)).map(s => s.id);
 
 /**
@@ -305,7 +360,7 @@ export const IDS_DA_ARVORE = SPECS.filter(s => !FORA_DA_ARVORE.includes(s.id)).m
  * classificar as falhas — continuam valendo, e apagá-las junto diria que a
  * pessoa desfez um trabalho que ela não desfez.
  */
-export const IDS_DA_EXECUCAO = ['roda', 'saidaEsperada', ...IDS_DA_ARVORE];
+export const IDS_DA_EXECUCAO = ['roda', 'saidaEsperada', 'mostraDoBanco', 'gravouNoBanco', ...IDS_DA_ARVORE];
 
 /**
  * Roda as verificações pedidas.
