@@ -4184,6 +4184,78 @@ CC-ES001 e a CC-ES004 já tinham corrigido nas janelas delas, e que a nuvem
 ainda carregava desde a CC-ES006. A regra que sobe vem depois da que centra,
 e `nuvem.test.tsx` confere a ordem.
 
+**A CC005 roda o SQLite do Python, e é um motor só.** O Pyodide traz o
+`sqlite3` embutido, com o SQLite de verdade dentro — e o requisito 7 pede um
+programa Python conectado a um banco. O editor de SQL dos outros oito
+laboratórios usa o mesmo motor, pelo mesmo worker: a consulta que a pessoa
+escreve no editor é lida por quem o `cursor.execute` dela vai usar no módulo 9.
+Uma biblioteca de SQL em JavaScript ao lado seria o segundo "Word" — discordaria
+no `= NULL`, na afinidade de tipo, na mensagem de erro, e a pessoa aprenderia
+um SQL que o programa dela não fala. O código Python do motor é montado em
+`sqlite.ts`, e o worker e as travas executam o **mesmo** texto.
+
+**O banco volta ao estado da lição a cada execução.** É a pasta do Python da
+CC004 outra vez: o arquivo `.sql` é a receita inteira, e rodá-lo duas vezes
+não insere em dobro. No banco de verdade não há volta, e a lição do módulo 8 diz
+isso — é por isso que se escreve o `WHERE` antes do `SET`, e é por isso que a
+transação existe.
+
+**A meta confere o que a consulta respondeu, e não como ela foi escrita.** Há
+muitas consultas certas para a mesma pergunta, e cobrar uma delas mediria ter
+adivinhado a nossa. As colunas se comparam pelo conteúdo, e não pelo nome nem
+pela posição — `SELECT idade, nome` responde o mesmo que `SELECT nome, idade`.
+Coluna a mais não passa onde ela muda a resposta (`SELECT *` não é "o nome e a
+idade"), e passa onde não muda (o id ao lado da lista de inscritos). O resultado
+errado aqui é sempre plausível: sessenta e uma linhas onde eram sessenta e duas,
+trezentas e setenta e duas onde eram sessenta e uma, o Tucano com média 11.
+
+**O banco é o clube das outras veredas, e as armadilhas já estavam nele.** As
+duas Ana Clara Ribeiro são a razão de o nome não servir de chave e de o
+`UPDATE ... WHERE nome = ...` mudar as duas; a idade em branco da do Tucano é o
+`= NULL` que não acha ninguém e a média que `SUM / COUNT(*)` erra. O que entrou
+de novo foi um recém-chegado sem unidade, que é o que faz a junção comum perder
+alguém em silêncio, e o telefone antigo da Tia Rute copiado na lista do
+acampamento, que é o problema real de dado repetido do requisito 4.
+
+**O comando começa no código, e não no comentário de antes.** O corte entre
+comandos é do próprio SQLite (`complete_statement`), e o pedaço entre dois
+pontos e vírgulas trazia junto os comentários que vinham antes. Na aba
+Mensagens isso punha o enunciado inteiro no lugar do comando, e a meta que
+reconhece a recusa da chave estrangeira pelo começo do texto deixava de achar
+o `INSERT` que vinha depois de um comentário. Quem viu foi o Chromium.
+
+**Executar no primeiro segundo perdia o clique.** O worker atende um pedido por
+vez e recusa o segundo, e a lateral pede o banco de partida assim que a tela
+abre. Quem apertava Executar antes de essa abertura terminar via o botão não
+fazer nada. A execução espera a abertura agora; o jsdom não sente isso, porque
+lá o Python de teste responde na hora.
+
+**A cardinalidade é um gesto, e a coluna é outro.** O requisito 5 pede o
+diagrama "indicando chaves e cardinalidade". Um modelador que tirasse a
+cardinalidade da coluna estrangeira sozinho nunca a teria indicada por
+ninguém. Aqui a coluna diz para onde aponta e a ligação diz quantos de cada
+lado, e a meta confere que as duas concordam — no um-para-muitos, quem aponta
+é o lado muitos. A ligação N:N existe no menu, porque todo modelador a oferece,
+e nunca concorda: nenhuma coluna guarda uma lista, e é a tabela do meio que o
+módulo cobra. A janela **não pinta** a ligação incoerente, pela regra do painel
+de Problemas.
+
+**O diagrama chega com a chave errada.** Os membros vêm identificados pelo
+nome, que é como a secretaria os identificaria numa conversa. É a primeira
+tarefa, e é ela que impede o diagrama de abrir com "todas as tabelas têm
+chave" já verde.
+
+**O módulo 9 é o laboratório de Python, com o banco na pasta.** Uma terceira
+janela de Python seria o segundo "Word". A lição declara `banco`, e o worker o
+grava em `/projeto` antes do programa e o lê depois **por uma conexão nova** —
+é essa leitura que separa quem fez commit de quem não fez, porque sem commit o
+programa vê o registro novo na própria consulta e o arquivo não tem nada. O
+nome do membro novo tem apóstrofo, e é o que separa o `?` do comando colado:
+com f-string o `INSERT` quebra no meio do sobrenome. `usaParametros` também
+recusa o comando de mudança com o valor escrito dentro, mesmo com a aspa
+dobrada certinho — o requisito pede o valor separado, e o próximo virá de uma
+variável.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -4658,6 +4730,15 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDoProjetoDeDesign.test.tsx` | lição da CC-DG006 impossível de vencer clicando, em qualquer das cinco telas |
 | `src/labs/nuvem.test.tsx` | caixa da nuvem centrada no celular, com o confirmar debaixo da cápsula de tarefas |
 | `src/curriculum/exemplosDoProjetoDeDesign.test.ts` | proporção, letra do celular, símbolo pequeno ou frase do convite que a teoria cita e o motor não devolve |
+| `src/labs/sqlite.test.ts` | ponto e vírgula dentro de texto cortando o comando, ou transação aberta que fica valendo |
+| `src/labs/metasDaCc005.test.ts` | meta da CC005 que abre verde, ou que a solução de referência não fecha |
+| `src/labs/metasDaCc005.test.ts` | produto cartesiano, junção pela coluna errada ou junção comum valendo pela lista de todos |
+| `src/labs/metasDaCc005.test.ts` | média de `SUM / COUNT(*)`, ou cópias consertadas valendo por normalizar |
+| `src/labs/metasDaCc005.test.ts` | UPDATE pelo nome mudando as duas Anas, ou DELETE que leva as conquistas dos outros |
+| `src/labs/metasDaCc005.test.ts` | ligação N:N direta, ou estrangeira no lado um, fechando o diagrama |
+| `src/components/LaboratorioDeBanco.test.tsx` | lição da CC005 impossível de vencer digitando e executando, ou arquivo mudado sem envelhecer a lista |
+| `src/curriculum/exemplosDeSql.test.ts` | resultado da teoria da CC005 que o SQLite não devolve |
+| `src/curriculum/laboratoriosDePython.test.ts` | cadastro sem commit valendo por gravado, ou comando colado valendo por parâmetro |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

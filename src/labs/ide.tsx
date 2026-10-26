@@ -2,7 +2,7 @@ import {
   Files, Search, GitBranch, Blocks, Play, RotateCw, Lock,
   FileCode, ChevronDown, CircleAlert, TriangleAlert, Code2, Eye, BookOpen,
 } from 'lucide-react';
-import { realcarLinhasCss, realcarLinhas, realcarLinhasPython } from './realce';
+import { realcarLinhasCss, realcarLinhas, realcarLinhasPython, realcarLinhasSql } from './realce';
 
 /*
  * A moldura do editor de código, compartilhada pelos laboratórios de HTML.
@@ -365,7 +365,7 @@ function escrever(
 export function EditorDeCodigo({ codigo, aoMudar, rotulo, somenteLeitura = false, linguagem = 'html' }: {
   codigo: string; aoMudar: (c: string) => void; rotulo: string;
   /** Decide o realce. O arranjo do editor é o mesmo; a coloração, não. */
-  linguagem?: 'html' | 'css' | 'python';
+  linguagem?: 'html' | 'css' | 'python' | 'sql';
   /**
    * Arquivo de referência, aberto e não editável.
    *
@@ -378,7 +378,8 @@ export function EditorDeCodigo({ codigo, aoMudar, rotulo, somenteLeitura = false
 }) {
   const linhas = (linguagem === 'css' ? realcarLinhasCss
     : linguagem === 'python' ? realcarLinhasPython
-      : realcarLinhas)(codigo);
+      : linguagem === 'sql' ? realcarLinhasSql
+        : realcarLinhas)(codigo);
 
   const aoTeclar = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const campo = e.currentTarget;

@@ -124,6 +124,7 @@ def analisar(fonte):
         'usaLista': False, 'usaTupla': False, 'usaDicionario': False, 'usaConjunto': False,
         'leCsv': False, 'gravaJson': False, 'leJson': False,
         'tratouOErroCerto': False,
+        'conectaAoBanco': False, 'usaParametros': False,
         # Estas três são do projeto, e não do arquivo: quem as recalcula, depois
         # de ler todos, é _cruzado. Ficam aqui para o dicionário ter sempre a
         # mesma forma — um achado que só existisse às vezes chegaria à tela como
@@ -295,6 +296,42 @@ def analisar(fonte):
             continue
         if all(h.type is not None and _corpo_util(h.body) for h in no.handlers):
             achados['tratouOErroCerto'] = True
+
+    # ── O banco, do módulo 9 da CC005 ───────────────────────────────────
+    #
+    # Conectar é a chamada de sqlite3.connect, e não o import: o import sozinho
+    # é a mesma trava vazia do csv.
+    #
+    # Parâmetro é o comando que chega com o ponto de interrogação E os valores
+    # num segundo argumento. Basta UM comando montado colando texto no meio —
+    # f-string, soma de textos, format ou porcentagem — para não valer: o que
+    # o requisito ensina é que o valor nunca entra no texto do comando, e um
+    # programa com um execute certo e outro colado continua aberto pelo outro.
+    _COLADO = (ast.JoinedStr, ast.BinOp)
+    tem_parametro = False
+    tem_colado = False
+    for no in ast.walk(arvore):
+        if not (isinstance(no, ast.Call) and isinstance(no.func, ast.Attribute)):
+            continue
+        if no.func.attr == 'connect' and isinstance(no.func.value, ast.Name) and no.func.value.id == 'sqlite3':
+            achados['conectaAoBanco'] = True
+        if no.func.attr not in ('execute', 'executemany') or not no.args:
+            continue
+        comando = no.args[0]
+        if isinstance(comando, _COLADO) or (
+                isinstance(comando, ast.Call) and isinstance(comando.func, ast.Attribute)
+                and comando.func.attr == 'format'):
+            tem_colado = True
+        elif isinstance(comando, ast.Constant) and isinstance(comando.value, str):
+            separado = '?' in comando.value and len(no.args) >= 2
+            if separado:
+                tem_parametro = True
+            # O comando que muda o banco com o valor escrito dentro dele, mesmo
+            # com a aspa dobrada certinho, não passa: o requisito pede o valor
+            # separado, e o próximo valor vai vir de uma variável.
+            elif comando.value.lstrip().upper().startswith(('INSERT', 'UPDATE', 'DELETE')):
+                tem_colado = True
+    achados['usaParametros'] = tem_parametro and not tem_colado
 
     achados['leEExibe'] = leu and escreveu
     return achados

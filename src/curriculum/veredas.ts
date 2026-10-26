@@ -4,6 +4,7 @@ import { MODULOS_DE_BLOCOS } from './logicaComBlocos';
 import { MODULOS_DE_PYTHON } from './sintaxeDePython';
 import { MODULOS_DE_TERMINAL } from './terminalEGit';
 import { MODULOS_DE_PYTHON_AVANCADO } from './pythonAvancado';
+import { MODULOS_DE_SQL } from './sqlDoClube';
 import { MODULOS_DE_ARQUIVOS } from './arquivosEArmazenamento';
 import { MODULOS_DO_EDITOR } from './editorDeTexto';
 import { MODULOS_DE_PLANILHA } from './planilhas';
@@ -26,6 +27,8 @@ import { MODULOS_DO_PROJETO_DE_DESIGN } from './projetoDeDesign';
 import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
+import type { BancoNaPasta } from '../labs/pythonWorker';
+import type { RegistroEsperado } from '../lib/pythonValidator';
 
 /*
  * As veredas.
@@ -82,7 +85,7 @@ export interface TopicoDeVereda {
    * `'blocos'` desenha a pilha do Scratch, com a cor da categoria; `'texto'` é
    * um algoritmo ou uma tabela, e não tem resultado nenhum a mostrar.
    */
-  exemploComo?: 'html' | 'css' | 'blocos' | 'texto' | 'python';
+  exemploComo?: 'html' | 'css' | 'blocos' | 'texto' | 'python' | 'sql';
   /**
    * Só para `'css'`: a marcação a que a folha se aplica.
    *
@@ -240,6 +243,19 @@ export type LicaoDeVereda =
      * o painel abriria resolvido.
      */
     falhas?: FalhaPlantada[];
+    /**
+     * Só para `'python'`: o banco que mora na pasta do programa.
+     *
+     * O requisito 7 da CC005 pede um programa conectado a um banco, e quem se
+     * conecta precisa de um arquivo para abrir. Ele é gravado a partir da
+     * semente antes de cada execução, como o resto da pasta, e lido de volta
+     * depois por uma conexão nova — é essa leitura que diz se a inserção ficou.
+     */
+    banco?: BancoNaPasta;
+    /** Só para o laboratório com banco: o registro que tem de ficar gravado. */
+    registroEsperado?: RegistroEsperado;
+    /** Só para o laboratório com banco: o que a consulta tem de mostrar. */
+    saidaContem?: string[];
   }
   | {
     /*
@@ -729,6 +745,28 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      O banco de dados da CC005, e por que ele é mais um tipo.
+
+      Vale a conta de \`ambiente\`, \`terminal\` e dos programas de escritório: o
+      que se confere não é um texto com um validador de linguagem, é o que o
+      arquivo .sql **fez** — o que cada consulta devolveu e como o banco ficou
+      no fim. Enfiá-lo em \`laboratorio\` com \`linguagem: 'sql'\` faria a escada
+      de validadores daquele tipo conferir o modelo com o de HTML, verde sem ter
+      olhado nada. E o módulo 6 nem tem arquivo: é um diagrama.
+
+      O módulo 9 fica de fora de propósito: ele é um programa Python, e é
+      \`laboratorio\` com \`linguagem: 'python'\` e o banco na pasta.
+    */
+    id: string;
+    tipo: 'banco';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCc005').LicaoDaCc005;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       A redação guiada, e por que ela é um terceiro tipo.
 
       O requisito 1 da CC001 pede um relatório escrito. Isso não é teoria — não
@@ -928,8 +966,24 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_PYTHON_AVANCADO,
   },
-  anunciada('CC005', 'SQL', 'Base',
-    'Guardar e procurar informação numa base de dados, que é onde quase todo programa a guarda.'),
+  {
+    id: 'cc005',
+    code: 'CC005',
+    name: 'SQL',
+    familia: 'Base',
+    description: 'Guardar e procurar informação numa base de dados, que é onde quase todo programa a guarda.',
+    /*
+      Sai da CC004, e não de uma trilha. Lá o programa aprende a guardar em
+      arquivo, e isso basta enquanto quem lê é o próprio programa que escreveu;
+      sessenta e dois membros, seis unidades e duas pessoas mexendo ao mesmo
+      tempo pedem um banco.
+    */
+    origem: 'CC004',
+    /* E exige a CC004 concluída, que é o requisito 1 do documento oficial. */
+    preRequisitos: ['cc004'],
+    mostraResultado: true,
+    modulos: MODULOS_DE_SQL,
+  },
   anunciada('CC006', 'Projeto de Programa', 'Base',
     'Juntar tudo num programa que resolve uma coisa do clube, do começo ao fim.'),
 

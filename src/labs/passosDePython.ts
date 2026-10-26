@@ -76,6 +76,26 @@ export const PASSOS_DE_PYTHON: Record<string, string[]> = {
     'Alguma coisa dentro dele precisa mudar a variável que a condição testa — senão ele nunca para.',
     'Um while que não termina é encerrado depois de alguns segundos, e o painel avisa.',
   ],
+  conectaAoBanco: [
+    'No alto do programa: import sqlite3.',
+    'Abra o arquivo que está na pasta: conexao = sqlite3.connect("clube.db").',
+    'Confira o nome com cuidado. Um nome errado não dá erro na hora: cria um banco novo e vazio, e o erro aparece na consulta, como "no such table".',
+  ],
+  usaParametros: [
+    'Escreva o comando com um ? no lugar de cada valor: "INSERT INTO membros (nome, idade, unidade_id) VALUES (?, ?, ?)".',
+    'Passe os valores numa tupla, como segundo argumento do execute: conexao.execute(comando, (nome, idade, unidade_id)).',
+    'Não cole o valor no texto com f-string nem com +. O apóstrofo de um sobrenome fecha a aspa no meio e o comando quebra.',
+  ],
+  mostraDoBanco: [
+    'Peça os nomes com uma consulta: conexao.execute("SELECT nome FROM membros WHERE unidade_id = ?", (1,)).',
+    'O fetchall() devolve uma lista de tuplas, uma por registro.',
+    'Percorra a lista com for e imprima cada nome: for (nome,) in linhas: print(nome)',
+  ],
+  gravouNoBanco: [
+    'Depois do INSERT, escreva conexao.commit(). É ele que grava no arquivo.',
+    'Sem o commit, a consulta do próprio programa até mostra o registro novo, e o arquivo continua sem ele.',
+    'No fim, conexao.close() fecha o arquivo.',
+  ],
   quarentaLinhas: [
     'Linha em branco e linha só de comentário não contam: o requisito é de programa.',
     'Se está curto, o caminho não é encher — é o programa fazer mais: pedir mais dados, tratar mais casos, mostrar um resumo no fim.',
