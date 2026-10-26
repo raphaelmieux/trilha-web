@@ -81,7 +81,11 @@ export interface Imagem {
   nome: string;
   largura: number;
   altura: number;
-  modo: 'rgb' | 'cmyk';
+  /**
+   * Vetor é o símbolo que veio do editor de design em SVG: ele não tem pixel
+   * nenhum, e por isso não tem resolução que falte em tamanho nenhum.
+   */
+  modo: 'rgb' | 'cmyk' | 'vetor';
 }
 
 export interface QuadroDeImagem extends Retangulo {
@@ -370,6 +374,8 @@ export const imagemDe = (d: Documento, id: string) => d.biblioteca.find(i => i.i
 export function ppiEfetivo(d: Documento, q: QuadroDeImagem): number {
   const img = imagemDe(d, q.imagem);
   if (!img) return 0;
+  /* O vetor se redesenha em qualquer tamanho: não há ponto que apareça. */
+  if (img.modo === 'vetor') return Infinity;
   /* A imagem preenche o quadro sem distorcer: a escala é a maior das duas, e
      o que sobra é cortado pela borda do quadro. */
   const escala = Math.max(q.largura / img.largura, q.altura / img.altura);
