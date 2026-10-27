@@ -289,10 +289,12 @@ describe('o leitor do catálogo acompanha as migrations', () => {
 
   /* E o leitor de fato apaga: sem isso a trava acima passaria num leitor que
      reconhecesse o DELETE e não fizesse nada com ele. */
-  it('e as duas aposentadas não estão mais no catálogo', () => {
+  it('e as aposentadas não estão mais no catálogo', () => {
     const catalogo = catalogoSemeado();
     expect(catalogo.has('mini_html')).toBe(false);
     expect(catalogo.has('lab_image_lab')).toBe(false);
+    expect(catalogo.has('lab_text_editor')).toBe(false);
     expect(catalogo.has('vereda_html'), 'apagou demais').toBe(true);
+    expect(catalogo.has('lab_redacao_guiada'), 'apagou demais').toBe(true);
   });
 });

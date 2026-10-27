@@ -4677,6 +4677,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/formaDaInsignia.test.ts` | classe cujo glifo não se lê sobre a própria cor, ou ícone sem raio de tinta medido |
 | `src/lib/insignias.test.ts` | ícone ou classe do catálogo divergindo do que a migration semeia |
 | `src/lib/insignias.test.ts` | classe de insígnia de vereda ou de trilha divergindo da que a estante desenha |
+| `src/lib/insignias.test.ts` | insígnia de laboratório cujo laboratório nenhuma lição aberta usa, que fica na estante sem ninguém poder ganhá-la |
 | `src/hooks/escritaDepoisDoDesmonte.test.ts` | efeito que escreve estado depois de esperar sem saber se a tela ainda está lá |
 | `src/lib/ofensiva.test.ts` | evento de laboratório que ninguém classificou, e que por isso não faria a ofensiva andar |
 | `src/lib/ofensiva.test.ts` | a lista de eventos do banco divergindo da do navegador, que daria duas ofensivas à mesma pessoa |
