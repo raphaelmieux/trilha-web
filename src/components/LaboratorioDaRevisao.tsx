@@ -1,17 +1,19 @@
 import { useMemo, useRef, useState } from 'react';
 import {
   GitCompareArrows, Check, X, MessageSquarePlus, ChevronRight, Replace, Undo2, Redo2,
-  AlignLeft, Clipboard, Scissors, Copy,
+  AlignLeft, AlignCenter, AlignRight, AlignJustify, Pilcrow, Clipboard, Scissors, Copy,
 } from 'lucide-react';
-import { IconeItalico, IconeNegrito, IconeSublinhado } from '../labs/office';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
+import { GrupoDeFonte, CSS_FONTE_DO_WORD } from '../labs/fonteDoWord';
+import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
+import { isolarSelecao, palavraEmVolta, recolhida, selecaoDoTrecho, tamanhoDoParagrafo, trechosEmVolta } from '../labs/edicao';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
   BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
   BalaoDeComentario, DialogoDeSubstituir,
 } from '../labs/word';
 import {
-  DIA_DO_DESBRAVADOR_INICIAL, METAS_DA_REVISAO, trechosDoParagrafo, type Doc,
+  DIA_DO_DESBRAVADOR_INICIAL, METAS_DA_REVISAO, type Doc,
 } from '../labs/diaDoDesbravador';
 import {
   aceitarRevisao, rejeitarRevisao, aceitarTodasAsRevisoes, rejeitarTodasAsRevisoes,
@@ -58,49 +60,28 @@ const SEM_OPCOES: OpcoesDeBusca = { diferenciarMaiusculas: false, palavrasInteir
 
 export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair }: Props) {
   const [doc, setDoc] = useState<Doc>(DIA_DO_DESBRAVADOR_INICIAL);
-  const [passado, setPassado] = useState<Doc[]>([]);
-  const [futuro, setFuturo] = useState<Doc[]>([]);
   const [guia, setGuia] = useState('Revisão');
-  const [selecionado, setSelecionado] = useState<string | null>(null);
-  const [trecho, setTrecho] = useState<string | null>(null);
   const [aviso, setAviso] = useState('');
   const [zoom, setZoom] = useState(1);
+  const [marcas, setMarcas] = useState(false);
   const [buscaAberta, setBuscaAberta] = useState(false);
   const [procurar, setProcurar] = useState('');
   const [por, setPor] = useState('');
   const [opcoes, setOpcoes] = useState<OpcoesDeBusca>(SEM_OPCOES);
   const [rascunhos, setRascunhos] = useState<Record<string, string>>({});
   const jaGravou = useRef(false);
-
-  /* Todo comando passa por aqui: é o que faz o Desfazer existir sem que cada
-     um deles precise lembrar de empilhar. */
-  const mexer = (f: (d: Doc) => Doc) => {
-    setDoc((d) => {
-      const novo = f(d);
-      if (novo === d) return d;
-      setPassado(p => [...p, d]);
-      setFuturo([]);
-      return novo;
-    });
-  };
-
+  /* O controle de alterações é do documento: com ele ligado, o que se digita
+     sai marcado com o seu nome, sem nada mais a fazer. O Desfazer é o mesmo
+     para tecla e para botão — no Word ele não distingue os dois. */
+  const edicao = useEdicaoDoWord(doc, setDoc, { quem: { autor: 'voce' } });
+  const mexer = (f: (d: Doc) => Doc) => edicao.mudar(d => f(d));
   const desfazer = () => {
-    setPassado((p) => {
-      if (p.length === 0) { setAviso('Não há mais nada para desfazer.'); return p; }
-      const anterior = p[p.length - 1];
-      setFuturo(f => [doc, ...f]);
-      setDoc(anterior);
-      return p.slice(0, -1);
-    });
+    if (!edicao.podeDesfazer) { setAviso('Não há mais nada para desfazer.'); return; }
+    edicao.desfazer();
   };
-
   const refazer = () => {
-    setFuturo((f) => {
-      if (f.length === 0) { setAviso('Não há nada para refazer.'); return f; }
-      setPassado(p => [...p, doc]);
-      setDoc(f[0]);
-      return f.slice(1);
-    });
+    if (!edicao.podeRefazer) { setAviso('Não há nada para refazer.'); return; }
+    edicao.refazer();
   };
 
   const feitas = useMemo(
@@ -131,14 +112,19 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair }
 
   const pendentes = revisoesPendentes(doc);
 
-  const marcaEscolhida = trecho && pendentes.some(r => r.trecho.id === trecho) ? trecho : null;
+  /* A marca escolhida é a que está debaixo do cursor — no Word é o cursor
+     dentro da marca que diz qual Aceitar aceita. */
+  const emVolta = edicao.selecao ? trechosEmVolta(doc, edicao.selecao.foco) : null;
+  const debaixoDoCursor = (emVolta?.depois?.revisao ? emVolta.depois.id : null)
+    ?? (emVolta?.antes?.revisao ? emVolta.antes.id : null);
+  const marcaEscolhida = debaixoDoCursor && pendentes.some(r => r.trecho.id === debaixoDoCursor) ? debaixoDoCursor : null;
 
   const proximaMarca = () => {
     if (pendentes.length === 0) { setAviso('Não há mais marcas para resolver.'); return; }
-    const atual = pendentes.findIndex(r => r.trecho.id === trecho);
+    const atual = pendentes.findIndex(r => r.trecho.id === debaixoDoCursor);
     const proxima = pendentes[(atual + 1) % pendentes.length];
-    setTrecho(proxima.trecho.id);
-    setSelecionado(proxima.bloco);
+    edicao.folha.aoSelecionar(selecaoDoTrecho(doc, proxima.trecho.id));
+    edicao.focar();
     setAviso(`Marca de ${NOME_DO_AUTOR[proxima.trecho.revisao.autor]}: "${proxima.trecho.texto}" `
       + `${proxima.trecho.revisao.tipo === 'inserido' ? 'entrou' : 'saiu'}.`);
   };
@@ -151,14 +137,12 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair }
   const aceitar = () => {
     if (!marcaEscolhida) { semMarca(); return; }
     mexer(d => aceitarRevisao(d, marcaEscolhida));
-    setTrecho(null);
     setAviso('Marca aceita.');
   };
 
   const rejeitar = () => {
     if (!marcaEscolhida) { semMarca(); return; }
     mexer(d => rejeitarRevisao(d, marcaEscolhida));
-    setTrecho(null);
     setAviso('Marca rejeitada: o texto voltou ao que era.');
   };
 
@@ -167,17 +151,27 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair }
   const comentarios = comentariosDoDoc(doc);
   const comentados = useMemo(() => new Set(comentarios.map(c => c.trecho)), [comentarios]);
 
+  /**
+   * Novo Comentário vale para o que está selecionado, como no Word. Com o
+   * cursor parado, vale para a palavra em que ele está; num espaço, para o
+   * parágrafo inteiro.
+   */
   const novoComentario = () => {
-    if (!selecionado) {
-      setAviso('Selecione primeiro o parágrafo que você quer comentar, clicando nele.');
+    const s = edicao.selecao;
+    if (!s) {
+      setAviso('Selecione primeiro o texto que você quer comentar.');
       return;
     }
-    const alvo = trecho && trechosDoParagrafo(doc, selecionado).includes(trecho)
-      ? trecho
-      : trechosDoParagrafo(doc, selecionado)[0];
-    if (!alvo) { setAviso('Este bloco não tem texto para comentar.'); return; }
+    const p = paragrafos(doc).find(b => b.id === s.foco.bloco);
+    const alcance = !recolhida(s) ? s
+      : palavraEmVolta(doc, s.foco)
+        ?? (p ? { ancora: { bloco: p.id, offset: 0 }, foco: { bloco: p.id, offset: tamanhoDoParagrafo(p) } } : null);
+    if (!alcance || recolhida(alcance)) { setAviso('Este parágrafo não tem texto para comentar.'); return; }
+    const isolado = isolarSelecao(doc, alcance);
+    if (!isolado.trecho) { setAviso('Este parágrafo não tem texto para comentar.'); return; }
+    const alvo = isolado.trecho;
     const id = `meu-${comentarios.length + 1}`;
-    mexer(d => acrescentarComentario(d, {
+    edicao.mudar(() => acrescentarComentario(isolado.doc, {
       id, trecho: alvo, autor: 'voce', texto: '', respostas: [], resolvido: false,
     }));
     setRascunhos(r => ({ ...r, [id]: '' }));
@@ -244,9 +238,8 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair }
   const acoes = (
     <>
       <button type="button" className="btn-ghost" onClick={() => {
-        setDoc(DIA_DO_DESBRAVADOR_INICIAL);
-        setPassado([]); setFuturo([]);
-        setSelecionado(null); setTrecho(null); setRascunhos({});
+        edicao.reiniciar(DIA_DO_DESBRAVADOR_INICIAL);
+        setRascunhos({});
         setBuscaAberta(false); setProcurar(''); setPor(''); setOpcoes(SEM_OPCOES);
         setAviso('');
       }}>
@@ -293,9 +286,14 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair }
     >
       <style>{CSS_WORD}</style>
       <style>{CSS_FOLHA}</style>
+      <style>{CSS_FONTE_DO_WORD}</style>
 
-      <div className="wd-janela">
-        <BarraDeTituloDoWord documento="Dia do Desbravador — relato" aoAvisar={setAviso} />
+      <div className="wd-janela" style={{
+        '--largura-cm': 21, '--altura-cm': 29.7, '--margem-cm': 2.5, '--zoom': zoom,
+      } as React.CSSProperties}>
+        <BarraDeTituloDoWord documento="Dia do Desbravador — relato" aoAvisar={setAviso}
+          aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
+          aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />
 
         <GuiasDoWord
           atual={guia} usaveis={GUIAS_USAVEIS}
@@ -311,13 +309,21 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair }
                 <EnfeiteDaFaixa dica="Recortar (Ctrl+X)" aoAvisar={setAviso}><Scissors className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
                 <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={setAviso}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
               </GrupoDaFaixa>
-              <GrupoDaFaixa nome="Fonte">
-                <EnfeiteDaFaixa dica="Negrito (Ctrl+N)" aoAvisar={setAviso}><IconeNegrito /></EnfeiteDaFaixa>
-                <EnfeiteDaFaixa dica="Itálico (Ctrl+I)" aoAvisar={setAviso}><IconeItalico /></EnfeiteDaFaixa>
-                <EnfeiteDaFaixa dica="Sublinhado (Ctrl+S)" aoAvisar={setAviso}><IconeSublinhado /></EnfeiteDaFaixa>
-              </GrupoDaFaixa>
+              <GrupoDeFonte edicao={edicao} aoAvisar={setAviso} />
               <GrupoDaFaixa nome="Parágrafo">
-                <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={setAviso}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                <div className="wd-linhas">
+                  <div style={{ display: 'flex', gap: 1 }}>
+                    <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={setAviso}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                    <EnfeiteDaFaixa dica="Centralizar (Ctrl+E)" aoAvisar={setAviso}><AlignCenter className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                    <EnfeiteDaFaixa dica="Alinhar à Direita (Ctrl+G)" aoAvisar={setAviso}><AlignRight className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                    <EnfeiteDaFaixa dica="Justificar (Ctrl+J)" aoAvisar={setAviso}><AlignJustify className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                  </div>
+                  <div style={{ display: 'flex', gap: 1 }}>
+                    <BotaoDaFaixa dica="Mostrar Tudo (Ctrl+*)" ativo={marcas} aoClicar={() => { setMarcas(m => !m); edicao.focar(); }}>
+                      <Pilcrow className="w-3.5 h-3.5" />
+                    </BotaoDaFaixa>
+                  </div>
+                </div>
               </GrupoDaFaixa>
               {/* Substituir mora em Início › Edição, que é onde o Word o põe —
                   e não numa guia inventada por ser o assunto da lição. */}
@@ -364,7 +370,6 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair }
                 <BotaoDaFaixa dica="Aceitar Todas as Alterações" rotulo="Aceitar Todas" empilhado
                   aoClicar={() => {
                     mexer(aceitarTodasAsRevisoes);
-                    setTrecho(null);
                     setAviso('Todas as marcas foram aceitas. Releia o documento: aceitar tudo aceita também o que estava errado.');
                   }}>
                   <Check className="w-5 h-5" />
@@ -372,7 +377,6 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair }
                 <BotaoDaFaixa dica="Rejeitar Todas as Alterações" rotulo="Rejeitar Todas" empilhado
                   aoClicar={() => {
                     mexer(rejeitarTodasAsRevisoes);
-                    setTrecho(null);
                     setAviso('Todas as marcas foram rejeitadas, inclusive as que estavam certas.');
                   }}>
                   <X className="w-5 h-5" />
@@ -380,11 +384,11 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair }
               </GrupoDaFaixa>
               <GrupoDaFaixa nome="Desfazer">
                 <BotaoDaFaixa dica="Desfazer (Ctrl+Z)" rotulo="Desfazer" empilhado
-                  ativo={passado.length > 0} aoClicar={desfazer}>
+                  ativo={edicao.podeDesfazer} aoClicar={desfazer}>
                   <Undo2 className="w-5 h-5" />
                 </BotaoDaFaixa>
                 <BotaoDaFaixa dica="Refazer (Ctrl+Y)" rotulo="Refazer" empilhado
-                  ativo={futuro.length > 0} aoClicar={refazer}>
+                  ativo={edicao.podeRefazer} aoClicar={refazer}>
                   <Redo2 className="w-5 h-5" />
                 </BotaoDaFaixa>
               </GrupoDaFaixa>
@@ -404,16 +408,10 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair }
 
         <FolhaDoWord
           doc={doc}
-          selecionado={selecionado}
+          marcas={marcas}
+          edicao={edicao.folha}
           comentado={comentados}
-          aoEscolher={(id) => { setSelecionado(id); setAviso(''); }}
-          aoEscolherTrecho={(id) => {
-            setTrecho(id);
-            const bloco = paragrafos(doc).find(b => b.trechos.some(x => x.id === id));
-            if (bloco) setSelecionado(bloco.id);
-            setAviso('');
-          }}
-          aoClicarNoVazio={() => { setSelecionado(null); setTrecho(null); }}
+          aoEscolher={() => setAviso('')}
           margem={margem}
         />
 

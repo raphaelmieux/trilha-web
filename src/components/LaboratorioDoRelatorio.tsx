@@ -1,10 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  Table, ImagePlus, Captions, Rows3, Columns3, Trash2, PanelTop,
-  AlignLeft, Clipboard, Scissors, Copy, WrapText,
+  Table, ImagePlus, Captions, Rows3, Columns3, PanelTop, Pilcrow,
+  AlignLeft, AlignCenter, AlignRight, AlignJustify, Clipboard, Scissors, Copy, WrapText,
 } from 'lucide-react';
-import { IconeItalico, IconeNegrito, IconeSublinhado } from '../labs/office';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
+import { GrupoDeFonte, CSS_FONTE_DO_WORD } from '../labs/fonteDoWord';
+import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
+import { cursorEm, paragrafosDaSelecao, recolhida, tamanhoDoParagrafo } from '../labs/edicao';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
   BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
@@ -15,7 +17,7 @@ import {
   type Doc, type Secao,
 } from '../labs/relatorioDoAcampamento';
 import {
-  paragrafos, ehParagrafo, larguraDaTabela,
+  ehParagrafo, larguraDaTabela,
   ESTILOS_DE_TABELA, ESTILO_PADRAO_DE_TABELA, NOMES_DA_DISPOSICAO,
   type Bloco, type Disposicao, type EstiloDeTabela,
 } from '../labs/documento';
@@ -80,9 +82,14 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
   const [menu, setMenu] = useState<string | null>(null);
   const [aviso, setAviso] = useState('');
   const [zoom, setZoom] = useState(1);
+  const [marcas, setMarcas] = useState(false);
   const jaGravou = useRef(false);
+  const edicao = useEdicaoDoWord(doc, setDoc);
 
-  const alvo: Bloco<Secao> | null = doc.blocos.find(b => b.id === selecionado) ?? null;
+  /* Tabela e imagem se escolhem como objeto, com um clique; o texto, pelo
+     cursor. O parágrafo onde o cursor está é onde a imagem e a tabela nova
+     entram. */
+  const alvo: Bloco<Secao> | null = doc.blocos.find(b => b.id === selecionado) ?? edicao.paragrafo;
   const tabela = alvo?.tipo === 'tabela' ? alvo : null;
   const imagem = alvo?.tipo === 'imagem' ? alvo : null;
 
@@ -136,13 +143,13 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
   const inserirGradeVazia = () => {
     fecharMenu();
     const id = `tab-${doc.blocos.length}`;
-    const onde = doc.blocos.findIndex(b => b.id === (selecionado ?? 'quem-1'));
+    const onde = doc.blocos.findIndex(b => b.id === (alvo?.id ?? 'quem-1'));
     const grade = {
       tipo: 'tabela' as const, id, secao: (alvo?.secao ?? 'quem') as Secao,
       linhas: Array.from({ length: 3 }, () => ['', '', '']),
       cabecalho: false, estilo: ESTILO_PADRAO_DE_TABELA,
     };
-    setDoc(d => ({
+    edicao.mudar(d => ({
       ...d,
       blocos: [...d.blocos.slice(0, onde + 1), grade, ...d.blocos.slice(onde + 1)],
     }));
@@ -151,28 +158,43 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
       + 'escrita — para aproveitar o que existe, o comando é "Converter Texto em Tabela".');
   };
 
+  /**
+   * Converter Texto em Tabela converte **o que está selecionado**, como no
+   * Word: as linhas que a seleção toca viram as linhas da tabela, e a
+   * tabulação separa as colunas. Antes ele convertia a lista inteira sozinho,
+   * de onde quer que se clicasse — o gesto de selecionar, que é metade do
+   * requisito, não existia.
+   */
   const converterEmTabela = () => {
     fecharMenu();
-    const daLista = paragrafos(doc).filter(b => b.secao === 'lista');
-    if (daLista.length === 0) {
-      setAviso('Não há mais nada alinhado com tabulação para converter.');
+    const s = edicao.selecao;
+    if (!s || recolhida(s)) {
+      setAviso('Selecione primeiro as linhas que vão virar tabela — da primeira à última da lista.');
       return;
     }
-    const onde = doc.blocos.findIndex(b => b.id === daLista[0].id);
+    const linhas = paragrafosDaSelecao(doc, s);
+    if (!linhas.some(b => textoDoBloco(b).includes('\t'))) {
+      setAviso('Nada do que está selecionado é separado por tabulação, e é a tabulação que diz onde cada coluna começa.');
+      return;
+    }
+    const ids = new Set(linhas.map(b => b.id));
+    const onde = doc.blocos.findIndex(b => b.id === linhas[0].id);
     const nova = {
-      tipo: 'tabela' as const, id: 'tab-inscritos', secao: 'lista' as Secao,
-      linhas: daLista.map(b => textoDoBloco(b).split('\t')),
+      tipo: 'tabela' as const,
+      id: doc.blocos.some(b => b.id === 'tab-inscritos') ? `tab-${doc.blocos.length}` : 'tab-inscritos',
+      secao: linhas[0].secao,
+      linhas: linhas.map(b => textoDoBloco(b).split('\t')),
       cabecalho: false,
       /* Nasce na grade crua, que é o que o Word aplica sozinho — e é o que faz
          a tarefa seguinte, de escolher na galeria, ter o que mudar. */
       estilo: ESTILO_PADRAO_DE_TABELA,
     };
-    setDoc((d) => {
-      const resto = d.blocos.filter(b => b.secao !== 'lista');
+    edicao.mudar((d) => {
+      const resto = d.blocos.filter(b => !ids.has(b.id));
       return { ...d, blocos: [...resto.slice(0, onde), nova, ...resto.slice(onde)] };
     });
-    setSelecionado('tab-inscritos');
-    setAviso('Lista convertida. As colunas agora são colunas de verdade: o nome comprido não '
+    setSelecionado(nova.id);
+    setAviso('Linhas convertidas. As colunas agora são colunas de verdade: o nome comprido não '
       + 'empurra mais o que está ao lado dele.');
   };
 
@@ -186,7 +208,7 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
   const mudarTabela = (f: (t: NonNullable<typeof tabela>) => Partial<NonNullable<typeof tabela>>) => {
     if (!tabela) return;
     const id = tabela.id;
-    setDoc(d => ({
+    edicao.mudar(d => ({
       ...d,
       blocos: d.blocos.map(b => (b.id === id && b.tipo === 'tabela' ? { ...b, ...f(b) } : b)),
     }));
@@ -306,7 +328,7 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
          verde. */
       disposicao: 'alinhada' as const,
     };
-    setDoc(d => ({
+    edicao.mudar(d => ({
       ...d,
       blocos: [...d.blocos.slice(0, onde + 1), foto, ...d.blocos.slice(onde + 1)],
     }));
@@ -322,7 +344,7 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
       return;
     }
     const id = imagem.id;
-    setDoc(d => ({
+    edicao.mudar(d => ({
       ...d,
       blocos: d.blocos.map(b => (b.id === id && b.tipo === 'imagem'
         ? { ...b, disposicao: qual } : b)),
@@ -346,25 +368,15 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
     }
     const onde = doc.blocos.findIndex(b => b.id === imagem.id);
     const nova = legendaDeFigura(id, imagem.secao, imagem.descricao);
-    setDoc(d => ({
-      ...d,
-      blocos: [...d.blocos.slice(0, onde + 1), nova, ...d.blocos.slice(onde + 1)],
+    /* O cursor vai para o fim da legenda, que é onde o Word o deixa: o texto
+       que a acompanha é de quem a insere, e se escreve ali. */
+    edicao.mudar(d => ({
+      doc: { ...d, blocos: [...d.blocos.slice(0, onde + 1), nova, ...d.blocos.slice(onde + 1)] },
+      selecao: cursorEm(id, tamanhoDoParagrafo(nova)),
     }));
-    setSelecionado(id);
+    setSelecionado(null);
     setAviso('Legenda inserida. O "Figura" e o número da frente não foram digitados: são um campo, '
       + 'e o fundo cinza é o Word dizendo isso. O número sai da posição dela entre as figuras.');
-  };
-
-  const excluirParagrafo = () => {
-    fecharMenu();
-    if (!alvo || !ehParagrafo(alvo)) {
-      setAviso('Clique antes no parágrafo que você quer apagar.');
-      return;
-    }
-    const id = alvo.id;
-    setDoc(d => ({ ...d, blocos: d.blocos.filter(b => b.id !== id) }));
-    setSelecionado(null);
-    setAviso('Parágrafo apagado.');
   };
 
   /* Uma gravação por montagem: o `StrictMode` monta duas vezes de propósito. */
@@ -378,7 +390,7 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
   const acoes = (
     <>
       <button type="button" className="btn-ghost" onClick={() => {
-        setDoc(RELATORIO_INICIAL);
+        edicao.reiniciar(RELATORIO_INICIAL);
         setSelecionado(null);
         setCelula(null);
         setAviso('O relatório voltou ao estado em que chegou.');
@@ -406,6 +418,7 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
     >
       <style>{CSS_WORD}</style>
       <style>{CSS_FOLHA}</style>
+      <style>{CSS_FONTE_DO_WORD}</style>
       <style>{`
         .wt-galeria { display: flex; gap: 3px; }
         .wt-estilo {
@@ -418,8 +431,12 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
         .wt-estilo[aria-pressed="true"] { border-color: #2B579A; background: #EFF4FB; }
       `}</style>
 
-      <div className="wd-janela">
-        <BarraDeTituloDoWord documento="Relatório do Acampamento" aoAvisar={setAviso} />
+      <div className="wd-janela" style={{
+        '--largura-cm': 21, '--altura-cm': 29.7, '--margem-cm': 2.5, '--zoom': zoom,
+      } as React.CSSProperties}>
+        <BarraDeTituloDoWord documento="Relatório do Acampamento" aoAvisar={setAviso}
+          aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
+          aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />
 
         <GuiasDoWord
           atual={guiaAtual} usaveis={GUIAS_USAVEIS} contextuais={contextuais}
@@ -436,16 +453,21 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
                 <EnfeiteDaFaixa dica="Recortar (Ctrl+X)" aoAvisar={setAviso}><Scissors className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
                 <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={setAviso}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
               </GrupoDaFaixa>
-              <GrupoDaFaixa nome="Fonte">
-                <EnfeiteDaFaixa dica="Negrito (Ctrl+N)" aoAvisar={setAviso}><IconeNegrito /></EnfeiteDaFaixa>
-                <EnfeiteDaFaixa dica="Itálico (Ctrl+I)" aoAvisar={setAviso}><IconeItalico /></EnfeiteDaFaixa>
-                <EnfeiteDaFaixa dica="Sublinhado (Ctrl+S)" aoAvisar={setAviso}><IconeSublinhado /></EnfeiteDaFaixa>
-              </GrupoDaFaixa>
+              <GrupoDeFonte edicao={edicao} aoAvisar={setAviso} />
               <GrupoDaFaixa nome="Parágrafo">
-                <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={setAviso}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                <BotaoDaFaixa dica="Excluir Parágrafo" aoClicar={excluirParagrafo}>
-                  <Trash2 className="w-3.5 h-3.5" />
-                </BotaoDaFaixa>
+                <div className="wd-linhas">
+                  <div style={{ display: 'flex', gap: 1 }}>
+                    <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={setAviso}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                    <EnfeiteDaFaixa dica="Centralizar (Ctrl+E)" aoAvisar={setAviso}><AlignCenter className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                    <EnfeiteDaFaixa dica="Alinhar à Direita (Ctrl+G)" aoAvisar={setAviso}><AlignRight className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                    <EnfeiteDaFaixa dica="Justificar (Ctrl+J)" aoAvisar={setAviso}><AlignJustify className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                  </div>
+                  <div style={{ display: 'flex', gap: 1 }}>
+                    <BotaoDaFaixa dica="Mostrar Tudo (Ctrl+*)" ativo={marcas} aoClicar={() => { setMarcas(m => !m); edicao.focar(); }}>
+                      <Pilcrow className="w-3.5 h-3.5" />
+                    </BotaoDaFaixa>
+                  </div>
+                </div>
               </GrupoDaFaixa>
             </>
           )}
@@ -568,9 +590,10 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
 
         <FolhaDoWord
           doc={doc}
+          marcas={marcas}
+          edicao={edicao.folha}
           selecionado={selecionado}
           aoEscolher={escolher}
-          aoClicarNoVazio={() => { setSelecionado(null); setCelula(null); fecharMenu(); }}
           celula={celula}
           aoCursorNaCelula={cursorNaCelula}
           aoEditarCelula={escreverNaCelula}

@@ -1,10 +1,11 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  PanelTop, PanelBottom, Hash, ListTree, RefreshCw, Plus, SquareCheck, Square,
-  AlignLeft, Clipboard, Scissors, Copy,
+  PanelTop, PanelBottom, Hash, ListTree, RefreshCw, SquareCheck, Square, FileText,
+  AlignLeft, AlignCenter, AlignRight, AlignJustify, Pilcrow, Clipboard, Scissors, Copy,
 } from 'lucide-react';
-import { IconeItalico, IconeNegrito, IconeSublinhado } from '../labs/office';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
+import { GrupoDeFonte, GrupoDeEstilos, CSS_FONTE_DO_WORD } from '../labs/fonteDoWord';
+import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
   BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
@@ -12,9 +13,9 @@ import {
 import {
   RELATORIO_ANUAL_INICIAL, METAS_DO_RELATORIO_ANUAL, SECAO_QUE_FALTA,
   quantasPaginas, titulosDoDoc, sumarioAtualizado,
-  type Doc, type Secao,
+  type Doc,
 } from '../labs/relatorioAnual';
-import { linhaDe, trechoDe, campoDe, faixaTemCampoDePagina } from '../labs/documento';
+import { trechoDe, campoDe, faixaTemCampoDePagina } from '../labs/documento';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
 
 /*
@@ -36,9 +37,10 @@ import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
   que é exatamente o gesto que a lição existe para desfazer.
 
   ── E o sumário envelhece na tela ────────────────────────────────────────
-  A seção que a liderança pediu entra por um botão, como o parágrafo da revisão
-  do módulo 2 — e pelo mesmo motivo: o que a tarefa mede é o que acontece com o
-  sumário depois, e para isso o gesto precisa acontecer dentro do documento.
+  A seção que a liderança pediu é escrita no fim do documento — Ctrl+Enter, o
+  título, Título 1 na galeria e o corpo —, como o parágrafo da revisão do
+  módulo 2. Já foi um botão que a punha pronta; o Word não tem esse botão, e o
+  que a tarefa mede é o que acontece com o sumário depois.
 */
 
 interface Props {
@@ -53,10 +55,11 @@ const GUIAS_USAVEIS = ['Início', 'Inserir', 'Referências'];
 export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, aoSair }: Props) {
   const [doc, setDoc] = useState<Doc>(RELATORIO_ANUAL_INICIAL);
   const [guia, setGuia] = useState('Inserir');
-  const [selecionado, setSelecionado] = useState<string | null>(null);
   const [aviso, setAviso] = useState('');
   const [zoom, setZoom] = useState(1);
+  const [marcas, setMarcas] = useState(false);
   const jaGravou = useRef(false);
+  const edicao = useEdicaoDoWord(doc, setDoc);
 
   const feitas = useMemo(
     () => new Set(METAS_DO_RELATORIO_ANUAL.filter(m => m.feita(doc)).map(m => m.id)),
@@ -91,7 +94,7 @@ export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, a
       e sem onde escrever, que é pior do que não ter aberto.
     */
     const nova = { trechos: [trechoDe(`${onde}-a`, '')] };
-    setDoc(d => (onde === 'cabecalho' ? { ...d, cabecalho: nova } : { ...d, rodape: nova }));
+    edicao.mudar(d => (onde === 'cabecalho' ? { ...d, cabecalho: nova } : { ...d, rodape: nova }));
     setAviso(onde === 'cabecalho'
       ? 'Cabeçalho aberto. Escreva nele, no alto da folha — o que você escrever aparece em todas.'
       : 'Rodapé aberto.');
@@ -118,7 +121,7 @@ export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, a
       lado deixaria "Página 2 Página 3" no pé da folha, e a tarefa ficaria verde
       com o documento pior do que antes.
     */
-    setDoc(d => ({
+    edicao.mudar(d => ({
       ...d,
       rodape: { trechos: [trechoDe('rod-t', 'Página '), campoDe('rod-n', 'pagina')] },
     }));
@@ -128,7 +131,7 @@ export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, a
 
   const alternarPrimeiraDiferente = () => {
     const ligando = !doc.primeiraPaginaDiferente;
-    setDoc(d => ({ ...d, primeiraPaginaDiferente: ligando }));
+    edicao.mudar(d => ({ ...d, primeiraPaginaDiferente: ligando }));
     setAviso(ligando
       ? 'Primeira página diferente. A folha 1 já traz o nome do relatório em letra grande — '
         + 'repeti-lo no cabeçalho dela seria dizer duas vezes.'
@@ -137,33 +140,27 @@ export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, a
 
   /* ── O documento ─────────────────────────────────────────────────────────── */
 
-  const acrescentarSecao = () => {
-    if (doc.blocos.some(b => b.id === SECAO_QUE_FALTA.tituloId)) {
-      setAviso('A seção de encerramento já está no relatório.');
+  const quebraDePagina = () => {
+    if (!edicao.selecao) {
+      setAviso('Clique primeiro no documento — a quebra de página entra onde o cursor está.');
       return;
     }
-    const tinhaSumario = !!doc.sumario;
-    setDoc(d => ({
-      ...d,
-      blocos: [
-        ...d.blocos,
-        {
-          ...linhaDe(SECAO_QUE_FALTA.tituloId, SECAO_QUE_FALTA.secao as Secao, SECAO_QUE_FALTA.titulo),
-          estilo: 'Título 1' as const,
-          quebraDePagina: true,
-        },
-        linhaDe(SECAO_QUE_FALTA.corpoId, SECAO_QUE_FALTA.secao as Secao, SECAO_QUE_FALTA.corpo),
-      ],
-    }));
-    setAviso(tinhaSumario
-      ? 'Seção acrescentada, em folha própria. Agora volte à folha 1 e olhe o sumário: ele não '
-        + 'sabe que ela existe, e continua mostrando as folhas de antes. Nada avisou.'
-      : 'Seção acrescentada, em folha própria, com o estilo Título 1 — que é o que o sumário procura.');
+    edicao.executar({ tipo: 'quebra-de-pagina' });
+    edicao.focar();
+  };
+
+  const copiarSecao = async () => {
+    try {
+      await navigator.clipboard.writeText(SECAO_QUE_FALTA.corpo);
+      setAviso('O texto da seção foi copiado. Ponha o cursor embaixo do título e cole com Ctrl+V.');
+    } catch {
+      setAviso(`Não deu para copiar daqui — escreva o texto: "${SECAO_QUE_FALTA.corpo}"`);
+    }
   };
 
   const gerarSumario = () => {
     const itens = titulosDoDoc(doc);
-    setDoc(d => ({ ...d, sumario: itens }));
+    edicao.mudar(d => ({ ...d, sumario: itens }));
     setAviso(itens.length === 0
       ? 'Nenhuma entrada de sumário foi encontrada: ele lê os estilos de título, e não o tamanho da letra.'
       : `Sumário gerado com ${itens.length} entradas, cada uma com a folha em que está hoje.`);
@@ -175,7 +172,7 @@ export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, a
       return;
     }
     const estava = sumarioAtualizado(doc);
-    setDoc(d => ({ ...d, sumario: titulosDoDoc(d) }));
+    edicao.mudar(d => ({ ...d, sumario: titulosDoDoc(d) }));
     setAviso(estava
       ? 'O sumário já estava em dia.'
       : 'Sumário atualizado. Ele estava mostrando o documento de antes — é isto que o botão '
@@ -192,9 +189,11 @@ export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, a
 
   const acoes = (
     <>
+      <button type="button" className="btn-ghost" onClick={copiarSecao}>
+        Copiar o texto da seção
+      </button>
       <button type="button" className="btn-ghost" onClick={() => {
-        setDoc(RELATORIO_ANUAL_INICIAL);
-        setSelecionado(null);
+        edicao.reiniciar(RELATORIO_ANUAL_INICIAL);
         setAviso('O relatório voltou ao estado em que chegou.');
       }}>
         Recomeçar
@@ -218,9 +217,14 @@ export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, a
     >
       <style>{CSS_WORD}</style>
       <style>{CSS_FOLHA}</style>
+      <style>{CSS_FONTE_DO_WORD}</style>
 
-      <div className="wd-janela">
-        <BarraDeTituloDoWord documento="Relatório Anual 2026" aoAvisar={setAviso} />
+      <div className="wd-janela" style={{
+        '--largura-cm': 21, '--altura-cm': 29.7, '--margem-cm': 2.5, '--zoom': zoom,
+      } as React.CSSProperties}>
+        <BarraDeTituloDoWord documento="Relatório Anual 2026" aoAvisar={setAviso}
+          aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
+          aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />
 
         <GuiasDoWord
           atual={guia} usaveis={GUIAS_USAVEIS}
@@ -236,14 +240,24 @@ export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, a
                 <EnfeiteDaFaixa dica="Recortar (Ctrl+X)" aoAvisar={setAviso}><Scissors className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
                 <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={setAviso}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
               </GrupoDaFaixa>
-              <GrupoDaFaixa nome="Fonte">
-                <EnfeiteDaFaixa dica="Negrito (Ctrl+N)" aoAvisar={setAviso}><IconeNegrito /></EnfeiteDaFaixa>
-                <EnfeiteDaFaixa dica="Itálico (Ctrl+I)" aoAvisar={setAviso}><IconeItalico /></EnfeiteDaFaixa>
-                <EnfeiteDaFaixa dica="Sublinhado (Ctrl+S)" aoAvisar={setAviso}><IconeSublinhado /></EnfeiteDaFaixa>
-              </GrupoDaFaixa>
+              <GrupoDeFonte edicao={edicao} aoAvisar={setAviso} />
               <GrupoDaFaixa nome="Parágrafo">
-                <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={setAviso}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                <div className="wd-linhas">
+                  <div style={{ display: 'flex', gap: 1 }}>
+                    <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={setAviso}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                    <EnfeiteDaFaixa dica="Centralizar (Ctrl+E)" aoAvisar={setAviso}><AlignCenter className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                    <EnfeiteDaFaixa dica="Alinhar à Direita (Ctrl+G)" aoAvisar={setAviso}><AlignRight className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                    <EnfeiteDaFaixa dica="Justificar (Ctrl+J)" aoAvisar={setAviso}><AlignJustify className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                  </div>
+                  <div style={{ display: 'flex', gap: 1 }}>
+                    <BotaoDaFaixa dica="Mostrar Tudo (Ctrl+*)" ativo={marcas} aoClicar={() => { setMarcas(m => !m); edicao.focar(); }}>
+                      <Pilcrow className="w-3.5 h-3.5" />
+                    </BotaoDaFaixa>
+                  </div>
+                </div>
               </GrupoDaFaixa>
+              <GrupoDeEstilos edicao={edicao} aoAvisar={setAviso}
+                estilos={['Normal', 'Título 1', 'Título 2', 'Subtítulo', 'Citação']} />
             </>
           )}
 
@@ -273,10 +287,10 @@ export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, a
                     ? <SquareCheck className="w-5 h-5" /> : <Square className="w-5 h-5" />}
                 </BotaoDaFaixa>
               </GrupoDaFaixa>
-              <GrupoDaFaixa nome="Texto">
-                <BotaoDaFaixa dica="Acrescentar a seção de encerramento"
-                  rotulo="Seção de encerramento" empilhado aoClicar={acrescentarSecao}>
-                  <Plus className="w-5 h-5" />
+              <GrupoDaFaixa nome="Páginas">
+                <BotaoDaFaixa dica="Quebra de Página (Ctrl+Enter)" rotulo="Quebra de Página" empilhado
+                  aoClicar={quebraDePagina}>
+                  <FileText className="w-5 h-5" />
                 </BotaoDaFaixa>
               </GrupoDaFaixa>
             </>
@@ -299,9 +313,8 @@ export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, a
 
         <FolhaDoWord
           doc={doc}
-          selecionado={selecionado}
-          aoEscolher={(id) => { setSelecionado(id); setAviso(''); }}
-          aoClicarNoVazio={() => setSelecionado(null)}
+          marcas={marcas}
+          edicao={edicao.folha}
           aoEscreverNaFaixa={escreverNaFaixa}
         />
 

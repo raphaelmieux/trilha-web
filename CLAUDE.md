@@ -3317,6 +3317,81 @@ parte deste exercício. existe no Word de verdade…". Agora as peças do Office
 têm os dois canais separados — `aoAvisar` recebe o recado pronto, e
 `aoNaoFazParte`, quando o laboratório o entrega, recebe só o nome do comando.
 
+**O Word se edita com cursor, e não escolhendo parágrafo.** Os laboratórios de
+Word se pareciam com o Word e não funcionavam como ele: clicava-se num
+parágrafo, ele ganhava um contorno, e os botões agiam sobre o parágrafo
+inteiro. Juntar duas linhas do endereço com quebra de linha era um botão da
+faixa, "Juntar com Quebra de Linha", porque não havia onde apertar Shift+Enter;
+apagar um parágrafo vazio era outro botão, porque não havia Backspace. O
+desbravador aprendia um programa que não existe, e o gesto que a lição pedia
+nunca acontecia.
+
+A folha agora é `contenteditable`, e o cursor é o do próprio navegador: setas,
+Home, End, Shift+seta, clique duplo, arrasto e as alças de seleção do celular
+fazem o que fazem no Word, de graça. O que o navegador **não** faz é escrever:
+toda tecla que mudaria o texto é parada (`keydown` para Enter, Backspace,
+Delete e Tab; `beforeinput` para o resto, que é por onde o teclado do celular
+passa), vira um comando de `edicao.ts`, e a folha se redesenha do modelo. Se o
+DOM fosse a fonte da verdade, o Ctrl+B do Chrome poria um `<b>` dentro de um
+trecho, e as metas leriam um documento que a tela não mostra. A composição —
+acento de tecla morta, teclado do celular — não se pode impedir: deixa-se
+compor, o resultado entra pelo caminho de sempre e a folha é remontada.
+
+`cursorNaFolha.ts` traduz o cursor do navegador para posição do modelo, e
+`useEdicaoDoWord` guarda o cursor, a formatação pendente e o Ctrl+Z. O
+laboratório continua dono do documento, e os comandos dele passam por `mudar`
+para entrar no mesmo desfazer das teclas.
+
+Três decisões do motor erram calado se invertidas:
+
+- **a posição conta unidades**: letra, quebra de linha e campo valem uma cada.
+  O campo é um só, e o cursor pula a "Figura 1" inteira — entrar nele e
+  digitar apagaria a diferença entre o número calculado e o digitado;
+- **o pedaço de antes fica com o id**: partir um trecho deixa o original à
+  esquerda, e o Enter no começo de um parágrafo cria o vazio **antes** dele.
+  Metas e comentários seguem id; com o texto empurrado para um id novo, abrir
+  uma linha acima da assinatura faria a meta da assinatura deixar de achá-la;
+- **tirar o negrito apaga o negrito direto**, em vez de gravar "negrito:
+  falso". Gravar o falso deixaria formatação direta para sempre, e a meta que
+  pede o documento sem ela nunca fecharia para quem desfez à mão.
+
+A formatação vale para a seleção, como no Word: sem seleção, dentro de uma
+palavra, vale para a palavra; num espaço, fica pendente para o que se digitar.
+O estilo de parágrafo vale para todo parágrafo que a seleção toca. A borracha
+("Limpar Toda a Formatação") tira também o estilo, e o Ctrl+Espaço tira só a de
+caractere — a diferença é do programa, e a lição do módulo 1 da CC-ES002 a usa.
+Com o controle de alterações ligado, o que se digita sai marcado e o que se
+apaga sai riscado; o que o próprio autor acabou de inserir sai de verdade.
+
+**As metas leem o texto, e não o id do trecho de partida.** Com seleção de
+verdade, quem arrasta sobre "até 20 de junho" pega uma letra a mais ou a menos,
+e o motor parte os trechos onde a seleção começa e acaba. Uma meta presa ao id
+aprovaria quem pegou a mais e reprovaria quem começou um caractere depois.
+Pelo mesmo motivo as soluções de referência das travas são feitas com as
+mesmas chamadas do motor que as teclas fazem, e as travas que clicam digitam
+por `tecladoDaFolha.ts`, que dispara os eventos que o navegador dispararia.
+
+**A fonte do documento veste o papel, e não a janela.** Ela ia no `style` da
+janela inteira, e escolher Georgia na circular trocava a letra da faixa, das
+guias e da barra de título junto. A letra do papel também passou a ser medida
+em pontos da folha: 11 no estilo é 11 pontos, e desenhado como 11 px o texto
+saía do tamanho de uma folha com zoom de 80%.
+
+**O ¶ da folha editável é desenhado pela folha de estilo.** Ele era um
+elemento que não se edita no fim do parágrafo, e num parágrafo vazio o Chromium
+tirava o cursor dali: o Enter abria a linha nova e o que se digitava ia para o
+começo da de baixo. Quem viu foi o Chromium; no jsdom não há cursor para
+empurrar.
+
+**O botão da faixa não rouba o foco.** `BotaoDaFaixa` impede o `mousedown`,
+senão clicar em Negrito tiraria o cursor do documento e a seleção sumiria antes
+de o botão agir. Quem desenha botão de faixa à mão precisa fazer o mesmo.
+
+**Os atalhos são os do programa imitado.** O Word em português é Ctrl+N, Ctrl+I
+e Ctrl+S; o editor de navegador da CC-ES006 não traduz nada e é Ctrl+B, Ctrl+I
+e Ctrl+U. A folha recebe `atalhos` do gancho, e o Ctrl+B do Word é parado sem
+fazer nada — no Chrome ele escreveria `<b>` no DOM.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que
@@ -4853,6 +4928,12 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDoProjeto.test.tsx` | lição com metas em dois programas sem caminho entre eles |
 | `src/components/LaboratorioDoProjeto.test.tsx` | transferência pendurada na linha do dono, onde o seletor a descarta |
 | `src/labs/classesDoPrograma.test.ts` | classe de programa imitado usada na tela e definida em folha nenhuma |
+| `src/labs/edicao.test.ts` | Enter no começo que muda o id do parágrafo de texto, ou negrito desligado que deixa formatação direta |
+| `src/labs/edicao.test.ts` | campo apagado letra por letra, ou controle de alterações que tira o texto em vez de riscar |
+| `src/components/LaboratorioDaCircular.test.tsx` | circular que volta a precisar de botão que o Word não tem, ou fonte do documento vazando para a janela |
+| `src/components/LaboratorioDaCircular.test.tsx` | zoom do rodapé que muda o número e não a folha |
+| `src/components/LaboratorioDoRelatorio.test.tsx` | Converter Texto em Tabela que converte sem nada selecionado |
+| `src/components/LaboratorioDaRevisao.test.tsx` | texto digitado com o controle ligado saindo sem marca |
 | `src/labs/office.test.tsx` | guia do Office sem faixa padrão, que abriria um cartão vazio |
 | `src/labs/office.test.tsx` | faixa do laboratório que deixou de ser a irmã seguinte da fileira de guias, e não se esconde ao espiar outra guia |
 | `src/labs/office.test.tsx` | grupo completado que repete um que o laboratório já desenhou, ou B de "bold" no lugar do N |

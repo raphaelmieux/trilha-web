@@ -1,11 +1,17 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  Pencil, MessageSquare, Eye, History, Share2, X, RotateCcw, type LucideIcon,
+  Pencil, MessageSquare, Eye, History, X, RotateCcw, Star, FolderInput, CloudCheck,
+  Search, Undo2, Redo2, Printer, SpellCheck, Paintbrush, ChevronDown, Minus, Plus, Bold,
+  Italic, Underline, Baseline, Highlighter, Link, Image, AlignLeft, ArrowUpDown, ListChecks,
+  List, ListOrdered, IndentDecrease, IndentIncrease, RemoveFormatting, Lock, Video,
+  type LucideIcon,
 } from 'lucide-react';
 import {
   type ModoDeTrabalho, type Pessoa, type Versao, MODOS_DE_TRABALHO,
 } from './arquivoCompartilhado';
 import { NOME_DO_AUTOR, COR_DO_AUTOR } from './documento';
+import type { FormatoDaSelecao, Marca } from './edicao';
+import type { Formatacao } from './useEdicaoDoWord';
 
 /*
  * A janela do editor de documento **no navegador**, em peças.
@@ -84,9 +90,15 @@ export const CSS_DO_EDITOR_NA_NUVEM = `
 .ed-compartilhar:hover { background: #A8DBFF; }
 
 .ed-barra {
-  display: flex; align-items: center; gap: 3px; margin: 8px 14px 0;
-  padding: 4px 9px; background: #EDF2FA; border-radius: 999px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 6px; margin: 8px 14px 0;
+  padding: 4px 9px; background: #EDF2FA; border-radius: 999px;
 }
+.ed-barra-rolagem {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 3px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.ed-barra-rolagem::-webkit-scrollbar { display: none; }
+.ed-barra-rolagem > * { flex-shrink: 0; }
 .ed-ferramenta {
   border: none; background: none; cursor: pointer; color: #1F1F1F;
   width: 30px; height: 30px; border-radius: 6px; display: grid; place-items: center;
@@ -96,7 +108,7 @@ export const CSS_DO_EDITOR_NA_NUVEM = `
 .ed-ferramenta:disabled { color: #9AA0A6; cursor: default; background: none; }
 .ed-separador { width: 1px; height: 20px; background: #C4C7C5; margin: 0 5px; }
 .ed-modo {
-  margin-left: auto; display: inline-flex; align-items: center; gap: 7px;
+  margin-left: auto; flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px;
   border: none; background: #DCE3ED; color: #1F1F1F; cursor: pointer;
   border-radius: 999px; padding: 6px 13px; font: inherit; font-size: 12.5px;
 }
@@ -178,6 +190,90 @@ export const CSS_DO_EDITOR_NA_NUVEM = `
   .ed-topo { flex-direction: column; gap: 6px; }
   .ed-presenca { padding-top: 0; }
 }
+
+/* ── O que faz desta janela o editor de documento do navegador ──────────────
+
+   O ícone azul de folha, a estrela, o mover e a nuvem ao lado do nome; os oito
+   menus de palavras; a barra larga com desfazer, imprimir, zoom, estilo,
+   fonte e tamanho; e o papel centrado numa mesa quase branca, com régua. Sem
+   isso a janela era um nome, quatro botões e um texto encostado na borda —
+   nada que se reencontre na sala de informática. */
+.ed-logo {
+  width: 40px; height: 40px; flex: none; display: grid; place-items: center; margin-top: 2px;
+  border: none; background: none; cursor: pointer; border-radius: 50%;
+}
+.ed-logo:hover { background: #F1F3F4; }
+.ed-linha-nome { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+.ed-icone-nome {
+  width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  border: none; background: none; color: #444746; cursor: pointer;
+}
+.ed-icone-nome:hover { background: #E8EAED; }
+.ed-acoes-topo { display: flex; align-items: center; gap: 6px; }
+.ed-redondo {
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  border: none; background: none; color: #444746; cursor: pointer;
+}
+.ed-redondo:hover { background: #E8EAED; }
+.ed-combo {
+  display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 6px;
+  border: none; background: none; border-radius: 4px; color: #1F1F1F; cursor: pointer;
+  font: inherit; font-size: 13px; white-space: nowrap;
+}
+.ed-combo:hover { background: #DCE3ED; }
+.ed-tamanho {
+  width: 34px; height: 24px; border: 1px solid #747775; border-radius: 4px; text-align: center;
+  font: inherit; font-size: 13px; color: #1F1F1F; background: transparent;
+}
+.ed-letra { font-family: Arial, sans-serif; font-size: 15px; line-height: 1; }
+/* A janela se mede por ela mesma: ao lado do painel de tarefas ela tem
+   trezentos pixels a menos do que a tela diz. Abaixo da largura em que a
+   barra cabe numa linha, as ferramentas de menos uso saem — é o que o editor
+   de verdade faz, recolhendo-as atrás das reticências —, e o seletor de modo,
+   que é a lição do requisito 4.4, continua no fim da mesma linha. */
+.ed-janela { container-type: inline-size; }
+@container (max-width: 1240px) { .ed-menos { display: none !important; } }
+@container (max-width: 760px) { .ed-so-largo { display: none !important; } }
+
+.ed-rolagem {
+  --px-cm: 34;
+  background: #F9FBFD;
+}
+@media (max-width: 640px)  { .ed-rolagem { --px-cm: 17; } }
+@media (min-width: 641px) and (max-width: 1023px) { .ed-rolagem { --px-cm: 26; } }
+.ed-regua {
+  position: sticky; top: 0; z-index: 4; background: #F9FBFD; padding: 4px 0;
+  display: flex; justify-content: center; border-bottom: 1px solid #E3E3E3;
+}
+.ed-regua-barra {
+  width: calc(21 * var(--px-cm) * 1px); height: 14px; position: relative;
+  background: #E8EAED; border-radius: 1px;
+}
+.ed-regua-miolo {
+  position: absolute; top: 0; bottom: 0; background: #FFFFFF;
+  left: calc(2.5 * var(--px-cm) * 1px); right: calc(2.5 * var(--px-cm) * 1px);
+}
+.ed-regua-numero {
+  position: absolute; top: 1px; transform: translateX(-50%); font-size: 8px; color: #5E5E5E;
+  line-height: 12px;
+}
+/* A folha é a mesma do Word, e a casca é que muda: aqui ela pousa na mesa
+   clara, com a borda fina do editor de navegador, e não na mesa cinza do
+   Word. Sem estas regras a folha nem existia nesta janela — as medidas
+   moram na folha do Word, que este laboratório não carrega, e o texto saía
+   encostado na borda da tela. */
+.ed-rolagem .wd-canvas { background: transparent; padding: 14px 12px 40px; }
+.ed-rolagem .wd-pagina {
+  background: #FFFFFF; margin: 0 auto; position: relative; z-index: 0;
+  box-shadow: 0 0 0 1px #DADCE0, 0 1px 3px rgba(60,64,67,.15);
+  width: calc(var(--largura-cm, 21) * var(--px-cm) * 1px);
+  min-height: calc(var(--altura-cm, 29.7) * var(--px-cm) * 1px);
+  padding: calc(var(--margem-cm, 2.5) * var(--px-cm) * 1px);
+  display: flex; flex-direction: column;
+}
+.ed-rolagem .wd-pagina + .wd-pagina { margin-top: 12px; }
+.ed-rolagem .wd-par { font-size: calc(var(--pt, 11) * var(--px-cm) * 0.035277px); }
+
 `;
 
 /* ── Os três modos: é aqui que o requisito 4.4 acontece ────────────────────── */
@@ -191,28 +287,115 @@ const ICONE_DO_MODO: Record<ModoDeTrabalho, LucideIcon> = {
 
 /* ── O alto ────────────────────────────────────────────────────────────────── */
 
-export function TopoDoEditor({ nome, aoMudarNome, menus, direita }: {
+/**
+ * O ícone do editor de documento: a folha azul de canto dobrado.
+ *
+ * Desenhado aqui, e não tirado de um pacote de ícones: é por ele que se
+ * reconhece de longe qual programa está aberto, e um ícone genérico de
+ * arquivo diria "algum programa".
+ */
+function IconeDoDocumento() {
+  return (
+    <svg width="26" height="34" viewBox="0 0 26 34" aria-hidden="true">
+      <path d="M2 0h16l8 8v24a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2z" fill="#4285F4" />
+      <path d="M18 0l8 8h-6a2 2 0 0 1-2-2z" fill="#A1C2FA" />
+      <rect x="6" y="15" width="14" height="2" fill="#FFFFFF" />
+      <rect x="6" y="19.5" width="14" height="2" fill="#FFFFFF" />
+      <rect x="6" y="24" width="10" height="2" fill="#FFFFFF" />
+    </svg>
+  );
+}
+
+export function TopoDoEditor({ nome, aoMudarNome, menus, direita, aoNaoFazParte, aoIrParaInicio }: {
   nome: string;
   /** Sem ele o nome não se digita: a peça vem pela presença do setter. */
   aoMudarNome?: (n: string) => void;
   menus: ReactNode;
   direita: ReactNode;
+  /**
+   * Para a estrela, o mover e a nuvem ao lado do nome, que existem no editor
+   * de verdade e não fazem parte da lição. Sem ele, os três não são
+   * desenhados — ícone que não responde nada ensina que o programa mente.
+   */
+  aoNaoFazParte?: (comando: string) => void;
+  /** O ícone do programa leva de volta à lista de arquivos, como no de verdade. */
+  aoIrParaInicio?: () => void;
 }) {
   return (
     <div className="ed-topo">
+      <button type="button" className="ed-logo" title="Página inicial do Documentos"
+        aria-label="Página inicial do Documentos"
+        onClick={aoIrParaInicio ?? (() => aoNaoFazParte?.('A página inicial do Documentos'))}>
+        <IconeDoDocumento />
+      </button>
       <div className="ed-identidade">
-        <input
-          className="ed-nome"
-          value={nome}
-          readOnly={!aoMudarNome}
-          aria-label="Nome do documento"
-          size={Math.max(nome.length, 8)}
-          onChange={e => aoMudarNome?.(e.target.value)}
-        />
+        <div className="ed-linha-nome">
+          <input
+            className="ed-nome"
+            value={nome}
+            readOnly={!aoMudarNome}
+            aria-label="Nome do documento"
+            size={Math.max(nome.length, 8)}
+            onChange={e => aoMudarNome?.(e.target.value)}
+          />
+          {aoNaoFazParte && (
+            <>
+              <button type="button" className="ed-icone-nome" title="Marcar com estrela"
+                aria-label="Marcar com estrela" onClick={() => aoNaoFazParte('Marcar com estrela')}>
+                <Star size={17} aria-hidden />
+              </button>
+              <button type="button" className="ed-icone-nome" title="Mover"
+                aria-label="Mover o documento" onClick={() => aoNaoFazParte('Mover o documento para outra pasta, por aqui,')}>
+                <FolderInput size={17} aria-hidden />
+              </button>
+              <button type="button" className="ed-icone-nome" title="Todas as alterações foram salvas no Drive"
+                aria-label="Status do documento: salvo" onClick={() => aoNaoFazParte('O status de salvamento')}>
+                <CloudCheck size={17} aria-hidden />
+              </button>
+            </>
+          )}
+        </div>
         <div className="ed-menus">{menus}</div>
       </div>
       <div className="ed-presenca">{direita}</div>
     </div>
+  );
+}
+
+/**
+ * Os oito menus de palavras, na ordem em que o editor de navegador os põe.
+ *
+ * O laboratório desenha a gaveta dos que a lição usa; os outros abrem a
+ * gaveta padrão, com os itens que o programa tem, todos avisando. Menu que
+ * não abria nada — Formatar e Ajuda abriam, até aqui, para lugar nenhum — é o
+ * muro que ensina a parar de procurar.
+ */
+export const MENUS_DO_EDITOR = [
+  'Arquivo', 'Editar', 'Ver', 'Inserir', 'Formatar', 'Ferramentas', 'Extensões', 'Ajuda',
+] as const;
+
+const GAVETAS_PADRAO: Record<(typeof MENUS_DO_EDITOR)[number], string[]> = {
+  Arquivo: ['Novo', 'Abrir', 'Fazer uma cópia', 'Compartilhar', 'E-mail', 'Fazer o download', 'Renomear', 'Mover', 'Mover para a lixeira', 'Histórico de versões', 'Disponibilizar off-line', 'Detalhes', 'Idioma', 'Configuração da página', 'Imprimir'],
+  Editar: ['Desfazer', 'Refazer', 'Recortar', 'Copiar', 'Colar', 'Colar sem formatação', 'Selecionar tudo', 'Excluir', 'Localizar e substituir'],
+  Ver: ['Modo', 'Mostrar layout de impressão', 'Mostrar régua', 'Mostrar contorno', 'Mostrar barra de equações', 'Mostrar caracteres não imprimíveis', 'Tela cheia'],
+  Inserir: ['Imagem', 'Tabela', 'Desenho', 'Gráfico', 'Linha horizontal', 'Emoji', 'Caracteres especiais', 'Equação', 'Cabeçalhos e rodapés', 'Números de página', 'Quebra', 'Link', 'Comentário', 'Índice'],
+  Formatar: ['Texto', 'Estilos de parágrafo', 'Alinhar e recuar', 'Espaçamento entre linhas e parágrafos', 'Colunas', 'Marcadores e numeração', 'Cabeçalhos e rodapés', 'Números de página', 'Orientação da página', 'Limpar formatação'],
+  Ferramentas: ['Ortografia e gramática', 'Contagem de palavras', 'Revisar alterações sugeridas', 'Comparar documentos', 'Citações', 'Dicionário', 'Traduzir documento', 'Digitação por voz', 'Preferências', 'Acessibilidade'],
+  Extensões: ['Complementos', 'Apps Script'],
+  Ajuda: ['Ajuda do Documentos', 'Treinamento', 'Atualizações', 'Enviar feedback ao Google', 'Atalhos do teclado'],
+};
+
+/** A gaveta que o editor de verdade tem nesse menu, com todo item avisando. */
+export function GavetaPadraoDoEditor({ menu, aoNaoFazParte }: {
+  menu: (typeof MENUS_DO_EDITOR)[number];
+  aoNaoFazParte: (comando: string) => void;
+}) {
+  return (
+    <>
+      {GAVETAS_PADRAO[menu].map(item => (
+        <ItemDaGaveta key={item} aoClicar={() => aoNaoFazParte(`${menu} › ${item}`)}>{item}</ItemDaGaveta>
+      ))}
+    </>
   );
 }
 
@@ -274,15 +457,29 @@ export function PresencaNoEditor({ quem }: { quem: Pessoa[] }) {
 export function BotaoCompartilharNoEditor({ aoClicar }: { aoClicar: () => void }) {
   return (
     <button type="button" className="ed-compartilhar" onClick={aoClicar}>
-      <Share2 size={17} aria-hidden /> Compartilhar
+      <Lock size={15} aria-hidden /> Compartilhar
     </button>
   );
 }
 
 /* ── A barra fina ──────────────────────────────────────────────────────────── */
 
-export function BarraDoEditor({ children }: { children: ReactNode }) {
-  return <div className="ed-barra">{children}</div>;
+/**
+ * A barra larga de ferramentas.
+ *
+ * As ferramentas rolam de lado numa linha só, e o que vai em `direita` — o
+ * seletor de modo — fica fora da rolagem, sempre à vista no fim da linha. A
+ * barra quebrava em duas e depois em três no celular, empurrando o papel
+ * para baixo; e o seletor de modo, que é o requisito 4.4 inteiro, era o
+ * primeiro a cair para a linha de baixo.
+ */
+export function BarraDoEditor({ children, direita }: { children: ReactNode; direita?: ReactNode }) {
+  return (
+    <div className="ed-barra">
+      <div className="ed-barra-rolagem">{children}</div>
+      {direita}
+    </div>
+  );
 }
 
 export function FerramentaDoEditor({ icone: Icone, dica, ativa, desligada, aoClicar }: {
@@ -302,6 +499,141 @@ export function FerramentaDoEditor({ icone: Icone, dica, ativa, desligada, aoCli
 
 export function SeparadorDaBarra() {
   return <span className="ed-separador" aria-hidden />;
+}
+
+/**
+ * As ferramentas que a barra do editor de navegador tem sempre, avisando.
+ *
+ * Vêm em duas metades porque o laboratório põe a dele no meio, onde o
+ * programa de verdade a põe: o comentário fica depois do link, e o que é só
+ * da lição — aceitar, rejeitar, o histórico — depois de tudo. Negrito aqui é
+ * B, e não N: o editor de navegador não traduz os ícones, ao contrário do
+ * Word em português.
+ */
+/** O que a barra precisa do cursor do documento para agir. */
+interface ControleDaBarra {
+  formato: FormatoDaSelecao;
+  marcar: (m: Marca) => void;
+  formatar: (f: Formatacao) => void;
+  desfazer: () => void;
+  refazer: () => void;
+}
+
+export function FerramentasPadraoDoEditor({ parte, aoNaoFazParte, controle }: {
+  parte: 'antes' | 'depois';
+  aoNaoFazParte: (comando: string) => void;
+  /**
+   * O cursor do documento. Com ele, desfazer, refazer, negrito, itálico,
+   * sublinhado e o tamanho da letra agem sobre a seleção, como no editor de
+   * verdade; sem ele, avisam — é a regra da presença do setter.
+   */
+  controle?: ControleDaBarra;
+}) {
+  const acao: Partial<Record<string, () => void>> = controle ? {
+    'Desfazer (Ctrl+Z)': controle.desfazer,
+    'Refazer (Ctrl+Y)': controle.refazer,
+    'Negrito (Ctrl+B)': () => controle.marcar('negrito'),
+    'Itálico (Ctrl+I)': () => controle.marcar('italico'),
+    'Sublinhado (Ctrl+U)': () => controle.marcar('sublinhado'),
+    'Diminuir tamanho da fonte (Ctrl+Shift+,)': () => controle.formatar({ tipo: 'encolher' }),
+    'Aumentar tamanho da fonte (Ctrl+Shift+.)': () => controle.formatar({ tipo: 'crescer' }),
+  } : {};
+  const ligado: Partial<Record<string, boolean>> = controle ? {
+    'Negrito (Ctrl+B)': controle.formato.negrito,
+    'Itálico (Ctrl+I)': controle.formato.italico,
+    'Sublinhado (Ctrl+U)': controle.formato.sublinhado,
+  } : {};
+  const f = (Icone: LucideIcon, dica: string, extra = '') => (
+    <button key={dica} type="button" className={`ed-ferramenta ${extra}`} title={dica} aria-label={dica}
+      aria-pressed={ligado[dica]}
+      /* O clique na barra não tira o cursor do documento. */
+      onMouseDown={ev => ev.preventDefault()}
+      onClick={() => (acao[dica] ? acao[dica]!() : aoNaoFazParte(dica))}>
+      <Icone size={17} aria-hidden />
+    </button>
+  );
+  const combo = (rotulo: string, valor: string, extra = '') => (
+    <button key={rotulo} type="button" className={`ed-combo ${extra}`} title={rotulo} aria-label={rotulo}
+      onClick={() => aoNaoFazParte(rotulo)}>
+      {valor} <ChevronDown size={13} aria-hidden />
+    </button>
+  );
+  if (parte === 'antes') {
+    return (
+      <>
+        {f(Search, 'Pesquisar nos menus (Alt+/)', 'ed-menos')}
+        {f(Undo2, 'Desfazer (Ctrl+Z)')}
+        {f(Redo2, 'Refazer (Ctrl+Y)')}
+        {f(Printer, 'Imprimir (Ctrl+P)', 'ed-menos')}
+        {f(SpellCheck, 'Verificação ortográfica e gramatical (Ctrl+Alt+X)', 'ed-menos')}
+        {f(Paintbrush, 'Pintar formatação', 'ed-menos')}
+        {combo('Zoom', '100%', 'ed-menos')}
+        <SeparadorDaBarra />
+        {combo('Estilos', 'Texto normal')}
+        <SeparadorDaBarra />
+        {combo('Fonte', 'Arial', 'ed-so-largo')}
+        <span className="ed-so-largo" style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+          {f(Minus, 'Diminuir tamanho da fonte (Ctrl+Shift+,)')}
+          <button type="button" className="ed-tamanho" aria-label="Tamanho da fonte"
+            onClick={() => aoNaoFazParte('Tamanho da fonte')}>{controle?.formato.tamanho ?? 11}</button>
+          {f(Plus, 'Aumentar tamanho da fonte (Ctrl+Shift+.)')}
+        </span>
+        <SeparadorDaBarra />
+        {f(Bold, 'Negrito (Ctrl+B)')}
+        {f(Italic, 'Itálico (Ctrl+I)')}
+        {f(Underline, 'Sublinhado (Ctrl+U)')}
+        {f(Baseline, 'Cor do texto')}
+        {f(Highlighter, 'Cor de destaque', 'ed-menos')}
+        <SeparadorDaBarra />
+        {f(Link, 'Inserir link (Ctrl+K)')}
+      </>
+    );
+  }
+  return (
+    <>
+      {f(Image, 'Inserir imagem', 'ed-so-largo')}
+      <SeparadorDaBarra />
+      {f(AlignLeft, 'Alinhar e recuar', 'ed-so-largo')}
+      {f(ArrowUpDown, 'Espaçamento entre linhas e parágrafos', 'ed-so-largo')}
+      {f(ListChecks, 'Lista de verificação', 'ed-menos')}
+      {f(List, 'Lista com marcadores', 'ed-so-largo')}
+      {f(ListOrdered, 'Lista numerada', 'ed-so-largo')}
+      {f(IndentDecrease, 'Diminuir recuo (Ctrl+[)', 'ed-menos')}
+      {f(IndentIncrease, 'Aumentar recuo (Ctrl+])', 'ed-menos')}
+      {f(RemoveFormatting, 'Limpar formatação (Ctrl+\\)', 'ed-menos')}
+    </>
+  );
+}
+
+/** Os dois botões redondos do alto, antes das bolhas: comentários e reunião. */
+export function AcoesDoTopoDoEditor({ aoNaoFazParte }: { aoNaoFazParte: (comando: string) => void }) {
+  return (
+    <span className="ed-acoes-topo">
+      <button type="button" className="ed-redondo ed-so-largo" title="Abrir histórico de comentários"
+        aria-label="Abrir histórico de comentários" onClick={() => aoNaoFazParte('O histórico de comentários')}>
+        <MessageSquare size={19} aria-hidden />
+      </button>
+      <button type="button" className="ed-redondo ed-so-largo" title="Participar de uma chamada aqui ou apresentar esta guia na chamada"
+        aria-label="Participar de uma chamada" onClick={() => aoNaoFazParte('Abrir uma reunião de vídeo a partir do documento')}>
+        <Video size={19} aria-hidden />
+      </button>
+    </span>
+  );
+}
+
+/** A régua do editor, com o branco onde o texto cabe e o cinza das margens. */
+export function ReguaDoEditor() {
+  return (
+    <div className="ed-regua" aria-hidden="true">
+      <div className="ed-regua-barra">
+        <div className="ed-regua-miolo" />
+        {Array.from({ length: 16 }, (_, i) => i + 1).map(n => (
+          <span key={n} className="ed-regua-numero"
+            style={{ left: `calc(${n + 2.5} * var(--px-cm) * 1px)` }}>{n}</span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -344,7 +676,7 @@ const escaparId = (id: string) =>
 export function PalcoDoEditor({ children, lado }: { children: ReactNode; lado?: ReactNode }) {
   return (
     <div className="ed-palco">
-      <div className="ed-rolagem">{children}</div>
+      <div className="ed-rolagem"><ReguaDoEditor />{children}</div>
       {lado}
     </div>
   );

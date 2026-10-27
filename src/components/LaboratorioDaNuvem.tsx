@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Undo2, Share2, Download, Copy, Trash2, FolderInput, Mail, Users,
   MessageSquarePlus, Check, X, History, Link2,
@@ -14,19 +14,24 @@ import {
   CSS_DO_EDITOR_NA_NUVEM, TopoDoEditor, MenuDoEditor, ItemDaGaveta,
   PresencaNoEditor, BotaoCompartilharNoEditor, BarraDoEditor, FerramentaDoEditor,
   SeparadorDaBarra, SeletorDeModo, PalcoDoEditor, CursorDeOutro, PainelDeHistorico,
-  AvisoDoEditor, BotaoDoEditor,
+  AvisoDoEditor, BotaoDoEditor, GavetaPadraoDoEditor, FerramentasPadraoDoEditor,
+  AcoesDoTopoDoEditor,
 } from '../labs/editorNaNuvem';
 import { CSS_FOLHA, FolhaDoWord, BalaoDeComentario } from '../labs/word';
+import { useEdicaoDoWord, type ComandoDeTexto } from '../labs/useEdicaoDoWord';
+import {
+  isolarSelecao, palavraEmVolta, recolhida, sugestaoDoTrecho, tamanhoDoParagrafo, trechosEmVolta,
+} from '../labs/edicao';
 import {
   type ArquivoDaNuvem, type ModoDeTrabalho, type Nuvem, type Papel, type Pessoa,
-  PAPEIS, NOME_DO_PAPEL, compartilhar, conflitoDeSincronizacao, gravarVersao,
+  PAPEIS, NOME_DO_PAPEL, compartilhar, conflitoDeSincronizacao, gravarVersao, gravarNaSessao,
   mandarParaALixeira, mandarPorAnexo, mover, mudarAcessoGeral, papelDe, podeEditar,
   restaurarVersao, tirarAcessoDoArquivo, transferirPropriedade, versaoAtual,
 } from '../labs/arquivoCompartilhado';
 import {
-  type Doc, type Paragrafo, NOME_DO_AUTOR, acrescentarComentario, aceitarRevisao,
-  blocoDe, comentariosDoDoc, linhaDe, rejeitarRevisao, resolverComentario,
-  responderComentario, revisoesPendentes, textoDoDoc, trechoDe,
+  type Doc, NOME_DO_AUTOR, acrescentarComentario, aceitarRevisao,
+  comentariosDoDoc, linhaDe, rejeitarRevisao, resolverComentario,
+  responderComentario, revisoesPendentes, textoDoDoc,
 } from '../labs/documento';
 import { ESCALA, LINHA_DA_MARTA } from '../labs/documentosDaNuvem';
 import {
@@ -115,44 +120,8 @@ function Moldura({
 const docDoArquivo = (a: ArquivoDaNuvem | undefined): Doc<string> | undefined =>
   a && versaoAtual(a)?.doc;
 
-/** Trocar o texto de um parágrafo simples. */
-const escreverNoBloco = (d: Doc<string>, blocoId: string, texto: string): Doc<string> => ({
-  ...d,
-  blocos: d.blocos.map(b => (b.id === blocoId && b.tipo === 'paragrafo'
-    ? { ...b, trechos: [trechoDe(`${b.id}-a`, texto)] } : b)),
-});
-
-/**
- * O mesmo gesto, com o controle de quem só comenta — ou com o modo de Sugestão.
- *
- * O texto **não entra** no parágrafo: ele vira um bloco novo com marca de
- * inserção, esperando alguém aceitar. É o que o editor de verdade faz, e é a
- * diferença inteira entre os requisitos 4.3 e 4.4.
- */
-const sugerirDepoisDo = (d: Doc<string>, blocoId: string, texto: string): Doc<string> => {
-  const onde = d.blocos.findIndex(b => b.id === blocoId);
-  const novo: Paragrafo<string> = blocoDe(`sug-${d.blocos.length}`, 'corpo', [
-    { ...trechoDe(`sug-${d.blocos.length}-a`, texto), revisao: { autor: 'voce', tipo: 'inserido' } },
-  ]);
-  return { ...d, blocos: [...d.blocos.slice(0, onde + 1), novo, ...d.blocos.slice(onde + 1)] };
-};
-
-/**
- * Enter no fim do parágrafo: nasce um vazio logo abaixo.
- *
- * Ela devolve **o id do novo**, e não só o documento, porque o cursor tem de
- * ir para lá — no editor de verdade Enter leva o cursor junto. Deixá-lo no
- * parágrafo de cima faz a tecla parecer que não funcionou: aparece uma linha
- * em branco e o que se digita continua entrando na linha anterior.
- */
-const paragrafoDepoisDe = (d: Doc<string>, blocoId: string): { doc: Doc<string>; novo: string } => {
-  const onde = d.blocos.findIndex(b => b.id === blocoId);
-  const novo = linhaDe(`p-${d.blocos.length}-${onde}`, 'corpo', '');
-  return {
-    doc: { ...d, blocos: [...d.blocos.slice(0, onde + 1), novo, ...d.blocos.slice(onde + 1)] },
-    novo: novo.id,
-  };
-};
+/** O documento do gancho enquanto nenhum arquivo está aberto. */
+const DOC_VAZIO: Doc<string> = { blocos: [], colunas: {}, sumario: null };
 
 /* ── O componente ─────────────────────────────────────────────────────────── */
 
@@ -182,11 +151,16 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
   const [comoMandar, setComoMandar] = useState<'anexo' | 'vinculo'>('anexo');
   const [papelNovo, setPapelNovo] = useState<Papel>('leitor');
   const [gaveta, setGaveta] = useState<string | null>(null);
-  const [bloco, setBloco] = useState<string | null>(null);
   const [historico, setHistorico] = useState(false);
   const [versao, setVersao] = useState<string | null>(null);
   const [rascunhos, setRascunhos] = useState<Record<string, string>>({});
   const [aviso, setAviso] = useState<string | null>(null);
+  /* O que existe no editor de verdade e não faz parte da lição responde com o
+     aviso preto do programa, como os enfeites da faixa do Word. */
+  const fora = (comando: string) => {
+    setGaveta(null);
+    setAviso(`${comando} existe no editor de verdade, e não faz parte desta lição.`);
+  };
   const [outrosJaEscreveram, setOutrosJaEscreveram] = useState(0);
 
   const nuvem = ctx.nuvem;
@@ -205,7 +179,7 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
     setCtx(contextoInicial(qual));
     setAberto(registro.abre ?? null);
     setLugar('meu'); setPasta(null); setEscolhido(null); setMenu(null); setCaixa(null);
-    setHeranca(false); lidos.current = new Set(); setGaveta(null); setBloco(null);
+    setHeranca(false); lidos.current = new Set(); setGaveta(null);
     setHistorico(false); setVersao(null); setRascunhos({}); setAviso(null);
     setOutrosJaEscreveram(0);
   };
@@ -257,30 +231,44 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
     }
   };
 
-  const escrever = (blocoId: string, texto: string) => {
-    if (!arquivoAberto || !doc) return;
-    /*
-      Três caminhos, e é neles que a vereda acontece. Quem só comenta não muda
-      o texto: propõe. Quem está em modo de Sugestão, idem, por escolha. Só no
-      terceiro o texto entra mesmo.
-    */
-    if (soComento) {
-      const novo = sugerirDepoisDo(doc, blocoId, texto);
-      gravar(arquivoAberto.id, ['voce'], novo);
-      descobrir('comentarista-so-sugere');
-      setAviso('Você é comentarista aqui: o que escreveu virou sugestão.');
-      return;
-    }
-    if (ctx.modo === 'sugestao') {
-      const novo = sugerirDepoisDo(doc, blocoId, texto);
-      gravar(arquivoAberto.id, ['voce'], novo);
-      descobrir('escreveu-em-modo-sugestao');
-      return;
-    }
-    const novo = escreverNoBloco(doc, blocoId, texto);
-    gravar(arquivoAberto.id, ['voce'], novo);
-    osOutrosRespondem(novo);
-  };
+  /*
+    O que se digita passa pelo mesmo motor do Word, e são três caminhos — é
+    neles que a vereda acontece. Quem só comenta não muda o texto: propõe.
+    Quem está em modo de Sugestão, idem, por escolha. Só no terceiro o texto
+    entra mesmo. Propor é o controle de alterações com o seu nome: o que se
+    digita sai sublinhado, e o que se apaga sai riscado, esperando alguém
+    aceitar.
+  */
+  const propondo = soComento || ctx.modo === 'sugestao';
+  const mudaTexto = (c: ComandoDeTexto) => !['desfazer', 'refazer', 'selecionar-tudo'].includes(c.tipo);
+  const edicao = useEdicaoDoWord(doc ?? DOC_VAZIO, (novo) => {
+    if (!arquivoAberto) return;
+    mexer(n => gravarNaSessao(n, arquivoAberto.id, 'agora mesmo', ['voce'], novo));
+    if (!propondo) osOutrosRespondem(novo);
+  }, {
+    quem: { autor: 'voce', marcar: propondo },
+    atalhos: 'navegador',
+    permitir: (c) => {
+      if (!mudaTexto(c)) return true;
+      if (ctx.modo === 'visualizacao') {
+        setAviso('Você está em modo de Visualização: aqui só se lê. Troque o modo no canto da barra para escrever.');
+        return false;
+      }
+      if (c.tipo === 'inserir' || c.tipo === 'apagar' || c.tipo === 'paragrafo') {
+        if (soComento) {
+          descobrir('comentarista-so-sugere');
+          setAviso('Você é comentarista aqui: o que escreveu virou sugestão.');
+        } else if (ctx.modo === 'sugestao') {
+          descobrir('escreveu-em-modo-sugestao');
+        }
+      }
+      return true;
+    },
+  });
+  const { esquecer } = edicao;
+  /* Outro arquivo na mesma janela: o Ctrl+Z e o cursor eram do anterior. */
+  useEffect(() => { esquecer(); }, [aberto, esquecer]);
+  const bloco = edicao.paragrafo?.id ?? null;
 
   /* ── A nuvem ────────────────────────────────────────────────────────────── */
 
@@ -305,7 +293,6 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
   const abrir = (a: ArquivoDaNuvem) => {
     if (a.tipo === 'pasta') { setPasta(a.id); setEscolhido(null); return; }
     setAberto(a.id);
-    setBloco(null);
     if (a.copiaDe === 'materiais') descobrir('a-copia-nao-acompanha');
     if (a.nome.includes('cópia em conflito')) descobrir('abriu-a-copia-em-conflito');
   };
@@ -508,6 +495,24 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
 
   const comentados = new Set(doc ? comentariosDoDoc(doc).map(c => c.trecho) : []);
   const pendentes = doc ? revisoesPendentes(doc) : [];
+  /* Um balão por sugestão, e não por marca: trocar uma palavra deixa a velha
+     riscada e a nova sublinhada, e o editor mostra as duas num balão só. */
+  const sugestoesAgrupadas = (() => {
+    if (!doc) return [];
+    const vistos = new Set<string>();
+    return pendentes.flatMap(({ trecho }) => {
+      if (vistos.has(trecho.id)) return [];
+      const ids = sugestaoDoTrecho(doc, trecho.id);
+      ids.forEach(id => vistos.add(id));
+      const marcados = pendentes.filter(p => ids.includes(p.trecho.id)).map(p => p.trecho);
+      return [{
+        ids,
+        autor: trecho.revisao.autor,
+        tirar: marcados.filter(x => x.revisao.tipo === 'excluido').map(x => x.texto).join(''),
+        por: marcados.filter(x => x.revisao.tipo === 'inserido').map(x => x.texto).join(''),
+      }];
+    });
+  })();
   const versaoBoa = (v: string) => {
     const vs = arquivoAberto?.versoes.find(x => x.id === v);
     return !!vs?.doc && textoDoDoc(vs.doc).includes('a inscrição custa 45 reais');
@@ -531,31 +536,71 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
             && gravar(arquivoAberto.id, ['voce'], resolverComentario(doc, c.id))}
         />
       ))}
-      {pendentes.map(({ trecho }) => (
-        <div key={trecho.id} className="wd-balao" data-sugestao={trecho.id}>
-          <div className="wd-balao-autor">{NOME_DO_AUTOR[trecho.revisao.autor]} sugeriu</div>
-          <div>{trecho.texto}</div>
+      {sugestoesAgrupadas.map(g => (
+        <div key={g.ids[0]} className="wd-balao" data-sugestao={g.ids[0]}>
+          <div className="wd-balao-autor">{NOME_DO_AUTOR[g.autor]} sugeriu</div>
+          {g.tirar && <div>Excluir: <s>{g.tirar}</s></div>}
+          {g.por && <div>{g.tirar ? 'Adicionar: ' : ''}{g.por}</div>}
           <div className="wd-balao-acoes">
-            <button type="button" onClick={() => {
-              if (!arquivoAberto) return;
-              gravar(arquivoAberto.id, ['voce'], aceitarRevisao(doc, trecho.id));
-              descobrir('aceitou-uma-sugestao');
-            }}>Aceitar</button>
-            <button type="button" onClick={() => {
-              if (!arquivoAberto) return;
-              gravar(arquivoAberto.id, ['voce'], rejeitarRevisao(doc, trecho.id));
-              descobrir('rejeitou-uma-sugestao');
-            }}>Rejeitar</button>
+            <button type="button" onClick={() => resolverSugestao(true, g.ids[0])}>Aceitar</button>
+            <button type="button" onClick={() => resolverSugestao(false, g.ids[0])}>Rejeitar</button>
           </div>
         </div>
       ))}
     </div>
   ) : undefined;
 
+  /**
+   * Comentar vale para o que está selecionado, como no editor de verdade; com
+   * o cursor parado, para a palavra em que ele está, e num espaço para o
+   * parágrafo inteiro.
+   */
+  const comentarNaSelecao = () => {
+    const s = edicao.selecao;
+    if (!arquivoAberto || !doc || !s) {
+      setAviso('Selecione primeiro o texto que você quer comentar.');
+      return;
+    }
+    const p = edicao.paragrafo;
+    const alcance = !recolhida(s) ? s
+      : palavraEmVolta(doc, s.foco)
+        ?? (p ? { ancora: { bloco: p.id, offset: 0 }, foco: { bloco: p.id, offset: tamanhoDoParagrafo(p) } } : null);
+    if (!alcance || recolhida(alcance)) return;
+    const isolado = isolarSelecao(doc, alcance);
+    if (!isolado.trecho) return;
+    gravar(arquivoAberto.id, ['voce'], acrescentarComentario(isolado.doc, {
+      id: `c-voce-${comentariosDoDoc(doc).length}`,
+      trecho: isolado.trecho, autor: 'voce',
+      texto: 'Precisamos confirmar isto antes da reunião.',
+      respostas: [], resolvido: false,
+    }));
+  };
+
+  /**
+   * Aceitar ou rejeitar a sugestão escolhida — a do balão clicado, ou a que
+   * está debaixo do cursor, ou, sem nenhuma das duas, a primeira da página.
+   * A sugestão é o grupo inteiro: trocar uma palavra deixa duas marcas, e as
+   * duas se resolvem juntas.
+   */
+  const resolverSugestao = (aceitar: boolean, trechoId?: string) => {
+    if (!arquivoAberto || !doc) return;
+    const emVolta = edicao.selecao ? trechosEmVolta(doc, edicao.selecao.foco) : null;
+    const debaixo = (emVolta?.depois?.revisao ? emVolta.depois.id : null)
+      ?? (emVolta?.antes?.revisao ? emVolta.antes.id : null);
+    const alvoId = trechoId ?? debaixo ?? pendentes[0]?.trecho.id;
+    if (!alvoId) return;
+    const grupo = sugestaoDoTrecho(doc, alvoId);
+    const novo = grupo.reduce((d, id) => (aceitar ? aceitarRevisao(d, id) : rejeitarRevisao(d, id)), doc);
+    gravar(arquivoAberto.id, ['voce'], novo);
+    descobrir(aceitar ? 'aceitou-uma-sugestao' : 'rejeitou-uma-sugestao');
+  };
+
   const vistaDoEditor = arquivoAberto && doc && (
     <div className="ed-janela">
       <TopoDoEditor
         nome={arquivoAberto.nome}
+        aoNaoFazParte={fora}
+        aoIrParaInicio={() => { setAberto(null); setHistorico(false); }}
         menus={(
           <>
             <MenuDoEditor nome="Arquivo" aberto={gaveta === 'arquivo'}
@@ -571,28 +616,30 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
             </MenuDoEditor>
             <MenuDoEditor nome="Editar" aberto={gaveta === 'editar'}
               aoAbrir={() => setGaveta(g => (g === 'editar' ? null : 'editar'))}>
-              <ItemDaGaveta desligado>Desfazer</ItemDaGaveta>
-              <ItemDaGaveta desligado>Refazer</ItemDaGaveta>
+              <GavetaPadraoDoEditor menu="Editar" aoNaoFazParte={fora} />
+            </MenuDoEditor>
+            <MenuDoEditor nome="Ver" aberto={gaveta === 'Ver'}
+              aoAbrir={() => setGaveta(g => (g === 'Ver' ? null : 'Ver'))}>
+              <GavetaPadraoDoEditor menu="Ver" aoNaoFazParte={fora} />
             </MenuDoEditor>
             <MenuDoEditor nome="Inserir" aberto={gaveta === 'inserir'}
               aoAbrir={() => setGaveta(g => (g === 'inserir' ? null : 'inserir'))}>
               <ItemDaGaveta icone={MessageSquarePlus} desligado={!bloco} aoClicar={() => {
-                if (!bloco) return;
-                gravar(arquivoAberto.id, ['voce'], acrescentarComentario(doc, {
-                  id: `c-voce-${comentariosDoDoc(doc).length}`,
-                  trecho: `${bloco}-a`, autor: 'voce',
-                  texto: 'Precisamos confirmar isto antes da reunião.',
-                  respostas: [], resolvido: false,
-                }));
+                comentarNaSelecao();
                 setGaveta(null);
               }}>Comentário</ItemDaGaveta>
             </MenuDoEditor>
-            <MenuDoEditor nome="Formatar" aberto={false} aoAbrir={() => {}} />
-            <MenuDoEditor nome="Ajuda" aberto={false} aoAbrir={() => {}} />
+            {(['Formatar', 'Ferramentas', 'Extensões', 'Ajuda'] as const).map(m => (
+              <MenuDoEditor key={m} nome={m} aberto={gaveta === m}
+                aoAbrir={() => setGaveta(g => (g === m ? null : m))}>
+                <GavetaPadraoDoEditor menu={m} aoNaoFazParte={fora} />
+              </MenuDoEditor>
+            ))}
           </>
         )}
         direita={(
           <>
+            <AcoesDoTopoDoEditor aoNaoFazParte={fora} />
             <button type="button" className="ed-ferramenta" aria-label="Quem está no documento"
               onClick={() => descobrir('viu-as-bolhas')}>
               <Users size={17} aria-hidden />
@@ -609,40 +656,26 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
         )}
       />
 
-      <BarraDoEditor>
+      <BarraDoEditor direita={(
+        <SeletorDeModo modo={ctx.modo}
+          aoTrocar={(m: ModoDeTrabalho) => setCtx(c => ({ ...c, modo: m }))} />
+      )}>
+        <FerramentasPadraoDoEditor parte="antes" aoNaoFazParte={fora} controle={edicao} />
         <FerramentaDoEditor icone={MessageSquarePlus} dica="Inserir comentário"
           desligada={!bloco}
-          aoClicar={() => {
-            if (!bloco) return;
-            gravar(arquivoAberto.id, ['voce'], acrescentarComentario(doc, {
-              id: `c-voce-${comentariosDoDoc(doc).length}`,
-              trecho: `${bloco}-a`, autor: 'voce',
-              texto: 'Precisamos confirmar isto antes da reunião.',
-              respostas: [], resolvido: false,
-            }));
-          }} />
+          aoClicar={comentarNaSelecao} />
+        <FerramentasPadraoDoEditor parte="depois" aoNaoFazParte={fora} />
+        <SeparadorDaBarra />
         <FerramentaDoEditor icone={History} dica="Histórico de versões"
           ativa={historico}
           aoClicar={() => { setHistorico(h => !h); descobrir('leu-quem-escreveu'); }} />
         <SeparadorDaBarra />
         <FerramentaDoEditor icone={Check} dica="Aceitar a sugestão escolhida"
           desligada={pendentes.length === 0}
-          aoClicar={() => {
-            const p = pendentes[0];
-            if (!p) return;
-            gravar(arquivoAberto.id, ['voce'], aceitarRevisao(doc, p.trecho.id));
-            descobrir('aceitou-uma-sugestao');
-          }} />
+          aoClicar={() => resolverSugestao(true)} />
         <FerramentaDoEditor icone={X} dica="Rejeitar a sugestão escolhida"
           desligada={pendentes.length === 0}
-          aoClicar={() => {
-            const p = pendentes[0];
-            if (!p) return;
-            gravar(arquivoAberto.id, ['voce'], rejeitarRevisao(doc, p.trecho.id));
-            descobrir('rejeitou-uma-sugestao');
-          }} />
-        <SeletorDeModo modo={ctx.modo}
-          aoTrocar={(m: ModoDeTrabalho) => setCtx(c => ({ ...c, modo: m }))} />
+          aoClicar={() => resolverSugestao(false)} />
       </BarraDoEditor>
 
       <PalcoDoEditor lado={historico ? (
@@ -660,19 +693,9 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
       ) : undefined}>
         <FolhaDoWord
           doc={doc}
-          selecionado={bloco}
           marcas
           comentado={comentados}
-          aoEscolher={setBloco}
-          aoClicarNoVazio={() => setBloco(null)}
-          aoEscreverNoParagrafo={ctx.modo === 'visualizacao' ? undefined : escrever}
-          aoNovoParagrafo={ctx.modo === 'edicao' && !soComento
-            ? b => {
-              const { doc: depois, novo } = paragrafoDepoisDe(doc, b);
-              gravar(arquivoAberto.id, ['voce'], depois);
-              setBloco(novo);
-            }
-            : undefined}
+          edicao={edicao.folha}
           margem={margem}
         />
         {qual === 'juntos' && outrosJaEscreveram > 0 && (

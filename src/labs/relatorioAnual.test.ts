@@ -1,12 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import {
+  aplicarEstilo, cursorEm, inserirTexto, quebraDePagina, quebrarParagrafo,
+} from './edicao';
+import {
   RELATORIO_ANUAL_INICIAL, METAS_DO_RELATORIO_ANUAL, TEXTO_DO_CABECALHO,
   SECAO_QUE_FALTA, RODAPE_DIGITADO, rodapeDeCampo,
   cabecalhoEscrito, temASecaoQueFaltava, metaDaVez,
   type Doc,
 } from './relatorioAnual';
 import {
-  linhaDe, trechoDe, titulosDoDoc, sumarioAtualizado, quantasPaginas,
+  paragrafos, textoDoBloco, trechoDe, titulosDoDoc, sumarioAtualizado, quantasPaginas,
   paginasDoDoc, textoDaFaixa, faixaTemCampoDePagina,
 } from './documento';
 
@@ -33,18 +36,17 @@ const comNumeracao = (d: Doc): Doc => ({ ...d, rodape: rodapeDeCampo() });
 
 const comPrimeiraDiferente = (d: Doc): Doc => ({ ...d, primeiraPaginaDiferente: true });
 
-const comASecao = (d: Doc): Doc => ({
-  ...d,
-  blocos: [
-    ...d.blocos,
-    {
-      ...linhaDe(SECAO_QUE_FALTA.tituloId, SECAO_QUE_FALTA.secao, SECAO_QUE_FALTA.titulo),
-      estilo: 'Título 1' as const,
-      quebraDePagina: true,
-    },
-    linhaDe(SECAO_QUE_FALTA.corpoId, SECAO_QUE_FALTA.secao, SECAO_QUE_FALTA.corpo),
-  ],
-});
+/* Com as teclas: Enter no fim, Ctrl+Enter, o título, Título 1, Enter e o corpo. */
+const comASecao = (d: Doc): Doc => {
+  const ultimo = paragrafos(d)[paragrafos(d).length - 1];
+  let r = quebrarParagrafo(d, cursorEm(ultimo.id, textoDoBloco(ultimo).length));
+  r = quebraDePagina(r.doc, r.selecao);
+  r = inserirTexto(r.doc, r.selecao, SECAO_QUE_FALTA.titulo);
+  r = aplicarEstilo(r.doc, r.selecao, 'Título 1');
+  r = quebrarParagrafo(r.doc, r.selecao);
+  r = inserirTexto(r.doc, r.selecao, SECAO_QUE_FALTA.corpo);
+  return r.doc;
+};
 
 const gerarSumario = (d: Doc): Doc => ({ ...d, sumario: titulosDoDoc(d) });
 

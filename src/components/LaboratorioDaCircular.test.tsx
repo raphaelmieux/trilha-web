@@ -6,15 +6,22 @@ import { MemoryRouter } from 'react-router-dom';
 import LaboratorioDaCircular from './LaboratorioDaCircular';
 import LaboratorioDeWord from './LaboratorioDeWord';
 import { VEREDAS, licoesDaVereda } from '../curriculum/veredas';
+import { porCursor, tecla, digitar } from '../labs/tecladoDaFolha';
+import { PARAGRAFO_QUE_CHEGA } from '../labs/circularDoClube';
 
 /*
   A circular do módulo 2, percorrida clicando.
 
   `circularDoClube.test.ts` prova que as cinco metas podem ficar verdes. Isto
   pergunta outra coisa: **a janela chama alguma delas?** Um botão ¶ que não
-  liga nada, um comando de juntar que não junta, um Excluir que apaga
-  parágrafo com texto — as metas continuam certas e o laboratório fica
+  liga nada, um Shift+Enter que a folha não escuta, um Backspace que apaga a
+  assinatura em vez do ¶ vazio — as metas continuam certas e o laboratório fica
   impossível de vencer, que é pior do que um que abre resolvido.
+
+  E ela é percorrida **com as teclas**: clicar onde o desbravador clicaria e
+  apertar o que ele apertaria. A circular já foi vencida por botões que o Word
+  não tem — "Juntar com Quebra de Linha", "Excluir Parágrafo Vazio" —, e uma
+  trava que voltasse a clicar neles provaria um programa que não existe.
 
   E há uma pergunta que só este módulo faz: **dá para ver o que está errado?**
   A teoria escreve que, com as marcas desligadas, o Enter e a quebra de linha
@@ -79,11 +86,6 @@ const paragrafos = () => [...container.querySelectorAll('[data-bloco]')];
 const comando = (dica: string) =>
   [...container.querySelectorAll('button')].find(b => b.getAttribute('title') === dica);
 
-const guia = (nome: string) =>
-  [...container.querySelectorAll('button')].find(b => b.textContent?.trim() === nome
-    && b.className.includes('wd-guia'));
-
-const escolher = (id: string) => clicar(paragrafo(id), `parágrafo ${id}`);
 
 const marcasNaTela = () => container.querySelectorAll('[data-marca="paragrafo"]').length;
 const quebrasNaTela = () => container.querySelectorAll('[data-marca="quebra"]').length;
@@ -144,42 +146,44 @@ describe('o botão ¶ mostra o que estava escondido', () => {
     clicar(comando('Mostrar Tudo (Ctrl+*)'), 'Mostrar Tudo');
     const antes = marcasNaTela();
 
-    escolher('end-1');
-    clicar(comando('Juntar com Quebra de Linha (Shift+Enter)'), 'Juntar');
+    juntarEndereco();
 
     expect(quebrasNaTela(), 'as duas quebras de linha não apareceram').toBe(2);
     expect(marcasNaTela(), 'os três ¶ do endereço deviam ter virado um').toBe(antes - 2);
   });
 });
 
-describe('a circular pode ser vencida clicando', () => {
+/** Delete no fim da linha e Shift+Enter, duas vezes — o que o passo a passo manda. */
+function juntarEndereco() {
+  porCursor(container, 'end-1', 'fim');
+  tecla(container, 'Delete');
+  tecla(container, 'Enter', { shift: true });
+  porCursor(container, 'end-1', 'fim');
+  tecla(container, 'Delete');
+  tecla(container, 'Enter', { shift: true });
+}
+
+describe('a circular pode ser vencida com o teclado', () => {
   it('marcas, endereço, o parágrafo que chega, a quebra de página e a fonte', () => {
     montar();
     clicar(comando('Mostrar Tudo (Ctrl+*)'), 'Mostrar Tudo');
 
-    escolher('end-1');
-    clicar(comando('Juntar com Quebra de Linha (Shift+Enter)'), 'Juntar');
+    juntarEndereco();
 
-    clicar(guia('Inserir'), 'a guia Inserir');
-    clicar(comando('Acrescentar o parágrafo da revisão'), 'Parágrafo da revisão');
-    expect(paragrafo('ab-4'), 'o parágrafo da revisão não entrou no documento').toBeTruthy();
+    porCursor(container, 'ab-3', 'fim');
+    tecla(container, 'Enter');
+    digitar(container, PARAGRAFO_QUE_CHEGA.texto);
 
-    /* Apaga os cinco vazios, um a um, como quem apaga cinco Enters. */
-    clicar(guia('Início'), 'a guia Início');
-    for (let i = 0; i < 5; i += 1) {
-      const vazio = vazios()[0];
-      expect(vazio, `sumiu um vazio antes da hora (${i} apagados)`).toBeTruthy();
-      clicar(vazio, 'um parágrafo vazio');
-      clicar(comando('Excluir Parágrafo Vazio'), 'Excluir Parágrafo Vazio');
-    }
+    /* Cinco Backspaces no começo da assinatura, como quem apaga cinco Enters. */
+    porCursor(container, 'assina', 0);
+    for (let i = 0; i < 5; i += 1) tecla(container, 'Backspace');
     expect(vazios(), 'sobrou parágrafo vazio').toHaveLength(0);
+    expect(paragrafo('assina'), 'o Backspace apagou a assinatura junto').toBeTruthy();
+    tecla(container, 'Enter', { ctrl: true });
 
-    escolher('assina');
-    clicar(guia('Inserir'), 'a guia Inserir');
-    clicar(comando('Quebra de Página (Ctrl+Enter)'), 'Quebra de Página');
-
-    clicar(guia('Início'), 'a guia Início');
-    clicar([...container.querySelectorAll('.wc-fonte')].find(b => b.textContent?.trim() === 'Georgia'),
+    tecla(container, 'a', { ctrl: true });
+    clicar(container.querySelector('[aria-label="Fonte"]'), 'a caixa de fontes');
+    clicar([...document.querySelectorAll('.wd-lista-item')].find(b => b.textContent?.trim() === 'Georgia'),
       'a fonte Georgia');
 
     expect(podeConcluir(), oQueFalta()).toBe(true);
@@ -187,35 +191,50 @@ describe('a circular pode ser vencida clicando', () => {
     expect(venceu, 'o botão de concluir não registrou a lição').toBe(true);
   });
 
-  it('Excluir Parágrafo Vazio recusa parágrafo com texto', () => {
-    /*
-      Sem a recusa, o caminho mais curto para a tarefa seria apagar a
-      assinatura — e o documento entregue ficaria sem ela, com a lista verde.
-    */
+  it('o que se digita entra onde está o cursor', () => {
     montar();
-    escolher('ab-1');
-    clicar(comando('Excluir Parágrafo Vazio'), 'Excluir Parágrafo Vazio');
-
-    expect(paragrafo('ab-1'), 'um parágrafo com texto foi apagado').toBeTruthy();
-    expect(container.textContent).toContain('Este parágrafo tem texto');
+    porCursor(container, 'titulo', 0);
+    digitar(container, 'URGENTE: ');
+    expect(paragrafo('titulo')?.textContent).toMatch(/^URGENTE: Circular/);
   });
 
-  it('juntar sem escolher uma linha do endereço não junta nada', () => {
+  it('Ctrl+Z desfaz a palavra digitada de uma vez', () => {
     montar();
-    escolher('ab-1');
-    clicar(comando('Juntar com Quebra de Linha (Shift+Enter)'), 'Juntar');
-
-    expect(paragrafo('end-2'), 'o endereço foi juntado a partir de um parágrafo de fora').toBeTruthy();
-    expect(container.textContent).toContain('Escolha uma das linhas do endereço');
+    porCursor(container, 'titulo', 'fim');
+    digitar(container, ' 2026');
+    tecla(container, 'z', { ctrl: true });
+    expect(paragrafo('titulo')?.textContent).toBe('Circular às famílias — Acampamento de Inverno');
   });
 
-  it('a fonte escolhida veste a folha inteira', () => {
-    // O requisito 2.4 é uma decisão do documento, e não de um parágrafo.
+  it('a fonte escolhida veste o papel, e a faixa continua com a letra do Word', () => {
+    /* O defeito que veio no print: escolher Georgia trocava a letra da faixa,
+       das guias e da barra de título junto, porque a família ia na janela. */
     montar();
-    clicar([...container.querySelectorAll('.wc-fonte')].find(b => b.textContent?.trim() === 'Georgia'),
+    porCursor(container, 'titulo', 0, { bloco: 'assina', offset: 'fim' });
+    clicar(container.querySelector('[aria-label="Fonte"]'), 'a caixa de fontes');
+    clicar([...document.querySelectorAll('.wd-lista-item')].find(b => b.textContent?.trim() === 'Georgia'),
       'a fonte Georgia');
     const janela = container.querySelector('.wd-janela') as HTMLElement;
-    expect(janela.style.fontFamily).toContain('Georgia');
+    expect(janela.style.fontFamily, 'a fonte do documento vazou para a janela').toBe('');
+    const titulo = container.querySelector('[data-bloco="titulo"] [data-trecho]') as HTMLElement;
+    expect(titulo.style.fontFamily).toContain('Georgia');
+  });
+
+  it('o zoom do rodapé muda o tamanho da folha, e não só o número', () => {
+    /* Ele mudava o número ao lado da régua e mais nada: o estado existia e
+       nenhuma folha de estilo o lia. */
+    montar();
+    const janela = container.querySelector('.wd-janela') as HTMLElement;
+    const antes = janela.style.getPropertyValue('--zoom');
+    clicar(container.querySelector('[aria-label="Aumentar o zoom"]'), 'Aumentar o zoom');
+    expect(janela.style.getPropertyValue('--zoom'), 'o zoom não chegou à folha').not.toBe(antes);
+  });
+
+  it('não há mais botão que o Word não tem', () => {
+    montar();
+    for (const dica of ['Juntar com Quebra de Linha (Shift+Enter)', 'Excluir Parágrafo Vazio', 'Acrescentar o parágrafo da revisão']) {
+      expect(comando(dica), `"${dica}" voltou para a faixa`).toBeUndefined();
+    }
   });
 });
 
