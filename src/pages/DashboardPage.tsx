@@ -17,6 +17,7 @@ import Emblema from '../components/ui/Emblema';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
 import EstanteDeInsignias from '../components/ui/EstanteDeInsignias';
 import SecaoDeVeredas from '../components/SecaoDeVeredas';
+import ContinueDeOndeParou from '../components/ContinueDeOndeParou';
 import { INSIGNIAS } from '../lib/insignias';
 import type { ProgressMap } from '../lib/progress';
 import { Lock, Award, Flame, Star, Clock, FileText, Medal, HardHat } from 'lucide-react';
@@ -187,6 +188,16 @@ export default function DashboardPage() {
 
   const xp = enrollments.reduce((sum, e) => sum + (e.xp || 0), 0);
 
+  /* A última atividade de cada trilha é o `updated_at` da matrícula: toda
+     lição e todo laboratório passam por `updateEnrollmentActivity`, e o
+     gatilho do banco carimba a hora. É o que ordena o "Continue de onde
+     parou" — `last_activity_date` ao lado só sabe o dia, e duas trilhas
+     estudadas na mesma tarde empatariam. */
+  const ultimaAtividade: Record<string, string> = {};
+  for (const m of enrollments) {
+    if (m.specialties?.code) ultimaAtividade[m.specialties.code] = m.updated_at;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -219,6 +230,16 @@ export default function DashboardPage() {
         badges={badges}
         total={INSIGNIAS.length + familias.flatMap(f => f.trilhas).filter(t => !t.emConstrucao).length}
         posicoes={posicoes}
+      />
+
+      {/* Antes das listas: elas mostram tudo o que existe, e esta mostra só o
+          que a pessoa deixou pela metade — ver ContinueDeOndeParou. */}
+      <ContinueDeOndeParou
+        userId={profile.id}
+        progress={progress}
+        ultimaAtividade={ultimaAtividade}
+        liberada={e => preRequisitoCumprido(e, concluiu)}
+        carregando={loading}
       />
 
       {/*

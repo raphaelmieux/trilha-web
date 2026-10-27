@@ -58,6 +58,15 @@ export interface PercursoDeVereda {
     nossa não se cobra de quem já andou.
   */
   topicos: Set<string>;
+  /*
+    Quando a pessoa venceu alguma coisa aqui pela última vez.
+
+    É o que põe a vereda em ordem no "Continue de onde parou" do painel, ao
+    lado das trilhas: quem estudou a CC002 ontem e a AP043 na semana passada
+    precisa ver a CC002 primeiro. Sai do `created_at` dos mesmos eventos — nada
+    novo é gravado, e o histórico de quem já percorreu entra junto.
+  */
+  ultimaVez?: string;
 }
 
 export type PercursoDasVeredas = Record<string, PercursoDeVereda>;
@@ -73,12 +82,19 @@ export function percursoDosEventos(eventos: EventoDeAtividade[]): PercursoDasVer
       : typeof m.trilha === 'string' ? m.trilha : null;
     if (!vereda) continue;
 
+    let registrou = false;
     if (EVENTOS_DE_TOPICO.includes(e.event_type)) {
       const topico = typeof m.topico === 'string' ? m.topico : null;
-      if (topico) (feito[vereda] ??= percursoVazio()).topicos.add(topico);
+      if (topico) { (feito[vereda] ??= percursoVazio()).topicos.add(topico); registrou = true; }
     } else if (e.event_type === EVENTO_LABORATORIO || e.event_type === EVENTO_TEORIA) {
       const licao = typeof m.licao === 'string' ? m.licao : null;
-      if (licao) (feito[vereda] ??= percursoVazio()).licoes.add(licao);
+      if (licao) { (feito[vereda] ??= percursoVazio()).licoes.add(licao); registrou = true; }
+    }
+    /* Comparação de texto, e não de `Date`: o ISO do Postgres ordena certo
+       como texto, e a mais recente vence em qualquer ordem de chegada. */
+    const quando = e.created_at;
+    if (registrou && quando && (!feito[vereda].ultimaVez || quando > feito[vereda].ultimaVez!)) {
+      feito[vereda].ultimaVez = quando;
     }
   }
   return feito;
