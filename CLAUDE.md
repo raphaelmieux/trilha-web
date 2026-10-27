@@ -163,6 +163,42 @@ critério mora em `src/lib/insignias.ts`; a linha, na migration do catálogo. Ao
 abrir trilha nova, o código nasce sozinho (`codigoDaInsigniaDaTrilha`), mas a
 linha ainda é à mão — `src/lib/insignias.test.ts` cobra.
 
+**Todo laboratório concluído rende uma conquista.** É regra, e vale para
+laboratório novo de trilha **e** de vereda: quem escreve o laboratório escreve,
+no mesmo trabalho, a insígnia dele. Laboratório é a parte em que se faz alguma
+coisa, com tela e retorno próprios, e vencê-lo sem que a estante registre
+ensina que ali não havia nada a vencer — sem erro em lugar nenhum, porque
+concluir simplesmente não dá nada.
+
+Para um laboratório de trilha são quatro peças, e faltar qualquer uma deixa a
+insígnia muda:
+
+- o `LabType` novo e a entrada dele em `LABORATORIOS`, em `insignias.ts` — o
+  código `lab_<tipo>` e a classe saem sozinhos, do nível da trilha;
+- a linha `lab_<tipo>` numa migration nova de `badges`, com nome, descrição,
+  ícone `lab` e a classe que `classeDoLaboratorio` calcula;
+- o evento de conclusão gravando o `lessonCode` — é por ele que
+  `laboratorioDoEvento` acha o tipo. Sem ele, o tipo do evento precisa de
+  entrada em `LABORATORIO_DO_EVENTO`;
+- e o evento classificado na ofensiva, que `ofensiva.test.ts` cobra.
+
+A trava que conferia isto tinha um buraco do tamanho da regra: ela só olhava
+os laboratórios que **já** tinham insígnia, e pulava calada todos os outros. Um
+laboratório novo sem entrada no catálogo passava verde. Hoje
+`insignias.test.ts` lista todo laboratório das trilhas abertas e reprova o que
+não tiver a sua `lab_<tipo>`.
+
+Varredura de outubro de 2026: os **29** laboratórios em uso nas trilhas têm
+insígnia, linha semeada e evento reconhecido. O que **não** cumpre a regra são
+os laboratórios das veredas — **219**, nas 26 veredas abertas —, que não têm
+insígnia própria nenhuma: a vereda rende uma só, `vereda_<id>`, quando todas as
+lições estão vencidas, e o laboratório de vereda também não anda na escada de
+Laboratórios, que conta `LabType` e a vereda não tem. É dívida declarada, e não
+decisão: vereda nova já nasce cobrando a insígnia de cada laboratório dela.
+E há o caso inverso, `lab_text_editor`, insígnia de um laboratório que nenhuma
+lição usa mais — não se apaga, porque apagar linha de `badges` tira a
+conquista de quem a tem.
+
 **Número guardado não responde por "hoje".** A ofensiva — dias seguidos de
 atividade — ficou meses parada em "2 dias", e não era conta errada: era conta
 que ninguém refazia. `enrollments.streak_days` era escrita na hora da
@@ -1012,7 +1048,8 @@ registro inteiro antes de medir qualquer coisa.
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois
-que ela deixa de ser `emConstrucao`. A arte vai em
+que ela deixa de ser `emConstrucao`. E uma insígnia **por laboratório** da
+vereda, pela regra de que todo laboratório concluído rende uma conquista. A arte vai em
 `public/assets/specialties/<CODIGO>.png` e o fundo do certificado em
 `public/assets/certificates/<CODIGO>.png`; `veredas.test.ts` cobra as duas. `veredas.test.ts` reprova laboratório que abra com verificação
 já verde, verificação sem passo a passo, e módulo que repita o próprio nome
@@ -4470,6 +4507,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `supabase/migrations/migrations.test.ts` | `DELETE FROM badges` sem reconceder a conquista antes, que apaga insígnia de quem a tinha |
 | `src/lib/certificados.test.ts` | o padrão de um certificado ilegível — inverter para `'active'` reprova |
 | `src/lib/insignias.test.ts` | insígnia com critério no código e sem linha no catálogo |
+| `src/lib/insignias.test.ts` | laboratório de trilha sem a sua insígnia `lab_<tipo>`, que concluir não daria nada |
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `src/labs/metasDaAp044.test.ts` | tarefa do laboratório de estilos que nasce verde, ou que ninguém consegue vencer |
