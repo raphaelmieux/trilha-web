@@ -201,7 +201,9 @@ nenhuma lição usava mais. Foi aposentada em
 `lab_redacao_guiada` a quem a tinha, com o `awarded_at` original — apagar
 linha de `badges` sem isso tira a conquista de quem a tem. `insignias.test.ts`
 passou a cobrar os dois sentidos: laboratório sem insígnia e insígnia sem
-laboratório.
+laboratório. O editor saiu do código depois, com o `LabType` dele: os eventos
+`text_submitted` antigos, gravados sem a lição, caem na redação guiada da
+trilha, que é a mesma insígnia que a migration concedeu.
 
 **Número guardado não responde por "hoje".** A ofensiva — dias seguidos de
 atividade — ficou meses parada em "2 dias", e não era conta errada: era conta
