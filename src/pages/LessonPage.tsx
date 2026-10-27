@@ -16,7 +16,6 @@ import { porqueDaEscolha } from '../lib/porque';
 import { supabase } from '../lib/supabase';
 import FinalExam from '../components/FinalExam';
 import QuestionRenderer from '../components/questions/QuestionRenderer';
-import TextEditorLab from '../labs/TextEditorLab';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import PactBuilderLab from '../labs/PactBuilderLab';
 import ThreatLab from '../labs/ThreatLab';
@@ -132,7 +131,6 @@ export default function LessonPage() {
           <span style={{ color: 'var(--color-text-faint)' }}>/</span>
           <span className="font-medium" style={{ color: 'var(--color-text)' }}>{lesson.title}</span>
         </div>
-        {lesson.labType === 'text_editor' && <TextEditorLab {...labProps} />}
         {lesson.labType === 'redacao_guiada' && <RedacaoGuiadaLab {...labProps} />}
         {lesson.labType === 'pact_builder' && <PactBuilderLab {...labProps} />}
         {lesson.labType === 'threat_lab' && <ThreatLab {...labProps} />}

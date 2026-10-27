@@ -150,14 +150,17 @@ const PASSOS: Record<string, string> = {
  * critério delas espera um laboratório que este mapa nunca nomeava. (A
  * primeira foi aposentada depois: a lição dela passou à redação guiada.)
  *
- * Os dois laboratórios de escrita gravam `text_submitted`, o mesmo evento para
- * mecânicas diferentes. E `table_challenge` é o CodeLab noutra variante, então
- * grava `code_lab_completed` igual à lição de HTML — as duas convivem na AP035.
+ * `text_submitted` é gravado pela redação guiada e foi gravado, antes dela,
+ * pelo editor de texto, que saiu do código junto com a insígnia. E
+ * `table_challenge` é o CodeLab noutra variante, então grava
+ * `code_lab_completed` igual à lição de HTML — as duas convivem na AP035.
  *
  * O que desempata já está gravado: `lessonCode`. Com ele, o laboratório sai da
  * própria lição no currículo, que é a fonte da verdade sobre qual mecânica
  * aquela lição usa. Sem ele — eventos antigos do editor de texto — resta a
- * trilha, e dentro dela a lição de escrita é uma só.
+ * trilha, e a lição de escrita dela hoje é a redação guiada: é a mesma
+ * insígnia que a migration da aposentadoria deu a quem tinha a do editor, e
+ * por isso o histórico e a estante dizem a mesma coisa.
  */
 export function laboratorioDoEvento(e: EventoDeAtividade): LabType | undefined {
   const m = objeto(e.metadata);
@@ -179,7 +182,7 @@ export function laboratorioDoEvento(e: EventoDeAtividade): LabType | undefined {
     const trilha = trilhaDoEvento(e);
     const t = trilha ? getSpecialty(trilha) : undefined;
     const l = t?.modules.flatMap(x => x.lessons)
-      .find(x => x.labType === 'redacao_guiada' || x.labType === 'text_editor');
+      .find(x => x.labType === 'redacao_guiada');
     return l?.labType;
   }
 
@@ -255,7 +258,7 @@ export function descreverAtividade(e: EventoDeAtividade): AtividadeDescrita {
        a trilha tinha um só. */
     const codigo = texto(m.lessonCode);
     const titulo = (codigo ? tituloDaLicao(trilha, l => l.code === codigo) : undefined)
-      ?? tituloDaLicao(trilha, l => l.labType === 'redacao_guiada' || l.labType === 'text_editor');
+      ?? tituloDaLicao(trilha, l => l.labType === 'redacao_guiada');
     return { trilha, texto: titulo ? `Relatório enviado: ${titulo}` : 'Relatório enviado' };
   }
 

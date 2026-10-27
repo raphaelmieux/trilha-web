@@ -268,7 +268,7 @@ describe('a tentativa precisa passar do limiar', () => {
   reprova aqui até alguém decidir se ele é módulo vencido ou passo do meio.
 */
 const PASSOS_DO_MEIO = [
-  'text_saved',      // rascunho salvo no editor de texto
+  'text_saved',      // rascunho salvo no editor de texto, aposentado: só no histórico
   'mail_sent',       // uma mensagem enviada dentro do laboratório de e-mail
   'threat_sim_run',  // uma simulação rodada no laboratório de ameaças
   'redacao_montada', // o rascunho montado, antes da entrega
