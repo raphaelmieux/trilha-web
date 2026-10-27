@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CircleAlert, Play, Lock, HardHat } from 'lucide-react';
 import { useFecharAoNavegar } from '../hooks/useFecharAoNavegar';
 import { useAuth } from '../context/AuthContext';
@@ -71,9 +71,27 @@ export default function VeredaPage() {
     certifications, getByCurriculum,
     loading: carregandoTokens, refresh: recarregarCertificados,
   } = useCertifications(profile?.id);
-  const [aberta, setAberta] = useState<string | null>(null);
+  /*
+    A lição pode chegar aberta pelo endereço — `?licao=<id>`.
 
-  const fechar = async () => { setAberta(null); await recarregar(); };
+    É a porta do "Continue de onde parou", no painel: o cartão diz qual é a
+    próxima lição, e levar a pessoa à lista de lições para ela procurar de novo
+    a que acabou de ler no cartão seria o caminho que o cartão existe para
+    encurtar. Só a montagem lê o parâmetro; depois a lição volta a abrir e
+    fechar por estado, como sempre.
+  */
+  const [busca, setBusca] = useSearchParams();
+  const [aberta, setAberta] = useState<string | null>(() => busca.get('licao'));
+
+  const fechar = async () => {
+    setAberta(null);
+    /* Sai do endereço ao fechar, senão recarregar a página reabriria a lição
+       de que a pessoa acabou de sair. Trocar a busca é uma navegação, e o
+       `useFecharAoNavegar` chama isto de novo — a segunda vez acha tudo
+       fechado e só relê o percurso. */
+    if (busca.has('licao')) setBusca({}, { replace: true });
+    await recarregar();
+  };
 
   /*
     Sair da lição pelo menu.

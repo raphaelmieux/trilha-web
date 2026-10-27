@@ -3560,6 +3560,23 @@ o pedido que o componente faz e com que argumentos, com a propriedade declarada
 no teste para a guarda ter o que escrever. Quem viu o defeito foi o Chromium,
 como no `float` em item de flex e no `\t` colapsado.
 
+**"Continue de onde parou" é uma fila só, e leva à lição.** O painel lista
+tudo o que existe — treze trilhas por família, cinquenta e uma veredas —, e
+quem está no meio de três coisas tinha de achar as três ali e, dentro de cada
+uma, a lição que faltava. A seção do topo mostra só o que está pela metade, da
+mais recente para a mais antiga, trilha e vereda misturadas: separadas, "o que
+eu estava fazendo?" teria duas respostas em dois lugares. A regra mora em
+`lib/continuar.ts`, e a ordem sai do que já é gravado — o `updated_at` da
+matrícula na trilha, o `created_at` do evento mais recente na vereda.
+
+O cartão inteiro é um link para a **próxima lição**, e não para a trilha: é o
+que ele promete. A próxima é a **primeira por fazer** na ordem do currículo, e
+não a seguinte à última feita — quem pulou a lição 1 tem a 1 por fazer. Na
+vereda, que abre lição por estado, o endereço ganhou `?licao=<id>`, lido só na
+montagem e tirado ao sair: sem isso, recarregar reabriria a lição de que a
+pessoa acabou de sair. E a seção some enquanto o painel carrega, porque
+desenhar com metade dos dados poria a ordem errada na tela por um instante.
+
 **Link externo é sempre `<a target="_blank">`**, pelo componente `LinkExterno`.
 `window.open` funciona no computador e falha no celular.
 
@@ -4668,6 +4685,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/ui/EstanteDeInsignias.test.tsx` | insígnia do painel que leva ao formulário do perfil em vez de contar o que rendeu |
 | `src/components/ui/ExplicacaoDaInsignia.test.tsx` | cartão de explicação desenhado dentro de quem o chamou, onde o `backdrop-filter` prende o `fixed` |
 | `src/lib/relatorioEmPdf.test.ts` | conquista sem data dizendo-se a primeira, ou sumário reservando menos folhas do que tem entradas |
+| `src/lib/continuar.test.ts` | trilha terminada na fila, próxima lição que pula a que faltou, ou a mais antiga no topo |
+| `src/components/ContinueDeOndeParou.test.tsx` | seção que aparece vazia ou antes de os dados chegarem, ou cartão que não leva à próxima lição |
+| `src/pages/VeredaPage.test.tsx` | `?licao=` ignorado, que manda o "Continuar" para a lista, ou deixado no endereço depois de sair |
 | `src/components/AoTopoAoNavegar.test.tsx` | tela que abre na rolagem da anterior, com o título acima da dobra |
 | `src/components/AoTopoAoNavegar.test.tsx` | troca de página que desliza, ou que vai ao topo quando só a busca muda |
 | `src/components/AoTopoAoNavegar.test.tsx` | ir ao topo escrito numa página em vez do `App`, que conserta uma e deixa doze |

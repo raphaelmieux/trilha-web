@@ -11,6 +11,8 @@ export interface AndamentoDeVereda {
   vencidas: number;
   total: number;
   concluida: boolean;
+  /** Quando alguma lição dela foi vencida pela última vez — ver `PercursoDeVereda`. */
+  ultimaVez?: string;
 }
 
 /**
@@ -54,7 +56,10 @@ export function useVeredas(userId: string | undefined) {
       que é outra cópia da mesma conta, ficou para trás. O relatório entregue ao
       clube listava as vinte e nove por escrever como cumpridas.
     */
-    return { id: v.id, vencidas, total, concluida: total > 0 && vencidas === total };
+    return {
+      id: v.id, vencidas, total, concluida: total > 0 && vencidas === total,
+      ultimaVez: percurso[v.id]?.ultimaVez,
+    };
   });
 
   const percursoDe = (id: string): PercursoDeVereda | undefined => percurso[id];
