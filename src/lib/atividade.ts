@@ -145,9 +145,10 @@ const PASSOS: Record<string, string> = {
  *
  * O mapa acima resolve a maioria: um tipo de evento, um laboratório. Três
  * ficavam de fora, e o preço não era cosmético — `lab_text_editor`,
- * `lab_redacao_guiada` e `lab_table_challenge` existem no catálogo de
+ * `lab_redacao_guiada` e `lab_table_challenge` existiam no catálogo de
  * insígnias e na tabela do banco, e nunca podiam ser conquistadas, porque o
- * critério delas espera um laboratório que este mapa nunca nomeava.
+ * critério delas espera um laboratório que este mapa nunca nomeava. (A
+ * primeira foi aposentada depois: a lição dela passou à redação guiada.)
  *
  * Os dois laboratórios de escrita gravam `text_submitted`, o mesmo evento para
  * mecânicas diferentes. E `table_challenge` é o CodeLab noutra variante, então

@@ -96,7 +96,6 @@ const LABORATORIOS: [LabType, string, string][] = [
   ['threat_lab', 'Caça-ameaças', 'Concluiu o laboratório de ameaças e proteção.'],
   ['pact_builder', 'Compromisso assinado', 'Escreveu o próprio compromisso de uso da internet.'],
   ['filipenses', 'Filtro de Filipenses', 'Concluiu o estudo de Filipenses 4:8.'],
-  ['text_editor', 'Primeiro relatório', 'Escreveu e entregou um texto de trilha.'],
   ['redacao_guiada', 'Relatório construído', 'Montou um relatório pesquisando etapa por etapa.'],
   ['code_lab', 'Página escrita à mão', 'Concluiu o laboratório de HTML.'],
   ['table_challenge', 'Dados em linhas e colunas', 'Montou uma página com tabela.'],

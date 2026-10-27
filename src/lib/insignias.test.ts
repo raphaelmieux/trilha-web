@@ -367,6 +367,30 @@ describe('toda insígnia de laboratório é alcançável', () => {
 
     expect(inalcancaveis, inalcancaveis.join(' | ')).toEqual([]);
   });
+
+  /*
+    E o caminho no outro sentido: toda insígnia de laboratório tem uma lição
+    aberta que usa aquele laboratório.
+
+    A trava acima parte do currículo, e por isso não enxerga a insígnia cujo
+    laboratório saiu dele. Foi assim com `lab_text_editor`: a AP034.3-L2
+    passou do editor de texto para a redação guiada, nenhuma lição ficou com
+    o editor, e "Primeiro relatório" virou um lugar vazio na estante de todo
+    mundo — a mesma falha calada, vinda do lado que ninguém conferia.
+  */
+  it('cada insígnia de laboratório tem lição aberta que a conceda', () => {
+    const usados = new Set(getOpenSpecialties().flatMap(
+      e => e.modules.flatMap(m => m.lessons.map(l => l.labType)),
+    ));
+    const deLaboratorio = INSIGNIAS.filter(i => i.code.startsWith('lab_'));
+    /* Guarda contra o vazio: um filtro que não achasse nada aprovaria tudo. */
+    expect(deLaboratorio.length).toBeGreaterThan(20);
+
+    const orfas = deLaboratorio
+      .filter(i => !usados.has(i.code.slice('lab_'.length) as never))
+      .map(i => i.code);
+    expect(orfas, `sem lição que as conceda: ${orfas.join(', ')}`).toEqual([]);
+  });
 });
 
 /*
