@@ -195,9 +195,13 @@ insígnia própria nenhuma: a vereda rende uma só, `vereda_<id>`, quando todas 
 lições estão vencidas, e o laboratório de vereda também não anda na escada de
 Laboratórios, que conta `LabType` e a vereda não tem. É dívida declarada, e não
 decisão: vereda nova já nasce cobrando a insígnia de cada laboratório dela.
-E há o caso inverso, `lab_text_editor`, insígnia de um laboratório que nenhuma
-lição usa mais — não se apaga, porque apagar linha de `badges` tira a
-conquista de quem a tem.
+E havia o caso inverso, `lab_text_editor`, insígnia de um laboratório que
+nenhuma lição usava mais. Foi aposentada em
+`20261027000000_aposenta_primeiro_relatorio`, que antes de apagar a linha dá
+`lab_redacao_guiada` a quem a tinha, com o `awarded_at` original — apagar
+linha de `badges` sem isso tira a conquista de quem a tem. `insignias.test.ts`
+passou a cobrar os dois sentidos: laboratório sem insígnia e insígnia sem
+laboratório.
 
 **Número guardado não responde por "hoje".** A ofensiva — dias seguidos de
 atividade — ficou meses parada em "2 dias", e não era conta errada: era conta
