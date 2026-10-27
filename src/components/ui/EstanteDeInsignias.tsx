@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import BadgeIcon from './BadgeIcon';
 import ExplicacaoDaInsignia from './ExplicacaoDaInsignia';
 import { ESCADAS } from '../../lib/escadasDeInsignia';
+import { ehInsigniaDeLaboratorioDeVereda } from '../../curriculum/veredas';
 import { CLASSES, type NivelDaInsignia } from '../../lib/nivelDaInsignia';
 import { ALTURA, LARGURA, formaDaClasse } from '../../lib/formaDaInsignia';
 import type { InsigniaConquistada } from '../../lib/conquista';
@@ -66,7 +67,12 @@ export default function EstanteDeInsignias({ badges, total, posicoes }: {
      de horário. Cada uma diz que uma coisa específica foi feita, então não há
      topo a escolher: aparecem todas. */
   const emEscada = new Set(ESCADAS.flatMap(e => e.degraus.map(d => d.code)));
-  const avulsas = badges.filter(b => !emEscada.has(b.code));
+  /* Menos as dos laboratórios de vereda. Cada vereda tem de sete a doze, e
+     quem percorreu três já teria trinta ícones aqui — o muro que este cartão
+     existe para não ser. Elas viram uma linha com a contagem, e a porta é a
+     Estante, onde aparecem agrupadas por vereda. */
+  const dasVeredas = badges.filter(b => ehInsigniaDeLaboratorioDeVereda(b.code));
+  const avulsas = badges.filter(b => !emEscada.has(b.code) && !ehInsigniaDeLaboratorioDeVereda(b.code));
 
   return (
     <div className="card p-4 space-y-3">
@@ -130,6 +136,14 @@ export default function EstanteDeInsignias({ badges, total, posicoes }: {
               </button>
             ))}
           </div>
+
+          {dasVeredas.length > 0 && (
+            <Link to="/estante" className="block text-xs transition hover:opacity-80" style={{ color: 'var(--color-text-dim)' }}>
+              <span className="font-bold" style={{ color: 'var(--color-text-soft)' }}>{dasVeredas.length}</span>
+              {dasVeredas.length === 1 ? ' laboratório de vereda vencido' : ' laboratórios de vereda vencidos'}
+              {' — ver na estante'}
+            </Link>
+          )}
 
           {/* A escada aberta: os sete degraus, com o que falta em contorno. Aqui
               o apagado vale a pena, e na fileira acima não: são sete de uma

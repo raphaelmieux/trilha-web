@@ -1742,3 +1742,30 @@ export function codigoDaInsigniaDaVereda(id: string): string {
      `cc-fe002` traria um hífen que a tabela não aceita. */
   return `vereda_${id.replace(/[^a-z0-9]/g, '')}`;
 }
+
+/** O começo do código de toda insígnia de laboratório de vereda. */
+export const PREFIXO_DA_INSIGNIA_DE_LABORATORIO_DE_VEREDA = 'lab_vereda_';
+
+/**
+ * A insígnia de cada laboratório de vereda.
+ *
+ * Todo laboratório concluído rende uma conquista, e o de vereda não é exceção:
+ * a insígnia da vereda inteira só cai quando tudo está vencido, e quem fez
+ * sete laboratórios de doze ficava sem nada na estante dizendo isso. O código
+ * sai do **id** da vereda e do **id** da lição, que nunca mudam — o `code` da
+ * tela pode ser renomeado sem que ninguém perca a insígnia, pela mesma razão
+ * escrita em `codigoDaInsigniaDaVereda`.
+ *
+ * O prefixo não é o `lab_` sozinho dos laboratórios de trilha: aqueles
+ * nascem de um `LabType`, e a trava que cobra que todo `lab_<tipo>` tenha
+ * laboratório no currículo das trilhas acusaria estes de órfãos.
+ */
+export function codigoDaInsigniaDoLaboratorioDeVereda(veredaId: string, licaoId: string): string {
+  const limpo = (s: string) => s.replace(/[^a-z0-9]/g, '');
+  return `${PREFIXO_DA_INSIGNIA_DE_LABORATORIO_DE_VEREDA}${limpo(veredaId)}_${limpo(licaoId)}`;
+}
+
+/** É insígnia de laboratório de vereda? */
+export function ehInsigniaDeLaboratorioDeVereda(code: string): boolean {
+  return code.startsWith(PREFIXO_DA_INSIGNIA_DE_LABORATORIO_DE_VEREDA);
+}

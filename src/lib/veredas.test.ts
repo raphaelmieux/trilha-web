@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { VEREDAS, veredasAbertas, veredasComConteudo, licoesDaVereda, topicosDaVereda,
   textoDaOrigem, preRequisitoDaVeredaCumprido, veredasQueFaltamAntes,
-  type LicaoDeVereda, type Vereda } from '../curriculum/veredas';
+  codigoDaInsigniaDoLaboratorioDeVereda, type LicaoDeVereda, type Vereda } from '../curriculum/veredas';
 import { getAllSpecialties } from '../curriculum';
 import {
   EVENTO_TOPICO, EVENTO_TEORIA, EVENTO_LABORATORIO,
@@ -878,7 +878,7 @@ describe('o que a vereda rende para as escadas de conquista', () => {
   });
 
   it('sem evento nenhum, nada é contado', () => {
-    expect(conquistasNasVeredas([])).toEqual({ licoes: 0, modulos: 0, requisitos: 0 });
+    expect(conquistasNasVeredas([])).toEqual({ licoes: 0, modulos: 0, requisitos: 0, laboratoriosDeVereda: [] });
   });
 
   it('cada lição vencida conta uma, e ela anda nas duas escadas', () => {
@@ -891,6 +891,25 @@ describe('o que a vereda rende para as escadas de conquista', () => {
       ter —, então quem responde é a lição, que é a unidade que ela pede.
     */
     expect(uma.requisitos, 'a lição de vereda não somou na escada de Requisitos').toBe(1);
+  });
+
+  /*
+    O laboratório vencido sai daqui já pelo código da insígnia dele, e só o
+    laboratório: a teoria anda nas escadas de Lições e de Requisitos, mas não
+    rende insígnia própria — a regra é por laboratório concluído.
+  */
+  it('cada laboratório vencido sai pelo código da insígnia, e a teoria não', () => {
+    const lab = oModulo.licoes.find(l => l.tipo !== 'teoria')!;
+    const teoria = oModulo.licoes.find(l => l.tipo === 'teoria')!;
+    expect(lab, 'o módulo de prova não tem laboratório').toBeTruthy();
+    expect(teoria, 'o módulo de prova não tem teoria').toBeTruthy();
+
+    const r = conquistasNasVeredas([evento(aVereda.id, lab), evento(aVereda.id, teoria)]);
+    expect(r.laboratoriosDeVereda).toEqual([codigoDaInsigniaDoLaboratorioDeVereda(aVereda.id, lab.id)]);
+
+    /* E vencer duas vezes não rende duas: o percurso guarda lições, não cliques. */
+    const repetido = conquistasNasVeredas([evento(aVereda.id, lab), evento(aVereda.id, lab)]);
+    expect(repetido.laboratoriosDeVereda).toHaveLength(1);
   });
 
   it('o módulo só conta com todas as lições dele vencidas', () => {

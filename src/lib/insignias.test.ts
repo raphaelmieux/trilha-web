@@ -1,11 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { INSIGNIAS, SEM_CLASSE, insigniasConquistadas, codigoDaInsigniaDaTrilha, type ResumoDoDesbravador } from './insignias';
+import {
+  INSIGNIAS, SEM_CLASSE, insigniasConquistadas, codigoDaInsigniaDaTrilha,
+  insigniasDosLaboratoriosDeVereda, classeDoLaboratorioDeVereda, classeDaVereda,
+  type ResumoDoDesbravador,
+} from './insignias';
 import { fileirasDaEstante } from './estante';
 import { ESCADAS } from './escadasDeInsignia';
 import { getOpenSpecialties } from '../curriculum';
-import { veredasAbertas, codigoDaInsigniaDaVereda } from '../curriculum/veredas';
+import {
+  VEREDAS, veredasAbertas, codigoDaInsigniaDaVereda, licoesDaVereda,
+  codigoDaInsigniaDoLaboratorioDeVereda,
+} from '../curriculum/veredas';
+import { NIVEIS_DA_INSIGNIA } from './nivelDaInsignia';
 import { hasIcon, RAIO_DA_TINTA, iconeCanonico } from './badgeIcons';
 import { laboratorioDoEvento, LABORATORIO_DO_EVENTO } from './atividade';
 import { catalogoSemeado } from '../../supabase/migrations/catalogoSemeado';
@@ -45,7 +53,7 @@ const zerado = (): ResumoDoDesbravador => ({
   requisitos: 0, licoes: 0, licoesPerfeitas: 0, modulos: 0, trilhas: [],
   laboratorios: new Set(), provas: 0, provasPerfeitas: 0, melhorSequencia: 0,
   diasAtivos: 0, horas: new Set(), diasDaSemana: new Set(), xp: 0, certificados: [],
-  veredas: [],
+  veredas: [], laboratoriosDeVereda: [],
 });
 
 const com = (mudancas: Partial<ResumoDoDesbravador>): ResumoDoDesbravador => ({ ...zerado(), ...mudancas });
@@ -420,6 +428,91 @@ describe('toda insígnia de laboratório é alcançável', () => {
   sem erro e sem prêmio — que é exatamente o tipo de falha que não aparece em
   tela nenhuma.
 */
+/*
+  E o laboratório de vereda rende a sua, pela mesma regra.
+
+  A vereda rendia uma insígnia só, no fim: quem venceu sete dos doze
+  laboratórios de uma vereda não tinha nada na estante dizendo isso — eram
+  duzentos e dezenove laboratórios sem prêmio nenhum, sem erro em lugar
+  nenhum. Estas travas cobram a regra para a vereda que abrir amanhã: o
+  laboratório novo já nasce pedindo a linha dele na tabela.
+*/
+describe('as insígnias dos laboratórios de vereda', () => {
+  const doCatalogo = insigniasDosLaboratoriosDeVereda();
+
+  it('cada laboratório de vereda aberta tem a sua, semeada com o que o catálogo diz', () => {
+    const laboratorios = veredasAbertas().flatMap(v => licoesDaVereda(v)
+      .filter(l => l.tipo !== 'teoria')
+      .map(l => ({ v, l })));
+    /* Lista vazia deixaria a trava verde por não ter conferido nada. */
+    expect(laboratorios.length).toBeGreaterThan(200);
+
+    const semeadas = catalogoSemeado();
+    const faltando: string[] = [];
+    const divergentes: string[] = [];
+    for (const { v, l } of laboratorios) {
+      const code = codigoDaInsigniaDoLaboratorioDeVereda(v.id, l.id);
+      const daqui = doCatalogo.find(i => i.code === code);
+      const linha = semeadas.get(code);
+      if (!daqui || !linha) { faltando.push(`${v.code}/${l.id}`); continue; }
+      if (linha.name !== daqui.nome || linha.description !== daqui.descricao
+        || linha.icon !== daqui.icone || linha.tier !== daqui.classe) divergentes.push(code);
+    }
+    expect(faltando, `laboratório de vereda sem insígnia semeada: ${faltando.join(', ')}`).toEqual([]);
+    expect(divergentes, `insígnia semeada diferente do catálogo: ${divergentes.join(', ')}`).toEqual([]);
+  });
+
+  /* Um código para dois laboratórios daria a insígnia de um a quem venceu o
+     outro — e o limpador de hífens é exatamente o que poderia juntá-los. */
+  it('não repete código, e o código cabe na tabela', () => {
+    const codigos = doCatalogo.map(i => i.code);
+    expect(new Set(codigos).size).toBe(codigos.length);
+    for (const c of codigos) expect(c).toMatch(/^[a-z0-9_]+$/);
+  });
+
+  it('a classe fica um patamar abaixo da vereda, e nunca abaixo de Amigo', () => {
+    for (const v of veredasAbertas()) {
+      const daVereda = NIVEIS_DA_INSIGNIA.indexOf(classeDaVereda(v.id));
+      const doLab = NIVEIS_DA_INSIGNIA.indexOf(classeDoLaboratorioDeVereda(v.id));
+      expect(doLab, v.code).toBe(Math.max(0, daVereda - 1));
+    }
+  });
+
+  it('é conquistada por quem venceu aquele laboratório, e só aquele', () => {
+    const [um, outro] = doCatalogo;
+    const ganhou = insigniasConquistadas(com({ laboratoriosDeVereda: [um.code] }));
+    expect(ganhou).toContain(um.code);
+    expect(ganhou).not.toContain(outro.code);
+  });
+
+  /* A conta de lições soma o que foi vencido numa vereda em construção, e é o
+     certo para as escadas. Aqui seria conceder insígnia que a estante não tem
+     onde pôr nem a tabela tem linha para guardar. */
+  it('não é conquistada em vereda em construção', () => {
+    const emConstrucao = VEREDAS.find(v => v.emConstrucao && licoesDaVereda(v).some(l => l.tipo !== 'teoria'));
+    const inventado = emConstrucao
+      ? codigoDaInsigniaDoLaboratorioDeVereda(emConstrucao.id, licoesDaVereda(emConstrucao).find(l => l.tipo !== 'teoria')!.id)
+      : codigoDaInsigniaDoLaboratorioDeVereda('vereda-por-abrir', 'm1-lab');
+    expect(insigniasConquistadas(com({ laboratoriosDeVereda: [inventado] }))).not.toContain(inventado);
+  });
+
+  /*
+    A migration que as criou concede também a quem já tinha vencido, lendo os
+    eventos gravados — e quem liga evento a insígnia é uma tabela escrita no
+    SQL. Um id trocado ali não estoura: só deixa alguém sem a insígnia de um
+    laboratório que venceu, ou com a de outro.
+  */
+  it('a concessão retroativa liga cada evento à insígnia certa', () => {
+    const sql = readFileSync(join(DIR_MIGRATIONS, '20261027160000_insignias_dos_laboratorios_de_vereda.sql'), 'utf8');
+    const ligacoes = [...sql.matchAll(/^ {4}\('([a-z0-9_]+)', '([^']+)', '([^']+)', '([^']+)'\)/gm)];
+    expect(ligacoes.length).toBeGreaterThan(200);
+    for (const [, code, vereda, licao, percurso] of ligacoes) {
+      expect(codigoDaInsigniaDoLaboratorioDeVereda(vereda, licao), code).toBe(code);
+      expect(VEREDAS.find(v => v.id === vereda)?.code, code).toBe(percurso);
+    }
+  });
+});
+
 describe('as insígnias das veredas', () => {
   /* Só as abertas: a vereda anunciada ainda não tem conteúdo, e semear a
      insígnia dela agora seria prometer prêmio por percurso que não existe. É

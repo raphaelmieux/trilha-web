@@ -152,6 +152,7 @@ export async function montarResumo(userId: string): Promise<ResumoDoDesbravador>
        laboratório vencido é um evento, e a vereda está concluída quando todas
        as lições dela apareceram. */
     veredas: veredasConcluidas(eventos.data ?? []),
+    laboratoriosDeVereda: naVereda.laboratoriosDeVereda,
   };
 }
 
