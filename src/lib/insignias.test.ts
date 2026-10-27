@@ -343,6 +343,28 @@ describe('a hora do estudo', () => {
   chega ao laboratório certo.
 */
 describe('toda insígnia de laboratório é alcançável', () => {
+  /*
+    E o caso que o teste de baixo pulava: laboratório sem insígnia nenhuma.
+
+    Ele conferia só os laboratórios que **já** tinham marca no catálogo, e
+    seguia adiante calado em todo o resto. Um laboratório novo que esquecesse
+    a entrada em `LABORATORIOS` passava por ele verde — concluir não daria
+    nada, e nada reprovaria. A regra é uma conquista por laboratório
+    concluído, e quem a cobra é esta trava.
+  */
+  it('cada laboratório do currículo tem a sua insígnia', () => {
+    const laboratorios = new Set<string>();
+    for (const e of getOpenSpecialties())
+      for (const m of e.modules)
+        for (const l of m.lessons)
+          if (l.labType && l.labType !== 'final_exam') laboratorios.add(l.labType);
+
+    /* Lista vazia deixaria a trava verde por não ter conferido nada. */
+    expect(laboratorios.size).toBeGreaterThan(20);
+    const semInsignia = [...laboratorios].filter(lab => !INSIGNIAS.some(i => i.code === `lab_${lab}`));
+    expect(semInsignia, `laboratório sem insígnia: ${semInsignia.join(', ')}`).toEqual([]);
+  });
+
   it('cada laboratório do currículo é reconhecido a partir do evento da lição', () => {
     const inalcancaveis: string[] = [];
 
@@ -350,7 +372,6 @@ describe('toda insígnia de laboratório é alcançável', () => {
       for (const m of e.modules) {
         for (const l of m.lessons) {
           if (!l.labType || l.labType === 'final_exam') continue;
-          if (!INSIGNIAS.some(i => i.code === `lab_${l.labType}`)) continue;
 
           /* O evento que essa lição grava ao concluir: os laboratórios que
              registram a lição são a maioria, e é por ela que o tipo se resolve. */
