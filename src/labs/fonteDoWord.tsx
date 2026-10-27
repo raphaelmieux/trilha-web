@@ -5,7 +5,10 @@ import {
 } from 'lucide-react';
 import { BotaoDaFaixa, GrupoDaFaixa } from './word';
 import { IconeItalico, IconeNegrito, IconeSublinhado } from './office';
-import { FONTES_DO_WORD, COR_DO_REALCE, APARENCIA_DO_ESTILO, type Estilo, type Realce } from './documento';
+import {
+  FONTES_DO_WORD, COR_DO_REALCE, APARENCIA_DO_ESTILO, NOMES_DA_CAIXA,
+  type Estilo, type ModoDeCaixa, type Realce,
+} from './documento';
 import { TAMANHOS_DO_WORD, type FormatoDaSelecao, type Marca } from './edicao';
 import type { Formatacao } from './useEdicaoDoWord';
 
@@ -161,15 +164,14 @@ function BotaoDividido({ dica, aoClicar, children, abrir, aberto, ancoraRef }: {
  * O grupo Fonte inteiro: família, tamanho, aumentar e diminuir, limpar, as
  * três marcas, subscrito e sobrescrito, realce e cor.
  *
- * Tachado, Efeitos de Texto e Maiúsculas e Minúsculas estão na fileira e
- * avisam: o modelo do documento não os guarda, e um botão que mudasse a tela
+ * Tachado e Efeitos de Texto estão na fileira e avisam: o modelo do documento não os guarda, e um botão que mudasse a tela
  * sem mudar o documento seria pior do que o aviso.
  */
 export function GrupoDeFonte({ edicao, aoAvisar }: {
   edicao: ControleDaFonte;
   aoAvisar: (recado: string) => void;
 }) {
-  const [aberta, setAberta] = useState<null | 'fonte' | 'tamanho' | 'cor' | 'realce'>(null);
+  const [aberta, setAberta] = useState<null | 'fonte' | 'tamanho' | 'cor' | 'realce' | 'caixa'>(null);
   const [digitado, setDigitado] = useState<string | null>(null);
   const [ultimaCor, setUltimaCor] = useState('#FF0000');
   const [ultimoRealce, setUltimoRealce] = useState<Exclude<Realce, 'nenhum'>>('amarelo');
@@ -177,6 +179,7 @@ export function GrupoDeFonte({ edicao, aoAvisar }: {
   const caixaTamanho = useRef<HTMLSpanElement | null>(null);
   const botaoCor = useRef<HTMLSpanElement | null>(null);
   const botaoRealce = useRef<HTMLSpanElement | null>(null);
+  const botaoCaixa = useRef<HTMLSpanElement | null>(null);
   const { formato } = edicao;
   const fechar = () => setAberta(null);
   const enfeite = (nome: string) => aoAvisar(`${nome} existe no Word de verdade, e não faz parte deste exercício.`);
@@ -227,9 +230,12 @@ export function GrupoDeFonte({ edicao, aoAvisar }: {
           <BotaoDaFaixa dica="Diminuir Tamanho da Fonte (Ctrl+<)" aoClicar={() => edicao.formatar({ tipo: 'encolher' })}>
             <span style={{ fontSize: 11, fontWeight: 600, lineHeight: 1 }}>A<sup style={{ fontSize: 8 }}>▼</sup></span>
           </BotaoDaFaixa>
-          <BotaoDaFaixa dica="Maiúsculas e Minúsculas" aoClicar={() => enfeite('Maiúsculas e Minúsculas')}>
-            <CaseSensitive className="w-4 h-4" />
-          </BotaoDaFaixa>
+          <span ref={botaoCaixa}>
+            <BotaoDaFaixa dica="Maiúsculas e Minúsculas" aoClicar={() => setAberta(a => (a === 'caixa' ? null : 'caixa'))}>
+              <CaseSensitive className="w-4 h-4" />
+              <ChevronDown className="w-2.5 h-2.5" />
+            </BotaoDaFaixa>
+          </span>
           <BotaoDaFaixa dica="Limpar Toda a Formatação" aoClicar={() => edicao.formatar({ tipo: 'limpar' })}>
             <Eraser className="w-3.5 h-3.5" />
           </BotaoDaFaixa>
@@ -275,6 +281,16 @@ export function GrupoDeFonte({ edicao, aoAvisar }: {
               aria-selected={formato.fonte === f.nome} style={{ fontFamily: f.pilha }}
               onClick={() => { edicao.formatar({ tipo: 'fonte', nome: f.nome }); fechar(); }}>
               {f.nome}
+            </button>
+          ))}
+        </ListaSuspensa>
+      )}
+      {aberta === 'caixa' && (
+        <ListaSuspensa ancora={botaoCaixa.current} aoFechar={fechar} largura={260}>
+          {(Object.keys(NOMES_DA_CAIXA) as ModoDeCaixa[]).map(m => (
+            <button key={m} type="button" className="wd-lista-item" role="option"
+              onClick={() => { edicao.formatar({ tipo: 'caixa', modo: m }); fechar(); }}>
+              {NOMES_DA_CAIXA[m]}
             </button>
           ))}
         </ListaSuspensa>

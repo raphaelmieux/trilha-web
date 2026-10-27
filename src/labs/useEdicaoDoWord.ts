@@ -1,9 +1,12 @@
 import type React from 'react';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { type Direta, type Doc, type Estilo, type Paragrafo, type Realce, type Trecho, ehParagrafo } from './documento';
+import {
+  type Direta, type Doc, type Estilo, type ModoDeCaixa, type Paragrafo, type Realce, type Trecho,
+  aplicarCaixa, ehParagrafo,
+} from './documento';
 import {
   type Edicao, type Marca, type QuemEdita, type Selecao,
-  alternarMarca, alternarPosicao, aplicarEstilo, definirCor, definirFonte, definirRealce, definirTamanho,
+  alternarMarca, alternarPosicao, aplicarEstilo, transformarSelecao, definirCor, definirFonte, definirRealce, definirTamanho,
   limparFormatacao, limparTudo, mudarTamanhoEmDegrau, apagar, apagarSelecao, formatoDaSelecao, inserirTexto, mesmaSelecao,
   palavraEmVolta, quebraDeLinha, quebraDePagina, quebrarParagrafo, recolhida, selecaoValida,
   selecionarTudo, tamanhoDoParagrafo, unidadesDoTrecho,
@@ -39,7 +42,9 @@ export type Formatacao =
   | { tipo: 'limpar-caractere' }
   | { tipo: 'realce'; realce: Realce }
   | { tipo: 'subscrito' }
-  | { tipo: 'sobrescrito' };
+  | { tipo: 'sobrescrito' }
+  | { tipo: 'caixa'; modo: ModoDeCaixa }
+  | { tipo: 'enfase' };
 
 /** O que a folha precisa receber para ser editável. */
 export interface EdicaoDaFolha {
@@ -48,6 +53,13 @@ export interface EdicaoDaFolha {
   aoComando: (c: ComandoDeTexto) => void;
   /** A folha avisa onde está a raiz editável, para o gancho devolver o foco. */
   raiz: React.MutableRefObject<HTMLElement | null>;
+  /**
+   * De que programa são os atalhos. O Word em português usa Ctrl+N, Ctrl+I e
+   * Ctrl+S; o editor de navegador não traduz nada e usa Ctrl+B, Ctrl+I e
+   * Ctrl+U em qualquer língua. Ensinar o atalho de um no outro seria ensinar
+   * um gesto que não funciona lá fora.
+   */
+  atalhos: 'word' | 'navegador';
 }
 
 interface Passo<S extends string> {
@@ -79,6 +91,7 @@ export function useEdicaoDoWord<S extends string>(
     quem?: QuemEdita;
     /** Para cada comando de teclado. Devolver `false` o recusa. */
     permitir?: (c: ComandoDeTexto, d: Doc<S>, s: Selecao | null) => boolean;
+    atalhos?: 'word' | 'navegador';
   } = {},
 ) {
   const raiz = useRef<HTMLElement | null>(null);
@@ -210,6 +223,19 @@ export function useEdicaoDoWord<S extends string>(
       case 'realce': r = definirRealce(d, alvo, f.realce); break;
       case 'subscrito': r = alternarPosicao(d, alvo, 'subscrito'); break;
       case 'sobrescrito': r = alternarPosicao(d, alvo, 'sobrescrito'); break;
+      /* Maiúsculas e Minúsculas troca as letras de verdade, como no Word: o
+         texto guardado muda, e não só a aparência. */
+      case 'caixa': {
+        const modo = f.modo;
+        r = transformarSelecao(d, alvo, x => (x.campo ? x : { ...x, texto: aplicarCaixa(x.texto, modo) }));
+        break;
+      }
+      /* Ênfase é estilo de caractere: liga se algum pedaço não tem. */
+      case 'enfase': {
+        const todos = paragrafosComTrechos(d, alvo).every(x => x.enfase);
+        r = transformarSelecao(d, alvo, x => ({ ...x, enfase: !todos }));
+        break;
+      }
       default: {
         const naoTratado: never = f;
         throw new Error(`formatação não tratada: ${JSON.stringify(naoTratado)}`);
@@ -280,6 +306,19 @@ export function useEdicaoDoWord<S extends string>(
     focar();
   }, [gravar, focar]);
 
+  /**
+   * Outro documento abriu na mesma janela: as pilhas do Ctrl+Z e o cursor são
+   * do anterior, e desfazer agora gravaria o texto de um arquivo no outro.
+   */
+  const esquecer = useCallback(() => {
+    passado.current = [];
+    futuro.current = [];
+    setContagem(n => n + 1);
+    setSelecaoCrua(null);
+    setPendente(undefined);
+    digitando.current = false;
+  }, []);
+
   /** Recomeçar: o documento volta, e o Ctrl+Z não alcança o que veio antes. */
   const reiniciar = useCallback((d: Doc<S>) => {
     passado.current = [];
@@ -291,9 +330,10 @@ export function useEdicaoDoWord<S extends string>(
     atual.current.aoMudar(d);
   }, []);
 
+  const atalhos = opcoes.atalhos ?? 'word';
   const folha: EdicaoDaFolha = useMemo(() => ({
-    selecao, aoSelecionar, aoComando: executar, raiz,
-  }), [selecao, aoSelecionar, executar]);
+    selecao, aoSelecionar, aoComando: executar, raiz, atalhos,
+  }), [selecao, aoSelecionar, executar, atalhos]);
 
   /* O parágrafo e o trecho em que o cursor está — "a marca escolhida" do
      painel de revisão é a que está debaixo do cursor, como no Word. */
@@ -328,6 +368,7 @@ export function useEdicaoDoWord<S extends string>(
     estilo,
     mudar,
     reiniciar,
+    esquecer,
     desfazer,
     refazer,
     podeDesfazer: passado.current.length > 0,
@@ -342,3 +383,10 @@ export function useEdicaoDoWord<S extends string>(
 }
 
 export type EdicaoDoWord<S extends string = string> = ReturnType<typeof useEdicaoDoWord<S>>;
+
+/** Os trechos com texto dentro de uma seleção, para saber se todos têm uma coisa. */
+function paragrafosComTrechos(d: Doc<string>, s: Selecao): Trecho[] {
+  const vistos: Trecho[] = [];
+  transformarSelecao(d, s, x => { if (x.texto || x.campo) vistos.push(x); return x; });
+  return vistos;
+}

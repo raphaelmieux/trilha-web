@@ -4,6 +4,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import EstilosTextoLab from './EstilosTextoLab';
+import { porCursor } from './tecladoDaFolha';
 import { METAS_DOS_ESTILOS, TEXTO_DO_SITE } from './metasDaAp044';
 
 /*
@@ -70,22 +71,42 @@ const porRotulo = (rotulo: string) =>
   container.querySelector(`[aria-label="${rotulo}"]`);
 
 const guia = (nome: string) => porTexto('.wd-guia', nome);
+const itemDaLista = (texto: string) =>
+  [...document.querySelectorAll('.wd-lista-item')].find(e => e.textContent?.includes(texto));
 const itemDeMenu = (texto: string) =>
   [...container.querySelectorAll('.wd-menu-item')].find(e => e.textContent?.includes(texto));
 
-/** Clica no trecho do documento cujo texto começa assim. */
-const trecho = (comeco: string) => {
-  const e = [...container.querySelectorAll('.wd-par span')]
-    .find(x => (x.textContent ?? '').startsWith(comeco));
-  clicar(e, `trecho "${comeco}"`);
-};
-
-/** Clica no parágrafo inteiro escolhendo o primeiro trecho dele. */
-const paragrafo = (comeco: string) => {
-  const p = [...container.querySelectorAll('.wd-par')]
+/** O parágrafo da folha cujo texto começa assim. */
+const achar = (comeco: string) => {
+  const p = [...container.querySelectorAll<HTMLElement>('p[data-bloco]')]
     .find(x => (x.textContent ?? '').startsWith(comeco));
   expect(p, `não achei o parágrafo "${comeco}"`).toBeTruthy();
-  clicar(p!.querySelector('span'), `parágrafo "${comeco}"`);
+  return p!;
+};
+
+/**
+ * Seleciona `texto` no documento, como quem arrasta o mouse por cima dele.
+ * `antes` desempata quando o texto aparece mais de uma vez — o "2" do H₂O é o
+ * que vem depois de "H".
+ */
+const selecionar = (texto: string, antes = '') => {
+  const p = [...container.querySelectorAll<HTMLElement>('p[data-bloco]')]
+    .find(x => (x.textContent ?? '').includes(antes + texto));
+  expect(p, `não achei "${antes}${texto}" na folha`).toBeTruthy();
+  const de = p!.textContent!.indexOf(antes + texto) + antes.length;
+  porCursor(container, p!.dataset.bloco!, de, { bloco: p!.dataset.bloco!, offset: de + texto.length });
+};
+
+/** Clica no parágrafo: o cursor cai nele. */
+const paragrafo = (comeco: string) => {
+  const p = achar(comeco);
+  clicar(p.querySelector('span'), `parágrafo "${comeco}"`);
+};
+
+/** Três cliques no parágrafo: ele inteiro selecionado. */
+const paragrafoInteiro = (comeco: string) => {
+  const p = achar(comeco);
+  porCursor(container, p.dataset.bloco!, 0, { bloco: p.dataset.bloco!, offset: 'fim' });
 };
 
 /**
@@ -138,23 +159,18 @@ describe('o laboratório de estilos se vence clicando', () => {
     }
     paragrafo('Bem-aventurados');
     clicar(porTexto('.es-estilo', 'Citação'), 'Citação');
-    trecho('até 20 de junho');
+    selecionar('até 20 de junho');
     clicar(porTexto('.es-estilo', 'Ênfase'), 'Ênfase');
     expect(feitas()).toContain('estilos');
 
     // 5 — Realce, no mesmo trecho que já está selecionado
     clicar(porRotulo('Cor do Realce do Texto'), 'realce');
-    clicar(itemDeMenu('Amarelo'), 'Amarelo');
     expect(feitas()).toContain('realce');
 
-    // 4 — Sobrescrito e subscrito
-    trecho('2');
-    // O primeiro "2" solto é o do H₂O; o do m² vem depois.
+    // 4 — Sobrescrito e subscrito, cada "2" selecionado sozinho
+    selecionar('2', 'H');
     clicar(porRotulo('Subscrito (Ctrl+=)'), 'subscrito');
-    const doisSoltos = [...container.querySelectorAll('.wd-par span')]
-      .filter(x => x.textContent === '2');
-    const doisDoMetro = doisSoltos[doisSoltos.length - 1];
-    clicar(doisDoMetro, 'o 2 de m²');
+    selecionar('2', '6 m');
     clicar(porRotulo('Sobrescrito (Ctrl+Shift++)'), 'sobrescrito');
     expect(feitas()).toContain('sobre-sub');
 
@@ -170,10 +186,10 @@ describe('o laboratório de estilos se vence clicando', () => {
     expect(feitas()).toContain('colar-destino');
     expect(container.textContent).toContain(TEXTO_DO_SITE);
 
-    // 6 — o Caps Lock, pelo botão Aa
-    paragrafo('MANUAL DO ACAMPAMENTO');
-    clicar(porRotulo('Alterar Maiúsculas e Minúsculas'), 'Aa');
-    clicar(itemDeMenu('Primeira letra da frase'), 'Primeira letra da frase');
+    // 6 — o Caps Lock, pelo botão Aa, com o título inteiro selecionado
+    paragrafoInteiro('MANUAL DO ACAMPAMENTO');
+    clicar(porRotulo('Maiúsculas e Minúsculas'), 'Aa');
+    clicar(itemDaLista('Primeira letra da frase'), 'Primeira letra da frase');
     expect(feitas()).toContain('caixa');
 
     // 7 — colunas, na guia Layout
@@ -228,9 +244,9 @@ describe('o laboratório de estilos se vence clicando', () => {
     expect(feitas()).toContain('sumario');
 
     clicar(guia('Início'), 'guia Início');
-    paragrafo('MANUAL DO ACAMPAMENTO');
-    clicar(porRotulo('Alterar Maiúsculas e Minúsculas'), 'Aa');
-    clicar(itemDeMenu('Primeira letra da frase'), 'Primeira letra da frase');
+    paragrafoInteiro('MANUAL DO ACAMPAMENTO');
+    clicar(porRotulo('Maiúsculas e Minúsculas'), 'Aa');
+    clicar(itemDaLista('Primeira letra da frase'), 'Primeira letra da frase');
     expect(feitas(), 'o sumário velho continuou valendo depois de o título mudar')
       .not.toContain('sumario');
 
@@ -247,12 +263,12 @@ describe('o laboratório de estilos se vence clicando', () => {
   */
   it('Ênfase vale para o trecho, e Título 2 para o parágrafo inteiro', () => {
     clicar(guia('Início'), 'guia Início');
-    trecho('até 20 de junho');
+    selecionar('até 20 de junho');
     clicar(porTexto('.es-estilo', 'Ênfase'), 'Ênfase');
 
-    const paragrafoDoPrazo = [...container.querySelectorAll('.wd-par')]
+    const paragrafoDoPrazo = [...container.querySelectorAll('p[data-bloco]')]
       .find(p => (p.textContent ?? '').includes('A ficha assinada'))!;
-    const trechos = [...paragrafoDoPrazo.querySelectorAll('span')];
+    const trechos = [...paragrafoDoPrazo.querySelectorAll('[data-trecho]')];
     const emItalico = trechos.filter(s => (s as HTMLElement).style.fontStyle === 'italic');
     expect(emItalico, 'Ênfase pegou mais de um trecho').toHaveLength(1);
     expect(emItalico[0].textContent).toBe('até 20 de junho');
@@ -263,7 +279,7 @@ describe('o laboratório de estilos se vence clicando', () => {
   it('sem seleção, a galeria de estilos explica em vez de não fazer nada', () => {
     clicar(guia('Início'), 'guia Início');
     clicar(porTexto('.es-estilo', 'Título 1'), 'Título 1');
-    expect(container.textContent).toContain('Clique antes num trecho do documento');
+    expect(container.textContent).toContain('Clique antes no documento');
     expect(feitas()).toEqual([]);
   });
 });

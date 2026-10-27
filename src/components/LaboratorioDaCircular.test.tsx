@@ -220,6 +220,16 @@ describe('a circular pode ser vencida com o teclado', () => {
     expect(titulo.style.fontFamily).toContain('Georgia');
   });
 
+  it('o zoom do rodapé muda o tamanho da folha, e não só o número', () => {
+    /* Ele mudava o número ao lado da régua e mais nada: o estado existia e
+       nenhuma folha de estilo o lia. */
+    montar();
+    const janela = container.querySelector('.wd-janela') as HTMLElement;
+    const antes = janela.style.getPropertyValue('--zoom');
+    clicar(container.querySelector('[aria-label="Aumentar o zoom"]'), 'Aumentar o zoom');
+    expect(janela.style.getPropertyValue('--zoom'), 'o zoom não chegou à folha').not.toBe(antes);
+  });
+
   it('não há mais botão que o Word não tem', () => {
     montar();
     for (const dica of ['Juntar com Quebra de Linha (Shift+Enter)', 'Excluir Parágrafo Vazio', 'Acrescentar o parágrafo da revisão']) {

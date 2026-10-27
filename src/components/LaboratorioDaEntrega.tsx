@@ -248,7 +248,9 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair }
           previaDaImpressao={previa}
         />
       ) : (
-        <div className="wd-janela">
+        <div className="wd-janela" style={{
+        '--largura-cm': 21, '--altura-cm': 29.7, '--margem-cm': 2.5, '--zoom': zoom,
+      } as React.CSSProperties}>
           <BarraDeTituloDoWord documento={entrega.nome} aoAvisar={setAviso}
             aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
             aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />

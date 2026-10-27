@@ -932,7 +932,8 @@ export function aparenciaDe(d: Doc<string>, e: Estilo): CSSProperties {
 export function aparenciaDoTrecho(d: Doc<string>, b: Paragrafo<string>, x: Trecho): CSSProperties {
   const doEstilo = aparenciaDe(d, b.estilo);
   /* Ênfase é estilo de caractere: ela inclina, e a direta pode desfazer. */
-  const base: CSSProperties = x.enfase ? { ...doEstilo, fontStyle: 'italic' } : doEstilo;
+  const comEnfase: CSSProperties = x.enfase ? { ...doEstilo, fontStyle: 'italic' } : doEstilo;
+  const base: CSSProperties = x.deFora ? { ...comEnfase, ...LETRA_DE_FORA } : comEnfase;
   const extra: CSSProperties = {
     ...(x.realce && x.realce !== 'nenhum' ? { backgroundColor: COR_DO_REALCE[x.realce] } : {}),
     ...(x.posicao === 'sobrescrito' ? { verticalAlign: 'super', fontSize: '0.65em' } : {}),
@@ -951,6 +952,19 @@ export function aparenciaDoTrecho(d: Doc<string>, b: Paragrafo<string>, x: Trech
     ...extra,
   };
 }
+
+/**
+ * A letra de um texto colado com "Manter Formatação Original": a do site de
+ * onde ele veio. Mora aqui, e não no laboratório que cola, porque é a folha
+ * que a desenha — e uma folha que não soubesse dela mostraria a colagem de
+ * origem igualzinha à de destino, que é a diferença inteira do exercício.
+ */
+export const LETRA_DE_FORA: CSSProperties = {
+  fontFamily: 'Verdana, Geneva, sans-serif',
+  fontSize: 10.5,
+  color: '#1F5C99',
+  backgroundColor: '#EEF3F8',
+};
 
 /** As cores do marca-texto, as do Word. */
 export const COR_DO_REALCE: Record<Exclude<Realce, 'nenhum'>, string> = {

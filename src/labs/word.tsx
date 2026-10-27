@@ -947,11 +947,22 @@ export const CSS_FOLHA = `
      espaço no fim da linha não aparece — o cursor andaria e a tela não. */
   .wd-editavel p[data-editavel] { white-space: pre-wrap; tab-size: 32; outline: none; }
   .wd-editavel .wd-bloco.escolhido { outline: none; }
+  .wd-editavel p[data-marca="paragrafo"]::after { content: '¶'; color: #9AA0A6; }
   /* A seleção do Word é cinza, e o texto continua com a cor dele. A da
      plataforma, vermelha com letra branca, faria o documento parecer outro
      programa no instante em que alguém seleciona uma palavra. */
   .wd-editavel ::selection { background: rgba(0, 0, 0, 0.17); color: currentColor; }
   .wd-ilha { cursor: default; }
+  /* As notas de rodapé: um traço curto e o texto pequeno, no pé da folha. */
+  .wd-notas { margin-top: auto; padding-top: 6px; font-size: 9px; color: #201F1E; }
+  .wd-notas::before { content: ''; display: block; width: 30%; border-top: 1px solid #8A8886; margin-bottom: 4px; }
+  .wd-nota { display: flex; gap: 4px; align-items: baseline; }
+  .wd-nota sup, .wd-nota-marca { color: #2B579A; font-weight: 700; }
+  .wd-nota-campo {
+    border: none; border-bottom: 1px dotted #8A8886; background: transparent;
+    font: inherit; color: inherit; width: 100%; padding: 1px 2px; outline: none;
+  }
+  .wd-nota-campo:focus { box-shadow: inset 0 0 0 1px #2B579A; }
 .wd-escrevendo {
   display: block; width: 100%; border: none; background: transparent;
   font: inherit; color: inherit; resize: none; overflow: hidden;
@@ -1000,6 +1011,10 @@ function emPontos(estilo: React.CSSProperties): React.CSSProperties {
   }
   return r;
 }
+
+/** A posição da nota de rodapé deste parágrafo entre as do documento. */
+const numeroDaNota = (d: Doc<string>, id: string) =>
+  d.blocos.filter(b => b.tipo === 'paragrafo' && b.nota !== undefined).findIndex(b => b.id === id) + 1;
 
 const daParaDigitar = (b: Paragrafo<string>) =>
   b.trechos.length <= 1 && !b.trechos.some(x => x.campo || x.revisao);
@@ -1063,6 +1078,11 @@ export function ParagrafoDaFolha({
           data-bloco={bloco.id}
           data-estilo={bloco.estilo}
           data-editavel=""
+          /* O ¶ da folha editável é desenhado pela folha de estilo, e não por
+             um elemento: um elemento que não se edita no fim de um parágrafo
+             vazio faz o Chromium tirar o cursor dali — o Enter abria a linha
+             nova e o que se digitava ia para o começo da de baixo. */
+          data-marca={marcas ? 'paragrafo' : undefined}
           onClick={aoEscolher}
         >
           {bloco.trechos.map(x => (
@@ -1099,7 +1119,9 @@ export function ParagrafoDaFolha({
               )}
             </Fragment>
           ))}
-          {marcas && <span className="wd-marca" data-marca="paragrafo" contentEditable={false}>¶</span>}
+          {bloco.nota !== undefined && (
+            <sup className="wd-nota-marca" contentEditable={false}>{numeroDaNota(doc, bloco.id)}</sup>
+          )}
           {segura && <br data-vazio="" />}
         </p>
       </>
@@ -1455,6 +1477,54 @@ export function FaixaDaFolha({ doc, faixa, pagina, onde, aoEscrever }: {
   );
 }
 
+/** Os blocos de uma folha agrupados em rodadas da mesma seção, para as colunas. */
+function emRodadas<B extends { id: string; secao: string }>(blocos: B[], colunas: Record<string, number>) {
+  const r: { chave: string; colunas: number; blocos: B[] }[] = [];
+  for (const b of blocos) {
+    const n = colunas[b.secao] ?? 1;
+    const ultima = r[r.length - 1];
+    if (ultima && ultima.blocos[0].secao === b.secao) ultima.blocos.push(b);
+    else r.push({ chave: b.id, colunas: n, blocos: [b] });
+  }
+  return r;
+}
+
+/**
+ * As notas de rodapé da folha, no pé dela, numeradas pelo programa.
+ *
+ * A numeração conta as notas do documento inteiro, na ordem: é ela que o
+ * requisito pede para não se digitar à mão. Ficam numa ilha que não se edita
+ * pela folha — cada nota tem o campo dela, como no Word, onde o cursor pula
+ * para o pé da página ao inserir.
+ */
+function NotasDaFolha({ doc, blocos, editavel, aoEscrever }: {
+  doc: Doc<string>;
+  blocos: Bloco<string>[];
+  editavel: boolean;
+  aoEscrever?: (blocoId: string, texto: string) => void;
+}) {
+  const todas = doc.blocos.filter((b): b is Paragrafo<string> => b.tipo === 'paragrafo' && b.nota !== undefined);
+  const aqui = todas.filter(b => blocos.includes(b));
+  if (aqui.length === 0) return null;
+  return (
+    <div className="wd-notas" contentEditable={editavel ? false : undefined}>
+      {aqui.map(b => {
+        const n = todas.indexOf(b) + 1;
+        return (
+          <div key={b.id} className="wd-nota">
+            <sup>{n}</sup>
+            {aoEscrever ? (
+              <input className="wd-nota-campo" value={b.nota ?? ''} aria-label={`Nota de rodapé ${n}`}
+                placeholder="Escreva aqui a nota de rodapé…"
+                onChange={ev => aoEscrever(b.id, ev.target.value)} />
+            ) : <span>{b.nota}</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
  * A folha inteira: quantas páginas o documento tiver, cada uma com as faixas
  * que se repetem.
@@ -1472,7 +1542,7 @@ export function FaixaDaFolha({ doc, faixa, pagina, onde, aoEscrever }: {
 export function FolhaDoWord({
   doc, selecionado, marcas, aoEscolher, aoClicarNoVazio,
   celula, aoCursorNaCelula, aoEditarCelula, aoEscreverNaFaixa,
-  comentado, aoEscolherTrecho, margem, aoEscreverNoParagrafo, aoNovoParagrafo, edicao,
+  comentado, aoEscolherTrecho, margem, aoEscreverNoParagrafo, aoNovoParagrafo, edicao, aoEscreverNota,
 }: {
   doc: Doc<string>;
   selecionado?: string | null;
@@ -1506,6 +1576,8 @@ export function FolhaDoWord({
    * prometeria um gesto que o exercício não tem.
    */
   edicao?: EdicaoDaFolha;
+  /** Escrever a nota de rodapé de um parágrafo. Sem ele, a nota é de leitura. */
+  aoEscreverNota?: (blocoId: string, texto: string) => void;
 }) {
   const paginas = paginasDoDoc(doc);
   /* Embaixo do título, e não acima dele: quem fecha a abertura é quem carrega
@@ -1556,7 +1628,8 @@ export function FolhaDoWord({
                 {numero === 1 && doc.sumario && fechaAAbertura === null && (
                   <div contentEditable={editavel ? false : undefined}><SumarioDaFolha itens={doc.sumario} /></div>
                 )}
-                {blocos.map((b) => {
+                {emRodadas(blocos, doc.colunas as Record<string, number>).map(rodada => {
+                  const desenhados = rodada.blocos.map((b) => {
                   const dentro = doc.blocos.indexOf(b);
                   const anterior = doc.blocos[dentro - 1];
                   const flutuaComAFigura = b.tipo === 'paragrafo' && b.estilo === 'Legenda'
@@ -1587,8 +1660,18 @@ export function FolhaDoWord({
                       )}
                     </Fragment>
                   );
+                });
+                  /* Colunas valem para a seção, e não para o parágrafo: a
+                     rodada de blocos da mesma seção corre em colunas junto. */
+                  return rodada.colunas > 1 ? (
+                    <div key={rodada.chave} data-colunas={rodada.colunas}
+                      style={{ columnCount: rodada.colunas, columnGap: 'calc(var(--px-cm, 34) * 0.9px)' }}>
+                      {desenhados}
+                    </div>
+                  ) : <Fragment key={rodada.chave}>{desenhados}</Fragment>;
                 })}
               </div>
+              <NotasDaFolha doc={doc} blocos={blocos} editavel={editavel} aoEscrever={aoEscreverNota} />
               {comFaixas && doc.rodape && (
                 <div contentEditable={editavel ? false : undefined} className={editavel ? 'wd-ilha' : undefined}>
                   <FaixaDaFolha doc={doc} faixa={doc.rodape} pagina={numero} onde="rodape"
@@ -1813,10 +1896,16 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
       /* Os atalhos do Word em português: N é Negrito, I é Itálico, S é
          Sublinhado. O B e o U do Chrome escreveriam `<b>` e `<u>` direto no
          DOM, e são parados sem fazer nada. */
-      if (tecla === 'n') return parar({ tipo: 'marca', marca: 'negrito' });
-      if (tecla === 'i') return parar({ tipo: 'marca', marca: 'italico' });
-      if (tecla === 's') return parar({ tipo: 'marca', marca: 'sublinhado' });
-      if (tecla === 'b' || tecla === 'u') return parar();
+      if (atual.current.edicao?.atalhos === 'navegador') {
+        if (tecla === 'b') return parar({ tipo: 'marca', marca: 'negrito' });
+        if (tecla === 'i') return parar({ tipo: 'marca', marca: 'italico' });
+        if (tecla === 'u') return parar({ tipo: 'marca', marca: 'sublinhado' });
+      } else {
+        if (tecla === 'n') return parar({ tipo: 'marca', marca: 'negrito' });
+        if (tecla === 'i') return parar({ tipo: 'marca', marca: 'italico' });
+        if (tecla === 's') return parar({ tipo: 'marca', marca: 'sublinhado' });
+        if (tecla === 'b' || tecla === 'u') return parar();
+      }
       /* Ctrl+Espaço tira a formatação de caractere e deixa o estilo; Ctrl+>
          e Ctrl+< sobem e descem um degrau de tamanho, como na faixa. */
       if (ev.key === ' ') return parar({ tipo: 'formatar', formatacao: { tipo: 'limpar-caractere' } });
@@ -1855,8 +1944,12 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
        teve layout para mover nada. */
     const t = (ev.target as HTMLElement).closest<HTMLElement>('[data-trecho]');
     const ancora = r.ownerDocument.getSelection()?.anchorNode ?? null;
-    const velha = lida && p && recolhida(lida)
-      && (lida.foco.bloco !== p.dataset.bloco || (!!t && !!ancora && !t.contains(ancora)));
+    /* Um clique simples sem Shift sempre recolhe a seleção no navegador; uma
+       seleção estendida que sobrevive a ele é a de antes. Duplo e triplo
+       clique selecionam de propósito, e `detail` conta os cliques. */
+    const velha = lida && p && !ev.shiftKey && (
+      (!recolhida(lida) && ev.detail <= 1)
+      || (recolhida(lida) && (lida.foco.bloco !== p.dataset.bloco || (!!t && !!ancora && !t.contains(ancora)))));
     if (lida && !velha) { e.aoSelecionar(lida); return; }
     if (!p) return;
     const b = atual.current.doc.blocos.find(x => x.id === p.dataset.bloco);

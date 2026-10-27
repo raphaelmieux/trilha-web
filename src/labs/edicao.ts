@@ -1013,3 +1013,28 @@ export function trechosEmVolta(d: Doc<string>, p: Ponto): { antes: Trecho | null
   }
   return { antes, depois };
 }
+
+/**
+ * A sugestão inteira a que um trecho marcado pertence: os trechos marcados
+ * vizinhos, do mesmo autor, no mesmo parágrafo.
+ *
+ * Trocar uma palavra em modo de Sugestão produz duas marcas — a palavra velha
+ * riscada e a nova sublinhada —, e o editor da nuvem as trata como uma
+ * sugestão só: um Aceitar aceita as duas. Aceitar só uma deixaria a palavra
+ * nova ao lado da velha ainda riscada, um meio-termo que ninguém propôs.
+ */
+export function sugestaoDoTrecho(d: Doc<string>, trechoId: string): string[] {
+  for (const b of d.blocos) {
+    if (!ehParagrafo(b)) continue;
+    const i = b.trechos.findIndex(x => x.id === trechoId);
+    if (i < 0) continue;
+    const autor = b.trechos[i].revisao?.autor;
+    if (!autor) return [];
+    let de = i;
+    while (de > 0 && b.trechos[de - 1].revisao?.autor === autor) de--;
+    let ate = i;
+    while (ate < b.trechos.length - 1 && b.trechos[ate + 1].revisao?.autor === autor) ate++;
+    return b.trechos.slice(de, ate + 1).map(x => x.id);
+  }
+  return [];
+}

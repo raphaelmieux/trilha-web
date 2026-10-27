@@ -219,7 +219,9 @@ export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, a
       <style>{CSS_FOLHA}</style>
       <style>{CSS_FONTE_DO_WORD}</style>
 
-      <div className="wd-janela">
+      <div className="wd-janela" style={{
+        '--largura-cm': 21, '--altura-cm': 29.7, '--margem-cm': 2.5, '--zoom': zoom,
+      } as React.CSSProperties}>
         <BarraDeTituloDoWord documento="Relatório Anual 2026" aoAvisar={setAviso}
           aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
           aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />

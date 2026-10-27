@@ -431,7 +431,9 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
         .wt-estilo[aria-pressed="true"] { border-color: #2B579A; background: #EFF4FB; }
       `}</style>
 
-      <div className="wd-janela">
+      <div className="wd-janela" style={{
+        '--largura-cm': 21, '--altura-cm': 29.7, '--margem-cm': 2.5, '--zoom': zoom,
+      } as React.CSSProperties}>
         <BarraDeTituloDoWord documento="Relatório do Acampamento" aoAvisar={setAviso}
           aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
           aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />
