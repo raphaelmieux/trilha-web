@@ -1,8 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
 import {
   Table, ImagePlus, Captions, Rows3, Columns3, Trash2, PanelTop,
-  Bold, Italic, Underline, AlignLeft, Clipboard, Scissors, Copy, WrapText,
+  AlignLeft, Clipboard, Scissors, Copy, WrapText,
 } from 'lucide-react';
+import { IconeItalico, IconeNegrito, IconeSublinhado } from '../labs/office';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
@@ -119,8 +120,6 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
   const guiaAtual = contextuais.some(g => g.id === guia) || GUIAS_USAVEIS.includes(guia)
     ? guia : 'Inserir';
 
-  const naoFazParte = (nome: string) =>
-    setAviso(`${nome} existe no Word de verdade, e está aqui para a janela ficar igual — mas não faz parte desta lição.`);
 
   const fecharMenu = () => setMenu(null);
   const abrir = (id: string) => setMenu(m => (m === id ? null : id));
@@ -420,30 +419,30 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
       `}</style>
 
       <div className="wd-janela">
-        <BarraDeTituloDoWord documento="Relatório do Acampamento" aoAvisar={naoFazParte} />
+        <BarraDeTituloDoWord documento="Relatório do Acampamento" aoAvisar={setAviso} />
 
         <GuiasDoWord
           atual={guiaAtual} usaveis={GUIAS_USAVEIS} contextuais={contextuais}
           aoTrocar={(id) => { setGuia(id); fecharMenu(); }}
-          aoAvisar={naoFazParte} />
+          aoAvisar={setAviso} />
 
         <div className="wd-faixa" style={{ overflowX: menu ? 'visible' : 'auto' }}>
           {guiaAtual === 'Início' && (
             <>
               <GrupoDaFaixa nome="Área de Transferência">
-                <EnfeiteDaFaixa dica="Colar (Ctrl+V)" rotulo="Colar" empilhado aoAvisar={naoFazParte}>
+                <EnfeiteDaFaixa dica="Colar (Ctrl+V)" rotulo="Colar" empilhado aoAvisar={setAviso}>
                   <Clipboard className="w-5 h-5" />
                 </EnfeiteDaFaixa>
-                <EnfeiteDaFaixa dica="Recortar (Ctrl+X)" aoAvisar={naoFazParte}><Scissors className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={naoFazParte}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                <EnfeiteDaFaixa dica="Recortar (Ctrl+X)" aoAvisar={setAviso}><Scissors className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={setAviso}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
               </GrupoDaFaixa>
               <GrupoDaFaixa nome="Fonte">
-                <EnfeiteDaFaixa dica="Negrito (Ctrl+N)" aoAvisar={naoFazParte}><Bold className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                <EnfeiteDaFaixa dica="Itálico (Ctrl+I)" aoAvisar={naoFazParte}><Italic className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                <EnfeiteDaFaixa dica="Sublinhado (Ctrl+S)" aoAvisar={naoFazParte}><Underline className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                <EnfeiteDaFaixa dica="Negrito (Ctrl+N)" aoAvisar={setAviso}><IconeNegrito /></EnfeiteDaFaixa>
+                <EnfeiteDaFaixa dica="Itálico (Ctrl+I)" aoAvisar={setAviso}><IconeItalico /></EnfeiteDaFaixa>
+                <EnfeiteDaFaixa dica="Sublinhado (Ctrl+S)" aoAvisar={setAviso}><IconeSublinhado /></EnfeiteDaFaixa>
               </GrupoDaFaixa>
               <GrupoDaFaixa nome="Parágrafo">
-                <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={naoFazParte}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={setAviso}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
                 <BotaoDaFaixa dica="Excluir Parágrafo" aoClicar={excluirParagrafo}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </BotaoDaFaixa>
@@ -491,7 +490,7 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
                 aoClicar={inserirLegenda}>
                 <Captions className="w-5 h-5" />
               </BotaoDaFaixa>
-              <EnfeiteDaFaixa dica="Inserir Índice de Ilustrações" aoAvisar={naoFazParte}>
+              <EnfeiteDaFaixa dica="Inserir Índice de Ilustrações" aoAvisar={setAviso}>
                 <PanelTop className="w-3.5 h-3.5" />
               </EnfeiteDaFaixa>
             </GrupoDaFaixa>
@@ -588,7 +587,7 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
                   ? 'Nenhuma tabela selecionada'
                   : `Lista com ${COLUNAS_DA_LISTA.length} colunas alinhadas com tabulação`}
           </span>
-          <ZoomDoWord zoom={zoom} aoMudar={setZoom} />
+          <ZoomDoWord zoom={zoom} aoMudar={setZoom} aoAvisar={setAviso} />
         </div>
       </div>
     </LaboratorioEmTelaCheia>

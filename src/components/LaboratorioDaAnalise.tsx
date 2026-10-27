@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
-  CSS_EXCEL, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel,
+  CSS_EXCEL, BarraDeStatusDoExcel, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel,
   GradeDoExcel, DesenhoDoGrafico,
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
@@ -600,15 +600,14 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
         {/* A régua conta o que o filtro deixou à vista, como a do Excel — e é
             por ela que se descobre que a moda da altura descreve duas pessoas
             em quarenta e oito. Ela relata o número, e nunca o que ele significa. */}
-        <div className="pl-status">
+        <BarraDeStatusDoExcel aoAvisar={avisar} planilha={p} faixa={faixa} caderno={cad}>
           <span>Pronto</span>
           {sobraram !== null && (
             <span style={{ marginLeft: 12 }}>
               {sobraram} de {(p.tabela ? normalizar(p.tabela).base - normalizar(p.tabela).topo : 0)} registros encontrados
             </span>
           )}
-          <span style={{ marginLeft: 'auto' }}>{nomeDaFaixa(faixa)}</span>
-        </div>
+        </BarraDeStatusDoExcel>
       </div>
 
       {filtroAberto && (

@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom';
 import {
   AlignLeft, AlignCenter, AlignRight, ChevronsUp, ChevronsDown, Minus,
   Combine, Split, Rows3, Trash2, Table2, Paintbrush, Grid2x2,
-  Sigma, FileCheck2, RotateCcw, Bold, Percent, Palette,
+  Sigma, FileCheck2, RotateCcw, Percent, Palette,
   ChevronDown, Ruler, Copy, ClipboardPaste, Scissors, Eraser, Undo2, Redo2,
-  Italic, Underline, PaintBucket,
+  PaintBucket,
 } from 'lucide-react';
+import { IconeItalico, IconeNegrito, IconeSublinhado } from './office';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
-  CSS_EXCEL, BarraDeFormulas, BarraDeTituloDoExcel, GuiasDoExcel, AbasDoExcel, GradeDoExcel,
+  CSS_EXCEL, BarraDeStatusDoExcel, BarraDeFormulas, BarraDeTituloDoExcel, GuiasDoExcel, AbasDoExcel, GradeDoExcel,
 } from './excel';
 import { useGradeDoExcel } from './gradeDoExcel';
 import {
@@ -504,10 +505,10 @@ export default function PlanilhaLab({
               </div>
               <div className="flex items-center gap-1">
                 <Bt dica="Negrito (Ctrl+N)" ativo={p.celulas[sel.l][sel.c].negrito} aoClicar={negritar}>
-                  <Bold className="w-3.5 h-3.5" />
+                  <IconeNegrito />
                 </Bt>
-                <Enfeite dica="Itálico (Ctrl+I)"><Italic className="w-3.5 h-3.5" /></Enfeite>
-                <Enfeite dica="Sublinhado (Ctrl+S)"><Underline className="w-3.5 h-3.5" /></Enfeite>
+                <Enfeite dica="Itálico (Ctrl+I)"><IconeItalico /></Enfeite>
+                <Enfeite dica="Sublinhado (Ctrl+S)"><IconeSublinhado /></Enfeite>
                 <Enfeite dica="Bordas"><Grid2x2 className="w-3.5 h-3.5" /></Enfeite>
                 <Enfeite dica="Cor do Preenchimento"><PaintBucket className="w-3.5 h-3.5" /></Enfeite>
                 <Enfeite dica="Cor da Fonte"><Palette className="w-3.5 h-3.5" /></Enfeite>
@@ -748,15 +749,14 @@ export default function PlanilhaLab({
             Com faixa selecionada ela mostra média, contagem e soma — que é o
             que a planilha de verdade põe aí, e é como muita gente soma uma
             coluna sem escrever fórmula nenhuma. */}
-        <div className="pl-status">
+        <BarraDeStatusDoExcel aoAvisar={avisar}>
           <span>{resumoDaFaixa ?? 'Pronto'}</span>
-          <span className="ml-auto">{nomeDaFaixa(faixa)}</span>
           <span>
             {p.celulas[sel.l][sel.c].texto.startsWith('=')
               ? `Fórmula — resultado ${valorDe(p, sel.l, sel.c)}`
               : ''}
           </span>
-        </div>
+        </BarraDeStatusDoExcel>
       </div>
     </LaboratorioEmTelaCheia>
   );

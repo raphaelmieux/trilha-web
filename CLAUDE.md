@@ -3157,6 +3157,84 @@ vez; o outro muda a regra para todos os arquivos daquele tipo. A tarefa do
 "abrir com" só fecha se o padrão **não** tiver mudado junto — é a diferença que
 faz alguém abrir uma foto no editor uma vez e passar a abrir todas ali.
 
+**Word, Excel, PowerPoint e Access são uma janela só, e ela mora em
+`office.tsx`.** Cada um desenhava a própria moldura, e as quatro já tinham
+divergido onde mais se vê: o Word e o Excel tinham a barra de título clara do
+Microsoft 365, o PowerPoint a tinha laranja e o Access vermelha, do tema
+colorido do Office 2016. Quem saía da apresentação para a planilha via dois
+pacotes Office no mesmo computador. É a decisão de `word.tsx`, um andar acima:
+a barra de título com o acesso rápido (AutoSalvamento, Salvar, Desfazer,
+Refazer), a fileira de guias com Comentários e Compartilhar na ponta, a faixa
+em cartão branco de cantos redondos, a barra de status com os modos de exibição
+e o zoom. O que muda é a cor e o que vai dentro da faixa.
+
+As classes antigas continuam (`wd-guia`, `pl-titulo`, `pp-status`): as travas
+de cada laboratório as procuram, e a peça nova as recebe por parâmetro em vez de
+inventar outras.
+
+**Guia que o exercício não usa abre assim mesmo.** Ela aparecia cinza, e o
+clique respondia com um aviso. Programa nenhum tem guia cinza: quem abria
+"Layout" por curiosidade recebia um muro, e muro ensina a andar no trilho.
+Hoje toda guia abre a faixa inteira do programa de verdade — os grupos, os
+nomes e os botões em português —, e o aviso só chega no botão. As faixas moram
+em `faixasDoOffice.ts`, que é dado e não tela.
+
+Isso acontece na fileira de guias, e não em cada laboratório. Ela guarda qual
+guia está sendo espiada e desenha a faixa dela logo abaixo de si; a faixa do
+laboratório, que vem logo depois na marcação, se esconde pela folha
+(`.of-faixa-padrao + .wd-faixa`). Vinte e cinco laboratórios ganharam o
+comportamento sem mudar uma linha — e por isso `office.test.tsx` lê o fonte de
+cada um e cobra que a faixa seja a irmã seguinte da fileira: qualquer coisa
+posta entre as duas mostraria duas faixas empilhadas, sem erro nenhum.
+
+**E a faixa do laboratório é completada com os grupos que faltam.** Cada
+laboratório desenha os grupos de que o exercício precisa, e só eles: a faixa de
+Início do Word saía com quatro grupos onde o programa tem oito, e a do Excel
+com seis botões sem nome. Faixa magra ensina que o resto não existe. A fileira
+de guias lê os nomes dos grupos que a faixa irmã desenhou, põe os do programa
+que não estão lá por portal dentro dela e ordena todos por `order`, na ordem do
+programa de verdade. Três detalhes erram calado:
+
+- **nome encurtado é o mesmo grupo.** "Classificar" é o começo de "Classificar
+  e Filtrar", e "Editando" é o nome que o laboratório deu ao grupo Edição: pôr
+  o do programa ao lado daria dois grupos para os mesmos botões;
+- **comando que o laboratório já desenhou não se repete.** O do exercício é o
+  que funciona; repeti-lo como enfeite poria na mesma faixa dois "Atualizar
+  Tudo", um que faz e outro que avisa — e a trava que procura pelo `title`
+  acharia o que avisa, que vem antes no DOM depois que a faixa troca de guia;
+- **a faixa muda sem a fileira saber** — um grupo que aparece com o cursor na
+  tabela —, e por isso um `MutationObserver` relê os nomes. Os grupos que ele
+  mesmo pôs ficam fora da leitura, senão a releitura não pararia.
+
+**Negrito é N, e Sublinhado é S.** O ícone de "bold" dos pacotes de ícones é um
+B, e um B na faixa manda procurar uma letra que o computador do clube não
+mostra. `IconeNegrito`, `IconeItalico` e `IconeSublinhado` moram em
+`office.tsx`, e os atalhos escritos nas dicas são os do Office em português:
+Ctrl+N, Ctrl+I, Ctrl+S, e Ctrl+B para salvar.
+
+**A barra de status do Excel conta a seleção, e não escreve o endereço.** Ela
+mostrava "A1" no canto, que é o que a caixa de nome já diz e o Excel não
+repete. O que ele mostra ali, com mais de uma célula preenchida selecionada, é
+Média, Contagem e Soma — e é o primeiro lugar em que o número guardado como
+texto se denuncia sem fórmula nenhuma: a Contagem conta a célula e a Soma não.
+`contaDaSelecao` mora em `planilha.ts`, e o `BarraDeStatusDoExcel` guarda o que
+o laboratório escreve num bloco próprio, porque a trava da AP044 procura o
+último `span` dele.
+
+**O Word das operações de arquivo era um terceiro Word.** A janela do editor
+dentro do laboratório de compactar desenhava a fileira de guias à mão, e a
+primeira guia dela se chamava "Página Inicial" — em todo outro laboratório de
+Word ela é "Início". Hoje é a `GuiasDoWord`, com a guia Arquivo abrindo os
+bastidores.
+
+**E a frase de "não faz parte" saía dobrada em seis laboratórios.** Eles
+passavam à fileira de guias e aos enfeites da faixa uma função que embrulha um
+**nome** numa frase, e as duas peças já entregavam a frase pronta: "Itálico
+existe no Word de verdade, e está aqui para a faixa ficar igual — mas não faz
+parte deste exercício. existe no Word de verdade…". Agora as peças do Office
+têm os dois canais separados — `aoAvisar` recebe o recado pronto, e
+`aoNaoFazParte`, quando o laboratório o entrega, recebe só o nome do comando.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que
@@ -4667,6 +4745,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDoProjeto.test.tsx` | lição com metas em dois programas sem caminho entre eles |
 | `src/components/LaboratorioDoProjeto.test.tsx` | transferência pendurada na linha do dono, onde o seletor a descarta |
 | `src/labs/classesDoPrograma.test.ts` | classe de programa imitado usada na tela e definida em folha nenhuma |
+| `src/labs/office.test.tsx` | guia do Office sem faixa padrão, que abriria um cartão vazio |
+| `src/labs/office.test.tsx` | faixa do laboratório que deixou de ser a irmã seguinte da fileira de guias, e não se esconde ao espiar outra guia |
+| `src/labs/office.test.tsx` | grupo completado que repete um que o laboratório já desenhou, ou B de "bold" no lugar do N |
 | `src/labs/gradeDoExcel.test.tsx` | laboratório de planilha novo fora da mesa, teclando diferente dos outros |
 | `src/labs/planilha.test.ts` | Mover ou Copiar que copia sem a caixa marcada, ou Substituir que ignora a seleção |
 | `src/labs/planilha.test.ts` | Remover Duplicatas que acha a linha antes de padronizar, ou que junta homônimos com todas as colunas marcadas |

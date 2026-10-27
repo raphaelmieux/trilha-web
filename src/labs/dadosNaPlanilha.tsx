@@ -30,7 +30,7 @@ import {
   Replace, Trash2, Undo2,
 } from 'lucide-react';
 import {
-  AbasDoExcel, BarraDeFormulas, BarraDeTituloDoExcel, BotaoDoExcel, DesenhoDoGrafico,
+  AbasDoExcel, BarraDeStatusDoExcel, BarraDeFormulas, BarraDeTituloDoExcel, BotaoDoExcel, DesenhoDoGrafico,
   GradeDoExcel, GrupoDoExcel, GuiasDoExcel,
 } from './excel';
 import { useGradeDoExcel } from './gradeDoExcel';
@@ -38,9 +38,8 @@ import {
   type Caderno, type Historico, type Planilha, type TipoDeGrafico,
   desfazer, historicoDe, moverOuCopiar, nomeDaFaixa, normalizar, ordenar,
   planilhaAtiva, pontosDaDispersao, pontosDoGrafico, refazer, registrar,
-  removerDuplicatas, renomearAba, substituir, trocarAtiva, valorCalculado, umaCelulaSo,
+  removerDuplicatas, renomearAba, substituir, trocarAtiva, umaCelulaSo,
 } from './planilha';
-import { mostrarNumero } from './formulas';
 import type { ContextoDoProjetoDeDados } from './metasDaCcEs013';
 
 export interface PropsDaSuperficieDeDados {
@@ -111,29 +110,6 @@ type Dialogo =
   | { tipo: 'duplicatas'; colunas: number[] }
   | { tipo: 'grafico'; grafico: TipoDeGrafico; titulo: string; eixoX: string; eixoY: string };
 
-/**
- * O que a régua do Excel conta na seleção: Média, Contagem e Soma.
- *
- * É o primeiro lugar em que o número guardado como texto se denuncia sem
- * fórmula nenhuma — a Contagem conta toda célula preenchida, e a Média e a
- * Soma só as que são número. Selecionar a coluna da distância e ver a Contagem
- * maior do que os números que entraram na Média é a mesma pista da
- * `CONT.NÚM` da CC-ES003, sem escrever nada.
- */
-function contaDaSelecao(p: Planilha, cad: Caderno, faixa: { l1: number; c1: number; l2: number; c2: number }) {
-  if (umaCelulaSo(faixa)) return null;
-  const n = normalizar(faixa);
-  let contagem = 0; let numeros = 0; let soma = 0;
-  for (let l = n.topo; l <= Math.min(n.base, p.celulas.length - 1); l++) {
-    for (let c = n.esq; c <= Math.min(n.dir, (p.celulas[0]?.length ?? 1) - 1); c++) {
-      if ((p.celulas[l]?.[c]?.texto ?? '') === '') continue;
-      contagem += 1;
-      const v = valorCalculado(p, l, c, cad);
-      if (v.tipo === 'numero') { numeros += 1; soma += v.n; }
-    }
-  }
-  return contagem === 0 ? null : { contagem, numeros, soma };
-}
 
 export function AnaliseNoExcel({ ctx, mudar, avisar }: PropsDaSuperficieDeDados) {
   const [hist, setHist] = useState<Historico<Caderno>>(() => historicoDe(ctx.p.caderno));
@@ -239,7 +215,6 @@ export function AnaliseNoExcel({ ctx, mudar, avisar }: PropsDaSuperficieDeDados)
     </BotaoDoExcel>
   );
 
-  const conta = contaDaSelecao(p, cad, g.faixa);
   const cabecalhos = p.tabela
     ? Array.from({ length: normalizar(p.tabela).dir - normalizar(p.tabela).esq + 1 },
       (_, i) => normalizar(p.tabela!).esq + i)
@@ -394,17 +369,9 @@ export function AnaliseNoExcel({ ctx, mudar, avisar }: PropsDaSuperficieDeDados)
       <AbasDoExcel nomes={cad.planilhas.map(q => q.nome)} ativa={cad.ativa}
         aoTrocar={irParaAba} aoAvisar={avisar} />
 
-      <div className="pl-status">
+      <BarraDeStatusDoExcel aoAvisar={avisar} planilha={p} faixa={g.faixa} caderno={cad}>
         <span>Pronto</span>
-        {conta && (
-          <span style={{ marginLeft: 12 }}>
-            {conta.numeros > 0 && `Média: ${mostrarNumero(conta.soma / conta.numeros)}   `}
-            Contagem: {conta.contagem}
-            {conta.numeros > 0 && `   Soma: ${mostrarNumero(conta.soma)}`}
-          </span>
-        )}
-        <span style={{ marginLeft: 'auto' }}>{nomeDaFaixa(g.faixa)}</span>
-      </div>
+      </BarraDeStatusDoExcel>
 
       {dialogo && (
         <>

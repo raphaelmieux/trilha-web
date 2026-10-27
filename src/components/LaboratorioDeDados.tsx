@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import {
-  Bold, ArrowDownAZ, ArrowUpZA, RefreshCw, Rows3, Columns3, Table2, PieChart,
+  ArrowDownAZ, ArrowUpZA, RefreshCw, Rows3, Columns3, Table2, PieChart,
   Sigma, Undo2, Redo2, Trash2, Save, Sheet, FileText,
 } from 'lucide-react';
+import { IconeNegrito } from '../labs/office';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
-  CSS_EXCEL, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
+  CSS_EXCEL, BarraDeStatusDoExcel, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
 import {
@@ -658,7 +659,7 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
                     {botao('Refazer (Ctrl+Y)', grade.refazer, <Redo2 className="w-4 h-4" />)}
                   </GrupoDoExcel>
                   <GrupoDoExcel nome="Fonte">
-                    {botao('Negrito', negritar, <Bold className="w-4 h-4" />, p.celulas[sel.l][sel.c].negrito)}
+                    {botao('Negrito', negritar, <IconeNegrito />, p.celulas[sel.l][sel.c].negrito)}
                   </GrupoDoExcel>
                   <GrupoDoExcel nome="Células">
                     {botao('Excluir Linhas da Planilha', tirarLinha, <Rows3 className="w-4 h-4" />)}
@@ -726,10 +727,9 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
               aoTrocar={trocarAba} aoAvisar={avisar}
             />
 
-            <div className="pl-status">
+            <BarraDeStatusDoExcel aoAvisar={avisar} planilha={p} faixa={faixa} caderno={cad}>
               <span>Pronto</span>
-              <span style={{ marginLeft: 'auto' }}>{nomeDaFaixa(faixa)}</span>
-            </div>
+            </BarraDeStatusDoExcel>
           </div>
       </Area>
 

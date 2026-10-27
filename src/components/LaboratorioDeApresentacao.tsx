@@ -997,6 +997,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
             </div>
 
             <ReguaDoPowerPoint
+              aoAvisar={avisar}
               atual={atual + 1} total={ap.slides.length} palavras={palavrasDoSlide(slide)}
               extra={(
                 <span className="hidden md:inline">

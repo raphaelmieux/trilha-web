@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
+import { GUIAS_DO_WORD } from './word';
 import FormatacaoTextoLab from './FormatacaoTextoLab';
 
 /*
@@ -65,9 +66,21 @@ const paragrafo = (trecho: string) =>
     .find(p => p.textContent?.includes(trecho));
 
 describe('a faixa de opções', () => {
-  it('traz as guias Início e Layout funcionando', () => {
+  /* Toda guia abre, como no Word: as que o exercício não usa mostram a faixa
+     inteira do programa, com os botões avisando. Início e Layout são as do
+     laboratório — clicar nelas devolve a faixa dele, e não a padrão. */
+  it('traz todas as guias, e Início e Layout com a faixa do laboratório', () => {
     const guias = [...container.querySelectorAll('[role="tab"]')].map(g => g.textContent);
-    expect(guias).toEqual(['Início', 'Layout']);
+    expect(guias).toEqual([...GUIAS_DO_WORD]);
+
+    const clicarGuia = (nome: string) => {
+      const g = [...container.querySelectorAll('[role="tab"]')].find(x => x.textContent === nome)!;
+      act(() => { g.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    };
+    clicarGuia('Design');
+    expect(container.querySelector('.of-faixa-padrao'), 'Design não abriu a faixa do Word').not.toBeNull();
+    clicarGuia('Layout');
+    expect(container.querySelector('.of-faixa-padrao'), 'Layout ficou com a faixa padrão por cima da do laboratório').toBeNull();
   });
 
   /* Se Margens voltar para a guia Início, ou para um painel fora da faixa, o

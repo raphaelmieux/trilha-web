@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Bold, Italic, Underline, Strikethrough, Superscript, Subscript,
+  Strikethrough, Superscript, Subscript,
   Highlighter, CaseSensitive, Columns, ClipboardPaste, Copy, Scissors,
   Paintbrush, Eraser, ChevronDown, ListTree, Quote, StickyNote, BookMarked,
   Type, Baseline, Sparkles, AlignLeft, Pilcrow, Globe,
   FileCheck2, RotateCcw,
 } from 'lucide-react';
+import { IconeItalico, IconeNegrito, IconeSublinhado } from './office';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
   CSS_WORD, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
@@ -444,9 +445,9 @@ export default function EstilosTextoLab({ specialtyCode, lessonCode, lessonTitle
                   <EnfeiteDaFaixa dica="Limpar Toda a Formatação" aoAvisar={avisarFechando}><Eraser className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
                 </div>
                 <div style={{ display: 'flex', gap: 3 }}>
-                  <EnfeiteDaFaixa dica="Negrito (Ctrl+N)" aoAvisar={avisarFechando}><Bold className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                  <EnfeiteDaFaixa dica="Itálico (Ctrl+I)" aoAvisar={avisarFechando}><Italic className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                  <EnfeiteDaFaixa dica="Sublinhado (Ctrl+S)" aoAvisar={avisarFechando}><Underline className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                  <EnfeiteDaFaixa dica="Negrito (Ctrl+N)" aoAvisar={avisarFechando}><IconeNegrito /></EnfeiteDaFaixa>
+                  <EnfeiteDaFaixa dica="Itálico (Ctrl+I)" aoAvisar={avisarFechando}><IconeItalico /></EnfeiteDaFaixa>
+                  <EnfeiteDaFaixa dica="Sublinhado (Ctrl+S)" aoAvisar={avisarFechando}><IconeSublinhado /></EnfeiteDaFaixa>
                   <EnfeiteDaFaixa dica="Tachado" aoAvisar={avisarFechando}><Strikethrough className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
                   <BotaoDaFaixa dica="Subscrito (Ctrl+=)" ativo={alvoTrecho?.posicao === 'subscrito'}
                     aoClicar={() => posicionar('subscrito')}>
@@ -660,7 +661,7 @@ export default function EstilosTextoLab({ specialtyCode, lessonCode, lessonTitle
           <span className="hidden md:inline">
             {doc.sumario ? `Sumário com ${doc.sumario.length}` : 'Sem sumário'}
           </span>
-          <ZoomDoWord zoom={zoom} aoMudar={setZoom} />
+          <ZoomDoWord zoom={zoom} aoMudar={setZoom} aoAvisar={avisarFechando} />
         </div>
       </div>
     </LaboratorioEmTelaCheia>

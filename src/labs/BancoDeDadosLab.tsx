@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Table2, FileSpreadsheet, FileText, Database, Import, ArrowDownAZ, ArrowUpZA,
-  Filter, Save, Plus, Trash2, Search, Ruler, Sigma, Minus, Square as SquareIcon, X,
+  Filter, Save, Plus, Trash2, Search, Ruler, Sigma,
   FileCheck2, RotateCcw, AlertTriangle, ChevronDown,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import { CSS_WINDOWS, DialogoDoWindows } from './windows';
+import { CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao } from './office';
 import {
   AGENDA_INICIAL, METAS_DA_AGENDA, LISTA_DO_CLUBE, COLUNAS_DA_LISTA,
   CAMPO_DA_COLUNA, CAMPOS_PEDIDOS, REGRA_DE_EMAIL,
@@ -391,6 +392,7 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
       rodape={26}
     >
       <style>{CSS_WINDOWS}</style>
+      <style>{CSS_OFFICE}</style>
       <style>{`
         /* O vermelho é o do Access, como o azul é o do Word e o verde o do
            Excel: é por ele que o desbravador reconhece qual dos três abriu. */
@@ -399,21 +401,10 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
           display: flex; flex-direction: column; min-height: 0;
           font-family: system-ui, 'Segoe UI', Roboto, sans-serif; font-size: 12.5px;
         }
-        .ac-titulo {
-          background: #A4373A; color: #FFFFFF; display: flex; align-items: center;
-          gap: 10px; padding: 6px 10px; font-size: 12px;
-        }
-        .ac-guias {
-          display: flex; gap: 2px; padding: 0 8px; background: #F9F8F7;
-          border-bottom: 1px solid #E1DFDD; overflow-x: auto;
-        }
-        .ac-guia {
-          padding: 6px 10px 7px; font-size: 12.5px; white-space: nowrap;
-          border: none; background: none; color: #201F1E; cursor: pointer;
-          border-bottom: 2px solid transparent;
-        }
-        .ac-guia:hover { background: #EDEBE9; }
-        .ac-guia[aria-selected="true"] { color: #A4373A; border-bottom-color: #A4373A; font-weight: 600; }
+        /* Barra de título e guias: as do Microsoft 365, em office.tsx — a
+           janela clara dos outros três, e não mais a faixa vermelha do tema
+           colorido, que fazia o Access parecer de outro pacote. */
+        .ac-titulo, .ac-guias, .ac-guia { font-size: 12px; }
         .ac-faixa {
           display: flex; align-items: stretch; padding: 4px 6px 2px;
           background: #F3F2F1; border-bottom: 1px solid #E1DFDD; overflow-x: auto;
@@ -509,8 +500,8 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
           border-radius: 4px; padding: 8px 10px; color: #201F1E;
         }
         .ac-status {
-          background: #A4373A; color: #FFFFFF; font-size: 11.5px;
-          padding: 4px 10px; display: flex; gap: 14px; align-items: center;
+          background: #F3F3F3; color: #424242; font-size: 11.5px; border-top: 1px solid #E0E0E0;
+          padding: 3px 10px; display: flex; gap: 14px; align-items: center; min-height: 26px;
         }
         .ac-papel {
           background: #FFFFFF; border: 1px solid #C8C6C4; padding: 18px;
@@ -519,38 +510,13 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
       `}</style>
 
       <div className="ac-janela" onClick={fecharMenu}>
-        <div className="ac-titulo">
-          <Database className="w-4 h-4" />
-          <span style={{ fontWeight: 600 }}>Agenda do Clube</span>
-          <span style={{ opacity: .85 }}>: Banco de Dados</span>
-          <span className="ml-auto flex items-center gap-3" style={{ opacity: .9 }}>
-            <button type="button" aria-label="Minimizar" onClick={() => naoFazParte('Minimizar')}>
-              <Minus className="w-3 h-3" />
-            </button>
-            <button type="button" aria-label="Maximizar" onClick={() => avisar('O Access já está ocupando a tela inteira.')}>
-              <SquareIcon className="w-2.5 h-2.5" />
-            </button>
-            <button type="button" aria-label="Fechar" onClick={() => naoFazParte('Fechar o Access')}>
-              <X className="w-3 h-3" />
-            </button>
-          </span>
-        </div>
+        <BarraDeTituloDoOffice app="access" classe="ac-titulo" arquivo="Agenda do Clube : Banco de Dados"
+          estado="Salvo neste PC" aoAvisar={avisar} aoNaoFazParte={naoFazParte} />
 
-        <div className="ac-guias" role="tablist">
-          {GUIAS.map(nome => (
-            USAVEIS.includes(nome) ? (
-              <button key={nome} type="button" role="tab" aria-selected={guia === nome}
-                className="ac-guia" onClick={ev => { ev.stopPropagation(); setGuia(nome); fecharMenu(); }}>
-                {nome}
-              </button>
-            ) : (
-              <button key={nome} type="button" className="ac-guia" style={{ color: '#8A8886' }}
-                onClick={ev => { ev.stopPropagation(); naoFazParte(`A guia ${nome}`); }}>
-                {nome}
-              </button>
-            )
-          ))}
-        </div>
+        <GuiasDoOffice app="access" classe="ac-guias" classeDaGuia="ac-guia"
+          guias={GUIAS.filter(g => g !== 'Arquivo')} atual={guia} usaveis={USAVEIS}
+          aoTrocar={nome => { setGuia(nome); fecharMenu(); }}
+          aoAvisar={avisar} aoNaoFazParte={naoFazParte} />
 
         <div className="ac-faixa" style={{ overflowX: menu ? 'visible' : 'auto' }}
           onClick={ev => ev.stopPropagation()}>
@@ -900,6 +866,7 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
         </div>
 
         <div className="ac-status">
+          <span className="of-status-esquerda">
           <span>
             {modo === 'estrutura' ? 'Modo Estrutura'
               : modo === 'relatorio' ? 'Modo Relatório'
@@ -911,6 +878,10 @@ export default function BancoDeDadosLab({ specialtyCode, lessonCode, lessonTitle
               {agenda.filtroDeBairro && ` (filtrado de ${agenda.registros.length})`}
             </span>
           )}
+          </span>
+          <span className="of-status-direita">
+            <ModosDeExibicao app="access" aoAvisar={naoFazParte} />
+          </span>
         </div>
       </div>
 

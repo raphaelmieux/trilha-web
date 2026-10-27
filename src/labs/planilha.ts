@@ -1233,3 +1233,28 @@ export function removerDuplicatas(p: Planilha, colunas: number[]): { planilha: P
     removidas,
   };
 }
+
+/**
+ * Média, contagem e soma da faixa selecionada, como a barra de status do
+ * Excel as mostra.
+ *
+ * Ela só responde quando há mais de uma célula preenchida: com uma só o Excel
+ * não escreve nada, e com nenhuma número também não. A contagem conta tudo o
+ * que não está vazio; a média e a soma, só o que é número — é a diferença
+ * entre CONT.VALORES e CONT.NÚM, e um número guardado como texto aparece
+ * nela antes de aparecer em qualquer fórmula.
+ */
+export function contaDaSelecao(p: Planilha, faixa: Faixa, caderno?: Caderno) {
+  if (umaCelulaSo(faixa)) return null;
+  const n = normalizar(faixa);
+  let contagem = 0; let numeros = 0; let soma = 0;
+  for (let l = n.topo; l <= Math.min(n.base, p.celulas.length - 1); l++) {
+    for (let c = n.esq; c <= Math.min(n.dir, (p.celulas[0]?.length ?? 1) - 1); c++) {
+      if ((p.celulas[l]?.[c]?.texto ?? '') === '') continue;
+      contagem += 1;
+      const v = valorCalculado(p, l, c, caderno);
+      if (v.tipo === 'numero') { numeros += 1; soma += v.n; }
+    }
+  }
+  return contagem < 2 ? null : { contagem, numeros, soma };
+}

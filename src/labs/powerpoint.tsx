@@ -1,5 +1,8 @@
 import type React from 'react';
-import { Link2, Minus, Music, Play, Presentation, Square as SquareIcon, X } from 'lucide-react';
+import { Link2, Music, Play } from 'lucide-react';
+import {
+  CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice, AcessibilidadeDoStatus,
+} from './office';
 import {
   PX_POR_PONTO, aparenciaDoSlide,
   type GraficoNoSlide, type Slide, type SlideMestre,
@@ -54,21 +57,10 @@ export const CSS_POWERPOINT = `
   display: flex; flex-direction: column; min-height: 0;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif; font-size: 12.5px;
 }
-.pp-titulo {
-  background: #B7472A; color: #FFFFFF; display: flex; align-items: center;
-  gap: 10px; padding: 6px 10px; font-size: 12px;
-}
-.pp-guias {
-  display: flex; gap: 2px; padding: 0 8px; background: #F9F8F7;
-  border-bottom: 1px solid #E1DFDD; overflow-x: auto;
-}
-.pp-guia {
-  padding: 6px 10px 7px; font-size: 12.5px; white-space: nowrap;
-  border: none; background: none; color: #201F1E; cursor: pointer;
-  border-bottom: 2px solid transparent;
-}
-.pp-guia:hover { background: #EDEBE9; }
-.pp-guia[aria-selected="true"] { color: #B7472A; border-bottom-color: #B7472A; font-weight: 600; }
+/* Barra de título e guias: as do Microsoft 365, em office.tsx — a mesma
+   janela clara do Word e do Excel, e não mais a faixa laranja do tema
+   colorido do Office 2016, que fazia o PowerPoint parecer de outro pacote. */
+.pp-titulo, .pp-guias, .pp-guia { font-size: 12px; }
 .pp-faixa {
   display: flex; align-items: stretch; padding: 4px 6px 2px;
   background: #F3F2F1; border-bottom: 1px solid #E1DFDD; overflow-x: auto;
@@ -134,8 +126,8 @@ export const CSS_POWERPOINT = `
 .pp-grafico { width: 100%; }
 .pp-titulo-campo:focus { outline: none; border-color: #B7472A; border-style: solid; }
 .pp-status {
-  background: #B7472A; color: #FFFFFF; font-size: 11.5px;
-  padding: 4px 10px; display: flex; gap: 14px; align-items: center;
+  background: #F3F3F3; color: #424242; font-size: 11.5px; border-top: 1px solid #E0E0E0;
+  padding: 3px 10px; display: flex; gap: 14px; align-items: center; min-height: 26px; flex: none;
 }
 .pp-bastidores { flex: 1; min-height: 0; display: flex; background: #FFFFFF; }
 .pp-rail {
@@ -292,7 +284,8 @@ export const CSS_POWERPOINT = `
     width: auto; border-left: none; border-top: 1px solid #C8C6C4;
     max-height: 40%; flex: none;
   }
-}`;
+}
+${CSS_OFFICE}`;
 
 /* ── As guias ─────────────────────────────────────────────────────────────── */
 
@@ -317,23 +310,8 @@ export function BarraDeTituloDoPowerPoint({ arquivo, aoAvisar, aoNaoFazParte }: 
   aoNaoFazParte: (nome: string) => void;
 }) {
   return (
-    <div className="pp-titulo">
-      <Presentation className="w-4 h-4" />
-      <span style={{ fontWeight: 600 }}>{arquivo}</span>
-      <span style={{ opacity: .85 }}>— PowerPoint</span>
-      <span className="ml-auto flex items-center gap-3" style={{ opacity: .9 }}>
-        <button type="button" aria-label="Minimizar" onClick={() => aoNaoFazParte('Minimizar')}>
-          <Minus className="w-3 h-3" />
-        </button>
-        <button type="button" aria-label="Maximizar"
-          onClick={() => aoAvisar('O PowerPoint já está ocupando a tela inteira.')}>
-          <SquareIcon className="w-2.5 h-2.5" />
-        </button>
-        <button type="button" aria-label="Fechar" onClick={() => aoNaoFazParte('Fechar o PowerPoint')}>
-          <X className="w-3 h-3" />
-        </button>
-      </span>
-    </div>
+    <BarraDeTituloDoOffice app="powerpoint" classe="pp-titulo" arquivo={arquivo}
+      aoAvisar={aoAvisar} aoNaoFazParte={aoNaoFazParte} />
   );
 }
 
@@ -351,7 +329,7 @@ export function GuiasDoPowerPoint({ atual, usaveis, aoTrocar, aoNaoFazParte, aoA
   usaveis: readonly string[];
   aoTrocar: (nome: string) => void;
   /**
-   * Recebe o **nome** da guia, e não o recado: quem escreve a frase é o
+   * Recebe o **nome** do comando, e não o recado: quem escreve a frase é o
    * laboratório, porque é ele que sabe o que faz parte do exercício dele — e é
    * a mesma frase que os botões da barra de título usam.
    */
@@ -359,44 +337,10 @@ export function GuiasDoPowerPoint({ atual, usaveis, aoTrocar, aoNaoFazParte, aoA
   aoAbrirArquivo?: () => void;
 }) {
   return (
-    <div className="pp-guias" role="tablist">
-      {GUIAS_DO_POWERPOINT.map((nome) => {
-        if (nome === 'Arquivo') {
-          return (
-            <button
-              key={nome} type="button" className="pp-guia"
-              style={{ background: '#B7472A', color: '#FFFFFF', borderRadius: '3px 3px 0 0' }}
-              onClick={(ev) => {
-                ev.stopPropagation();
-                if (aoAbrirArquivo) aoAbrirArquivo();
-                else aoNaoFazParte('A guia Arquivo');
-              }}
-            >
-              Arquivo
-            </button>
-          );
-        }
-        if (usaveis.includes(nome)) {
-          return (
-            <button
-              key={nome} type="button" role="tab" aria-selected={atual === nome}
-              className="pp-guia"
-              onClick={(ev) => { ev.stopPropagation(); aoTrocar(nome); }}
-            >
-              {nome}
-            </button>
-          );
-        }
-        return (
-          <button
-            key={nome} type="button" className="pp-guia" style={{ color: '#8A8886' }}
-            onClick={(ev) => { ev.stopPropagation(); aoNaoFazParte(`A guia ${nome}`); }}
-          >
-            {nome}
-          </button>
-        );
-      })}
-    </div>
+    <GuiasDoOffice app="powerpoint" classe="pp-guias" classeDaGuia="pp-guia"
+      guias={GUIAS_DO_POWERPOINT.filter(g => g !== 'Arquivo')} atual={atual} usaveis={usaveis}
+      aoTrocar={aoTrocar} aoAbrirArquivo={aoAbrirArquivo}
+      aoAvisar={aoNaoFazParte} aoNaoFazParte={aoNaoFazParte} />
   );
 }
 
@@ -725,17 +669,27 @@ export function PainelDeNotas({ notas, aberto, aoAbrir, aoEscrever, rotulo }: {
  * demais poria na nossa tela a resposta que a lição existe para o desbravador
  * ler na lista de tarefas.
  */
-export function ReguaDoPowerPoint({ atual, total, palavras, extra }: {
+export function ReguaDoPowerPoint({ atual, total, palavras, extra, aoAvisar }: {
   atual: number; total: number; palavras?: number; extra?: React.ReactNode;
+  /** Para Anotações, Comentários e os modos de exibição, que existem e não fazem parte. */
+  aoAvisar?: (r: string) => void;
 }) {
+  const avisar = aoAvisar ?? (() => undefined);
   return (
     <div className="pp-status">
-      <span>Slide {atual} de {total}</span>
-      {palavras !== undefined && (
-        <span>{palavras} {palavras === 1 ? 'palavra' : 'palavras'}</span>
-      )}
-      <span className="hidden sm:inline">Português (Brasil)</span>
-      {extra}
+      <span className="of-status-esquerda">
+        <span>Slide {atual} de {total}</span>
+        {palavras !== undefined && (
+          <span>{palavras} {palavras === 1 ? 'palavra' : 'palavras'}</span>
+        )}
+        <span className="hidden sm:inline">Português (Brasil)</span>
+        {extra}
+      </span>
+      <span className="of-status-direita">
+        <AcessibilidadeDoStatus app="powerpoint" aoAvisar={avisar} />
+        <ModosDeExibicao app="powerpoint" aoAvisar={avisar} />
+        <ZoomDoOffice app="powerpoint" aoAvisar={avisar} />
+      </span>
     </div>
   );
 }

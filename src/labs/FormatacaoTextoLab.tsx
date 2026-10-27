@@ -7,10 +7,11 @@ import {
   ArrowDownAZ, Pilcrow, ArrowUpDown, PaintBucket, Square,
   Copy, ClipboardPaste, Scissors, Paintbrush, Eraser, CaseSensitive, Columns,
   Highlighter, Baseline, Sparkles, Search, ChevronDown, Type,
-  FileCheck2, RotateCcw, Minus,
+  FileCheck2, RotateCcw,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import { CSS_WORD, BarraDeTituloDoWord, GuiasDoWord } from './word';
+import { ModosDeExibicao, ZoomDoOffice } from './office';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
   ensureEnrollment, updateEnrollmentActivity, logActivity,
@@ -772,20 +773,13 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTi
           <span className="hidden md:inline" style={{ marginLeft: 'auto' }}>
             {alvo ? `Selecionado: ${alvo.texto.slice(0, 28)}${alvo.texto.length > 28 ? '…' : ''}` : 'Clique num parágrafo para selecioná-lo'}
           </span>
-          <span className="flex items-center gap-2 md:ml-4" style={{ marginLeft: 'auto' }} aria-hidden="true">
-            <Minus className="w-3 h-3" />
-            <span style={{ width: 60, height: 3, background: '#C8C6C4', borderRadius: 2, position: 'relative' }}>
-              <span style={{
-                position: 'absolute', left: '56%', top: -3,
-                width: 8, height: 9, background: '#605E5C', borderRadius: 1,
-              }} />
-            </span>
-            <span style={{ fontSize: 13, lineHeight: 1 }}>+</span>
-            <span style={{ minWidth: 32, textAlign: 'right' }}>
-              <span className="sm:hidden">45%</span>
-              <span className="hidden sm:inline lg:hidden">69%</span>
-              <span className="hidden lg:inline">90%</span>
-            </span>
+          {/* Os modos e o zoom do Word compartilhado. Aqui o zoom não muda a
+              folha — ela tem a medida de cada largura de tela —, e um controle
+              desenhado que só mexesse no número ensinaria que o programa mente:
+              ele mostra o de agora e avisa. */}
+          <span className="flex items-center gap-2 md:ml-4" style={{ marginLeft: 'auto' }}>
+            <ModosDeExibicao app="word" aoAvisar={avisarFechando} />
+            <ZoomDoOffice app="word" zoom={0.9} aoAvisar={avisarFechando} />
           </span>
         </div>
       </div>
