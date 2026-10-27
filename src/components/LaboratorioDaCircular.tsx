@@ -1,20 +1,21 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  Pilcrow, AlignLeft, Sparkles, Trash2,
-  Clipboard, Scissors, Copy, CornerDownLeft, FileText, Plus,
+  Pilcrow, AlignLeft, AlignCenter, AlignRight, AlignJustify, Sparkles,
+  Clipboard, Scissors, Copy, FileText, Search, Replace, MousePointer2,
 } from 'lucide-react';
-import { IconeItalico, IconeNegrito, IconeSublinhado } from '../labs/office';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
   BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
 } from '../labs/word';
+import { GrupoDeFonte, CSS_FONTE_DO_WORD } from '../labs/fonteDoWord';
 import {
-  CIRCULAR_INICIAL, METAS_DA_CIRCULAR, PARAGRAFO_QUE_CHEGA, IDS_DO_ENDERECO,
-  gestosVazios, textoDoBloco,
+  CIRCULAR_INICIAL, METAS_DA_CIRCULAR, PARAGRAFO_QUE_CHEGA,
+  gestosVazios,
   type Doc, type GestosDaCircular,
 } from '../labs/circularDoClube';
-import { linhaDe, trechoDe, FONTES } from '../labs/documento';
+import { quantasPaginas, textoVisivel } from '../labs/documento';
+import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
 
 /*
@@ -47,22 +48,27 @@ interface Props {
 
 const GUIAS_USAVEIS = ['Início', 'Inserir'];
 
-const FAMILIAS = [
-  { id: 'serifada' as const, nome: 'Georgia', dica: 'Serifada — texto longo no papel' },
-  { id: 'sem-serifa' as const, nome: 'Calibri', dica: 'Sem serifa — tela, título, placa' },
-];
+/** Em que folha está o parágrafo do cursor — a régua de status do Word diz. */
+function paginaDoCursor(d: Doc, bloco: string | undefined): number {
+  if (!bloco) return 1;
+  let pagina = 1;
+  for (const b of d.blocos) {
+    if (b.quebraDePagina && b !== d.blocos[0]) pagina++;
+    if (b.id === bloco) return pagina;
+  }
+  return 1;
+}
 
 export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair }: Props) {
   const [doc, setDoc] = useState<Doc>(CIRCULAR_INICIAL);
   const [gestos, setGestos] = useState<GestosDaCircular>(gestosVazios);
   const [guia, setGuia] = useState('Início');
-  const [selecionado, setSelecionado] = useState<string | null>(null);
   const [aviso, setAviso] = useState('');
   const [zoom, setZoom] = useState(1);
   const jaGravou = useRef(false);
+  const edicao = useEdicaoDoWord(doc, setDoc);
 
   const contexto = useMemo(() => ({ doc, gestos }), [doc, gestos]);
-  const alvo = doc.blocos.find(b => b.id === selecionado) ?? null;
 
   const feitas = useMemo(
     () => new Set(METAS_DA_CIRCULAR.filter(m => m.feita(contexto)).map(m => m.id)),
@@ -80,13 +86,6 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
     passos: m.passos,
   }));
 
-
-  const exigirSelecao = () => {
-    if (alvo) return true;
-    setAviso('Clique primeiro num parágrafo — o comando vale para onde o cursor está.');
-    return false;
-  };
-
   /* ── Os gestos ───────────────────────────────────────────────────────────── */
 
   const alternarMarcas = () => {
@@ -94,83 +93,32 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
     setAviso(gestos.marcas
       ? 'Marcas desligadas. O documento volta a parecer certo — e é justamente por isso que elas existem.'
       : 'Marcas ligadas. Cada ¶ é um Enter; os cinco sozinhos antes da assinatura são os que a empurram.');
-  };
-
-  /**
-   * Junta o endereço num parágrafo só, com quebras de linha entre as linhas.
-   *
-   * O gesto de verdade é apagar o ¶ e pôr `Shift+Enter` no lugar, e é o que o
-   * passo a passo ensina. Aqui ele é um comando porque não há cursor de texto
-   * dentro do parágrafo — a folha não é editável, e inventar um editor de texto
-   * completo para este exercício daria um programa que não é o Word.
-   */
-  const juntarComQuebra = () => {
-    if (!exigirSelecao() || !alvo || alvo.secao !== 'endereco') {
-      setAviso('Escolha uma das linhas do endereço: são elas que deviam ser um parágrafo só.');
-      return;
-    }
-    setDoc(d => {
-      const doEndereco = d.blocos.filter(b => IDS_DO_ENDERECO.includes(b.id));
-      if (doEndereco.length < 2) return d;
-      const junto = {
-        ...doEndereco[0],
-        trechos: doEndereco.map((b, i) => ({
-          ...trechoDe(`end-${i}`, textoDoBloco(b)),
-          ...(i > 0 ? { quebra: true } : {}),
-        })),
-      };
-      const onde = d.blocos.findIndex(b => b.id === IDS_DO_ENDERECO[0]);
-      const resto = d.blocos.filter(b => !IDS_DO_ENDERECO.includes(b.id));
-      return { ...d, blocos: [...resto.slice(0, onde), junto, ...resto.slice(onde)] };
-    });
-    setSelecionado(IDS_DO_ENDERECO[0]);
-    setAviso('As três linhas viraram um parágrafo só. Com as marcas ligadas, o ↵ apareceu no lugar '
-      + 'de dois ¶ — e o vão entre elas sumiu junto.');
-  };
-
-  const acrescentarParagrafo = () => {
-    if (gestos.cresceu) return;
-    setDoc(d => {
-      const onde = d.blocos.findIndex(b => b.id === 'ab-3');
-      const novo = linhaDe(PARAGRAFO_QUE_CHEGA.id, PARAGRAFO_QUE_CHEGA.secao, PARAGRAFO_QUE_CHEGA.texto);
-      return { ...d, blocos: [...d.blocos.slice(0, onde + 1), novo, ...d.blocos.slice(onde + 1)] };
-    });
-    setGestos(g => ({ ...g, cresceu: true }));
-    setAviso('Parágrafo acrescentado. Olhe a assinatura: os cinco Enters continuam empurrando o mesmo '
-      + 'tanto, e o tanto certo mudou. É isso que o Enter cobra depois.');
-  };
-
-  const excluirParagrafo = () => {
-    if (!exigirSelecao() || !alvo) return;
-    if (textoDoBloco(alvo).trim() !== '') {
-      setAviso('Este parágrafo tem texto. Os que empurram a assinatura são os vazios — com as marcas '
-        + 'ligadas, são os ¶ sozinhos.');
-      return;
-    }
-    const id = alvo.id;
-    setDoc(d => ({ ...d, blocos: d.blocos.filter(b => b.id !== id) }));
-    setSelecionado(null);
-    setAviso('Parágrafo vazio apagado.');
+    edicao.focar();
   };
 
   const quebraDePagina = () => {
-    if (!exigirSelecao() || !alvo) return;
-    const id = alvo.id;
-    setDoc(d => ({
-      ...d,
-      blocos: d.blocos.map(b => (b.id === id ? { ...b, quebraDePagina: !b.quebraDePagina } : b)),
-    }));
-    setAviso(alvo.quebraDePagina
-      ? 'Quebra de página removida.'
-      : 'Quebra de página posta antes deste parágrafo. Ela empurra para a folha seguinte e continua '
-        + 'certa quando o texto de cima crescer.');
+    if (!edicao.selecao) {
+      setAviso('Clique primeiro no documento — a quebra de página entra onde o cursor está.');
+      return;
+    }
+    edicao.executar({ tipo: 'quebra-de-pagina' });
+    edicao.focar();
   };
 
-  const escolherFonte = (id: 'serifada' | 'sem-serifa') => {
-    setDoc(d => ({ ...d, fonte: id }));
-    setAviso(id === 'serifada'
-      ? 'Fonte serifada. É a de texto longo impresso — os pezinhos ajudam o olho a seguir a linha no papel.'
-      : 'Fonte sem serifa. Ela é a de tela e de título; esta circular vai impressa e lida inteira.');
+  /*
+    O recado da liderança vai para a área de transferência do computador, e
+    dali entra no documento pelo Ctrl+V de sempre. Antes havia um botão na
+    faixa que punha o parágrafo pronto no lugar certo — um comando que o Word
+    não tem, e que fazia a tarefa medir um clique. A cópia é da plataforma, e
+    por isso mora no painel; colar é do programa.
+  */
+  const copiarRecado = async () => {
+    try {
+      await navigator.clipboard.writeText(PARAGRAFO_QUE_CHEGA.texto);
+      setAviso('O aviso da liderança foi copiado. Clique onde ele deve entrar, aperte Enter e cole com Ctrl+V.');
+    } catch {
+      setAviso(`Não deu para copiar daqui — escreva o aviso: "${PARAGRAFO_QUE_CHEGA.texto}"`);
+    }
   };
 
   /* Uma gravação por montagem: o `StrictMode` monta duas vezes de propósito. */
@@ -183,10 +131,12 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
 
   const acoes = (
     <>
+      <button type="button" className="btn-ghost" onClick={copiarRecado}>
+        Copiar o aviso da liderança
+      </button>
       <button type="button" className="btn-ghost" onClick={() => {
-        setDoc(CIRCULAR_INICIAL);
+        edicao.reiniciar(CIRCULAR_INICIAL);
         setGestos(gestosVazios());
-        setSelecionado(null);
         setAviso('A circular voltou ao estado em que chegou.');
       }}>
         Recomeçar
@@ -196,6 +146,9 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
       </button>
     </>
   );
+
+  const palavras = textoVisivel(doc).split(/\s+/).filter(Boolean).length;
+  const enfeite = (nome: string) => setAviso(`${nome} existe no Word de verdade, e não faz parte deste exercício.`);
 
   return (
     <LaboratorioEmTelaCheia
@@ -210,21 +163,12 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
     >
       <style>{CSS_WORD}</style>
       <style>{CSS_FOLHA}</style>
-      <style>{`
-        .wc-fontes { display: flex; gap: 3px; }
-        .wc-fonte {
-          border: 1px solid #C8C6C4; background: #FFFFFF; border-radius: 2px;
-          padding: 2px 10px; height: 40px; min-width: 76px; cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 12px; color: #201F1E; white-space: nowrap;
-        }
-        .wc-fonte:hover { border-color: #2B579A; }
-      `}</style>
+      <style>{CSS_FONTE_DO_WORD}</style>
 
-      {/* A fonte escolhida veste a folha inteira, que é o que o requisito 2.4
-          pede: a decisão é do documento, e não de um parágrafo. */}
-      <div className="wd-janela" style={doc.fonte ? { fontFamily: FONTES[doc.fonte] } : undefined}>
-        <BarraDeTituloDoWord documento="Circular às famílias" aoAvisar={setAviso} />
+      <div className="wd-janela">
+        <BarraDeTituloDoWord documento="Circular às famílias" aoAvisar={setAviso}
+          aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
+          aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />
 
         <GuiasDoWord
           atual={guia} usaveis={GUIAS_USAVEIS}
@@ -232,82 +176,64 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
           aoAvisar={setAviso} />
 
         {guia === 'Início' && (
-          <div className="wd-faixa" style={{ overflowX: 'auto' }}>
+          <div className="wd-faixa">
             <GrupoDaFaixa nome="Área de Transferência">
-              <EnfeiteDaFaixa dica="Colar (Ctrl+V)" rotulo="Colar" empilhado aoAvisar={setAviso}>
+              <EnfeiteDaFaixa dica="Colar (Ctrl+V)" rotulo="Colar" empilhado aoAvisar={() => setAviso('Para colar, use Ctrl+V com o cursor no documento — o navegador não deixa o botão ler a área de transferência.')}>
                 <Clipboard className="w-5 h-5" />
               </EnfeiteDaFaixa>
-              <EnfeiteDaFaixa dica="Recortar (Ctrl+X)" aoAvisar={setAviso}><Scissors className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-              <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={setAviso}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+              <div className="wd-linhas">
+                <EnfeiteDaFaixa dica="Recortar (Ctrl+X)" aoAvisar={() => setAviso('Para recortar, selecione e use Ctrl+X.')}><Scissors className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={() => setAviso('Para copiar, selecione e use Ctrl+C.')}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+              </div>
             </GrupoDaFaixa>
 
-            <GrupoDaFaixa nome="Fonte">
-              {/* As duas famílias, e não uma lista de vinte nomes: o requisito
-                  2.4 pede a escolha entre serifada e sem serifa, e uma lista
-                  longa esconderia a decisão no meio do rolar. */}
-              <div className="wc-fontes">
-                {FAMILIAS.map(f => (
-                  <button
-                    key={f.id} type="button" className="wc-fonte" title={f.dica}
-                    aria-pressed={doc.fonte === f.id}
-                    style={{
-                      fontFamily: FONTES[f.id],
-                      borderColor: doc.fonte === f.id ? '#2B579A' : '#C8C6C4',
-                    }}
-                    onClick={() => escolherFonte(f.id)}
-                  >
-                    {f.nome}
-                  </button>
-                ))}
-              </div>
-              <EnfeiteDaFaixa dica="Negrito (Ctrl+N)" aoAvisar={setAviso}><IconeNegrito /></EnfeiteDaFaixa>
-              <EnfeiteDaFaixa dica="Itálico (Ctrl+I)" aoAvisar={setAviso}><IconeItalico /></EnfeiteDaFaixa>
-              <EnfeiteDaFaixa dica="Sublinhado (Ctrl+S)" aoAvisar={setAviso}><IconeSublinhado /></EnfeiteDaFaixa>
-            </GrupoDaFaixa>
+            <GrupoDeFonte edicao={edicao} aoAvisar={setAviso} />
 
             <GrupoDaFaixa nome="Parágrafo">
-              <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={setAviso}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-              {/*
-                O botão que a lição inteira depende. Com ele desligado o Enter e
-                a quebra de linha não aparecem, e o documento errado passa por
-                certo — é o que a teoria diz, e é a primeira tarefa.
-              */}
-              <BotaoDaFaixa dica="Mostrar Tudo (Ctrl+*)" ativo={gestos.marcas} aoClicar={alternarMarcas}>
-                <Pilcrow className="w-3.5 h-3.5" />
-              </BotaoDaFaixa>
-              <BotaoDaFaixa dica="Juntar com Quebra de Linha (Shift+Enter)" aoClicar={juntarComQuebra}>
-                <CornerDownLeft className="w-3.5 h-3.5" />
-              </BotaoDaFaixa>
-              <BotaoDaFaixa dica="Excluir Parágrafo Vazio" aoClicar={excluirParagrafo}>
-                <Trash2 className="w-3.5 h-3.5" />
-              </BotaoDaFaixa>
+              <div className="wd-linhas">
+                <div style={{ display: 'flex', gap: 1 }}>
+                  <BotaoDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoClicar={() => enfeite('Alinhar à Esquerda')}><AlignLeft className="w-3.5 h-3.5" /></BotaoDaFaixa>
+                  <BotaoDaFaixa dica="Centralizar (Ctrl+E)" aoClicar={() => enfeite('Centralizar')}><AlignCenter className="w-3.5 h-3.5" /></BotaoDaFaixa>
+                  <BotaoDaFaixa dica="Alinhar à Direita (Ctrl+G)" aoClicar={() => enfeite('Alinhar à Direita')}><AlignRight className="w-3.5 h-3.5" /></BotaoDaFaixa>
+                  <BotaoDaFaixa dica="Justificar (Ctrl+J)" aoClicar={() => enfeite('Justificar')}><AlignJustify className="w-3.5 h-3.5" /></BotaoDaFaixa>
+                </div>
+                <div style={{ display: 'flex', gap: 1 }}>
+                  {/*
+                    O botão que a lição inteira depende. Com ele desligado o Enter e
+                    a quebra de linha não aparecem, e o documento errado passa por
+                    certo — é o que a teoria diz, e é a primeira tarefa.
+                  */}
+                  <BotaoDaFaixa dica="Mostrar Tudo (Ctrl+*)" ativo={gestos.marcas} aoClicar={alternarMarcas}>
+                    <Pilcrow className="w-3.5 h-3.5" />
+                  </BotaoDaFaixa>
+                </div>
+              </div>
             </GrupoDaFaixa>
 
-            <GrupoDaFaixa nome="Editando">
-              <EnfeiteDaFaixa dica="Localizar (Ctrl+L)" aoAvisar={setAviso}><Sparkles className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+            <GrupoDaFaixa nome="Edição">
+              <div className="wd-linhas">
+                <EnfeiteDaFaixa dica="Localizar (Ctrl+L)" rotulo="Localizar" aoAvisar={setAviso}><Search className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                <EnfeiteDaFaixa dica="Substituir (Ctrl+U)" rotulo="Substituir" aoAvisar={setAviso}><Replace className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                <BotaoDaFaixa dica="Selecionar Tudo (Ctrl+A)" rotulo="Selecionar" aoClicar={() => { edicao.executar({ tipo: 'selecionar-tudo' }); edicao.focar(); }}>
+                  <MousePointer2 className="w-3.5 h-3.5" />
+                </BotaoDaFaixa>
+              </div>
             </GrupoDaFaixa>
           </div>
         )}
 
         {guia === 'Inserir' && (
-          <div className="wd-faixa" style={{ overflowX: 'auto' }}>
+          <div className="wd-faixa">
             <GrupoDaFaixa nome="Páginas">
+              <EnfeiteDaFaixa dica="Folha de Rosto" rotulo="Folha de Rosto" empilhado aoAvisar={setAviso}>
+                <FileText className="w-5 h-5" />
+              </EnfeiteDaFaixa>
+              <EnfeiteDaFaixa dica="Página em Branco" rotulo="Página em Branco" empilhado aoAvisar={setAviso}>
+                <FileText className="w-5 h-5" />
+              </EnfeiteDaFaixa>
               <BotaoDaFaixa dica="Quebra de Página (Ctrl+Enter)" rotulo="Quebra de Página" empilhado
                 aoClicar={quebraDePagina}>
-                <FileText className="w-5 h-5" />
-              </BotaoDaFaixa>
-            </GrupoDaFaixa>
-            <GrupoDaFaixa nome="Texto">
-              {/*
-                O parágrafo que a liderança pediu. Ele é da lição, e não do Word
-                — e mesmo assim entra aqui, onde o texto se insere, em vez de
-                virar um botão da plataforma por cima da janela: o que a tarefa
-                mede é o que acontece com a assinatura depois, e para isso o
-                gesto precisa acontecer dentro do documento.
-              */}
-              <BotaoDaFaixa dica="Acrescentar o parágrafo da revisão" rotulo="Parágrafo da revisão"
-                empilhado aoClicar={acrescentarParagrafo}>
-                <Plus className="w-5 h-5" />
+                <Sparkles className="w-5 h-5" />
               </BotaoDaFaixa>
             </GrupoDaFaixa>
           </div>
@@ -315,17 +241,12 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
 
         <ReguaDoWord larguraCm={21} margemCm={2.5} />
 
-        <FolhaDoWord
-          doc={doc}
-          selecionado={selecionado}
-          marcas={gestos.marcas}
-          aoEscolher={id => { setSelecionado(id); setAviso(''); }}
-          aoClicarNoVazio={() => setSelecionado(null)}
-        />
+        <FolhaDoWord doc={doc} marcas={gestos.marcas} edicao={edicao.folha} />
 
         <div className="wd-status">
-          <span>{doc.blocos.length} parágrafos</span>
-          <span>{gestos.marcas ? 'Marcas de parágrafo ligadas' : 'Marcas de parágrafo desligadas'}</span>
+          <span>Página {Math.min(paginaDoCursor(doc, edicao.selecao?.foco.bloco), quantasPaginas(doc))} de {quantasPaginas(doc)}</span>
+          <span>{palavras} palavras</span>
+          <span>Português (Brasil)</span>
           <ZoomDoWord zoom={zoom} aoMudar={setZoom} aoAvisar={setAviso} />
         </div>
       </div>

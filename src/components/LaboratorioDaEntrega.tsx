@@ -1,10 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
 import {
   Check, X, ChevronRight, RefreshCw, FileType2,
-  AlignLeft, Clipboard, Scissors, Copy,
+  AlignLeft, AlignCenter, AlignRight, AlignJustify, Pilcrow, Clipboard, Scissors, Copy,
 } from 'lucide-react';
-import { IconeItalico, IconeNegrito, IconeSublinhado } from '../labs/office';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
+import { GrupoDeFonte, CSS_FONTE_DO_WORD } from '../labs/fonteDoWord';
+import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
+import { selecaoDoTrecho, trechosEmVolta } from '../labs/edicao';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
   BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
@@ -62,14 +64,14 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair }
   const [doc, setDoc] = useState<Doc>(RELATORIO_DA_ENTREGA_INICIAL);
   const [entrega, setEntrega] = useState<Entrega>(ENTREGA_INICIAL);
   const [guia, setGuia] = useState('Revisão');
-  const [selecionado, setSelecionado] = useState<string | null>(null);
-  const [trecho, setTrecho] = useState<string | null>(null);
   const [painel, setPainel] = useState<PainelDosBastidores | null>(null);
   const [formato, setFormato] = useState<FormatoDeArquivo>('docx');
   const [imp, setImp] = useState<AjustesDeImpressao>(IMPRESSAO_INICIAL);
   const [aviso, setAviso] = useState('');
   const [zoom, setZoom] = useState(1);
+  const [marcas, setMarcas] = useState(false);
   const jaGravou = useRef(false);
+  const edicao = useEdicaoDoWord(doc, setDoc, { quem: { autor: 'voce' } });
 
   const contexto = useMemo(() => ({ doc, entrega }), [doc, entrega]);
   const feitas = useMemo(
@@ -94,14 +96,18 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair }
   /* ── Terminar ────────────────────────────────────────────────────────────── */
 
   const pendentes = revisoesPendentes(doc);
+  /* A marca escolhida é a que está debaixo do cursor, dos dois lados dele. */
+  const emVolta = edicao.selecao ? trechosEmVolta(doc, edicao.selecao.foco) : null;
+  const trecho = (emVolta?.depois?.revisao ? emVolta.depois.id : null)
+    ?? (emVolta?.antes?.revisao ? emVolta.antes.id : null);
   const marcaEscolhida = trecho && pendentes.some(r => r.trecho.id === trecho) ? trecho : null;
 
   const proximaMarca = () => {
     if (pendentes.length === 0) { setAviso('Não há mais marcas para resolver.'); return; }
     const atual = pendentes.findIndex(r => r.trecho.id === trecho);
     const proxima = pendentes[(atual + 1) % pendentes.length];
-    setTrecho(proxima.trecho.id);
-    setSelecionado(proxima.bloco);
+    edicao.folha.aoSelecionar(selecaoDoTrecho(doc, proxima.trecho.id));
+    edicao.focar();
     setAviso(`Marca de ${NOME_DO_AUTOR[proxima.trecho.revisao.autor]}: "${proxima.trecho.texto}" `
       + `${proxima.trecho.revisao.tipo === 'inserido' ? 'entrou' : 'saiu'}.`);
   };
@@ -113,20 +119,18 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair }
 
   const aceitar = () => {
     if (!marcaEscolhida) { semMarca(); return; }
-    setDoc(d => aceitarRevisao(d, marcaEscolhida));
-    setTrecho(null);
+    edicao.mudar(d => aceitarRevisao(d, marcaEscolhida));
     setAviso('Marca aceita.');
   };
 
   const rejeitar = () => {
     if (!marcaEscolhida) { semMarca(); return; }
-    setDoc(d => rejeitarRevisao(d, marcaEscolhida));
-    setTrecho(null);
+    edicao.mudar(d => rejeitarRevisao(d, marcaEscolhida));
     setAviso('Marca rejeitada: o texto voltou ao que era.');
   };
 
   const atualizarSumario = () => {
-    setDoc(d => ({ ...d, sumario: titulosDoDoc(d) }));
+    edicao.mudar(d => ({ ...d, sumario: titulosDoDoc(d) }));
     setAviso('Sumário atualizado: agora ele lista o documento como ele está hoje.');
   };
 
@@ -178,9 +182,9 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair }
   const acoes = (
     <>
       <button type="button" className="btn-ghost" onClick={() => {
-        setDoc(RELATORIO_DA_ENTREGA_INICIAL);
+        edicao.reiniciar(RELATORIO_DA_ENTREGA_INICIAL);
         setEntrega(ENTREGA_INICIAL);
-        setSelecionado(null); setTrecho(null); setPainel(null);
+        setPainel(null);
         setFormato('docx'); setImp(IMPRESSAO_INICIAL);
         setAviso('O relatório e a pasta voltaram ao estado em que chegaram.');
       }}>
@@ -223,6 +227,7 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair }
     >
       <style>{CSS_WORD}</style>
       <style>{CSS_FOLHA}</style>
+      <style>{CSS_FONTE_DO_WORD}</style>
 
       {painel ? (
         <BastidoresDoWord
@@ -244,7 +249,9 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair }
         />
       ) : (
         <div className="wd-janela">
-          <BarraDeTituloDoWord documento={entrega.nome} aoAvisar={setAviso} />
+          <BarraDeTituloDoWord documento={entrega.nome} aoAvisar={setAviso}
+            aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
+            aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />
 
           {/* Arquivo não é guia: é a porta dos bastidores, como no Word. */}
           <GuiasDoWord
@@ -263,13 +270,21 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair }
                   <EnfeiteDaFaixa dica="Recortar (Ctrl+X)" aoAvisar={setAviso}><Scissors className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
                   <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={setAviso}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
                 </GrupoDaFaixa>
-                <GrupoDaFaixa nome="Fonte">
-                  <EnfeiteDaFaixa dica="Negrito (Ctrl+N)" aoAvisar={setAviso}><IconeNegrito /></EnfeiteDaFaixa>
-                  <EnfeiteDaFaixa dica="Itálico (Ctrl+I)" aoAvisar={setAviso}><IconeItalico /></EnfeiteDaFaixa>
-                  <EnfeiteDaFaixa dica="Sublinhado (Ctrl+S)" aoAvisar={setAviso}><IconeSublinhado /></EnfeiteDaFaixa>
-                </GrupoDaFaixa>
+                <GrupoDeFonte edicao={edicao} aoAvisar={setAviso} />
                 <GrupoDaFaixa nome="Parágrafo">
-                  <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={setAviso}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                  <div className="wd-linhas">
+                    <div style={{ display: 'flex', gap: 1 }}>
+                      <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={setAviso}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                      <EnfeiteDaFaixa dica="Centralizar (Ctrl+E)" aoAvisar={setAviso}><AlignCenter className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                      <EnfeiteDaFaixa dica="Alinhar à Direita (Ctrl+G)" aoAvisar={setAviso}><AlignRight className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                      <EnfeiteDaFaixa dica="Justificar (Ctrl+J)" aoAvisar={setAviso}><AlignJustify className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                    </div>
+                    <div style={{ display: 'flex', gap: 1 }}>
+                      <BotaoDaFaixa dica="Mostrar Tudo (Ctrl+*)" ativo={marcas} aoClicar={() => { setMarcas(m => !m); edicao.focar(); }}>
+                        <Pilcrow className="w-3.5 h-3.5" />
+                      </BotaoDaFaixa>
+                    </div>
+                  </div>
                 </GrupoDaFaixa>
               </>
             )}
@@ -309,18 +324,7 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair }
 
           <ReguaDoWord larguraCm={21} margemCm={2.5} />
 
-          <FolhaDoWord
-            doc={doc}
-            selecionado={selecionado}
-            aoEscolher={(id) => { setSelecionado(id); setAviso(''); }}
-            aoEscolherTrecho={(id) => {
-              setTrecho(id);
-              const bloco = paragrafos(doc).find(b => b.trechos.some(x => x.id === id));
-              if (bloco) setSelecionado(bloco.id);
-              setAviso('');
-            }}
-            aoClicarNoVazio={() => { setSelecionado(null); setTrecho(null); }}
-          />
+          <FolhaDoWord doc={doc} marcas={marcas} edicao={edicao.folha} aoEscolher={() => setAviso('')} />
 
           <div className="wd-status">
             <span>{quantasPaginas(doc)} folhas</span>

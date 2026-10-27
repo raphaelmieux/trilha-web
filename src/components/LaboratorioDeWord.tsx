@@ -1,11 +1,13 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  Eraser, AlignLeft, Pilcrow, Sparkles,
+  AlignLeft, AlignCenter, AlignRight, AlignJustify, Pilcrow, Search, Replace,
   BookMarked, ListTree, StickyNote, Quote,
   Clipboard, Scissors, Copy,
 } from 'lucide-react';
-import { IconeItalico, IconeNegrito, IconeSublinhado } from '../labs/office';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
+import { GrupoDeFonte, CSS_FONTE_DO_WORD } from '../labs/fonteDoWord';
+import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
+import { aplicarEstilo as estiloNaSelecao } from '../labs/edicao';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
   BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
@@ -14,7 +16,7 @@ import {
   OFICIO_INICIAL, METAS_DO_OFICIO, type Doc,
 } from '../labs/oficioDoClube';
 import {
-  aparenciaDe, textoDoBloco, ehTitulo, titulosDoDoc, paragrafos, ehParagrafo,
+  aparenciaDe, ehTitulo, titulosDoDoc, paragrafos, textoVisivel, quantasPaginas,
   type Estilo, type AjusteDeEstilo,
 } from '../labs/documento';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
@@ -67,7 +69,6 @@ const TAMANHOS = [9, 10, 11, 12, 13, 14, 16, 18, 20, 24];
 export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: Props) {
   const [doc, setDoc] = useState<Doc>(OFICIO_INICIAL);
   const [guia, setGuia] = useState('Início');
-  const [selecionado, setSelecionado] = useState<string | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
   /* A caixa Modificar Estilo, quando aberta, e o rascunho dela. O rascunho é
      separado do documento porque a caixa do Word tem Cancelar: aplicar a cada
@@ -76,13 +77,14 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
   const [rascunho, setRascunho] = useState<AjusteDeEstilo>({});
   const [aviso, setAviso] = useState('');
   const [zoom, setZoom] = useState(1);
+  const [marcas, setMarcas] = useState(false);
   const [gravando, setGravando] = useState(false);
   const jaGravou = useRef(false);
+  const edicao = useEdicaoDoWord(doc, setDoc);
 
-  /* Parágrafo, e não bloco: todo comando desta lição — estilo, formatação
-     direta, sumário — vale para um parágrafo, e o relatório não tem outra
-     coisa. Pedir o parágrafo ao modelo é o que mantém isso verdade. */
-  const alvo = paragrafos(doc).find(b => b.id === selecionado) ?? null;
+  /* O parágrafo do cursor: o estilo vale para onde o cursor está, e para
+     todo parágrafo que a seleção toca. */
+  const alvo = edicao.paragrafo;
 
   const feitas = useMemo(
     () => new Set(METAS_DO_OFICIO.filter(m => m.feita(doc)).map(m => m.id)),
@@ -110,10 +112,10 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
   const abrir = (id: string) => setMenu(m => (m === id ? null : id));
 
   const exigirSelecao = () => {
-    if (alvo) return true;
+    if (edicao.selecao) return true;
     /* O Word também diz isso, em vez de aplicar no nada: é a mesma decisão do
        "selecione primeiro" do laboratório de operações. */
-    setAviso('Clique primeiro num parágrafo do documento — o estilo vale para onde o cursor está.');
+    setAviso('Clique primeiro no documento — o estilo vale para onde o cursor está.');
     return false;
   };
 
@@ -121,34 +123,11 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
 
   const aplicarEstilo = (e: Estilo) => {
     if (!exigirSelecao()) return;
-    setDoc(d => ({
-      ...d,
-      blocos: d.blocos.map(b => (b.id === selecionado && ehParagrafo(b) ? { ...b, estilo: e } : b)),
-    }));
+    edicao.mudar((d, s) => (s ? estiloNaSelecao(d, s, e) : d));
     fecharMenu();
     setAviso(ehTitulo(e)
       ? `${e} aplicado. A aparência mudou pouco — ela já estava imitando um título. O que mudou é que agora o sumário consegue ler este parágrafo.`
       : `${e} aplicado.`);
-  };
-
-  const limparFormatacao = () => {
-    /*
-      Limpa o documento inteiro, e não só o parágrafo: é o que "Selecionar Tudo
-      e limpar" faz, que é o caminho que o passo a passo ensina — e é o gesto
-      honesto num documento que chegou inteiro formatado à mão.
-    */
-    const tinha = paragrafos(doc).some(b => b.trechos.some(x => x.direta));
-    setDoc(d => ({
-      ...d,
-      blocos: d.blocos.map(b => (ehParagrafo(b) ? {
-        ...b,
-        trechos: b.trechos.map(({ direta, ...x }) => { void direta; return x; }),
-      } : b)),
-    }));
-    fecharMenu();
-    setAviso(tinha
-      ? 'Formatação direta removida. O que sobrou é o estilo — e agora mexer no estilo mexe no documento.'
-      : 'Não havia formatação direta para tirar.');
   };
 
   const abrirModificar = (e: Estilo) => {
@@ -160,7 +139,7 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
   const confirmarModificar = () => {
     if (!modificando) return;
     const estilo = modificando;
-    setDoc(d => ({ ...d, estilos: { ...d.estilos, [estilo]: rascunho } }));
+    edicao.mudar(d => ({ ...d, estilos: { ...d.estilos, [estilo]: rascunho } }));
     setModificando(null);
     const quantos = paragrafos(doc).filter(b => b.estilo === estilo).length;
     setAviso(`${estilo} redefinido. ${quantos} ${quantos === 1 ? 'parágrafo mudou' : 'parágrafos mudaram'} `
@@ -169,7 +148,7 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
 
   const gerarSumario = () => {
     const titulos = titulosDoDoc(doc);
-    setDoc(d => ({ ...d, sumario: titulos }));
+    edicao.mudar(d => ({ ...d, sumario: titulos }));
     fecharMenu();
     setAviso(titulos.length
       ? `Sumário gerado com ${titulos.length} ${titulos.length === 1 ? 'entrada' : 'entradas'}.`
@@ -205,8 +184,7 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
   const acoes = (
     <>
       <button type="button" className="btn-ghost" onClick={() => {
-        setDoc(OFICIO_INICIAL);
-        setSelecionado(null);
+        edicao.reiniciar(OFICIO_INICIAL);
         setAviso('O relatório voltou ao estado em que o examinador o entregou.');
       }}>
         Recomeçar
@@ -230,6 +208,7 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
     >
       <style>{CSS_WORD}</style>
       <style>{CSS_FOLHA}</style>
+      <style>{CSS_FONTE_DO_WORD}</style>
       <style>{`
         .wr-galeria { display: flex; gap: 3px; }
         .wr-estilo {
@@ -268,7 +247,9 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
       `}</style>
 
       <div className="wd-janela">
-        <BarraDeTituloDoWord documento="Relatório de Atividades" aoAvisar={setAviso} />
+        <BarraDeTituloDoWord documento="Relatório de Atividades" aoAvisar={setAviso}
+          aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
+          aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />
 
         <GuiasDoWord
           atual={guia} usaveis={GUIAS_USAVEIS}
@@ -285,23 +266,27 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
               <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={setAviso}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
             </GrupoDaFaixa>
 
-            <GrupoDaFaixa nome="Fonte">
-              <EnfeiteDaFaixa dica="Negrito (Ctrl+N)" aoAvisar={setAviso}><IconeNegrito /></EnfeiteDaFaixa>
-              <EnfeiteDaFaixa dica="Itálico (Ctrl+I)" aoAvisar={setAviso}><IconeItalico /></EnfeiteDaFaixa>
-              <EnfeiteDaFaixa dica="Sublinhado (Ctrl+S)" aoAvisar={setAviso}><IconeSublinhado /></EnfeiteDaFaixa>
-              {/*
-                O botão que o requisito 6 pede. Ele fica no grupo Fonte, que é
-                onde o Word o põe — e não num lugar inventado pela lição, que
-                ensinaria a procurá-lo onde ele não está.
-              */}
-              <BotaoDaFaixa dica="Limpar Toda a Formatação" aoClicar={limparFormatacao}>
-                <Eraser className="w-3.5 h-3.5" />
-              </BotaoDaFaixa>
-            </GrupoDaFaixa>
+            {/* O grupo Fonte inteiro, e não só a borracha: o requisito 6 pede
+                que se tire a formatação direta, e o caminho do Word é
+                selecionar e limpar — Ctrl+Espaço tira só a de caractere, e a
+                borracha tira também o estilo. As duas estão aqui porque estão
+                lá, e a diferença entre elas é parte da lição. */}
+            <GrupoDeFonte edicao={edicao} aoAvisar={setAviso} />
 
             <GrupoDaFaixa nome="Parágrafo">
-              <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={setAviso}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-              <EnfeiteDaFaixa dica="Mostrar Tudo (Ctrl+*)" aoAvisar={setAviso}><Pilcrow className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+              <div className="wd-linhas">
+                <div style={{ display: 'flex', gap: 1 }}>
+                  <BotaoDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoClicar={() => naoFazParte('Alinhar à Esquerda')}><AlignLeft className="w-3.5 h-3.5" /></BotaoDaFaixa>
+                  <BotaoDaFaixa dica="Centralizar (Ctrl+E)" aoClicar={() => naoFazParte('Centralizar')}><AlignCenter className="w-3.5 h-3.5" /></BotaoDaFaixa>
+                  <BotaoDaFaixa dica="Alinhar à Direita (Ctrl+G)" aoClicar={() => naoFazParte('Alinhar à Direita')}><AlignRight className="w-3.5 h-3.5" /></BotaoDaFaixa>
+                  <BotaoDaFaixa dica="Justificar (Ctrl+J)" aoClicar={() => naoFazParte('Justificar')}><AlignJustify className="w-3.5 h-3.5" /></BotaoDaFaixa>
+                </div>
+                <div style={{ display: 'flex', gap: 1 }}>
+                  <BotaoDaFaixa dica="Mostrar Tudo (Ctrl+*)" ativo={marcas} aoClicar={() => { setMarcas(m => !m); edicao.focar(); }}>
+                    <Pilcrow className="w-3.5 h-3.5" />
+                  </BotaoDaFaixa>
+                </div>
+              </div>
             </GrupoDaFaixa>
 
             {/*
@@ -316,9 +301,10 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
                     <button
                       type="button" className="wr-estilo"
                       title={`${e} — clique para aplicar, botão direito para modificar`}
-                      aria-pressed={alvo?.estilo === e}
+                      aria-pressed={edicao.formato.estilo === e}
+                      onMouseDown={ev => ev.preventDefault()}
                       style={{
-                        borderColor: alvo?.estilo === e ? '#2B579A' : '#C8C6C4',
+                        borderColor: edicao.formato.estilo === e ? '#2B579A' : '#C8C6C4',
                         ...aparenciaDe(doc, e),
                         marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0,
                         fontSize: Math.min(13, Number(aparenciaDe(doc, e).fontSize ?? 11)),
@@ -339,8 +325,11 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
               </div>
             </GrupoDaFaixa>
 
-            <GrupoDaFaixa nome="Editando">
-              <EnfeiteDaFaixa dica="Localizar (Ctrl+L)" aoAvisar={setAviso}><Sparkles className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+            <GrupoDaFaixa nome="Edição">
+              <div className="wd-linhas">
+                <EnfeiteDaFaixa dica="Localizar (Ctrl+L)" rotulo="Localizar" aoAvisar={setAviso}><Search className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+                <EnfeiteDaFaixa dica="Substituir (Ctrl+U)" rotulo="Substituir" aoAvisar={setAviso}><Replace className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+              </div>
             </GrupoDaFaixa>
           </div>
         )}
@@ -372,16 +361,12 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
 
         <ReguaDoWord larguraCm={21} margemCm={2.5} />
 
-        <FolhaDoWord
-          doc={doc}
-          selecionado={selecionado}
-          aoEscolher={id => { setSelecionado(id); setAviso(''); fecharMenu(); }}
-          aoClicarNoVazio={() => { setSelecionado(null); fecharMenu(); }}
-        />
+        <FolhaDoWord doc={doc} marcas={marcas} edicao={edicao.folha} />
 
         <div className="wd-status">
-          <span>{doc.blocos.length} parágrafos</span>
-          <span>{alvo ? `${alvo.estilo} — ${textoDoBloco(alvo).slice(0, 28)}…` : 'Nenhum parágrafo selecionado'}</span>
+          <span>Página 1 de {quantasPaginas(doc)}</span>
+          <span>{textoVisivel(doc).split(/\s+/).filter(Boolean).length} palavras</span>
+          <span>{alvo ? alvo.estilo : 'Português (Brasil)'}</span>
           <ZoomDoWord zoom={zoom} aoMudar={setZoom} aoAvisar={setAviso} />
         </div>
       </div>

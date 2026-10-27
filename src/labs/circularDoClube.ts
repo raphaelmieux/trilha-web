@@ -1,7 +1,8 @@
 import {
-  linhaDe, textoDoBloco, textoDoDoc, paragrafosVazios, paragrafos,
+  linhaDe, textoDoBloco, textoDoDoc, paragrafosVazios, paragrafos, familiaDoTrecho,
   type Doc as DocDoWord, type Bloco as BlocoDoWord,
 } from './documento';
+import { unidadesDoParagrafo } from './edicao';
 
 /*
   A circular do módulo 2: o documento em que alguém usou o Enter como régua.
@@ -93,11 +94,9 @@ export const IDS_DO_ENDERECO = ['end-1', 'end-2', 'end-3'];
 export interface GestosDaCircular {
   /** As marcas de parágrafo estão ligadas. */
   marcas: boolean;
-  /** O parágrafo da revisão já foi acrescentado. */
-  cresceu: boolean;
 }
 
-export const gestosVazios = (): GestosDaCircular => ({ marcas: false, cresceu: false });
+export const gestosVazios = (): GestosDaCircular => ({ marcas: false });
 
 export interface ContextoDaCircular {
   doc: Doc;
@@ -115,14 +114,53 @@ export interface MetaDaCircular {
 
 const um = (d: Doc, id: string) => d.blocos.find(b => b.id === id);
 
-/** O endereço virou um parágrafo só, com as três linhas dentro dele. */
+/** As três linhas do endereço, como chegaram. */
+const LINHAS_DO_ENDERECO = IDS_DO_ENDERECO.map(id => textoDoBloco(CIRCULAR_INICIAL.blocos.find(b => b.id === id)!));
+
+/**
+ * O endereço virou um parágrafo só, com as três linhas dentro dele.
+ *
+ * Conta-se por **linha**, e não por trecho: com o cursor de verdade, juntar e
+ * quebrar parte os trechos de mais de um jeito, e todos dão o mesmo endereço.
+ * O que não pode é colar as três num texto corrido, nem perder uma delas.
+ */
 export function enderecoNumBlocoSo(d: Doc): boolean {
   const doEndereco = paragrafos(d).filter(b => b.secao === 'endereco');
   if (doEndereco.length !== 1) return false;
-  const [b] = doEndereco;
-  /* Três linhas lógicas, e as duas de baixo entrando por quebra — não basta
-     ter um bloco só: colar as três num texto corrido perderia as linhas. */
-  return b.trechos.length === 3 && b.trechos.slice(1).every(x => x.quebra === true);
+  const linhas = unidadesDoParagrafo(doEndereco[0]).split('\n').map(l => l.trim());
+  return linhas.length === LINHAS_DO_ENDERECO.length
+    && linhas.every((l, i) => l === LINHAS_DO_ENDERECO[i]);
+}
+
+const IDS_ORIGINAIS = new Set(CIRCULAR_INICIAL.blocos.map(b => b.id));
+
+/**
+ * O parágrafo que a revisão pediu está no corpo, antes do endereço.
+ *
+ * Ele é escrito — ou colado do recado da liderança —, e não posto por um
+ * botão: o que a lição mostra é o que acontece com a assinatura **depois**, e
+ * para isso o texto precisa entrar no documento pelo caminho de qualquer texto.
+ * Seis palavras é o piso de um aviso: um Enter e uma letra não são parágrafo.
+ */
+export function paragrafoDaRevisao(d: Doc): boolean {
+  const ps = paragrafos(d);
+  const ondeEndereco = ps.findIndex(b => b.secao === 'endereco');
+  return ps.some((b, i) => !IDS_ORIGINAIS.has(b.id)
+    && (ondeEndereco < 0 || i < ondeEndereco)
+    && b.secao === 'corpo'
+    && textoDoBloco(b).trim().split(/\s+/).filter(Boolean).length >= 6);
+}
+
+/**
+ * Todo o texto da circular sai numa fonte serifada.
+ *
+ * A fonte é de caractere no Word — vale para o que está selecionado —, então
+ * o caminho é selecionar tudo e escolher. Metade em Georgia e metade em
+ * Calibri não é a decisão que o requisito 2.4 pede: é a decisão pela metade.
+ */
+export function tudoSerifado(d: Doc): boolean {
+  const comTexto = paragrafos(d).flatMap(b => b.trechos.filter(x => x.texto.trim() !== ''));
+  return comTexto.length > 0 && comTexto.every(x => familiaDoTrecho(d, x) === 'serifada');
 }
 
 export const METAS_DA_CIRCULAR: MetaDaCircular[] = [
@@ -146,7 +184,8 @@ export const METAS_DA_CIRCULAR: MetaDaCircular[] = [
     onde: 'Início › Parágrafo (Shift+Enter)',
     passos: [
       'Clique no fim da linha "Sítio Recanto da Regional".',
-      'Apague o ¶ que está ali e ponha uma quebra de linha no lugar, com Shift+Enter.',
+      'Aperte Delete para apagar o ¶ que está ali — a linha de baixo sobe e gruda nesta.',
+      'Sem mexer o cursor, aperte Shift+Enter: a linha desce de novo, agora dentro do mesmo parágrafo.',
       'Repita entre a segunda e a terceira linha.',
       'Com as marcas ligadas, a seta virada ↵ aparece no lugar do ¶ — são as duas coisas diferentes que a lição separa.',
     ],
@@ -155,15 +194,17 @@ export const METAS_DA_CIRCULAR: MetaDaCircular[] = [
   {
     id: 'cresceu',
     titulo: 'Acrescentar o parágrafo que a revisão pediu',
-    detalhe: 'A liderança pediu um aviso sobre o frio. Acrescente-o e olhe o que acontece com a '
-      + 'assinatura: os cinco Enters continuam empurrando o mesmo tanto, e o tanto certo mudou.',
+    detalhe: 'A liderança pediu um aviso sobre o frio. Escreva-o — ou copie e cole do recado — '
+      + 'depois do terceiro parágrafo, e olhe o que acontece com a assinatura: os cinco Enters '
+      + 'continuam empurrando o mesmo tanto, e o tanto certo mudou.',
     onde: 'no corpo da circular',
     passos: [
-      'Clique no fim do terceiro parágrafo do corpo.',
-      'Use o botão "Acrescentar o parágrafo da revisão", que é o que a liderança mandou incluir.',
+      'Clique no fim do terceiro parágrafo do corpo, depois de "ninguém fica de fora por dinheiro."',
+      'Aperte Enter para abrir um parágrafo novo.',
+      `Escreva o aviso: "${PARAGRAFO_QUE_CHEGA.texto}"`,
       'Veja onde a assinatura foi parar.',
     ],
-    feita: c => c.gestos.cresceu,
+    feita: c => paragrafoDaRevisao(c.doc),
   },
   {
     id: 'quebra',
@@ -172,9 +213,9 @@ export const METAS_DA_CIRCULAR: MetaDaCircular[] = [
       + 'não mudar. Quebra de página empurra para a folha seguinte e continua certa depois.',
     onde: 'Inserir › Quebra de Página (Ctrl+Enter)',
     passos: [
-      'Apague os cinco parágrafos vazios — com as marcas ligadas eles são os cinco ¶ sozinhos.',
-      'Clique no parágrafo da assinatura.',
-      'Ponha uma quebra de página antes dele, por Ctrl+Enter ou por Inserir › Quebra de Página.',
+      'Clique no começo da assinatura, antes de "Diretoria".',
+      'Aperte Backspace até os cinco ¶ sozinhos sumirem — cada Backspace apaga um.',
+      'Com o cursor ainda no começo da assinatura, aperte Ctrl+Enter, ou use Inserir › Quebra de Página.',
     ],
     feita: c => paragrafosVazios(c.doc).length === 0
       && !!um(c.doc, 'assina')?.quebraDePagina,
@@ -186,10 +227,11 @@ export const METAS_DA_CIRCULAR: MetaDaCircular[] = [
       + 'Quem decide a fonte é onde o texto vai ser lido, e não o gosto de quem escreve.',
     onde: 'Início › Fonte',
     passos: [
-      'Na guia Início, no grupo Fonte, abra a lista de famílias.',
-      'Escolha uma serifada — Georgia ou Times New Roman —, que é a de texto longo no papel.',
+      'Selecione o documento inteiro com Ctrl+A.',
+      'Na guia Início, no grupo Fonte, abra a caixa com o nome da fonte.',
+      'Escolha uma serifada — Georgia, Cambria ou Times New Roman —, que é a de texto longo no papel.',
     ],
-    feita: c => c.doc.fonte === 'serifada',
+    feita: c => tudoSerifado(c.doc),
   },
 ];
 

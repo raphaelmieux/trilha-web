@@ -131,6 +131,11 @@ export const APARENCIA_DO_ESTILO: Record<Estilo, CSSProperties> = {
 export interface Direta {
   negrito?: boolean;
   italico?: boolean;
+  /** O Ctrl+S do Word em português. Ele não existia porque nenhum botão o
+      alcançava; com o cursor de verdade, a faixa inteira passou a agir. */
+  sublinhado?: boolean;
+  /** O nome da fonte, como a caixa de fontes do Word o escreve — um de `FONTES_DO_WORD`. */
+  fonte?: string;
   tamanho?: number;
   cor?: string;
 }
@@ -869,8 +874,38 @@ export const paragrafosVazios = <S extends string>(d: Doc<S>) =>
 /** As pilhas de nomes de fonte que cada família rende, com os nomes do Word. */
 export const FONTES: Record<'serifada' | 'sem-serifa', string> = {
   serifada: 'Georgia, "Times New Roman", serif',
-  'sem-serifa': 'Calibri, Arial, sans-serif',
+  'sem-serifa': 'Calibri, Carlito, Arial, sans-serif',
 };
+
+/**
+ * A caixa de fontes da guia Início, com as famílias que um computador de clube
+ * tem instaladas.
+ *
+ * A fonte é formatação de **caractere**, como no Word: vale para o que está
+ * selecionado. A família de cada uma é o que a lição de tipografia mede — a
+ * caixa lista nomes, e quem decide se a escolha serve ao papel é a família
+ * por trás do nome.
+ */
+export const FONTES_DO_WORD: { nome: string; pilha: string; familia: 'serifada' | 'sem-serifa' }[] = [
+  { nome: 'Calibri', pilha: 'Calibri, Carlito, Arial, sans-serif', familia: 'sem-serifa' },
+  { nome: 'Arial', pilha: 'Arial, "Liberation Sans", Helvetica, sans-serif', familia: 'sem-serifa' },
+  { nome: 'Verdana', pilha: 'Verdana, "DejaVu Sans", sans-serif', familia: 'sem-serifa' },
+  { nome: 'Segoe UI', pilha: '"Segoe UI", Roboto, "Noto Sans", sans-serif', familia: 'sem-serifa' },
+  { nome: 'Cambria', pilha: 'Cambria, Caladea, Georgia, serif', familia: 'serifada' },
+  { nome: 'Georgia', pilha: 'Georgia, "DejaVu Serif", serif', familia: 'serifada' },
+  { nome: 'Times New Roman', pilha: '"Times New Roman", "Liberation Serif", Times, serif', familia: 'serifada' },
+  { nome: 'Garamond', pilha: 'Garamond, "EB Garamond", "Times New Roman", serif', familia: 'serifada' },
+];
+
+/** O nome que a caixa de fontes mostra para o corpo do documento, sem fonte direta. */
+export const fonteDoCorpo = (d: Doc<string>) => (d.fonte === 'serifada' ? 'Georgia' : 'Calibri');
+
+/** A família em que um trecho sai desenhado: a fonte direta vence a do corpo. */
+export function familiaDoTrecho(d: Doc<string>, x: Trecho): 'serifada' | 'sem-serifa' {
+  const direta = x.direta?.fonte && FONTES_DO_WORD.find(f => f.nome === x.direta!.fonte);
+  if (direta) return direta.familia;
+  return d.fonte ?? 'sem-serifa';
+}
 
 /** Os parágrafos que ainda carregam formatação direta. */
 export const comFormatacaoDireta = <S extends string>(d: Doc<S>) =>
@@ -896,16 +931,31 @@ export function aparenciaDe(d: Doc<string>, e: Estilo): CSSProperties {
 /** A aparência de um trecho: a do estilo do bloco, com a direta por cima. */
 export function aparenciaDoTrecho(d: Doc<string>, b: Paragrafo<string>, x: Trecho): CSSProperties {
   const doEstilo = aparenciaDe(d, b.estilo);
-  if (!x.direta) return doEstilo;
-  const { negrito, italico, tamanho, cor } = x.direta;
+  /* Ênfase é estilo de caractere: ela inclina, e a direta pode desfazer. */
+  const base: CSSProperties = x.enfase ? { ...doEstilo, fontStyle: 'italic' } : doEstilo;
+  const extra: CSSProperties = {
+    ...(x.realce && x.realce !== 'nenhum' ? { backgroundColor: COR_DO_REALCE[x.realce] } : {}),
+    ...(x.posicao === 'sobrescrito' ? { verticalAlign: 'super', fontSize: '0.65em' } : {}),
+    ...(x.posicao === 'subscrito' ? { verticalAlign: 'sub', fontSize: '0.65em' } : {}),
+  };
+  if (!x.direta) return { ...base, ...extra };
+  const { negrito, italico, sublinhado, tamanho, cor } = x.direta;
   return {
-    ...doEstilo,
+    ...base,
     ...(tamanho !== undefined ? { fontSize: tamanho } : {}),
     ...(cor !== undefined ? { color: cor } : {}),
     ...(negrito !== undefined ? { fontWeight: negrito ? 700 : 400 } : {}),
     ...(italico !== undefined ? { fontStyle: italico ? 'italic' : 'normal' } : {}),
+    ...(sublinhado ? { textDecoration: 'underline' } : {}),
+    ...(x.direta.fonte ? { fontFamily: FONTES_DO_WORD.find(f => f.nome === x.direta!.fonte)?.pilha ?? x.direta.fonte } : {}),
+    ...extra,
   };
 }
+
+/** As cores do marca-texto, as do Word. */
+export const COR_DO_REALCE: Record<Exclude<Realce, 'nenhum'>, string> = {
+  amarelo: '#FFFF00', verde: '#00FF00', ciano: '#00FFFF', rosa: '#FF00FF',
+};
 
 /** Os títulos do documento, na ordem, como o sumário os leria agora. */
 export function titulosDoDoc(d: Doc<string>): ItemDeSumario[] {

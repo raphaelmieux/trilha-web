@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 import LaboratorioDoRelatorioAnual from './LaboratorioDoRelatorioAnual';
 import { VEREDAS, licoesDaVereda } from '../curriculum/veredas';
 import { TEXTO_DO_CABECALHO, SECAO_QUE_FALTA } from '../labs/relatorioAnual';
+import { porCursor, tecla, digitar, colar } from '../labs/tecladoDaFolha';
 
 /*
   O relatório anual do módulo 4, percorrido clicando.
@@ -80,7 +81,17 @@ const guia = (nome: string) =>
   [...container.querySelectorAll('.wd-guia')].find(b => b.textContent?.trim() === nome);
 
 const folhas = () => [...container.querySelectorAll('.wd-pagina')];
-const bloco = (id: string) => container.querySelector(`[data-bloco="${id}"]`);
+/** No fim do documento: Enter, Ctrl+Enter, o título, Título 1, Enter e o corpo colado. */
+const escreverASecao = () => {
+  porCursor(container, 'nu-2', 'fim');
+  tecla(container, 'Enter');
+  tecla(container, 'Enter', { ctrl: true });
+  digitar(container, SECAO_QUE_FALTA.titulo);
+  clicar(guia('Início'), 'a guia Início');
+  clicar(container.querySelector('.wd-galeria-item[aria-label="Título 1"]'), 'Título 1 na galeria');
+  tecla(container, 'Enter');
+  colar(container, SECAO_QUE_FALTA.corpo);
+};
 
 const faixas = (onde: 'cabecalho' | 'rodape') =>
   [...container.querySelectorAll(`[data-faixa="${onde}"]`)];
@@ -207,9 +218,9 @@ describe('o relatório anual pode ser vencido clicando', () => {
     expect(estado()).toContain('Sumário em dia');
 
     /* 5. A seção que faltava — e o sumário envelhece na tela. */
-    clicar(guia('Inserir'), 'a guia Inserir');
-    clicar(comando('Acrescentar a seção de encerramento'), 'Seção de encerramento');
-    expect(bloco(SECAO_QUE_FALTA.tituloId), 'a seção não entrou').toBeTruthy();
+    escreverASecao();
+    const titulos = [...container.querySelectorAll('p[data-estilo="Título 1"]')].map(p => p.textContent ?? '');
+    expect(titulos[titulos.length - 1], 'a seção não entrou').toContain(SECAO_QUE_FALTA.titulo);
     expect(linhasDoSumario(), 'o sumário se atualizou sozinho').toEqual(antes);
     expect(estado(), 'a régua de status não acusou o sumário velho')
       .toContain('Sumário desatualizado');
@@ -280,8 +291,7 @@ describe('o sumário guarda a folha, e ela anda', () => {
 
   it('gerar o sumário de novo depois da seção o põe em dia', () => {
     montar();
-    clicar(guia('Inserir'), 'a guia Inserir');
-    clicar(comando('Acrescentar a seção de encerramento'), 'Seção de encerramento');
+    escreverASecao();
     clicar(guia('Referências'), 'a guia Referências');
     clicar(comando('Sumário'), 'Sumário');
     expect(estado()).toContain('Sumário em dia');

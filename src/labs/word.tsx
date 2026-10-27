@@ -23,7 +23,10 @@ import {
  * ensinaria a procurar no lugar errado.
  */
 
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { lerSelecao, escreverSelecao } from './cursorNaFolha';
+import { mesmaSelecao, textoDaSelecao, recolhida, cursorEm, tamanhoDoParagrafo, selecaoDoTrecho, type Selecao } from './edicao';
+import type { EdicaoDaFolha, ComandoDeTexto } from './useEdicaoDoWord';
 import {
   CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice,
 } from './office';
@@ -31,6 +34,7 @@ import {
 import {
   aparenciaDe, aparenciaDoTrecho, textoDoTrecho, larguraDaTabela,
   paginasDoDoc, blocoAntesDoSumario, NOME_DO_AUTOR, COR_DO_AUTOR,
+  FONTES,
   type Doc, type Bloco, type Paragrafo, type TabelaDoDoc, type ImagemDoDoc,
   type Disposicao, type ItemDeSumario, type FaixaDaPagina,
   type Comentario, type OpcoesDeBusca,
@@ -592,6 +596,10 @@ export function BotaoDaFaixa({ dica, rotulo, ativo, aoClicar, children, empilhad
     <button
       type="button" title={dica} aria-label={dica} aria-pressed={ativo}
       onClick={aoClicar}
+      /* O clique na faixa não tira o cursor do documento, como no Word: o
+         negrito apertado vale para a seleção que estava lá, e o cursor
+         continua piscando no mesmo lugar depois. */
+      onMouseDown={ev => ev.preventDefault()}
       className="wd-bt"
       style={{
         backgroundColor: ativo ? '#D6E8F7' : 'transparent',
@@ -929,6 +937,21 @@ export const CSS_FOLHA = `
   .wd-fora-da-linha > .wd-imagem { position: absolute; top: 0; left: 18%; opacity: .9; }
   .wd-disp-atras { z-index: -1; }
   .wd-disp-frente { z-index: 2; }
+/* ── A folha que se edita ────────────────────────────────────────────────
+   A letra do papel é a do Word, e não a da janela: Calibri onde existe, e a
+   Carlito — que tem as mesmas medidas — onde não existe. */
+  .wd-pagina { font-family: Calibri, Carlito, 'Segoe UI', Arial, sans-serif; }
+  .wd-editavel { outline: none; caret-color: #000000; }
+  .wd-editavel .wd-pagina { cursor: text; }
+  /* Espaço digitado é espaço: sem isto o HTML colapsa dois espaços num, e o
+     espaço no fim da linha não aparece — o cursor andaria e a tela não. */
+  .wd-editavel p[data-editavel] { white-space: pre-wrap; tab-size: 32; outline: none; }
+  .wd-editavel .wd-bloco.escolhido { outline: none; }
+  /* A seleção do Word é cinza, e o texto continua com a cor dele. A da
+     plataforma, vermelha com letra branca, faria o documento parecer outro
+     programa no instante em que alguém seleciona uma palavra. */
+  .wd-editavel ::selection { background: rgba(0, 0, 0, 0.17); color: currentColor; }
+  .wd-ilha { cursor: default; }
 .wd-escrevendo {
   display: block; width: 100%; border: none; background: transparent;
   font: inherit; color: inherit; resize: none; overflow: hidden;
@@ -956,12 +979,34 @@ export const CSS_FOLHA = `
  * requisito 4.4 da CC-ES002; por cima de uma marca, retypar desfaria em
  * silêncio a proposta de outra pessoa.
  */
+/**
+ * O tamanho da letra medido em pontos do papel, e não em pixels da tela.
+ *
+ * O estilo diz 11 e o Word lê 11 pontos: numa folha de 21 cm desenhada a 34 px
+ * por centímetro, isso dá 13 px. Desenhado como 11 px, o texto saía do tamanho
+ * de uma folha com zoom de 80%, e o documento inteiro parecia miúdo dentro do
+ * papel. O `max` segura o piso no número cru: no celular a folha encolhe para
+ * caber, e a letra encolhendo junto ficaria ilegível — lá ela para em 11 px, que
+ * é o que já era.
+ */
+function emPontos(estilo: React.CSSProperties): React.CSSProperties {
+  const r: React.CSSProperties = { ...estilo };
+  if (typeof r.fontSize === 'number') {
+    r.fontSize = `max(${r.fontSize}px, calc(var(--px-cm, 34) * ${(r.fontSize * 0.035278).toFixed(4)}px))`;
+  }
+  for (const lado of ['marginTop', 'marginBottom', 'marginLeft', 'marginRight'] as const) {
+    const v = r[lado];
+    if (typeof v === 'number' && v !== 0) r[lado] = `max(${v}px, calc(var(--px-cm, 34) * ${(v * 0.035278).toFixed(4)}px))`;
+  }
+  return r;
+}
+
 const daParaDigitar = (b: Paragrafo<string>) =>
   b.trechos.length <= 1 && !b.trechos.some(x => x.campo || x.revisao);
 
 export function ParagrafoDaFolha({
   doc, bloco, escolhido, marcas, aoEscolher, classe, comentado, aoEscolherTrecho,
-  aoEscrever, aoNovoParagrafo,
+  aoEscrever, aoNovoParagrafo, editavel,
 }: {
   doc: Doc<string>;
   bloco: Paragrafo<string>;
@@ -989,12 +1034,82 @@ export function ParagrafoDaFolha({
   aoEscrever?: (texto: string) => void;
   /** Enter no fim do parágrafo. Sem ele, Enter não faz nada. */
   aoNovoParagrafo?: () => void;
+  /**
+   * O parágrafo mora numa folha que se edita com cursor de verdade.
+   *
+   * Aí ele se desenha plano — cada trecho filho direto do parágrafo, e o que
+   * não é texto marcado `contenteditable=false` —, porque é andando por essa
+   * árvore que `cursorNaFolha.ts` traduz o cursor do navegador para a posição
+   * no documento. E o contorno de "parágrafo escolhido" some: no Word não há
+   * parágrafo escolhido, há cursor.
+   */
+  editavel?: boolean;
 }) {
+  if (editavel) {
+    const vazio = tamanhoDoParagrafo(bloco) === 0;
+    const ultimo = bloco.trechos[bloco.trechos.length - 1];
+    /* Um `<br>` no fim segura a altura da linha: o parágrafo vazio, e a linha
+       vazia depois de uma quebra, não teriam altura nenhuma sem ele, e o
+       cursor não teria onde piscar. */
+    const segura = vazio || (!!ultimo?.quebra && !ultimo.texto && !ultimo.campo);
+    return (
+      <>
+        {bloco.quebraDePagina && marcas && (
+          <div className="wd-quebra-pagina" contentEditable={false}>Quebra de Página</div>
+        )}
+        <p
+          className={`wd-bloco${classe ? ` ${classe}` : ''}`}
+          style={emPontos(aparenciaDe(doc, bloco.estilo))}
+          data-bloco={bloco.id}
+          data-estilo={bloco.estilo}
+          data-editavel=""
+          onClick={aoEscolher}
+        >
+          {bloco.trechos.map(x => (
+            <Fragment key={x.id}>
+              {x.quebra && (
+                <>
+                  {marcas && <span className="wd-marca" data-marca="quebra" contentEditable={false}>↵</span>}
+                  <br data-quebra="" />
+                </>
+              )}
+              {x.campo ? (
+                <span className="wd-campo" data-trecho={x.id} data-campo={x.campo} contentEditable={false}
+                  style={emPontos(aparenciaDoTrecho(doc, bloco, x))}>
+                  {textoDoTrecho(doc, x)}
+                </span>
+              ) : (
+                <span
+                  className={[
+                    x.texto.includes('\t') ? 'wd-tab' : '',
+                    x.revisao ? `wd-rev wd-rev-${x.revisao.tipo} wd-autor-${x.revisao.autor}` : '',
+                    comentado?.has(x.id) ? 'wd-comentado' : '',
+                  ].filter(Boolean).join(' ') || undefined}
+                  style={x.revisao
+                    ? emPontos({ ...aparenciaDoTrecho(doc, bloco, x), color: COR_DO_AUTOR[x.revisao.autor] })
+                    : emPontos(aparenciaDoTrecho(doc, bloco, x))}
+                  title={x.revisao ? `${NOME_DO_AUTOR[x.revisao.autor]}: ${x.revisao.tipo}` : undefined}
+                  onClick={aoEscolherTrecho ? () => aoEscolherTrecho(x.id) : undefined}
+                  data-trecho={x.id}
+                  data-revisao={x.revisao?.tipo}
+                  data-autor={x.revisao?.autor}
+                >
+                  {x.texto}
+                </span>
+              )}
+            </Fragment>
+          ))}
+          {marcas && <span className="wd-marca" data-marca="paragrafo" contentEditable={false}>¶</span>}
+          {segura && <br data-vazio="" />}
+        </p>
+      </>
+    );
+  }
   if (aoEscrever && escolhido && daParaDigitar(bloco)) {
     return (
       <textarea
         className={`wd-bloco wd-escrevendo${classe ? ` ${classe}` : ''}`}
-        style={aparenciaDe(doc, bloco.estilo)}
+        style={emPontos(aparenciaDe(doc, bloco.estilo))}
         data-bloco={bloco.id}
         data-estilo={bloco.estilo}
         aria-label={`Parágrafo: ${bloco.trechos.map(x => x.texto).join('')}`}
@@ -1022,7 +1137,7 @@ export function ParagrafoDaFolha({
       )}
       <p
         className={`wd-bloco${escolhido ? ' escolhido' : ''}${classe ? ` ${classe}` : ''}`}
-        style={aparenciaDe(doc, bloco.estilo)}
+        style={emPontos(aparenciaDe(doc, bloco.estilo))}
         onClick={aoEscolher ? ev => { ev.stopPropagation(); aoEscolher(); } : undefined}
         data-bloco={bloco.id}
         data-estilo={bloco.estilo}
@@ -1050,8 +1165,8 @@ export function ParagrafoDaFolha({
                 comentado?.has(x.id) ? 'wd-comentado' : '',
               ].filter(Boolean).join(' ') || undefined}
               style={x.revisao
-                ? { ...aparenciaDoTrecho(doc, bloco, x), color: COR_DO_AUTOR[x.revisao.autor] }
-                : aparenciaDoTrecho(doc, bloco, x)}
+                ? emPontos({ ...aparenciaDoTrecho(doc, bloco, x), color: COR_DO_AUTOR[x.revisao.autor] })
+                : emPontos(aparenciaDoTrecho(doc, bloco, x))}
               title={x.revisao ? `${NOME_DO_AUTOR[x.revisao.autor]}: ${x.revisao.tipo}` : undefined}
               onClick={aoEscolherTrecho
                 ? ev => { ev.stopPropagation(); aoEscolherTrecho(x.id); } : undefined}
@@ -1249,10 +1364,11 @@ export function SumarioDaFolha({ itens }: { itens: ItemDeSumario[] }) {
  */
 export function BlocoDaFolha({
   doc, bloco, escolhido, marcas, aoEscolher, celula, aoCursorNaCelula, aoEditarCelula, classe,
-  comentado, aoEscolherTrecho, aoEscrever, aoNovoParagrafo,
+  comentado, aoEscolherTrecho, aoEscrever, aoNovoParagrafo, editavel,
 }: {
   doc: Doc<string>;
   bloco: Bloco<string>;
+  editavel?: boolean;
   escolhido?: boolean;
   marcas?: boolean;
   aoEscolher?: () => void;
@@ -1272,15 +1388,23 @@ export function BlocoDaFolha({
         <ParagrafoDaFolha doc={doc} bloco={bloco} escolhido={escolhido}
           marcas={marcas} aoEscolher={aoEscolher} classe={classe}
           comentado={comentado} aoEscolherTrecho={aoEscolherTrecho}
-          aoEscrever={aoEscrever} aoNovoParagrafo={aoNovoParagrafo} />
+          aoEscrever={aoEscrever} aoNovoParagrafo={aoNovoParagrafo} editavel={editavel} />
       );
-    case 'tabela':
-      return (
+    /* Tabela e imagem são ilhas dentro da folha editável: a célula tem o
+       campo dela, e a imagem se escolhe com um clique, como objeto. */
+    case 'tabela': {
+      const tabela = (
         <TabelaDaFolha tabela={bloco} escolhido={escolhido} aoEscolher={aoEscolher}
           celula={celula} aoCursorNaCelula={aoCursorNaCelula} aoEditarCelula={aoEditarCelula} />
       );
+      return editavel ? <div contentEditable={false} className="wd-ilha">{tabela}</div> : tabela;
+    }
     case 'imagem':
-      return <ImagemDaFolha imagem={bloco} escolhido={escolhido} aoEscolher={aoEscolher} />;
+      return editavel ? (
+        <div contentEditable={false} className="wd-ilha">
+          <ImagemDaFolha imagem={bloco} escolhido={escolhido} aoEscolher={aoEscolher} />
+        </div>
+      ) : <ImagemDaFolha imagem={bloco} escolhido={escolhido} aoEscolher={aoEscolher} />;
     default: {
       const naoTratado: never = bloco;
       throw new Error(`bloco de tipo não tratado na folha: ${JSON.stringify(naoTratado)}`);
@@ -1348,7 +1472,7 @@ export function FaixaDaFolha({ doc, faixa, pagina, onde, aoEscrever }: {
 export function FolhaDoWord({
   doc, selecionado, marcas, aoEscolher, aoClicarNoVazio,
   celula, aoCursorNaCelula, aoEditarCelula, aoEscreverNaFaixa,
-  comentado, aoEscolherTrecho, margem, aoEscreverNoParagrafo, aoNovoParagrafo,
+  comentado, aoEscolherTrecho, margem, aoEscreverNoParagrafo, aoNovoParagrafo, edicao,
 }: {
   doc: Doc<string>;
   selecionado?: string | null;
@@ -1374,13 +1498,43 @@ export function FolhaDoWord({
   aoEscreverNoParagrafo?: (blocoId: string, texto: string) => void;
   /** Enter no fim de um parágrafo. */
   aoNovoParagrafo?: (blocoId: string) => void;
+  /**
+   * A folha se edita com cursor de verdade — `useEdicaoDoWord` entrega isto.
+   *
+   * Sem ele a folha é a de antes, de leitura ou de parágrafo escolhido. É a
+   * regra da presença do setter: quem não edita texto não ganha um cursor que
+   * prometeria um gesto que o exercício não tem.
+   */
+  edicao?: EdicaoDaFolha;
 }) {
   const paginas = paginasDoDoc(doc);
   /* Embaixo do título, e não acima dele: quem fecha a abertura é quem carrega
      o sumário logo depois. `null` só acontece em folha sem bloco nenhum. */
   const fechaAAbertura = doc.sumario ? blocoAntesDoSumario(doc) : null;
+  const editavel = !!edicao;
+  const raiz = useFolhaEditavel(doc, edicao);
+  /* A fonte do documento veste o **papel**, e não a janela. Ela já vestiu a
+     janela inteira, e escolher uma serifada trocava a letra da faixa, das
+     guias e da barra de título junto — o Word mudando de cara porque alguém
+     mudou a fonte de um documento. */
+  const fonte = doc.fonte ? { fontFamily: FONTES[doc.fonte] } : undefined;
   return (
-    <div className="wd-canvas" onClick={aoClicarNoVazio}>
+    <div
+      className={`wd-canvas${editavel ? ' wd-editavel' : ''}`}
+      onClick={editavel ? raiz.aoClicar : aoClicarNoVazio}
+      {...(editavel ? {
+        ref: raiz.ref,
+        contentEditable: true,
+        tabIndex: 0,
+        suppressContentEditableWarning: true,
+        spellCheck: false,
+        role: 'textbox',
+        'aria-multiline': true,
+        'aria-label': 'Documento',
+        onKeyDown: raiz.aoTeclar,
+      } : {})}
+    >
+      <Fragment key={raiz.geracao}>
       {paginas.map((blocos, i) => {
         const numero = i + 1;
         /* A caixa "Primeira página diferente" do Word: a capa não leva faixa.
@@ -1388,17 +1542,19 @@ export function FolhaDoWord({
         const comFaixas = !(doc.primeiraPaginaDiferente && numero === 1);
         return (
           <div key={numero} className={margem ? 'wd-folha-com-margem' : undefined}>
-            <div className="wd-pagina" onClick={ev => ev.stopPropagation()}
-              data-pagina={numero}>
+            <div className="wd-pagina" onClick={editavel ? undefined : ev => ev.stopPropagation()}
+              data-pagina={numero} style={fonte}>
               {comFaixas && doc.cabecalho && (
-                <FaixaDaFolha doc={doc} faixa={doc.cabecalho} pagina={numero} onde="cabecalho"
-                  aoEscrever={aoEscreverNaFaixa
-                    ? (id, valor) => aoEscreverNaFaixa('cabecalho', id, valor) : undefined} />
+                <div contentEditable={editavel ? false : undefined} className={editavel ? 'wd-ilha' : undefined}>
+                  <FaixaDaFolha doc={doc} faixa={doc.cabecalho} pagina={numero} onde="cabecalho"
+                    aoEscrever={aoEscreverNaFaixa
+                      ? (id, valor) => aoEscreverNaFaixa('cabecalho', id, valor) : undefined} />
+                </div>
               )}
               <div className="wd-corpo">
                 {/* Folha sem bloco nenhum: não há abertura para fechar. */}
                 {numero === 1 && doc.sumario && fechaAAbertura === null && (
-                  <SumarioDaFolha itens={doc.sumario} />
+                  <div contentEditable={editavel ? false : undefined}><SumarioDaFolha itens={doc.sumario} /></div>
                 )}
                 {blocos.map((b) => {
                   const dentro = doc.blocos.indexOf(b);
@@ -1409,7 +1565,7 @@ export function FolhaDoWord({
                   return (
                     <Fragment key={b.id}>
                       <BlocoDaFolha
-                        doc={doc} bloco={b}
+                        doc={doc} bloco={b} editavel={editavel}
                         escolhido={selecionado === b.id}
                         marcas={marcas}
                         comentado={comentado}
@@ -1427,28 +1583,292 @@ export function FolhaDoWord({
                         classe={flutuaComAFigura ? 'wd-legenda-flutua' : undefined}
                       />
                       {numero === 1 && doc.sumario && b.id === fechaAAbertura && (
-                        <SumarioDaFolha itens={doc.sumario} />
+                        <div contentEditable={editavel ? false : undefined}><SumarioDaFolha itens={doc.sumario} /></div>
                       )}
                     </Fragment>
                   );
                 })}
               </div>
               {comFaixas && doc.rodape && (
-                <FaixaDaFolha doc={doc} faixa={doc.rodape} pagina={numero} onde="rodape"
-                  aoEscrever={aoEscreverNaFaixa
-                    ? (id, valor) => aoEscreverNaFaixa('rodape', id, valor) : undefined} />
+                <div contentEditable={editavel ? false : undefined} className={editavel ? 'wd-ilha' : undefined}>
+                  <FaixaDaFolha doc={doc} faixa={doc.rodape} pagina={numero} onde="rodape"
+                    aoEscrever={aoEscreverNaFaixa
+                      ? (id, valor) => aoEscreverNaFaixa('rodape', id, valor) : undefined} />
+                </div>
               )}
             </div>
             {/* Fora do papel: a contagem de folhas que a régua de status do
                 Word também mostra. Ela não é do documento, e por isso não some
                 com "Primeira página diferente". */}
-            <div className="wd-folha-numero">Folha {numero} de {paginas.length}</div>
-            {margem && numero === 1 && <div className="wd-margem">{margem}</div>}
+            <div className="wd-folha-numero" contentEditable={editavel ? false : undefined}>Folha {numero} de {paginas.length}</div>
+            {margem && numero === 1 && (
+              <div className="wd-margem" contentEditable={editavel ? false : undefined}>{margem}</div>
+            )}
           </div>
         );
       })}
+      </Fragment>
     </div>
   );
+}
+
+/**
+ * O que faz a folha editável funcionar: os ouvintes do teclado e da seleção.
+ *
+ * ── O navegador não escreve no documento ─────────────────────────────────
+ * Toda tecla que mudaria o texto é parada aqui e vira um `ComandoDeTexto`. O
+ * Enter, o Backspace, o Delete e o Tab são lidos no `keydown`, que é o mesmo
+ * em todo navegador de computador; o que é digitado chega pelo `beforeinput`,
+ * que é por onde o teclado do celular também passa. Tipo de entrada que não
+ * reconhecemos é recusado: deixá-lo passar seria deixar o Chrome pôr um `<b>`
+ * dentro de um trecho, e a tela mostraria o que o documento não tem.
+ *
+ * ── A composição é a exceção, e ela é desfeita ───────────────────────────
+ * O teclado do celular e o acento de tecla morta digitam "compondo": o
+ * navegador escreve direto no DOM, e esse passo não se pode impedir. Então
+ * deixa-se compor, e no fim o que foi composto entra no modelo pelo caminho de
+ * sempre — e a folha é **remontada** (`geracao`), para que o React não fique
+ * com um texto no DOM que ele não escreveu.
+ *
+ * ── O cursor do navegador só é tocado com a folha em foco ────────────────
+ * Escrever a seleção do documento com o foco num campo do balão de comentário
+ * roubaria o foco do campo no meio da frase. E só se escreve quando ela
+ * difere da que já está lá, contada em posições do modelo: reescrever uma
+ * seleção igual durante um arrasto do mouse interromperia o arrasto.
+ */
+function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
+  const no = useRef<HTMLDivElement | null>(null);
+  const [geracao, setGeracao] = useState(0);
+  const compondo = useRef<Selecao | null>(null);
+  const atual = useRef({ doc, edicao });
+  atual.current = { doc, edicao };
+
+  const ref = (el: HTMLDivElement | null) => {
+    no.current = el;
+    if (edicao) edicao.raiz.current = el;
+  };
+
+  /*
+    O `selectionchange` chega depois, numa tarefa à parte: quem aperta End e
+    Delete em seguida apaga com o cursor de antes do End. Antes de cada comando,
+    a seleção do navegador — que é onde o cursor de fato está — é lida de novo.
+  */
+  const sincronizar = () => {
+    const r = no.current;
+    if (!r || compondo.current) return;
+    const lida = lerSelecao(r);
+    if (lida) atual.current.edicao?.aoSelecionar(lida);
+  };
+  const mandar = (c: ComandoDeTexto) => { sincronizar(); atual.current.edicao?.aoComando(c); };
+
+  /* O cursor do modelo vai para o navegador depois de cada pintura. */
+  useLayoutEffect(() => {
+    const r = no.current;
+    const sel = edicao?.selecao;
+    if (!r || !sel || compondo.current) return;
+    if (r.ownerDocument.activeElement !== r) return;
+    if (mesmaSelecao(lerSelecao(r), sel)) return;
+    escreverSelecao(r, sel);
+  });
+
+  const ativa = !!edicao;
+  useEffect(() => {
+    const r = no.current;
+    if (!r || !ativa) return;
+    const documento = r.ownerDocument;
+    const mandar = (c: ComandoDeTexto) => { sincronizar(); atual.current.edicao?.aoComando(c); };
+
+    /* O cursor do navegador vai para o modelo — clique, setas, arrasto. */
+    const aoMudarSelecao = () => {
+      if (compondo.current) return;
+      const s = lerSelecao(r);
+      if (s) atual.current.edicao?.aoSelecionar(s);
+    };
+
+    const alvoDoNavegador = (ev: InputEvent): Selecao | undefined => {
+      const intervalos = typeof ev.getTargetRanges === 'function' ? ev.getTargetRanges() : [];
+      const i = intervalos[0];
+      if (!i) return undefined;
+      const sel = documento.getSelection();
+      if (!sel) return undefined;
+      /* Lê-se o intervalo pela própria ponte: põe-se na seleção um instante,
+         lê-se, e devolve-se o que estava. */
+      const antes = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+      try {
+        sel.setBaseAndExtent(i.startContainer, i.startOffset, i.endContainer, i.endOffset);
+        return lerSelecao(r) ?? undefined;
+      } finally {
+        sel.removeAllRanges();
+        if (antes) sel.addRange(antes);
+      }
+    };
+
+    const aoAntesDeEscrever = (ev: InputEvent) => {
+      if (ev.target !== r) return;
+      switch (ev.inputType) {
+        case 'insertCompositionText':
+          return; // não se impede; ver a nota da composição
+        case 'insertText':
+        case 'insertReplacementText': {
+          ev.preventDefault();
+          const texto = ev.data ?? ev.dataTransfer?.getData('text/plain') ?? '';
+          if (texto) mandar({ tipo: 'inserir', texto, alvo: ev.inputType === 'insertReplacementText' ? alvoDoNavegador(ev) : undefined });
+          return;
+        }
+        case 'insertFromPaste': {
+          ev.preventDefault();
+          const texto = ev.dataTransfer?.getData('text/plain') ?? '';
+          if (texto) mandar({ tipo: 'inserir', texto });
+          return;
+        }
+        case 'insertParagraph': ev.preventDefault(); mandar({ tipo: 'paragrafo' }); return;
+        case 'insertLineBreak': ev.preventDefault(); mandar({ tipo: 'quebra-de-linha' }); return;
+        case 'deleteContentBackward': ev.preventDefault(); mandar({ tipo: 'apagar', direcao: 'tras' }); return;
+        case 'deleteContentForward': ev.preventDefault(); mandar({ tipo: 'apagar', direcao: 'frente' }); return;
+        case 'deleteWordBackward': ev.preventDefault(); mandar({ tipo: 'apagar', direcao: 'tras', palavra: true }); return;
+        case 'deleteWordForward': ev.preventDefault(); mandar({ tipo: 'apagar', direcao: 'frente', palavra: true }); return;
+        case 'deleteByCut':
+        case 'deleteContent':
+        case 'deleteSoftLineBackward':
+        case 'deleteHardLineBackward':
+        case 'deleteSoftLineForward':
+        case 'deleteHardLineForward': {
+          ev.preventDefault();
+          const alvo = alvoDoNavegador(ev);
+          mandar({ tipo: 'apagar', direcao: 'tras', alvo });
+          return;
+        }
+        case 'historyUndo': ev.preventDefault(); mandar({ tipo: 'desfazer' }); return;
+        case 'historyRedo': ev.preventDefault(); mandar({ tipo: 'refazer' }); return;
+        case 'formatBold': ev.preventDefault(); mandar({ tipo: 'marca', marca: 'negrito' }); return;
+        case 'formatItalic': ev.preventDefault(); mandar({ tipo: 'marca', marca: 'italico' }); return;
+        case 'formatUnderline': ev.preventDefault(); mandar({ tipo: 'marca', marca: 'sublinhado' }); return;
+        default:
+          ev.preventDefault();
+      }
+    };
+
+    const aoColar = (ev: ClipboardEvent) => {
+      if (ev.target !== r && !r.contains(ev.target as Node)) return;
+      if ((ev.target as HTMLElement).closest?.('input, textarea')) return;
+      ev.preventDefault();
+      const texto = ev.clipboardData?.getData('text/plain') ?? '';
+      if (texto) mandar({ tipo: 'inserir', texto });
+    };
+
+    const aoRecortar = (ev: ClipboardEvent) => {
+      if ((ev.target as HTMLElement).closest?.('input, textarea')) return;
+      const { doc: d, edicao: e } = atual.current;
+      const sel = e?.selecao;
+      if (!sel || recolhida(sel)) return;
+      ev.preventDefault();
+      ev.clipboardData?.setData('text/plain', textoDaSelecao(d, sel));
+      mandar({ tipo: 'apagar', direcao: 'tras' });
+    };
+
+    const aoComecarAComposicao = () => {
+      compondo.current = atual.current.edicao?.selecao ?? null;
+    };
+    const aoTerminarAComposicao = (ev: CompositionEvent) => {
+      const alvo = compondo.current;
+      compondo.current = null;
+      if (ev.data) mandar({ tipo: 'inserir', texto: ev.data, alvo: alvo ?? undefined });
+      setGeracao(g => g + 1);
+    };
+
+    /* Arrastar texto de um lugar para outro escreveria no DOM sem passar
+       pelo modelo. O Word deixa; aqui, por ora, não. */
+    const semArrastar = (ev: Event) => ev.preventDefault();
+
+    documento.addEventListener('selectionchange', aoMudarSelecao);
+    r.addEventListener('beforeinput', aoAntesDeEscrever);
+    r.addEventListener('paste', aoColar);
+    r.addEventListener('cut', aoRecortar);
+    r.addEventListener('compositionstart', aoComecarAComposicao);
+    r.addEventListener('compositionend', aoTerminarAComposicao);
+    r.addEventListener('dragstart', semArrastar);
+    r.addEventListener('drop', semArrastar);
+    return () => {
+      documento.removeEventListener('selectionchange', aoMudarSelecao);
+      r.removeEventListener('beforeinput', aoAntesDeEscrever);
+      r.removeEventListener('paste', aoColar);
+      r.removeEventListener('cut', aoRecortar);
+      r.removeEventListener('compositionstart', aoComecarAComposicao);
+      r.removeEventListener('compositionend', aoTerminarAComposicao);
+      r.removeEventListener('dragstart', semArrastar);
+      r.removeEventListener('drop', semArrastar);
+    };
+  }, [ativa]);
+
+  const aoTeclar = (ev: React.KeyboardEvent<HTMLDivElement>) => {
+    if (ev.target !== ev.currentTarget) return;
+    if (ev.nativeEvent.isComposing || ev.keyCode === 229) return;
+    const ctrl = ev.ctrlKey || ev.metaKey;
+    const tecla = ev.key.toLowerCase();
+    const parar = (c?: ComandoDeTexto) => { ev.preventDefault(); if (c) mandar(c); };
+    if (ctrl && !ev.altKey) {
+      if (tecla === 'z') return parar(ev.shiftKey ? { tipo: 'refazer' } : { tipo: 'desfazer' });
+      if (tecla === 'y') return parar({ tipo: 'refazer' });
+      if (tecla === 'a') return parar({ tipo: 'selecionar-tudo' });
+      /* Os atalhos do Word em português: N é Negrito, I é Itálico, S é
+         Sublinhado. O B e o U do Chrome escreveriam `<b>` e `<u>` direto no
+         DOM, e são parados sem fazer nada. */
+      if (tecla === 'n') return parar({ tipo: 'marca', marca: 'negrito' });
+      if (tecla === 'i') return parar({ tipo: 'marca', marca: 'italico' });
+      if (tecla === 's') return parar({ tipo: 'marca', marca: 'sublinhado' });
+      if (tecla === 'b' || tecla === 'u') return parar();
+      /* Ctrl+Espaço tira a formatação de caractere e deixa o estilo; Ctrl+>
+         e Ctrl+< sobem e descem um degrau de tamanho, como na faixa. */
+      if (ev.key === ' ') return parar({ tipo: 'formatar', formatacao: { tipo: 'limpar-caractere' } });
+      if (ev.key === '>' || (ev.shiftKey && ev.key === '.')) return parar({ tipo: 'formatar', formatacao: { tipo: 'crescer' } });
+      if (ev.key === '<' || (ev.shiftKey && ev.key === ',')) return parar({ tipo: 'formatar', formatacao: { tipo: 'encolher' } });
+      if (ev.key === '=' && !ev.shiftKey) return parar({ tipo: 'formatar', formatacao: { tipo: 'subscrito' } });
+      if (ev.key === '+' || (ev.shiftKey && ev.key === '=')) return parar({ tipo: 'formatar', formatacao: { tipo: 'sobrescrito' } });
+      if (ev.key === 'Enter') return parar({ tipo: 'quebra-de-pagina' });
+      if (ev.key === 'Backspace') return parar({ tipo: 'apagar', direcao: 'tras', palavra: true });
+      if (ev.key === 'Delete') return parar({ tipo: 'apagar', direcao: 'frente', palavra: true });
+      return;
+    }
+    if (ev.key === 'Enter') return parar(ev.shiftKey ? { tipo: 'quebra-de-linha' } : { tipo: 'paragrafo' });
+    if (ev.key === 'Backspace') return parar({ tipo: 'apagar', direcao: 'tras' });
+    if (ev.key === 'Delete') return parar({ tipo: 'apagar', direcao: 'frente' });
+    if (ev.key === 'Tab') return parar({ tipo: 'inserir', texto: '\t' });
+    /* Esc devolve o teclado à página, senão o Tab capturado prende quem
+       navega sem mouse — a mesma decisão do editor de código. */
+    if (ev.key === 'Escape') { ev.currentTarget.blur(); return; }
+  };
+
+  /**
+   * O clique põe o cursor. No navegador a seleção já está lá quando o clique
+   * chega; onde não há layout — o jsdom das travas — não há seleção nenhuma,
+   * e o cursor vai para o fim do parágrafo clicado, que é onde o Word o põe
+   * quando se clica à direita do texto.
+   */
+  const aoClicar = (ev: React.MouseEvent<HTMLDivElement>) => {
+    const r = no.current;
+    const e = atual.current.edicao;
+    if (!r || !e) return;
+    const lida = lerSelecao(r);
+    const p = (ev.target as HTMLElement).closest<HTMLElement>('p[data-bloco][data-editavel]');
+    /* No navegador o clique já moveu a seleção para o parágrafo clicado. Uma
+       seleção recolhida noutro parágrafo é a que ficou de antes — o clique não
+       teve layout para mover nada. */
+    const t = (ev.target as HTMLElement).closest<HTMLElement>('[data-trecho]');
+    const ancora = r.ownerDocument.getSelection()?.anchorNode ?? null;
+    const velha = lida && p && recolhida(lida)
+      && (lida.foco.bloco !== p.dataset.bloco || (!!t && !!ancora && !t.contains(ancora)));
+    if (lida && !velha) { e.aoSelecionar(lida); return; }
+    if (!p) return;
+    const b = atual.current.doc.blocos.find(x => x.id === p.dataset.bloco);
+    if (!b || b.tipo !== 'paragrafo') return;
+    /* Clicou num trecho: o cursor vai para o começo dele, que é o mais perto
+       que se chega do ponto clicado sem layout — e é o que deixa "a marca
+       debaixo do cursor" ser a marca clicada. */
+    const noTrecho = t ? selecaoDoTrecho(atual.current.doc, t.dataset.trecho!) : null;
+    e.aoSelecionar(noTrecho ? cursorEm(b.id, noTrecho.ancora.offset) : cursorEm(b.id, tamanhoDoParagrafo(b)));
+  };
+
+  return { ref, geracao, aoTeclar, aoClicar };
 }
 
 /* ── Revisão: os balões da margem ─────────────────────────────────────────── */

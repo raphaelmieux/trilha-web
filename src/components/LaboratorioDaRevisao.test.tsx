@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import LaboratorioDaRevisao from './LaboratorioDaRevisao';
 import { VEREDAS, licoesDaVereda } from '../curriculum/veredas';
+import { porCursor, digitar, tecla } from '../labs/tecladoDaFolha';
 import { PALAVRA_ESTRAGADA, TROCAS_ESPERADAS } from '../labs/diaDoDesbravador';
 import { COR_DO_AUTOR } from '../labs/documento';
 
@@ -249,6 +250,25 @@ describe('a lição pode ser vencida clicando', () => {
       .toBe(true);
     clicar(botaoDeConcluir(), 'Concluir a lição');
     expect(venceu).toBe(true);
+  });
+});
+
+describe('com o controle ligado, o que se digita sai marcado', () => {
+  it('digitar entra sublinhado com o seu nome, e apagar risca em vez de tirar', () => {
+    /* É o recurso inteiro, e antes não havia como vê-lo acontecer com o que
+       a própria pessoa escreve: sem cursor, ela só resolvia marcas alheias. */
+    montar();
+    clicar(guia('Revisão'), 'a guia Revisão');
+    clicar(comando('Controlar Alterações'), 'Controlar Alterações');
+    porCursor(container, 'fe-1', 0);
+    digitar(container, 'Nota: ');
+    const minha = [...container.querySelectorAll('[data-revisao="inserido"][data-autor="voce"]')]
+      .find(e => e.textContent === 'Nota: ');
+    expect(minha, 'o texto digitado não saiu marcado como seu').toBeTruthy();
+    porCursor(container, 'fe-1', 'fim');
+    tecla(container, 'Backspace');
+    expect(container.querySelector('[data-revisao="excluido"][data-autor="voce"]'),
+      'o Backspace tirou a letra em vez de riscá-la').toBeTruthy();
   });
 });
 
