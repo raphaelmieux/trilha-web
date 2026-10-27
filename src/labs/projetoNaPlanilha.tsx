@@ -21,6 +21,7 @@ import { Palette, Redo2, Sigma, Undo2 } from 'lucide-react';
 import {
   AbasDoExcel, BarraDeFormulas, BarraDeTituloDoExcel, BotaoDoExcel,
   GradeDoExcel, GrupoDoExcel, GuiasDoExcel,
+  BarraDeStatusDoExcel,
 } from './excel';
 import { useGradeDoExcel } from './gradeDoExcel';
 import {
@@ -150,9 +151,9 @@ export function ControleNoExcel({ ctx, mudar, avisar }: PropsDaSuperficie) {
       />
 
       {p.nome === NOME_DA_ABA_DE_CONTROLE && (
-        <div className="pl-status">
-          Pronto · {nomeDaFaixa(g.faixa)}
-        </div>
+        <BarraDeStatusDoExcel aoAvisar={avisar} planilha={p} faixa={g.faixa}>
+          <span>Pronto</span>
+        </BarraDeStatusDoExcel>
       )}
     </div>
   );

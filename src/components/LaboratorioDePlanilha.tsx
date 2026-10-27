@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import {
   AlignLeft, AlignCenter, AlignRight, ChevronsUp, Minus, ChevronsDown,
-  Bold, Combine, Sigma, Palette, ArrowDownAZ, ArrowUpZA, Filter,
+  Combine, Sigma, Palette, ArrowDownAZ, ArrowUpZA, Filter,
   Snowflake, PieChart, Undo2, Redo2, Percent, ClipboardList,
 } from 'lucide-react';
+import { IconeNegrito } from '../labs/office';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
-  CSS_EXCEL, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
+  CSS_EXCEL, BarraDeStatusDoExcel, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
   DesenhoDoGrafico,
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
@@ -314,7 +315,7 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
               </GrupoDoExcel>
               <GrupoDoExcel nome="Fonte">
                 <BotaoDoExcel dica="Negrito" ativo={p.celulas[sel.l][sel.c].negrito} aoClicar={negritar}>
-                  <Bold className="w-4 h-4" />
+                  <IconeNegrito />
                 </BotaoDoExcel>
               </GrupoDoExcel>
               <GrupoDoExcel nome="Alinhamento">
@@ -435,14 +436,12 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
           }}
         />
 
-        <div className="pl-status">
+        <BarraDeStatusDoExcel aoAvisar={avisar} planilha={p} faixa={faixa} caderno={cad}>
           <span>Pronto</span>
-          <span style={{ marginLeft: 'auto' }}>
-            {p.filtro?.valor
-              ? `Filtro: ${p.filtro.valor} — ${contarVisiveis(p)} de ${contarDaTabela(p)} linhas`
-              : nomeDaFaixa(faixa)}
-          </span>
-        </div>
+          {p.filtro?.valor && (
+            <span>{`Filtro: ${p.filtro.valor} — ${contarVisiveis(p)} de ${contarDaTabela(p)} linhas`}</span>
+          )}
+        </BarraDeStatusDoExcel>
       </div>
 
       {filtroAberto && (

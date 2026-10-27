@@ -716,7 +716,7 @@ export default function InsercaoTextoLab({
           <span>Página 1 de 2</span>
           <span className="hidden sm:inline">{doc.tabela ? `Tabela de ${doc.tabela.linhas.length} linhas` : 'Sem tabela'}</span>
           <span className="hidden md:inline">Português (Brasil)</span>
-          <ZoomDoWord zoom={zoom} aoMudar={setZoom} />
+          <ZoomDoWord zoom={zoom} aoMudar={setZoom} aoAvisar={avisar} />
         </div>
       </div>
     </LaboratorioEmTelaCheia>

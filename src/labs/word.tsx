@@ -1,6 +1,6 @@
 import {
   ArrowLeft, Printer, Save, FileType2, FolderOpen, Cloud, Clock, HardDrive,
-  Plus, Info, Share2, X, Search, Minus, Square as SquareIcon,
+  Plus, Info, Share2, X,
   Image as ImageIcon,
 } from 'lucide-react';
 
@@ -24,6 +24,9 @@ import {
  */
 
 import { Fragment, type ReactNode } from 'react';
+import {
+  CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice,
+} from './office';
 
 import {
   aparenciaDe, aparenciaDoTrecho, textoDoTrecho, larguraDaTabela,
@@ -57,27 +60,10 @@ export const CSS_WORD = `
 }
 @media (max-width: 640px)  { .wd-janela { --px-cm-tela: 17; } }
 @media (min-width: 641px) and (max-width: 1023px) { .wd-janela { --px-cm-tela: 26; } }
-.wd-titulo {
-  background: #F9F8F7; border-bottom: 1px solid #E1DFDD;
-  display: flex; align-items: center; gap: 10px; padding: 6px 10px; font-size: 12px;
-}
-.wd-guias {
-  display: flex; gap: 2px; padding: 0 8px; background: #F9F8F7;
-  border-bottom: 1px solid #E1DFDD; overflow-x: auto;
-}
-.wd-guia {
-  padding: 6px 10px 7px; font-size: 12.5px; white-space: nowrap;
-  border: none; background: none; color: #201F1E; cursor: pointer;
-  border-bottom: 2px solid transparent;
-}
-.wd-guia:hover { background: #EDEBE9; }
-.wd-guia[aria-selected="true"] { color: #2B579A; border-bottom-color: #2B579A; font-weight: 600; }
-/* A guia contextual — a que só existe enquanto o cursor está na tabela ou na
-   imagem — é laranja no Word, e não azul. A cor é o aviso de que ela vai
-   embora: quem a confunde com uma guia fixa procura por ela depois e não
-   acha. */
-.wd-guia-contextual { color: #C43E1C; }
-.wd-guia-contextual[aria-selected="true"] { color: #C43E1C; border-bottom-color: #C43E1C; }
+/* A barra de título e a fileira de guias são as do Microsoft 365, e moram em
+   office.tsx com as do Excel e do PowerPoint: são a mesma janela. Aqui fica só
+   o que é do Word. */
+.wd-titulo, .wd-guias, .wd-guia { font-size: 12px; }
 .wd-faixa {
   display: flex; align-items: stretch; gap: 0; padding: 4px 6px 2px;
   background: #F3F2F1; border-bottom: 1px solid #E1DFDD; overflow-x: auto;
@@ -112,7 +98,7 @@ export const CSS_WORD = `
 }
 .wd-menu-item:hover { background: #EDEBE9 !important; }
 .wd-regua {
-  background: #FFFFFF; border-bottom: 1px solid #E1DFDD; padding: 3px 0;
+  background: #F3F3F3; border-bottom: 1px solid #E0E0E0; padding: 3px 0; flex: none;
   display: flex; justify-content: center;
 }
 .wd-canvas {
@@ -154,8 +140,9 @@ export const CSS_WORD = `
   height: 16px; position: relative; background: #C8C6C4; border-radius: 1px;
 }
 .wd-status {
-  background: #F3F2F1; border-top: 1px solid #E1DFDD; color: #605E5C;
-  font-size: 11.5px; padding: 4px 10px; display: flex; gap: 14px; align-items: center;
+  background: #F3F3F3; border-top: 1px solid #E0E0E0; color: #424242;
+  font-size: 11.5px; padding: 3px 10px; display: flex; gap: 14px; align-items: center;
+  min-height: 26px; flex: none;
 }
 .wd-zoom { width: 74px; accent-color: #2B579A; cursor: pointer; }
 .wd-zoom-bt { color: #605E5C; padding: 2px; border-radius: 2px; cursor: pointer; }
@@ -223,6 +210,7 @@ export const CSS_WORD = `
     color: #201F1E; line-height: 1.6; overflow: hidden;
   }
   @media (max-width: 900px) { .wd-bast-lado { flex-direction: column; } }
+${CSS_OFFICE}
 `;
 
 /* ── As telas dos bastidores ──────────────────────────────────────────────── */
@@ -522,41 +510,17 @@ export const GUIAS_DO_WORD = [
   'Referências', 'Correspondências', 'Revisão', 'Exibir', 'Ajuda',
 ] as const;
 
-export function BarraDeTituloDoWord({ documento, estado = 'Salvo', aoAvisar }: {
+export function BarraDeTituloDoWord({ documento, estado = 'Salvo', aoAvisar, aoDesfazer, aoRefazer }: {
   documento: string;
   estado?: string;
   aoAvisar: (recado: string) => void;
+  /** O Desfazer da barra de acesso rápido, quando o laboratório tem um. */
+  aoDesfazer?: () => void;
+  aoRefazer?: () => void;
 }) {
   return (
-    <div className="wd-titulo">
-      <span style={{ color: '#2B579A', fontWeight: 700, fontSize: 13 }}>W</span>
-      <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full"
-        style={{ background: '#E6EEF7', color: '#2B579A', fontSize: 10.5, fontWeight: 600 }}>
-        AutoSalvamento
-      </span>
-      <span style={{ fontWeight: 600 }}>{documento}</span>
-      <span style={{ color: '#605E5C' }}>— {estado}</span>
-      <button type="button"
-        className="hidden sm:flex items-center gap-1 mx-auto px-3 py-1 rounded"
-        style={{ background: '#EFEDEB', color: '#605E5C', fontSize: 11.5 }}
-        onClick={() => aoAvisar('A caixa de pesquisa existe no Word de verdade, e está aqui para a barra ficar igual — mas não faz parte deste exercício.')}>
-        <Search className="w-3 h-3" /> Pesquisar
-      </button>
-      <span className="ml-auto sm:ml-0 flex items-center gap-3" style={{ color: '#605E5C' }}>
-        <button type="button" aria-label="Minimizar"
-          onClick={() => aoAvisar('Minimizar não faz parte deste exercício.')}>
-          <Minus className="w-3 h-3" />
-        </button>
-        <button type="button" aria-label="Maximizar"
-          onClick={() => aoAvisar('O Word já está ocupando a tela inteira.')}>
-          <SquareIcon className="w-2.5 h-2.5" />
-        </button>
-        <button type="button" aria-label="Fechar"
-          onClick={() => aoAvisar('Fechar o Word não faz parte deste exercício.')}>
-          <X className="w-3 h-3" />
-        </button>
-      </span>
-    </div>
+    <BarraDeTituloDoOffice app="word" classe="wd-titulo" arquivo={documento} estado={estado}
+      aoAvisar={aoAvisar} aoDesfazer={aoDesfazer} aoRefazer={aoRefazer} />
   );
 }
 
@@ -572,7 +536,7 @@ export function BarraDeTituloDoWord({ documento, estado = 'Salvo', aoAvisar }: {
  * depois de todas as fixas, e só enquanto o cursor está no que as convoca.
  */
 export function GuiasDoWord({
-  atual, usaveis, contextuais = [], aoTrocar, aoAvisar, aoAbrirArquivo,
+  atual, usaveis, contextuais = [], aoTrocar, aoAvisar, aoAbrirArquivo, aoNaoFazParte,
 }: {
   atual: string;
   usaveis: readonly string[];
@@ -591,34 +555,14 @@ export function GuiasDoWord({
    * de operações fez, e é como a plataforma ficou com dois "Words" uma vez.
    */
   aoAbrirArquivo?: () => void;
+  /** Quando o laboratório escreve a própria frase: recebe só o nome do comando. */
+  aoNaoFazParte?: (comando: string) => void;
 }) {
   return (
-    <div className="wd-guias" role="tablist">
-      <button type="button" className="wd-guia"
-        style={{ background: '#2B579A', color: '#FFFFFF', borderRadius: '3px 3px 0 0' }}
-        onClick={aoAbrirArquivo
-          ? aoAbrirArquivo
-          : () => aoAvisar('A guia Arquivo existe no Word de verdade, e está aqui para a faixa ficar igual — mas não faz parte deste exercício.')}>
-        Arquivo
-      </button>
-      {GUIAS_DO_WORD.map(nome => (
-        usaveis.includes(nome) ? (
-          <button key={nome} type="button" role="tab" aria-selected={atual === nome}
-            className="wd-guia" onClick={() => aoTrocar(nome)}>{nome}</button>
-        ) : (
-          <button key={nome} type="button" className="wd-guia" style={{ color: '#8A8886' }}
-            onClick={() => aoAvisar(`A guia ${nome} existe no Word de verdade, e está aqui para a faixa ficar igual — mas não faz parte deste exercício.`)}>
-            {nome}
-          </button>
-        )
-      ))}
-      {contextuais.map(g => (
-        <button key={g.id} type="button" role="tab" aria-selected={atual === g.id}
-          className="wd-guia wd-guia-contextual" onClick={() => aoTrocar(g.id)}>
-          {g.nome}
-        </button>
-      ))}
-    </div>
+    <GuiasDoOffice app="word" classe="wd-guias" classeDaGuia="wd-guia"
+      guias={GUIAS_DO_WORD} atual={atual} usaveis={usaveis} contextuais={contextuais}
+      aoTrocar={aoTrocar} aoAvisar={aoAvisar} aoAbrirArquivo={aoAbrirArquivo}
+      aoNaoFazParte={aoNaoFazParte} mostrarEditando />
   );
 }
 
@@ -702,6 +646,23 @@ export function ReguaDoWord({ larguraCm, margemCm }: { larguraCm: number; margem
           right: 'calc(var(--margem-cm) * var(--px-cm) * 1px)',
           background: '#FFFFFF', borderLeft: '1px solid #A19F9D', borderRight: '1px solid #A19F9D',
         }} />
+        {/* Os marcadores de recuo: a ampulheta na margem esquerda (primeira
+            linha em cima, deslocamento embaixo) e o triângulo na direita. São
+            eles que dizem que a régua é a do Word, e não um metro qualquer. */}
+        <svg width="9" height="16" viewBox="0 0 9 16" aria-hidden="true" style={{
+          position: 'absolute', top: 0, transform: 'translateX(-50%)',
+          left: 'calc(var(--margem-cm) * var(--px-cm) * 1px)',
+        }}>
+          <path d="M0.5 0.5h8L4.5 5z" fill="#FFFFFF" stroke="#605E5C" />
+          <path d="M4.5 10.5l4 -4h-8z" fill="#FFFFFF" stroke="#605E5C" />
+          <rect x="0.5" y="11" width="8" height="4" fill="#FFFFFF" stroke="#605E5C" />
+        </svg>
+        <svg width="9" height="16" viewBox="0 0 9 16" aria-hidden="true" style={{
+          position: 'absolute', top: 0, transform: 'translateX(-50%)',
+          right: 'calc(var(--margem-cm) * var(--px-cm) * 1px - 9px)',
+        }}>
+          <path d="M4.5 10.5l4 -4h-8z" fill="#FFFFFF" stroke="#605E5C" />
+        </svg>
         {Array.from({ length: Math.floor(larguraCm) }, (_, i) => i + 1).map(cm => (
           <span key={cm} style={{
             position: 'absolute', top: 1, transform: 'translateX(-50%)',
@@ -723,21 +684,16 @@ export function ReguaDoWord({ larguraCm, margemCm }: { larguraCm: number; margem
  * se faz no Word nessa hora. Botão desenhado que não faz nada ensina que o
  * programa também não faz.
  */
-export function ZoomDoWord({ zoom, aoMudar }: { zoom: number; aoMudar: (z: number) => void }) {
-  const passo = (d: number) => aoMudar(Math.min(1.5, Math.max(0.4, Number((zoom + d).toFixed(2)))));
+export function ZoomDoWord({ zoom, aoMudar, aoAvisar }: {
+  zoom: number;
+  aoMudar: (z: number) => void;
+  /** Para os modos de exibição ao lado, que existem e não fazem parte. */
+  aoAvisar?: (recado: string) => void;
+}) {
   return (
     <span className="flex items-center gap-2" style={{ marginLeft: 'auto' }}>
-      <button type="button" aria-label="Reduzir o zoom" onClick={() => passo(-0.1)} className="wd-zoom-bt">
-        <Minus className="w-3 h-3" />
-      </button>
-      <input
-        type="range" min={40} max={150} step={10} value={Math.round(zoom * 100)}
-        aria-label="Zoom" className="wd-zoom"
-        onChange={e => aoMudar(Number(e.target.value) / 100)} />
-      <button type="button" aria-label="Aumentar o zoom" onClick={() => passo(0.1)} className="wd-zoom-bt">
-        <Plus className="w-3 h-3" />
-      </button>
-      <span style={{ minWidth: 34, textAlign: 'right' }}>{Math.round(zoom * 100)}%</span>
+      <ModosDeExibicao app="word" aoAvisar={aoAvisar ?? (() => undefined)} />
+      <ZoomDoOffice app="word" zoom={zoom} aoMudar={aoMudar} />
     </span>
   );
 }

@@ -1,8 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  Bold, Italic, Underline, Pilcrow, AlignLeft, Sparkles, Trash2,
+  Pilcrow, AlignLeft, Sparkles, Trash2,
   Clipboard, Scissors, Copy, CornerDownLeft, FileText, Plus,
 } from 'lucide-react';
+import { IconeItalico, IconeNegrito, IconeSublinhado } from '../labs/office';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
@@ -79,8 +80,6 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
     passos: m.passos,
   }));
 
-  const naoFazParte = (nome: string) =>
-    setAviso(`${nome} existe no Word de verdade, e está aqui para a janela ficar igual — mas não faz parte desta lição.`);
 
   const exigirSelecao = () => {
     if (alvo) return true;
@@ -225,21 +224,21 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
       {/* A fonte escolhida veste a folha inteira, que é o que o requisito 2.4
           pede: a decisão é do documento, e não de um parágrafo. */}
       <div className="wd-janela" style={doc.fonte ? { fontFamily: FONTES[doc.fonte] } : undefined}>
-        <BarraDeTituloDoWord documento="Circular às famílias" aoAvisar={naoFazParte} />
+        <BarraDeTituloDoWord documento="Circular às famílias" aoAvisar={setAviso} />
 
         <GuiasDoWord
           atual={guia} usaveis={GUIAS_USAVEIS}
           aoTrocar={setGuia}
-          aoAvisar={naoFazParte} />
+          aoAvisar={setAviso} />
 
         {guia === 'Início' && (
           <div className="wd-faixa" style={{ overflowX: 'auto' }}>
             <GrupoDaFaixa nome="Área de Transferência">
-              <EnfeiteDaFaixa dica="Colar (Ctrl+V)" rotulo="Colar" empilhado aoAvisar={naoFazParte}>
+              <EnfeiteDaFaixa dica="Colar (Ctrl+V)" rotulo="Colar" empilhado aoAvisar={setAviso}>
                 <Clipboard className="w-5 h-5" />
               </EnfeiteDaFaixa>
-              <EnfeiteDaFaixa dica="Recortar (Ctrl+X)" aoAvisar={naoFazParte}><Scissors className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-              <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={naoFazParte}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+              <EnfeiteDaFaixa dica="Recortar (Ctrl+X)" aoAvisar={setAviso}><Scissors className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+              <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={setAviso}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
             </GrupoDaFaixa>
 
             <GrupoDaFaixa nome="Fonte">
@@ -261,13 +260,13 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
                   </button>
                 ))}
               </div>
-              <EnfeiteDaFaixa dica="Negrito (Ctrl+N)" aoAvisar={naoFazParte}><Bold className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-              <EnfeiteDaFaixa dica="Itálico (Ctrl+I)" aoAvisar={naoFazParte}><Italic className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-              <EnfeiteDaFaixa dica="Sublinhado (Ctrl+S)" aoAvisar={naoFazParte}><Underline className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+              <EnfeiteDaFaixa dica="Negrito (Ctrl+N)" aoAvisar={setAviso}><IconeNegrito /></EnfeiteDaFaixa>
+              <EnfeiteDaFaixa dica="Itálico (Ctrl+I)" aoAvisar={setAviso}><IconeItalico /></EnfeiteDaFaixa>
+              <EnfeiteDaFaixa dica="Sublinhado (Ctrl+S)" aoAvisar={setAviso}><IconeSublinhado /></EnfeiteDaFaixa>
             </GrupoDaFaixa>
 
             <GrupoDaFaixa nome="Parágrafo">
-              <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={naoFazParte}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+              <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={setAviso}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
               {/*
                 O botão que a lição inteira depende. Com ele desligado o Enter e
                 a quebra de linha não aparecem, e o documento errado passa por
@@ -285,7 +284,7 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
             </GrupoDaFaixa>
 
             <GrupoDaFaixa nome="Editando">
-              <EnfeiteDaFaixa dica="Localizar (Ctrl+L)" aoAvisar={naoFazParte}><Sparkles className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
+              <EnfeiteDaFaixa dica="Localizar (Ctrl+L)" aoAvisar={setAviso}><Sparkles className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
             </GrupoDaFaixa>
           </div>
         )}
@@ -327,7 +326,7 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
         <div className="wd-status">
           <span>{doc.blocos.length} parágrafos</span>
           <span>{gestos.marcas ? 'Marcas de parágrafo ligadas' : 'Marcas de parágrafo desligadas'}</span>
-          <ZoomDoWord zoom={zoom} aoMudar={setZoom} />
+          <ZoomDoWord zoom={zoom} aoMudar={setZoom} aoAvisar={setAviso} />
         </div>
       </div>
     </LaboratorioEmTelaCheia>

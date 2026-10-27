@@ -9,6 +9,7 @@ import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
   CSS_EXCEL, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, AbasDoExcel,
   DesenhoDoGrafico,
+  BarraDeStatusDoExcel,
 } from './excel';
 import {
   ACAMPAMENTO_INICIAL, METAS_DO_ACAMPAMENTO, UNIDADES, INSCRICOES_POR_MES,
@@ -491,7 +492,7 @@ export default function PlanilhaAvancadaLab({ specialtyCode, lessonCode, lessonT
           A barra de status soma o que está à vista, como a do Excel.
           É o segundo número, e é ele que denuncia a linha escondida.
         */}
-        <div className="pl-status">
+        <BarraDeStatusDoExcel aoAvisar={avisar}>
           <span>Pronto</span>
           <span>
             {ac.unidadeFiltrada
@@ -501,7 +502,7 @@ export default function PlanilhaAvancadaLab({ specialtyCode, lessonCode, lessonT
           <span className="ml-auto" style={{ color: batem ? '#605E5C' : '#A4262C' }}>
             Soma do que está à vista: {reais(daVista)}
           </span>
-        </div>
+        </BarraDeStatusDoExcel>
       </div>
     </LaboratorioEmTelaCheia>
   );
