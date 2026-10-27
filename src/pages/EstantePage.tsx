@@ -7,14 +7,14 @@ import ExplicacaoDaInsignia from '../components/ui/ExplicacaoDaInsignia';
 import { MarcaEmTexto } from '../components/ui/BrandMark';
 import PainelDeTokens from '../components/ui/PainelDeTokens';
 import { LoadingState } from '../components/ui/PageState';
-import { fileirasDaEstante, type LugarNaEstante } from '../lib/estante';
+import { fileirasDaEstante, type GrupoDaFileira, type LugarNaEstante } from '../lib/estante';
 import { CLASSES } from '../lib/nivelDaInsignia';
 import { ALTURA, LARGURA, formaDaClasse } from '../lib/formaDaInsignia';
-import { Trophy } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trophy } from 'lucide-react';
 import type { InsigniaConquistada } from '../lib/conquista';
 
 /*
- * A estante: as cento e trinta e duas insígnias e os Token.Web(), num lugar só.
+ * A estante: todas as insígnias e os Token.Web(), num lugar só.
  *
  * ── Por que uma página, e por que ela mostra o que falta ─────────────────
  * A estante do painel mostra o **topo** de cada família e conta o que falta
@@ -93,17 +93,15 @@ export default function EstantePage() {
                 {vencidos}/{fileira.lugares.length}
               </span>
             </div>
-            <ol className="flex flex-wrap gap-x-2 gap-y-4 list-none p-0 m-0">
-              {fileira.lugares.map(lugar => (
-                <li key={lugar.code}>
-                  <Lugar
-                    lugar={lugar}
-                    conquistada={porCodigo.get(lugar.code)}
-                    aoAbrir={() => setAberta(lugar.code)}
-                  />
-                </li>
-              ))}
-            </ol>
+            {fileira.grupos ? (
+              <Grupos
+                grupos={fileira.grupos}
+                porCodigo={porCodigo}
+                aoAbrir={setAberta}
+              />
+            ) : (
+              <Prateleira lugares={fileira.lugares} porCodigo={porCodigo} aoAbrir={setAberta} />
+            )}
           </section>
         );
       })}
@@ -119,6 +117,77 @@ export default function EstantePage() {
         />
       )}
     </div>
+  );
+}
+
+function Prateleira({ lugares, porCodigo, aoAbrir }: {
+  lugares: LugarNaEstante[];
+  porCodigo: Map<string, InsigniaConquistada>;
+  aoAbrir: (code: string) => void;
+}) {
+  return (
+    <ol className="flex flex-wrap gap-x-2 gap-y-4 list-none p-0 m-0">
+      {lugares.map(lugar => (
+        <li key={lugar.code}>
+          <Lugar
+            lugar={lugar}
+            conquistada={porCodigo.get(lugar.code)}
+            aoAbrir={() => aoAbrir(lugar.code)}
+          />
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/**
+ * A fileira grande, partida: cada grupo fechado diz quanto dele já foi vencido,
+ * e abre num clique.
+ *
+ * Os laboratórios das veredas passam de duzentos, e desenhá-los todos de uma
+ * vez seria o muro que a estante evita em toda parte — é a mesma decisão da
+ * escada que abre no clique. Um grupo aberto por vez: dois abertos já
+ * empurrariam o segundo para fora da tela de quem abriu o primeiro.
+ */
+function Grupos({ grupos, porCodigo, aoAbrir }: {
+  grupos: GrupoDaFileira[];
+  porCodigo: Map<string, InsigniaConquistada>;
+  aoAbrir: (code: string) => void;
+}) {
+  const [aberto, setAberto] = useState<string | null>(null);
+  return (
+    <ul className="list-none p-0 m-0 space-y-1">
+      {grupos.map(grupo => {
+        const vencidos = grupo.lugares.filter(l => porCodigo.has(l.code)).length;
+        const estaAberto = aberto === grupo.chave;
+        const Seta = estaAberto ? ChevronDown : ChevronRight;
+        return (
+          <li key={grupo.chave}>
+            <button
+              type="button"
+              onClick={() => setAberto(estaAberto ? null : grupo.chave)}
+              aria-expanded={estaAberto}
+              className="w-full flex items-center justify-between gap-2 py-1.5 text-left text-sm transition hover:opacity-80"
+            >
+              <span className="flex items-center gap-1.5 min-w-0">
+                <Seta className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-text-dim)' }} />
+                <span className="truncate" style={{ color: vencidos > 0 ? 'var(--color-text-soft)' : 'var(--color-text-dim)' }}>
+                  {grupo.titulo}
+                </span>
+              </span>
+              <span className="text-xs font-mono tabular-nums flex-shrink-0" style={{ color: 'var(--color-text-muted)' }}>
+                {vencidos}/{grupo.lugares.length}
+              </span>
+            </button>
+            {estaAberto && (
+              <div className="pt-2 pb-3 pl-6">
+                <Prateleira lugares={grupo.lugares} porCodigo={porCodigo} aoAbrir={aoAbrir} />
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

@@ -1,8 +1,11 @@
-import type { LabType, Specialty } from '../types';
-import { codigoDaInsigniaDaVereda, VEREDAS, licoesDaVereda } from '../curriculum/veredas';
+import { nomeCompleto, type LabType, type Specialty } from '../types';
+import {
+  codigoDaInsigniaDaVereda, codigoDaInsigniaDoLaboratorioDeVereda, VEREDAS, licoesDaVereda,
+  veredasAbertas, type Vereda,
+} from '../curriculum/veredas';
 import { getAllSpecialties } from '../curriculum';
 import { TODOS_OS_DEGRAUS } from './escadasDeInsignia';
-import type { NivelDaInsignia } from './nivelDaInsignia';
+import { NIVEIS_DA_INSIGNIA, type NivelDaInsignia } from './nivelDaInsignia';
 
 /*
  * O catálogo de insígnias, e o que cada uma exige.
@@ -59,6 +62,15 @@ export interface ResumoDoDesbravador {
   certificados: string[];
   /** Veredas percorridas até o fim — teoria lida e laboratório vencido. */
   veredas: string[];
+  /**
+   * Os laboratórios de vereda vencidos, já pelo código da insígnia de cada um.
+   *
+   * Não é `laboratorios`: aquele conta `LabType`, que é a mecânica de uma lição
+   * de trilha, e alimenta a escada de Laboratórios. O de vereda não tem
+   * `LabType` — é uma lição dentro de uma vereda —, e a insígnia dele é de
+   * identidade, uma por laboratório, e não degrau de escada nenhuma.
+   */
+  laboratoriosDeVereda: string[];
 }
 
 export type Tier = NivelDaInsignia;
@@ -192,6 +204,56 @@ export function classeDaVereda(id: string): NivelDaInsignia {
   return TAMANHO_DA_VEREDA.find(([teto]) => licoes <= teto)?.[1] ?? 'lider';
 }
 
+/*
+  O laboratório de vereda fica um patamar abaixo da vereda dele, pela razão
+  que já põe o de trilha abaixo da trilha: um laboratório é uma lição dentro
+  do percurso, e não pode valer o mesmo que fechá-lo. Amigo é o chão — não há
+  patamar abaixo do primeiro.
+*/
+/** A classe da insígnia de um laboratório de vereda. */
+export function classeDoLaboratorioDeVereda(veredaId: string): NivelDaInsignia {
+  const daVereda = NIVEIS_DA_INSIGNIA.indexOf(classeDaVereda(veredaId));
+  return NIVEIS_DA_INSIGNIA[Math.max(0, daVereda - 1)];
+}
+
+/** Uma insígnia de laboratório de vereda, como o catálogo e a estante a veem. */
+export interface InsigniaDeLaboratorioDeVereda {
+  code: string;
+  nome: string;
+  descricao: string;
+  icone: 'lab';
+  classe: NivelDaInsignia;
+  veredaId: string;
+  licaoId: string;
+}
+
+/**
+ * As insígnias dos laboratórios de vereda, na ordem em que se percorre.
+ *
+ * Ficam fora de `INSIGNIAS` pela mesma razão das de trilha e de vereda: nascem
+ * do currículo, e o laboratório novo entra sozinho. O que continua sendo à mão
+ * é a linha na tabela, e `estante.test.ts` cobra os dois sentidos — linha
+ * semeada sem lugar na estante, e lugar na estante sem linha semeada.
+ *
+ * Só as veredas abertas: semear prêmio por laboratório que ninguém pode abrir é
+ * prometer por nada, a regra que já vale para a insígnia da vereda inteira.
+ */
+export function insigniasDosLaboratoriosDeVereda(
+  registro: Vereda[] = veredasAbertas(),
+): InsigniaDeLaboratorioDeVereda[] {
+  return registro.flatMap(v => licoesDaVereda(v)
+    .filter(l => l.tipo !== 'teoria')
+    .map(l => ({
+      code: codigoDaInsigniaDoLaboratorioDeVereda(v.id, l.id),
+      nome: l.titulo,
+      descricao: `Concluiu o laboratório “${l.titulo}” da vereda ${nomeCompleto(v)}.`,
+      icone: 'lab' as const,
+      classe: classeDoLaboratorioDeVereda(v.id),
+      veredaId: v.id,
+      licaoId: l.id,
+    })));
+}
+
 export const INSIGNIAS: Insignia[] = [
   /*
     As treze escadas, achatadas: cada degrau é uma insígnia, e a classe dela é
@@ -266,10 +328,15 @@ export function codigoDaInsigniaDaTrilha(codigoDaTrilha: string): string {
 /** Os códigos conquistados, dado o resumo. */
 export function insigniasConquistadas(r: ResumoDoDesbravador): string[] {
   const codigos = INSIGNIAS.filter(i => i.conquistou(r)).map(i => i.code);
+  /* Só as das veredas abertas. A conta de lições soma também o que foi vencido
+     numa vereda em construção, e é o certo para as escadas; aqui seria
+     conceder uma insígnia que a estante não tem onde pôr. */
+  const abertas = new Set(insigniasDosLaboratoriosDeVereda().map(i => i.code));
   return [
     ...codigos,
     ...r.trilhas.map(codigoDaInsigniaDaTrilha),
     ...r.veredas.map(codigoDaInsigniaDaVereda),
+    ...r.laboratoriosDeVereda.filter(c => abertas.has(c)),
   ];
 }
 

@@ -7,7 +7,8 @@ import { NOME_DO_TIPO, nomeCompleto } from '../types';
 import {
   getVereda, licoesDaVereda, veredasQueFaltamAntes,
   type LicaoDeVereda, textoDaOrigem } from '../curriculum/veredas';
-import { licaoVencida, registrarLicaoVencida, percursoVazio } from '../lib/veredas';
+import { licaoVencida, percursoVazio } from '../lib/veredas';
+import { vencerLicaoDaVereda } from '../lib/vencerLicaoDaVereda';
 import { useVeredas } from '../hooks/useVeredas';
 import { useCertifications } from '../hooks/useCertifications';
 import TeoriaDaVereda from '../components/TeoriaDaVereda';
@@ -165,7 +166,7 @@ export default function VeredaPage() {
   /* Uma gravação só para os dois tipos: a lição diz qual evento é dela. */
   const vencer = async () => {
     if (!profile?.id || !licaoAberta) return;
-    await registrarLicaoVencida(profile.id, vereda, licaoAberta, feito ?? percursoVazio());
+    await vencerLicaoDaVereda(profile.id, vereda, licaoAberta, feito ?? percursoVazio());
   };
 
   if (licaoAberta?.tipo === 'teoria' && profile?.id) {

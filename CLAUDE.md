@@ -188,13 +188,11 @@ laboratório novo sem entrada no catálogo passava verde. Hoje
 `insignias.test.ts` lista todo laboratório das trilhas abertas e reprova o que
 não tiver a sua `lab_<tipo>`.
 
-Varredura de outubro de 2026: os **29** laboratórios em uso nas trilhas têm
-insígnia, linha semeada e evento reconhecido. O que **não** cumpre a regra são
-os laboratórios das veredas — **219**, nas 26 veredas abertas —, que não têm
-insígnia própria nenhuma: a vereda rende uma só, `vereda_<id>`, quando todas as
-lições estão vencidas, e o laboratório de vereda também não anda na escada de
-Laboratórios, que conta `LabType` e a vereda não tem. É dívida declarada, e não
-decisão: vereda nova já nasce cobrando a insígnia de cada laboratório dela.
+Varredura de outubro de 2026: os **29** laboratórios em uso nas trilhas
+tinham insígnia, linha semeada e evento reconhecido. Os **219** das 26
+veredas abertas não tinham nenhuma — a vereda rendia uma só, `vereda_<id>`, no
+fim —, e quem venceu sete dos doze laboratórios de uma vereda não via nada na
+estante dizendo isso. Passaram a ter, e as decisões estão logo abaixo.
 E havia o caso inverso, `lab_text_editor`, insígnia de um laboratório que
 nenhuma lição usava mais. Foi aposentada em
 `20261027000000_aposenta_primeiro_relatorio`, que antes de apagar a linha dá
@@ -204,6 +202,45 @@ passou a cobrar os dois sentidos: laboratório sem insígnia e insígnia sem
 laboratório. O editor saiu do código depois, com o `LabType` dele: os eventos
 `text_submitted` antigos, gravados sem a lição, caem na redação guiada da
 trilha, que é a mesma insígnia que a migration concedeu.
+
+**O laboratório de vereda rende a sua, e ela nasce do currículo.** Fica fora
+de `INSIGNIAS`, como as de trilha e de vereda: `insigniasDosLaboratoriosDeVereda`
+monta uma por laboratório das veredas abertas, e o laboratório novo entra
+sozinho. O código é `lab_vereda_<vereda>_<lição>`, dos **ids** — que nunca
+mudam —, e não o `lab_` sozinho dos de trilha: aqueles nascem de um `LabType`,
+e a trava que cobra laboratório no currículo para todo `lab_<tipo>` acusaria
+estes de órfãos. A classe fica um patamar abaixo da vereda, pela régua que já
+põe o laboratório de trilha abaixo da trilha, e Amigo é o chão. O nome é o
+título da lição, e a descrição diz de qual vereda ele é.
+
+A conta sai de `conquistasNasVeredas`, do mesmo laço que soma as lições — duas
+leituras dos mesmos eventos discordariam no primeiro ajuste. A conta inclui
+vereda em construção, que é o certo para as escadas; a concessão não, porque
+seria dar insígnia que a estante não tem onde pôr. E o laboratório de vereda
+**continua fora** da escada de Laboratórios: ela conta `LabType`, e somar
+duzentos laboratórios numa escada que vai até 28 a esvaziaria de sentido.
+
+**E cai na hora.** Vencer uma lição de vereda gravava o evento e parava: nada
+chamava `evaluateBadges`, e o prêmio esperava a próxima atividade numa trilha,
+que quem só percorre veredas pode nunca fazer. `vencerLicaoDaVereda` grava e
+avalia, e mora num arquivo próprio porque `gamification.ts` importa de
+`veredas.ts` — o laço de ESM devolveria `undefined` calado.
+
+**Duzentas de uma vez é muro, e a estante as parte por vereda.** Uma fileira só
+com os duzentos e dezenove lugares seria o muro dos trinta e dois cartões de
+vereda outra vez. `FileiraDaEstante` ganhou `grupos`: fechado, cada vereda diz
+quantos dos laboratórios dela já vieram; aberto, um de cada vez, mostra os
+lugares. `lugares` continua sendo a lista inteira, porque é por ela que a
+estante se confere contra o banco. No cartão do painel elas viram uma linha
+com a contagem, e não trinta ícones.
+
+**Quem já tinha vencido recebeu pela migration, com a data de quando venceu.**
+`evaluateBadges` concederia na próxima atividade de cada um, mas com a data de
+hoje, o contexto da ação que a disparou e trinta avisos de uma vez para quem
+voltasse depois de três veredas. A `20261027160000` concede a partir dos
+eventos `vereda_laboratorio` já gravados, lendo também o campo antigo
+`trilha`, e `insignias.test.ts` confere que a tabela que liga evento a
+insígnia dentro do SQL aponta para o laboratório certo.
 
 **Número guardado não responde por "hoje".** A ofensiva — dias seguidos de
 atividade — ficou meses parada em "2 dias", e não era conta errada: era conta
@@ -1054,8 +1091,10 @@ registro inteiro antes de medir qualquer coisa.
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois
-que ela deixa de ser `emConstrucao`. E uma insígnia **por laboratório** da
-vereda, pela regra de que todo laboratório concluído rende uma conquista. A arte vai em
+que ela deixa de ser `emConstrucao`. E uma linha por laboratório dela, com o
+código `lab_vereda_<vereda>_<lição>` e o nome, a descrição e a classe que
+`insigniasDosLaboratoriosDeVereda` calcula — `insignias.test.ts` e
+`estante.test.ts` cobram, nos dois sentidos. A arte vai em
 `public/assets/specialties/<CODIGO>.png` e o fundo do certificado em
 `public/assets/certificates/<CODIGO>.png`; `veredas.test.ts` cobra as duas. `veredas.test.ts` reprova laboratório que abra com verificação
 já verde, verificação sem passo a passo, e módulo que repita o próprio nome
@@ -4514,6 +4553,10 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/certificados.test.ts` | o padrão de um certificado ilegível — inverter para `'active'` reprova |
 | `src/lib/insignias.test.ts` | insígnia com critério no código e sem linha no catálogo |
 | `src/lib/insignias.test.ts` | laboratório de trilha sem a sua insígnia `lab_<tipo>`, que concluir não daria nada |
+| `src/lib/insignias.test.ts` | laboratório de vereda aberta sem a sua insígnia semeada, ou semeada diferente do catálogo |
+| `src/lib/insignias.test.ts` | concessão retroativa que liga o evento de um laboratório à insígnia de outro |
+| `src/lib/vencerLicaoDaVereda.test.ts` | lição de vereda vencida que não avalia as insígnias, deixando o prêmio para a próxima trilha |
+| `src/pages/EstantePage.test.tsx` | fileira partida cujo grupo não abre, abre a vereda errada, ou abre todas de uma vez |
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `src/labs/metasDaAp044.test.ts` | tarefa do laboratório de estilos que nasce verde, ou que ninguém consegue vencer |
