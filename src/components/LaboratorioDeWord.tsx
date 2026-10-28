@@ -47,6 +47,13 @@ interface Props {
   licao: Extract<LicaoDeVereda, { tipo: 'word' }>;
   aoVencer: () => void | Promise<void>;
   aoSair: () => void;
+  /**
+   * O documento de partida e o nome dele, quando não são os do exercício. Só a
+   * página de bastidor passa isto, para fotografar um gesto num documento que
+   * não é o da lição — veja `src/components/bastidor.ts`.
+   */
+  inicial?: import('../labs/documento').Doc<string>;
+  arquivo?: string;
 }
 
 const GUIAS_USAVEIS = ['Início', 'Referências'];
@@ -64,8 +71,8 @@ const CORES = [
 
 const TAMANHOS = [9, 10, 11, 12, 13, 14, 16, 18, 20, 24];
 
-export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: Props) {
-  const [doc, setDoc] = useState<Doc>(OFICIO_INICIAL);
+export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair, inicial, arquivo }: Props) {
+  const [doc, setDoc] = useState<Doc>((inicial as Doc | undefined) ?? OFICIO_INICIAL);
   const [guia, setGuia] = useState('Início');
   const [menu, setMenu] = useState<string | null>(null);
   /* A caixa Modificar Estilo, quando aberta, e o rascunho dela. O rascunho é
@@ -247,7 +254,7 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
       <div className="wd-janela" style={{
         '--largura-cm': 21, '--altura-cm': 29.7, '--margem-cm': 2.5, '--zoom': zoom,
       } as React.CSSProperties}>
-        <BarraDeTituloDoWord documento="Relatório de Atividades" aoAvisar={setAviso}
+        <BarraDeTituloDoWord documento={arquivo ?? 'Relatório de Atividades'} aoAvisar={setAviso}
           aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
           aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />
 

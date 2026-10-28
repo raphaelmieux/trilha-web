@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
+import { NoBastidor } from './bastidor';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, ArrowLeft, X, ListChecks, MonitorSmartphone, LifeBuoy } from 'lucide-react';
 
@@ -213,6 +214,7 @@ export default function LaboratorioEmTelaCheia({
   trilha, voltarPara, titulo, programa, imitaPrograma = true,
   tarefas, aviso, children, acoes, rodape = 0,
 }: Props) {
+  const noBastidor = useContext(NoBastidor);
   const [painelAberto, setPainelAberto] = useState(true);
   const [avisoDeTela, setAvisoDeTela] = useState(() => imitaPrograma && !jaAvisado(programa));
   /* Com o aviso de pé a bolha começa fechada: dois painéis escuros empilhados
@@ -289,6 +291,16 @@ export default function LaboratorioEmTelaCheia({
       color: '#fff', fontSize: 10, lineHeight: '15px', textAlign: 'center',
     }}>{feita ? '✓' : ''}</span>
   );
+
+  /* Depois de todos os ganchos, que o React conta pela ordem. */
+  if (noBastidor) {
+    return (
+      <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: imitaPrograma ? FUNDO_DO_PROGRAMA : FUNDO_DA_PLATAFORMA }}>
+        <style>{CSS_DA_MOLDURA}</style>
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">{children}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: imitaPrograma ? FUNDO_DO_PROGRAMA : FUNDO_DA_PLATAFORMA }}>

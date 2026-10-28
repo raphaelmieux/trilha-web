@@ -38,7 +38,7 @@ const topicos = (): TopicoDeVereda[] => MODULOS_DE_SQL
   .filter(t => t.exemploComo === 'sql');
 
 function oQueOBancoDiz(t: TopicoDeVereda): string {
-  const e = JSON.parse(py.runPython(programaDoSql(SEMENTE_DO_TOPICO[t.id] ?? SEMENTE_DO_CLUBE, t.exemplo)) as string) as ExecucaoDeSql;
+  const e = JSON.parse(py.runPython(programaDoSql(SEMENTE_DO_TOPICO[t.id] ?? SEMENTE_DO_CLUBE, (t.exemplo ?? ''))) as string) as ExecucaoDeSql;
   if (e.erro) return `Erro na linha ${e.erro.linha}: ${e.erro.mensagem}`;
   const ultima = [...e.comandos].reverse().find(c => c.tipo === 'consulta');
   return ultima ? escreverResultado(ultima.colunas, ultima.linhas) : '';

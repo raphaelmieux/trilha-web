@@ -52,6 +52,13 @@ interface Props {
   licao: Extract<LicaoDeVereda, { tipo: 'word' }>;
   aoVencer: () => void | Promise<void>;
   aoSair: () => void;
+  /**
+   * O documento de partida e o nome dele, quando não são os do exercício. Só a
+   * página de bastidor passa isto, para fotografar um gesto num documento que
+   * não é o da lição — veja `src/components/bastidor.ts`.
+   */
+  inicial?: import('../labs/documento').Doc<string>;
+  arquivo?: string;
 }
 
 const GUIAS_USAVEIS = ['Início', 'Inserir', 'Referências'];
@@ -71,8 +78,8 @@ const O_QUE_A_DISPOSICAO_FAZ: Record<Disposicao, string> = {
   'acima-e-abaixo': 'A imagem fica sozinha na largura da página, com o texto acima e abaixo.',
 };
 
-export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair }: Props) {
-  const [doc, setDoc] = useState<Doc>(RELATORIO_INICIAL);
+export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair, inicial, arquivo }: Props) {
+  const [doc, setDoc] = useState<Doc>((inicial as Doc | undefined) ?? RELATORIO_INICIAL);
   const [guia, setGuia] = useState('Inserir');
   const [selecionado, setSelecionado] = useState<string | null>(null);
   /* Onde o cursor está dentro da tabela. Comando de tabela age onde o cursor
@@ -433,7 +440,7 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
       <div className="wd-janela" style={{
         '--largura-cm': 21, '--altura-cm': 29.7, '--margem-cm': 2.5, '--zoom': zoom,
       } as React.CSSProperties}>
-        <BarraDeTituloDoWord documento="Relatório do Acampamento" aoAvisar={setAviso}
+        <BarraDeTituloDoWord documento={arquivo ?? 'Relatório do Acampamento'} aoAvisar={setAviso}
           aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
           aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />
 

@@ -47,12 +47,19 @@ interface Props {
   licao: Extract<LicaoDeVereda, { tipo: 'word' }>;
   aoVencer: () => void | Promise<void>;
   aoSair: () => void;
+  /**
+   * O documento de partida e o nome dele, quando não são os do exercício. Só a
+   * página de bastidor passa isto, para fotografar um gesto num documento que
+   * não é o da lição — veja `src/components/bastidor.ts`.
+   */
+  inicial?: import('../labs/documento').Doc<string>;
+  arquivo?: string;
 }
 
 const GUIAS_USAVEIS = ['Início', 'Inserir', 'Referências'];
 
-export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, aoSair }: Props) {
-  const [doc, setDoc] = useState<Doc>(RELATORIO_ANUAL_INICIAL);
+export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, aoSair, inicial, arquivo }: Props) {
+  const [doc, setDoc] = useState<Doc>((inicial as Doc | undefined) ?? RELATORIO_ANUAL_INICIAL);
   const [guia, setGuia] = useState('Inserir');
   const [aviso, setAviso] = useState('');
   const [zoom, setZoom] = useState(1);
@@ -221,7 +228,7 @@ export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, a
       <div className="wd-janela" style={{
         '--largura-cm': 21, '--altura-cm': 29.7, '--margem-cm': 2.5, '--zoom': zoom,
       } as React.CSSProperties}>
-        <BarraDeTituloDoWord documento="Relatório Anual 2026" aoAvisar={setAviso}
+        <BarraDeTituloDoWord documento={arquivo ?? 'Relatório Anual 2026'} aoAvisar={setAviso}
           aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
           aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />
 

@@ -50,6 +50,13 @@ interface Props {
   licao: Extract<LicaoDeVereda, { tipo: 'word' }>;
   aoVencer: () => void | Promise<void>;
   aoSair: () => void;
+  /**
+   * O documento de partida e o nome dele, quando não são os do exercício. Só a
+   * página de bastidor passa isto, para fotografar um gesto num documento que
+   * não é o da lição — veja `src/components/bastidor.ts`.
+   */
+  inicial?: import('../labs/documento').Doc<string>;
+  arquivo?: string;
 }
 
 const GUIAS_USAVEIS = ['Início', 'Referências', 'Revisão'];
@@ -58,9 +65,9 @@ const IMPRESSAO_INICIAL: AjustesDeImpressao = {
   copias: 1, agrupado: true, qualidade: 'normal', ajuste: 'real', porFolha: 1,
 };
 
-export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair }: Props) {
-  const [doc, setDoc] = useState<Doc>(RELATORIO_DA_ENTREGA_INICIAL);
-  const [entrega, setEntrega] = useState<Entrega>(ENTREGA_INICIAL);
+export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair, inicial, arquivo }: Props) {
+  const [doc, setDoc] = useState<Doc>((inicial as Doc | undefined) ?? RELATORIO_DA_ENTREGA_INICIAL);
+  const [entrega, setEntrega] = useState<Entrega>(arquivo ? { ...ENTREGA_INICIAL, nome: arquivo } : ENTREGA_INICIAL);
   const [guia, setGuia] = useState('Revisão');
   const [painel, setPainel] = useState<PainelDosBastidores | null>(null);
   const [formato, setFormato] = useState<FormatoDeArquivo>('docx');

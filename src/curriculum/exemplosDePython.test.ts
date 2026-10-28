@@ -83,7 +83,7 @@ describe('os exemplos de Python das lições', () => {
   it('todo exemplo é Python que o interpretador aceita', () => {
     const quebrados: string[] = [];
     for (const [code, t] of exemplosDePython()) {
-      const r = rodar(`compile(${JSON.stringify(t.exemplo)}, "licao", "exec")`, []);
+      const r = rodar(`compile(${JSON.stringify(t.exemplo ?? '')}, "licao", "exec")`, []);
       if (r.erro) quebrados.push(`${code}/${t.id}: ${r.erro.split('\n').pop()}`);
     }
     expect(quebrados).toEqual([]);
@@ -93,7 +93,7 @@ describe('os exemplos de Python das lições', () => {
     const divergentes: string[] = [];
     for (const [code, t] of exemplosDePython()) {
       if (t.exemploSaida === undefined) continue;
-      const r = rodar(t.exemplo, t.exemploEntrada ?? [], code === 'CC005');
+      const r = rodar(t.exemplo ?? '', t.exemploEntrada ?? [], code === 'CC005');
       if (r.erro) {
         divergentes.push(`${code}/${t.id}: parou com erro — ${r.erro.split('\n').pop()}`);
         continue;
@@ -113,7 +113,7 @@ describe('os exemplos de Python das lições', () => {
   */
   it('todo exemplo que pergunta declara o que foi digitado', () => {
     const sem = exemplosDePython()
-      .filter(([, t]) => t.exemplo.includes('input(') && !(t.exemploEntrada ?? []).length)
+      .filter(([, t]) => (t.exemplo ?? '').includes('input(') && !(t.exemploEntrada ?? []).length)
       .map(([code, t]) => `${code}/${t.id}`);
     expect(sem).toEqual([]);
   });
@@ -122,7 +122,7 @@ describe('os exemplos de Python das lições', () => {
      resquício de uma versão anterior, e ninguém repara nela. */
   it('nenhum exemplo declara entrada que não vai usar', () => {
     const sobrando = exemplosDePython()
-      .filter(([, t]) => (t.exemploEntrada ?? []).length && !t.exemplo.includes('input('))
+      .filter(([, t]) => (t.exemploEntrada ?? []).length && !(t.exemplo ?? '').includes('input('))
       .map(([code, t]) => `${code}/${t.id}`);
     expect(sobrando).toEqual([]);
   });
