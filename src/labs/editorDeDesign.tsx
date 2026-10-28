@@ -135,6 +135,10 @@ export const CSS_DO_EDITOR_DE_DESIGN = `
   flex: 1; min-width: 0; overflow: auto; background: #1A1B1E; position: relative;
   display: flex; align-items: flex-start; justify-content: center; padding: 28px;
 }
+/* A letra da prancha é desenho, e não texto da página: Shift + clique soma um
+   objeto à seleção, e o navegador, sem isto, pinta por cima da peça a faixa
+   de texto entre um clique e outro. O texto se escreve no painel. */
+.dz-mesa { user-select: none; -webkit-user-select: none; }
 .dz-mesa:focus { outline: none; }
 .dz-mesa:focus-visible { box-shadow: inset 0 0 0 1px rgba(61, 111, 224, .55); }
 .dz-prancha-nome { position: absolute; font-size: 11px; color: #9A9DA5; }

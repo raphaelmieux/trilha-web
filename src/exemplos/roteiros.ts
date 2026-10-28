@@ -25,10 +25,14 @@
  */
 
 import { ROTEIROS_DO_EDITOR } from './roteiros/editorDeTexto';
+import { ROTEIROS_DOS_FUNDAMENTOS } from './roteiros/fundamentosVisuais';
 
 export type Acao =
-  /** Clica. `direito` abre o menu de contexto; `duplo` dá dois cliques. */
-  | { clicar: string; direito?: boolean; duplo?: boolean }
+  /**
+   * Clica. `direito` abre o menu de contexto; `duplo` dá dois cliques; `com`
+   * segura uma tecla junto — Shift soma à seleção, como em todo editor.
+   */
+  | { clicar: string; direito?: boolean; duplo?: boolean; com?: 'Shift' | 'Control' }
   /** Digita no que estiver com o foco, tecla por tecla. */
   | { digitar: string }
   /** Aperta uma tecla ou combinação: `Enter`, `Shift+Enter`, `Control+z`. */
@@ -65,6 +69,7 @@ export interface Roteiro {
 
 export const ROTEIROS: Roteiro[] = [
   ...ROTEIROS_DO_EDITOR,
+  ...ROTEIROS_DOS_FUNDAMENTOS,
 ];
 
 /** Os nomes das imagens que um roteiro produz, na ordem. */

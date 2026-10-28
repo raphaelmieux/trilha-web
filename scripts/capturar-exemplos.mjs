@@ -99,7 +99,7 @@ for (const r of escolhidos) {
       if ('clicar' in a) {
         const alvo = pagina.locator(a.clicar).first();
         if (a.duplo) await alvo.dblclick();
-        else await alvo.click({ button: a.direito ? 'right' : 'left' });
+        else await alvo.click({ button: a.direito ? 'right' : 'left', modifiers: a.com ? [a.com] : [] });
       } else if ('digitar' in a) {
         await pagina.keyboard.type(a.digitar, { delay: 5 });
       } else if ('tecla' in a) {

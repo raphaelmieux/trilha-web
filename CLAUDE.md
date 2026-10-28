@@ -843,6 +843,16 @@ faria. E a janela de 1100 px cortava as guias contextuais no fim da fileira,
 que são justamente o assunto do tópico de tabela: o padrão é 1280, e os
 roteiros de tabela fotografam a 1440.
 
+As veredas de design seguem a mesma receita, com o editor de design montado
+direto em `cenasDeDesign.tsx` — ele já é um programa inteiro e não precisa do
+laboratório em volta. A paleta das telas da CC-DG001 é a da unidade Jatobá, e
+não a do cartaz do laboratório: aquela é a resposta do módulo 4, e a teoria a
+citava inteira, com as justificativas.
+
+A primeira captura com Shift + clique mostrou um defeito do próprio editor: o
+navegador pintava, por cima da peça, a faixa de texto entre um clique e outro.
+A letra da prancha é desenho; a mesa tem `user-select: none`.
+
 **No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
 Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
 escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela
