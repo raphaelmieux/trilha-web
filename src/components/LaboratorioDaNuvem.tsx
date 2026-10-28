@@ -8,7 +8,7 @@ import {
   CSS_DA_NUVEM, TopoDaNuvem, LateralDaNuvem, CaminhoDaNuvem, CabecalhoDaLista,
   LinhaDaNuvem, MenuDoArquivo, ItemDoMenu, SeletorDePapel, AcessoPelaPasta,
   OQuePapelDeixa, CaixaDeCompartilhar, PessoaDaCaixa, SecaoDaCaixa,
-  RodapeDaCaixa, BotaoDaNuvem, type LugarDaNuvem,
+  RodapeDaCaixa, BotaoDaNuvem, BarraDaSelecao, AcaoDaSelecao, type LugarDaNuvem,
 } from '../labs/nuvem';
 import {
   CSS_DO_EDITOR_NA_NUVEM, TopoDoEditor, MenuDoEditor, ItemDaGaveta,
@@ -26,7 +26,7 @@ import {
   type ArquivoDaNuvem, type ModoDeTrabalho, type Nuvem, type Papel, type Pessoa,
   PAPEIS, NOME_DO_PAPEL, compartilhar, conflitoDeSincronizacao, gravarVersao, gravarNaSessao,
   mandarParaALixeira, mandarPorAnexo, mover, mudarAcessoGeral, papelDe, podeEditar,
-  restaurarVersao, tirarAcessoDoArquivo, transferirPropriedade, versaoAtual,
+  restaurarVersao, tirarAcessoDoArquivo, transferirPropriedade, versaoAtual, emOrdemDaLista,
 } from '../labs/arquivoCompartilhado';
 import {
   type Doc, NOME_DO_AUTOR, acrescentarComentario, aceitarRevisao,
@@ -137,6 +137,7 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
   const [ctx, setCtx] = useState<ContextoDaNuvem>(() => contextoInicial(qual));
   const [aberto, setAberto] = useState<string | null>(registro.abre ?? null);
   const [lugar, setLugar] = useState<LugarDaNuvem>('meu');
+  const [crescente, setCrescente] = useState(true);
   const [pasta, setPasta] = useState<string | null>(null);
   const [escolhido, setEscolhido] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
@@ -297,24 +298,50 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
     if (a.nome.includes('cópia em conflito')) descobrir('abriu-a-copia-em-conflito');
   };
 
+  /* Os gestos sobre um arquivo saem de um lugar só: o menu de três pontos e a
+     barra da seleção fazem a mesma coisa, e escritos duas vezes divergiriam —
+     a descoberta da ficha médica valeria por um caminho e não pelo outro. */
+  const compartilharArquivo = (id: string) => {
+    setEscolhido(id); setCaixa('compartilhar'); setMenu(null); setHeranca(false);
+    if (id === 'fichas') descobrir('a-pasta-alcanca');
+  };
+  const moverArquivo = (id: string) => { setEscolhido(id); setCaixa('mover'); setMenu(null); };
+  const paraALixeira = (id: string) => {
+    mexer(n => mandarParaALixeira(n, id));
+    setMenu(null); setEscolhido(null);
+  };
+  const daSelecao = escolhido ? nuvem.arquivos.find(a => a.id === escolhido && naPasta.includes(a)) : undefined;
+  const NOME_DO_LUGAR: Record<LugarDaNuvem, string> = {
+    meu: 'Meu Drive', comigo: 'Compartilhados comigo', lixeira: 'Lixeira',
+  };
+
   const vistaDaNuvem = (
     <div className="nv-janela">
       <TopoDaNuvem quem="voce" />
       <div className="nv-corpo">
         <LateralDaNuvem lugar={lugar} usado={0.31}
+          aoNovo={() => setAviso('Criar pasta e arquivo existe na nuvem de verdade, e está aqui para a lateral ficar igual — mas não faz parte deste exercício.')}
           aoIr={l => { setLugar(l); setPasta(null); setEscolhido(null); }} />
         <div className="nv-painel">
-          {lugar === 'meu' && <CaminhoDaNuvem trilha={trilhaDoCaminho()} aoIr={setPasta} />}
+          <CaminhoDaNuvem trilha={lugar === 'meu' ? trilhaDoCaminho() : [{ id: null, nome: NOME_DO_LUGAR[lugar] }]}
+            aoIr={setPasta} />
+          <BarraDaSelecao quantos={daSelecao ? 1 : 0} aoLimpar={() => setEscolhido(null)}>
+            {daSelecao && (
+              <>
+                <AcaoDaSelecao icone={Share2} nome="Compartilhar" aoClicar={() => compartilharArquivo(daSelecao.id)} />
+                <AcaoDaSelecao icone={FolderInput} nome="Mover para" aoClicar={() => moverArquivo(daSelecao.id)} />
+                <AcaoDaSelecao icone={Trash2} nome="Mover para a lixeira" aoClicar={() => paraALixeira(daSelecao.id)}
+                  desligado={lugar === 'lixeira' || !podeEditar(nuvem, daSelecao.id, 'voce')} />
+              </>
+            )}
+          </BarraDaSelecao>
           <div className="nv-lista">
-            <CabecalhoDaLista />
-            {naPasta.map(a => (
+            <CabecalhoDaLista crescente={crescente} aoOrdenar={() => setCrescente(c => !c)} />
+            {emOrdemDaLista(naPasta, crescente).map(a => (
               <LinhaDaNuvem key={a.id} arquivo={a} escolhido={escolhido === a.id}
                 aoEscolher={() => setEscolhido(a.id)}
                 aoAbrir={() => abrir(a)}
-                aoMenu={e => {
-                  e.preventDefault();
-                  setMenu({ id: a.id, x: 40, y: 80 });
-                }} />
+                aoMenu={(_, onde) => setMenu({ id: a.id, ...onde })} />
             ))}
           </div>
         </div>
@@ -322,16 +349,11 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
 
       {menu && alvo && (
         <MenuDoArquivo onde={{ x: menu.x, y: menu.y }} aoFechar={() => setMenu(null)}>
-          <ItemDoMenu icone={Share2} aoClicar={() => {
-            setEscolhido(alvo.id); setCaixa('compartilhar'); setMenu(null); setHeranca(false);
-            if (alvo.id === 'fichas') descobrir('a-pasta-alcanca');
-          }}>Compartilhar</ItemDoMenu>
+          <ItemDoMenu icone={Share2} aoClicar={() => compartilharArquivo(alvo.id)}>Compartilhar</ItemDoMenu>
           <ItemDoMenu icone={Mail} aoClicar={() => {
             setEscolhido(alvo.id); setCaixa('email'); setMenu(null);
           }} desligado={alvo.tipo === 'pasta'}>Enviar por e-mail</ItemDoMenu>
-          <ItemDoMenu icone={FolderInput} aoClicar={() => {
-            setEscolhido(alvo.id); setCaixa('mover'); setMenu(null);
-          }}>Mover para</ItemDoMenu>
+          <ItemDoMenu icone={FolderInput} aoClicar={() => moverArquivo(alvo.id)}>Mover para</ItemDoMenu>
           <div className="nv-risco" />
           <ItemDoMenu icone={Download} desligado>Baixar</ItemDoMenu>
           <ItemDoMenu icone={Copy} desligado>Fazer uma cópia</ItemDoMenu>
@@ -341,10 +363,8 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
               original, não de quem a provocou — gatear por propriedade
               trancaria a lição do requisito 6, que é ela que manda tirá-la
               da frente. */}
-          <ItemDoMenu icone={Trash2} aoClicar={() => {
-            mexer(n => mandarParaALixeira(n, alvo.id));
-            setMenu(null); setEscolhido(null);
-          }} desligado={!podeEditar(nuvem, alvo.id, 'voce')}>
+          <ItemDoMenu icone={Trash2} aoClicar={() => paraALixeira(alvo.id)}
+            desligado={!podeEditar(nuvem, alvo.id, 'voce')}>
             Mover para a lixeira
           </ItemDoMenu>
         </MenuDoArquivo>
@@ -664,7 +684,7 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
         <FerramentaDoEditor icone={MessageSquarePlus} dica="Inserir comentário"
           desligada={!bloco}
           aoClicar={comentarNaSelecao} />
-        <FerramentasPadraoDoEditor parte="depois" aoNaoFazParte={fora} />
+        <FerramentasPadraoDoEditor parte="depois" aoNaoFazParte={fora} controle={edicao} />
         <SeparadorDaBarra />
         <FerramentaDoEditor icone={History} dica="Histórico de versões"
           ativa={historico}

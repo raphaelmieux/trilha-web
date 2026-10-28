@@ -35,6 +35,20 @@ import {
   preencherAbaixo, preencherADireita, proxima, valorDaGrade,
 } from './planilha';
 import { mostrar } from './formulas';
+import {
+  alternarAncoragem, nomeApontado, podeApontar, referenciasDaFormula, regiaoAtual, saltar, ultimaUsada,
+} from './teclasDaPlanilha';
+
+/**
+ * O que a barra de status do Excel escreve no canto esquerdo.
+ *
+ * Inserir é a edição que começou digitando — as setas confirmam e andam; Editar
+ * é a que começou com F2 ou dois cliques — as setas andam dentro do texto; e
+ * Apontar é a fórmula esperando uma referência, quando clicar numa célula
+ * escreve o nome dela em vez de sair da edição. São três teclados diferentes
+ * para a mesma tecla, e o Excel diz qual está valendo exatamente aqui.
+ */
+export type ModoDaGrade = 'Pronto' | 'Inserir' | 'Editar' | 'Apontar';
 
 export interface UsoDaGrade {
   /** A planilha à vista. Quem a guarda é o laboratório. */
@@ -81,6 +95,8 @@ export interface GradeControlada {
   setEditando: React.Dispatch<React.SetStateAction<'celula' | 'barra' | null>>;
   gradeRef: React.RefObject<HTMLDivElement>;
   recorte: Recorte | null;
+  /** O que a barra de status escreve à esquerda. */
+  modo: ModoDaGrade;
 
   selecionar: (l: number, c: number) => void;
   selecionarFaixa: (f: Faixa) => void;
@@ -128,6 +144,11 @@ export interface GradeControlada {
   };
 
   props: {
+    /** A fórmula em edição espera uma referência: clicar escreve o nome da célula. */
+    apontavel: boolean;
+    /** As faixas que a fórmula em edição cita, com a cor de cada uma. */
+    referencias: { faixa: Faixa; cor: string }[];
+    aoTeclarNaEdicao: (e: React.KeyboardEvent<HTMLInputElement>) => boolean;
     planilha: Planilha;
     faixa: Faixa;
     ativa: { l: number; c: number };
@@ -183,6 +204,23 @@ export function useGradeDoExcel({
     re-renderização: um estado ainda estaria com o valor velho quando ele lê.
   */
   const jaResolvida = useRef(false);
+  /*
+    Inserir ou Editar: de onde a edição começou decide o que as setas fazem.
+    Quem digita por cima de uma célula e aperta seta quer ir para a próxima —
+    é assim que se preenche uma coluna inteira sem tirar a mão do teclado. Quem
+    abriu a célula com F2 quer corrigir uma letra no meio.
+  */
+  const [modo, setModo] = useState<'entrar' | 'editar'>('entrar');
+  /* A referência que o apontar escreveu: onde ela começa no texto e que faixa
+     ela nomeia. Clicar de novo troca essa, em vez de acrescentar outra. */
+  const [apontando, setApontando] = useState<{ inicio: number; faixa: Faixa } | null>(null);
+  const [arrastandoApontar, setArrastandoApontar] = useState(false);
+  /*
+    A coluna onde começou uma sequência de Tabs. Depois de A2, Tab, B2, Tab,
+    C2, o Enter leva a A3 — e não a C3 —, que é o que faz digitar uma linha de
+    cadastro e voltar ao começo da seguinte. Qualquer outro gesto a esquece.
+  */
+  const colunaDoTab = useRef<number | null>(null);
   const arrasto = useRef<{ tipo: 'coluna' | 'linha'; indice: number; inicio: number; base: number } | null>(null);
 
   const sel = { l: faixa.l1, c: faixa.c1 };
@@ -193,12 +231,24 @@ export function useGradeDoExcel({
     setFaixa({ l1: l, c1: c, l2: l, c2: c });
     setBarra(texto(p, l, c));
     setEditando(null);
+    setApontando(null);
+    colunaDoTab.current = null;
   };
 
   const selecionarFaixa = (f: Faixa) => {
     setFaixa(f);
     setBarra(texto(p, f.l1, f.c1));
     setEditando(null);
+    setApontando(null);
+  };
+
+  const apontavel = editando !== null && (apontando !== null || podeApontar(barra));
+
+  /** Escreve o nome da faixa apontada no fim da fórmula, trocando a apontada antes. */
+  const apontar = (f: Faixa) => {
+    const inicio = apontando?.inicio ?? barra.length;
+    setBarra(barra.slice(0, inicio) + nomeApontado(f));
+    setApontando({ inicio, faixa: f });
   };
 
   /** A frase de recusa da faixa inteira, ou `null` se toda ela aceita escrita. */
@@ -224,8 +274,9 @@ export function useGradeDoExcel({
     }
     mudar(q => escrever(q, sel.l, sel.c, valor));
     setEditando(null);
+    setApontando(null);
     if (andarPara) {
-      const destino = proxima(p, faixa, andarPara);
+      const destino = andarComTab(andarPara);
       setFaixa(destino);
       setBarra(texto(p, destino.l1, destino.c1));
     } else {
@@ -233,10 +284,71 @@ export function useGradeDoExcel({
     }
   };
 
+  /** Tab lembra a coluna de onde a sequência saiu; o Enter seguinte volta a ela. */
+  const andarComTab = (direcao: Direcao): Faixa => {
+    if (direcao === 'direita') {
+      if (colunaDoTab.current === null) colunaDoTab.current = sel.c;
+    } else if (direcao === 'baixo' && colunaDoTab.current !== null) {
+      const c = colunaDoTab.current;
+      colunaDoTab.current = null;
+      const l = Math.min(p.celulas.length - 1, sel.l + 1);
+      return { l1: l, c1: c, l2: l, c2: c };
+    } else {
+      colunaDoTab.current = null;
+    }
+    return proxima(p, faixa, direcao);
+  };
+
   const cancelarEdicao = () => {
     jaResolvida.current = true;
     setEditando(null);
+    setApontando(null);
     setBarra(texto(p, sel.l, sel.c));
+  };
+
+  /**
+   * As teclas que valem **durante** a edição, na célula ou na barra. Devolve
+   * se tratou a tecla, para o campo não tratá-la de novo.
+   */
+  const aoTeclarNaEdicao = (e: React.KeyboardEvent<HTMLInputElement>, onde: 'celula' | 'barra' = 'celula'): boolean => {
+    const campo = e.currentTarget;
+    if (e.key === 'F2') { e.preventDefault(); setModo(m => (m === 'entrar' ? 'editar' : 'entrar')); return true; }
+    if (e.key === 'F4') {
+      e.preventDefault();
+      const r = alternarAncoragem(barra, campo.selectionStart ?? barra.length);
+      setBarra(r.texto);
+      setApontando(null);
+      requestAnimationFrame(() => campo.setSelectionRange?.(r.cursor, r.cursor));
+      return true;
+    }
+    /* Ctrl+Enter grava e fica na mesma célula. */
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      jaResolvida.current = true;
+      confirmar(barra);
+      gradeRef.current?.focus();
+      return true;
+    }
+    const setas: Record<string, Direcao> = {
+      ArrowUp: 'cima', ArrowDown: 'baixo', ArrowLeft: 'esquerda', ArrowRight: 'direita',
+    };
+    const direcao = setas[e.key];
+    if (!direcao || onde !== 'celula' || modo !== 'entrar') return false;
+    e.preventDefault();
+    if (apontavel) {
+      /* No modo Apontar a seta anda com a referência, e não com o cursor:
+         Shift estende a faixa apontada, como o Shift+seta da grade. */
+      const base = apontando?.faixa ?? { l1: sel.l, c1: sel.c, l2: sel.l, c2: sel.c };
+      const f = apontando
+        ? mover(p, base, direcao, e.shiftKey)
+        : mover(p, base, direcao, false);
+      apontar(e.shiftKey && !apontando ? { ...f, l1: sel.l, c1: sel.c } : f);
+      return true;
+    }
+    jaResolvida.current = true;
+    confirmar(barra, direcao);
+    gradeRef.current?.focus();
+    return true;
   };
 
   /* ── Área de transferência ─────────────────────────────────────────────── */
@@ -286,6 +398,11 @@ export function useGradeDoExcel({
     }
 
     const ctrl = e.ctrlKey || e.metaKey;
+    const setas: Record<string, Direcao> = {
+      ArrowUp: 'cima', ArrowDown: 'baixo', ArrowLeft: 'esquerda', ArrowRight: 'direita',
+    };
+    const ultimaLinha = p.celulas.length - 1;
+    const ultimaColuna = (p.celulas[0]?.length ?? 1) - 1;
     if (ctrl) {
       const k = e.key.toLowerCase();
       if (k === 'c') { e.preventDefault(); copiar(); return; }
@@ -293,14 +410,25 @@ export function useGradeDoExcel({
       if (k === 'v') { e.preventDefault(); colar(); return; }
       if (k === 'z') { e.preventDefault(); desfazer(); return; }
       if (k === 'y') { e.preventDefault(); refazer(); return; }
+      /* Ctrl+seta para na borda do bloco de dados; com Shift, estende até lá. */
+      if (setas[e.key]) {
+        e.preventDefault();
+        const destino = saltar(p, faixa, setas[e.key], e.shiftKey);
+        colunaDoTab.current = null;
+        if (e.shiftKey) setFaixa(destino); else selecionarFaixa(destino);
+        return;
+      }
+      if (e.key === 'Home') { e.preventDefault(); selecionar(0, 0); return; }
+      if (e.key === 'End') { e.preventDefault(); const u = ultimaUsada(p); selecionar(u.l, u.c); return; }
+      if (k === 'a') { e.preventDefault(); setFaixa(regiaoAtual(p, sel.l, sel.c)); return; }
+      /* Ctrl+Espaço pega a coluna inteira. */
+      if (e.key === ' ') { e.preventDefault(); setFaixa({ l1: 0, c1: sel.c, l2: ultimaLinha, c2: sel.c }); return; }
       return;
     }
 
-    const setas: Record<string, Direcao> = {
-      ArrowUp: 'cima', ArrowDown: 'baixo', ArrowLeft: 'esquerda', ArrowRight: 'direita',
-    };
     if (setas[e.key]) {
       e.preventDefault();
+      colunaDoTab.current = null;
       const destino = mover(p, faixa, setas[e.key], e.shiftKey);
       setFaixa(destino);
       /* Com Shift a faixa cresce e a âncora fica: a barra continua mostrando a
@@ -309,9 +437,17 @@ export function useGradeDoExcel({
       return;
     }
 
-    if (e.key === 'Enter') { e.preventDefault(); selecionarFaixa(proxima(p, faixa, e.shiftKey ? 'cima' : 'baixo')); return; }
-    if (e.key === 'Tab') { e.preventDefault(); selecionarFaixa(proxima(p, faixa, e.shiftKey ? 'esquerda' : 'direita')); return; }
-    if (e.key === 'F2') { e.preventDefault(); setBarra(texto(p, sel.l, sel.c)); setEditando('celula'); return; }
+    /* Shift+Espaço pega a linha inteira. */
+    if (e.key === ' ' && e.shiftKey) { e.preventDefault(); setFaixa({ l1: sel.l, c1: 0, l2: sel.l, c2: ultimaColuna }); return; }
+    if (e.key === 'Home') { e.preventDefault(); selecionar(sel.l, 0); return; }
+    if (e.key === 'PageDown' || e.key === 'PageUp') {
+      e.preventDefault();
+      selecionar(Math.max(0, Math.min(ultimaLinha, sel.l + (e.key === 'PageDown' ? 20 : -20))), sel.c);
+      return;
+    }
+    if (e.key === 'Enter') { e.preventDefault(); selecionarFaixa(andarComTab(e.shiftKey ? 'cima' : 'baixo')); return; }
+    if (e.key === 'Tab') { e.preventDefault(); selecionarFaixa(andarComTab(e.shiftKey ? 'esquerda' : 'direita')); return; }
+    if (e.key === 'F2') { e.preventDefault(); setBarra(texto(p, sel.l, sel.c)); setModo('editar'); setEditando('celula'); return; }
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); limparConteudo(); return; }
     if (e.key === 'Escape') { e.preventDefault(); cancelarEdicao(); return; }
 
@@ -320,6 +456,8 @@ export function useGradeDoExcel({
     if (!e.altKey && e.key.length === 1) {
       e.preventDefault();
       setBarra(e.key);
+      setModo('entrar');
+      setApontando(null);
       setEditando('celula');
     }
   };
@@ -395,15 +533,17 @@ export function useGradeDoExcel({
 
   return {
     faixa, setFaixa, sel, barra, setBarra, editando, setEditando, gradeRef, recorte,
+    modo: !editando ? 'Pronto' : apontando ? 'Apontar' : modo === 'entrar' ? 'Inserir' : 'Editar',
     selecionar, selecionarFaixa, confirmar, cancelarEdicao, desfazer, refazer,
     copiar, recortar, colar, limparConteudo,
     aoTeclar, aoArrastarBorda, aoAjustarAoConteudo,
     aoComecarPreenchimento: setPreenchendo,
     propsDaBarra: {
       value: editando ? barra : texto(p, sel.l, sel.c),
-      onFocus: () => setEditando('barra'),
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setBarra(e.target.value),
+      onFocus: () => { setModo('editar'); setEditando('barra'); },
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => { setBarra(e.target.value); setApontando(null); },
       onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (aoTeclarNaEdicao(e, 'barra')) return;
         if (e.key === 'Enter') { e.preventDefault(); confirmar(barra, 'baixo'); gradeRef.current?.focus(); }
         if (e.key === 'Escape') { e.preventDefault(); cancelarEdicao(); gradeRef.current?.focus(); }
       },
@@ -431,7 +571,18 @@ export function useGradeDoExcel({
       rascunho: editando === 'celula' ? barra : null,
       gradeRef,
       aoTeclar,
+      apontavel,
+      referencias: editando ? referenciasDaFormula(barra) : [],
+      aoTeclarNaEdicao,
       aoApontarCelula: (l, c, e) => {
+        /* No modo Apontar o clique escreve o nome da célula na fórmula, e o
+           foco fica no campo — sair dele gravaria a fórmula pela metade. */
+        if (apontavel && e.button === 0) {
+          e.preventDefault();
+          apontar(e.shiftKey && apontando ? { ...apontando.faixa, l2: l, c2: c } : { l1: l, c1: c, l2: l, c2: c });
+          setArrastandoApontar(true);
+          return;
+        }
         gradeRef.current?.focus();
         if (e.button !== 0) return;
         if (e.shiftKey) { setFaixa(f => ({ ...f, l2: l, c2: c })); return; }
@@ -439,6 +590,7 @@ export function useGradeDoExcel({
         setArrastandoFaixa(true);
       },
       aoEntrarNaCelula: (l, c) => {
+        if (arrastandoApontar && apontando) { apontar({ ...apontando.faixa, l2: l, c2: c }); return; }
         if (preenchendo) { setFaixa(f => ({ ...f, l2: l, c2: c })); return; }
         if (arrastandoFaixa) setFaixa(f => ({ ...f, l2: l, c2: c }));
       },
@@ -455,12 +607,13 @@ export function useGradeDoExcel({
       aoMoverPonteiro: moverArrasto,
       aoSoltarPonteiro: () => {
         arrasto.current = null;
+        setArrastandoApontar(false);
         setArrastandoFaixa(false);
         soltarPreenchimento();
       },
       aoSairDaGrade: () => setArrastandoFaixa(false),
-      aoAbrirEdicao: (t) => { setBarra(t); setEditando('celula'); },
-      aoEscrever: setBarra,
+      aoAbrirEdicao: (t) => { setBarra(t); setModo('editar'); setApontando(null); setEditando('celula'); },
+      aoEscrever: (t) => { setBarra(t); setApontando(null); },
       aoConfirmar: (t, direcao) => {
         if (jaResolvida.current) { jaResolvida.current = false; return; }
         /* Enter e Tab confirmam *e* saem da célula, e é a saída que dispara o

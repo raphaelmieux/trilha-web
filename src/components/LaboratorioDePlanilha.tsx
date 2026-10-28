@@ -134,7 +134,7 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
     refazer: () => setHist(refazer),
     avisar: (texto: string) => avisar(texto),
   });
-  const { faixa, setFaixa, sel, setBarra, setEditando, gradeRef } = g;
+  const { faixa, setFaixa, sel, setBarra, setEditando } = g;
 
   /* ── Os comandos da faixa ──────────────────────────────────────────────── */
 
@@ -409,23 +409,23 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
           aoArrastarBorda={g.aoArrastarBorda}
           aoAjustarAoConteudo={g.aoAjustarAoConteudo}
           aoComecarPreenchimento={g.aoComecarPreenchimento}
-          aoAbrirFiltro={p.filtro ? (c => {
-            const alvo = gradeRef.current?.querySelectorAll('.pl-cab-col')[c]?.getBoundingClientRect();
-            setFiltroAberto({ coluna: c, x: alvo?.left ?? 80, y: (alvo?.bottom ?? 120) + 2 });
+          aoAbrirFiltro={p.filtro ? ((c, alvo) => {
+            /* A lista abre embaixo da setinha, sem passar da borda da tela. */
+            const x = Math.min(alvo?.left ?? 80, window.innerWidth - 200);
+            setFiltroAberto({ coluna: c, x: Math.max(8, x), y: (alvo?.bottom ?? 120) + 2 });
           }) : undefined}
-        />
-
-        {p.grafico && (
-          <div className="pl-grafico" role="figure" aria-label={`Gráfico: ${p.grafico.titulo}`}>
-            <div className="pl-grafico-titulo">{p.grafico.titulo || '(sem título)'}</div>
-            <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p, cad)}
-              pares={pontosDaDispersao(p, cad)} tendencia={p.grafico.tendencia}
-              equacao={p.grafico.equacao} />
-            <div className="pl-grafico-eixo">
-              {p.grafico.eixoX || '(eixo sem nome)'} × {p.grafico.eixoY || '(eixo sem nome)'}
+          sobreposicao={p.grafico && (
+            <div className="pl-grafico" role="figure" aria-label={`Gráfico: ${p.grafico.titulo}`}>
+              <div className="pl-grafico-titulo">{p.grafico.titulo || '(sem título)'}</div>
+              <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p, cad)}
+                pares={pontosDaDispersao(p, cad)} tendencia={p.grafico.tendencia}
+                equacao={p.grafico.equacao} />
+              <div className="pl-grafico-eixo">
+                {p.grafico.eixoX || '(eixo sem nome)'} × {p.grafico.eixoY || '(eixo sem nome)'}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        />
 
         <AbasDoExcel
           nomes={cad.planilhas.map(q => q.nome)} ativa={cad.ativa} aoAvisar={avisar}
@@ -437,7 +437,7 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
         />
 
         <BarraDeStatusDoExcel aoAvisar={avisar} planilha={p} faixa={faixa} caderno={cad}>
-          <span>Pronto</span>
+          <span>{g.modo}</span>
           {p.filtro?.valor && (
             <span>{`Filtro: ${p.filtro.valor} — ${contarVisiveis(p)} de ${contarDaTabela(p)} linhas`}</span>
           )}

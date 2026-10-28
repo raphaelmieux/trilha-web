@@ -323,7 +323,7 @@ export default function LaboratorioEmTelaCheia({
                 botão de entregar justamente quando ele aparece. */}
             <div className="flex-1 min-h-0 overflow-auto">
               {tarefas.map(t => (
-                <div key={t.id} className="flex gap-2 px-3 py-2.5"
+                <div key={t.id} className="flex gap-2 px-3 py-2.5" data-tarefa={t.id} data-feita={t.feita ? 'sim' : 'nao'}
                   style={{ borderBottom: '1px solid #F3F2F1', fontSize: 12, color: '#3B3A39' }}>
                   <Marca feita={t.feita} />
                   <div className="min-w-0">

@@ -645,3 +645,20 @@ export const nuvemDoClube = (): Nuvem => ({
     }),
   ],
 });
+
+/**
+ * A ordem da lista: pastas primeiro, depois os arquivos pelo nome.
+ *
+ * É o que a nuvem de verdade faz por padrão, e é por isso que mora aqui e não
+ * em cada laboratório — dois laboratórios que ordenassem diferente mostrariam
+ * a mesma pasta em duas ordens. A comparação é em português: `localeCompare`,
+ * e não `<`, que poria "Ática" depois de "Zona".
+ */
+export function emOrdemDaLista(arquivos: ArquivoDaNuvem[], crescente = true): ArquivoDaNuvem[] {
+  return [...arquivos].sort((a, b) => {
+    const pasta = Number(b.tipo === 'pasta') - Number(a.tipo === 'pasta');
+    if (pasta !== 0) return pasta;
+    const nome = a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base', numeric: true });
+    return crescente ? nome : -nome;
+  });
+}

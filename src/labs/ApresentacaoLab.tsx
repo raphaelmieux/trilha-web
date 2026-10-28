@@ -475,6 +475,8 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
                     slide={slide} mestre={mestre}
                     rotuloDoTitulo={`Título do slide ${atual + 1}`}
                     aoEscreverNoTitulo={titulo => mudarSlide(slide.id, { titulo })}
+                    rotuloDoCorpo={`Texto do slide ${atual + 1}`}
+                    aoEscreverNoCorpo={topicos => mudarSlide(slide.id, { topicos })}
                     caminhoDoVideo={CAMINHO_DO_VIDEO}
                     nomeDoAudio={AUDIOS[0]}
                     caminhoDoAudio={CAMINHO_DO_AUDIO}

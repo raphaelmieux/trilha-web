@@ -418,58 +418,58 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
           aoArrastarBorda={grade.aoArrastarBorda}
           aoAjustarAoConteudo={grade.aoAjustarAoConteudo}
           aoComecarPreenchimento={grade.aoComecarPreenchimento}
-          aoAbrirFiltro={p.filtro ? (col => {
-            const alvo = grade.gradeRef.current?.querySelectorAll('.pl-cab-col')[col]?.getBoundingClientRect();
-            setFiltroAberto({ coluna: col, x: alvo?.left ?? 80, y: (alvo?.bottom ?? 120) + 2 });
+          aoAbrirFiltro={p.filtro ? ((col, alvo) => {
+            /* A lista abre embaixo da setinha, sem passar da borda da tela. */
+            const x = Math.min(alvo?.left ?? 80, window.innerWidth - 200);
+            setFiltroAberto({ coluna: col, x: Math.max(8, x), y: (alvo?.bottom ?? 120) + 2 });
           }) : undefined}
-        />
+          sobreposicao={p.grafico && (
+            <div className="pl-grafico" role="figure" aria-label={`Gráfico: ${p.grafico.titulo}`}>
+              <div className="pl-grafico-titulo">{p.grafico.titulo || '(sem título)'}</div>
+              <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p, cad)}
+                pares={pontosDaDispersao(p, cad)} tendencia={p.grafico.tendencia}
+                equacao={p.grafico.equacao} />
+              <div className="pl-grafico-eixo">
+                {p.grafico.eixoX || '(eixo sem nome)'} × {p.grafico.eixoY || '(eixo sem nome)'}
+              </div>
+              {/*
+                Elementos do Gráfico, e são **duas** caixas: no Excel dá para ver
+                a reta e nunca ler a equação dela, que é o que quase todo mundo
+                faz. Uma caixa só apagaria uma das duas metades do requisito 5.3.
 
-        {p.grafico && (
-          <div className="pl-grafico" role="figure" aria-label={`Gráfico: ${p.grafico.titulo}`}>
-            <div className="pl-grafico-titulo">{p.grafico.titulo || '(sem título)'}</div>
-            <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p, cad)}
-              pares={pontosDaDispersao(p, cad)} tendencia={p.grafico.tendencia}
-              equacao={p.grafico.equacao} />
-            <div className="pl-grafico-eixo">
-              {p.grafico.eixoX || '(eixo sem nome)'} × {p.grafico.eixoY || '(eixo sem nome)'}
+                Ele vive **no gráfico**, e não na caixa de inserir, porque é onde
+                o Excel o põe: a linha de tendência é um elemento de um gráfico
+                que já existe. E ele muda o gráfico no lugar, em vez de refazê-lo
+                — refazendo, o título e os eixos que a lição entregou sumiriam.
+              */}
+              <fieldset className="pl-elementos">
+                <legend>Elementos do Gráfico</legend>
+                <label>
+                  <input
+                    type="checkbox" aria-label="Linha de Tendência"
+                    checked={Boolean(p.grafico.tendencia)}
+                    onChange={e => mudar(q => (q.grafico ? {
+                      ...q,
+                      grafico: { ...q.grafico, tendencia: e.target.checked || undefined },
+                    } : q))}
+                  />
+                  Linha de Tendência
+                </label>
+                <label>
+                  <input
+                    type="checkbox" aria-label="Exibir Equação no gráfico"
+                    checked={Boolean(p.grafico.equacao)}
+                    onChange={e => mudar(q => (q.grafico ? {
+                      ...q,
+                      grafico: { ...q.grafico, equacao: e.target.checked || undefined },
+                    } : q))}
+                  />
+                  Exibir Equação no gráfico
+                </label>
+              </fieldset>
             </div>
-            {/*
-              Elementos do Gráfico, e são **duas** caixas: no Excel dá para ver
-              a reta e nunca ler a equação dela, que é o que quase todo mundo
-              faz. Uma caixa só apagaria uma das duas metades do requisito 5.3.
-
-              Ele vive **no gráfico**, e não na caixa de inserir, porque é onde
-              o Excel o põe: a linha de tendência é um elemento de um gráfico
-              que já existe. E ele muda o gráfico no lugar, em vez de refazê-lo
-              — refazendo, o título e os eixos que a lição entregou sumiriam.
-            */}
-            <fieldset className="pl-elementos">
-              <legend>Elementos do Gráfico</legend>
-              <label>
-                <input
-                  type="checkbox" aria-label="Linha de Tendência"
-                  checked={Boolean(p.grafico.tendencia)}
-                  onChange={e => mudar(q => (q.grafico ? {
-                    ...q,
-                    grafico: { ...q.grafico, tendencia: e.target.checked || undefined },
-                  } : q))}
-                />
-                Linha de Tendência
-              </label>
-              <label>
-                <input
-                  type="checkbox" aria-label="Exibir Equação no gráfico"
-                  checked={Boolean(p.grafico.equacao)}
-                  onChange={e => mudar(q => (q.grafico ? {
-                    ...q,
-                    grafico: { ...q.grafico, equacao: e.target.checked || undefined },
-                  } : q))}
-                />
-                Exibir Equação no gráfico
-              </label>
-            </fieldset>
-          </div>
-        )}
+          )}
+        />
 
         <AbasDoExcel
           nomes={cad.planilhas.map(q => q.nome)} ativa={cad.ativa} aoAvisar={avisar}
@@ -484,7 +484,7 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
         {/* A régua conta o que o filtro deixou à vista, como a do Excel. Ela
             relata o número, e nunca o que ele significa. */}
         <BarraDeStatusDoExcel aoAvisar={avisar} planilha={p} faixa={faixa} caderno={cad}>
-          <span>Pronto</span>
+          <span>{grade.modo}</span>
           {sobraram !== null && (
             <span style={{ marginLeft: 12 }}>
               {sobraram} de {(p.tabela ? normalizar(p.tabela).base - normalizar(p.tabela).topo : 0)} registros encontrados

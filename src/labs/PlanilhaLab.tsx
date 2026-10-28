@@ -750,7 +750,7 @@ export default function PlanilhaLab({
             que a planilha de verdade põe aí, e é como muita gente soma uma
             coluna sem escrever fórmula nenhuma. */}
         <BarraDeStatusDoExcel aoAvisar={avisar}>
-          <span>{resumoDaFaixa ?? 'Pronto'}</span>
+          <span>{g.modo === 'Pronto' ? (resumoDaFaixa ?? 'Pronto') : g.modo}</span>
           <span>
             {p.celulas[sel.l][sel.c].texto.startsWith('=')
               ? `Fórmula — resultado ${valorDe(p, sel.l, sel.c)}`

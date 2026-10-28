@@ -1,7 +1,8 @@
 import type React from 'react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  type Direta, type Doc, type Estilo, type ModoDeCaixa, type Paragrafo, type Realce, type Trecho,
+  type Alinhamento, type Direta, type Doc, type Estilo, type ModoDeCaixa, type Paragrafo, type Realce,
+  type TipoDeLista, type Trecho,
   aplicarCaixa, ehParagrafo,
 } from './documento';
 import {
@@ -10,6 +11,8 @@ import {
   limparFormatacao, limparTudo, mudarTamanhoEmDegrau, apagar, apagarSelecao, formatoDaSelecao, inserirTexto, mesmaSelecao,
   palavraEmVolta, quebraDeLinha, quebraDePagina, quebrarParagrafo, recolhida, selecaoValida,
   selecionarTudo, tamanhoDoParagrafo, unidadesDoTrecho,
+  alinhar, alternarLista, colarFragmento, definirEntrelinha, formatoDoParagrafoDaSelecao,
+  fragmentoDaSelecao, mudarRecuo, tabular, textoDaSelecao,
 } from './edicao';
 
 /**
@@ -27,9 +30,21 @@ export type ComandoDeTexto =
   | { tipo: 'quebra-de-pagina' }
   | { tipo: 'marca'; marca: Marca }
   | { tipo: 'formatar'; formatacao: Formatacao }
+  | { tipo: 'paragrafar'; formatacao: FormatacaoDeParagrafo }
+  | { tipo: 'tab'; voltar: boolean }
+  | { tipo: 'copiar' }
+  | { tipo: 'recortar' }
+  | { tipo: 'colar'; texto?: string }
   | { tipo: 'desfazer' }
   | { tipo: 'refazer' }
   | { tipo: 'selecionar-tudo' };
+
+/** O que os botões do grupo Parágrafo fazem. */
+export type FormatacaoDeParagrafo =
+  | { tipo: 'alinhar'; alinhamento: Alinhamento }
+  | { tipo: 'entrelinha'; valor: number }
+  | { tipo: 'lista'; lista: TipoDeLista }
+  | { tipo: 'recuo'; delta: 1 | -1 };
 
 /** O que os outros botões do grupo Fonte fazem. */
 export type Formatacao =
@@ -105,6 +120,11 @@ export function useEdicaoDoWord<S extends string>(
   const futuro = useRef<Passo<S>[]>([]);
   const [, setContagem] = useState(0);
   const digitando = useRef(false);
+  /* A área de transferência do programa: o texto, para reconhecer o que volta
+     no Ctrl+V, e os pedaços com a formatação, que é o que o Colar do Word
+     cola. O texto que chega de fora — de outra janela — entra puro. */
+  const transferencia = useRef<{ texto: string; fragmento: Trecho[][] } | null>(null);
+  const [temTransferencia, setTemTransferencia] = useState(false);
 
   /* O documento pode mudar por baixo do cursor — um comando do laboratório
      que apaga o parágrafo em que ele estava. A seleção é sempre a de agora,
@@ -253,6 +273,39 @@ export function useEdicaoDoWord<S extends string>(
     return true;
   }, [gravar]);
 
+  /**
+   * Alinhamento, entrelinha, lista e recuo: valem para todo parágrafo que a
+   * seleção toca, inteiro, e com o cursor parado valem para o parágrafo dele.
+   * Não há pendente, porque não há o que esperar: o parágrafo já existe.
+   */
+  const paragrafar = useCallback((f: FormatacaoDeParagrafo) => {
+    const { doc: d, selecao: s } = atual.current;
+    if (!s) return;
+    digitando.current = false;
+    let r: Edicao<S>;
+    switch (f.tipo) {
+      case 'alinhar': r = alinhar(d, s, f.alinhamento); break;
+      case 'entrelinha': r = definirEntrelinha(d, s, f.valor); break;
+      case 'lista': r = alternarLista(d, s, f.lista); break;
+      case 'recuo': r = mudarRecuo(d, s, f.delta); break;
+      default: {
+        const naoTratado: never = f;
+        throw new Error(`formatação de parágrafo não tratada: ${JSON.stringify(naoTratado)}`);
+      }
+    }
+    gravar(r.doc, s);
+  }, [gravar]);
+
+  /** Copiar: devolve o texto, para quem precisar pô-lo na área do sistema. */
+  const copiar = useCallback((): string | null => {
+    const { doc: d, selecao: s } = atual.current;
+    if (!s || recolhida(s)) return null;
+    const texto = textoDaSelecao(d, s);
+    transferencia.current = { texto, fragmento: fragmentoDaSelecao(d, s) };
+    setTemTransferencia(true);
+    return texto;
+  }, []);
+
   const executar = useCallback((c: ComandoDeTexto) => {
     const { doc: d, selecao: s, pendente: p, opcoes: o } = atual.current;
     if (o.permitir && !o.permitir(c, d, s)) return;
@@ -261,6 +314,8 @@ export function useEdicaoDoWord<S extends string>(
     if (c.tipo === 'selecionar-tudo') { setSelecaoCrua(selecionarTudo(d)); return; }
     if (c.tipo === 'marca') { marcar(c.marca); return; }
     if (c.tipo === 'formatar') { formatar(c.formatacao); return; }
+    if (c.tipo === 'paragrafar') { paragrafar(c.formatacao); return; }
+    if (c.tipo === 'copiar') { copiar(); return; }
     const alvo = ('alvo' in c && c.alvo) ? selecaoValida(d, c.alvo) : s;
     if (!alvo) return;
     const q = o.quem;
@@ -281,6 +336,27 @@ export function useEdicaoDoWord<S extends string>(
       case 'paragrafo': r = quebrarParagrafo(d, alvo, q); digitando.current = false; break;
       case 'quebra-de-linha': r = quebraDeLinha(d, alvo, q); digitando.current = false; break;
       case 'quebra-de-pagina': r = quebraDePagina(d, alvo, q); digitando.current = false; break;
+      case 'tab': r = tabular(d, alvo, c.voltar, q); digitando.current = false; break;
+      /* Recortar é copiar e apagar, no mesmo passo de desfazer. */
+      case 'recortar': {
+        if (recolhida(alvo)) return;
+        copiar();
+        r = apagarSelecao(d, alvo, q);
+        digitando.current = false;
+        break;
+      }
+      /* O que voltou é o que saiu daqui: cola com a formatação. O que veio de
+         outra janela entra puro, herdando a de onde o cursor está. */
+      case 'colar': {
+        const t = transferencia.current;
+        if (t && (c.texto === undefined || c.texto.replace(/\r\n?/g, '\n') === t.texto)) {
+          r = colarFragmento(d, alvo, t.fragmento, q);
+        } else if (c.texto) {
+          r = inserirTexto(d, alvo, c.texto, q, p);
+        } else return;
+        digitando.current = false;
+        break;
+      }
       default: {
         const naoTratado: never = c;
         throw new Error(`comando não tratado: ${JSON.stringify(naoTratado)}`);
@@ -289,7 +365,7 @@ export function useEdicaoDoWord<S extends string>(
     gravar(r.doc, r.selecao, juntar);
     /* O pendente vale até o cursor andar; digitar o carrega junto. */
     if (c.tipo !== 'inserir') setPendente(undefined);
-  }, [desfazer, refazer, marcar, formatar, gravar]);
+  }, [desfazer, refazer, marcar, formatar, paragrafar, copiar, gravar]);
 
   /**
    * Um comando do laboratório, que entra no Ctrl+Z como qualquer tecla.
@@ -359,6 +435,11 @@ export function useEdicaoDoWord<S extends string>(
     selecao,
     folha,
     formato: formatoDaSelecao(doc, selecao, pendente),
+    formatoDoParagrafo: formatoDoParagrafoDaSelecao(doc, selecao),
+    paragrafar,
+    copiar,
+    /** Há o que colar? O botão Colar do Word fica apagado enquanto não há. */
+    temTransferencia,
     pendente,
     paragrafo,
     trecho,

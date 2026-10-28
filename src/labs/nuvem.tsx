@@ -1,6 +1,6 @@
-import type React from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import {
-  HardDrive, Users, Trash2, Search, ChevronRight, ChevronDown,
+  HardDrive, Users, Trash2, Search, ChevronRight, ChevronDown, ArrowUp, ArrowDown, Plus, X,
   FileText, Table2, Folder, Image, FileType, MoreVertical, type LucideIcon,
 } from 'lucide-react';
 import {
@@ -133,6 +133,37 @@ export const CSS_DA_NUVEM = `
   border-radius: 50%; width: 30px; height: 30px; display: grid; place-items: center;
 }
 .nv-pontos:hover { background: #E3E3E3; }
+/* O botão Novo fica no alto da lateral, branco e com sombra, como na nuvem
+   de verdade: é a primeira coisa que alguém procura para criar alguma coisa. */
+.nv-novo {
+  display: inline-flex; align-items: center; gap: 11px; margin: 0 0 14px 4px;
+  padding: 14px 20px 14px 16px; border: none; border-radius: 16px; cursor: pointer;
+  background: #FFFFFF; color: #1F1F1F; font-size: 14px; font-weight: 500;
+  box-shadow: 0 1px 2px rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+}
+.nv-novo:hover { background: #EDF2FC; }
+/* O cabeçalho do Nome ordena, e a setinha diz em que sentido. */
+.nv-ordenar {
+  display: inline-flex; align-items: center; gap: 5px; border: none; background: none;
+  cursor: pointer; color: inherit; font: inherit; padding: 2px 6px; margin-left: -6px; border-radius: 6px;
+}
+.nv-ordenar:hover { background: #EDEDED; }
+.nv-dono { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.nv-dono .nv-bolha { width: 22px; height: 22px; font-size: 10.5px; }
+/* Com algo escolhido, a fileira de cima vira a barra da seleção, como na
+   nuvem de verdade: o que fazer com o escolhido aparece sem abrir menu. */
+.nv-selecao {
+  display: flex; align-items: center; gap: 4px; margin: 0 12px 6px; padding: 4px 8px;
+  background: #EDF2FC; border-radius: 999px; min-height: 40px;
+}
+.nv-selecao-vazia { background: transparent; }
+.nv-selecao-conta { font-size: 13.5px; margin: 0 10px 0 2px; color: #1F1F1F; }
+.nv-selecao button {
+  border: none; background: none; cursor: pointer; color: #444746;
+  border-radius: 50%; width: 32px; height: 32px; display: grid; place-items: center;
+}
+.nv-selecao button:hover:not(:disabled) { background: #DDE3EA; }
+.nv-selecao button:disabled { color: #A8ABAE; cursor: default; }
 
 .nv-menu {
   position: absolute; z-index: 40; min-width: 232px; padding: 7px 0;
@@ -230,6 +261,7 @@ export const CSS_DA_NUVEM = `
     border-right: none; border-bottom: 1px solid #E3E3E3;
   }
   .nv-lugar { width: auto; flex: none; border-radius: 999px; padding: 7px 13px; }
+  .nv-novo { margin: 0; flex: none; padding: 7px 14px; border-radius: 999px; }
   .nv-espaco { display: none; }
   .nv-cabecalho, .nv-linha { grid-template-columns: 1fr 40px; }
   .nv-cabecalho > :nth-child(2), .nv-cabecalho > :nth-child(3),
@@ -282,14 +314,21 @@ const LUGARES: { id: LugarDaNuvem; nome: string; icone: LucideIcon }[] = [
   { id: 'lixeira', nome: 'Lixeira', icone: Trash2 },
 ];
 
-export function LateralDaNuvem({ lugar, aoIr, usado }: {
+export function LateralDaNuvem({ lugar, aoIr, usado, aoNovo }: {
   lugar: LugarDaNuvem;
   aoIr: (l: LugarDaNuvem) => void;
   /** Quanto do espaço já foi usado, de 0 a 1. */
   usado: number;
+  /** O botão Novo, quando o laboratório tem o que responder a ele. */
+  aoNovo?: () => void;
 }) {
   return (
     <nav className="nv-lado" aria-label="Lugares da nuvem">
+      {aoNovo && (
+        <button type="button" className="nv-novo" onClick={aoNovo}>
+          <Plus size={20} aria-hidden /> Novo
+        </button>
+      )}
       {LUGARES.map(l => (
         <button key={l.id} type="button" className="nv-lugar"
           aria-current={l.id === lugar} onClick={() => aoIr(l.id)}>
@@ -339,10 +378,22 @@ const COR_DO_TIPO: Record<TipoDeArquivo, string> = {
   imagem: '#C5221F', pdf: '#B31412',
 };
 
-export function CabecalhoDaLista() {
+export function CabecalhoDaLista({ crescente = true, aoOrdenar }: {
+  crescente?: boolean;
+  /** Clicar em Nome inverte a ordem. Sem ele, o cabeçalho é só rótulo. */
+  aoOrdenar?: () => void;
+} = {}) {
+  const Seta = crescente ? ArrowUp : ArrowDown;
   return (
     <div className="nv-cabecalho">
-      <span>Nome</span>
+      {aoOrdenar ? (
+        <span>
+          <button type="button" className="nv-ordenar" onClick={aoOrdenar}
+            aria-label={`Ordenar por nome, ${crescente ? 'de Z a A' : 'de A a Z'}`}>
+            Nome <Seta size={14} aria-hidden />
+          </button>
+        </span>
+      ) : <span>Nome</span>}
       <span>Proprietário</span>
       <span>Última alteração</span>
       <span />
@@ -350,12 +401,29 @@ export function CabecalhoDaLista() {
   );
 }
 
+/**
+ * Onde o menu abre, medido a partir da janela da nuvem.
+ *
+ * No botão direito, onde está o ponteiro; nos três pontos, logo embaixo do
+ * botão e encostado nele pela direita — que é o que a nuvem de verdade faz.
+ * O menu abria sempre no mesmo canto da janela, longe da linha clicada, e não
+ * havia como saber de qual arquivo ele falava.
+ */
+function ondeAbrirOMenu(e: React.MouseEvent): { x: number; y: number } {
+  const janela = (e.currentTarget as HTMLElement).closest('.nv-janela')?.getBoundingClientRect();
+  const ox = janela?.left ?? 0;
+  const oy = janela?.top ?? 0;
+  if (e.type === 'contextmenu') return { x: e.clientX - ox, y: e.clientY - oy };
+  const b = (e.currentTarget as HTMLElement).getBoundingClientRect();
+  return { x: b.right - ox - 232, y: b.bottom - oy + 2 };
+}
+
 export function LinhaDaNuvem({ arquivo, escolhido, aoEscolher, aoAbrir, aoMenu }: {
   arquivo: ArquivoDaNuvem;
   escolhido: boolean;
   aoEscolher: () => void;
   aoAbrir: () => void;
-  aoMenu?: (e: React.MouseEvent) => void;
+  aoMenu?: (e: React.MouseEvent, onde: { x: number; y: number }) => void;
 }) {
   const Icone = ICONE_DO_TIPO[arquivo.tipo];
   const ultima = arquivo.versoes[arquivo.versoes.length - 1];
@@ -373,7 +441,7 @@ export function LinhaDaNuvem({ arquivo, escolhido, aoEscolher, aoAbrir, aoMenu }
       tabIndex={0}
       onClick={aoEscolher}
       onDoubleClick={aoAbrir}
-      onContextMenu={aoMenu}
+      onContextMenu={aoMenu ? e => { e.preventDefault(); aoEscolher(); aoMenu(e, ondeAbrirOMenu(e)); } : undefined}
       onKeyDown={e => {
         if (e.key === 'Enter') { e.preventDefault(); aoAbrir(); }
         if (e.key === ' ') { e.preventDefault(); aoEscolher(); }
@@ -386,14 +454,15 @@ export function LinhaDaNuvem({ arquivo, escolhido, aoEscolher, aoAbrir, aoMenu }
           <span className="nv-selo"><Users size={12} aria-hidden /> Compartilhado</span>
         )}
       </span>
-      <span className="nv-fraco" data-coluna="dono">
-        {arquivo.dono === 'voce' ? 'eu' : NOME_DO_AUTOR[arquivo.dono]}
+      <span className="nv-fraco nv-dono" data-coluna="dono">
+        <Bolha quem={arquivo.dono} />
+        <span>{arquivo.dono === 'voce' ? 'eu' : NOME_DO_AUTOR[arquivo.dono]}</span>
       </span>
       <span className="nv-fraco" data-coluna="quando">{ultima?.quando ?? '—'}</span>
       {aoMenu ? (
         <button type="button" className="nv-pontos" title="Mais ações"
           aria-label={`Mais ações de ${arquivo.nome}`}
-          onClick={e => { e.stopPropagation(); aoEscolher(); aoMenu(e); }}>
+          onClick={e => { e.stopPropagation(); aoEscolher(); aoMenu(e, ondeAbrirOMenu(e)); }}>
           <MoreVertical size={17} aria-hidden />
         </button>
       ) : <span />}
@@ -408,13 +477,69 @@ export function MenuDoArquivo({ onde, aoFechar, children }: {
   aoFechar: () => void;
   children: React.ReactNode;
 }) {
+  /* O menu não sai da janela: perto da borda de baixo ele abre para cima, e
+     perto da direita, para a esquerda — senão os últimos itens, que são
+     "Mover para a lixeira", ficariam fora da tela. */
+  const ref = useRef<HTMLDivElement>(null);
+  const { x: ox, y: oy } = onde;
+  const [pos, setPos] = useState(onde);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const caixa = el?.offsetParent as HTMLElement | null;
+    if (!el || !caixa) { setPos({ x: ox, y: oy }); return; }
+    const x = Math.max(8, Math.min(ox, caixa.clientWidth - el.offsetWidth - 8));
+    const y = oy + el.offsetHeight > caixa.clientHeight - 8
+      ? Math.max(8, oy - el.offsetHeight) : oy;
+    setPos({ x, y });
+  }, [ox, oy]);
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, zIndex: 39 }} onClick={aoFechar} />
-      <div className="nv-menu" role="menu" style={{ left: onde.x, top: onde.y }}>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 39 }} onClick={aoFechar}
+        onContextMenu={e => { e.preventDefault(); aoFechar(); }} />
+      <div ref={ref} className="nv-menu" role="menu" style={{ left: pos.x, top: pos.y }}>
         {children}
       </div>
     </>
+  );
+}
+
+/**
+ * A barra que aparece com um arquivo escolhido: quantos, e o que fazer com eles.
+ *
+ * Os botões são do laboratório, que é quem sabe o que cada gesto faz com a
+ * nuvem dele; aqui fica a forma — o X que desfaz a escolha, a contagem e a
+ * fileira de ícones, que na nuvem de verdade substitui a fileira de filtros.
+ */
+export function BarraDaSelecao({ quantos, aoLimpar, children }: {
+  quantos: number;
+  aoLimpar: () => void;
+  children: React.ReactNode;
+}) {
+  /* Vazia, ela continua ocupando o lugar: a lista não pula para baixo a cada
+     clique, que é o que faria quem clica errar a linha seguinte. */
+  if (quantos === 0) return <div className="nv-selecao nv-selecao-vazia" aria-hidden />;
+  return (
+    <div className="nv-selecao" role="toolbar" aria-label="Ações do que está escolhido">
+      <button type="button" title="Limpar seleção" aria-label="Limpar seleção" onClick={aoLimpar}>
+        <X size={18} aria-hidden />
+      </button>
+      <span className="nv-selecao-conta">{quantos} selecionado{quantos > 1 ? 's' : ''}</span>
+      {children}
+    </div>
+  );
+}
+
+/** Um botão da barra da seleção: só o ícone, com o nome na dica. */
+export function AcaoDaSelecao({ icone: Icone, nome, aoClicar, desligado }: {
+  icone: LucideIcon;
+  nome: string;
+  aoClicar?: () => void;
+  desligado?: boolean;
+}) {
+  return (
+    <button type="button" title={nome} aria-label={nome} onClick={aoClicar} disabled={desligado}>
+      <Icone size={18} aria-hidden />
+    </button>
   );
 }
 

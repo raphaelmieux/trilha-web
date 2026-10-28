@@ -1,11 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  AlignLeft, AlignCenter, AlignRight, AlignJustify, Pilcrow, Search, Replace,
-  BookMarked, ListTree, StickyNote, Quote,
-  Clipboard, Scissors, Copy,
+  Search, Replace, BookMarked, ListTree, StickyNote, Quote,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
-import { GrupoDeFonte, CSS_FONTE_DO_WORD } from '../labs/fonteDoWord';
+import { GrupoDeFonte, CSS_FONTE_DO_WORD, GrupoDeParagrafo, GrupoAreaDeTransferencia } from '../labs/fonteDoWord';
 import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
 import { aplicarEstilo as estiloNaSelecao } from '../labs/edicao';
 import {
@@ -260,13 +258,7 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
 
         {guia === 'Início' && (
           <div className="wd-faixa" style={{ overflowX: menu ? 'visible' : 'auto' }}>
-            <GrupoDaFaixa nome="Área de Transferência">
-              <EnfeiteDaFaixa dica="Colar (Ctrl+V)" rotulo="Colar" empilhado aoAvisar={setAviso}>
-                <Clipboard className="w-5 h-5" />
-              </EnfeiteDaFaixa>
-              <EnfeiteDaFaixa dica="Recortar (Ctrl+X)" aoAvisar={setAviso}><Scissors className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-              <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={setAviso}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-            </GrupoDaFaixa>
+            <GrupoAreaDeTransferencia edicao={edicao} aoAvisar={setAviso} />
 
             {/* O grupo Fonte inteiro, e não só a borracha: o requisito 6 pede
                 que se tire a formatação direta, e o caminho do Word é
@@ -275,21 +267,8 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair }: P
                 lá, e a diferença entre elas é parte da lição. */}
             <GrupoDeFonte edicao={edicao} aoAvisar={setAviso} />
 
-            <GrupoDaFaixa nome="Parágrafo">
-              <div className="wd-linhas">
-                <div style={{ display: 'flex', gap: 1 }}>
-                  <BotaoDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoClicar={() => naoFazParte('Alinhar à Esquerda')}><AlignLeft className="w-3.5 h-3.5" /></BotaoDaFaixa>
-                  <BotaoDaFaixa dica="Centralizar (Ctrl+E)" aoClicar={() => naoFazParte('Centralizar')}><AlignCenter className="w-3.5 h-3.5" /></BotaoDaFaixa>
-                  <BotaoDaFaixa dica="Alinhar à Direita (Ctrl+G)" aoClicar={() => naoFazParte('Alinhar à Direita')}><AlignRight className="w-3.5 h-3.5" /></BotaoDaFaixa>
-                  <BotaoDaFaixa dica="Justificar (Ctrl+J)" aoClicar={() => naoFazParte('Justificar')}><AlignJustify className="w-3.5 h-3.5" /></BotaoDaFaixa>
-                </div>
-                <div style={{ display: 'flex', gap: 1 }}>
-                  <BotaoDaFaixa dica="Mostrar Tudo (Ctrl+*)" ativo={marcas} aoClicar={() => { setMarcas(m => !m); edicao.focar(); }}>
-                    <Pilcrow className="w-3.5 h-3.5" />
-                  </BotaoDaFaixa>
-                </div>
-              </div>
-            </GrupoDaFaixa>
+            <GrupoDeParagrafo edicao={edicao} aoAvisar={setAviso}
+              marcas={{ ligadas: marcas, alternar: () => { setMarcas(m => !m); edicao.focar(); } }} />
 
             {/*
               A galeria. O clique aplica; o botão direito abre Modificar, que é

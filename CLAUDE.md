@@ -3392,6 +3392,102 @@ e Ctrl+S; o editor de navegador da CC-ES006 não traduz nada e é Ctrl+B, Ctrl+I
 e Ctrl+U. A folha recebe `atalhos` do gancho, e o Ctrl+B do Word é parado sem
 fazer nada — no Chrome ele escreveria `<b>` no DOM.
 
+**A AP042 e a AP043 escrevem na mesma folha.** Os dois laboratórios de Word
+das trilhas ficaram para trás quando a folha ganhou cursor: um escolhia
+parágrafo num menu, o outro tinha painel próprio de margens fora da faixa. Hoje
+os dois são a folha de `word.tsx` com `useEdicaoDoWord`, e as metas moram em
+`metasDaAp042.ts` e `metasDaAp043.ts`, lendo o documento e não o clique.
+
+**Parágrafo é formato do parágrafo, e lista é número calculado.** Alinhamento,
+entrelinha, recuo e lista moram em `Paragrafo.formato`, e não nos trechos: no
+Word eles valem para o parágrafo inteiro, e guardá-los letra a letra deixaria
+meio parágrafo centralizado. O marcador e o número **não são texto** — saem de
+`marcadorDaLista`, contando os vizinhos, e a folha os desenha por `::before` a
+partir de `data-marcador`. Número digitado à mão é a armadilha do "Figura 1"
+outra vez: apagar o item 2 deixaria um 1 e um 3.
+
+E os comandos de parágrafo valem para **todo parágrafo que a seleção toca**, por
+`paragrafosAlcancados`. Um clique triplo seleciona o título e pega o começo do
+parágrafo seguinte na posição zero; contado como tocado, o Ctrl+E centralizava
+os dois. Posição zero do último não conta, que é o que o Word faz.
+
+**A folha tem tamanho, orientação e margem, e é do documento.** `Doc.pagina`,
+com as medidas reais em centímetros: A4 é 21 × 29,7, Carta é 21,59 × 27,94, e
+as margens Estreita, Moderada, Normal e Larga são as do Word. Um painel da
+plataforma ao lado da folha ensinava a procurar margem no lugar errado; ela mora
+em Layout › Configurar Página, e a folha muda de forma na hora.
+
+**A área de transferência é do Word, e não do navegador.** Copiar guarda um
+fragmento com a formatação (`fragmentoDaSelecao`), colar o insere pelo motor
+(`colarFragmento`). O navegador colaria HTML de qualquer lugar e o modelo não o
+leria — a tela mostraria o que o documento não tem.
+
+**O Excel tem modos, e a barra de status diz qual.** Pronto, Inserir, Editar e
+Apontar, como no programa: de onde a edição começou decide o que a seta faz.
+Escrevendo uma fórmula logo depois de `=`, de um operador, de `(` ou de `;`, a
+seta e o clique **apontam** — escrevem a referência no texto, e cada referência
+da fórmula ganha o contorno da sua cor na grade. Depois de um número, clicar
+noutra célula é sair da edição. As regras puras moram em `teclasDaPlanilha.ts`:
+
+- **F4 gira em quatro passos**, `A1` → `$A$1` → `A$1` → `$A1`, e não liga e
+  desliga: o cifrão só da linha é o que a CC-ES003 cobra ao arrastar para
+  baixo, e um botão de dois estados nunca o produziria. `LOG10(` não é
+  referência, e o F4 não o toca;
+- **Ctrl+seta para na borda do bloco de dados**, e não na da grade;
+- **Tab e depois Enter volta à coluna de onde o Tab começou**, que é como se
+  preenche uma tabela linha a linha sem tirar a mão do teclado.
+
+**A AP044 deixou de ter uma planilha só dela.** Ela desenhava uma tabela HTML,
+com o total num painel ao lado e a fórmula num botão: as setas, o F2 e a barra
+de fórmulas que a AP043 acabara de ensinar não existiam ali. Hoje é uma pasta de
+verdade na `GradeDoExcel`, e por isso entrou na mesa de `gradeDoExcel.test.tsx`.
+O total mora em D123, embaixo do que soma; os meses moram **noutra aba**, porque
+o filtro esconde a linha inteira — uma tabela ao lado da lista sumiria junto, e
+o gráfico perderia pontos sem explicação.
+
+E ela achou quatro coisas que falhavam caladas em todas as planilhas:
+
+- **o motor não tinha `SUBTOTAL`.** A tarefa conferia o texto da fórmula, e o
+  número na célula vinha de outra conta. Hoje ele pergunta a `linhaEscondida` —
+  a mesma pergunta que a grade faz para esconder a linha —, ignora outro
+  `SUBTOTAL` dentro da faixa e trata 9 e 109 igual, porque a linha que o filtro
+  esconde sai dos dois;
+- **a Soma da barra de status contava as linhas escondidas**, e então nunca
+  discordava do `=SOMA` — que é a discórdia que a lição manda notar;
+- **o formato da célula era gravado e nunca desenhado.** Moeda não fazia nada
+  na tela, em nenhuma vereda;
+- **a linha congelada não ficava presa.** O `top` ia na `<tr>`, e quem gruda é
+  a célula, que não o herda. E as letras das colunas rolavam embora — na linha
+  80 ninguém sabia que coluna era qual.
+
+**O gráfico flutua sobre as células, e não sobre a janela.** Pendurado na
+janela, ele cobria a barra de título e a faixa — justamente onde mora Design do
+Gráfico. Hoje vai por `sobreposicao`, dentro da caixa que rola, como no Excel,
+e o que se faz nele (escrever o título) não vira tecla da grade. A guia
+contextual só existe com o gráfico escolhido, e o título se escreve **no
+gráfico**, com o convite cinza "Título do Gráfico" — que não conta como título.
+
+**A setinha do filtro mora na célula do cabeçalho**, e não na letra da coluna:
+é onde o Excel a põe e onde quem leu a teoria vai procurá-la. A lista abre
+embaixo dela.
+
+**O corpo do slide se escreve no slide.** Era um campo de texto à parte embaixo
+do palco — um formulário da plataforma onde o PowerPoint tem o espaço
+reservado. `FolhaDoSlide` recebe `aoEscreverNoCorpo` e desenha uma lista
+editável com os marcadores: Enter abre o tópico seguinte, Backspace tira um, e
+colar entra como texto. O DOM é de quem digita; o modelo só o reescreve quando
+os dois discordam, e as duas leituras aparam as linhas vazias do fim **do mesmo
+jeito** — senão o Enter no último tópico abria a linha, o modelo a aparava, e
+ela sumia debaixo do cursor.
+
+**A lista da nuvem se comporta como a de uma nuvem.** Pastas primeiro, o resto
+em ordem de dicionário (`emOrdemDaLista`, com número como número: Ata 9 antes de
+Ata 10), e o cabeçalho do Nome inverte. O menu abre **onde se clicou** — abria
+sempre no mesmo canto, longe da linha, sem dizer de qual arquivo falava — e não
+sai da janela. Com um arquivo escolhido aparece a barra da seleção, que ocupa o
+lugar mesmo vazia para a lista não pular a cada clique. O dono vem com a bolha
+dele.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que
@@ -5009,6 +5105,16 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDeBanco.test.tsx` | lição da CC005 impossível de vencer digitando e executando, ou arquivo mudado sem envelhecer a lista |
 | `src/curriculum/exemplosDeSql.test.ts` | resultado da teoria da CC005 que o SQLite não devolve |
 | `src/curriculum/laboratoriosDePython.test.ts` | cadastro sem commit valendo por gravado, ou comando colado valendo por parâmetro |
+| `src/labs/metasDaAp042.test.ts` | tarefa do laboratório de formatação que nasce verde, ou que ninguém consegue vencer |
+| `src/labs/FormatacaoTextoLab.test.tsx` | margem fora da guia Layout, ou tarefa da AP042 que não fecha pelos gestos do Word |
+| `src/labs/InsercaoTextoLab.test.tsx` | guia contextual da tabela que fica sem tabela, ou cabeçalho fechado que se escreve |
+| `src/labs/edicao.test.ts` | comando de parágrafo que pega o vizinho na posição zero de um clique triplo |
+| `src/labs/teclasDaPlanilha.test.ts` | F4 que liga e desliga em vez de girar, ou que mexe em nome de função |
+| `src/labs/planilha.test.ts` | SUBTOTAL que soma a linha escondida, ou a SOMA que deixa de somá-la |
+| `src/labs/planilhaDoAcampamento.test.ts` | barra de status que conta o escondido, ou SUBTOTAL de meia coluna fechando a tarefa |
+| `src/labs/PlanilhaAvancadaLab.test.tsx` | AP044 fora da grade do Excel, ou Design do Gráfico que fica sem gráfico escolhido |
+| `src/labs/powerpoint.test.tsx` | corpo do slide escrito fora do slide, ou Enter cuja linha some debaixo do cursor |
+| `src/labs/nuvem.test.tsx` | lista fora da ordem da nuvem, ou menu que não abre onde se clicou |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

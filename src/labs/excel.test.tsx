@@ -148,7 +148,7 @@ describe('as peças novas aparecem pela presença do setter', () => {
   it('sem aoAbrirFiltro, não há setinha de filtro', () => {
     const p = planilhaDeTeste(CLUBE, { tabela: { l1: 0, c1: 0, l2: 3, c2: 1 } });
     const container = montar(<Grade planilha={p} />);
-    expect(container.querySelector('.pl-cab-bt')).toBeNull();
+    expect(container.querySelector('.pl-filtro-seta')).toBeNull();
   });
 
   /*
@@ -158,7 +158,7 @@ describe('as peças novas aparecem pela presença do setter', () => {
   it('com aoAbrirFiltro, ela aparece só nas colunas da tabela declarada', () => {
     const p = planilhaDeTeste(CLUBE, { tabela: { l1: 0, c1: 0, l2: 3, c2: 1 } });
     const container = montar(<Grade planilha={p} aoAbrirFiltro={vi.fn()} />);
-    expect(container.querySelectorAll('.pl-cab-bt')).toHaveLength(2);
+    expect(container.querySelectorAll('.pl-filtro-seta')).toHaveLength(2);
   });
 
   it('sem aoArrastarBorda, não há alça de tamanho', () => {

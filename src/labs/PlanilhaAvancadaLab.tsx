@@ -2,20 +2,25 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Filter, Snowflake, ChartLine, ChartPie, ChartColumn, ChartScatter,
-  Type, Ruler, ChevronDown, Sigma, ArrowDownAZ, Eraser, Copy, ClipboardPaste,
-  FileCheck2, RotateCcw, Check,
+  Sigma, ArrowDownAZ, ArrowUpZA, Eraser, Copy, ClipboardPaste, Scissors,
+  FileCheck2, RotateCcw, Undo2, Redo2, Check, ChevronDown, Rows3, Percent,
 } from 'lucide-react';
+import { IconeNegrito } from './office';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
   CSS_EXCEL, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, AbasDoExcel,
-  DesenhoDoGrafico,
-  BarraDeStatusDoExcel,
+  BarraDeFormulas, GradeDoExcel, DesenhoDoGrafico, BarraDeStatusDoExcel,
 } from './excel';
+import { useGradeDoExcel } from './gradeDoExcel';
+import { regiaoAtual } from './teclasDaPlanilha';
 import {
-  ACAMPAMENTO_INICIAL, METAS_DO_ACAMPAMENTO, UNIDADES, INSCRICOES_POR_MES,
-  NOMES_DOS_GRAFICOS,
-  inscritosNaTela, totalDaCelula, totalNaTela,
-  type Acampamento, type TipoDeGrafico,
+  type Caderno, type Planilha, type TipoDeGrafico, type Historico, type Formato,
+  planilhaAtiva, trocarAtiva, historicoDe, registrar as registrarPasso, desfazer, refazer,
+  nomeDaCelula, nomeDaFaixa, normalizar, umaCelulaSo, ordenar, pontosDoGrafico,
+} from './planilha';
+import {
+  METAS_DO_ACAMPAMENTO, INSCRITOS, ABA_DOS_INSCRITOS,
+  acampamentoInicial, inscritosVisiveis,
 } from './planilhaDoAcampamento';
 import {
   upsertRequirementProgress, getRequirementId, getSpecialtyId,
@@ -33,111 +38,206 @@ import type { PropsDeLaboratorio as Props } from './tipos';
  * parar de olhar linha por linha. Estender aquele mudaria o que a trilha
  * anterior avalia como concluído.
  *
- * A janela é a mesma, de `excel.tsx` — que saiu de dentro do laboratório da
- * AP043 justamente agora, para que não existam dois "Excel" diferentes na
- * plataforma. É a mesma decisão que `word.tsx` já tinha registrado.
+ * ── E é a mesma grade ────────────────────────────────────────────────────
+ * Ele desenhava uma tabela HTML própria, com o total num painel ao lado e a
+ * fórmula num botão: setas, F2, Enter e a barra de fórmulas — tudo o que a
+ * AP043 acabara de ensinar — não existiam aqui. Hoje a planilha é uma
+ * `Planilha` na `GradeDoExcel`, e o gancho é o mesmo dos outros seis
+ * laboratórios de planilha, o que põe este na mesa de `gradeDoExcel.test.tsx`.
  *
  * ── Os dois números ──────────────────────────────────────────────────────
- * A planilha mostra ao mesmo tempo a célula do total, que é a `SOMA`, e a
- * barra de status, que soma o que está à vista — como o Excel de verdade faz.
- * Com filtro aplicado eles não batem, e é aí que a lição acontece: quem não
- * sabe disso lê o número da célula e o manda para a liderança.
+ * A célula D123 é a `SOMA`; a barra de status soma a seleção pulando o que o
+ * filtro escondeu — como o Excel de verdade faz. Com filtro aplicado eles não
+ * batem, e é aí que a lição acontece. O programa não escreve aviso nenhum
+ * sobre isso: a régua de status relata, e quem compara é o desbravador.
  */
 
-const COLUNAS = ['Nome', 'Unidade', 'Diárias', 'Valor'] as const;
-const USAVEIS = ['Página Inicial', 'Inserir', 'Exibir'];
+const GUIAS_USAVEIS = ['Página Inicial', 'Inserir', 'Dados', 'Exibir'] as const;
+const DESIGN_DO_GRAFICO = 'Design do Gráfico';
 
-const ICONE_DO_GRAFICO: Record<Exclude<TipoDeGrafico, 'nenhum'>, typeof ChartLine> = {
-  pizza: ChartPie,
-  barras: ChartColumn,
+const NOME_DO_GRAFICO: Record<TipoDeGrafico, string> = {
+  colunas: 'Colunas',
+  linha: 'Linhas',
+  pizza: 'Pizza',
+  dispersao: 'Dispersão',
+};
+
+const ICONE_DO_GRAFICO: Record<TipoDeGrafico, typeof ChartLine> = {
+  colunas: ChartColumn,
   linha: ChartLine,
+  pizza: ChartPie,
   dispersao: ChartScatter,
 };
 
-const reais = (n: number) => `R$ ${n.toLocaleString('pt-BR')}`;
+/* O programa explica o que cada tipo responde ao inseri-lo, em vez de só
+   deixar a tarefa vermelha: vermelho sem explicação mede paciência. */
+const O_QUE_O_GRAFICO_RESPONDE: Record<TipoDeGrafico, string> = {
+  linha: 'Gráfico de linhas: o eixo tem ordem no tempo, e a linha entre dois pontos diz "daqui foi para ali".',
+  pizza: 'Pizza responde composição — quanto cada parte representa do todo. Ela não mostra que março veio depois de fevereiro.',
+  colunas: 'Colunas comparam quantidades. Comparam bem — mas não mostram a subida entre um mês e o seguinte.',
+  dispersao: 'Dispersão relaciona duas medidas, e não uma série no tempo.',
+};
+
+type Menu = 'classificar' | 'congelar' | 'elemento' | 'tipo' | null;
 
 export default function PlanilhaAvancadaLab({ specialtyCode, lessonCode, lessonTitle, requirementCodes, userId }: Props) {
-  const [ac, setAc] = useState<Acampamento>(ACAMPAMENTO_INICIAL);
-  const [guia, setGuia] = useState('Página Inicial');
-  const [menu, setMenu] = useState<string | null>(null);
-  const [editandoTotal, setEditandoTotal] = useState(false);
-  const [rascunhoDaFormula, setRascunhoDaFormula] = useState('');
+  const [hist, setHist] = useState<Historico<Caderno>>(() => historicoDe(acampamentoInicial()));
+  const cad = hist.presente;
+  const p = planilhaAtiva(cad);
+
+  const [guia, setGuia] = useState<string>('Página Inicial');
+  const [menu, setMenu] = useState<Menu>(null);
+  const [filtroAberto, setFiltroAberto] = useState<{ coluna: number; x: number; y: number } | null>(null);
+  const [graficoEscolhido, setGraficoEscolhido] = useState(false);
+  /* Os títulos dos eixos aparecem quando alguém os acrescenta, como no Excel:
+     o gráfico inserido não traz nenhum. */
+  const [eixosNaTela, setEixosNaTela] = useState(false);
   const [aviso, setAviso] = useState('');
   const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState('');
   const [gravando, setGravando] = useState(false);
 
-  const naTela = inscritosNaTela(ac);
-  const daCelula = totalDaCelula(ac);
-  const daVista = totalNaTela(ac);
-  const batem = daCelula === daVista;
-
-  const tarefas = METAS_DO_ACAMPAMENTO.map(m => ({
-    id: m.id, titulo: m.titulo, detalhe: m.detalhe, onde: m.onde,
-    passos: m.passos, feita: m.feita(ac),
-  }));
-  const tudoFeito = tarefas.every(t => t.feita);
-
-  const fecharMenu = () => setMenu(null);
-  const abrir = (id: string) => setMenu(m => (m === id ? null : id));
-  const avisar = (r: string) => { fecharMenu(); setAviso(r); };
+  const avisar = (texto: string) => { setMenu(null); setAviso(texto); };
   const naoFazParte = (n: string) =>
     avisar(`${n} existe no Excel de verdade, e está aqui para a faixa ficar igual — mas não faz parte deste exercício.`);
 
-  const ligarFiltro = () => {
-    fecharMenu();
-    setAc(a => ({ ...a, filtroLigado: !a.filtroLigado, unidadeFiltrada: a.filtroLigado ? '' : a.unidadeFiltrada }));
-    setAviso(ac.filtroLigado
-      ? 'Filtro desligado. As cento e vinte linhas voltaram — elas nunca tinham saído.'
-      : 'Filtro ligado: repare nas setinhas que apareceram no cabeçalho. Clique na da coluna Unidade.');
+  const mudar = (f: (q: Planilha) => Planilha) =>
+    setHist(h => registrarPasso(h, trocarAtiva(h.presente, f(planilhaAtiva(h.presente)))));
+
+  const g = useGradeDoExcel({
+    planilha: p,
+    mudar,
+    desfazer: () => setHist(desfazer),
+    refazer: () => setHist(refazer),
+    avisar,
+  });
+  const { faixa, setFaixa, sel, setBarra, setEditando } = g;
+
+  const tarefas = METAS_DO_ACAMPAMENTO.map(m => ({
+    id: m.id, titulo: m.titulo, detalhe: m.detalhe, onde: m.onde,
+    passos: m.passos, feita: m.feita(cad),
+  }));
+  const tudoFeito = tarefas.every(t => t.feita);
+
+  /* ── Os comandos ───────────────────────────────────────────────────────── */
+
+  const naFaixa = (f: (cel: Planilha['celulas'][0][0]) => Planilha['celulas'][0][0]) => {
+    const n = normalizar(faixa);
+    mudar(q => ({
+      ...q,
+      celulas: q.celulas.map((linha, l) => linha.map((cel, c) => (
+        l >= n.topo && l <= n.base && c >= n.esq && c <= n.dir ? f(cel) : cel))),
+    }));
+  };
+  const negritar = () => {
+    const alvo = !p.celulas[sel.l][sel.c].negrito;
+    naFaixa(cel => ({ ...cel, negrito: alvo }));
+  };
+  const formatar = (formato: Formato) => naFaixa(cel => ({ ...cel, formato }));
+
+  /* A AutoSoma soma o que está acima até a primeira célula vazia, como a do
+     Excel — é a mesma conta da CC-ES003. */
+  const autoSoma = () => {
+    let topo = sel.l - 1;
+    while (topo >= 0 && (p.celulas[topo][sel.c]?.texto ?? '').trim() !== '') topo--;
+    topo++;
+    if (topo >= sel.l) { avisar('Não há números logo acima desta célula para somar.'); return; }
+    setBarra(`=SOMA(${nomeDaCelula(topo, sel.c)}:${nomeDaCelula(sel.l - 1, sel.c)})`);
+    setEditando('celula');
   };
 
-  const filtrarPor = (unidade: string) => {
-    fecharMenu();
-    setAc(a => ({ ...a, unidadeFiltrada: unidade }));
-    setAviso(unidade
-      ? 'Filtrado. As outras linhas continuam na planilha, escondidas — e repare que o total da célula não mudou junto.'
-      : 'Filtro retirado da coluna.');
+  const ligarFiltro = () => {
+    setMenu(null);
+    if (!p.tabela) { avisar('Esta aba não tem uma tabela para filtrar.'); return; }
+    mudar(q => ({ ...q, filtro: q.filtro ? null : { coluna: normalizar(q.tabela!).esq, valor: '' } }));
+  };
+  const limparFiltro = () => {
+    setMenu(null);
+    if (!p.filtro) return;
+    mudar(q => ({ ...q, filtro: q.filtro ? { ...q.filtro, valor: '' } : null }));
+  };
+  const classificar = (crescente: boolean) => {
+    setMenu(null);
+    if (!p.tabela) { avisar('Esta aba não tem uma tabela para classificar.'); return; }
+    mudar(q => ordenar(q, sel.c, crescente));
   };
 
   const congelar = (linhas: number) => {
-    fecharMenu();
-    setAc(a => ({ ...a, linhasCongeladas: linhas }));
-    setAviso(linhas
-      ? 'Cabeçalho preso no alto. Congelar é coisa de tela: não muda dado nenhum, não trava célula contra edição e não vai para a impressão.'
-      : 'Painéis descongelados.');
+    setMenu(null);
+    mudar(q => ({ ...q, congeladas: linhas }));
+    if (linhas === 0 && sel.l === 0) {
+      avisar('Congelar Painéis prende o que está acima da célula escolhida — na linha 1 não há nada acima.');
+    }
   };
 
-  const gravarFormula = () => {
-    setEditandoTotal(false);
-    const nova = rascunhoDaFormula.trim();
-    if (!nova.startsWith('=')) {
-      setAviso('Fórmula começa com sinal de igual — sem ele, o Excel guarda o texto e não calcula nada.');
+  const valoresDaColuna = (coluna: number): string[] => {
+    if (!p.tabela) return [];
+    const n = normalizar(p.tabela);
+    const vistos = new Set<string>();
+    for (let l = n.topo + 1; l <= n.base; l++) {
+      const t = (p.celulas[l]?.[coluna]?.texto ?? '').trim();
+      if (t !== '') vistos.add(t);
+    }
+    return [...vistos].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  };
+
+  /*
+    Inserir o gráfico lê a seleção; com uma célula só, a região em volta dela.
+
+    É o que o Excel faz: clicar dentro da tabela e mandar inserir pega a tabela
+    inteira. Exigir a faixa arrastada ensinaria um gesto a mais que o programa
+    não pede.
+  */
+  const inserirGrafico = (tipo: TipoDeGrafico) => {
+    const origem = umaCelulaSo(faixa) ? regiaoAtual(p, sel.l, sel.c) : faixa;
+    const n = normalizar(origem);
+    if (n.topo === n.base && n.esq === n.dir) {
+      avisar('Selecione os dados do gráfico antes de inserir.');
       return;
     }
-    setAc(a => ({ ...a, formulaDoTotal: nova }));
-    setAviso(nova.toUpperCase().startsWith('=SUBTOTAL')
-      ? 'Agora os dois números batem — e continuam batendo quando você trocar o filtro, porque a fórmula lê o que está à vista.'
-      : 'Gravado. Confira se ele bate com o número do rodapé.');
+    mudar(q => ({
+      ...q,
+      grafico: { tipo, titulo: q.grafico?.titulo ?? '', eixoX: q.grafico?.eixoX ?? '', eixoY: q.grafico?.eixoY ?? '', faixa: origem },
+    }));
+    setGraficoEscolhido(true);
+    setGuia(DESIGN_DO_GRAFICO);
+    avisar(O_QUE_O_GRAFICO_RESPONDE[tipo]);
   };
 
-  const criarGrafico = (tipo: Exclude<TipoDeGrafico, 'nenhum'>) => {
-    fecharMenu();
-    setAc(a => ({ ...a, grafico: { tipo, titulo: a.grafico?.titulo ?? '', eixos: a.grafico?.eixos ?? false } }));
-    setAviso(tipo === 'linha'
-      ? 'Gráfico de linhas: o eixo tem ordem no tempo, e a linha entre dois pontos diz "daqui foi para ali". Agora dê um título e nomeie os eixos.'
-      : tipo === 'pizza'
-        ? 'Pizza responde composição — quanto cada parte representa do todo. Ela não mostra que março veio depois de fevereiro.'
-        : tipo === 'barras'
-          ? 'Colunas comparam quantidades. Comparam bem — mas não mostram a subida e a descida entre um mês e o seguinte.'
-          : 'Dispersão relaciona duas medidas, e não uma série no tempo.');
+  const trocarTipo = (tipo: TipoDeGrafico) => {
+    if (!p.grafico) return;
+    mudar(q => ({ ...q, grafico: q.grafico ? { ...q.grafico, tipo } : null }));
+    avisar(O_QUE_O_GRAFICO_RESPONDE[tipo]);
+  };
+
+  const escreverNoGrafico = (campo: 'titulo' | 'eixoX' | 'eixoY', valor: string) =>
+    mudar(q => ({ ...q, grafico: q.grafico ? { ...q.grafico, [campo]: valor } : null }));
+
+  const excluirGrafico = () => {
+    mudar(q => ({ ...q, grafico: null }));
+    setGraficoEscolhido(false);
+    setEixosNaTela(false);
+    setGuia('Inserir');
+  };
+
+  const trocarAba = (i: number) => {
+    setHist(h => ({ ...h, presente: { ...h.presente, ativa: i } }));
+    setFaixa({ l1: 0, c1: 0, l2: 0, c2: 0 });
+    setEditando(null);
+    setGraficoEscolhido(false);
+    if (guia === DESIGN_DO_GRAFICO) setGuia('Inserir');
+    /* A aba nova abre no começo dela: herdar a rolagem da lista de cento e
+       vinte deixaria a de seis meses com o cabeçalho fora da tela. */
+    const caixa = g.gradeRef.current;
+    if (caixa) { caixa.scrollTop = 0; caixa.scrollLeft = 0; }
   };
 
   const recomecar = () => {
-    setAc(ACAMPAMENTO_INICIAL);
+    setHist(historicoDe(acampamentoInicial()));
     setGuia('Página Inicial');
-    setEditandoTotal(false);
-    fecharMenu();
+    setGraficoEscolhido(false);
+    setEixosNaTela(false);
+    setMenu(null);
     setAviso('');
   };
 
@@ -200,14 +300,14 @@ export default function PlanilhaAvancadaLab({ specialtyCode, lessonCode, lessonT
       <button onClick={recomecar} className="btn-secondary text-xs py-2 w-full justify-center inline-flex items-center gap-1">
         <RotateCcw className="w-3 h-3" /> Recomeçar a planilha
       </button>
+      <p style={{ fontSize: 11, opacity: 0.75 }}>
+        As setas andam, Shift+setas estendem, Ctrl+setas pulam até a borda dos dados,
+        F2 edita e Enter grava. Fórmula começa por <strong>=</strong>.
+      </p>
     </div>
   );
 
-  const Menu = ({ id, children }: { id: string; children: React.ReactNode }) => (
-    menu === id ? <div className="pl-menu" role="menu">{children}</div> : null
-  );
-
-  const ItemMenu = ({ aoClicar, ativo, children }: {
+  const ItemDoMenu = ({ aoClicar, ativo, children }: {
     aoClicar: () => void; ativo?: boolean; children: React.ReactNode;
   }) => (
     <button type="button" role="menuitem" onClick={aoClicar} className="pl-menu-item">
@@ -218,6 +318,9 @@ export default function PlanilhaAvancadaLab({ specialtyCode, lessonCode, lessonT
     </button>
   );
 
+  const visiveis = inscritosVisiveis(cad);
+  const filtrando = cad.ativa === ABA_DOS_INSCRITOS && !!p.filtro?.valor;
+
   return (
     <LaboratorioEmTelaCheia
       trilha={specialtyCode}
@@ -227,95 +330,78 @@ export default function PlanilhaAvancadaLab({ specialtyCode, lessonCode, lessonT
       tarefas={tarefas}
       aviso={aviso}
       acoes={acoes}
-      rodape={26}
+      rodape={28}
     >
       <style>{CSS_EXCEL}</style>
-      <style>{`
-        .pa-corpo { flex: 1; min-height: 0; display: flex; overflow: hidden; }
-        .pa-lista { flex: 1; min-width: 0; overflow: auto; background: #FFFFFF; }
-        .pa-tabela { border-collapse: collapse; width: 100%; font-size: 12.5px; }
-        .pa-tabela th {
-          background: #F3F2F1; border: 1px solid #D2D0CE; padding: 3px 6px;
-          color: #605E5C; font-size: 11.5px; font-weight: 600; text-align: left;
-          white-space: nowrap;
-        }
-        /* O cabeçalho congelado é sticky: é o que "congelar painéis" faz —
-           prender no alto o que ficaria para trás na rolagem. */
-        .pa-congelado th { position: sticky; top: 0; z-index: 2; }
-        .pa-tabela td { border: 1px solid #E1DFDD; padding: 2px 6px; color: #201F1E; white-space: nowrap; }
-        .pa-seta {
-          border: 1px solid #C8C6C4; background: #FFFFFF; border-radius: 2px;
-          margin-left: 6px; padding: 0 3px; cursor: pointer; color: #605E5C;
-        }
-        .pa-lado {
-          width: 300px; flex: none; border-left: 1px solid #E1DFDD; background: #FAF9F8;
-          padding: 10px; overflow: auto;
-        }
-        .pa-total {
-          border: 1px solid #D2D0CE; background: #FFFFFF; padding: 8px 10px;
-          margin-bottom: 12px; font-size: 12.5px; color: #201F1E;
-        }
-        .pa-formula {
-          font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px;
-          color: #605E5C; cursor: cell; display: block; padding: 2px 0;
-        }
-        .pa-mini {
-          border: 1px solid #D2D0CE; background: #FFFFFF; padding: 8px; font-size: 11.5px;
-        }
-        .pa-grafico { border: 1px solid #D2D0CE; background: #FFFFFF; padding: 10px; }
-      `}</style>
 
-      <div className="pl-janela" onClick={fecharMenu}>
+      {/* Clicar fora do gráfico o desescolhe, e a guia contextual some junto —
+          é o que o Excel faz com Design do Gráfico. */}
+      <div className="pl-janela" onPointerDownCapture={ev => {
+        const alvo = ev.target as HTMLElement;
+        if (graficoEscolhido && !alvo.closest('.pl-grafico, .pl-faixa, .pl-guias')) setGraficoEscolhido(false);
+      }}>
         <BarraDeTituloDoExcel arquivo="inscritos-do-acampamento" aoAvisar={avisar} />
-        <GuiasDoExcel atual={guia} usaveis={USAVEIS}
-          aoTrocar={g => { setGuia(g); fecharMenu(); }} aoAvisar={avisar} />
+        <GuiasDoExcel atual={guia} usaveis={GUIAS_USAVEIS}
+          contextuais={p.grafico && graficoEscolhido ? [{ id: DESIGN_DO_GRAFICO, nome: DESIGN_DO_GRAFICO }] : []}
+          aoTrocar={x => { setGuia(x); setMenu(null); }} aoAvisar={avisar} />
 
-        <div className="pl-faixa" style={{ overflowX: menu ? 'visible' : 'auto' }}
-          onClick={ev => ev.stopPropagation()}>
+        <div className="pl-faixa" style={{ overflowX: menu ? 'visible' : 'auto' }}>
           {guia === 'Página Inicial' && (
             <>
+              <GrupoDoExcel nome="Desfazer">
+                <BotaoDoExcel dica="Desfazer (Ctrl+Z)" aoClicar={g.desfazer}><Undo2 className="w-4 h-4" /></BotaoDoExcel>
+                <BotaoDoExcel dica="Refazer (Ctrl+Y)" aoClicar={g.refazer}><Redo2 className="w-4 h-4" /></BotaoDoExcel>
+              </GrupoDoExcel>
               <GrupoDoExcel nome="Área de Transferência">
-                <BotaoDoExcel dica="Colar (Ctrl+V)" aoClicar={() => naoFazParte('Colar')}>
-                  <ClipboardPaste className="w-4 h-4" />
-                </BotaoDoExcel>
-                <BotaoDoExcel dica="Copiar (Ctrl+C)" aoClicar={() => naoFazParte('Copiar')}>
-                  <Copy className="w-4 h-4" />
-                </BotaoDoExcel>
+                <BotaoDoExcel dica="Colar (Ctrl+V)" aoClicar={g.colar}><ClipboardPaste className="w-4 h-4" /></BotaoDoExcel>
+                <BotaoDoExcel dica="Recortar (Ctrl+X)" aoClicar={g.recortar}><Scissors className="w-4 h-4" /></BotaoDoExcel>
+                <BotaoDoExcel dica="Copiar (Ctrl+C)" aoClicar={g.copiar}><Copy className="w-4 h-4" /></BotaoDoExcel>
               </GrupoDoExcel>
               <GrupoDoExcel nome="Fonte">
-                <BotaoDoExcel dica="Fonte" aoClicar={() => naoFazParte('A caixa de fonte')}>
-                  <Type className="w-4 h-4" />
+                <BotaoDoExcel dica="Negrito (Ctrl+N)" ativo={p.celulas[sel.l]?.[sel.c]?.negrito} aoClicar={negritar}>
+                  <IconeNegrito />
                 </BotaoDoExcel>
               </GrupoDoExcel>
-              <GrupoDoExcel nome="Classificar e Filtrar">
-                <BotaoDoExcel dica="Filtro" ativo={ac.filtroLigado} aoClicar={ligarFiltro}>
-                  <Filter className="w-4 h-4" />
+              <GrupoDoExcel nome="Número">
+                <BotaoDoExcel dica="Formato de Moeda" aoClicar={() => formatar('moeda')}>
+                  <span style={{ fontSize: 12, fontWeight: 600 }}>R$</span>
                 </BotaoDoExcel>
-                <BotaoDoExcel dica="Classificar de A a Z" aoClicar={() => naoFazParte('Classificar')}>
-                  <ArrowDownAZ className="w-4 h-4" />
-                </BotaoDoExcel>
-                <BotaoDoExcel dica="Limpar Filtros" aoClicar={() => filtrarPor('')}>
-                  <Eraser className="w-4 h-4" />
+                <BotaoDoExcel dica="Estilo de Porcentagem" aoClicar={() => formatar('porcentagem')}>
+                  <Percent className="w-4 h-4" />
                 </BotaoDoExcel>
               </GrupoDoExcel>
               <GrupoDoExcel nome="Edição">
-                <BotaoDoExcel dica="AutoSoma" aoClicar={() => naoFazParte('A AutoSoma')}>
-                  <Sigma className="w-4 h-4" />
-                </BotaoDoExcel>
+                <BotaoDoExcel dica="AutoSoma" aoClicar={autoSoma}><Sigma className="w-4 h-4" /></BotaoDoExcel>
+                <div style={{ position: 'relative' }}>
+                  <BotaoDoExcel dica="Classificar e Filtrar" ativo={!!p.filtro}
+                    aoClicar={() => setMenu(m => (m === 'classificar' ? null : 'classificar'))}>
+                    <span className="inline-flex items-center"><ArrowDownAZ className="w-4 h-4" /><ChevronDown className="w-3 h-3" /></span>
+                  </BotaoDoExcel>
+                  {menu === 'classificar' && (
+                    <div className="pl-menu" role="menu">
+                      <ItemDoMenu aoClicar={() => classificar(true)}>Classificar de A a Z</ItemDoMenu>
+                      <ItemDoMenu aoClicar={() => classificar(false)}>Classificar de Z a A</ItemDoMenu>
+                      <div className="pl-menu-risco" />
+                      <ItemDoMenu ativo={!!p.filtro} aoClicar={ligarFiltro}>Filtro</ItemDoMenu>
+                      <ItemDoMenu aoClicar={limparFiltro}>Limpar</ItemDoMenu>
+                    </div>
+                  )}
+                </div>
+                <BotaoDoExcel dica="Limpar Conteúdo (Del)" aoClicar={g.limparConteudo}><Eraser className="w-4 h-4" /></BotaoDoExcel>
               </GrupoDoExcel>
             </>
           )}
 
           {guia === 'Inserir' && (
             <GrupoDoExcel nome="Gráficos">
-              {(Object.keys(ICONE_DO_GRAFICO) as (keyof typeof ICONE_DO_GRAFICO)[]).map(t => {
+              {(Object.keys(NOME_DO_GRAFICO) as TipoDeGrafico[]).map(t => {
                 const Icone = ICONE_DO_GRAFICO[t];
                 return (
-                  <BotaoDoExcel key={t} dica={`Gráfico de ${NOMES_DOS_GRAFICOS[t]}`}
-                    ativo={ac.grafico?.tipo === t} aoClicar={() => criarGrafico(t)}>
+                  <BotaoDoExcel key={t} dica={`Inserir Gráfico de ${NOME_DO_GRAFICO[t]}`}
+                    ativo={p.grafico?.tipo === t} aoClicar={() => inserirGrafico(t)}>
                     <span className="flex flex-col items-center">
                       <Icone className="w-5 h-5" />
-                      <span style={{ fontSize: 9 }}>{NOMES_DOS_GRAFICOS[t]}</span>
+                      <span style={{ fontSize: 9 }}>{NOME_DO_GRAFICO[t]}</span>
                     </span>
                   </BotaoDoExcel>
                 );
@@ -323,187 +409,168 @@ export default function PlanilhaAvancadaLab({ specialtyCode, lessonCode, lessonT
             </GrupoDoExcel>
           )}
 
+          {guia === 'Dados' && (
+            <GrupoDoExcel nome="Classificar e Filtrar">
+              <BotaoDoExcel dica="Classificar de A a Z" aoClicar={() => classificar(true)}><ArrowDownAZ className="w-4 h-4" /></BotaoDoExcel>
+              <BotaoDoExcel dica="Classificar de Z a A" aoClicar={() => classificar(false)}><ArrowUpZA className="w-4 h-4" /></BotaoDoExcel>
+              <BotaoDoExcel dica="Filtro" ativo={!!p.filtro} aoClicar={ligarFiltro}>
+                <span className="flex flex-col items-center"><Filter className="w-5 h-5" /><span style={{ fontSize: 9 }}>Filtro</span></span>
+              </BotaoDoExcel>
+              <BotaoDoExcel dica="Limpar" aoClicar={limparFiltro}><Eraser className="w-4 h-4" /></BotaoDoExcel>
+            </GrupoDoExcel>
+          )}
+
           {guia === 'Exibir' && (
             <GrupoDoExcel nome="Janela">
               <div style={{ position: 'relative' }}>
-                <BotaoDoExcel dica="Congelar Painéis" ativo={ac.linhasCongeladas > 0}
-                  aoClicar={() => abrir('congelar')}>
+                <BotaoDoExcel dica="Congelar Painéis" ativo={p.congeladas > 0}
+                  aoClicar={() => setMenu(m => (m === 'congelar' ? null : 'congelar'))}>
                   <span className="flex flex-col items-center">
                     <Snowflake className="w-5 h-5" />
-                    <span style={{ fontSize: 9 }}>Congelar</span>
+                    <span style={{ fontSize: 9 }}>Congelar Painéis</span>
                   </span>
                 </BotaoDoExcel>
-                <Menu id="congelar">
-                  <ItemMenu ativo={ac.linhasCongeladas > 0} aoClicar={() => congelar(1)}>
-                    Congelar Linha Superior
-                  </ItemMenu>
-                  <ItemMenu aoClicar={() => naoFazParte('Congelar Primeira Coluna')}>
-                    Congelar Primeira Coluna
-                  </ItemMenu>
-                  <ItemMenu ativo={ac.linhasCongeladas === 0} aoClicar={() => congelar(0)}>
-                    Descongelar Painéis
-                  </ItemMenu>
-                </Menu>
+                {menu === 'congelar' && (
+                  <div className="pl-menu" role="menu">
+                    {p.congeladas > 0 ? (
+                      <ItemDoMenu aoClicar={() => congelar(0)}>Descongelar Painéis</ItemDoMenu>
+                    ) : (
+                      <ItemDoMenu aoClicar={() => congelar(sel.l)}>Congelar Painéis</ItemDoMenu>
+                    )}
+                    <ItemDoMenu aoClicar={() => congelar(1)}>Congelar Linha Superior</ItemDoMenu>
+                    <ItemDoMenu aoClicar={() => naoFazParte('Congelar Primeira Coluna')}>Congelar Primeira Coluna</ItemDoMenu>
+                  </div>
+                )}
               </div>
-              <BotaoDoExcel dica="Linhas de Grade" aoClicar={() => naoFazParte('Linhas de Grade')}>
-                <Ruler className="w-4 h-4" />
+              <BotaoDoExcel dica="Linhas de Grade" aoClicar={() => naoFazParte('Desligar as Linhas de Grade')}>
+                <Rows3 className="w-4 h-4" />
               </BotaoDoExcel>
             </GrupoDoExcel>
           )}
+
+          {guia === DESIGN_DO_GRAFICO && p.grafico && (
+            <>
+              <GrupoDoExcel nome="Layouts de Gráfico">
+                <div style={{ position: 'relative' }}>
+                  <BotaoDoExcel dica="Adicionar Elemento Gráfico"
+                    aoClicar={() => setMenu(m => (m === 'elemento' ? null : 'elemento'))}>
+                    <span className="flex flex-col items-center">
+                      <ChartColumn className="w-5 h-5" />
+                      <span style={{ fontSize: 9 }}>Adicionar Elemento</span>
+                    </span>
+                  </BotaoDoExcel>
+                  {menu === 'elemento' && (
+                    <div className="pl-menu" role="menu">
+                      <ItemDoMenu ativo={eixosNaTela} aoClicar={() => { setEixosNaTela(v => !v); setMenu(null); }}>
+                        Títulos dos Eixos
+                      </ItemDoMenu>
+                      <ItemDoMenu aoClicar={() => avisar('O título do gráfico já está nele: clique em "Título do Gráfico" e escreva.')}>
+                        Título do Gráfico
+                      </ItemDoMenu>
+                      <ItemDoMenu aoClicar={() => naoFazParte('Legenda')}>Legenda</ItemDoMenu>
+                      <ItemDoMenu aoClicar={() => naoFazParte('Rótulos de Dados')}>Rótulos de Dados</ItemDoMenu>
+                    </div>
+                  )}
+                </div>
+              </GrupoDoExcel>
+              <GrupoDoExcel nome="Tipo">
+                <div style={{ position: 'relative' }}>
+                  <BotaoDoExcel dica="Alterar Tipo de Gráfico"
+                    aoClicar={() => setMenu(m => (m === 'tipo' ? null : 'tipo'))}>
+                    <span className="flex flex-col items-center">
+                      <ChartLine className="w-5 h-5" />
+                      <span style={{ fontSize: 9 }}>Alterar Tipo</span>
+                    </span>
+                  </BotaoDoExcel>
+                  {menu === 'tipo' && (
+                    <div className="pl-menu" role="menu">
+                      {(Object.keys(NOME_DO_GRAFICO) as TipoDeGrafico[]).map(t => (
+                        <ItemDoMenu key={t} ativo={p.grafico?.tipo === t} aoClicar={() => trocarTipo(t)}>
+                          {NOME_DO_GRAFICO[t]}
+                        </ItemDoMenu>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <BotaoDoExcel dica="Excluir Gráfico" aoClicar={excluirGrafico}><Eraser className="w-4 h-4" /></BotaoDoExcel>
+              </GrupoDoExcel>
+            </>
+          )}
         </div>
 
-        <div className="pa-corpo">
-          <div className="pa-lista">
-            <table className={`pa-tabela ${ac.linhasCongeladas > 0 ? 'pa-congelado' : ''}`}>
-              <thead>
-                <tr>
-                  {COLUNAS.map(c => (
-                    <th key={c}>
-                      {c}
-                      {ac.filtroLigado && c === 'Unidade' && (
-                        <span style={{ position: 'relative', display: 'inline-block' }}>
-                          <button type="button" className="pa-seta" aria-label="Filtrar por Unidade"
-                            onClick={ev => { ev.stopPropagation(); abrir('unidade'); }}>
-                            <ChevronDown className="w-3 h-3" />
-                          </button>
-                          <Menu id="unidade">
-                            <ItemMenu ativo={!ac.unidadeFiltrada} aoClicar={() => filtrarPor('')}>
-                              (Selecionar Tudo)
-                            </ItemMenu>
-                            {UNIDADES.map(u => (
-                              <ItemMenu key={u} ativo={ac.unidadeFiltrada === u} aoClicar={() => filtrarPor(u)}>
-                                {u}
-                              </ItemMenu>
-                            ))}
-                          </Menu>
-                        </span>
-                      )}
-                      {ac.filtroLigado && c !== 'Unidade' && (
-                        <button type="button" className="pa-seta" aria-label={`Filtrar por ${c}`}
-                          onClick={ev => { ev.stopPropagation(); naoFazParte(`Filtrar por ${c}`); }}>
-                          <ChevronDown className="w-3 h-3" />
-                        </button>
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {naTela.map(i => (
-                  <tr key={i.nome}>
-                    <td>{i.nome}</td>
-                    <td>{i.unidade}</td>
-                    <td>{i.diarias}</td>
-                    <td>{reais(i.valor)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <BarraDeFormulas nome={nomeDaFaixa(faixa)} props={g.propsDaBarra} />
 
-          <div className="pa-lado" onClick={ev => ev.stopPropagation()}>
-            {/* A célula do total, que é onde os dois números divergem. */}
-            <div className="pa-total">
-              <p style={{ fontWeight: 600, marginBottom: 2 }}>Total arrecadado (célula D123)</p>
-              <p style={{ fontSize: 18, fontWeight: 700, color: batem ? '#217346' : '#A4262C' }}>
-                {reais(daCelula)}
-              </p>
-              {editandoTotal ? (
-                <input className="pl-entrada" autoFocus value={rascunhoDaFormula}
-                  aria-label="Fórmula da célula do total"
-                  onChange={e => setRascunhoDaFormula(e.target.value)}
-                  onBlur={gravarFormula}
-                  onKeyDown={e => { if (e.key === 'Enter') gravarFormula(); }} />
-              ) : (
-                <button type="button" className="pa-formula" aria-label="Fórmula da célula do total"
-                  onClick={() => { setRascunhoDaFormula(ac.formulaDoTotal); setEditandoTotal(true); }}>
-                  {ac.formulaDoTotal}
-                </button>
+        <GradeDoExcel
+          {...g.props}
+          aoArrastarBorda={g.aoArrastarBorda}
+          aoAjustarAoConteudo={g.aoAjustarAoConteudo}
+          aoAbrirFiltro={p.filtro ? ((c, alvo) => {
+            /* A lista abre embaixo da setinha, sem passar da borda da tela. */
+            const x = Math.min(alvo?.left ?? 80, window.innerWidth - 200);
+            setFiltroAberto({ coluna: c, x: Math.max(8, x), y: (alvo?.bottom ?? 120) + 2 });
+          }) : undefined}
+          sobreposicao={p.grafico && (
+            <div className="pl-grafico" role="figure" aria-label={`Gráfico: ${p.grafico.titulo || 'Título do Gráfico'}`}
+              data-escolhido={graficoEscolhido ? 'sim' : 'nao'}
+              onClick={() => { if (!graficoEscolhido) { setGraficoEscolhido(true); setGuia(DESIGN_DO_GRAFICO); } }}>
+              <input className="pl-grafico-campo pl-grafico-titulo" aria-label="Título do Gráfico"
+                placeholder="Título do Gráfico" value={p.grafico.titulo}
+                onFocus={() => setGraficoEscolhido(true)}
+                onChange={e => escreverNoGrafico('titulo', e.target.value)} />
+              {eixosNaTela && (
+                <input className="pl-grafico-campo pl-grafico-eixo" aria-label="Título do Eixo Vertical"
+                  placeholder="Título do Eixo" value={p.grafico.eixoY} style={{ textAlign: 'left' }}
+                  onChange={e => escreverNoGrafico('eixoY', e.target.value)} />
               )}
-              {!batem && (
-                <p style={{ fontSize: 11, color: '#A4262C', marginTop: 4 }}>
-                  Este número não é o do rodapé. Com filtro aplicado, a SOMA continua
-                  contando as linhas escondidas.
-                </p>
+              <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p, cad)} />
+              {eixosNaTela && (
+                <input className="pl-grafico-campo pl-grafico-eixo" aria-label="Título do Eixo Horizontal"
+                  placeholder="Título do Eixo" value={p.grafico.eixoX}
+                  onChange={e => escreverNoGrafico('eixoX', e.target.value)} />
               )}
             </div>
+          )}
+        />
 
-            {/* Os meses, que é o que o gráfico tem de mostrar. */}
-            <div className="pa-mini" style={{ marginBottom: 12 }}>
-              <p style={{ fontWeight: 600, marginBottom: 4 }}>Inscrições por mês (F2:G7)</p>
-              <table style={{ width: '100%', fontSize: 11.5 }}>
-                <tbody>
-                  {INSCRICOES_POR_MES.map(m => (
-                    <tr key={m.mes}>
-                      <td style={{ color: '#605E5C' }}>{m.mes}</td>
-                      <td style={{ textAlign: 'right' }}>{m.total}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <AbasDoExcel nomes={cad.planilhas.map(q => q.nome)} ativa={cad.ativa} aoAvisar={avisar} aoTrocar={trocarAba} />
 
-            {ac.grafico && (
-              <div className="pa-grafico">
-                <input className="pl-entrada" style={{ marginBottom: 6, width: '100%' }}
-                  placeholder="Título do gráfico"
-                  aria-label="Título do gráfico"
-                  value={ac.grafico.titulo}
-                  onChange={e => setAc(a => ({ ...a, grafico: { ...a.grafico!, titulo: e.target.value } }))} />
-
-                {/* O desenho vem de `excel.tsx`, e não daqui.
-
-                    Ele era escrito neste arquivo, e já tinha divergido do da
-                    CC-ES003 de um jeito que nada acusava: a pizza era um
-                    `conic-gradient` de porcentagens fixas, que não saíam de
-                    dado nenhum, e as outras três liam esta constante. O gráfico
-                    de pizza desenhava a mesma figura para qualquer planilha.
-
-                    Agora a pizza mostra os meses de verdade — o que ela
-                    continua não respondendo é a pergunta, que é a lição
-                    inteira: "pizza e colunas desenham sem erro nenhum". Um
-                    desenho errado do dado certo ensina isso; um desenho que não
-                    vem de dado nenhum não ensina nada. */}
-                {ac.grafico.tipo !== 'nenhum' && (
-                  <DesenhoDoGrafico
-                    tipo={ac.grafico.tipo === 'barras' ? 'colunas' : ac.grafico.tipo}
-                    pontos={INSCRICOES_POR_MES.map(m => ({ rotulo: m.mes, valor: m.total }))} />
-                )}
-
-                <label className="flex items-center gap-2" style={{ fontSize: 11.5, marginTop: 6 }}>
-                  <input type="checkbox" checked={ac.grafico.eixos}
-                    aria-label="Títulos dos Eixos"
-                    onChange={e => setAc(a => ({ ...a, grafico: { ...a.grafico!, eixos: e.target.checked } }))} />
-                  Títulos dos Eixos
-                </label>
-                {ac.grafico.eixos && (
-                  <p style={{ fontSize: 10.5, color: '#605E5C', marginTop: 2 }}>
-                    Eixo horizontal: Mês · Eixo vertical: Inscritos
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <AbasDoExcel nomes={['Inscritos']} aoAvisar={avisar} />
-
-        {/*
-          A barra de status soma o que está à vista, como a do Excel.
-          É o segundo número, e é ele que denuncia a linha escondida.
-        */}
-        <BarraDeStatusDoExcel aoAvisar={avisar}>
-          <span>Pronto</span>
-          <span>
-            {ac.unidadeFiltrada
-              ? `${naTela.length} de ${ac.inscritos.length} registros encontrados`
-              : `${ac.inscritos.length} registros`}
-          </span>
-          <span className="ml-auto" style={{ color: batem ? '#605E5C' : '#A4262C' }}>
-            Soma do que está à vista: {reais(daVista)}
-          </span>
+        {/* A régua relata, e não julga: o Excel escreve quantos registros o
+            filtro achou e soma a seleção, e quem compara com D123 é quem
+            está estudando. */}
+        <BarraDeStatusDoExcel aoAvisar={avisar} planilha={p} faixa={faixa} caderno={cad}>
+          <span>{g.modo}</span>
+          {filtrando && <span>{`${visiveis} de ${INSCRITOS.length} registros encontrados`}</span>}
         </BarraDeStatusDoExcel>
       </div>
+
+      {menu && <div className="pl-veu" style={{ zIndex: 30 }} onPointerDown={() => setMenu(null)} />}
+
+      {filtroAberto && (
+        <>
+          <div className="pl-veu" onPointerDown={() => setFiltroAberto(null)} />
+          <div className="pl-filtro-lista" style={{ left: filtroAberto.x, top: filtroAberto.y }} role="listbox"
+            aria-label={`Filtrar ${p.celulas[0]?.[filtroAberto.coluna]?.texto ?? ''}`}>
+            <button type="button" className="pl-filtro-item"
+              aria-current={!p.filtro?.valor}
+              onClick={() => {
+                mudar(q => ({ ...q, filtro: { coluna: filtroAberto.coluna, valor: '' } }));
+                setFiltroAberto(null);
+              }}>
+              (Selecionar Tudo)
+            </button>
+            {valoresDaColuna(filtroAberto.coluna).map(v => (
+              <button key={v} type="button" className="pl-filtro-item"
+                aria-current={p.filtro?.coluna === filtroAberto.coluna && p.filtro.valor === v}
+                onClick={() => {
+                  mudar(q => ({ ...q, filtro: { coluna: filtroAberto.coluna, valor: v } }));
+                  setFiltroAberto(null);
+                }}>
+                {v}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </LaboratorioEmTelaCheia>
   );
 }

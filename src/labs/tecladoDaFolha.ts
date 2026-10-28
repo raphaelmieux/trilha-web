@@ -46,13 +46,48 @@ export function porCursor(
 }
 
 /** Uma tecla, com os modificadores que vierem. */
-export function tecla(c: HTMLElement, key: string, mods: { ctrl?: boolean; shift?: boolean } = {}) {
+export function tecla(c: HTMLElement, key: string, mods: { ctrl?: boolean; shift?: boolean; code?: string } = {}) {
   const f = folhaEditavel(c);
   act(() => {
     f.dispatchEvent(new KeyboardEvent('keydown', {
-      key, bubbles: true, cancelable: true, ctrlKey: !!mods.ctrl, shiftKey: !!mods.shift,
+      key, code: mods.code, bubbles: true, cancelable: true, ctrlKey: !!mods.ctrl, shiftKey: !!mods.shift,
     }));
   });
+}
+
+/** Um evento de área de transferência com uma área de mentira, que o jsdom não tem. */
+function eventoDaArea(tipo: 'copy' | 'cut' | 'paste', area: Map<string, string>): Event {
+  const ev = new Event(tipo, { bubbles: true, cancelable: true });
+  Object.defineProperty(ev, 'clipboardData', {
+    value: {
+      getData: (t: string) => area.get(t) ?? '',
+      setData: (t: string, v: string) => { area.set(t, v); },
+    },
+  });
+  return ev;
+}
+
+/**
+ * Ctrl+C, Ctrl+X e Ctrl+V pelo caminho do navegador: o evento de cópia, de
+ * recorte ou de colagem na folha, com uma área de transferência compartilhada
+ * entre as chamadas. Devolve o que ficou nela.
+ */
+const AREA = new Map<string, string>();
+export function copiar(c: HTMLElement): string {
+  const f = folhaEditavel(c);
+  act(() => { f.dispatchEvent(eventoDaArea('copy', AREA)); });
+  return AREA.get('text/plain') ?? '';
+}
+export function recortar(c: HTMLElement): string {
+  const f = folhaEditavel(c);
+  act(() => { f.dispatchEvent(eventoDaArea('cut', AREA)); });
+  return AREA.get('text/plain') ?? '';
+}
+/** Ctrl+V com o que está na área — ou com um texto que veio de outra janela. */
+export function colarDaArea(c: HTMLElement, deFora?: string) {
+  const f = folhaEditavel(c);
+  if (deFora !== undefined) AREA.set('text/plain', deFora);
+  act(() => { f.dispatchEvent(eventoDaArea('paste', AREA)); });
 }
 
 /** Digita o texto, letra por letra, pelo `beforeinput` que o navegador mandaria. */

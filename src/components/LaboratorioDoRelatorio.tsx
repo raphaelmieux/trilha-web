@@ -1,10 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  Table, ImagePlus, Captions, Rows3, Columns3, PanelTop, Pilcrow,
-  AlignLeft, AlignCenter, AlignRight, AlignJustify, Clipboard, Scissors, Copy, WrapText,
+  Table, ImagePlus, Captions, Rows3, Columns3, PanelTop, WrapText,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
-import { GrupoDeFonte, CSS_FONTE_DO_WORD } from '../labs/fonteDoWord';
+import { GrupoDeFonte, CSS_FONTE_DO_WORD, GrupoDeParagrafo, GrupoAreaDeTransferencia } from '../labs/fonteDoWord';
 import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
 import { cursorEm, paragrafosDaSelecao, recolhida, tamanhoDoParagrafo } from '../labs/edicao';
 import {
@@ -446,29 +445,10 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
         <div className="wd-faixa" style={{ overflowX: menu ? 'visible' : 'auto' }}>
           {guiaAtual === 'Início' && (
             <>
-              <GrupoDaFaixa nome="Área de Transferência">
-                <EnfeiteDaFaixa dica="Colar (Ctrl+V)" rotulo="Colar" empilhado aoAvisar={setAviso}>
-                  <Clipboard className="w-5 h-5" />
-                </EnfeiteDaFaixa>
-                <EnfeiteDaFaixa dica="Recortar (Ctrl+X)" aoAvisar={setAviso}><Scissors className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={setAviso}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-              </GrupoDaFaixa>
+              <GrupoAreaDeTransferencia edicao={edicao} aoAvisar={setAviso} />
               <GrupoDeFonte edicao={edicao} aoAvisar={setAviso} />
-              <GrupoDaFaixa nome="Parágrafo">
-                <div className="wd-linhas">
-                  <div style={{ display: 'flex', gap: 1 }}>
-                    <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={setAviso}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                    <EnfeiteDaFaixa dica="Centralizar (Ctrl+E)" aoAvisar={setAviso}><AlignCenter className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                    <EnfeiteDaFaixa dica="Alinhar à Direita (Ctrl+G)" aoAvisar={setAviso}><AlignRight className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                    <EnfeiteDaFaixa dica="Justificar (Ctrl+J)" aoAvisar={setAviso}><AlignJustify className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                  </div>
-                  <div style={{ display: 'flex', gap: 1 }}>
-                    <BotaoDaFaixa dica="Mostrar Tudo (Ctrl+*)" ativo={marcas} aoClicar={() => { setMarcas(m => !m); edicao.focar(); }}>
-                      <Pilcrow className="w-3.5 h-3.5" />
-                    </BotaoDaFaixa>
-                  </div>
-                </div>
-              </GrupoDaFaixa>
+              <GrupoDeParagrafo edicao={edicao} aoAvisar={setAviso}
+                marcas={{ ligadas: marcas, alternar: () => { setMarcas(m => !m); edicao.focar(); } }} />
             </>
           )}
 

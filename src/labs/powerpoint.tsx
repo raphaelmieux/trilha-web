@@ -1,10 +1,10 @@
-import type React from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { Link2, Music, Play } from 'lucide-react';
 import {
   CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice, AcessibilidadeDoStatus,
 } from './office';
 import {
-  PX_POR_PONTO, aparenciaDoSlide,
+  PX_POR_PONTO, aparenciaDoSlide, semVaziosNoFim,
   type GraficoNoSlide, type Slide, type SlideMestre,
 } from './apresentacao';
 
@@ -110,6 +110,18 @@ export const CSS_POWERPOINT = `
   font: inherit; color: inherit; text-align: inherit; padding: 1px 3px;
 }
 .pp-titulo-campo:hover { border-color: #A6A6A6; }
+/* O espaço reservado do corpo: tracejado ao passar o ponteiro, contínuo com o
+   cursor dentro, e o convite cinza enquanto estiver vazio — como no PowerPoint. */
+.pp-corpo-campo {
+  margin: 0 22px; border: 1px dashed transparent; min-height: 2.2em; outline: none;
+  padding-top: 2px; padding-bottom: 2px; white-space: pre-wrap;
+}
+.pp-corpo-campo:hover { border-color: #A6A6A6; }
+.pp-corpo-campo:focus { border-color: #B7472A; border-style: solid; }
+.pp-corpo-campo li { margin-bottom: 3px; }
+.pp-corpo-campo[data-vazio="sim"]:not(:focus) li:first-child::before {
+  content: 'Clique para adicionar texto'; color: #7A7A7A;
+}
 /*
   A caixa desenhada à mão fica onde ela ficou, por cima do slide.
 
@@ -450,7 +462,7 @@ export function ItemDeMenuDoPowerPoint({ aoClicar, ativo, children }: {
  */
 export function FolhaDoSlide({
   slide, mestre, mini, numero, caminhoDoVideo, nomeDoAudio, caminhoDoAudio,
-  aoEscreverNoTitulo, rotuloDoTitulo, desenharGrafico,
+  aoEscreverNoTitulo, rotuloDoTitulo, aoEscreverNoCorpo, rotuloDoCorpo, desenharGrafico,
 }: {
   slide: Slide;
   mestre: SlideMestre;
@@ -462,6 +474,14 @@ export function FolhaDoSlide({
   caminhoDoAudio?: string;
   aoEscreverNoTitulo?: (texto: string) => void;
   rotuloDoTitulo?: string;
+  /**
+   * O corpo se escreve no próprio slide, com os marcadores, quando há quem
+   * receba as linhas. Era um campo à parte embaixo do palco — um formulário da
+   * plataforma onde o PowerPoint tem o espaço reservado —, e o desbravador
+   * aprendia a escrever fora do slide.
+   */
+  aoEscreverNoCorpo?: (topicos: string[]) => void;
+  rotuloDoCorpo?: string;
   /**
    * O gráfico, desenhado por quem tem os números.
    *
@@ -518,7 +538,14 @@ export function FolhaDoSlide({
           )}
         </p>
       )}
-      {s.topicos.length > 0 && (
+      {aoEscreverNoCorpo && !mini && s.layout !== 'em-branco'
+        && (s.layout !== 'so-titulo' || s.topicos.length > 0) ? (
+        <CorpoEditavel
+          topicos={s.topicos} aoEscrever={aoEscreverNoCorpo} rotulo={rotuloDoCorpo}
+          centrado={s.layout === 'titulo'}
+          estilo={{ ...estilo(doCorpo), padding: `0 ${34 * f}px`, lineHeight: 1.5 }}
+        />
+      ) : s.topicos.length > 0 && (
         <ul style={{
           ...estilo(doCorpo), padding: `0 ${34 * f}px`,
           textAlign: s.layout === 'titulo' ? 'center' : 'left',
@@ -619,6 +646,98 @@ export function FolhaDoSlide({
       )}
     </div>
   );
+}
+
+/**
+ * O espaço reservado do corpo, escrito no slide.
+ *
+ * É uma lista editável do próprio navegador, e não um campo de texto: é ela
+ * que desenha o marcador na frente de cada linha e faz o Enter abrir o tópico
+ * seguinte, como no PowerPoint. O DOM é de quem digita enquanto ele digita;
+ * o modelo só o reescreve quando os dois discordam — reescrever a cada tecla
+ * jogaria o cursor para o começo da caixa.
+ *
+ * As duas leituras aparam as linhas vazias do fim **igual**: sem isso, o Enter
+ * no último tópico criaria a linha nova, o modelo a aparava, a comparação
+ * acusava diferença e a linha recém-aberta sumia debaixo do cursor.
+ */
+function CorpoEditavel({ topicos, aoEscrever, rotulo, centrado, estilo }: {
+  topicos: string[];
+  aoEscrever: (topicos: string[]) => void;
+  rotulo?: string;
+  centrado: boolean;
+  estilo: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLUListElement>(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    /* Sem item nenhum também se escreve: é no primeiro item que o convite
+       cinza aparece, e é nele que o cursor cai ao clicar. */
+    if (el.querySelector('li') && semVaziosNoFim(linhasDoCorpo(el)).join('\n') === topicos.join('\n')) return;
+    el.replaceChildren(...(topicos.length ? topicos : ['']).map(t => {
+      const li = document.createElement('li');
+      if (t) li.textContent = t;
+      else li.appendChild(document.createElement('br'));
+      return li;
+    }));
+  }, [topicos]);
+
+  const aoDigitar = () => {
+    const el = ref.current;
+    if (!el) return;
+    /* Apagar tudo tira até o último item, e o que se digita depois cairia
+       solto, sem marcador. Ele volta a ser um tópico. */
+    if (!el.querySelector('li') && (el.textContent ?? '') !== '') {
+      const li = document.createElement('li');
+      li.textContent = el.textContent;
+      el.replaceChildren(li);
+      const r = document.createRange();
+      r.selectNodeContents(li);
+      r.collapse(false);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(r);
+    }
+    aoEscrever(semVaziosNoFim(linhasDoCorpo(el)));
+  };
+
+  return (
+    <ul
+      ref={ref}
+      className="pp-corpo-campo"
+      contentEditable
+      suppressContentEditableWarning
+      role="textbox"
+      aria-multiline="true"
+      aria-label={rotulo}
+      data-vazio={topicos.length === 0 ? 'sim' : undefined}
+      style={{ ...estilo, textAlign: centrado ? 'center' : 'left', listStyle: centrado ? 'none' : 'disc' }}
+      onInput={aoDigitar}
+      /* Colar entra como texto: o HTML copiado de uma página traria a cor e a
+         fonte dela, que o slide não guarda e a tela mostraria até o próximo
+         desenho. */
+      onPaste={ev => {
+        ev.preventDefault();
+        document.execCommand('insertText', false, ev.clipboardData.getData('text/plain'));
+      }}
+      /* Negrito, itálico e sublinhado moram na faixa e valem para a caixa
+         inteira; deixados ao navegador, ele escreveria um <b> que o modelo não
+         guarda. */
+      onKeyDown={ev => {
+        if ((ev.ctrlKey || ev.metaKey) && ['b', 'i', 'u', 'n', 's'].includes(ev.key.toLowerCase())) ev.preventDefault();
+      }}
+    />
+  );
+}
+
+/** As linhas da lista, uma por item; sem item nenhum, o texto solto. */
+function linhasDoCorpo(el: HTMLElement): string[] {
+  const itens = [...el.querySelectorAll('li')];
+  if (itens.length) return itens.map(li => (li.textContent ?? '').replace(/\u00a0/g, ' '));
+  const t = el.textContent ?? '';
+  return t ? t.split('\n') : [];
 }
 
 /* ── O painel de notas ────────────────────────────────────────────────────── */
