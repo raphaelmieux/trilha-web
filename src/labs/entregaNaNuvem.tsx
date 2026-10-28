@@ -17,7 +17,7 @@ import {
   MenuDoArquivo, RodapeDaCaixa, SecaoDaCaixa, TopoDaNuvem, type LugarDaNuvem,
 } from './nuvem';
 import {
-  arquivoDe, mandarParaALixeira, mover, pastasAcima, restaurarDaLixeira, type Nuvem,
+  arquivoDe, mandarParaALixeira, mover, pastasAcima, restaurarDaLixeira, type Nuvem, emOrdemDaLista,
 } from './arquivoCompartilhado';
 import { PASTA_DO_PROJETO } from './acampamentoDasFamilias';
 
@@ -29,6 +29,7 @@ export interface PropsDaEntrega {
 
 export function EntregaNaNuvem({ nuvem: n, mudar, avisar }: PropsDaEntrega) {
   const [lugar, setLugar] = useState<LugarDaNuvem>('meu');
+  const [crescente, setCrescente] = useState(true);
   const [pasta, setPasta] = useState<string | null>(PASTA_DO_PROJETO);
   const [escolhido, setEscolhido] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
@@ -107,13 +108,13 @@ export function EntregaNaNuvem({ nuvem: n, mudar, avisar }: PropsDaEntrega) {
             </div>
           )}
 
-          <CabecalhoDaLista />
+          <CabecalhoDaLista crescente={crescente} aoOrdenar={() => setCrescente(c => !c)} />
           {dentro.length === 0 && (
             <p className="nv-fraco" style={{ padding: '16px 12px' }}>
               {naLixeira ? 'A lixeira está vazia.' : 'Nada aqui ainda.'}
             </p>
           )}
-          {dentro.map(a => (
+          {emOrdemDaLista(dentro, crescente).map(a => (
             <div key={a.id}>
               {renomeando === a.id
                 ? (
@@ -134,7 +135,7 @@ export function EntregaNaNuvem({ nuvem: n, mudar, avisar }: PropsDaEntrega) {
                       if (a.tipo === 'pasta' && !naLixeira) setPasta(a.id);
                       else if (!naLixeira) avisar(`${a.nome} abriria no programa dele. Aqui a lição é onde ele mora.`);
                     }}
-                    aoMenu={e => { e.preventDefault(); setMenu({ id: a.id, x: e.clientX, y: e.clientY }); }} />
+                    aoMenu={(_, onde) => setMenu({ id: a.id, ...onde })} />
                 )}
             </div>
           ))}

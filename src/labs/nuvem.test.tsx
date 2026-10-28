@@ -5,9 +5,10 @@ import { createRoot, type Root } from 'react-dom/client';
 import {
   CSS_DA_NUVEM, TopoDaNuvem, LateralDaNuvem, CaminhoDaNuvem, CabecalhoDaLista,
   LinhaDaNuvem, SeletorDePapel, AcessoPelaPasta, OQuePapelDeixa,
-  CaixaDeCompartilhar, PessoaDaCaixa, SecaoDaCaixa, BotaoDaNuvem,
+  CaixaDeCompartilhar, PessoaDaCaixa, SecaoDaCaixa, BotaoDaNuvem, BarraDaSelecao, AcaoDaSelecao,
 } from './nuvem';
-import { nuvemDoClube, arquivoDe, compartilhar, type Nuvem } from './arquivoCompartilhado';
+import { nuvemDoClube, arquivoDe, compartilhar, emOrdemDaLista, type Nuvem } from './arquivoCompartilhado';
+import { Share2 } from 'lucide-react';
 
 /*
   A janela da nuvem, e o que ela não pode contar.
@@ -347,5 +348,85 @@ describe('a caixa no celular', () => {
     expect(centra).toBeGreaterThan(-1);
     expect(sobe, 'a regra que sobe a caixa no celular saiu da folha').toBeGreaterThan(-1);
     expect(sobe, 'a regra que sobe a caixa foi escrita antes da que a centra, e perdeu').toBeGreaterThan(centra);
+  });
+});
+
+/* ── O arranjo da nuvem de verdade ─────────────────────────────────────────── */
+
+describe('a lista se ordena como a nuvem ordena', () => {
+  const lista = ['Zona', 'pasta B', 'Ática', 'Ata 10', 'Ata 9'].map((nome, i) => ({
+    ...n.arquivos[0], id: `x${i}`, nome, tipo: nome.startsWith('pasta') ? 'pasta' as const : 'documento' as const,
+  }));
+
+  it('pastas primeiro, e o resto em ordem de dicionário, com número como número', () => {
+    expect(emOrdemDaLista(lista).map(a => a.nome)).toEqual(['pasta B', 'Ata 9', 'Ata 10', 'Ática', 'Zona']);
+  });
+
+  it('ao contrário, a pasta continua em cima', () => {
+    expect(emOrdemDaLista(lista, false).map(a => a.nome)).toEqual(['pasta B', 'Zona', 'Ática', 'Ata 10', 'Ata 9']);
+  });
+
+  it('o cabeçalho do Nome só vira botão quando há quem ordene', () => {
+    montar(<CabecalhoDaLista />);
+    expect(container.querySelector('button')).toBeNull();
+    let vezes = 0;
+    act(() => root.render(<CabecalhoDaLista crescente aoOrdenar={() => { vezes++; }} />));
+    act(() => { container.querySelector('button')!.click(); });
+    expect(vezes).toBe(1);
+  });
+});
+
+describe('o Novo e a barra da seleção', () => {
+  it('o Novo aparece pela presença do setter', () => {
+    montar(<LateralDaNuvem lugar="meu" aoIr={() => {}} usado={0.3} />);
+    expect(texto()).not.toContain('Novo');
+    act(() => root.render(<LateralDaNuvem lugar="meu" aoIr={() => {}} usado={0.3} aoNovo={() => {}} />));
+    expect(texto()).toContain('Novo');
+  });
+
+  /* A lista pularia para baixo a cada clique, e quem clica erraria a linha
+     seguinte. */
+  it('sem nada escolhido a barra fica vazia, mas ocupa o lugar', () => {
+    montar(<BarraDaSelecao quantos={0} aoLimpar={() => {}}>{null}</BarraDaSelecao>);
+    expect(container.querySelector('.nv-selecao')).not.toBeNull();
+    expect(container.querySelector('button')).toBeNull();
+  });
+
+  it('com um escolhido ela diz quantos e oferece o que fazer', () => {
+    let limpou = false;
+    montar(
+      <BarraDaSelecao quantos={1} aoLimpar={() => { limpou = true; }}>
+        <AcaoDaSelecao icone={Share2} nome="Compartilhar" aoClicar={() => {}} />
+      </BarraDaSelecao>,
+    );
+    expect(texto()).toContain('1 selecionado');
+    expect(container.querySelector('[aria-label="Compartilhar"]')).not.toBeNull();
+    act(() => { (container.querySelector('[aria-label="Limpar seleção"]') as HTMLElement).click(); });
+    expect(limpou).toBe(true);
+  });
+
+  /* O dono aparece com a bolha dele, como na lista de verdade: é o rosto que
+     se procura numa lista de vinte arquivos. */
+  it('a coluna do dono traz a bolha', () => {
+    montar(<LinhaDaNuvem arquivo={acharArq('materiais')} escolhido={false} aoEscolher={() => {}} aoAbrir={() => {}} />);
+    expect(container.querySelector('[data-coluna="dono"] .nv-bolha')).not.toBeNull();
+  });
+
+  it('o botão direito escolhe a linha e abre o menu ali', () => {
+    let escolheu = false;
+    let onde: { x: number; y: number } | null = null;
+    montar(
+      <div className="nv-janela">
+        <LinhaDaNuvem arquivo={acharArq('materiais')} escolhido={false}
+          aoEscolher={() => { escolheu = true; }} aoAbrir={() => {}}
+          aoMenu={(_, o) => { onde = o; }} />
+      </div>,
+    );
+    act(() => {
+      container.querySelector('.nv-linha')!.dispatchEvent(
+        new MouseEvent('contextmenu', { bubbles: true, clientX: 300, clientY: 150 }));
+    });
+    expect(escolheu).toBe(true);
+    expect(onde).toEqual({ x: 300, y: 150 });
   });
 });

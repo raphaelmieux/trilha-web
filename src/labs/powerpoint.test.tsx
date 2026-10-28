@@ -65,7 +65,7 @@ describe('o corpo do slide é o espaço reservado, e não um campo à parte', ()
     montar(['Saída às 19h']);
     act(() => { corpo().querySelector('li')!.textContent = 'Saída às 18h'; });
     digitar();
-    expect(gravados.at(-1)).toEqual(['Saída às 18h']);
+    expect(gravados[gravados.length - 1]).toEqual(['Saída às 18h']);
   });
 
   it('o Enter no último tópico abre uma linha que fica, mesmo vazia', () => {
@@ -76,7 +76,7 @@ describe('o corpo do slide é o espaço reservado, e não um campo à parte', ()
       corpo().appendChild(li);
     });
     digitar();
-    expect(gravados.at(-1), 'a linha vazia do fim não é tópico').toEqual(['Saída às 19h']);
+    expect(gravados[gravados.length - 1], 'a linha vazia do fim não é tópico').toEqual(['Saída às 19h']);
     expect(itens(), 'a linha recém-aberta sumiu debaixo do cursor').toHaveLength(2);
   });
 
@@ -85,7 +85,7 @@ describe('o corpo do slide é o espaço reservado, e não um campo à parte', ()
     act(() => { corpo().replaceChildren(document.createTextNode('Levar lanterna')); });
     digitar();
     expect(itens()).toEqual(['Levar lanterna']);
-    expect(gravados.at(-1)).toEqual(['Levar lanterna']);
+    expect(gravados[gravados.length - 1]).toEqual(['Levar lanterna']);
   });
 
   it('uma mudança vinda de fora (desfazer, outro comando) reescreve a lista', () => {
