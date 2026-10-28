@@ -555,7 +555,10 @@ export function valorCalculado(p: Planilha, l: number, c: number, caderno?: Cade
     if (!aba || aba === p.nome) return p.celulas[li]?.[ci]?.texto ?? '';
     const outra = caderno && planilhaPorNome(caderno, aba);
     return outra ? outra.celulas[li]?.[ci]?.texto ?? '' : '';
-  }, l, c, p.nome);
+  }, l, c, p.nome, (li, aba) => {
+    const dona = !aba || aba === p.nome ? p : caderno && planilhaPorNome(caderno, aba);
+    return dona ? linhaEscondida(dona, li) : false;
+  });
 }
 
 export function valorDe(p: Planilha, l: number, c: number): string {
@@ -1249,6 +1252,10 @@ export function contaDaSelecao(p: Planilha, faixa: Faixa, caderno?: Caderno) {
   const n = normalizar(faixa);
   let contagem = 0; let numeros = 0; let soma = 0;
   for (let l = n.topo; l <= Math.min(n.base, p.celulas.length - 1); l++) {
+    /* A linha escondida pelo filtro fica de fora, como no Excel: é por isso
+       que a Soma do rodapé discorda do `=SOMA` da célula, e é essa discórdia
+       que a AP044 manda notar. */
+    if (linhaEscondida(p, l)) continue;
     for (let c = n.esq; c <= Math.min(n.dir, (p.celulas[0]?.length ?? 1) - 1); c++) {
       if ((p.celulas[l]?.[c]?.texto ?? '') === '') continue;
       contagem += 1;

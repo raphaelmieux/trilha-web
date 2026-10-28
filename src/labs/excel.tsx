@@ -4,7 +4,7 @@ import {
 } from './office';
 import {
   type Caderno, type Direcao, type Faixa, type Planilha,
-  alinhamentoDe, estiloCondicional, linhaEscondida, mostrar, naFaixa, nomeDaColuna,
+  alinhamentoDe, estiloCondicional, linhaEscondida, mostrar, naFaixa, nomeDaColuna, nomeDaCelula, normalizar,
   textoDoResumo, valorCalculado, contaDaSelecao,
   type TipoDeGrafico, type PontoDoGrafico, type PontoDeDispersao, type EixoDoGrafico,
 } from './planilha';
@@ -262,8 +262,18 @@ export const CSS_EXCEL = `
 /* O congelamento é de tela: a linha congelada gruda no alto enquanto o resto
    rola. O z-index fica acima do cabeçalho de linha, senão a coluna de números passa
    por cima dela ao rolar de lado. */
-.pl-congelada td, .pl-congelada th { position: sticky; z-index: 3; background: #FFFFFF; }
-.pl-congelada th.pl-cab-lin { z-index: 4; }
+/* Escrito com a tabela e a linha na frente para vencer as regras que põem a
+   célula ativa e a da setinha do filtro em position: relative — com a mesma
+   especificidade elas venciam, e o cabeçalho com setinha rolava embora. */
+.pl-grade tr.pl-congelada td, .pl-grade tr.pl-congelada th { position: sticky; top: inherit; z-index: 3; background: #FFFFFF; }
+.pl-grade tr.pl-congelada th.pl-cab-lin { z-index: 4; background: #F5F5F5; }
+/* A linha cinza-escura embaixo da última linha presa é como o Excel mostra
+   onde o congelamento corta. */
+.pl-congelada-ultima td, .pl-congelada-ultima th { box-shadow: inset 0 -1px 0 #8A8886; }
+/* As letras das colunas nunca saem do alto, congelado ou não — é por elas que
+   se lê o endereço de uma célula na linha 80. */
+.pl-grade thead th { position: sticky; top: 0; z-index: 5; }
+.pl-grade thead th.pl-canto { z-index: 6; }
 
 /* A alça de preenchimento: o quadradinho no canto da célula ativa. Ela fica
    **fora** do fluxo do texto, senão empurra o conteúdo da célula e a coluna
@@ -279,12 +289,16 @@ export const CSS_EXCEL = `
   display: inline-flex; align-items: center; gap: 2px;
   margin-left: 4px; vertical-align: middle; color: #217346;
 }
-.pl-cab-bt {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 14px; height: 14px; border: none; background: transparent;
-  color: #605E5C; cursor: pointer; border-radius: 2px;
+/* A setinha do filtro, no canto direito da célula do cabeçalho: um quadradinho
+   cinza com borda, como o do Excel. A célula reserva o espaço dela à direita
+   para o texto não passar por baixo. */
+.pl-grade td:has(> .pl-filtro-seta) { position: relative; padding-right: 22px; }
+.pl-filtro-seta {
+  position: absolute; right: 2px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid #C8C6C4; background: #F3F2F1; color: #424242; border-radius: 2px; cursor: pointer;
 }
-.pl-cab-bt:hover { background: #E1DFDD; color: #217346; }
+.pl-filtro-seta:hover { background: #E1DFDD; border-color: #8A8886; }
 
 /* ── As caixas de diálogo ──────────────────────────────────────────────────
 
@@ -354,7 +368,19 @@ export const CSS_EXCEL = `
 }
 .pl-grafico-titulo { font-size: 12.5px; font-weight: 600; text-align: center; margin-bottom: 6px; }
 .pl-grafico-eixo { font-size: 10.5px; color: #605E5C; text-align: center; }
+/* Escolhido, o gráfico ganha a moldura e os títulos viram campos de escrever,
+   como no Excel: o título se edita no lugar, e não numa caixa à parte. */
+.pl-grafico[data-escolhido="sim"] { outline: 2px solid #217346; outline-offset: 1px; }
+.pl-grafico-campo {
+  display: block; width: 100%; border: 1px dashed transparent; background: transparent;
+  text-align: center; color: #201F1E; font: inherit; padding: 1px 2px;
+}
+.pl-grafico[data-escolhido="sim"] .pl-grafico-campo { border-color: #A19F9D; }
+.pl-grafico-campo::placeholder { color: #605E5C; }
 .pl-grade-caixa { position: relative; }
+/* O gráfico flutua no canto da área das células, e rola com elas. */
+.pl-sobre-a-grade { position: absolute; top: 0; right: 0; z-index: 6; }
+.pl-sobre-a-grade .pl-grafico { position: relative; top: 36px; right: 16px; }
 
 @media (max-width: 720px) {
   .pl-dialogo { top: 12px; transform: translate(-50%, 0); }
@@ -383,9 +409,11 @@ export function BarraDeTituloDoExcel({ arquivo, estado = 'Salvo', aoAvisar, aoDe
  * aparece assim mesmo, apagada, e responde que existe e não faz parte. Guia que
  * sumisse da fileira ensinaria que o Excel não a tem.
  */
-export function GuiasDoExcel({ atual, usaveis, aoTrocar, aoAvisar, aoAbrirArquivo }: {
+export function GuiasDoExcel({ atual, usaveis, contextuais, aoTrocar, aoAvisar, aoAbrirArquivo }: {
   atual: string;
   usaveis: readonly string[];
+  /** As guias que só existem com algo escolhido — Design do Gráfico, com o gráfico. */
+  contextuais?: readonly { id: string; nome: string }[];
   aoTrocar: (id: string) => void;
   aoAvisar: (recado: string) => void;
   /**
@@ -400,7 +428,7 @@ export function GuiasDoExcel({ atual, usaveis, aoTrocar, aoAvisar, aoAbrirArquiv
 }) {
   return (
     <GuiasDoOffice app="excel" classe="pl-guias" classeDaGuia="pl-guia" classeDoArquivo="pl-guia-arquivo"
-      guias={GUIAS_DO_EXCEL} atual={atual} usaveis={usaveis}
+      guias={GUIAS_DO_EXCEL} atual={atual} usaveis={usaveis} contextuais={contextuais}
       aoTrocar={aoTrocar} aoAvisar={aoAvisar} aoAbrirArquivo={aoAbrirArquivo}
       /* A guia Fórmulas tem uma razão própria a dizer, e diz ao abrir: a
          faixa dela existe inteira, mas aqui a fórmula se escreve na célula. */
@@ -664,6 +692,15 @@ export interface PropsDaGradeDoExcel {
   aoEscrever: (texto: string) => void;
   aoConfirmar: (texto: string, direcao?: Direcao) => void;
   aoCancelar: () => void;
+  /**
+   * A fórmula em edição espera uma referência. Aí o clique numa célula não pode
+   * tirar o foco do campo: ele escreve o nome dela, e quem decide é o gancho.
+   */
+  apontavel?: boolean;
+  /** As faixas que a fórmula em edição cita, contornadas cada uma na sua cor. */
+  referencias?: { faixa: Faixa; cor: string }[];
+  /** As teclas da edição — F2, F4, Ctrl+Enter, as setas do modo Inserir. */
+  aoTeclarNaEdicao?: (e: React.KeyboardEvent<HTMLInputElement>) => boolean;
 
   /** Menu do botão direito. Sem ele, a grade não abre menu nenhum. */
   aoContexto?: (e: React.MouseEvent, alvo: 'celula' | 'coluna' | 'linha', l: number, c: number) => void;
@@ -684,16 +721,45 @@ export interface PropsDaGradeDoExcel {
   /** Quais células o estilo de tabela pinta. Só a AP043 usa. */
   naTabela?: (l: number, c: number) => boolean;
   /** A setinha do filtro no cabeçalho. Sem ela, o cabeçalho não tem botão. */
-  aoAbrirFiltro?: (c: number) => void;
+  /** Abre a lista do filtro; o retângulo é o da setinha, para a lista abrir embaixo dela. */
+  aoAbrirFiltro?: (c: number, onde?: DOMRect) => void;
+  /**
+   * O que flutua sobre a planilha — o gráfico.
+   *
+   * Mora dentro da caixa que rola, e não sobre a janela: no Excel o gráfico
+   * está preso às células e rola com elas. Pendurado na janela, ele cobria a
+   * barra de título e a faixa, que é justamente o que a pessoa precisa ver
+   * para achar Design do Gráfico.
+   */
+  sobreposicao?: React.ReactNode;
 }
+
+/** A altura da fileira das letras das colunas, com a borda: é dela que a linha presa desconta. */
+const ALTURA_DAS_LETRAS = 21;
 
 export function GradeDoExcel({
   planilha: p, caderno, faixa, ativa, rascunho, gradeRef,
   aoTeclar, aoApontarCelula, aoEntrarNaCelula, aoApontarColuna, aoApontarLinha,
   aoMoverPonteiro, aoSoltarPonteiro, aoSairDaGrade,
-  aoAbrirEdicao, aoEscrever, aoConfirmar, aoCancelar,
+  aoAbrirEdicao, aoEscrever, aoConfirmar, aoCancelar, apontavel, referencias, aoTeclarNaEdicao,
   aoContexto, aoArrastarBorda, aoAjustarAoConteudo, aoComecarPreenchimento, naTabela, aoAbrirFiltro,
+  sobreposicao,
 }: PropsDaGradeDoExcel) {
+  /* O contorno colorido de cada referência da fórmula em edição: só as bordas
+     da faixa, como o Excel desenha, e não a faixa inteira pintada. */
+  const contornoDasReferencias = (l: number, c: number): string | undefined => {
+    if (!referencias?.length) return undefined;
+    const sombras: string[] = [];
+    for (const r of referencias) {
+      const n = normalizar(r.faixa);
+      if (l < n.topo || l > n.base || c < n.esq || c > n.dir) continue;
+      if (l === n.topo) sombras.push(`inset 0 2px 0 ${r.cor}`);
+      if (l === n.base) sombras.push(`inset 0 -2px 0 ${r.cor}`);
+      if (c === n.esq) sombras.push(`inset 2px 0 0 ${r.cor}`);
+      if (c === n.dir) sombras.push(`inset -2px 0 0 ${r.cor}`);
+    }
+    return sombras.length ? sombras.join(', ') : undefined;
+  };
   return (
     <div
       ref={gradeRef}
@@ -717,15 +783,6 @@ export function GradeDoExcel({
                     {p.ordenacao.crescente ? <ArrowDownAZ className="w-3 h-3" /> : <ArrowUpZA className="w-3 h-3" />}
                   </span>
                 )}
-                {aoAbrirFiltro && ehCabecalhoDaTabela(p, c) && (
-                  <button type="button" className="pl-cab-bt"
-                    title={`Filtrar a coluna ${nomeDaColuna(c)}`}
-                    aria-label={`Filtrar a coluna ${nomeDaColuna(c)}`}
-                    onPointerDown={e => e.stopPropagation()}
-                    onClick={() => aoAbrirFiltro(c)}>
-                    <Filter className="w-3 h-3" style={{ color: p.filtro?.coluna === c && p.filtro.valor ? '#217346' : undefined }} />
-                  </button>
-                )}
                 {aoArrastarBorda && (
                   <span
                     className="pl-alca-col"
@@ -741,10 +798,16 @@ export function GradeDoExcel({
           {p.celulas.map((linha, l) => (
             <tr
               key={l}
-              style={{ height: p.alturas[l], top: l < p.congeladas ? l * p.alturas[0] : undefined }}
+              /* A linha presa gruda logo abaixo das letras das colunas, somando
+                 a altura das presas acima dela. */
+              style={{
+                height: p.alturas[l],
+                top: l < p.congeladas ? ALTURA_DAS_LETRAS + p.alturas.slice(0, l).reduce((s, a) => s + a, 0) : undefined,
+              }}
               className={[
                 linhaEscondida(p, l) ? 'pl-escondida' : '',
                 l < p.congeladas ? 'pl-congelada' : '',
+                l === p.congeladas - 1 ? 'pl-congelada-ultima' : '',
               ].filter(Boolean).join(' ')}>
               <th className={`pl-cab-lin${dentroDasLinhas(faixa, l) ? ' pl-cab-ativo' : ''}`}
                 onPointerDown={e => aoApontarLinha(l, e)}
@@ -776,7 +839,7 @@ export function GradeDoExcel({
                   mostrar o de baixo faria a tela discordar do retrato.
                 */
                 const doResumo = textoDoResumo(p, l, c);
-                const mostrado = doResumo ?? mostrar(valor);
+                const mostrado = doResumo ?? mostrar(valor, cel.formato);
                 const h = doResumo !== null ? 'esquerda' : alinhamentoDe(cel, valor);
                 const cond = estiloCondicional(p, l, c);
                 return (
@@ -787,6 +850,8 @@ export function GradeDoExcel({
                        fecha — o mesmo gesto da planilha de verdade. Sem ele não
                        havia como dizer "de A1 até D1". */
                     onPointerDown={e => aoApontarCelula(l, c, e)}
+                    onMouseDown={apontavel ? e => e.preventDefault() : undefined}
+                    data-celula={nomeDaCelula(l, c)}
                     onContextMenu={e => aoContexto?.(e, 'celula', l, c)}
                     onPointerEnter={() => aoEntrarNaCelula(l, c)}
                     className={[
@@ -800,6 +865,7 @@ export function GradeDoExcel({
                       textAlign: h === 'centro' ? 'center' : h === 'direita' ? 'right' : 'left',
                       verticalAlign: cel.v === 'meio' ? 'middle' : cel.v === 'acima' ? 'top' : 'bottom',
                       fontWeight: cel.negrito ? 700 : 400,
+                      boxShadow: contornoDasReferencias(l, c),
                     }}>
                     {/* O autoFocus é só de quem começou a editar *na célula*:
                         dado à célula durante a digitação na barra, era ele que
@@ -811,6 +877,7 @@ export function GradeDoExcel({
                         value={rascunho}
                         onChange={e => aoEscrever(e.target.value)}
                         onKeyDown={e => {
+                          if (aoTeclarNaEdicao?.(e)) return;
                           if (e.key === 'Enter') { e.preventDefault(); aoConfirmar(rascunho, e.shiftKey ? 'cima' : 'baixo'); gradeRef.current?.focus(); }
                           if (e.key === 'Tab') { e.preventDefault(); aoConfirmar(rascunho, e.shiftKey ? 'esquerda' : 'direita'); gradeRef.current?.focus(); }
                           if (e.key === 'Escape') { e.preventDefault(); aoCancelar(); gradeRef.current?.focus(); }
@@ -822,6 +889,20 @@ export function GradeDoExcel({
                         className="pl-valor">
                         {mostrado}
                       </span>
+                    )}
+                    {/* A setinha do filtro mora na célula do cabeçalho da
+                        tabela, e não na letra da coluna: é ali que o Excel a
+                        põe, e é ali que quem leu a teoria vai procurá-la. */}
+                    {aoAbrirFiltro && ehCelulaDoCabecalho(p, l, c) && (
+                      <button type="button" className="pl-filtro-seta"
+                        title={`Filtrar a coluna ${nomeDaColuna(c)}`}
+                        aria-label={`Filtrar a coluna ${nomeDaColuna(c)}`}
+                        onPointerDown={e => e.stopPropagation()}
+                        onClick={e => aoAbrirFiltro(c, e.currentTarget.getBoundingClientRect())}>
+                        {p.filtro?.coluna === c && p.filtro.valor
+                          ? <Filter className="w-2.5 h-2.5" />
+                          : <ChevronDown className="w-3 h-3" />}
+                      </button>
                     )}
                     {ancora && aoComecarPreenchimento && rascunho === null && (
                       <span
@@ -841,6 +922,17 @@ export function GradeDoExcel({
           ))}
         </tbody>
       </table>
+      {sobreposicao && (
+        /* O que se faz no gráfico é do gráfico: a tecla escrita no título não
+           pode virar movimento de célula, nem o clique virar seleção. */
+        <div className="pl-sobre-a-grade"
+          onKeyDown={e => e.stopPropagation()}
+          onPointerDown={e => e.stopPropagation()}
+          onPointerMove={e => e.stopPropagation()}
+          onPointerUp={e => e.stopPropagation()}>
+          {sobreposicao}
+        </div>
+      )}
     </div>
   );
 }
@@ -855,11 +947,11 @@ const dentroDasLinhas = (f: Faixa, l: number) => l >= Math.min(f.l1, f.l2) && l 
  * prometeria filtrar a coluna vazia da direita, que é um gesto sem efeito — e
  * gesto sem efeito é o que ensina a pessoa a desconfiar do programa.
  */
-function ehCabecalhoDaTabela(p: Planilha, c: number): boolean {
+function ehCelulaDoCabecalho(p: Planilha, l: number, c: number): boolean {
   if (!p.tabela) return false;
   const esq = Math.min(p.tabela.c1, p.tabela.c2);
   const dir = Math.max(p.tabela.c1, p.tabela.c2);
-  return c >= esq && c <= dir;
+  return l === Math.min(p.tabela.l1, p.tabela.l2) && c >= esq && c <= dir;
 }
 
 /* ── O gráfico ─────────────────────────────────────────────────────────────

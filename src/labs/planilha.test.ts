@@ -8,7 +8,7 @@ import {
   linhaEscondida, estiloCondicional, ordenar, preencherAbaixo, preencherADireita,
   valorDaGrade, planilhaAtiva, trocarAtiva, planilhaPorNome,
   moverOuCopiar, renomearAba, substituir, removerDuplicatas, planilhaDe,
-  pontosDoGrafico, pontosDaDispersao,
+  pontosDoGrafico, pontosDaDispersao, valorDe,
 } from './planilha';
 import { mostrar } from './formulas';
 
@@ -630,5 +630,34 @@ describe('o gráfico lê a conta que atravessa a aba', () => {
     });
     expect(pontosDaDispersao(pares, { planilhas: [base, pares], ativa: 1 }))
       .toEqual([{ x: 17, y: 1 }, { x: 10, y: 2 }]);
+  });
+});
+
+describe('SUBTOTAL respeita o filtro, e a SOMA não', () => {
+  const p = planilhaDe('Inscritos', [
+    ['Unidade', 'Valor'],
+    ['Falcão', '10'],
+    ['Águia', '20'],
+    ['Falcão', '30'],
+    ['', ''],
+    ['=SOMA(B2:B4)', '=SUBTOTAL(109;B2:B4)'],
+  ], { tabela: { l1: 0, c1: 0, l2: 3, c2: 1 } });
+
+  it('sem filtro, as duas dão o mesmo', () => {
+    expect(valorDe(p, 5, 0)).toBe('60');
+    expect(valorDe(p, 5, 1)).toBe('60');
+  });
+
+  it('com filtro, só o SUBTOTAL fica com o que está à vista', () => {
+    const f = { ...p, filtro: { coluna: 0, valor: 'Falcão' } };
+    expect(valorDe(f, 5, 0), 'a SOMA ignora o filtro, que é a lição').toBe('60');
+    expect(valorDe(f, 5, 1)).toBe('40');
+    const contagem = { ...f, celulas: f.celulas.map((l, i) => (i === 6 ? l.map((c, j) => (j === 0 ? { ...c, texto: '=SUBTOTAL(2;B2:B4)' } : c)) : l)) };
+    expect(valorDe(contagem, 6, 0)).toBe('2');
+  });
+
+  it('não conta outro SUBTOTAL que caia dentro da faixa', () => {
+    const q = planilhaDe('X', [['1'], ['2'], ['=SUBTOTAL(9;A1:A2)'], ['=SUBTOTAL(9;A1:A3)']]);
+    expect(valorDe(q, 3, 0)).toBe('3');
   });
 });

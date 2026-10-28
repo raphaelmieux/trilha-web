@@ -728,7 +728,7 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
             />
 
             <BarraDeStatusDoExcel aoAvisar={avisar} planilha={p} faixa={faixa} caderno={cad}>
-              <span>Pronto</span>
+              <span>{grade.modo}</span>
             </BarraDeStatusDoExcel>
           </div>
       </Area>

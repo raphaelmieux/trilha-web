@@ -252,7 +252,7 @@ describe('as lições da CC-ES003 se vencem clicando', () => {
     apontar(celula(3, 1));
     clicar(botao('Classificar de A a Z'));
     clicar(botao('Filtro'));
-    clicar(container.querySelectorAll('.pl-cab-bt')[1]);
+    clicar(container.querySelectorAll('.pl-filtro-seta')[1]);
     clicar(container.querySelectorAll('.pl-filtro-lista .pl-filtro-item')[1]);
 
     expect(abertas(), 'a lição de destacar não fecha clicando').toBe(0);

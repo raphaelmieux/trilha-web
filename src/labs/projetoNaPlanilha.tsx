@@ -152,7 +152,7 @@ export function ControleNoExcel({ ctx, mudar, avisar }: PropsDaSuperficie) {
 
       {p.nome === NOME_DA_ABA_DE_CONTROLE && (
         <BarraDeStatusDoExcel aoAvisar={avisar} planilha={p} faixa={g.faixa}>
-          <span>Pronto</span>
+          <span>{g.modo}</span>
         </BarraDeStatusDoExcel>
       )}
     </div>
