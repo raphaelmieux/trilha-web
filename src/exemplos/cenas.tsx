@@ -6,6 +6,7 @@ import LaboratorioDoRelatorioAnual from '../components/LaboratorioDoRelatorioAnu
 import LaboratorioDaRevisao from '../components/LaboratorioDaRevisao';
 import LaboratorioDaEntrega from '../components/LaboratorioDaEntrega';
 import { CENAS_DE_DESIGN } from './cenasDeDesign';
+import { CENAS_VETORIAIS } from './cenasVetoriais';
 import { VEREDAS, type LicaoDeVereda } from '../curriculum/veredas';
 import { blocoDe, campoDe, linhaDe, trechoDe, titulosDoDoc, type Doc, type Paragrafo, type Bloco } from '../labs/documento';
 
@@ -300,4 +301,5 @@ export const CENAS: Record<string, ComponentType> = {
   'word-escala': revisao(ESCALA, 'Escala da Cantina'),
   'word-manual-entrega': entrega({ ...MANUAL, sumario: titulosDoDoc(MANUAL) }, 'Manual da Unidade Falcão'),
   ...CENAS_DE_DESIGN,
+  ...CENAS_VETORIAIS,
 };

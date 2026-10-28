@@ -37,7 +37,7 @@ const prancha = (id: string, nome: string, objetos: Prancha['objetos'], fundo = 
 
 /* A cena guarda o arquivo, como o laboratório guardaria: o editor só desenha
    o que recebe e devolve o que mudou. */
-const cena = (inicial: Arte, arquivo: string, primeira = inicial.pranchas[0].id) =>
+export const cena = (inicial: Arte, arquivo: string, primeira = inicial.pranchas[0].id) =>
   function CenaDoEditor() {
     const [arte, setArte] = useState(inicial);
     return (

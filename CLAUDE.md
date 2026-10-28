@@ -853,6 +853,18 @@ A primeira captura com Shift + clique mostrou um defeito do próprio editor: o
 navegador pintava, por cima da peça, a faixa de texto entre um clique e outro.
 A letra da prancha é desenho; a mesa tem `user-select: none`.
 
+As da CC-DG002 acharam mais dois. Com zoom de 800% a prancha passava da mesa,
+e o `justify-content: center` a empurrava para a esquerda além do alcance da
+rolagem: a borda esquerda da peça ficava inalcançável, justamente a que a
+lição de ampliar manda olhar. Ela se centra por `margin: auto`, que vira zero
+quando não cabe. E um caminho sem preenchimento mostrava "Vários" no campo de
+cor — que é o que o campo diz de uma seleção com cores diferentes —; sem
+preenchimento o campo some, e a caixa "Sem preenchimento" diz o estado.
+
+O roteiro também fala com o mouse: `ponto` aperta num lugar do elemento, em
+fração da caixa dele, e solta ali ou depois de arrastar. É assim que a gota
+das telas é desenhada com a caneta, nó por nó.
+
 **No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
 Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
 escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela
