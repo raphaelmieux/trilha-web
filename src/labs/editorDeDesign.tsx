@@ -133,7 +133,7 @@ export const CSS_DO_EDITOR_DE_DESIGN = `
 .dz-lista-item[aria-current="true"], .dz-lista-item[aria-selected="true"] { background: #3D6FE0; color: #FFFFFF; }
 .dz-mesa {
   flex: 1; min-width: 0; overflow: auto; background: #1A1B1E; position: relative;
-  display: flex; align-items: flex-start; justify-content: center; padding: 28px;
+  display: flex; align-items: flex-start; padding: 28px;
 }
 /* A letra da prancha é desenho, e não texto da página: Shift + clique soma um
    objeto à seleção, e o navegador, sem isto, pinta por cima da peça a faixa
@@ -171,7 +171,11 @@ export const CSS_DO_EDITOR_DE_DESIGN = `
 .dz-cor { border: 1px solid #3A3C42; border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
 .dz-cor-cabeca { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #FFFFFF; }
 .dz-medida { font-size: 22px; font-weight: 700; color: #FFFFFF; font-variant-numeric: tabular-nums; }
-.dz-prancha-e-guias { position: relative; flex: none; }
+/* Centrada pela margem, e não por justify-content: com zoom de 400% ou 800% a
+   prancha passa da mesa, e o que o centro empurrasse para a esquerda ficaria
+   fora do alcance da rolagem — a borda esquerda da peça, inalcançável. A
+   margem automática vira zero quando não cabe, e a rolagem começa nela. */
+.dz-prancha-e-guias { position: relative; flex: none; margin: 0 auto; }
 .dz-guias { position: absolute; left: 0; top: 0; overflow: visible; }
 .dz-recado { padding: 8px 10px; border-bottom: 1px solid #3A3C42; margin: 0; }
 .dz-caixa { flex-direction: row; align-items: center; gap: 6px; color: #C7C9CE; }
@@ -1366,9 +1370,15 @@ function Propriedades({ prancha, selecionados: os, mudarSelecionados, mudarPranc
         <div className="dz-secao">
           <div className="dz-secao-titulo"><span>Preenchimento e traço</span></div>
           <div className="dz-campos">
-            <CampoCor rotulo="Preenchimento" valor={comum(os, o => (
-              o.tipo === 'retangulo' || o.tipo === 'elipse' || o.tipo === 'caminho' ? o.preenchimento ?? undefined : undefined))}
-              aoMudar={hex => set(o => (o.tipo === 'retangulo' || o.tipo === 'elipse' || o.tipo === 'caminho' ? { ...o, preenchimento: hex } : o))} />
+            {/* Sem preenchimento não há cor a mostrar: o campo vazio diria
+                "Vários", que é o que ele diz de uma seleção com cores
+                diferentes, e um caminho só não tem várias. A caixa logo abaixo
+                é quem diz o estado. */}
+            {!os.every(o => o.tipo === 'caminho' && o.preenchimento === null) && (
+              <CampoCor rotulo="Preenchimento" valor={comum(os, o => (
+                o.tipo === 'retangulo' || o.tipo === 'elipse' || o.tipo === 'caminho' ? o.preenchimento ?? undefined : undefined))}
+                aoMudar={hex => set(o => (o.tipo === 'retangulo' || o.tipo === 'elipse' || o.tipo === 'caminho' ? { ...o, preenchimento: hex } : o))} />
+            )}
             {soCaminhos && (
               <label className="dz-campo dz-campo-largo dz-caixa">
                 <input type="checkbox" checked={os.every(o => o.tipo === 'caminho' && o.preenchimento === null)}

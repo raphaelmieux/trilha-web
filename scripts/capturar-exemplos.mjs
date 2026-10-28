@@ -110,10 +110,30 @@ for (const r of escolhidos) {
         await pagina.locator(a.rolarAte).first().evaluate(el => el.scrollIntoView({ block: 'start' }));
       } else if ('apontar' in a) {
         await pagina.locator(a.apontar).first().hover();
+      } else if ('ponto' in a) {
+        /* Um ponto dado em fração da caixa do elemento: é como a caneta se
+           mede, contra a prancha, e não contra a tela. */
+        const caixa = await pagina.locator(a.ponto).first().boundingBox();
+        const xy = ([fx, fy]) => [caixa.x + fx * caixa.width, caixa.y + fy * caixa.height];
+        const [x, y] = xy(a.em);
+        await pagina.mouse.move(x, y);
+        await pagina.mouse.down();
+        if (a.ate) {
+          const [x2, y2] = xy(a.ate);
+          await pagina.mouse.move(x2, y2, { steps: 8 });
+        }
+        await pagina.mouse.up();
       } else if ('selecionar' in a) {
         const alvo = pagina.locator(a.selecionar).first();
         await alvo.click();
         await alvo.evaluate((el, texto) => {
+          /* Num campo de texto a seleção é do campo, e não do documento. */
+          if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) {
+            const i = el.value.indexOf(texto);
+            if (i < 0) throw new Error(`"${texto}" não está no campo`);
+            el.setSelectionRange(i, i + texto.length);
+            return;
+          }
           const andar = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
           for (let no = andar.nextNode(); no; no = andar.nextNode()) {
             const i = no.data.indexOf(texto);

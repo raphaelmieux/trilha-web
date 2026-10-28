@@ -26,6 +26,7 @@
 
 import { ROTEIROS_DO_EDITOR } from './roteiros/editorDeTexto';
 import { ROTEIROS_DOS_FUNDAMENTOS } from './roteiros/fundamentosVisuais';
+import { ROTEIROS_DO_DESENHO_VETORIAL } from './roteiros/desenhoVetorial';
 
 export type Acao =
   /**
@@ -39,7 +40,13 @@ export type Acao =
   | { tecla: string }
   /** Escolhe uma opção numa caixa de seleção. */
   | { escolher: string; valor: string }
-  /** Seleciona, dentro do elemento, o primeiro trecho com este texto. */
+  /**
+   * Aperta o botão num ponto do elemento, dado em fração da caixa dele
+   * (`[0.5, 0.5]` é o meio), e solta ali ou depois de arrastar até `ate`. É o
+   * gesto da caneta: clicar põe um nó de canto, arrastar puxa a alça.
+   */
+  | { ponto: string; em: [number, number]; ate?: [number, number] }
+  /** Seleciona, dentro do elemento ou do campo, o primeiro trecho com este texto. */
   | { selecionar: string; texto: string }
   /** Seleciona do começo do primeiro elemento ao fim do segundo. */
   | { selecionarBlocos: [string, string] }
@@ -70,6 +77,7 @@ export interface Roteiro {
 export const ROTEIROS: Roteiro[] = [
   ...ROTEIROS_DO_EDITOR,
   ...ROTEIROS_DOS_FUNDAMENTOS,
+  ...ROTEIROS_DO_DESENHO_VETORIAL,
 ];
 
 /** Os nomes das imagens que um roteiro produz, na ordem. */
