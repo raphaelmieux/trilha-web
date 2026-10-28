@@ -53,21 +53,6 @@ import { roteiroDaApresentacao } from '../labs/roteiroDaApresentacao';
 
 type Tela = 'normal' | 'mestre' | 'telao' | 'bastidores' | 'caderno' | 'planilha';
 
-/**
- * As linhas do fim que ficaram vazias saem.
- *
- * Apertar Enter no fim da lista cria uma linha vazia, e no PowerPoint ela é um
- * tópico — vazio, mas um. Guardá-la faria o teto de seis estourar por uma
- * linha que ninguém vê, e a tarefa ficaria vermelha sem nada na tela
- * explicando. As do meio ficam: linha em branco entre dois tópicos é escolha
- * de quem escreve.
- */
-function semVaziosNoFim(linhas: string[]): string[] {
-  const fim = [...linhas];
-  while (fim.length > 0 && fim[fim.length - 1].trim() === '') fim.pop();
-  return fim;
-}
-
 const USAVEIS = ['Página Inicial', 'Inserir', 'Design', 'Revisão', 'Apresentação de Slides', 'Exibir'];
 
 /** Os tons que a coluna do seletor de cor oferece de cada cor do clube. */
@@ -936,30 +921,15 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
                       slide={slide} mestre={ap.mestre} numero={atual + 1}
                       rotuloDoTitulo={`Título do slide ${atual + 1}`}
                       aoEscreverNoTitulo={titulo => mudarSlide(slide.id, { titulo })}
+                      /* O corpo é **uma** caixa de texto, e as linhas dela são
+                         os tópicos: é o que um espaço reservado de conteúdo é
+                         no PowerPoint, e é o que dá gesto para apagar um tópico
+                         — com um campo por tópico, a meta de seis por slide
+                         seria impossível de vencer. */
+                      rotuloDoCorpo={`Tópicos do slide ${atual + 1}`}
+                      aoEscreverNoCorpo={topicos => mudarSlide(slide.id, { topicos })}
                       desenharGrafico={desenharGrafico} nomeDoAudio="hino-do-clube.mp3"
                     />
-                    {/*
-                      O corpo é **uma** caixa de texto, e as linhas dela são os
-                      tópicos.
-
-                      É o que um espaço reservado de conteúdo é no PowerPoint, e
-                      é também o que torna a lição possível: com um campo por
-                      tópico não haveria gesto nenhum para **apagar** um — e a
-                      meta de seis tópicos por slide ficaria impossível de
-                      vencer com o motor inteiramente correto, que é o defeito
-                      que esta trava existe para achar.
-                    */}
-                    {slide.layout !== 'em-branco'
-                      && (slide.layout !== 'so-titulo' || slide.topicos.length > 0) && (
-                      <textarea
-                        className="pp-titulo-campo mt-2"
-                        aria-label={`Tópicos do slide ${atual + 1}`}
-                        value={slide.topicos.join('\n')}
-                        rows={Math.max(3, slide.topicos.length + 1)}
-                        style={{ fontSize: 12, border: '1px solid #D7D7D7', borderRadius: 2, resize: 'vertical' }}
-                        onChange={e => mudarSlide(slide.id, { topicos: semVaziosNoFim(e.target.value.split('\n')) })}
-                      />
-                    )}
                   </div>
                 </div>
                 <PainelDeNotas
