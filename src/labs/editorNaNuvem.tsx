@@ -10,8 +10,8 @@ import {
   type ModoDeTrabalho, type Pessoa, type Versao, MODOS_DE_TRABALHO,
 } from './arquivoCompartilhado';
 import { NOME_DO_AUTOR, COR_DO_AUTOR } from './documento';
-import type { FormatoDaSelecao, Marca } from './edicao';
-import type { Formatacao } from './useEdicaoDoWord';
+import type { FormatoDaSelecao, FormatoDoParagrafoDaSelecao, Marca } from './edicao';
+import type { Formatacao, FormatacaoDeParagrafo } from './useEdicaoDoWord';
 
 /*
  * A janela do editor de documento **no navegador**, em peças.
@@ -517,6 +517,8 @@ interface ControleDaBarra {
   formatar: (f: Formatacao) => void;
   desfazer: () => void;
   refazer: () => void;
+  paragrafar?: (f: FormatacaoDeParagrafo) => void;
+  formatoDoParagrafo?: FormatoDoParagrafoDaSelecao;
 }
 
 export function FerramentasPadraoDoEditor({ parte, aoNaoFazParte, controle }: {
@@ -537,11 +539,20 @@ export function FerramentasPadraoDoEditor({ parte, aoNaoFazParte, controle }: {
     'Sublinhado (Ctrl+U)': () => controle.marcar('sublinhado'),
     'Diminuir tamanho da fonte (Ctrl+Shift+,)': () => controle.formatar({ tipo: 'encolher' }),
     'Aumentar tamanho da fonte (Ctrl+Shift+.)': () => controle.formatar({ tipo: 'crescer' }),
+    ...(controle.paragrafar ? {
+      'Lista com marcadores': () => controle.paragrafar!({ tipo: 'lista', lista: 'marcadores' }),
+      'Lista numerada': () => controle.paragrafar!({ tipo: 'lista', lista: 'numeracao' }),
+      'Diminuir recuo (Ctrl+[)': () => controle.paragrafar!({ tipo: 'recuo', delta: -1 }),
+      'Aumentar recuo (Ctrl+])': () => controle.paragrafar!({ tipo: 'recuo', delta: 1 }),
+      'Limpar formatação (Ctrl+\\)': () => controle.formatar({ tipo: 'limpar-caractere' }),
+    } : {}),
   } : {};
   const ligado: Partial<Record<string, boolean>> = controle ? {
     'Negrito (Ctrl+B)': controle.formato.negrito,
     'Itálico (Ctrl+I)': controle.formato.italico,
     'Sublinhado (Ctrl+U)': controle.formato.sublinhado,
+    'Lista com marcadores': controle.formatoDoParagrafo?.lista === 'marcadores',
+    'Lista numerada': controle.formatoDoParagrafo?.lista === 'numeracao',
   } : {};
   const f = (Icone: LucideIcon, dica: string, extra = '') => (
     <button key={dica} type="button" className={`ed-ferramenta ${extra}`} title={dica} aria-label={dica}

@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import {
   type Doc, type Paragrafo, blocoDe, campoDe, linhaDe, trechoDe, textoDoDoc, textoVisivel,
-  comFormatacaoDireta, paragrafos,
+  comFormatacaoDireta, paragrafos, marcadorDaLista,
 } from './documento';
 import {
   type Selecao, cursorEm, inserirTexto, apagar, quebrarParagrafo, quebraDeLinha, quebraDePagina,
   alternarMarca, aplicarEstilo, formatoDaSelecao, palavraEmVolta, selecaoValida, selecionarTudo,
   textoDaSelecao, tamanhoDoParagrafo, isolarSelecao, limparFormatacao, definirTamanho, apagarSelecao,
+  alternarLista, alinhar, tabular, limparTudo, fragmentoDaSelecao, colarFragmento, formatoDoParagrafoDaSelecao,
 } from './edicao';
 
 /*
@@ -262,5 +263,90 @@ describe('a seleção', () => {
     const r = isolarSelecao(base(), sel('p1', 15, 'p1', 22));
     const p1 = r.doc.blocos[0] as Paragrafo<S>;
     expect(p1.trechos.find(x => x.id === r.trecho)?.texto).toBe('inverno');
+  });
+});
+
+describe('parágrafo: alinhamento e listas', () => {
+  const lista = () => doc(
+    linhaDe('a', 'corpo', 'Saco de dormir'),
+    linhaDe('b', 'corpo', 'Lanterna'),
+    linhaDe('c', 'corpo', 'Caneca'),
+  );
+  const tudo = sel('a', 0, 'c', 6);
+
+  it('alinhar vale para o parágrafo inteiro, com o cursor parado no meio', () => {
+    const d = alinhar(lista(), cursorEm('b', 3), 'centro').doc;
+    expect(paragrafos(d).map(b => b.formato?.alinhamento ?? 'esquerda')).toEqual(['esquerda', 'centro', 'esquerda']);
+    expect(formatoDoParagrafoDaSelecao(d, tudo).alinhamento).toBeNull();
+  });
+
+  /* Três cliques no navegador selecionam o parágrafo com o fim já no começo
+     do seguinte. Centralizar não pode levar o de baixo junto. */
+  it('seleção que acaba no começo de um parágrafo não o alcança', () => {
+    const d = alinhar(lista(), sel('a', 0, 'b', 0), 'centro').doc;
+    expect(paragrafos(d).map(b => b.formato?.alinhamento ?? 'esquerda')).toEqual(['centro', 'esquerda', 'esquerda']);
+    const estilo = aplicarEstilo(lista(), sel('a', 0, 'b', 0), 'Título 1').doc;
+    expect(paragrafos(estilo).map(b => b.estilo)).toEqual(['Título 1', 'Normal', 'Normal']);
+  });
+
+  it('a lista é um interruptor, e a numeração é calculada', () => {
+    const d = alternarLista(lista(), tudo, 'numeracao').doc;
+    expect(['a', 'b', 'c'].map(id => marcadorDaLista(d, id))).toEqual(['1.', '2.', '3.']);
+    expect(paragrafos(alternarLista(d, tudo, 'numeracao').doc).every(b => !b.formato)).toBe(true);
+  });
+
+  it('Enter num item continua a lista, e Enter num item vazio a fecha', () => {
+    const d = alternarLista(lista(), tudo, 'marcadores').doc;
+    const r = quebrarParagrafo(d, cursorEm('c', 6));
+    const novo = paragrafos(r.doc).find(b => b.id === r.selecao.foco.bloco)!;
+    expect(novo.formato?.lista).toBe('marcadores');
+    const fechou = quebrarParagrafo(r.doc, r.selecao);
+    expect(paragrafos(fechou.doc).find(b => b.id === novo.id)!.formato?.lista).toBeUndefined();
+    expect(fechou.doc.blocos).toHaveLength(r.doc.blocos.length);
+  });
+
+  it('Backspace no começo do item tira o marcador sem juntar com o de cima', () => {
+    const d = alternarLista(lista(), tudo, 'marcadores').doc;
+    const r = apagar(d, cursorEm('b', 0), 'tras');
+    expect(r.doc.blocos).toHaveLength(3);
+    expect(paragrafos(r.doc)[1].formato?.lista).toBeUndefined();
+  });
+
+  it('Tab no começo do item desce um nível; no meio do texto é tabulação', () => {
+    const d = alternarLista(lista(), tudo, 'numeracao').doc;
+    const r = tabular(d, cursorEm('b', 0), false);
+    expect(paragrafos(r.doc)[1].formato?.recuo).toBe(1);
+    expect(marcadorDaLista(r.doc, 'b')).toBe('a.');
+    expect(marcadorDaLista(r.doc, 'c')).toBe('2.');
+    const meio = tabular(d, cursorEm('b', 3), false);
+    expect(texto(meio.doc, 'b')).toBe('Lan\tterna');
+  });
+
+  it('Limpar Toda a Formatação tira a de parágrafo também', () => {
+    const d = alinhar(alternarLista(lista(), tudo, 'marcadores').doc, tudo, 'direita').doc;
+    expect(paragrafos(limparTudo(d, tudo).doc).every(b => !b.formato)).toBe(true);
+  });
+});
+
+describe('copiar e colar com a formatação', () => {
+  it('cola o pedaço com o negrito de origem, e com marca se o controle estiver ligado', () => {
+    const d0 = base();
+    const negrito = alternarMarca(d0, sel('p1', 0, 'p1', 11), 'negrito').doc;
+    const frag = fragmentoDaSelecao(negrito, sel('p1', 0, 'p1', 11));
+    const r = colarFragmento(negrito, cursorEm('p2', 0), frag);
+    const colado = paragrafos(r.doc).find(b => b.id === 'p2')!.trechos[0];
+    expect(colado.texto).toBe('Acampamento');
+    expect(colado.direta?.negrito).toBe(true);
+    expect(r.selecao.foco.offset).toBe(11);
+    const marcado = colarFragmento({ ...negrito, controlarAlteracoes: true }, cursorEm('p2', 0), frag);
+    expect(paragrafos(marcado.doc).find(b => b.id === 'p2')!.trechos[0].revisao?.tipo).toBe('inserido');
+  });
+
+  it('o que está riscado não vai para a área de transferência', () => {
+    const d = { ...base(), controlarAlteracoes: true };
+    const riscado = apagar(d, cursorEm('p1', 11), 'tras', { autor: 'voce' }).doc;
+    const semMarca = { ...riscado, controlarAlteracoes: false };
+    const frag = fragmentoDaSelecao(semMarca, sel('p1', 0, 'p1', 22));
+    expect(frag[0].map(x => x.texto).join('')).toBe('Acampament de inverno');
   });
 });

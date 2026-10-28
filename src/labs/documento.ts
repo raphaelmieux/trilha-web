@@ -320,6 +320,76 @@ export interface Paragrafo<S extends string = string> extends BlocoBase<S> {
   estilo: Estilo;
   /** Nota de rodapé pendurada neste parágrafo. */
   nota?: string;
+  /** A formatação de parágrafo aplicada à mão. Ausente é a do estilo. */
+  formato?: FormatoDoParagrafo;
+}
+
+export type Alinhamento = 'esquerda' | 'centro' | 'direita' | 'justificado';
+export type TipoDeLista = 'marcadores' | 'numeracao';
+
+/**
+ * O que o grupo Parágrafo da faixa muda — e o que mora no **parágrafo**, e
+ * não no trecho.
+ *
+ * Alinhamento, entrelinha, lista e recuo valem para a linha inteira: no Word
+ * não há como centralizar meia frase, e é por isso que o botão de centralizar
+ * age com o cursor parado em qualquer ponto do parágrafo. Guardá-los no
+ * trecho deixaria representável o parágrafo meio centralizado, e cada leitor
+ * teria de decidir qual metade vale.
+ *
+ * A lista é um estado do parágrafo, e não um "• " digitado no começo dele: é
+ * o que faz a numeração se refazer sozinha quando um item sai do meio. Quem
+ * digita "1." à mão entrega uma lista que, depois da primeira revisão, pula
+ * do 2 para o 4 — a mesma família da legenda digitada.
+ */
+export interface FormatoDoParagrafo {
+  alinhamento?: Alinhamento;
+  /** Múltiplo da linha simples: 1, 1,15, 1,5, 2… */
+  entrelinha?: number;
+  lista?: TipoDeLista;
+  /** Em degraus de 1,25 cm, que é o que "Aumentar Recuo" anda no Word. */
+  recuo?: number;
+}
+
+/** Quanto anda um degrau de recuo, em centímetros. */
+export const DEGRAU_DE_RECUO_CM = 1.25;
+
+const MARCADORES = ['•', '◦', '▪'];
+const romanos = (n: number) => {
+  const tabela: [number, string][] = [[10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']];
+  let r = '';
+  for (const [v, l] of tabela) while (n >= v) { r += l; n -= v; }
+  return r;
+};
+
+/**
+ * O que aparece antes de um item de lista: o marcador do nível, ou o número.
+ *
+ * O número é **calculado**, contando os itens numerados seguidos do mesmo
+ * nível acima dele — e um parágrafo sem lista no meio recomeça a conta. Nível
+ * mais fundo não interrompe o de fora: o 2 continua sendo 2 depois de três
+ * subitens, que é o que uma lista de vários níveis do Word faz.
+ */
+export function marcadorDaLista(d: Doc<string>, blocoId: string): string | null {
+  const i = d.blocos.findIndex(b => b.id === blocoId);
+  const b = d.blocos[i];
+  if (!b || b.tipo !== 'paragrafo' || !b.formato?.lista) return null;
+  const nivel = b.formato.recuo ?? 0;
+  if (b.formato.lista === 'marcadores') return MARCADORES[nivel % MARCADORES.length];
+  let n = 1;
+  for (let j = i - 1; j >= 0; j--) {
+    const a = d.blocos[j];
+    if (a.tipo !== 'paragrafo' || !a.formato?.lista) break;
+    const outro = a.formato.recuo ?? 0;
+    if (outro < nivel) break;
+    if (outro === nivel) {
+      if (a.formato.lista !== 'numeracao') break;
+      n++;
+    }
+  }
+  if (nivel % 3 === 1) return `${String.fromCharCode(96 + ((n - 1) % 26) + 1)}.`;
+  if (nivel % 3 === 2) return `${romanos(n)}.`;
+  return `${n}.`;
 }
 
 /**
@@ -605,6 +675,49 @@ export interface Doc<S extends string = string> {
   controlarAlteracoes?: boolean;
   /** Os comentários da margem. Ausente é o mesmo que nenhum. */
   comentarios?: Comentario[];
+  /**
+   * O papel, a orientação e as margens — Layout › Configurar Página.
+   *
+   * Moram no documento, como no Word: é o arquivo que sai da impressora em
+   * paisagem, e não o programa. Ausente é o padrão de todo documento novo em
+   * português, A4 em pé com margem normal.
+   */
+  pagina?: ConfiguracaoDaPagina;
+}
+
+export type Papel = 'A4' | 'Carta' | 'Ofício';
+export type Orientacao = 'retrato' | 'paisagem';
+export type Margens = 'normal' | 'estreita' | 'moderada' | 'larga';
+
+export interface ConfiguracaoDaPagina {
+  papel: Papel;
+  orientacao: Orientacao;
+  margens: Margens;
+}
+
+export const PAGINA_PADRAO: ConfiguracaoDaPagina = { papel: 'A4', orientacao: 'retrato', margens: 'normal' };
+
+/** Largura e altura em pé, em centímetros, como a caixa Tamanho do Word mostra. */
+export const MEDIDAS_DO_PAPEL: Record<Papel, { largura: number; altura: number }> = {
+  A4: { largura: 21, altura: 29.7 },
+  Carta: { largura: 21.59, altura: 27.94 },
+  Ofício: { largura: 21.59, altura: 35.56 },
+};
+
+export const MEDIDAS_DAS_MARGENS: Record<Margens, number> = {
+  estreita: 1.27, moderada: 1.91, normal: 2.5, larga: 5.08,
+};
+
+/** As medidas que a folha desenha. Virar o papel troca largura e altura. */
+export function medidasDaPagina(d: Doc<string>): { largura: number; altura: number; margem: number } {
+  const p = d.pagina ?? PAGINA_PADRAO;
+  const { largura, altura } = MEDIDAS_DO_PAPEL[p.papel];
+  const deitado = p.orientacao === 'paisagem';
+  return {
+    largura: deitado ? altura : largura,
+    altura: deitado ? largura : altura,
+    margem: MEDIDAS_DAS_MARGENS[p.margens],
+  };
 }
 
 /* ── Montar ───────────────────────────────────────────────────────────────── */

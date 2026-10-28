@@ -39,9 +39,9 @@
  */
 
 import {
-  type Autor, type Bloco, type Direta, type Doc, type Estilo, type Paragrafo, type Posicao,
-  type Realce, type Trecho,
-  aparenciaDe, ehParagrafo, fonteDoCorpo,
+  type Alinhamento, type Autor, type Bloco, type Direta, type Doc, type Estilo,
+  type FormatoDoParagrafo, type Paragrafo, type Posicao, type Realce, type TipoDeLista, type Trecho,
+  aparenciaDe, ehParagrafo, fonteDoCorpo, textoDoTrecho,
 } from './documento';
 
 /* ── Posição e seleção ────────────────────────────────────────────────────── */
@@ -158,6 +158,36 @@ export function textoDaSelecao(d: Doc<string>, s: Selecao): string {
     const ate = b.id === fim.bloco ? fim.offset : u.length;
     return u.slice(de, ate);
   }).join('\n');
+}
+
+/**
+ * O que vai para a área de transferência: os pedaços selecionados com a
+ * formatação deles, um parágrafo por linha.
+ *
+ * O texto riscado de uma revisão não vai — ele já saiu do documento —, e a
+ * marca de quem inseriu também não: colado noutro lugar, o texto é de quem
+ * colou. Campo vai como o texto que mostra, porque fora daqui ele não teria
+ * de onde recalcular o número.
+ */
+export function fragmentoDaSelecao(d: Doc<string>, s: Selecao): Trecho[][] {
+  const { inicio, fim } = ordenar(d, s);
+  const ids = new Ids(d);
+  return paragrafosDaSelecao(d, s).map(b => {
+    const de = b.id === inicio.bloco ? inicio.offset : 0;
+    const ate = b.id === fim.bloco ? fim.offset : tamanhoDoParagrafo(b);
+    const { trechos, de: i, ate: j } = isolar(b.trechos, de, ate, ids);
+    return trechos.slice(i, j)
+      .filter(x => x.revisao?.tipo !== 'excluido')
+      .map(x => {
+        const t: Trecho = { ...x };
+        delete t.revisao;
+        if (t.campo) {
+          t.texto = textoDoTrecho(d, x);
+          delete t.campo;
+        }
+        return t;
+      });
+  });
 }
 
 /* ── Ids ──────────────────────────────────────────────────────────────────── */
@@ -416,6 +446,12 @@ export function apagar<S extends string>(
   const i = indiceDoBloco(d, p.id);
 
   if (direcao === 'tras' && k === 0) {
+    /* No começo de um item, o Backspace tira o marcador antes de juntar
+       qualquer coisa: é o que o Word faz, e é como se sai de uma lista sem
+       apagar texto nenhum. */
+    if (p.formato?.lista) {
+      return { doc: trocarBloco(d, p.id, [comFormato(p, { ...p.formato, lista: undefined })]), selecao: s };
+    }
     if (p.quebraDePagina) {
       const sem: Paragrafo<S> = { ...p };
       delete sem.quebraDePagina;
@@ -583,6 +619,42 @@ export function inserirTexto<S extends string>(
 }
 
 /**
+ * Colar o que saiu de `fragmentoDaSelecao`: a formatação de origem vai junto,
+ * que é o que o Colar do Word faz sem ninguém escolher nada. Cada linha do
+ * fragmento depois da primeira abre um parágrafo, como o Enter.
+ */
+export function colarFragmento<S extends string>(
+  d: Doc<S>, s: Selecao, fragmento: Trecho[][], q?: QuemEdita,
+): Edicao<S> {
+  const limpo = apagarSelecao(d, s, q);
+  let doc = limpo.doc;
+  let sel = limpo.selecao;
+  const marcar = marcando(d, q);
+  const autor = autorDe(q);
+  fragmento.forEach((linha, n) => {
+    if (n > 0) {
+      const r = quebrarParagrafo(doc, sel, q);
+      doc = r.doc;
+      sel = r.selecao;
+    }
+    const p = paragrafoPorId(doc, sel.foco.bloco);
+    const pedacos = linha.filter(x => x.texto || x.quebra);
+    if (!p || pedacos.length === 0) return;
+    const ids = new Ids(doc);
+    const { trechos, i } = partir(p.trechos, sel.foco.offset, ids);
+    const novos = pedacos.map(x => {
+      const t: Trecho = { ...x, id: ids.novo(p.trechos[0].id) };
+      if (marcar) t.revisao = { autor, tipo: 'inserido' };
+      return t;
+    });
+    const lista = [...trechos.slice(0, i), ...novos, ...trechos.slice(i)];
+    doc = trocarBloco(doc, p.id, [{ ...p, trechos: semVazios(lista) }]);
+    sel = cursorEm(p.id, sel.foco.offset + novos.reduce((t, x) => t + unidadesDoTrecho(x), 0));
+  });
+  return { doc, selecao: sel };
+}
+
+/**
  * Shift+Enter: desce uma linha sem fechar o parágrafo.
  *
  * É a diferença que o requisito 2.3 da CC-ES002 pede, e ela precisa de um
@@ -636,10 +708,23 @@ export function quebrarParagrafo<S extends string>(d: Doc<S>, s: Selecao, q?: Qu
   const n = tamanhoDoParagrafo(p);
   const ids = new Ids(doc0);
 
+  /* Enter num item de lista vazio fecha a lista, como no Word: sobe um
+     nível se estiver recuado, e sai da lista se já estiver na margem. Sem
+     isso, quem termina uma lista e aperta Enter duas vezes ganharia um item
+     vazio atrás do outro, e nunca voltaria ao texto corrido. */
+  if (n === 0 && p.formato?.lista) {
+    const recuo = p.formato.recuo ?? 0;
+    const formato: FormatoDoParagrafo = recuo > 0
+      ? { ...p.formato, recuo: recuo - 1 }
+      : { ...p.formato, lista: undefined, recuo: undefined };
+    return { doc: trocarBloco(doc0, p.id, [comFormato(p, formato)]), selecao: limpo.selecao };
+  }
+
   if (k === 0 && n > 0) {
     const vazio: Paragrafo<S> = {
       tipo: 'paragrafo', id: ids.novo(p.id), secao: p.secao, estilo: p.estilo,
       trechos: [vazioComo(p.trechos[0], ids.novo(p.trechos[0].id))],
+      ...(p.formato ? { formato: p.formato } : {}),
     };
     let depois: Paragrafo<S> = p;
     if (p.quebraDePagina) {
@@ -652,10 +737,11 @@ export function quebrarParagrafo<S extends string>(d: Doc<S>, s: Selecao, q?: Qu
 
   if (n === 0) {
     /* Enter num parágrafo vazio: outro vazio embaixo, e o cursor desce. */
+    const estilo = ESTILO_SEGUINTE[p.estilo] ?? p.estilo;
     const novo: Paragrafo<S> = {
-      tipo: 'paragrafo', id: ids.novo(p.id), secao: p.secao,
-      estilo: ESTILO_SEGUINTE[p.estilo] ?? p.estilo,
+      tipo: 'paragrafo', id: ids.novo(p.id), secao: p.secao, estilo,
       trechos: [vazioComo(p.trechos[0], ids.novo(p.trechos[0].id))],
+      ...(p.formato && estilo === p.estilo ? { formato: p.formato } : {}),
     };
     return { doc: trocarBloco(doc0, p.id, [p, novo]), selecao: cursorEm(novo.id, 0) };
   }
@@ -671,8 +757,12 @@ export function quebrarParagrafo<S extends string>(d: Doc<S>, s: Selecao, q?: Qu
   };
   const antes: Paragrafo<S> = { ...p, trechos: comAoMenosUm(esquerda, trechos[0], ids, p.trechos[0].id) };
   /* O parágrafo novo que nasce no fim de um título vira Normal; a formatação
-     direta do título não vai junto, senão o Normal sairia azul e grande. */
+     direta do título não vai junto, senão o Normal sairia azul e grande. A de
+     parágrafo vai junto quando o estilo continua: o item seguinte de uma
+     lista é outro item, e a linha seguinte de um texto centralizado continua
+     centralizada. */
   if (novo.estilo !== p.estilo) novo.trechos = novo.trechos.map(x => (x.texto || x.campo ? x : semDireta(x)));
+  else if (p.formato) novo.formato = p.formato;
   return { doc: trocarBloco(doc0, p.id, [antes, novo]), selecao: cursorEm(novo.id, 0) };
 }
 
@@ -873,7 +963,8 @@ export function limparFormatacao<S extends string>(d: Doc<S>, s: Selecao): Edica
  */
 export function limparTudo<S extends string>(d: Doc<S>, s: Selecao): Edicao<S> {
   const r = limparFormatacao(d, s);
-  return aplicarEstilo(r.doc, s, 'Normal');
+  const semFormato = formatarParagrafos(r.doc, s, () => ({}));
+  return aplicarEstilo(semFormato.doc, s, 'Normal');
 }
 
 /**
@@ -884,10 +975,112 @@ export function limparTudo<S extends string>(d: Doc<S>, s: Selecao): Edicao<S> {
  * cursor parado no meio de um título basta para aplicar Título 1 nele.
  */
 export function aplicarEstilo<S extends string>(d: Doc<S>, s: Selecao, estilo: Estilo): Edicao<S> {
-  const alvos = new Set(paragrafosDaSelecao(d, s).map(b => b.id));
+  const alvos = new Set(paragrafosAlcancados(d, s).map(b => b.id));
   return {
     doc: { ...d, blocos: d.blocos.map(b => (alvos.has(b.id) && ehParagrafo(b) ? { ...b, estilo } : b)) },
     selecao: s,
+  };
+}
+
+/* ── Parágrafo ────────────────────────────────────────────────────────────── */
+
+/**
+ * Os parágrafos que um comando de parágrafo alcança.
+ *
+ * Uma seleção que termina no começo de um parágrafo não o alcança: é o que os
+ * três cliques do navegador produzem — o parágrafo inteiro, com o fim já do
+ * lado de lá —, e no Word três cliques num título e Ctrl+E centralizam o
+ * título, e não a linha de baixo junto.
+ */
+export function paragrafosAlcancados<S extends string>(d: Doc<S>, s: Selecao): Paragrafo<S>[] {
+  const lista = paragrafosDaSelecao(d, s);
+  if (lista.length > 1 && ordenar(d, s).fim.offset === 0) return lista.slice(0, -1);
+  return lista;
+}
+
+/** O parágrafo com outra formatação, sem chave vazia sobrando. */
+function comFormato<S extends string>(p: Paragrafo<S>, f: FormatoDoParagrafo): Paragrafo<S> {
+  const limpo: FormatoDoParagrafo = {};
+  if (f.alinhamento && f.alinhamento !== 'esquerda') limpo.alinhamento = f.alinhamento;
+  if (f.entrelinha && f.entrelinha !== 1) limpo.entrelinha = f.entrelinha;
+  if (f.lista) limpo.lista = f.lista;
+  if (f.recuo && f.recuo > 0) limpo.recuo = f.recuo;
+  const novo: Paragrafo<S> = { ...p };
+  if (Object.keys(limpo).length > 0) novo.formato = limpo;
+  else delete novo.formato;
+  return novo;
+}
+
+/**
+ * A formatação de parágrafo vale para **todo** parágrafo que a seleção toca,
+ * inteiro — como o estilo. O cursor parado no meio de uma frase basta para
+ * centralizar o parágrafo dela.
+ */
+export function formatarParagrafos<S extends string>(
+  d: Doc<S>, s: Selecao, f: (atual: FormatoDoParagrafo) => FormatoDoParagrafo,
+): Edicao<S> {
+  const alvos = new Set(paragrafosAlcancados(d, s).map(b => b.id));
+  return {
+    doc: { ...d, blocos: d.blocos.map(b => (alvos.has(b.id) && ehParagrafo(b) ? comFormato(b, f(b.formato ?? {})) : b)) },
+    selecao: s,
+  };
+}
+
+export const alinhar = <S extends string>(d: Doc<S>, s: Selecao, alinhamento: Alinhamento) =>
+  formatarParagrafos(d, s, f => ({ ...f, alinhamento }));
+
+export const definirEntrelinha = <S extends string>(d: Doc<S>, s: Selecao, entrelinha: number) =>
+  formatarParagrafos(d, s, f => ({ ...f, entrelinha }));
+
+/**
+ * Marcadores e Numeração: ligam a lista em todos os parágrafos tocados, e
+ * desligam quando todos já estão nela — o botão do Word, que é um interruptor.
+ * Trocar de marcadores para numeração é apertar o outro botão: a lista muda
+ * de tipo sem precisar ser desligada antes.
+ */
+export function alternarLista<S extends string>(d: Doc<S>, s: Selecao, tipo: TipoDeLista): Edicao<S> {
+  const todos = paragrafosAlcancados(d, s).every(b => b.formato?.lista === tipo);
+  return formatarParagrafos(d, s, f => ({ ...f, lista: todos ? undefined : tipo }));
+}
+
+/** Aumentar e Diminuir Recuo. Nunca passa da margem, nem de oito degraus. */
+export const mudarRecuo = <S extends string>(d: Doc<S>, s: Selecao, delta: 1 | -1) =>
+  formatarParagrafos(d, s, f => ({ ...f, recuo: Math.max(0, Math.min(8, (f.recuo ?? 0) + delta)) }));
+
+/**
+ * O Tab: no começo de um item de lista, ou com vários parágrafos selecionados,
+ * ele recua — é como a lista ganha um subitem no Word. No meio do texto, é um
+ * caractere de tabulação. Shift+Tab só desce de nível; fora disso não faz nada.
+ */
+export function tabular<S extends string>(d: Doc<S>, s: Selecao, voltar: boolean, q?: QuemEdita): Edicao<S> {
+  const tocados = paragrafosAlcancados(d, s);
+  const umSo = tocados.length === 1 ? tocados[0] : null;
+  const noComecoDeItem = !!umSo?.formato?.lista && recolhida(s) && s.foco.offset === 0;
+  if (tocados.length > 1 || noComecoDeItem || voltar) {
+    if (voltar && !tocados.some(b => (b.formato?.recuo ?? 0) > 0)) return { doc: d, selecao: s };
+    return mudarRecuo(d, s, voltar ? -1 : 1);
+  }
+  return inserirTexto(d, s, '\t', q);
+}
+
+/** O estado do grupo Parágrafo da faixa. `null` quando a seleção mistura dois. */
+export interface FormatoDoParagrafoDaSelecao {
+  alinhamento: Alinhamento | null;
+  entrelinha: number | null;
+  lista: TipoDeLista | 'nenhuma' | null;
+}
+
+export function formatoDoParagrafoDaSelecao(d: Doc<string>, s: Selecao | null): FormatoDoParagrafoDaSelecao {
+  const tocados = s ? paragrafosAlcancados(d, s) : [];
+  if (tocados.length === 0) return { alinhamento: null, entrelinha: null, lista: null };
+  const unico = <T,>(f: (b: Paragrafo<string>) => T): T | null => {
+    const v = f(tocados[0]);
+    return tocados.every(b => f(b) === v) ? v : null;
+  };
+  return {
+    alinhamento: unico(b => b.formato?.alinhamento ?? 'esquerda'),
+    entrelinha: unico(b => b.formato?.entrelinha ?? 1),
+    lista: unico(b => b.formato?.lista ?? 'nenhuma'),
   };
 }
 

@@ -1,14 +1,13 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  Pilcrow, AlignLeft, AlignCenter, AlignRight, AlignJustify, Sparkles,
-  Clipboard, Scissors, Copy, FileText, Search, Replace, MousePointer2,
+  Sparkles, FileText, Search, Replace, MousePointer2,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
   BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
 } from '../labs/word';
-import { GrupoDeFonte, CSS_FONTE_DO_WORD } from '../labs/fonteDoWord';
+import { GrupoDeFonte, CSS_FONTE_DO_WORD, GrupoDeParagrafo, GrupoAreaDeTransferencia } from '../labs/fonteDoWord';
 import {
   CIRCULAR_INICIAL, METAS_DA_CIRCULAR, PARAGRAFO_QUE_CHEGA,
   gestosVazios,
@@ -148,7 +147,6 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
   );
 
   const palavras = textoVisivel(doc).split(/\s+/).filter(Boolean).length;
-  const enfeite = (nome: string) => setAviso(`${nome} existe no Word de verdade, e não faz parte deste exercício.`);
 
   return (
     <LaboratorioEmTelaCheia
@@ -179,38 +177,12 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
 
         {guia === 'Início' && (
           <div className="wd-faixa">
-            <GrupoDaFaixa nome="Área de Transferência">
-              <EnfeiteDaFaixa dica="Colar (Ctrl+V)" rotulo="Colar" empilhado aoAvisar={() => setAviso('Para colar, use Ctrl+V com o cursor no documento — o navegador não deixa o botão ler a área de transferência.')}>
-                <Clipboard className="w-5 h-5" />
-              </EnfeiteDaFaixa>
-              <div className="wd-linhas">
-                <EnfeiteDaFaixa dica="Recortar (Ctrl+X)" aoAvisar={() => setAviso('Para recortar, selecione e use Ctrl+X.')}><Scissors className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                <EnfeiteDaFaixa dica="Copiar (Ctrl+C)" aoAvisar={() => setAviso('Para copiar, selecione e use Ctrl+C.')}><Copy className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-              </div>
-            </GrupoDaFaixa>
+            <GrupoAreaDeTransferencia edicao={edicao} aoAvisar={setAviso} />
 
             <GrupoDeFonte edicao={edicao} aoAvisar={setAviso} />
 
-            <GrupoDaFaixa nome="Parágrafo">
-              <div className="wd-linhas">
-                <div style={{ display: 'flex', gap: 1 }}>
-                  <BotaoDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoClicar={() => enfeite('Alinhar à Esquerda')}><AlignLeft className="w-3.5 h-3.5" /></BotaoDaFaixa>
-                  <BotaoDaFaixa dica="Centralizar (Ctrl+E)" aoClicar={() => enfeite('Centralizar')}><AlignCenter className="w-3.5 h-3.5" /></BotaoDaFaixa>
-                  <BotaoDaFaixa dica="Alinhar à Direita (Ctrl+G)" aoClicar={() => enfeite('Alinhar à Direita')}><AlignRight className="w-3.5 h-3.5" /></BotaoDaFaixa>
-                  <BotaoDaFaixa dica="Justificar (Ctrl+J)" aoClicar={() => enfeite('Justificar')}><AlignJustify className="w-3.5 h-3.5" /></BotaoDaFaixa>
-                </div>
-                <div style={{ display: 'flex', gap: 1 }}>
-                  {/*
-                    O botão que a lição inteira depende. Com ele desligado o Enter e
-                    a quebra de linha não aparecem, e o documento errado passa por
-                    certo — é o que a teoria diz, e é a primeira tarefa.
-                  */}
-                  <BotaoDaFaixa dica="Mostrar Tudo (Ctrl+*)" ativo={gestos.marcas} aoClicar={alternarMarcas}>
-                    <Pilcrow className="w-3.5 h-3.5" />
-                  </BotaoDaFaixa>
-                </div>
-              </div>
-            </GrupoDaFaixa>
+            <GrupoDeParagrafo edicao={edicao} aoAvisar={setAviso}
+              marcas={{ ligadas: gestos.marcas, alternar: alternarMarcas }} />
 
             <GrupoDaFaixa nome="Edição">
               <div className="wd-linhas">

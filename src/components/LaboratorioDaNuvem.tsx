@@ -664,7 +664,7 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
         <FerramentaDoEditor icone={MessageSquarePlus} dica="Inserir comentário"
           desligada={!bloco}
           aoClicar={comentarNaSelecao} />
-        <FerramentasPadraoDoEditor parte="depois" aoNaoFazParte={fora} />
+        <FerramentasPadraoDoEditor parte="depois" aoNaoFazParte={fora} controle={edicao} />
         <SeparadorDaBarra />
         <FerramentaDoEditor icone={History} dica="Histórico de versões"
           ativa={historico}

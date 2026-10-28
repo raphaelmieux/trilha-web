@@ -2,15 +2,14 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Columns, ClipboardPaste, Copy, Scissors, Paintbrush, ChevronDown, ListTree, Quote,
-  StickyNote, BookMarked, Type, Baseline, AlignLeft, AlignCenter, AlignRight, AlignJustify,
-  Pilcrow, Globe, Search, Replace, FileCheck2, RotateCcw,
+  StickyNote, BookMarked, Type, Baseline, Globe, Search, Replace, FileCheck2, RotateCcw,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
   BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
 } from './word';
-import { GrupoDeFonte, CSS_FONTE_DO_WORD } from './fonteDoWord';
+import { GrupoDeFonte, CSS_FONTE_DO_WORD, GrupoDeParagrafo } from './fonteDoWord';
 import { useEdicaoDoWord } from './useEdicaoDoWord';
 import {
   DOC_INICIAL, METAS_DOS_ESTILOS, TEXTO_DO_SITE, titulosDoDoc, textoVisivel,
@@ -335,21 +334,8 @@ export default function EstilosTextoLab({ specialtyCode, lessonCode, lessonTitle
 
             <GrupoDeFonte edicao={edicao} aoAvisar={avisarFechando} />
 
-            <GrupoDaFaixa nome="Parágrafo">
-              <div className="wd-linhas">
-                <div style={{ display: 'flex', gap: 1 }}>
-                  <EnfeiteDaFaixa dica="Alinhar à Esquerda (Ctrl+Q)" aoAvisar={avisarFechando}><AlignLeft className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                  <EnfeiteDaFaixa dica="Centralizar (Ctrl+E)" aoAvisar={avisarFechando}><AlignCenter className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                  <EnfeiteDaFaixa dica="Alinhar à Direita (Ctrl+G)" aoAvisar={avisarFechando}><AlignRight className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                  <EnfeiteDaFaixa dica="Justificar (Ctrl+J)" aoAvisar={avisarFechando}><AlignJustify className="w-3.5 h-3.5" /></EnfeiteDaFaixa>
-                </div>
-                <div style={{ display: 'flex', gap: 1 }}>
-                  <BotaoDaFaixa dica="Mostrar Tudo (Ctrl+*)" ativo={marcas} aoClicar={() => { setMarcas(m => !m); edicao.focar(); }}>
-                    <Pilcrow className="w-3.5 h-3.5" />
-                  </BotaoDaFaixa>
-                </div>
-              </div>
-            </GrupoDaFaixa>
+            <GrupoDeParagrafo edicao={edicao} aoAvisar={avisarFechando}
+              marcas={{ ligadas: marcas, alternar: () => { setMarcas(m => !m); edicao.focar(); } }} />
 
             {/*
               A galeria de Estilos, que é onde esta trilha mora.

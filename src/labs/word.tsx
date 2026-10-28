@@ -26,7 +26,7 @@ import {
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { lerSelecao, escreverSelecao } from './cursorNaFolha';
 import { mesmaSelecao, textoDaSelecao, recolhida, cursorEm, tamanhoDoParagrafo, selecaoDoTrecho, type Selecao } from './edicao';
-import type { EdicaoDaFolha, ComandoDeTexto } from './useEdicaoDoWord';
+import type { EdicaoDaFolha, ComandoDeTexto, FormatacaoDeParagrafo } from './useEdicaoDoWord';
 import {
   CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice,
 } from './office';
@@ -34,7 +34,7 @@ import {
 import {
   aparenciaDe, aparenciaDoTrecho, textoDoTrecho, larguraDaTabela,
   paginasDoDoc, blocoAntesDoSumario, NOME_DO_AUTOR, COR_DO_AUTOR,
-  FONTES,
+  FONTES, DEGRAU_DE_RECUO_CM, marcadorDaLista, medidasDaPagina,
   type Doc, type Bloco, type Paragrafo, type TabelaDoDoc, type ImagemDoDoc,
   type Disposicao, type ItemDeSumario, type FaixaDaPagina,
   type Comentario, type OpcoesDeBusca,
@@ -188,11 +188,15 @@ export const CSS_WORD = `
   }
   .wd-lugar:hover { background: #F3F2F1; }
   .wd-lugar[aria-current="true"] { background: #EDEBE9; font-weight: 600; }
-  .wd-campo {
+  /* Só o campo de digitar dos bastidores. Escrito como .wd-campo, ele valia
+     também para o campo do documento — o número de página e a legenda —, que
+     tem a mesma classe: o número saía numa caixa de 30 px de altura com borda
+     e a largura inteira do rodapé, sem nada estourar. */
+  input.wd-campo {
     height: 30px; padding: 0 8px; font-size: 13px; color: #201F1E;
     background: #FFFFFF; border: 1px solid #8A8886; border-radius: 2px; width: 100%;
   }
-  .wd-campo:focus { outline: 2px solid #2B579A; outline-offset: -1px; }
+  input.wd-campo:focus { outline: 2px solid #2B579A; outline-offset: -1px; }
   .wd-ajuste {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
     width: 100%; height: 30px; padding: 0 8px; font-size: 12.5px; color: #201F1E;
@@ -726,6 +730,15 @@ export function ZoomDoWord({ zoom, aoMudar, aoAvisar }: {
 
 export const CSS_FOLHA = `
   .wd-bloco { cursor: text; }
+  /* O marcador da lista mora no recuo pendente, à esquerda da primeira letra.
+     Ele não é texto: não se seleciona, não se apaga com Delete, e o número se
+     refaz quando um item sai do meio. */
+  .wd-bloco[data-marcador] { position: relative; }
+  .wd-bloco[data-marcador]::before {
+    content: attr(data-marcador); position: absolute;
+    left: calc(var(--px-cm, 34) * -0.63px); width: calc(var(--px-cm, 34) * 0.63px);
+    text-align: left; user-select: none; font-style: normal; font-weight: normal; text-decoration: none;
+  }
   .wd-bloco.escolhido { outline: 1px solid #2B579A; outline-offset: 2px; }
   /* As marcas de parágrafo. Cinza claro, como no Word: elas são auxílio de
      edição e não podem competir com o texto que a pessoa está lendo. */
@@ -929,6 +942,20 @@ export const CSS_FOLHA = `
   }
   .wd-faixa-escrita:focus { box-shadow: inset 0 0 0 2px #2B579A; }
   .wd-faixa-escrita::placeholder { color: #B9B9B9; font-style: italic; }
+  /* Cabeçalho e rodapé têm um modo próprio, como no Word: fechados, ficam
+     apagados e só abrem com dois cliques; abertos, o corpo é que se apaga, a
+     faixa ganha a etiqueta azul com o nome dela, e dois cliques no corpo
+     voltam ao texto. Escrever no cabeçalho sem abri-lo é o engano que o modo
+     existe para mostrar. */
+  .wd-faixa-fechada { opacity: .55; cursor: default; }
+  .wd-faixas-abertas .wd-corpo { opacity: .4; }
+  .wd-faixa-aberta { position: relative; border-color: #2B579A !important; }
+  .wd-faixa-etiqueta {
+    position: absolute; left: 0; font-size: 9px; line-height: 1; color: #FFFFFF;
+    background: #2B579A; padding: 2px 5px; border-radius: 0 0 3px 0; white-space: nowrap;
+  }
+  .wd-faixa-cabecalho .wd-faixa-etiqueta { bottom: -15px; }
+  .wd-faixa-rodape .wd-faixa-etiqueta { top: -15px; border-radius: 0 3px 0 0; }
   /* Atrás e à frente saem da linha e **cobrem** o texto — é isto que faz delas
      a resposta errada para uma foto num relatório, e é preciso vê-lo. O
      invólucro tem altura zero para que a imagem não empurre nada: fora da
@@ -1012,6 +1039,29 @@ function emPontos(estilo: React.CSSProperties): React.CSSProperties {
   return r;
 }
 
+/**
+ * O estilo do parágrafo e, por cima, a formatação de parágrafo aplicada à mão.
+ *
+ * O recuo é medido em centímetros da folha, como na régua; a lista ganha um
+ * recuo pendente onde o marcador mora. O marcador em si é desenhado pela folha
+ * de estilo, a partir de `data-marcador`, e não por um elemento: um elemento
+ * que não se edita no começo do parágrafo empurraria o cursor do navegador, a
+ * mesma razão de o ¶ ser desenhado assim.
+ */
+function estiloDoParagrafo(doc: Doc<string>, bloco: Paragrafo<string>): React.CSSProperties {
+  const base = emPontos(aparenciaDe(doc, bloco.estilo));
+  const f = bloco.formato;
+  if (!f) return base;
+  const r: React.CSSProperties = { ...base };
+  if (f.alinhamento) {
+    r.textAlign = ({ esquerda: 'left', centro: 'center', direita: 'right', justificado: 'justify' } as const)[f.alinhamento];
+  }
+  if (f.entrelinha) r.lineHeight = (1.25 * f.entrelinha).toFixed(3);
+  const recuoCm = (f.recuo ?? 0) * DEGRAU_DE_RECUO_CM + (f.lista ? 0.63 : 0);
+  if (recuoCm > 0) r.marginLeft = `calc(var(--px-cm, 34) * ${recuoCm.toFixed(2)}px)`;
+  return r;
+}
+
 /** A posição da nota de rodapé deste parágrafo entre as do documento. */
 const numeroDaNota = (d: Doc<string>, id: string) =>
   d.blocos.filter(b => b.tipo === 'paragrafo' && b.nota !== undefined).findIndex(b => b.id === id) + 1;
@@ -1074,9 +1124,10 @@ export function ParagrafoDaFolha({
         )}
         <p
           className={`wd-bloco${classe ? ` ${classe}` : ''}`}
-          style={emPontos(aparenciaDe(doc, bloco.estilo))}
+          style={estiloDoParagrafo(doc, bloco)}
           data-bloco={bloco.id}
           data-estilo={bloco.estilo}
+          data-marcador={marcadorDaLista(doc, bloco.id) ?? undefined}
           data-editavel=""
           /* O ¶ da folha editável é desenhado pela folha de estilo, e não por
              um elemento: um elemento que não se edita no fim de um parágrafo
@@ -1159,7 +1210,8 @@ export function ParagrafoDaFolha({
       )}
       <p
         className={`wd-bloco${escolhido ? ' escolhido' : ''}${classe ? ` ${classe}` : ''}`}
-        style={emPontos(aparenciaDe(doc, bloco.estilo))}
+        style={estiloDoParagrafo(doc, bloco)}
+        data-marcador={marcadorDaLista(doc, bloco.id) ?? undefined}
         onClick={aoEscolher ? ev => { ev.stopPropagation(); aoEscolher(); } : undefined}
         data-bloco={bloco.id}
         data-estilo={bloco.estilo}
@@ -1441,16 +1493,25 @@ export function BlocoDaFolha({
  * sendo desenhada — é a diferença inteira entre o número calculado e o
  * digitado, e ela só aparece quando há mais de uma folha para comparar.
  */
-export function FaixaDaFolha({ doc, faixa, pagina, onde, aoEscrever }: {
+export function FaixaDaFolha({ doc, faixa, pagina, onde, aoEscrever, modo, aoAbrir }: {
   doc: Doc<string>;
   faixa: FaixaDaPagina;
   pagina: number;
   onde: 'cabecalho' | 'rodape';
   /** Quando dado, o que é texto vira campo de digitar; o campo nunca vira. */
   aoEscrever?: (trechoId: string, valor: string) => void;
+  /** Em que modo a faixa está, quando o laboratório usa o modo do Word. */
+  modo?: 'aberta' | 'fechada';
+  /** Dois cliques numa faixa fechada a abrem. */
+  aoAbrir?: () => void;
 }) {
   return (
-    <div className={`wd-faixa-pagina wd-faixa-${onde}`} data-faixa={onde}>
+    <div className={`wd-faixa-pagina wd-faixa-${onde}${modo ? ` wd-faixa-${modo}` : ''}`} data-faixa={onde}
+      onDoubleClick={modo === 'fechada' && aoAbrir ? aoAbrir : undefined}
+      title={modo === 'fechada' ? `Dois cliques para editar o ${onde === 'cabecalho' ? 'cabeçalho' : 'rodapé'}` : undefined}>
+      {modo === 'aberta' && pagina === 1 && (
+        <span className="wd-faixa-etiqueta">{onde === 'cabecalho' ? 'Cabeçalho' : 'Rodapé'}</span>
+      )}
       <span style={{ display: 'flex', gap: 2, alignItems: 'baseline', flex: 1 }}>
         {faixa.trechos.map(x => (x.campo ? (
           /*
@@ -1543,6 +1604,7 @@ export function FolhaDoWord({
   doc, selecionado, marcas, aoEscolher, aoClicarNoVazio,
   celula, aoCursorNaCelula, aoEditarCelula, aoEscreverNaFaixa,
   comentado, aoEscolherTrecho, margem, aoEscreverNoParagrafo, aoNovoParagrafo, edicao, aoEscreverNota,
+  faixasAbertas, aoAbrirFaixas, aoFecharFaixas,
 }: {
   doc: Doc<string>;
   selecionado?: string | null;
@@ -1578,6 +1640,16 @@ export function FolhaDoWord({
   edicao?: EdicaoDaFolha;
   /** Escrever a nota de rodapé de um parágrafo. Sem ele, a nota é de leitura. */
   aoEscreverNota?: (blocoId: string, texto: string) => void;
+  /**
+   * O modo de cabeçalho e rodapé do Word. Com `aoAbrirFaixas`, as faixas
+   * fechadas ficam apagadas e só se escrevem depois de abertas — por dois
+   * cliques nelas ou pelo botão da guia Inserir. Sem ele, a faixa é campo de
+   * digitar o tempo todo, como nos laboratórios que não ensinam o modo.
+   */
+  faixasAbertas?: boolean;
+  aoAbrirFaixas?: () => void;
+  /** Dois cliques no corpo apagado fecham as faixas, como no Word. */
+  aoFecharFaixas?: () => void;
 }) {
   const paginas = paginasDoDoc(doc);
   /* Embaixo do título, e não acima dele: quem fecha a abertura é quem carrega
@@ -1590,10 +1662,27 @@ export function FolhaDoWord({
      guias e da barra de título junto — o Word mudando de cara porque alguém
      mudou a fonte de um documento. */
   const fonte = doc.fonte ? { fontFamily: FONTES[doc.fonte] } : undefined;
+  /* O papel configurado no documento ganha da medida que a janela declarou:
+     quem vira a folha em Layout vê a folha virar. Sem `pagina`, vale a da
+     janela, que é a dos laboratórios que não mexem em papel. */
+  const medidas = doc.pagina ? medidasDaPagina(doc) : null;
+  const estiloDaPagina = {
+    ...fonte,
+    ...(medidas ? {
+      '--largura-cm': medidas.largura, '--altura-cm': medidas.altura, '--margem-cm': medidas.margem,
+    } as React.CSSProperties : {}),
+  };
+  const comModo = !!aoAbrirFaixas;
+  const modo: 'aberta' | 'fechada' | undefined = comModo ? (faixasAbertas ? 'aberta' : 'fechada') : undefined;
+  const escreverNaFaixa = comModo && !faixasAbertas ? undefined : aoEscreverNaFaixa;
   return (
     <div
-      className={`wd-canvas${editavel ? ' wd-editavel' : ''}`}
-      onClick={editavel ? raiz.aoClicar : aoClicarNoVazio}
+      className={`wd-canvas${editavel ? ' wd-editavel' : ''}${faixasAbertas ? ' wd-faixas-abertas' : ''}`}
+      onClick={editavel
+        /* Tabela e imagem param o clique antes daqui: o que chega é clique no
+           texto, e ele tira o objeto de escolhido, como o cursor do Word. */
+        ? ev => { raiz.aoClicar(ev); aoClicarNoVazio?.(); }
+        : aoClicarNoVazio}
       {...(editavel ? {
         ref: raiz.ref,
         contentEditable: true,
@@ -1615,15 +1704,16 @@ export function FolhaDoWord({
         return (
           <div key={numero} className={margem ? 'wd-folha-com-margem' : undefined}>
             <div className="wd-pagina" onClick={editavel ? undefined : ev => ev.stopPropagation()}
-              data-pagina={numero} style={fonte}>
+              data-pagina={numero} style={estiloDaPagina}>
               {comFaixas && doc.cabecalho && (
                 <div contentEditable={editavel ? false : undefined} className={editavel ? 'wd-ilha' : undefined}>
                   <FaixaDaFolha doc={doc} faixa={doc.cabecalho} pagina={numero} onde="cabecalho"
-                    aoEscrever={aoEscreverNaFaixa
-                      ? (id, valor) => aoEscreverNaFaixa('cabecalho', id, valor) : undefined} />
+                    modo={modo} aoAbrir={aoAbrirFaixas}
+                    aoEscrever={escreverNaFaixa
+                      ? (id, valor) => escreverNaFaixa('cabecalho', id, valor) : undefined} />
                 </div>
               )}
-              <div className="wd-corpo">
+              <div className="wd-corpo" onDoubleClick={faixasAbertas ? aoFecharFaixas : undefined}>
                 {/* Folha sem bloco nenhum: não há abertura para fechar. */}
                 {numero === 1 && doc.sumario && fechaAAbertura === null && (
                   <div contentEditable={editavel ? false : undefined}><SumarioDaFolha itens={doc.sumario} /></div>
@@ -1675,8 +1765,9 @@ export function FolhaDoWord({
               {comFaixas && doc.rodape && (
                 <div contentEditable={editavel ? false : undefined} className={editavel ? 'wd-ilha' : undefined}>
                   <FaixaDaFolha doc={doc} faixa={doc.rodape} pagina={numero} onde="rodape"
-                    aoEscrever={aoEscreverNaFaixa
-                      ? (id, valor) => aoEscreverNaFaixa('rodape', id, valor) : undefined} />
+                    modo={modo} aoAbrir={aoAbrirFaixas}
+                    aoEscrever={escreverNaFaixa
+                      ? (id, valor) => escreverNaFaixa('rodape', id, valor) : undefined} />
                 </div>
               )}
             </div>
@@ -1831,23 +1922,28 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
       }
     };
 
+    /* O Ctrl+C, o Ctrl+X e o Ctrl+V passam pela área de transferência do
+       sistema — é o que deixa colar no bloco de notas o que se copiou daqui —
+       e também pela do gancho, que guarda a formatação. */
     const aoColar = (ev: ClipboardEvent) => {
       if (ev.target !== r && !r.contains(ev.target as Node)) return;
       if ((ev.target as HTMLElement).closest?.('input, textarea')) return;
       ev.preventDefault();
       const texto = ev.clipboardData?.getData('text/plain') ?? '';
-      if (texto) mandar({ tipo: 'inserir', texto });
+      mandar({ tipo: 'colar', texto: texto || undefined });
     };
 
-    const aoRecortar = (ev: ClipboardEvent) => {
+    const aoCopiarOuRecortar = (recortar: boolean) => (ev: ClipboardEvent) => {
       if ((ev.target as HTMLElement).closest?.('input, textarea')) return;
       const { doc: d, edicao: e } = atual.current;
       const sel = e?.selecao;
       if (!sel || recolhida(sel)) return;
       ev.preventDefault();
       ev.clipboardData?.setData('text/plain', textoDaSelecao(d, sel));
-      mandar({ tipo: 'apagar', direcao: 'tras' });
+      mandar({ tipo: recortar ? 'recortar' : 'copiar' });
     };
+    const aoRecortar = aoCopiarOuRecortar(true);
+    const aoCopiar = aoCopiarOuRecortar(false);
 
     const aoComecarAComposicao = () => {
       compondo.current = atual.current.edicao?.selecao ?? null;
@@ -1867,6 +1963,7 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
     r.addEventListener('beforeinput', aoAntesDeEscrever);
     r.addEventListener('paste', aoColar);
     r.addEventListener('cut', aoRecortar);
+    r.addEventListener('copy', aoCopiar);
     r.addEventListener('compositionstart', aoComecarAComposicao);
     r.addEventListener('compositionend', aoTerminarAComposicao);
     r.addEventListener('dragstart', semArrastar);
@@ -1876,6 +1973,7 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
       r.removeEventListener('beforeinput', aoAntesDeEscrever);
       r.removeEventListener('paste', aoColar);
       r.removeEventListener('cut', aoRecortar);
+      r.removeEventListener('copy', aoCopiar);
       r.removeEventListener('compositionstart', aoComecarAComposicao);
       r.removeEventListener('compositionend', aoTerminarAComposicao);
       r.removeEventListener('dragstart', semArrastar);
@@ -1896,7 +1994,19 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
       /* Os atalhos do Word em português: N é Negrito, I é Itálico, S é
          Sublinhado. O B e o U do Chrome escreveriam `<b>` e `<u>` direto no
          DOM, e são parados sem fazer nada. */
+      const paragrafar = (f: FormatacaoDeParagrafo) => parar({ tipo: 'paragrafar', formatacao: f });
       if (atual.current.edicao?.atalhos === 'navegador') {
+        if (ev.shiftKey) {
+          /* Os do editor de navegador: Ctrl+Shift com a inicial em inglês, e
+             7 e 8 para as listas — lidos pela tecla, e não pelo caractere,
+             que com Shift vira & e *. */
+          if (tecla === 'l') return paragrafar({ tipo: 'alinhar', alinhamento: 'esquerda' });
+          if (tecla === 'e') return paragrafar({ tipo: 'alinhar', alinhamento: 'centro' });
+          if (tecla === 'r') return paragrafar({ tipo: 'alinhar', alinhamento: 'direita' });
+          if (tecla === 'j') return paragrafar({ tipo: 'alinhar', alinhamento: 'justificado' });
+          if (ev.code === 'Digit7') return paragrafar({ tipo: 'lista', lista: 'numeracao' });
+          if (ev.code === 'Digit8') return paragrafar({ tipo: 'lista', lista: 'marcadores' });
+        }
         if (tecla === 'b') return parar({ tipo: 'marca', marca: 'negrito' });
         if (tecla === 'i') return parar({ tipo: 'marca', marca: 'italico' });
         if (tecla === 'u') return parar({ tipo: 'marca', marca: 'sublinhado' });
@@ -1905,6 +2015,18 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
         if (tecla === 'i') return parar({ tipo: 'marca', marca: 'italico' });
         if (tecla === 's') return parar({ tipo: 'marca', marca: 'sublinhado' });
         if (tecla === 'b' || tecla === 'u') return parar();
+        /* Os de parágrafo do Word em português: Q à esquerda, E centraliza,
+           G à direita, J justifica; 1, 5 e 2 são as entrelinhas simples, 1,5
+           e dupla. */
+        if (!ev.shiftKey) {
+          if (tecla === 'q') return paragrafar({ tipo: 'alinhar', alinhamento: 'esquerda' });
+          if (tecla === 'e') return paragrafar({ tipo: 'alinhar', alinhamento: 'centro' });
+          if (tecla === 'g') return paragrafar({ tipo: 'alinhar', alinhamento: 'direita' });
+          if (tecla === 'j') return paragrafar({ tipo: 'alinhar', alinhamento: 'justificado' });
+          if (ev.code === 'Digit1') return paragrafar({ tipo: 'entrelinha', valor: 1 });
+          if (ev.code === 'Digit5') return paragrafar({ tipo: 'entrelinha', valor: 1.5 });
+          if (ev.code === 'Digit2') return paragrafar({ tipo: 'entrelinha', valor: 2 });
+        }
       }
       /* Ctrl+Espaço tira a formatação de caractere e deixa o estilo; Ctrl+>
          e Ctrl+< sobem e descem um degrau de tamanho, como na faixa. */
@@ -1921,7 +2043,7 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
     if (ev.key === 'Enter') return parar(ev.shiftKey ? { tipo: 'quebra-de-linha' } : { tipo: 'paragrafo' });
     if (ev.key === 'Backspace') return parar({ tipo: 'apagar', direcao: 'tras' });
     if (ev.key === 'Delete') return parar({ tipo: 'apagar', direcao: 'frente' });
-    if (ev.key === 'Tab') return parar({ tipo: 'inserir', texto: '\t' });
+    if (ev.key === 'Tab') return parar({ tipo: 'tab', voltar: ev.shiftKey });
     /* Esc devolve o teclado à página, senão o Tab capturado prende quem
        navega sem mouse — a mesma decisão do editor de código. */
     if (ev.key === 'Escape') { ev.currentTarget.blur(); return; }
