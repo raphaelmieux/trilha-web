@@ -78,7 +78,7 @@ const blocosDasLicoes = () => VEREDAS
   .flatMap(v => v.modulos.flatMap(m => m.licoes).map(l => [v.code, l] as const))
   .flatMap(([code, l]) => (l.tipo === 'teoria' ? l.topicos.map(t => [code, t] as const) : []))
   .filter(([, t]) => t.exemploComo === 'blocos')
-  .flatMap(([code, t]) => lerExemploDeBlocos(t.exemplo)
+  .flatMap(([code, t]) => lerExemploDeBlocos(t.exemplo ?? '')
     .filter(linha => linha.tipo === 'bloco')
     .map(linha => ({ code, topico: t.id, texto: (linha as { texto: string }).texto })));
 
@@ -172,7 +172,7 @@ describe('o vocabulário da tela', () => {
     .filter(v => v.code === code)
     .flatMap(v => v.modulos.flatMap(m => m.licoes))
     .flatMap(l => (l.tipo === 'teoria' ? l.topicos : []))
-    .flatMap(t => [t.titulo, t.resumo, ...t.explicacao, t.atencao, t.exemplo])
+    .flatMap(t => [t.titulo, t.resumo, ...t.explicacao, t.atencao, (t.exemplo ?? '')])
     .join('\n');
 
   const PROIBIDAS: [RegExp, string][] = [

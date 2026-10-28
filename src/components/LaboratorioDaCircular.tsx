@@ -44,6 +44,13 @@ interface Props {
   licao: Extract<LicaoDeVereda, { tipo: 'word' }>;
   aoVencer: () => void | Promise<void>;
   aoSair: () => void;
+  /**
+   * O documento de partida e o nome dele, quando não são os do exercício. Só a
+   * página de bastidor passa isto, para fotografar um gesto num documento que
+   * não é o da lição — veja `src/components/bastidor.ts`.
+   */
+  inicial?: import('../labs/documento').Doc<string>;
+  arquivo?: string;
 }
 
 const GUIAS_USAVEIS = ['Início', 'Inserir'];
@@ -59,8 +66,8 @@ function paginaDoCursor(d: Doc, bloco: string | undefined): number {
   return 1;
 }
 
-export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair }: Props) {
-  const [doc, setDoc] = useState<Doc>(CIRCULAR_INICIAL);
+export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair, inicial, arquivo }: Props) {
+  const [doc, setDoc] = useState<Doc>((inicial as Doc | undefined) ?? CIRCULAR_INICIAL);
   const [gestos, setGestos] = useState<GestosDaCircular>(gestosVazios);
   const [guia, setGuia] = useState('Início');
   const [aviso, setAviso] = useState('');
@@ -168,7 +175,7 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair 
       <div className="wd-janela" style={{
         '--largura-cm': 21, '--altura-cm': 29.7, '--margem-cm': 2.5, '--zoom': zoom,
       } as React.CSSProperties}>
-        <BarraDeTituloDoWord documento="Circular às famílias" aoAvisar={setAviso}
+        <BarraDeTituloDoWord documento={arquivo ?? 'Circular às famílias'} aoAvisar={setAviso}
           aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
           aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />
 

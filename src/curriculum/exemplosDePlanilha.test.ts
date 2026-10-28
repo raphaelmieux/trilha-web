@@ -38,7 +38,7 @@ const topico = (id: string): TopicoDeVereda => {
 };
 
 /** As linhas de um exemplo, sem o recuo do desenho. */
-const linhas = (id: string) => topico(id).exemplo.split('\n').map(l => l.trim());
+const linhas = (id: string) => (topico(id).exemplo ?? '').split('\n').map(l => l.trim());
 
 /*
   Uma grade a partir de células escritas em nome de planilha ("D3"), que é como
@@ -177,7 +177,7 @@ describe('os exemplos da teoria da CC-ES003', () => {
     olhando a coluna.
   */
   it('o número guardado como texto encosta para o lado que a lição desenha', () => {
-    const texto = topico('tamanho-e-alinhamento').exemplo;
+    const texto = (topico('tamanho-e-alinhamento').exemplo ?? '');
     expect(texto).toMatch(/texto\s+→ encosta à esquerda/);
     expect(texto).toMatch(/número\s+→ encosta à direita/);
 

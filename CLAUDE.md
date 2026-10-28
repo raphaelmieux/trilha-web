@@ -794,6 +794,55 @@ justamente nos casos mistos. Bloco vira bloco por `blocosDoScratch.ts`, com a
 cor da categoria de verdade — cor errada manda procurar na gaveta errada da
 paleta —, e o que não se reconhece sai cinza, porque cinza diz "não sei".
 
+**Vereda que ensina interface mostra a interface: o exemplo é a tela.** As
+veredas de escritório e de design nasceram com exemplos em `'texto'` — um
+quadro em fonte de máquina de escrever com "Inserir › Tabela › 3 colunas × 5
+linhas", uma tabela desenhada com traços, uma seta entre "18h" e "19h". Era o
+molde do W3Schools sem o que ele tem de bom, que é o exemplo **rodar**: quem
+lia via um esboço de algoritmo repetindo o parágrafo de cima, e não via o
+programa. Nada estoura — o quadro aparece, bem formatado, e não ensina nada.
+
+Hoje o exemplo de um tópico de interface é uma sequência de `telas`: a janela
+do **próprio laboratório**, fotografada passo a passo, com o botão a apertar
+circulado e uma legenda dizendo o que mudou. `PassoAPasso` as desenha uma por
+vez, sobrepostas na mesma célula, para trocar de passo não esperar download nem
+pular a página. Exemplo que só resumia a explicação saiu, e o que ele tinha de
+útil foi para a explicação; `exemplo` passou a ser opcional por isso.
+
+Não é captura de programa comercial, e é decisão: a licença do repositório não
+comporta arte de terceiros, e a tela que importa é a que a pessoa vai encontrar
+no laboratório, com os mesmos botões nos mesmos lugares. E o documento
+fotografado **nunca é o do exercício** — o programa do campori, a lista da
+cantina, a ata da diretoria —, porque fotografar o gesto no arquivo da lição
+seria pôr o gabarito na teoria.
+
+As imagens se refazem por receita, e não à mão. `exemplos.html` é uma página
+de bastidor que só existe no servidor de desenvolvimento: monta uma cena de
+`src/exemplos/cenas.tsx` — um laboratório aberto com o arquivo de exemplo, que
+ele recebe por `inicial` — e `NoBastidor` tira de cena a moldura da plataforma.
+`scripts/capturar-exemplos.mjs` segue os roteiros de `src/exemplos/roteiros/`,
+clica e digita como o desbravador faria, e grava em
+`public/assets/exemplos/<vereda>/<tópico>-<n>.png`. Imagem guardada sem
+receita ficaria mostrando o programa de seis meses atrás no dia em que a faixa
+mudasse, e referência que diverge do laboratório é pior do que nenhuma: mexeu
+na janela, rode o script da vereda e confira as telas.
+
+O nome de cada imagem sai de `telasDoTopico`, e não é escrito à mão, e mora em
+`telas.ts` e não em `veredas.ts`: os arquivos de conteúdo são importados por
+ela, e a função de volta fecharia o laço de ESM que devolve `undefined` calado.
+`telasDasLicoes.test.ts` cobra que toda tela citada exista, que o roteiro
+produza exatamente as telas do tópico, que nenhuma imagem sobre na pasta e que
+toda tela tenha legenda **e** descrição diferentes — a descrição é o que o
+leitor de tela lê, e igual à legenda ela diria a mesma frase duas vezes sem
+nunca dizer o que a tela mostra.
+
+Dois erros que só a tela mostrou. A teoria da substituição dizia que trocar
+"ana" por "Ana" sem "palavras inteiras" transformava "manhã" em "mAnahã" — e
+"manhã" não tem "ana" nenhum; o quadro de texto afirmava o que nenhum Word
+faria. E a janela de 1100 px cortava as guias contextuais no fim da fileira,
+que são justamente o assunto do tópico de tabela: o padrão é 1280, e os
+roteiros de tabela fotografam a 1440.
+
 **No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
 Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
 escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela
@@ -4838,6 +4887,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/index.test.ts` | trilha sem emblema ou sem fundo de certificado no repositório |
 | `src/curriculum/index.test.ts` | trilha aberta com lição, módulo ou laboratório repetido, ou requisito sem lição |
 | `src/curriculum/exemplosDaTeoria.test.ts` | seletor do exemplo de CSS que não acha ninguém na marcação do tópico |
+| `src/curriculum/telasDasLicoes.test.ts` | tela de lição sem imagem no disco, imagem sem lição, roteiro que fotografa outro número de passos, ou tela sem descrição para o leitor de tela |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |
 | `src/curriculum/qualidade.test.ts` | lição ou prova que sorteia sem ter três questões de sobra |
 | `src/curriculum/qualidade.test.ts` | questão de prova sem requisito, requisito de teoria sem questão, ou sorteio que não cabe a cobertura |
