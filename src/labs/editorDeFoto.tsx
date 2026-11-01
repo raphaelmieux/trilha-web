@@ -155,6 +155,35 @@ function SelecaoPintada({ m }: { m: Mascara }) {
 }
 
 /** O histograma da luminância, com o pico das pontas à vista. */
+/**
+ * O campo de número guarda o que está escrito, e não só o número.
+ *
+ * Controlado direto pelo número, ele não deixava escrever um negativo: com só
+ * o "-" no campo o navegador lê vazio, `Number('')` é zero, e o React
+ * reescreve o campo com o zero — quem digitava -50 na Temperatura recebia 50,
+ * a foto ficava mais quente em vez de mais fria, e nada explicava. O texto
+ * acompanha o número quando ele muda por fora (a faixa, o Redefinir, o
+ * Aplicar), e o número só muda quando o texto é um número.
+ */
+function CampoDeNumero({ id, rotulo, valor, aoMudar, min, max, passo }: {
+  id: string; rotulo: string; valor: number; aoMudar: (v: number) => void; min: number; max: number; passo: number;
+}) {
+  const [texto, setTexto] = useState(String(valor));
+  const [visto, setVisto] = useState(valor);
+  if (valor !== visto) { setVisto(valor); setTexto(String(valor)); }
+  return (
+    <input id={id} className="ft-entrada" type="number" aria-label={rotulo} value={texto} min={min} max={max} step={passo}
+      onChange={e => {
+        setTexto(e.target.value);
+        const v = Number(e.target.value);
+        if (e.target.value.trim() === '' || !Number.isFinite(v)) return;
+        const certo = Math.min(max, Math.max(min, v));
+        setVisto(certo);
+        aoMudar(certo);
+      }} />
+  );
+}
+
 function Histograma({ img }: { img: Imagem }) {
   const barras = useMemo(() => {
     const b = new Array<number>(64).fill(0);
@@ -369,8 +398,7 @@ export function EditorDeFoto({ documento: d, mudar, pasta = [], aoAbrir, aoExpor
   const numero = (rotulo: string, valor: number, aoMudar: (v: number) => void, min: number, max: number, passo = 1, faixa = false) => (
     <div className="ft-campo">
       <label htmlFor={`ft-${rotulo}`}>{rotulo}</label>
-      <input id={`ft-${rotulo}`} className="ft-entrada" type="number" aria-label={rotulo} value={valor} min={min} max={max} step={passo}
-        onChange={e => { const v = Number(e.target.value); if (Number.isFinite(v)) aoMudar(Math.min(max, Math.max(min, v))); }} />
+      <CampoDeNumero id={`ft-${rotulo}`} rotulo={rotulo} valor={valor} aoMudar={aoMudar} min={min} max={max} passo={passo} />
       {faixa && (
         <input className="ft-faixa" type="range" aria-label={`${rotulo} (faixa)`} value={valor} min={min} max={max} step={passo}
           onChange={e => aoMudar(Number(e.target.value))} />
