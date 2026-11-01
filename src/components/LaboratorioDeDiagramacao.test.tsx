@@ -226,6 +226,18 @@ describe('o que a janela não pode deixar fácil', () => {
     expect(faltam()).toBe(4);
   });
 
+  it('a ferramenta de imagem cria o quadro em cima de uma coluna de texto', () => {
+    montar('imagens');
+    pagina(2);
+    const antes = container.querySelectorAll('.dg-imagem').length;
+    clicar(porRotulo('Quadro de imagem (F)'), 'quadro de imagem');
+    const coluna = container.querySelector('.dg-quadro');
+    expect(coluna, 'a página 2 não tem coluna de texto').toBeTruthy();
+    ponteiro(coluna, 20, 120);
+    expect(container.querySelectorAll('.dg-imagem').length).toBe(antes + 1);
+    expect(porRotulo('Quadro de imagem (F)')?.getAttribute('aria-pressed')).toBe('false');
+  });
+
   it('o "+" do estilo aparece no parágrafo mexido à mão', () => {
     montar('estilos');
     menu('Texto', 'Editar matéria');
