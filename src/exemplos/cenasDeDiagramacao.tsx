@@ -29,6 +29,7 @@ export const CENAS_DE_DIAGRAMACAO: Record<string, ComponentType> = {
   'guia-sem-sangria': cena(guiaSemSangria, 0),
   'guia-pronto': cena(guia, 1),
   'guia-pronto-p3': cena(guia, 2),
+  'guia-pronto-p4': cena(guia, 3),
   'guia-texto-colado': cena(guiaComTextoColado, 1),
   'guia-sem-fotos': cena(guiaSemFotos, 1),
   'guia-lobo-grande': cena(guiaComLoboGrande, 2),

@@ -900,6 +900,19 @@ justamente onde ela vai, e o botão parecia quebrado. O laboratório não sentia
 porque as fotos dele chegam postas. Com ferramenta de criar, o clique passa;
 `LaboratorioDeDiagramacao.test.tsx` cobra.
 
+A CC-DG006 tinha o caso mais grave: a teoria percorria o próprio convite do
+Acampamento das Famílias, e os quadros traziam os três rascunhos, o motivo de
+cada descarte, a hora que o público pede e os nomes dos finais — as respostas
+dos módulos 6, 7 e 8. A teoria fala do mutirão do córrego, de
+`src/exemplos/mutiraoDoCorrego.ts`, e os sete tópicos que ensinam um gesto
+o mostram nas janelas das veredas exigidas: o editor de design para o
+símbolo e o post, o de foto para exportar sem perder o original, o
+diagramador para o vetor no papel e a nuvem para separar e nomear. Os tópicos
+que só existem no caderno da lição ficam em prosa, porque o caderno lê as
+imagens e as respostas do convite direto, e fotografá-lo seria mostrar o
+gabarito. `EntregaNaNuvem` ganhou `pastaDoProjeto`, com a do convite por
+padrão, para abrir na pasta de outro projeto.
+
 **No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
 Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
 escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela
