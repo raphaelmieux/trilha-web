@@ -85,6 +85,7 @@ export const CSS_DO_DIAGRAMADOR = `
 .dg-botao:hover { background: #AD1457; }
 .dg-botao-claro { padding: 6px 10px; border-radius: 5px; background: #3A3B41; color: #E4E4E7; }
 .dg-botao-claro:hover { background: #4A4B52; }
+.dg-botao-claro:disabled { opacity: 0.4; cursor: not-allowed; background: #3A3B41; }
 .dg-status { display: flex; gap: 14px; flex-wrap: wrap; padding: 4px 10px; background: #1E1F23; border-top: 1px solid #3A3B41; color: #A1A1AA; font-size: 11.5px; font-variant-numeric: tabular-nums; }
 .dg-status-excesso { color: #EF9A9A; font-weight: 600; }
 .dg-fundo-do-dialogo { position: absolute; inset: 0; z-index: 40; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; padding: 12px; }
@@ -244,9 +245,13 @@ export function Diagramador({ documento: d, mudar, paginaInicial = 0, aoVer, aoA
     if (e.key === 'Escape') { setSelecao(null); setMenu(null); setDialogo(null); }
   };
 
+  /* Com uma ferramenta de criar na mão, o clique passa pelo quadro que já
+     está ali e chega à página, que cria o quadro novo. Engolido aqui, ele
+     não fazia nada: a foto não se punha em cima de uma coluna de texto, que
+     é justamente onde ela vai, e o botão parecia quebrado. */
   const escolher = (s: Selecao) => (e: React.MouseEvent | React.PointerEvent) => {
-    e.stopPropagation();
     if (ferramenta !== 'selecionar') return;
+    e.stopPropagation();
     setSelecao(s);
   };
 

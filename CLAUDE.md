@@ -885,6 +885,21 @@ outras cores e outra letra, e `exemplosDaIdentidadeVisual.test.ts` reprova se
 a paleta ou o mínimo das duas coincidirem. As questões continuam falando da
 Ipê, e são conferidas contra ela.
 
+A CC-DG005 fotografa o diagramador com o guia da caminhada ecológica, de
+`src/exemplos/guiaDaCaminhada.ts`: três colunas de 36 mm em vez de duas de 57,
+outros estilos, o lobo-guará a 191 e 293 ppi em vez da foto da unidade a 137 e
+285, e outras cores na prova. `exemplosDaDiagramacao.test.ts` confere a teoria
+contra o guia, as questões contra o boletim, e reprova se os dois passarem a
+dividir uma malha, um par de ppi ou uma cor.
+
+A primeira captura achou um defeito do diagramador: com a ferramenta de imagem
+ou de texto na mão, clicar em cima de um quadro de texto não fazia nada. O
+quadro engolia o clique para se deixar selecionar, e a página nunca o
+recebia — a foto não se punha em cima de uma coluna de texto, que é
+justamente onde ela vai, e o botão parecia quebrado. O laboratório não sentia
+porque as fotos dele chegam postas. Com ferramenta de criar, o clique passa;
+`LaboratorioDeDiagramacao.test.tsx` cobra.
+
 **No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
 Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
 escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela
