@@ -117,12 +117,14 @@ for (const r of escolhidos) {
         const xy = ([fx, fy]) => [caixa.x + fx * caixa.width, caixa.y + fy * caixa.height];
         const [x, y] = xy(a.em);
         await pagina.mouse.move(x, y);
+        if (a.com) await pagina.keyboard.down(a.com);
         await pagina.mouse.down();
         if (a.ate) {
           const [x2, y2] = xy(a.ate);
           await pagina.mouse.move(x2, y2, { steps: 8 });
         }
         await pagina.mouse.up();
+        if (a.com) await pagina.keyboard.up(a.com);
       } else if ('selecionar' in a) {
         const alvo = pagina.locator(a.selecionar).first();
         await alvo.click();

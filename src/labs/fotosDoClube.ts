@@ -49,7 +49,7 @@ export const GRAMA: Retangulo = { x: 1300, y: 950, l: 260, a: 160 };
 const GRAO = 2;
 const BRANCO_DA_PLACA: [number, number, number] = [236, 236, 232];
 
-const dentroDoTriangulo = (x: number, y: number, ax: number, ay: number, bx: number, by: number, cx: number, cy: number) => {
+export const dentroDoTriangulo = (x: number, y: number, ax: number, ay: number, bx: number, by: number, cx: number, cy: number) => {
   const s = (ax - cx) * (y - cy) - (ay - cy) * (x - cx);
   const t = (bx - ax) * (y - ay) - (by - ay) * (x - ax);
   if ((s < 0) !== (t < 0) && s !== 0 && t !== 0) return false;
@@ -100,7 +100,7 @@ function corDaCena(
   return [r + (245 - r) * nv, g + (245 - g) * nv, b + (248 - b) * nv];
 }
 
-function fotografar(largura: number, altura: number, mapa: Mapa, cor: (x: number, y: number) => [number, number, number], semente: number): Imagem {
+export function fotografar(largura: number, altura: number, mapa: Mapa, cor: (x: number, y: number) => [number, number, number], semente: number): Imagem {
   const img = { ...novaImagem(largura, altura, 72), mapa };
   // O inverso do mapa: de cada pixel da foto até o ponto da cena que ele viu.
   const det = mapa.a * mapa.d - mapa.b * mapa.c;
@@ -120,7 +120,7 @@ function fotografar(largura: number, altura: number, mapa: Mapa, cor: (x: number
 }
 
 /** A câmera torta: gira a cena em volta do centro da foto. */
-function mapaDaCamera(largura: number, altura: number, graus: number): Mapa {
+export function mapaDaCamera(largura: number, altura: number, graus: number): Mapa {
   const t = (graus * Math.PI) / 180;
   const cos = Math.cos(t); const sin = Math.sin(t);
   const cx = largura / 2; const cy = altura / 2;

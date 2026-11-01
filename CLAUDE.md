@@ -865,6 +865,18 @@ O roteiro também fala com o mouse: `ponto` aperta num lugar do elemento, em
 fração da caixa dele, e solta ali ou depois de arrastar. É assim que a gota
 das telas é desenhada com a caneta, nó por nó.
 
+A CC-DG003 fotografa o editor de foto com fotos próprias — o lago e o emblema
+de `src/exemplos/fotosDeExemplo.ts`, geradas pelo mesmo motor do laboratório
+—, e não a do acampamento: a inclinação, o recorte e a cor da placa daquela
+são a resposta das lições. O `ponto` passou a aceitar `com`, que segura o
+Shift do clique que soma à seleção da varinha.
+
+E a primeira captura achou um defeito do editor: digitar **-50** na
+Temperatura gravava **50**. Com só o "-" no campo de número o navegador lê
+vazio, `Number('')` é zero, e o React reescrevia o campo com o zero, apagando
+o sinal — a foto esquentava em vez de esfriar, sem nada explicar. O campo
+guarda o texto agora (`CampoDeNumero`), e `LaboratorioDeFoto.test.tsx` cobra.
+
 **No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
 Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
 escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela
