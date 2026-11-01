@@ -8,6 +8,7 @@ import LaboratorioDaEntrega from '../components/LaboratorioDaEntrega';
 import { CENAS_DE_DESIGN } from './cenasDeDesign';
 import { CENAS_VETORIAIS } from './cenasVetoriais';
 import { CENAS_DE_FOTO } from './cenasDeFoto';
+import { CENAS_DE_IDENTIDADE } from './cenasDeIdentidade';
 import { VEREDAS, type LicaoDeVereda } from '../curriculum/veredas';
 import { blocoDe, campoDe, linhaDe, trechoDe, titulosDoDoc, type Doc, type Paragrafo, type Bloco } from '../labs/documento';
 
@@ -304,4 +305,5 @@ export const CENAS: Record<string, ComponentType> = {
   ...CENAS_DE_DESIGN,
   ...CENAS_VETORIAIS,
   ...CENAS_DE_FOTO,
+  ...CENAS_DE_IDENTIDADE,
 };
