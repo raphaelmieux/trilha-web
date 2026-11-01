@@ -5,6 +5,8 @@ import LaboratorioDoRelatorio from '../components/LaboratorioDoRelatorio';
 import LaboratorioDoRelatorioAnual from '../components/LaboratorioDoRelatorioAnual';
 import LaboratorioDaRevisao from '../components/LaboratorioDaRevisao';
 import LaboratorioDaEntrega from '../components/LaboratorioDaEntrega';
+import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
+import { discoDaUnidade } from './discoDaUnidade';
 import { CENAS_DE_DESIGN } from './cenasDeDesign';
 import { CENAS_VETORIAIS } from './cenasVetoriais';
 import { CENAS_DE_FOTO } from './cenasDeFoto';
@@ -290,6 +292,14 @@ const entrega = (inicial: Doc<string>, arquivo: string) => () => (
     aoVencer={nada} aoSair={nada} inicial={inicial} arquivo={arquivo} />
 );
 
+/* ── Explorador ───────────────────────────────────────────────────────────── */
+
+/** O notebook da unidade Tucano, e não o computador do clube que o laboratório arruma. */
+const explorador = () => () => (
+  <LaboratorioDeExplorador vereda={vereda('cc-es001')} licao={licaoDe('cc-es001', 'explorador')}
+    aoVencer={nada} aoSair={nada} disco={discoDaUnidade} />
+);
+
 export const CENAS: Record<string, ComponentType> = {
   'word-programa-a-mao': word(PROGRAMA_A_MAO, 'Programa do Campori'),
   'word-programa-com-estilo': word(PROGRAMA_COM_ESTILO, 'Programa do Campori'),
@@ -304,6 +314,7 @@ export const CENAS: Record<string, ComponentType> = {
   'word-ata-comentada': revisao(ATA_COMENTADA, 'Ata da Diretoria'),
   'word-escala': revisao(ESCALA, 'Escala da Cantina'),
   'word-manual-entrega': entrega({ ...MANUAL, sumario: titulosDoDoc(MANUAL) }, 'Manual da Unidade Falcão'),
+  'explorador-tucano': explorador(),
   ...CENAS_DE_DESIGN,
   ...CENAS_VETORIAIS,
   ...CENAS_DE_FOTO,
