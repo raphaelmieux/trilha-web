@@ -877,6 +877,14 @@ vazio, `Number('')` é zero, e o React reescrevia o campo com o zero, apagando
 o sinal — a foto esquentava em vez de esfriar, sem nada explicar. O campo
 guarda o texto agora (`CampoDeNumero`), e `LaboratorioDeFoto.test.tsx` cobra.
 
+A CC-DG004 era o caso mais claro de gabarito na teoria: o laboratório
+constrói a marca da Ipê, e a teoria mostrava a Ipê pronta — o conceito, a
+paleta inteira com os cinco códigos, o mínimo de 38. As telas usam a marca
+da unidade Buriti, de `src/exemplos/marcaDoBuriti.ts`, com outras formas,
+outras cores e outra letra, e `exemplosDaIdentidadeVisual.test.ts` reprova se
+a paleta ou o mínimo das duas coincidirem. As questões continuam falando da
+Ipê, e são conferidas contra ela.
+
 **No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
 Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
 escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela

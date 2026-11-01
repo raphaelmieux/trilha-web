@@ -28,6 +28,7 @@ import { ROTEIROS_DO_EDITOR } from './roteiros/editorDeTexto';
 import { ROTEIROS_DOS_FUNDAMENTOS } from './roteiros/fundamentosVisuais';
 import { ROTEIROS_DO_DESENHO_VETORIAL } from './roteiros/desenhoVetorial';
 import { ROTEIROS_DA_IMAGEM_DIGITAL } from './roteiros/imagemDigital';
+import { ROTEIROS_DA_IDENTIDADE_VISUAL } from './roteiros/identidadeVisual';
 
 export type Acao =
   /**
@@ -80,6 +81,7 @@ export const ROTEIROS: Roteiro[] = [
   ...ROTEIROS_DOS_FUNDAMENTOS,
   ...ROTEIROS_DO_DESENHO_VETORIAL,
   ...ROTEIROS_DA_IMAGEM_DIGITAL,
+  ...ROTEIROS_DA_IDENTIDADE_VISUAL,
 ];
 
 /** Os nomes das imagens que um roteiro produz, na ordem. */
