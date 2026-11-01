@@ -913,6 +913,25 @@ imagens e as respostas do convite direto, e fotografá-lo seria mostrar o
 gabarito. `EntregaNaNuvem` ganhou `pastaDoProjeto`, com a do convite por
 padrão, para abrir na pasta de outro projeto.
 
+A CC-ES001 tinha um quadro de texto em cada um dos vinte e três tópicos — a
+listagem de pasta, a árvore desenhada com traços, o "ERRADO / CERTO" de dois
+nomes —, que é o molde da CC003 e serve lá porque o terminal **é** texto. No
+Explorador não serve: as telas mostram onze gestos no laboratório, e os doze
+tópicos sem botão (formato aberto, 3-2-1, o que esvaziar deixa no disco)
+ficaram em prosa. O computador fotografado é o notebook da unidade Tucano, de
+`src/exemplos/discoDaUnidade.ts`, e não o do clube: lá os dez nomes da Área de
+Trabalho, o relatório na versão errada e os inscritos que só sobraram na cópia
+são as respostas. `LaboratorioDeExplorador` ganhou `disco` por isso, com o do
+clube por padrão, e `exemplosDeArquivos.test.ts` reprova se os dois
+computadores dividirem um nome.
+
+A teoria ensinava a buscar escrevendo `tipo:imagem` na caixa, e a janela do
+laboratório filtra numa caixa com Tipo e Data: a lição descrevia um gesto que
+a pessoa não ia encontrar. E a primeira captura achou um defeito do
+laboratório: no diálogo de versões anteriores o rótulo encostava na data —
+"domingo28/10" —, porque `.win-bt` não é flex e o `space-between` escrito no
+botão nunca valeu.
+
 **No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
 Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
 escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela
