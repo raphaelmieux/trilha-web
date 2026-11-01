@@ -25,12 +25,14 @@ export interface PropsDaEntrega {
   nuvem: Nuvem;
   mudar: (f: (n: Nuvem) => Nuvem) => void;
   avisar: (texto: string) => void;
+  /** A pasta em que a janela abre e para onde "Meu Drive" volta. É a do projeto da lição, salvo quem mostra outro projeto. */
+  pastaDoProjeto?: string;
 }
 
-export function EntregaNaNuvem({ nuvem: n, mudar, avisar }: PropsDaEntrega) {
+export function EntregaNaNuvem({ nuvem: n, mudar, avisar, pastaDoProjeto = PASTA_DO_PROJETO }: PropsDaEntrega) {
   const [lugar, setLugar] = useState<LugarDaNuvem>('meu');
   const [crescente, setCrescente] = useState(true);
-  const [pasta, setPasta] = useState<string | null>(PASTA_DO_PROJETO);
+  const [pasta, setPasta] = useState<string | null>(pastaDoProjeto);
   const [escolhido, setEscolhido] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [renomeando, setRenomeando] = useState<string | null>(null);
@@ -82,7 +84,7 @@ export function EntregaNaNuvem({ nuvem: n, mudar, avisar }: PropsDaEntrega) {
       <TopoDaNuvem quem="voce" />
 
       <div className="nv-corpo">
-        <LateralDaNuvem lugar={lugar} aoIr={l => { setLugar(l); if (l === 'meu') setPasta(PASTA_DO_PROJETO); }} usado={0.21} />
+        <LateralDaNuvem lugar={lugar} aoIr={l => { setLugar(l); if (l === 'meu') setPasta(pastaDoProjeto); }} usado={0.21} />
 
         <div className="nv-lista">
           <CaminhoDaNuvem trilha={trilha} aoIr={id => { setLugar('meu'); setPasta(id); }} />

@@ -1,5 +1,6 @@
 import type { ModuloDeVereda, TopicoDeVereda } from './veredas';
 import { QUESTOES_DO_PROJETO_DE_DESIGN as Q } from './questoesDoProjetoDeDesign';
+import { telasDoTopico } from './telas';
 
 /*
  * A vereda CC-DG006 Projeto de Design.
@@ -18,17 +19,27 @@ import { QUESTOES_DO_PROJETO_DE_DESIGN as Q } from './questoesDoProjetoDeDesign'
  * Acampamento das Famílias — para que o projeto de cada um não seja a
  * primeira vez de nada.
  *
+ * ── A teoria mostra outro projeto ────────────────────────────────────────
+ * O convite é o que o laboratório percorre, e os rascunhos, os descartes, a
+ * hora que o público pede e os nomes dos finais dele são respostas. A teoria
+ * fala do mutirão do córrego, de `src/exemplos/mutiraoDoCorrego.ts`, e os
+ * tópicos que ensinam um gesto o mostram tela por tela nas janelas das
+ * veredas que o requisito 1 exige.
+ *
  * ── Os números ──────────────────────────────────────────────────────────
  * Os que a teoria cita — proporções, corpos de letra, milímetros — saem do
  * mesmo motor que confere as lições, e `exemplosDoProjetoDeDesign.test.ts`
  * os confere.
  */
 
+const V = 'CC-DG006';
+
 const t = (
   id: string, titulo: string, resumo: string,
-  explicacao: string[], exemplo: string, atencao: string, marcas: string[],
+  explicacao: string[], atencao: string, marcas: string[],
+  telas?: [legenda: string, descricao: string][],
 ): TopicoDeVereda => ({
-  id, titulo, resumo, explicacao, exemplo, exemploComo: 'texto' as const, atencao, marcas,
+  id, titulo, resumo, explicacao, atencao, marcas, ...(telas ? { telas: telasDoTopico(V, id, telas) } : {}),
 });
 
 /* ── Módulo 1: a proposta ─────────────────────────────────────────────────── */
@@ -39,18 +50,12 @@ const PROPOSTA: TopicoDeVereda[] = [
     'A demanda e o público',
     'O que precisa ser comunicado, e a quem.',
     [
-      'Todo projeto de design começa por uma **demanda de comunicação**: alguém precisa ficar sabendo de alguma coisa, e hoje não fica. "Fazer um cartaz bonito" não é demanda; "metade das famílias novas fica sabendo do acampamento na véspera" é.',
-      'O **público** é quem precisa ficar sabendo. Ele decide tudo o que vem depois: a letra, as palavras, o lugar em que a peça vai aparecer. Pais e avós leem no celular, na fila do mercado; desbravadores leem no mural da sede.',
+      'Todo projeto de design começa por uma **demanda de comunicação**: alguém precisa ficar sabendo de alguma coisa, e hoje não fica. "Fazer um cartaz bonito" não é demanda; "no último mutirão do córrego apareceram seis pessoas, e o clube precisava de trinta" é.',
+      'O **público** é quem precisa ficar sabendo. Ele decide tudo o que vem depois: a letra, as palavras, o lugar em que a peça vai aparecer. No mutirão o público são os **vizinhos do bairro** — eles passam pelo portão da sede a pé e veem o perfil do clube no celular, e nunca leram o boletim.',
+      'A proposta escreve as duas coisas e mais duas: **onde** as peças vão circular (o portão da sede e o perfil do clube) e **quais** são as quatro peças — a impressa, a digital, o símbolo e as imagens tratadas.',
       '"Todo mundo" não é público. Peça feita para todos não fala com ninguém em particular, e não há como saber se ela funcionou.',
     ],
-    `A proposta do convite
-
-  Demanda: as famílias dos desbravadores novos ficam sabendo
-           do Acampamento das Famílias na véspera, e metade não vai.
-  Público: pais, mães e avós dos desbravadores que entraram este ano.
-  Meio:    o grupo de mensagens das famílias e o perfil do clube.
-  Peças:   impressa, digital, símbolo e imagens tratadas.`,
-    'A demanda tem de ser do clube de verdade. A do convite é um exemplo para percorrer o caminho; a sua você escolhe.',
+    'A demanda tem de ser do clube de verdade. O mutirão é um exemplo para ver o caminho; a sua você escolhe.',
     ['demanda', 'público'],
   ),
   t(
@@ -59,15 +64,9 @@ const PROPOSTA: TopicoDeVereda[] = [
     'A proposta vai ao examinador, e só depois a produção começa.',
     [
       'O requisito pede que a proposta seja **aprovada antes** de a execução começar. A ordem é a regra inteira: aprovar o que já está pronto não deixa o examinador mudar nada, e a única resposta possível passa a ser sim.',
-      'Proposta incompleta volta. Sem público, sem dizer onde a peça digital vai circular, ou sem as quatro peças, o examinador devolve dizendo o que falta — e o certo é completar e mandar de novo.',
-      'Começar a produzir antes da aprovação é o atalho mais comum, e o mais caro: se o examinador pedir outra coisa, o trabalho feito vai para o lixo.',
+      'Proposta incompleta volta. Sem público, sem dizer onde a peça digital vai circular, ou sem as quatro peças, o examinador devolve dizendo o que falta — e o certo é completar e mandar de novo, e não começar enquanto isso.',
+      'Começar a produzir antes da aprovação é o atalho mais comum, e o mais caro: se o examinador pedir outra coisa — um cartaz para o portão em vez de um folheto para a caixa de correio, por exemplo —, o trabalho feito vai para o lixo.',
     ],
-    `A ordem
-
-  1. Escrever a proposta
-  2. Enviar ao examinador
-  3. Voltou com o que falta? Completar e enviar de novo
-  4. Aprovada: só agora começar a produzir`,
     'Guarde a proposta aprovada junto dos arquivos do projeto. Ela é o primeiro item da apresentação.',
     ['aprovação'],
   ),
@@ -82,35 +81,31 @@ const SIMBOLO: TopicoDeVereda[] = [
     'Desenhado por você, em vetor, e não baixado.',
     [
       'O requisito pede um **símbolo vetorial de autoria própria**: formas que você desenhou, no editor de vetor da CC-DG002. Um ícone baixado de um site de "ícones grátis" não é seu — e grátis para baixar não é livre para usar.',
-      'O símbolo é um **grupo**: as formas que o compõem se movem juntas, e é a cópia do grupo que vai para o post e para o convite. As duas peças com o mesmo símbolo é o que faz quem vê saber que elas são do mesmo projeto.',
-      'A primeira ideia raramente é a que fica. Não apague as tentativas: elas vão para a apresentação como versões descartadas.',
+      'O símbolo é um **grupo**. As peças saem da caneta soltas — no mutirão, a gota, a folha e a margem do córrego —, e se agrupam com as três escolhidas na lista de camadas e Ctrl+G. Agrupado, ele se move, se copia e cresce por igual, e é a cópia do grupo que vai para o post e para o cartaz.',
+      'As duas peças com o **mesmo** símbolo é o que faz quem vê saber que elas são do mesmo projeto. A primeira ideia raramente é a que fica: não apague as tentativas, porque elas vão para a apresentação como versões descartadas.',
     ],
-    `O símbolo do convite
-
-  Barraca  triângulo verde
-  Porta    triângulo creme por cima
-  Chão     retângulo marrom
-  → agrupados: um só objeto, que se copia inteiro`,
     'Trocar o clipart por um desenho seu muito parecido com ele continua sendo copiar. A ideia também precisa ser sua.',
     ['símbolo', 'autoria'],
+    [
+      ['As três peças, escolhidas com Shift', 'O editor de design com a gota azul, a folha verde e a margem do córrego na prancha. Na lista de camadas, Gota, Folha e Margem estão selecionadas juntas.'],
+      ['Ctrl+G faz delas um grupo só', 'A lista de camadas mostra agora um grupo chamado Símbolo com as três peças dentro, e o campo Nome da camada diz Símbolo.'],
+    ],
   ),
   t(
     'simbolo-pequeno',
     'O símbolo pequeno',
-    'Ele vai aparecer no canto do post e no rodapé do convite.',
+    'Ele vai aparecer no canto do post e no rodapé do cartaz.',
     [
       'Um símbolo bonito grande pode sumir pequeno. No canto de um post visto no celular ele tem uns **32 pixels** de lado, e o que for mais fino que um pixel nesse tamanho desaparece.',
-      'A primeira ideia da barraca era feita de traço de 3 pixels numa barraca de 280. Com 32 de lado, cada traço fica com **um terço de pixel**: o desenho some inteiro.',
-      'O remédio é desenhar com formas cheias e grossas. O editor mostra o símbolo em 64, 32 e 16 pixels lado a lado — confira antes de levar para as peças.',
+      'A primeira ideia da gota do mutirão era só contorno: traço de 2 pixels numa prancha de 400. Com 32 de lado, cada traço fica com 2 × 32 ÷ 400, **um sexto de pixel** — a gota some, e sobra um quadrado branco. A versão cheia, com a margem de 22 pixels de altura, continua lá: 22 × 32 ÷ 400 dá quase dois pixels.',
+      'O remédio é desenhar com formas cheias e grossas, e conferir antes de levar para as peças: **Exibir › Ver em 64, 32 e 16 px** mostra a prancha nos três tamanhos, lado a lado.',
     ],
-    `A barraca em 32 pixels
-
-  Traço de 3 px numa barraca de 280 px
-  → 3 × 32 ÷ 280 = um terço de pixel: some
-  Chão de 24 px de altura
-  → 24 × 32 ÷ 280 = quase 3 pixels: aparece`,
     'É a régua do ícone de 16 pixels da CC-DG002, no tamanho em que este símbolo vai ser visto.',
     ['tamanho mínimo'],
+    [
+      ['A primeira ideia, em três tamanhos', 'A prancha da primeira ideia, uma gota feita só de contorno. No painel Tamanhos, ela aparece clara em 64 pixels, quase sumida em 32 e invisível em 16.'],
+      ['O símbolo cheio continua de pé', 'A prancha do símbolo final, com a gota azul cheia, a folha e a margem. Em 64, 32 e 16 pixels o desenho continua reconhecível.'],
+    ],
   ),
 ];
 
@@ -123,15 +118,16 @@ const IMAGENS: TopicoDeVereda[] = [
     'Endireitar, devolver a luz, e exportar com outro nome.',
     [
       'A foto do celular quase sempre chega **torta e escura**. Tratar é o que a CC-DG003 ensinou: endireitar pelo horizonte, recortar o que sobrou, e devolver a luz e o contraste.',
-      'Exporte a foto tratada com **outro nome**. Exportar com o nome do original escreve por cima dele, e o arquivo do celular se perde — o que foi feito não tem mais volta.',
+      'Depois vem o passo que mais se erra: **exportar com outro nome**. A caixa Exportar como avisa quando o nome já existe na pasta, e o botão vira **Substituir** — exportar ali escreve por cima do original, e o arquivo do celular se perde sem volta. Com um nome novo, o botão volta a ser Exportar e os dois ficam na pasta.',
       'O original é parte da entrega: ele mostra o que foi tratado, e é dele que se parte se precisar refazer.',
     ],
-    `A foto do acampamento
-
-  IMG_0412.jpg               original, torta e escura
-  acampamento-tratada.jpg    endireitada, com luz, nome novo`,
-    'Quem tirou a foto também conta: a do acampamento é da secretária do clube, e usá-la é com a autorização dela.',
+    'Quem tirou a foto também conta. Foto de outra pessoa do clube se usa com a autorização dela, e o nome dela vai junto.',
     ['tratamento de imagem', 'original'],
+    [
+      ['Com o nome do original, o botão diz Substituir', 'A caixa Exportar como, com o nome IMG_lago, que é o do arquivo aberto. Embaixo, o aviso diz que já existe um arquivo com este nome e que exportar vai substituí-lo, e o botão diz Substituir.'],
+      ['Com um nome novo, ele volta a ser Exportar', 'A mesma caixa com o nome lago-tratada: o aviso sumiu e o botão diz Exportar.'],
+      ['Os dois ficam na pasta', 'A caixa Abrir lista os dois arquivos, IMG_lago.jpg e lago-tratada.jpg.'],
+    ],
   ),
   t(
     'origem-declarada',
@@ -139,14 +135,9 @@ const IMAGENS: TopicoDeVereda[] = [
     'De quem é, e com que licença.',
     [
       'O requisito pede as imagens **com a origem de cada uma declarada**. São três situações, e é a lição de direitos da CC-DG003: a imagem **própria** (sua, ou do clube com autorização), a de **licença livre**, e a **protegida**, que não se pode usar.',
-      'Licença livre não é sem condição. A **CC BY** deixa usar, mudar e imprimir, e pede uma coisa: o **crédito** — quem fez, e a licença. Sem o crédito, usar é como se a imagem fosse protegida.',
-      'Site que não diz a licença não deu licença nenhuma. A imagem é protegida até alguém dizer o contrário.',
+      'Licença livre não é sem condição. A **CC BY** deixa usar, mudar e imprimir, e pede uma coisa: o **crédito** — quem fez, e a licença. Sem o crédito, usar é como se a imagem fosse protegida. No mutirão, a foto do córrego é do clube, tirada por um conselheiro que autorizou; um desenho de garrafa achado num banco de imagens com CC BY entraria com o nome do autor ao lado.',
+      'Site que não diz a licença não deu licença nenhuma. A imagem é protegida até alguém dizer o contrário — e por isso ela não entra em peça nenhuma, nem na pasta da entrega.',
     ],
-    `As três imagens do convite
-
-  IMG_0412.jpg          própria: Célia Moura, secretária do clube
-  fogueira-ana-souza    livre, CC BY: crédito para Ana Souza
-  barraca-clipart.png   protegida: o site não diz a licença`,
     'O crédito vai na própria peça, perto da imagem. Numa lista à parte, ninguém que vê a peça fica sabendo.',
     ['licença', 'crédito'],
   ),
@@ -157,35 +148,29 @@ const IMAGENS: TopicoDeVereda[] = [
 const IMPRESSA: TopicoDeVereda[] = [
   t(
     'convite-para-a-grafica',
-    'O convite que a gráfica aceita',
-    'Foto tratada sangrando, resolução de impressão e o PDF certo.',
+    'A peça que a gráfica aceita',
+    'Foto tratada sangrando, resolução de impressão, o símbolo em vetor e o PDF certo.',
     [
       'A peça impressa sai do programa de diagramação da CC-DG005, com as mesmas regras: a foto que encosta na borda **passa da borda** 3 mm, que é a sangria; toda foto tem resolução de impressão no tamanho em que foi posta; e o PDF vai com sangria, marcas de corte e CMYK.',
-      'O símbolo entra como **vetor**, o arquivo .svg que o editor exportou. Vetor não tem ppi: ele se redesenha em qualquer tamanho, e por isso o programa diz "vetor" onde, numa foto, diria o ppi.',
-      'Mexeu no convite depois de exportar? Exporte de novo. O PDF é um retrato do convite de quando foi exportado.',
+      'O símbolo entra como **vetor**, o arquivo .svg que o editor exportou. Vetor não tem ppi: ele se redesenha em qualquer tamanho. Por isso, onde numa foto o programa diria o ppi, para o vetor ele diz só "vetor" — e o painel avisa que ele fica nítido em qualquer tamanho.',
+      'Mexeu na peça depois de exportar? Exporte de novo. O PDF é um retrato de quando foi exportado.',
     ],
-    `A foto do convite A5
-
-  Parando na borda:  X 0, Y 0, largura 148 mm  → fio branco no corte
-  Sangrando:         X -3, Y -3, largura 154 mm → corte limpo`,
-    'A foto crua do celular também passa no ppi. O que a reprova não é a resolução: é estar torta e escura.',
+    'Símbolo exportado em PNG e posto grande no papel volta a ter ppi, e volta a poder serrilhar. Para a gráfica, leve o SVG.',
     ['sangria', 'PDF'],
+    [
+      ['O vetor não tem ppi', 'O diagramador com um mapa em SVG posto na página. No lugar do ppi, o selo diz vetor, e o painel de propriedades diz que ele é nítido em qualquer tamanho.'],
+    ],
   ),
   t(
     'o-que-quando-onde',
     'O quê, quando e onde',
-    'As três perguntas que todo convite responde.',
+    'As três perguntas que toda peça de chamada responde.',
     [
-      'Um convite responde a três perguntas: **o quê**, **quando** e **onde**. Faltando uma, quem lê não vai — ou liga para perguntar, o que dá na mesma.',
-      '"Onde" é a que mais falta em convite de clube. Quem escreve sabe de cor que o acampamento é na chácara, e por isso esquece de escrever. Quem lê não sabe.',
-      'O crédito da foto de outra pessoa também é texto da peça, e entra como legenda, perto da imagem.',
+      'Uma peça de chamada responde a três perguntas: **o quê**, **quando** e **onde**. Faltando uma, quem lê não vai — ou liga para perguntar, o que dá na mesma.',
+      'No mutirão as três ficam assim: **Mutirão do Córrego**; **domingo, 19 de outubro, das 7h às 11h**; **encontro no portão da sede, ao lado da quadra**. A hora do fim importa tanto quanto a do começo: quem tem almoço de família precisa saber se dá tempo.',
+      '"Onde" é a que mais falta em peça de clube. Quem escreve sabe de cor onde fica a sede, e por isso esquece de escrever. O vizinho que nunca entrou lá não sabe.',
     ],
-    `O convite
-
-  O quê:   Acampamento das Famílias
-  Quando:  Sábado, 14 de setembro, das 8h às 17h
-  Onde:    Na Chácara Recanto Verde. O ônibus sai da igreja às 7h30.`,
-    'Releia o convite como quem nunca foi ao clube. Toda informação que só quem é de dentro sabe precisa estar escrita.',
+    'Releia a peça como quem nunca foi ao clube. Toda informação que só quem é de dentro sabe precisa estar escrita.',
     ['informação essencial'],
   ),
 ];
@@ -198,31 +183,27 @@ const DIGITAL: TopicoDeVereda[] = [
     'A proporção do meio',
     'A peça digital é outra peça, e não a impressa encolhida.',
     [
-      'O requisito pede a peça digital **adaptada** da impressa, com **proporção e legibilidade próprias do meio**. Encolher o convite até caber na tela não é adaptar: é o mesmo papel, pequeno.',
-      'Cada lugar tem a sua proporção. O **post quadrado** é 1080 × 1080; o **post em retrato**, 1080 × 1350; o **story**, 1080 × 1920. A folha A5, 1 por 1,41, não é nenhuma delas — no feed ela sai cortada ou com faixas dos lados.',
-      'Antes de refazer, **duplique** a prancha. A versão encolhida é a versão descartada que você vai mostrar ao examinador.',
+      'O requisito pede a peça digital **adaptada** da impressa, com **proporção e legibilidade próprias do meio**. Encolher a peça até caber na tela não é adaptar: é o mesmo papel, pequeno.',
+      'Cada lugar tem a sua proporção. O **post quadrado** é 1080 × 1080; o **post em retrato**, 1080 × 1350; o **story**, 1080 × 1920. A folha A5 encolhida para 1080 de largura dá 1080 × 1532, que não é nenhuma delas — no feed ela sai cortada ou com faixas dos lados.',
+      'Antes de refazer, **duplique** a prancha e dê um nome à cópia. A versão encolhida é a versão descartada que você vai mostrar ao examinador. Depois, troque o **Tamanho da prancha** do original: o que estava embaixo fica de fora, e rearranjar o que sobrou é o trabalho de adaptar.',
     ],
-    `O post do convite
-
-  Convite encolhido:  1080 × 1528, a proporção da folha A5
-  Post em retrato:    1080 × 1350, a que o feed mostra inteira`,
-    'Mudar o tamanho da prancha não mexe no que está nela. Rearranjar o que ficou fora é o trabalho de adaptar.',
+    'Mudar o tamanho da prancha não mexe no que está nela. Ninguém rearranja por você.',
     ['proporção', 'adaptação'],
+    [
+      ['O cartaz do mutirão encolhido para o feed', 'O editor de design com a prancha Post do mutirão: foto em cima, título, data, lugar e um parágrafo inteiro. O campo Tamanho da prancha diz Personalizado, 1080 × 1532.'],
+      ['Guardada a cópia, o post passa a retrato', 'Na lista de pranchas aparece a cópia Post — cartaz encolhido. A prancha Post passou para Post retrato, 1080 × 1350, e a assinatura do rodapé ficou de fora.'],
+    ],
   ),
   t(
     'letra-do-celular',
     'A letra do celular',
     'Letra grande e pouca palavra.',
     [
-      'Um post de 1080 pixels aparece com uns 360 de largura na tela do telefone: **um terço**. A letra de 40 chega a uns 13, que é o menor corpo confortável. A de 22, que no convite impresso estava ótima, chega a 7 — existe, e ninguém lê.',
-      'Por isso o post leva **pouco texto**: no máximo umas 30 palavras. O convite em papel é lido parado; o post passa debaixo do dedo em um segundo e meio.',
-      'Cortar não é perder o essencial. O quê, quando e onde continuam lá; o parágrafo do convite sai.',
+      'Um post de 1080 pixels aparece com uns 360 de largura na tela do telefone: **um terço**. A letra de 40 chega a uns 13, que é o menor corpo confortável. A de 22, que no papel estava ótima, chega a 7 — existe, e ninguém lê.',
+      'Por isso o post leva **pouco texto**: no máximo umas 30 palavras. A peça em papel é lida parada; o post passa debaixo do dedo em um segundo e meio.',
+      'Cortar não é perder o essencial. No mutirão, o quê, o quando e o onde continuam lá, em letra grande; o parágrafo sobre luvas e sacos sai — ele cabe na legenda do post, que só lê quem já parou.',
     ],
-    `A mesma letra, no papel e no celular
-
-  Corpo 22 no post de 1080  → uns 7 pixels na tela: não se lê
-  Corpo 40 no post de 1080  → uns 13 pixels na tela: se lê`,
-    'Cortar com pressa leva junto o que não devia. No post do convite, a hora saiu no corte — e o público vai notar.',
+    'Cortar com pressa leva junto o que não devia. Releia o post depois de cortar procurando as três respostas.',
     ['legibilidade'],
   ),
 ];
@@ -236,16 +217,9 @@ const PROCESSO: TopicoDeVereda[] = [
     'O caminho até a peça também se apresenta.',
     [
       'O requisito pede para **documentar o processo**: os **rascunhos**, as **versões descartadas** e a **razão de cada descarte**. O examinador quer ver como a peça chegou a ser o que é.',
-      'Os **rascunhos** são à mão, no papel, antes do computador — três ideias diferentes, e não a mesma desenhada três vezes. Guarde-os, ou fotografe.',
-      'As **versões descartadas** estão no arquivo: a primeira ideia do símbolo, o post encolhido. Por isso elas não se apagam — duplicar antes de refazer é o que as guarda.',
+      'Os **rascunhos** são à mão, no papel, antes do computador — três ideias **diferentes**, e não a mesma desenhada três vezes. No mutirão, foram uma gota, uma mão segurando um saco de lixo e o córrego visto de cima.',
+      'As **versões descartadas** estão no arquivo: a gota de contorno, o post encolhido. Por isso elas não se apagam — duplicar antes de refazer é o que as guarda.',
     ],
-    `O processo do convite
-
-  Rascunhos:  barraca com a porta aberta
-              fogueira com duas pessoas grandes e uma pequena
-              mão de adulto segurando mão de criança
-  Versões:    símbolo de traço fino
-              post com o convite encolhido`,
     'Versão que só existe na sua memória não se mostra. Se não está no arquivo, não está no processo.',
     ['processo', 'versão descartada'],
   ),
@@ -255,15 +229,9 @@ const PROCESSO: TopicoDeVereda[] = [
     'Um motivo próprio para cada versão, com o que você viu.',
     [
       'Cada versão descartada tem **o motivo dela**. "Não ficou bom" não explica nada, e o mesmo motivo para duas versões diferentes não explica nenhuma.',
-      'O bom motivo diz **o que se viu**: o símbolo de traço fino sumia com 32 pixels; o post encolhido tinha letra de sete pixels no celular. É o que o examinador pode conferir olhando a versão.',
+      'O bom motivo diz **o que se viu**. A gota de contorno do mutirão sumia em 32 pixels; o cartaz encolhido tinha proporção de folha e o parágrafo em letra de sete pixels no celular. É o que o examinador pode conferir olhando a versão.',
       'Descarte não é fracasso. É o processo funcionando: cada versão descartada ensinou alguma coisa que a final tem.',
     ],
-    `Dois motivos
-
-  Símbolo — primeira ideia:  feita de traço fino, a barraca
-                             sumia inteira com 32 pixels.
-  Post encolhido:            proporção de folha, letra de sete
-                             pixels no celular e texto demais.`,
     'Escreva o motivo olhando a versão, e não de memória. O que se vê nela é o que se diz.',
     ['descarte'],
   ),
@@ -279,34 +247,31 @@ const ENTREGA: TopicoDeVereda[] = [
     [
       'O requisito pede os arquivos **em formato editável e final**. O **final** é o que se entrega a quem vai usar: o PDF para a gráfica, o PNG para o feed. O **editável** é o que se entrega a quem vai mudar: no ano que vem, a data muda, e é dele que se parte.',
       'Os dois não se substituem. Só o final, ninguém muda a data; só o editável, a gráfica não abre.',
-      'Organize em **pastas**: uma de editáveis, uma de finais, e uma para os originais e as versões. Nada solto na pasta do projeto.',
+      'Organize em **pastas**: uma de editáveis, uma de finais, e uma para os originais e as versões. Na nuvem, **Nova pasta** cria cada uma, e **Mover para**, no menu de três pontos de cada arquivo, o leva para a dele. Nada solto na pasta do projeto.',
     ],
-    `A pasta do projeto
-
-  Editáveis/   simbolo.svg, convite.sla, post.svg,
-               acampamento-tratada.xcf
-  Finais/      simbolo.png, convite.pdf, post.png,
-               acampamento-tratada.jpg
-  Originais e versões/   IMG_0412.jpg, a fogueira, o post encolhido`,
-    'As extensões são as dos programas livres — Scribus, Inkscape, GIMP. Com outro programa, a extensão muda e a divisão é a mesma.',
+    'As extensões são as dos programas livres — .sla do Scribus, .svg do Inkscape, .xcf do GIMP. Com outro programa, a extensão muda e a divisão é a mesma.',
     ['editável', 'final'],
+    [
+      ['Tudo solto na pasta do projeto', 'A nuvem do clube com a pasta Mutirão do Córrego: o editável e o final de cada peça lado a lado, a foto original e a tratada, e nomes como post (1).png e cartaz-final-FINAL2.pdf.'],
+      ['Cada arquivo para a pasta dele', 'Depois de criar a pasta Editáveis, a caixa Mover simbolo.svg está aberta com Editáveis escolhida como destino.'],
+    ],
   ),
   t(
     'nomes-e-pastas',
     'Nomes que dizem a data e a versão',
     'O padrão da CC-ES001, e o que não vai junto.',
     [
-      'Os finais levam no nome **a data e a versão**, todos no mesmo padrão — é o que a CC-ES001 ensinou. "convite-final-FINAL2.pdf" não diz qual é o mais novo; "convite-2026-09-01-v03.pdf" diz.',
-      'O que **não é seu** não vai na pasta. O clipart baixado não entrou em peça nenhuma, e entregá-lo junto é distribuir uma imagem cuja licença não deixa.',
+      'Os finais levam no nome **a data e a versão**, todos no mesmo padrão — é o que a CC-ES001 ensinou. "cartaz-final-FINAL2.pdf" não diz qual é o mais novo; "cartaz-2026-10-05-v02.pdf" diz. Renomeia-se pelo menu de três pontos do arquivo, em **Renomear**.',
+      'O que **não é seu** não vai na pasta. Uma imagem baixada que não entrou em peça nenhuma, entregue junto, é distribuir o que a licença não deixa.',
       'O resto vai inteiro: originais e versões são parte do projeto, e mandá-los para a lixeira apaga o processo.',
     ],
-    `Os finais, com data e versão
-
-  convite-2026-09-01-v03.pdf
-  post-2026-09-01-v02.png
-  simbolo-2026-09-01-v02.png`,
     'Data com o ano primeiro, depois o mês e o dia: é o que faz a ordem alfabética virar ordem de tempo.',
     ['nome de arquivo'],
+    [
+      ['O final que ainda não diz nada', 'A pasta Finais do mutirão, com o post e o símbolo já com data e versão, e o cartaz ainda chamado cartaz-final-FINAL2.pdf.'],
+      ['Renomear, com a data e a versão', 'O campo de renomear aberto na linha do cartaz, com o nome novo cartaz-2026-10-05-v02.pdf digitado.'],
+      ['Todos no mesmo padrão', 'A pasta Finais com cartaz-2026-10-05-v02.pdf, post-2026-10-05-v03.png e simbolo-2026-10-05-v01.png, todos no mesmo padrão de data e versão.'],
+    ],
   ),
 ];
 
@@ -318,19 +283,10 @@ const RETORNO: TopicoDeVereda[] = [
     'Cinco pessoas do público',
     'O retorno que conta é de quem a peça precisa alcançar.',
     [
-      'O requisito pede para submeter a peça a **cinco pessoas do público-alvo** e coletar o retorno. Do **público**: o conselheiro e o colega da unidade são os primeiros a opinar, e a opinião deles é sobre outra coisa.',
-      'Mostre a peça como ela vai ser vista — o post no celular, o convite na mão — e pergunte o que a pessoa entendeu, e não se ela gostou. "Gostei" não ensina nada.',
+      'O requisito pede para submeter a peça a **cinco pessoas do público-alvo** e coletar o retorno. Do **público**: o conselheiro e o colega da unidade são os primeiros a opinar, e a opinião deles é sobre outra coisa. No mutirão, o público são os vizinhos — a dona da padaria da esquina conta, o diretor do clube não.',
+      'Mostre a peça como ela vai ser vista — o post no celular, o cartaz no portão — e pergunte o que a pessoa entendeu, e não se ela gostou. "Gostei" não ensina nada; "achei que era só para quem é do clube" ensina muito.',
       'Anote o que cada um disse com as palavras dele. Resumir na hora já é decidir o que importa.',
     ],
-    `Sete responderam ao post
-
-  Lúcia, mãe da Bia          público
-  Jorge, pai do Davi         público
-  Cláudia, mãe do Pedro      público
-  Antônio, avô da Lara       público
-  Renata, mãe do Caio        público
-  Tio Márcio, conselheiro    não é do público
-  Lucas, colega de unidade   não é do público`,
     'Retorno de quem não é do público pode até ser bom conselho, mas não conta para o requisito.',
     ['público-alvo', 'retorno'],
   ),
@@ -339,17 +295,11 @@ const RETORNO: TopicoDeVereda[] = [
     'O que muda, e o que fica',
     'Seguir todo comentário é tão errado quanto não seguir nenhum.',
     [
-      'Cada retorno pede uma leitura: ele aponta **o que falta para alguém do público decidir**, ou é **gosto**? "Não diz que horas começa" é falta: quem trabalha no sábado de manhã precisa saber. "Eu poria mais cores" é gosto de uma pessoa.',
+      'Cada retorno pede uma leitura: ele aponta **o que falta para alguém do público decidir**, ou é **gosto**? "Não sei se posso levar meu filho de oito anos" é falta: o post cortou a linha dos menores. "Eu poria mais verde" é gosto de uma pessoa.',
       'O requisito pede **ao menos uma alteração** feita a partir do retorno, e registrada: qual comentário, o que mudou na peça, e por quê.',
       'A mudança aparece **na peça**. Escrever que mudou, sem mudar, não é alteração — e mudar quebrando o resto também não: o post continua com letra de celular e pouco texto.',
     ],
-    `Uma alteração registrada
-
-  Retorno:  Lúcia — "não diz que horas começa nem que horas acaba"
-  Mudança:  a linha da data passou a ser
-            "Sábado, 14 de setembro, 8h às 17h"
-  Por quê:  ela trabalha até meio-dia, e não sabia se dava tempo.`,
-    'A hora estava no convite encolhido e saiu no corte do post. Retorno do público costuma achar justamente o que a gente cortou com pressa.',
+    'Retorno do público costuma achar justamente o que a gente cortou com pressa.',
     ['alteração'],
   ),
 ];
@@ -363,19 +313,9 @@ const APRESENTACAO: TopicoDeVereda[] = [
     'Um roteiro com tempo para cada parte, e a maior para as peças.',
     [
       'O requisito pede apresentar **em até quinze minutos**. Sem roteiro, a apresentação gasta dez minutos explicando a demanda e corre no fim — justamente nas peças.',
-      'Dê minutos a cada parte: a demanda e o público, as peças, o processo e o retorno. As **peças** levam a maior fatia: é delas que o examinador vai perguntar.',
+      'Dê minutos a cada parte: a demanda e o público, a proposta aprovada, as peças, os rascunhos e versões, o retorno e o que mudou, e as perguntas. As **peças** levam a maior fatia — cinco minutos de quinze —, porque é delas que o examinador vai perguntar.',
       'Deixe um tempo para as perguntas. Quinze minutos são o teto, e não a meta.',
     ],
-    `Um roteiro de quinze minutos
-
-  A demanda e o público        2
-  A proposta aprovada          1
-  As peças, com a impressa     5
-  Rascunhos e versões          3
-  O retorno e o que mudou      2
-  Perguntas                    2
-                              ──
-                              15`,
     'Ensaie com um relógio. A primeira vez sempre passa do tempo.',
     ['apresentação'],
   ),
@@ -385,14 +325,9 @@ const APRESENTACAO: TopicoDeVereda[] = [
     'O papel de verdade, e não a tela.',
     [
       'O requisito pede a apresentação **com a peça impressa em mãos**. É no papel que se vê se a sangria funcionou, se a letra se lê e se a cor saiu como na prova.',
-      'A peça impressa sai do **PDF da gráfica**, o mesmo que foi exportado do convite como ele está agora. Imprimir um PDF velho é levar ao examinador a versão de antes da última correção.',
-      'Leve também o post no celular. A peça digital se apresenta no meio dela.',
+      'A peça impressa sai do **PDF da gráfica**, o mesmo que foi exportado da peça como ela está agora. Imprimir um PDF velho é levar ao examinador a versão de antes da última correção.',
+      'Leve também o post no celular, que é onde ele se apresenta, e a pasta do projeto, para mostrar o editável e o final de cada peça.',
     ],
-    `O que levar
-
-  O convite impresso, do PDF da gráfica
-  O post, no celular
-  A pasta do projeto, para mostrar o editável e o final`,
     'Imprima com antecedência. Gráfica tem prazo, e impressora de casa acaba a tinta na véspera.',
     ['peça impressa'],
   ),
