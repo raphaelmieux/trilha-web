@@ -952,6 +952,31 @@ E o arrasto da alça, no roteiro, se mede contra a alça e não contra a célula
 o canto da célula fica por baixo da alça, mas o navegador entrega o clique à
 célula, e o arrasto vira seleção em vez de preenchimento.
 
+A CC-ES004 também citava a pasta do laboratório: a caixa de Imprimir desenhada
+com colchetes em cima da ata, a procura por "Chácara" no recibo, o "Filcia"
+que o reconhecimento grava, a pergunta da Tia Rute na margem. As telas
+fotografam a gincana da primavera, de `src/exemplos/gincanaDaPrimavera.ts` —
+outros arquivos, outro papel fotografado (a nota da papelaria) e outras
+pessoas —, e `LaboratorioDePdf` ganhou `outra` para abrir nela: a pasta, a
+atividade, o papel do digitalizador e quem assina e comenta, com os do
+acampamento por padrão. `exemplosDePdf.test.ts` confere as legendas pelo
+motor e reprova se as duas pastas dividirem um arquivo ou uma linha.
+
+E a captura achou dois defeitos do laboratório, os dois invisíveis no jsdom.
+**O digitalizador nunca teve moldura.** Os três embrulhos dele tinham nomes
+que folha nenhuma definia, e a limpeza de classes da CC-ES012 os tirou com
+razão — mas a folha do digitalizador desenha as mesmas peças com outros nomes,
+`scan-celular`, `scan-palco` e `scan-controles`, que ninguém usava. O
+aplicativo saía colado embaixo do leitor, sem a mesa em volta do papel, e
+enquadrar perdia o sentido: a mesa é o que se tira da foto. Hoje ele abre por
+cima do leitor, como o celular por cima da mesa.
+
+**E o contador da procura ficava fora da tela.** A faixa do leitor não
+quebrava linha e rolava de lado, e os onze comandos com nome já ocupam 1230
+px: a caixa de procurar e o "1 página" ficavam além da borda direita em
+qualquer notebook. É o número que o requisito 5 manda ler como prova, e ele
+estava atrás de uma rolagem que ninguém faz. A faixa quebra linha agora.
+
 A teoria ensinava a buscar escrevendo `tipo:imagem` na caixa, e a janela do
 laboratório filtra numa caixa com Tipo e Data: a lição descrevia um gesto que
 a pessoa não ia encontrar. E a primeira captura achou um defeito do
@@ -4970,6 +4995,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDePdf.test.tsx` | lição da CC-ES004 impossível de vencer clicando |
 | `src/components/LaboratorioDePdf.test.tsx` | faixa que muda conforme o exercício, ou comando que age sem documento escolhido |
 | `src/components/LaboratorioDePdf.test.tsx` | diálogo centrado no celular, com Confirmar debaixo da cápsula de tarefas |
+| `src/components/LaboratorioDePdf.test.tsx` | digitalizador fora das classes que a folha dele desenha, que o deixa colado embaixo do leitor sem mesa nem moldura |
+| `src/labs/leitorDePdf.test.tsx` | faixa do leitor que rola de lado em vez de quebrar linha, escondendo o contador da procura |
+| `src/curriculum/exemplosDePdf.test.ts` | legenda da teoria da CC-ES004 que a pasta da gincana não devolve, ou gincana que divide arquivo ou linha com a pasta do laboratório |
 | `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |

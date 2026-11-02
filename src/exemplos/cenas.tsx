@@ -9,6 +9,10 @@ import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
 import { discoDaUnidade } from './discoDaUnidade';
 import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
 import { pastaDaExcursao, type Estado } from './excursaoDeOutubro';
+import LaboratorioDePdf from '../components/LaboratorioDePdf';
+import {
+  ATIVIDADE, GINCANA, NOME_DA_FOTO_DA_NOTA, NOTA_DA_PAPELARIA, PESSOAS, type EstadoDaGincana,
+} from './gincanaDaPrimavera';
 import { CENAS_DE_DESIGN } from './cenasDeDesign';
 import { CENAS_VETORIAIS } from './cenasVetoriais';
 import { CENAS_DE_FOTO } from './cenasDeFoto';
@@ -310,6 +314,18 @@ const planilha = (estado: Estado) => () => (
     aoVencer={nada} aoSair={nada} inicial={() => pastaDaExcursao(estado)} arquivo="Excursão de outubro" />
 );
 
+/* ── Leitor de PDF ────────────────────────────────────────────────────────── */
+
+/** A gincana da primavera, e não a pasta do acampamento que o laboratório arruma. */
+const leitor = (estado: EstadoDaGincana) => () => (
+  <LaboratorioDePdf vereda={vereda('cc-es004')} licao={licaoDe('cc-es004', 'pdf')}
+    aoVencer={nada} aoSair={nada}
+    outra={{
+      inicial: GINCANA[estado], atividade: ATIVIDADE, pessoas: PESSOAS,
+      papel: { nome: NOME_DA_FOTO_DA_NOTA, linhas: NOTA_DA_PAPELARIA },
+    }} />
+);
+
 export const CENAS: Record<string, ComponentType> = {
   'word-programa-a-mao': word(PROGRAMA_A_MAO, 'Programa do Campori'),
   'word-programa-com-estilo': word(PROGRAMA_COM_ESTILO, 'Programa do Campori'),
@@ -334,6 +350,7 @@ export const CENAS: Record<string, ComponentType> = {
   'excursao-chamada': planilha({ aba: 'Chamada' }),
   'excursao-orcamento': planilha({ aba: 'Orçamento' }),
   'excursao-conferir': planilha({ aba: 'Conferir' }),
+  ...Object.fromEntries((Object.keys(GINCANA) as EstadoDaGincana[]).map(e => [`gincana-${e}`, leitor(e)])),
   ...CENAS_DE_DESIGN,
   ...CENAS_VETORIAIS,
   ...CENAS_DE_FOTO,
