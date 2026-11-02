@@ -78,7 +78,7 @@ export const PASSOS_DE_PYTHON: Record<string, string[]> = {
   ],
   conectaAoBanco: [
     'No alto do programa: import sqlite3.',
-    'Abra o arquivo que está na pasta: conexao = sqlite3.connect("clube.db").',
+    'Abra o arquivo do banco que está na pasta, pelo nome que o enunciado dá: conexao = sqlite3.connect("clube.db"), por exemplo.',
     'Confira o nome com cuidado. Um nome errado não dá erro na hora: cria um banco novo e vazio, e o erro aparece na consulta, como "no such table".',
   ],
   usaParametros: [
@@ -95,6 +95,17 @@ export const PASSOS_DE_PYTHON: Record<string, string[]> = {
     'Depois do INSERT, escreva conexao.commit(). É ele que grava no arquivo.',
     'Sem o commit, a consulta do próprio programa até mostra o registro novo, e o arquivo continua sem ele.',
     'No fim, conexao.close() fecha o arquivo.',
+  ],
+  bancoComoEsperado: [
+    'Leia no enunciado a entrada que o programa vai receber, linha por linha, e siga a ordem das perguntas que ele descreve.',
+    'Rode, e confira na saída se cada pergunta recebeu a resposta certa.',
+    'Se uma inserção ou mudança não aparece no banco, confira o commit depois dela.',
+  ],
+  avisaOsErros: [
+    'Rode com a entrada do enunciado e veja onde o programa para ou fica calado.',
+    'Para o erro que derruba o programa, ponha a chamada num try e apanhe o erro pelo nome: except sqlite3.IntegrityError:',
+    'Para o que não derruba mas não faz nada, olhe o que a função devolve: o rowcount 0 quer dizer que nenhum registro foi mexido.',
+    'Em cada caso, escreva a frase que o enunciado combinou e deixe o laço voltar ao menu.',
   ],
   quarentaLinhas: [
     'Linha em branco e linha só de comentário não contam: o requisito é de programa.',

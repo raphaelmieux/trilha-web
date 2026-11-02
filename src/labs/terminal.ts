@@ -65,6 +65,15 @@ export interface Commit {
   ramo: string;
   /** O commit veio de uma mesclagem? O log precisa saber. */
   mesclagem?: boolean;
+  /**
+   * O dia do commit, em ano-mês-dia.
+   *
+   * Só a CC006 o usa: o requisito 4 pede quinze commits em quatro dias
+   * distintos, e isso não se confere sem data. Ausente nos computadores que
+   * não têm calendário — a CC003 inteira —, e aí o log não escreve linha de
+   * data nenhuma, em vez de inventar uma.
+   */
+  data?: string;
 }
 
 export interface Repositorio {
@@ -100,6 +109,8 @@ export interface Maquina {
    * instalar o próprio instalador.
    */
   instalados: string[];
+  /** Que dia é hoje neste computador. É a data que o próximo commit recebe. */
+  hoje?: string;
 }
 
 const HOME = '/home/desbravador';
@@ -363,6 +374,28 @@ function remover(m: Maquina, args: string[]): Resposta {
 
 /* ── O Git ─────────────────────────────────────────────────────────────────── */
 
+/**
+ * As linhas que saíram e as que entraram, pela maior subsequência comum.
+ * Quadrático, e os arquivos daqui têm dezenas de linhas.
+ */
+export function diferencaDeLinhas(antes: string, depois: string): string[] {
+  const a = antes.split('\n'), b = depois.split('\n');
+  const t = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+  for (let i = a.length - 1; i >= 0; i--) {
+    for (let j = b.length - 1; j >= 0; j--) {
+      t[i][j] = a[i] === b[j] ? t[i + 1][j + 1] + 1 : Math.max(t[i + 1][j], t[i][j + 1]);
+    }
+  }
+  const saida: string[] = [];
+  let i = 0, j = 0;
+  while (i < a.length || j < b.length) {
+    if (i < a.length && j < b.length && a[i] === b[j]) { i++; j++; }
+    else if (j < b.length && (i === a.length || t[i][j + 1] >= t[i + 1][j])) saida.push(`+${b[j++]}`);
+    else saida.push(`-${a[i++]}`);
+  }
+  return saida;
+}
+
 const proximoId = (repo: Repositorio) => `c${repo.commits.length + 1}`.padEnd(2, '0');
 
 const commitDe = (repo: Repositorio, id: string | null) =>
@@ -477,6 +510,7 @@ function git(m: Maquina, args: string[]): Resposta {
       arvore,
       pai: repo.ramos[repo.ramoAtual],
       ramo: repo.ramoAtual,
+      ...(m.hoje ? { data: m.hoje } : {}),
     };
     return ok({
       ...m,
@@ -487,6 +521,30 @@ function git(m: Maquina, args: string[]): Resposta {
         preparados: [],
       },
     }, `[${repo.ramoAtual} ${commit.id}] ${mensagem}\n ${repo.preparados.length} arquivo(s) alterado(s)`);
+  }
+
+  /*
+    O diff, e por que a CC006 o trouxe.
+
+    Guardar cada mudança no seu commit pede saber **o que** mudou em cada
+    arquivo, e o `git status` só diz o nome. Sem o diff, escrever a mensagem
+    obriga a abrir o arquivo inteiro e comparar de memória — que é como se
+    acaba escrevendo "ajustes". A comparação é por linha, sem contexto: o que
+    saiu com menos, o que entrou com mais, como o diff de verdade marca.
+  */
+  if (sub === 'diff') {
+    const arvore = arvoreDoRamo(repo);
+    const emDisco = arquivosSob(m.disco, repo.raiz);
+    const { modificados, novos, apagados } = mudancas(m);
+    const nomes = resto.filter(r => !r.startsWith('-')).map(r => resolver(m.cwd, r));
+    const alvos = [...modificados, ...apagados].filter(c => nomes.length === 0 || nomes.includes(c));
+    if (alvos.length === 0) {
+      return ok(m, nomes.some(n => novos.includes(n))
+        ? 'O arquivo ainda não está no repositório: o diff compara com o último commit, e ele não tem nada para comparar.'
+        : '');
+    }
+    return ok(m, alvos.map(c => [`--- a/${relativo(repo, c)}`, `+++ b/${relativo(repo, c)}`,
+      ...diferencaDeLinhas(arvore[c] ?? '', emDisco[c] ?? '')].join('\n')).join('\n\n'));
   }
 
   if (sub === 'log') {
@@ -501,7 +559,8 @@ function git(m: Maquina, args: string[]): Resposta {
     }
     if (historico.length === 0) return erro(m, `fatal: o ramo atual ${repo.ramoAtual} não tem nenhum commit`);
     return ok(m, historico
-      .map(c => (linha ? `${c.id} ${c.mensagem}` : `commit ${c.id}\n\n    ${c.mensagem}\n`))
+      .map(c => (linha ? `${c.id} ${c.mensagem}`
+        : `commit ${c.id}\n${c.data ? `Date:   ${c.data}\n` : ''}\n    ${c.mensagem}\n`))
       .join('\n'));
   }
 
@@ -568,6 +627,7 @@ function git(m: Maquina, args: string[]): Resposta {
       pai: repo.ramos[repo.ramoAtual],
       ramo: repo.ramoAtual,
       mesclagem: true,
+      ...(m.hoje ? { data: m.hoje } : {}),
     };
     let disco = m.disco;
     for (const [caminho, texto] of Object.entries(arvore)) disco = escrever(disco, caminho, arquivo(texto));
@@ -858,7 +918,7 @@ export function rodar(m: Maquina, linha: string): Resposta {
         '  cp <de> <para>         copiar   ( -r para pasta )',
         '  mv <de> <para>         mover ou renomear',
         '  rm <arquivo>           remover  ( -r para pasta )',
-        '  git <comando>          init, status, add, commit, log, restore,',
+        '  git <comando>          init, status, diff, add, commit, log, restore,',
         '                         branch, checkout, merge, remote, push, pull',
         '  pip <comando>          list, install, show, uninstall, freeze',
         '  pip freeze > <arquivo> gravar a lista do que está instalado',
