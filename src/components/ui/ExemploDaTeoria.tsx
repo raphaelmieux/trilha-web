@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { realcarLinhas, realcarLinhasCss, realcarLinhasPython, realcarLinhasSql } from '../../labs/realce';
+import { realcarLinhas, realcarLinhasCss, realcarLinhasJavascript, realcarLinhasPython, realcarLinhasSql } from '../../labs/realce';
 import { lerResultado } from '../../labs/sqlite';
 import { CORES_DO_REALCE } from '../../labs/ide';
 import { lerExemploDeBlocos, COR_DA_CATEGORIA } from '../../labs/blocosDoScratch';
@@ -293,6 +293,32 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
         <div className="ex-caixa">
           <p className="ex-caixa-topo">Exemplo</p>
           <pre className="ex-codigo claro">{exemplo}</pre>
+        </div>
+      </>
+    );
+  }
+
+  if (como === 'javascript') {
+    /*
+      O quadro do lado é o terminal, com o comando em cima: é o que a pessoa
+      vai ver no laboratório ao rodar o mesmo programa, e é o que o Node de
+      verdade escreve — `exemplosDeJavascript.test.ts` roda cada exemplo nele.
+    */
+    const comSaida = mostraResultado && topico.exemploSaida !== undefined;
+    return (
+      <>
+        <style>{CSS_EXEMPLO}</style>
+        <div className={comSaida ? 'ex-dupla' : ''}>
+          <div className="ex-caixa">
+            <p className="ex-caixa-topo">Você escreve, no programa.js</p>
+            <Codigo linhas={realcarLinhasJavascript(exemplo)} />
+          </div>
+          {comSaida && (
+            <div className="ex-caixa">
+              <p className="ex-caixa-topo">E o terminal mostra</p>
+              <pre className="ex-saida">{`$ node programa.js\n${topico.exemploSaida || ''}`}</pre>
+            </div>
+          )}
         </div>
       </>
     );

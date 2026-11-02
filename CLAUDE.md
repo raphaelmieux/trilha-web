@@ -4834,6 +4834,85 @@ precisa das quatro operações, e o examinador as acha pelo verbo. "cri" acharia
 operação —, e a proposta que esqueceu de prever o cadastro passaria por
 completa.
 
+**A CC-FE003 roda JavaScript no próprio navegador, imitando o Node.** A CC002
+precisou de doze megabytes de Pyodide porque o navegador não fala Python;
+JavaScript ele fala, e o V8 do Chrome é o mesmo do Node — as mensagens de erro
+saem dele, com as mesmas palavras. O que falta é o que o Node põe em volta do
+programa, e é só isso que `nodeSimulado.ts` monta: o `console.log` que escreve
+texto, a pasta de mentira por trás do `fs`, o `require`, o `import` e o
+`process`. Roda num worker, um por execução, pela razão do worker do Python: o
+primeiro `while` de todo mundo não termina.
+
+**O `console.log` do navegador não serve, e o do Node se imita.** O do navegador
+desenha uma árvore clicável e não devolve texto; o do Node escreve
+`{ nome: 'Ana', idade: 12 }`, com aspas simples e espaço dentro das chaves, quebra
+em oitenta colunas e arruma em colunas o arranjo de mais de seis números. Um
+laboratório que escrevesse outra coisa ensinaria a reconhecer uma saída que o
+programa nunca vai produzir no terminal do clube. `inspecionar.ts` é a regra de
+`util.inspect`, e `inspecionar.test.ts` compara com o `util.format` do próprio
+Node. A quebra é em **oitenta**, e não nos 128 que a documentação sugere: quem
+mostrou foi medir.
+
+**O Node de hoje roda `import` num `.js` sem configuração, e a lição ensina
+`import`.** Desde a versão 22 ele detecta o formato pelo arquivo: com `import`,
+`export` ou `await` no topo, é módulo ES; sem, é CommonJS. `new Function` não
+compila módulo, então `esm.ts` lê o arquivo pelo `acorn` e troca a sintaxe de
+módulo por código comum **no mesmo lugar e com as mesmas linhas** — é o que
+deixa o número da linha do erro bater com o que a pessoa escreveu. Os enganos
+do caminho saem com as palavras do Node: `import` sem a extensão sugere o nome
+certo, `require` num arquivo com `import` diz que não existe ali, e `require`
+com `await` no topo recusa escolher.
+
+**O relógio é de mentira.** `setTimeout` entra numa fila ordenada, e a fila anda
+quando a parte síncrona termina e as promessas assentam — `Date.now()` anda
+junto. Esperar três segundos devolve na hora, na mesma ordem em que o Node
+devolveria. Sem isso a lição de assíncrono seria lição de paciência, e a trava
+que roda os exemplos levaria minutos.
+
+**Toda promessa sai `<pending>`.** O Node consulta o estado interno dela, que o
+JavaScript não alcança. É o caso que importa — esquecer o `await` é o engano que
+a lição mostra, e nele ela está pendente —, e o exemplo da teoria espera de
+verdade antes de devolver, para os dois concordarem.
+
+**A seta do erro vai onde o Node a põe, e isso depende de como o erro chegou.**
+Num `throw` síncrono, o Node aponta o `throw`; numa promessa rejeitada — e o
+corpo de um módulo ES é uma promessa —, aponta onde o erro foi criado. E quando
+quem lança é uma função do próprio Node, o `readFileSync` que não acha o
+arquivo, ele aponta para dentro de `node:fs`, numa linha que ninguém escreveu;
+o simulado aponta a linha do programa que chamou, que é onde está o engano, e a
+trava compara só a mensagem nesse caso.
+
+**O simulado é conferido contra o Node de verdade, e não contra a memória de
+quem o escreveu.** `nodeDeVerdade.ts` roda o mesmo programa no `node` da
+máquina, numa pasta temporária, e as travas comparam saída, erro e a pasta
+depois. São três: os enganos que as lições mostram (`nodeSimulado.test.ts`),
+cada exemplo da teoria (`exemplosDeJavascript.test.ts`), e cada solução de
+referência dos laboratórios (`laboratoriosDeJavascript.test.ts`). Se os dois
+discordarem, o laboratório aprova um programa que lá fora faria outra coisa.
+
+**A análise pede uso, e não a palavra.** Função que ninguém chama não conta;
+`let` que nunca muda não mostra a diferença para `const`; método de seta não
+tem `this`; `reduce` sem valor inicial estoura no dia em que o arranjo
+filtrado vier vazio. E o `fs` se chama dos dois jeitos — `fs.readFileSync` e
+`readFileSync` sozinho, depois de `import { readFileSync }`, que é o que a lição
+ensina. A primeira versão só via o primeiro, e `javascriptAnalise.test.ts`, com
+um caso que passa e um que quase passa por conta, achou.
+
+**O terminal mostra o comando, e a lateral mostra a pasta depois.** O painel da
+direita é um terminal com `~/projeto$ node programa.js` em cima da saída, porque
+o requisito 7 pede um programa executado **fora** do navegador, e a primeira vez
+diante do terminal do clube não deveria ser a primeira vez que se vê aquilo. O
+JSON que o programa gravou aparece na lateral como ficou, e o arquivo que ele
+criou aparece também: gravar só se confere abrindo o arquivo. Não há campo de
+entrada — o programa de linha de comando daqui lê de arquivo, que é o que o
+requisito 6 ensina.
+
+**O laço que escreve sem parar enche a saída antes do prazo.** A saída é
+cortada em vinte mil caracteres, e o corte diz por quê: um `while` cuja condição
+nunca muda, com um `console.log` dentro, é o primeiro laço sem fim de todo
+mundo, e "a saída foi cortada" sozinho deixaria a pessoa achando que o defeito é
+o tamanho.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -5344,6 +5423,13 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaCc006.test.ts` | roteiro sem a decisão técnica, demonstração fora do centro, ou justificativa sem alternativa |
 | `src/curriculum/laboratoriosDePython.test.ts` | almoxarifado com except sem nome valendo por validado, ou erro apanhado em silêncio valendo por avisado |
 | `src/components/LaboratorioDoProjetoDePrograma.test.tsx` | lição da CC006 impossível de vencer clicando, ou terminal que abre no computador errado |
+| `src/labs/nodeSimulado.test.ts` | Node simulado escrevendo saída, erro ou pasta diferentes do Node de verdade |
+| `src/labs/inspecionar.test.ts` | console.log imitado quebrando linha ou arrumando colunas diferente do `util.format` |
+| `src/labs/javascriptAnalise.test.ts` | palavra escrita valendo por uso: função nunca chamada, let que não muda, método de seta |
+| `src/curriculum/exemplosDeJavascript.test.ts` | exemplo de JavaScript da teoria cuja saída declarada não é a do simulado ou a do Node |
+| `src/curriculum/laboratoriosDeJavascript.test.ts` | laboratório da CC-FE003 que abre verde, que a solução não fecha, ou que o Node faria diferente |
+| `src/curriculum/laboratoriosDeJavascript.test.ts` | var esquecido, reduce sem inicial ou JSON sem recuo passando com a saída certa |
+| `src/components/LaboratorioDeJavascript.test.tsx` | terminal sem o comando, JSON gravado que não aparece na lateral, ou lista que não envelhece |
 | `src/labs/metasDaAp042.test.ts` | tarefa do laboratório de formatação que nasce verde, ou que ninguém consegue vencer |
 | `src/labs/FormatacaoTextoLab.test.tsx` | margem fora da guia Layout, ou tarefa da AP042 que não fecha pelos gestos do Word |
 | `src/labs/InsercaoTextoLab.test.tsx` | guia contextual da tabela que fica sem tabela, ou cabeçalho fechado que se escreve |

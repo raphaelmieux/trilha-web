@@ -317,6 +317,84 @@ export function realcarLinhasPython(codigo: string): string[] {
 }
 
 /*
+ * O JavaScript.
+ *
+ * As cores seguem o sentido das outras: `com` para comentário — os dois, `//`
+ * e o de bloco —, `tag` para palavra-chave, `val` para texto e número, `attr`
+ * para os nomes que a plataforma já traz (`console`, `JSON`, `Math`), e `pon`
+ * para pontuação. O texto entre crases sai inteiro como texto, `${}`
+ * incluído: pintar o miolo de outra cor pediria ler a expressão de dentro, e
+ * a lição o explica com palavras.
+ */
+const CHAVES_JS = new Set([
+  'async', 'await', 'break', 'case', 'catch', 'class', 'const', 'continue',
+  'default', 'do', 'else', 'export', 'extends', 'false', 'finally', 'for',
+  'from', 'function', 'if', 'import', 'in', 'instanceof', 'let', 'new', 'null',
+  'of', 'return', 'switch', 'this', 'throw', 'true', 'try', 'typeof',
+  'undefined', 'var', 'while',
+]);
+const EMBUTIDAS_JS = new Set([
+  'console', 'JSON', 'Math', 'Number', 'String', 'Array', 'Object', 'Promise',
+  'Date', 'require', 'module', 'process', 'setTimeout', 'setInterval',
+  'clearInterval', 'clearTimeout', 'parseInt', 'parseFloat', 'Error',
+]);
+
+export function realcarLinhasJavascript(codigo: string): string[] {
+  let saida = '';
+  let i = 0;
+  while (i < codigo.length) {
+    const resto = codigo.slice(i);
+    const c = resto[0];
+    if (resto.startsWith('//')) {
+      const fim = codigo.indexOf('\n', i);
+      const ate = fim === -1 ? codigo.length : fim;
+      saida += pinta('com', codigo.slice(i, ate));
+      i = ate;
+      continue;
+    }
+    if (resto.startsWith('/*')) {
+      const fim = codigo.indexOf('*/', i + 2);
+      const ate = fim === -1 ? codigo.length : fim + 2;
+      saida += pinta('com', codigo.slice(i, ate));
+      i = ate;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') {
+      let j = i + 1;
+      while (j < codigo.length && codigo[j] !== c && (c === '`' || codigo[j] !== '\n')) {
+        j += codigo[j] === '\\' ? 2 : 1;
+      }
+      const ate = Math.min(j + 1, codigo.length);
+      saida += pinta('val', codigo.slice(i, ate));
+      i = ate;
+      continue;
+    }
+    const numero = /^\d+(\.\d+)?/.exec(resto);
+    if (numero) {
+      saida += pinta('val', numero[0]);
+      i += numero[0].length;
+      continue;
+    }
+    const palavra = /^[A-Za-z_$][\w$]*/.exec(resto);
+    if (palavra) {
+      const p = palavra[0];
+      saida += pinta(CHAVES_JS.has(p) ? 'tag' : EMBUTIDAS_JS.has(p) ? 'attr' : 'txt', p);
+      i += p.length;
+      continue;
+    }
+    const pontuacao = /^[()[\]{}:;,.=+\-*/%<>!&|^~?]+/.exec(resto);
+    if (pontuacao) {
+      saida += pinta('pon', pontuacao[0]);
+      i += pontuacao[0].length;
+      continue;
+    }
+    saida += pinta('txt', c);
+    i += 1;
+  }
+  return saida.split('\n');
+}
+
+/*
  * O SQL.
  *
  * As palavras que esta vereda ensina saem em azul, maiúsculas ou não — o

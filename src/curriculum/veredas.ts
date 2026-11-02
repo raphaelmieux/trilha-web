@@ -1,5 +1,6 @@
 import { MODULOS_DE_HTML } from './sintaxeHtml';
 import { MODULOS_DE_CSS } from './folhaDeEstilo';
+import { MODULOS_DE_JAVASCRIPT } from './javascript';
 import { MODULOS_DE_BLOCOS } from './logicaComBlocos';
 import { MODULOS_DE_PYTHON } from './sintaxeDePython';
 import { MODULOS_DE_TERMINAL } from './terminalEGit';
@@ -127,7 +128,7 @@ export interface TopicoDeVereda {
    * `'blocos'` desenha a pilha do Scratch, com a cor da categoria; `'texto'` é
    * um algoritmo ou uma tabela, e não tem resultado nenhum a mostrar.
    */
-  exemploComo?: 'html' | 'css' | 'blocos' | 'texto' | 'python' | 'sql';
+  exemploComo?: 'html' | 'css' | 'blocos' | 'texto' | 'python' | 'sql' | 'javascript';
   /**
    * Só para `'css'`: a marcação a que a folha se aplica.
    *
@@ -150,7 +151,7 @@ export interface TopicoDeVereda {
    */
   exemploLarguras?: number[];
   /**
-   * Só para `'python'`: o que o programa escreve ao rodar.
+   * Só para `'python'` e `'javascript'`: o que o programa escreve ao rodar.
    *
    * Em CSS o resultado é uma página, e o quadro a desenha. Em Python o
    * resultado é o que sai no painel de saída — e é ele que a pessoa vai
@@ -212,7 +213,7 @@ export type LicaoDeVereda =
      * folha de estilo sem página é texto, e o resultado só existe quando ela
      * encontra a marcação.
      */
-    linguagem?: 'html' | 'css' | 'blocos' | 'python' | 'scratch';
+    linguagem?: 'html' | 'css' | 'blocos' | 'python' | 'scratch' | 'javascript';
     /**
      * Só para `'blocos'`: o projeto de onde a pessoa parte.
      *
@@ -300,6 +301,14 @@ export type LicaoDeVereda =
     saidaContem?: string[];
     /** Só para o laboratório com banco: como as tabelas têm de ficar no fim. */
     bancoEsperado?: BancoEsperado[];
+    /**
+     * Só para `'javascript'`: o arquivo JSON que o programa deixa gravado.
+     *
+     * O requisito 6 da CC-FE003 pede ler **e gravar**, e gravar só se confere
+     * olhando a pasta depois — o programa que monta o objeto e o imprime na
+     * tela fez metade, e o arquivo continua como estava.
+     */
+    jsonEsperado?: import('../lib/javascriptValidator').JsonEsperado;
   }
   | {
     /*
@@ -1631,8 +1640,24 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_CSS,
   },
-  anunciada('CC-FE003', 'JavaScript', 'Front-end',
-    'Fazer a página responder: guardar valores, decidir e reagir ao que a pessoa faz.'),
+  {
+    id: 'cc-fe003',
+    code: 'CC-FE003',
+    name: 'JavaScript',
+    familia: 'Front-end',
+    description: 'A linguagem dos navegadores, rodando no terminal: variáveis, funções, objetos, promessas e JSON.',
+    /*
+      Sai da CC004, e não da CC-FE002. O requisito 1 do documento oficial é
+      "ter concluído a vereda CC004", e a vereda inteira é a ponte entre o
+      Python que a pessoa já escreve e a linguagem que as veredas seguintes de
+      Front-end vão usar na página. O id é o que o cartão anunciado já tinha:
+      nada foi gravado com ele, e mudá-lo agora só desalinharia a família.
+    */
+    origem: 'CC004',
+    preRequisitos: ['cc004'],
+    mostraResultado: true,
+    modulos: MODULOS_DE_JAVASCRIPT,
+  },
   anunciada('CC-FE004', 'DOM', 'Front-end',
     'Mexer na página depois que ela abriu — achar um elemento, trocar o texto, criar outro.'),
   anunciada('CC-FE005', 'TypeScript', 'Front-end',
