@@ -440,6 +440,35 @@ describe('as lições de calendário se fecham clicando', () => {
     expect(faltam(), 'a lição da recorrência não fecha clicando').toBe(0);
   });
 
+  /*
+    A teoria fala em três opções, e a caixa tinha duas: "Este e os seguintes"
+    só existia no motor. Referência que diverge do laboratório é pior do que
+    nenhuma, e a opção do meio é a que corta a série sem reescrever o passado.
+  */
+  it('"Este e os seguintes" corta a série no dia e deixa o que veio antes', () => {
+    montar('recorrente');
+    clicar(porTexto('Criar'));
+    escrever(campo('Título'), 'Reunião do clube');
+    escrever(campo('Dia'), '2026-06-27');
+    escrever(campo('Começa às'), '14:00');
+    escrever(campo('Termina às'), '17:00');
+    marcar('Repetir toda semana');
+    escrever(campo('Repetir até'), '2026-12-19');
+    clicar(porTexto('Salvar'));
+    const chips = () => todos('[aria-label="Abrir: Reunião do clube"]').length;
+    clicar(porRotulo('Voltar para o calendário'));
+    expect(chips(), 'a série não aparece em julho antes de cortar').toBeGreaterThan(0);
+
+    clicar(todos('[aria-label="Abrir: Reunião do clube"]')[0]);
+    clicar(porTexto('Excluir'));
+    clicar(porTexto('Este e os seguintes'));
+    clicar(porTexto('OK'));
+    expect(chips(), 'julho continua com a reunião depois do corte').toBe(0);
+
+    clicar(porRotulo('Mês anterior'));
+    expect(chips(), 'o corte apagou também o que veio antes').toBe(1);
+  });
+
   it('o calendário do clube', () => {
     montar('calendario');
     expect(faltam()).toBe(4);

@@ -1,5 +1,6 @@
 import type { ModuloDeVereda, TopicoDeVereda } from './veredas';
 import { QUESTOES_DA_COMUNICACAO } from './questoesDaComunicacao';
+import { telasDoTopico } from './telas';
 
 /*
  * A vereda CC-ES007 Comunicação e Agenda.
@@ -28,11 +29,31 @@ import { QUESTOES_DA_COMUNICACAO } from './questoesDaComunicacao';
  * Nenhuma dessas telas parece errada, e é essa a matéria.
  */
 
+/*
+  O exemplo desta vereda é a tela do correio, do calendário e da sala de
+  reunião, e não um quadro de texto.
+
+  Ela nasceu com um esboço em cada tópico — os três campos desenhados com
+  setas, a grade de disponibilidade feita de blocos, a lista de convidados
+  com "← o endereço tem uma letra a menos" na margem —, e o esboço era do
+  próprio acampamento que o laboratório prepara: o Daniel que saiu da lista
+  do Falcão e a Helena que entrou, a reunião com o Acre às 15h, o endereço do
+  Tio Samuel, o Tio Márcio que não compartilha a agenda, o sábado do
+  acampamento. Os vinte e quatro tópicos ensinam um gesto, e todos o mostram
+  no laboratório.
+
+  O que as telas fotografam é a fanfarra do clube, e não o acampamento: o
+  motivo está em `src/exemplos/fanfarraDoClube.ts`, e
+  `exemplosDaComunicacao.test.ts` confere as legendas contra ela.
+*/
+const V = 'CC-ES007';
 const t = (
   id: string, titulo: string, resumo: string,
-  explicacao: string[], exemplo: string, atencao: string, marcas: string[],
+  explicacao: string[], atencao: string, marcas: string[],
+  telas?: [legenda: string, descricao: string][],
 ): TopicoDeVereda => ({
-  id, titulo, resumo, explicacao, exemplo, exemploComo: 'texto' as const, atencao, marcas,
+  id, titulo, resumo, explicacao, atencao, marcas,
+  ...(telas ? { telas: telasDoTopico(V, id, telas) } : {}),
 });
 
 /* ── Módulo 1 — Cópia oculta (requisitos 2.1 e 3) ─────────────────────────── */
@@ -48,17 +69,18 @@ const COPIA_OCULTA: TopicoDeVereda[] = [
       'Quem está no Cco recebe e não aparece. Nem para os outros do Cco, nem para quem está no Para. Só quem enviou sabe quem estava ali.',
       'A escolha do campo não é uma formalidade: ela decide quem vai ler o endereço de quem. E essa decisão não é sua — é das pessoas cujos endereços você está entregando.',
     ],
-    `A mesma mensagem, dois campos
-
-No Cc, com 50 famílias:
-  Cada família recebe e lê:
-    familia01@..., familia02@..., familia03@... (as 49 outras)
-
-No Cco, com as mesmas 50:
-  Cada família recebe e lê:
-    (nada: só a mensagem)`,
     'Não existe desfazer. Depois que a mensagem saiu com os endereços à mostra, cinquenta pessoas têm a lista, e qualquer uma delas pode encaminhá-la.',
     ['Para', 'Cc', 'Cco', 'endereço visível'],
+    [
+      [
+        'Um convite de outro clube chega com 23 endereços de clubes no Cc: quem abre a mensagem lê todos eles.',
+        'O correio com a mensagem Convite: Encontro de Fanfarras da Região aberta, e o cabeçalho de endereços circulado: no Para a secretaria, e no Cc uma fileira de endereços secretaria@clube02 até secretaria@clube24.',
+      ],
+      [
+        'Na mensagem nova, Cc Cco abre os dois campos. No Cco, "+ os clubes da região" põe os 24 endereços onde ninguém os lê.',
+        'A janela Nova mensagem com o campo Cco circulado, mostrando três fichas de endereço de clubes e a marca e mais 21.',
+      ],
+    ],
   ),
   t(
     'quando-cco-e-errado',
@@ -70,14 +92,14 @@ No Cco, com as mesmas 50:
       'E há o outro lado: se quem está no Cco clicar em Responder a todos, a resposta vai para os visíveis e entrega que havia alguém escondido ali. É constrangedor, e é a única maneira de a cópia oculta virar pública.',
       'A regra não é "use Cco em listas grandes". É: quem precisa conversar aparece; quem só precisa receber, e não se conhece, fica oculto.',
     ],
-    `Quem vê quem
-
-Aviso às famílias          →  ninguém precisa ver ninguém  →  Cco
-Pergunta à direção         →  os quatro vão se responder   →  Para
-Aviso a uma unidade        →  eles se conhecem             →  Para
-Convite a clubes da região →  não se conhecem              →  Cco`,
     'Um endereço a mais no Cco é inofensivo. Um a menos, numa conversa em que ele precisava responder, é uma pessoa deixada de fora sem saber.',
     ['conversa', 'responder a todos', 'quem precisa ver'],
+    [
+      [
+        'Para a fanfarra, que vai conversar entre si, os endereços vão no Para: cada um vê quem mais recebeu.',
+        'A janela Nova mensagem com o campo Para circulado, preenchido pelo botão a fanfarra com os endereços da Bianca, da Lívia, do Mateus e mais um.',
+      ],
+    ],
   ),
 ];
 
@@ -94,14 +116,14 @@ const A_MENSAGEM: TopicoDeVereda[] = [
       'Um assunto informativo contém a palavra pela qual alguém vai procurar. Ônibus. Acampamento. Autorização. Tesouraria. Se a palavra estiver ali, a busca acha.',
       'E a data ajuda quando o assunto se repete: "Pauta do conselho de 28 de julho" se distingue de "Pauta do conselho de 30 de agosto" sem ninguém abrir nenhuma das duas.',
     ],
-    `Assuntos da mesma mensagem
-
-  Reunião                                          ruim
-  Aviso importante                                 ruim
-  Confirmação do ônibus do acampamento             bom
-  Ônibus do acampamento — resposta até quarta      melhor`,
     '"Urgente" e "Importante" não dizem do que se trata. Quem recebe dez desses por semana para de notar a palavra, e continua sem saber o assunto.',
     ['assunto', 'busca', 'seis meses depois'],
+    [
+      [
+        'O assunto leva a palavra que alguém vai procurar depois, e o prazo: "Fanfarra — lista de instrumentos até sexta".',
+        'A janela Nova mensagem com o campo Assunto circulado, escrito Fanfarra — lista de instrumentos até sexta.',
+      ],
+    ],
   ),
   t(
     'pedido-saudacao-assinatura',
@@ -110,20 +132,21 @@ const A_MENSAGEM: TopicoDeVereda[] = [
     [
       'Uma mensagem formal abre com uma saudação. Uma linha basta, e ela é para quem lê: começar direto no assunto soa como ordem.',
       'Depois vem o pedido, e é aqui que quase toda mensagem falha. "Seria bom se alguém pudesse levar o som" não pede nada a ninguém: não há quem, não há quando, e ninguém leva o som. Um pedido diz o que você precisa e até quando.',
-      'Cuidado com o prazo: a data da viagem não é a data da resposta. Uma mensagem que diz "a saída é dia 3" e pede o número dos inscritos não pediu nada para quarta — e quem responder no dia 2 respondeu tarde demais.',
-      'E a assinatura diz quem é você no clube. "Marina" assina; "Marina Duarte, secretaria do Clube Pioneiros" diz a quem responder e com que autoridade o pedido foi feito.',
+      'Cuidado com o prazo: a data do evento não é a data da resposta. Uma mensagem que diz "o desfile é dia 7" e pede a lista de instrumentos não pediu nada para sexta — e quem responder no dia 6 respondeu tarde demais.',
+      'E a assinatura diz quem é você no clube. "Lúcia" assina; "Lúcia Campos, secretaria do clube" diz a quem responder e com que autoridade o pedido foi feito. Ela se escreve uma vez, nas configurações, e entra sozinha no fim de toda mensagem.',
     ],
-    `O mesmo pedido, duas vezes
-
-Sem pedido:
-  Seria bom se alguém pudesse me passar o número da unidade.
-  → ninguém foi encarregado, e ninguém responde
-
-Com pedido:
-  Peço que me confirmem o número da unidade até quarta.
-  → tem quem, tem o quê, tem quando`,
     'Arrumar a forma não pode custar o conteúdo: reescrever a mensagem e perder a data da saída é como a única mensagem que tinha a informação deixa de tê-la.',
     ['saudação', 'pedido', 'prazo', 'assinatura'],
+    [
+      [
+        'A assinatura se escreve uma vez, em Configurações › Geral: o nome e a função no clube.',
+        'As configurações do correio na aba Geral, com o campo Assinatura circulado, escrito Lúcia Campos e, embaixo, Secretaria do Clube Pioneiros.',
+      ],
+      [
+        'Na mensagem, a saudação abre, o pedido diz o quê e até quando, e a assinatura entra sozinha no fim.',
+        'A janela Nova mensagem para o Tio Válter, com o texto circulado — Olá, Tio Válter! e o pedido de confirmar até sexta quem toca cada instrumento — e, embaixo, a assinatura que entrou sozinha, também circulada.',
+      ],
+    ],
   ),
 ];
 
@@ -135,20 +158,19 @@ const O_ARQUIVO_PESADO: TopicoDeVereda[] = [
     'O anexo é copiado para cada caixa',
     'E por isso o provedor recusa os grandes.',
     [
-      'Um anexo não viaja uma vez: ele é copiado para a caixa de cada pessoa que recebe. Cento e oitenta megabytes mandados a quarenta famílias são sete gigabytes guardados, e não cento e oitenta.',
+      'Um anexo não viaja uma vez: ele é copiado para a caixa de cada pessoa que recebe. Duzentos e quarenta megabytes mandados a quarenta pessoas são quase dez gigabytes guardados, e não duzentos e quarenta.',
       'Por isso todo provedor tem um limite — normalmente vinte e cinco megabytes. Acima dele a mensagem nem sai: volta com um aviso dizendo que o anexo é grande demais.',
       'O vínculo faz o contrário. A mensagem leva um endereço, que não pesa nada, e o arquivo continua num lugar só. Quarenta pessoas abrindo o mesmo arquivo é um arquivo, e não quarenta.',
       'E há um ganho a mais: corrigir o original corrige o que todo mundo abre. Com o anexo, uma circular com a data errada são sessenta cópias erradas já entregues.',
     ],
-    `180 MB, dois jeitos
-
-Por anexo, para 40 famílias:
-  40 caixas × 180 MB = 7,2 GB  → e o provedor recusa antes disso
-
-Por vínculo, para 40 famílias:
-  1 arquivo × 180 MB = 180 MB  → e a mensagem pesa alguns bytes`,
     'O anexo continua sendo a escolha certa para o que está pronto e não muda mais: a ficha assinada, o recibo, o PDF do ano passado. Ele chega inteiro e fica.',
     ['limite de anexo', 'vínculo', 'peso por caixa'],
+    [
+      [
+        'A gravação do ensaio tem 240 MB. Anexada, a mensagem nem sai: o provedor responde que o limite é 25 MB.',
+        'A janela Nova mensagem com o anexo gravacao-do-ensaio.mp4 de 240 MB circulado e, embaixo, o aviso vermelho dizendo que o anexo tem 240 MB, que o limite é 25 MB e que a mensagem não foi enviada.',
+      ],
+    ],
   ),
   t(
     'o-vinculo-que-ninguem-abre',
@@ -160,15 +182,18 @@ Por vínculo, para 40 famílias:
       'O anexo grande, pelo menos, volta com erro: você sabe na hora que não chegou. O vínculo fechado não avisa nada — para você, ele foi entregue.',
       'Então são dois cuidados, e não um: mandar o vínculo, e abrir o acesso para quem vai recebê-lo. Um sem o outro é meio caminho.',
     ],
-    `Depois de inserir o vínculo
-
-  Fotos do acampamento
-  Só você consegue abrir        ← as 40 famílias clicam e não veem nada
-
-  Fotos do acampamento
-  Qualquer pessoa com o vínculo ← chega`,
-    'Uma linha na mensagem resolve a estranheza de quem esperava um anexo: são 180 MB de fotos, estão na pasta do clube, e o vínculo abre para qualquer um.',
+    'Uma linha na mensagem resolve a estranheza de quem esperava um anexo: a gravação tem 240 MB, está na pasta do clube, e o vínculo abre para qualquer um.',
     ['quem abre', 'solicitar acesso', 'justificar a escolha'],
+    [
+      [
+        'Inserir vínculo põe só o endereço do arquivo na mensagem — e ele chega dizendo "Só você consegue abrir".',
+        'A janela Nova mensagem com o vínculo gravacao-do-ensaio.mp4 circulado, marcado Só você consegue abrir, e o botão Mudar quem abre ao lado.',
+      ],
+      [
+        'Mudar quem abre: agora qualquer pessoa com o vínculo consegue abrir. Sem este passo, ninguém abriria.',
+        'O mesmo vínculo circulado depois do clique, marcado Qualquer pessoa com o vínculo consegue abrir.',
+      ],
+    ],
   ),
 ];
 
@@ -185,13 +210,18 @@ const A_CAIXA: TopicoDeVereda[] = [
       'É essa assimetria que torna arquivar seguro. Quem não sabe disso acredita que tirar da entrada é perder, e por isso nunca tira nada: a caixa chega a quatro mil mensagens e para de servir para qualquer coisa.',
       'Excluir é para o que você tem certeza de que nunca mais vai procurar. Para todo o resto, arquivar custa o mesmo clique e não fecha nenhuma porta.',
     ],
-    `Onde cada uma vai parar
-
-  Arquivada  →  sai da entrada  →  a busca acha
-  Excluída   →  vai à lixeira   →  a busca não lê a lixeira
-                                 →  e a lixeira esvazia sozinha`,
     'O recibo da tesouraria que você excluiu em junho some de vez em julho, e você vai precisar dele em novembro. Arquivar teria custado o mesmo clique.',
     ['arquivar', 'excluir', 'busca', 'lixeira'],
+    [
+      [
+        'Aberta a mensagem das baquetas, os dois botões ficam lado a lado: Arquivar guarda, Excluir manda para a lixeira.',
+        'O correio com a mensagem Baquetas novas aberta e os botões Arquivar e Excluir circulados, embaixo do texto.',
+      ],
+      [
+        'Uma mensagem de maio, arquivada, aparece na busca por "violão". A lixeira a busca não lê.',
+        'O correio com violão escrito na pesquisa e um resultado só, circulado: Empréstimo do violão, da Tia Denise, de 12 de maio.',
+      ],
+    ],
   ),
   t(
     'a-entrada-e-uma-lista',
@@ -200,18 +230,21 @@ const A_CAIXA: TopicoDeVereda[] = [
     [
       'A caixa de entrada só serve para alguma coisa se o que está nela estiver lá por um motivo. O critério não é a idade da mensagem, nem quem a mandou, nem se você já leu.',
       'O critério é uma pergunta só: isto espera alguma coisa de mim? Se espera, fica. Se não espera, sai — arquivada, e não excluída.',
-      '"Recebi, obrigada!" não espera nada. "A escala já está no mural" não espera nada. "Preciso do número até quarta" espera, e precisa ficar à vista.',
+      '"Recebi as baquetas, obrigada!" não espera nada. "Os horários de julho estão no mural" não espera nada. "Preciso da lista de instrumentos até sexta" espera, e precisa ficar à vista — e o convite que pede confirmação também.',
       'E ler não é resolver. A caixa de quem confunde as duas fica cheia de mensagens lidas que ninguém atendeu, e todas elas parecem tratadas.',
     ],
-    `A entrada depois de arrumada
-
-  Número final de inscritos       ← a direção espera o total
-  Falta a autorização da Gabriela ← a tesouraria espera você falar com a mãe
-  Escala de cozinha da Falcão     ← o conselheiro espera a divisão dos dias
-
-  (o resto foi arquivado, e continua na busca)`,
     'Arrumar é decidir uma a uma. Arquivar tudo de uma vez deixa a entrada limpa e leva junto o que precisava de você — é a versão rápida de não ter arrumado nada.',
     ['pendência', 'entrada', 'decidir uma a uma'],
+    [
+      [
+        'Duas mensagens na entrada não esperam nada de você: o agradecimento das baquetas e o aviso do mural.',
+        'A caixa de entrada com cinco mensagens e duas linhas circuladas: Baquetas novas e Horário dos ensaios de julho no mural.',
+      ],
+      [
+        'Arquivadas as duas, a entrada fica com o que pede resposta: o convite, a lista de instrumentos e a tuba.',
+        'A caixa de entrada com três mensagens, circuladas: o convite do Encontro de Fanfarras, a lista de instrumentos do desfile e o orçamento do conserto da tuba.',
+      ],
+    ],
   ),
 ];
 
@@ -228,14 +261,14 @@ const A_LISTA: TopicoDeVereda[] = [
       'O que ela não faz é proteger. Na hora da entrega, a lista abre nos endereços de quem está dentro — e quem recebe lê todos eles, como se tivessem sido digitados um a um.',
       'É por isso que lista e cópia oculta se confundem: as duas encurtam a digitação. Só uma delas esconde alguém, e não é a lista.',
     ],
-    `O que chega quando se manda para a lista
-
-  Para: unidade.falcao@clubepioneiros.org.br
-
-  ...e cada um dos cinco recebe:
-  Para: bruno@..., helena@..., lucas@..., sofia@..., tiago@...`,
     'Para uma unidade isso está certo: eles se conhecem e vão conversar entre si. Para cinquenta famílias que não se conhecem, o campo continua sendo o Cco.',
     ['lista de distribuição', 'apelido', 'abre na entrega'],
+    [
+      [
+        'Em Configurações › Listas, a lista Fanfarra tem um endereço próprio e, embaixo, quem ele entrega.',
+        'As configurações do correio na aba Listas, com o cartão da lista Fanfarra circulado: o endereço fanfarra@clubepioneiros.org.br e a lista de nomes marcados.',
+      ],
+    ],
   ),
   t(
     'a-lista-envelhece',
@@ -247,15 +280,18 @@ const A_LISTA: TopicoDeVereda[] = [
       'São dois erros diferentes, e conferir um não confere o outro. Por isso se olha a lista inteira, e não só quem foi lembrado na hora.',
       'A hora de revisar é toda vez que alguém entra ou sai. Uma vez por ano deixa onze meses de mensagens indo para o lugar errado.',
     ],
-    `A lista da Falcão, hoje e de verdade
-
-  Na lista:   Bruno, Daniel, Lucas, Sofia, Tiago
-  Na unidade: Bruno, Helena, Lucas, Sofia, Tiago
-
-  Daniel saiu em fevereiro e continua recebendo tudo.
-  Helena entrou em março e não recebeu nada ainda.`,
     'A lista não sabe quem está na unidade. Ela continua entregando, certinha, para as pessoas de antes — e é essa correção aparente que faz o problema durar.',
     ['revisar', 'quem saiu', 'quem entrou'],
+    [
+      [
+        'O Caio saiu em maio e continua marcado. A Lívia entrou em junho e não está.',
+        'O cartão da lista Fanfarra com duas caixas circuladas: Caio Mendes marcado e Lívia Torres desmarcada.',
+      ],
+      [
+        'Desmarcado o Caio e marcada a Lívia, a lista entrega para quem está na fanfarra hoje.',
+        'O mesmo cartão circulado depois das duas mudanças, com Caio Mendes desmarcado e Lívia Torres marcada.',
+      ],
+    ],
   ),
 ];
 
@@ -269,19 +305,17 @@ const A_AUSENCIA: TopicoDeVereda[] = [
     [
       'Quem escreve e não recebe nada fica esperando. A resposta automática existe para essa pessoa: ela avisa que não haverá resposta agora e diz o que fazer enquanto isso.',
       'Uma que diz apenas "estou fora até dia 25" faz só metade. Quem escreveu passa a saber que não será atendido, e continua sem saber a quem recorrer.',
-      'A outra metade é um nome e um endereço: "para o acampamento, fale com a tesouraria" mais o endereço dela. Nome sem endereço manda a pessoa procurar.',
+      'A outra metade é um nome e um endereço: "para a fanfarra, fale com a Tia Denise" mais o endereço dela. Nome sem endereço manda a pessoa procurar.',
       'E ela precisa de data de fim. Sem isso, continua respondendo em março que você está de férias, correta e velha — e quem escreve conclui que a secretaria do clube parou de funcionar.',
     ],
-    `Duas respostas de ausência
-
-  Estou fora até dia 25. Volto depois.
-  → quem escreveu continua parado
-
-  Estou fora da secretaria até 25/07. Para o acampamento,
-  fale com tesouraria@clubepioneiros.org.br.
-  → quem escreveu sabe o que fazer hoje`,
     'A resposta automática manda uma mensagem por pessoa, e não uma por mensagem. É o que impede duas caixas de férias de ficarem se respondendo até o fim do mês.',
     ['data de fim', 'a quem recorrer', 'uma por pessoa'],
+    [
+      [
+        'Em Resposta automática: ligada, com último dia, e dizendo com quem falar e em que endereço.',
+        'As configurações do correio na aba Resposta automática, com a caixa de ligar marcada, o primeiro dia 13/07/2026, o último dia 24/07/2026 circulado, e o texto circulado: estou fora da secretaria até 24/07, para assuntos da fanfarra fale com a Tia Denise, com o endereço dela.',
+      ],
+    ],
   ),
   t(
     'o-que-nao-contar',
@@ -293,15 +327,14 @@ const A_AUSENCIA: TopicoDeVereda[] = [
       'E há a opção de responder só a quem está nos seus contatos. Ela existe porque responder confirma duas coisas a quem atirou no escuro: que o endereço existe e que tem alguém lendo.',
       'Com ela ligada, o clube continua sendo atendido e quem não é conhecido não recebe confirmação nenhuma. É um clique, e ele muda quem fica sabendo da sua ausência.',
     ],
-    `A mesma ausência, dita de dois jeitos
-
-  Estou de férias com a família até 25/07.
-  → conta que não há ninguém em casa, para qualquer um
-
-  Estou fora da secretaria até 25/07.
-  → conta o que quem escreveu precisa saber`,
     'O motivo da ausência é seu. O que a resposta precisa dizer é até quando e com quem falar — nada além disso ajuda quem escreveu.',
     ['só para contatos', 'casa vazia', 'confirmar o endereço'],
+    [
+      [
+        '"Responder só a quem está nos meus contatos": quem atirou no escuro não recebe confirmação nenhuma.',
+        'A aba Resposta automática com a caixa Responder só a quem está nos meus contatos marcada e circulada.',
+      ],
+    ],
   ),
 ];
 
@@ -318,38 +351,33 @@ const O_EVENTO: TopicoDeVereda[] = [
       'O horário quer as duas pontas. Um evento sem hora de fim ocupa o resto do dia na agenda de quem aceitou, e todo mundo depois dele parece ocupado.',
       'E o título é o que aparece na grade do mês, num espaço de poucas palavras. "Reunião" ali é tão inútil quanto no assunto de uma mensagem.',
     ],
-    `O mesmo evento, duas vezes
-
-  Reunião
-  sábado, 14h
-
-  Reunião do clube — unidades e ordem unida
-  sábado, 14h às 17h · Igreja Central, salão
-  Levar o lenço. A Falcão cozinha neste sábado.`,
     'A descrição viaja com o convite para todo mundo. Se o calendário for publicado na web, ela viaja para qualquer pessoa — e é lá que costuma estar o telefone de alguém.',
     ['local', 'descrição', 'hora de fim'],
+    [
+      [
+        'O ensaio geral tem as duas pontas do horário, o local e uma descrição que responde o que levar.',
+        'O evento Ensaio geral do desfile aberto no calendário, com três linhas circuladas: o dia 08/07/2026 das 19:00 às 21:00, o local Quadra da escola e a descrição sobre o uniforme, o instrumento afinado e a água.',
+      ],
+    ],
   ),
   t(
     'o-fuso',
     'O fuso horário, e por que ele erra calado',
     'Um evento não tem uma hora: tem um instante.',
     [
-      'Um fuso horário é a faixa do planeta que acerta o relógio do mesmo jeito. Um evento não guarda "15h": ele guarda um instante, e cada pessoa lê esse instante no relógio dela.',
+      'Um fuso horário é a faixa do planeta que acerta o relógio do mesmo jeito. Um evento não guarda "10h": ele guarda um instante, e cada pessoa lê esse instante no relógio dela.',
       'Isso funciona sozinho quando todo mundo está no mesmo fuso. Quando não está, quem cria o evento decide em que fuso as horas que ele digitou devem ser lidas.',
-      'Combinar 15h com alguém em Rio Branco e criar o evento no fuso de Brasília põe a pessoa às 13h na agenda dela. Nada estoura: as duas agendas concordam, os dois convites estão certos, e ela entra duas horas antes.',
-      'E escrever "15h, horário do Acre" na descrição não muda nada. A descrição fica certa, o campo fica errado, e quem lê confia no calendário — que é o que o calendário existe para ser.',
+      'Combinar 10h com alguém em Rio Branco e criar o evento no fuso de Brasília põe a pessoa às 8h na agenda dela. Nada estoura: as duas agendas concordam, os dois convites estão certos, e ela entra duas horas antes.',
+      'E escrever "10h, horário do Acre" na descrição não muda nada. A descrição fica certa, o campo fica errado, e quem lê confia no calendário — que é o que o calendário existe para ser.',
     ],
-    `O mesmo instante, dois relógios
-
-  Evento criado às 15h no fuso de Brasília
-    em Brasília   → 15h
-    em Rio Branco → 13h
-
-  Evento criado às 15h no fuso do Acre
-    em Rio Branco → 15h
-    em Brasília   → 17h`,
     'O fuso se escolhe pelo nome da cidade, e nunca escrevendo o deslocamento à mão. O Brasil acabou com o horário de verão em 2019, e propostas de trazê-lo de volta aparecem.',
     ['fuso horário', 'instante', 'o campo, não a descrição'],
+    [
+      [
+        'A conversa foi criada às 10:00 no fuso de Rio Branco, e embaixo o calendário avisa: quem está em Brasília lê 12:00.',
+        'O evento Conversa com a fanfarra de Rio Branco aberto, com o horário das 10:00 às 11:00 e o seletor de fuso em Rio Branco (Acre) circulados, e a linha embaixo dizendo que quem está em Brasília lê 12:00 na agenda dele.',
+      ],
+    ],
   ),
 ];
 
@@ -366,14 +394,14 @@ const O_CONVITE: TopicoDeVereda[] = [
       'E o convite tem uma vantagem que só aparece quando alguma coisa muda: mudar o horário do evento muda a agenda de todos os convidados, e avisa cada um. Quem anotou num papel continua com o horário de antes.',
       'Em troca, o convite pede uma resposta. E é no acompanhamento dessa resposta que está a metade difícil.',
     ],
-    `As quatro respostas possíveis
-
-  Sim        → vai, e contou com a data
-  Não        → não vai, e já decidiu
-  Talvez     → viu e ainda não sabe
-  Aguardando → não veio clique nenhum`,
     'Quem respondeu talvez avisou que não sabe. Contar como presente é a mesma leitura otimista que transforma "aguardando" em presença garantida.',
     ['convite', 'resposta', 'mudança avisa'],
+    [
+      [
+        'Cada convidado aparece com a resposta dele: sim, não, talvez ou aguardando.',
+        'A lista de convidados do Ensaio geral do desfile circulada, com seis endereços e, ao lado de cada um, sim, sim, nao, talvez, aguardando e aguardando.',
+      ],
+    ],
   ),
   t(
     'aguardando-nao-e-sim',
@@ -385,15 +413,18 @@ const O_CONVITE: TopicoDeVereda[] = [
       'Reenviar não adianta: vai para o mesmo lugar nenhum. O conserto é olhar os endereços de quem está aguardando, letra por letra, e corrigir.',
       'Para os outros dois casos, o conserto é perguntar. Ninguém deixa de responder por mal — convite é fácil de fechar sem clicar —, e uma linha perguntando resolve o que três convites não resolvem.',
     ],
-    `A lista de convidados, na véspera
-
-  Tio Ricardo      sim
-  Tio Nelson       não
-  Tia Rute         talvez
-  Tia Joana        aguardando   ← viu e não decidiu
-  tio.samuel@...   aguardando   ← o endereço tem uma letra a menos`,
     'Ler "aguardando" como "vai" é o que faz reuniões começarem com metade das cadeiras vazias, e ninguém entender por quê.',
     ['aguardando', 'endereço errado', 'acompanhar'],
+    [
+      [
+        'Dois "aguardando" iguais: a Tia Denise recebeu e não decidiu; o endereço do Otávio termina em .co, e o convite não chegou.',
+        'A lista de convidados com duas linhas circuladas, as duas marcadas aguardando: denise.fanfarra@exemplo.com e otavio.reis@exemplo.co.',
+      ],
+      [
+        'Corrigido o endereço, ele continua "aguardando" — agora com o convite chegando de verdade.',
+        'A linha circulada depois de Corrigir, com otavio.reis@exemplo.com e a resposta aguardando.',
+      ],
+    ],
   ),
 ];
 
@@ -410,12 +441,18 @@ const O_QUE_SE_REPETE: TopicoDeVereda[] = [
       'Um fim declarado é uma linha, e é o que obriga alguém a rever a série quando o semestre acabar — que é justamente quando ela costuma mudar de horário ou de lugar.',
       'O fim pode ser generoso: dezembro, o fim do ano letivo, a data do campori. O que não pode é não existir.',
     ],
-    `A mesma reunião de sábado
-
-  Repetir toda semana                    → chega a 2075
-  Repetir toda semana até 19/12/2026     → alguém a revê em dezembro`,
     'Série sem fim não dá erro. Ela simplesmente continua desenhando a reunião todo sábado, para sempre, na agenda de todo mundo que aceitou o convite.',
     ['recorrência', 'data de fim', 'série'],
+    [
+      [
+        'Um evento só desenha o ensaio em toda quarta-feira do mês.',
+        'A grade de julho do calendário com a coluna das quartas-feiras circulada, e o chip 19:30 Ensaio da fanfarra nos dias 1, 8, 15, 22 e 29.',
+      ],
+      [
+        'Aberto o ensaio, a repetição tem fim declarado: toda semana, até 25/11/2026.',
+        'O evento Ensaio da fanfarra aberto, com a linha Repetir toda semana marcada e a data de fim 25/11/2026 circulada.',
+      ],
+    ],
   ),
   t(
     'as-tres-opcoes',
@@ -423,17 +460,18 @@ const O_QUE_SE_REPETE: TopicoDeVereda[] = [
     'Escritas em letra do mesmo tamanho.',
     [
       'Quando você manda excluir um evento que faz parte de uma série, o calendário abre uma caixa com três opções: este evento, este e os seguintes, todos os eventos.',
-      'Este evento tira uma ocorrência e deixa a série de pé. É o que se quer quando o clube está no acampamento naquele sábado.',
-      'Este e os seguintes corta a série na data escolhida. É o que se quer quando a reunião muda de horário a partir de agosto: junho e julho continuam como aconteceram.',
-      'Todos os eventos apaga a série inteira, inclusive o que já passou. E não pergunta de novo. Nenhuma das três vem destacada, e é por isso que tanta gente apaga um ano para desmarcar um sábado.',
+      'Este evento tira uma ocorrência e deixa a série de pé. É o que se quer quando a escola fecha naquela quarta e não há ensaio.',
+      'Este e os seguintes corta a série na data escolhida. É o que se quer quando o ensaio acaba antes do previsto: junho e julho continuam como aconteceram.',
+      'Todos os eventos apaga a série inteira, inclusive o que já passou. E não pergunta de novo. Nenhuma das três vem destacada, e é por isso que tanta gente apaga um ano para desmarcar um dia.',
     ],
-    `Desmarcar o sábado do acampamento
-
-  Este evento           → some só o sábado 4 de julho
-  Este e os seguintes   → somem 4, 11, 18, 25 e o resto do ano
-  Todos os eventos      → some o ano inteiro, e o que já passou`,
     'Nada avisa quando a escolha foi a errada. O que sumiu sumiu da agenda de todo mundo ao mesmo tempo, e só se percebe quando ninguém aparece no sábado seguinte.',
     ['este evento', 'este e os seguintes', 'todos os eventos'],
+    [
+      [
+        'Excluir um ensaio da série abre a caixa com as três opções, na mesma letra.',
+        'A caixa Este evento se repete aberta por cima do evento, circulada, com as opções Este evento, Este e os seguintes e Todos os eventos, cada uma com uma linha explicando o que tira, e o botão OK.',
+      ],
+    ],
   ),
 ];
 
@@ -450,13 +488,14 @@ const O_CALENDARIO_DO_CLUBE: TopicoDeVereda[] = [
       'Fazer alterações deixa criar, mudar e apagar qualquer evento. É o nível de quem organiza — e é o que põe o acampamento ao alcance de quem o tiver.',
       'Fazer alterações e gerenciar compartilhamento é o único que se propaga: quem o tem pode dar acesso a mais gente, e pode tirar o seu.',
     ],
-    `A quem dar cada nível
-
-  A direção, que organiza          → fazer alterações
-  Os conselheiros, que participam  → ver todos os detalhes
-  As famílias, que marcam conversa → ver apenas livre/ocupado`,
     'Dar "fazer alterações" a todo mundo resolve a reclamação de que ninguém consegue marcar nada, e põe o acampamento ao alcance de trinta pessoas. Ninguém apaga de propósito: apaga arrastando.',
     ['livre/ocupado', 'ver detalhes', 'alterar', 'gerenciar'],
+    [
+      [
+        'Ao compartilhar a agenda da fanfarra, cada pessoa ganha um nível, e embaixo dele o que esse nível não deixa fazer.',
+        'A caixa Compartilhar Fanfarra do clube circulada: o Tio Válter com Fazer alterações e a linha não deixa dar acesso a mais ninguém, a Bianca com Ver todos os detalhes e a linha não deixa criar, mudar nem apagar evento nenhum, e embaixo os campos para escolher outra pessoa e outro nível.',
+      ],
+    ],
   ),
   t(
     'a-grade-responde-o-que-consultou',
@@ -468,14 +507,18 @@ const O_CALENDARIO_DO_CLUBE: TopicoDeVereda[] = [
       'A maioria das pessoas não tem o trabalho na agenda do clube. Elas parecem livres a semana inteira, e não estão.',
       'Então a grade encurta o trabalho e não o termina: ela diz quem certamente não pode, e não diz quem pode. Para o resto, pergunta-se.',
     ],
-    `A grade das quatro pessoas, na quinta-feira
-
-  Tio Samuel   ██ ocupado 14h-15h30
-  Tia Rute     ██ ocupado 16h-18h
-  Tia Joana    ██ ocupado 9h-12h
-  Tio Márcio   ▨▨ sem acesso à agenda  ← não é livre: é "não sei"`,
     'Publicar o calendário na web entrega os horários e a descrição de cada evento, para qualquer pessoa e para os buscadores. A descrição é onde costuma estar o telefone de alguém.',
     ['disponibilidade', 'sem acesso', 'perguntar'],
+    [
+      [
+        'Na grade do dia 10, o Otávio aparece hachurado: ele não compartilha a agenda, e isso não quer dizer que está livre.',
+        'A grade de disponibilidade com os horários de 08:00 a 18:30 e quatro linhas, e a do Otávio Reis circulada, toda hachurada, com a nota não compartilha a agenda.',
+      ],
+      [
+        'Perguntar a Otávio Reis traz o que a grade não sabia: ele só consegue depois das 18:00.',
+        'O aviso verde circulado embaixo da grade: Otávio Reis respondeu, só consigo depois das 18:00.',
+      ],
+    ],
   ),
 ];
 
@@ -492,14 +535,18 @@ const A_REUNIAO: TopicoDeVereda[] = [
       'E o microfone. Todo programa mostra que ele está fechado, e todo mundo fala dois minutos assim mesmo. Não sai som nenhum, e abrir depois não faz ninguém ouvir o que já foi dito.',
       'O aviso estar na tela não impede nada. O que ajuda é o hábito: olhar o ícone antes da primeira frase.',
     ],
-    `Antes de começar
-
-  1. O vínculo está no evento?
-  2. Alguém está na sala de espera?
-  3. O microfone está aberto?
-  4. O que está aberto na tela que você vai mostrar?`,
     'O passo 4 é o único que não dá para tomar depois. Fechar a conversa e silenciar as notificações antes de apresentar é mais fácil do que explicar o que apareceu.',
     ['vínculo no evento', 'sala de espera', 'microfone'],
+    [
+      [
+        '"Agendar no calendário" põe o vínculo da sala no evento do ensaio, que viaja com o convite.',
+        'A sala da fanfarra antes de entrar, com a faixa embaixo circulada: o vínculo já está no evento de 2026-07-08, ele viaja com o convite.',
+      ],
+      [
+        'Na sala, a Bianca espera para entrar, e quem falou de microfone fechado vê o aviso: ninguém ouviu.',
+        'A sala com três faixas e um botão circulados: Bianca Lopes quer entrar na reunião, com Admitir e Recusar; Você falou 1 vez com o microfone fechado, ninguém ouviu; e o botão do microfone, vermelho, fechado.',
+      ],
+    ],
   ),
   t(
     'compartilhar-a-tela',
@@ -511,13 +558,18 @@ const A_REUNIAO: TopicoDeVereda[] = [
       'Uma guia do navegador é a única que consegue levar o som junto, e mesmo assim só com a caixa marcada. Compartilhar o vídeo pela janela do navegador entrega a imagem e o silêncio.',
       'A escolha depende do que você vai mostrar: uma coisa só, pela janela; várias, pela tela inteira — depois de fechar o que não pode aparecer.',
     ],
-    `O que cada escolha leva junto
-
-  Tela inteira  →  tudo, inclusive as notificações
-  Uma janela    →  só ela, mesmo depois de você trocar de programa
-  Uma guia      →  só ela, e é a única que leva o som`,
     'Na sua tela as três parecem a mesma coisa depois que a apresentação começa. A diferença aparece do outro lado, e ninguém do outro lado avisa.',
     ['tela inteira', 'janela', 'guia com áudio'],
+    [
+      [
+        'Apresentar agora abre a escolha: a tela inteira, uma janela ou uma guia — e diz o que cada uma leva junto.',
+        'A caixa Escolha o que compartilhar, com as três abas A tela inteira, Uma janela e Uma guia do navegador circuladas, e a linha circulada embaixo dizendo que a tela inteira leva tudo, inclusive as notificações.',
+      ],
+      [
+        'Compartilhada a tela inteira, a notificação da Tia Denise apareceu para a sala toda.',
+        'A sala apresentando a tela inteira, com a faixa circulada dizendo que a sala leu a notificação da Tia Denise sobre o conserto da tuba.',
+      ],
+    ],
   ),
 ];
 
@@ -534,15 +586,14 @@ const A_PAUTA_E_A_ATA: TopicoDeVereda[] = [
       'Um parágrafo dizendo "vamos falar do acampamento e de mais umas coisas" não é pauta. Ninguém consegue preparar nada com isso, e a reunião começa com todo mundo descobrindo o assunto junto.',
       'Ela costuma encurtar a reunião, e isso é consequência. A razão é outra: ninguém chega sem saber do que se trata.',
     ],
-    `Uma pauta de verdade
-
-  Pauta da reunião do conselho de 28 de julho
-
-  1. Prestação de contas do acampamento
-  2. Escala do segundo semestre
-  3. Compra do material da ordem unida`,
     'A pauta vai para quem vai estar na reunião, e o convite do calendário é um bom lugar para ela: na descrição do evento, ela chega junto com o horário.',
     ['pauta', 'antes', 'lista de assuntos'],
+    [
+      [
+        'A pauta vai antes, para a fanfarra, com o assunto datado e os itens numerados.',
+        'A janela Nova mensagem com o assunto Pauta da reunião da fanfarra de 10 de julho circulado e o texto circulado com três itens numerados: repertório do Encontro, conserto da tuba e escala dos instrumentos.',
+      ],
+    ],
   ),
   t(
     'a-ata',
@@ -554,16 +605,14 @@ const A_PAUTA_E_A_ATA: TopicoDeVereda[] = [
       'Com dono e prazo, a ata vira uma lista de compromissos que a próxima reunião confere. Sem eles, ela vira um documento que ninguém abre.',
       'E ela vai para as mesmas pessoas que receberam a pauta. Quem faltou precisa dela ainda mais do que quem foi.',
     ],
-    `Duas atas do mesmo conselho
-
-  Ficou combinado que alguém vai ver o material da ordem unida.
-  → ninguém vê o material
-
-  Tio Nelson fecha a prestação de contas até dia 5.
-  Tia Cláudia monta a escala do semestre até sexta.
-  → a próxima reunião confere duas linhas`,
     'O requisito 8 pede que você mostre a caixa de entrada organizada e o calendário do clube com um mês planejado. Nenhum dos dois se arruma na véspera.',
     ['ata', 'dono', 'prazo', 'distribuir'],
+    [
+      [
+        'A ata guarda decisões, cada uma com quem faz e até quando.',
+        'A janela Nova mensagem com o texto circulado: Decisões, e três linhas — o Tio Válter escolhe as músicas até dia 17, a Tia Denise leva a tuba ao conserto até sexta, a Bianca monta a escala até dia 14.',
+      ],
+    ],
   ),
 ];
 
