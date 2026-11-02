@@ -26,6 +26,8 @@ import { discoDoClube } from '../labs/discoDoClube';
 import { dispositivoInicial } from '../labs/dispositivoExterno';
 import { PASSOS_DO_EXPLORADOR } from '../labs/passosDeExplorador';
 import { validarPython, IDS_DE_PYTHON } from './pythonValidator';
+import { validarJavascript, IDS_DE_JAVASCRIPT } from './javascriptValidator';
+import { PASSOS_DE_JAVASCRIPT } from '../labs/passosDeJavascript';
 import { classificacaoInicial } from '../labs/falhasDePython';
 import { PASSOS } from '../labs/desafioDeHtml';
 import { PASSOS_DE_CSS } from '../labs/passosDeCss';
@@ -252,7 +254,14 @@ describe('os modelos dos laboratórios da vereda', () => {
           existe justamente para pegá-la. Toda linguagem nova entra aqui — foi
           por isso que `scratch` entrou junto com o editor de verdade.
         */
-        const verdes = (licao.linguagem === 'python'
+        const verdes = (licao.linguagem === 'javascript'
+          /* Sem execução nada roda, e é o estado em que o laboratório abre. A
+             trava que executa o modelo de verdade mora em
+             `laboratoriosDeJavascript.test.ts`. */
+          ? validarJavascript({ achados: {}, ilegiveis: [], execucao: null,
+            saidaEsperada: licao.saidaEsperada, saidaContem: licao.saidaContem,
+            jsonEsperado: licao.jsonEsperado }, licao.verificacoes)
+          : licao.linguagem === 'python'
           /* Sem execução não há resultado, e é justamente esse o estado em que
              o laboratório abre: nada rodou ainda, então nada pode estar verde. */
           ? validarPython({
@@ -285,6 +294,7 @@ describe('os modelos dos laboratórios da vereda', () => {
           inventados. Aqui se confere que cada um existe de verdade.
         */
         const conhecidos = licao.linguagem === 'python' ? IDS_DE_PYTHON
+          : licao.linguagem === 'javascript' ? IDS_DE_JAVASCRIPT
           : licao.linguagem === 'scratch' ? IDS_DE_SCRATCH
             : licao.linguagem === 'blocos' ? IDS_DE_BLOCOS
               : licao.linguagem === 'css' ? IDS_DE_CSS : IDS_DE_HTML;
@@ -470,6 +480,7 @@ describe('os modelos dos laboratórios da vereda', () => {
   it('toda verificação cobrada tem passo a passo para quem travar', () => {
     const passosDe = (linguagem: string | undefined) =>
       (linguagem === 'python' ? PASSOS_DE_PYTHON
+        : linguagem === 'javascript' ? PASSOS_DE_JAVASCRIPT
         /* Scratch e blocos cobram os mesmos dez ids e mesmo assim têm passo a
            passo separado: um é de arrastar e o outro era de tocar, e a
            instrução errada chega justamente para quem já travou. */

@@ -44,6 +44,7 @@ import LaboratorioDoRelatorioAnual from '../components/LaboratorioDoRelatorioAnu
 import LaboratorioDaRevisao from '../components/LaboratorioDaRevisao';
 import LaboratorioDaEntrega from '../components/LaboratorioDaEntrega';
 import LaboratorioDePython from '../components/LaboratorioDePython';
+import LaboratorioDeJavascript from '../components/LaboratorioDeJavascript';
 import LaboratorioDeBanco from '../components/LaboratorioDeBanco';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -596,6 +597,14 @@ export default function VeredaPage() {
     if (licaoAberta.linguagem === 'python') {
       return (
         <LaboratorioDePython vereda={vereda} licao={licaoAberta} userId={profile.id}
+          aoVencer={vencer} aoSair={fechar} />
+      );
+    }
+    /* JavaScript pela mesma razão do Python: rodar é a verificação, e o
+       painel da direita é um terminal com `node`. */
+    if (licaoAberta.linguagem === 'javascript') {
+      return (
+        <LaboratorioDeJavascript vereda={vereda} licao={licaoAberta} userId={profile.id}
           aoVencer={vencer} aoSair={fechar} />
       );
     }
