@@ -11,7 +11,7 @@ import {
   TopoDoCorreio, VinculoDaMensagem,
 } from '../labs/correio';
 import {
-  type Caixa, type Lista, type Rascunho,
+  type Caixa, type Contato, type Lista, type Rascunho,
   AGUIA, CONSELHEIROS_DO_CLUBE, DIRECAO, DOMINIO, FALCAO, FAMILIAS, HOJE, LIMITE_DE_ANEXO,
   arquivar, buscar, cabeNoAnexo, criarLista, enviar, mudarMembros, naPasta, nomeDe,
   paraAEntrada, paraALixeira, rascunhoVazio,
@@ -23,12 +23,12 @@ import {
   TopoDoCalendario,
 } from '../labs/calendario';
 import {
-  type Evento, type NivelNoCalendario, type Recorrencia,
+  type Evento, type NivelNoCalendario, type PessoaNaAgenda, type Recorrencia,
   CALENDARIO_DO_CLUBE, CONVIDADOS_DA_REUNIAO, DIA_DA_REUNIAO, FUSO_DE_BRASILIA,
   FUSO_DO_ACRE, GRADE, MARCIO_SO_DEPOIS_DE, MINHA_AGENDA, NIVEIS, NOMES_DOS_MESES,
   NOME_DO_NIVEL, OQUE_O_NIVEL_NAO_DEIXA, PASSO_DA_GRADE,
   apagarEvento, cancelarOcorrencia, compartilharCalendario, criarEvento, diasDoMes,
-  estadoEm, horaPara, mudarEvento, ocorrencias, publicarCalendario, semAgendaCompartilhada,
+  estadoEm, horaPara, mudarDaquiEmDiante, mudarEvento, ocorrencias, publicarCalendario, semAgendaCompartilhada,
   tirarDoCalendario, trocarConvidado,
 } from '../labs/agenda';
 import {
@@ -135,7 +135,29 @@ type Comum = {
   recomecar: () => void;
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  outra?: OutraComunicacao;
 };
+
+/**
+ * O que as telas da teoria trocam: a caixa, a agenda e a sala de partida, e as
+ * peças que o laboratório tem escritas para o Clube Pioneiros — os grupos do
+ * campo de endereço, quem cabe numa lista, o arquivo grande, a grade de
+ * disponibilidade e as janelas da sua máquina na sala.
+ *
+ * Elas fotografam a fanfarra do clube, porque tudo o que o laboratório abre é
+ * resposta de alguma lição — o motivo está em `src/exemplos/fanfarraDoClube.ts`.
+ * Sem nada disso, o laboratório é o de sempre.
+ */
+export interface OutraComunicacao {
+  inicial: () => ContextoDaComunicacao;
+  grupos: { nome: string; enderecos: string[] }[];
+  membrosDasListas: Contato[];
+  arquivoGrande: { nome: string; mb: number };
+  convidaveis: Contato[];
+  grade: { pessoas: PessoaNaAgenda[]; dia: string; soDepoisDe: string };
+  correcoes: Record<string, string>;
+  sala: { nome: string; eventoId: string; janelas: string[]; guias: string[] };
+}
 
 const anotar = (c: ContextoDaComunicacao, o: string): ContextoDaComunicacao =>
   (c.descobertas.includes(o) ? c : { ...c, descobertas: [...c.descobertas, o] });
@@ -176,6 +198,7 @@ function NoCorreio({ contexto, mudar, rascunhoInicial, ...c }: Comum & {
   const [novaLista, setNovaLista] = useState('');
 
   const caixa = contexto.caixa;
+  const grande = c.outra?.arquivoGrande ?? FOTOS;
   const mensagem = caixa.mensagens.find(m => m.id === aberta);
   const lista = termo.trim() ? buscar(caixa, termo) : naPasta(caixa, pasta as never);
 
@@ -224,7 +247,7 @@ function NoCorreio({ contexto, mudar, rascunhoInicial, ...c }: Comum & {
       aoAcrescentar={e => setRascunho(r => (r ? { ...r, [k]: [...r[k], e] } : r))}
       extra={(
         <span className="co-fila-grupos">
-          {GRUPOS.map(g => (
+          {(c.outra?.grupos ?? GRUPOS).map(g => (
             <button key={g.nome} type="button" className="co-copias"
               aria-label={`No ${rotulo}, trazer ${g.nome}`}
               onClick={() => setRascunho(r => (r
@@ -267,7 +290,7 @@ function NoCorreio({ contexto, mudar, rascunhoInicial, ...c }: Comum & {
                     <div key={l.id} className="co-bloco-lista">
                       <strong>{l.nome}</strong>
                       <span className="co-dica">{l.endereco}</span>
-                      {[...FALCAO, ...AGUIA].map(p => (
+                      {(c.outra?.membrosDasListas ?? [...FALCAO, ...AGUIA]).map(p => (
                         <label key={p.id} className="co-membro">
                           <input type="checkbox" checked={l.membros.includes(p.id)}
                             aria-label={`${p.nome} na ${l.nome}`}
@@ -445,9 +468,9 @@ function NoCorreio({ contexto, mudar, rascunhoInicial, ...c }: Comum & {
             {recusa && <AvisoDoCorreio tom="ruim">{recusa}</AvisoDoCorreio>}
             <PeDeEscrever
               aoEnviar={mandar}
-              aoAnexar={() => setRascunho(r => (r ? { ...r, anexos: [{ ...FOTOS }] } : r))}
+              aoAnexar={() => setRascunho(r => (r ? { ...r, anexos: [{ ...grande }] } : r))}
               aoInserirVinculo={() => setRascunho(r => (r
-                ? { ...r, vinculos: [{ ...FOTOS, quemAbre: 'so-voce' }], anexos: [] } : r))}
+                ? { ...r, vinculos: [{ ...grande, quemAbre: 'so-voce' }], anexos: [] } : r))}
             />
           </JanelinhaDeEscrever>
         )}
@@ -493,12 +516,14 @@ function NoCalendario({ contexto, mudar, ...c }: Comum) {
   const [aQuemDar, setAQuemDar] = useState('');
   const [nivelNovo, setNivelNovo] = useState<NivelNoCalendario>('ver-detalhes');
   const [excluindo, setExcluindo] = useState<{ id: string; dia: string } | undefined>();
-  const [escolha, setEscolha] = useState<'este' | 'todos'>('este');
+  const [escolha, setEscolha] = useState<'este' | 'seguintes' | 'todos'>('este');
   const [vendoGrade, setVendoGrade] = useState(false);
   const [resposta, setResposta] = useState('');
   const [recado, setRecado] = useState<{ para: string[]; texto: string } | undefined>();
 
   const agenda = contexto.agenda;
+  const grade = c.outra?.grade
+    ?? { pessoas: CONVIDADOS_DA_REUNIAO, dia: DIA_DA_REUNIAO, soDepoisDe: MARCIO_SO_DEPOIS_DE };
   const aberto = rascunho ?? agenda.eventos.find(e => e.id === abertoId);
   const cal = agenda.calendarios.find(x => x.id === compartilhando);
 
@@ -580,7 +605,7 @@ function NoCalendario({ contexto, mudar, ...c }: Comum) {
                         aria-label="A quem dar acesso"
                         onChange={e => setAQuemDar(e.target.value)}>
                         <option value="">Escolha uma pessoa</option>
-                        {[...DIRECAO, ...CONSELHEIROS_DO_CLUBE, ...FAMILIAS.slice(0, 3)]
+                        {(c.outra?.convidaveis ?? [...DIRECAO, ...CONSELHEIROS_DO_CLUBE, ...FAMILIAS.slice(0, 3)])
                           .map(p => <option key={p.id} value={p.endereco}>{p.nome}</option>)}
                       </select>
                       <select className="ca-campo" style={{ width: 'auto' }} value={nivelNovo}
@@ -706,7 +731,7 @@ function NoCalendario({ contexto, mudar, ...c }: Comum) {
                         <span className="ca-dica">{g.resposta}</span>
                         <BotaoDoCalendario aria-label={`Corrigir o endereço de ${g.endereco}`}
                           onClick={() => mexer(a => trocarConvidado(a, aberto.id, g.endereco,
-                            `falcao@${DOMINIO}`))}>
+                            c.outra?.correcoes[g.endereco] ?? `falcao@${DOMINIO}`))}>
                           Corrigir
                         </BotaoDoCalendario>
                       </div>
@@ -750,26 +775,26 @@ function NoCalendario({ contexto, mudar, ...c }: Comum) {
                       <>
                         <GradeDeDisponibilidade
                           colunas={COLUNAS_DA_GRADE}
-                          pessoas={CONVIDADOS_DA_REUNIAO.map(p => ({
+                          pessoas={grade.pessoas.map(p => ({
                             id: p.endereco, nome: p.nome,
                             nota: p.compartilha ? undefined : 'não compartilha a agenda',
                           }))}
                           estadoDe={(id, col) => {
-                            const p = CONVIDADOS_DA_REUNIAO.find(x => x.endereco === id);
-                            return p ? estadoEm(p, DIA_DA_REUNIAO, col.de, col.ate) : 'sem-acesso';
+                            const p = grade.pessoas.find(x => x.endereco === id);
+                            return p ? estadoEm(p, grade.dia, col.de, col.ate) : 'sem-acesso';
                           }}
                           escolhida={{ de: aberto.inicio, ate: aberto.fim }}
                           aoEscolher={col => mudarAberto({
-                            dia: DIA_DA_REUNIAO, inicio: col.de, fim: col.ate,
+                            dia: grade.dia, inicio: col.de, fim: col.ate,
                           })}
                         />
-                        {semAgendaCompartilhada(CONVIDADOS_DA_REUNIAO).map(p => (
+                        {semAgendaCompartilhada(grade.pessoas).map(p => (
                           <BotaoDoCalendario key={p.endereco}
                             aria-label={`Perguntar a ${p.nome}`}
                             onClick={() => {
                               mudar(ctx => anotar(ctx, PERGUNTOU_A_QUEM_NAO_COMPARTILHA));
                               setResposta(`${p.nome} respondeu: só consigo depois das `
-                                + `${MARCIO_SO_DEPOIS_DE}.`);
+                                + `${grade.soDepoisDe}.`);
                             }}>
                             Perguntar a {p.nome}
                           </BotaoDoCalendario>
@@ -799,6 +824,15 @@ function NoCalendario({ contexto, mudar, ...c }: Comum) {
                       ? cancelarOcorrencia(a, alvo.id, SABADO_A_PULAR(a, alvo.id))
                       : apagarEvento(a, alvo.id);
                   });
+                } else if (escolha === 'seguintes') {
+                  /* Corta a série no dia e não deixa nada depois dele: é a
+                     série nova de `mudarDaquiEmDiante`, apagada em seguida. */
+                  mexer(a => {
+                    const e = a.eventos.find(x => x.id === alvo.id);
+                    if (!e?.repete) return apagarEvento(a, alvo.id);
+                    const dia = SABADO_A_PULAR(a, alvo.id);
+                    return apagarEvento(mudarDaquiEmDiante(a, alvo.id, dia, {}), `${alvo.id}-de-${dia}`);
+                  });
                 } else {
                   mexer(a => apagarEvento(a, alvo.id));
                 }
@@ -812,6 +846,9 @@ function NoCalendario({ contexto, mudar, ...c }: Comum) {
               <OpcaoDoDialogo rotulo="Este evento" escolhida={escolha === 'este'}
                 detalhe="Tira só esta ocorrência. A série continua."
                 aoEscolher={() => setEscolha('este')} />
+              <OpcaoDoDialogo rotulo="Este e os seguintes" escolhida={escolha === 'seguintes'}
+                detalhe="Tira esta e todas as que vêm depois. As de antes ficam."
+                aoEscolher={() => setEscolha('seguintes')} />
               <OpcaoDoDialogo rotulo="Todos os eventos" escolhida={escolha === 'todos'}
                 detalhe="Tira a série inteira, de agora e de antes."
                 aoEscolher={() => setEscolha('todos')} />
@@ -867,12 +904,12 @@ const SABADO_A_PULAR = (a: { eventos: Evento[] }, id: string): string => {
    A sala de reunião — módulo 11
    ──────────────────────────────────────────────────────────────────────── */
 
-const ABAS_DE_APRESENTAR: AbaDeApresentar[] = (['tela-inteira', 'janela', 'guia'] as const)
-  .map(id => ({
+const abasDeApresentar = (janelas: string[], guias: string[]): AbaDeApresentar[] =>
+  (['tela-inteira', 'janela', 'guia'] as const).map(id => ({
     id,
     nome: NOME_DO_COMPARTILHAMENTO[id],
     leva: OQUE_A_ESCOLHA_LEVA_JUNTO[id],
-    alvos: id === 'tela-inteira' ? [] : id === 'janela' ? [PLANILHA, CONVERSA] : [VIDEO],
+    alvos: id === 'tela-inteira' ? [] : id === 'janela' ? janelas : guias,
   }));
 
 function NaSala({ contexto, mudar, ...c }: Comum) {
@@ -882,7 +919,9 @@ function NaSala({ contexto, mudar, ...c }: Comum) {
   const [comSom, setComSom] = useState(false);
 
   const sala = contexto.reuniao;
-  const evento = contexto.agenda.eventos.find(e => e.id === CONSELHO_DE_JULHO);
+  const daSala = c.outra?.sala
+    ?? { nome: 'Sala do conselho', eventoId: CONSELHO_DE_JULHO, janelas: [PLANILHA, CONVERSA], guias: [VIDEO] };
+  const evento = contexto.agenda.eventos.find(e => e.id === daSala.eventoId);
 
   const mexerSala = (f: (r: Reuniao) => Reuniao) =>
     mudar(ctx => ({ ...ctx, reuniao: f(ctx.reuniao) }));
@@ -906,7 +945,7 @@ function NaSala({ contexto, mudar, ...c }: Comum) {
               <div className="re-tela" data-vazia="sim">
                 <span>
                   <Video className="w-5 h-5" style={{ display: 'inline', marginRight: 8 }} />
-                  Sala do conselho — {sala.link}
+                  {daSala.nome} — {sala.link}
                 </span>
               </div>
               <div className="re-ladrilhos">
@@ -914,7 +953,7 @@ function NaSala({ contexto, mudar, ...c }: Comum) {
                   onClick={() => mudar(ctx => ({
                     ...ctx,
                     agenda: evento
-                      ? mudarEvento(ctx.agenda, CONSELHO_DE_JULHO, { linkDaReuniao: sala.link })
+                      ? mudarEvento(ctx.agenda, daSala.eventoId, { linkDaReuniao: sala.link })
                       : ctx.agenda,
                   }))}>
                   Agendar no calendário
@@ -957,7 +996,7 @@ function NaSala({ contexto, mudar, ...c }: Comum) {
                       }}>
                       <Mic className="w-4 h-4" /> Falar
                     </BotaoDaSala>
-                    {[PLANILHA, CONVERSA].map(j => (
+                    {daSala.janelas.map(j => (
                       <BotaoDaSala key={j} aria-label={`Ir para ${j}`}
                         onClick={() => mexerSala(r => focar(r, j))}>
                         {j === sala.emFoco ? '● ' : ''}{j}
@@ -994,7 +1033,7 @@ function NaSala({ contexto, mudar, ...c }: Comum) {
           )}
         {escolhendo && (
           <CaixaDeApresentar
-            abas={ABAS_DE_APRESENTAR} aba={aba}
+            abas={abasDeApresentar(daSala.janelas, daSala.guias)} aba={aba}
             aoTrocarAba={id => { setAba(id); setAlvo(''); }}
             alvo={alvo} aoEscolherAlvo={setAlvo}
             comSom={comSom} aoTrocarSom={aba === 'guia' ? setComSom : undefined}
@@ -1032,21 +1071,22 @@ const CSS_DO_LABORATORIO = `
 
 /* ── O despacho ───────────────────────────────────────────────────────────── */
 
-export default function LaboratorioDeComunicacao({ vereda, licao, aoVencer, aoSair }: {
+export default function LaboratorioDeComunicacao({ vereda, licao, aoVencer, aoSair, outra }: {
   vereda: Vereda;
   licao: Extract<LicaoDeVereda, { tipo: 'comunicacao' }>;
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  outra?: OutraComunicacao;
 }) {
   const l = LICOES_DA_CC_ES007[licao.licao];
-  const [partida] = useState<ContextoDaComunicacao>(l.inicial);
+  const [partida] = useState<ContextoDaComunicacao>(outra?.inicial ?? l.inicial);
   const [contexto, setContexto] = useState<ContextoDaComunicacao>(partida);
 
   const comum: Comum = {
     vereda, licao, metas: l.metas, contexto,
     mudar: f => setContexto(f),
     recomecar: () => setContexto(partida),
-    aoVencer, aoSair,
+    aoVencer, aoSair, outra,
   };
 
   switch (l.programa) {

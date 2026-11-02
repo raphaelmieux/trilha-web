@@ -18,6 +18,8 @@ import {
   CAIXA_DOS_AVENTUREIROS, DIRETORIA, ENDERECO_DO_CLUBE, ENDERECO_DO_INTRUSO, NOME_DO_COFRE, VAZAMENTOS_DO_EXEMPLO,
   contaDosAventureiros, contaDosAventureirosInvadida, cofreDosAventureiros,
 } from './aventureirosEstrelaGuia';
+import LaboratorioDeComunicacao from '../components/LaboratorioDeComunicacao';
+import { FANFARRA } from './fanfarraDoClube';
 import { CENAS_DE_DESIGN } from './cenasDeDesign';
 import { CENAS_VETORIAIS } from './cenasVetoriais';
 import { CENAS_DE_FOTO } from './cenasDeFoto';
@@ -350,6 +352,19 @@ const contas = (n: number) => () => (
     }} />
 );
 
+/* ── Comunicação e agenda ────────────────────────────────────────────────── */
+
+/*
+ * A fanfarra do clube, e não o acampamento que as lições preparam. A lição só
+ * escolhe o programa — correio, calendário ou sala —; a caixa, a agenda e a
+ * sala vêm de `fanfarraDoClube.ts`. As três primeiras lições de cada programa
+ * abrem sem rascunho pronto.
+ */
+const comunicacao = (n: number) => () => (
+  <LaboratorioDeComunicacao vereda={vereda('cc-es007')} licao={licaoDe('cc-es007', 'comunicacao', n)}
+    aoVencer={nada} aoSair={nada} outra={FANFARRA} />
+);
+
 export const CENAS: Record<string, ComponentType> = {
   'word-programa-a-mao': word(PROGRAMA_A_MAO, 'Programa do Campori'),
   'word-programa-com-estilo': word(PROGRAMA_COM_ESTILO, 'Programa do Campori'),
@@ -376,6 +391,9 @@ export const CENAS: Record<string, ComponentType> = {
   'excursao-conferir': planilha({ aba: 'Conferir' }),
   ...Object.fromEntries((Object.keys(GINCANA) as EstadoDaGincana[]).map(e => [`gincana-${e}`, leitor(e)])),
   ...Object.fromEntries(LICOES_DE_CONTAS.map((l, i) => [`aventureiros-${l}`, contas(i)])),
+  'fanfarra-correio': comunicacao(0),
+  'fanfarra-calendario': comunicacao(6),
+  'fanfarra-sala': comunicacao(10),
   ...CENAS_DE_DESIGN,
   ...CENAS_VETORIAIS,
   ...CENAS_DE_FOTO,

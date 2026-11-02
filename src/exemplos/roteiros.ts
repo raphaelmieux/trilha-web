@@ -35,6 +35,7 @@ import { ROTEIROS_DE_ARQUIVOS } from './roteiros/arquivos';
 import { ROTEIROS_DE_PLANILHA } from './roteiros/planilhas';
 import { ROTEIROS_DE_PDF } from './roteiros/documentosPortateis';
 import { ROTEIROS_DE_CONTAS } from './roteiros/contasESeguranca';
+import { ROTEIROS_DA_COMUNICACAO } from './roteiros/comunicacaoEAgenda';
 
 export type Acao =
   /**
@@ -48,6 +49,12 @@ export type Acao =
   | { tecla: string }
   /** Escolhe uma opção numa caixa de seleção. */
   | { escolher: string; valor: string }
+  /**
+   * Preenche um campo de uma vez. Serve ao campo de data, que se digita na
+   * ordem do idioma do navegador — dia antes do mês aqui, mês antes do dia
+   * lá fora — e recebe o valor no formato da máquina, `2026-07-13`, sempre.
+   */
+  | { preencher: string; valor: string }
   /**
    * Aperta o botão num ponto do elemento, dado em fração da caixa dele
    * (`[0.5, 0.5]` é o meio), e solta ali ou depois de arrastar até `ate`. É o
@@ -94,6 +101,7 @@ export const ROTEIROS: Roteiro[] = [
   ...ROTEIROS_DE_PLANILHA,
   ...ROTEIROS_DE_PDF,
   ...ROTEIROS_DE_CONTAS,
+  ...ROTEIROS_DA_COMUNICACAO,
 ];
 
 /** Os nomes das imagens que um roteiro produz, na ordem. */

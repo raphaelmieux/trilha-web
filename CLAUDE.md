@@ -996,6 +996,32 @@ estranho na lista enquanto `portasAbertas` dizia que só havia duas portas —
 a legenda das três portas afirmava o que o motor não via. Apareceu
 escrevendo a trava que conta as portas, antes de ela rodar.
 
+A CC-ES007 fotografa a fanfarra do clube, de `src/exemplos/fanfarraDoClube.ts`
+— a mesma secretaria cuidando de outra frente, com outras mensagens, outra
+lista, outros eventos, outras pessoas e outra sala —, e não o acampamento: lá
+as cinquenta e duas famílias no Cco, o Daniel que saiu da lista do Falcão e a
+Helena que entrou, a reunião com o Acre às 15h, o endereço do Tio Samuel e o
+Tio Márcio sem agenda compartilhada são as respostas. O que continua igual é
+o programa: o endereço da secretaria e o domínio, que a pessoa reencontra no
+laboratório. Esta vereda era a mais amarrada às constantes do clube — os
+grupos do campo de endereço, quem cabe numa lista, o arquivo grande, a grade
+de disponibilidade e as janelas da sala estavam escritos no componente —, e
+`LaboratorioDeComunicacao` ganhou `outra` para cada uma, com as do clube por
+padrão. `exemplosDaComunicacao.test.ts` reprova se a fanfarra dividir uma
+mensagem, uma pessoa, um evento ou um endereço com o acampamento.
+
+Escrever as legendas achou uma divergência: a teoria ensina três opções na
+caixa de excluir um evento que se repete, e a caixa do laboratório tinha
+duas. "Este e os seguintes" existia no motor (`mudarDaquiEmDiante`) e não na
+tela, e é a opção que corta a série sem apagar o que já passou.
+`LaboratorioDeComunicacao.test.tsx` cobra que ela corta julho e deixa junho.
+
+E a captura passou a abrir o Chromium em português. O idioma da página não
+mexe nos campos nativos de data e hora; quem manda é a variável `LANG` do
+processo. Sem ela saíam "07/08/2026" e "07:00 PM" na tela do calendário, e
+uma data digitada no roteiro caía com dia e mês trocados. Para campo de data
+o roteiro usa `preencher`, que entrega o valor no formato da máquina.
+
 A teoria ensinava a buscar escrevendo `tipo:imagem` na caixa, e a janela do
 laboratório filtra numa caixa com Tipo e Data: a lição descrevia um gesto que
 a pessoa não ia encontrar. E a primeira captura achou um defeito do
@@ -5162,6 +5188,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/leitorDePdf.test.tsx` | faixa do leitor que rola de lado em vez de quebrar linha, escondendo o contador da procura |
 | `src/curriculum/exemplosDePdf.test.ts` | legenda da teoria da CC-ES004 que a pasta da gincana não devolve, ou gincana que divide arquivo ou linha com a pasta do laboratório |
 | `src/curriculum/exemplosDeContas.test.ts` | legenda da teoria da CC-ES005 que as contas dos Aventureiros não devolvem, ou os Aventureiros dividindo endereço, senha, aplicativo ou mensagem com o clube do laboratório |
+| `src/curriculum/exemplosDaComunicacao.test.ts` | legenda da teoria da CC-ES007 que a fanfarra não devolve, ou a fanfarra dividindo mensagem, pessoa, evento ou endereço com o acampamento do laboratório |
+| `src/components/LaboratorioDeComunicacao.test.tsx` | caixa de excluir sem "Este e os seguintes", ou com ela apagando o que veio antes |
 | `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |

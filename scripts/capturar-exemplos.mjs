@@ -66,7 +66,14 @@ const DESTACAR = (grupos) => {
   }
 };
 
-const navegador = await chromium.launch();
+/* O idioma do processo, e não o da página, é o que decide como os campos
+   nativos de data e hora se desenham: "13/07/2026" e "19:00", e não
+   "07/13/2026" e "07:00 PM". No Linux quem manda é a variável LANG; o
+   argumento cobre as outras máquinas. */
+const navegador = await chromium.launch({
+  args: ['--lang=pt-BR'],
+  env: { ...process.env, LANG: 'pt_BR.UTF-8', LANGUAGE: 'pt_BR' },
+});
 let erros = 0;
 
 for (const r of escolhidos) {
@@ -84,6 +91,10 @@ for (const r of escolhidos) {
   const pagina = await navegador.newPage({
     viewport: { width: r.largura ?? 1280, height: r.altura ?? 720 },
     deviceScaleFactor: 1,
+    /* Os campos nativos de data e hora desenham no idioma do navegador: sem
+       isto saíam "07/15/2026" e "07:00 PM", que não é o que o desbravador
+       vê no computador do clube. */
+    locale: 'pt-BR',
   });
   const problemas = [];
   pagina.on('pageerror', e => problemas.push(e.message));
@@ -104,6 +115,8 @@ for (const r of escolhidos) {
         await pagina.keyboard.type(a.digitar, { delay: 5 });
       } else if ('tecla' in a) {
         await pagina.keyboard.press(a.tecla);
+      } else if ('preencher' in a) {
+        await pagina.locator(a.preencher).first().fill(a.valor);
       } else if ('escolher' in a) {
         await pagina.locator(a.escolher).first().selectOption(a.valor);
       } else if ('rolarAte' in a) {
