@@ -61,10 +61,17 @@ export const CSS_DO_LEITOR = `
 .pdf-nome { font-weight: 600; }
 .pdf-titulo-dados { margin-left: auto; color: #57606A; font-size: 11.5px; }
 
+/* A faixa quebra linha, e não rola de lado. Rolando, a caixa de procurar e o
+   contador de páginas achadas ficavam além da borda direita em qualquer
+   notebook — os onze comandos com nome já ocupam 1230 px —, e o contador é o
+   que o requisito 5 manda ler: a prova de que o reconhecimento funcionou
+   estava escondida atrás de uma rolagem que ninguém faz. Quebrando, o que não
+   cabe desce para uma segunda fileira, e a procura continua encostada à
+   direita. */
 .pdf-faixa {
-  display: flex; align-items: center; gap: 2px; flex-wrap: nowrap;
+  display: flex; align-items: center; gap: 2px; flex-wrap: wrap;
   background: #FFFFFF; border-bottom: 1px solid #D7DBE0;
-  padding: 5px 8px; overflow-x: auto;
+  padding: 5px 8px;
 }
 .pdf-bt {
   display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
@@ -599,8 +606,11 @@ export function SetasDePagina({ indice, total, aoIr }: {
  */
 export function TelaInicialDoLeitor({
   origens, pdfs, aberto, aoAbrir, aoAbrirOrigem, aoRenomear, aoDigitalizar,
+  atividade = 'Acampamento de Inverno 2026 — Clube de Desbravadores',
 }: {
   origens: { nome: string; programa: string }[];
+  /** De que atividade é a pasta. As telas da teoria abrem a pasta de outra. */
+  atividade?: string;
   pdfs: DocumentoPdf[];
   /** O nome do documento aberto, para a linha dele aparecer marcada. */
   aberto?: string;
@@ -612,7 +622,7 @@ export function TelaInicialDoLeitor({
   return (
     <div className="pdf-inicial">
       <h3>Documentos da atividade</h3>
-      <p className="pdf-sub">Acampamento de Inverno 2026 — Clube de Desbravadores</p>
+      <p className="pdf-sub">{atividade}</p>
 
       {origens.length > 0 && (
         <div className="pdf-grupo">

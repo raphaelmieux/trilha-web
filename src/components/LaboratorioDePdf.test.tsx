@@ -287,6 +287,28 @@ describe('as lições da CC-ES004 se vencem clicando', () => {
 
 /* ── O programa é o mesmo nas sete ─────────────────────────────────────────── */
 
+describe('o digitalizador é um celular por cima do leitor', () => {
+  /*
+    Os embrulhos dele tinham nomes que folha nenhuma definia, e a limpeza de
+    classes os tirou: o aplicativo saía colado embaixo do leitor, sem a mesa em
+    volta do papel e sem o fundo de câmera — e enquadrar perdia o sentido,
+    porque a mesa é o que se tira da foto. O jsdom não desenha nada, então o
+    que se cobra é a promessa: as peças nas classes que a folha do
+    digitalizador pinta, e o fundo que o põe por cima.
+  */
+  it('abre nas classes que a folha do digitalizador desenha', () => {
+    montar('digitalizar');
+    clicar(porTexto('.pdf-inicial .pdf-bt', 'Digitalizar'));
+    const fundo = container.querySelector('.pdf-scanner-fundo');
+    expect(fundo).not.toBeNull();
+    for (const peca of ['.scan-celular', '.scan-palco', '.scan-controles']) {
+      expect(fundo!.querySelector(peca), peca).not.toBeNull();
+    }
+    expect(fundo!.querySelector('.scan-palco .scan-papel')).not.toBeNull();
+    expect(CSS_DO_LABORATORIO).toMatch(/\.pdf-scanner-fundo\s*\{[^}]*position:\s*absolute/);
+  });
+});
+
 describe('a janela é a mesma nas sete lições', () => {
   /*
     A faixa não muda conforme o exercício: todos os comandos o tempo todo,

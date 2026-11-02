@@ -365,3 +365,17 @@ describe('a folha de estilo do leitor', () => {
     expect(daFileira).toBeGreaterThan(daColuna);
   });
 });
+
+describe('a procura cabe na tela de um notebook', () => {
+  /*
+    A faixa rolava de lado, e os onze comandos com nome já ocupam 1230 px: a
+    caixa de procurar e o contador de páginas achadas ficavam além da borda em
+    qualquer notebook. O contador é o que o requisito 5 manda ler. A faixa
+    quebra linha agora, e o que não cabe desce para uma segunda fileira.
+  */
+  it('a faixa quebra linha, e não esconde o que sobra numa rolagem', () => {
+    const faixa = /\.pdf-faixa\s*\{([^}]*)\}/.exec(CSS_DO_LEITOR)?.[1] ?? '';
+    expect(faixa).toMatch(/flex-wrap:\s*wrap/);
+    expect(faixa).not.toMatch(/overflow-x:\s*auto/);
+  });
+});

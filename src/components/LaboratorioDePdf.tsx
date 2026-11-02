@@ -75,6 +75,16 @@ interface Scanner {
 }
 
 export const CSS_DO_LABORATORIO = `
+/* O aplicativo de digitalizar abre por cima do leitor, como o celular por
+   cima da mesa: uma coluna estreita na altura toda, e o leitor esmaecido em
+   volta. No celular ela ocupa a largura inteira, que é o que ela é ali. */
+.pdf-scanner-fundo {
+  position: absolute; inset: 0; z-index: 45;
+  background: rgba(15, 20, 26, 0.55);
+  display: flex; justify-content: center;
+}
+.pdf-scanner-fundo .scan-celular { flex: 0 1 460px; }
+
 .pdf-dialogo-fundo {
   position: absolute; inset: 0; background: rgba(15, 20, 26, 0.45);
   display: flex; align-items: center; justify-content: center; padding: 16px;
@@ -132,14 +142,34 @@ export const CSS_DO_LABORATORIO = `
 
 /* ── O laboratório ─────────────────────────────────────────────────────────── */
 
-export default function LaboratorioDePdf({ vereda, licao, aoVencer, aoSair }: {
+/**
+ * O que as telas da teoria trocam: a pasta, a atividade, o papel que o
+ * digitalizador fotografa e quem assina e comenta. Elas fotografam a gincana
+ * da primavera, porque tudo na pasta do acampamento é resposta de alguma
+ * lição — o motivo está em `src/exemplos/gincanaDaPrimavera.ts`. Sem nada
+ * disso, o laboratório é o de sempre.
+ */
+export interface OutraPasta {
+  inicial: () => PastaDoClube;
+  atividade: string;
+  papel: { nome: string; linhas: string[] };
+  pessoas: { assina: string; comenta: string };
+}
+
+const PESSOAS_DO_CLUBE = { assina: 'Marta Rocha', comenta: 'Ana Beatriz Rocha' };
+
+export default function LaboratorioDePdf({ vereda, licao, aoVencer, aoSair, outra }: {
   vereda: Vereda;
   licao: Extract<LicaoDeVereda, { tipo: 'pdf' }>;
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  outra?: OutraPasta;
 }) {
   const licaoDaPasta = PASTAS_DA_CC_ES004[licao.pasta];
-  const [pasta, setPasta] = useState<PastaDoClube>(licaoDaPasta.inicial);
+  const inicial = outra?.inicial ?? licaoDaPasta.inicial;
+  const papel = outra?.papel ?? { nome: 'IMG_20260702_143512.pdf', linhas: RECIBO };
+  const pessoas = outra?.pessoas ?? PESSOAS_DO_CLUBE;
+  const [pasta, setPasta] = useState<PastaDoClube>(inicial);
   const [aberto, setAberto] = useState<string | null>(null);
   const [pagina, setPagina] = useState(0);
   const [escolhidas, setEscolhidas] = useState<string[]>([]);
@@ -272,8 +302,8 @@ export default function LaboratorioDePdf({ vereda, licao, aoVencer, aoSair }: {
        esteja na pasta: `comPdf` casa por nome, e dois iguais fariam a
        digitalização **substituir** o outro documento sem nada avisar. */
     const novo: DocumentoPdf = {
-      nome: 'IMG_20260702_143512.pdf',
-      paginas: [paginaDePapel('recibo-1', RECIBO, captura)],
+      nome: papel.nome,
+      paginas: [paginaDePapel('recibo-1', papel.linhas, captura)],
       campos: [],
       anotacoes: [],
     };
@@ -311,7 +341,7 @@ export default function LaboratorioDePdf({ vereda, licao, aoVencer, aoSair }: {
       </button>
       <button
         onClick={() => {
-          setPasta(licaoDaPasta.inicial());
+          setPasta(inicial());
           setAberto(null);
           setPagina(0);
           setEscolhidas([]);
@@ -407,6 +437,7 @@ export default function LaboratorioDePdf({ vereda, licao, aoVencer, aoSair }: {
               aoAbrirOrigem={nome => setDialogo({ tipo: 'imprimir', arquivo: nome })}
               aoRenomear={nome => setDialogo({ tipo: 'renomear', de: nome, para: nome })}
               aoDigitalizar={abrirScanner}
+              atividade={outra?.atividade}
             />
           )}
 
@@ -421,6 +452,7 @@ export default function LaboratorioDePdf({ vereda, licao, aoVencer, aoSair }: {
         {scanner && (
           <TelaDoScanner
             scanner={scanner}
+            linhas={papel.linhas}
             aoMudar={setScanner}
             aoSalvar={() => salvarDigitalizacao(scanner)}
             aoFechar={() => setScanner(null)}
@@ -433,6 +465,7 @@ export default function LaboratorioDePdf({ vereda, licao, aoVencer, aoSair }: {
             pasta={pasta}
             doc={doc}
             escolhidas={escolhidas}
+            pessoas={pessoas}
             aoMudar={setDialogo}
             aoFechar={() => setDialogo(null)}
             aoAplicar={f => { mudar(f); setDialogo(null); }}
@@ -453,8 +486,9 @@ export default function LaboratorioDePdf({ vereda, licao, aoVencer, aoSair }: {
   detectasse a borda certa e escolhesse o filtro bom sozinho entregaria a lição
   resolvida — apagando justamente o gesto que o requisito nomeia.
 */
-function TelaDoScanner({ scanner, aoMudar, aoSalvar, aoFechar }: {
+function TelaDoScanner({ scanner, linhas, aoMudar, aoSalvar, aoFechar }: {
   scanner: Scanner;
+  linhas: string[];
   aoMudar: (s: Scanner) => void;
   aoSalvar: () => void;
   aoFechar: () => void;
@@ -482,13 +516,21 @@ function TelaDoScanner({ scanner, aoMudar, aoSalvar, aoFechar }: {
     else aoSalvar();
   };
 
+  /*
+    O celular por cima do leitor, e as peças nas classes que a folha do
+    digitalizador desenha. Os três embrulhos já tiveram nomes que folha nenhuma
+    definia, e quando a limpeza de classes os tirou sobraram três divs sem
+    nada: o aplicativo saía colado embaixo do leitor, sem mesa em volta do
+    papel e sem fundo de câmera — e enquadrar perdia o sentido, porque a mesa
+    é o que se tira da foto. Quem viu foi a captura das telas da teoria.
+  */
   return (
-    <div>
-      <div>
+    <div className="pdf-scanner-fundo" role="dialog" aria-modal="true" aria-label="Digitalizar">
+      <div className="scan-celular">
         <TopoDoScanner titulo="Digitalizar" etapa={ETAPA[scanner.etapa]} />
 
-        <div>
-          <PapelNaMesa linhas={RECIBO} captura={captura}>
+        <div className="scan-palco">
+          <PapelNaMesa linhas={linhas} captura={captura}>
             {scanner.etapa === 'recorte' && (
               <CantosDeRecorte
                 margem={scanner.captura.margem}
@@ -498,28 +540,30 @@ function TelaDoScanner({ scanner, aoMudar, aoSalvar, aoFechar }: {
           </PapelNaMesa>
         </div>
 
-        <AvisoDeQualidade qualidade={qualidadeDaCaptura(captura)} />
+        <div className="scan-controles">
+          <AvisoDeQualidade qualidade={qualidadeDaCaptura(captura)} />
 
-        {scanner.etapa !== 'camera' && (
-          <ReguasDaCaptura
-            captura={scanner.captura}
-            aoMudar={c => aoMudar({ ...scanner, captura: c })}
+          {scanner.etapa !== 'camera' && (
+            <ReguasDaCaptura
+              captura={scanner.captura}
+              aoMudar={c => aoMudar({ ...scanner, captura: c })}
+            />
+          )}
+
+          {scanner.etapa === 'filtro' && (
+            <FileiraDeFiltros
+              escolhido={scanner.filtro}
+              aoEscolher={f => aoMudar({ ...scanner, filtro: f })}
+            />
+          )}
+
+          <AcoesDoScanner
+            etapa={scanner.etapa}
+            aoAvancar={avancar}
+            aoRefazer={scanner.etapa === 'camera' ? undefined : aoFechar}
+            rotuloPrincipal={ROTULO[scanner.etapa]}
           />
-        )}
-
-        {scanner.etapa === 'filtro' && (
-          <FileiraDeFiltros
-            escolhido={scanner.filtro}
-            aoEscolher={f => aoMudar({ ...scanner, filtro: f })}
-          />
-        )}
-
-        <AcoesDoScanner
-          etapa={scanner.etapa}
-          aoAvancar={avancar}
-          aoRefazer={scanner.etapa === 'camera' ? undefined : aoFechar}
-          rotuloPrincipal={ROTULO[scanner.etapa]}
-        />
+        </div>
       </div>
     </div>
   );
@@ -528,9 +572,10 @@ function TelaDoScanner({ scanner, aoMudar, aoSalvar, aoFechar }: {
 /* ── As caixas de diálogo ─────────────────────────────────────────────────── */
 
 function CaixaDeDialogo({
-  dialogo, pasta, doc, escolhidas, aoMudar, aoFechar, aoAplicar, aoAbrir, aoAvisar,
+  dialogo, pasta, doc, escolhidas, pessoas, aoMudar, aoFechar, aoAplicar, aoAbrir, aoAvisar,
 }: {
   dialogo: Dialogo;
+  pessoas: { assina: string; comenta: string };
   pasta: PastaDoClube;
   doc?: DocumentoPdf;
   escolhidas: string[];
@@ -794,7 +839,7 @@ function CaixaDeDialogo({
                   if (!doc) return;
                   aoAplicar(p => comPdf(p, dialogo.modo === 'imagem'
                     ? assinarComImagem(doc)
-                    : assinarVerificavel(doc, 'Marta Rocha', Date.now())));
+                    : assinarVerificavel(doc, pessoas.assina, Date.now())));
                 }}>
                 Assinar
               </button>
@@ -864,7 +909,7 @@ function CaixaDeDialogo({
                     id: `c-${doc.anotacoes.length + 1}`,
                     paginaId: doc.paginas[0].id,
                     tipo: 'comentario',
-                    por: 'Ana Beatriz Rocha',
+                    por: pessoas.comenta,
                     texto: dialogo.texto.trim(),
                   })));
                 }}>
@@ -895,7 +940,7 @@ function CaixaDeDialogo({
                     id: `h-${doc.anotacoes.length + 1}`,
                     paginaId: doc.paginas[0].id,
                     tipo: 'destaque',
-                    por: 'Ana Beatriz Rocha',
+                    por: pessoas.comenta,
                     texto: dialogo.trecho,
                   })));
                 }}>

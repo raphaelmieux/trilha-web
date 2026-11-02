@@ -1,5 +1,6 @@
 import type { ModuloDeVereda, TopicoDeVereda } from './veredas';
 import { QUESTOES_DE_PDF } from './questoesDeDocumentosPortateis';
+import { telasDoTopico } from './telas';
 
 /*
  * A vereda CC-ES004 Documentos Portáteis.
@@ -25,11 +26,30 @@ import { QUESTOES_DE_PDF } from './questoesDeDocumentosPortateis';
  * **prova**, e não olhada.
  */
 
+/*
+  O exemplo desta vereda é a tela do leitor de PDF e do digitalizador, e não
+  um quadro de texto.
+
+  Ela nasceu com um esboço em cada tópico — a caixa de Imprimir desenhada com
+  colchetes, o selo da assinatura escrito com um tique, a procura com uma
+  lupa de emoji —, e o esboço era da própria pasta do acampamento que o
+  laboratório arruma: a ata, o recibo da Chácara Recanto, o "Filcia" que o
+  reconhecimento grava. Os tópicos que ensinam um gesto o mostram no
+  laboratório, e os que só explicam uma ideia (o que é um PDF, a ordem entre
+  reduzir e reconhecer, o que é um dossiê, a conferência) ficam em prosa.
+
+  A pasta fotografada é a da gincana da primavera, e não a do acampamento: o
+  motivo está em `src/exemplos/gincanaDaPrimavera.ts`, e
+  `exemplosDePdf.test.ts` confere as legendas contra ela.
+*/
+const V = 'CC-ES004';
 const t = (
   id: string, titulo: string, resumo: string,
-  explicacao: string[], exemplo: string, atencao: string, marcas: string[],
+  explicacao: string[], atencao: string, marcas: string[],
+  telas?: [legenda: string, descricao: string][],
 ): TopicoDeVereda => ({
-  id, titulo, resumo, explicacao, exemplo, exemploComo: 'texto' as const, atencao, marcas,
+  id, titulo, resumo, explicacao, atencao, marcas,
+  ...(telas ? { telas: telasDoTopico(V, id, telas) } : {}),
 });
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -47,18 +67,6 @@ const O_QUE_E_UM_PDF: TopicoDeVereda[] = [
       'O PDF não faz isso porque ele leva as fontes dentro dele, e leva também onde cada letra fica na página. Ele não pede nada ao computador que o abre além de um leitor.',
       'É por isso que quase tudo o que circula é PDF: boleto, ingresso, ficha, contrato. Quem manda precisa que o outro veja exatamente aquilo.',
     ],
-    `O mesmo documento, dois formatos
-
-.docx no computador de quem escreveu   .docx no computador do clube
-  Ata da reunião                          Ata da reunião
-  Aos quatorze dias do mês de março       Aos quatorze dias do mês de
-  de 2026, reuniu-se a diretoria.         março de 2026, reuniu-se a
-                                          diretoria.
-
-.pdf em qualquer um dos dois
-  Ata da reunião
-  Aos quatorze dias do mês de março
-  de 2026, reuniu-se a diretoria.`,
     'O PDF não "trava" o documento: ele guarda um retrato dele. Quem tiver o programa certo edita um PDF — o que não dá é editar junto, porque não há de onde o texto voltar.',
     ['PDF', 'formato portátil', 'fontes embutidas'],
   ),
@@ -72,14 +80,18 @@ const O_QUE_E_UM_PDF: TopicoDeVereda[] = [
       'Então o caminho é sempre o mesmo: escreve-se no editor, e exporta-se para PDF na hora de mandar. Quem precisar mudar alguma coisa muda no editor e exporta de novo.',
       'Quem inverte isso acaba com dois documentos: o PDF corrigido que foi entregue e o editável desatualizado que a próxima diretoria vai abrir no ano que vem.',
     ],
-    `O caminho certo                     O caminho que dá errado
-──────────────────────              ──────────────────────────
-ata.docx  ← todo mundo escreve      ata.pdf  ← alguém corrige aqui
-    ↓ exporta                          e o ata.docx continua velho
-ata.pdf   ← circula                    ↓
-                                    ano que vem alguém abre o .docx`,
     'Esta é a razão de o PDF ser ótimo e péssimo pelo mesmo motivo. Não há um formato bom para as duas coisas — há dois formatos, e um momento certo de trocar de um para o outro.',
     ['distribuição', 'edição colaborativa', 'exportar'],
+    [
+      [
+        'Com o PDF já gerado, alguém acrescenta uma linha ao regulamento no editor: a premiação depois do almoço.',
+        'Caixa Editar — regulamento-gincana.docx, destacada, com a linha nova A premiação acontece logo depois do almoço digitada.',
+      ],
+      [
+        'O PDF não acompanhou: ele continua com as cinco linhas de antes. Ele guarda um retrato, e não um vínculo — quem precisa da linha nova precisa de um PDF novo.',
+        'Leitor aberto em regulamento-gincana.pdf com a página destacada mostrando as cinco linhas originais, sem a linha da premiação.',
+      ],
+    ],
   ),
   t(
     'como-se-gera',
@@ -91,20 +103,18 @@ ata.pdf   ← circula                    ↓
       'Alguns programas também têm "Exportar como PDF" no menu Arquivo. Dá no mesmo, e onde existir é um caminho a menos.',
       'O que muda de um programa para outro é o que cabe na folha. A planilha pergunta quais colunas entram; a apresentação pergunta se vai um slide por página ou vários. Vale olhar a prévia antes de salvar.',
     ],
-    `Arquivo › Imprimir
-
-  Impressora:  [ Salvar como PDF        ▾ ]
-               [ HP DeskJet 2700          ]
-               [ Microsoft Print to PDF   ]
-
-  Páginas:     ( ) Todas   ( ) 1 a 3
-  Prévia:      ┌──────────┐
-               │ Ata da   │
-               │ reunião  │
-               └──────────┘
-                              [ Salvar ]`,
     'A prévia de impressão é a única chance de ver o que vai sair. Planilha larga vira PDF cortado ao meio com frequência, e o corte só aparece depois de o arquivo já ter sido enviado.',
     ['Imprimir', 'Salvar como PDF', 'exportar'],
+    [
+      [
+        'Abrir o regulamento abre a caixa de Imprimir, e a impressora escolhida é "Salvar como PDF": não sai papel nenhum, sai um arquivo.',
+        'Caixa Imprimir — regulamento-gincana.docx sobre a pasta da gincana, com a linha Impressora: Salvar como PDF e o botão Salvar como PDF destacados.',
+      ],
+      [
+        'O PDF sai pronto e abre no leitor, com o mesmo texto do .docx — agora num retrato que chega igual em qualquer computador.',
+        'Leitor aberto em regulamento-gincana.pdf, com o nome do arquivo no alto e a página do regulamento destacados.',
+      ],
+    ],
   ),
 ];
 
@@ -120,39 +130,44 @@ const JUNTAR_E_PARTIR: TopicoDeVereda[] = [
     [
       'Combinar põe vários PDFs um depois do outro, na ordem que se escolher, e produz um arquivo novo. Os originais continuam na pasta: combinar copia, não consome.',
       'A razão de fazer isso quase nunca é economizar espaço — é que documento que vai junto chega junto. Quem recebe três anexos abre o primeiro, resolve o assunto e não volta aos outros dois.',
-      'A ordem importa e se escolhe na hora. A ata antes do orçamento, o orçamento antes da apresentação: quem lê espera a sequência da reunião, e não a ordem em que os arquivos foram salvos.',
+      'A ordem importa e se escolhe na hora. O regulamento antes da pontuação, a pontuação antes da abertura: quem lê espera a sequência do assunto, e não a ordem em que os arquivos foram salvos.',
       'Depois de combinar, vale abrir o resultado e olhar as miniaturas. É onde se percebe que uma das partes entrou de cabeça para baixo ou que faltou uma página.',
     ],
-    `Antes                          Depois
-─────                          ──────
-ata.pdf          (1 pág.)      acampamento.pdf  (3 págs.)
-orcamento.pdf    (1 pág.)        1 · ata
-apresentacao.pdf (1 pág.)        2 · orçamento
-                                 3 · apresentação
-
-  e os três originais continuam na pasta`,
     'Combinar um documento com ele mesmo três vezes produz um arquivo de três páginas e nada reunido. O número de páginas fecha, e não é o número que conta.',
     ['combinar', 'ordem', 'anexos'],
+    [
+      [
+        'Combinar lista os PDFs da pasta, marcados na ordem em que vão entrar, e pede o nome do arquivo que vai juntá-los.',
+        'Caixa Combinar arquivos com os três PDFs da gincana marcados, destacados, e o campo de nome destacado com gincana-2026-09-19-v01.pdf.',
+      ],
+      [
+        'O combinado abre com três páginas, uma de cada arquivo, na ordem em que foram marcados. Os três originais continuam na pasta.',
+        'Leitor aberto em gincana-2026-09-19-v01.pdf com o painel de miniaturas destacado mostrando as páginas 1, 2 e 3, e o alto da janela dizendo 3 páginas.',
+      ],
+    ],
   ),
   t(
     'extrair-e-dividir',
     'Extrair não é dividir',
     'Uma copia para fora; a outra reparte e não sobra o inteiro.',
     [
-      'Extrair tira uma cópia das páginas escolhidas para um arquivo novo, e o documento inteiro continua de pé. Serve quando a secretaria precisa só da página do orçamento e não tem por que receber o resto.',
+      'Extrair tira uma cópia das páginas escolhidas para um arquivo novo, e o documento inteiro continua de pé. Serve quando a secretaria precisa só da página da pontuação e não tem por que receber o resto.',
       'Dividir reparte o documento em dois a partir de uma página: o que vem antes num arquivo, o que vem depois em outro. Serve quando o arquivo era grande demais para anexar, ou quando metade dele é de outra pessoa.',
       'A diferença aparece no dia em que alguém precisa do documento completo. Depois de extrair, ele existe; depois de dividir, ele foi repartido.',
       'Nas duas, a escolha das páginas se faz no painel de miniaturas, à esquerda. Marca-se ali, e o programa age sobre o que está marcado — como em todo programa, o comando age sobre o que foi escolhido, e não sobre o que ele adivinha.',
     ],
-    `Extrair a página 2                Dividir a partir da página 3
-──────────────────                ────────────────────────────
-inteiro.pdf   (3 págs.)  fica     parte-1.pdf  (págs. 1 e 2)
-orcamento.pdf (1 pág.)   novo     parte-2.pdf  (pág. 3)
-
-                                   e inteiro.pdf não existe mais
-                                   como resultado da operação`,
-    'Antes de dividir, vale conferir a conta: a soma das páginas dos dois pedaços tem de dar o total do original. Uma página que some no caminho não avisa, e o dossiê chega sem o orçamento dentro.',
+    'Antes de dividir, vale conferir a conta: a soma das páginas dos dois pedaços tem de dar o total do original. Uma página que some no caminho não avisa, e o dossiê chega sem a pontuação dentro.',
     ['extrair', 'dividir', 'miniaturas'],
+    [
+      [
+        'Marcada a página 2 no painel da esquerda, Extrair páginas pede só o nome do arquivo novo — e avisa que o documento inteiro continua na pasta.',
+        'Miniatura da página 2 destacada e caixa Extrair páginas destacada, com 1 página marcada e o nome pontuacao-2026-09-19-v01.pdf.',
+      ],
+      [
+        'De volta à pasta, os dois estão lá: o combinado de três páginas e a página da pontuação, sozinha. Extrair copia, e não recorta.',
+        'Lista de PDFs da gincana com gincana-2026-09-19-v01.pdf e pontuacao-2026-09-19-v01.pdf destacados.',
+      ],
+    ],
   ),
 ];
 
@@ -167,22 +182,22 @@ const PESO_E_PERDA: TopicoDeVereda[] = [
     'Dois PDFs que abrem exatamente iguais, e só um deles tem letras dentro.',
     [
       'Um PDF gerado de um documento de texto tem as letras dentro dele: cada palavra está lá, gravada como palavra. É um documento pesquisável — dá para procurar, copiar e selecionar.',
-      'Um PDF feito de fotografia de papel não tem letra nenhuma dentro. Tem uma imagem que desenha letras, que é outra coisa: o computador vê manchas escuras sobre fundo claro, e não sabe que aquilo diz "Ficha médica".',
+      'Um PDF feito de fotografia de papel não tem letra nenhuma dentro. Tem uma imagem que desenha letras, que é outra coisa: o computador vê manchas escuras sobre fundo claro, e não sabe que aquilo diz "Termo de autorização".',
       'Na tela, os dois são idênticos. A mesma folha, a mesma letra, o mesmo tamanho. A diferença só aparece quando alguém procura uma palavra: num ela aparece, no outro o leitor responde nenhum resultado com a palavra à vista na página.',
       'Num dossiê que vai ficar arquivado, o documento em imagem é o que ninguém acha quando precisa. E nada na lista de arquivos diz qual dos cinco é ele.',
     ],
-    `Procurando "Chácara" nos dois
-
-documento gerado do editor     documento fotografado
-  → 1 página encontrada          → nenhum resultado
-
-  e os dois mostram, na tela:
-  ┌────────────────────────────┐
-  │ Recibo 118 — Chácara       │
-  │ Recanto                    │
-  └────────────────────────────┘`,
     'O leitor avisa em amarelo quando o documento não tem texto dentro — mas o aviso some assim que existir qualquer texto, inclusive um texto reconhecido errado. Sumir não quer dizer resolvido.',
     ['pesquisável', 'documento em imagem', 'camada de texto'],
+    [
+      [
+        'No regulamento, que saiu do editor, procurar "inscrição" acha a página: o texto está lá dentro.',
+        'Leitor aberto em regulamento-gincana.pdf, com a caixa de procurar destacada contendo inscrição e o contador 1 página destacado.',
+      ],
+      [
+        'Nos termos de imagem, fotografados do papel, a mesma procura não acha nada — e a palavra está à vista na página. O leitor avisa que o documento é imagem.',
+        'Leitor aberto em termos-de-imagem.pdf, com o contador nenhum resultado destacado, a faixa amarela dizendo que o documento é uma imagem digitalizada e a página destacada.',
+      ],
+    ],
   ),
   t(
     'compressao',
@@ -194,15 +209,22 @@ documento gerado do editor     documento fotografado
       'O que se perde é nitidez de imagem. Numa foto de paisagem isso aparece como borrão; numa foto de papel escrito, aparece como letra que começa a se desmanchar na borda.',
       'A escolha do nível é uma conta: caixa de e-mail costuma aceitar até uns vinte e cinco megabytes, e é para baixo disso que se comprime. Comprimir mais do que o necessário é jogar fora qualidade sem ganhar nada.',
     ],
-    `Cinco páginas, dois documentos
-
-digitadas no editor       9,2 MB → comprimido → 9,0 MB
-                          (quase nada: é tudo texto)
-
-fotografadas do papel     9,2 MB → comprimido → 2,0 MB
-                          (muito: é tudo imagem)`,
     'A perda de nitidez não volta. Comprimir forte um documento e depois precisar dele legível quer dizer digitalizar o papel de novo — e às vezes o papel já não existe.',
     ['compressão', 'qualidade', 'tamanho do arquivo'],
+    [
+      [
+        'Na pasta, o regulamento digitado tem 38 KB; os termos fotografados, cinco páginas, têm 9,0 MB.',
+        'Lista de PDFs da gincana destacada: regulamento-gincana.pdf com 1 pág. e 38 KB, termos-de-imagem.pdf com 5 págs. e 9,0 MB.',
+      ],
+      [
+        'Reduzir tamanho oferece dois níveis, e a caixa diz o que se joga fora: qualidade de imagem.',
+        'Caixa Reduzir tamanho do arquivo, destacada, com as opções Redução leve e Redução forte.',
+      ],
+      [
+        'Depois da redução forte, os termos passaram para 2,0 MB. Em documento digitado não haveria de onde tirar.',
+        'Lista de PDFs com a linha termos-de-imagem.pdf destacada, agora com 5 págs. e 2,0 MB.',
+      ],
+    ],
   ),
   t(
     'a-ordem-custa',
@@ -214,11 +236,6 @@ fotografadas do papel     9,2 MB → comprimido → 2,0 MB
       'Comprimir primeiro tira nitidez, e o reconhecimento fica com menos do que ler. Ele erra — e erra parecido, trocando letras por letras parecidas, que é pior do que não ler nada.',
       'Nos dois casos o arquivo termina com o mesmo tamanho. Na lista de arquivos, os dois são indistinguíveis. A diferença só aparece procurando uma palavra.',
     ],
-    `Reconhecer e depois reduzir     Reduzir e depois reconhecer
-───────────────────────────     ───────────────────────────
-2,0 MB                           2,0 MB
-procurando "Ficha": 5 páginas    procurando "Ficha": nenhuma
-                                 (o arquivo guardou "Filcia")`,
     'Não há aviso nenhum do lado errado. O arquivo passa a se dizer pesquisável, porque ele tem texto dentro — só que o texto está errado.',
     ['ordem', 'reconhecimento', 'compressão'],
   ),
@@ -239,18 +256,22 @@ const DIGITALIZAR: TopicoDeVereda[] = [
       'O filtro é a parte que quase todo mundo pula. "Original" guarda a cor e deixa a letra acinzentada; "Preto e branco" joga fora tudo o que não é quase-preto e deixa a letra limpa. Para papel escrito, é o segundo que serve.',
       'O aplicativo mostra um aviso do que ele mediu — imagem escura, página torta. Ele diz o que viu, e não se a tarefa está boa: quem julga é quem digitalizou.',
     ],
-    `Como a foto cai e como ela fica
-
-recém-tirada        9° torta, 28px de mesa em volta,
-                    contraste 38  →  aviso: ruim
-
-cantos encaixados   reta e sem mesa,
-e endireitada       contraste 38  →  aviso: ruim ainda
-
-filtro Preto        reta, sem mesa,
-e branco            contraste 96  →  aviso: bom`,
     'Arrumar metade não basta, e essa é a parte que engana: a folha fica reta e bem recortada, parece pronta, e o contraste continua o de uma foto de mesa.',
     ['digitalizar', 'enquadramento', 'contraste'],
+    [
+      [
+        'A foto cai como cai: torta, com a mesa em volta e acinzentada. O aplicativo avisa que a imagem está escura ou torta.',
+        'Aplicativo de digitalizar com a nota da papelaria torta sobre a mesa de madeira; destacado, o aviso vermelho Imagem escura ou torta.',
+      ],
+      [
+        'Os cantos encaixados na folha e a régua de endireitar no zero deixam o papel reto e sem mesa — e o aviso continua dizendo "escura": falta o contraste.',
+        'Etapa Ajuste os cantos com o papel reto, os quatro cantos azuis nas pontas, e destacados o aviso vermelho e as réguas Endireitar em 0 grau e Enquadrar em 0.',
+      ],
+      [
+        'Com o filtro Preto e branco, o aviso fica verde: imagem nítida e bem enquadrada. Só agora a foto serve para virar PDF.',
+        'Etapa Escolha o filtro com Preto e branco destacado e o aviso verde Imagem nítida e bem enquadrada destacado.',
+      ],
+    ],
   ),
   t(
     'ocr',
@@ -259,18 +280,21 @@ e branco            contraste 96  →  aviso: bom`,
     [
       'Reconhecimento óptico de caracteres, ou OCR, é o programa lendo uma imagem e escrevendo, por baixo dela, o texto que ele acha que está ali. A imagem continua sendo o que se vê; o texto fica numa camada invisível.',
       'É adivinhação, e adivinhação erra. Quanto pior a foto, mais ele erra — e o jeito dele errar é o que engana: ele não devolve garranchos, devolve palavras parecidas.',
-      'A troca mais famosa é o "m" virando "rn": "acampamento" vira "acarnparnento", que lido rápido é a palavra certa. Também trocam "h" por "li", "d" por "cl", "e" por "c".',
+      'A troca mais famosa é o "m" virando "rn": "comunicado" vira "cornunicado", que lido rápido é a palavra certa. Também trocam "h" por "li", "d" por "cl", "e" por "c".',
       'Texto que falta se percebe olhando o tamanho do arquivo ou a página vazia. Texto quase certo não se percebe de jeito nenhum — e os dois falham na busca exatamente igual.',
     ],
-    `O que o papel diz e o que o OCR gravou
-
-papel:      Recibo 118 — Chácara Recanto
-foto boa:   Recibo 118 — Chácara Recanto
-foto ruim:  Rccibo 118 — Cliácara Rccanto
-
-procurando "Chácara" na foto ruim: nenhum resultado`,
     'Depois de reconhecer, o aviso amarelo de "documento em imagem" some, e o leitor passa a tratar o arquivo como pesquisável. Isso não diz nada sobre o texto estar certo.',
     ['OCR', 'reconhecimento', 'camada de texto'],
+    [
+      [
+        'O leitor avisa que os termos são imagem, e o botão de reconhecer o texto está no próprio aviso e na faixa.',
+        'Leitor aberto em termos-de-imagem.pdf, com a faixa amarela de documento digitalizado e o comando Reconhecer texto destacados.',
+      ],
+      [
+        'Depois de reconhecer, Copiar texto devolve as linhas dos termos: agora há letra por baixo da foto.',
+        'Caixa Texto copiado, destacada, com as linhas do termo de autorização de uso de imagem.',
+      ],
+    ],
   ),
   t(
     'comprovar',
@@ -280,16 +304,16 @@ procurando "Chácara" na foto ruim: nenhum resultado`,
       'Depois de digitalizar e reconhecer, a pergunta é: deu certo? E ela não se responde olhando, porque um documento em imagem e um pesquisável abrem iguais.',
       'Responde-se procurando. Escolhe-se uma palavra que está claramente na página — um nome, um número de recibo — e procura-se no leitor. Se o contador disser quantas páginas acharam, o reconhecimento funcionou.',
       'Se disser nenhum resultado, uma de duas coisas aconteceu: ninguém reconheceu o texto, ou o reconhecimento leu errado. As duas se consertam do mesmo jeito — refazer a captura com enquadramento e filtro melhores, e reconhecer de novo.',
-      'Vale escolher uma palavra incomum. Procurar "de" acha alguma coisa em quase qualquer lixo; procurar "Chácara" só acha se a palavra estiver lá.',
+      'Vale escolher uma palavra incomum. Procurar "de" acha alguma coisa em quase qualquer lixo; procurar "Cartolinas" só acha se a palavra estiver lá.',
     ],
-    `A prova, no leitor
-
-  🔍 [ Chácara            ]   1 página
-
-  🔍 [ Chácara            ]   nenhum resultado
-      ↑ e a palavra está à vista na tela`,
     'A contradição é o ponto: a palavra está desenhada na página e o programa não a encontra. É essa contradição que mostra o que é camada de texto.',
     ['prova', 'procurar', 'camada de texto'],
+    [
+      [
+        'A prova é procurar: depois do reconhecimento, "imagem" é achada nas cinco páginas.',
+        'Leitor aberto em termos-de-imagem.pdf, com a caixa de procurar contendo imagem e o contador 5 páginas destacados.',
+      ],
+    ],
   ),
 ];
 
@@ -308,15 +332,14 @@ const FORMULARIO_E_COMENTARIO: TopicoDeVereda[] = [
       'O caminho errado é o comum: imprimir, escrever à mão, fotografar de volta e mandar a foto. Isso transforma um documento pesquisável de duzentos kilobytes numa imagem de dois megabytes, com a letra de alguém que estava com pressa.',
       'Se o PDF não tiver campos, ainda assim não é preciso imprimir: os leitores têm uma ferramenta de escrever por cima. É pior do que campo de verdade, e muito melhor do que papel fotografado.',
     ],
-    `Autorização de participação
-
-  Nome do desbravador  [ Ana Beatriz Rocha     ]
-  Unidade              [ Águia                 ]
-  Responsável          [                       ] ← vermelho
-  Telefone             [                       ] ← vermelho
-  Observações          [                       ]`,
     'Campo preenchido com espaços continua vazio para quem vai ler. O leitor não reclama, o campo perde a borda vermelha, e o documento chega sem o nome do responsável.',
     ['formulário', 'campos', 'preencher'],
+    [
+      [
+        'Os campos se preenchem dentro do PDF. Os obrigatórios ainda vazios — a camiseta e o responsável — ficam marcados até alguém escrever.',
+        'Ficha de inscrição da gincana com os campos Nome do desbravador e Unidade preenchidos e os campos Tamanho da camiseta e Responsável vazios, os quatro destacados.',
+      ],
+    ],
   ),
   t(
     'marcar-e-comentar',
@@ -328,19 +351,18 @@ const FORMULARIO_E_COMENTARIO: TopicoDeVereda[] = [
       'Os balões ficam **fora** do papel, na margem. É de propósito: comentário não sai na impressão e não empurra o texto — ele é conversa sobre o documento, e não parte dele.',
       'Quando alguém deixa uma pergunta num comentário, responder é outra ação, e não a mesma coisa que marcar como resolvido. Resolver sem responder fecha o assunto sem dizer nada a quem perguntou.',
     ],
-    `A circular, com a margem aberta
-
-┌──────────────────────────┐   ┌────────────────────┐
-│ Circular 03/2026         │   │ Tia Rute           │
-│ O acampamento acontecerá │   │ A data bate com o  │
-│ de 17 a 19 de julho.     │   │ calendário? Confira│
-│ A autorização deve voltar│   └────────────────────┘
-│ até o dia 30 de junho.   │   ┌────────────────────┐
-└──────────────────────────┘   │ Ana Beatriz        │
-   ↑ trecho destacado          │ Confirmei: bate.   │
-                               └────────────────────┘`,
     'Comentário não é edição. Ele fica por cima do documento e pode ser apagado por quem receber — o que está escrito no texto continua escrito no texto.',
     ['destacar', 'comentar', 'margem'],
+    [
+      [
+        'O comunicado chegou com uma pergunta na margem, fora da página: ela não sai na impressão.',
+        'Leitor aberto em comunicado-07.pdf com a margem de comentários destacada, mostrando o balão de Tio Leandro sobre o prazo das inscrições.',
+      ],
+      [
+        'Responder é outro comentário, logo abaixo, dizendo o que se conferiu — e não apagar a pergunta.',
+        'Margem destacada com dois balões: a pergunta de Tio Leandro e a resposta de Rafael Moura dizendo que conferiu com a secretaria.',
+      ],
+    ],
   ),
 ];
 
@@ -359,15 +381,18 @@ const O_QUE_PARECE_GARANTIA: TopicoDeVereda[] = [
       'Impressão digital do documento é um número calculado a partir de cada byte dele. Mudar uma vírgula muda o número inteiro, e é isso que permite ao leitor conferir depois se o documento ainda é o mesmo.',
       'A assinatura verificável não impede ninguém de mexer no documento. Ela faz com que mexer **apareça** — que é uma garantia diferente, e mais útil.',
     ],
-    `O selo, na barra de baixo do leitor
-
-  ✓ Assinatura válida
-    Marta Rocha · 12/07/2026 · confere com o documento
-
-  ⚠ Assinatura não confere
-    o documento mudou depois de assinado`,
     'Assinatura válida não quer dizer documento verdadeiro: quer dizer que ele não mudou desde que aquela pessoa assinou. Quem assinou e o que estava escrito continuam sendo perguntas separadas.',
     ['assinatura eletrônica', 'verificável', 'impressão digital'],
+    [
+      [
+        'Assinar oferece as duas: a imagem colada e a verificável. Na página, as duas desenham o mesmo rabisco.',
+        'Caixa Assinar documento, destacada, com as opções Imagem da assinatura e Assinatura verificável.',
+      ],
+      [
+        'Com a verificável, a régua de baixo mostra o selo: assinatura válida.',
+        'Ficha de inscrição preenchida com o selo verde Assinatura válida destacado na barra de baixo.',
+      ],
+    ],
   ),
   t(
     'colada-ou-verificavel',
@@ -379,13 +404,14 @@ const O_QUE_PARECE_GARANTIA: TopicoDeVereda[] = [
       'No dia de assinar, as duas são iguais. A diferença aparece depois — e por isso quem escolhe pela aparência escolhe no escuro.',
       'A imagem colada tem seu uso: um convite, um cartão, uma coisa que não precisa provar nada. Autorização, recibo e contrato pedem a outra.',
     ],
-    `Mês seguinte: alguém muda o valor do recibo
-
-assinatura colada          assinatura verificável
-  o rabisco continua lá      ⚠ não confere
-  nada acusa nada            e o leitor diz desde quando`,
     'A imagem colada nunca acusa nada, e é isso que faz dela a pior das duas: um documento adulterado com assinatura colada continua parecendo assinado.',
     ['assinatura colada', 'verificável', 'adulteração'],
+    [
+      [
+        'Trocado o tamanho da camiseta depois de assinar, o selo vira "não confere": o documento mudou, e a assinatura verificável percebe.',
+        'Ficha de inscrição com o campo Tamanho da camiseta mudado para G e o selo vermelho Assinatura não confere, os dois destacados.',
+      ],
+    ],
   ),
   t(
     'senha-nao-e-seguranca',
@@ -397,17 +423,18 @@ assinatura colada          assinatura verificável
       'Existem também as caixas de "não permitir copiar" e "não permitir imprimir". Elas não são travas: são **pedidos** gravados dentro do arquivo. O leitor obedece porque foi escrito para obedecer, e outro leitor simplesmente não obedece.',
       'Então "documento protegido por senha" e "documento seguro" são coisas diferentes. O que a senha dá é controle de quem abre da primeira vez.',
     ],
-    `O que cada coisa garante
-
-senha de abertura        quem não tem a senha não abre
-                         quem tem, faz o que quiser
-
-não permitir copiar      um pedido; outro leitor ignora
-não permitir imprimir    um pedido; outro leitor ignora
-
-assinatura verificável   mexeu, aparece`,
     'O programa que ignora o pedido de "não copiar" não é de invasor: é qualquer outro leitor de PDF. A restrição depende da boa vontade de quem abre.',
     ['senha', 'restrições', 'segurança'],
+    [
+      [
+        'Proteger pede uma senha de abertura e oferece duas caixas — não copiar, não imprimir. A caixa diz o que elas são: pedidos.',
+        'Caixa Proteger com senha, destacada, com a senha digitada e as opções Não permitir copiar texto e Não permitir imprimir.',
+      ],
+      [
+        'Com "não permitir copiar" ligado, Copiar texto entrega o texto assim mesmo. O pedido é ao leitor, e leitor nenhum é obrigado a obedecer.',
+        'Caixa Texto copiado, destacada, dizendo que o documento pede que o leitor não deixe copiar e que o texto veio assim mesmo, com as linhas da ficha.',
+      ],
+    ],
   ),
 ];
 
@@ -421,19 +448,12 @@ const O_DOSSIE: TopicoDeVereda[] = [
     'O que é um dossiê',
     'O que fica arquivado da atividade, para quem abrir daqui a dois anos.',
     [
-      'Dossiê é o conjunto de documentos que registra uma coisa que aconteceu. Do acampamento, o dossiê é a ata que o aprovou, o orçamento, a lista de presença, a circular que foi às famílias e o recibo da chácara.',
-      'Ele não é para agora: é para quem abrir depois. A próxima diretoria que for organizar o acampamento do ano que vem vai procurar exatamente isso, e o que ela achar é o que vai ter.',
+      'Dossiê é o conjunto de documentos que registra uma coisa que aconteceu. Da gincana, o dossiê é o regulamento que a organizou, a pontuação, a lista das equipes, o comunicado que foi às unidades e a nota da papelaria que comprova o gasto.',
+      'Ele não é para agora: é para quem abrir depois. A próxima diretoria que for organizar a gincana do ano que vem vai procurar exatamente isso, e o que ela achar é o que vai ter.',
       'Por isso todos os documentos precisam ser pesquisáveis. Um que seja foto sem texto dentro é o que ninguém acha quando precisa — e, como os cinco abrem iguais, ninguém sabe qual é antes de precisar.',
       'E por isso eles precisam de nome. Cinco arquivos chamados "documento (1)" até "documento (5)" são cinco arquivos que alguém vai abrir um a um.',
     ],
-    `O dossiê do acampamento
-
-  ata-2026-03-14-v01.pdf        a reunião que aprovou
-  orcamento-2026-07-01-v02.pdf  quanto custou
-  presenca-2026-07-19-v01.pdf   quem foi
-  circular-2026-06-02-v01.pdf   o que foi dito às famílias
-  recibo-2026-07-02-v01.pdf     o comprovante da chácara`,
-    'Cinco é o mínimo que o requisito pede, e não uma meta: um acampamento de três dias produz bem mais do que cinco documentos. O que se escolhe é o que responde às perguntas que alguém vai fazer.',
+    'Cinco é o mínimo que o requisito pede, e não uma meta: uma gincana de um sábado produz bem mais do que cinco documentos. O que se escolhe é o que responde às perguntas que alguém vai fazer.',
     ['dossiê', 'arquivo', 'registro'],
   ),
   t(
@@ -443,20 +463,21 @@ const O_DOSSIE: TopicoDeVereda[] = [
     [
       'Um padrão de nome é uma forma repetida: assunto, data e versão, sempre na mesma ordem e com o mesmo separador. Qual forma é escolha de quem organiza — a vereda de arquivos já pediu que você escolhesse a sua.',
       'A data se escreve do maior para o menor: ano, mês, dia. É o que faz a ordem alfabética da pasta virar ordem de tempo, e é a única razão de a data não ser escrita como se fala.',
-      'A versão diz qual é a mais recente sem ninguém abrir nada. Sem ela, "orçamento final" e "orçamento final 2" convivem na mesma pasta e ninguém sabe qual vale.',
+      'A versão diz qual é a mais recente sem ninguém abrir nada. Sem ela, "regulamento final" e "regulamento final 2" convivem na mesma pasta e ninguém sabe qual vale.',
       'As duas coisas são necessárias e não se substituem. Cinco arquivos no mesmo formato e sem data não ordenam a pasta; cinco datados e cada um num formato também não.',
     ],
-    `A mesma pasta, dois jeitos
-
-sem padrão                      com padrão
-  Ata reunião.pdf                 ata-2026-03-14-v01.pdf
-  orcamento final.pdf             circular-2026-06-02-v01.pdf
-  IMG_20260702_143512.pdf         orcamento-2026-07-01-v02.pdf
-  circular 03.pdf                 presenca-2026-07-19-v01.pdf
-  doc scan 2.pdf                  recibo-2026-07-02-v01.pdf
-                                  ↑ a pasta se ordenou sozinha`,
-    'O nome que a câmera dá — IMG_20260702_143512 — tem data dentro e ainda assim não serve: ele não diz o que é o documento, que é a primeira coisa que alguém procura.',
+    'O nome que a câmera dá — IMG_20260912_174802 — tem data dentro e ainda assim não serve: ele não diz o que é o documento, que é a primeira coisa que alguém procura.',
     ['padrão de nome', 'data', 'versão'],
+    [
+      [
+        'A pasta como o caminho deixou: um NOVO, um (2), o nome da câmera e um "scan". Nenhum diz a data, e nenhum diz a versão.',
+        'Lista de PDFs destacada: Regulamento NOVO.pdf, pontos (2).pdf, IMG_20260912_174802.pdf e scan termos.pdf.',
+      ],
+      [
+        'Renomear, no padrão: o assunto, a data com o ano primeiro, e a versão.',
+        'Caixa Renomear, destacada, com o nome termos-2026-09-19-v01.pdf digitado.',
+      ],
+    ],
   ),
   t(
     'conferir-antes',
@@ -468,13 +489,6 @@ sem padrão                      com padrão
       'Vale conferir também o que não é conteúdo — se algum documento está assinado e o selo diz que confere, se nenhum está protegido por uma senha que ninguém mais tem.',
       'Um dossiê entregue com um documento ilegível não volta para conserto: ele fica arquivado do jeito que chegou, e quem descobrir o problema vai ser alguém que precisava daquele documento.',
     ],
-    `A conferência, documento a documento
-
-  ata          ✓ pesquisável   "reunião" → 1 página
-  orçamento    ✓ pesquisável   "Total"   → 1 página
-  presença     ⚠ em imagem     → reconhecer, e procurar de novo
-  circular     ✓ pesquisável   "julho"   → 1 página
-  recibo       ✓ pesquisável   "Chácara" → 1 página`,
     'Reconhecer o texto de um documento que já tem texto é pior do que não fazer nada: o programa relê a página e troca texto exato por texto adivinhado, num arquivo que continua se dizendo pesquisável.',
     ['conferência', 'entrega', 'dossiê'],
   ),
