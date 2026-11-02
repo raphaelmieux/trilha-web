@@ -447,13 +447,17 @@ export function CaixaDeGerar({ como, aoMudar, senha, aoSortear, aoUsar }: {
  * é o item e quem tem acesso a ele. É a mesma regra do painel de Problemas do
  * Python e do polegar do laboratório de IA.
  */
-export function AcessoDaEntrada({ entrada, aoPassarParaOClube, aoDarAcesso, aoTirarAcesso }: {
+export function AcessoDaEntrada({
+  entrada, aoPassarParaOClube, aoDarAcesso, aoTirarAcesso, diretoria = ['Marta', 'Ronaldo', 'Cleide'],
+}: {
   entrada: EntradaDoCofre;
   aoPassarParaOClube?: () => void;
   aoDarAcesso?: (quem: string) => void;
   aoTirarAcesso?: (quem: string) => void;
+  /** Quem pode receber acesso. As telas da teoria abrem o cofre de outro clube. */
+  diretoria?: string[];
 }) {
-  const daDiretoria = ['Marta', 'Ronaldo', 'Cleide'];
+  const daDiretoria = diretoria;
   const fora = daDiretoria.filter(q => !entrada.acesso.includes(q));
   return (
     <div className="cf-cartao">

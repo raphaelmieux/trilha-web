@@ -977,6 +977,25 @@ px: a caixa de procurar e o "1 página" ficavam além da borda direita em
 qualquer notebook. É o número que o requisito 5 manda ler como prova, e ele
 estava atrás de uma rolagem que ninguém faz. A faixa quebra linha agora.
 
+A CC-ES005 fotografa as contas dos Aventureiros Estrela Guia, de
+`src/exemplos/aventureirosEstrelaGuia.ts` — o clube das crianças menores, com
+outra diretoria, outras senhas, outros aplicativos, outro vazamento e outras
+mensagens —, e não as do Clube Pioneiros: lá a senha repetida em quatro
+contas, o formulário no endereço da Marta, a FotoMágica que lê as mensagens e
+a loja de camisetas que vazou são as respostas. São três programas, e a cena
+escolhe qual pela lição, como o laboratório; `LaboratorioDeContas` ganhou
+`outra` por isso, com as contas do clube por padrão, e
+`exemplosDeContas.test.ts` reprova se os dois clubes dividirem um endereço,
+uma senha, um aplicativo ou uma mensagem. A senha de lista fica de fora dessa
+conta, de propósito: `Senha@123` está no cofre do laboratório porque todo
+mundo a escolhe, e ensinar que ela está nas listas é a matéria.
+
+O motor reconhece o aplicativo do intruso pelo **id**, `acesso-remoto`, e não
+pelo nome. O exemplo nasceu com outro id, e a tela mostrava o aplicativo
+estranho na lista enquanto `portasAbertas` dizia que só havia duas portas —
+a legenda das três portas afirmava o que o motor não via. Apareceu
+escrevendo a trava que conta as portas, antes de ela rodar.
+
 A teoria ensinava a buscar escrevendo `tipo:imagem` na caixa, e a janela do
 laboratório filtra numa caixa com Tipo e Data: a lição descrevia um gesto que
 a pessoa não ia encontrar. E a primeira captura achou um defeito do
@@ -5142,6 +5161,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDePdf.test.tsx` | digitalizador fora das classes que a folha dele desenha, que o deixa colado embaixo do leitor sem mesa nem moldura |
 | `src/labs/leitorDePdf.test.tsx` | faixa do leitor que rola de lado em vez de quebrar linha, escondendo o contador da procura |
 | `src/curriculum/exemplosDePdf.test.ts` | legenda da teoria da CC-ES004 que a pasta da gincana não devolve, ou gincana que divide arquivo ou linha com a pasta do laboratório |
+| `src/curriculum/exemplosDeContas.test.ts` | legenda da teoria da CC-ES005 que as contas dos Aventureiros não devolvem, ou os Aventureiros dividindo endereço, senha, aplicativo ou mensagem com o clube do laboratório |
 | `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |

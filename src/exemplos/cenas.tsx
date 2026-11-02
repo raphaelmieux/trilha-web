@@ -13,6 +13,11 @@ import LaboratorioDePdf from '../components/LaboratorioDePdf';
 import {
   ATIVIDADE, GINCANA, NOME_DA_FOTO_DA_NOTA, NOTA_DA_PAPELARIA, PESSOAS, type EstadoDaGincana,
 } from './gincanaDaPrimavera';
+import LaboratorioDeContas from '../components/LaboratorioDeContas';
+import {
+  CAIXA_DOS_AVENTUREIROS, DIRETORIA, ENDERECO_DO_CLUBE, ENDERECO_DO_INTRUSO, NOME_DO_COFRE, VAZAMENTOS_DO_EXEMPLO,
+  contaDosAventureiros, contaDosAventureirosInvadida, cofreDosAventureiros,
+} from './aventureirosEstrelaGuia';
 import { CENAS_DE_DESIGN } from './cenasDeDesign';
 import { CENAS_VETORIAIS } from './cenasVetoriais';
 import { CENAS_DE_FOTO } from './cenasDeFoto';
@@ -326,6 +331,25 @@ const leitor = (estado: EstadoDaGincana) => () => (
     }} />
 );
 
+/* ── Contas e segurança ──────────────────────────────────────────────────── */
+
+/*
+ * As contas dos Aventureiros Estrela Guia, e não as do Clube Pioneiros que as
+ * lições arrumam. A lição escolhe o programa (cofre, página da conta ou
+ * correio) e a conta de partida (a comum ou a invadida); o resto vem de
+ * `aventureirosEstrelaGuia.ts`.
+ */
+const LICOES_DE_CONTAS = ['senhas', 'duas-etapas', 'aplicativos', 'vazamento', 'privacidade', 'golpes', 'invasao', 'plano'] as const;
+const contas = (n: number) => () => (
+  <LaboratorioDeContas vereda={vereda('cc-es005')} licao={licaoDe('cc-es005', 'contas', n)}
+    aoVencer={nada} aoSair={nada}
+    outra={{
+      cofre: cofreDosAventureiros, conta: contaDosAventureiros, contaInvadida: contaDosAventureirosInvadida,
+      caixa: () => CAIXA_DOS_AVENTUREIROS, vazamentos: VAZAMENTOS_DO_EXEMPLO, nomeDoCofre: NOME_DO_COFRE,
+      diretoria: DIRETORIA, enderecoDoClube: ENDERECO_DO_CLUBE, enderecoDoIntruso: ENDERECO_DO_INTRUSO,
+    }} />
+);
+
 export const CENAS: Record<string, ComponentType> = {
   'word-programa-a-mao': word(PROGRAMA_A_MAO, 'Programa do Campori'),
   'word-programa-com-estilo': word(PROGRAMA_COM_ESTILO, 'Programa do Campori'),
@@ -351,6 +375,7 @@ export const CENAS: Record<string, ComponentType> = {
   'excursao-orcamento': planilha({ aba: 'Orçamento' }),
   'excursao-conferir': planilha({ aba: 'Conferir' }),
   ...Object.fromEntries((Object.keys(GINCANA) as EstadoDaGincana[]).map(e => [`gincana-${e}`, leitor(e)])),
+  ...Object.fromEntries(LICOES_DE_CONTAS.map((l, i) => [`aventureiros-${l}`, contas(i)])),
   ...CENAS_DE_DESIGN,
   ...CENAS_VETORIAIS,
   ...CENAS_DE_FOTO,

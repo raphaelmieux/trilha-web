@@ -21,7 +21,7 @@ import {
   gerarCodigosDeReserva, ligarDuasEtapas, guardarCodigos, revogarAplicativo,
   ajustar, fecharTudo, trocarSenhaDaConta, encerrarOutrasSessoes,
   trocarRecuperacao, tirarEncaminhamento, vazamentosDe, portasAbertas,
-  ENDERECO_DO_INTRUSO,
+  ENDERECO_DO_INTRUSO, contaInvadida, type Vazamento,
 } from '../labs/contaOnline';
 import {
   CSS_DO_CORREIO, TopoDoCorreio, LateralDoCorreio, ListaDoCorreio, LinhaDaLista,
@@ -124,7 +124,28 @@ type Comum = {
   licao: { titulo: string; verificacoes: string[] };
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  outra?: OutraConta;
 };
+
+/**
+ * O que as telas da teoria trocam: o cofre, a conta, a caixa de correio, as
+ * listas de vazamento, o nome do cofre, a diretoria e o endereço institucional.
+ * Elas fotografam o Clube de Aventureiros Estrela Guia, porque tudo nas contas
+ * do Clube Pioneiros é resposta de alguma lição — o motivo está em
+ * `src/exemplos/aventureirosEstrelaGuia.ts`. Sem nada disso, o laboratório é o
+ * de sempre.
+ */
+export interface OutraConta {
+  cofre: () => Cofre;
+  conta: () => ContaOnline;
+  contaInvadida: () => ContaOnline;
+  caixa: () => MensagemDoCorreio[];
+  vazamentos: Vazamento[];
+  nomeDoCofre: string;
+  diretoria: string[];
+  enderecoDoClube: string;
+  enderecoDoIntruso: string;
+}
 
 /* ────────────────────────────────────────────────────────────────────────────
    O cofre de senhas — módulos 1 e 8
@@ -191,7 +212,7 @@ function NoCofre({ inicial, metas, ...c }: Comum & {
     >
       <style>{CSS_DO_COFRE}</style>
       <div className="cf-janela">
-        <TopoDoCofre cofre="Clube Pioneiros" termo={termo} aoBuscar={setTermo} />
+        <TopoDoCofre cofre={c.outra?.nomeDoCofre ?? 'Clube Pioneiros'} termo={termo} aoBuscar={setTermo} />
         <div className="cf-corpo">
           <ListaDoCofre quantas={lista.length}>
             {lista.map(e => (
@@ -251,9 +272,10 @@ function NoCofre({ inicial, metas, ...c }: Comum & {
                 <AcessoDaEntrada
                   entrada={entrada}
                   aoPassarParaOClube={() => setCofre(x =>
-                    passarParaOClube(x, entrada.id, 'inscricoes@clubepioneiros.org'))}
+                    passarParaOClube(x, entrada.id, c.outra?.enderecoDoClube ?? 'inscricoes@clubepioneiros.org'))}
                   aoDarAcesso={quem => setCofre(x => darAcesso(x, entrada.id, quem))}
                   aoTirarAcesso={quem => setCofre(x => tirarAcesso(x, entrada.id, quem))}
+                  diretoria={c.outra?.diretoria}
                 />
               </>
             )}
@@ -287,7 +309,7 @@ function NaConta({ inicial, metas, ...c }: Comum & {
   const [consultados, setConsultados] = useState<string[]>([]);
   const [dialogo, setDialogo] = useState<DialogoDaConta | null>(null);
 
-  const portas = portasAbertas(conta, ENDERECO_DO_INTRUSO);
+  const portas = portasAbertas(conta, c.outra?.enderecoDoIntruso ?? ENDERECO_DO_INTRUSO);
 
   const recomecar = () => {
     setConta(partida); setSecao('seguranca'); setMetodo(undefined); setCaixa(false);
@@ -399,7 +421,7 @@ function NaConta({ inicial, metas, ...c }: Comum & {
                     setConsultado(e);
                     setConsultados(x => (x.includes(e) ? x : [...x, e]));
                   }}
-                  achados={consultado ? vazamentosDe(consultado) : []}
+                  achados={consultado ? vazamentosDe(consultado, c.outra?.vazamentos) : []}
                   consultado={consultado}
                 />
               </>
@@ -734,22 +756,27 @@ const CSS_DA_ANALISE = `
 
 /* ── O despacho ───────────────────────────────────────────────────────────── */
 
-export default function LaboratorioDeContas({ vereda, licao, aoVencer, aoSair }: {
+export default function LaboratorioDeContas({ vereda, licao, aoVencer, aoSair, outra }: {
   vereda: Vereda;
   licao: Extract<LicaoDeVereda, { tipo: 'contas' }>;
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  outra?: OutraConta;
 }) {
   const l = LICOES_DA_CC_ES005[licao.licao];
-  const comum = { vereda, licao, aoVencer, aoSair };
+  const comum = { vereda, licao, aoVencer, aoSair, outra };
 
   switch (l.programa) {
     case 'cofre':
-      return <NoCofre {...comum} inicial={l.inicial} metas={l.metas} />;
-    case 'conta':
-      return <NaConta {...comum} inicial={l.inicial} metas={l.metas} />;
+      return <NoCofre {...comum} inicial={outra?.cofre ?? l.inicial} metas={l.metas} />;
+    case 'conta': {
+      /* A lição da invasão parte da conta já invadida; as outras, da conta como
+         ela chega. A troca segue a mesma regra. */
+      const daOutra = outra && (l.inicial === contaInvadida ? outra.contaInvadida : outra.conta);
+      return <NaConta {...comum} inicial={daOutra ?? l.inicial} metas={l.metas} />;
+    }
     case 'correio':
-      return <NoCorreio {...comum} caixa={l.caixa} metas={l.metas} />;
+      return <NoCorreio {...comum} caixa={outra?.caixa ?? l.caixa} metas={l.metas} />;
     default: {
       /* `never` no default: a nona lição não compila até dizer em qual dos
          três programas ela acontece. */

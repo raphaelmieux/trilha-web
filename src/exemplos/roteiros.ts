@@ -34,6 +34,7 @@ import { ROTEIROS_DO_PROJETO_DE_DESIGN } from './roteiros/projetoDeDesign';
 import { ROTEIROS_DE_ARQUIVOS } from './roteiros/arquivos';
 import { ROTEIROS_DE_PLANILHA } from './roteiros/planilhas';
 import { ROTEIROS_DE_PDF } from './roteiros/documentosPortateis';
+import { ROTEIROS_DE_CONTAS } from './roteiros/contasESeguranca';
 
 export type Acao =
   /**
@@ -92,6 +93,7 @@ export const ROTEIROS: Roteiro[] = [
   ...ROTEIROS_DE_ARQUIVOS,
   ...ROTEIROS_DE_PLANILHA,
   ...ROTEIROS_DE_PDF,
+  ...ROTEIROS_DE_CONTAS,
 ];
 
 /** Os nomes das imagens que um roteiro produz, na ordem. */
