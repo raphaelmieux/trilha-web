@@ -22,7 +22,7 @@ import {
 } from './nuvem';
 import { NOME_DO_AUTOR } from './documento';
 import {
-  compartilhar, pastasAcima, quemEscreveu, transferirPropriedade, type Pessoa,
+  compartilhar, pastasAcima, quemEscreveu, transferirPropriedade, type Pessoa, emOrdemDaLista,
 } from './arquivoCompartilhado';
 import { CampoLongo } from './caderno';
 import {
@@ -44,6 +44,7 @@ function ListaDoProjeto({ ctx, mudar, avisar, extra }: PropsDaSuperficie & {
   extra?: React.ReactNode;
 }) {
   const [lugar, setLugar] = useState<LugarDaNuvem>('meu');
+  const [crescente, setCrescente] = useState(true);
   const [pasta, setPasta] = useState<string | null>(PASTA_RAIZ);
   const [escolhido, setEscolhido] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
@@ -78,15 +79,15 @@ function ListaDoProjeto({ ctx, mudar, avisar, extra }: PropsDaSuperficie & {
       <TopoDaNuvem quem="voce" />
 
       <div className="nv-corpo">
-        <LateralDaNuvem lugar={lugar} aoIr={setLugar} usado={34} />
+        <LateralDaNuvem lugar={lugar} aoIr={setLugar} usado={0.34} />
 
         <div className="nv-lista">
           <CaminhoDaNuvem trilha={trilha} aoIr={setPasta} />
 
           <div className="nv-barra-espaco">{extra}</div>
 
-          <CabecalhoDaLista />
-          {dentro.map(a => (
+          <CabecalhoDaLista crescente={crescente} aoOrdenar={() => setCrescente(c => !c)} />
+          {emOrdemDaLista(dentro, crescente).map(a => (
             <div key={a.id}>
               {renomeando === a.id
                 ? (
@@ -110,7 +111,7 @@ function ListaDoProjeto({ ctx, mudar, avisar, extra }: PropsDaSuperficie & {
                     arquivo={a} escolhido={escolhido === a.id}
                     aoEscolher={() => setEscolhido(a.id)}
                     aoAbrir={() => (a.tipo === 'pasta' ? setPasta(a.id) : setCaixa(a.id))}
-                    aoMenu={e => { e.preventDefault(); setMenu({ id: a.id, x: e.clientX, y: e.clientY }); }}
+                    aoMenu={(_, onde) => setMenu({ id: a.id, ...onde })}
                   />
                 )}
               {funcaoDaPasta(a.id) && (

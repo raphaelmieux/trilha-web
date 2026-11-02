@@ -131,6 +131,11 @@ export const APARENCIA_DO_ESTILO: Record<Estilo, CSSProperties> = {
 export interface Direta {
   negrito?: boolean;
   italico?: boolean;
+  /** O Ctrl+S do Word em português. Ele não existia porque nenhum botão o
+      alcançava; com o cursor de verdade, a faixa inteira passou a agir. */
+  sublinhado?: boolean;
+  /** O nome da fonte, como a caixa de fontes do Word o escreve — um de `FONTES_DO_WORD`. */
+  fonte?: string;
   tamanho?: number;
   cor?: string;
 }
@@ -315,6 +320,76 @@ export interface Paragrafo<S extends string = string> extends BlocoBase<S> {
   estilo: Estilo;
   /** Nota de rodapé pendurada neste parágrafo. */
   nota?: string;
+  /** A formatação de parágrafo aplicada à mão. Ausente é a do estilo. */
+  formato?: FormatoDoParagrafo;
+}
+
+export type Alinhamento = 'esquerda' | 'centro' | 'direita' | 'justificado';
+export type TipoDeLista = 'marcadores' | 'numeracao';
+
+/**
+ * O que o grupo Parágrafo da faixa muda — e o que mora no **parágrafo**, e
+ * não no trecho.
+ *
+ * Alinhamento, entrelinha, lista e recuo valem para a linha inteira: no Word
+ * não há como centralizar meia frase, e é por isso que o botão de centralizar
+ * age com o cursor parado em qualquer ponto do parágrafo. Guardá-los no
+ * trecho deixaria representável o parágrafo meio centralizado, e cada leitor
+ * teria de decidir qual metade vale.
+ *
+ * A lista é um estado do parágrafo, e não um "• " digitado no começo dele: é
+ * o que faz a numeração se refazer sozinha quando um item sai do meio. Quem
+ * digita "1." à mão entrega uma lista que, depois da primeira revisão, pula
+ * do 2 para o 4 — a mesma família da legenda digitada.
+ */
+export interface FormatoDoParagrafo {
+  alinhamento?: Alinhamento;
+  /** Múltiplo da linha simples: 1, 1,15, 1,5, 2… */
+  entrelinha?: number;
+  lista?: TipoDeLista;
+  /** Em degraus de 1,25 cm, que é o que "Aumentar Recuo" anda no Word. */
+  recuo?: number;
+}
+
+/** Quanto anda um degrau de recuo, em centímetros. */
+export const DEGRAU_DE_RECUO_CM = 1.25;
+
+const MARCADORES = ['•', '◦', '▪'];
+const romanos = (n: number) => {
+  const tabela: [number, string][] = [[10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']];
+  let r = '';
+  for (const [v, l] of tabela) while (n >= v) { r += l; n -= v; }
+  return r;
+};
+
+/**
+ * O que aparece antes de um item de lista: o marcador do nível, ou o número.
+ *
+ * O número é **calculado**, contando os itens numerados seguidos do mesmo
+ * nível acima dele — e um parágrafo sem lista no meio recomeça a conta. Nível
+ * mais fundo não interrompe o de fora: o 2 continua sendo 2 depois de três
+ * subitens, que é o que uma lista de vários níveis do Word faz.
+ */
+export function marcadorDaLista(d: Doc<string>, blocoId: string): string | null {
+  const i = d.blocos.findIndex(b => b.id === blocoId);
+  const b = d.blocos[i];
+  if (!b || b.tipo !== 'paragrafo' || !b.formato?.lista) return null;
+  const nivel = b.formato.recuo ?? 0;
+  if (b.formato.lista === 'marcadores') return MARCADORES[nivel % MARCADORES.length];
+  let n = 1;
+  for (let j = i - 1; j >= 0; j--) {
+    const a = d.blocos[j];
+    if (a.tipo !== 'paragrafo' || !a.formato?.lista) break;
+    const outro = a.formato.recuo ?? 0;
+    if (outro < nivel) break;
+    if (outro === nivel) {
+      if (a.formato.lista !== 'numeracao') break;
+      n++;
+    }
+  }
+  if (nivel % 3 === 1) return `${String.fromCharCode(96 + ((n - 1) % 26) + 1)}.`;
+  if (nivel % 3 === 2) return `${romanos(n)}.`;
+  return `${n}.`;
 }
 
 /**
@@ -600,6 +675,49 @@ export interface Doc<S extends string = string> {
   controlarAlteracoes?: boolean;
   /** Os comentários da margem. Ausente é o mesmo que nenhum. */
   comentarios?: Comentario[];
+  /**
+   * O papel, a orientação e as margens — Layout › Configurar Página.
+   *
+   * Moram no documento, como no Word: é o arquivo que sai da impressora em
+   * paisagem, e não o programa. Ausente é o padrão de todo documento novo em
+   * português, A4 em pé com margem normal.
+   */
+  pagina?: ConfiguracaoDaPagina;
+}
+
+export type Papel = 'A4' | 'Carta' | 'Ofício';
+export type Orientacao = 'retrato' | 'paisagem';
+export type Margens = 'normal' | 'estreita' | 'moderada' | 'larga';
+
+export interface ConfiguracaoDaPagina {
+  papel: Papel;
+  orientacao: Orientacao;
+  margens: Margens;
+}
+
+export const PAGINA_PADRAO: ConfiguracaoDaPagina = { papel: 'A4', orientacao: 'retrato', margens: 'normal' };
+
+/** Largura e altura em pé, em centímetros, como a caixa Tamanho do Word mostra. */
+export const MEDIDAS_DO_PAPEL: Record<Papel, { largura: number; altura: number }> = {
+  A4: { largura: 21, altura: 29.7 },
+  Carta: { largura: 21.59, altura: 27.94 },
+  Ofício: { largura: 21.59, altura: 35.56 },
+};
+
+export const MEDIDAS_DAS_MARGENS: Record<Margens, number> = {
+  estreita: 1.27, moderada: 1.91, normal: 2.5, larga: 5.08,
+};
+
+/** As medidas que a folha desenha. Virar o papel troca largura e altura. */
+export function medidasDaPagina(d: Doc<string>): { largura: number; altura: number; margem: number } {
+  const p = d.pagina ?? PAGINA_PADRAO;
+  const { largura, altura } = MEDIDAS_DO_PAPEL[p.papel];
+  const deitado = p.orientacao === 'paisagem';
+  return {
+    largura: deitado ? altura : largura,
+    altura: deitado ? largura : altura,
+    margem: MEDIDAS_DAS_MARGENS[p.margens],
+  };
 }
 
 /* ── Montar ───────────────────────────────────────────────────────────────── */
@@ -869,8 +987,38 @@ export const paragrafosVazios = <S extends string>(d: Doc<S>) =>
 /** As pilhas de nomes de fonte que cada família rende, com os nomes do Word. */
 export const FONTES: Record<'serifada' | 'sem-serifa', string> = {
   serifada: 'Georgia, "Times New Roman", serif',
-  'sem-serifa': 'Calibri, Arial, sans-serif',
+  'sem-serifa': 'Calibri, Carlito, Arial, sans-serif',
 };
+
+/**
+ * A caixa de fontes da guia Início, com as famílias que um computador de clube
+ * tem instaladas.
+ *
+ * A fonte é formatação de **caractere**, como no Word: vale para o que está
+ * selecionado. A família de cada uma é o que a lição de tipografia mede — a
+ * caixa lista nomes, e quem decide se a escolha serve ao papel é a família
+ * por trás do nome.
+ */
+export const FONTES_DO_WORD: { nome: string; pilha: string; familia: 'serifada' | 'sem-serifa' }[] = [
+  { nome: 'Calibri', pilha: 'Calibri, Carlito, Arial, sans-serif', familia: 'sem-serifa' },
+  { nome: 'Arial', pilha: 'Arial, "Liberation Sans", Helvetica, sans-serif', familia: 'sem-serifa' },
+  { nome: 'Verdana', pilha: 'Verdana, "DejaVu Sans", sans-serif', familia: 'sem-serifa' },
+  { nome: 'Segoe UI', pilha: '"Segoe UI", Roboto, "Noto Sans", sans-serif', familia: 'sem-serifa' },
+  { nome: 'Cambria', pilha: 'Cambria, Caladea, Georgia, serif', familia: 'serifada' },
+  { nome: 'Georgia', pilha: 'Georgia, "DejaVu Serif", serif', familia: 'serifada' },
+  { nome: 'Times New Roman', pilha: '"Times New Roman", "Liberation Serif", Times, serif', familia: 'serifada' },
+  { nome: 'Garamond', pilha: 'Garamond, "EB Garamond", "Times New Roman", serif', familia: 'serifada' },
+];
+
+/** O nome que a caixa de fontes mostra para o corpo do documento, sem fonte direta. */
+export const fonteDoCorpo = (d: Doc<string>) => (d.fonte === 'serifada' ? 'Georgia' : 'Calibri');
+
+/** A família em que um trecho sai desenhado: a fonte direta vence a do corpo. */
+export function familiaDoTrecho(d: Doc<string>, x: Trecho): 'serifada' | 'sem-serifa' {
+  const direta = x.direta?.fonte && FONTES_DO_WORD.find(f => f.nome === x.direta!.fonte);
+  if (direta) return direta.familia;
+  return d.fonte ?? 'sem-serifa';
+}
 
 /** Os parágrafos que ainda carregam formatação direta. */
 export const comFormatacaoDireta = <S extends string>(d: Doc<S>) =>
@@ -896,16 +1044,45 @@ export function aparenciaDe(d: Doc<string>, e: Estilo): CSSProperties {
 /** A aparência de um trecho: a do estilo do bloco, com a direta por cima. */
 export function aparenciaDoTrecho(d: Doc<string>, b: Paragrafo<string>, x: Trecho): CSSProperties {
   const doEstilo = aparenciaDe(d, b.estilo);
-  if (!x.direta) return doEstilo;
-  const { negrito, italico, tamanho, cor } = x.direta;
+  /* Ênfase é estilo de caractere: ela inclina, e a direta pode desfazer. */
+  const comEnfase: CSSProperties = x.enfase ? { ...doEstilo, fontStyle: 'italic' } : doEstilo;
+  const base: CSSProperties = x.deFora ? { ...comEnfase, ...LETRA_DE_FORA } : comEnfase;
+  const extra: CSSProperties = {
+    ...(x.realce && x.realce !== 'nenhum' ? { backgroundColor: COR_DO_REALCE[x.realce] } : {}),
+    ...(x.posicao === 'sobrescrito' ? { verticalAlign: 'super', fontSize: '0.65em' } : {}),
+    ...(x.posicao === 'subscrito' ? { verticalAlign: 'sub', fontSize: '0.65em' } : {}),
+  };
+  if (!x.direta) return { ...base, ...extra };
+  const { negrito, italico, sublinhado, tamanho, cor } = x.direta;
   return {
-    ...doEstilo,
+    ...base,
     ...(tamanho !== undefined ? { fontSize: tamanho } : {}),
     ...(cor !== undefined ? { color: cor } : {}),
     ...(negrito !== undefined ? { fontWeight: negrito ? 700 : 400 } : {}),
     ...(italico !== undefined ? { fontStyle: italico ? 'italic' : 'normal' } : {}),
+    ...(sublinhado ? { textDecoration: 'underline' } : {}),
+    ...(x.direta.fonte ? { fontFamily: FONTES_DO_WORD.find(f => f.nome === x.direta!.fonte)?.pilha ?? x.direta.fonte } : {}),
+    ...extra,
   };
 }
+
+/**
+ * A letra de um texto colado com "Manter Formatação Original": a do site de
+ * onde ele veio. Mora aqui, e não no laboratório que cola, porque é a folha
+ * que a desenha — e uma folha que não soubesse dela mostraria a colagem de
+ * origem igualzinha à de destino, que é a diferença inteira do exercício.
+ */
+export const LETRA_DE_FORA: CSSProperties = {
+  fontFamily: 'Verdana, Geneva, sans-serif',
+  fontSize: 10.5,
+  color: '#1F5C99',
+  backgroundColor: '#EEF3F8',
+};
+
+/** As cores do marca-texto, as do Word. */
+export const COR_DO_REALCE: Record<Exclude<Realce, 'nenhum'>, string> = {
+  amarelo: '#FFFF00', verde: '#00FF00', ciano: '#00FFFF', rosa: '#FF00FF',
+};
 
 /** Os títulos do documento, na ordem, como o sumário os leria agora. */
 export function titulosDoDoc(d: Doc<string>): ItemDeSumario[] {

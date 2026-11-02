@@ -5,7 +5,7 @@ import type { TopicoDeVereda } from './veredas';
 import { contrastRatio, hexToRgb } from '../lib/imageTools';
 import { PALETA_COMPOSTA, comBatismoRefeito, versoesDoBatismo } from '../labs/metasDaCcDg001';
 import {
-  ARTE_INICIAL, BATISMO_PECA, CAMPORI_PECA, COR_DA_SITUACAO,
+  ARTE_INICIAL, BATISMO_PECA, CAMPORI_PECA, COR_DA_SITUACAO, TINTA,
 } from '../labs/arteDoClube';
 import { cmykDe, contrasteDoTexto, hslDe, textos, umaPrancha } from '../labs/design';
 
@@ -28,7 +28,7 @@ const topicos = (): TopicoDeVereda[] =>
 function textoDoTopico(id: string): string {
   const t = topicos().find(x => x.id === id);
   if (!t) throw new Error(`O tópico ${id} sumiu da vereda.`);
-  return [t.resumo, ...t.explicacao, t.exemplo, t.atencao ?? ''].join('\n');
+  return [t.resumo, ...t.explicacao, t.exemplo ?? '', t.atencao ?? ''].join('\n');
 }
 
 function textoDaQuestao(id: string): string {
@@ -48,6 +48,15 @@ const graus = (x: number) => `${Math.round(x)}°`;
 
 interface Afirmacao { onde: string; texto: () => string; numero: () => string }
 
+/** Como a teoria escreve os três números de uma cor, no texto corrido. */
+const hslEscrito = (hex: string) => {
+  const { h, s, l } = hslDe(hex);
+  return `matiz ${graus(h)}, saturação ${pct(s)} e luminosidade ${pct(l)}`;
+};
+const DESTAQUE_DA_TELA = '#2E7D4F';
+const APOIO_DA_TELA = '#76B290';
+const NEUTRO_DA_TELA = '#8A938E';
+
 const tituloDoCampori = () => textos(CAMPORI_PECA).find(t => t.id === 'titulo')!;
 const [escuroDaFogueira, claroDaFogueira] = (() => {
   const foto = CAMPORI_PECA.objetos.find(o => o.tipo === 'foto');
@@ -56,12 +65,13 @@ const [escuroDaFogueira, claroDaFogueira] = (() => {
 })();
 
 const AFIRMACOES: Afirmacao[] = [
-  /* O cartaz e a paleta do módulo 4. */
-  { onde: 'uma-paleta-de-cinco', texto: () => textoDoTopico('uma-paleta-de-cinco'), numero: () => razao(PALETA_COMPOSTA.texto!, PALETA_COMPOSTA.fundo!) },
-  { onde: 'uma-paleta-de-cinco', texto: () => textoDoTopico('uma-paleta-de-cinco'), numero: () => PALETA_COMPOSTA.apoio! },
-  { onde: 'matiz · destaque', texto: () => textoDoTopico('matiz-saturacao-luminosidade'), numero: () => `${graus(hslDe(PALETA_COMPOSTA.destaque!).h)}       ${pct(hslDe(PALETA_COMPOSTA.destaque!).s)}          ${pct(hslDe(PALETA_COMPOSTA.destaque!).l)}` },
-  { onde: 'matiz · apoio', texto: () => textoDoTopico('matiz-saturacao-luminosidade'), numero: () => `${graus(hslDe(PALETA_COMPOSTA.apoio!).h)}       ${pct(hslDe(PALETA_COMPOSTA.apoio!).s)}          ${pct(hslDe(PALETA_COMPOSTA.apoio!).l)}` },
-  { onde: 'matiz · neutro', texto: () => textoDoTopico('matiz-saturacao-luminosidade'), numero: () => `${graus(hslDe(PALETA_COMPOSTA.neutro!).h)}        ${pct(hslDe(PALETA_COMPOSTA.neutro!).s)}          ${pct(hslDe(PALETA_COMPOSTA.neutro!).l)}` },
+  /* A paleta do cartaz da unidade Jatobá, que as telas do módulo 4 mostram. É
+     outra que a do laboratório, de propósito: a do laboratório é a resposta
+     dele. */
+  { onde: 'uma-paleta-de-cinco', texto: () => textoDoTopico('uma-paleta-de-cinco'), numero: () => razao(TINTA, '#FFFFFF') },
+  { onde: 'matiz · destaque', texto: () => textoDoTopico('matiz-saturacao-luminosidade'), numero: () => hslEscrito(DESTAQUE_DA_TELA) },
+  { onde: 'matiz · apoio', texto: () => textoDoTopico('matiz-saturacao-luminosidade'), numero: () => hslEscrito(APOIO_DA_TELA) },
+  { onde: 'matiz · neutro', texto: () => textoDoTopico('matiz-saturacao-luminosidade'), numero: () => hslEscrito(NEUTRO_DA_TELA) },
   { onde: 'luz-e-tinta · vermelho do clube', texto: () => textoDoTopico('luz-e-tinta'), numero: () => `CMYK ${cmykDe(PALETA_COMPOSTA.destaque!).join(', ')}` },
   { onde: 'luz-e-tinta · rgb do clube', texto: () => textoDoTopico('luz-e-tinta'), numero: () => `RGB ${Object.values(hexToRgb(PALETA_COMPOSTA.destaque!)!).join(', ')}` },
   { onde: 'luz-e-tinta · vermelho puro', texto: () => textoDoTopico('luz-e-tinta'), numero: () => `CMYK ${cmykDe('#FF0000').join(', ')}` },
@@ -71,6 +81,7 @@ const AFIRMACOES: Afirmacao[] = [
   { onde: 'diferente-de-verdade · hora', texto: () => textoDoTopico('diferente-de-verdade'), numero: () => razao(textos(BATISMO_PECA).find(t => t.id === 'hora')!.cor, '#FFFFFF') },
   { onde: 'DG1-M6-Q2', texto: () => textoDaQuestao('DG1-M6-Q2'), numero: () => razao(textos(BATISMO_PECA).find(t => t.id === 'titulo')!.cor, '#FFFFFF') },
   { onde: 'refazer · hora', texto: () => textoDoTopico('refazer-sem-perder'), numero: () => razao(textos(BATISMO_PECA).find(t => t.id === 'hora')!.cor, '#FFFFFF') },
+  { onde: 'diferente-de-verdade · #333333', texto: () => textoDoTopico('diferente-de-verdade'), numero: () => razao('#333333', '#FFFFFF') },
   { onde: 'diferente-de-verdade · preto', texto: () => textoDoTopico('diferente-de-verdade'), numero: () => '21:1' },
 
   /* A régua do módulo 8. */

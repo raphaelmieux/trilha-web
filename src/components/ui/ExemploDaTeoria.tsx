@@ -5,6 +5,7 @@ import { CORES_DO_REALCE } from '../../labs/ide';
 import { lerExemploDeBlocos, COR_DA_CATEGORIA } from '../../labs/blocosDoScratch';
 import { TextoDeBloco } from './BandeiraVerde';
 import type { TopicoDeVereda } from '../../curriculum/veredas';
+import { PassoAPasso } from './PassoAPasso';
 
 /**
  * O exemplo de um tópico de teoria, desenhado do jeito que o assunto pede.
@@ -264,6 +265,13 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
   /** A vereda mostra o resultado? Blocos e texto nunca mostram: não há um. */
   mostraResultado: boolean;
 }) {
+  if (topico.telas?.length) return <PassoAPasso telas={topico.telas} titulo={topico.titulo} />;
+
+  /* Sem exemplo, nada: o tópico se sustenta na explicação. Um quadro vazio
+     rotulado "Exemplo" seria a promessa não cumprida de sempre. */
+  const exemplo = topico.exemplo;
+  if (exemplo === undefined) return null;
+
   const como = topico.exemploComo ?? 'html';
 
   if (como === 'blocos') {
@@ -272,7 +280,7 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
         <style>{CSS_EXEMPLO}</style>
         <div className="ex-caixa">
           <p className="ex-caixa-topo">No Scratch, fica assim</p>
-          <Blocos exemplo={topico.exemplo} />
+          <Blocos exemplo={exemplo} />
         </div>
       </>
     );
@@ -284,7 +292,7 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
         <style>{CSS_EXEMPLO}</style>
         <div className="ex-caixa">
           <p className="ex-caixa-topo">Exemplo</p>
-          <pre className="ex-codigo claro">{topico.exemplo}</pre>
+          <pre className="ex-codigo claro">{exemplo}</pre>
         </div>
       </>
     );
@@ -309,7 +317,7 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
         <div className={comSaida ? 'ex-dupla' : ''}>
           <div className="ex-caixa">
             <p className="ex-caixa-topo">Você escreve, no .py</p>
-            <Codigo linhas={realcarLinhasPython(topico.exemplo)} />
+            <Codigo linhas={realcarLinhasPython(exemplo)} />
           </div>
           {comSaida && (
             <div className="ex-caixa">
@@ -338,7 +346,7 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
         <div className={saida !== undefined ? 'ex-dupla' : ''}>
           <div className="ex-caixa">
             <p className="ex-caixa-topo">Você escreve, no editor de banco</p>
-            <Codigo linhas={realcarLinhasSql(topico.exemplo)} />
+            <Codigo linhas={realcarLinhasSql(exemplo)} />
           </div>
           {saida !== undefined && (
             <div className="ex-caixa">
@@ -367,7 +375,7 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
        "o navegador mostra" seria a mesma promessa não cumprida de antes. */
     const temPagina = mostraResultado && !!topico.exemploMarcacao;
     const larguras = topico.exemploLarguras ?? [];
-    const pagina = paginaDeCss(topico.exemplo, topico.exemploMarcacao ?? '');
+    const pagina = paginaDeCss(exemplo, topico.exemploMarcacao ?? '');
 
     /*
       Duas telas, e então o código vai por cima em vez de ao lado.
@@ -382,7 +390,7 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
           <style>{CSS_EXEMPLO}</style>
           <div className="ex-caixa">
             <p className="ex-caixa-topo">Você escreve, no .css</p>
-            <Codigo linhas={realcarLinhasCss(topico.exemplo)} />
+            <Codigo linhas={realcarLinhasCss(exemplo)} />
           </div>
           <Telas larguras={larguras} pagina={pagina} titulo={topico.titulo} />
         </>
@@ -395,7 +403,7 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
         <div className={temPagina ? 'ex-dupla' : ''}>
           <div className="ex-caixa">
             <p className="ex-caixa-topo">Você escreve, no .css</p>
-            <Codigo linhas={realcarLinhasCss(topico.exemplo)} />
+            <Codigo linhas={realcarLinhasCss(exemplo)} />
           </div>
           {temPagina && (
             <div className="ex-caixa">
@@ -408,19 +416,19 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
     );
   }
 
-  const temResultado = mostraResultado && mostraAlgo(topico.exemplo);
+  const temResultado = mostraResultado && mostraAlgo(exemplo);
   return (
     <>
       <style>{CSS_EXEMPLO}</style>
       <div className={temResultado ? 'ex-dupla' : ''}>
         <div className="ex-caixa">
           <p className="ex-caixa-topo">Você escreve</p>
-          <Codigo linhas={realcarLinhas(topico.exemplo)} />
+          <Codigo linhas={realcarLinhas(exemplo)} />
         </div>
         {temResultado && (
           <div className="ex-caixa">
             <p className="ex-caixa-topo">O navegador mostra</p>
-            <iframe srcDoc={paginaDeHtml(topico.exemplo)}
+            <iframe srcDoc={paginaDeHtml(exemplo)}
               sandbox="" title={`Resultado: ${topico.titulo}`} />
           </div>
         )}

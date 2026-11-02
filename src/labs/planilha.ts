@@ -456,6 +456,38 @@ export const alinhamentoDe = (cel: Celula, valor: Valor): Exclude<AlinhaH, 'padr
 export const LARGURA_PADRAO = 92;
 export const ALTURA_PADRAO = 24;
 
+/**
+ * A largura que um texto de tantos caracteres pede: sete pixels por letra e
+ * dez de respiro, que são o padding da célula. É a que os dois cliques na
+ * borda usam para alargar a coluna.
+ */
+export const larguraQuePede = (caracteres: number) => caracteres * 7 + 10;
+
+/**
+ * A largura que um número já formatado ocupa: o algarismo e a letra valem
+ * sete, e a pontuação e o espaço valem metade.
+ *
+ * Contar tudo a sete, como `larguraQuePede`, trocava por cerquilhas o total em
+ * moeda da AP044 — "R$" com espaço, ponto e vírgula — numa coluna em que ele
+ * cabe com folga na tela. E as duas contas continuam de acordo onde importa:
+ * esta nunca passa de `larguraQuePede`, então a coluna ajustada com dois
+ * cliques nunca mostra `####` no número que a ajustou.
+ */
+export const larguraDoNumero = (mostrado: string): number =>
+  [...mostrado].reduce((a, ch) => a + (/[.,\s]/.test(ch) ? 3.5 : 7), 10);
+
+/**
+ * O que uma célula de número mostra numa coluna desta largura.
+ *
+ * Número não se corta, porque um número cortado é outro número: 1.620 com o
+ * último algarismo escondido se lê 162. O Excel troca tudo por cerquilhas, e
+ * é a única pista de que a coluna está estreita demais.
+ */
+export const numeroNaLargura = (mostrado: string, largura: number): string =>
+  larguraDoNumero(mostrado) <= largura
+    ? mostrado
+    : '#'.repeat(Math.max(1, Math.floor((largura - 10) / 7)));
+
 /*
   A grade é maior do que a tabela, e é isso que faz dela uma planilha.
 
@@ -555,7 +587,10 @@ export function valorCalculado(p: Planilha, l: number, c: number, caderno?: Cade
     if (!aba || aba === p.nome) return p.celulas[li]?.[ci]?.texto ?? '';
     const outra = caderno && planilhaPorNome(caderno, aba);
     return outra ? outra.celulas[li]?.[ci]?.texto ?? '' : '';
-  }, l, c, p.nome);
+  }, l, c, p.nome, (li, aba) => {
+    const dona = !aba || aba === p.nome ? p : caderno && planilhaPorNome(caderno, aba);
+    return dona ? linhaEscondida(dona, li) : false;
+  });
 }
 
 export function valorDe(p: Planilha, l: number, c: number): string {
@@ -1232,4 +1267,33 @@ export function removerDuplicatas(p: Planilha, colunas: number[]): { planilha: P
     planilha: { ...p, celulas, tabela: { l1: t.topo, c1: t.esq, l2: t.base - removidas, c2: t.dir } },
     removidas,
   };
+}
+
+/**
+ * Média, contagem e soma da faixa selecionada, como a barra de status do
+ * Excel as mostra.
+ *
+ * Ela só responde quando há mais de uma célula preenchida: com uma só o Excel
+ * não escreve nada, e com nenhuma número também não. A contagem conta tudo o
+ * que não está vazio; a média e a soma, só o que é número — é a diferença
+ * entre CONT.VALORES e CONT.NÚM, e um número guardado como texto aparece
+ * nela antes de aparecer em qualquer fórmula.
+ */
+export function contaDaSelecao(p: Planilha, faixa: Faixa, caderno?: Caderno) {
+  if (umaCelulaSo(faixa)) return null;
+  const n = normalizar(faixa);
+  let contagem = 0; let numeros = 0; let soma = 0;
+  for (let l = n.topo; l <= Math.min(n.base, p.celulas.length - 1); l++) {
+    /* A linha escondida pelo filtro fica de fora, como no Excel: é por isso
+       que a Soma do rodapé discorda do `=SOMA` da célula, e é essa discórdia
+       que a AP044 manda notar. */
+    if (linhaEscondida(p, l)) continue;
+    for (let c = n.esq; c <= Math.min(n.dir, (p.celulas[0]?.length ?? 1) - 1); c++) {
+      if ((p.celulas[l]?.[c]?.texto ?? '') === '') continue;
+      contagem += 1;
+      const v = valorCalculado(p, l, c, caderno);
+      if (v.tipo === 'numero') { numeros += 1; soma += v.n; }
+    }
+  }
+  return contagem < 2 ? null : { contagem, numeros, soma };
 }

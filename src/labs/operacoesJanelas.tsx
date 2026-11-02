@@ -7,7 +7,7 @@ import {
   FileType2, ClipboardPaste,
 } from 'lucide-react';
 import { BarraDeJanela, IconeWinRAR } from './windows';
-import { CSS_WORD, BastidoresDoWord, type PainelDosBastidores, type AjustesDeImpressao } from './word';
+import { CSS_WORD, BastidoresDoWord, GuiasDoWord, type PainelDosBastidores, type AjustesDeImpressao } from './word';
 
 /*
  * As janelas do laboratório de operações com arquivos.
@@ -205,8 +205,6 @@ export function JanelaEditor({
 }) {
   const [painel, setPainel] = useState<PainelDosBastidores | null>(null);
 
-  const guias = ['Página Inicial', 'Inserir', 'Layout', 'Referências', 'Revisão', 'Exibir'];
-
   return (
     <div className="win-janela media">
       <style>{CSS_WORD}</style>
@@ -236,20 +234,13 @@ export function JanelaEditor({
         />
       ) : (
         <div className="wd-janela">
-          <div className="wd-guias">
-            {/* Arquivo é a primeira guia e não é uma guia: abre os bastidores.
-                É por ela que se chega a Salvar como, Exportar e Imprimir. */}
-            <button className="wd-guia" style={{ background: '#2B579A', color: '#FFFFFF' }}
-              onClick={() => setPainel('salvar-como')}>
-              Arquivo
-            </button>
-            {guias.map((g, i) => (
-              <button key={g} className="wd-guia" aria-selected={i === 0}
-                onClick={() => i !== 0 && aoAvisar(`A guia ${g}`)}>
-                {g}
-              </button>
-            ))}
-          </div>
+          {/* A fileira é a do Word compartilhado: ela se chamava "Página Inicial"
+              aqui e "Início" em todo outro laboratório de Word — um terceiro Word,
+              desenhado à mão. Arquivo abre os bastidores, que é por onde se chega
+              a Salvar como, Exportar e Imprimir. */}
+          <GuiasDoWord atual="Início" usaveis={['Início']} aoTrocar={() => undefined}
+            aoAvisar={aoAvisar} aoNaoFazParte={aoAvisar}
+            aoAbrirArquivo={() => setPainel('salvar-como')} />
 
           <div className="wd-faixa">
             <div className="wd-grupo">

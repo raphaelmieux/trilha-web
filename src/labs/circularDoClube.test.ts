@@ -1,10 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
-  CIRCULAR_INICIAL, METAS_DA_CIRCULAR, PARAGRAFO_QUE_CHEGA, IDS_DO_ENDERECO,
-  gestosVazios, metaDaVez, enderecoNumBlocoSo,
+  CIRCULAR_INICIAL, METAS_DA_CIRCULAR, PARAGRAFO_QUE_CHEGA,
+  gestosVazios, metaDaVez, enderecoNumBlocoSo, paragrafoDaRevisao, tudoSerifado,
   type Doc, type ContextoDaCircular,
 } from './circularDoClube';
-import { paragrafosVazios, linhaDe, trechoDe, textoDoBloco, paragrafos } from './documento';
+import { paragrafosVazios, linhaDe, textoDoBloco, paragrafos } from './documento';
+import {
+  apagar, cursorEm, definirFonte, inserirTexto, quebraDeLinha, quebraDePagina, quebrarParagrafo,
+  selecionarTudo,
+} from './edicao';
 
 /*
   A circular do módulo 2, e as cinco metas que a consertam.
@@ -23,37 +27,38 @@ import { paragrafosVazios, linhaDe, trechoDe, textoDoBloco, paragrafos } from '.
 
 const contexto = (doc: Doc, gestos = gestosVazios()): ContextoDaCircular => ({ doc, gestos });
 
-/* ── A solução de referência ──────────────────────────────────────────────── */
+/* ── A solução de referência ──────────────────────────────────────────────
+   Ela é feita com as **mesmas teclas** que a tela manda — Delete, Shift+Enter,
+   Enter, Backspace, Ctrl+Enter, Ctrl+A e a caixa de fontes —, pelo motor de
+   `edicao.ts`. Uma solução que montasse o documento final à mão provaria que a
+   meta fecha, e não que alguém consegue fechá-la digitando. */
 
-/** Junta as três linhas do endereço num parágrafo só, com quebras de linha. */
-const juntarEndereco = (d: Doc): Doc => {
-  const doEndereco = d.blocos.filter(b => IDS_DO_ENDERECO.includes(b.id));
-  const junto = {
-    ...doEndereco[0],
-    trechos: doEndereco.map((b, i) => ({
-      ...trechoDe(`end-${i}`, textoDoBloco(b)),
-      ...(i > 0 ? { quebra: true } : {}),
-    })),
-  };
-  const antes = d.blocos.findIndex(b => b.id === IDS_DO_ENDERECO[0]);
-  const restantes = d.blocos.filter(b => !IDS_DO_ENDERECO.includes(b.id));
-  return { ...d, blocos: [...restantes.slice(0, antes), junto, ...restantes.slice(antes)] };
+type Passo = (d: Doc) => Doc;
+
+const juntarEndereco: Passo = d => {
+  let r = apagar(d, cursorEm('end-1', 25), 'frente');
+  r = quebraDeLinha(r.doc, r.selecao);
+  const fimDaSegunda = 25 + 1 + 'Rodovia DF-128, km 9'.length;
+  r = apagar(r.doc, cursorEm('end-1', fimDaSegunda), 'frente');
+  r = quebraDeLinha(r.doc, r.selecao);
+  return r.doc;
 };
 
-const acrescentarParagrafo = (d: Doc): Doc => {
-  const depoisDe = d.blocos.findIndex(b => b.id === 'ab-3');
-  const novo = linhaDe(PARAGRAFO_QUE_CHEGA.id, PARAGRAFO_QUE_CHEGA.secao, PARAGRAFO_QUE_CHEGA.texto);
-  return { ...d, blocos: [...d.blocos.slice(0, depoisDe + 1), novo, ...d.blocos.slice(depoisDe + 1)] };
+const acrescentarParagrafo: Passo = d => {
+  const ab3 = paragrafos(d).find(b => b.id === 'ab-3')!;
+  let r = quebrarParagrafo(d, cursorEm('ab-3', textoDoBloco(ab3).length));
+  r = inserirTexto(r.doc, r.selecao, PARAGRAFO_QUE_CHEGA.texto);
+  return r.doc;
 };
 
-const trocarPorQuebra = (d: Doc): Doc => ({
-  ...d,
-  blocos: d.blocos
-    .filter(b => textoDoBloco(b).trim() !== '')
-    .map(b => (b.id === 'assina' ? { ...b, quebraDePagina: true } : b)),
-});
+const trocarPorQuebra: Passo = d => {
+  let doc = d;
+  /* Cinco Backspaces no começo da assinatura: cada um leva um ¶ sozinho. */
+  for (let i = 0; i < 5; i++) doc = apagar(doc, cursorEm('assina', 0), 'tras').doc;
+  return quebraDePagina(doc, cursorEm('assina', 0)).doc;
+};
 
-const escolherFonte = (d: Doc): Doc => ({ ...d, fonte: 'serifada' });
+const escolherFonte: Passo = d => definirFonte(d, selecionarTudo(d)!, 'Georgia').doc;
 
 function resolvido(): ContextoDaCircular {
   let d: Doc = CIRCULAR_INICIAL;
@@ -61,7 +66,7 @@ function resolvido(): ContextoDaCircular {
   d = acrescentarParagrafo(d);
   d = trocarPorQuebra(d);
   d = escolherFonte(d);
-  return contexto(d, { marcas: true, cresceu: true });
+  return contexto(d, { marcas: true });
 }
 
 /* ── As travas ────────────────────────────────────────────────────────────── */
@@ -113,7 +118,7 @@ describe('a circular pode ser vencida', () => {
     const passos: ((x: ContextoDaCircular) => ContextoDaCircular)[] = [
       x => ({ ...x, gestos: { ...x.gestos, marcas: true } }),
       x => ({ ...x, doc: juntarEndereco(x.doc) }),
-      x => ({ doc: acrescentarParagrafo(x.doc), gestos: { ...x.gestos, cresceu: true } }),
+      x => ({ ...x, doc: acrescentarParagrafo(x.doc) }),
       x => ({ ...x, doc: trocarPorQuebra(x.doc) }),
       x => ({ ...x, doc: escolherFonte(x.doc) }),
     ];
@@ -148,15 +153,36 @@ describe('juntar o endereço é quebra de linha, e não texto corrido', () => {
   });
 
   it('as três linhas sem quebra nenhuma não contam', () => {
-    // Três trechos colados num bloco, sem `quebra`, saem numa linha só na tela.
-    const semQuebra = juntarEndereco(CIRCULAR_INICIAL);
-    const sem: Doc = {
-      ...semQuebra,
-      blocos: semQuebra.blocos.map(b => (b.secao === 'endereco' && b.tipo === 'paragrafo'
-        ? { ...b, trechos: b.trechos.map(({ quebra, ...x }) => { void quebra; return x; }) }
-        : b)),
-    };
-    expect(enderecoNumBlocoSo(sem)).toBe(false);
+    // Juntar com Delete e não pôr o Shift+Enter deixa as três coladas numa linha.
+    let r = apagar(CIRCULAR_INICIAL, cursorEm('end-1', 25), 'frente');
+    r = apagar(r.doc, cursorEm('end-1', 25 + 'Rodovia DF-128, km 9'.length), 'frente');
+    expect(enderecoNumBlocoSo(r.doc)).toBe(false);
+  });
+
+  it('perder uma linha no caminho não conta', () => {
+    const sem = apagar(juntarEndereco(CIRCULAR_INICIAL), cursorEm('end-1', 30), 'tras', undefined, true);
+    expect(enderecoNumBlocoSo(sem.doc)).toBe(false);
+  });
+});
+
+describe('o parágrafo da revisão é escrito, e escrito no corpo', () => {
+  it('um Enter e nada mais não é parágrafo', () => {
+    const r = quebrarParagrafo(CIRCULAR_INICIAL, cursorEm('ab-3', textoDoBloco(paragrafos(CIRCULAR_INICIAL).find(b => b.id === 'ab-3')!).length));
+    expect(paragrafoDaRevisao(inserirTexto(r.doc, r.selecao, 'Frio').doc)).toBe(false);
+  });
+
+  it('escrito depois do endereço, não conta: ele é do corpo da circular', () => {
+    const r = quebrarParagrafo(CIRCULAR_INICIAL, cursorEm('end-3', 'Sobradinho, DF'.length));
+    const escrito = inserirTexto(r.doc, r.selecao, PARAGRAFO_QUE_CHEGA.texto).doc;
+    expect(paragrafoDaRevisao(escrito)).toBe(false);
+  });
+});
+
+describe('a fonte vale para o documento inteiro', () => {
+  it('metade em Georgia não é a decisão', () => {
+    const metade = definirFonte(CIRCULAR_INICIAL, { ancora: { bloco: 'titulo', offset: 0 }, foco: { bloco: 'ab-2', offset: 10 } }, 'Georgia').doc;
+    expect(tudoSerifado(metade)).toBe(false);
+    expect(tudoSerifado(escolherFonte(CIRCULAR_INICIAL))).toBe(true);
   });
 });
 

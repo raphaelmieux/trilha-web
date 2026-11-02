@@ -34,6 +34,11 @@ import {
   type Planilha, vazia, LARGURA_PADRAO, ALTURA_PADRAO,
   COLUNAS_DA_GRADE, LINHAS_DA_GRADE, larguraDaTabela,
 } from './planilha';
+import {
+  linhaDe, ehTabela, ehImagem, faixaTemCampoDePagina, larguraDaTabela as larguraDaTabelaDoDoc,
+  DISPOSICOES_QUE_AJUSTAM, ESTILO_PADRAO_DE_TABELA,
+  type Doc as DocDoWord, type FaixaDaPagina,
+} from './documento';
 
 export type {
   AlinhaH, AlinhaV, Layout, Celula, Planilha, Faixa,
@@ -47,21 +52,26 @@ export {
 
 /* ── O documento ───────────────────────────────────────────────────────────── */
 
-export type Quebra = 'linha' | 'quadrada' | 'atras';
-export type EstiloDaTabela = 'nenhum' | 'grade' | 'listrada';
+/*
+  O documento da inserção é o `Doc` de `documento.ts`, o mesmo da CC-ES002.
 
-export interface Tabela {
-  linhas: string[][];
-  estilo: EstiloDaTabela;
-}
+  Ele já foi um modelo próprio — `tabela`, `imagem`, `cabecalho` e `numeracao`
+  soltos, sem texto nenhum dentro —, e a folha era desenhada aqui, à mão. A
+  tabela não era um bloco do documento e a foto não era uma imagem do Word:
+  eram peças deste exercício, e o desbravador que saía daqui para a vereda de
+  editor de texto encontrava um segundo jeito de inserir as mesmas coisas.
+  Hoje a tabela é uma `TabelaDoDoc`, a foto é uma `ImagemDoDoc` com as seis
+  disposições do Word, e o número de página é um campo no rodapé.
 
-export interface Doc {
-  tabela: Tabela | null;
-  imagem: { presente: boolean; quebra: Quebra };
-  cabecalho: string;
-  rodape: string;
-  numeracao: boolean;
-}
+  São duas folhas desde o começo, por uma quebra de página: cabeçalho, rodapé
+  e numeração são invisíveis num documento de uma página só. Com duas vê-se o
+  que eles são — o mesmo cabeçalho repetido, e um número que muda sozinho.
+*/
+
+export type Secao = 'texto';
+export type Doc = DocDoWord<Secao>;
+
+const linha = (id: string, texto: string) => linhaDe<Secao>(id, 'texto', texto);
 
 export const TABELA_INICIAL: string[][] = [
   ['Unidade', 'Inscritos'],
@@ -69,12 +79,22 @@ export const TABELA_INICIAL: string[][] = [
   ['Águia', '9'],
 ];
 
+export const FOTO_DO_ACAMPAMENTO = {
+  arquivo: 'acampamento-julho.jpg',
+  descricao: 'Barracas montadas na clareira, com a serra ao fundo',
+};
+
 export const DOC_INICIAL: Doc = {
-  tabela: null,
-  imagem: { presente: false, quebra: 'linha' },
-  cabecalho: '',
-  rodape: '',
-  numeracao: false,
+  blocos: [
+    { ...linha('titulo', 'Relatório do acampamento de julho'), estilo: 'Título 1' },
+    linha('p1', 'A unidade saiu na sexta-feira à tarde e voltou no domingo. Foram três dias de caminhada, fogo de conselho e classe bíblica ao ar livre. O tempo ajudou: choveu só na primeira noite, e mesmo assim ninguém desmontou barraca.'),
+    linha('p2', 'As unidades que acamparam, e quantos foram de cada uma:'),
+    linha('p3', 'As inscrições do próximo acampamento abrem na primeira reunião de setembro. Quem ficou devendo a diária deste pode acertar com a secretaria antes disso.'),
+    { ...linha('p4', 'No sábado à tarde a unidade fez a trilha até a cachoeira. O caminho leva quarenta minutos de subida, e o combinado era ninguém sair da fila — o que funcionou até a metade.'), quebraDePagina: true },
+    linha('p5', 'No domingo, antes de desmontar, cada um recolheu o lixo da própria barraca. O campo ficou como estava quando chegamos, que é a regra.'),
+  ],
+  colunas: { texto: 1 },
+  sumario: null,
 };
 
 /* ── As metas ──────────────────────────────────────────────────────────────── */
@@ -88,6 +108,10 @@ export interface MetaDeInsercao {
   feita: (d: Doc) => boolean;
 }
 
+/** O texto escrito numa faixa, sem o campo. */
+const textoEscrito = (f: FaixaDaPagina | null | undefined) =>
+  (f?.trechos ?? []).filter(x => !x.campo).map(x => x.texto).join('').trim();
+
 /*
   Nenhuma delas está cumprida no documento inicial, e isso é conferido por
   teste: um laboratório que abre com tarefa verde não ensina nada, e o defeito
@@ -98,33 +122,35 @@ export const METAS_DA_INSERCAO: MetaDeInsercao[] = [
   {
     id: 'tabela',
     titulo: 'Inserir e mexer numa tabela',
-    detalhe: 'O relatório precisa de uma tabela com as unidades. Insira uma, acrescente a unidade que falta numa linha nova, tire a coluna que sobrou e escolha um estilo para ela.',
-    onde: 'Inserir › Tabela — e depois na guia Layout da Tabela, que só aparece com o cursor dentro dela',
+    detalhe: 'O relatório precisa de uma tabela com as unidades, logo depois da frase que as anuncia. Insira uma, acrescente a unidade que falta numa linha nova, tire a coluna que sobrou e escolha um estilo para ela.',
+    onde: 'Inserir › Tabela — e depois nas guias Layout da Tabela e Design da Tabela, que só aparecem com o cursor dentro dela',
     passos: [
+      'Clique no fim da frase "As unidades que acamparam…".',
       'Na guia Inserir, clique em Tabela e escolha o tamanho 3 por 3.',
       'Clique dentro da tabela: repare que duas guias novas apareceram no alto.',
-      'Em Layout da Tabela, use Inserir Abaixo para ganhar uma linha, e escreva a unidade que falta.',
-      'Ainda em Layout da Tabela, ponha o cursor na coluna vazia e use Excluir Coluna.',
-      'Em Design da Tabela, escolha um estilo — com grade ou listrado.',
+      'Em Layout da Tabela, use Inserir Abaixo para ganhar uma linha, e escreva Tucano e 11.',
+      'Ainda em Layout da Tabela, clique numa célula da coluna vazia e use Excluir › Colunas.',
+      'Em Design da Tabela, escolha um estilo diferente da grade crua.',
     ],
-    feita: d => !!d.tabela
-      && d.tabela.linhas.length >= 4
-      && d.tabela.linhas[0].length === 2
-      && d.tabela.estilo !== 'nenhum'
-      && d.tabela.linhas.every(l => l.every(c => c.trim() !== '')),
+    feita: d => d.blocos.filter(ehTabela).some(t =>
+      t.linhas.length >= 4
+      && larguraDaTabelaDoDoc(t) === 2
+      && t.estilo !== ESTILO_PADRAO_DE_TABELA
+      && t.linhas.every(l => l.length >= 2 && l.slice(0, 2).every(c => c.trim() !== ''))),
   },
   {
     id: 'imagem',
     titulo: 'Inserir a foto e ajustá-la ao texto',
-    detalhe: 'Insira a foto do acampamento. Ela vai entrar empurrando o parágrafo para baixo — ajuste a quebra de texto para que o texto passe ao lado dela.',
-    onde: 'Inserir › Imagens, e depois Formatar Imagem › Quebra de Texto',
+    detalhe: 'Insira a foto do acampamento. Ela vai entrar alinhada com o texto, empurrando o parágrafo para baixo — escolha uma quebra de texto que faça o texto passar ao lado dela.',
+    onde: 'Inserir › Imagens, e depois Formato da Imagem › Quebra de Texto Automática',
     passos: [
-      'Na guia Inserir, clique em Imagens e escolha a foto do acampamento.',
+      'Clique no primeiro parágrafo, onde a foto deve entrar.',
+      'Na guia Inserir, clique em Imagens › Este Dispositivo e escolha a foto do acampamento.',
       'Repare que ela entrou como se fosse uma letra gigante, empurrando o texto.',
-      'Clique na imagem: aparece a guia Formatar Imagem.',
-      'Em Quebra de Texto, escolha Quadrada — o texto passa a contornar a foto.',
+      'Clique na imagem: aparece a guia Formato da Imagem.',
+      'Em Quebra de Texto Automática, escolha Quadrada — o texto passa a contornar a foto. Atrás e Na Frente do Texto não servem: elas cobrem o texto.',
     ],
-    feita: d => d.imagem.presente && d.imagem.quebra !== 'linha',
+    feita: d => d.blocos.filter(ehImagem).some(i => DISPOSICOES_QUE_AJUSTAM.includes(i.disposicao)),
   },
   {
     id: 'cabecalho',
@@ -134,22 +160,22 @@ export const METAS_DA_INSERCAO: MetaDeInsercao[] = [
     passos: [
       'Na guia Inserir, clique em Cabeçalho. A área do cabeçalho abre e o resto do texto fica apagado.',
       'Escreva o nome do clube.',
-      'Desça até o rodapé, na mesma área aberta, e escreva o nome da unidade.',
-      'Clique em Fechar Cabeçalho e Rodapé para voltar ao documento.',
+      'Clique em Rodapé, ou desça até o pé da folha, e escreva o nome da unidade.',
+      'Clique em Fechar Cabeçalho e Rodapé — ou dê dois cliques no texto — para voltar ao documento.',
     ],
-    feita: d => d.cabecalho.trim() !== '' && d.rodape.trim() !== '',
+    feita: d => textoEscrito(d.cabecalho) !== '' && textoEscrito(d.rodape) !== '',
   },
   {
     id: 'numeracao',
     titulo: 'Inserir a numeração de páginas',
-    detalhe: 'Ligue a numeração de páginas. Ela não é um número digitado: é um campo que se recalcula sozinho, e por isso a segunda página mostra 2 sem ninguém escrever nada lá.',
+    detalhe: 'Ponha o número de página no rodapé. Ele não é um número digitado: é um campo que se recalcula sozinho, e por isso a segunda página mostra 2 sem ninguém escrever nada lá.',
     onde: 'Inserir › Número de Página',
     passos: [
       'Na guia Inserir, clique em Número de Página.',
-      'Escolha Fim da Página, no canto direito.',
+      'Escolha Fim da Página.',
       'Confira na segunda página: o número mudou sozinho.',
     ],
-    feita: d => d.numeracao,
+    feita: d => faixaTemCampoDePagina(d.rodape) || faixaTemCampoDePagina(d.cabecalho),
   },
 ];
 

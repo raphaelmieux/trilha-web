@@ -163,6 +163,85 @@ critério mora em `src/lib/insignias.ts`; a linha, na migration do catálogo. Ao
 abrir trilha nova, o código nasce sozinho (`codigoDaInsigniaDaTrilha`), mas a
 linha ainda é à mão — `src/lib/insignias.test.ts` cobra.
 
+**Todo laboratório concluído rende uma conquista.** É regra, e vale para
+laboratório novo de trilha **e** de vereda: quem escreve o laboratório escreve,
+no mesmo trabalho, a insígnia dele. Laboratório é a parte em que se faz alguma
+coisa, com tela e retorno próprios, e vencê-lo sem que a estante registre
+ensina que ali não havia nada a vencer — sem erro em lugar nenhum, porque
+concluir simplesmente não dá nada.
+
+Para um laboratório de trilha são quatro peças, e faltar qualquer uma deixa a
+insígnia muda:
+
+- o `LabType` novo e a entrada dele em `LABORATORIOS`, em `insignias.ts` — o
+  código `lab_<tipo>` e a classe saem sozinhos, do nível da trilha;
+- a linha `lab_<tipo>` numa migration nova de `badges`, com nome, descrição,
+  ícone `lab` e a classe que `classeDoLaboratorio` calcula;
+- o evento de conclusão gravando o `lessonCode` — é por ele que
+  `laboratorioDoEvento` acha o tipo. Sem ele, o tipo do evento precisa de
+  entrada em `LABORATORIO_DO_EVENTO`;
+- e o evento classificado na ofensiva, que `ofensiva.test.ts` cobra.
+
+A trava que conferia isto tinha um buraco do tamanho da regra: ela só olhava
+os laboratórios que **já** tinham insígnia, e pulava calada todos os outros. Um
+laboratório novo sem entrada no catálogo passava verde. Hoje
+`insignias.test.ts` lista todo laboratório das trilhas abertas e reprova o que
+não tiver a sua `lab_<tipo>`.
+
+Varredura de outubro de 2026: os **29** laboratórios em uso nas trilhas
+tinham insígnia, linha semeada e evento reconhecido. Os **219** das 26
+veredas abertas não tinham nenhuma — a vereda rendia uma só, `vereda_<id>`, no
+fim —, e quem venceu sete dos doze laboratórios de uma vereda não via nada na
+estante dizendo isso. Passaram a ter, e as decisões estão logo abaixo.
+E havia o caso inverso, `lab_text_editor`, insígnia de um laboratório que
+nenhuma lição usava mais. Foi aposentada em
+`20261027000000_aposenta_primeiro_relatorio`, que antes de apagar a linha dá
+`lab_redacao_guiada` a quem a tinha, com o `awarded_at` original — apagar
+linha de `badges` sem isso tira a conquista de quem a tem. `insignias.test.ts`
+passou a cobrar os dois sentidos: laboratório sem insígnia e insígnia sem
+laboratório. O editor saiu do código depois, com o `LabType` dele: os eventos
+`text_submitted` antigos, gravados sem a lição, caem na redação guiada da
+trilha, que é a mesma insígnia que a migration concedeu.
+
+**O laboratório de vereda rende a sua, e ela nasce do currículo.** Fica fora
+de `INSIGNIAS`, como as de trilha e de vereda: `insigniasDosLaboratoriosDeVereda`
+monta uma por laboratório das veredas abertas, e o laboratório novo entra
+sozinho. O código é `lab_vereda_<vereda>_<lição>`, dos **ids** — que nunca
+mudam —, e não o `lab_` sozinho dos de trilha: aqueles nascem de um `LabType`,
+e a trava que cobra laboratório no currículo para todo `lab_<tipo>` acusaria
+estes de órfãos. A classe fica um patamar abaixo da vereda, pela régua que já
+põe o laboratório de trilha abaixo da trilha, e Amigo é o chão. O nome é o
+título da lição, e a descrição diz de qual vereda ele é.
+
+A conta sai de `conquistasNasVeredas`, do mesmo laço que soma as lições — duas
+leituras dos mesmos eventos discordariam no primeiro ajuste. A conta inclui
+vereda em construção, que é o certo para as escadas; a concessão não, porque
+seria dar insígnia que a estante não tem onde pôr. E o laboratório de vereda
+**continua fora** da escada de Laboratórios: ela conta `LabType`, e somar
+duzentos laboratórios numa escada que vai até 28 a esvaziaria de sentido.
+
+**E cai na hora.** Vencer uma lição de vereda gravava o evento e parava: nada
+chamava `evaluateBadges`, e o prêmio esperava a próxima atividade numa trilha,
+que quem só percorre veredas pode nunca fazer. `vencerLicaoDaVereda` grava e
+avalia, e mora num arquivo próprio porque `gamification.ts` importa de
+`veredas.ts` — o laço de ESM devolveria `undefined` calado.
+
+**Duzentas de uma vez é muro, e a estante as parte por vereda.** Uma fileira só
+com os duzentos e dezenove lugares seria o muro dos trinta e dois cartões de
+vereda outra vez. `FileiraDaEstante` ganhou `grupos`: fechado, cada vereda diz
+quantos dos laboratórios dela já vieram; aberto, um de cada vez, mostra os
+lugares. `lugares` continua sendo a lista inteira, porque é por ela que a
+estante se confere contra o banco. No cartão do painel elas viram uma linha
+com a contagem, e não trinta ícones.
+
+**Quem já tinha vencido recebeu pela migration, com a data de quando venceu.**
+`evaluateBadges` concederia na próxima atividade de cada um, mas com a data de
+hoje, o contexto da ação que a disparou e trinta avisos de uma vez para quem
+voltasse depois de três veredas. A `20261027160000` concede a partir dos
+eventos `vereda_laboratorio` já gravados, lendo também o campo antigo
+`trilha`, e `insignias.test.ts` confere que a tabela que liga evento a
+insígnia dentro do SQL aponta para o laboratório certo.
+
 **Número guardado não responde por "hoje".** A ofensiva — dias seguidos de
 atividade — ficou meses parada em "2 dias", e não era conta errada: era conta
 que ninguém refazia. `enrollments.streak_days` era escrita na hora da
@@ -715,6 +794,171 @@ justamente nos casos mistos. Bloco vira bloco por `blocosDoScratch.ts`, com a
 cor da categoria de verdade — cor errada manda procurar na gaveta errada da
 paleta —, e o que não se reconhece sai cinza, porque cinza diz "não sei".
 
+**Vereda que ensina interface mostra a interface: o exemplo é a tela.** As
+veredas de escritório e de design nasceram com exemplos em `'texto'` — um
+quadro em fonte de máquina de escrever com "Inserir › Tabela › 3 colunas × 5
+linhas", uma tabela desenhada com traços, uma seta entre "18h" e "19h". Era o
+molde do W3Schools sem o que ele tem de bom, que é o exemplo **rodar**: quem
+lia via um esboço de algoritmo repetindo o parágrafo de cima, e não via o
+programa. Nada estoura — o quadro aparece, bem formatado, e não ensina nada.
+
+Hoje o exemplo de um tópico de interface é uma sequência de `telas`: a janela
+do **próprio laboratório**, fotografada passo a passo, com o botão a apertar
+circulado e uma legenda dizendo o que mudou. `PassoAPasso` as desenha uma por
+vez, sobrepostas na mesma célula, para trocar de passo não esperar download nem
+pular a página. Exemplo que só resumia a explicação saiu, e o que ele tinha de
+útil foi para a explicação; `exemplo` passou a ser opcional por isso.
+
+Não é captura de programa comercial, e é decisão: a licença do repositório não
+comporta arte de terceiros, e a tela que importa é a que a pessoa vai encontrar
+no laboratório, com os mesmos botões nos mesmos lugares. E o documento
+fotografado **nunca é o do exercício** — o programa do campori, a lista da
+cantina, a ata da diretoria —, porque fotografar o gesto no arquivo da lição
+seria pôr o gabarito na teoria.
+
+As imagens se refazem por receita, e não à mão. `exemplos.html` é uma página
+de bastidor que só existe no servidor de desenvolvimento: monta uma cena de
+`src/exemplos/cenas.tsx` — um laboratório aberto com o arquivo de exemplo, que
+ele recebe por `inicial` — e `NoBastidor` tira de cena a moldura da plataforma.
+`scripts/capturar-exemplos.mjs` segue os roteiros de `src/exemplos/roteiros/`,
+clica e digita como o desbravador faria, e grava em
+`public/assets/exemplos/<vereda>/<tópico>-<n>.png`. Imagem guardada sem
+receita ficaria mostrando o programa de seis meses atrás no dia em que a faixa
+mudasse, e referência que diverge do laboratório é pior do que nenhuma: mexeu
+na janela, rode o script da vereda e confira as telas.
+
+O nome de cada imagem sai de `telasDoTopico`, e não é escrito à mão, e mora em
+`telas.ts` e não em `veredas.ts`: os arquivos de conteúdo são importados por
+ela, e a função de volta fecharia o laço de ESM que devolve `undefined` calado.
+`telasDasLicoes.test.ts` cobra que toda tela citada exista, que o roteiro
+produza exatamente as telas do tópico, que nenhuma imagem sobre na pasta e que
+toda tela tenha legenda **e** descrição diferentes — a descrição é o que o
+leitor de tela lê, e igual à legenda ela diria a mesma frase duas vezes sem
+nunca dizer o que a tela mostra.
+
+Dois erros que só a tela mostrou. A teoria da substituição dizia que trocar
+"ana" por "Ana" sem "palavras inteiras" transformava "manhã" em "mAnahã" — e
+"manhã" não tem "ana" nenhum; o quadro de texto afirmava o que nenhum Word
+faria. E a janela de 1100 px cortava as guias contextuais no fim da fileira,
+que são justamente o assunto do tópico de tabela: o padrão é 1280, e os
+roteiros de tabela fotografam a 1440.
+
+As veredas de design seguem a mesma receita, com o editor de design montado
+direto em `cenasDeDesign.tsx` — ele já é um programa inteiro e não precisa do
+laboratório em volta. A paleta das telas da CC-DG001 é a da unidade Jatobá, e
+não a do cartaz do laboratório: aquela é a resposta do módulo 4, e a teoria a
+citava inteira, com as justificativas.
+
+A primeira captura com Shift + clique mostrou um defeito do próprio editor: o
+navegador pintava, por cima da peça, a faixa de texto entre um clique e outro.
+A letra da prancha é desenho; a mesa tem `user-select: none`.
+
+As da CC-DG002 acharam mais dois. Com zoom de 800% a prancha passava da mesa,
+e o `justify-content: center` a empurrava para a esquerda além do alcance da
+rolagem: a borda esquerda da peça ficava inalcançável, justamente a que a
+lição de ampliar manda olhar. Ela se centra por `margin: auto`, que vira zero
+quando não cabe. E um caminho sem preenchimento mostrava "Vários" no campo de
+cor — que é o que o campo diz de uma seleção com cores diferentes —; sem
+preenchimento o campo some, e a caixa "Sem preenchimento" diz o estado.
+
+O roteiro também fala com o mouse: `ponto` aperta num lugar do elemento, em
+fração da caixa dele, e solta ali ou depois de arrastar. É assim que a gota
+das telas é desenhada com a caneta, nó por nó.
+
+A CC-DG003 fotografa o editor de foto com fotos próprias — o lago e o emblema
+de `src/exemplos/fotosDeExemplo.ts`, geradas pelo mesmo motor do laboratório
+—, e não a do acampamento: a inclinação, o recorte e a cor da placa daquela
+são a resposta das lições. O `ponto` passou a aceitar `com`, que segura o
+Shift do clique que soma à seleção da varinha.
+
+E a primeira captura achou um defeito do editor: digitar **-50** na
+Temperatura gravava **50**. Com só o "-" no campo de número o navegador lê
+vazio, `Number('')` é zero, e o React reescrevia o campo com o zero, apagando
+o sinal — a foto esquentava em vez de esfriar, sem nada explicar. O campo
+guarda o texto agora (`CampoDeNumero`), e `LaboratorioDeFoto.test.tsx` cobra.
+
+A CC-DG004 era o caso mais claro de gabarito na teoria: o laboratório
+constrói a marca da Ipê, e a teoria mostrava a Ipê pronta — o conceito, a
+paleta inteira com os cinco códigos, o mínimo de 38. As telas usam a marca
+da unidade Buriti, de `src/exemplos/marcaDoBuriti.ts`, com outras formas,
+outras cores e outra letra, e `exemplosDaIdentidadeVisual.test.ts` reprova se
+a paleta ou o mínimo das duas coincidirem. As questões continuam falando da
+Ipê, e são conferidas contra ela.
+
+A CC-DG005 fotografa o diagramador com o guia da caminhada ecológica, de
+`src/exemplos/guiaDaCaminhada.ts`: três colunas de 36 mm em vez de duas de 57,
+outros estilos, o lobo-guará a 191 e 293 ppi em vez da foto da unidade a 137 e
+285, e outras cores na prova. `exemplosDaDiagramacao.test.ts` confere a teoria
+contra o guia, as questões contra o boletim, e reprova se os dois passarem a
+dividir uma malha, um par de ppi ou uma cor.
+
+A primeira captura achou um defeito do diagramador: com a ferramenta de imagem
+ou de texto na mão, clicar em cima de um quadro de texto não fazia nada. O
+quadro engolia o clique para se deixar selecionar, e a página nunca o
+recebia — a foto não se punha em cima de uma coluna de texto, que é
+justamente onde ela vai, e o botão parecia quebrado. O laboratório não sentia
+porque as fotos dele chegam postas. Com ferramenta de criar, o clique passa;
+`LaboratorioDeDiagramacao.test.tsx` cobra.
+
+A CC-DG006 tinha o caso mais grave: a teoria percorria o próprio convite do
+Acampamento das Famílias, e os quadros traziam os três rascunhos, o motivo de
+cada descarte, a hora que o público pede e os nomes dos finais — as respostas
+dos módulos 6, 7 e 8. A teoria fala do mutirão do córrego, de
+`src/exemplos/mutiraoDoCorrego.ts`, e os sete tópicos que ensinam um gesto
+o mostram nas janelas das veredas exigidas: o editor de design para o
+símbolo e o post, o de foto para exportar sem perder o original, o
+diagramador para o vetor no papel e a nuvem para separar e nomear. Os tópicos
+que só existem no caderno da lição ficam em prosa, porque o caderno lê as
+imagens e as respostas do convite direto, e fotografá-lo seria mostrar o
+gabarito. `EntregaNaNuvem` ganhou `pastaDoProjeto`, com a do convite por
+padrão, para abrir na pasta de outro projeto.
+
+A CC-ES001 tinha um quadro de texto em cada um dos vinte e três tópicos — a
+listagem de pasta, a árvore desenhada com traços, o "ERRADO / CERTO" de dois
+nomes —, que é o molde da CC003 e serve lá porque o terminal **é** texto. No
+Explorador não serve: as telas mostram onze gestos no laboratório, e os doze
+tópicos sem botão (formato aberto, 3-2-1, o que esvaziar deixa no disco)
+ficaram em prosa. O computador fotografado é o notebook da unidade Tucano, de
+`src/exemplos/discoDaUnidade.ts`, e não o do clube: lá os dez nomes da Área de
+Trabalho, o relatório na versão errada e os inscritos que só sobraram na cópia
+são as respostas. `LaboratorioDeExplorador` ganhou `disco` por isso, com o do
+clube por padrão, e `exemplosDeArquivos.test.ts` reprova se os dois
+computadores dividirem um nome.
+
+A CC-ES003 era o caso mais grave: a teoria percorria a própria pasta do
+acampamento que o laboratório arruma. A diária de 45, os doze inscritos, a
+tabela de conselheiros fora de ordem com o "Tia Rute" que o PROCV aproximado
+devolve para a Onça, os gastos de 820, 910 e 1180 — tudo resposta de alguma
+lição. As telas fotografam a excursão de outubro, de
+`src/exemplos/excursaoDeOutubro.ts`: a refeição a 18, dez participantes, uma
+tabela de ônibus em que a Tucano cai no ônibus errado. `LaboratorioDePlanilha`
+ganhou `inicial` e `arquivo` por isso, com a pasta do acampamento por padrão.
+
+A primeira captura achou um defeito que valia para todo laboratório de
+planilha: **nenhuma coluna cortava nada**. A grade tinha `table-layout: fixed`
+e a célula tinha `overflow: hidden`, mas a tabela não tinha largura declarada —
+e o navegador só obedece ao layout fixo com largura declarada. Sem ela, a
+coluna se alargava até caber o conteúdo, e a tarefa do módulo 1 da CC-ES003,
+que diz que "nenhum nome cabe na coluna A", aparecia em cima de uma tela com
+todos os nomes inteiros. A tabela declara a soma das colunas agora, e o número
+que não cabe vira cerquilhas, como no Excel. A medida do número
+(`larguraDoNumero`) conta pontuação e espaço pela metade: contando tudo a sete,
+como a conta dos dois cliques na borda (`larguraQuePede`), o total em moeda da
+AP044 virava `####` numa coluna em que ele cabe com folga — e foi a trava que
+clica daquele laboratório quem pegou. A do número nunca passa da outra, então a
+coluna recém-ajustada nunca mostra `####` no número que a ajustou.
+
+E o arrasto da alça, no roteiro, se mede contra a alça e não contra a célula:
+o canto da célula fica por baixo da alça, mas o navegador entrega o clique à
+célula, e o arrasto vira seleção em vez de preenchimento.
+
+A teoria ensinava a buscar escrevendo `tipo:imagem` na caixa, e a janela do
+laboratório filtra numa caixa com Tipo e Data: a lição descrevia um gesto que
+a pessoa não ia encontrar. E a primeira captura achou um defeito do
+laboratório: no diálogo de versões anteriores o rótulo encostava na data —
+"domingo28/10" —, porque `.win-bt` não é flex e o `space-between` escrito no
+botão nunca valeu.
+
 **No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
 Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
 escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela
@@ -1012,7 +1256,10 @@ registro inteiro antes de medir qualquer coisa.
 **Para acrescentar uma vereda:** os módulos num arquivo como `sintaxeHtml.ts`,
 a entrada em `VEREDAS` com o código dela, e a linha da insígnia
 (`vereda_<id>`) numa migration nova — `insignias.test.ts` cobra, e só depois
-que ela deixa de ser `emConstrucao`. A arte vai em
+que ela deixa de ser `emConstrucao`. E uma linha por laboratório dela, com o
+código `lab_vereda_<vereda>_<lição>` e o nome, a descrição e a classe que
+`insigniasDosLaboratoriosDeVereda` calcula — `insignias.test.ts` e
+`estante.test.ts` cobram, nos dois sentidos. A arte vai em
 `public/assets/specialties/<CODIGO>.png` e o fundo do certificado em
 `public/assets/certificates/<CODIGO>.png`; `veredas.test.ts` cobra as duas. `veredas.test.ts` reprova laboratório que abra com verificação
 já verde, verificação sem passo a passo, e módulo que repita o próprio nome
@@ -1880,15 +2127,15 @@ navegador; aqui sai de `formulas.ts`, que é o mesmo motor que responde ao
 desbravador — lição e laboratório não podem discordar.
 
 A diferença para a de Python é o contexto. Um programa traz tudo consigo; uma
-fórmula só significa alguma coisa sobre uma planilha, e a planilha do exemplo
-está **desenhada** no texto. Ler o desenho seria máquina frágil que um dia para
-de achar o que procura e aprova tudo calada — a armadilha do "zero link não é
-zero link quebrado" aplicada à própria trava. Então a divisão é esta: a
-**grade** se declara no teste, e a **afirmação** se lê da lição. O número que a
-tela mostra nunca é o número que o teste escreveu, e mudar o desenho sem mudar
-a conta reprova, que é a falha certa. Com a guarda contra o vazio de sempre:
-cada exemplo diz quantas afirmações tem, e um reescrito sem as setas reprova em
-vez de passar por não ter conferido nada.
+fórmula só significa alguma coisa sobre uma planilha. A planilha do exemplo era
+**desenhada** no texto, com setas, e a grade se declarava no teste; hoje o
+exemplo é a tela do Excel fotografada sobre a pasta da excursão de outubro
+(`src/exemplos/excursaoDeOutubro.ts`), e a conta se faz sobre essa pasta, pelo
+motor. A divisão continua a mesma: a **conta** se faz no teste, e a
+**afirmação** se lê da legenda. Mudar a pasta sem refazer as telas reprova, que
+é a falha certa — a imagem continuaria mostrando a pasta antiga. E a guarda
+contra o vazio cobra o número de tópicos com tela: sem elas, cada trava leria
+texto vazio e passaria.
 
 Ela achou, na primeira execução, o alinhamento que perguntava ao texto impresso.
 
@@ -3157,6 +3404,255 @@ vez; o outro muda a regra para todos os arquivos daquele tipo. A tarefa do
 "abrir com" só fecha se o padrão **não** tiver mudado junto — é a diferença que
 faz alguém abrir uma foto no editor uma vez e passar a abrir todas ali.
 
+**Word, Excel, PowerPoint e Access são uma janela só, e ela mora em
+`office.tsx`.** Cada um desenhava a própria moldura, e as quatro já tinham
+divergido onde mais se vê: o Word e o Excel tinham a barra de título clara do
+Microsoft 365, o PowerPoint a tinha laranja e o Access vermelha, do tema
+colorido do Office 2016. Quem saía da apresentação para a planilha via dois
+pacotes Office no mesmo computador. É a decisão de `word.tsx`, um andar acima:
+a barra de título com o acesso rápido (AutoSalvamento, Salvar, Desfazer,
+Refazer), a fileira de guias com Comentários e Compartilhar na ponta, a faixa
+em cartão branco de cantos redondos, a barra de status com os modos de exibição
+e o zoom. O que muda é a cor e o que vai dentro da faixa.
+
+As classes antigas continuam (`wd-guia`, `pl-titulo`, `pp-status`): as travas
+de cada laboratório as procuram, e a peça nova as recebe por parâmetro em vez de
+inventar outras.
+
+**Guia que o exercício não usa abre assim mesmo.** Ela aparecia cinza, e o
+clique respondia com um aviso. Programa nenhum tem guia cinza: quem abria
+"Layout" por curiosidade recebia um muro, e muro ensina a andar no trilho.
+Hoje toda guia abre a faixa inteira do programa de verdade — os grupos, os
+nomes e os botões em português —, e o aviso só chega no botão. As faixas moram
+em `faixasDoOffice.ts`, que é dado e não tela.
+
+Isso acontece na fileira de guias, e não em cada laboratório. Ela guarda qual
+guia está sendo espiada e desenha a faixa dela logo abaixo de si; a faixa do
+laboratório, que vem logo depois na marcação, se esconde pela folha
+(`.of-faixa-padrao + .wd-faixa`). Vinte e cinco laboratórios ganharam o
+comportamento sem mudar uma linha — e por isso `office.test.tsx` lê o fonte de
+cada um e cobra que a faixa seja a irmã seguinte da fileira: qualquer coisa
+posta entre as duas mostraria duas faixas empilhadas, sem erro nenhum.
+
+**E a faixa do laboratório é completada com os grupos que faltam.** Cada
+laboratório desenha os grupos de que o exercício precisa, e só eles: a faixa de
+Início do Word saía com quatro grupos onde o programa tem oito, e a do Excel
+com seis botões sem nome. Faixa magra ensina que o resto não existe. A fileira
+de guias lê os nomes dos grupos que a faixa irmã desenhou, põe os do programa
+que não estão lá por portal dentro dela e ordena todos por `order`, na ordem do
+programa de verdade. Três detalhes erram calado:
+
+- **nome encurtado é o mesmo grupo.** "Classificar" é o começo de "Classificar
+  e Filtrar", e "Editando" é o nome que o laboratório deu ao grupo Edição: pôr
+  o do programa ao lado daria dois grupos para os mesmos botões;
+- **comando que o laboratório já desenhou não se repete.** O do exercício é o
+  que funciona; repeti-lo como enfeite poria na mesma faixa dois "Atualizar
+  Tudo", um que faz e outro que avisa — e a trava que procura pelo `title`
+  acharia o que avisa, que vem antes no DOM depois que a faixa troca de guia;
+- **a faixa muda sem a fileira saber** — um grupo que aparece com o cursor na
+  tabela —, e por isso um `MutationObserver` relê os nomes. Os grupos que ele
+  mesmo pôs ficam fora da leitura, senão a releitura não pararia.
+
+**Negrito é N, e Sublinhado é S.** O ícone de "bold" dos pacotes de ícones é um
+B, e um B na faixa manda procurar uma letra que o computador do clube não
+mostra. `IconeNegrito`, `IconeItalico` e `IconeSublinhado` moram em
+`office.tsx`, e os atalhos escritos nas dicas são os do Office em português:
+Ctrl+N, Ctrl+I, Ctrl+S, e Ctrl+B para salvar.
+
+**A barra de status do Excel conta a seleção, e não escreve o endereço.** Ela
+mostrava "A1" no canto, que é o que a caixa de nome já diz e o Excel não
+repete. O que ele mostra ali, com mais de uma célula preenchida selecionada, é
+Média, Contagem e Soma — e é o primeiro lugar em que o número guardado como
+texto se denuncia sem fórmula nenhuma: a Contagem conta a célula e a Soma não.
+`contaDaSelecao` mora em `planilha.ts`, e o `BarraDeStatusDoExcel` guarda o que
+o laboratório escreve num bloco próprio, porque a trava da AP044 procura o
+último `span` dele.
+
+**O Word das operações de arquivo era um terceiro Word.** A janela do editor
+dentro do laboratório de compactar desenhava a fileira de guias à mão, e a
+primeira guia dela se chamava "Página Inicial" — em todo outro laboratório de
+Word ela é "Início". Hoje é a `GuiasDoWord`, com a guia Arquivo abrindo os
+bastidores.
+
+**E a frase de "não faz parte" saía dobrada em seis laboratórios.** Eles
+passavam à fileira de guias e aos enfeites da faixa uma função que embrulha um
+**nome** numa frase, e as duas peças já entregavam a frase pronta: "Itálico
+existe no Word de verdade, e está aqui para a faixa ficar igual — mas não faz
+parte deste exercício. existe no Word de verdade…". Agora as peças do Office
+têm os dois canais separados — `aoAvisar` recebe o recado pronto, e
+`aoNaoFazParte`, quando o laboratório o entrega, recebe só o nome do comando.
+
+**O Word se edita com cursor, e não escolhendo parágrafo.** Os laboratórios de
+Word se pareciam com o Word e não funcionavam como ele: clicava-se num
+parágrafo, ele ganhava um contorno, e os botões agiam sobre o parágrafo
+inteiro. Juntar duas linhas do endereço com quebra de linha era um botão da
+faixa, "Juntar com Quebra de Linha", porque não havia onde apertar Shift+Enter;
+apagar um parágrafo vazio era outro botão, porque não havia Backspace. O
+desbravador aprendia um programa que não existe, e o gesto que a lição pedia
+nunca acontecia.
+
+A folha agora é `contenteditable`, e o cursor é o do próprio navegador: setas,
+Home, End, Shift+seta, clique duplo, arrasto e as alças de seleção do celular
+fazem o que fazem no Word, de graça. O que o navegador **não** faz é escrever:
+toda tecla que mudaria o texto é parada (`keydown` para Enter, Backspace,
+Delete e Tab; `beforeinput` para o resto, que é por onde o teclado do celular
+passa), vira um comando de `edicao.ts`, e a folha se redesenha do modelo. Se o
+DOM fosse a fonte da verdade, o Ctrl+B do Chrome poria um `<b>` dentro de um
+trecho, e as metas leriam um documento que a tela não mostra. A composição —
+acento de tecla morta, teclado do celular — não se pode impedir: deixa-se
+compor, o resultado entra pelo caminho de sempre e a folha é remontada.
+
+`cursorNaFolha.ts` traduz o cursor do navegador para posição do modelo, e
+`useEdicaoDoWord` guarda o cursor, a formatação pendente e o Ctrl+Z. O
+laboratório continua dono do documento, e os comandos dele passam por `mudar`
+para entrar no mesmo desfazer das teclas.
+
+Três decisões do motor erram calado se invertidas:
+
+- **a posição conta unidades**: letra, quebra de linha e campo valem uma cada.
+  O campo é um só, e o cursor pula a "Figura 1" inteira — entrar nele e
+  digitar apagaria a diferença entre o número calculado e o digitado;
+- **o pedaço de antes fica com o id**: partir um trecho deixa o original à
+  esquerda, e o Enter no começo de um parágrafo cria o vazio **antes** dele.
+  Metas e comentários seguem id; com o texto empurrado para um id novo, abrir
+  uma linha acima da assinatura faria a meta da assinatura deixar de achá-la;
+- **tirar o negrito apaga o negrito direto**, em vez de gravar "negrito:
+  falso". Gravar o falso deixaria formatação direta para sempre, e a meta que
+  pede o documento sem ela nunca fecharia para quem desfez à mão.
+
+A formatação vale para a seleção, como no Word: sem seleção, dentro de uma
+palavra, vale para a palavra; num espaço, fica pendente para o que se digitar.
+O estilo de parágrafo vale para todo parágrafo que a seleção toca. A borracha
+("Limpar Toda a Formatação") tira também o estilo, e o Ctrl+Espaço tira só a de
+caractere — a diferença é do programa, e a lição do módulo 1 da CC-ES002 a usa.
+Com o controle de alterações ligado, o que se digita sai marcado e o que se
+apaga sai riscado; o que o próprio autor acabou de inserir sai de verdade.
+
+**As metas leem o texto, e não o id do trecho de partida.** Com seleção de
+verdade, quem arrasta sobre "até 20 de junho" pega uma letra a mais ou a menos,
+e o motor parte os trechos onde a seleção começa e acaba. Uma meta presa ao id
+aprovaria quem pegou a mais e reprovaria quem começou um caractere depois.
+Pelo mesmo motivo as soluções de referência das travas são feitas com as
+mesmas chamadas do motor que as teclas fazem, e as travas que clicam digitam
+por `tecladoDaFolha.ts`, que dispara os eventos que o navegador dispararia.
+
+**A fonte do documento veste o papel, e não a janela.** Ela ia no `style` da
+janela inteira, e escolher Georgia na circular trocava a letra da faixa, das
+guias e da barra de título junto. A letra do papel também passou a ser medida
+em pontos da folha: 11 no estilo é 11 pontos, e desenhado como 11 px o texto
+saía do tamanho de uma folha com zoom de 80%.
+
+**O ¶ da folha editável é desenhado pela folha de estilo.** Ele era um
+elemento que não se edita no fim do parágrafo, e num parágrafo vazio o Chromium
+tirava o cursor dali: o Enter abria a linha nova e o que se digitava ia para o
+começo da de baixo. Quem viu foi o Chromium; no jsdom não há cursor para
+empurrar.
+
+**O botão da faixa não rouba o foco.** `BotaoDaFaixa` impede o `mousedown`,
+senão clicar em Negrito tiraria o cursor do documento e a seleção sumiria antes
+de o botão agir. Quem desenha botão de faixa à mão precisa fazer o mesmo.
+
+**Os atalhos são os do programa imitado.** O Word em português é Ctrl+N, Ctrl+I
+e Ctrl+S; o editor de navegador da CC-ES006 não traduz nada e é Ctrl+B, Ctrl+I
+e Ctrl+U. A folha recebe `atalhos` do gancho, e o Ctrl+B do Word é parado sem
+fazer nada — no Chrome ele escreveria `<b>` no DOM.
+
+**A AP042 e a AP043 escrevem na mesma folha.** Os dois laboratórios de Word
+das trilhas ficaram para trás quando a folha ganhou cursor: um escolhia
+parágrafo num menu, o outro tinha painel próprio de margens fora da faixa. Hoje
+os dois são a folha de `word.tsx` com `useEdicaoDoWord`, e as metas moram em
+`metasDaAp042.ts` e `metasDaAp043.ts`, lendo o documento e não o clique.
+
+**Parágrafo é formato do parágrafo, e lista é número calculado.** Alinhamento,
+entrelinha, recuo e lista moram em `Paragrafo.formato`, e não nos trechos: no
+Word eles valem para o parágrafo inteiro, e guardá-los letra a letra deixaria
+meio parágrafo centralizado. O marcador e o número **não são texto** — saem de
+`marcadorDaLista`, contando os vizinhos, e a folha os desenha por `::before` a
+partir de `data-marcador`. Número digitado à mão é a armadilha do "Figura 1"
+outra vez: apagar o item 2 deixaria um 1 e um 3.
+
+E os comandos de parágrafo valem para **todo parágrafo que a seleção toca**, por
+`paragrafosAlcancados`. Um clique triplo seleciona o título e pega o começo do
+parágrafo seguinte na posição zero; contado como tocado, o Ctrl+E centralizava
+os dois. Posição zero do último não conta, que é o que o Word faz.
+
+**A folha tem tamanho, orientação e margem, e é do documento.** `Doc.pagina`,
+com as medidas reais em centímetros: A4 é 21 × 29,7, Carta é 21,59 × 27,94, e
+as margens Estreita, Moderada, Normal e Larga são as do Word. Um painel da
+plataforma ao lado da folha ensinava a procurar margem no lugar errado; ela mora
+em Layout › Configurar Página, e a folha muda de forma na hora.
+
+**A área de transferência é do Word, e não do navegador.** Copiar guarda um
+fragmento com a formatação (`fragmentoDaSelecao`), colar o insere pelo motor
+(`colarFragmento`). O navegador colaria HTML de qualquer lugar e o modelo não o
+leria — a tela mostraria o que o documento não tem.
+
+**O Excel tem modos, e a barra de status diz qual.** Pronto, Inserir, Editar e
+Apontar, como no programa: de onde a edição começou decide o que a seta faz.
+Escrevendo uma fórmula logo depois de `=`, de um operador, de `(` ou de `;`, a
+seta e o clique **apontam** — escrevem a referência no texto, e cada referência
+da fórmula ganha o contorno da sua cor na grade. Depois de um número, clicar
+noutra célula é sair da edição. As regras puras moram em `teclasDaPlanilha.ts`:
+
+- **F4 gira em quatro passos**, `A1` → `$A$1` → `A$1` → `$A1`, e não liga e
+  desliga: o cifrão só da linha é o que a CC-ES003 cobra ao arrastar para
+  baixo, e um botão de dois estados nunca o produziria. `LOG10(` não é
+  referência, e o F4 não o toca;
+- **Ctrl+seta para na borda do bloco de dados**, e não na da grade;
+- **Tab e depois Enter volta à coluna de onde o Tab começou**, que é como se
+  preenche uma tabela linha a linha sem tirar a mão do teclado.
+
+**A AP044 deixou de ter uma planilha só dela.** Ela desenhava uma tabela HTML,
+com o total num painel ao lado e a fórmula num botão: as setas, o F2 e a barra
+de fórmulas que a AP043 acabara de ensinar não existiam ali. Hoje é uma pasta de
+verdade na `GradeDoExcel`, e por isso entrou na mesa de `gradeDoExcel.test.tsx`.
+O total mora em D123, embaixo do que soma; os meses moram **noutra aba**, porque
+o filtro esconde a linha inteira — uma tabela ao lado da lista sumiria junto, e
+o gráfico perderia pontos sem explicação.
+
+E ela achou quatro coisas que falhavam caladas em todas as planilhas:
+
+- **o motor não tinha `SUBTOTAL`.** A tarefa conferia o texto da fórmula, e o
+  número na célula vinha de outra conta. Hoje ele pergunta a `linhaEscondida` —
+  a mesma pergunta que a grade faz para esconder a linha —, ignora outro
+  `SUBTOTAL` dentro da faixa e trata 9 e 109 igual, porque a linha que o filtro
+  esconde sai dos dois;
+- **a Soma da barra de status contava as linhas escondidas**, e então nunca
+  discordava do `=SOMA` — que é a discórdia que a lição manda notar;
+- **o formato da célula era gravado e nunca desenhado.** Moeda não fazia nada
+  na tela, em nenhuma vereda;
+- **a linha congelada não ficava presa.** O `top` ia na `<tr>`, e quem gruda é
+  a célula, que não o herda. E as letras das colunas rolavam embora — na linha
+  80 ninguém sabia que coluna era qual.
+
+**O gráfico flutua sobre as células, e não sobre a janela.** Pendurado na
+janela, ele cobria a barra de título e a faixa — justamente onde mora Design do
+Gráfico. Hoje vai por `sobreposicao`, dentro da caixa que rola, como no Excel,
+e o que se faz nele (escrever o título) não vira tecla da grade. A guia
+contextual só existe com o gráfico escolhido, e o título se escreve **no
+gráfico**, com o convite cinza "Título do Gráfico" — que não conta como título.
+
+**A setinha do filtro mora na célula do cabeçalho**, e não na letra da coluna:
+é onde o Excel a põe e onde quem leu a teoria vai procurá-la. A lista abre
+embaixo dela.
+
+**O corpo do slide se escreve no slide.** Era um campo de texto à parte embaixo
+do palco — um formulário da plataforma onde o PowerPoint tem o espaço
+reservado. `FolhaDoSlide` recebe `aoEscreverNoCorpo` e desenha uma lista
+editável com os marcadores: Enter abre o tópico seguinte, Backspace tira um, e
+colar entra como texto. O DOM é de quem digita; o modelo só o reescreve quando
+os dois discordam, e as duas leituras aparam as linhas vazias do fim **do mesmo
+jeito** — senão o Enter no último tópico abria a linha, o modelo a aparava, e
+ela sumia debaixo do cursor.
+
+**A lista da nuvem se comporta como a de uma nuvem.** Pastas primeiro, o resto
+em ordem de dicionário (`emOrdemDaLista`, com número como número: Ata 9 antes de
+Ata 10), e o cabeçalho do Nome inverte. O menu abre **onde se clicou** — abria
+sempre no mesmo canto, longe da linha, sem dizer de qual arquivo falava — e não
+sai da janela. Com um arquivo escolhido aparece a barra da seleção, que ocupa o
+lugar mesmo vazia para a lista não pular a cada clique. O dono vem com a bolha
+dele.
+
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
 o editor do celular. O que se repete entre os três é o arranjo, e é ele que
@@ -3440,6 +3936,23 @@ O jsdom não rola nada — `window.scrollTo` não é implementado lá, e
 o pedido que o componente faz e com que argumentos, com a propriedade declarada
 no teste para a guarda ter o que escrever. Quem viu o defeito foi o Chromium,
 como no `float` em item de flex e no `\t` colapsado.
+
+**"Continue de onde parou" é uma fila só, e leva à lição.** O painel lista
+tudo o que existe — treze trilhas por família, cinquenta e uma veredas —, e
+quem está no meio de três coisas tinha de achar as três ali e, dentro de cada
+uma, a lição que faltava. A seção do topo mostra só o que está pela metade, da
+mais recente para a mais antiga, trilha e vereda misturadas: separadas, "o que
+eu estava fazendo?" teria duas respostas em dois lugares. A regra mora em
+`lib/continuar.ts`, e a ordem sai do que já é gravado — o `updated_at` da
+matrícula na trilha, o `created_at` do evento mais recente na vereda.
+
+O cartão inteiro é um link para a **próxima lição**, e não para a trilha: é o
+que ele promete. A próxima é a **primeira por fazer** na ordem do currículo, e
+não a seguinte à última feita — quem pulou a lição 1 tem a 1 por fazer. Na
+vereda, que abre lição por estado, o endereço ganhou `?licao=<id>`, lido só na
+montagem e tirado ao sair: sem isso, recarregar reabriria a lição de que a
+pessoa acabou de sair. E a seção some enquanto o painel carrega, porque
+desenhar com metade dos dados poria a ordem errada na tela por um instante.
 
 **Link externo é sempre `<a target="_blank">`**, pelo componente `LinkExterno`.
 `window.open` funciona no computador e falha no celular.
@@ -4457,6 +4970,11 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `supabase/migrations/migrations.test.ts` | `DELETE FROM badges` sem reconceder a conquista antes, que apaga insígnia de quem a tinha |
 | `src/lib/certificados.test.ts` | o padrão de um certificado ilegível — inverter para `'active'` reprova |
 | `src/lib/insignias.test.ts` | insígnia com critério no código e sem linha no catálogo |
+| `src/lib/insignias.test.ts` | laboratório de trilha sem a sua insígnia `lab_<tipo>`, que concluir não daria nada |
+| `src/lib/insignias.test.ts` | laboratório de vereda aberta sem a sua insígnia semeada, ou semeada diferente do catálogo |
+| `src/lib/insignias.test.ts` | concessão retroativa que liga o evento de um laboratório à insígnia de outro |
+| `src/lib/vencerLicaoDaVereda.test.ts` | lição de vereda vencida que não avalia as insígnias, deixando o prêmio para a próxima trilha |
+| `src/pages/EstantePage.test.tsx` | fileira partida cujo grupo não abre, abre a vereda errada, ou abre todas de uma vez |
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `src/labs/metasDaAp044.test.ts` | tarefa do laboratório de estilos que nasce verde, ou que ninguém consegue vencer |
@@ -4543,11 +5061,12 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/cadernoDoClube.test.ts` | gráfico de tipo que não responde à pergunta, ou sem eixo identificado |
 | `src/labs/cadernoDoClube.test.ts` | número-como-texto "consertado" apagando a célula |
 | `src/labs/cadernoDoClube.test.ts` | fórmula das lições que sai no roteiro sem frase própria, ou coluna arrastada virando doze frases |
-| `src/curriculum/exemplosDePlanilha.test.ts` | exemplo da teoria cujo resultado declarado não é o que o motor devolve |
+| `src/curriculum/exemplosDePlanilha.test.ts` | legenda da teoria cujo número a pasta da excursão não devolve pelo motor, ou pasta que passa a dividir nome, valor ou procura com a do laboratório |
 | `src/curriculum/exemplosDePlanilha.test.ts` | número guardado como texto encostando à direita, que apaga a primeira pista do requisito 7 |
 | `src/labs/metasDaAp043.test.ts` | alinhamento decidido pelo texto impresso, que já perdeu o tipo do valor |
 | `src/labs/excel.test.tsx` | peça da grade que sumiu no recorte, ou que aparece sem o laboratório ter pedido |
 | `src/labs/excel.test.tsx` | grade que guarda a própria seleção, em vez de desenhar a que o chamador diz |
+| `src/labs/excel.test.tsx` | tabela da grade sem a largura declarada, onde a coluna estreita se alarga sozinha e nada se corta |
 | `src/components/LaboratorioDePlanilha.test.tsx` | lição da CC-ES003 impossível de vencer clicando |
 | `src/components/LaboratorioDePlanilha.test.tsx` | trocar de aba perdendo o que foi escrito, ou faixa que muda conforme o exercício |
 | `src/labs/correioDoClube.test.ts` | Cco preenchido com a lista grande vazando pelo Para, ou assinatura configurada e nunca usada |
@@ -4613,6 +5132,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/ui/EstanteDeInsignias.test.tsx` | insígnia do painel que leva ao formulário do perfil em vez de contar o que rendeu |
 | `src/components/ui/ExplicacaoDaInsignia.test.tsx` | cartão de explicação desenhado dentro de quem o chamou, onde o `backdrop-filter` prende o `fixed` |
 | `src/lib/relatorioEmPdf.test.ts` | conquista sem data dizendo-se a primeira, ou sumário reservando menos folhas do que tem entradas |
+| `src/lib/continuar.test.ts` | trilha terminada na fila, próxima lição que pula a que faltou, ou a mais antiga no topo |
+| `src/components/ContinueDeOndeParou.test.tsx` | seção que aparece vazia ou antes de os dados chegarem, ou cartão que não leva à próxima lição |
+| `src/pages/VeredaPage.test.tsx` | `?licao=` ignorado, que manda o "Continuar" para a lista, ou deixado no endereço depois de sair |
 | `src/components/AoTopoAoNavegar.test.tsx` | tela que abre na rolagem da anterior, com o título acima da dobra |
 | `src/components/AoTopoAoNavegar.test.tsx` | troca de página que desliza, ou que vai ao topo quando só a busca muda |
 | `src/components/AoTopoAoNavegar.test.tsx` | ir ao topo escrito numa página em vez do `App`, que conserta uma e deixa doze |
@@ -4626,6 +5148,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/formaDaInsignia.test.ts` | classe cujo glifo não se lê sobre a própria cor, ou ícone sem raio de tinta medido |
 | `src/lib/insignias.test.ts` | ícone ou classe do catálogo divergindo do que a migration semeia |
 | `src/lib/insignias.test.ts` | classe de insígnia de vereda ou de trilha divergindo da que a estante desenha |
+| `src/lib/insignias.test.ts` | insígnia de laboratório cujo laboratório nenhuma lição aberta usa, que fica na estante sem ninguém poder ganhá-la |
 | `src/hooks/escritaDepoisDoDesmonte.test.ts` | efeito que escreve estado depois de esperar sem saber se a tela ainda está lá |
 | `src/lib/ofensiva.test.ts` | evento de laboratório que ninguém classificou, e que por isso não faria a ofensiva andar |
 | `src/lib/ofensiva.test.ts` | a lista de eventos do banco divergindo da do navegador, que daria duas ofensivas à mesma pessoa |
@@ -4642,6 +5165,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/index.test.ts` | trilha sem emblema ou sem fundo de certificado no repositório |
 | `src/curriculum/index.test.ts` | trilha aberta com lição, módulo ou laboratório repetido, ou requisito sem lição |
 | `src/curriculum/exemplosDaTeoria.test.ts` | seletor do exemplo de CSS que não acha ninguém na marcação do tópico |
+| `src/curriculum/telasDasLicoes.test.ts` | tela de lição sem imagem no disco, imagem sem lição, roteiro que fotografa outro número de passos, ou tela sem descrição para o leitor de tela |
 | `src/curriculum/qualidade.test.ts` | duas questões da mesma prova com o mesmo enunciado ou a mesma resposta certa |
 | `src/curriculum/qualidade.test.ts` | lição ou prova que sorteia sem ter três questões de sobra |
 | `src/curriculum/qualidade.test.ts` | questão de prova sem requisito, requisito de teoria sem questão, ou sorteio que não cabe a cobertura |
@@ -4732,6 +5256,15 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDoProjeto.test.tsx` | lição com metas em dois programas sem caminho entre eles |
 | `src/components/LaboratorioDoProjeto.test.tsx` | transferência pendurada na linha do dono, onde o seletor a descarta |
 | `src/labs/classesDoPrograma.test.ts` | classe de programa imitado usada na tela e definida em folha nenhuma |
+| `src/labs/edicao.test.ts` | Enter no começo que muda o id do parágrafo de texto, ou negrito desligado que deixa formatação direta |
+| `src/labs/edicao.test.ts` | campo apagado letra por letra, ou controle de alterações que tira o texto em vez de riscar |
+| `src/components/LaboratorioDaCircular.test.tsx` | circular que volta a precisar de botão que o Word não tem, ou fonte do documento vazando para a janela |
+| `src/components/LaboratorioDaCircular.test.tsx` | zoom do rodapé que muda o número e não a folha |
+| `src/components/LaboratorioDoRelatorio.test.tsx` | Converter Texto em Tabela que converte sem nada selecionado |
+| `src/components/LaboratorioDaRevisao.test.tsx` | texto digitado com o controle ligado saindo sem marca |
+| `src/labs/office.test.tsx` | guia do Office sem faixa padrão, que abriria um cartão vazio |
+| `src/labs/office.test.tsx` | faixa do laboratório que deixou de ser a irmã seguinte da fileira de guias, e não se esconde ao espiar outra guia |
+| `src/labs/office.test.tsx` | grupo completado que repete um que o laboratório já desenhou, ou B de "bold" no lugar do N |
 | `src/labs/gradeDoExcel.test.tsx` | laboratório de planilha novo fora da mesa, teclando diferente dos outros |
 | `src/labs/planilha.test.ts` | Mover ou Copiar que copia sem a caixa marcada, ou Substituir que ignora a seleção |
 | `src/labs/planilha.test.ts` | Remover Duplicatas que acha a linha antes de padronizar, ou que junta homônimos com todas as colunas marcadas |
@@ -4811,6 +5344,16 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaCc006.test.ts` | roteiro sem a decisão técnica, demonstração fora do centro, ou justificativa sem alternativa |
 | `src/curriculum/laboratoriosDePython.test.ts` | almoxarifado com except sem nome valendo por validado, ou erro apanhado em silêncio valendo por avisado |
 | `src/components/LaboratorioDoProjetoDePrograma.test.tsx` | lição da CC006 impossível de vencer clicando, ou terminal que abre no computador errado |
+| `src/labs/metasDaAp042.test.ts` | tarefa do laboratório de formatação que nasce verde, ou que ninguém consegue vencer |
+| `src/labs/FormatacaoTextoLab.test.tsx` | margem fora da guia Layout, ou tarefa da AP042 que não fecha pelos gestos do Word |
+| `src/labs/InsercaoTextoLab.test.tsx` | guia contextual da tabela que fica sem tabela, ou cabeçalho fechado que se escreve |
+| `src/labs/edicao.test.ts` | comando de parágrafo que pega o vizinho na posição zero de um clique triplo |
+| `src/labs/teclasDaPlanilha.test.ts` | F4 que liga e desliga em vez de girar, ou que mexe em nome de função |
+| `src/labs/planilha.test.ts` | SUBTOTAL que soma a linha escondida, ou a SOMA que deixa de somá-la |
+| `src/labs/planilhaDoAcampamento.test.ts` | barra de status que conta o escondido, ou SUBTOTAL de meia coluna fechando a tarefa |
+| `src/labs/PlanilhaAvancadaLab.test.tsx` | AP044 fora da grade do Excel, ou Design do Gráfico que fica sem gráfico escolhido |
+| `src/labs/powerpoint.test.tsx` | corpo do slide escrito fora do slide, ou Enter cuja linha some debaixo do cursor |
+| `src/labs/nuvem.test.tsx` | lista fora da ordem da nuvem, ou menu que não abre onde se clicou |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

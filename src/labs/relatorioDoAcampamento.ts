@@ -211,7 +211,7 @@ export const METAS_DO_RELATORIO: MetaDoRelatorio[] = [
       + 'comprido demais. Tabulação é espaço; coluna de tabela é coluna. Converta a lista inteira.',
     onde: 'Inserir › Tabela › Converter Texto em Tabela',
     passos: [
-      'Clique numa das linhas da lista de inscritos.',
+      'Selecione a lista de inscritos inteira: clique antes de "Nome" e arraste até o fim da última linha (ou use Shift+setas).',
       'Abra a guia Inserir e o botão Tabela.',
       'Escolha "Converter Texto em Tabela" — o separador é a tabulação, que é o que está lá.',
       'Repare no que muda: as colunas param de depender do tamanho do nome.',
@@ -301,7 +301,8 @@ export const METAS_DO_RELATORIO: MetaDoRelatorio[] = [
       'Clique na foto que você inseriu e use Referências › Inserir Legenda.',
       'Escreva o que a foto mostra. O "Figura 1" da frente não se digita: ele já vem, e é campo.',
       'Agora olhe a legenda do mastro, mais abaixo: ela também diz "Figura 1".',
-      'Apague-a, clique na foto do mastro e insira a legenda dela pelo mesmo caminho.',
+      'Selecione a legenda velha inteira (três cliques nela), apague com Delete, e apague também a linha vazia que sobrar.',
+      'Clique na foto do mastro e insira a legenda dela pelo mesmo caminho.',
       'Repare no número: ele virou 2 sozinho, porque agora há uma figura antes.',
     ],
     feita: (d) => {

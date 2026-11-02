@@ -275,4 +275,16 @@ describe('o que a janela não pode deixar fácil', () => {
     campo('Exposição', 0.7); campo('Contraste', 30); campo('Temperatura', 40);
     expect(faltam()).toBe(3);
   }, 60000);
+
+  it('o campo de número deixa escrever um negativo, passando pelo "-" sozinho', () => {
+    montar('ajustes');
+    /* Com só o "-" o navegador lê o campo vazio. Gravar isso como zero
+       apagava o sinal, e quem digitava -50 recebia 50. */
+    campo('Temperatura', 30);
+    campo('Temperatura', '');
+    expect((porRotulo('Temperatura (faixa)') as HTMLInputElement).value).toBe('30');
+    campo('Temperatura', '-50');
+    expect((porRotulo('Temperatura (faixa)') as HTMLInputElement).value).toBe('-50');
+    expect((porRotulo('Temperatura') as HTMLInputElement).value).toBe('-50');
+  }, 60000);
 });

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
-  CSS_POWERPOINT, BarraDeTituloDoPowerPoint, GuiasDoPowerPoint,
+  CSS_POWERPOINT, BarraDeTituloDoPowerPoint, GuiasDoPowerPoint, ReguaDoPowerPoint,
   GrupoDoPowerPoint, BotaoDoPowerPoint, MenuDoPowerPoint, ItemDeMenuDoPowerPoint,
   FolhaDoSlide,
 } from './powerpoint';
@@ -475,6 +475,8 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
                     slide={slide} mestre={mestre}
                     rotuloDoTitulo={`Título do slide ${atual + 1}`}
                     aoEscreverNoTitulo={titulo => mudarSlide(slide.id, { titulo })}
+                    rotuloDoCorpo={`Texto do slide ${atual + 1}`}
+                    aoEscreverNoCorpo={topicos => mudarSlide(slide.id, { topicos })}
                     caminhoDoVideo={CAMINHO_DO_VIDEO}
                     nomeDoAudio={AUDIOS[0]}
                     caminhoDoAudio={CAMINHO_DO_AUDIO}
@@ -487,13 +489,14 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
               </div>
             </div>
 
-            <div className="pp-status">
-              <span>Slide {atual + 1} de {ap.slides.length}</span>
-              <span className="hidden sm:inline">Português (Brasil)</span>
-              <span className="hidden md:inline">
-                {ap.pdf ? `PDF com ${ap.pdf.length} slides` : 'Sem PDF'}
-              </span>
-            </div>
+            <ReguaDoPowerPoint
+              atual={atual + 1} total={ap.slides.length} aoAvisar={avisar}
+              extra={(
+                <span className="hidden md:inline">
+                  {ap.pdf ? `PDF com ${ap.pdf.length} slides` : 'Sem PDF'}
+                </span>
+              )}
+            />
           </>
         )}
 

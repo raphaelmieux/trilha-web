@@ -7,6 +7,7 @@ import LaboratorioDoRelatorio from './LaboratorioDoRelatorio';
 import LaboratorioDeWord from './LaboratorioDeWord';
 import LaboratorioDaCircular from './LaboratorioDaCircular';
 import { VEREDAS, licoesDaVereda } from '../curriculum/veredas';
+import { porCursor, tecla } from '../labs/tecladoDaFolha';
 import { INSCRITA_QUE_FALTA, FOTO_DA_FOGUEIRA } from '../labs/relatorioDoAcampamento';
 import { CSS_FOLHA } from '../labs/word';
 
@@ -110,6 +111,19 @@ const escreverNaCelula = (linha: number, coluna: number, texto: string) => {
   });
 };
 
+/** Arrasta do começo da primeira linha da lista ao fim da última. */
+const selecionarLista = () => {
+  const ids = [...container.querySelectorAll<HTMLElement>('[data-bloco^="lista-"]')].map(p => p.dataset.bloco!);
+  porCursor(container, ids[0], 0, { bloco: ids[ids.length - 1], offset: 'fim' });
+};
+
+/** Três cliques na legenda digitada e Delete; e Delete de novo na linha vazia que sobra. */
+const apagarALegendaVelha = () => {
+  porCursor(container, 'leg-mastro', 0, { bloco: 'leg-mastro', offset: 'fim' });
+  tecla(container, 'Delete');
+  tecla(container, 'Delete');
+};
+
 const legendas = () => [...container.querySelectorAll('[data-estilo="Legenda"]')];
 
 /** O que cada legenda mostra na folha, com o campo já resolvido. */
@@ -197,6 +211,7 @@ describe('as guias contextuais existem enquanto o cursor as convoca', () => {
       Uma janela que as desenhasse sempre desmentiria a lição na própria tela.
     */
     montar();
+    selecionarLista();
     clicar(guia('Inserir'), 'a guia Inserir');
     clicar(comando('Tabela'), 'Tabela');
     clicar(itemDeMenu('Converter Texto em Tabela…'), 'Converter Texto em Tabela');
@@ -215,6 +230,7 @@ describe('o relatório pode ser vencido clicando', () => {
     montar();
 
     /* 1. Converter a lista alinhada com Tab numa tabela. */
+    selecionarLista();
     clicar(guia('Inserir'), 'a guia Inserir');
     clicar(comando('Tabela'), 'Tabela');
     clicar(itemDeMenu('Converter Texto em Tabela…'), 'Converter Texto em Tabela');
@@ -265,9 +281,8 @@ describe('o relatório pode ser vencido clicando', () => {
     clicar(guia('Referências'), 'a guia Referências');
     clicar(comando('Inserir Legenda'), 'Inserir Legenda');
 
-    clicar(bloco('leg-mastro'), 'a legenda digitada');
-    clicar(guia('Início'), 'a guia Início');
-    clicar(comando('Excluir Parágrafo'), 'Excluir Parágrafo');
+    apagarALegendaVelha();
+    expect(bloco('leg-mastro'), 'a legenda velha continuou no documento').toBeNull();
 
     clicar(bloco('img-mastro'), 'a foto do mastro');
     clicar(guia('Referências'), 'a guia Referências');
@@ -276,6 +291,19 @@ describe('o relatório pode ser vencido clicando', () => {
     expect(podeConcluir(), oQueFalta()).toBe(true);
     clicar(botaoDeConcluir(), 'Concluir a lição');
     expect(venceu, 'o botão de concluir não registrou a lição').toBe(true);
+  });
+
+  it('converter sem selecionar as linhas não converte nada', () => {
+    /* No Word o comando converte o que está selecionado. Antes ele convertia
+       a lista inteira de onde quer que se clicasse, e o gesto de selecionar —
+       metade do requisito — não existia. */
+    montar();
+    porCursor(container, 'titulo', 0);
+    clicar(guia('Inserir'), 'a guia Inserir');
+    clicar(comando('Tabela'), 'Tabela');
+    clicar(itemDeMenu('Converter Texto em Tabela…'), 'Converter Texto em Tabela');
+    expect(tabela(), 'converteu sem nada selecionado').toBeNull();
+    expect(container.textContent).toContain('Selecione primeiro as linhas');
   });
 
   it('uma grade vazia não resolve a conversão, e o aviso diz por quê', () => {
@@ -297,6 +325,7 @@ describe('o relatório pode ser vencido clicando', () => {
 
   it('excluir coluna sem o cursor numa célula não apaga nada', () => {
     montar();
+    selecionarLista();
     clicar(guia('Inserir'), 'a guia Inserir');
     clicar(comando('Tabela'), 'Tabela');
     clicar(itemDeMenu('Converter Texto em Tabela…'), 'Converter Texto em Tabela');
@@ -400,9 +429,8 @@ describe('a legenda de campo se vê, e o número anda sozinho', () => {
     montar();
 
     /* Primeiro a do mastro, sozinha: ela é a Figura 1. */
-    clicar(bloco('leg-mastro'), 'a legenda digitada');
-    clicar(guia('Início'), 'a guia Início');
-    clicar(comando('Excluir Parágrafo'), 'Excluir Parágrafo');
+    apagarALegendaVelha();
+    expect(bloco('leg-mastro'), 'a legenda velha continuou no documento').toBeNull();
     clicar(bloco('img-mastro'), 'a foto do mastro');
     clicar(guia('Referências'), 'a guia Referências');
     clicar(comando('Inserir Legenda'), 'Inserir Legenda');

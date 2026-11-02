@@ -496,6 +496,13 @@ interface Ctx {
    * zero com cara de total.
    */
   aba?: string;
+  /**
+   * A linha está escondida pelo filtro? Só o `SUBTOTAL` pergunta.
+   *
+   * Sem quem responda, nada está escondido — e `SUBTOTAL(109;...)` soma tudo,
+   * que é o que ele faz numa planilha sem filtro.
+   */
+  escondida?: (linha: number, aba?: string) => boolean;
 }
 
 const chave = (l: number, c: number, aba?: string) => `${aba ?? ''}:${l}:${c}`;
@@ -827,6 +834,50 @@ function chamada(ctx: Ctx, nome: string, args: No[]): Valor {
       return Array.isArray(vs) ? num(vs.filter(v => v.tipo !== 'vazio').length) : vs;
     }
 
+    /*
+      SUBTOTAL é a SOMA que respeita o filtro, e é a lição inteira da AP044:
+      com linha escondida, a célula do `=SOMA` e a barra de status deixam de
+      bater, e só esta fórmula concorda com o que está à vista.
+
+      O código diz qual conta: 1 média, 2 contagem de números, 3 contagem de
+      preenchidas, 4 máximo, 5 mínimo, 9 soma — e o mesmo mais cem. No Excel
+      a centena só muda para linha escondida **à mão**; a escondida pelo
+      filtro sai das duas, e aqui não há outra. Outro SUBTOTAL dentro da
+      faixa fica de fora, como lá: senão o total de grupo contaria duas vezes.
+    */
+    case 'SUBTOTAL': {
+      if (args.length < 2) return erro('valor');
+      const cod = comoNumero(avaliar(ctx, args[0]));
+      if (typeof cod !== 'number') return cod;
+      const tipo = Math.trunc(cod) % 100;
+      const vs: Valor[] = [];
+      for (const arg of args.slice(1)) {
+        if (arg.k !== 'faixa' && arg.k !== 'ref') return erro('valor');
+        const a = arg.k === 'faixa' ? arg.a : arg.r;
+        const b = arg.k === 'faixa' ? arg.b : arg.r;
+        const aba = a.aba ?? ctx.aba;
+        for (let l = Math.min(a.linha, b.linha); l <= Math.max(a.linha, b.linha); l++) {
+          if (ctx.escondida?.(l, aba)) continue;
+          for (let c = Math.min(a.coluna, b.coluna); c <= Math.max(a.coluna, b.coluna); c++) {
+            if (/^\s*=\s*SUBTOTAL\s*\(/i.test(ctx.bruto(l, c, aba) ?? '')) continue;
+            const v = celula(ctx, l, c, a.aba);
+            if (ehErro(v)) return v;
+            vs.push(v);
+          }
+        }
+      }
+      const ns = vs.flatMap(v => (v.tipo === 'numero' ? [v.n] : []));
+      switch (tipo) {
+        case 1: return ns.length ? num(ns.reduce((s, n) => s + n, 0) / ns.length) : erro('div0');
+        case 2: return num(ns.length);
+        case 3: return num(vs.filter(v => v.tipo !== 'vazio').length);
+        case 4: return num(ns.length ? Math.max(...ns) : 0);
+        case 5: return num(ns.length ? Math.min(...ns) : 0);
+        case 9: return num(ns.reduce((s, n) => s + n, 0));
+        default: return erro('valor');
+      }
+    }
+
     case 'CONTSE': {
       if (args.length !== 2 || args[0].k !== 'faixa') return erro('valor');
       const criterio = avaliar(ctx, args[1]);
@@ -1122,13 +1173,14 @@ function procv(ctx: Ctx, args: No[]): Valor {
 /** O valor da célula, calculando a fórmula que houver nela. */
 export function valorDaCelula(
   bruto: Bruto, linha: number, coluna: number, aba?: string,
+  escondida?: (linha: number, aba?: string) => boolean,
 ): Valor {
   /*
     `aba` é o nome da aba desta célula, e quem o tem é a pasta de trabalho.
     Laboratório de uma planilha só não passa nada, e aí referência sem nome
     continua caindo na única aba que existe — que é o que o acessador já faz.
   */
-  return celula({ bruto, visitando: new Set(), cache: new Map(), aba }, linha, coluna);
+  return celula({ bruto, visitando: new Set(), cache: new Map(), aba, escondida }, linha, coluna);
 }
 
 /** O valor de uma fórmula solta, sem célula de origem — serve aos exemplos da teoria. */

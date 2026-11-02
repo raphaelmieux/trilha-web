@@ -88,6 +88,18 @@ const teclar = (key: string) => {
 const escrever = (campo: Element | null | undefined, texto: string, nome: string) => {
   expect(campo, `não achei o campo "${nome}"`).toBeTruthy();
   act(() => {
+    /* O corpo do slide é a lista editável do próprio slide: escreve-se nela
+       como o navegador escreveria, um item por linha, e avisa-se a digitação. */
+    if ((campo as HTMLElement).isContentEditable || (campo as HTMLElement).getAttribute('contenteditable') === 'true') {
+      const ul = campo as HTMLElement;
+      ul.replaceChildren(...(texto === '' ? [''] : texto.split('\n')).map(t => {
+        const li = document.createElement('li');
+        li.textContent = t;
+        return li;
+      }));
+      ul.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
     const el = campo as HTMLInputElement | HTMLTextAreaElement;
     const proto = el instanceof HTMLTextAreaElement
       ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;

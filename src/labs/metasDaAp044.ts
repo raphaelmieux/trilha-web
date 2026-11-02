@@ -56,7 +56,7 @@ export type {
 } from './documento';
 export {
   NOMES_DA_CAIXA, aplicarCaixa, textoDoBloco, titulosDoDoc, sumarioAtualizado,
-  APARENCIA_DO_ESTILO, paragrafos, ehParagrafo,
+  APARENCIA_DO_ESTILO, LETRA_DE_FORA, paragrafos, ehParagrafo, textoVisivel,
 } from './documento';
 
 const t = (id: string, texto: string): Trecho => trechoDe(id, texto);
@@ -131,7 +131,37 @@ export interface MetaDeEstilos {
 const comEstilo = (d: Doc, e: Estilo) => paragrafos(d).filter(b => b.estilo === e);
 const trechos = (d: Doc) => paragrafos(d).flatMap(b => b.trechos);
 const um = (d: Doc, id: string) => paragrafos(d).find(b => b.id === id);
-const trecho = (d: Doc, id: string) => trechos(d).find(x => x.id === id);
+/**
+ * Todo pedaço de `texto`, dentro do parágrafo `bloco`, satisfaz `pred`?
+ *
+ * As metas leem o **texto** que se pede, e não o id do trecho que o documento
+ * de partida tinha: com o cursor de verdade, a pessoa seleciona "até 20 de
+ * junho" arrastando, e o motor parte os trechos onde a seleção começa e
+ * acaba. Uma meta presa ao id aprovaria quem pegou uma letra a mais e
+ * reprovaria quem começou um caractere depois.
+ */
+function trechosDoPedaco(d: Doc, bloco: string, antes: string, texto: string): Trecho[] {
+  const b = um(d, bloco);
+  if (!b) return [];
+  const corrido = b.trechos.map(x => x.texto).join('');
+  const onde = corrido.indexOf(antes + texto);
+  if (onde < 0) return [];
+  const de = onde + antes.length;
+  const ate = de + texto.length;
+  const r: Trecho[] = [];
+  let pos = 0;
+  for (const x of b.trechos) {
+    const fim = pos + x.texto.length;
+    if (fim > de && pos < ate && x.texto.length > 0) r.push(x);
+    pos = fim;
+  }
+  return r;
+}
+
+const pedacoTodo = (d: Doc, bloco: string, antes: string, texto: string, pred: (x: Trecho) => boolean) => {
+  const ts = trechosDoPedaco(d, bloco, antes, texto);
+  return ts.length > 0 && ts.every(pred);
+};
 const colados = (d: Doc) => paragrafos(d).filter(b => textoDoBloco(b) === TEXTO_DO_SITE);
 
 export const METAS_DOS_ESTILOS: MetaDeEstilos[] = [
@@ -158,7 +188,7 @@ export const METAS_DOS_ESTILOS: MetaDeEstilos[] = [
     detalhe: 'O nome do manual foi digitado com o Caps Lock ligado. Deixe-o como "Manual do acampamento de inverno" sem redigitar nada.',
     onde: 'Início › Fonte › Aa',
     passos: [
-      'Clique no parágrafo do nome do manual.',
+      'Selecione o nome do manual inteiro — três cliques nele.',
       'Na guia Início, no grupo Fonte, abra o botão Aa.',
       'Escolha "Primeira letra da frase em maiúscula." — é o que devolve o título ao normal.',
     ],
@@ -197,12 +227,12 @@ export const METAS_DOS_ESTILOS: MetaDeEstilos[] = [
     detalhe: 'Na lista do que levar, o "2" de m² é sobrescrito e o "2" de H₂O é subscrito. Os dois estão escritos na linha, do tamanho errado.',
     onde: 'Início › Fonte',
     passos: [
-      'Clique no "2" que está depois de "6 m".',
+      'Selecione o "2" que está depois de "6 m" — clique antes dele e aperte Shift+→.',
       'No grupo Fonte, clique em x² (Sobrescrito).',
-      'Clique no "2" que está entre o H e o O e escolha x₂ (Subscrito).',
+      'Selecione o "2" que está entre o H e o O e escolha x₂ (Subscrito).',
     ],
-    feita: d => trecho(d, 'lev-7-b')?.posicao === 'sobrescrito'
-      && trecho(d, 'lev-2-b')?.posicao === 'subscrito',
+    feita: d => pedacoTodo(d, 'lev-7', '6 m', '2', x => x.posicao === 'sobrescrito')
+      && pedacoTodo(d, 'lev-2', 'H', '2', x => x.posicao === 'subscrito'),
   },
   {
     id: 'realce',
@@ -214,7 +244,7 @@ export const METAS_DOS_ESTILOS: MetaDeEstilos[] = [
       'No grupo Fonte, abra a setinha ao lado do marcador de texto.',
       'Escolha uma cor. Amarelo é a que o Word já vem oferecendo.',
     ],
-    feita: d => trecho(d, 'prazo-b')?.realce !== 'nenhum' && !!trecho(d, 'prazo-b'),
+    feita: d => pedacoTodo(d, 'prazo', '', 'até 20 de junho', x => x.realce !== 'nenhum'),
   },
   {
     id: 'colunas',

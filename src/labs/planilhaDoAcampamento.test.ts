@@ -1,10 +1,30 @@
 import { describe, it, expect } from 'vitest';
 import {
-  ACAMPAMENTO_INICIAL, METAS_DO_ACAMPAMENTO, INSCRITOS, UNIDADES,
+  METAS_DO_ACAMPAMENTO, INSCRITOS, UNIDADES,
   INSCRICOES_POR_MES, FORMULA_INICIAL, FORMULA_QUE_RESPEITA,
-  inscritosNaTela, totalDaCelula, totalNaTela,
-  type Acampamento,
+  CELULA_DO_TOTAL, ABA_DOS_INSCRITOS, ABA_DOS_MESES, COLUNA_DA_UNIDADE,
+  acampamentoInicial, inscritosVisiveis, totalDaCelula, totalNaTela,
 } from './planilhaDoAcampamento';
+import { type Caderno, type Grafico, type Planilha, contaDaSelecao } from './planilha';
+
+/** A pasta com uma aba mexida. */
+const comAba = (cad: Caderno, i: number, f: (p: Planilha) => Planilha): Caderno =>
+  ({ ...cad, planilhas: cad.planilhas.map((q, j) => (j === i ? f(q) : q)) });
+const comInscritos = (cad: Caderno, f: (p: Planilha) => Planilha) => comAba(cad, ABA_DOS_INSCRITOS, f);
+const comTotal = (cad: Caderno, formula: string) => comInscritos(cad, p => ({
+  ...p,
+  celulas: p.celulas.map((l, i) => (i === CELULA_DO_TOTAL.l
+    ? l.map((c, j) => (j === CELULA_DO_TOTAL.c ? { ...c, texto: formula } : c)) : l)),
+}));
+const filtrada = (cad: Caderno, unidade = 'Falcão') =>
+  comInscritos(cad, p => ({ ...p, filtro: { coluna: COLUNA_DA_UNIDADE, valor: unidade } }));
+const comGrafico = (cad: Caderno, g: Partial<Grafico> | null) => comAba(cad, ABA_DOS_MESES, p => ({
+  ...p,
+  grafico: g ? {
+    tipo: 'linha', titulo: 'Inscrições de janeiro a junho', eixoX: 'Mês', eixoY: 'Inscritos',
+    faixa: { l1: 0, c1: 0, l2: 6, c2: 1 }, ...g,
+  } : null,
+}));
 
 /*
   O laboratório de planilha avançada abre com tudo por fazer.
@@ -18,7 +38,7 @@ import {
 
 describe('nenhuma tarefa do laboratório de planilha nasce verde', () => {
   it('a planilha abre com as cinco por fazer', () => {
-    const verdes = METAS_DO_ACAMPAMENTO.filter(m => m.feita(ACAMPAMENTO_INICIAL)).map(m => m.id);
+    const verdes = METAS_DO_ACAMPAMENTO.filter(m => m.feita(acampamentoInicial())).map(m => m.id);
     expect(verdes, `${verdes.join(', ')} já estão cumpridas na planilha inicial`).toEqual([]);
   });
 
@@ -27,11 +47,22 @@ describe('nenhuma tarefa do laboratório de planilha nasce verde', () => {
     expect(sem).toEqual([]);
   });
 
-  it('e a planilha abre com a fórmula que não sabe do filtro', () => {
-    expect(ACAMPAMENTO_INICIAL.formulaDoTotal).toBe(FORMULA_INICIAL);
-    expect(ACAMPAMENTO_INICIAL.filtroLigado).toBe(false);
-    expect(ACAMPAMENTO_INICIAL.linhasCongeladas).toBe(0);
-    expect(ACAMPAMENTO_INICIAL.grafico).toBeNull();
+  it('e a planilha abre com a fórmula que não sabe do filtro, em D123', () => {
+    const cad = acampamentoInicial();
+    const p = cad.planilhas[ABA_DOS_INSCRITOS];
+    expect(p.celulas[CELULA_DO_TOTAL.l][CELULA_DO_TOTAL.c].texto).toBe(FORMULA_INICIAL);
+    expect(p.filtro).toBeNull();
+    expect(p.congeladas).toBe(0);
+    expect(cad.planilhas[ABA_DOS_MESES].grafico).toBeNull();
+  });
+
+  /* O filtro esconde a linha inteira: os meses ao lado da lista sumiriam
+     junto, e o gráfico perderia pontos sem explicação. */
+  it('os meses moram em outra aba, longe do que o filtro esconde', () => {
+    const cad = acampamentoInicial();
+    expect(cad.planilhas[ABA_DOS_MESES].nome).toBe('Por mês');
+    const lista = cad.planilhas[ABA_DOS_INSCRITOS];
+    expect(lista.celulas.some(l => l.some(c => c.texto === 'Janeiro'))).toBe(false);
   });
 });
 
@@ -61,14 +92,10 @@ describe('a planilha é grande o bastante para o filtro fazer falta', () => {
 
 /* ── A planilha pronta ─────────────────────────────────────────────────────── */
 
-const pronta = (): Acampamento => ({
-  ...ACAMPAMENTO_INICIAL,
-  filtroLigado: true,
-  unidadeFiltrada: 'Falcão',
-  formulaDoTotal: FORMULA_QUE_RESPEITA,
-  linhasCongeladas: 1,
-  grafico: { tipo: 'linha', titulo: 'Inscrições de janeiro a junho', eixos: true },
-});
+const pronta = (): Caderno => comGrafico(
+  comInscritos(comTotal(filtrada(acampamentoInicial()), FORMULA_QUE_RESPEITA), p => ({ ...p, congeladas: 1 })),
+  {},
+);
 
 describe('toda tarefa do laboratório de planilha tem como ser vencida', () => {
   it('a planilha pronta fecha as cinco', () => {
@@ -85,20 +112,31 @@ describe('toda tarefa do laboratório de planilha tem como ser vencida', () => {
   corresponde ao que está vendo, e manda esse número para a liderança.
 */
 describe('filtro esconde, e a SOMA continua somando o escondido', () => {
-  const filtrada: Acampamento = { ...ACAMPAMENTO_INICIAL, filtroLigado: true, unidadeFiltrada: 'Falcão' };
+  const comFiltro = filtrada(acampamentoInicial());
+  const meta = METAS_DO_ACAMPAMENTO.find(m => m.id === 'soma')!;
 
   it('as linhas escondidas continuam existindo', () => {
-    expect(inscritosNaTela(filtrada).length).toBeLessThan(filtrada.inscritos.length);
-    expect(filtrada.inscritos).toHaveLength(120);
+    expect(inscritosVisiveis(comFiltro)).toBeLessThan(INSCRITOS.length);
+    expect(comFiltro.planilhas[ABA_DOS_INSCRITOS].celulas[120][0].texto).toBe('Inscrito 120');
   });
 
-  it('a célula do total e o rodapé mostram números diferentes', () => {
-    expect(totalDaCelula(filtrada)).toBeGreaterThan(totalNaTela(filtrada));
+  it('a célula do total e a soma do que está à vista mostram números diferentes', () => {
+    expect(totalDaCelula(comFiltro)!).toBeGreaterThan(totalNaTela(comFiltro));
+  });
+
+  /* A barra de status é o segundo número: ela soma a seleção pulando o que o
+     filtro escondeu, que é o que o Excel faz. */
+  it('a barra de status soma só o que está à vista', () => {
+    const p = comFiltro.planilhas[ABA_DOS_INSCRITOS];
+    const conta = contaDaSelecao(p, { l1: 1, c1: 3, l2: 120, c2: 3 });
+    expect(conta?.soma).toBe(totalNaTela(comFiltro));
+    expect(conta?.contagem).toBe(inscritosVisiveis(comFiltro));
   });
 
   it('e com SUBTOTAL eles passam a bater', () => {
-    const corrigida: Acampamento = { ...filtrada, formulaDoTotal: FORMULA_QUE_RESPEITA };
+    const corrigida = comTotal(comFiltro, FORMULA_QUE_RESPEITA);
     expect(totalDaCelula(corrigida)).toBe(totalNaTela(corrigida));
+    expect(meta.feita(corrigida)).toBe(true);
   });
 
   /*
@@ -109,12 +147,25 @@ describe('filtro esconde, e a SOMA continua somando o escondido', () => {
     coisa que não estava errada.
   */
   it('SUBTOTAL sem filtro nenhum não fecha a tarefa', () => {
-    const semFiltro: Acampamento = { ...ACAMPAMENTO_INICIAL, formulaDoTotal: FORMULA_QUE_RESPEITA };
-    expect(METAS_DO_ACAMPAMENTO.find(m => m.id === 'soma')!.feita(semFiltro)).toBe(false);
+    expect(meta.feita(comTotal(acampamentoInicial(), FORMULA_QUE_RESPEITA))).toBe(false);
   });
 
   it('e a SOMA com filtro também não', () => {
-    expect(METAS_DO_ACAMPAMENTO.find(m => m.id === 'soma')!.feita(filtrada)).toBe(false);
+    expect(meta.feita(comFiltro)).toBe(false);
+  });
+
+  /* Uma faixa curta pode, por acaso, somar o mesmo que as linhas visíveis de
+     uma unidade; tirar o filtro dentro da conferência é o que a denuncia. */
+  it('SUBTOTAL sobre parte da coluna não fecha', () => {
+    expect(meta.feita(comTotal(comFiltro, '=SUBTOTAL(109;D2:D60)'))).toBe(false);
+  });
+
+  it('e o número digitado igual ao da tela também não', () => {
+    expect(meta.feita(comTotal(comFiltro, String(totalNaTela(comFiltro))))).toBe(false);
+  });
+
+  it('o 9 também vale: o filtro esconde para os dois códigos', () => {
+    expect(meta.feita(comTotal(comFiltro, '=SUBTOTAL(9;D2:D121)'))).toBe(true);
   });
 });
 
@@ -128,14 +179,18 @@ describe('filtro esconde, e a SOMA continua somando o escondido', () => {
 describe('só o gráfico que responde a pergunta conta', () => {
   const meta = METAS_DO_ACAMPAMENTO.find(m => m.id === 'grafico')!;
 
-  for (const tipo of ['pizza', 'barras', 'dispersao'] as const) {
+  for (const tipo of ['pizza', 'colunas', 'dispersao'] as const) {
     it(`${tipo} não fecha a tarefa`, () => {
-      expect(meta.feita({ ...pronta(), grafico: { tipo, titulo: 'Inscrições', eixos: true } })).toBe(false);
+      expect(meta.feita(comGrafico(pronta(), { tipo }))).toBe(false);
     });
   }
 
   it('linha fecha', () => {
     expect(meta.feita(pronta())).toBe(true);
+  });
+
+  it('linha sobre três meses não fecha: não é a subida de janeiro a junho', () => {
+    expect(meta.feita(comGrafico(pronta(), { faixa: { l1: 0, c1: 0, l2: 3, c2: 1 } }))).toBe(false);
   });
 });
 
@@ -144,14 +199,14 @@ describe('o gráfico precisa dizer o que mede', () => {
   const meta = METAS_DO_ACAMPAMENTO.find(m => m.id === 'rotulos')!;
 
   it('sem título não fecha', () => {
-    expect(meta.feita({ ...pronta(), grafico: { tipo: 'linha', titulo: '', eixos: true } })).toBe(false);
+    expect(meta.feita(comGrafico(pronta(), { titulo: '' }))).toBe(false);
   });
 
-  it('sem eixos identificados não fecha', () => {
-    expect(meta.feita({ ...pronta(), grafico: { tipo: 'linha', titulo: 'Inscrições', eixos: false } })).toBe(false);
+  it('com um eixo só não fecha', () => {
+    expect(meta.feita(comGrafico(pronta(), { eixoY: '' }))).toBe(false);
   });
 
   it('e sem gráfico nenhum não fecha', () => {
-    expect(meta.feita({ ...pronta(), grafico: null })).toBe(false);
+    expect(meta.feita(comGrafico(pronta(), null))).toBe(false);
   });
 });

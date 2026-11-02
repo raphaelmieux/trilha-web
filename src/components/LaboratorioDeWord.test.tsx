@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 import LaboratorioDeWord from './LaboratorioDeWord';
 import EstilosTextoLab from '../labs/EstilosTextoLab';
 import { VEREDAS, licoesDaVereda } from '../curriculum/veredas';
+import { tecla } from '../labs/tecladoDaFolha';
 
 /*
   O laboratório de Word da CC-ES002, percorrido clicando.
@@ -185,7 +186,7 @@ describe('o relatório abre por consertar', () => {
     const escrito = pintado('titulo')!;
     expect(escrito.style.fontWeight, 'o título não chega em negrito — ele não engana ninguém')
       .toBe('700');
-    expect(escrito.style.fontSize).toBe('16px');
+    expect(escrito.style.fontSize).toMatch(/^max\(16px/);
   });
 
   it('gerar o sumário antes dos estilos devolve a caixa vazia do Word', () => {
@@ -217,7 +218,9 @@ describe('o relatório pode ser vencido clicando', () => {
     */
     expect(pintado('titulo')!.style.fontWeight, 'o título não estava em negrito à mão').toBe('700');
 
-    clicar(comando('Limpar Toda a Formatação'), 'Limpar Toda a Formatação');
+    /* Ctrl+A e Ctrl+Espaço: tira a de caractere e deixa o estilo. */
+    tecla(container, 'a', { ctrl: true });
+    tecla(container, ' ', { ctrl: true });
     const doEstilo = pintado('titulo')!;
     expect(doEstilo.style.fontWeight,
       'a formatação direta continuou vencendo o estilo depois de limpar').toBe('400');
@@ -234,18 +237,31 @@ describe('o relatório pode ser vencido clicando', () => {
     // O requisito 8, medido na tela: uma mexida, quatro parágrafos.
     montar();
     aplicarOsEstilos();
-    clicar(comando('Limpar Toda a Formatação'), 'Limpar Toda a Formatação');
+    tecla(container, 'a', { ctrl: true });
+    tecla(container, ' ', { ctrl: true });
     modificar('Título 2', '24');
 
     const medidas = ['h-abertura', 'h-atividades', 'h-numeros', 'h-fecho']
-      .map(id => (paragrafo(id) as HTMLElement).style.fontSize);
-    expect(medidas).toEqual(['24px', '24px', '24px', '24px']);
+      .map(id => (paragrafo(id) as HTMLElement).style.fontSize.match(/^max\((\d+)px/)?.[1]);
+    expect(medidas).toEqual(['24', '24', '24', '24']);
+  });
+
+  it('a borracha tira a direta e o estilo junto, como no Word', () => {
+    /* É a diferença que o passo a passo ensina: "Limpar Toda a Formatação"
+       devolve o parágrafo a Normal. Um botão que só tirasse a direta ensinaria
+       que ele é o Ctrl+Espaço, e no computador do clube os títulos sumiriam
+       do sumário sem ninguém entender por quê. */
+    montar();
+    aplicar('titulo', 'Título 1');
+    clicar(comando('Limpar Toda a Formatação'), 'Limpar Toda a Formatação');
+    expect(estiloDe('titulo')).toBe('Normal');
+    expect(pintado('titulo')!.style.fontWeight).not.toBe('700');
   });
 
   it('aplicar estilo sem parágrafo escolhido avisa, em vez de aplicar no nada', () => {
     montar();
     clicar(naGaleria('Título 1'), 'Título 1 na galeria');
-    expect(container.textContent).toContain('Clique primeiro num parágrafo');
+    expect(container.textContent).toContain('Clique primeiro no documento');
     expect(estiloDe('titulo'), 'o estilo foi aplicado sem ninguém escolher onde').toBe('Normal');
   });
 

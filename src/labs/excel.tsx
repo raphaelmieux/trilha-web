@@ -1,8 +1,11 @@
-import { ArrowDownAZ, ArrowUpZA, Filter, X } from 'lucide-react';
+import { ArrowDownAZ, ArrowUpZA, Check, ChevronDown, ChevronLeft, ChevronRight, Filter, MoreHorizontal, Plus, X } from 'lucide-react';
+import {
+  CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice, AcessibilidadeDoStatus,
+} from './office';
 import {
   type Caderno, type Direcao, type Faixa, type Planilha,
-  alinhamentoDe, estiloCondicional, linhaEscondida, mostrar, naFaixa, nomeDaColuna,
-  textoDoResumo, valorCalculado,
+  alinhamentoDe, estiloCondicional, linhaEscondida, mostrar, naFaixa, nomeDaColuna, nomeDaCelula, normalizar,
+  textoDoResumo, valorCalculado, contaDaSelecao, numeroNaLargura,
   type TipoDeGrafico, type PontoDoGrafico, type PontoDeDispersao, type EixoDoGrafico,
 } from './planilha';
 
@@ -23,7 +26,7 @@ import {
 
 /** As guias do Excel em português, na ordem em que ele as põe. */
 export const GUIAS_DO_EXCEL = [
-  'Página Inicial', 'Inserir', 'Layout da Página', 'Fórmulas',
+  'Página Inicial', 'Inserir', 'Desenhar', 'Layout da Página', 'Fórmulas',
   'Dados', 'Revisão', 'Exibir', 'Ajuda',
 ] as const;
 
@@ -42,17 +45,8 @@ export const CSS_EXCEL = `
   flex: 1; display: flex; flex-direction: column; min-height: 0;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
 }
-.pl-titulo {
-  background: #F9F8F7; border-bottom: 1px solid #E1DFDD;
-  display: flex; align-items: center; gap: 10px; padding: 6px 10px; font-size: 12px;
-}
-.pl-guias { display: flex; background: #F3F2F1; border-bottom: 1px solid #E1DFDD; padding: 0 6px; }
-.pl-guia {
-  padding: 6px 12px; font-size: 12.5px; color: #201F1E;
-  border-bottom: 2px solid transparent; background: transparent;
-}
-.pl-guia:hover { background: #EDEBE9; }
-.pl-guia[aria-selected="true"] { color: #217346; border-bottom-color: #217346; font-weight: 600; }
+/* Barra de título e guias: as do Microsoft 365, em office.tsx. */
+.pl-titulo, .pl-guias, .pl-guia { font-size: 12px; }
 .pl-faixa {
   display: flex; gap: 2px; background: #FFFFFF; border-bottom: 1px solid #E1DFDD;
   padding: 3px 6px 0; overflow-x: auto;
@@ -73,28 +67,57 @@ export const CSS_EXCEL = `
 .pl-bt:focus-visible { outline: 2px solid #217346; outline-offset: 1px; }
 .pl-sep { width: 1px; align-self: stretch; background: #E1DFDD; margin: 2px 3px; }
 
+/* A barra de fórmulas do Microsoft 365: a caixa de nome com a setinha, o
+   pontilhado de arrastar, os três botões (cancelar, inserir e fx) e o campo
+   com a setinha de expandir no fim. Os dois primeiros só acendem durante a
+   edição, como no Excel — é por eles que se vê que a célula está em edição. */
 .pl-formula {
-  display: flex; align-items: center; gap: 6px; padding: 4px 8px;
-  background: #FFFFFF; border-bottom: 1px solid #E1DFDD;
+  display: flex; align-items: center; gap: 0; padding: 4px 8px 6px;
+  background: #F3F3F3; flex: none;
 }
 .pl-nome {
-  min-width: 62px; font-size: 12px; padding: 3px 6px;
-  border: 1px solid #D2D0CE; border-radius: 2px; background: #FFFFFF;
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 4px;
+  width: 92px; height: 24px; font-size: 12px; padding: 0 4px 0 7px;
+  border: 1px solid #D1D1D1; border-radius: 4px 0 0 4px; background: #FFFFFF; color: #242424;
 }
-.pl-fx { font-style: italic; color: #605E5C; font-size: 12px; }
+.pl-formula-meio {
+  display: inline-flex; align-items: center; height: 24px; padding: 0 2px;
+  background: #FFFFFF; border-top: 1px solid #D1D1D1; border-bottom: 1px solid #D1D1D1; color: #616161;
+}
+.pl-formula-bt {
+  width: 24px; height: 22px; display: grid; place-items: center; border: none; background: transparent;
+  color: #616161; cursor: pointer; border-radius: 3px;
+}
+.pl-formula-bt:hover:not(:disabled) { background: #EBEBEB; }
+.pl-formula-bt:disabled { color: #BDBDBD; cursor: default; }
+.pl-pontilhado { width: 8px; text-align: center; color: #9E9E9E; letter-spacing: -1px; font-size: 11px; }
+.pl-fx { font-style: italic; font-family: Georgia, 'Times New Roman', serif; color: #424242; font-size: 13px; }
 .pl-entrada {
-  flex: 1; border: 1px solid #D2D0CE; border-radius: 2px; padding: 3px 6px;
-  font-size: 12.5px; font-family: inherit; background: #FFFFFF; color: #201F1E;
+  flex: 1; min-width: 0; height: 24px; border: 1px solid #D1D1D1; border-radius: 0; padding: 0 6px;
+  font-size: 12.5px; font-family: inherit; background: #FFFFFF; color: #242424;
+}
+.pl-formula-expandir {
+  height: 24px; width: 22px; display: grid; place-items: center; background: #FFFFFF; color: #616161;
+  border: 1px solid #D1D1D1; border-left: none; border-radius: 0 4px 4px 0; cursor: pointer;
 }
 .pl-entrada:focus { outline: 1px solid #217346; }
 
 .pl-grade-caixa { flex: 1; min-height: 0; overflow: auto; background: #FFFFFF; padding-bottom: 20px; }
 .pl-grade { border-collapse: collapse; table-layout: fixed; }
-.pl-canto { width: 34px; background: #F3F2F1; border: 1px solid #D2D0CE; position: sticky; left: 0; z-index: 2; }
-.pl-cab-col, .pl-cab-lin {
-  background: #F3F2F1; border: 1px solid #D2D0CE; color: #605E5C;
-  font-size: 11.5px; font-weight: 600; position: relative;
+.pl-canto {
+  width: 34px; background: #F5F5F5; border: 1px solid #D4D4D4; position: sticky; left: 0; z-index: 2;
+  /* O triângulo no canto de baixo é o "selecionar tudo" do Excel. */
+  background-image: linear-gradient(135deg, transparent 62%, #B5B5B5 62%, #B5B5B5 82%, transparent 82%);
 }
+.pl-cab-col, .pl-cab-lin {
+  background: #F5F5F5; border: 1px solid #D4D4D4; color: #424242;
+  font-size: 11.5px; font-weight: 400; position: relative;
+}
+/* O cabeçalho da coluna e da linha selecionadas acende, com a borda verde do
+   lado que encosta na grade: é assim que o Excel diz onde está o cursor sem
+   ninguém ler a caixa de nome. */
+.pl-cab-col.pl-cab-ativo { background: #D3F0E0; color: #0E5C2F; font-weight: 600; box-shadow: inset 0 -2px 0 #217346; }
+.pl-cab-lin.pl-cab-ativo { background: #D3F0E0; color: #0E5C2F; font-weight: 600; box-shadow: inset -2px 0 0 #217346; }
 .pl-cab-col { height: 20px; }
 .pl-cab-lin { width: 34px; position: sticky; left: 0; z-index: 1; }
 /* As alças ficam por cima da borda do cabeçalho, como na planilha de verdade:
@@ -103,7 +126,7 @@ export const CSS_EXCEL = `
 .pl-alca-lin { position: absolute; left: 0; bottom: -3px; height: 7px; width: 100%; cursor: row-resize; }
 
 .pl-grade td {
-  border: 1px solid #E1DFDD; padding: 2px 5px; font-size: 12.5px;
+  border: 1px solid #E1E1E1; padding: 2px 5px; font-size: 12.5px;
   overflow: hidden; white-space: nowrap;
 }
 .pl-ativa { outline: 2px solid #217346; outline-offset: -2px; }
@@ -139,9 +162,10 @@ export const CSS_EXCEL = `
 .pl-layout-manual td.pl-na-tabela { border: 1px solid #605E5C; background: #FBFBF9; }
 
 .pl-status {
-  display: flex; align-items: center; gap: 14px; padding: 4px 10px;
-  background: #F3F2F1; border-top: 1px solid #E1DFDD; font-size: 11.5px; color: #605E5C;
+  display: flex; align-items: center; gap: 14px; padding: 3px 10px; min-height: 26px; flex: none;
+  background: #F3F3F3; border-top: 1px solid #E0E0E0; font-size: 11.5px; color: #424242;
 }
+.pl-agregados { display: inline-flex; gap: 16px; white-space: nowrap; }
 .pl-menu {
   position: absolute; z-index: 40; top: 100%; left: 0; margin-top: 2px;
   background: #FFFFFF; border: 1px solid #C8C6C4; border-radius: 3px;
@@ -176,23 +200,35 @@ export const CSS_EXCEL = `
 /* A grade tem foco para receber o teclado, e o contorno do navegador em volta
    dela inteira não diz nada — quem mostra onde está o cursor é a célula. */
 .pl-grade-caixa:focus { outline: none; }
-.pl-guia-arquivo { background: #217346; color: #FFFFFF; border-radius: 3px 3px 0 0; }
+.pl-guia-arquivo { letter-spacing: 0; }
 .pl-abas {
-  display: flex; align-items: stretch; gap: 2px; padding: 0 8px;
-  background: #F3F2F1; border-top: 1px solid #E1DFDD;
+  display: flex; align-items: stretch; gap: 0; padding: 0 8px 0 4px; min-height: 30px; flex: none;
+  background: #F3F3F3; border-top: 1px solid #E0E0E0; overflow-x: auto;
 }
+/* As setas de rolar as abas e as reticências ficam à esquerda, antes delas,
+   como no Excel. */
+.pl-abas-nav { display: flex; align-items: center; gap: 0; padding-right: 6px; flex: none; }
+.pl-abas-nav button {
+  width: 22px; height: 22px; display: grid; place-items: center; border: none; background: transparent;
+  color: #616161; cursor: pointer; border-radius: 3px;
+}
+.pl-abas-nav button:hover { background: #E1E1E1; }
 .pl-aba {
-  padding: 5px 14px; font-size: 12px; color: #201F1E; background: transparent;
-  border: none; border-top: 2px solid transparent; cursor: pointer;
+  position: relative; padding: 0 16px; font-size: 12px; color: #242424; background: transparent;
+  border: none; border-right: 1px solid #E0E0E0; cursor: pointer; white-space: nowrap;
 }
-.pl-aba[aria-current="true"] {
-  background: #FFFFFF; color: #217346; font-weight: 600; border-top-color: #217346;
+.pl-aba:hover { background: #EBEBEB; }
+.pl-aba[aria-current="true"] { background: #FFFFFF; color: #217346; font-weight: 600; }
+.pl-aba[aria-current="true"]::after {
+  content: ''; position: absolute; left: 12px; right: 12px; bottom: 3px; height: 2px;
+  border-radius: 1px; background: #217346;
 }
 .pl-aba-mais {
-  padding: 5px 10px; font-size: 14px; color: #605E5C; background: transparent;
-  border: none; cursor: pointer;
+  align-self: center; margin-left: 8px; width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center; color: #616161; background: transparent;
+  border: 1px solid #9E9E9E; cursor: pointer; flex: none; padding: 0;
 }
-.pl-aba-mais:hover { background: #EDEBE9; }
+.pl-aba-mais:hover { background: #E1E1E1; }
 
 /* ── O que a CC-ES003 acrescentou à grade ──────────────────────────────────
 
@@ -226,8 +262,18 @@ export const CSS_EXCEL = `
 /* O congelamento é de tela: a linha congelada gruda no alto enquanto o resto
    rola. O z-index fica acima do cabeçalho de linha, senão a coluna de números passa
    por cima dela ao rolar de lado. */
-.pl-congelada td, .pl-congelada th { position: sticky; z-index: 3; background: #FFFFFF; }
-.pl-congelada th.pl-cab-lin { z-index: 4; }
+/* Escrito com a tabela e a linha na frente para vencer as regras que põem a
+   célula ativa e a da setinha do filtro em position: relative — com a mesma
+   especificidade elas venciam, e o cabeçalho com setinha rolava embora. */
+.pl-grade tr.pl-congelada td, .pl-grade tr.pl-congelada th { position: sticky; top: inherit; z-index: 3; background: #FFFFFF; }
+.pl-grade tr.pl-congelada th.pl-cab-lin { z-index: 4; background: #F5F5F5; }
+/* A linha cinza-escura embaixo da última linha presa é como o Excel mostra
+   onde o congelamento corta. */
+.pl-congelada-ultima td, .pl-congelada-ultima th { box-shadow: inset 0 -1px 0 #8A8886; }
+/* As letras das colunas nunca saem do alto, congelado ou não — é por elas que
+   se lê o endereço de uma célula na linha 80. */
+.pl-grade thead th { position: sticky; top: 0; z-index: 5; }
+.pl-grade thead th.pl-canto { z-index: 6; }
 
 /* A alça de preenchimento: o quadradinho no canto da célula ativa. Ela fica
    **fora** do fluxo do texto, senão empurra o conteúdo da célula e a coluna
@@ -243,12 +289,16 @@ export const CSS_EXCEL = `
   display: inline-flex; align-items: center; gap: 2px;
   margin-left: 4px; vertical-align: middle; color: #217346;
 }
-.pl-cab-bt {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 14px; height: 14px; border: none; background: transparent;
-  color: #605E5C; cursor: pointer; border-radius: 2px;
+/* A setinha do filtro, no canto direito da célula do cabeçalho: um quadradinho
+   cinza com borda, como o do Excel. A célula reserva o espaço dela à direita
+   para o texto não passar por baixo. */
+.pl-grade td:has(> .pl-filtro-seta) { position: relative; padding-right: 22px; }
+.pl-filtro-seta {
+  position: absolute; right: 2px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid #C8C6C4; background: #F3F2F1; color: #424242; border-radius: 2px; cursor: pointer;
 }
-.pl-cab-bt:hover { background: #E1DFDD; color: #217346; }
+.pl-filtro-seta:hover { background: #E1DFDD; border-color: #8A8886; }
 
 /* ── As caixas de diálogo ──────────────────────────────────────────────────
 
@@ -318,33 +368,37 @@ export const CSS_EXCEL = `
 }
 .pl-grafico-titulo { font-size: 12.5px; font-weight: 600; text-align: center; margin-bottom: 6px; }
 .pl-grafico-eixo { font-size: 10.5px; color: #605E5C; text-align: center; }
+/* Escolhido, o gráfico ganha a moldura e os títulos viram campos de escrever,
+   como no Excel: o título se edita no lugar, e não numa caixa à parte. */
+.pl-grafico[data-escolhido="sim"] { outline: 2px solid #217346; outline-offset: 1px; }
+.pl-grafico-campo {
+  display: block; width: 100%; border: 1px dashed transparent; background: transparent;
+  text-align: center; color: #201F1E; font: inherit; padding: 1px 2px;
+}
+.pl-grafico[data-escolhido="sim"] .pl-grafico-campo { border-color: #A19F9D; }
+.pl-grafico-campo::placeholder { color: #605E5C; }
 .pl-grade-caixa { position: relative; }
+/* O gráfico flutua no canto da área das células, e rola com elas. */
+.pl-sobre-a-grade { position: absolute; top: 0; right: 0; z-index: 6; }
+.pl-sobre-a-grade .pl-grafico { position: relative; top: 36px; right: 16px; }
 
 @media (max-width: 720px) {
   .pl-dialogo { top: 12px; transform: translate(-50%, 0); }
 }
+${CSS_OFFICE}
 `;
 
 
-export function BarraDeTituloDoExcel({ arquivo, estado = 'Salvo', aoAvisar }: {
+export function BarraDeTituloDoExcel({ arquivo, estado = 'Salvo', aoAvisar, aoDesfazer, aoRefazer }: {
   arquivo: string;
   estado?: string;
   aoAvisar: (recado: string) => void;
+  aoDesfazer?: () => void;
+  aoRefazer?: () => void;
 }) {
   return (
-    <div className="pl-titulo">
-      <span style={{ color: '#217346', fontWeight: 700, fontSize: 13 }}>▦</span>
-      <span style={{ fontWeight: 600 }}>{arquivo}</span>
-      <span style={{ color: '#605E5C' }}>— {estado}</span>
-      <span className="ml-auto flex items-center gap-2" style={{ color: '#605E5C' }}>
-        <button type="button" className="px-1" aria-label="Minimizar"
-          onClick={() => aoAvisar('Minimizar não faz parte deste exercício.')}>—</button>
-        <button type="button" className="px-1" aria-label="Fechar"
-          onClick={() => aoAvisar('Fechar a planilha não faz parte deste exercício.')}>
-          <X className="w-3 h-3" />
-        </button>
-      </span>
-    </div>
+    <BarraDeTituloDoOffice app="excel" classe="pl-titulo" arquivo={arquivo} estado={estado}
+      aoAvisar={aoAvisar} aoDesfazer={aoDesfazer} aoRefazer={aoRefazer} />
   );
 }
 
@@ -355,9 +409,11 @@ export function BarraDeTituloDoExcel({ arquivo, estado = 'Salvo', aoAvisar }: {
  * aparece assim mesmo, apagada, e responde que existe e não faz parte. Guia que
  * sumisse da fileira ensinaria que o Excel não a tem.
  */
-export function GuiasDoExcel({ atual, usaveis, aoTrocar, aoAvisar, aoAbrirArquivo }: {
+export function GuiasDoExcel({ atual, usaveis, contextuais, aoTrocar, aoAvisar, aoAbrirArquivo }: {
   atual: string;
   usaveis: readonly string[];
+  /** As guias que só existem com algo escolhido — Design do Gráfico, com o gráfico. */
+  contextuais?: readonly { id: string; nome: string }[];
   aoTrocar: (id: string) => void;
   aoAvisar: (recado: string) => void;
   /**
@@ -371,27 +427,14 @@ export function GuiasDoExcel({ atual, usaveis, aoTrocar, aoAvisar, aoAbrirArquiv
   aoAbrirArquivo?: () => void;
 }) {
   return (
-    <div className="pl-guias" role="tablist">
-      <button type="button" className="pl-guia pl-guia-arquivo"
-        onClick={() => (aoAbrirArquivo
-          ? aoAbrirArquivo()
-          : aoAvisar('A guia Arquivo existe no Excel de verdade, e não faz parte deste exercício.'))}>
-        Arquivo
-      </button>
-      {GUIAS_DO_EXCEL.map(nome => (
-        usaveis.includes(nome) ? (
-          <button key={nome} type="button" role="tab" aria-selected={atual === nome}
-            className="pl-guia" onClick={() => aoTrocar(nome)}>{nome}</button>
-        ) : (
-          <button key={nome} type="button" className="pl-guia" style={{ color: '#8A8886' }}
-            onClick={() => aoAvisar(nome === 'Fórmulas'
-              ? 'A guia Fórmulas existe no Excel de verdade. Aqui a fórmula se escreve direto na célula, que é como se faz na prática.'
-              : `A guia ${nome} existe no Excel de verdade, e não faz parte deste exercício.`)}>
-            {nome}
-          </button>
-        )
-      ))}
-    </div>
+    <GuiasDoOffice app="excel" classe="pl-guias" classeDaGuia="pl-guia" classeDoArquivo="pl-guia-arquivo"
+      guias={GUIAS_DO_EXCEL} atual={atual} usaveis={usaveis} contextuais={contextuais}
+      aoTrocar={aoTrocar} aoAvisar={aoAvisar} aoAbrirArquivo={aoAbrirArquivo}
+      /* A guia Fórmulas tem uma razão própria a dizer, e diz ao abrir: a
+         faixa dela existe inteira, mas aqui a fórmula se escreve na célula. */
+      recadoDaGuia={nome => (nome === 'Fórmulas'
+        ? 'A guia Fórmulas existe no Excel de verdade. Aqui a fórmula se escreve direto na célula, que é como se faz na prática.'
+        : undefined)} />
   );
 }
 
@@ -455,20 +498,51 @@ export function BotaoDoExcel({ dica, aoClicar, ativo, children }: {
  * cancelamento, e escrever uma delas por fora custaria justamente essa
  * guarda.
  */
-export function BarraDeFormulas({ nome, props }: {
+export function BarraDeFormulas({ nome, props, editando, aoCancelar, aoConfirmar, aoAvisar }: {
   /** O nome da faixa selecionada, por `nomeDaFaixa`. */
   nome: string;
   props: React.ComponentProps<'input'>;
+  /**
+   * Se há edição em curso. Acende o ✕ e o ✓, que no Excel ficam cinzentos
+   * enquanto não há o que cancelar nem confirmar. Sem o laboratório dizer,
+   * a barra deduz do foco no campo dela.
+   */
+  editando?: boolean;
+  aoCancelar?: () => void;
+  aoConfirmar?: () => void;
+  aoAvisar?: (r: string) => void;
 }) {
+  const avisar = (r: string) => aoAvisar?.(`${r} existe no Excel de verdade, e não faz parte deste exercício.`);
   return (
     <div className="pl-formula">
-      <span className="pl-nome" aria-label="Caixa de nome">{nome}</span>
-      <span className="pl-fx">fx</span>
+      <span className="pl-nome" aria-label="Caixa de nome">
+        <span className="truncate">{nome}</span>
+        <ChevronDown className="w-3 h-3" style={{ color: '#616161', flex: 'none' }} aria-hidden="true" />
+      </span>
+      <span className="pl-formula-meio">
+        <span className="pl-pontilhado" aria-hidden="true">⋮</span>
+        <button type="button" className="pl-formula-bt" aria-label="Cancelar" title="Cancelar"
+          disabled={!editando} onClick={aoCancelar}>
+          <X className="w-3.5 h-3.5" />
+        </button>
+        <button type="button" className="pl-formula-bt" aria-label="Inserir" title="Inserir"
+          disabled={!editando} onClick={aoConfirmar}>
+          <Check className="w-3.5 h-3.5" />
+        </button>
+        <button type="button" className="pl-formula-bt" aria-label="Inserir Função" title="Inserir Função"
+          onClick={() => avisar('A caixa Inserir Função')}>
+          <span className="pl-fx">fx</span>
+        </button>
+      </span>
       <input
         className="pl-entrada"
         aria-label="Barra de fórmulas"
         placeholder="Escreva aqui, ou uma fórmula começando por ="
         {...props} />
+      <button type="button" className="pl-formula-expandir" aria-label="Expandir a Barra de Fórmulas"
+        title="Expandir a Barra de Fórmulas" onClick={() => avisar('Expandir a barra de fórmulas')}>
+        <ChevronDown className="w-3 h-3" />
+      </button>
     </div>
   );
 }
@@ -479,8 +553,27 @@ export function AbasDoExcel({ nomes, ativa = 0, aoTrocar, aoAvisar }: {
   aoTrocar?: (i: number) => void;
   aoAvisar: (r: string) => void;
 }) {
+  /* As setas rolam a fileira quando há mais abas do que cabem — e aqui, com a
+     fileira inteira à vista, elas passam para a aba vizinha, que é o que o
+     Ctrl+PgDn faz no Excel. Numa pasta de uma aba só elas não têm para onde ir. */
+  const ir = (d: number) => {
+    const alvo = ativa + d;
+    if (aoTrocar && alvo >= 0 && alvo < nomes.length) aoTrocar(alvo);
+  };
   return (
     <div className="pl-abas">
+      <span className="pl-abas-nav">
+        <button type="button" aria-label="Planilha anterior" title="Planilha anterior" onClick={() => ir(-1)}>
+          <ChevronLeft className="w-3.5 h-3.5" />
+        </button>
+        <button type="button" aria-label="Próxima planilha" title="Próxima planilha" onClick={() => ir(1)}>
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+        <button type="button" aria-label="Todas as planilhas" title="Todas as planilhas"
+          onClick={() => aoAvisar('A lista de todas as planilhas existe no programa de verdade, e não faz parte deste exercício.')}>
+          <MoreHorizontal className="w-3.5 h-3.5" />
+        </button>
+      </span>
       {nomes.map((nome, i) => (
         <button
           key={nome} type="button" className="pl-aba" aria-current={i === ativa}
@@ -491,8 +584,44 @@ export function AbasDoExcel({ nomes, ativa = 0, aoTrocar, aoAvisar }: {
       ))}
       <button type="button" className="pl-aba-mais" title="Nova planilha" aria-label="Nova planilha"
         onClick={() => aoAvisar('Acrescentar planilhas existe no programa de verdade, e não faz parte deste exercício.')}>
-        +
+        <Plus className="w-3 h-3" />
       </button>
+    </div>
+  );
+}
+
+
+/**
+ * A barra de status do Excel: o que o laboratório tem a dizer à esquerda, e à
+ * direita o que o programa sempre tem — média, contagem e soma da seleção, os
+ * modos de exibição e o zoom.
+ *
+ * O que o laboratório escreve vai dentro de um bloco próprio, e isso não é
+ * enfeite: as travas procuram o último `span` dele.
+ */
+export function BarraDeStatusDoExcel({ children, aoAvisar, planilha, faixa, caderno }: {
+  children?: React.ReactNode;
+  aoAvisar: (r: string) => void;
+  planilha?: Planilha;
+  faixa?: Faixa;
+  caderno?: Caderno;
+}) {
+  const conta = planilha && faixa ? contaDaSelecao(planilha, faixa, caderno) : null;
+  return (
+    <div className="pl-status">
+      <div className="of-status-esquerda">{children}</div>
+      <div className="of-status-direita">
+        <AcessibilidadeDoStatus app="excel" aoAvisar={aoAvisar} />
+        {conta && (
+          <span className="pl-agregados" aria-label="Resumo da seleção">
+            {conta.numeros > 0 && <span>Média: {mostrar({ tipo: 'numero', n: conta.soma / conta.numeros })}</span>}
+            <span>Contagem: {conta.contagem}</span>
+            {conta.numeros > 0 && <span>Soma: {mostrar({ tipo: 'numero', n: conta.soma })}</span>}
+          </span>
+        )}
+        <ModosDeExibicao app="excel" aoAvisar={aoAvisar} />
+        <ZoomDoOffice app="excel" aoAvisar={aoAvisar} />
+      </div>
     </div>
   );
 }
@@ -563,6 +692,15 @@ export interface PropsDaGradeDoExcel {
   aoEscrever: (texto: string) => void;
   aoConfirmar: (texto: string, direcao?: Direcao) => void;
   aoCancelar: () => void;
+  /**
+   * A fórmula em edição espera uma referência. Aí o clique numa célula não pode
+   * tirar o foco do campo: ele escreve o nome dela, e quem decide é o gancho.
+   */
+  apontavel?: boolean;
+  /** As faixas que a fórmula em edição cita, contornadas cada uma na sua cor. */
+  referencias?: { faixa: Faixa; cor: string }[];
+  /** As teclas da edição — F2, F4, Ctrl+Enter, as setas do modo Inserir. */
+  aoTeclarNaEdicao?: (e: React.KeyboardEvent<HTMLInputElement>) => boolean;
 
   /** Menu do botão direito. Sem ele, a grade não abre menu nenhum. */
   aoContexto?: (e: React.MouseEvent, alvo: 'celula' | 'coluna' | 'linha', l: number, c: number) => void;
@@ -583,16 +721,45 @@ export interface PropsDaGradeDoExcel {
   /** Quais células o estilo de tabela pinta. Só a AP043 usa. */
   naTabela?: (l: number, c: number) => boolean;
   /** A setinha do filtro no cabeçalho. Sem ela, o cabeçalho não tem botão. */
-  aoAbrirFiltro?: (c: number) => void;
+  /** Abre a lista do filtro; o retângulo é o da setinha, para a lista abrir embaixo dela. */
+  aoAbrirFiltro?: (c: number, onde?: DOMRect) => void;
+  /**
+   * O que flutua sobre a planilha — o gráfico.
+   *
+   * Mora dentro da caixa que rola, e não sobre a janela: no Excel o gráfico
+   * está preso às células e rola com elas. Pendurado na janela, ele cobria a
+   * barra de título e a faixa, que é justamente o que a pessoa precisa ver
+   * para achar Design do Gráfico.
+   */
+  sobreposicao?: React.ReactNode;
 }
+
+/** A altura da fileira das letras das colunas, com a borda: é dela que a linha presa desconta. */
+const ALTURA_DAS_LETRAS = 21;
 
 export function GradeDoExcel({
   planilha: p, caderno, faixa, ativa, rascunho, gradeRef,
   aoTeclar, aoApontarCelula, aoEntrarNaCelula, aoApontarColuna, aoApontarLinha,
   aoMoverPonteiro, aoSoltarPonteiro, aoSairDaGrade,
-  aoAbrirEdicao, aoEscrever, aoConfirmar, aoCancelar,
+  aoAbrirEdicao, aoEscrever, aoConfirmar, aoCancelar, apontavel, referencias, aoTeclarNaEdicao,
   aoContexto, aoArrastarBorda, aoAjustarAoConteudo, aoComecarPreenchimento, naTabela, aoAbrirFiltro,
+  sobreposicao,
 }: PropsDaGradeDoExcel) {
+  /* O contorno colorido de cada referência da fórmula em edição: só as bordas
+     da faixa, como o Excel desenha, e não a faixa inteira pintada. */
+  const contornoDasReferencias = (l: number, c: number): string | undefined => {
+    if (!referencias?.length) return undefined;
+    const sombras: string[] = [];
+    for (const r of referencias) {
+      const n = normalizar(r.faixa);
+      if (l < n.topo || l > n.base || c < n.esq || c > n.dir) continue;
+      if (l === n.topo) sombras.push(`inset 0 2px 0 ${r.cor}`);
+      if (l === n.base) sombras.push(`inset 0 -2px 0 ${r.cor}`);
+      if (c === n.esq) sombras.push(`inset 2px 0 0 ${r.cor}`);
+      if (c === n.dir) sombras.push(`inset -2px 0 0 ${r.cor}`);
+    }
+    return sombras.length ? sombras.join(', ') : undefined;
+  };
   return (
     <div
       ref={gradeRef}
@@ -602,12 +769,21 @@ export function GradeDoExcel({
       onPointerMove={aoMoverPonteiro}
       onPointerUp={aoSoltarPonteiro}
       onPointerLeave={aoSairDaGrade}>
-      <table className={`pl-grade pl-layout-${p.layout}`}>
+      {/*
+        A largura da tabela é a soma das colunas, escrita aqui. Sem ela o
+        `table-layout: fixed` não vale — o navegador só o obedece com largura
+        declarada —, e a coluna se alargava sozinha até caber o conteúdo:
+        nenhum nome ficava cortado, e a tarefa que manda alargar a coluna A
+        dizia que os nomes não cabiam em cima de uma tela que mostrava todos.
+        Os 34 são o canto, do mesmo tamanho dos números das linhas.
+      */}
+      <table className={`pl-grade pl-layout-${p.layout}`}
+        style={{ width: 34 + p.larguras.reduce((a, w) => a + w, 0) }}>
         <thead>
           <tr>
             <th className="pl-canto" />
             {p.larguras.map((w, c) => (
-              <th key={c} className="pl-cab-col" style={{ width: w, minWidth: w }}
+              <th key={c} className={`pl-cab-col${dentroDasColunas(faixa, c) ? ' pl-cab-ativo' : ''}`} style={{ width: w, minWidth: w }}
                 onPointerDown={e => aoApontarColuna(c, e)}
                 onContextMenu={e => aoContexto?.(e, 'coluna', 0, c)}>
                 {nomeDaColuna(c)}
@@ -615,15 +791,6 @@ export function GradeDoExcel({
                   <span className="pl-cab-marca" aria-label={p.ordenacao.crescente ? 'ordenada de A a Z' : 'ordenada de Z a A'}>
                     {p.ordenacao.crescente ? <ArrowDownAZ className="w-3 h-3" /> : <ArrowUpZA className="w-3 h-3" />}
                   </span>
-                )}
-                {aoAbrirFiltro && ehCabecalhoDaTabela(p, c) && (
-                  <button type="button" className="pl-cab-bt"
-                    title={`Filtrar a coluna ${nomeDaColuna(c)}`}
-                    aria-label={`Filtrar a coluna ${nomeDaColuna(c)}`}
-                    onPointerDown={e => e.stopPropagation()}
-                    onClick={() => aoAbrirFiltro(c)}>
-                    <Filter className="w-3 h-3" style={{ color: p.filtro?.coluna === c && p.filtro.valor ? '#217346' : undefined }} />
-                  </button>
                 )}
                 {aoArrastarBorda && (
                   <span
@@ -640,12 +807,18 @@ export function GradeDoExcel({
           {p.celulas.map((linha, l) => (
             <tr
               key={l}
-              style={{ height: p.alturas[l], top: l < p.congeladas ? l * p.alturas[0] : undefined }}
+              /* A linha presa gruda logo abaixo das letras das colunas, somando
+                 a altura das presas acima dela. */
+              style={{
+                height: p.alturas[l],
+                top: l < p.congeladas ? ALTURA_DAS_LETRAS + p.alturas.slice(0, l).reduce((s, a) => s + a, 0) : undefined,
+              }}
               className={[
                 linhaEscondida(p, l) ? 'pl-escondida' : '',
                 l < p.congeladas ? 'pl-congelada' : '',
+                l === p.congeladas - 1 ? 'pl-congelada-ultima' : '',
               ].filter(Boolean).join(' ')}>
-              <th className="pl-cab-lin"
+              <th className={`pl-cab-lin${dentroDasLinhas(faixa, l) ? ' pl-cab-ativo' : ''}`}
                 onPointerDown={e => aoApontarLinha(l, e)}
                 onContextMenu={e => aoContexto?.(e, 'linha', l, 0)}>
                 {l + 1}
@@ -675,7 +848,11 @@ export function GradeDoExcel({
                   mostrar o de baixo faria a tela discordar do retrato.
                 */
                 const doResumo = textoDoResumo(p, l, c);
-                const mostrado = doResumo ?? mostrar(valor);
+                const largura = p.larguras.slice(c, c + cel.span).reduce((a, w) => a + w, 0);
+                const mostrado = doResumo
+                  ?? (valor.tipo === 'numero'
+                    ? numeroNaLargura(mostrar(valor, cel.formato), largura)
+                    : mostrar(valor, cel.formato));
                 const h = doResumo !== null ? 'esquerda' : alinhamentoDe(cel, valor);
                 const cond = estiloCondicional(p, l, c);
                 return (
@@ -686,6 +863,8 @@ export function GradeDoExcel({
                        fecha — o mesmo gesto da planilha de verdade. Sem ele não
                        havia como dizer "de A1 até D1". */
                     onPointerDown={e => aoApontarCelula(l, c, e)}
+                    onMouseDown={apontavel ? e => e.preventDefault() : undefined}
+                    data-celula={nomeDaCelula(l, c)}
                     onContextMenu={e => aoContexto?.(e, 'celula', l, c)}
                     onPointerEnter={() => aoEntrarNaCelula(l, c)}
                     className={[
@@ -699,6 +878,7 @@ export function GradeDoExcel({
                       textAlign: h === 'centro' ? 'center' : h === 'direita' ? 'right' : 'left',
                       verticalAlign: cel.v === 'meio' ? 'middle' : cel.v === 'acima' ? 'top' : 'bottom',
                       fontWeight: cel.negrito ? 700 : 400,
+                      boxShadow: contornoDasReferencias(l, c),
                     }}>
                     {/* O autoFocus é só de quem começou a editar *na célula*:
                         dado à célula durante a digitação na barra, era ele que
@@ -710,6 +890,7 @@ export function GradeDoExcel({
                         value={rascunho}
                         onChange={e => aoEscrever(e.target.value)}
                         onKeyDown={e => {
+                          if (aoTeclarNaEdicao?.(e)) return;
                           if (e.key === 'Enter') { e.preventDefault(); aoConfirmar(rascunho, e.shiftKey ? 'cima' : 'baixo'); gradeRef.current?.focus(); }
                           if (e.key === 'Tab') { e.preventDefault(); aoConfirmar(rascunho, e.shiftKey ? 'esquerda' : 'direita'); gradeRef.current?.focus(); }
                           if (e.key === 'Escape') { e.preventDefault(); aoCancelar(); gradeRef.current?.focus(); }
@@ -721,6 +902,20 @@ export function GradeDoExcel({
                         className="pl-valor">
                         {mostrado}
                       </span>
+                    )}
+                    {/* A setinha do filtro mora na célula do cabeçalho da
+                        tabela, e não na letra da coluna: é ali que o Excel a
+                        põe, e é ali que quem leu a teoria vai procurá-la. */}
+                    {aoAbrirFiltro && ehCelulaDoCabecalho(p, l, c) && (
+                      <button type="button" className="pl-filtro-seta"
+                        title={`Filtrar a coluna ${nomeDaColuna(c)}`}
+                        aria-label={`Filtrar a coluna ${nomeDaColuna(c)}`}
+                        onPointerDown={e => e.stopPropagation()}
+                        onClick={e => aoAbrirFiltro(c, e.currentTarget.getBoundingClientRect())}>
+                        {p.filtro?.coluna === c && p.filtro.valor
+                          ? <Filter className="w-2.5 h-2.5" />
+                          : <ChevronDown className="w-3 h-3" />}
+                      </button>
                     )}
                     {ancora && aoComecarPreenchimento && rascunho === null && (
                       <span
@@ -740,9 +935,23 @@ export function GradeDoExcel({
           ))}
         </tbody>
       </table>
+      {sobreposicao && (
+        /* O que se faz no gráfico é do gráfico: a tecla escrita no título não
+           pode virar movimento de célula, nem o clique virar seleção. */
+        <div className="pl-sobre-a-grade"
+          onKeyDown={e => e.stopPropagation()}
+          onPointerDown={e => e.stopPropagation()}
+          onPointerMove={e => e.stopPropagation()}
+          onPointerUp={e => e.stopPropagation()}>
+          {sobreposicao}
+        </div>
+      )}
     </div>
   );
 }
+
+const dentroDasColunas = (f: Faixa, c: number) => c >= Math.min(f.c1, f.c2) && c <= Math.max(f.c1, f.c2);
+const dentroDasLinhas = (f: Faixa, l: number) => l >= Math.min(f.l1, f.l2) && l <= Math.max(f.l1, f.l2);
 
 /**
  * A coluna faz parte do cabeçalho da tabela declarada.
@@ -751,11 +960,11 @@ export function GradeDoExcel({
  * prometeria filtrar a coluna vazia da direita, que é um gesto sem efeito — e
  * gesto sem efeito é o que ensina a pessoa a desconfiar do programa.
  */
-function ehCabecalhoDaTabela(p: Planilha, c: number): boolean {
+function ehCelulaDoCabecalho(p: Planilha, l: number, c: number): boolean {
   if (!p.tabela) return false;
   const esq = Math.min(p.tabela.c1, p.tabela.c2);
   const dir = Math.max(p.tabela.c1, p.tabela.c2);
-  return c >= esq && c <= dir;
+  return l === Math.min(p.tabela.l1, p.tabela.l2) && c >= esq && c <= dir;
 }
 
 /* ── O gráfico ─────────────────────────────────────────────────────────────

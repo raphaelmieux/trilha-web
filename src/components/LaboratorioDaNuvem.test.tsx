@@ -4,6 +4,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import LaboratorioDaNuvem from './LaboratorioDaNuvem';
+import { porCursor, colar, tecla } from '../labs/tecladoDaFolha';
 import { LICOES_DA_CC_ES006, type LicaoDaCcEs006 } from '../labs/metasDaCcEs006';
 import type { LicaoDeVereda, Vereda } from '../curriculum/veredas';
 
@@ -110,12 +111,29 @@ const abrirArquivo = (nome: string) => {
 const paragrafo = (texto: string) =>
   todos<HTMLElement>('[data-bloco]').find(p => (p.textContent ?? '').includes(texto));
 
-/** Escolher um parágrafo e digitar por cima dele, que é o que se faz no editor. */
+/**
+ * Selecionar o parágrafo inteiro e escrever por cima dele, que é o que se faz
+ * no editor — três cliques e digitar.
+ */
 function digitar(acheiPor: string, novo: string) {
-  clicar(paragrafo(acheiPor));
-  const campo = container.querySelector<HTMLTextAreaElement>('textarea.wd-escrevendo');
-  expect(campo, 'o parágrafo escolhido não virou campo de digitar').toBeTruthy();
-  escrever(campo!, novo);
+  const p = paragrafo(acheiPor);
+  expect(p, `não achei o parágrafo "${acheiPor}"`).toBeTruthy();
+  porCursor(container, p!.dataset.bloco!, 0, { bloco: p!.dataset.bloco!, offset: 'fim' });
+  colar(container, novo);
+}
+
+/**
+ * Enter no fim de um parágrafo abre outro embaixo, e o que se escreve entra
+ * nele — o cursor vai junto, como no editor de verdade.
+ */
+function novaLinhaDepoisDe(acheiPor: string, conteudo: string) {
+  const p = paragrafo(acheiPor);
+  expect(p, `não achei o parágrafo "${acheiPor}"`).toBeTruthy();
+  porCursor(container, p!.dataset.bloco!, 'fim');
+  tecla(container, 'Enter');
+  colar(container, conteudo);
+  const novo = (paragrafo(acheiPor)!.nextElementSibling as HTMLElement | null);
+  expect(novo?.textContent, 'Enter deixou o cursor no parágrafo de cima').toContain(conteudo);
 }
 
 /**
@@ -132,20 +150,6 @@ const faltam = () => {
 };
 
 const voltar = () => clicar(porTexto('Voltar para a nuvem'));
-
-/** Enter no fim de um parágrafo abre outro embaixo, e o cursor vai junto. */
-function novaLinhaDepoisDe(acheiPor: string, conteudo: string) {
-  clicar(paragrafo(acheiPor));
-  const campo = container.querySelector<HTMLTextAreaElement>('textarea.wd-escrevendo');
-  expect(campo, 'o parágrafo escolhido não virou campo de digitar').toBeTruthy();
-  act(() => {
-    campo!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-  });
-  const vazio = container.querySelector<HTMLTextAreaElement>('textarea.wd-escrevendo');
-  expect(vazio, 'Enter não levou o cursor para o parágrafo novo').toBeTruthy();
-  expect(vazio!.value, 'Enter deixou o cursor no parágrafo de cima').toBe('');
-  escrever(vazio!, conteudo);
-}
 
 /* ── Módulo 1: anexo ou vínculo ────────────────────────────────────────────── */
 
@@ -386,10 +390,9 @@ describe('a lição do combinado fecha clicando', () => {
       expect(titulo, `a pergunta "${pergunta}" não está no documento`).toBeTruthy();
       /* A resposta é o parágrafo logo depois do título da pergunta. */
       const campo = titulo!.nextElementSibling as HTMLElement | null;
-      clicar(campo);
-      const caixa = container.querySelector<HTMLTextAreaElement>('textarea.wd-escrevendo');
-      expect(caixa, `a resposta de "${pergunta}" não virou campo`).toBeTruthy();
-      escrever(caixa!, resposta);
+      expect(campo?.dataset.bloco, `a resposta de "${pergunta}" não é um parágrafo`).toBeTruthy();
+      porCursor(container, campo!.dataset.bloco!, 0, { bloco: campo!.dataset.bloco!, offset: 'fim' });
+      colar(container, resposta);
     }
     voltar();
 

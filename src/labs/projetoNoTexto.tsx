@@ -15,6 +15,7 @@ import {
   BarraDeTituloDoWord, BotaoDaFaixa, FolhaDoWord,
   GrupoDaFaixa, GuiasDoWord, ReguaDoWord,
 } from './word';
+import { useEdicaoDoWord } from './useEdicaoDoWord';
 import { titulosDoDoc } from './documento';
 import { BLOCOS_DO_MAPA, comIdentidadeNoDocumento } from './metasDaCcEs012';
 import { FAMILIA_DA_FONTE } from './projetoDocumental';
@@ -35,13 +36,18 @@ const USAVEIS = ['Início', 'Inserir', 'Referências', 'Revisão', 'Exibir'];
 
 export function RegulamentoNoWord({ ctx, mudar, avisar }: PropsDaSuperficie) {
   const [guia, setGuia] = useState('Início');
-  const [selecionado, setSelecionado] = useState<string | null>(null);
   const doc = ctx.p.documento;
+  /* O regulamento se edita com o cursor, como todo Word da plataforma: o que
+     a lição cobra são os comandos do conjunto, e o texto continua sendo texto
+     em que se escreve. */
+  const edicao = useEdicaoDoWord(doc, novo => mudar(c => ({ ...c, p: { ...c.p, documento: novo } })));
   const temMapa = doc.blocos.some(b => b.id === 'b-mapa');
 
   return (
     <div className="wd-janela">
-      <BarraDeTituloDoWord documento="regulamento-da-feira-2026-07-02-v03" aoAvisar={avisar} />
+      <BarraDeTituloDoWord documento="regulamento-da-feira-2026-07-02-v03" aoAvisar={avisar}
+        aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
+        aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />
       <GuiasDoWord atual={guia} usaveis={USAVEIS} aoTrocar={setGuia} aoAvisar={avisar} />
 
       <div className="wd-faixa">
@@ -165,10 +171,7 @@ export function RegulamentoNoWord({ ctx, mudar, avisar }: PropsDaSuperficie) {
 
       <ReguaDoWord larguraCm={21} margemCm={2.5} />
 
-      <FolhaDoWord
-        doc={doc} selecionado={selecionado}
-        aoEscolher={setSelecionado} aoClicarNoVazio={() => setSelecionado(null)}
-      />
+      <FolhaDoWord doc={doc} edicao={edicao.folha} />
     </div>
   );
 }

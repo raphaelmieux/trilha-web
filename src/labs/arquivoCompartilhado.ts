@@ -424,6 +424,27 @@ export const gravarVersao = (
 }));
 
 /**
+ * Gravar o que se digita, sem uma versão por tecla.
+ *
+ * A nuvem de verdade junta as edições de uma mesma sessão numa versão só: quem
+ * abre o histórico vê "Você, agora mesmo", e não quarenta linhas iguais, uma
+ * por letra. Se a última versão é desta sessão e das mesmas mãos, ela é
+ * reescrita; senão nasce outra — e é isso que faz a linha da Marta, escrita
+ * entre duas edições suas, aparecer no histórico como dela.
+ */
+export function gravarNaSessao(
+  n: Nuvem, id: string, quando: string, porQuem: Pessoa[], doc: Doc<string>,
+): Nuvem {
+  return mexerNo(n, id, (a) => {
+    const ultima = a.versoes[a.versoes.length - 1];
+    const mesma = !!ultima && ultima.quando === quando
+      && ultima.porQuem.length === porQuem.length && ultima.porQuem.every(p => porQuem.includes(p));
+    if (!mesma) return { ...a, versoes: [...a.versoes, { id: `${a.id}-v${a.versoes.length + 1}`, quando, porQuem, doc }] };
+    return { ...a, versoes: [...a.versoes.slice(0, -1), { ...ultima, doc }] };
+  });
+}
+
+/**
  * Restaurar uma versão anterior.
  *
  * **Ela não apaga as mais novas: acrescenta uma.** É o que a nuvem de verdade
@@ -624,3 +645,20 @@ export const nuvemDoClube = (): Nuvem => ({
     }),
   ],
 });
+
+/**
+ * A ordem da lista: pastas primeiro, depois os arquivos pelo nome.
+ *
+ * É o que a nuvem de verdade faz por padrão, e é por isso que mora aqui e não
+ * em cada laboratório — dois laboratórios que ordenassem diferente mostrariam
+ * a mesma pasta em duas ordens. A comparação é em português: `localeCompare`,
+ * e não `<`, que poria "Ática" depois de "Zona".
+ */
+export function emOrdemDaLista(arquivos: ArquivoDaNuvem[], crescente = true): ArquivoDaNuvem[] {
+  return [...arquivos].sort((a, b) => {
+    const pasta = Number(b.tipo === 'pasta') - Number(a.tipo === 'pasta');
+    if (pasta !== 0) return pasta;
+    const nome = a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base', numeric: true });
+    return crescente ? nome : -nome;
+  });
+}

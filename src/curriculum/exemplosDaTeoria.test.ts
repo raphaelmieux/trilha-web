@@ -80,7 +80,7 @@ describe('a marcação de exemplo dos tópicos', () => {
     const orfaos: string[] = [];
     for (const [nome, t] of comMarcacao()) {
       const pagina = paginaDe(t.exemploMarcacao ?? '');
-      for (const regra of lerFolha(t.exemplo)) {
+      for (const regra of lerFolha(t.exemplo ?? '')) {
         for (const seletor of semPseudo(regra.seletor)) {
           if (!pagina.querySelector(seletor)) orfaos.push(`${nome}: ${seletor}`);
         }
@@ -92,7 +92,7 @@ describe('a marcação de exemplo dos tópicos', () => {
   /* Uma folha que o analisador descarta inteira não pinta nada, e o quadro sai
      igual à página crua — sem nada dizendo por quê. */
   it('a folha do exemplo tem ao menos uma regra que o navegador aceita', () => {
-    const mudas = comMarcacao().filter(([, t]) => lerFolha(t.exemplo).length === 0).map(([n]) => n);
+    const mudas = comMarcacao().filter(([, t]) => lerFolha(t.exemplo ?? '').length === 0).map(([n]) => n);
     expect(mudas).toEqual([]);
   });
 });
@@ -141,7 +141,7 @@ describe('o exemplo desenhado em duas telas', () => {
   it('as larguras caem dos dois lados de cada consulta de mídia', () => {
     const cegas: string[] = [];
     for (const [nome, t] of comLarguras()) {
-      for (const condicao of condicoesDe(t.exemplo)) {
+      for (const condicao of condicoesDe(t.exemplo ?? '')) {
         const larguras = t.exemploLarguras ?? [];
         const dentro = larguras.some(l => valeEm(condicao, l));
         const fora = larguras.some(l => !valeEm(condicao, l));
@@ -156,7 +156,7 @@ describe('o exemplo desenhado em duas telas', () => {
      quadro nenhum. */
   it('todo tópico com consulta de mídia desenha as duas telas', () => {
     const sozinhos = comMarcacao()
-      .filter(([, t]) => condicoesDe(t.exemplo).length > 0 && (t.exemploLarguras ?? []).length === 0)
+      .filter(([, t]) => condicoesDe(t.exemplo ?? '').length > 0 && (t.exemploLarguras ?? []).length === 0)
       .map(([n]) => n);
     expect(sozinhos).toEqual([]);
   });

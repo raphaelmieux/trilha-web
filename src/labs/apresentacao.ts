@@ -475,3 +475,18 @@ export const textoDaApresentacao = (a: Apresentacao) => a.slides
   .map(s => [s.titulo, ...s.topicos, ...s.caixas.map(c => c.texto)]
     .map(t => t.trim()).filter(t => t !== '').join('\n'))
   .join('\n--\n');
+
+/**
+ * As linhas do fim que ficaram vazias saem.
+ *
+ * Apertar Enter no fim da lista cria uma linha vazia, e no PowerPoint ela é um
+ * tópico — vazio, mas um. Guardá-la faria o teto de seis estourar por uma
+ * linha que ninguém vê, e a tarefa ficaria vermelha sem nada na tela
+ * explicando. As do meio ficam: linha em branco entre dois tópicos é escolha
+ * de quem escreve.
+ */
+export function semVaziosNoFim(linhas: string[]): string[] {
+  const fim = [...linhas];
+  while (fim.length > 0 && fim[fim.length - 1].trim() === '') fim.pop();
+  return fim;
+}

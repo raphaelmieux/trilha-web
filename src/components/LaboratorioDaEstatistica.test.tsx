@@ -470,7 +470,7 @@ describe('as lições da CC-ES010 se vencem clicando', () => {
     apontar(celula(1, colY));
     guia('Dados');
     clicar(botao('Filtro'));
-    clicar(container.querySelectorAll('.pl-cab-col')[colY].querySelector('button'));
+    clicar(container.querySelector(`[aria-label="Filtrar a coluna ${String.fromCharCode(65 + colY)}"]`));
     const lista = container.querySelector('.pl-filtro-lista')!;
     const valores = [...lista.querySelectorAll('.pl-filtro-item')];
     clicar(valores[1]);
@@ -696,7 +696,7 @@ describe('a tela da CC-ES010', () => {
     apontar(celula(1, colY));
     guia('Dados');
     clicar(botao('Filtro'));
-    clicar(container.querySelectorAll('.pl-cab-col')[colY].querySelector('button'));
+    clicar(container.querySelector(`[aria-label="Filtrar a coluna ${String.fromCharCode(65 + colY)}"]`));
     clicar([...container.querySelectorAll('.pl-filtro-lista .pl-filtro-item')][1]);
     const meta = LICOES_DA_CC_ES010.exclusao.metas[0];
     expect(meta.id).toBe('viu-que-esconder-nao-exclui');

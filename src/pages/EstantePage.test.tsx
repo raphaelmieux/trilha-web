@@ -64,6 +64,10 @@ afterEach(() => {
 
 const TODOS = fileirasDaEstante().flatMap(f => f.lugares);
 const TOTAL = TODOS.length;
+/* A fileira partida em grupos desenha os grupos fechados: os lugares dela só
+   aparecem quando o grupo abre. Todo o resto aparece de saída. */
+const PARTIDAS = fileirasDaEstante().filter(f => f.grupos);
+const A_VISTA = fileirasDaEstante().filter(f => !f.grupos).flatMap(f => f.lugares);
 
 /** Os desenhos da tela, pelo nome acessível que cada um carrega. */
 const rotulos = () => [...container.querySelectorAll('svg[role="img"]')]
@@ -80,7 +84,7 @@ describe('a estante mostra o catálogo inteiro', () => {
   it('desenha um lugar para cada insígnia, vazios inclusive', () => {
     desenhar();
     expect(vazios(), 'a estante encolheu para o tamanho do que foi conquistado')
-      .toHaveLength(TOTAL);
+      .toHaveLength(A_VISTA.length);
     expect(container.textContent).toContain(`0 de ${TOTAL} insígnias`);
   });
 
@@ -92,7 +96,7 @@ describe('a estante mostra o catálogo inteiro', () => {
     desenhar();
 
     expect(cheios()).toHaveLength(3);
-    expect(vazios()).toHaveLength(TOTAL - 3);
+    expect(vazios()).toHaveLength(A_VISTA.length - 3);
     expect(container.textContent).toContain(`3 de ${TOTAL} insígnias`);
     for (const l of tres) {
       expect(rotulos()).toContain(`${l.nome} — conquistada`);
@@ -117,6 +121,48 @@ describe('a estante mostra o catálogo inteiro', () => {
     for (const f of fileirasDaEstante()) {
       expect(container.textContent, `a fileira "${f.titulo}" sumiu`).toContain(f.titulo);
     }
+  });
+});
+
+/*
+  Os laboratórios das veredas passam de duzentos, e chegam partidos por vereda.
+
+  Duas formas de errar, as duas caladas: o grupo fechado não abrir — os
+  lugares existem no catálogo e nunca chegam à tela, com o contador dizendo
+  que estão lá — e o grupo abrir os laboratórios de outra vereda. E a terceira,
+  que é a razão de partir: abrir tudo de uma vez, que devolve o muro.
+*/
+describe('a fileira partida em grupos', () => {
+  it('existe, e cada grupo abre exatamente os lugares dele', () => {
+    expect(PARTIDAS.length, 'a fileira dos laboratórios de vereda deixou de ser partida').toBeGreaterThan(0);
+    desenhar();
+    for (const fileira of PARTIDAS) {
+      const grupos = fileira.grupos!;
+      expect(grupos.flatMap(g => g.lugares).map(l => l.code),
+        'os grupos não cobrem a fileira inteira').toEqual(fileira.lugares.map(l => l.code));
+      for (const grupo of grupos) {
+        const botao = [...container.querySelectorAll('button[aria-expanded]')]
+          .find(b => b.textContent?.includes(grupo.titulo)) as HTMLButtonElement | undefined;
+        expect(botao, `o grupo ${grupo.titulo} não tem botão`).toBeTruthy();
+        act(() => { botao!.click(); });
+        expect(botao!.getAttribute('aria-expanded')).toBe('true');
+        expect(vazios(), `o grupo ${grupo.titulo} abriu outra coisa`)
+          .toHaveLength(A_VISTA.length + grupo.lugares.length);
+        for (const l of grupo.lugares) expect(rotulos().some(r => r.startsWith(`${l.nome} — `))).toBe(true);
+      }
+    }
+  });
+
+  it('diz quanto de cada grupo já veio, e mostra a conquistada ao abrir', () => {
+    const grupo = PARTIDAS[0].grupos![0];
+    estado.badges = [insignia(grupo.lugares[0])];
+    desenhar();
+    const botao = [...container.querySelectorAll('button[aria-expanded]')]
+      .find(b => b.textContent?.includes(grupo.titulo)) as HTMLButtonElement;
+    expect(botao.textContent).toContain(`1/${grupo.lugares.length}`);
+    expect(cheios(), 'a conquistada apareceu antes de o grupo abrir').toHaveLength(0);
+    act(() => { botao.click(); });
+    expect(cheios()).toEqual([`${grupo.lugares[0].nome} — conquistada`]);
   });
 });
 

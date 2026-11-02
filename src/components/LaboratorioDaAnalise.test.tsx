@@ -292,7 +292,7 @@ describe('as lições da CC-ES009 se vencem clicando', () => {
     apontar(celula(1, colAltura));
     guia('Dados');
     clicar(botao('Filtro'));
-    clicar(container.querySelectorAll('.pl-cab-bt')[colAltura]);
+    clicar(container.querySelectorAll('.pl-filtro-seta')[colAltura]);
     clicar([...container.querySelectorAll('.pl-filtro-item')]
       .find(i => i.textContent?.trim() === aModa));
     expect(container.textContent, 'a régua não conta o que o filtro deixou à vista')
@@ -300,7 +300,7 @@ describe('as lições da CC-ES009 se vencem clicando', () => {
 
     /* E mexer num dado faz a conta andar. Depois o Ctrl+Z devolve a base, que
        é o que as contas conferidas nesta lição esperam. */
-    clicar(container.querySelectorAll('.pl-cab-bt')[colAltura]);
+    clicar(container.querySelectorAll('.pl-filtro-seta')[colAltura]);
     clicar([...container.querySelectorAll('.pl-filtro-item')]
       .find(i => i.textContent?.trim() === '(Todas)'));
     escrever(1, colAltura, '1,71');

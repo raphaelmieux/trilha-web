@@ -1,6 +1,7 @@
 import { ESCADAS, type Escada, type DegrauDaEscada } from './escadasDeInsignia';
 import {
   INSIGNIAS, SEM_CLASSE, codigoDaInsigniaDaTrilha, classeDaTrilha, classeDaVereda,
+  insigniasDosLaboratoriosDeVereda,
 } from './insignias';
 import { getOpenSpecialties } from '../curriculum';
 import { veredasAbertas, codigoDaInsigniaDaVereda, licoesDaVereda } from '../curriculum/veredas';
@@ -14,9 +15,10 @@ import type { NivelDaInsignia } from './nivelDaInsignia';
   ── Por que ele não existia ───────────────────────────────────────────────
   Até aqui, ninguém precisava da lista completa. `INSIGNIAS` traz as que são
   escritas à mão — os noventa e um degraus das escadas, as quatro de horário e
-  as vinte e seis de laboratório —, e as de trilha e de vereda **não estão
-  nela**: nascem do currículo na hora de conceder, por
-  `codigoDaInsigniaDaTrilha` e `codigoDaInsigniaDaVereda`. Quem só desenha o
+  as de laboratório de trilha —, e as de trilha, de vereda e de laboratório de
+  vereda **não estão nela**: nascem do currículo na hora de conceder, por
+  `codigoDaInsigniaDaTrilha`, `codigoDaInsigniaDaVereda` e
+  `insigniasDosLaboratoriosDeVereda`. Quem só desenha o
   que a pessoa já tem nunca sente falta delas, porque o que ela tem já veio do
   banco com nome e classe.
 
@@ -47,13 +49,26 @@ export interface LugarNaEstante {
   alvo?: number;
 }
 
+/** Um pedaço de uma fileira grande, que a tela abre de um em um. */
+export interface GrupoDaFileira {
+  chave: string;
+  titulo: string;
+  lugares: LugarNaEstante[];
+}
+
 /** Uma fileira da estante: a família, o que ela mede, e os sete degraus. */
 export interface FileiraDaEstante {
   chave: string;
   titulo: string;
   /** O que a fileira mede, ou de onde a classe de cada item sai. */
   explica: string;
+  /** Todos os lugares, na ordem — é por aqui que se conta e se confere. */
   lugares: LugarNaEstante[];
+  /**
+   * Os mesmos lugares, partidos — só na fileira grande demais para abrir de
+   * uma vez. A tela desenha os grupos fechados e abre o que for clicado.
+   */
+  grupos?: GrupoDaFileira[];
 }
 
 const doDegrau = (escada: Escada, d: DegrauDaEscada): LugarNaEstante => ({
@@ -110,6 +125,37 @@ function fileiraDasVeredas(): FileiraDaEstante {
   };
 }
 
+/*
+  Os laboratórios das veredas: uma insígnia por laboratório, e duzentos e
+  tantos lugares.
+
+  Despejados numa fileira só, eles seriam o muro que os trinta e dois cartões
+  de vereda já foram uma vez — e o mesmo que a estante evita mostrando o topo
+  de cada escada. Então eles vêm **partidos por vereda**, e a tela abre uma de
+  cada vez: fechado, cada vereda diz quantos dos laboratórios dela já foram
+  vencidos; aberta, mostra os lugares. `lugares` continua sendo a lista
+  inteira, porque é por ela que a estante se confere contra o banco.
+*/
+function fileiraDosLaboratoriosDeVereda(): FileiraDaEstante {
+  const insignias = insigniasDosLaboratoriosDeVereda();
+  const lugar = (i: (typeof insignias)[number]): LugarNaEstante => ({
+    code: i.code, nome: i.nome, descricao: i.descricao, icone: i.icone, classe: i.classe,
+  });
+  return {
+    chave: 'laboratorios-das-veredas',
+    titulo: 'Laboratórios das veredas',
+    explica: 'uma por laboratório — a classe fica um patamar abaixo da vereda dele',
+    lugares: insignias.map(lugar),
+    grupos: veredasAbertas()
+      .map(v => ({
+        chave: v.id,
+        titulo: nomeCompleto(v),
+        lugares: insignias.filter(i => i.veredaId === v.id).map(lugar),
+      }))
+      .filter(g => g.lugares.length > 0),
+  };
+}
+
 /** Os códigos que pertencem a alguma escada, para não repetir na estante. */
 const emEscada = (): Set<string> =>
   new Set(ESCADAS.flatMap(e => e.degraus.map(d => d.code)));
@@ -156,6 +202,7 @@ export function fileirasDaEstante(): FileiraDaEstante[] {
     fileiraDosLaboratorios(),
     fileiraDasTrilhas(),
     fileiraDasVeredas(),
+    fileiraDosLaboratoriosDeVereda(),
     fileiraSemClasse(),
   ];
 }

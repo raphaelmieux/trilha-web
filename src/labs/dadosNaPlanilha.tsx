@@ -30,7 +30,7 @@ import {
   Replace, Trash2, Undo2,
 } from 'lucide-react';
 import {
-  AbasDoExcel, BarraDeFormulas, BarraDeTituloDoExcel, BotaoDoExcel, DesenhoDoGrafico,
+  AbasDoExcel, BarraDeStatusDoExcel, BarraDeFormulas, BarraDeTituloDoExcel, BotaoDoExcel, DesenhoDoGrafico,
   GradeDoExcel, GrupoDoExcel, GuiasDoExcel,
 } from './excel';
 import { useGradeDoExcel } from './gradeDoExcel';
@@ -38,9 +38,8 @@ import {
   type Caderno, type Historico, type Planilha, type TipoDeGrafico,
   desfazer, historicoDe, moverOuCopiar, nomeDaFaixa, normalizar, ordenar,
   planilhaAtiva, pontosDaDispersao, pontosDoGrafico, refazer, registrar,
-  removerDuplicatas, renomearAba, substituir, trocarAtiva, valorCalculado, umaCelulaSo,
+  removerDuplicatas, renomearAba, substituir, trocarAtiva, umaCelulaSo,
 } from './planilha';
-import { mostrarNumero } from './formulas';
 import type { ContextoDoProjetoDeDados } from './metasDaCcEs013';
 
 export interface PropsDaSuperficieDeDados {
@@ -111,29 +110,6 @@ type Dialogo =
   | { tipo: 'duplicatas'; colunas: number[] }
   | { tipo: 'grafico'; grafico: TipoDeGrafico; titulo: string; eixoX: string; eixoY: string };
 
-/**
- * O que a régua do Excel conta na seleção: Média, Contagem e Soma.
- *
- * É o primeiro lugar em que o número guardado como texto se denuncia sem
- * fórmula nenhuma — a Contagem conta toda célula preenchida, e a Média e a
- * Soma só as que são número. Selecionar a coluna da distância e ver a Contagem
- * maior do que os números que entraram na Média é a mesma pista da
- * `CONT.NÚM` da CC-ES003, sem escrever nada.
- */
-function contaDaSelecao(p: Planilha, cad: Caderno, faixa: { l1: number; c1: number; l2: number; c2: number }) {
-  if (umaCelulaSo(faixa)) return null;
-  const n = normalizar(faixa);
-  let contagem = 0; let numeros = 0; let soma = 0;
-  for (let l = n.topo; l <= Math.min(n.base, p.celulas.length - 1); l++) {
-    for (let c = n.esq; c <= Math.min(n.dir, (p.celulas[0]?.length ?? 1) - 1); c++) {
-      if ((p.celulas[l]?.[c]?.texto ?? '') === '') continue;
-      contagem += 1;
-      const v = valorCalculado(p, l, c, cad);
-      if (v.tipo === 'numero') { numeros += 1; soma += v.n; }
-    }
-  }
-  return contagem === 0 ? null : { contagem, numeros, soma };
-}
 
 export function AnaliseNoExcel({ ctx, mudar, avisar }: PropsDaSuperficieDeDados) {
   const [hist, setHist] = useState<Historico<Caderno>>(() => historicoDe(ctx.p.caderno));
@@ -239,7 +215,6 @@ export function AnaliseNoExcel({ ctx, mudar, avisar }: PropsDaSuperficieDeDados)
     </BotaoDoExcel>
   );
 
-  const conta = contaDaSelecao(p, cad, g.faixa);
   const cabecalhos = p.tabela
     ? Array.from({ length: normalizar(p.tabela).dir - normalizar(p.tabela).esq + 1 },
       (_, i) => normalizar(p.tabela!).esq + i)
@@ -305,106 +280,97 @@ export function AnaliseNoExcel({ ctx, mudar, avisar }: PropsDaSuperficieDeDados)
         aoArrastarBorda={g.aoArrastarBorda}
         aoAjustarAoConteudo={g.aoAjustarAoConteudo}
         aoComecarPreenchimento={g.aoComecarPreenchimento}
-      />
-
-      {p.grafico && (
-        <div className="pl-grafico" role="figure" aria-label={`Gráfico: ${p.grafico.titulo || 'sem título'}`}>
-          <div className="pl-grafico-titulo">{p.grafico.titulo || '(sem título)'}</div>
-          <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p, cad)}
-            pares={pontosDaDispersao(p, cad)} tendencia={p.grafico.tendencia}
-            equacao={p.grafico.equacao} />
-          <div className="pl-grafico-eixo">
-            {p.grafico.tipo === 'pizza'
-              ? 'Pizza não tem eixo'
-              : `${p.grafico.eixoX || '(eixo sem nome)'} × ${p.grafico.eixoY || '(eixo sem nome)'}`}
-          </div>
-          {/*
-            Formatar o gráfico, no lugar: o título, os eixos e o tipo se
-            mudam no gráfico que existe, como no Excel — clicar no título e
-            escrever. Refazer o gráfico para trocar uma palavra do título
-            perderia a faixa que a pessoa selecionou.
-          */}
-          {/*
-            Recolhida, como o painel de formatação do Excel, que só abre
-            quando se pede: aberta o tempo todo, ela cobriria metade da grade
-            na tela pequena.
-          */}
-          <details className="pl-formatar">
-            <summary>Formatar gráfico</summary>
-            <div className="pl-formatar-campos">
-              <label>
-                Título
-                <input type="text" aria-label="Título do gráfico" value={p.grafico.titulo}
-                  onChange={e => mudarGrafico(gr => ({ ...gr, titulo: e.target.value }))} />
-              </label>
-              <label>
-                Tipo
-                <select aria-label="Alterar Tipo de Gráfico" value={p.grafico.tipo}
-                  onChange={e => {
-                    const tipo = e.target.value as TipoDeGrafico;
-                    mudarGrafico(gr => ({ ...gr, tipo }));
-                    avisar(`${NOME_DO_GRAFICO[tipo]} — ${O_QUE_O_GRAFICO_RESPONDE[tipo]}`);
-                  }}>
-                  {Object.entries(NOME_DO_GRAFICO).map(([k, r]) => <option key={k} value={k}>{r}</option>)}
-                </select>
-              </label>
-              {p.grafico.tipo !== 'pizza' && (
-                <>
-                  <label>
-                    Eixo horizontal
-                    <input type="text" aria-label="Eixo horizontal" value={p.grafico.eixoX}
-                      onChange={e => mudarGrafico(gr => ({ ...gr, eixoX: e.target.value }))} />
-                  </label>
-                  <label>
-                    Eixo vertical
-                    <input type="text" aria-label="Eixo vertical" value={p.grafico.eixoY}
-                      onChange={e => mudarGrafico(gr => ({ ...gr, eixoY: e.target.value }))} />
-                  </label>
-                </>
-              )}
-              <button type="button" className="pl-dialogo-bt" onClick={() => {
-                mudarPlanilha(q => ({ ...q, grafico: null }));
-              }}>
-                <Trash2 className="w-3 h-3" style={{ display: 'inline' }} /> Excluir gráfico
-              </button>
+        sobreposicao={p.grafico && (
+          <div className="pl-grafico" role="figure" aria-label={`Gráfico: ${p.grafico.titulo || 'sem título'}`}>
+            <div className="pl-grafico-titulo">{p.grafico.titulo || '(sem título)'}</div>
+            <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p, cad)}
+              pares={pontosDaDispersao(p, cad)} tendencia={p.grafico.tendencia}
+              equacao={p.grafico.equacao} />
+            <div className="pl-grafico-eixo">
+              {p.grafico.tipo === 'pizza'
+                ? 'Pizza não tem eixo'
+                : `${p.grafico.eixoX || '(eixo sem nome)'} × ${p.grafico.eixoY || '(eixo sem nome)'}`}
             </div>
-          </details>
-          {/* A linha de tendência é elemento de dispersão: é onde ela significa
-              alguma coisa aqui, e o Excel não a oferece na pizza. */}
-          {p.grafico.tipo === 'dispersao' && (
-            <fieldset className="pl-elementos">
-              <legend>Elementos do Gráfico</legend>
-              <label>
-                <input type="checkbox" aria-label="Linha de Tendência"
-                  checked={Boolean(p.grafico.tendencia)}
-                  onChange={e => mudarGrafico(gr => ({ ...gr, tendencia: e.target.checked || undefined }))} />
-                Linha de Tendência
-              </label>
-              <label>
-                <input type="checkbox" aria-label="Exibir Equação no gráfico"
-                  checked={Boolean(p.grafico.equacao)}
-                  onChange={e => mudarGrafico(gr => ({ ...gr, equacao: e.target.checked || undefined }))} />
-                Exibir Equação no gráfico
-              </label>
-            </fieldset>
-          )}
-        </div>
-      )}
+            {/*
+              Formatar o gráfico, no lugar: o título, os eixos e o tipo se
+              mudam no gráfico que existe, como no Excel — clicar no título e
+              escrever. Refazer o gráfico para trocar uma palavra do título
+              perderia a faixa que a pessoa selecionou.
+            */}
+            {/*
+              Recolhida, como o painel de formatação do Excel, que só abre
+              quando se pede: aberta o tempo todo, ela cobriria metade da grade
+              na tela pequena.
+            */}
+            <details className="pl-formatar">
+              <summary>Formatar gráfico</summary>
+              <div className="pl-formatar-campos">
+                <label>
+                  Título
+                  <input type="text" aria-label="Título do gráfico" value={p.grafico.titulo}
+                    onChange={e => mudarGrafico(gr => ({ ...gr, titulo: e.target.value }))} />
+                </label>
+                <label>
+                  Tipo
+                  <select aria-label="Alterar Tipo de Gráfico" value={p.grafico.tipo}
+                    onChange={e => {
+                      const tipo = e.target.value as TipoDeGrafico;
+                      mudarGrafico(gr => ({ ...gr, tipo }));
+                      avisar(`${NOME_DO_GRAFICO[tipo]} — ${O_QUE_O_GRAFICO_RESPONDE[tipo]}`);
+                    }}>
+                    {Object.entries(NOME_DO_GRAFICO).map(([k, r]) => <option key={k} value={k}>{r}</option>)}
+                  </select>
+                </label>
+                {p.grafico.tipo !== 'pizza' && (
+                  <>
+                    <label>
+                      Eixo horizontal
+                      <input type="text" aria-label="Eixo horizontal" value={p.grafico.eixoX}
+                        onChange={e => mudarGrafico(gr => ({ ...gr, eixoX: e.target.value }))} />
+                    </label>
+                    <label>
+                      Eixo vertical
+                      <input type="text" aria-label="Eixo vertical" value={p.grafico.eixoY}
+                        onChange={e => mudarGrafico(gr => ({ ...gr, eixoY: e.target.value }))} />
+                    </label>
+                  </>
+                )}
+                <button type="button" className="pl-dialogo-bt" onClick={() => {
+                  mudarPlanilha(q => ({ ...q, grafico: null }));
+                }}>
+                  <Trash2 className="w-3 h-3" style={{ display: 'inline' }} /> Excluir gráfico
+                </button>
+              </div>
+            </details>
+            {/* A linha de tendência é elemento de dispersão: é onde ela significa
+                alguma coisa aqui, e o Excel não a oferece na pizza. */}
+            {p.grafico.tipo === 'dispersao' && (
+              <fieldset className="pl-elementos">
+                <legend>Elementos do Gráfico</legend>
+                <label>
+                  <input type="checkbox" aria-label="Linha de Tendência"
+                    checked={Boolean(p.grafico.tendencia)}
+                    onChange={e => mudarGrafico(gr => ({ ...gr, tendencia: e.target.checked || undefined }))} />
+                  Linha de Tendência
+                </label>
+                <label>
+                  <input type="checkbox" aria-label="Exibir Equação no gráfico"
+                    checked={Boolean(p.grafico.equacao)}
+                    onChange={e => mudarGrafico(gr => ({ ...gr, equacao: e.target.checked || undefined }))} />
+                  Exibir Equação no gráfico
+                </label>
+              </fieldset>
+            )}
+          </div>
+        )}
+      />
 
       <AbasDoExcel nomes={cad.planilhas.map(q => q.nome)} ativa={cad.ativa}
         aoTrocar={irParaAba} aoAvisar={avisar} />
 
-      <div className="pl-status">
-        <span>Pronto</span>
-        {conta && (
-          <span style={{ marginLeft: 12 }}>
-            {conta.numeros > 0 && `Média: ${mostrarNumero(conta.soma / conta.numeros)}   `}
-            Contagem: {conta.contagem}
-            {conta.numeros > 0 && `   Soma: ${mostrarNumero(conta.soma)}`}
-          </span>
-        )}
-        <span style={{ marginLeft: 'auto' }}>{nomeDaFaixa(g.faixa)}</span>
-      </div>
+      <BarraDeStatusDoExcel aoAvisar={avisar} planilha={p} faixa={g.faixa} caderno={cad}>
+        <span>{g.modo}</span>
+      </BarraDeStatusDoExcel>
 
       {dialogo && (
         <>

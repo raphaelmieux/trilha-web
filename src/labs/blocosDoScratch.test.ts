@@ -104,7 +104,7 @@ describe('os exemplos da CC001', () => {
     programa dele.
   */
   it('nenhuma linha junta dois blocos', () => {
-    const juntas = topicos.flatMap(t => t.exemplo.split('\n'))
+    const juntas = topicos.flatMap(t => (t.exemplo ?? '').split('\n'))
       .filter(l => (l.match(/\[/g) ?? []).length > 1);
     expect(juntas).toEqual([]);
   });
@@ -115,13 +115,13 @@ describe('os exemplos da CC001', () => {
     escrito com colchete e tudo. A anotação vai na linha de cima.
   */
   it('nenhuma linha mistura bloco e comentário', () => {
-    const misturadas = topicos.flatMap(t => t.exemplo.split('\n'))
+    const misturadas = topicos.flatMap(t => (t.exemplo ?? '').split('\n'))
       .filter(l => /\]\s*\S/.test(l));
     expect(misturadas).toEqual([]);
   });
 
   it('nenhum bloco escrito nas lições sai sem categoria', () => {
-    const cinzas = topicos.flatMap(t => lerExemploDeBlocos(t.exemplo))
+    const cinzas = topicos.flatMap(t => lerExemploDeBlocos(t.exemplo ?? ''))
       .filter(l => l.tipo === 'bloco' && l.categoria === 'desconhecida')
       .map(l => (l.tipo === 'bloco' ? l.texto : ''));
     expect([...new Set(cinzas)]).toEqual([]);
@@ -143,14 +143,14 @@ describe('o rótulo do exemplo diz a verdade sobre ele', () => {
 
   it('todo exemplo com blocos está rotulado como blocos', () => {
     const errados = [...topicosDe('CC001'), ...topicosDe('CC-FE002'), ...topicosDe('CC-FE001')]
-      .filter(t => temBloco(t.exemplo) && t.exemploComo !== 'blocos')
+      .filter(t => temBloco(t.exemplo ?? '') && t.exemploComo !== 'blocos')
       .map(t => t.id);
     expect(errados).toEqual([]);
   });
 
   it('nenhum exemplo rotulado como blocos está sem blocos', () => {
     const vazios = [...topicosDe('CC001'), ...topicosDe('CC-FE002'), ...topicosDe('CC-FE001')]
-      .filter(t => t.exemploComo === 'blocos' && !temBloco(t.exemplo))
+      .filter(t => t.exemploComo === 'blocos' && !temBloco(t.exemplo ?? ''))
       .map(t => t.id);
     expect(vazios).toEqual([]);
   });
@@ -165,7 +165,7 @@ describe('o rótulo do exemplo diz a verdade sobre ele', () => {
 
   it('nenhum tópico da CC-FE002 cai no padrão de HTML sem ser HTML de verdade', () => {
     const errados = topicosDe('CC-FE002')
-      .filter(t => (t.exemploComo ?? 'html') === 'html' && !t.exemplo.trim().startsWith('<'))
+      .filter(t => (t.exemploComo ?? 'html') === 'html' && !(t.exemplo ?? '').trim().startsWith('<'))
       .map(t => t.id);
     expect(errados).toEqual([]);
   });

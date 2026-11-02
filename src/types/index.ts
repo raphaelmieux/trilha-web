@@ -91,7 +91,6 @@ export const NOME_DO_TIPO: Record<LessonType, string> = {
 };
 
 export type LabType =
-  | 'text_editor'
   | 'redacao_guiada'
   | 'pact_builder'
   | 'threat_lab'

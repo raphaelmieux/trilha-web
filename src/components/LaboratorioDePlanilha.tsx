@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import {
   AlignLeft, AlignCenter, AlignRight, ChevronsUp, Minus, ChevronsDown,
-  Bold, Combine, Sigma, Palette, ArrowDownAZ, ArrowUpZA, Filter,
+  Combine, Sigma, Palette, ArrowDownAZ, ArrowUpZA, Filter,
   Snowflake, PieChart, Undo2, Redo2, Percent, ClipboardList,
 } from 'lucide-react';
+import { IconeNegrito } from '../labs/office';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
-  CSS_EXCEL, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
+  CSS_EXCEL, BarraDeStatusDoExcel, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
   DesenhoDoGrafico,
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
@@ -88,14 +89,24 @@ type Dialogo =
 
 /* ── O laboratório ─────────────────────────────────────────────────────────── */
 
-export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair }: {
+export default function LaboratorioDePlanilha({
+  vereda, licao, aoVencer, aoSair, inicial, arquivo = 'Acampamento 2026',
+}: {
   vereda: Vereda;
   licao: Extract<LicaoDeVereda, { tipo: 'planilha' }>;
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  /**
+   * Outra pasta no lugar da que a lição abre. Só as telas da teoria a passam:
+   * elas fotografam a excursão de outubro, porque tudo na pasta do
+   * acampamento é resposta de alguma lição — o motivo está em
+   * `src/exemplos/excursaoDeOutubro.ts`.
+   */
+  inicial?: () => Caderno;
+  arquivo?: string;
 }) {
   const licaoDoCaderno = CADERNOS_DA_CC_ES003[licao.caderno];
-  const [hist, setHist] = useState<Historico<Caderno>>(() => historicoDe(licaoDoCaderno.inicial()));
+  const [hist, setHist] = useState<Historico<Caderno>>(() => historicoDe((inicial ?? licaoDoCaderno.inicial)()));
   const cad = hist.presente;
   const p = planilhaAtiva(cad);
 
@@ -133,7 +144,7 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
     refazer: () => setHist(refazer),
     avisar: (texto: string) => avisar(texto),
   });
-  const { faixa, setFaixa, sel, setBarra, setEditando, gradeRef } = g;
+  const { faixa, setFaixa, sel, setBarra, setEditando } = g;
 
   /* ── Os comandos da faixa ──────────────────────────────────────────────── */
 
@@ -298,7 +309,7 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
       <style>{CSS_EXCEL}</style>
 
       <div className="pl-janela">
-        <BarraDeTituloDoExcel arquivo="Acampamento 2026" aoAvisar={avisar} />
+        <BarraDeTituloDoExcel arquivo={arquivo} aoAvisar={avisar} />
         <GuiasDoExcel atual={guia} usaveis={GUIAS_USAVEIS} aoTrocar={setGuia} aoAvisar={avisar} />
 
         <div className="pl-faixa">
@@ -314,7 +325,7 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
               </GrupoDoExcel>
               <GrupoDoExcel nome="Fonte">
                 <BotaoDoExcel dica="Negrito" ativo={p.celulas[sel.l][sel.c].negrito} aoClicar={negritar}>
-                  <Bold className="w-4 h-4" />
+                  <IconeNegrito />
                 </BotaoDoExcel>
               </GrupoDoExcel>
               <GrupoDoExcel nome="Alinhamento">
@@ -408,23 +419,23 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
           aoArrastarBorda={g.aoArrastarBorda}
           aoAjustarAoConteudo={g.aoAjustarAoConteudo}
           aoComecarPreenchimento={g.aoComecarPreenchimento}
-          aoAbrirFiltro={p.filtro ? (c => {
-            const alvo = gradeRef.current?.querySelectorAll('.pl-cab-col')[c]?.getBoundingClientRect();
-            setFiltroAberto({ coluna: c, x: alvo?.left ?? 80, y: (alvo?.bottom ?? 120) + 2 });
+          aoAbrirFiltro={p.filtro ? ((c, alvo) => {
+            /* A lista abre embaixo da setinha, sem passar da borda da tela. */
+            const x = Math.min(alvo?.left ?? 80, window.innerWidth - 200);
+            setFiltroAberto({ coluna: c, x: Math.max(8, x), y: (alvo?.bottom ?? 120) + 2 });
           }) : undefined}
-        />
-
-        {p.grafico && (
-          <div className="pl-grafico" role="figure" aria-label={`Gráfico: ${p.grafico.titulo}`}>
-            <div className="pl-grafico-titulo">{p.grafico.titulo || '(sem título)'}</div>
-            <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p, cad)}
-              pares={pontosDaDispersao(p, cad)} tendencia={p.grafico.tendencia}
-              equacao={p.grafico.equacao} />
-            <div className="pl-grafico-eixo">
-              {p.grafico.eixoX || '(eixo sem nome)'} × {p.grafico.eixoY || '(eixo sem nome)'}
+          sobreposicao={p.grafico && (
+            <div className="pl-grafico" role="figure" aria-label={`Gráfico: ${p.grafico.titulo}`}>
+              <div className="pl-grafico-titulo">{p.grafico.titulo || '(sem título)'}</div>
+              <DesenhoDoGrafico tipo={p.grafico.tipo} pontos={pontosDoGrafico(p, cad)}
+                pares={pontosDaDispersao(p, cad)} tendencia={p.grafico.tendencia}
+                equacao={p.grafico.equacao} />
+              <div className="pl-grafico-eixo">
+                {p.grafico.eixoX || '(eixo sem nome)'} × {p.grafico.eixoY || '(eixo sem nome)'}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        />
 
         <AbasDoExcel
           nomes={cad.planilhas.map(q => q.nome)} ativa={cad.ativa} aoAvisar={avisar}
@@ -435,14 +446,12 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
           }}
         />
 
-        <div className="pl-status">
-          <span>Pronto</span>
-          <span style={{ marginLeft: 'auto' }}>
-            {p.filtro?.valor
-              ? `Filtro: ${p.filtro.valor} — ${contarVisiveis(p)} de ${contarDaTabela(p)} linhas`
-              : nomeDaFaixa(faixa)}
-          </span>
-        </div>
+        <BarraDeStatusDoExcel aoAvisar={avisar} planilha={p} faixa={faixa} caderno={cad}>
+          <span>{g.modo}</span>
+          {p.filtro?.valor && (
+            <span>{`Filtro: ${p.filtro.valor} — ${contarVisiveis(p)} de ${contarDaTabela(p)} linhas`}</span>
+          )}
+        </BarraDeStatusDoExcel>
       </div>
 
       {filtroAberto && (

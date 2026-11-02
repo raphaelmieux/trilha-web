@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { trechoDe, campoDe } from './documento';
 import {
   DOC_INICIAL, PLANILHA_INICIAL, ESTADO_INICIAL,
   METAS_DA_INSERCAO, METAS_DA_PLANILHA, METAS_DA_AREA,
@@ -58,15 +59,22 @@ describe('toda tarefa da AP043 tem como ser vencida', () => {
     escritos; numeração ligada.
   */
   it('o documento de inserção fecha as quatro', () => {
-    const pronto = {
-      tabela: {
-        linhas: [['Unidade', 'Inscritos'], ['Falcão', '12'], ['Águia', '9'], ['Tucano', '11']],
-        estilo: 'grade' as const,
-      },
-      imagem: { presente: true, quebra: 'quadrada' as const },
-      cabecalho: 'Clube Falcão Peregrino',
-      rodape: 'Unidade Falcão',
-      numeracao: true,
+    const pronto: typeof DOC_INICIAL = {
+      ...DOC_INICIAL,
+      blocos: [
+        ...DOC_INICIAL.blocos.slice(0, 3),
+        {
+          tipo: 'tabela', id: 'tab', secao: 'texto', cabecalho: false, estilo: 'Tabela de Lista 3',
+          linhas: [['Unidade', 'Inscritos'], ['Falcão', '12'], ['Águia', '9'], ['Tucano', '11']],
+        },
+        {
+          tipo: 'imagem', id: 'img', secao: 'texto', arquivo: 'acampamento-julho.jpg',
+          descricao: 'Barracas', disposicao: 'quadrada',
+        },
+        ...DOC_INICIAL.blocos.slice(3),
+      ],
+      cabecalho: { trechos: [trechoDe('c', 'Clube Falcão Peregrino')] },
+      rodape: { trechos: [trechoDe('r', 'Unidade Falcão'), campoDe('n', 'pagina')] },
     };
     const abertas = METAS_DA_INSERCAO.filter(m => !m.feita(pronto)).map(m => m.id);
     expect(abertas, `${abertas.join(', ')} continuam abertas num documento pronto`).toEqual([]);
@@ -391,5 +399,43 @@ describe('a grade é maior do que a tabela', () => {
 
   it('a largura da tabela ignora a grade vazia em volta', () => {
     expect(larguraDaTabela(PLANILHA_INICIAL)).toBe(5);
+  });
+});
+
+describe('as inserções erram do jeito que o Word deixa errar', () => {
+  const comFoto = (disposicao: 'atras' | 'frente' | 'alinhada' | 'quadrada'): typeof DOC_INICIAL => ({
+    ...DOC_INICIAL,
+    blocos: [...DOC_INICIAL.blocos, {
+      tipo: 'imagem', id: 'img', secao: 'texto', arquivo: 'a.jpg', descricao: 'a', disposicao,
+    }],
+  });
+  const imagem = METAS_DA_INSERCAO.find(m => m.id === 'imagem')!;
+
+  /* Atrás e na frente tiram a foto da linha, o que parece resolver — e fazem o
+     texto ignorá-la, que é o contrário de ajustar. */
+  it('foto atrás ou na frente do texto não está ajustada ao texto', () => {
+    expect(imagem.feita(comFoto('atras'))).toBe(false);
+    expect(imagem.feita(comFoto('frente'))).toBe(false);
+    expect(imagem.feita(comFoto('alinhada'))).toBe(false);
+    expect(imagem.feita(comFoto('quadrada'))).toBe(true);
+  });
+
+  it('número de página digitado não é numeração de páginas', () => {
+    const numeracao = METAS_DA_INSERCAO.find(m => m.id === 'numeracao')!;
+    const digitado = { ...DOC_INICIAL, rodape: { trechos: [trechoDe('r', 'Página 1')] } };
+    expect(numeracao.feita(digitado)).toBe(false);
+    const campo = { ...DOC_INICIAL, rodape: { trechos: [trechoDe('r', 'Página '), campoDe('n', 'pagina')] } };
+    expect(numeracao.feita(campo)).toBe(true);
+  });
+
+  /* Faixa aberta e nunca escrita se repete em toda folha dizendo nada. */
+  it('cabeçalho aberto e vazio não está escrito', () => {
+    const cabecalho = METAS_DA_INSERCAO.find(m => m.id === 'cabecalho')!;
+    const vazio = { ...DOC_INICIAL, cabecalho: { trechos: [trechoDe('c', '')] }, rodape: { trechos: [trechoDe('r', 'Falcão')] } };
+    expect(cabecalho.feita(vazio)).toBe(false);
+  });
+
+  it('o documento já nasce com duas folhas, para o cabeçalho ter onde se repetir', () => {
+    expect(DOC_INICIAL.blocos.some(b => b.quebraDePagina)).toBe(true);
   });
 });

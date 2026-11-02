@@ -1,5 +1,6 @@
 import type { ModuloDeVereda, TopicoDeVereda } from './veredas';
 import { QUESTOES_DO_EDITOR } from './questoesDoEditor';
+import { telasDoTopico } from './telas';
 
 /*
  * A vereda CC-ES002 Editor de Texto.
@@ -32,16 +33,25 @@ import { QUESTOES_DO_EDITOR } from './questoesDoEditor';
  */
 
 /*
-  Todo exemplo desta vereda é `'texto'`: um parágrafo, um par de nomes de
-  estilo lado a lado, um pedaço de sumário. Não há linguagem para realçar nem
-  página para desenhar — é a mesma decisão da CC003 e da CC-ES001, e o helper é
-  o mesmo.
+  Os exemplos desta vereda são telas do Word do laboratório, fotografadas pela
+  página de bastidor seguindo `src/exemplos/roteiros/editorDeTexto.ts`.
+
+  Eram quadros de texto puro — "Sem estilo │ Com estilo", uma seta entre
+  "18h" e "19h", um sumário desenhado com pontinhos —, no molde do W3Schools:
+  explicação em cima, exemplo embaixo. Só que o exemplo do W3Schools roda, e
+  estes repetiam o parágrafo de cima em outro formato. Os que mostravam uma
+  operação viraram a operação na tela, num documento do clube que não é o do
+  laboratório; os que só resumiam saíram, e o que eles tinham de útil foi para
+  a explicação.
 */
+const V = 'CC-ES002';
 const t = (
   id: string, titulo: string, resumo: string,
-  explicacao: string[], exemplo: string, atencao: string, marcas: string[],
+  explicacao: string[], atencao: string, marcas: string[],
+  telas?: [legenda: string, descricao: string][],
 ): TopicoDeVereda => ({
-  id, titulo, resumo, explicacao, exemplo, exemploComo: 'texto' as const, atencao, marcas,
+  id, titulo, resumo, explicacao, atencao, marcas,
+  ...(telas ? { telas: telasDoTopico(V, id, telas) } : {}),
 });
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -57,17 +67,14 @@ const FORMATAR: TopicoDeVereda[] = [
       'Formatação direta é o que acontece quando você seleciona um texto e clica em negrito, ou escolhe o tamanho 16, ou troca a cor. A ordem vale para *aquele pedaço*, e para mais nada.',
       'É o jeito que todo mundo aprende primeiro, e ele funciona — para um documento de uma página que ninguém vai mexer de novo. O convite do acampamento, o cartaz da cantina.',
       'O problema não é o resultado; é que a decisão fica guardada em cada pedaço, um por um. O documento não sabe que aqueles oito textos de 16 pontos e negrito são todos títulos de seção: para ele são oito pedaços que por acaso estão parecidos.',
+      'Dá para conferir isso em qualquer documento: clique num título e olhe a galeria de Estilos, em Início. Se ela marca **Normal**, aquele título é um parágrafo comum enfeitado à mão — e o grupo Fonte ao lado mostra o enfeite: negrito ligado, tamanho maior.',
     ],
-    `Você selecionou:   "Programação do sábado"
-Você clicou em:    Negrito, Tamanho 16, Cor azul
-
-O documento guardou:
-  parágrafo 12 → negrito, 16pt, azul
-
-O documento NÃO guardou:
-  "isto é um título de seção"`,
     'Formatação direta não é errada — é local. O erro é usá-la para dizer uma coisa que se repete: se você vai fazer o mesmo em outros lugares do documento, o que você quer é estilo.',
     ['formatação direta', 'negrito', 'seleção'],
+    [
+      ['O cursor está em “Sábado”, que parece título: azul, negrito e maior. Mas a galeria de Estilos marca **Normal** — para o Word, é um parágrafo comum enfeitado à mão.',
+        'Janela do Word com o programa do campori. O título Sábado está circulado no documento; na faixa de opções, a galeria de Estilos mostra Normal selecionado, e o grupo Fonte mostra tamanho 13 com o Negrito ligado.'],
+    ],
   ),
   t(
     'estilo',
@@ -75,36 +82,39 @@ O documento NÃO guardou:
     'Um nome que guarda a decisão, e que o texto inteiro usa.',
     [
       'Estilo é a formatação com um nome. Em vez de dizer "negrito, 16, azul" oito vezes, você diz "isto é Título 1" oito vezes — e o que Título 1 significa fica escrito num lugar só.',
-      'Trocar o que ele significa muda os oito de uma vez. É essa a demonstração que o requisito 8 pede, e ela dura três segundos: abra a galeria, mude a cor de Título 1, e o documento inteiro acompanha.',
+      'Trocar o que ele significa muda os oito de uma vez. É essa a demonstração que o requisito 8 pede, e ela dura três segundos: botão direito no estilo da galeria, Modificar, uma cor nova — e o documento inteiro acompanha.',
       'Todo editor de texto vem com estilos prontos — Normal, Título 1, Título 2, Citação, Legenda —, e todos eles podem ser modificados. Modificar o que existe é quase sempre melhor do que criar um novo: o sumário, a legenda e o navegador de documento já sabem procurar os nomes de fábrica.',
     ],
-    `Sem estilo                        Com estilo
-─────────────────────────         ─────────────────────────
-8 pedaços formatados à mão        8 parágrafos marcados Título 1
-mudar a cor = 8 edições           mudar a cor = 1 edição
-o sumário não acha nada           o sumário acha os 8`,
-    'Aplicar o estilo é clicar no parágrafo e escolher o nome na galeria — não é selecionar a linha inteira. Estilo de parágrafo vale para o parágrafo em que o cursor está, do começo ao fim dele.',
+    'Aplicar o estilo é clicar no parágrafo e escolher o nome na galeria — não é preciso selecionar a linha inteira. Estilo de parágrafo vale para o parágrafo em que o cursor está, do começo ao fim dele.',
     ['estilo', 'galeria de estilos', 'Título 1'],
+    [
+      ['Aqui os dias já são títulos de verdade: com o cursor em “Sábado”, a galeria acende **Título 2**.',
+        'Programa do campori com os dias como títulos azuis. O título Sábado e o botão Título 2 da galeria de Estilos estão circulados.'],
+      ['Botão direito sobre Título 2, na galeria, e escolha Modificar…',
+        'Menu aberto embaixo do botão Título 2, com os itens Modificar e Atualizar para Corresponder à Seleção. Modificar está circulado.'],
+      ['Na caixa Modificar Estilo a decisão é tomada uma vez: tamanho 16 e vermelho escuro. A prévia mostra como fica.',
+        'Caixa Modificar Estilo sobre o documento, com Tamanho 16, Cor Vermelho escuro, Negrito marcado e a frase de prévia em vermelho.'],
+      ['Um OK, e Sexta-feira, Sábado e Domingo mudaram juntos. Ninguém selecionou nenhum dos três.',
+        'Documento depois da mudança: os três títulos dos dias estão maiores e vermelho-escuros, cada um circulado.'],
+    ],
   ),
   t(
     'dois-problemas',
     'O que a formatação direta cobra depois',
     'Ela custa na hora de mudar, e custa na hora de montar o sumário.',
     [
-      'O primeiro problema é a **manutenção**. Num relatório de quatro páginas há uns dez títulos; num de vinte, uns cinquenta. Quando a liderança pede que os títulos fiquem menores, quem formatou à mão passa uma tarde caçando um por um — e sempre esquece um, que fica diferente e ninguém vê até o documento estar impresso.',
+      'O primeiro problema é a **manutenção**. Num relatório de quatro páginas há uns dez títulos; num de vinte, uns cinquenta. Quando a liderança pede que os títulos fiquem menores, quem formatou à mão passa uma tarde caçando um por um — e sempre esquece um, que fica diferente e ninguém vê até o documento estar impresso. Com estilo, o mesmo pedido é uma mudança só, na caixa Modificar.',
       'O segundo é o **sumário**. Ele não é escrito: é gerado, e o que ele procura são os parágrafos marcados como título. Um texto que só *parece* um título, porque alguém o deixou em negrito e grande, não aparece nele. O sumário sai com metade das seções, ou sai vazio, e não há erro nenhum na tela para explicar.',
       'Os dois problemas são da mesma família: o documento não sabe o que cada pedaço é. Estilo é o que conta isso a ele.',
     ],
-    `Pedido da liderança: "os títulos estão grandes demais"
-
-Com formatação direta        Com estilo
-────────────────────         ─────────────
-achar cada título            abrir a galeria
-mudar o tamanho              modificar Título 1
-repetir 50 vezes             pronto
-conferir se sobrou algum`,
     'Há um terceiro que aparece sozinho: o documento fica pesado e lento. Cada pedaço formatado à mão é uma instrução guardada, e um texto com milhares delas demora a abrir. Mas os dois que o requisito 3 pede são a manutenção e o sumário.',
     ['manutenção', 'sumário', 'consistência'],
+    [
+      ['No programa com os títulos feitos à mão: Referências › Sumário › Sumário Automático 1.',
+        'Guia Referências aberta, com o menu do botão Sumário mostrando Sumário Automático 1, circulado, e Atualizar Sumário.'],
+      ['O sumário sai vazio — “Nenhuma entrada de sumário foi encontrada”. Os três dias parecem títulos, e nenhum é.',
+        'Documento com uma caixa de sumário logo abaixo do título, circulada, dizendo que nenhuma entrada foi encontrada; os dias continuam azuis e em negrito mais abaixo.'],
+    ],
   ),
 ];
 
@@ -120,16 +130,17 @@ const PARAGRAFO_E_LETRA: TopicoDeVereda[] = [
     [
       'Parágrafo é tudo o que existe entre um Enter e o seguinte. Pode ter dez linhas ou uma palavra; o que o define não é o tamanho, é o Enter no fim.',
       'Ele é a unidade de quase toda formatação: alinhamento, espaçamento antes e depois, recuo, e o estilo de parágrafo inteiro valem para ele, não para a linha. É por isso que aplicar Título 1 com o cursor no meio da frase funciona — o editor sabe onde o parágrafo começa e onde acaba.',
-      'Um parágrafo vazio é um Enter sem nada dentro, e é assim que muita gente empurra texto para a página seguinte. Funciona até alguém acrescentar uma frase acima, e aí o empurrão vai parar no lugar errado.',
+      'Um parágrafo vazio é um Enter sem nada dentro, e é assim que muita gente empurra texto para baixo ou para a página seguinte. Funciona até alguém acrescentar uma frase acima, e aí o empurrão vai parar no lugar errado.',
+      'O botão **Mostrar Tudo** (o ¶, em Início › Parágrafo) desenha um ¶ no fim de cada parágrafo. Ele não sai na impressão; é o jeito de ver o que o documento é por dentro, e não só o que ele parece.',
     ],
-    `[Enter] fecha o parágrafo e abre outro
-
-  Parágrafo 1 ──→ "No sábado de manhã o clube se reúne às 8h."[Enter]
-  Parágrafo 2 ──→ "Cada unidade leva a própria bandeira."[Enter]
-
-Alinhamento, recuo e espaçamento valem por parágrafo.`,
-    'Para empurrar texto para a página seguinte não se apertam oito Enters: usa-se quebra de página. O Enter empurra hoje e desarruma amanhã, quando o texto de cima crescer ou encolher.',
-    ['parágrafo', 'Enter', 'quebra de página'],
+    'Para empurrar texto para a página seguinte não se apertam oito Enters: usa-se Inserir › Quebra de Página. O Enter empurra hoje e desarruma amanhã, quando o texto de cima crescer ou encolher.',
+    ['parágrafo', 'Enter', 'quebra de página', 'Mostrar Tudo'],
+    [
+      ['Na tela, o convite parece pronto: a assinatura bem embaixo, longe do texto.',
+        'Convite da investidura no Word, com um espaço grande em branco entre o endereço e a assinatura da diretoria, que está circulada.'],
+      ['Com o ¶ ligado, o espaço revela o que é: quatro ¶ sozinhos, quatro Enters vazios empurrando a assinatura.',
+        'O mesmo convite com as marcas de parágrafo visíveis; o botão Mostrar Tudo está circulado na faixa, e um círculo envolve as quatro linhas que só têm o símbolo de parágrafo.'],
+    ],
   ),
   t(
     'quebra-de-linha',
@@ -139,35 +150,34 @@ Alinhamento, recuo e espaçamento valem por parágrafo.`,
       'Quebra de linha é `Shift+Enter`. Ela desce uma linha e continua no **mesmo** parágrafo — o que significa que o espaçamento entre parágrafos não entra, e o estilo continua sendo o mesmo.',
       'Ela serve para as poucas coisas em que a linha importa e o parágrafo não: endereço, verso de música, assinatura em duas linhas. Em texto corrido ela não serve para nada.',
       'A diferença aparece na hora do estilo: um endereço escrito com três Enters são três parágrafos, e ganham três vezes o espaçamento de depois; escrito com duas quebras de linha é um parágrafo só, com as três linhas coladas como devem ficar.',
+      'Para consertar um endereço já escrito com Enter, vá ao fim da primeira linha, aperte Delete (as duas linhas se juntam) e depois Shift+Enter. Nenhuma letra é redigitada.',
     ],
-    `Com Enter (3 parágrafos)      Com Shift+Enter (1 parágrafo)
-─────────────────────────      ─────────────────────────────
-Rua das Palmeiras, 120         Rua das Palmeiras, 120
-                               Sobradinho, DF
-Sobradinho, DF                 73000-000
-
-73000-000                      (sem os vãos no meio)`,
-    'Ligar as marcas de parágrafo (o botão com o símbolo de parágrafo, em Início) mostra as duas: o Enter aparece como um símbolo de parágrafo, e a quebra de linha como uma seta virada. Com elas desligadas, as duas são invisíveis e o documento erra calado.',
+    'Com as marcas ligadas, o Enter aparece como ¶ e a quebra de linha como uma seta ↵. Com elas desligadas, as duas são invisíveis e o documento erra calado.',
     ['quebra de linha', 'Shift+Enter', 'marcas de formatação'],
+    [
+      ['Com o ¶ ligado, o endereço mostra três ¶: são três parágrafos, e o vão entre as linhas é o espaçamento de parágrafo.',
+        'Convite com as marcas visíveis. As três linhas do endereço — Igreja Central de Sobradinho, Quadra 6, Sobradinho — estão circuladas, cada uma terminando em ¶, com espaço entre elas.'],
+      ['Delete no fim da linha e Shift+Enter, duas vezes: o endereço vira um parágrafo só, com as setas ↵ e as linhas coladas.',
+        'O mesmo endereço circulado, agora com as três linhas juntas: as duas primeiras terminam numa seta de quebra de linha e só a última termina em ¶.'],
+    ],
   ),
   t(
     'serifa',
     'Serifada e sem serifa',
     'Com pezinho e sem pezinho, e onde cada uma se lê melhor.',
     [
-      'Serifa é o pequeno traço nas pontas das letras. Fontes serifadas — Times New Roman, Georgia, Garamond — têm esses traços; as sem serifa — Arial, Calibri, Helvetica — não têm.',
-      'A regra prática do dia a dia: serifada para texto longo impresso, sem serifa para tela e para títulos. Os traços ajudam o olho a seguir a linha no papel, e atrapalham pouco na tela de hoje — mas em tela pequena eles somem e viram sujeira.',
+      'Serifa é o pequeno traço nas pontas das letras. Fontes serifadas — Cambria, Georgia, Times New Roman, Garamond — têm esses traços; as sem serifa — Calibri, Arial, Verdana — não têm. A própria caixa Fonte do Word desenha cada nome com a sua letra, e é ali que se vê a diferença de perto.',
+      'A regra prática do dia a dia: serifada para texto longo impresso, sem serifa para tela e para títulos. Os traços ajudam o olho a seguir a linha no papel; em tela pequena eles somem e viram sujeira.',
       'O que **não** é regra é escolher pelo gosto de quem escreve. Um relatório entregue impresso e um cartaz projetado no telão pedem coisas diferentes, e quem decide é onde o texto vai ser lido.',
     ],
-    `Serifada (pezinho nas pontas)    Sem serifa (traço limpo)
-─────────────────────────────    ────────────────────────
-Times New Roman                  Arial
-Georgia                          Calibri
-Garamond                         Helvetica
-
-texto longo no papel             tela, título, placa`,
     'Não misture mais de duas fontes no mesmo documento — uma para título e uma para corpo basta. Documento com cinco fontes não parece rico, parece remendado, e é o erro mais comum de quem está aprendendo.',
     ['serifa', 'fonte', 'legibilidade'],
+    [
+      ['Com o texto todo selecionado (Ctrl+A), a caixa Fonte abre a lista — e cada nome vem escrito com a própria letra. Cambria, Georgia, Times e Garamond têm os pezinhos.',
+        'Lista de fontes aberta embaixo da caixa Fonte, com Calibri, Arial, Verdana e Segoe UI sem serifa e Cambria, Georgia, Times New Roman e Garamond serifadas; Georgia está circulada. O documento atrás está todo selecionado.'],
+      ['Georgia escolhida: o convite inteiro passa a ser serifado, que é o que convém ao papel que vai para as famílias.',
+        'Convite agora escrito em Georgia, com o primeiro parágrafo circulado e a caixa Fonte, também circulada, mostrando Georgia.'],
+    ],
   ),
 ];
 
@@ -182,80 +192,79 @@ const NO_MEIO_DO_TEXTO: TopicoDeVereda[] = [
     'Para dado que tem colunas, e não para alinhar texto.',
     [
       'Tabela serve para o que tem linha e coluna de verdade: a lista de inscritos com nome, unidade e telefone; o orçamento com item, quantidade e valor.',
-      'Ela se insere por Inserir › Tabela, escolhendo quantas colunas e quantas linhas. Depois disso ela cresce sozinha: `Tab` na última célula acrescenta uma linha nova, que é como se digita uma lista inteira sem tocar no mouse.',
-      'O que ela **não** é: um jeito de alinhar texto. Quem usa tabela invisível para pôr duas coisas lado a lado descobre o problema quando o texto muda de tamanho, ou quando alguém abre o documento em outro computador.',
+      'Há dois caminhos, os dois em Inserir › Tabela. **Inserir Tabela** cria a grade vazia, com quantas colunas e linhas você pedir, e `Tab` na última célula acrescenta uma linha nova — é como se digita uma lista inteira sem tocar no mouse. **Converter Texto em Tabela** serve quando a lista já existe separada por Tab, que é como ela chega quando alguém a cola de uma planilha: cada Tab vira a divisa de uma coluna.',
+      'O que ela **não** é: um jeito de alinhar texto. Lista alinhada com Tab parece tabela até um nome crescer, e aí a linha inteira escorrega; tabela invisível usada para pôr duas coisas lado a lado desmonta quando alguém abre o documento em outro computador.',
     ],
-    `Inserir › Tabela › 3 colunas × 5 linhas
-
-┌──────────────┬──────────┬──────────────┐
-│ Nome         │ Unidade  │ Telefone     │
-├──────────────┼──────────┼──────────────┤
-│ Ana          │ Falcão   │ (61) 99999…  │
-└──────────────┴──────────┴──────────────┘
-
-Tab na última célula → linha nova`,
-    'A primeira linha costuma ser o cabeçalho, e vale marcá-la como tal: numa tabela que atravessa duas páginas, o cabeçalho marcado se repete no alto da segunda. Sem isso, a página seguinte é uma tabela sem títulos de coluna.',
-    ['tabela', 'linha', 'coluna', 'cabeçalho da tabela'],
+    'A primeira linha costuma ser o cabeçalho, e vale marcá-la como tal (Layout da Tabela › Linha de Cabeçalho): numa tabela que atravessa duas páginas, o cabeçalho marcado se repete no alto da segunda. Sem isso, a página seguinte é uma tabela sem títulos de coluna.',
+    ['tabela', 'linha', 'coluna', 'cabeçalho da tabela', 'converter texto em tabela'],
+    [
+      ['A lista de vendas veio colada da planilha do caixa. Com o ¶ ligado, cada linha termina num ¶: são cinco parágrafos alinhados com Tab, e não uma tabela.',
+        'Relatório da cantina com as vendas em cinco linhas — Item, Pastel, Suco, Pipoca e Água — alinhadas em três colunas por tabulação, circuladas, cada uma terminando em ¶.'],
+      ['Selecione as cinco linhas e vá em Inserir › Tabela › Converter Texto em Tabela…',
+        'Guia Inserir aberta com o menu do botão Tabela mostrando Inserir Tabela e Converter Texto em Tabela, este circulado.'],
+      ['Cada Tab virou uma divisa de coluna: agora é uma tabela de verdade, e o texto de uma célula não empurra o da vizinha.',
+        'A mesma lista transformada numa tabela de três colunas e cinco linhas com bordas, circulada.'],
+    ],
   ),
   t(
     'linha-e-coluna',
     'Acrescentar e remover',
     'A tabela muda depois de pronta, e há botão para isso.',
     [
-      'Acrescentar linha ou coluna se faz pelo botão direito sobre a tabela, ou pela guia contextual de Layout que aparece quando o cursor está dentro dela. Dá para inserir acima, abaixo, à esquerda e à direita.',
-      'Remover é pelo mesmo caminho, e ali mora uma confusão que custa caro: **apagar o conteúdo não é remover a linha**. Selecionar as células e apertar Delete esvazia o que estava escrito e deixa a linha vazia lá, ocupando espaço.',
+      'Com o cursor numa célula, duas guias novas aparecem no fim da fileira: **Design da Tabela**, com os estilos, e **Layout da Tabela**, com o que muda a forma — inserir linha acima ou abaixo, coluna à esquerda ou à direita, e excluir.',
+      'Remover é pelo mesmo caminho, e ali mora uma confusão que custa caro: **apagar o conteúdo não é remover a linha**. Selecionar as células e apertar Delete esvazia o que estava escrito e deixa a linha vazia lá, ocupando espaço. Quem tira a linha é Layout da Tabela › Excluir › Excluir Linhas.',
       'A guia contextual é a mesma ideia do resto do editor: ela só existe enquanto o cursor está dentro da tabela, porque comandos de tabela não têm o que fazer fora dela.',
     ],
-    `Cursor dentro da tabela → aparecem duas guias novas
-                           "Design da Tabela" e "Layout"
-
-Layout › Inserir Acima / Abaixo / À Esquerda / À Direita
-Layout › Excluir › Linhas / Colunas / Tabela
-
-Delete nas células = esvazia
-Excluir › Linhas   = tira a linha`,
     'Se a guia de Layout sumiu, o cursor saiu da tabela. Não é um defeito do programa: é a guia contextual fazendo o que ela faz.',
     ['inserir linha', 'excluir linha', 'guia contextual'],
+    [
+      ['Com o cursor na célula “Gelo”, aparecem duas guias no fim da fileira: Design da Tabela e Layout da Tabela.',
+        'Word com a tabela de vendas; o cursor está na célula Gelo, na última linha, e as guias Design da Tabela e Layout da Tabela, em vermelho no fim da fileira de guias, estão circuladas.'],
+      ['Em Layout da Tabela › Excluir, escolha Excluir Linhas — e não o Delete nas células.',
+        'Guia Layout da Tabela aberta, com o menu do botão Excluir mostrando Excluir Linhas, circulado, e Excluir Colunas.'],
+      ['A linha do gelo saiu inteira. Com Delete ela teria ficado ali, vazia, ocupando espaço.',
+        'A tabela de vendas circulada, agora com cinco linhas e sem a do gelo.'],
+    ],
   ),
   t(
     'imagem-no-texto',
     'A imagem e o texto em volta',
     'O que decide onde ela fica é a disposição.',
     [
-      'Inserida, a imagem nasce *alinhada com o texto*: ela se comporta como se fosse uma letra gigante, empurrando a linha inteira. Isso quase nunca é o que se quer.',
-      'A disposição do texto — quadrada, próxima, atrás, à frente, acima e abaixo — é o que decide o resto. "Quadrada" faz o texto contornar a caixa da imagem; "acima e abaixo" a deixa sozinha na largura da página.',
+      'Inserida, a imagem nasce *alinhada com o texto*: ela se comporta como se fosse uma letra gigante, sozinha numa linha enorme, com um vazio do lado. Isso quase nunca é o que se quer.',
+      'A disposição do texto, em Formato da Imagem › Dispor Texto, é o que decide o resto. **Quadrada** faz o texto contornar a caixa da imagem; **Próxima** contorna o desenho; **Acima e Abaixo** a deixa sozinha na largura da página. **Atrás** e **À Frente** tiram a imagem da linha, e o texto passa a ignorá-la — o que quase nunca é arrumar.',
       'Escolhida a disposição, a imagem passa a ter uma **âncora**: um parágrafo ao qual ela está presa. Apagar aquele parágrafo leva a imagem junto, e é assim que uma foto some de um documento sem ninguém ter apagado foto nenhuma.',
     ],
-    `Alinhada com o texto   → a imagem é uma letra enorme
-Quadrada               → o texto contorna a caixa
-Próxima                → o texto contorna o desenho
-Atrás / À frente       → o texto ignora a imagem
-Acima e abaixo         → a imagem toma a largura
-
-Âncora: o parágrafo a que a imagem está presa.`,
     'Imagem esticada para caber é o defeito que mais aparece em documento de clube. Arraste sempre pelo canto, e nunca pelo meio da borda: o canto mantém a proporção, e o meio achata as pessoas da foto.',
     ['imagem', 'disposição do texto', 'âncora', 'proporção'],
+    [
+      ['A foto da fila entrou alinhada com o texto: ocupa uma linha só para ela, com um vazio do lado.',
+        'Relatório da cantina com uma foto entre dois parágrafos; o trecho circulado mostra a foto à esquerda e um espaço branco à direita dela, antes do parágrafo seguinte.'],
+      ['Com a foto escolhida, Formato da Imagem › Dispor Texto mostra as seis disposições.',
+        'Guia contextual Formato da Imagem aberta, com o menu Dispor Texto listando Alinhada com o Texto, Quadrada (circulada), Próxima, Atrás do Texto, À Frente do Texto e Acima e Abaixo.'],
+      ['Em Quadrada, o texto passa a contornar a caixa da foto, e o vazio sumiu.',
+        'A foto e os dois parágrafos seguintes circulados: o texto agora corre ao lado direito da foto.'],
+    ],
   ),
   t(
     'legenda',
     'A legenda',
     'Um campo que se numera sozinho, e não uma frase embaixo da foto.',
     [
-      'Legenda é o texto que identifica a imagem ou a tabela, e no editor ela é um recurso, não uma linha escrita à mão: Referências › Inserir Legenda.',
-      'A diferença é a numeração. A legenda inserida assim traz um campo — "Figura 1", "Figura 2" —, e o campo se renumera sozinho quando alguém acrescenta uma figura no meio do documento. Escrita à mão, a figura 3 vira a 4 e ninguém corrige a 5, a 6 e a 7.',
+      'Legenda é o texto que identifica a imagem ou a tabela, e no editor ela é um recurso, não uma linha escrita à mão: escolha a figura e vá em Referências › Inserir Legenda.',
+      'A diferença é a numeração. A legenda inserida assim traz um **campo** — o "Figura 1" de fundo cinza —, e o campo se renumera sozinho quando alguém acrescenta uma figura no meio do documento. Escrita à mão, a figura 3 vira a 4 e ninguém corrige a 5, a 6 e a 7.',
       'E ela usa o estilo Legenda, o que faz todas ficarem iguais, e permite gerar um índice de figuras depois — pelo mesmo caminho do sumário.',
     ],
-    `Referências › Inserir Legenda
-
-  Figura 1 — A fogueira na noite de sábado
-  Figura 2 — A bandeira da Unidade Falcão
-
-Acrescente uma figura entre as duas:
-  Figura 1 — …
-  Figura 2 — a nova
-  Figura 3 — a que era a 2   ← renumerada sozinha`,
-    'A legenda fica acima da tabela e abaixo da figura — é a convenção de todo texto técnico, e o editor oferece as duas posições na mesma caixa. Não é exigência do programa; é o que quem lê espera encontrar.',
+    'A legenda fica acima da tabela e abaixo da figura — é a convenção de todo texto técnico. Não é exigência do programa; é o que quem lê espera encontrar.',
     ['legenda', 'campo', 'numeração automática', 'índice de figuras'],
+    [
+      ['A segunda foto já tem legenda, inserida pelo Word: o “Figura 1” de fundo cinza é um campo, e não texto digitado.',
+        'Relatório com duas fotos; só a de baixo tem legenda, circulada, começando por Figura 1 com fundo cinza.'],
+      ['Escolha a primeira foto e vá em Referências › Inserir Legenda.',
+        'Guia Referências aberta, com o botão Inserir Legenda circulado no grupo Legendas.'],
+      ['A legenda nova nasce “Figura 1”, e a que era 1 virou “Figura 2” sozinha. Digitadas à mão, as duas diriam “Figura 1”.',
+        'As duas legendas circuladas: embaixo da primeira foto, Figura 1; embaixo da segunda, Figura 2.'],
+    ],
   ),
 ];
 
@@ -270,61 +279,55 @@ const EM_TODA_PAGINA: TopicoDeVereda[] = [
     'A faixa de cima e a de baixo, escritas uma vez e repetidas em todas.',
     [
       'Cabeçalho é a área acima da margem superior; rodapé, a abaixo da inferior. O que se escreve neles aparece em **toda** página, e é para isso que eles existem: o nome do clube, o título do documento, a data.',
-      'Eles não fazem parte do corpo do texto, e é por isso que o cursor não chega neles digitando — entra-se por Inserir › Cabeçalho, ou com dois cliques na área.',
-      'A primeira página costuma ser diferente: uma capa não leva cabeçalho. A caixa "primeira página diferente" existe justamente para isso, e é ela que evita a gambiarra de pôr a capa num arquivo separado.',
+      'Eles não fazem parte do corpo do texto, e é por isso que o cursor não chega neles digitando — entra-se por Inserir › Cabeçalho (ou Rodapé), ou com dois cliques na área.',
+      'A primeira página costuma ser diferente: uma capa não leva cabeçalho. A caixa **Primeira Página Diferente**, no mesmo grupo, existe justamente para isso, e é ela que evita a gambiarra de pôr a capa num arquivo separado.',
     ],
-    `┌─────────────────────────────────────┐
-│ Clube Pioneiros do Cerrado    2026  │ ← cabeçalho
-├─────────────────────────────────────┤
-│                                     │
-│   (o corpo do documento)            │
-│                                     │
-├─────────────────────────────────────┤
-│                 3                   │ ← rodapé
-└─────────────────────────────────────┘`,
     'Escrever o nome do clube no alto da primeira página, dentro do corpo, parece a mesma coisa e não é: ele não vai se repetir, e vai empurrar o texto quando alguém acrescentar um parágrafo acima.',
     ['cabeçalho', 'rodapé', 'primeira página diferente'],
+    [
+      ['Inserir › Cabeçalho abre a faixa de cima da folha, fora do corpo do texto.',
+        'Guia Inserir aberta, com o botão Cabeçalho circulado no grupo Cabeçalho e Rodapé, ao lado de Rodapé, Número de Página e Primeira Página Diferente.'],
+      ['Escrito uma vez na folha 1, o cabeçalho aparece igual na 2 e na 3. Com o zoom em 50%, dá para ver duas folhas de uma vez.',
+        'Duas folhas do manual em zoom de 50%; no alto de cada uma, circulado, o mesmo cabeçalho: Unidade Falcão — Manual de Acampamento 2026.'],
+    ],
   ),
   t(
     'numeracao',
     'Numeração de páginas',
     'Um campo, e não um número digitado.',
     [
-      'O número da página é um campo que o editor calcula: Inserir › Número de Página, escolhendo onde ele fica. Acrescentar ou tirar páginas renumera tudo sozinho.',
-      'Ele mora no cabeçalho ou no rodapé, porque é lá que ele precisa se repetir. Digitar "3" no pé da terceira página funciona até alguém acrescentar um parágrafo na primeira.',
+      'O número da página é um campo que o editor calcula: Inserir › Número de Página. Acrescentar ou tirar páginas renumera tudo sozinho.',
+      'Ele mora no cabeçalho ou no rodapé, porque é lá que ele precisa se repetir. E é aí que mora o engano: o que se digita no rodapé também se repete — igual em todas as folhas. "Página 1" digitado na primeira aparece na segunda, na terceira e na décima.',
       'Documento com capa costuma não numerar a capa, e costuma começar a contar do 1 na página seguinte. As duas coisas são configuráveis, e são o que separa um relatório entregue de um rascunho impresso.',
     ],
-    `Inserir › Número de Página › Fim da Página
-
-Página 1 (capa)     → sem número
-Página 2            → 1
-Página 3            → 2
-
-Acrescente uma página no meio:
-o campo renumera as seguintes sozinho.`,
     'Se o número não muda de página para página, ele foi digitado, e não inserido como campo. É o mesmo teste do sumário: o que o editor calcula, ele recalcula.',
     ['número de página', 'campo', 'capa'],
+    [
+      ['O rodapé desta folha diz “Página 1”, e ela é a segunda. Alguém digitou o número, e ele se repete igual em todas.',
+        'Segunda folha do manual em zoom de 50%, com o rodapé circulado dizendo Página 1; embaixo dela, o rótulo Folha 2 de 3.'],
+      ['Inserir › Número de Página troca o número digitado por um campo de fundo cinza: esta folha passa a dizer 2, a seguinte 3, e ninguém digitou nada.',
+        'A mesma folha depois do comando: o botão Número de Página está circulado na faixa e o rodapé, também circulado, mostra Página seguido do número 2 num campo cinza.'],
+    ],
   ),
   t(
     'sumario',
     'O sumário',
     'Ele é lido dos estilos, e não escrito à mão.',
     [
-      'O sumário se gera em Referências › Sumário, e o que ele procura são os parágrafos marcados com os estilos de título — Título 1 vira entrada de primeiro nível, Título 2 de segundo, e assim por diante.',
+      'O sumário se gera em Referências › Sumário, e o que ele procura são os parágrafos marcados com os estilos de título — Título 1 vira entrada de primeiro nível, Título 2 de segundo, e cada entrada leva a folha em que o título está.',
       'É aqui que o módulo 1 se paga. Num documento formatado à mão o sumário sai vazio, e a tela não diz por quê: não há erro, há uma caixa sem nada dentro.',
-      'E ele **guarda o que leu**. Trocar um título depois de gerar deixa o sumário mostrando o texto velho, e nada avisa. O botão Atualizar Sumário é o que o alcança, e ele é metade da lição: um sumário desatualizado é pior do que nenhum, porque quem lê confia nele.',
+      'E ele **guarda o que leu**. Mudar um título de folha, ou trocar o texto dele, depois de gerar deixa o sumário mostrando o documento de antes, e nada no texto avisa. O botão Atualizar Sumário é o que o alcança, e ele é metade da lição: um sumário desatualizado é pior do que nenhum, porque quem lê confia nele.',
     ],
-    `Sumário
-───────────────────────────────────────
-1. Antes do acampamento .............. 2
-   1.1 A lista de inscritos .......... 2
-   1.2 O que levar ................... 3
-2. Durante ........................... 4
-3. Depois ............................ 6
-
-Título 1 → nível 1     Título 2 → nível 2`,
     'Sumário gerado antes de o documento acabar aponta para páginas que ainda vão mudar. Gere quando quiser, mas atualize antes de exportar — e confira, porque o que ele mostra é o que o clube vai arquivar.',
     ['sumário', 'atualizar sumário', 'níveis de título'],
+    [
+      ['Referências › Sumário lê os títulos do manual e anota a folha de cada um: “O fogo” está na 3.',
+        'Primeira folha do manual com o sumário gerado e circulado, listando os títulos e subtítulos com os números de folha à direita; O fogo aparece na folha 3.'],
+      ['Uma quebra de página antes de “O fogo” o mandou para a folha 4 — e o sumário continua dizendo 3. A barra de status diz “Sumário desatualizado”.',
+        'O mesmo sumário, com a linha O fogo circulada ainda apontando para a folha 3; na barra de status, embaixo, Sumário desatualizado e 4 folhas.'],
+      ['Atualizar Sumário relê o documento, e “O fogo” passa a apontar para a folha 4.',
+        'Guia Referências com o botão Atualizar Sumário circulado; no sumário, a linha O fogo, também circulada, agora termina em 4.'],
+    ],
   ),
 ];
 
@@ -339,19 +342,19 @@ const REVISAR: TopicoDeVereda[] = [
     'O editor passa a marcar o que mudou, em vez de só mudar.',
     [
       'Ligado o controle de alterações (Revisão › Controlar Alterações), toda edição fica marcada: o que entrou aparece sublinhado e colorido, o que saiu aparece riscado, e cada marca leva o nome de quem a fez.',
-      'Nada disso é definitivo. No fim, quem é dono do documento percorre as marcas e **aceita** ou **rejeita** cada uma — e é só aí que o texto de verdade muda.',
+      'Nada disso é definitivo. No fim, quem é dono do documento percorre as marcas — o botão **Próxima** vai de uma em outra — e **aceita** ou **rejeita** cada uma. É só aí que o texto de verdade muda.',
       'É o que permite mandar um documento para a liderança revisar sem perder o que estava escrito. Sem ele, a devolução vem com o texto já trocado e ninguém sabe o que foi mexido.',
     ],
-    `Revisão › Controlar Alterações (ligado)
-
-  "A reunião começa às ~~8h~~ 9h da manhã."
-                        ↑      ↑
-                    riscado   inserido
-                    (saiu)    (entrou)
-
-Depois: Aceitar ou Rejeitar, uma a uma.`,
     'Documento entregue com alterações ainda marcadas é documento entregue pela metade. Antes de exportar, aceite ou rejeite tudo — e repare que "Sem Marcações" só **esconde** as marcas: elas continuam lá, e reaparecem para quem abrir depois.',
     ['controlar alterações', 'aceitar', 'rejeitar'],
+    [
+      ['Na guia Revisão, Controlar Alterações liga a marcação. Daqui em diante, toda edição fica registrada.',
+        'Ata da diretoria aberta na guia Revisão, com o botão Controlar Alterações circulado no grupo Controle.'],
+      ['Trocando “18h” por “19h” com o controle ligado, nada some: o 18h fica riscado e o 19h entra sublinhado, na cor de quem mexeu.',
+        'O primeiro parágrafo da ata circulado: no horário da saída, 18h aparece riscado e 19h logo depois, sublinhado em azul. A barra de status diz 2 marcas pendentes.'],
+      ['Próxima e Aceitar, marca por marca: depois das duas, sobra o texto final, sem marca nenhuma.',
+        'O mesmo parágrafo circulado, agora dizendo apenas às 19h, sem risco nem sublinhado; a barra de status diz Sem marcas pendentes.'],
+    ],
   ),
   t(
     'comentario',
@@ -359,40 +362,41 @@ Depois: Aceitar ou Rejeitar, uma a uma.`,
     'Recado na margem, que não entra no texto.',
     [
       'Comentário é uma anotação presa a um pedaço do texto, e que fica na margem. Ele não é o texto: não sai na impressão comum e não aparece para quem lê o documento depois de resolvido.',
-      'Serve para o que é pergunta, e não correção: "confirmou a data com a igreja?", "esta tabela não bate com a do ano passado". Quem recebe responde no próprio comentário, e a conversa fica encadeada ali.',
-      'Resolvido o assunto, o comentário se marca como resolvido, ou se exclui. Comentário que fica para sempre vira ruído, e o próximo leitor não sabe se aquilo ainda importa.',
+      'Serve para o que é pergunta, e não correção: "confirmou a data com a igreja?", "esta tabela não bate com a do ano passado". Quem recebe responde no próprio balão, e a conversa fica encadeada ali, junto do trecho de que ela fala.',
+      'Resolvido o assunto, o comentário se marca como resolvido, ou se exclui. Comentário que fica aberto para sempre vira ruído, e o próximo leitor não sabe se aquilo ainda importa.',
     ],
-    `Texto                          Margem
-─────────────────────────      ────────────────────────
-A saída é dia 14 de março.  ┤  Raphael: confirmou com
-                               a igreja?
-                                 └ Ana: confirmado ontem.
-                                   [Resolver]`,
     'Comentário não é controle de alterações. Um pergunta, o outro muda — e quem escreve a correção dentro do comentário obriga a outra pessoa a digitá-la de novo.',
     ['comentário', 'revisão', 'resolver'],
+    [
+      ['A liderança devolveu a ata com uma pergunta na margem, presa ao parágrafo do gás — que aparece destacado em amarelo.',
+        'Ata da diretoria com o parágrafo sobre o gás destacado em amarelo e circulado; à direita, na margem, um balão circulado com a pergunta da Liderança sobre quem vai comprar o gás.'],
+      ['A resposta entra no próprio balão, embaixo da pergunta: a conversa fica junta, e não espalhada em mensagens.',
+        'O balão da margem circulado, agora com a resposta de Você embaixo da pergunta, dizendo que o Tiago fica com a compra, e os botões Responder e Resolver.'],
+      ['Resolvido, o balão fica apagado e marcado “Resolvido”: continua lá para quem procurar, e para de pedir atenção.',
+        'O mesmo balão circulado, em cinza, com a pergunta, a resposta e a palavra Resolvido no pé.'],
+    ],
   ),
   t(
     'substituicao',
     'Substituição automática',
     'Trocar tudo de uma vez, e conferir antes de confiar.',
     [
-      'Localizar e Substituir (`Ctrl+H`) troca um texto por outro em todo o documento. É o que conserta em dois segundos o nome de um lugar escrito errado dezoito vezes.',
-      'E é onde se perde um documento inteiro em dois segundos também. Substituir "ana" por "Ana" sem marcar "palavras inteiras" transforma "manhã" em "mAnahã" e "semana" em "semAnaa" — em todo o texto, de uma vez.',
-      'Por isso existem as duas opções que quase ninguém marca: **diferenciar maiúsculas de minúsculas** e **palavras inteiras**. E existe o "Substituir" um a um, que mostra cada ocorrência antes de trocar — mais lento, e o único jeito de ver o que vai acontecer.',
+      'Localizar e Substituir (`Ctrl+H`, ou Início › Substituir) troca um texto por outro em todo o documento. É o que conserta em dois segundos o nome de um lugar escrito errado dezoito vezes.',
+      'E é onde se estraga um documento inteiro em dois segundos também. Procurar "ana" acha o nome Ana — e acha também o "ana" de dentro de "semana", "Mariana" e "banana". Substituir Tudo troca todos, de uma vez, sem perguntar.',
+      'Por isso existem as duas opções que quase ninguém marca: **diferenciar maiúsculas de minúsculas** e **localizar palavras inteiras**. Antes de apertar Substituir Tudo, olhe a contagem de ocorrências: se ela é maior do que o que você esperava, é porque a busca está pegando pedaço de outra palavra.',
     ],
-    `Substituir "ana" por "Ana"
-
-Sem "palavras inteiras":
-  manhã   → mAnahã
-  semana  → semAnaa
-  Ana     → AnAna
-
-Com "palavras inteiras" marcado:
-  manhã   → manhã
-  semana  → semana
-  ana     → Ana`,
     'O Ctrl+Z desfaz um Substituir Tudo inteiro, e é a primeira coisa a apertar quando o documento fica estranho. Mas ele só alcança enquanto o documento não foi fechado — depois disso, o que vale é a cópia de segurança.',
     ['localizar e substituir', 'palavras inteiras', 'Ctrl+H'],
+    [
+      ['Procurar “ana” e trocar por “Ana”, sem marcar nada: o Word conta 6 ocorrências, e o nome só aparece duas vezes.',
+        'Caixa Localizar e Substituir aberta e circulada, com ana em Localizar, Ana em Substituir por, as duas caixas de opção desmarcadas e a contagem de 6 ocorrências no documento.'],
+      ['Substituir Tudo estragou o texto: semAna, MariAna, bAnana — tudo de uma vez, sem aviso.',
+        'Os dois parágrafos da escala circulados, agora com semAna, MariAna e bAnana escritos errado ao lado de Ana.'],
+      ['Ctrl+Z desfaz tudo. Com as duas caixas marcadas, a mesma busca acha só 2 ocorrências: as duas “ana” sozinhas.',
+        'A caixa Localizar e Substituir com Diferenciar maiúsculas de minúsculas e Localizar palavras inteiras marcadas e a contagem de 2 ocorrências, tudo circulado; o texto atrás voltou ao original.'],
+      ['Agora sim: só o nome mudou, e semana, Mariana e banana ficaram intactas.',
+        'Os dois parágrafos circulados com Ana em maiúscula nos dois lugares e semana, Mariana e banana escritas certo.'],
+    ],
   ),
 ];
 
@@ -407,14 +411,9 @@ const ENTREGAR: TopicoDeVereda[] = [
     'O documento como ele vai ser visto, e não como ele foi escrito.',
     [
       'PDF quer dizer *formato de documento portátil*, e a palavra que importa é portátil: ele carrega dentro dele as fontes, as imagens e as medidas, de modo que abre igual em qualquer computador, em qualquer celular, em qualquer impressora.',
-      'É o oposto do arquivo editável. O `.docx` guarda as **instruções** — "isto é Título 1, e Título 1 é Calibri 16" — e monta a página na hora de abrir, com o que a máquina tiver. Se ela não tiver a fonte, usa outra, e a quebra de página muda.',
+      'É o oposto do arquivo editável. O `.docx` guarda as **instruções** — "isto é Título 1, e Título 1 é Calibri 16" — e monta a página na hora de abrir, com o que a máquina tiver. Se ela não tiver a fonte, usa outra; a outra é um pouco mais larga, a linha quebra noutro lugar, e o título que fechava a folha 3 abre a folha 4. Quem conferiu o relatório no computador de casa e o imprime no do clube vê um documento que não foi o que conferiu.',
       'Por isso o PDF é o formato de entrega, e não o formato de trabalho: ele está certo em toda máquina justamente porque quase não dá para editá-lo.',
     ],
-    `.docx  →  instruções, montadas na hora de abrir
-           (a fonte pode faltar; a página pode mudar)
-
-.pdf   →  a página pronta, com tudo dentro
-           (abre igual em qualquer lugar)`,
     'PDF não é imagem, e não é seguro. O texto continua dentro dele — dá para copiar, dá para procurar palavra, e dá para editar com o programa certo. Ele congela a aparência, e não o conteúdo.',
     ['PDF', 'formato portátil', 'docx'],
   ),
@@ -423,19 +422,20 @@ const ENTREGAR: TopicoDeVereda[] = [
     'Exportar em PDF',
     'Um gesto, e um retrato do documento naquele instante.',
     [
-      'Exportar se faz por Arquivo › Exportar › Criar PDF, ou por Salvar Como escolhendo PDF na lista de tipos. Os dois caminhos chegam no mesmo lugar.',
+      'Exportar se faz por Arquivo › Exportar › Criar PDF/XPS, ou por Arquivo › Salvar como, escolhendo PDF na lista de tipos. Os dois caminhos chegam no mesmo lugar.',
       'E o PDF **congela o que existir na hora**, exatamente como o sumário guarda o que leu. Exportar cedo e continuar mexendo é o que se faz sem pensar, e o arquivo entregue fica sem o que veio depois — sem nada na tela dizendo isso.',
-      'A ordem que evita isso é sempre a mesma: terminar, aceitar as alterações, atualizar o sumário, e só então exportar.',
+      'A ordem que evita isso é sempre a mesma: terminar o texto; aceitar ou rejeitar as marcas de revisão; atualizar o sumário; só então exportar; e guardar o editável junto.',
     ],
-    `Ordem de entrega
-────────────────────────────────
-1. terminar o texto
-2. aceitar ou rejeitar as marcas
-3. atualizar o sumário
-4. exportar em PDF
-5. guardar o editável junto`,
     'O PDF exportado não se corrige: corrige-se o documento editável e exporta-se de novo. Quem conserta no PDF acaba com dois documentos diferentes, e o editável — que é o que vai ser usado no ano que vem — fica sendo o errado.',
     ['exportar', 'Salvar Como', 'ordem de entrega'],
+    [
+      ['O botão Exportar abre a mesma tela de Arquivo › Exportar.',
+        'Manual da Unidade Falcão aberto no Word, com o botão Exportar circulado no grupo Entrega, no fim da faixa.'],
+      ['Criar PDF/XPS. O próprio Word diz o que o PDF faz: mantém o layout, as fontes e as imagens, e não se altera facilmente.',
+        'Tela azul de bastidores do Word na seção Exportar, com a explicação de Criar Documento PDF/XPS e o botão Criar PDF/XPS circulado.'],
+      ['A barra de status passa a listar o PDF gravado. Ele é um retrato: o que mudar no documento daqui em diante não entra nele.',
+        'De volta ao documento, a barra de status embaixo mostra, circulado, o arquivo Manual da Unidade Falcão.pdf.'],
+    ],
   ),
   t(
     'editavel-e-pdf',
@@ -445,14 +445,16 @@ const ENTREGAR: TopicoDeVereda[] = [
       'O requisito 7 pede o relatório em PDF **e** em formato editável, e não é redundância: são dois usos diferentes do mesmo trabalho.',
       'O PDF é o que se lê, se imprime e se arquiva: ele é o documento como ele ficou, e ninguém o desconfigura por acidente.',
       'O editável é o que a próxima diretoria abre para fazer o relatório do ano seguinte. Sem ele, o clube tem um retrato bonito de um trabalho que vai ter de ser refeito do zero — e é por isso que a entrega é dupla.',
+      'Os dois levam o mesmo nome, com data e versão — `manual-falcao-2026-03-14-v01.docx` e `manual-falcao-2026-03-14-v01.pdf` —, que é o padrão de nomeação da CC-ES001 aplicado aqui.',
     ],
-    `relatorio-2026-03-14-v01.docx   ← o que se mexe
-relatorio-2026-03-14-v01.pdf    ← o que se lê
-
-Mesmo nome, mesma data, mesma versão.
-É o padrão de nomeação da CC-ES001, aplicado aqui.`,
-    'Os dois saem com o mesmo nome e a mesma versão, de propósito. Um par com nomes diferentes vira, seis meses depois, duas coisas que ninguém sabe se são a mesma.',
+    'Um par com nomes diferentes vira, seis meses depois, duas coisas que ninguém sabe se são a mesma. E um editável salvo antes de terminar, ao lado de um PDF novo, tem o mesmo nome e outro conteúdo — salve os dois depois da última mudança.',
     ['entrega', 'formato editável', 'versão'],
+    [
+      ['Arquivo › Salvar como: o nome leva data e versão, e o tipo é Documento do Word (.docx).',
+        'Tela de bastidores Salvar como, com o campo Nome do arquivo preenchido com manual-falcao-2026-03-14-v01 e o Tipo Documento do Word, os dois circulados.'],
+      ['Salvo o editável e exportado o PDF, a barra de status lista o par: o mesmo nome, um .docx e um .pdf.',
+        'Documento de volta à tela, com a barra de status circulada mostrando manual-falcao-2026-03-14-v01.docx e manual-falcao-2026-03-14-v01.pdf.'],
+    ],
   ),
 ];
 

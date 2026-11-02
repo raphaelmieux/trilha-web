@@ -10,6 +10,21 @@
  * **parar de olhar linha por linha**. Filtro em vez do olho, cabeçalho preso
  * em vez de rolar de volta, gráfico em vez de ler números.
  *
+ * ── É uma pasta de trabalho de verdade ───────────────────────────────────
+ * Ela era um objeto próprio — lista de inscritos, um campo com a fórmula do
+ * total, um booleano de filtro —, desenhado numa tabela que não era a grade
+ * do Excel. A célula do total ficava num painel ao lado, e "escrever a
+ * fórmula" era clicar num botão com o texto dela. O desbravador saía da AP043
+ * sabendo andar com as setas, F2 e Enter, e chegava aqui numa planilha em que
+ * nada disso existia.
+ *
+ * Hoje é a `Planilha` de `planilha.ts`, na grade de `excel.tsx`: o total mora
+ * em D123, embaixo da coluna que ele soma, e se escreve como toda fórmula se
+ * escreve. O `SUBTOTAL` é do motor de `formulas.ts`, e respeita o filtro
+ * porque pergunta a `linhaEscondida` — a mesma pergunta que a grade faz para
+ * esconder a linha. Duas respostas para "esta linha está à vista?" seriam o
+ * total e a tela discordando no primeiro ajuste.
+ *
  * ── Filtro esconde, e não apaga ──────────────────────────────────────────
  * É o mal-entendido que custa caro, e ele tem uma consequência que ninguém
  * conta: com filtro aplicado, `SOMA` continua somando tudo, inclusive o que
@@ -17,56 +32,34 @@
  * vê na tela — e manda esse total para a liderança.
  *
  * A planilha mostra os dois números ao mesmo tempo, como o Excel de verdade
- * mostra: a célula do total, que é a `SOMA`, e a barra de status, que soma o
- * que está à vista. Quando eles não batem, é porque há linha escondida.
- * `SUBTOTAL` é a fórmula que respeita o filtro, e é ela que a tarefa pede.
+ * mostra: a célula do total, que é a `SOMA`, e a barra de status, que soma a
+ * seleção pulando as linhas escondidas. Quando eles não batem, é porque há
+ * linha escondida. `SUBTOTAL` é a fórmula que respeita o filtro.
+ *
+ * ── Os meses moram em outra aba ──────────────────────────────────────────
+ * O filtro esconde a **linha inteira**, e não só a célula da tabela: uma
+ * tabela de meses posta ao lado dos inscritos sumiria junto quando alguém
+ * filtrasse, e o gráfico perderia os pontos sem explicação. É o que o Excel
+ * faz, e é por isso que se separa resumo de lista em abas.
  *
  * ── Congelar é de tela, e não de dado ────────────────────────────────────
  * Não muda a planilha, não trava célula contra edição e não vai para o PDF.
- * Vale dizer porque "congelar" soa como travar.
  *
  * ── E o gráfico é uma leitura ────────────────────────────────────────────
- * Criar é fácil; escolher o tipo é a lição, e o tipo sai da pergunta. A
- * pergunta aqui é de **evolução** — como a inscrição cresceu mês a mês —, e
- * ela só tem uma resposta certa. Pizza responde composição e barras respondem
- * comparação: nenhuma das duas mostra que março veio depois de fevereiro.
+ * O tipo sai da pergunta. A pergunta aqui é de **evolução** — como a inscrição
+ * cresceu mês a mês —, e ela só tem uma resposta certa.
  */
 
-export type TipoDeGrafico = 'nenhum' | 'pizza' | 'barras' | 'linha' | 'dispersao';
-
-export const NOMES_DOS_GRAFICOS: Record<TipoDeGrafico, string> = {
-  nenhum: '(nenhum)',
-  pizza: 'Pizza',
-  barras: 'Colunas',
-  linha: 'Linhas',
-  dispersao: 'Dispersão',
-};
-
-export interface Grafico {
-  tipo: TipoDeGrafico;
-  titulo: string;
-  /** Os eixos foram identificados — sem isso o gráfico não afirma nada. */
-  eixos: boolean;
-}
+import {
+  type Caderno, type Celula, type Planilha,
+  planilhaDe, valorCalculado, linhaEscondida, pontosDoGrafico,
+} from './planilha';
 
 export interface Inscrito {
   nome: string;
   unidade: string;
   diarias: number;
   valor: number;
-}
-
-export interface Acampamento {
-  inscritos: Inscrito[];
-  /** O filtro está ligado: as setinhas aparecem no cabeçalho. */
-  filtroLigado: boolean;
-  /** A unidade escolhida no filtro, ou vazio para todas. */
-  unidadeFiltrada: string;
-  /** A fórmula escrita na célula do total. */
-  formulaDoTotal: string;
-  /** Quantas linhas do alto ficam paradas enquanto o resto rola. */
-  linhasCongeladas: number;
-  grafico: Grafico | null;
 }
 
 export const UNIDADES = ['Falcão', 'Águia', 'Tucano', 'Arara', 'Jaguar', 'Onça'];
@@ -104,29 +97,87 @@ export const FORMULA_INICIAL = '=SOMA(D2:D121)';
 /** A que respeita o filtro. 109 é o código da soma que ignora o escondido. */
 export const FORMULA_QUE_RESPEITA = '=SUBTOTAL(109;D2:D121)';
 
-export const ACAMPAMENTO_INICIAL: Acampamento = {
-  inscritos: INSCRITOS,
-  filtroLigado: false,
-  unidadeFiltrada: '',
-  formulaDoTotal: FORMULA_INICIAL,
-  linhasCongeladas: 0,
-  grafico: null,
-};
+/** Onde as coisas moram na aba Inscritos. */
+export const COLUNA_DA_UNIDADE = 1;
+export const COLUNA_DO_VALOR = 3;
+/** D123: a linha 123 da tela, depois de uma linha em branco embaixo da tabela. */
+export const CELULA_DO_TOTAL = { l: 122, c: COLUNA_DO_VALOR };
+export const ABA_DOS_INSCRITOS = 0;
+export const ABA_DOS_MESES = 1;
 
-/** As linhas que a tela mostra: as escondidas continuam existindo. */
-export const inscritosNaTela = (a: Acampamento): Inscrito[] =>
-  a.unidadeFiltrada ? a.inscritos.filter(x => x.unidade === a.unidadeFiltrada) : a.inscritos;
+const emReais = (c: Celula): Celula => ({ ...c, formato: 'moeda' });
+const negrito = (c: Celula): Celula => ({ ...c, negrito: true });
 
-/** O que a célula do total mostra, conforme a fórmula que está escrita nela. */
-export function totalDaCelula(a: Acampamento): number {
-  const respeita = a.formulaDoTotal.toUpperCase().startsWith('=SUBTOTAL');
-  const linhas = respeita ? inscritosNaTela(a) : a.inscritos;
-  return linhas.reduce((s, x) => s + x.valor, 0);
+function abaDosInscritos(): Planilha {
+  const conteudo: string[][] = [
+    ['Nome', 'Unidade', 'Diárias', 'Valor'],
+    ...INSCRITOS.map(i => [i.nome, i.unidade, String(i.diarias), String(i.valor)]),
+    [],
+    ['', '', 'Total', FORMULA_INICIAL],
+  ];
+  const p = planilhaDe('Inscritos', conteudo, {
+    tabela: { l1: 0, c1: 0, l2: INSCRITOS.length, c2: 3 },
+  });
+  return {
+    ...p,
+    larguras: p.larguras.map((w, c) => (c === 0 ? 110 : w)),
+    celulas: p.celulas.map((linha, l) => linha.map((cel, c) => {
+      if (l === 0 && c <= 3) return negrito(cel);
+      if (c === COLUNA_DO_VALOR && l >= 1 && l <= CELULA_DO_TOTAL.l) return emReais(l === CELULA_DO_TOTAL.l ? negrito(cel) : cel);
+      if (l === CELULA_DO_TOTAL.l && c === 2) return negrito(cel);
+      return cel;
+    })),
+  };
 }
 
-/** O que a barra de status soma: sempre o que está à vista, como no Excel. */
-export const totalNaTela = (a: Acampamento): number =>
-  inscritosNaTela(a).reduce((s, x) => s + x.valor, 0);
+function abaDosMeses(): Planilha {
+  const p = planilhaDe('Por mês', [
+    ['Mês', 'Inscrições'],
+    ...INSCRICOES_POR_MES.map(m => [m.mes, String(m.total)]),
+  ]);
+  return { ...p, celulas: p.celulas.map((linha, l) => linha.map(cel => (l === 0 ? negrito(cel) : cel))) };
+}
+
+/** A pasta de partida. Função, e não constante: cada lição parte de uma cópia limpa. */
+export const acampamentoInicial = (): Caderno => ({
+  planilhas: [abaDosInscritos(), abaDosMeses()],
+  ativa: ABA_DOS_INSCRITOS,
+});
+
+/* ── As contas ─────────────────────────────────────────────────────────────── */
+
+const inscritos = (cad: Caderno) => cad.planilhas[ABA_DOS_INSCRITOS];
+const meses = (cad: Caderno) => cad.planilhas[ABA_DOS_MESES];
+
+const numero = (p: Planilha, l: number, c: number): number | null => {
+  const v = valorCalculado(p, l, c);
+  return v.tipo === 'numero' ? v.n : null;
+};
+
+/** O que a célula do total mostra agora. */
+export const totalDaCelula = (cad: Caderno): number | null =>
+  numero(inscritos(cad), CELULA_DO_TOTAL.l, CELULA_DO_TOTAL.c);
+
+/** A soma do que está à vista — o que a barra de status mostra com a coluna selecionada. */
+export function totalNaTela(cad: Caderno): number {
+  const p = inscritos(cad);
+  let soma = 0;
+  for (let l = 1; l <= INSCRITOS.length; l++) {
+    if (linhaEscondida(p, l)) continue;
+    soma += numero(p, l, COLUNA_DO_VALOR) ?? 0;
+  }
+  return soma;
+}
+
+/** Quantos inscritos aparecem na tela. */
+export function inscritosVisiveis(cad: Caderno): number {
+  const p = inscritos(cad);
+  let n = 0;
+  for (let l = 1; l <= INSCRITOS.length; l++) if (!linhaEscondida(p, l)) n++;
+  return n;
+}
+
+const TOTAL_DE_TODOS = INSCRITOS.reduce((s, i) => s + i.valor, 0);
 
 export interface MetaDoAcampamento {
   id: string;
@@ -134,7 +185,7 @@ export interface MetaDoAcampamento {
   detalhe: string;
   onde: string;
   passos: string[];
-  feita: (a: Acampamento) => boolean;
+  feita: (cad: Caderno) => boolean;
 }
 
 export const METAS_DO_ACAMPAMENTO: MetaDoAcampamento[] = [
@@ -142,36 +193,48 @@ export const METAS_DO_ACAMPAMENTO: MetaDoAcampamento[] = [
     id: 'filtro',
     titulo: 'Filtrar por uma unidade',
     detalhe: 'São cento e vinte linhas e você precisa ver só as de uma unidade. Ligue o filtro e escolha uma — e repare que as outras continuam lá, escondidas.',
-    onde: 'Página Inicial › Classificar e Filtrar › Filtro',
+    onde: 'Dados › Classificar e Filtrar › Filtro',
     passos: [
       'Clique em qualquer célula da tabela.',
-      'Em Classificar e Filtrar, clique em Filtro: aparecem setinhas no cabeçalho.',
+      'Na guia Dados, clique em Filtro: aparecem setinhas no cabeçalho.',
       'Clique na setinha da coluna Unidade e escolha uma.',
-      'Olhe o rodapé: ele continua dizendo quantas linhas existem, e não só as que aparecem.',
+      'Repare nos números das linhas à esquerda: eles pulam, porque as outras linhas continuam lá.',
     ],
-    feita: a => a.filtroLigado && a.unidadeFiltrada !== '' && inscritosNaTela(a).length > 0,
+    feita: cad => {
+      const f = inscritos(cad).filtro;
+      return !!f && f.coluna === COLUNA_DA_UNIDADE && f.valor !== '' && inscritosVisiveis(cad) > 0;
+    },
   },
   {
     id: 'soma',
     titulo: 'Fazer o total respeitar o filtro',
-    detalhe: 'Com o filtro aplicado, a célula do total continua somando as cento e vinte — inclusive as escondidas. Compare com o número do rodapé: eles não batem. Troque a fórmula por uma que respeite o filtro.',
-    onde: 'Na célula do total, ou na barra de fórmulas',
+    detalhe: 'Com o filtro aplicado, a célula D123 continua somando as cento e vinte — inclusive as escondidas. Selecione a coluna Valor e compare com a Soma do rodapé: elas não batem. Troque a fórmula por uma que respeite o filtro.',
+    onde: 'Na célula D123, ou na barra de fórmulas',
     passos: [
-      'Repare nos dois números: o da célula do total e o do rodapé.',
-      'Clique na célula do total e olhe a fórmula: ela soma o intervalo inteiro.',
-      `Troque por ${FORMULA_QUE_RESPEITA} — o 109 é a soma que ignora o que está escondido.`,
-      'Agora os dois números batem, e continuam batendo quando você troca o filtro.',
+      'Selecione D2 até D121 e leia a Soma na barra de status, embaixo à direita.',
+      'Compare com o número da célula D123: ele é maior.',
+      `Clique em D123 e escreva ${FORMULA_QUE_RESPEITA} — o 109 é a soma que ignora o que está escondido.`,
+      'Agora os dois números batem, e continuam batendo quando você troca a unidade do filtro.',
     ],
     /*
-      Duas condições, e a segunda não é redundante.
+      Três condições, e nenhuma é redundante.
 
-      Exigir só a fórmula deixaria passar quem a escreveu sem nunca ter
-      filtrado nada — e a lição inteira é a diferença entre os dois números,
-      que só existe com filtro aplicado.
+      A fórmula sozinha deixaria passar quem a escreveu sem nunca ter filtrado
+      nada — e a lição inteira é a diferença entre os dois números, que só
+      existe com filtro aplicado. O número batendo com a tela deixaria passar
+      `=SUBTOTAL(109;D2:D40)` numa unidade cujas linhas visíveis por acaso
+      somam o mesmo; tirar o filtro **dentro da conferência** é o que mostra
+      que a faixa alcança os cento e vinte.
     */
-    feita: a => a.formulaDoTotal.toUpperCase().startsWith('=SUBTOTAL')
-      && a.unidadeFiltrada !== ''
-      && totalDaCelula(a) === totalNaTela(a),
+    feita: cad => {
+      const p = inscritos(cad);
+      const texto = p.celulas[CELULA_DO_TOTAL.l]?.[CELULA_DO_TOTAL.c]?.texto ?? '';
+      if (!/^\s*=\s*SUBTOTAL\s*\(/i.test(texto)) return false;
+      if (!p.filtro?.valor) return false;
+      if (totalDaCelula(cad) !== totalNaTela(cad)) return false;
+      const semFiltro = { ...cad, planilhas: cad.planilhas.map((q, i) => (i === ABA_DOS_INSCRITOS ? { ...q, filtro: null } : q)) };
+      return totalDaCelula(semFiltro) === TOTAL_DE_TODOS;
+    },
   },
   {
     id: 'congelar',
@@ -184,19 +247,24 @@ export const METAS_DO_ACAMPAMENTO: MetaDoAcampamento[] = [
       'Role a tabela: o cabeçalho fica, o resto passa por baixo dele.',
       'Congelar é coisa de tela — não muda dado nenhum e não aparece na impressão.',
     ],
-    feita: a => a.linhasCongeladas >= 1,
+    feita: cad => inscritos(cad).congeladas >= 1,
   },
   {
     id: 'grafico',
     titulo: 'Desenhar como a inscrição cresceu',
     detalhe: 'A pergunta é de evolução: como a inscrição cresceu de janeiro a junho. Escolha o tipo de gráfico que responde isso — pizza responde composição, colunas respondem comparação, e nenhuma das duas mostra que março veio depois de fevereiro.',
-    onde: 'Inserir › Gráficos',
+    onde: 'Aba Por mês › Inserir › Gráficos',
     passos: [
-      'Selecione a tabela dos meses, que está ao lado da lista de inscritos.',
-      'Em Inserir, abra Gráficos.',
-      'Escolha o tipo que mostra evolução no tempo.',
+      'Abra a aba Por mês, no pé da janela.',
+      'Selecione A1 até B7, os meses com os números.',
+      'Em Inserir, clique em Gráfico de Linhas.',
     ],
-    feita: a => a.grafico?.tipo === 'linha',
+    /* Os seis meses dentro da faixa: um gráfico de linhas sobre três deles
+       desenha uma subida, e não a de janeiro a junho. */
+    feita: cad => {
+      const q = meses(cad);
+      return q.grafico?.tipo === 'linha' && pontosDoGrafico(q).length === INSCRICOES_POR_MES.length;
+    },
   },
   {
     id: 'rotulos',
@@ -204,10 +272,13 @@ export const METAS_DO_ACAMPAMENTO: MetaDoAcampamento[] = [
     detalhe: 'Sem eles, o gráfico é um desenho bonito que não afirma nada — e quem lê precisa adivinhar o que está medido.',
     onde: 'Design do Gráfico › Adicionar Elemento Gráfico',
     passos: [
-      'Clique no gráfico para que a guia de design apareça.',
+      'Clique no gráfico para que a guia Design do Gráfico apareça.',
       'Em Adicionar Elemento Gráfico, escreva o título.',
-      'Ainda ali, ligue os títulos dos eixos.',
+      'Ainda ali, escreva o título de cada eixo.',
     ],
-    feita: a => !!a.grafico && a.grafico.titulo.trim().length >= 4 && a.grafico.eixos,
+    feita: cad => {
+      const g = meses(cad).grafico;
+      return !!g && g.titulo.trim().length >= 4 && g.eixoX.trim() !== '' && g.eixoY.trim() !== '';
+    },
   },
 ];

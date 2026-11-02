@@ -6,6 +6,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import PlanilhaLab from './PlanilhaLab';
+import PlanilhaAvancadaLab from './PlanilhaAvancadaLab';
 import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
 import LaboratorioDeDados from '../components/LaboratorioDeDados';
 import LaboratorioDaAnalise from '../components/LaboratorioDaAnalise';
@@ -76,6 +77,13 @@ const VEREDA = { code: 'CC-ES003' } as Vereda;
  * conferência de baixo cobra que nenhum tenha ficado de fora.
  */
 const LABORATORIOS: Record<string, () => React.ReactElement> = {
+  'labs/PlanilhaAvancadaLab.tsx': () => (
+    <PlanilhaAvancadaLab
+      specialtyCode="AP044" lessonCode="AP044.5-L2"
+      lessonTitle="Filtrando e desenhando as inscrições"
+      requirementCodes={['AP044-8.1']}
+      userId="00000000-0000-0000-0000-000000000000" />
+  ),
   'labs/PlanilhaLab.tsx': () => (
     <PlanilhaLab
       specialtyCode="AP043" lessonCode="AP043.5-L2"
@@ -328,6 +336,70 @@ const GESTOS: Record<string, Gesto> = {
     });
     teclar(campo, 'Enter');
     expect(lido(L, 0), 'o Enter da barra não gravou').toBe('Semeadores');
+  },
+
+  /*
+    Inserir e Editar: quem começou digitando anda com a seta, quem abriu com F2
+    anda dentro do texto. Sem a diferença, preencher uma coluna inteira pedia
+    um Enter por célula, e corrigir uma letra no meio era impossível.
+  */
+  'no modo Inserir a seta grava e anda; no modo Editar ela fica no texto': () => {
+    apontar(celula(L, 1));
+    teclar(grade(), 'Q');
+    teclar(campoDaCelula()!, 'ArrowDown');
+    expect(lido(L, 1), 'a seta não gravou o que se digitou').toBe('Q');
+    expect(nomeDaCaixa(), 'a seta não desceu depois de gravar').toBe(`B${L + 2}`);
+    teclar(grade(), 'F2');
+    expect(campoDaCelula(), 'o F2 não abriu a edição').not.toBeNull();
+    teclar(campoDaCelula()!, 'ArrowDown');
+    expect(campoDaCelula(), 'no modo Editar a seta saiu da célula').not.toBeNull();
+  },
+
+  /* Apontar: a fórmula esperando referência, e o clique escrevendo o nome. */
+  'escrevendo uma fórmula, clicar noutra célula escreve o nome dela': () => {
+    apontar(celula(L, 0));
+    teclar(grade(), '=');
+    apontar(celula(L + 1, 1));
+    expect(campoDaCelula()?.value, 'o clique não escreveu a referência').toBe(`=B${L + 2}`);
+    apontar(celula(L + 1, 2));
+    expect(campoDaCelula()?.value, 'o segundo clique não trocou a referência apontada').toBe(`=C${L + 2}`);
+    digitar('+');
+    apontar(celula(L + 2, 2));
+    expect(campoDaCelula()?.value).toBe(`=C${L + 2}+C${L + 3}`);
+    teclar(campoDaCelula()!, 'Escape');
+  },
+
+  'F4 gira o cifrão da referência: A1, $A$1, A$1, $A1': () => {
+    apontar(celula(L, 0));
+    teclar(grade(), '=');
+    digitar('B2');
+    teclar(campoDaCelula()!, 'F4');
+    expect(campoDaCelula()?.value).toBe('=$B$2');
+    teclar(campoDaCelula()!, 'F4');
+    expect(campoDaCelula()?.value).toBe('=B$2');
+    teclar(campoDaCelula()!, 'F4');
+    expect(campoDaCelula()?.value).toBe('=$B2');
+    teclar(campoDaCelula()!, 'F4');
+    expect(campoDaCelula()?.value).toBe('=B2');
+    teclar(campoDaCelula()!, 'Escape');
+  },
+
+  'depois de uma sequência de Tabs, o Enter volta à coluna de onde ela saiu': () => {
+    apontar(celula(L, 1));
+    teclar(grade(), 'Tab');
+    teclar(grade(), 'Tab');
+    expect(nomeDaCaixa()).toBe(`D${L + 1}`);
+    teclar(grade(), 'Enter');
+    expect(nomeDaCaixa(), 'o Enter não voltou à coluna do primeiro Tab').toBe(`B${L + 2}`);
+  },
+
+  'Ctrl+Home vai a A1, e Ctrl+seta para na borda da grade quando não há dado': () => {
+    apontar(celula(L, 1));
+    teclar(grade(), 'Home', { ctrlKey: true });
+    expect(nomeDaCaixa()).toBe('A1');
+    apontar(celula(L + 5, 0));
+    teclar(grade(), 'ArrowDown', { ctrlKey: true });
+    expect(Number(nomeDaCaixa().slice(1)), 'Ctrl+seta para baixo não saltou').toBeGreaterThan(L + 6);
   },
 };
 

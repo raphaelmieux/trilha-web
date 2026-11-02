@@ -67,6 +67,20 @@ import type { BancoEsperado, RegistroEsperado } from '../lib/pythonValidator';
  * migration nova — `vereda_<id>`. `insignias.test.ts` cobra.
  */
 
+/** Um passo da operação mostrada: a tela e o que ela mostra. */
+export interface TelaDoExemplo {
+  /** O caminho dentro de `public/assets/exemplos/`: `<código da vereda>/<arquivo>.png`. */
+  imagem: string;
+  /** O que este passo mostra, em uma ou duas frases. Aparece embaixo da tela. */
+  legenda: string;
+  /**
+   * O que está na imagem, para quem não a vê — leitor de tela, e quem está com
+   * a imagem bloqueada pela rede do clube. Diz o que a tela mostra, e não o que
+   * a legenda já disse.
+   */
+  descricao: string;
+}
+
 export interface TopicoDeVereda {
   id: string;
   titulo: string;
@@ -74,8 +88,34 @@ export interface TopicoDeVereda {
   resumo: string;
   /** Dois ou três parágrafos curtos. Frase curta, exemplo do dia a dia. */
   explicacao: string[];
-  /** O exemplo. Roda de verdade no quadro do resultado, quando a vereda mostra um. */
-  exemplo: string;
+  /**
+   * O exemplo. Roda de verdade no quadro do resultado, quando a vereda mostra um.
+   *
+   * Ausente, o tópico não tem exemplo — e é o caso da maior parte das veredas
+   * que não escrevem código. Lá o exemplo era um quadro de texto puro desenhado
+   * à mão (uma tabela de "com estilo / sem estilo", uma seta entre duas
+   * palavras) que repetia a explicação em outro formato e não mostrava operação
+   * nenhuma: quem o lia não via nada que o parágrafo de cima já não tivesse
+   * dito. O que mostra uma operação de programa são as `telas`; o que só
+   * resumia, saiu.
+   */
+  exemplo?: string;
+  /**
+   * A operação mostrada no programa, uma tela por passo.
+   *
+   * Cada imagem é a janela do próprio laboratório — o Word, o Excel, o
+   * Explorador que o desbravador vai operar logo depois —, fotografada pela
+   * página de bastidor (`exemplos.html`) seguindo um roteiro em
+   * `src/exemplos/roteiros.ts`. Não é captura de programa comercial: a licença
+   * do repositório não comporta arte de terceiros, e a tela que importa é a que
+   * a pessoa vai encontrar no laboratório, com os mesmos botões nos mesmos
+   * lugares. E o documento fotografado nunca é o do exercício: mostrar o gesto
+   * no arquivo da lição seria entregar o gabarito.
+   *
+   * `telasDasLicoes.test.ts` cobra que toda imagem exista, que nenhuma sobre, e
+   * que o roteiro produza exatamente as telas que o tópico declara.
+   */
+  telas?: TelaDoExemplo[];
   /**
    * O que o exemplo é, e portanto como ele se desenha.
    *
@@ -1781,4 +1821,31 @@ export function codigoDaInsigniaDaVereda(id: string): string {
   /* Só letras e números: o código da insígnia é `[a-z0-9_]`, e um id como
      `cc-fe002` traria um hífen que a tabela não aceita. */
   return `vereda_${id.replace(/[^a-z0-9]/g, '')}`;
+}
+
+/** O começo do código de toda insígnia de laboratório de vereda. */
+export const PREFIXO_DA_INSIGNIA_DE_LABORATORIO_DE_VEREDA = 'lab_vereda_';
+
+/**
+ * A insígnia de cada laboratório de vereda.
+ *
+ * Todo laboratório concluído rende uma conquista, e o de vereda não é exceção:
+ * a insígnia da vereda inteira só cai quando tudo está vencido, e quem fez
+ * sete laboratórios de doze ficava sem nada na estante dizendo isso. O código
+ * sai do **id** da vereda e do **id** da lição, que nunca mudam — o `code` da
+ * tela pode ser renomeado sem que ninguém perca a insígnia, pela mesma razão
+ * escrita em `codigoDaInsigniaDaVereda`.
+ *
+ * O prefixo não é o `lab_` sozinho dos laboratórios de trilha: aqueles
+ * nascem de um `LabType`, e a trava que cobra que todo `lab_<tipo>` tenha
+ * laboratório no currículo das trilhas acusaria estes de órfãos.
+ */
+export function codigoDaInsigniaDoLaboratorioDeVereda(veredaId: string, licaoId: string): string {
+  const limpo = (s: string) => s.replace(/[^a-z0-9]/g, '');
+  return `${PREFIXO_DA_INSIGNIA_DE_LABORATORIO_DE_VEREDA}${limpo(veredaId)}_${limpo(licaoId)}`;
+}
+
+/** É insígnia de laboratório de vereda? */
+export function ehInsigniaDeLaboratorioDeVereda(code: string): boolean {
+  return code.startsWith(PREFIXO_DA_INSIGNIA_DE_LABORATORIO_DE_VEREDA);
 }

@@ -176,11 +176,12 @@ export const METAS_DO_OFICIO: MetaDoOficio[] = [
     titulo: 'Tirar toda a formatação direta',
     detalhe: 'Aplicar o estilo não apaga o negrito e o tamanho que estavam por cima — eles continuam lá, '
       + 'vencendo o estilo. Enquanto não saírem, mudar o estilo não muda nada, que é o contrário do que a vereda inteira ensina.',
-    onde: 'Início › Fonte › Limpar Toda a Formatação',
+    onde: 'Início › Fonte (Ctrl+A e depois Ctrl+Espaço)',
     passos: [
-      'Selecione o parágrafo — ou use Selecionar Tudo, que aqui é o caminho mais curto.',
-      'No grupo Fonte, clique em "Limpar Toda a Formatação" (o A com a borracha).',
-      'Confira: o estilo continua aplicado, e o que sai é só o que alguém tinha posto por cima dele.',
+      'Selecione o documento inteiro com Ctrl+A.',
+      'Aperte Ctrl+Espaço: ele tira a formatação de caractere — o negrito, o tamanho e a cor postos à mão — e deixa o estilo.',
+      'Confira: os títulos continuam com Título 1 e Título 2, e agora têm a cara do estilo, e não a do negrito.',
+      'O botão "Limpar Toda a Formatação" (o A com a borracha) também tira a direta — e tira o estilo junto: os títulos voltariam a Normal, e seria preciso aplicá-los de novo.',
     ],
     feita: d => textoIntacto(d) && comFormatacaoDireta(d).length === 0,
   },

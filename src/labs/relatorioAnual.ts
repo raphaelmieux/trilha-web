@@ -122,9 +122,24 @@ export const TEXTO_ORIGINAL = textoDoDoc(RELATORIO_ANUAL_INICIAL);
 
 /* ── Ler o documento ──────────────────────────────────────────────────────── */
 
-/** A seção de encerramento já entrou? */
-export const temASecaoQueFaltava = (d: Doc): boolean =>
-  paragrafos(d).some(b => b.id === SECAO_QUE_FALTA.tituloId);
+const normal = (t: string) => t.trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
+
+/**
+ * A seção de encerramento já entrou: o título com estilo Título 1, numa folha
+ * própria, e um parágrafo de texto logo abaixo dele.
+ *
+ * Ela é **escrita**, e não posta por um botão: Ctrl+Enter no fim do documento,
+ * o título, o estilo, e o corpo. Procura-se pelo texto do título — e não por
+ * um id, que só um botão saberia dar — e o estilo faz parte da conta: é ele
+ * que o sumário procura, e um título em negrito à mão ficaria de fora dele.
+ */
+export function temASecaoQueFaltava(d: Doc): boolean {
+  const ps = paragrafos(d);
+  const i = ps.findIndex(b => b.estilo === 'Título 1' && normal(textoDoBloco(b)) === normal(SECAO_QUE_FALTA.titulo));
+  if (i < 0 || !ps[i].quebraDePagina) return false;
+  const corpo = ps[i + 1];
+  return !!corpo && textoDoBloco(corpo).trim().split(/\s+/).filter(Boolean).length >= 6;
+}
 
 /** O cabeçalho diz alguma coisa, e não só existe. */
 export const cabecalhoEscrito = (d: Doc): boolean =>
@@ -190,8 +205,10 @@ export const METAS_DO_RELATORIO_ANUAL: MetaDoRelatorioAnual[] = [
       + 'Depois de acrescentá-la, olhe o sumário: se você já o tinha gerado, ele não sabe que ela existe.',
     onde: 'no fim do relatório',
     passos: [
-      'Use o botão "Acrescentar a seção de encerramento", na guia Inserir.',
-      'Ela entra com o estilo Título 1, que é o que o sumário procura.',
+      'Clique no fim do último parágrafo do relatório e aperte Enter.',
+      'Aperte Ctrl+Enter — ou Inserir › Quebra de Página — para a seção começar em folha própria.',
+      `Escreva o título: "${SECAO_QUE_FALTA.titulo}", e escolha Título 1 na galeria de Estilos da guia Início.`,
+      'Aperte Enter e cole o texto da seção (o botão "Copiar o texto da seção" fica no painel).',
       'Volte à folha 1 e olhe o sumário.',
     ],
     feita: temASecaoQueFaltava,

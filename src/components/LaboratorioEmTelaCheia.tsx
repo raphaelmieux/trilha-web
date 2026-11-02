@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
+import { NoBastidor } from './bastidor';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, ArrowLeft, X, ListChecks, MonitorSmartphone, LifeBuoy } from 'lucide-react';
 
@@ -213,6 +214,7 @@ export default function LaboratorioEmTelaCheia({
   trilha, voltarPara, titulo, programa, imitaPrograma = true,
   tarefas, aviso, children, acoes, rodape = 0,
 }: Props) {
+  const noBastidor = useContext(NoBastidor);
   const [painelAberto, setPainelAberto] = useState(true);
   const [avisoDeTela, setAvisoDeTela] = useState(() => imitaPrograma && !jaAvisado(programa));
   /* Com o aviso de pé a bolha começa fechada: dois painéis escuros empilhados
@@ -290,6 +292,16 @@ export default function LaboratorioEmTelaCheia({
     }}>{feita ? '✓' : ''}</span>
   );
 
+  /* Depois de todos os ganchos, que o React conta pela ordem. */
+  if (noBastidor) {
+    return (
+      <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: imitaPrograma ? FUNDO_DO_PROGRAMA : FUNDO_DA_PLATAFORMA }}>
+        <style>{CSS_DA_MOLDURA}</style>
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">{children}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: imitaPrograma ? FUNDO_DO_PROGRAMA : FUNDO_DA_PLATAFORMA }}>
       <style>{CSS_DA_MOLDURA}</style>
@@ -323,7 +335,7 @@ export default function LaboratorioEmTelaCheia({
                 botão de entregar justamente quando ele aparece. */}
             <div className="flex-1 min-h-0 overflow-auto">
               {tarefas.map(t => (
-                <div key={t.id} className="flex gap-2 px-3 py-2.5"
+                <div key={t.id} className="flex gap-2 px-3 py-2.5" data-tarefa={t.id} data-feita={t.feita ? 'sim' : 'nao'}
                   style={{ borderBottom: '1px solid #F3F2F1', fontSize: 12, color: '#3B3A39' }}>
                   <Marca feita={t.feita} />
                   <div className="min-w-0">

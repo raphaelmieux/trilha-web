@@ -1,7 +1,8 @@
 import { supabase } from './supabase';
 import { logActivity } from './progress';
 import {
-  VEREDAS, veredasAbertas, licoesDaVereda, type Vereda, type LicaoDeVereda,
+  VEREDAS, veredasAbertas, licoesDaVereda, codigoDaInsigniaDoLaboratorioDeVereda,
+  type Vereda, type LicaoDeVereda,
 } from '../curriculum/veredas';
 import { objeto, type EventoDeAtividade } from './atividade';
 
@@ -58,6 +59,15 @@ export interface PercursoDeVereda {
     nossa não se cobra de quem já andou.
   */
   topicos: Set<string>;
+  /*
+    Quando a pessoa venceu alguma coisa aqui pela última vez.
+
+    É o que põe a vereda em ordem no "Continue de onde parou" do painel, ao
+    lado das trilhas: quem estudou a CC002 ontem e a AP043 na semana passada
+    precisa ver a CC002 primeiro. Sai do `created_at` dos mesmos eventos — nada
+    novo é gravado, e o histórico de quem já percorreu entra junto.
+  */
+  ultimaVez?: string;
 }
 
 export type PercursoDasVeredas = Record<string, PercursoDeVereda>;
@@ -73,12 +83,19 @@ export function percursoDosEventos(eventos: EventoDeAtividade[]): PercursoDasVer
       : typeof m.trilha === 'string' ? m.trilha : null;
     if (!vereda) continue;
 
+    let registrou = false;
     if (EVENTOS_DE_TOPICO.includes(e.event_type)) {
       const topico = typeof m.topico === 'string' ? m.topico : null;
-      if (topico) (feito[vereda] ??= percursoVazio()).topicos.add(topico);
+      if (topico) { (feito[vereda] ??= percursoVazio()).topicos.add(topico); registrou = true; }
     } else if (e.event_type === EVENTO_LABORATORIO || e.event_type === EVENTO_TEORIA) {
       const licao = typeof m.licao === 'string' ? m.licao : null;
-      if (licao) (feito[vereda] ??= percursoVazio()).licoes.add(licao);
+      if (licao) { (feito[vereda] ??= percursoVazio()).licoes.add(licao); registrou = true; }
+    }
+    /* Comparação de texto, e não de `Date`: o ISO do Postgres ordena certo
+       como texto, e a mais recente vence em qualquer ordem de chegada. */
+    const quando = e.created_at;
+    if (registrou && quando && (!feito[vereda].ultimaVez || quando > feito[vereda].ultimaVez!)) {
+      feito[vereda].ultimaVez = quando;
     }
   }
   return feito;
@@ -125,6 +142,14 @@ export interface ConquistasNasVeredas {
    * um erro de digitação.
    */
   requisitos: number;
+  /**
+   * Os laboratórios vencidos, pelo código da insígnia de cada um.
+   *
+   * Sai do mesmo laço que conta as lições, e não de um segundo: duas leituras
+   * dos mesmos eventos discordariam no primeiro ajuste, e a estante diria que a
+   * pessoa venceu sete laboratórios enquanto a escada de Lições contava seis.
+   */
+  laboratoriosDeVereda: string[];
 }
 
 /**
@@ -167,6 +192,7 @@ export function conquistasNasVeredas(
   const percurso = percursoDosEventos(eventos);
   let licoes = 0;
   let modulos = 0;
+  const laboratoriosDeVereda: string[] = [];
 
   for (const vereda of registro) {
     const feito = percurso[vereda.id];
@@ -179,15 +205,18 @@ export function conquistasNasVeredas(
         vez, agora premiando módulo que ninguém percorreu.
       */
       if (modulo.licoes.length === 0) continue;
-      const vencidas = modulo.licoes.filter(l => licaoVencida(l, feito)).length;
-      licoes += vencidas;
-      if (vencidas === modulo.licoes.length) modulos += 1;
+      const vencidas = modulo.licoes.filter(l => licaoVencida(l, feito));
+      licoes += vencidas.length;
+      for (const l of vencidas) {
+        if (l.tipo !== 'teoria') laboratoriosDeVereda.push(codigoDaInsigniaDoLaboratorioDeVereda(vereda.id, l.id));
+      }
+      if (vencidas.length === modulo.licoes.length) modulos += 1;
     }
   }
 
   /* `requisitos` sai de `licoes` por escrito, e não por um segundo laço que
      contaria a mesma coisa e discordaria no primeiro ajuste. */
-  return { licoes, modulos, requisitos: licoes };
+  return { licoes, modulos, requisitos: licoes, laboratoriosDeVereda };
 }
 
 /**
