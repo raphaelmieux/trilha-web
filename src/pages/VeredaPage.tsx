@@ -18,6 +18,7 @@ import LaboratorioDeBlocos from '../components/LaboratorioDeBlocos';
 import LaboratorioDeScratch from '../components/LaboratorioDeScratch';
 import LaboratorioDeAmbiente from '../components/LaboratorioDeAmbiente';
 import LaboratorioDeTerminal from '../components/LaboratorioDeTerminal';
+import LaboratorioDoProjetoDePrograma from '../components/LaboratorioDoProjetoDePrograma';
 import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
 import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
 import LaboratorioDePdf from '../components/LaboratorioDePdf';
@@ -528,6 +529,15 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'banco' && profile?.id) {
     return (
       <LaboratorioDeBanco vereda={vereda} licao={licaoAberta} userId={profile.id}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /* A CC006: a proposta, o diário de bordo e o roteiro da apresentação. As
+     outras lições dela são de Python e de terminal, e passam pelo caminho delas. */
+  if (licaoAberta?.tipo === 'projeto-de-programa' && profile?.id) {
+    return (
+      <LaboratorioDoProjetoDePrograma vereda={vereda} licao={licaoAberta}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

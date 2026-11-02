@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, RotateCcw, TerminalSquare, FileCode2, Save, X } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
-  maquinaInicial, rodar, achar, resolver, escreverArquivo, palavras,
+  rodar, achar, resolver, escreverArquivo, palavras,
   type Maquina,
 } from '../labs/terminal';
+import { computadorDaLicao } from '../labs/computadores';
 import { validarTerminal } from '../lib/terminalValidator';
 import { PASSOS_DO_TERMINAL } from '../labs/passosDeTerminal';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
@@ -67,7 +68,7 @@ export default function LaboratorioDeTerminal({ vereda, licao, aoVencer, aoSair 
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
 }) {
-  const [maquina, setMaquina] = useState<Maquina>(maquinaInicial);
+  const [maquina, setMaquina] = useState<Maquina>(() => computadorDaLicao(licao));
   const [linhas, setLinhas] = useState<Linha[]>(BOAS_VINDAS);
   const [entrada, setEntrada] = useState('');
   /** Onde a seta para cima está, contando do fim. -1 é "na linha em branco". */
@@ -191,7 +192,7 @@ export default function LaboratorioDeTerminal({ vereda, licao, aoVencer, aoSair 
   };
 
   const recomecar = () => {
-    setMaquina(maquinaInicial());
+    setMaquina(computadorDaLicao(licao));
     setJaFeitas(new Set());
     setLinhas(BOAS_VINDAS);
     setExecutados([]);

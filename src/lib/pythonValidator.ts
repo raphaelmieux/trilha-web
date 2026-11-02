@@ -54,10 +54,29 @@ export interface ContextoDePython {
   registroEsperado?: RegistroEsperado;
   /** Só para o laboratório com banco: o que a consulta tem de pôr na saída. */
   saidaContem?: string[];
+  /** Só para o laboratório com banco: como as tabelas têm de ficar. */
+  bancoEsperado?: BancoEsperado[];
 }
 
 /** Uma linha que o programa tem de deixar gravada no arquivo do banco. */
 export interface RegistroEsperado { tabela: string; valores: Record<string, Valor> }
+
+/**
+ * Como uma tabela do banco tem de ficar depois do programa.
+ *
+ * É o que os laboratórios da CC006 conferem: o programa de linha de comando
+ * roda com a entrada decidida antes — cadastrar, listar, alterar, remover —, e
+ * o que se mede é o arquivo no fim. `presentes` são linhas que têm de estar lá
+ * (cada uma exatamente uma vez); `ausentes`, linhas que não podem estar. O que
+ * se compara são só as colunas escritas: o id que o banco deu não é do
+ * exercício.
+ */
+export interface BancoEsperado {
+  tabela: string;
+  colunas?: string[];
+  presentes?: Record<string, Valor>[];
+  ausentes?: Record<string, Valor>[];
+}
 
 interface Spec {
   id: string;
@@ -331,6 +350,61 @@ const SPECS: Spec[] = [
     },
   },
   {
+    id: 'bancoComoEsperado',
+    label: 'O banco ficou como devia',
+    hint: 'Rode com a entrada do enunciado e confira, no fim, o que o arquivo do banco guarda.',
+    run: ctx => {
+      const esperados = ctx.bancoEsperado ?? [];
+      if (esperados.length === 0) return { passed: false, detail: 'Este laboratório não diz como o banco deve ficar.' };
+      if (!ctx.execucao) return { passed: false, detail: 'O programa ainda não foi executado.' };
+      const banco = ctx.execucao.banco;
+      if (!banco) return { passed: false, detail: 'O arquivo do banco não pôde ser lido depois do programa.' };
+      for (const e of esperados) {
+        const t = tabelaDe(banco, e.tabela);
+        if (!t) return { passed: false, detail: `O banco não tem a tabela ${e.tabela}.` };
+        const nomes = t.colunas.map(c => c.nome.toLowerCase());
+        const falta = (e.colunas ?? []).filter(c => !nomes.includes(c.toLowerCase()));
+        if (falta.length) return { passed: false, detail: `A tabela ${e.tabela} não tem a coluna ${falta[0]}.` };
+        const linhas = registros(t);
+        const casa = (valores: Record<string, Valor>) => (r: Record<string, Valor>) =>
+          Object.entries(valores).every(([k, v]) => r[k.toLowerCase()] === v);
+        const presente = (e.presentes ?? []).find(v => linhas.filter(casa(v)).length !== 1);
+        if (presente) {
+          const n = linhas.filter(casa(presente)).length;
+          return { passed: false, detail: n === 0
+            ? `Falta em ${e.tabela}: ${descrever(presente)}.`
+            : `Em ${e.tabela} há ${n} linhas com ${descrever(presente)}, e devia haver uma.` };
+        }
+        const sobra = (e.ausentes ?? []).find(v => linhas.some(casa(v)));
+        if (sobra) return { passed: false, detail: `Em ${e.tabela} ficou o que não devia: ${descrever(sobra)}.` };
+      }
+      return { passed: true };
+    },
+  },
+  /*
+    O requisito 3.4 da CC006, e ele tem duas metades.
+
+    Não morrer é a primeira, e `roda` já a confere. A segunda é **dizer**: um
+    programa que apanha o erro e segue em silêncio também não encerra de forma
+    abrupta, e quem tentou remover o id 99 sai achando que removeu. Por isso as
+    frases que o enunciado combina têm de aparecer — é o contrato do programa
+    com quem o usa, como o menu.
+  */
+  {
+    id: 'avisaOsErros',
+    label: 'Diz o que deu errado, e continua',
+    hint: 'Cada erro do enunciado tem a frase combinada. O programa escreve a frase e volta para o menu.',
+    run: ctx => {
+      if (!ctx.saidaContem?.length) return { passed: false, detail: 'Este laboratório não diz que avisos esperar.' };
+      if (!ctx.execucao) return { passed: false, detail: 'O programa ainda não foi executado.' };
+      if (ctx.execucao.erro) return { passed: false, detail: 'O programa parou com erro: o erro precisa ser tratado, e não encerrar o programa.' };
+      const falta = ctx.saidaContem.find(t => !ctx.execucao!.saida.includes(t));
+      return falta === undefined
+        ? { passed: true }
+        : { passed: false, detail: `A saída não traz o aviso "${falta}".` };
+    },
+  },
+  {
     id: 'quarentaLinhas',
     label: 'Pelo menos 40 linhas de programa',
     hint: 'Linha em branco e linha só de comentário não contam — o requisito é de programa.',
@@ -343,13 +417,18 @@ const SPECS: Spec[] = [
   },
 ];
 
+/** Uma linha escrita para a pessoa ler: nome = Lanterna, quantidade = 12. */
+function descrever(valores: Record<string, Valor>): string {
+  return Object.entries(valores).map(([k, v]) => `${k} = ${v === null ? 'vazio' : v}`).join(', ');
+}
+
 const POR_ID = new Map(SPECS.map(s => [s.id, s]));
 
 /** Todos os ids que existem — é contra esta lista que o currículo é conferido. */
 export const IDS_DE_PYTHON = SPECS.map(s => s.id);
 
 /** Os ids que precisam da árvore, e por isso de uma análise antes. */
-const FORA_DA_ARVORE = ['roda', 'saidaEsperada', 'quarentaLinhas', 'classificouAsFalhas', 'mostraDoBanco', 'gravouNoBanco'];
+const FORA_DA_ARVORE = ['roda', 'saidaEsperada', 'quarentaLinhas', 'classificouAsFalhas', 'mostraDoBanco', 'gravouNoBanco', 'bancoComoEsperado', 'avisaOsErros'];
 export const IDS_DA_ARVORE = SPECS.filter(s => !FORA_DA_ARVORE.includes(s.id)).map(s => s.id);
 
 /**
@@ -360,7 +439,7 @@ export const IDS_DA_ARVORE = SPECS.filter(s => !FORA_DA_ARVORE.includes(s.id)).m
  * classificar as falhas — continuam valendo, e apagá-las junto diria que a
  * pessoa desfez um trabalho que ela não desfez.
  */
-export const IDS_DA_EXECUCAO = ['roda', 'saidaEsperada', 'mostraDoBanco', 'gravouNoBanco', ...IDS_DA_ARVORE];
+export const IDS_DA_EXECUCAO = ['roda', 'saidaEsperada', 'mostraDoBanco', 'gravouNoBanco', 'bancoComoEsperado', 'avisaOsErros', ...IDS_DA_ARVORE];
 
 /**
  * Roda as verificações pedidas.

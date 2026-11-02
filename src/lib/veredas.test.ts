@@ -20,7 +20,7 @@ import { validarAmbiente, IDS_DO_AMBIENTE, estadoInicial } from '../labs/ambient
 import { PASSOS_DO_AMBIENTE } from '../labs/passosDoAmbiente';
 import { PASSOS_DO_TERMINAL } from '../labs/passosDeTerminal';
 import { validarTerminal, IDS_DO_TERMINAL } from './terminalValidator';
-import { maquinaInicial } from '../labs/terminal';
+import { computadorDaLicao } from '../labs/computadores';
 import { validarExplorador, IDS_DO_EXPLORADOR, gestosVazios } from './exploradorValidator';
 import { discoDoClube } from '../labs/discoDoClube';
 import { dispositivoInicial } from '../labs/dispositivoExterno';
@@ -57,6 +57,7 @@ import { metasDa as metasDaCcDg004 } from '../labs/metasDaCcDg004';
 import { metasDa as metasDaCcDg005 } from '../labs/metasDaCcDg005';
 import { metasDa as metasDaCcDg006 } from '../labs/metasDaCcDg006';
 import { metasDa as metasDaCc005 } from '../labs/metasDaCc005';
+import { metasDaCc006 } from '../labs/metasDaCc006';
 
 /*
   Os laboratórios de Word partem de documentos diferentes, e a trava precisa
@@ -318,7 +319,7 @@ describe('os modelos dos laboratórios da vereda', () => {
     O terminal, pela mesma razão do ambiente.
 
     Ele também não tem `modelo`: o ponto de partida é um computador, e ele mora
-    em `maquinaInicial()`. O que se cobra é que ele comece sem repositório, sem
+    em `computadorDaLicao()`. O que se cobra é que ele comece sem repositório, sem
     a pasta que a tarefa manda criar, e sem nenhum comando executado — porque a
     forma que o defeito toma aqui é o disco de partida já ter o que a lição pede.
   */
@@ -327,7 +328,7 @@ describe('os modelos dos laboratórios da vereda', () => {
       if (licao.tipo !== 'terminal') continue;
 
       it(`${vereda.code} · ${licao.id} abre num computador sem nada feito`, () => {
-        const verdes = validarTerminal({ maquina: maquinaInicial(), executados: [] }, licao.verificacoes)
+        const verdes = validarTerminal({ maquina: computadorDaLicao(licao), executados: [] }, licao.verificacoes)
           .filter(r => r.passed).map(r => r.id);
         expect(verdes).toEqual([]);
       });
@@ -564,6 +565,8 @@ describe('os modelos dos laboratórios da vereda', () => {
           metasDaCcDg006(l.licao).map(m => [m.id, m.passos]));
         case 'banco': return Object.fromEntries(
           metasDaCc005(l.licao).map(m => [m.id, m.passos]));
+        case 'projeto-de-programa': return Object.fromEntries(
+          metasDaCc006(l.licao).map(m => [m.id, m.passos]));
         case 'laboratorio': return passosDe(l.linguagem);
         /* Teoria e redação não têm verificação com passo a passo. */
         case 'teoria': case 'redacao': return null;

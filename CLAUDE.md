@@ -4769,6 +4769,71 @@ recusa o comando de mudança com o valor escrito dentro, mesmo com a aspa
 dobrada certinho — o requisito pede o valor separado, e o próximo virá de uma
 variável.
 
+**A CC006 não ensina ferramenta nova, e por isso não tem janela nova.** O
+Python é o da CC004, o banco é o da CC005, o Git é o da CC003 — e as seis
+lições de fazer que acontecem num programa abrem nos laboratórios deles. O que
+ela ensina é o que liga os três: um programa proposto antes, escrito em
+partes, versionado ao longo de dias, explicado e defendido. As três lições que
+nenhum programa guarda — a proposta, o diário de bordo e o roteiro da
+apresentação — são o caderno do projeto, tela da plataforma, pela regra do
+caderno da CC-ES009.
+
+**Um programa só, em quatro etapas, e a referência de uma é o modelo da
+seguinte.** As versões do almoxarifado moram em `almoxarifado.ts`, e não no
+teste: o esqueleto do módulo 2 é o modelo do 3, o CRUD do 3 é o do 4, e o
+programa validado do 4 é o do 5. Mandar reescrever o esqueleto para poder
+fazer o menu ensinaria que o trabalho anterior não conta. E o repositório das
+lições de Git guarda **essas mesmas** versões, com a data em que cada uma foi
+escrita — um projeto inventado para o terminal ensinaria que cada etapa
+acontece num programa de mentira.
+
+**O banco nasce vazio, e é o programa que cria a tabela.** É o que todo
+programa com banco faz no computador de quem o baixa, e é o que separa o
+`CREATE TABLE IF NOT EXISTS` do `CREATE TABLE`. Por isso o laboratório do
+esqueleto não cobra `roda` — arquivo só de comentário roda —, e sim a tabela
+estar no arquivo depois.
+
+**O módulo 5 não cobra o banco, e é de propósito.** A primeira Corda entra
+antes e depois do conserto: o banco no fim é o mesmo com o programa que cai e
+com o que avisa, e cobrá-lo abriria verde. Quem separa os dois é rodar até o
+fim **e** dizer as frases combinadas — `avisaOsErros`, que existe porque
+tratar erro tem duas metades: não cair, e dizer. O programa que apanha o
+`IntegrityError` e segue calado não cai, e quem tentou cadastrar sai achando
+que cadastrou.
+
+**O requisito 4 pede quatro dias, e a plataforma não faz o calendário andar.**
+O que ela faz é o que acontece na vida: o almoxarifado foi escrito em três
+dias, com onze commits, e a lição de versionar é o quarto — com quatro
+mudanças feitas e não guardadas, a noite em que se escreveu e não se commitou.
+Um repositório com quinze abriria a lição verde; um vazio pediria quinze
+commits num dia só, que é o contrário do requisito. O terminal ganhou `hoje`
+na máquina e a data em cada commit, e o `git log` passou a mostrá-la.
+
+**E o terminal ganhou o `git diff`.** Um assunto por commit pede saber **o
+que** mudou em cada arquivo, e o `git status` só diz o nome. Sem o diff, a
+mensagem se escreve comparando o arquivo de memória — que é como se acaba
+escrevendo "ajustes". A trava de "um assunto por commit" confere os commits de
+hoje, e um `git add .` com as quatro mudanças deixa a árvore limpa, os quatro
+dias certos e essa tarefa vermelha.
+
+**Qual computador a lição de terminal abre é campo da lição, e o disco
+continua fora do currículo.** `computador` escolhe numa tabela de
+`computadores.ts` — um `Record` sobre a união, lido pela tela e pela trava de
+"abre sem nada feito". É a razão de `maquinaInicial()` não vir do currículo,
+de pé: o currículo diz qual máquina, e não o que há nela.
+
+**A aprovação da proposta é véspera do primeiro commit.** 16 de outubro, e o
+primeiro commit do almoxarifado é do dia 17: a ordem que o requisito 2 pede
+está escrita na própria história do repositório, e uma trava confere as duas
+datas. O "começar a programar" antes da aprovação é o `comecouAntes` da
+CC-ES012, pelo motivo escrito lá.
+
+**O verbo da funcionalidade se lê inteiro onde o começo engana.** A proposta
+precisa das quatro operações, e o examinador as acha pelo verbo. "cri" acharia
+"crianças" e "list" acharia "lista" — que aparece em funcionalidade de qualquer
+operação —, e a proposta que esqueceu de prever o cadastro passaria por
+completa.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -5272,6 +5337,13 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDeBanco.test.tsx` | lição da CC005 impossível de vencer digitando e executando, ou arquivo mudado sem envelhecer a lista |
 | `src/curriculum/exemplosDeSql.test.ts` | resultado da teoria da CC005 que o SQLite não devolve |
 | `src/curriculum/laboratoriosDePython.test.ts` | cadastro sem commit valendo por gravado, ou comando colado valendo por parâmetro |
+| `src/labs/repositorioDoAlmoxarifado.test.ts` | `git add .` fechando a lição de versionar, ou mensagem vaga valendo por uma que diz |
+| `src/labs/repositorioDoAlmoxarifado.test.ts` | README sem uma das quatro partes, com exemplo inventado, ou mexido depois do commit |
+| `src/labs/metasDaCc006.test.ts` | proposta aprovada sem uma das quatro operações, ou programação começada antes valendo por aprovada antes |
+| `src/labs/metasDaCc006.test.ts` | o mesmo problema três vezes no diário, ou a solução que repete o problema |
+| `src/labs/metasDaCc006.test.ts` | roteiro sem a decisão técnica, demonstração fora do centro, ou justificativa sem alternativa |
+| `src/curriculum/laboratoriosDePython.test.ts` | almoxarifado com except sem nome valendo por validado, ou erro apanhado em silêncio valendo por avisado |
+| `src/components/LaboratorioDoProjetoDePrograma.test.tsx` | lição da CC006 impossível de vencer clicando, ou terminal que abre no computador errado |
 | `src/labs/metasDaAp042.test.ts` | tarefa do laboratório de formatação que nasce verde, ou que ninguém consegue vencer |
 | `src/labs/FormatacaoTextoLab.test.tsx` | margem fora da guia Layout, ou tarefa da AP042 que não fecha pelos gestos do Word |
 | `src/labs/InsercaoTextoLab.test.tsx` | guia contextual da tabela que fica sem tabela, ou cabeçalho fechado que se escreve |

@@ -7,6 +7,10 @@ import { classificacaoInicial, type Classificacao } from '../labs/falhasDePython
 import { preambuloDoProjeto, PASTA_DO_PROJETO } from '../labs/projetoDePython';
 import { programaQueCriaOArquivo, programaQueLeOArquivo, type EstadoDoBanco } from '../labs/sqlite';
 import type { LicaoDeVereda } from './veredas';
+import {
+  BANCO_DO_CRUD, BANCO_DO_ESQUELETO, ENTRADA_VALIDADA, PRINCIPAL_DO_CRUD, PRINCIPAL_DO_ESQUELETO,
+  PRINCIPAL_FINAL, PRINCIPAL_VALIDADO,
+} from '../labs/almoxarifado';
 
 /*
   Os laboratórios de Python, conferidos rodando.
@@ -116,6 +120,7 @@ function conferir(
     classificacao,
     registroEsperado: licao.registroEsperado,
     saidaContem: licao.saidaContem,
+    bancoEsperado: licao.bancoEsperado,
   }, licao.verificacoes);
 }
 
@@ -394,15 +399,26 @@ conexao.execute(
 conexao.commit()
 conexao.close()
 `,
+  /* A CC006 escreve um programa só, em quatro etapas, e a referência de uma
+     é o modelo da seguinte: as versões moram em almoxarifado.ts. */
+  'CC006/m2-lab': PRINCIPAL_DO_ESQUELETO,
+  'CC006/m3-lab': PRINCIPAL_DO_CRUD,
+  'CC006/m4-lab': PRINCIPAL_VALIDADO,
+  'CC006/m5-lab': PRINCIPAL_FINAL,
 };
 
 /*
   O que a solução de referência escreve nos OUTROS arquivos-fonte.
 
-  Só o programa em partes tem um: nos demais, o que vem ao lado é dado para
-  ler, e o modelo dele já é o conteúdo final.
+  O programa em partes da CC004 e os quatro laboratórios do almoxarifado da
+  CC006 têm: nos demais, o que vem ao lado é dado para ler, e o modelo dele
+  já é o conteúdo final.
 */
 const FONTES_DA_SOLUCAO: Record<string, Record<string, string>> = {
+  'CC006/m2-lab': { 'banco.py': BANCO_DO_ESQUELETO },
+  'CC006/m3-lab': { 'banco.py': BANCO_DO_CRUD },
+  'CC006/m4-lab': { 'banco.py': BANCO_DO_CRUD, 'entrada.py': ENTRADA_VALIDADA },
+  'CC006/m5-lab': { 'banco.py': BANCO_DO_CRUD, 'entrada.py': ENTRADA_VALIDADA },
   'CC004/m7-lab': {
     'caixa.py': `import csv
 
@@ -550,5 +566,65 @@ conexao.execute(f"INSERT INTO membros (nome, idade, unidade_id) VALUES ('{nome}'
 )
 conexao.commit()`);
     expect(verdes(duas)).not.toContain('gravouNoBanco');
+  });
+});
+
+/*
+  O almoxarifado da CC006, pelos caminhos errados que cada etapa existe para
+  pegar: o comando colado, o except sem nome, o erro apanhado em silêncio e o
+  aviso que não volta ao menu.
+*/
+describe('o almoxarifado da CC006, pelo caminho errado', () => {
+  const licao = (id: string) => laboratorios().find(([code, l]) => code === 'CC006' && l.id === id)![1];
+  const verdes = (id: string, principal: string, fontes: Record<string, string>) =>
+    conferir(licao(id), principal, {}, fontes).filter(r => r.passed).map(r => r.id);
+
+  it('o cadastro colado com f-string não passa os valores separados', () => {
+    const colado = BANCO_DO_CRUD.replace(
+      'conexao.execute("INSERT INTO materiais (nome, quantidade) VALUES (?, ?)", (nome, quantidade))',
+      'conexao.execute(f"INSERT INTO materiais (nome, quantidade) VALUES (\'{nome}\', {quantidade})")');
+    expect(colado).toContain('f"INSERT');
+    const v = verdes('m3-lab', PRINCIPAL_DO_CRUD, { 'banco.py': colado });
+    expect(v).not.toContain('usaParametros');
+    expect(v).toContain('bancoComoEsperado');
+  });
+
+  it('remover que não remove deixa a Barraca no banco', () => {
+    const peloNome = PRINCIPAL_DO_CRUD.replace(
+      `        elif opcao == "4":
+            id_material = int(input("Id: "))
+            remover(conexao, id_material)`,
+      `        elif opcao == "4":
+            input("Id: ")`);
+    expect(verdes('m3-lab', peloNome, { 'banco.py': BANCO_DO_CRUD })).not.toContain('bancoComoEsperado');
+  });
+
+  it('validar com except sem nome não cumpre a validação', () => {
+    const pelado = ENTRADA_VALIDADA.replace('except ValueError:', 'except:');
+    const v = verdes('m4-lab', PRINCIPAL_VALIDADO, { 'banco.py': BANCO_DO_CRUD, 'entrada.py': pelado });
+    expect(v).not.toContain('tratouOErroCerto');
+    expect(v).toContain('roda');
+  });
+
+  it('converter sem conferir o vazio deixa o material sem nome entrar', () => {
+    const semTexto = PRINCIPAL_VALIDADO.replace('nome = ler_texto("Nome: ")', 'nome = input("Nome: ")');
+    const v = verdes('m4-lab', semTexto, { 'banco.py': BANCO_DO_CRUD, 'entrada.py': ENTRADA_VALIDADA });
+    expect(v).not.toContain('bancoComoEsperado');
+  });
+
+  it('apanhar o nome repetido em silêncio não avisa', () => {
+    const calado = PRINCIPAL_FINAL.replace('print("Já existe um material com esse nome.")', 'pass');
+    const v = verdes('m5-lab', calado, { 'banco.py': BANCO_DO_CRUD, 'entrada.py': ENTRADA_VALIDADA });
+    expect(v).toContain('roda');
+    expect(v).not.toContain('avisaOsErros');
+  });
+
+  it('não olhar o rowcount deixa o id 99 sem aviso', () => {
+    const semRowcount = PRINCIPAL_FINAL.replace(
+      `            if remover(conexao, id_material) == 0:
+                print("Nenhum material com esse id.")`,
+      '            remover(conexao, id_material)');
+    expect(verdes('m5-lab', semRowcount, { 'banco.py': BANCO_DO_CRUD, 'entrada.py': ENTRADA_VALIDADA }))
+      .not.toContain('avisaOsErros');
   });
 });

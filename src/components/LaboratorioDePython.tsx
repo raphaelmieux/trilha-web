@@ -181,9 +181,10 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
       saidaEsperada: licao.saidaEsperada,
       falhas, classificacao,
       registroEsperado: licao.registroEsperado, saidaContem: licao.saidaContem,
+      bancoEsperado: licao.bancoEsperado,
     }, licao.verificacoes),
     [codigo, achados, erroDeAnalise, execucao, licao.saidaEsperada, licao.verificacoes,
-      falhas, classificacao, licao.registroEsperado, licao.saidaContem]);
+      falhas, classificacao, licao.registroEsperado, licao.saidaContem, licao.bancoEsperado]);
 
   const passaram = resultados.filter(r => r.passed).length;
   /* Entregar exige que os resultados sejam do código que está na tela. Sem

@@ -199,4 +199,61 @@ export const PASSOS_DO_TERMINAL: Record<string, string[]> = {
     'Confira com cat requirements.txt.',
     'Grave depois de instalar: com nada instalado, o arquivo sai vazio.',
   ],
+  /* ── O projeto de programa (CC006) ── */
+  quinzeCommits: [
+    'Digite: git log --oneline — cada linha é um commit. Conte quantos há.',
+    'Digite: git status — ele lista os arquivos mudados e ainda não guardados.',
+    'Cada arquivo da lista é uma mudança só: ela vira um commit. É assim que se chega a quinze.',
+  ],
+  quatroDias: [
+    'Digite: git log — embaixo de cada commit aparece a linha Date.',
+    'Os onze de antes estão em três dias. Os que você fizer hoje entram com a data de hoje.',
+    'Basta um commit hoje para o quarto dia aparecer.',
+  ],
+  umAssuntoPorCommit: [
+    'Não use git add . — ele junta todas as mudanças num commit só.',
+    'Escolha um arquivo do git status e veja o que mudou: git diff entrada.py',
+    'Depois: git add entrada.py',
+    'E: git commit -m "Dá um exemplo na mensagem de número inválido"',
+    'Repita para cada arquivo que o git status ainda listar.',
+  ],
+  mensagensQueDizem: [
+    'A mensagem diz o que o commit fez, numa frase de três palavras ou mais.',
+    'Leia o git diff do arquivo antes de escrever: ele mostra a linha que saiu (com -) e a que entrou (com +).',
+    'Exemplo: git commit -m "Avisa quando não há material cadastrado"',
+    '"ajustes", "update" e "mudanças" não dizem nada a quem ler daqui a um mês.',
+  ],
+  arvoreLimpa: [
+    'Digite: git status',
+    'Enquanto aparecer arquivo na lista, ainda há mudança sem commit.',
+    'Quando ele disser "árvore de trabalho limpa", acabou.',
+  ],
+  leiameDescreve: [
+    'Digite: editar README.md — o painel do editor abre ao lado.',
+    'Primeira linha: # Almoxarifado do clube',
+    'Depois um título de seção: ## Descrição',
+    'E uma ou duas frases dizendo o que o programa faz e para quem — por exemplo, que ele guarda o material do clube e quanto há de cada coisa.',
+  ],
+  leiameInstala: [
+    'No README, abra a seção: ## Instalação',
+    'Diga que é preciso ter o Python 3 instalado.',
+    'E como pegar o projeto: baixar a pasta ou clonar o repositório. O banco se cria sozinho na primeira vez que roda.',
+  ],
+  leiameUsa: [
+    'Abra a seção: ## Uso',
+    'Escreva o comando que abre o programa: python principal.py',
+    'E diga o que o menu oferece: cadastrar, listar, alterar a quantidade e remover.',
+  ],
+  leiameExemplo: [
+    'Abra a seção: ## Exemplo de execução',
+    'Abra um bloco com três crases numa linha sozinha.',
+    'Cole o menu como ele aparece (1 - Cadastrar material, e assim por diante), uma escolha (Escolha: 2) e o que o programa respondeu.',
+    'Feche o bloco com três crases numa linha sozinha.',
+  ],
+  leiameVersionado: [
+    'Salve o README no painel do editor.',
+    'Digite: git add README.md',
+    'Depois: git commit -m "Escreve o README do almoxarifado"',
+    'Mexeu de novo depois? git add e git commit outra vez.',
+  ],
 };

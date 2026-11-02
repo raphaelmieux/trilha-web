@@ -3,6 +3,8 @@ import { MODULOS_DE_CSS } from './folhaDeEstilo';
 import { MODULOS_DE_BLOCOS } from './logicaComBlocos';
 import { MODULOS_DE_PYTHON } from './sintaxeDePython';
 import { MODULOS_DE_TERMINAL } from './terminalEGit';
+import { MODULOS_DO_PROJETO_DE_PROGRAMA } from './projetoDePrograma';
+import type { ComputadorDoTerminal } from '../labs/computadores';
 import { MODULOS_DE_PYTHON_AVANCADO } from './pythonAvancado';
 import { MODULOS_DE_SQL } from './sqlDoClube';
 import { MODULOS_DE_ARQUIVOS } from './arquivosEArmazenamento';
@@ -28,7 +30,7 @@ import type { Question } from '../types';
 import type { FalhaPlantada } from '../labs/falhasDePython';
 import type { ArquivoDoProjetoPython } from '../labs/projetoDePython';
 import type { BancoNaPasta } from '../labs/pythonWorker';
-import type { RegistroEsperado } from '../lib/pythonValidator';
+import type { BancoEsperado, RegistroEsperado } from '../lib/pythonValidator';
 
 /*
  * As veredas.
@@ -294,8 +296,10 @@ export type LicaoDeVereda =
     banco?: BancoNaPasta;
     /** Só para o laboratório com banco: o registro que tem de ficar gravado. */
     registroEsperado?: RegistroEsperado;
-    /** Só para o laboratório com banco: o que a consulta tem de mostrar. */
+    /** Só para o laboratório com banco: o que a saída tem de trazer — os nomes da consulta, ou os avisos de erro combinados. */
     saidaContem?: string[];
+    /** Só para o laboratório com banco: como as tabelas têm de ficar no fim. */
+    bancoEsperado?: BancoEsperado[];
   }
   | {
     /*
@@ -349,6 +353,13 @@ export type LicaoDeVereda =
     tipo: 'terminal';
     titulo: string;
     resumo: string;
+    /*
+      Qual computador, e não o que há nele. A CC006 versiona o projeto que a
+      própria vereda escreveu, e esse disco não é o do clube: tem histórico de
+      onze commits em três dias. O nome escolhe numa tabela do laboratório —
+      a mesma razão de `maquinaInicial()` não vir do currículo continua de pé.
+    */
+    computador?: ComputadorDoTerminal;
     /** Os ids de verificação, no validador do terminal. */
     verificacoes: string[];
   }
@@ -785,6 +796,21 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      A proposta, o diário de bordo e a apresentação da CC006. Um tipo próprio
+      porque não há programa: é o caderno do projeto, tela da plataforma. As
+      outras seis lições da vereda são `laboratorio` de Python e `terminal`,
+      os mesmos laboratórios da CC004 e da CC003.
+    */
+    id: string;
+    tipo: 'projeto-de-programa';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCc006').LicaoDaCc006;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       O banco de dados da CC005, e por que ele é mais um tipo.
 
       Vale a conta de \`ambiente\`, \`terminal\` e dos programas de escritório: o
@@ -1024,8 +1050,22 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_SQL,
   },
-  anunciada('CC006', 'Projeto de Programa', 'Base',
-    'Juntar tudo num programa que resolve uma coisa do clube, do começo ao fim.'),
+  {
+    id: 'cc006',
+    code: 'CC006',
+    name: 'Projeto de Programa',
+    familia: 'Base',
+    description: 'Juntar tudo num programa que resolve uma coisa do clube, do começo ao fim.',
+    /*
+      Sai da CC005, e não de uma trilha: é lá que o programa ganha um banco, e
+      um programa com banco é o primeiro que alguém usa de verdade.
+    */
+    origem: 'CC005',
+    /* As três que o requisito 1 do documento oficial pede, e nenhuma a mais. */
+    preRequisitos: ['cc003', 'cc004', 'cc005'],
+    mostraResultado: true,
+    modulos: MODULOS_DO_PROJETO_DE_PROGRAMA,
+  },
 
   /* ── Escritório ──────────────────────────────────────────────────────────
      Treze veredas, e a família com o grafo mais fechado que existe aqui: o

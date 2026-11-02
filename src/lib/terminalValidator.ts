@@ -485,9 +485,182 @@ const PACOTES: Spec[] = [
   },
 ];
 
+/* ── O projeto de programa (requisitos 4 e 5 da CC006) ─────────────────────── */
+
+/*
+  Este bloco também não é da CC003: é do repositório do almoxarifado, que tem
+  calendário. A raiz sai do repositório, e não da constante de cima — o
+  projeto mora em outra pasta.
+*/
+
+/** O histórico do ramo atual, do mais velho ao mais novo. */
+function historicoDoRamo(c: ContextoDoTerminal) {
+  const repo = c.maquina.repo;
+  if (!repo) return [];
+  const lista = [];
+  let id = repo.ramos[repo.ramoAtual];
+  while (id) {
+    const commit = repo.commits.find(x => x.id === id);
+    if (!commit) break;
+    lista.unshift(commit);
+    id = commit.pai;
+  }
+  return lista;
+}
+
+/** Os commits feitos hoje, cada um com o anterior a ele. */
+function commitsDeHoje(c: ContextoDoTerminal) {
+  const lista = historicoDoRamo(c);
+  return lista.map((x, i) => ({ commit: x, antes: i > 0 ? lista[i - 1].arvore : {} }))
+    .filter(x => !!c.maquina.hoje && x.commit.data === c.maquina.hoje);
+}
+
+const arquivosMudados = (antes: Record<string, string>, depois: Record<string, string>) =>
+  [...new Set([...Object.keys(antes), ...Object.keys(depois)])].filter(k => antes[k] !== depois[k]);
+
+/*
+  Mensagem que não diz nada. A lista é curta e é das que aparecem de verdade:
+  quem lê o histórico daqui a um mês não sabe o que "ajustes" ajustou.
+*/
+const VAGAS = /^(update|updates|wip|fix|teste|testes|commit|mudan[cç]as?|ajustes?|altera[cç](ão|ões)|coisas|v\d+|\.+)$/i;
+export const mensagemDiz = (m: string) => m.trim().split(/\s+/).length >= 3 && !VAGAS.test(m.trim());
+
+const leiaMeDoProjeto = (c: ContextoDoTerminal): string | null => {
+  const raiz = c.maquina.repo?.raiz;
+  if (!raiz) return null;
+  const no = achar(c.maquina.disco, `${raiz}/README.md`);
+  return no?.tipo === 'arquivo' ? (no.conteudo ?? '') : null;
+};
+
+/** A seção do README cujo título casa com o padrão, e o que vem até o próximo título. */
+function secao(texto: string, titulo: RegExp): string | null {
+  const linhas = texto.split('\n');
+  const i = linhas.findIndex(l => /^#{1,6}\s/.test(l) && titulo.test(l));
+  if (i < 0) return null;
+  const fim = linhas.findIndex((l, j) => j > i && /^#{1,6}\s/.test(l));
+  return linhas.slice(i + 1, fim < 0 ? undefined : fim).join('\n').trim();
+}
+
+const PROJETO: Spec[] = [
+  {
+    id: 'quinzeCommits',
+    label: 'Chegar a quinze commits',
+    hint: 'git log mostra quantos há. Cada mudança guardada no seu próprio commit conta um.',
+    run: c => {
+      const n = historicoDoRamo(c).length;
+      return { passed: n >= 15, detail: n < 15 ? `O histórico tem ${n} commits.` : undefined };
+    },
+  },
+  {
+    id: 'quatroDias',
+    label: 'Commits em quatro dias diferentes',
+    hint: 'git log mostra a data de cada um. Os de hoje entram no quarto dia.',
+    run: c => {
+      const dias = new Set(historicoDoRamo(c).map(x => x.data).filter(Boolean)).size;
+      return { passed: dias >= 4, detail: dias < 4 ? `Os commits estão em ${dias} dias.` : undefined };
+    },
+  },
+  {
+    /* Um assunto por commit: é o que torna o histórico legível e o que deixa
+       desfazer uma mudança sem levar as outras junto. Um "git add ." com as
+       quatro dentro passa as quatro de uma vez para um commit só. */
+    id: 'umAssuntoPorCommit',
+    label: 'Cada mudança no seu commit',
+    hint: 'git add um arquivo, git commit; depois o próximo. git status mostra o que falta.',
+    run: c => {
+      const hoje = commitsDeHoje(c);
+      if (hoje.length === 0) return { passed: false, detail: 'Nenhum commit hoje ainda.' };
+      const misturado = hoje.find(x => arquivosMudados(x.antes, x.commit.arvore).length > 1);
+      return misturado
+        ? { passed: false, detail: `O commit "${misturado.commit.mensagem}" guarda mais de uma mudança.` }
+        : { passed: true };
+    },
+  },
+  {
+    id: 'mensagensQueDizem',
+    label: 'Mensagens que dizem o que mudou',
+    hint: 'Uma frase que diga o que o commit fez, como "Avisa quando não há material cadastrado".',
+    run: c => {
+      const hoje = commitsDeHoje(c);
+      if (hoje.length === 0) return { passed: false, detail: 'Nenhum commit hoje ainda.' };
+      const vaga = hoje.find(x => !mensagemDiz(x.commit.mensagem));
+      return vaga ? { passed: false, detail: `"${vaga.commit.mensagem}" não diz o que mudou.` } : { passed: true };
+    },
+  },
+  {
+    id: 'arvoreLimpa',
+    label: 'Nada ficar de fora',
+    hint: 'git status tem de dizer que a árvore de trabalho está limpa.',
+    run: c => {
+      const { modificados, novos, apagados } = mudancas(c.maquina);
+      const n = modificados.length + novos.length + apagados.length;
+      return { passed: !!c.maquina.repo && n === 0, detail: n ? `Ainda há ${n} arquivo${n === 1 ? '' : 's'} sem commit.` : undefined };
+    },
+  },
+  {
+    id: 'leiameDescreve',
+    label: 'O README diz o que o programa é',
+    hint: 'Um título e uma seção "Descrição" dizendo para que o programa serve e para quem.',
+    run: c => {
+      const t = leiaMeDoProjeto(c);
+      const corpo = t === null ? null : secao(t, /descri|sobre|o que [eé]/i);
+      return { passed: !!corpo && corpo.split(/\s+/).length >= 8 };
+    },
+  },
+  {
+    id: 'leiameInstala',
+    label: 'O README diz como instalar',
+    hint: 'Uma seção "Instalação": o Python 3 e como baixar o projeto. O banco se cria sozinho na primeira vez.',
+    run: c => {
+      const t = leiaMeDoProjeto(c);
+      const corpo = t === null ? null : secao(t, /instala/i);
+      return { passed: !!corpo && /python/i.test(corpo) };
+    },
+  },
+  {
+    id: 'leiameUsa',
+    label: 'O README diz como usar',
+    hint: 'Uma seção "Uso" com o comando que abre o programa, python principal.py, e o que o menu oferece.',
+    run: c => {
+      const t = leiaMeDoProjeto(c);
+      const corpo = t === null ? null : secao(t, /\buso\b|usar/i);
+      return { passed: !!corpo && /principal\.py/.test(corpo) };
+    },
+  },
+  {
+    /* O exemplo é uma execução de verdade, colada: o menu, uma escolha e o que
+       o programa respondeu. Um exemplo inventado de cabeça mostra uma tela que
+       o programa não tem — e é a primeira coisa que quem chega vai comparar. */
+    id: 'leiameExemplo',
+    label: 'O README traz um exemplo de execução',
+    hint: 'Uma seção "Exemplo" com um bloco entre três crases mostrando o menu, uma escolha e a resposta.',
+    run: c => {
+      const t = leiaMeDoProjeto(c);
+      const corpo = t === null ? null : secao(t, /exemplo/i);
+      const bloco = corpo ? /```[^\n]*\n([\s\S]*?)```/.exec(corpo)?.[1] ?? '' : '';
+      return { passed: /Escolha:/.test(bloco) && /\d+ - \S/.test(bloco) };
+    },
+  },
+  {
+    id: 'leiameVersionado',
+    label: 'O README que está no disco é o do último commit',
+    hint: 'git add README.md e git commit. Mexeu depois? Commit de novo.',
+    run: c => {
+      const repo = c.maquina.repo;
+      const t = leiaMeDoProjeto(c);
+      const ultimo = historicoDoRamo(c).slice(-1)[0];
+      const noCommit = repo && ultimo ? ultimo.arvore[`${repo.raiz}/README.md`] : undefined;
+      return {
+        passed: t !== null && noCommit === t,
+        detail: t !== null && noCommit !== t ? 'O README do disco não é o que está no último commit.' : undefined,
+      };
+    },
+  },
+];
+
 /* ── O catálogo ────────────────────────────────────────────────────────────── */
 
-const TODAS: Spec[] = [...ANDAR, ...MEXER, ...REPOSITORIO, ...RAMOS, ...REMOTO, ...README, ...PACOTES];
+const TODAS: Spec[] = [...ANDAR, ...MEXER, ...REPOSITORIO, ...RAMOS, ...REMOTO, ...README, ...PACOTES, ...PROJETO];
 
 /** Os ids que existem, para o teste da vereda conferir o que a lição pede. */
 export const IDS_DO_TERMINAL = TODAS.map(s => s.id);
