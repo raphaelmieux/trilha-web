@@ -925,6 +925,33 @@ são as respostas. `LaboratorioDeExplorador` ganhou `disco` por isso, com o do
 clube por padrão, e `exemplosDeArquivos.test.ts` reprova se os dois
 computadores dividirem um nome.
 
+A CC-ES003 era o caso mais grave: a teoria percorria a própria pasta do
+acampamento que o laboratório arruma. A diária de 45, os doze inscritos, a
+tabela de conselheiros fora de ordem com o "Tia Rute" que o PROCV aproximado
+devolve para a Onça, os gastos de 820, 910 e 1180 — tudo resposta de alguma
+lição. As telas fotografam a excursão de outubro, de
+`src/exemplos/excursaoDeOutubro.ts`: a refeição a 18, dez participantes, uma
+tabela de ônibus em que a Tucano cai no ônibus errado. `LaboratorioDePlanilha`
+ganhou `inicial` e `arquivo` por isso, com a pasta do acampamento por padrão.
+
+A primeira captura achou um defeito que valia para todo laboratório de
+planilha: **nenhuma coluna cortava nada**. A grade tinha `table-layout: fixed`
+e a célula tinha `overflow: hidden`, mas a tabela não tinha largura declarada —
+e o navegador só obedece ao layout fixo com largura declarada. Sem ela, a
+coluna se alargava até caber o conteúdo, e a tarefa do módulo 1 da CC-ES003,
+que diz que "nenhum nome cabe na coluna A", aparecia em cima de uma tela com
+todos os nomes inteiros. A tabela declara a soma das colunas agora, e o número
+que não cabe vira cerquilhas, como no Excel. A medida do número
+(`larguraDoNumero`) conta pontuação e espaço pela metade: contando tudo a sete,
+como a conta dos dois cliques na borda (`larguraQuePede`), o total em moeda da
+AP044 virava `####` numa coluna em que ele cabe com folga — e foi a trava que
+clica daquele laboratório quem pegou. A do número nunca passa da outra, então a
+coluna recém-ajustada nunca mostra `####` no número que a ajustou.
+
+E o arrasto da alça, no roteiro, se mede contra a alça e não contra a célula:
+o canto da célula fica por baixo da alça, mas o navegador entrega o clique à
+célula, e o arrasto vira seleção em vez de preenchimento.
+
 A teoria ensinava a buscar escrevendo `tipo:imagem` na caixa, e a janela do
 laboratório filtra numa caixa com Tipo e Data: a lição descrevia um gesto que
 a pessoa não ia encontrar. E a primeira captura achou um defeito do
@@ -2100,15 +2127,15 @@ navegador; aqui sai de `formulas.ts`, que é o mesmo motor que responde ao
 desbravador — lição e laboratório não podem discordar.
 
 A diferença para a de Python é o contexto. Um programa traz tudo consigo; uma
-fórmula só significa alguma coisa sobre uma planilha, e a planilha do exemplo
-está **desenhada** no texto. Ler o desenho seria máquina frágil que um dia para
-de achar o que procura e aprova tudo calada — a armadilha do "zero link não é
-zero link quebrado" aplicada à própria trava. Então a divisão é esta: a
-**grade** se declara no teste, e a **afirmação** se lê da lição. O número que a
-tela mostra nunca é o número que o teste escreveu, e mudar o desenho sem mudar
-a conta reprova, que é a falha certa. Com a guarda contra o vazio de sempre:
-cada exemplo diz quantas afirmações tem, e um reescrito sem as setas reprova em
-vez de passar por não ter conferido nada.
+fórmula só significa alguma coisa sobre uma planilha. A planilha do exemplo era
+**desenhada** no texto, com setas, e a grade se declarava no teste; hoje o
+exemplo é a tela do Excel fotografada sobre a pasta da excursão de outubro
+(`src/exemplos/excursaoDeOutubro.ts`), e a conta se faz sobre essa pasta, pelo
+motor. A divisão continua a mesma: a **conta** se faz no teste, e a
+**afirmação** se lê da legenda. Mudar a pasta sem refazer as telas reprova, que
+é a falha certa — a imagem continuaria mostrando a pasta antiga. E a guarda
+contra o vazio cobra o número de tópicos com tela: sem elas, cada trava leria
+texto vazio e passaria.
 
 Ela achou, na primeira execução, o alinhamento que perguntava ao texto impresso.
 
@@ -4969,11 +4996,12 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/cadernoDoClube.test.ts` | gráfico de tipo que não responde à pergunta, ou sem eixo identificado |
 | `src/labs/cadernoDoClube.test.ts` | número-como-texto "consertado" apagando a célula |
 | `src/labs/cadernoDoClube.test.ts` | fórmula das lições que sai no roteiro sem frase própria, ou coluna arrastada virando doze frases |
-| `src/curriculum/exemplosDePlanilha.test.ts` | exemplo da teoria cujo resultado declarado não é o que o motor devolve |
+| `src/curriculum/exemplosDePlanilha.test.ts` | legenda da teoria cujo número a pasta da excursão não devolve pelo motor, ou pasta que passa a dividir nome, valor ou procura com a do laboratório |
 | `src/curriculum/exemplosDePlanilha.test.ts` | número guardado como texto encostando à direita, que apaga a primeira pista do requisito 7 |
 | `src/labs/metasDaAp043.test.ts` | alinhamento decidido pelo texto impresso, que já perdeu o tipo do valor |
 | `src/labs/excel.test.tsx` | peça da grade que sumiu no recorte, ou que aparece sem o laboratório ter pedido |
 | `src/labs/excel.test.tsx` | grade que guarda a própria seleção, em vez de desenhar a que o chamador diz |
+| `src/labs/excel.test.tsx` | tabela da grade sem a largura declarada, onde a coluna estreita se alarga sozinha e nada se corta |
 | `src/components/LaboratorioDePlanilha.test.tsx` | lição da CC-ES003 impossível de vencer clicando |
 | `src/components/LaboratorioDePlanilha.test.tsx` | trocar de aba perdendo o que foi escrito, ou faixa que muda conforme o exercício |
 | `src/labs/correioDoClube.test.ts` | Cco preenchido com a lista grande vazando pelo Para, ou assinatura configurada e nunca usada |

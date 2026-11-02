@@ -126,6 +126,30 @@ describe('as peças da grade continuam lá depois do recorte', () => {
   });
 });
 
+describe('a coluna tem a largura que a planilha diz', () => {
+  /*
+    Sem largura declarada, o navegador ignora o `table-layout: fixed` e
+    alarga a coluna até caber o conteúdo — nenhum nome ficava cortado, e a
+    tarefa que manda alargar a coluna A dizia que os nomes não cabiam em cima
+    de uma tela que mostrava todos. O jsdom não faz layout nenhum, então o que
+    se confere é a promessa: a tabela declara a soma das colunas.
+  */
+  it('a tabela declara a soma das larguras, mais o canto', () => {
+    const p = planilhaDeTeste(CLUBE, { larguras: [40, 92, 92, 92, 92] });
+    const container = montar(<Grade planilha={p} />);
+    expect((container.querySelector('.pl-grade') as HTMLElement).style.width).toBe(`${34 + 40 + 92 * 4}px`);
+  });
+
+  it('o número que não cabe vira cerquilhas, e o texto não', () => {
+    const p = planilhaDeTeste([['Inscritos totais', '123456789']], { larguras: [40, 40, 92, 92, 92] });
+    const container = montar(<Grade planilha={p} />);
+    const valores = textos(container, '.pl-valor');
+    expect(valores).toContain('Inscritos totais');
+    expect(valores).not.toContain('123456789');
+    expect(valores.some(v => /^#+$/.test(v))).toBe(true);
+  });
+});
+
 describe('as peças novas aparecem pela presença do setter', () => {
   /*
     É a regra do `aoBuscar` do Explorador. A AP043 não tem alça de

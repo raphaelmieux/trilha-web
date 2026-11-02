@@ -89,14 +89,24 @@ type Dialogo =
 
 /* ── O laboratório ─────────────────────────────────────────────────────────── */
 
-export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair }: {
+export default function LaboratorioDePlanilha({
+  vereda, licao, aoVencer, aoSair, inicial, arquivo = 'Acampamento 2026',
+}: {
   vereda: Vereda;
   licao: Extract<LicaoDeVereda, { tipo: 'planilha' }>;
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  /**
+   * Outra pasta no lugar da que a lição abre. Só as telas da teoria a passam:
+   * elas fotografam a excursão de outubro, porque tudo na pasta do
+   * acampamento é resposta de alguma lição — o motivo está em
+   * `src/exemplos/excursaoDeOutubro.ts`.
+   */
+  inicial?: () => Caderno;
+  arquivo?: string;
 }) {
   const licaoDoCaderno = CADERNOS_DA_CC_ES003[licao.caderno];
-  const [hist, setHist] = useState<Historico<Caderno>>(() => historicoDe(licaoDoCaderno.inicial()));
+  const [hist, setHist] = useState<Historico<Caderno>>(() => historicoDe((inicial ?? licaoDoCaderno.inicial)()));
   const cad = hist.presente;
   const p = planilhaAtiva(cad);
 
@@ -299,7 +309,7 @@ export default function LaboratorioDePlanilha({ vereda, licao, aoVencer, aoSair 
       <style>{CSS_EXCEL}</style>
 
       <div className="pl-janela">
-        <BarraDeTituloDoExcel arquivo="Acampamento 2026" aoAvisar={avisar} />
+        <BarraDeTituloDoExcel arquivo={arquivo} aoAvisar={avisar} />
         <GuiasDoExcel atual={guia} usaveis={GUIAS_USAVEIS} aoTrocar={setGuia} aoAvisar={avisar} />
 
         <div className="pl-faixa">

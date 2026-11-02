@@ -1,5 +1,6 @@
 import type { ModuloDeVereda, TopicoDeVereda } from './veredas';
 import { QUESTOES_DE_PLANILHA } from './questoesDePlanilha';
+import { telasDoTopico } from './telas';
 
 /*
  * A vereda CC-ES003 Planilhas.
@@ -33,11 +34,30 @@ import { QUESTOES_DE_PLANILHA } from './questoesDePlanilha';
  * parece conferida.
  */
 
+/*
+  O exemplo desta vereda é a janela do Excel, e não um quadro de texto.
+
+  Ela nasceu com uma grade desenhada em fonte de máquina de escrever em cada
+  tópico — colunas alinhadas com espaço, setas apontando o resultado —, e o
+  que se via era um esboço da planilha repetindo o parágrafo de cima, sem a
+  barra de fórmulas, sem a alça, sem a caixa que a regra abre. Os tópicos que
+  ensinam um gesto agora o mostram no laboratório, passo a passo; os que só
+  explicam uma decisão (quando travar, como achar cada defeito, apresentar)
+  ficam em prosa.
+
+  A pasta fotografada é a da excursão de outubro, e não a do acampamento que
+  as lições arrumam: lá a diária, os conselheiros e os defeitos da conferência
+  são as respostas. O motivo está em `src/exemplos/excursaoDeOutubro.ts`, e
+  `exemplosDePlanilha.test.ts` confere cada número das legendas pelo motor.
+*/
+const V = 'CC-ES003';
 const t = (
   id: string, titulo: string, resumo: string,
-  explicacao: string[], exemplo: string, atencao: string, marcas: string[],
+  explicacao: string[], atencao: string, marcas: string[],
+  telas?: [legenda: string, descricao: string][],
 ): TopicoDeVereda => ({
-  id, titulo, resumo, explicacao, exemplo, exemploComo: 'texto' as const, atencao, marcas,
+  id, titulo, resumo, explicacao, atencao, marcas,
+  ...(telas ? { telas: telasDoTopico(V, id, telas) } : {}),
 });
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -51,36 +71,36 @@ const CELULA_E_ZONAS: TopicoDeVereda[] = [
     'O endereço de uma caixa, e o endereço de um retângulo delas.',
     [
       'Célula é o cruzamento de uma coluna com uma linha, e o nome dela é a letra da coluna com o número da linha: A1, B3, D14. Esse nome é um endereço — é por ele que uma fórmula diz de onde tirar um valor.',
-      'Intervalo é um retângulo de células, escrito da primeira à última com dois-pontos no meio: D3:D14 é a coluna D, da linha 3 à 14. É quase sempre o intervalo que a fórmula quer, porque quase sempre o que se soma é uma coluna inteira de dados.',
+      'Intervalo é um retângulo de células, escrito da primeira à última com dois-pontos no meio: D3:D12 é a coluna D, da linha 3 à 12. É quase sempre o intervalo que a fórmula quer, porque quase sempre o que se soma é uma coluna inteira de dados.',
       'A caixa de nome, à esquerda da barra de fórmulas, mostra o endereço do que está selecionado. Arrastar por várias células faz ela mostrar o intervalo, e é assim que se confere se a seleção pegou o que devia.',
     ],
-    `Célula                  Intervalo
-──────────────          ──────────────────────
-A1     canto de cima    A1:D1   a primeira linha, quatro colunas
-D14    coluna D, 14     D3:D14  a coluna D, doze linhas
-                        A2:D14  o bloco de dados inteiro`,
     'O erro de intervalo mais comum não é escrever o endereço errado: é parar uma linha antes do fim. O total sai um pouco menor, e um pouco menor parece certo.',
     ['célula', 'intervalo', 'caixa de nome'],
+    [
+      [
+        'Arrastando de D3 a D12, a caixa de nome diz o intervalo inteiro: D3:D12. E a régua de baixo já faz as contas da seleção — dez células, soma 612.',
+        'Aba Excursão com a coluna Pago selecionada de D3 a D12; destacados, a caixa de nome mostrando D3:D12 e, na barra de status, Média 61,20, Contagem 10 e Soma 612.',
+      ],
+    ],
   ),
   t(
     'tres-zonas',
     'Dado, cálculo e apresentação',
     'As três coisas que uma planilha tem, e por que elas ficam separadas.',
     [
-      'O dado bruto é o que foi digitado ou importado: os nomes, as unidades, as diárias. Ele cresce — chega inscrito novo toda semana — e é ordenado, filtrado e conferido.',
-      'O cálculo é o que a planilha faz com o dado: o total, a média, a contagem. Ele não cresce: três cálculos continuam três depois de o décimo terceiro desbravador se inscrever.',
+      'O dado bruto é o que foi digitado ou importado: os nomes, as unidades, as refeições, o que cada um pagou. Ele cresce — chega inscrito novo toda semana — e é ordenado, filtrado e conferido.',
+      'O cálculo é o que a planilha faz com o dado: o total, a média, a contagem. Ele não cresce: cinco cálculos continuam cinco depois de o décimo primeiro desbravador se inscrever.',
       'A apresentação é o que faz alguém entender o que está vendo: o título, o cabeçalho, as cores. Ela não é dado nem conta, e é a única das três em que mesclar célula é a resposta certa.',
       'Misturados, os três atrapalham um ao outro. Um total encostado no fim dos dados vira obstáculo na hora de acrescentar linha; um título dentro do bloco de dados viaja junto quando alguém ordena.',
     ],
-    `        A          B         C        D    E        F
-1   Inscrições do acampamento               │  Cálculos
-2   Nome       Unidade   Diárias  Valor     │  Total arrecadado
-3   Ana        Águia     3        135       │  Média de diárias
-…                                           │  Quantos inscritos
-14  Miguel     Onça      3        135       │
-    └──────── dado bruto ────────┘  calha   └── cálculo ──`,
     'A coluna vazia entre os dois blocos não é desperdício: é o que impede a planilha de tratar dado e cálculo como uma tabela só. Sem ela, ordenar os dados leva os cálculos junto.',
     ['zonas', 'dado bruto', 'organização'],
+    [
+      [
+        'O dado bruto de A2 a D12, a calha vazia na coluna E e a zona de Cálculos na F, com os rótulos do que se quer e os resultados por escrever.',
+        'Aba Excursão com dois blocos destacados: a tabela de Nome, Unidade, Refeições e Pago, e, depois da coluna E vazia, a coluna F com Cálculos, Total arrecadado, Média de refeições, Maior, Menor e Quantos foram.',
+      ],
+    ],
   ),
   t(
     'tamanho-e-alinhamento',
@@ -88,16 +108,22 @@ D14    coluna D, 14     D3:D14  a coluna D, doze linhas
     'O que a largura esconde, e o que o alinhamento conta.',
     [
       'Coluna estreita demais esconde texto e transforma número numa fileira de cerquilhas. A largura se arrasta pela borda do cabeçalho, e dois cliques nela ajustam ao conteúdo — escrever espaços dentro da célula não empurra borda nenhuma, e ainda estraga toda comparação depois.',
+      'Número não se corta, porque um número cortado é outro número: com a coluna estreita, ele vira uma fileira de cerquilhas — ####. É a única pista de que a coluna está pequena, e alargá-la traz o número de volta.',
       'Alinhamento tem dois eixos. O horizontal quase todo mundo conhece; o vertical só aparece em linha alta, e é por isso que a linha do título se aumenta antes de centralizar nela.',
       'E o alinhamento padrão não é decoração: número vai para a direita, texto para a esquerda. É a planilha dizendo o que ela entendeu de cada célula — e é por essa diferença que se descobre um número que ela não entendeu.',
     ],
-    `Como a planilha alinha sozinha:
-
-  Falcão      │ texto   → encosta à esquerda
-         1620 │ número  → encosta à direita
-  1620        │ ISTO É TEXTO, e a soma vai pular`,
     'Alinhar uma coluna de números à esquerda é legítimo e é raro. O problema é o contrário: ver um número à esquerda e alinhá-lo à direita esconde a pista sem consertar o defeito.',
     ['largura', 'alinhamento', 'mesclar'],
+    [
+      [
+        'Com a coluna A estreita, a borda da B corta os nomes: a célula guarda o nome inteiro, e a tela mostra só o começo. A borda a arrastar fica no cabeçalho, entre o A e o B.',
+        'Aba Excursão com a coluna A estreita e os nomes cortados, destacados de A3 a A12; destacada também a borda direita do cabeçalho da coluna A.',
+      ],
+      [
+        'Dois cliques nessa borda ajustam a coluna ao texto mais comprido dela. E repare no alinhamento que ninguém escolheu: os números encostam à direita, os nomes à esquerda.',
+        'A mesma aba com a coluna A alargada e os nomes inteiros, destacados; destacadas também as colunas Refeições e Pago, com os números alinhados à direita.',
+      ],
+    ],
   ),
 ];
 
@@ -113,18 +139,20 @@ const FORMULA_E_FUNCAO: TopicoDeVereda[] = [
     [
       'Fórmula é tudo o que começa com o sinal de igual. Sem ele, o que você escreveu é texto — e SOMA sem igual fica escrito SOMA na célula, encostado à esquerda.',
       'O que a fórmula guarda é a conta, e não o resultado. Mudar um valor que ela cita refaz o resultado na hora, sem ninguém pedir. É essa a diferença inteira entre planilha e papel.',
-      'Uma fórmula cita células pelo endereço. Escrever o número dentro dela funciona hoje e erra no dia em que o número mudar — e ninguém avisa, porque a planilha não sabe que aquele 45 devia ser o valor da diária.',
+      'Uma fórmula cita células pelo endereço. Escrever o número dentro dela funciona hoje e erra no dia em que o número mudar — e ninguém avisa, porque a planilha não sabe que aquele 18 escrito no meio da conta devia ser o valor da refeição.',
     ],
-    `=B4*45          conta com o número escrito dentro
-=B4*B1          conta que lê o valor de B1
-1620            número digitado: não é conta nenhuma
-
-Mude B1 de 45 para 50:
-  a primeira continua dando o de antes
-  a segunda acompanha
-  a terceira continua mostrando 1620 para sempre`,
     'Um número digitado está certo hoje. É amanhã que ele erra, e amanhã ninguém está olhando.',
     ['fórmula', 'sinal de igual', 'recálculo'],
+    [
+      [
+        'C4 mostra 72, e a barra de fórmulas mostra o que ela guarda: =B4*B$1, as refeições vezes o valor da refeição, lido de B1.',
+        'Aba Lanche com a célula C4 selecionada, mostrando 72; destacadas a célula e a barra de fórmulas, com =B4*B$1.',
+      ],
+      [
+        'O valor da refeição passou de 18 para 20, e a coluna inteira se refez sozinha: a Alice, com quatro refeições, foi de 72 para 80.',
+        'Aba Lanche com B1 valendo 20, destacada, e a coluna A pagar recalculada de C4 a C13, também destacada, começando em 80.',
+      ],
+    ],
   ),
   t(
     'funcao',
@@ -133,16 +161,17 @@ Mude B1 de 45 para 50:
     [
       'Função é uma conta que a planilha já sabe fazer: você diz o nome e entrega o que ela precisa, entre parênteses. SOMA de um intervalo soma tudo o que houver ali.',
       'Nem toda fórmula tem função: B4 vezes B1 é fórmula e não chama nenhuma. E nem toda função é de número — existem as de texto, as de data, as de procura.',
+      'As que mais se usam: SOMA, MÉDIA, MÁXIMO e MÍNIMO, que fazem o que o nome diz, e as duas de contar, que o próximo tópico separa.',
       'O que vai dentro dos parênteses são os argumentos, separados por ponto e vírgula. Quase sempre o primeiro é um intervalo, e é aí que mora o erro: a função certa sobre o intervalo errado devolve um número plausível.',
     ],
-    `=SOMA(D3:D14)         soma os doze valores
-=MÉDIA(C3:C14)        soma e divide pela quantidade de números
-=MÁXIMO(C3:C14)       o maior
-=MÍNIMO(C3:C14)       o menor
-=CONT.NÚM(C3:C14)     quantos são números
-=CONT.VALORES(C3:C14) quantas células têm alguma coisa`,
     'MÉDIA divide pela quantidade de números, e não pela de células. Célula vazia não entra nem como zero — se entrasse, puxaria a média para baixo sem ninguém entender por quê.',
     ['função', 'argumento', 'SOMA', 'MÉDIA'],
+    [
+      [
+        'MÉDIA, MÁXIMO e MÍNIMO sobre a mesma coluna de refeições: 3,40, 4 e 2. A célula mostra o resultado; a barra, a fórmula da célula escolhida.',
+        'Aba Excursão com G3, G4 e G5 destacadas, mostrando 3,40, 4 e 2 ao lado de Média de refeições, Maior e Menor; a barra de fórmulas, destacada, mostra =MÉDIA(C3:C12).',
+      ],
+    ],
   ),
   t(
     'as-duas-contagens',
@@ -153,14 +182,14 @@ Mude B1 de 45 para 50:
       'Numa coluna sem defeito as duas dão o mesmo. Quando elas discordam, a diferença é exatamente a quantidade de células que parecem número e não são.',
       'É a maneira mais rápida de achar um número guardado como texto numa coluna de cento e vinte linhas: em vez de procurar com o olho, pergunta-se à planilha.',
     ],
-    `Uma coluna com doze valores preenchidos:
-
-  =CONT.NÚM(D3:D14)       →  11
-  =CONT.VALORES(D3:D14)   →  12
-
-  Um dos doze está preenchido com algo que não é número.`,
     'Esta é a pista que funciona quando o alinhamento não funciona — e o alinhamento não funciona quando alguém já mexeu nele.',
     ['CONT.NÚM', 'CONT.VALORES', 'diagnóstico'],
+    [
+      [
+        'Dez células preenchidas em Pago, e só nove números. O que falta na conta é o 72 do Benício, que encosta à esquerda.',
+        'Aba Conferir com F1 a G2 destacados — Números em Pago, 9, e Células preenchidas, 10 —, a barra de fórmulas com =CONT.NÚM(D3:D12) e, destacada, a célula D4 com 72 encostado à esquerda.',
+      ],
+    ],
   ),
 ];
 
@@ -178,15 +207,18 @@ const RELATIVA_E_ABSOLUTA: TopicoDeVereda[] = [
       'É o que faz a alça de preenchimento ser útil: uma fórmula escrita e arrastada doze linhas dá doze contas, cada uma lendo a linha dela. Sem isso, arrastar seria copiar o mesmo resultado doze vezes.',
       'Indo para o lado vale a mesma regra, com a coluna no lugar da linha: B3 vira C3, C3 vira D3.',
     ],
-    `Escrito em C4:   =B4*45
-Arrastado:
-  C5  →  =B5*45
-  C6  →  =B6*45
-  C7  →  =B7*45
-
-Cada linha lê a linha dela. É isso que se quer.`,
     'Relativa é o padrão, e na maioria das vezes é o que se quer. Ela só atrapalha quando uma das células citadas é a mesma para todas as linhas.',
     ['referência relativa', 'alça de preenchimento'],
+    [
+      [
+        'A fórmula escrita uma vez, em C4. O quadradinho verde no canto da célula é a alça de preenchimento, e é ele que se arrasta.',
+        'Aba Lanche com C4 selecionada mostrando 72; destacadas a barra de fórmulas, com =B4*B$1, e a alça de preenchimento no canto inferior direito da célula.',
+      ],
+      [
+        'Arrastada até C13, cada linha lê a sua: em C9 a fórmula virou =B9*B$1. O B4 desceu junto, e é isso a referência relativa.',
+        'Aba Lanche com a coluna A pagar preenchida de C4 a C13, destacada, e C9 selecionada; a barra de fórmulas, destacada, mostra =B9*B$1.',
+      ],
+    ],
   ),
   t(
     'referencia-absoluta',
@@ -197,32 +229,28 @@ Cada linha lê a linha dela. É isso que se quer.`,
       'A tecla F4 põe e tira os cifrões, e é por isso que ninguém precisa digitá-los: seleciona-se a referência na barra de fórmulas e aperta-se F4 até chegar na forma que se quer.',
       'Arrastando para baixo, quem precisa ficar parada é a linha — e B$1 basta. Os dois cifrões existem para quando a mesma fórmula vai para baixo e para o lado.',
     ],
-    `Escrito em C4:   =B4*B$1
-Arrastado para baixo:
-  C5  →  =B5*B$1
-  C6  →  =B6*B$1
-
-  A primeira referência anda. A segunda fica em B1.`,
     'Sem o cifrão, arrastar para baixo faz a segunda linha ler B2, que está vazia, e a terceira ler B3, que é um rótulo. A coluna sai certa no topo e zerada embaixo.',
     ['referência absoluta', 'cifrão', 'F4'],
+    [
+      [
+        'Sem cifrão, =B4*B1 arrastada vira =B6*B3 em C6 — e B3 é o rótulo "Refeições", então a célula dá #VALOR!. Mais abaixo, cada linha multiplica as refeições de uma pessoa pelas de outra: 16, 12, 8.',
+        'Aba Lanche com a coluna C preenchida a partir de =B4*B1: 72, 0, #VALOR!, 16, 12, 8 e outros números; destacados a coluna e a barra de fórmulas, com =B6*B3.',
+      ],
+      [
+        'Com o cursor depois do B1, cada F4 gira os cifrões: $B$1, B$1, $B1 e de volta a B1. Dois toques dão B$1 — a linha travada, que é o que se quer ao arrastar para baixo.',
+        'C4 em edição, com a fórmula =B4*B$1 escrita na célula; a barra de fórmulas, destacada, mostra a mesma fórmula, e B1 aparece contornada em vermelho como a referência citada.',
+      ],
+    ],
   ),
   t(
     'quando-travar',
     'Quando travar',
     'A pergunta que decide, e ela não é sobre o cifrão.',
     [
-      'A pergunta é sempre a mesma: esta célula é a mesma para todas as linhas, ou cada linha tem a sua? Diárias é de cada linha. O valor da diária é de todas.',
-      'Travar tudo por precaução não é inofensivo: a fórmula para de andar, e as doze linhas passam a mostrar o resultado da primeira. Doze números iguais e plausíveis, sem erro nenhum na tela.',
-      'E o valor que se trava mora numa célula porque ele muda. Escrever 45 dentro das doze fórmulas dá o mesmo resultado hoje, e no ano que vem obriga a achar as doze.',
+      'A pergunta é sempre a mesma: esta célula é a mesma para todas as linhas, ou cada linha tem a sua? As refeições são de cada linha. O valor da refeição é de todas.',
+      'Travar tudo por precaução não é inofensivo: com `=B$4*B$1`, a fórmula para de andar, e as dez linhas passam a mostrar o resultado da primeira. Dez números iguais e plausíveis, sem erro nenhum na tela.',
+      'E o valor que se trava mora numa célula porque ele muda. Escrever `=B4*18` dá o mesmo resultado hoje, e na próxima excursão obriga a achar as dez fórmulas — `=B4*B$1` só pede que se mude B1.',
     ],
-    `Diária do acampamento:  B1 = 45
-
-  Cada linha tem a sua?   →  sem cifrão
-  É a mesma para todas?   →  com cifrão
-
-  =B4*B$1     as diárias andam; o valor fica
-  =B$4*B$1    nada anda: doze vezes o mesmo número
-  =B4*45      nada lê B1: o ano que vem sai errado`,
     'Todo valor que aparece escrito em mais de um lugar vai ser trocado em menos lugares do que aparece. É por isso que ele mora numa célula.',
     ['quando travar', 'manutenção'],
   ),
@@ -242,15 +270,14 @@ const DECIDIR_E_PROCURAR: TopicoDeVereda[] = [
       'O teste é uma comparação: maior que, menor que, igual a, diferente de. O que sai dela é sempre verdadeiro ou falso, e é isso que a função usa para escolher.',
       'Palavra dentro de fórmula vai entre aspas. Sem elas, a planilha tenta achar alguma coisa chamada Sim e devolve erro ou vazio.',
     ],
-    `=SE(C3>=3;"Sim";"Não")
-
-  teste:   C3 >= 3
-  então:   escreve Sim
-  senão:   escreve Não
-
-A coluna inteira responde sozinha, linha por linha.`,
-    'Escrever a comparação como o número significa, e não como ele é hoje: três diárias é o acampamento inteiro, e maior ou igual a três continua certo se o acampamento crescer.',
+    'Escrever a comparação como o número significa, e não como ele é hoje: quatro refeições é o dia inteiro, e maior ou igual a quatro continua certo se alguém aparecer com cinco.',
     ['SE', 'condição', 'comparação'],
+    [
+      [
+        'Em E2, a pergunta: as refeições de C2 chegam a 4? Se sim, "Sim"; se não, "Não". A coluna inteira responde sozinha, linha por linha.',
+        'Aba Ônibus com a coluna Dia inteiro? destacada de E2 a E11, com Sim e Não; a barra de fórmulas, destacada, mostra =SE(C2>=4;"Sim";"Não").',
+      ],
+    ],
   ),
   t(
     'funcao-de-procura',
@@ -261,14 +288,14 @@ A coluna inteira responde sozinha, linha por linha.`,
       'A contagem da coluna começa na primeira coluna da tabela de procura, e não na coluna A da planilha. É por isso que a coluna do valor procurado precisa ser a primeira dela.',
       'A tabela de procura se trava com cifrões, senão ela anda quando a fórmula é arrastada — e a partir da terceira linha a procura passa a olhar um pedaço que não existe.',
     ],
-    `=PROCV(B3;$G$2:$H$7;2;FALSO)
-
-  procurado:  o que está em B3
-  tabela:     G2 até H7, travada
-  coluna:     2, contando de G
-  exato:      FALSO`,
     'Sem travar a tabela, a fórmula funciona na primeira linha e vai dando #N/D nas seguintes. Com um valor por linha, isso parece problema de dado.',
     ['PROCV', 'procura', 'tabela de procura'],
+    [
+      [
+        'Em D2, a procura leva a unidade de B2 até a tabela de G2 a H7, travada com cifrões, e traz a coluna 2 dela. FALSO no fim pede a unidade exata: a Tucano vai no Ônibus 1.',
+        'Aba Ônibus com D2 destacada mostrando Ônibus 1, a tabela de procura de G2 a H7 destacada, e a barra de fórmulas destacada com =PROCV(B2;$G$2:$H$7;2;FALSO).',
+      ],
+    ],
   ),
   t(
     'quarto-argumento',
@@ -277,21 +304,16 @@ A coluna inteira responde sozinha, linha por linha.`,
     [
       'O quarto argumento diz se a procura é exata ou aproximada. Não escrever nada é escolher aproximada — o padrão do programa, e não do bom senso.',
       'A procura aproximada lê a primeira coluna da tabela como se ela estivesse em ordem, e para no maior valor que não passa do procurado. Numa tabela ordenada isso é rápido e certo. Numa tabela digitada à mão, ela para na linha errada.',
-      'E o que ela devolve não é erro: é o valor de outra linha. Numa coluna de conselheiros, isso é o nome de uma pessoa de verdade, ao lado do nome de um desbravador que não é da unidade dela.',
+      'E o que ela devolve não é erro: é o valor de outra linha. Numa coluna de ônibus, isso é um ônibus de verdade, ao lado do nome de um desbravador que vai esperar no lugar errado.',
     ],
-    `Tabela na ordem em que o clube escreve as unidades:
-
-  Falcão   Tio Samuel
-  Águia    Tia Rute
-  Tucano   Tia Joana
-  Arara    Tio Márcio
-
-  Procurando Águia, sem o quarto argumento  →  #N/D
-  Procurando Onça,  sem o quarto argumento  →  Tia Rute
-
-  O primeiro se vê. O segundo, não.`,
     'Ele acerta em algumas linhas e erra em outras, o que é pior do que errar sempre: quem confere duas linhas ao acaso conclui que está tudo certo.',
     ['exato', 'aproximado', '#N/D'],
+    [
+      [
+        'A mesma procura, sem o FALSO. A Alice, da Tucano, aparece no Ônibus 3 — e a tabela, ao lado, diz Ônibus 1. Logo abaixo, o Falcão dá #N/D.',
+        'Aba Ônibus com a barra de fórmulas destacada, mostrando =PROCV(B2;$G$2:$H$7;2) sem o quarto argumento; destacadas D2 com Ônibus 3, D3 com #N/D e a linha da tabela com Tucano e Ônibus 1.',
+      ],
+    ],
   ),
 ];
 
@@ -309,16 +331,18 @@ const VER_O_QUE_IMPORTA: TopicoDeVereda[] = [
       'E ela se refaz sozinha. Mudar o valor de uma célula repinta na hora, sem ninguém tocar na regra. Pintar à mão faz o mesmo hoje e mente amanhã.',
       'A faixa da regra vai até a última linha com dado. Esticada até o fim da coluna, a parte em branco acende junto: para a planilha, célula vazia vale zero, e zero é menor que quase tudo.',
     ],
-    `Regra:  em C3:C14, se o valor for menor que 3, pinte
-
-  C3   3     │
-  C5   2     │ ← acende
-  C8   2     │ ← acende
-  C14  3     │
-
-Esticada até C200, as 186 vazias acendem também.`,
     'Planilha toda colorida não destaca coisa nenhuma. Se metade da coluna acendeu, a faixa passou do fim dos dados.',
     ['formatação condicional', 'regra', 'faixa'],
+    [
+      [
+        'Com C3 a C12 escolhidas, Formatação Condicional abre a regra inteira numa caixa: se o valor for menor do que 3, pinte de vermelho claro.',
+        'Caixa Formatação Condicional — C3:C12, destacada, com É Menor do Que, o número 3 em Comparar com e Vermelho claro em Pintar de.',
+      ],
+      [
+        'Acenderam as duas pessoas com duas refeições. Se uma delas passar a ter quatro, o vermelho sai sozinho: ninguém pinta nada à mão.',
+        'Aba Excursão com a coluna Refeições destacada e duas células, ambas com 2, pintadas de vermelho claro.',
+      ],
+    ],
   ),
   t(
     'filtro-e-ordenacao',
@@ -329,17 +353,18 @@ Esticada até C200, as 186 vazias acendem também.`,
       'Ordenar troca as linhas de lugar de verdade. É a única das duas que muda o arquivo, e é por isso que ela precisa levar a linha inteira: ordenar só a coluna escolhida deixa cada nome ao lado do dado de outro.',
       'E com filtro aplicado, a soma continua somando o que está escondido. Quem não sabe disso lê o número da célula e o manda para a liderança.',
     ],
-    `Sem filtro          Com filtro em Falcão
-──────────          ─────────────────────
- 3  Ana                3  (escondida)
- 4  Bruno              4  Bruno
- 5  Carla              5  (escondida)
- 6  Daniel             6  Daniel
-
-Os números das linhas pulam: é assim que se vê
-que há linha escondida.`,
     'Ordenar metade de uma tabela não estoura nada: ela continua com doze linhas plausíveis, e o cadastro inteiro está trocado.',
     ['filtro', 'ordenação', 'linha escondida'],
+    [
+      [
+        'Com o filtro ligado, cada cabeçalho ganha uma setinha. A da Unidade abre a lista do que existe na coluna.',
+        'Guia Dados com o botão Filtro destacado e a lista do filtro da coluna Unidade aberta, também destacada, com (Todas) e as seis unidades.',
+      ],
+      [
+        'Só as duas da Tucano à vista. Os números das linhas pulam de 3 para 7 e para 13: as outras continuam na planilha, escondidas — e a zona de Cálculos sumiu junto, porque mora nas mesmas linhas.',
+        'Aba Excursão filtrada com duas linhas à vista; destacados os números de linha 3, 7 e 13 e, na barra de status, Filtro: Tucano — 2 de 10 linhas.',
+      ],
+    ],
   ),
   t(
     'congelar',
@@ -350,16 +375,18 @@ que há linha escondida.`,
       'É de tela, e só. Não muda dado nenhum, não tranca célula contra edição e não vai para o papel. O nome engana, e é a única coisa que precisa ser dita sobre ele.',
       'Congela-se tudo o que está acima da célula escolhida: clicar na terceira linha e mandar congelar prende as duas primeiras.',
     ],
-    `Rolando sem congelar        Rolando com congelar
-────────────────────        ────────────────────
- 97  Ana      3               1  Inscrições 2026
- 98  Bruno    2               2  Nome  Unidade  Diárias
- 99  Carla    3              97  Ana   Águia    3
-                             98  Bruno Falcão   2
-
-Sem o cabeçalho, o 3 da direita não quer dizer nada.`,
     'Congelar não protege: quem tranca célula contra edição é a proteção de planilha, que é outro comando e está noutro menu.',
     ['congelar', 'painéis', 'cabeçalho'],
+    [
+      [
+        'Com A3 escolhida, Exibir › Congelar Painéis prende tudo o que está acima dela: o título e o cabeçalho.',
+        'Aba Chamada com a célula A3 destacada e, na guia Exibir, o botão Congelar Painéis destacado.',
+      ],
+      [
+        'Rolando até o fim da chamada, as linhas 1 e 2 continuam no alto, com uma linha mais escura embaixo delas. Sem elas, a coluna C seria uma fileira de números sem nome.',
+        'Aba Chamada rolada até as últimas linhas, com as linhas 1 e 2 — o título e o cabeçalho Nome, Unidade, Presenças — destacadas e presas no alto.',
+      ],
+    ],
   ),
 ];
 
@@ -377,14 +404,14 @@ const ORCAMENTO_E_GRAFICO: TopicoDeVereda[] = [
       'A linha de totais responde quanto se gastou em cada mês; a coluna de totais responde quanto se gastou em cada coisa. São duas perguntas diferentes, e é por isso que a tabela tem os dois.',
       'O total geral pode ser somado pela linha ou pela coluna. Os dois caminhos têm de dar o mesmo número, e quando não dão, um deles pegou uma célula a mais ou a menos.',
     ],
-    `              Março   Abril   Maio    Total
-Alimentação     820     910    1180    =SOMA(B3:D3)
-Transporte      430     430     610    =SOMA(B4:D4)
-Material        260     140      95    =SOMA(B5:D5)
-Premiação         0       0     340    =SOMA(B6:D6)
-Total     =SOMA(B3:B6)  …       …      =SOMA(E3:E6)`,
-    'Uma soma escrita como 820+910+1180 começa por igual, devolve o número certo, e é um número parado com um sinal na frente. Corrigir um gasto não muda nada nela.',
+    'Uma soma escrita como =600+900 começa por igual, devolve o número certo, e é um número parado com um sinal na frente. Corrigir um gasto não muda nada nela.',
     ['orçamento', 'total', 'tabela de duas entradas'],
+    [
+      [
+        'O total geral, em E7, é a soma da coluna de totais: 2135. Somado pela linha de totais, dá o mesmo — e quando os dois caminhos discordam, um deles pegou uma célula a mais.',
+        'Aba Orçamento com E7 selecionada mostrando 2135; destacados a barra de fórmulas com =SOMA(E3:E6), a linha de totais de B7 a E7 e a coluna de totais de E3 a E6.',
+      ],
+    ],
   ),
   t(
     'tipo-de-grafico',
@@ -395,14 +422,14 @@ Total     =SOMA(B3:B6)  …       …      =SOMA(E3:E6)`,
       'Escolher o errado não dá erro nenhum. O gráfico desenha, fica bonito, e afirma uma coisa que os dados não dizem — uma linha ligando Alimentação a Transporte afirma que uma virou a outra.',
       'Por isso a pergunta vem antes do gráfico. Para onde vai o dinheiro é repartição. Como a inscrição cresceu mês a mês é evolução. São perguntas diferentes sobre a mesma planilha.',
     ],
-    `Pergunta                          Gráfico
-────────────────────────────      ──────────
-Para onde vai o dinheiro?         pizza
-Qual unidade trouxe mais gente?   colunas
-Como a inscrição cresceu?         linha
-Quem fica mais tempo gasta mais?  dispersão`,
     'Se a tarefa aceitasse qualquer tipo, ela mediria ter clicado em Inserir. O que se mede é a escolha.',
     ['gráfico', 'pizza', 'colunas', 'linha'],
+    [
+      [
+        'Para onde foi o dinheiro é uma pergunta de repartição. Escolhida a pizza, a caixa diz o que ela responde antes de desenhar.',
+        'Caixa Inserir Gráfico com dados de G2:H6; destacados o tipo Pizza e a nota Repartição: quanto cada parte pesa no todo.',
+      ],
+    ],
   ),
   t(
     'titulo-e-eixos',
@@ -410,18 +437,21 @@ Quem fica mais tempo gasta mais?  dispersão`,
     'O que separa um desenho de uma afirmação.',
     [
       'Um gráfico sem título não diz do que ele é. Um gráfico sem eixos identificados não diz o que os números são: podem ser reais, pessoas, diárias ou qualquer coisa.',
-      'O título diz o que o gráfico mostra, e não o que ele é. Gráfico 1 não é título; Para onde foi o dinheiro do acampamento é.',
+      'O título diz o que o gráfico mostra, e não o que ele é. Gráfico 1 não é título; Quanto custou cada parte da excursão é.',
       'A planilha desenha sem título e sem eixos, sem reclamar. É por isso que quase todo gráfico entregue vem assim.',
     ],
-    `Sem identificação          Com identificação
-─────────────────          ───────────────────────────
-   ▓▓▓▓ 2910                Para onde foi o dinheiro
-   ▓▓ 1470                  (eixo X: categoria)
-   ▓ 495                    (eixo Y: reais gastos)
-
-O de cima pode ser qualquer coisa.`,
     'Quem lê o gráfico não é quem o fez. Tudo o que não estiver escrito nele vai ser adivinhado.',
     ['título', 'eixos', 'leitura'],
+    [
+      [
+        'Sem título e sem nome nos eixos, o gráfico desenha assim mesmo, e quem o lê não sabe se as barras são reais, pessoas ou dias.',
+        'Gráfico de colunas sobre a planilha com o título (sem título) e a legenda (eixo sem nome) × (eixo sem nome), os dois destacados.',
+      ],
+      [
+        'Com título e eixos, ele afirma uma coisa: o ônibus foi a maior parte do que a excursão custou.',
+        'O mesmo gráfico com o título Quanto custou cada parte da excursão e os eixos Categoria × Reais gastos, destacados; a barra do Ônibus é a mais alta.',
+      ],
+    ],
   ),
 ];
 
@@ -439,13 +469,22 @@ const CONFERIR_E_APRESENTAR: TopicoDeVereda[] = [
       'O número guardado como texto não grita. Na célula ele é igual aos outros; o que o denuncia é encostar à esquerda, e a diferença entre as duas contagens. A soma simplesmente o pula, e o total fecha menos.',
       'O total digitado à mão não tem pista nenhuma. Ele está certo hoje, e continua mostrando o número de hoje depois de alguém corrigir um dado. A única maneira de achá-lo é clicar na célula e olhar a barra de fórmulas.',
     ],
-    `O que se vê na tela          O que está na barra de fórmulas
-───────────────────          ───────────────────────────────
-#REF!                        =SOMA(#REF!)
-135                          '135          ← texto disfarçado
-33                           33            ← digitado, e certo hoje`,
     'Conferir uma planilha é olhar a barra de fórmulas, e não a célula. Na célula, dois dos três defeitos parecem normais.',
     ['#REF!', 'número como texto', 'total digitado'],
+    [
+      [
+        'O 72 do Benício encosta à esquerda, e a barra de fórmulas mostra o apóstrofo que a célula esconde: \'72 é texto, e a soma o pula.',
+        'Aba Conferir com D4 destacada, mostrando 72 à esquerda, e a barra de fórmulas destacada com o texto precedido de apóstrofo.',
+      ],
+      [
+        'O total pago mostra #REF!, e a barra mostra onde estava o intervalo que alguém excluiu: =SOMA(#REF!).',
+        'Aba Conferir com D14 destacada, mostrando #REF!, e a barra de fórmulas destacada com =SOMA(#REF!).',
+      ],
+      [
+        'O total de refeições mostra 34, e a barra também: é um número digitado, sem igual nenhum. Hoje está certo; muda uma refeição e ele continua dizendo 34.',
+        'Aba Conferir com C15 destacada, mostrando 34, e a barra de fórmulas destacada com o mesmo 34, sem sinal de igual.',
+      ],
+    ],
   ),
   t(
     'como-achar',
@@ -455,12 +494,8 @@ const CONFERIR_E_APRESENTAR: TopicoDeVereda[] = [
       'A fórmula quebrada se acha olhando: ela é a única que escreve alguma coisa diferente na célula. Consertá-la é refazer o intervalo que foi perdido.',
       'O número guardado como texto se acha perguntando à planilha: contar os números da coluna e comparar com quantas células estão preenchidas. A diferença é a quantidade de células doentes. Consertá-lo é escrever o número de novo — apagar a célula tira o defeito e deixa um buraco.',
       'O total digitado se acha clicando célula por célula nas que deveriam ser cálculo, e olhando se há fórmula. Consertá-lo é escrever a soma: o número na tela continua o mesmo, e o que muda é que agora ele se refaz.',
+      'Resumindo: a fórmula quebrada se acha olhando a tela; o número como texto, comparando CONT.NÚM com CONT.VALORES; o total digitado, clicando e lendo a barra.',
     ],
-    `Defeito                    Como achar
-────────────────────       ──────────────────────────────
-fórmula quebrada           olhando a tela
-número como texto          CONT.NÚM contra CONT.VALORES
-total digitado             clicando e lendo a barra`,
     'O mesmo defeito volta com outra roupa: consertar três totais digitados e deixar mais três ao lado não é ter entendido o erro.',
     ['diagnóstico', 'conferência'],
   ),
@@ -470,17 +505,9 @@ total digitado             clicando e lendo a barra`,
     'A metade do requisito que não se faz sozinho.',
     [
       'Montar a planilha é metade; a outra metade é conseguir dizer o que cada fórmula faz. Copiar uma fórmula é possível — explicar copiando, não.',
-      'A explicação é simples e é em voz alta: aqui eu somo tudo o que está de D3 até D14; aqui eu multiplico as diárias pelo valor da diária, e este cifrão é o que prende a referência quando eu arrasto.',
+      'A explicação é simples e é em voz alta: aqui eu somo tudo o que está de D3 até D12; aqui eu multiplico as refeições pelo valor da refeição, e este cifrão é o que prende a referência quando eu arrasto.',
       'O que se treina é falar sobre o próprio trabalho. Não há resposta certa escrita em lugar nenhum — o que há é a sua planilha, e o que você decidiu em cada célula dela.',
     ],
-    `O que dizer sobre cada fórmula:
-
-  G2   =SOMA(D3:D14)
-       "Aqui eu somo tudo o que está de D3 até D14."
-
-  C4   =B4*B$1
-       "Aqui eu multiplico B4 por B$1. O cifrão é o que
-        prende essa referência quando eu arrasto."`,
     'Esta parte acontece na conversa com o examinador, e a plataforma não confere nada dela. O que ela faz é preparar — e ela prepara com a sua planilha, e não com uma de exemplo.',
     ['apresentação', 'explicar'],
   ),

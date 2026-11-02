@@ -456,6 +456,38 @@ export const alinhamentoDe = (cel: Celula, valor: Valor): Exclude<AlinhaH, 'padr
 export const LARGURA_PADRAO = 92;
 export const ALTURA_PADRAO = 24;
 
+/**
+ * A largura que um texto de tantos caracteres pede: sete pixels por letra e
+ * dez de respiro, que são o padding da célula. É a que os dois cliques na
+ * borda usam para alargar a coluna.
+ */
+export const larguraQuePede = (caracteres: number) => caracteres * 7 + 10;
+
+/**
+ * A largura que um número já formatado ocupa: o algarismo e a letra valem
+ * sete, e a pontuação e o espaço valem metade.
+ *
+ * Contar tudo a sete, como `larguraQuePede`, trocava por cerquilhas o total em
+ * moeda da AP044 — "R$" com espaço, ponto e vírgula — numa coluna em que ele
+ * cabe com folga na tela. E as duas contas continuam de acordo onde importa:
+ * esta nunca passa de `larguraQuePede`, então a coluna ajustada com dois
+ * cliques nunca mostra `####` no número que a ajustou.
+ */
+export const larguraDoNumero = (mostrado: string): number =>
+  [...mostrado].reduce((a, ch) => a + (/[.,\s]/.test(ch) ? 3.5 : 7), 10);
+
+/**
+ * O que uma célula de número mostra numa coluna desta largura.
+ *
+ * Número não se corta, porque um número cortado é outro número: 1.620 com o
+ * último algarismo escondido se lê 162. O Excel troca tudo por cerquilhas, e
+ * é a única pista de que a coluna está estreita demais.
+ */
+export const numeroNaLargura = (mostrado: string, largura: number): string =>
+  larguraDoNumero(mostrado) <= largura
+    ? mostrado
+    : '#'.repeat(Math.max(1, Math.floor((largura - 10) / 7)));
+
 /*
   A grade é maior do que a tabela, e é isso que faz dela uma planilha.
 

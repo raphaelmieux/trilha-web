@@ -30,7 +30,7 @@ import { useRef, useState } from 'react';
 import type React from 'react';
 import {
   type Direcao, type Faixa, type Planilha, type Recorte,
-  ALTURA_PADRAO, LARGURA_PADRAO,
+  ALTURA_PADRAO, LARGURA_PADRAO, larguraQuePede,
   colar as colarEm, copiar as copiarFaixa, escrever, limpar, mover, normalizar,
   preencherAbaixo, preencherADireita, proxima, valorDaGrade,
 } from './planilha';
@@ -510,7 +510,7 @@ export function useGradeDoExcel({
       0);
     mudar(q => ({
       ...q,
-      larguras: q.larguras.map((w, i) => (i === indice ? Math.max(LARGURA_PADRAO, maior * 7 + 10) : w)),
+      larguras: q.larguras.map((w, i) => (i === indice ? Math.max(LARGURA_PADRAO, larguraQuePede(maior)) : w)),
     }));
   };
 

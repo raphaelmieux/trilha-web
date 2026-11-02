@@ -32,6 +32,7 @@ import { ROTEIROS_DA_IDENTIDADE_VISUAL } from './roteiros/identidadeVisual';
 import { ROTEIROS_DA_DIAGRAMACAO } from './roteiros/diagramacao';
 import { ROTEIROS_DO_PROJETO_DE_DESIGN } from './roteiros/projetoDeDesign';
 import { ROTEIROS_DE_ARQUIVOS } from './roteiros/arquivos';
+import { ROTEIROS_DE_PLANILHA } from './roteiros/planilhas';
 
 export type Acao =
   /**
@@ -88,6 +89,7 @@ export const ROTEIROS: Roteiro[] = [
   ...ROTEIROS_DA_DIAGRAMACAO,
   ...ROTEIROS_DO_PROJETO_DE_DESIGN,
   ...ROTEIROS_DE_ARQUIVOS,
+  ...ROTEIROS_DE_PLANILHA,
 ];
 
 /** Os nomes das imagens que um roteiro produz, na ordem. */
