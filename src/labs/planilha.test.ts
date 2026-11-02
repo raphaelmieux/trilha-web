@@ -8,6 +8,7 @@ import {
   linhaEscondida, estiloCondicional, ordenar, preencherAbaixo, preencherADireita,
   valorDaGrade, planilhaAtiva, trocarAtiva, planilhaPorNome,
   moverOuCopiar, renomearAba, substituir, removerDuplicatas, planilhaDe,
+  numeroNaLargura, larguraQuePede, larguraDoNumero, LARGURA_PADRAO,
   pontosDoGrafico, pontosDaDispersao, valorDe,
 } from './planilha';
 import { mostrar } from './formulas';
@@ -659,5 +660,33 @@ describe('SUBTOTAL respeita o filtro, e a SOMA não', () => {
   it('não conta outro SUBTOTAL que caia dentro da faixa', () => {
     const q = planilhaDe('X', [['1'], ['2'], ['=SUBTOTAL(9;A1:A2)'], ['=SUBTOTAL(9;A1:A3)']]);
     expect(valorDe(q, 3, 0)).toBe('3');
+  });
+});
+
+describe('o número que não cabe vira cerquilhas', () => {
+  /*
+    Os dois cliques na borda alargam até `larguraQuePede` do texto mais
+    comprido, e a célula de número decide se cabe por `larguraDoNumero`, que
+    nunca passa da outra. Se passasse, a coluna recém-ajustada mostraria `####`
+    justamente no número mais comprido dela.
+  */
+  it('a coluna ajustada ao número sempre o mostra inteiro', () => {
+    for (const n of ['1620', 'R$ 14.400,00', '3,40', '1.234.567']) {
+      expect(larguraDoNumero(n)).toBeLessThanOrEqual(larguraQuePede(n.length));
+      expect(numeroNaLargura(n, larguraQuePede(n.length))).toBe(n);
+    }
+  });
+
+  it('um pixel a menos do que o número pede já vira cerquilhas', () => {
+    expect(numeroNaLargura('1620', larguraDoNumero('1620'))).toBe('1620');
+    expect(numeroNaLargura('1620', larguraDoNumero('1620') - 1)).toMatch(/^#+$/);
+  });
+
+  it('o total em moeda cabe na largura padrão, como cabe na tela', () => {
+    expect(numeroNaLargura('R$ 14.400,00', LARGURA_PADRAO)).toBe('R$ 14.400,00');
+  });
+
+  it('as cerquilhas nunca somem de todo', () => {
+    expect(numeroNaLargura('123456', 5)).toBe('#');
   });
 });

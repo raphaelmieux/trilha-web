@@ -7,6 +7,8 @@ import LaboratorioDaRevisao from '../components/LaboratorioDaRevisao';
 import LaboratorioDaEntrega from '../components/LaboratorioDaEntrega';
 import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
 import { discoDaUnidade } from './discoDaUnidade';
+import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
+import { pastaDaExcursao, type Estado } from './excursaoDeOutubro';
 import { CENAS_DE_DESIGN } from './cenasDeDesign';
 import { CENAS_VETORIAIS } from './cenasVetoriais';
 import { CENAS_DE_FOTO } from './cenasDeFoto';
@@ -300,6 +302,14 @@ const explorador = () => () => (
     aoVencer={nada} aoSair={nada} disco={discoDaUnidade} />
 );
 
+/* ── Planilha ─────────────────────────────────────────────────────────────── */
+
+/** A excursão de outubro, e não a pasta do acampamento que o laboratório arruma. */
+const planilha = (estado: Estado) => () => (
+  <LaboratorioDePlanilha vereda={vereda('cc-es003')} licao={licaoDe('cc-es003', 'planilha')}
+    aoVencer={nada} aoSair={nada} inicial={() => pastaDaExcursao(estado)} arquivo="Excursão de outubro" />
+);
+
 export const CENAS: Record<string, ComponentType> = {
   'word-programa-a-mao': word(PROGRAMA_A_MAO, 'Programa do Campori'),
   'word-programa-com-estilo': word(PROGRAMA_COM_ESTILO, 'Programa do Campori'),
@@ -315,6 +325,15 @@ export const CENAS: Record<string, ComponentType> = {
   'word-escala': revisao(ESCALA, 'Escala da Cantina'),
   'word-manual-entrega': entrega({ ...MANUAL, sumario: titulosDoDoc(MANUAL) }, 'Manual da Unidade Falcão'),
   'explorador-tucano': explorador(),
+  'excursao': planilha({ aba: 'Excursão' }),
+  'excursao-nomes-cortados': planilha({ aba: 'Excursão', larguraDosNomes: 62 }),
+  'excursao-lanche': planilha({ aba: 'Lanche' }),
+  'excursao-lanche-vazio': planilha({ aba: 'Lanche', lanchePreenchido: false }),
+  'excursao-onibus': planilha({ aba: 'Ônibus' }),
+  'excursao-onibus-aproximado': planilha({ aba: 'Ônibus', procuraExata: false }),
+  'excursao-chamada': planilha({ aba: 'Chamada' }),
+  'excursao-orcamento': planilha({ aba: 'Orçamento' }),
+  'excursao-conferir': planilha({ aba: 'Conferir' }),
   ...CENAS_DE_DESIGN,
   ...CENAS_VETORIAIS,
   ...CENAS_DE_FOTO,

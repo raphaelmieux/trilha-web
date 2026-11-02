@@ -5,7 +5,7 @@ import {
 import {
   type Caderno, type Direcao, type Faixa, type Planilha,
   alinhamentoDe, estiloCondicional, linhaEscondida, mostrar, naFaixa, nomeDaColuna, nomeDaCelula, normalizar,
-  textoDoResumo, valorCalculado, contaDaSelecao,
+  textoDoResumo, valorCalculado, contaDaSelecao, numeroNaLargura,
   type TipoDeGrafico, type PontoDoGrafico, type PontoDeDispersao, type EixoDoGrafico,
 } from './planilha';
 
@@ -769,7 +769,16 @@ export function GradeDoExcel({
       onPointerMove={aoMoverPonteiro}
       onPointerUp={aoSoltarPonteiro}
       onPointerLeave={aoSairDaGrade}>
-      <table className={`pl-grade pl-layout-${p.layout}`}>
+      {/*
+        A largura da tabela é a soma das colunas, escrita aqui. Sem ela o
+        `table-layout: fixed` não vale — o navegador só o obedece com largura
+        declarada —, e a coluna se alargava sozinha até caber o conteúdo:
+        nenhum nome ficava cortado, e a tarefa que manda alargar a coluna A
+        dizia que os nomes não cabiam em cima de uma tela que mostrava todos.
+        Os 34 são o canto, do mesmo tamanho dos números das linhas.
+      */}
+      <table className={`pl-grade pl-layout-${p.layout}`}
+        style={{ width: 34 + p.larguras.reduce((a, w) => a + w, 0) }}>
         <thead>
           <tr>
             <th className="pl-canto" />
@@ -839,7 +848,11 @@ export function GradeDoExcel({
                   mostrar o de baixo faria a tela discordar do retrato.
                 */
                 const doResumo = textoDoResumo(p, l, c);
-                const mostrado = doResumo ?? mostrar(valor, cel.formato);
+                const largura = p.larguras.slice(c, c + cel.span).reduce((a, w) => a + w, 0);
+                const mostrado = doResumo
+                  ?? (valor.tipo === 'numero'
+                    ? numeroNaLargura(mostrar(valor, cel.formato), largura)
+                    : mostrar(valor, cel.formato));
                 const h = doResumo !== null ? 'esquerda' : alinhamentoDe(cel, valor);
                 const cond = estiloCondicional(p, l, c);
                 return (
