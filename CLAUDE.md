@@ -1064,19 +1064,24 @@ responde. E **o campo "Até" vazava pela borda direita** do diálogo de
 validação: as duas metades da faixa guardavam a largura natural do campo, e só
 `min-width: 0` as deixa encolher. `LaboratorioDeDados.test.tsx` cobra as duas.
 
-A CC-ES011 fotografa a apresentação da Feira de Especialidades, de
-`src/exemplos/feiraDeEspecialidades.ts` — o mesmo clube apresentando outro
-evento, com o laranja e o azul do cartaz da feira no lugar do ouro e do verde
-—, e não a do acampamento: lá os tópicos enxutos de cada slide, as cores
-escurecidas, os custos que mudaram na planilha e os slides que se juntam no
-corte são as respostas. Cada estado da feira parte do conserto do anterior,
-como as lições. `LaboratorioDeApresentacao` ganhou `outra`, com o estado de
-partida e o que a janela mostra com nome — o arquivo, a planilha, as fotos da
-pasta e os tons do seletor de cor —, e `exemplosDasApresentacoes.test.ts`
-confere as razões de contraste, as palavras da régua, os pixels e os
-megabytes das legendas pelo motor, e reprova se as duas apresentações
-dividirem um título ou um tópico em qualquer estado. Foi assim que o título
-"Programação" saiu da feira.
+A CC-ES011 fotografa a apresentação do Dia de Portas Abertas, de
+`src/exemplos/diaDePortasAbertas.ts` — o mesmo clube apresentando outro
+evento, com o laranja e o azul do cartaz no lugar do ouro e do verde —, e não
+a do acampamento: lá os tópicos enxutos de cada slide, as cores escurecidas,
+os custos que mudaram na planilha e os slides que se juntam no corte são as
+respostas. Cada estado do evento parte do conserto do anterior, como as
+lições. `LaboratorioDeApresentacao` ganhou `outra`, com o estado de partida e
+o que a janela mostra com nome — o arquivo, a planilha, as fotos da pasta e os
+tons do seletor de cor —, e `exemplosDasApresentacoes.test.ts` confere as
+razões de contraste, as palavras da régua, os pixels e os megabytes das
+legendas pelo motor, e reprova se as duas apresentações dividirem um título
+ou um tópico em qualquer estado. Foi assim que o título "Programação" saiu.
+
+O exemplo nasceu como a Feira de Especialidades, e não pode ser: a feira é o
+projeto do laboratório da CC-ES012, no terceiro sábado de agosto, no salão da
+igreja. Um exemplo com a mesma feira em outro dia e outro lugar faria duas
+veredas contarem dois eventos com o mesmo nome. **Evento de exemplo não
+reaproveita evento de laboratório de vereda nenhuma**, e não só da sua.
 
 Da mesma volta: o aviso de Limpar Formatação dizia "saiu dos dezesseis", e
 dezesseis é o tamanho da apresentação de partida — depois do corte, ou em

@@ -6,7 +6,7 @@ import { CADERNO_VAZIO, type ContextoDaApresentacao } from '../labs/metasDaCcEs0
 import type { OutraApresentacao } from '../components/LaboratorioDeApresentacao';
 
 /*
- * A apresentação da Feira de Especialidades: o que as telas da CC-ES011
+ * A apresentação do Dia de Portas Abertas: o que as telas da CC-ES011
  * fotografam.
  *
  * ── Por que outra apresentação ───────────────────────────────────────────
@@ -18,7 +18,7 @@ import type { OutraApresentacao } from '../components/LaboratorioDeApresentacao'
  * dezenove horas" é a resposta da lição de hierarquia —, que é pôr o gabarito
  * na teoria.
  *
- * Aqui é o mesmo clube apresentando outro evento, com a cor da feira no lugar
+ * Aqui é o mesmo clube apresentando outro evento, com a cor do cartaz no lugar
  * da do clube e os mesmos tipos de defeito: caixas à mão em alturas
  * diferentes, títulos com formatação direta, tópicos que são frases, cores que
  * não se leem, uma foto pequena esticada, custos digitados. Cada estado parte
@@ -27,47 +27,47 @@ import type { OutraApresentacao } from '../components/LaboratorioDeApresentacao'
  * dividirem um título ou um tópico.
  */
 
-/** As fotos da pasta da feira, com o tamanho em pixels de cada uma. */
-export const IMAGENS_DA_FEIRA: { arquivo: string; px: number; py: number }[] = [
-  { arquivo: 'cartaz-da-feira.png', px: 300, py: 225 },
-  { arquivo: 'cartaz-da-feira-grande.png', px: 1800, py: 1350 },
-  { arquivo: 'feira-2025.jpg', px: 640, py: 480 },
-  { arquivo: 'feira-2025-original.jpg', px: 4000, py: 3000 },
+/** As fotos da pasta do evento, com o tamanho em pixels de cada uma. */
+export const IMAGENS_DAS_PORTAS: { arquivo: string; px: number; py: number }[] = [
+  { arquivo: 'cartaz-portas-abertas.png', px: 300, py: 225 },
+  { arquivo: 'cartaz-portas-abertas-grande.png', px: 1800, py: 1350 },
+  { arquivo: 'portas-abertas-2025.jpg', px: 640, py: 480 },
+  { arquivo: 'portas-abertas-2025-original.jpg', px: 4000, py: 3000 },
 ];
 
 const imagem = (id: string, arquivo: string, largura: number): Imagem => {
-  const f = IMAGENS_DA_FEIRA.find(i => i.arquivo === arquivo)!;
+  const f = IMAGENS_DAS_PORTAS.find(i => i.arquivo === arquivo)!;
   return imagemInserida(id, arquivo, f.px, f.py, largura);
 };
 
-/** A cor da feira é laranja e azul, escolhidas pelo cartaz, e não pela leitura. */
-export const LARANJA_DA_FEIRA = '#F28C28';
-export const AZUL_DA_FEIRA = '#3AA0D8';
+/** A cor do cartaz é laranja e azul, escolhidas pelo cartaz, e não pela leitura. */
+export const LARANJA_DO_CARTAZ = '#F28C28';
+export const AZUL_DO_CARTAZ = '#3AA0D8';
 export const LARANJA_LEGIVEL = '#9E5308';
 export const AZUL_LEGIVEL = '#1C5E83';
 
 export const TONS_DO_LARANJA = [
-  { hex: LARANJA_DA_FEIRA, nome: 'Laranja da feira' },
-  { hex: '#C66E14', nome: 'Laranja da feira, 25% mais escuro' },
-  { hex: LARANJA_LEGIVEL, nome: 'Laranja da feira, 50% mais escuro' },
+  { hex: LARANJA_DO_CARTAZ, nome: 'Laranja do cartaz' },
+  { hex: '#C66E14', nome: 'Laranja do cartaz, 25% mais escuro' },
+  { hex: LARANJA_LEGIVEL, nome: 'Laranja do cartaz, 50% mais escuro' },
   { hex: '#000000', nome: 'Preto, texto 1' },
 ];
 export const TONS_DO_AZUL = [
-  { hex: AZUL_DA_FEIRA, nome: 'Azul da feira' },
-  { hex: '#8CCBEC', nome: 'Azul da feira, 40% mais claro' },
-  { hex: '#2A7DAC', nome: 'Azul da feira, 25% mais escuro' },
-  { hex: AZUL_LEGIVEL, nome: 'Azul da feira, 50% mais escuro' },
+  { hex: AZUL_DO_CARTAZ, nome: 'Azul do cartaz' },
+  { hex: '#8CCBEC', nome: 'Azul do cartaz, 40% mais claro' },
+  { hex: '#2A7DAC', nome: 'Azul do cartaz, 25% mais escuro' },
+  { hex: AZUL_LEGIVEL, nome: 'Azul do cartaz, 50% mais escuro' },
   { hex: '#333333', nome: 'Cinza-escuro, texto 2' },
 ];
 
-export const PLANILHA_DA_FEIRA = 'Custos da feira.xlsx';
-export const CUSTOS_DIGITADOS_DA_FEIRA = [
+export const PLANILHA_DAS_PORTAS = 'Custos do Portas Abertas.xlsx';
+export const CUSTOS_DIGITADOS_DAS_PORTAS = [
   { rotulo: 'Material', valor: 120 },
   { rotulo: 'Lanche', valor: 90 },
   { rotulo: 'Prêmios', valor: 60 },
 ];
 /** A planilha mudou depois que alguém digitou o slide: o material e os prêmios subiram. */
-export const CUSTOS_DA_FEIRA_HOJE = [
+export const CUSTOS_DAS_PORTAS_HOJE = [
   { rotulo: 'Material', valor: 150 },
   { rotulo: 'Lanche', valor: 90 },
   { rotulo: 'Prêmios', valor: 75 },
@@ -94,19 +94,19 @@ const aMao = (id: string, titulo: string, topicos: string[], y: number): Slide =
 });
 
 /** A apresentação como a secretaria a montou, slide por slide, à mão. */
-export const FEIRA_COMO_CHEGA: Apresentacao = {
+export const PORTAS_COMO_CHEGA: Apresentacao = {
   modelo: 'branco',
   mestre: MESTRE,
   pdf: null,
   slides: [
     {
-      ...aMao('f1', 'Feira de Especialidades 2026 do Clube Pioneiros', [
+      ...aMao('f1', 'Dia de Portas Abertas 2026 do Clube Pioneiros', [
         'Um convite da secretaria do clube para as famílias e os vizinhos',
       ], 8),
-      imagens: [imagem('f1-cartaz', 'cartaz-da-feira.png', 40)],
+      imagens: [imagem('f1-cartaz', 'cartaz-portas-abertas.png', 40)],
     },
-    escrito('f2', 'O que é a feira', [
-      'A feira é o dia em que cada unidade monta uma barraca e mostra para a comunidade uma especialidade que aprendeu durante o semestre',
+    escrito('f2', 'O que é o Portas Abertas', [
+      'O Portas Abertas é o dia em que cada unidade monta uma barraca e mostra para a comunidade uma especialidade que aprendeu durante o semestre',
       'Quem visita pode experimentar, perguntar e levar para casa o que as unidades prepararam, sem pagar nada',
     ]),
     aMao('f3', 'Data e local', [
@@ -127,9 +127,9 @@ export const FEIRA_COMO_CHEGA: Apresentacao = {
       'A unidade Onça vai mostrar culinária de acampamento no fogareiro',
       'A unidade Falcão vai ensinar a reconhecer as aves do cerrado pelo canto',
     ], 37),
-    escrito('f7', 'Custos da feira', [
-      ...CUSTOS_DIGITADOS_DA_FEIRA.map(c => `${c.rotulo}: R$ ${c.valor},00`),
-      `Total: R$ ${total(CUSTOS_DIGITADOS_DA_FEIRA)},00`,
+    escrito('f7', 'Custos do Portas Abertas', [
+      ...CUSTOS_DIGITADOS_DAS_PORTAS.map(c => `${c.rotulo}: R$ ${c.valor},00`),
+      `Total: R$ ${total(CUSTOS_DIGITADOS_DAS_PORTAS)},00`,
     ]),
     aMao('f8', 'Horários do domingo', [
       'Nove horas: abertura das barracas',
@@ -137,27 +137,27 @@ export const FEIRA_COMO_CHEGA: Apresentacao = {
       'Uma hora: encerramento e limpeza do pátio',
     ], 10),
     {
-      ...escrito('f9', 'Como foi a feira de 2025', []),
-      imagens: [imagem('f9-foto', 'feira-2025.jpg', 80)],
+      ...escrito('f9', 'Como foi o Portas Abertas de 2025', []),
+      imagens: [imagem('f9-foto', 'portas-abertas-2025.jpg', 80)],
     },
   ],
 };
 
 const mapear = (a: Apresentacao, f: (s: Slide) => Slide): Apresentacao => ({ ...a, slides: a.slides.map(f) });
 
-/** Depois do módulo 1: a identidade da feira no mestre, e a formatação direta limpa. */
-export const FEIRA_COM_MESTRE: Apresentacao = mapear({
-  ...FEIRA_COMO_CHEGA,
+/** Depois do módulo 1: a identidade do cartaz no mestre, e a formatação direta limpa. */
+export const PORTAS_COM_MESTRE: Apresentacao = mapear({
+  ...PORTAS_COMO_CHEGA,
   mestre: {
-    ...FEIRA_COMO_CHEGA.mestre,
+    ...PORTAS_COMO_CHEGA.mestre,
     fonteDoTitulo: 'Georgia', fonteDoCorpo: 'Calibri',
-    corDoTitulo: LARANJA_DA_FEIRA, corDoCorpo: AZUL_DA_FEIRA,
+    corDoTitulo: LARANJA_DO_CARTAZ, corDoCorpo: AZUL_DO_CARTAZ,
     logo: true, numeroNoPe: true,
   },
 }, limparFormatacaoDireta);
 
 /** Depois do módulo 2: cada caixa à mão no espaço reservado do layout. */
-export const FEIRA_COM_LAYOUT: Apresentacao = mapear(FEIRA_COM_MESTRE, (s) => {
+export const PORTAS_COM_LAYOUT: Apresentacao = mapear(PORTAS_COM_MESTRE, (s) => {
   if (s.caixas.length === 0) return s;
   const l: Layout = s.id === 'f1' ? 'titulo' : 'titulo-conteudo';
   return aplicarLayout(s, l);
@@ -174,48 +174,48 @@ const ENXUTOS: Record<string, string[]> = {
 };
 
 /** Depois do módulo 3: título 40, corpo 24, e cada tópico numa linha. */
-export const FEIRA_ENXUTA: Apresentacao = mapear(
-  { ...FEIRA_COM_LAYOUT, mestre: { ...FEIRA_COM_LAYOUT.mestre, tamanhoDoTitulo: 40, tamanhoDoCorpo: 24 } },
+export const PORTAS_ENXUTA: Apresentacao = mapear(
+  { ...PORTAS_COM_LAYOUT, mestre: { ...PORTAS_COM_LAYOUT.mestre, tamanhoDoTitulo: 40, tamanhoDoCorpo: 24 } },
   s => (ENXUTOS[s.id] ? { ...s, topicos: ENXUTOS[s.id] } : s),
 );
 
 /** Depois do módulo 4: as mesmas duas cores, escurecidas até se lerem. */
-export const FEIRA_LEGIVEL: Apresentacao = {
-  ...FEIRA_ENXUTA,
-  mestre: { ...FEIRA_ENXUTA.mestre, corDoTitulo: LARANJA_LEGIVEL, corDoCorpo: AZUL_LEGIVEL },
+export const PORTAS_LEGIVEL: Apresentacao = {
+  ...PORTAS_ENXUTA,
+  mestre: { ...PORTAS_ENXUTA.mestre, corDoTitulo: LARANJA_LEGIVEL, corDoCorpo: AZUL_LEGIVEL },
 };
 
 /** Depois do módulo 6: o cartaz trocado pelo arquivo grande, e a foto do ano passado compactada. */
-export const FEIRA_COM_IMAGENS: Apresentacao = mapear(FEIRA_LEGIVEL, s => ({
+export const PORTAS_COM_IMAGENS: Apresentacao = mapear(PORTAS_LEGIVEL, s => ({
   ...s,
-  imagens: s.imagens.map(i => (i.legenda === 'cartaz-da-feira.png'
-    ? imagem(i.id, 'cartaz-da-feira-grande.png', i.largura)
-    : i.legenda === 'feira-2025.jpg' ? compactarImagem(imagem(i.id, 'feira-2025-original.jpg', i.largura), 150) : i)),
+  imagens: s.imagens.map(i => (i.legenda === 'cartaz-portas-abertas.png'
+    ? imagem(i.id, 'cartaz-portas-abertas-grande.png', i.largura)
+    : i.legenda === 'portas-abertas-2025.jpg' ? compactarImagem(imagem(i.id, 'portas-abertas-2025-original.jpg', i.largura), 150) : i)),
 }));
 
 /** Depois do módulo 7: o slide dos custos com o gráfico incorporado da planilha. */
-export const FEIRA_COM_GRAFICO: Apresentacao = mapear(FEIRA_COM_IMAGENS, s => (s.id !== 'f7' ? s : {
+export const PORTAS_COM_GRAFICO: Apresentacao = mapear(PORTAS_COM_IMAGENS, s => (s.id !== 'f7' ? s : {
   ...s,
   topicos: [],
-  grafico: { id: 'f7-g', como: 'incorporado', planilha: PLANILHA_DA_FEIRA, retrato: CUSTOS_DA_FEIRA_HOJE.map(c => ({ ...c })) },
+  grafico: { id: 'f7-g', como: 'incorporado', planilha: PLANILHA_DAS_PORTAS, retrato: CUSTOS_DAS_PORTAS_HOJE.map(c => ({ ...c })) },
 }));
 
-export const NOTAS_DA_FEIRA: Record<string, string> = {
-  f1: 'Agradecer quem veio e dizer que a feira é aberta para os vizinhos também.',
+export const NOTAS_DAS_PORTAS: Record<string, string> = {
+  f1: 'Agradecer quem veio e dizer que o dia é aberto para os vizinhos também.',
   f3: 'Avisar que a entrada da frente fica fechada no domingo, e que o portão é o da rua de trás.',
   f4: 'Explicar que o passaporte completo concorre a um prêmio, e que criança pequena pode pedir ajuda.',
   f7: 'Dizer que o material ficou mais caro, e que a planilha está com a tesouraria para quem quiser ver.',
 };
 
 /** Depois do módulo 8: as notas escritas. */
-export const FEIRA_COM_NOTAS: Apresentacao = mapear(FEIRA_COM_GRAFICO, s => (
-  NOTAS_DA_FEIRA[s.id] ? { ...s, notas: NOTAS_DA_FEIRA[s.id] } : s
+export const PORTAS_COM_NOTAS: Apresentacao = mapear(PORTAS_COM_GRAFICO, s => (
+  NOTAS_DAS_PORTAS[s.id] ? { ...s, notas: NOTAS_DAS_PORTAS[s.id] } : s
 ));
 
 /** Depois do módulo 9: as duas partes das barracas consolidadas num slide só. */
-export const FEIRA_CORTADA: Apresentacao = {
-  ...FEIRA_COM_NOTAS,
-  slides: FEIRA_COM_NOTAS.slides
+export const PORTAS_CORTADA: Apresentacao = {
+  ...PORTAS_COM_NOTAS,
+  slides: PORTAS_COM_NOTAS.slides
     .filter(s => s.id !== 'f6')
     .map(s => (s.id !== 'f5' ? s : {
       ...s,
@@ -225,33 +225,33 @@ export const FEIRA_CORTADA: Apresentacao = {
     })),
 };
 
-export type EstadoDaFeira =
+export type EstadoDasPortas =
   | 'como-chega' | 'com-mestre' | 'com-layout' | 'enxuta' | 'legivel' | 'com-imagens'
   | 'com-grafico' | 'com-notas' | 'cortada';
 
-export const ESTADOS_DA_FEIRA: Record<EstadoDaFeira, Apresentacao> = {
-  'como-chega': FEIRA_COMO_CHEGA,
-  'com-mestre': FEIRA_COM_MESTRE,
-  'com-layout': FEIRA_COM_LAYOUT,
-  'enxuta': FEIRA_ENXUTA,
-  'legivel': FEIRA_LEGIVEL,
-  'com-imagens': FEIRA_COM_IMAGENS,
-  'com-grafico': FEIRA_COM_GRAFICO,
-  'com-notas': FEIRA_COM_NOTAS,
-  'cortada': FEIRA_CORTADA,
+export const ESTADOS_DAS_PORTAS: Record<EstadoDasPortas, Apresentacao> = {
+  'como-chega': PORTAS_COMO_CHEGA,
+  'com-mestre': PORTAS_COM_MESTRE,
+  'com-layout': PORTAS_COM_LAYOUT,
+  'enxuta': PORTAS_ENXUTA,
+  'legivel': PORTAS_LEGIVEL,
+  'com-imagens': PORTAS_COM_IMAGENS,
+  'com-grafico': PORTAS_COM_GRAFICO,
+  'com-notas': PORTAS_COM_NOTAS,
+  'cortada': PORTAS_CORTADA,
 };
 
-/** A apresentação da feira, partindo do estado que o tópico mostra. */
-export const naFeira = (estado: EstadoDaFeira): OutraApresentacao => ({
+/** A apresentação do Portas Abertas, partindo do estado que o tópico mostra. */
+export const nasPortasAbertas = (estado: EstadoDasPortas): OutraApresentacao => ({
   inicial: (): ContextoDaApresentacao => ({
-    ap: ESTADOS_DA_FEIRA[estado],
-    custos: CUSTOS_DA_FEIRA_HOJE.map(c => ({ ...c })),
+    ap: ESTADOS_DAS_PORTAS[estado],
+    custos: CUSTOS_DAS_PORTAS_HOJE.map(c => ({ ...c })),
     descobertas: [],
     caderno: CADERNO_VAZIO,
   }),
-  arquivo: 'Feira de Especialidades 2026',
-  planilha: PLANILHA_DA_FEIRA,
-  imagens: IMAGENS_DA_FEIRA,
+  arquivo: 'Dia de Portas Abertas 2026',
+  planilha: PLANILHA_DAS_PORTAS,
+  imagens: IMAGENS_DAS_PORTAS,
   tonsDoTitulo: TONS_DO_LARANJA,
   tonsDoCorpo: TONS_DO_AZUL,
 });

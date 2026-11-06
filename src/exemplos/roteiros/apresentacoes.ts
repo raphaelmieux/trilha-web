@@ -2,8 +2,8 @@ import type { Acao, Roteiro } from '../roteiros';
 
 /*
  * CC-ES011 Apresentações, no PowerPoint do laboratório, com a apresentação da
- * Feira de Especialidades — e não a do acampamento que as lições consertam.
- * O motivo está em `feiraDeEspecialidades.ts`.
+ * Dia de Portas Abertas — e não a do acampamento que as lições consertam.
+ * O motivo está em `diaDePortasAbertas.ts`.
  */
 
 const V = 'CC-ES011';
@@ -11,7 +11,7 @@ const L = 1280;
 const A = 800;
 
 const r = (topico: string, estado: string, acoes: Acao[]): Roteiro =>
-  ({ vereda: V, topico, cena: `feira-${estado}`, largura: L, altura: A, acoes });
+  ({ vereda: V, topico, cena: `portas-${estado}`, largura: L, altura: A, acoes });
 
 const guia = (nome: string) => `.pp-guia:text-is("${nome}")`;
 const botao = (dica: string) => `.pp-bt[title="${dica}"]`;
@@ -47,7 +47,7 @@ export const ROTEIROS_DAS_APRESENTACOES: Roteiro[] = [
     { clicar: noSlide(5) },
     ...abrirMestre,
     ...trocarNumero(TITULO_DO_MESTRE, '44'),
-    { clicar: cor('Laranja da feira') },
+    { clicar: cor('Laranja do cartaz') },
     fecharMestre,
     { foto: true, destaque: [[noSlide(5), noSlide(6)], '[aria-label="Título do slide 5"]'] },
     { clicar: guia('Página Inicial') },
@@ -115,8 +115,8 @@ export const ROTEIROS_DAS_APRESENTACOES: Roteiro[] = [
     { clicar: noSlide(2) },
     ...abrirMestre,
     { foto: true, destaque: ['[aria-label="Cor do título"]', '[aria-label="Cor do corpo"]'] },
-    { clicar: cor('Laranja da feira, 50% mais escuro') },
-    { clicar: cor('Azul da feira, 50% mais escuro') },
+    { clicar: cor('Laranja do cartaz, 50% mais escuro') },
+    { clicar: cor('Azul do cartaz, 50% mais escuro') },
     fecharMestre,
     { clicar: guia('Revisão') }, { clicar: botao('Verificar Acessibilidade') },
     { foto: true, destaque: [PALCO, painel('Acessibilidade')] },
@@ -143,14 +143,14 @@ export const ROTEIROS_DAS_APRESENTACOES: Roteiro[] = [
     { foto: true, destaque: [painel('Formatar Imagem')] },
     { clicar: `${painel('Formatar Imagem')} button:has-text("Alterar Imagem")` },
     { foto: true, destaque: [dialogo('Alterar Imagem')] },
-    { clicar: `${dialogo('Alterar Imagem')} button:has-text("feira-2025-original.jpg")` },
+    { clicar: `${dialogo('Alterar Imagem')} button:has-text("portas-abertas-2025-original.jpg")` },
     { foto: true, destaque: [painel('Formatar Imagem')] },
   ]),
   r('compactar-e-destrutivo', 'legivel', [
     { clicar: noSlide(9) },
     { clicar: guia('Design') }, { clicar: botao('Abrir o painel Formatar Imagem') },
     { clicar: `${painel('Formatar Imagem')} button:has-text("Alterar Imagem")` },
-    { clicar: `${dialogo('Alterar Imagem')} button:has-text("feira-2025-original.jpg")` },
+    { clicar: `${dialogo('Alterar Imagem')} button:has-text("portas-abertas-2025-original.jpg")` },
     { foto: true, destaque: [STATUS] },
     { clicar: botao('Compactar Imagens') },
     { clicar: '[aria-label="150 ppi"]' },

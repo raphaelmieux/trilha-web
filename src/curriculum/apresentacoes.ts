@@ -30,8 +30,8 @@ import { telasDoTopico } from './telas';
  *
  * ── O exemplo é a tela ───────────────────────────────────────────────────
  * Os tópicos que ensinam um gesto trazem as janelas do próprio laboratório,
- * passo a passo, abertas na apresentação da Feira de Especialidades
- * (`src/exemplos/feiraDeEspecialidades.ts`), e não na do acampamento, que é
+ * passo a passo, abertas na apresentação do Dia de Portas Abertas
+ * (`src/exemplos/diaDePortasAbertas.ts`), e não na do acampamento, que é
  * a das lições. Eram slides desenhados com traços, e citavam os tópicos
  * enxutos, as cores escurecidas e os custos que o laboratório manda achar. A
  * justificativa dos cortes fica em prosa: ela mora no caderno, e não no
@@ -65,11 +65,11 @@ const O_SLIDE_MESTRE: TopicoDeVereda[] = [
     [
       [
         'Em Exibir › Slide Mestre, o aviso amarelo diz onde você está, e a faixa mostra fonte, tamanho e cor do título e do corpo.',
-        'O PowerPoint no modo de slide mestre, com a Feira de Especialidades aberta. Circulados: o aviso amarelo, que diz "Você está no slide mestre. O que mudar aqui vale para todos os slides de uma vez", e a faixa com os campos Fonte, Tamanho e Cor do Título e do Corpo, e os botões Logo e Número.',
+        'O PowerPoint no modo de slide mestre, com o Dia de Portas Abertas aberto. Circulados: o aviso amarelo, que diz "Você está no slide mestre. O que mudar aqui vale para todos os slides de uma vez", e a faixa com os campos Fonte, Tamanho e Cor do Título e do Corpo, e os botões Logo e Número.',
       ],
       [
         'Trocado o tamanho do título para 44 e fechado o mestre, o título de todos os slides cresce junto.',
-        'De volta à exibição normal, com o slide 2 aberto. Circulados: a tira de slides à esquerda, em que todos os títulos laranja ficaram maiores, e o slide O que é a feira, com o título grande em Georgia.',
+        'De volta à exibição normal, com o slide 2 aberto. Circulados: a tira de slides à esquerda, em que todos os títulos laranja ficaram maiores, e o slide O que é o Portas Abertas, com o título grande em Georgia.',
       ],
     ],
   ),
@@ -185,7 +185,7 @@ const A_HIERARQUIA: TopicoDeVereda[] = [
     [
       [
         'Título a 40 e corpo a 32: um bloco de texto em que o título mal se destaca.',
-        'O slide 2, O que é a feira, circulado. O título laranja e os dois tópicos azuis têm quase o mesmo tamanho, e os tópicos ocupam três linhas cada um.',
+        'O slide 2, O que é o Portas Abertas, circulado. O título laranja e os dois tópicos azuis têm quase o mesmo tamanho, e os tópicos ocupam três linhas cada um.',
       ],
       [
         'No mestre, o corpo desce para 24 e o título fica em 40: agora há um título e uma lista.',
@@ -233,7 +233,7 @@ const O_CONTRASTE: TopicoDeVereda[] = [
     ['contraste', 'Verificar Acessibilidade'],
     [
       [
-        'Em Revisão › Verificar Acessibilidade, o painel mede o laranja e o azul da feira sobre o branco: 2,45:1 e 2,92:1.',
+        'Em Revisão › Verificar Acessibilidade, o painel mede o laranja e o azul do cartaz sobre o branco: 2,45:1 e 2,92:1.',
         'O slide 2 com o título laranja e os tópicos azul-claro. À direita, circulado, o painel Acessibilidade com dois avisos amarelos: Texto com contraste insuficiente: título do slide mestre, 2,45:1; e corpo do slide mestre, 2,92:1.',
       ],
     ],
@@ -243,7 +243,7 @@ const O_CONTRASTE: TopicoDeVereda[] = [
     'Escurecer a cor do clube não é desistir dela',
     'E a coluna de tons do seletor existe exatamente para isso.',
     [
-      'Quando a cor da identidade não se lê, há dois caminhos. Um é pintar tudo de preto: resolve a conta e joga fora a identidade. O outro é **escurecer a mesma cor** até ela passar — e ela continua sendo o laranja da feira, mais escuro.',
+      'Quando a cor da identidade não se lê, há dois caminhos. Um é pintar tudo de preto: resolve a conta e joga fora a identidade. O outro é **escurecer a mesma cor** até ela passar — e ela continua sendo o laranja do cartaz, mais escuro.',
       'O seletor de cor do PowerPoint oferece, ao lado de cada cor do tema, tons mais claros e mais escuros. É de lá que sai o conserto: 25% mais escuro, 50% mais escuro.',
       'E a cor nunca é a única pista. Quem não distingue duas cores precisa de outra coisa que diga o mesmo — tamanho, peso, posição. É a mesma razão de a insígnia desta plataforma ter forma **e** cor.',
     ],
@@ -251,11 +251,11 @@ const O_CONTRASTE: TopicoDeVereda[] = [
     [],
     [
       [
-        'No mestre, cada cor tem a sua fileira de tons: o laranja da feira, 25% e 50% mais escuro, e o preto.',
+        'No mestre, cada cor tem a sua fileira de tons: o laranja do cartaz, 25% e 50% mais escuro, e o preto.',
         'O modo de slide mestre com as duas fileiras de cor circuladas: a do título, com quatro tons de laranja até o preto, e a do corpo, com cinco tons de azul até o cinza-escuro.',
       ],
       [
-        'Com os dois tons 50% mais escuros, o painel mede 5,68:1 no título e 7,05:1 no corpo, e as duas cores continuam sendo da feira.',
+        'Com os dois tons 50% mais escuros, o painel mede 5,68:1 no título e 7,05:1 no corpo, e as duas cores continuam sendo as do cartaz.',
         'O slide 2 circulado, com o título em laranja escuro e os tópicos em azul escuro. À direita, circulado, o painel Acessibilidade com dois itens verdes: título do slide mestre, 5,68:1; corpo do slide mestre, 7,05:1.',
       ],
     ],
@@ -279,7 +279,7 @@ const OS_TRES_ERROS: TopicoDeVereda[] = [
     [
       [
         'No telão, os três de uma vez: duas frases inteiras, corpo quase do tamanho do título, e azul-claro sobre branco.',
-        'O telão em tela cheia no slide 2, O que é a feira, circulado: o título laranja-claro e dois tópicos longos em azul-claro, de duas linhas cada, quase do tamanho do título.',
+        'O telão em tela cheia no slide 2, O que é o Portas Abertas, circulado: o título laranja-claro e dois tópicos longos em azul-claro, de duas linhas cada, quase do tamanho do título.',
       ],
     ],
   ),
@@ -301,7 +301,7 @@ const OS_TRES_ERROS: TopicoDeVereda[] = [
       ],
       [
         'E a foto do ano passado, de 640 pixels, ocupa quase o slide inteiro: no telão ela é esticada.',
-        'O telão no slide 9 de 9, Como foi a feira de 2025, com a foto ocupando a maior parte do slide.',
+        'O telão no slide 9 de 9, Como foi o Portas Abertas de 2025, com a foto ocupando a maior parte do slide.',
       ],
     ],
   ),
@@ -324,15 +324,15 @@ const A_IMAGEM: TopicoDeVereda[] = [
     [
       [
         'Em Design › Imagem, o painel diz: 640 × 480 px, ocupando 80% do slide, e a projeção usa 1536.',
-        'O slide 9 com a foto feira-2025.jpg. À direita, circulado, o painel Formatar Imagem com o aviso amarelo: 640 × 480 px, ocupando 80% do slide — a projeção usa 1536 px de largura; e o botão Alterar Imagem.',
+        'O slide 9 com a foto portas-abertas-2025.jpg. À direita, circulado, o painel Formatar Imagem com o aviso amarelo: 640 × 480 px, ocupando 80% do slide — a projeção usa 1536 px de largura; e o botão Alterar Imagem.',
       ],
       [
         'Alterar Imagem lista as fotos da pasta com o tamanho de cada uma.',
-        'A caixa Alterar Imagem circulada, com quatro arquivos: cartaz-da-feira.png 300 × 225 px, cartaz-da-feira-grande.png 1800 × 1350 px, feira-2025.jpg 640 × 480 px e feira-2025-original.jpg 4000 × 3000 px.',
+        'A caixa Alterar Imagem circulada, com quatro arquivos: cartaz-portas-abertas.png 300 × 225 px, cartaz-portas-abertas-grande.png 1800 × 1350 px, portas-abertas-2025.jpg 640 × 480 px e portas-abertas-2025-original.jpg 4000 × 3000 px.',
       ],
       [
         'Trocada pela original, de 4000 pixels, o aviso continua: agora é pixel demais, que pesa e o telão não usa.',
-        'O painel Formatar Imagem circulado, com o aviso amarelo: feira-2025-original.jpg, 4000 × 3000 px, ocupando 80% do slide — a projeção usa 1536 px de largura.',
+        'O painel Formatar Imagem circulado, com o aviso amarelo: portas-abertas-2025-original.jpg, 4000 × 3000 px, ocupando 80% do slide — a projeção usa 1536 px de largura.',
       ],
     ],
   ),
@@ -350,7 +350,7 @@ const A_IMAGEM: TopicoDeVereda[] = [
     [
       [
         'Com a foto original no slide, a régua de status diz 3,5 MB.',
-        'A exibição normal no slide 9, com a régua de status circulada no pé da janela: Slide 9 de 9, 6 palavras, Português (Brasil), 3,5 MB.',
+        'A exibição normal no slide 9, com a régua de status circulada no pé da janela: Slide 9 de 9, 7 palavras, Português (Brasil), 3,5 MB.',
       ],
       [
         'Em Compactar Imagens, 150 ppi: a opção que serve à projeção.',
@@ -358,7 +358,7 @@ const A_IMAGEM: TopicoDeVereda[] = [
       ],
       [
         'Compactada, a foto fica com 1600 pixels — acima dos 1536 que o telão usa —, e o arquivo cai para 0,6 MB.',
-        'O painel Formatar Imagem circulado, agora em verde: feira-2025-original.jpg, 1600 × 1200 px, ocupando 80% do slide — a projeção usa 1536 px de largura. A régua de status, também circulada, diz 0,6 MB.',
+        'O painel Formatar Imagem circulado, agora em verde: portas-abertas-2025-original.jpg, 1600 × 1200 px, ocupando 80% do slide — a projeção usa 1536 px de largura. A régua de status, também circulada, diz 0,6 MB.',
       ],
     ],
   ),
@@ -381,11 +381,11 @@ const O_GRAFICO: TopicoDeVereda[] = [
     [
       [
         'No slide, os custos digitados: material 120, lanche 90, prêmios 60, total 270.',
-        'O slide 7, Custos da feira, circulado, com quatro tópicos: Material: R$ 120,00; Lanche: R$ 90,00; Prêmios: R$ 60,00; Total: R$ 270,00.',
+        'O slide 7, Custos do Portas Abertas, circulado, com quatro tópicos: Material: R$ 120,00; Lanche: R$ 90,00; Prêmios: R$ 60,00; Total: R$ 270,00.',
       ],
       [
         'Na planilha, hoje: material 150 e prêmios 75. O total é 315, e o slide continua dizendo 270.',
-        'A janela da planilha Custos da feira.xlsx, com Material 150, Lanche 90, Prêmios 75 e Total 315, e um gráfico de pizza ao lado.',
+        'A janela da planilha Custos do Portas Abertas.xlsx, com Material 150, Lanche 90, Prêmios 75 e Total 315, e um gráfico de pizza ao lado.',
       ],
     ],
   ),
@@ -407,7 +407,7 @@ const O_GRAFICO: TopicoDeVereda[] = [
       ],
       [
         'Colado mantendo a formatação, o slide passa a mostrar o gráfico com os números da planilha de hoje.',
-        'O slide 7, Custos da feira, circulado, agora com um gráfico de pizza de três fatias, Material, Lanche e Prêmios, no lugar dos números digitados.',
+        'O slide 7, Custos do Portas Abertas, circulado, agora com um gráfico de pizza de três fatias, Material, Lanche e Prêmios, no lugar dos números digitados.',
       ],
     ],
   ),
@@ -536,7 +536,7 @@ const CINCO_MINUTOS: TopicoDeVereda[] = [
     [
       [
         'Exportado com oito slides e depois cortado um, Arquivo › Informações diz: 7 slides, e o PDF criado com 8.',
-        'Os bastidores do PowerPoint em Arquivo › Informações, com a ficha circulada: Nome Feira de Especialidades 2026.pptx; Slides 7; Tamanho 0,7 MB; PDF criado com 8 slides.',
+        'Os bastidores do PowerPoint em Arquivo › Informações, com a ficha circulada: Nome Dia de Portas Abertas 2026.pptx; Slides 7; Tamanho 0,7 MB; PDF criado com 8 slides.',
       ],
     ],
   ),
