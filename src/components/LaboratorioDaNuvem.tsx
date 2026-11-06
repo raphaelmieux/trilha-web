@@ -29,7 +29,8 @@ import {
   restaurarVersao, tirarAcessoDoArquivo, transferirPropriedade, versaoAtual, emOrdemDaLista,
 } from '../labs/arquivoCompartilhado';
 import {
-  type Doc, NOME_DO_AUTOR, acrescentarComentario, aceitarRevisao,
+  type Doc, type Paragrafo, NOME_DO_AUTOR, acrescentarComentario, aceitarRevisao,
+  aceitarTodasAsRevisoes, rejeitarTodasAsRevisoes,
   comentariosDoDoc, linhaDe, rejeitarRevisao, resolverComentario,
   responderComentario, revisoesPendentes, textoDoDoc,
 } from '../labs/documento';
@@ -125,17 +126,41 @@ const DOC_VAZIO: Doc<string> = { blocos: [], colunas: {}, sumario: null };
 
 /* ── O componente ─────────────────────────────────────────────────────────── */
 
-export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: {
+/**
+ * O que as telas da teoria trocam: a nuvem de partida, o arquivo que abre, e o
+ * que os outros escrevem depois da sua primeira edição.
+ *
+ * Elas fotografam a pasta da fanfarra, porque tudo na nuvem do clube é
+ * resposta de alguma lição — o motivo está em `src/exemplos/nuvemDaFanfarra.ts`.
+ * Sem nada disso, o laboratório é o de sempre.
+ */
+export interface OutraNuvem {
+  inicial: () => Nuvem;
+  abre?: string;
+  /** O parágrafo que alguém escreve junto, na lição de escrever ao mesmo tempo. */
+  juntos?: { arquivo: string; quem: Pessoa; linha: () => Paragrafo<'corpo'> };
+  /** A versão que sobe quando a internet de alguém volta, na lição do conflito. */
+  conflito?: { arquivo: string; quem: Pessoa; doc: () => Doc<'corpo'> };
+}
+
+export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair, outra }: {
   vereda: Vereda;
   licao: Extract<LicaoDeVereda, { tipo: 'nuvem' }>;
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  outra?: OutraNuvem;
 }) {
   const qual: LicaoDaCcEs006 = licao.licao;
   const registro = LICOES_DA_CC_ES006[qual];
+  const partida = (): ContextoDaNuvem => {
+    if (!outra) return contextoInicial(qual);
+    const n = outra.inicial();
+    return { nuvem: n, antes: n, modo: 'edicao', descobertas: [] };
+  };
+  const abreDePartida = outra ? outra.abre ?? null : registro.abre ?? null;
 
-  const [ctx, setCtx] = useState<ContextoDaNuvem>(() => contextoInicial(qual));
-  const [aberto, setAberto] = useState<string | null>(registro.abre ?? null);
+  const [ctx, setCtx] = useState<ContextoDaNuvem>(partida);
+  const [aberto, setAberto] = useState<string | null>(abreDePartida);
   const [lugar, setLugar] = useState<LugarDaNuvem>('meu');
   const [crescente, setCrescente] = useState(true);
   const [pasta, setPasta] = useState<string | null>(null);
@@ -177,8 +202,8 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
     (c.descobertas.includes(o) ? c : { ...c, descobertas: [...c.descobertas, o] }));
 
   const recomecar = () => {
-    setCtx(contextoInicial(qual));
-    setAberto(registro.abre ?? null);
+    setCtx(partida());
+    setAberto(abreDePartida);
     setLugar('meu'); setPasta(null); setEscolhido(null); setMenu(null); setCaixa(null);
     setHeranca(false); lidos.current = new Set(); setGaveta(null);
     setHistorico(false); setVersao(null); setRascunhos({}); setAviso(null);
@@ -200,21 +225,26 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
   const osOutrosRespondem = (depois: Doc<string>) => {
     if (qual === 'juntos' && outrosJaEscreveram === 0) {
       setOutrosJaEscreveram(1);
-      gravar('escala', ['voce', 'marta'],
-        { ...depois, blocos: [...depois.blocos, LINHA_DA_MARTA()] });
-      setAviso('A Marta escreveu uma linha agora.');
+      const j = outra?.juntos ?? { arquivo: 'escala', quem: 'marta' as Pessoa, linha: LINHA_DA_MARTA };
+      gravar(j.arquivo, ['voce', j.quem],
+        { ...depois, blocos: [...depois.blocos, j.linha()] });
+      setAviso(`${NOME_DO_AUTOR[j.quem]} escreveu uma linha agora.`);
       return;
     }
     if (qual === 'conflito' && outrosJaEscreveram === 0) {
       setOutrosJaEscreveram(1);
       /* A internet da Marta voltou, e o que ela escreveu sem rede subiu
          junto. A nuvem não escolhe: guarda as duas. */
-      mexer(n => conflitoDeSincronizacao(n, 'escala', 'marta', {
-        ...ESCALA(),
-        blocos: [...ESCALA().blocos,
-          linhaDe('es-8', 'corpo', 'A Águia troca com a Onça no almoço de sábado.')],
-      }, 'agora mesmo'));
-      setAviso('A Marta voltou a ter internet, e a versão dela subiu junto.');
+      const c = outra?.conflito ?? {
+        arquivo: 'escala', quem: 'marta' as Pessoa,
+        doc: () => ({
+          ...ESCALA(),
+          blocos: [...ESCALA().blocos,
+            linhaDe('es-8', 'corpo', 'A Águia troca com a Onça no almoço de sábado.')],
+        }),
+      };
+      mexer(n => conflitoDeSincronizacao(n, c.arquivo, c.quem, c.doc(), 'agora mesmo'));
+      setAviso(`${NOME_DO_AUTOR[c.quem]} voltou a ter internet, e a versão escrita sem rede subiu junto.`);
       return;
     }
     if (qual === 'combinado') {
@@ -515,6 +545,7 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
 
   const comentados = new Set(doc ? comentariosDoDoc(doc).map(c => c.trecho) : []);
   const pendentes = doc ? revisoesPendentes(doc) : [];
+  const podeDecidir = arquivoAberto ? podeEditar(nuvem, arquivoAberto.id, 'voce') : false;
   /* Um balão por sugestão, e não por marca: trocar uma palavra deixa a velha
      riscada e a nova sublinhada, e o editor mostra as duas num balão só. */
   const sugestoesAgrupadas = (() => {
@@ -533,6 +564,11 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
       }];
     });
   })();
+  const docDaVersao = historico && versao && arquivoAberto
+    && versao !== versaoAtual(arquivoAberto)?.id
+    ? arquivoAberto.versoes.find(x => x.id === versao)?.doc
+    : undefined;
+
   const versaoBoa = (v: string) => {
     const vs = arquivoAberto?.versoes.find(x => x.id === v);
     return !!vs?.doc && textoDoDoc(vs.doc).includes('a inscrição custa 45 reais');
@@ -649,7 +685,27 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
                 setGaveta(null);
               }}>Comentário</ItemDaGaveta>
             </MenuDoEditor>
-            {(['Formatar', 'Ferramentas', 'Extensões', 'Ajuda'] as const).map(m => (
+            {/*
+              Aceitar e rejeitar todas moram em Ferramentas porque um programa
+              tem todos os comandos — e porque a teoria do módulo 6 fala deles:
+              referência que fala de um botão que a tela não tem é pior do que
+              referência nenhuma. Só quem edita decide; quem comenta propõe.
+            */}
+            <MenuDoEditor nome="Ferramentas" aberto={gaveta === 'Ferramentas'}
+              aoAbrir={() => setGaveta(g => (g === 'Ferramentas' ? null : 'Ferramentas'))}>
+              <ItemDaGaveta icone={Check} desligado={!podeDecidir || pendentes.length === 0}
+                aoClicar={() => {
+                  gravar(arquivoAberto.id, ['voce'], aceitarTodasAsRevisoes(doc));
+                  setGaveta(null);
+                }}>Aceitar todas as sugestões</ItemDaGaveta>
+              <ItemDaGaveta icone={X} desligado={!podeDecidir || pendentes.length === 0}
+                aoClicar={() => {
+                  gravar(arquivoAberto.id, ['voce'], rejeitarTodasAsRevisoes(doc));
+                  setGaveta(null);
+                }}>Rejeitar todas as sugestões</ItemDaGaveta>
+              <GavetaPadraoDoEditor menu="Ferramentas" aoNaoFazParte={fora} />
+            </MenuDoEditor>
+            {(['Formatar', 'Extensões', 'Ajuda'] as const).map(m => (
               <MenuDoEditor key={m} nome={m} aberto={gaveta === m}
                 aoAbrir={() => setGaveta(g => (g === m ? null : m))}>
                 <GavetaPadraoDoEditor menu={m} aoNaoFazParte={fora} />
@@ -711,15 +767,23 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair }: 
           aoFechar={() => setHistorico(false)}
         />
       ) : undefined}>
+        {/*
+          Escolher uma versão no histórico mostra **aquela** versão na folha, e
+          só para ler — é o que o programa de verdade faz, e é o único jeito de
+          achar a versão boa olhando, em vez de clicar em cada uma até a tarefa
+          ficar verde. A de agora volta quando o painel fecha ou a versão
+          escolhida é a atual.
+        */}
         <FolhaDoWord
-          doc={doc}
+          doc={docDaVersao ?? doc}
           marcas
           comentado={comentados}
-          edicao={edicao.folha}
-          margem={margem}
+          edicao={docDaVersao ? undefined : edicao.folha}
+          margem={docDaVersao ? undefined : margem}
         />
-        {qual === 'juntos' && outrosJaEscreveram > 0 && (
-          <CursorDeOutro quem="marta" blocoId="es-6" />
+        {qual === 'juntos' && outrosJaEscreveram > 0 && !docDaVersao && (
+          <CursorDeOutro quem={outra?.juntos?.quem ?? 'marta'}
+            blocoId={outra?.juntos?.linha().id ?? 'es-6'} />
         )}
       </PalcoDoEditor>
 

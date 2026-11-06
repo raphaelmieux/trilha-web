@@ -1022,6 +1022,27 @@ processo. Sem ela saíam "07/08/2026" e "07:00 PM" na tela do calendário, e
 uma data digitada no roteiro caía com dia e mês trocados. Para campo de data
 o roteiro usa `preencher`, que entrega o valor no formato da máquina.
 
+A CC-ES006 fotografa a pasta da fanfarra na mesma nuvem, de
+`src/exemplos/nuvemDaFanfarra.ts` — a Marta, o Ronaldo e a Cleide de sempre,
+com outros arquivos e outros defeitos do mesmo tipo —, e não a do
+acampamento: lá a lista de materiais que vai por anexo, as fichas médicas
+abertas pela pasta, a pergunta sobre a Onça, o dia 17 contra o 19 e a ata que
+perdeu as decisões são as respostas. `LaboratorioDaNuvem` ganhou `outra` por
+isso: a nuvem de partida, o arquivo que abre, quem escreve junto e quem
+provoca o conflito, com os do acampamento por padrão. O cursor da outra
+pessoa estava preso à Marta e ao parágrafo do combinado, e passou a vir de
+lá também. `exemplosDaNuvem.test.ts` confere as legendas pelo motor e
+reprova se as duas pastas dividirem um arquivo ou uma linha.
+
+Escrever as legendas achou duas divergências. A teoria falava em aceitar
+todas as sugestões de uma vez, e o editor não tinha onde: o menu Ferramentas
+ganhou "Aceitar todas" e "Rejeitar todas", como o editor de navegador de
+verdade. E o histórico de versões listava as versões e nunca mostrava
+nenhuma: escolher a de 4 de agosto deixava na folha o texto de agora, e a
+lição de restaurar pedia para conferir o que a versão antiga dizia sem ter
+onde ler. A versão escolhida aparece na folha, só para ler, e
+`LaboratorioDaNuvem.test.tsx` cobra.
+
 A teoria ensinava a buscar escrevendo `tipo:imagem` na caixa, e a janela do
 laboratório filtra numa caixa com Tipo e Data: a lição descrevia um gesto que
 a pessoa não ia encontrar. E a primeira captura achou um defeito do
@@ -5190,6 +5211,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/exemplosDeContas.test.ts` | legenda da teoria da CC-ES005 que as contas dos Aventureiros não devolvem, ou os Aventureiros dividindo endereço, senha, aplicativo ou mensagem com o clube do laboratório |
 | `src/curriculum/exemplosDaComunicacao.test.ts` | legenda da teoria da CC-ES007 que a fanfarra não devolve, ou a fanfarra dividindo mensagem, pessoa, evento ou endereço com o acampamento do laboratório |
 | `src/components/LaboratorioDeComunicacao.test.tsx` | caixa de excluir sem "Este e os seguintes", ou com ela apagando o que veio antes |
+| `src/curriculum/exemplosDaNuvem.test.ts` | legenda da teoria da CC-ES006 que a pasta da fanfarra não devolve, ou a fanfarra dividindo arquivo ou linha com a nuvem do acampamento |
+| `src/components/LaboratorioDaNuvem.test.tsx` | versão escolhida no histórico que não aparece na folha, ou que aparece editável |
 | `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |
