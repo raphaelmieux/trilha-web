@@ -1,4 +1,5 @@
 import type { ModuloDeVereda, TopicoDeVereda } from './veredas';
+import { telasDoTopico } from './telas';
 import { QUESTOES_DO_COMPARTILHADO } from './questoesDoCompartilhado';
 
 /*
@@ -31,11 +32,31 @@ import { QUESTOES_DO_COMPARTILHADO } from './questoesDoCompartilhado';
  * CC-ES005, com outro assunto.
  */
 
+/*
+  O exemplo desta vereda é a tela da nuvem e do editor de documento, e não um
+  quadro de texto.
+
+  Ela nasceu com um esboço em cada tópico — a pasta desenhada com traços, a
+  caixa de compartilhar com "← isto anula os três" na margem, o balão do
+  comentário feito de caixas —, e o esboço era da própria nuvem do
+  acampamento que o laboratório arruma: a ficha médica aberta pela pasta, a
+  Marta, o Ronaldo e a Cleide com os papéis que a lição de níveis pede, e o
+  balão do "diz 17 e no parágrafo 4 diz 19", que era a resposta da lição de
+  sugerir. Dezesseis tópicos ensinam um gesto e o mostram no laboratório; o
+  combinado da equipe fica em prosa, porque escrevê-lo é escrever.
+
+  A pasta fotografada é a da fanfarra, e não a do acampamento: o motivo está
+  em `src/exemplos/nuvemDaFanfarra.ts`, e `exemplosDaNuvem.test.ts` confere as
+  legendas contra ela.
+*/
+const V = 'CC-ES006';
 const t = (
   id: string, titulo: string, resumo: string,
-  explicacao: string[], exemplo: string, atencao: string, marcas: string[],
+  explicacao: string[], atencao: string, marcas: string[],
+  telas?: [legenda: string, descricao: string][],
 ): TopicoDeVereda => ({
-  id, titulo, resumo, explicacao, exemplo, exemploComo: 'texto' as const, atencao, marcas,
+  id, titulo, resumo, explicacao, atencao, marcas,
+  ...(telas ? { telas: telasDoTopico(V, id, telas) } : {}),
 });
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -53,17 +74,14 @@ const ANEXO_OU_VINCULO: TopicoDeVereda[] = [
       'Os dois começam idênticos, e é por isso que o anexo parece inofensivo. A diferença só aparece quando alguém escreve — e aí não há nada ligando um ao outro para avisar.',
       'Compartilhar o vínculo faz o contrário: continua existindo um arquivo só, e a outra pessoa entra nele. Quem abre lê o que está escrito agora, e não o que estava escrito no dia em que alguém mandou.',
     ],
-    `O mesmo arquivo, mandado de dois jeitos
-
-Por anexo:
-  a sua lista  →  [cópia]  →  a lista dela
-  Você escreve na sua. A dela continua igual.
-
-Por vínculo:
-  a sua lista  ←  ela entra aqui
-  Você escreve. Ela vê, na hora em que abrir.`,
     'O anexo é a escolha certa quando o documento está pronto e não muda mais: a ficha assinada, o recibo, o PDF do ano passado.',
     ['anexo', 'vínculo', 'cópia'],
+    [
+      [
+        'No menu de Uniformes da fanfarra, Enviar por e-mail pergunta como mandar: anexar uma cópia ou compartilhar o vínculo.',
+        'A caixa de enviar o arquivo Uniformes da fanfarra para a Cleide, com as duas opções circuladas: Anexar uma cópia, que sai um arquivo novo que passa a ser de quem recebeu, e Compartilhar o vínculo, que continua um arquivo só.',
+      ],
+    ],
   ),
   t(
     'os-dois-problemas',
@@ -75,16 +93,14 @@ Por vínculo:
       'O segundo é mais quieto. Quem recebeu um anexo fica com ele para sempre. Você pode tirar o acesso dessa pessoa ao arquivo compartilhado; a cópia continua na nuvem dela, e nada do que você faça a alcança.',
       'É a mesma lição de que tirar o acesso de alguém a um cofre de senhas não faz essa pessoa esquecer as senhas que ela decorou. O gesto de retirar alcança o original, e só ele.',
     ],
-    `A pasta de um clube que manda anexo
-
-  circular-acampamento.docx            12 de junho
-  circular-acampamento-final.docx      14 de junho
-  circular-acampamento-final2.docx     14 de junho
-  circular-acampamento-corrigida.docx  15 de junho
-
-Qual delas foi para as famílias? Ninguém sabe.`,
     'Se a circular sair por anexo para sessenta famílias e a data estiver errada, são sessenta cópias erradas. Com o vínculo, corrigir o original corrige o que as sessenta abrem.',
     ['duas versões', 'tirar o acesso', 'cópia solta'],
+    [
+      [
+        'Mandado por anexo, aparece um segundo arquivo: "Uniformes da fanfarra (cópia de Cleide)", na conta dela.',
+        'A lista Compartilhados comigo circulada, com a pasta Fanfarra, o Roteiro do desfile e o arquivo Uniformes da fanfarra (cópia de Cleide), de proprietária Cleide.',
+      ],
+    ],
   ),
 ];
 
@@ -101,16 +117,16 @@ const OS_TRES_NIVEIS: TopicoDeVereda[] = [
       'Quem tem leitura abre o arquivo e baixa uma cópia dele. Nada do que essa pessoa fizer chega ao documento.',
       'Quem tem comentário faz tudo isso, mais duas coisas: escreve observações na margem e propõe alterações. O que ele escreve no texto não muda o texto — vira proposta, e espera alguém aceitar.',
       'Quem tem edição escreve direto, aceita e rejeita propostas, e convida mais gente. É por isso que a lista de acesso de um arquivo cresce sozinha: qualquer editor pode convidar, e quase ninguém revisa a lista depois.',
-      'O que separa os três não é o quanto se confia na pessoa: é o que ela vai fazer. A Cleide, que só vai ler a lista no portão no dia, precisa de leitura — não porque se confie menos nela, mas porque ler é o que ela vai fazer.',
+      'O que separa os três não é o quanto se confia na pessoa: é o que ela vai fazer. Quem só vai conferir a lista de uniformes no dia do desfile precisa de leitura — não porque se confie menos nessa pessoa, mas porque ler é o que ela vai fazer.',
     ],
-    `O que cada nível não deixa fazer
-
-Leitura       não escreve, não comenta, não sugere.
-Comentário    não muda o texto: o que escrever vira sugestão.
-Edição        não apaga o arquivo para todos nem passa a
-              propriedade dele — isso é de quem é dono.`,
     'Dar edição "por precaução" é como se apaga uma linha sem querer. Quem precisar corrigir alguma coisa pede, e leva dez segundos.',
     ['leitura', 'comentário', 'edição'],
+    [
+      [
+        'Na caixa de compartilhar, "O que cada nível pode" diz o que o Comentarista faz e o que ele não faz.',
+        'A caixa Compartilhar Uniformes da fanfarra com a parte de baixo circulada: o seletor em Comentarista e o quadro dizendo que ele pode ler, comentar e propor, e não pode mudar o texto direto.',
+      ],
+    ],
   ),
   t(
     'o-acesso-geral',
@@ -122,17 +138,14 @@ Edição        não apaga o arquivo para todos nem passa a
       'E endereço é a coisa mais fácil de vazar que existe. Ele circula por mensagem, por captura de tela, por encaminhamento — e ninguém precisa invadir nada para ter um.',
       '"Qualquer pessoa com o link" tem lugar: um documento que se quer público, uma inscrição que qualquer família preenche. O que ele não pode é ser o jeito de não ter de escrever três endereços.',
     ],
-    `A caixa depois de tudo escolhido
-
-Pessoas com acesso
-  Marta      Editor
-  Ronaldo    Comentarista
-  Cleide     Leitor
-
-Acesso geral
-  Qualquer pessoa com o link   Editor   ←  isto anula os três`,
     'A caixa continua mostrando os três papéis do jeito que você os deixou. Nada nela diz que eles deixaram de valer.',
     ['acesso geral', 'link', 'restrito'],
+    [
+      [
+        'Em Acesso geral, "Qualquer pessoa — Editor": quem tiver o endereço entra como editor, e a lista acima não vale mais nada.',
+        'A caixa de compartilhar com a linha Acesso geral circulada, mostrando Qualquer pessoa com o link e a frase de que quem tiver o endereço entra como Editor.',
+      ],
+    ],
   ),
 ];
 
@@ -151,14 +164,18 @@ const A_PASTA_MANDA: TopicoDeVereda[] = [
       'Quando a permissão da pasta e a do arquivo discordam, vence a **mais permissiva**. A nuvem não escolhe a mais fechada: ela soma os caminhos e fica com o que deixa mais.',
       'O efeito é o que ninguém espera: um arquivo marcado como restrito, dentro de uma pasta compartilhada com o clube inteiro, **não está restrito**. A caixa dele continua dizendo que está.',
     ],
-    `Clube Pioneiros            compartilhada com 3 pessoas
-  └── Acampamento de julho
-        └── Fichas médicas 2026    "Restrito"
-
-A caixa da ficha diz: nenhuma pessoa convidada.
-Quem abre a ficha: as três.`,
     'Tirar o nome de cada pessoa da caixa do arquivo não fecha nada, porque não há nome nenhum lá: quem entra, entra pela pasta. Quem não move, não fecha.',
     ['herança', 'pasta compartilhada', 'mais permissiva'],
+    [
+      [
+        'Dentro da pasta Fanfarra, compartilhada com três pessoas, está a planilha dos telefones dos pais.',
+        'A pasta Fanfarra aberta na nuvem, com três arquivos, e a linha Telefones dos pais da fanfarra circulada.',
+      ],
+      [
+        'A caixa da planilha mostra só a Marta, a dona — e embaixo, "3 pessoas têm acesso pela pasta Fanfarra".',
+        'A caixa Compartilhar Telefones dos pais da fanfarra com a parte Pessoas com acesso circulada: a Marta como proprietária e, embaixo, a linha recolhida 3 pessoas têm acesso pela pasta Fanfarra.',
+      ],
+    ],
   ),
   t(
     'onde-isso-aparece',
@@ -170,16 +187,18 @@ Quem abre a ficha: as três.`,
       'Então o gesto que o requisito 5 manda demonstrar é esse: abrir a caixa de um arquivo que está dentro de uma pasta compartilhada e ler quem entra por ela. Uma vez que se sabe que a linha existe, ela é fácil.',
       'O conserto de um arquivo que não devia estar aberto é **movê-lo**, e não fechar a pasta: a pasta é onde o clube trabalha, e fechá-la resolve um problema criando outro.',
     ],
-    `A linha que quase ninguém abre
-
-  Pessoas com acesso
-    Marta (proprietária)
-
-  › 3 pessoas têm acesso pela pasta Clube Pioneiros
-
-Clicando na seta, aparecem os nomes e o papel de cada um.`,
-    'Nome completo e dado de saúde de criança num arquivo cuja caixa diz que ninguém foi convidado. Nada estourou, nada avisou.',
+    'Telefone de pai e de mãe num arquivo cuja caixa diz que ninguém foi convidado. Nada estourou, nada avisou.',
     ['caixa de compartilhar', 'mover', 'acesso efetivo'],
+    [
+      [
+        'Aberta a seta, aparecem os três: você e o Ronaldo editam pela pasta, a Cleide lê pela pasta.',
+        'A mesma caixa com a linha da pasta aberta e circulada, listando Você e Ronaldo como Editor pela pasta e Cleide como Leitor pela pasta.',
+      ],
+      [
+        'O conserto é mover: Mover para › Meu Drive tira a planilha de dentro da pasta.',
+        'A caixa Mover para da planilha, com o campo de destino circulado escolhido em Meu Drive.',
+      ],
+    ],
   ),
 ];
 
@@ -198,14 +217,14 @@ const ESCREVER_JUNTO: TopicoDeVereda[] = [
       'Não há botão de salvar. O que se digita já está gravado — e é justamente por isso que o histórico de versões existe, porque não há um "fechar sem salvar" para recusar uma besteira.',
       'Quem está dentro aparece nas bolhas do alto, com as iniciais, e o cursor de cada pessoa aparece no meio do texto, com o nome dela. As duas coisas somem quando a pessoa fecha: elas falam deste instante, e não do arquivo.',
     ],
-    `O que cada coisa da tela diz
-
-Bolhas no alto         quem está com o documento aberto agora
-Cursor colorido        onde essa pessoa está escrevendo
-Lista de acesso        quem pode abrir, esteja aqui ou não
-Histórico de versões   quem já escreveu, algum dia`,
     'Três coisas parecidas que respondem perguntas diferentes: agora, pode, e já escreveu. Confundi-las é o que faz alguém achar que "todo mundo participou" olhando a lista de acesso.',
     ['edição simultânea', 'bolhas', 'cursor'],
+    [
+      [
+        'Você escreve no encerramento e, sem esperar, o Ronaldo escreve a linha de baixo. As duas bolhas no alto dizem quem está ali.',
+        'O Repertório do Encontro aberto, com três coisas circuladas: as bolhas V e R no alto, a linha do encerramento com o seu acréscimo e, embaixo, a linha nova do Ronaldo sobre o bis, e o aviso Ronaldo escreveu uma linha agora.',
+      ],
+    ],
   ),
 ];
 
@@ -221,19 +240,21 @@ const COMENTAR: TopicoDeVereda[] = [
     [
       'O comentário vive numa margem ao lado do papel, e não dentro dele. É por isso que ele não sai na impressão e não empurra o texto — as duas coisas que fariam um comentário atrapalhar.',
       'E ele fica preso ao trecho de que fala. É essa a diferença entre comentar e mandar um recado por mensagem: no recado, ninguém sabe a que parte do documento ele se referia.',
-      'Comentário bom nomeia o que se viu e devolve uma pergunta que dá para responder. "A data aqui diz 17 e no parágrafo 4 diz 19, qual vale?" é revisão. "Isto está errado" é uma segunda pergunta.',
+      'Comentário bom nomeia o que se viu e devolve uma pergunta que dá para responder. "A Lívia ainda não aprendeu o hino: dá para pôr outra música?" é revisão. "Isto está errado" é uma segunda pergunta.',
       'A conversa continua no balão: quem escreveu responde, e a decisão fica guardada junto do trecho que a provocou. Daqui a seis meses é ali que alguém vai procurar por que a data ficou sendo 19.',
     ],
-    `Onde o comentário fica
-
-  ┌─────────────────────────┐   ┌──────────────────┐
-  │  A saída é no dia 17    │←──│ Marta            │
-  │  de julho, sexta-feira. │   │ E no parágrafo 4 │
-  │                         │   │ diz 19. Qual é?  │
-  └─────────────────────────┘   └──────────────────┘
-        o papel                     a margem`,
     'Ele fica fora do papel de propósito: dentro, sairia na impressão e mudaria a paginação do documento.',
     ['comentário', 'margem', 'responder'],
+    [
+      [
+        'O comentário do Ronaldo fica na margem, preso ao trecho de que fala: a segunda música, marcada de amarelo.',
+        'O repertório com a linha Segunda música: Hino do clube marcada em amarelo e circulada, e na margem o balão do Ronaldo circulado, perguntando se dá para pôr outra música no lugar do hino.',
+      ],
+      [
+        'Respondido no próprio balão, a resposta fica embaixo da pergunta.',
+        'O balão circulado com a pergunta do Ronaldo e, embaixo, a resposta assinada Você, sobre a Lívia tocar a Marcha no lugar do hino.',
+      ],
+    ],
   ),
   t(
     'resolver-nao-e-apagar',
@@ -245,12 +266,18 @@ const COMENTAR: TopicoDeVereda[] = [
       'Resolver é um clique, e responder não. É essa diferença de esforço que faz tanta gente só resolver — e quem perguntou fica achando que ninguém leu.',
       'Vale para o outro lado também: rejeitar uma proposta em silêncio devolve o documento com a proposta sumida, e quem propôs não sabe se você discordou ou se nem viu. As duas coisas ficam iguais na tela dela.',
     ],
-    `Os dois botões do balão, e o que sobra atrás
-
-Resolver   o balão sai da margem     a conversa fica guardada
-Excluir    o balão sai da margem     não há o que procurar depois`,
     'Antes de resolver uma pergunta, responda. Fechar o assunto sem dizer nada a quem perguntou é a versão em conversa de "zero link não é zero link quebrado".',
     ['resolver', 'excluir', 'responder'],
+    [
+      [
+        'Depois de responder, Resolver encerra o assunto.',
+        'O balão com a pergunta e a resposta, e o botão Resolver circulado.',
+      ],
+      [
+        'Resolvido, o balão fica apagado e escrito "Resolvido" — e a conversa continua guardada.',
+        'O balão apagado, em cinza, com a pergunta, a resposta e a palavra Resolvido, e o botão do histórico de comentários circulado no alto.',
+      ],
+    ],
   ),
 ];
 
@@ -269,13 +296,18 @@ const SUGERIR: TopicoDeVereda[] = [
       'Quem tem permissão de comentário está sempre nesse modo, queira ou não. Digitar no documento de outra pessoa não muda o texto dela: vira proposta. Quem não sabe disso fecha o documento achando que corrigiu.',
       'E aceitar é de quem tem edição. Se quem propõe pudesse aceitar, o modo de sugestão seria edição com dois cliques — a separação entre propor e decidir é a razão inteira de ele existir.',
     ],
-    `O mesmo gesto, nos três modos
-
-Edição          você digita   →  o texto muda
-Sugestão        você digita   →  vira proposta marcada
-Visualização    você digita   →  não acontece nada`,
     'O seletor fica escondido no canto da barra, e é por isso que o requisito 4.4 manda demonstrá-lo: quem nunca o procurou não sabe que ele existe.',
     ['modo de sugestão', 'aceitar', 'rejeitar'],
+    [
+      [
+        'No canto da barra, o modo passa de Edição para Sugestão.',
+        'O editor do repertório com o seletor de modo circulado no canto direito da barra, escrito Sugestão.',
+      ],
+      [
+        'O que se digita sai sublinhado, e a margem mostra "Você sugeriu", com Aceitar e Rejeitar.',
+        'A linha da abertura circulada com o acréscimo Em ritmo de marcha lenta sublinhado em outra cor, e na margem o balão circulado Você sugeriu, com os botões Aceitar e Rejeitar.',
+      ],
+    ],
   ),
   t(
     'aceitar-todas',
@@ -287,12 +319,18 @@ Visualização    você digita   →  não acontece nada`,
       'O caminho é percorrer uma a uma. É mais lento, e é o único que mostra cada proposta antes de ela valer — que é justamente o que o modo de sugestão existe para permitir.',
       'Rejeitar uma proposta pede uma palavra junto. Sem ela, quem propôs vê a proposta sumir e não sabe por quê.',
     ],
-    `O que o botão grosso faz
-
-Aceitar todas   →  18 propostas entram, inclusive a errada
-Uma a uma       →  18 decisões, e você viu cada uma`,
     'É o mesmo par do Substituir Tudo da CC-ES002: o botão rápido está lá, e a lição é saber quando ele não serve.',
     ['aceitar todas', 'rejeitar', 'revisar'],
+    [
+      [
+        'Com duas sugestões no documento, Ferramentas tem "Aceitar todas" e "Rejeitar todas".',
+        'O menu Ferramentas aberto com os dois primeiros itens circulados: Aceitar todas as sugestões e Rejeitar todas as sugestões, e na margem dois balões Você sugeriu.',
+      ],
+      [
+        'Aceitando uma de cada vez, a da abertura entrou e a outra continua esperando, com o balão dela.',
+        'A linha da abertura circulada, já sem marca, e na margem um balão Você sugeriu circulado, o da linha do encerramento, ainda com Aceitar e Rejeitar.',
+      ],
+    ],
   ),
 ];
 
@@ -311,16 +349,14 @@ const O_HISTORICO: TopicoDeVereda[] = [
       'É por isso que ele é a prova que o requisito 8 pede. Três pessoas escreveram o relatório: o histórico nomeia as três, em versões diferentes, e não há como fabricar isso depois.',
       'Dá para dar nome a uma versão — "versão entregue à liderança" —, e é o que separa as duas ou três que importam de cem salvas automáticas.',
     ],
-    `O painel de versões
-
-  5 de julho, 20:15  (versão atual)
-    ● Você
-  3 de julho, 09:40
-    ● Marta   ● Ronaldo
-  1 de julho, 20:12
-    ● Marta`,
     'Colar o texto das outras duas pessoas produz um histórico com um nome só. O requisito 8 pede a participação de cada uma, e é aqui que ela aparece ou não.',
     ['histórico', 'versão', 'quem escreveu'],
+    [
+      [
+        'O histórico da ata lista três versões, e embaixo de cada uma quem escreveu nela.',
+        'O painel Histórico de versões circulado: 9 de agosto com Ronaldo, que é a versão atual, 4 de agosto com Marta e Ronaldo, e 2 de agosto com Marta.',
+      ],
+    ],
   ),
   t(
     'restaurar-nao-apaga',
@@ -332,15 +368,18 @@ const O_HISTORICO: TopicoDeVereda[] = [
       'E quem restaura entra no histórico, porque restaurar é uma edição: ela muda o documento para todo mundo, e no dia seguinte a pergunta vai ser quem desfez aquilo.',
       'Nem sempre é preciso restaurar o documento inteiro. Dá para abrir a versão antiga, copiar só o parágrafo que sumiu e colar no de hoje — que é o caminho que quase ninguém descobre.',
     ],
-    `Antes e depois de restaurar a versão de 3 de julho
-
-antes                        depois
-  8 de julho  (atual)          hoje  (atual, restaurada)
-  3 de julho                   8 de julho
-  1 de julho                   3 de julho
-                               1 de julho`,
     'Num editor que salva sozinho não existe "fechar sem salvar". A besteira já está gravada, e o histórico é o único caminho de volta.',
     ['restaurar', 'não apaga', 'versão nova'],
+    [
+      [
+        'Escolhida a versão de 4 de agosto, a folha mostra o que ela dizia — com a linha das decisões — e o painel avisa que a de agora continua no histórico.',
+        'A ata mostrando a versão de 4 de agosto, com a linha Decidido: a fanfarra toca três músicas, e no painel a versão escolhida circulada e, embaixo, a frase de que a versão de agora continua no histórico e o botão Restaurar esta versão, também circulados.',
+      ],
+      [
+        'Restaurada, aparece uma versão nova no topo, sua — e as outras três continuam lá embaixo.',
+        'O painel de versões circulado com quatro entradas: agora mesmo, de Você, que é a atual, e embaixo as de 9, 4 e 2 de agosto.',
+      ],
+    ],
   ),
 ];
 
@@ -359,14 +398,14 @@ const O_CONFLITO: TopicoDeVereda[] = [
       'Alguém abre o arquivo por ali e perde a internet. Continua escrevendo — o arquivo está no computador dela. Quando a internet volta, a versão dela sobe, e a sua também já subiu.',
       'A nuvem não escolhe entre as duas: ela **guarda as duas**. A segunda vira um arquivo ao lado, com "(cópia em conflito de Fulano)" no nome, na mesma pasta do original.',
     ],
-    `A pasta depois do conflito
-
-  Escala das unidades.docx
-  Escala das unidades (cópia em conflito de Marta).docx
-
-Os dois abrem. Os dois têm texto. Nenhum dos dois é o certo.`,
     'Guardar as duas é o comportamento generoso: ficar com a mais recente jogaria fora o trabalho de alguém sem avisar. O preço é que alguém precisa juntá-las.',
     ['conflito', 'sincronizado', 'cópia em conflito'],
+    [
+      [
+        'A internet da Marta voltou, e a pasta ganhou um arquivo ao lado: "Repertório do Encontro (cópia em conflito de Marta)".',
+        'A pasta Fanfarra com quatro arquivos e a linha Repertório do Encontro (cópia em conflito de Marta) circulada, logo abaixo do original.',
+      ],
+    ],
   ),
   t(
     'como-se-resolve',
@@ -378,13 +417,18 @@ Os dois abrem. Os dois têm texto. Nenhum dos dois é o certo.`,
       'É por isso que o trabalho se perde num conflito sem nada ter sido apagado: ele fica num arquivo que ninguém abre. O problema não é destruição, é abandono.',
       'O jeito de não ter conflito é não trabalhar pela pasta sincronizada quando mais de uma pessoa vai escrever. No navegador o documento é um só, e o conflito é uma propriedade da cópia local.',
     ],
-    `Os dois caminhos errados, e o certo
-
-  apagar a cópia            →  perde-se o que ela escreveu
-  deixar as duas na pasta   →  alguém trabalha na errada
-  juntar e tirar a cópia    →  um arquivo, com tudo dentro`,
     'A cópia em conflito costuma ir para a lixeira, e não sumir: ela fica lá trinta dias, caso alguém perceba que faltou alguma coisa na junção.',
     ['juntar', 'lixeira', 'resolver'],
+    [
+      [
+        'A cópia tem uma linha que o original não tem: o ensaio extra de quinta. É ela que precisa ir para o original.',
+        'A cópia em conflito aberta no editor, com a última linha circulada: Ensaio extra na quinta, para o hino sair inteiro.',
+      ],
+      [
+        'Juntada a linha, a cópia vai para a lixeira, e a pasta volta a ter um repertório só.',
+        'A pasta Fanfarra circulada, com três arquivos: a ata, o Repertório do Encontro e os telefones dos pais, e nenhuma cópia em conflito.',
+      ],
+    ],
   ),
 ];
 
@@ -403,16 +447,18 @@ const O_DONO_E_O_COMBINADO: TopicoDeVereda[] = [
       'Passar a propriedade é um gesto separado, e fica escondido: no seletor de papel daquela pessoa, junto de Leitor, Comentarista e Editor, há uma opção de transferir propriedade.',
       'E transferir não é perder. Quem entrega a propriedade continua na lista, como editor — numa nuvem de verdade o dono anterior não some. Quem acha que perde, nunca transfere, e o clube fica com tudo na conta de uma pessoa.',
     ],
-    `O que acontece quando a conta do dono é desligada
-
-  Escala das unidades      dono: Marta
-    Você      Editor
-    Ronaldo   Editor
-    Cleide    Leitor
-
-  A conta da Marta sai  →  o arquivo sai junto, para os quatro.`,
     'É a conta mais fácil de fazer e a mais fácil de esquecer: quantos arquivos do clube estão na conta pessoal de uma pessoa só?',
     ['proprietário', 'transferir propriedade', 'conta'],
+    [
+      [
+        'A lista de uniformes é sua: você é a proprietária, e o Ronaldo entra como editor.',
+        'A caixa Compartilhar Uniformes da fanfarra com Pessoas com acesso circulada: Você como Proprietário e Ronaldo como Editor.',
+      ],
+      [
+        'No seletor do Ronaldo, Transferir propriedade: ele vira o dono, e você continua como editor.',
+        'A mesma parte circulada depois da troca: Ronaldo como Proprietário e Você como Editor.',
+      ],
+    ],
   ),
   t(
     'o-combinado',
@@ -424,15 +470,6 @@ const O_DONO_E_O_COMBINADO: TopicoDeVereda[] = [
       'Quem detém cada permissão. Quem edita, quem comenta, quem lê — e por quê, para que a próxima diretoria não tenha de adivinhar.',
       'E o que acontece quando alguém deixa a equipe. Esta é a que fica de fora, porque fala de um dia que ainda não chegou — e é a que custa caro quando chega. A resposta dela é a propriedade passando para quem fica, antes de a conta ser desligada.',
     ],
-    `As quatro perguntas, e onde o combinado mora
-
-  1. Onde ficam os arquivos?
-  2. Como são nomeados?
-  3. Quem detém cada permissão?
-  4. O que acontece quando alguém sai?
-
-  O combinado fica na pasta que ele mesmo indica —
-  e com a propriedade de quem fica.`,
     'Guardar o combinado na nuvem pessoal de quem o escreveu é a primeira exceção à própria regra dele: no dia em que essa pessoa sair, ele some junto.',
     ['combinado', 'padrão de nome', 'quem fica'],
   ),

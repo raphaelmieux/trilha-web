@@ -20,6 +20,8 @@ import {
 } from './aventureirosEstrelaGuia';
 import LaboratorioDeComunicacao from '../components/LaboratorioDeComunicacao';
 import { FANFARRA } from './fanfarraDoClube';
+import LaboratorioDaNuvem from '../components/LaboratorioDaNuvem';
+import { naFanfarra } from './nuvemDaFanfarra';
 import { CENAS_DE_DESIGN } from './cenasDeDesign';
 import { CENAS_VETORIAIS } from './cenasVetoriais';
 import { CENAS_DE_FOTO } from './cenasDeFoto';
@@ -365,6 +367,20 @@ const comunicacao = (n: number) => () => (
     aoVencer={nada} aoSair={nada} outra={FANFARRA} />
 );
 
+/* ── Trabalho compartilhado ──────────────────────────────────────────────── */
+
+/*
+ * A pasta da fanfarra, e não a nuvem do acampamento. A lição escolhe o que os
+ * outros fazem depois da sua edição (escrever junto, subir a cópia em
+ * conflito); a pasta e o arquivo aberto vêm de `nuvemDaFanfarra.ts`.
+ */
+const LICOES_DA_NUVEM = ['anexo', 'niveis', 'pasta', 'juntos', 'comentarios', 'sugestao', 'historico', 'conflito', 'combinado'];
+const nuvem = (licao: string, abre?: string) => () => (
+  <LaboratorioDaNuvem vereda={vereda('cc-es006')}
+    licao={licaoDe('cc-es006', 'nuvem', LICOES_DA_NUVEM.indexOf(licao))}
+    aoVencer={nada} aoSair={nada} outra={naFanfarra(abre)} />
+);
+
 export const CENAS: Record<string, ComponentType> = {
   'word-programa-a-mao': word(PROGRAMA_A_MAO, 'Programa do Campori'),
   'word-programa-com-estilo': word(PROGRAMA_COM_ESTILO, 'Programa do Campori'),
@@ -394,6 +410,13 @@ export const CENAS: Record<string, ComponentType> = {
   'fanfarra-correio': comunicacao(0),
   'fanfarra-calendario': comunicacao(6),
   'fanfarra-sala': comunicacao(10),
+  'nuvem-lista': nuvem('pasta'),
+  'nuvem-uniformes': nuvem('anexo', 'uniformes'),
+  'nuvem-juntos': nuvem('juntos', 'repertorio'),
+  'nuvem-repertorio': nuvem('comentarios', 'repertorio'),
+  'nuvem-roteiro': nuvem('sugestao', 'roteiro'),
+  'nuvem-ata': nuvem('historico', 'ata-fanfarra'),
+  'nuvem-conflito': nuvem('conflito', 'repertorio'),
   ...CENAS_DE_DESIGN,
   ...CENAS_VETORIAIS,
   ...CENAS_DE_FOTO,

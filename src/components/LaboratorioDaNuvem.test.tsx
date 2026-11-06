@@ -348,6 +348,24 @@ describe('a lição do histórico fecha clicando', () => {
     expect(todos('.ed-versao').length, 'restaurar apagou versões').toBe(antes + 1);
     expect(container.textContent).toContain('8 de julho');
   });
+
+  /*
+    Escolher uma versão mostra aquela versão na folha. A folha mostrava sempre
+    a de agora, e achar a versão boa virava clicar em cada uma até a tarefa
+    ficar verde — que é medir paciência, e não ler o histórico.
+  */
+  it('escolher uma versão antiga mostra o que ela dizia, e só para ler', () => {
+    montar('historico');
+    const folha = () => container.querySelector('.wd-folha')?.closest('.ed-palco') ?? container;
+    const decisoes = 'a inscrição custa 45 reais';
+    expect(folha().textContent, 'a ata de agora já traz as decisões').not.toContain(decisoes);
+    clicar(porRotulo('Histórico de versões'));
+    clicar(todos<HTMLButtonElement>('.ed-versao').find(v => (v.textContent ?? '').includes('3 de julho')));
+    expect(folha().textContent, 'a versão escolhida não apareceu na folha').toContain(decisoes);
+    expect(container.querySelector('[contenteditable="true"]'), 'a versão antiga ficou editável').toBeNull();
+    clicar(porRotulo('Fechar o histórico'));
+    expect(folha().textContent, 'fechar o histórico não trouxe a de agora de volta').not.toContain(decisoes);
+  });
 });
 
 /* ── Módulo 8: o conflito ──────────────────────────────────────────────────── */
