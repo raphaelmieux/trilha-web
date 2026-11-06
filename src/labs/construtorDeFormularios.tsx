@@ -148,7 +148,10 @@ export const CSS_DO_CONSTRUTOR = `
   font-size: 13.5px; color: #202124; background: #FFFFFF;
 }
 .fb-dois { display: flex; gap: 12px; }
-.fb-dois > * { flex: 1; }
+/* Sem o min-width zero, cada metade guarda a largura natural do campo dela e
+   o segundo campo vaza pela borda do diálogo, com o Até cortado ao meio. */
+.fb-dois > * { flex: 1; min-width: 0; }
+.fb-dois input { min-width: 0; width: 100%; box-sizing: border-box; }
 
 .fb-opcoes { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
 .fb-opcao { display: flex; align-items: center; gap: 10px; }

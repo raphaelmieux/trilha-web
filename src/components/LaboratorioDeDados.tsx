@@ -76,6 +76,9 @@ import type { LicaoDeVereda, Vereda } from '../curriculum/veredas';
 type Comum = {
   vereda: Vereda;
   licao: { titulo: string; verificacoes: string[] };
+  /** O nome do arquivo na barra de título da planilha. */
+  arquivo: string;
+  nomeDoCsv: string;
   metas: Meta[];
   contexto: ContextoDeDados;
   mudar: (f: (c: ContextoDeDados) => ContextoDeDados) => void;
@@ -221,7 +224,28 @@ function TelaDoFormulario(c: Comum) {
           que a lição seguinte abre, e a exportação é o módulo 6, na planilha.
           Botão que aparece sem ter o que fazer ensina a desconfiar do programa.
         */}
-        {aba === 'perguntas' ? (
+        {/*
+          Visualizar mostra o formulário como quem responde o vê, no lugar das
+          perguntas, e não embaixo delas. Empilhada, a prévia ficava numa faixa de
+          meia tela, com o campo recusado e a recusa abaixo da dobra — e a recusa
+          é o que esta lição manda ver.
+        */}
+        {previa ? (
+          <PreviaDoFormulario
+            titulo={f.titulo}
+            descricao={f.descricao}
+            campos={f.campos}
+            valores={previa}
+            aoMudar={(campoId, v) => setPrevia(p => ({ ...(p ?? {}), [campoId]: v }))}
+            recusas={recusado}
+            aoEnviar={enviarPrevia}
+            aviso={(
+              <BotaoDoConstrutor onClick={() => { setPrevia(null); setRecusado([]); }}>
+                Fechar a visualização
+              </BotaoDoConstrutor>
+            )}
+          />
+        ) : aba === 'perguntas' ? (
           <CorpoDoConstrutor>
             <CartaoDeCabecalho titulo={f.titulo} descricao={f.descricao} />
             {f.campos.map(campo => (
@@ -303,23 +327,6 @@ function TelaDoFormulario(c: Comum) {
           </div>
         )}
       </div>
-
-      {previa && (
-        <PreviaDoFormulario
-          titulo={f.titulo}
-          descricao={f.descricao}
-          campos={f.campos}
-          valores={previa}
-          aoMudar={(campoId, v) => setPrevia(p => ({ ...(p ?? {}), [campoId]: v }))}
-          recusas={recusado}
-          aoEnviar={enviarPrevia}
-          aviso={(
-            <BotaoDoConstrutor onClick={() => { setPrevia(null); setRecusado([]); }}>
-              Fechar a visualização
-            </BotaoDoConstrutor>
-          )}
-        />
-      )}
 
       {regra && (
         <DialogoDoConstrutor
@@ -613,7 +620,7 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
     }
     c.mudar(x => ({ ...x, csv: csvDaBase(x) }));
     setDialogo(null);
-    avisar(`${NOME_DO_CSV} foi para a pasta de downloads. Abra no Bloco de Notas para ver o que saiu.`);
+    avisar(`${c.nomeDoCsv} foi para a pasta de downloads. Abra no Bloco de Notas para ver o que saiu.`);
   };
 
   const botao = (dica: string, aoClicar: () => void, filho: React.ReactNode, ativo?: boolean) => (
@@ -645,10 +652,10 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
           aoTrocar={t => t === 'texto' && c.irPara('texto')} />
       )}>
           <div className="pl-janela">
-            <BarraDeTituloDoExcel arquivo="Inscrições 2026" aoAvisar={avisar} />
+            <BarraDeTituloDoExcel arquivo={c.arquivo} aoAvisar={avisar} />
             <GuiasDoExcel
               atual={guia} usaveis={GUIAS_USAVEIS} aoTrocar={setGuia} aoAvisar={avisar}
-              aoAbrirArquivo={() => setDialogo({ tipo: 'salvar', nome: NOME_DO_CSV.replace(/\.csv$/, ''), formato: 'csv' })}
+              aoAbrirArquivo={() => setDialogo({ tipo: 'salvar', nome: c.nomeDoCsv.replace(/\.csv$/, ''), formato: 'csv' })}
             />
 
             <div className="pl-faixa">
@@ -845,7 +852,7 @@ function TelaDoTexto(c: Comum) {
   const [aberto, setAberto] = useState<string | null>(null);
   const naPasta = c.contexto.csv === null
     ? []
-    : [{ nome: NOME_DO_CSV, conteudo: c.contexto.csv }];
+    : [{ nome: c.nomeDoCsv, conteudo: c.contexto.csv }];
 
   /*
     Abrir o arquivo é o que a tarefa pede, e ver a aspa é a outra: as duas se
@@ -986,7 +993,7 @@ function TelaDaPlataforma(c: Comum) {
               </p>
             ) : (
               <div className="flex items-center gap-3 text-sm">
-                <span className="font-mono">{NOME_DO_CSV}</span>
+                <span className="font-mono">{c.nomeDoCsv}</span>
                 <button
                   className="btn-ghost text-sm ml-auto"
                   onClick={() => c.mudar(v => ({ ...v, csv: null }))}
@@ -1004,19 +1011,39 @@ function TelaDaPlataforma(c: Comum) {
 
 /* ── O laboratório ────────────────────────────────────────────────────────── */
 
-export default function LaboratorioDeDados({ vereda, licao, aoVencer, aoSair }: {
+/**
+ * Outro formulário, de outro evento do clube, no lugar do acampamento.
+ *
+ * Existe para as telas da teoria (`src/exemplos/`): fotografar o formulário de
+ * inscrição do acampamento seria pôr na teoria as grafias do Falcão, as
+ * diárias com ponto e a família sem unidade, que são as respostas das lições.
+ * O contexto de partida vem inteiro de fora, e com ele o nome do arquivo na
+ * barra de título e o do CSV exportado — os dois que as telas escrevem.
+ */
+export interface OutrosDados {
+  inicial: () => ContextoDeDados;
+  programa?: ProgramaDaCcEs008;
+  arquivo: string;
+  csv: string;
+}
+
+export default function LaboratorioDeDados({ vereda, licao, aoVencer, aoSair, outra }: {
   vereda: Vereda;
   licao: Extract<LicaoDeVereda, { tipo: 'dados' }>;
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  outra?: OutrosDados;
 }) {
-  const daLicao = LICOES_DA_CC_ES008[licao.licao];
+  const doClube = LICOES_DA_CC_ES008[licao.licao];
+  const daLicao = outra ? { ...doClube, inicial: outra.inicial, programa: outra.programa ?? doClube.programa } : doClube;
   const [hist, setHist] = useState<Historico<ContextoDeDados>>(() => historicoDe(daLicao.inicial()));
   const [tela, setTela] = useState<ProgramaDaCcEs008>(daLicao.programa);
 
   const comum: Comum = {
     vereda,
     licao,
+    arquivo: outra?.arquivo ?? 'Inscrições 2026',
+    nomeDoCsv: outra?.csv ?? NOME_DO_CSV,
     metas: daLicao.metas,
     contexto: hist.presente,
     mudar: f => setHist(h => registrar(h, f(h.presente))),

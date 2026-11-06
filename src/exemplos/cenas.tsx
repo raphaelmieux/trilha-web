@@ -22,6 +22,8 @@ import LaboratorioDeComunicacao from '../components/LaboratorioDeComunicacao';
 import { FANFARRA } from './fanfarraDoClube';
 import LaboratorioDaNuvem from '../components/LaboratorioDaNuvem';
 import { naFanfarra } from './nuvemDaFanfarra';
+import LaboratorioDeDados from '../components/LaboratorioDeDados';
+import { naCamiseta, type EstadoDaCamiseta } from './camisetaDoClube';
 import { CENAS_DE_DESIGN } from './cenasDeDesign';
 import { CENAS_VETORIAIS } from './cenasVetoriais';
 import { CENAS_DE_FOTO } from './cenasDeFoto';
@@ -381,6 +383,20 @@ const nuvem = (licao: string, abre?: string) => () => (
     aoVencer={nada} aoSair={nada} outra={naFanfarra(abre)} />
 );
 
+/* ── Dados e formulários ─────────────────────────────────────────────────── */
+
+/*
+ * A encomenda da camiseta, e não a inscrição do acampamento. A lição só
+ * escolhe as tarefas da moldura; o formulário e a pasta, no estado que o
+ * tópico mostra, vêm de `camisetaDoClube.ts`.
+ */
+const ESTADOS_DA_CAMISETA: EstadoDaCamiseta[] = ['campos', 'validacao', 'base', 'resumo', 'conserto', 'csv', 'agenda'];
+const camiseta = (estado: EstadoDaCamiseta) => () => (
+  <LaboratorioDeDados vereda={vereda('cc-es008')}
+    licao={licaoDe('cc-es008', 'dados', ESTADOS_DA_CAMISETA.indexOf(estado))}
+    aoVencer={nada} aoSair={nada} outra={naCamiseta(estado)} />
+);
+
 export const CENAS: Record<string, ComponentType> = {
   'word-programa-a-mao': word(PROGRAMA_A_MAO, 'Programa do Campori'),
   'word-programa-com-estilo': word(PROGRAMA_COM_ESTILO, 'Programa do Campori'),
@@ -417,6 +433,7 @@ export const CENAS: Record<string, ComponentType> = {
   'nuvem-roteiro': nuvem('sugestao', 'roteiro'),
   'nuvem-ata': nuvem('historico', 'ata-fanfarra'),
   'nuvem-conflito': nuvem('conflito', 'repertorio'),
+  ...Object.fromEntries(ESTADOS_DA_CAMISETA.map(e => [`camiseta-${e}`, camiseta(e)])),
   ...CENAS_DE_DESIGN,
   ...CENAS_VETORIAIS,
   ...CENAS_DE_FOTO,
