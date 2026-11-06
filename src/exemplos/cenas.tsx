@@ -24,6 +24,8 @@ import LaboratorioDaNuvem from '../components/LaboratorioDaNuvem';
 import { naFanfarra } from './nuvemDaFanfarra';
 import LaboratorioDeDados from '../components/LaboratorioDeDados';
 import { naCamiseta, type EstadoDaCamiseta } from './camisetaDoClube';
+import LaboratorioDeApresentacao from '../components/LaboratorioDeApresentacao';
+import { nasPortasAbertas, type EstadoDasPortas } from './diaDePortasAbertas';
 import { CENAS_DE_DESIGN } from './cenasDeDesign';
 import { CENAS_VETORIAIS } from './cenasVetoriais';
 import { CENAS_DE_FOTO } from './cenasDeFoto';
@@ -397,6 +399,23 @@ const camiseta = (estado: EstadoDaCamiseta) => () => (
     aoVencer={nada} aoSair={nada} outra={naCamiseta(estado)} />
 );
 
+/* ── Apresentações ───────────────────────────────────────────────────────── */
+
+/*
+ * O Dia de Portas Abertas, e não o acampamento. Cada estado da apresentação
+ * abre na lição que parte dele, porque é a lição que decide se a janela tem a
+ * planilha ao lado; a apresentação vem de `diaDePortasAbertas.ts`.
+ */
+const LICAO_DO_ESTADO: Record<EstadoDasPortas, number> = {
+  'como-chega': 0, 'com-mestre': 1, 'com-layout': 2, 'enxuta': 3, 'legivel': 5,
+  'com-imagens': 6, 'com-grafico': 7, 'com-notas': 8, 'cortada': 9,
+};
+const portas = (estado: EstadoDasPortas) => () => (
+  <LaboratorioDeApresentacao vereda={vereda('cc-es011')}
+    licao={licaoDe('cc-es011', 'apresentacao', LICAO_DO_ESTADO[estado])}
+    aoVencer={nada} aoSair={nada} outra={nasPortasAbertas(estado)} />
+);
+
 export const CENAS: Record<string, ComponentType> = {
   'word-programa-a-mao': word(PROGRAMA_A_MAO, 'Programa do Campori'),
   'word-programa-com-estilo': word(PROGRAMA_COM_ESTILO, 'Programa do Campori'),
@@ -434,6 +453,7 @@ export const CENAS: Record<string, ComponentType> = {
   'nuvem-ata': nuvem('historico', 'ata-fanfarra'),
   'nuvem-conflito': nuvem('conflito', 'repertorio'),
   ...Object.fromEntries(ESTADOS_DA_CAMISETA.map(e => [`camiseta-${e}`, camiseta(e)])),
+  ...Object.fromEntries((Object.keys(LICAO_DO_ESTADO) as EstadoDasPortas[]).map(e => [`portas-${e}`, portas(e)])),
   ...CENAS_DE_DESIGN,
   ...CENAS_VETORIAIS,
   ...CENAS_DE_FOTO,
