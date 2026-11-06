@@ -1064,6 +1064,24 @@ responde. E **o campo "Até" vazava pela borda direita** do diálogo de
 validação: as duas metades da faixa guardavam a largura natural do campo, e só
 `min-width: 0` as deixa encolher. `LaboratorioDeDados.test.tsx` cobra as duas.
 
+A CC-ES011 fotografa a apresentação da Feira de Especialidades, de
+`src/exemplos/feiraDeEspecialidades.ts` — o mesmo clube apresentando outro
+evento, com o laranja e o azul do cartaz da feira no lugar do ouro e do verde
+—, e não a do acampamento: lá os tópicos enxutos de cada slide, as cores
+escurecidas, os custos que mudaram na planilha e os slides que se juntam no
+corte são as respostas. Cada estado da feira parte do conserto do anterior,
+como as lições. `LaboratorioDeApresentacao` ganhou `outra`, com o estado de
+partida e o que a janela mostra com nome — o arquivo, a planilha, as fotos da
+pasta e os tons do seletor de cor —, e `exemplosDasApresentacoes.test.ts`
+confere as razões de contraste, as palavras da régua, os pixels e os
+megabytes das legendas pelo motor, e reprova se as duas apresentações
+dividirem um título ou um tópico em qualquer estado. Foi assim que o título
+"Programação" saiu da feira.
+
+Da mesma volta: o aviso de Limpar Formatação dizia "saiu dos dezesseis", e
+dezesseis é o tamanho da apresentação de partida — depois do corte, ou em
+qualquer outra, o número mentia. Ele conta os slides que há.
+
 A teoria ensinava a buscar escrevendo `tipo:imagem` na caixa, e a janela do
 laboratório filtra numa caixa com Tipo e Data: a lição descrevia um gesto que
 a pessoa não ia encontrar. E a primeira captura achou um defeito do
@@ -5236,6 +5254,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDaNuvem.test.tsx` | versão escolhida no histórico que não aparece na folha, ou que aparece editável |
 | `src/curriculum/exemplosDosDados.test.ts` | legenda da teoria da CC-ES008 que a encomenda da camiseta não devolve, ou a encomenda dividindo pessoa, telefone ou endereço com o acampamento do laboratório |
 | `src/components/LaboratorioDeDados.test.tsx` | Visualizar que empilha a prévia embaixo das perguntas, ou faixa de validação que vaza do diálogo |
+| `src/curriculum/exemplosDasApresentacoes.test.ts` | contraste, palavras, pixels ou megabytes da teoria da CC-ES011 que o motor não devolve, ou a feira dividindo um título ou um tópico com o acampamento do laboratório |
 | `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |

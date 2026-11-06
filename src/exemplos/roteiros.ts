@@ -38,6 +38,7 @@ import { ROTEIROS_DE_CONTAS } from './roteiros/contasESeguranca';
 import { ROTEIROS_DA_COMUNICACAO } from './roteiros/comunicacaoEAgenda';
 import { ROTEIROS_DA_NUVEM } from './roteiros/trabalhoCompartilhado';
 import { ROTEIROS_DOS_DADOS } from './roteiros/dadosEFormularios';
+import { ROTEIROS_DAS_APRESENTACOES } from './roteiros/apresentacoes';
 
 export type Acao =
   /**
@@ -106,6 +107,7 @@ export const ROTEIROS: Roteiro[] = [
   ...ROTEIROS_DA_COMUNICACAO,
   ...ROTEIROS_DA_NUVEM,
   ...ROTEIROS_DOS_DADOS,
+  ...ROTEIROS_DAS_APRESENTACOES,
 ];
 
 /** Os nomes das imagens que um roteiro produz, na ordem. */

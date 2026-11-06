@@ -17,7 +17,7 @@ import {
 import {
   NOMES_DOS_LAYOUTS, aplicarLayout, compactarImagem, limparFormatacaoDireta,
   palavrasDoSlide, pesoEmMegabytes, pixelsQueAProjecaoPede, resolucaoDaImagem,
-  slideNovo, vazio,
+  imagemInserida, slideNovo, vazio,
   type Apresentacao, type Layout, type Slide,
 } from '../labs/apresentacao';
 import {
@@ -84,14 +84,44 @@ const TEM_PLANILHA: Record<LicaoDaCcEs011, boolean> = {
   'corte': false, 'cinco-minutos': false,
 };
 
-export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVencer, aoSair }: {
+type Tom = { hex: string; nome: string };
+
+/**
+ * Outra apresentação, de outro evento do clube, no lugar da do acampamento.
+ *
+ * Existe para as telas da teoria (`src/exemplos/`): fotografar a apresentação
+ * do acampamento poria na teoria os tópicos enxutos, as cores escurecidas e
+ * os custos da planilha, que são as respostas das lições. Vem de fora o que a
+ * janela mostra com nome: o arquivo, a planilha, as fotos da pasta e os tons
+ * que o seletor de cor oferece.
+ */
+export interface OutraApresentacao {
+  inicial: () => ContextoDaApresentacao;
+  arquivo: string;
+  planilha: string;
+  imagens: { arquivo: string; px: number; py: number }[];
+  tonsDoTitulo: Tom[];
+  tonsDoCorpo: Tom[];
+}
+
+export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVencer, aoSair, outra }: {
   vereda: Vereda;
   licao: Extract<LicaoDeVereda, { tipo: 'apresentacao' }>;
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  outra?: OutraApresentacao;
 }) {
   const licao = daLicao.licao;
-  const [ctx, setCtx] = useState<ContextoDaApresentacao>(() => PARTIDA_DA_LICAO[licao]());
+  const partida = () => (outra ? outra.inicial() : PARTIDA_DA_LICAO[licao]());
+  const arquivo = outra?.arquivo ?? 'Acampamento de Inverno 2026';
+  const planilha = outra?.planilha ?? PLANILHA_DOS_CUSTOS;
+  const imagensDaPasta = outra?.imagens ?? IMAGENS_DO_CLUBE;
+  const umaImagem = (id: string, nome: string, largura: number) => {
+    if (!outra) return umaImagemDoClube(id, nome, largura);
+    const f = imagensDaPasta.find(i => i.arquivo === nome)!;
+    return imagemInserida(id, nome, f.px, f.py, largura);
+  };
+  const [ctx, setCtx] = useState<ContextoDaApresentacao>(partida);
   const [salvando, setSalvando] = useState(false);
   const [tela, setTela] = useState<Tela>('normal');
   const [guia, setGuia] = useState('Página Inicial');
@@ -227,14 +257,14 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
   const limparFormatacao = () => {
     fecharMenu();
     mudarAp(a => ({ ...a, slides: a.slides.map(limparFormatacaoDireta) }));
-    setAviso('A formatação aplicada à mão saiu dos dezesseis. Agora o que vale é o mestre.');
+    setAviso(`A formatação aplicada à mão saiu dos ${ap.slides.length} slides. Agora o que vale é o mestre.`);
   };
 
   const inserirImagem = (arquivo: string) => {
     setDialogo(null);
     mudarSlide(slide.id, {
       imagens: [...slide.imagens.filter(i => i.legenda !== 'logo-clube.png'),
-        umaImagemDoClube(`i${Date.now()}`, arquivo, 40)],
+        umaImagem(`i${Date.now()}`, arquivo, 40)],
     });
   };
 
@@ -242,7 +272,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
     setDialogo(null);
     mudarSlide(slide.id, {
       imagens: slide.imagens.map(i => (
-        i.id === idDaImagem ? umaImagemDoClube(i.id, arquivo, i.largura) : i
+        i.id === idDaImagem ? umaImagem(i.id, arquivo, i.largura) : i
       )),
     });
     setAviso(`A imagem passou a ser ${arquivo}.`);
@@ -261,7 +291,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
     fecharMenu();
     mudarSlide(slide.id, {
       grafico: {
-        id: `g${Date.now()}`, como, planilha: PLANILHA_DOS_CUSTOS,
+        id: `g${Date.now()}`, como, planilha,
         retrato: ctx.custos.map(x => ({ ...x })),
       },
     });
@@ -337,7 +367,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
   const roteiro = useMemo(() => roteiroDaApresentacao(ap), [ap]);
 
   const recomecar = () => {
-    setCtx(PARTIDA_DA_LICAO[licao]());
+    setCtx(partida());
     setTela('normal');
     setAtual(0);
     setPainel('nenhum');
@@ -421,7 +451,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
 
       <div className="pp-janela" onClick={fecharMenu}>
         <BarraDeTituloDoPowerPoint
-          arquivo="Acampamento de Inverno 2026" aoAvisar={avisar} aoNaoFazParte={naoFazParte}
+          arquivo={arquivo} aoAvisar={avisar} aoNaoFazParte={naoFazParte}
         />
 
         {tela === 'telao' && (
@@ -452,7 +482,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
               <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 10 }}>Informações</h3>
               <dl style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 14px', fontSize: 12.5 }}>
                 <dt style={{ color: '#605E5C' }}>Nome</dt>
-                <dd>Acampamento de Inverno 2026.pptx</dd>
+                <dd>{arquivo}.pptx</dd>
                 <dt style={{ color: '#605E5C' }}>Slides</dt>
                 <dd>{ap.slides.length}</dd>
                 <dt style={{ color: '#605E5C' }}>Tamanho</dt>
@@ -619,7 +649,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
                   </CampoDoMestre>
                   <CampoDoMestre rotulo="Cor">
                     <SeletorDeCorDoPowerPoint
-                      tons={TONS_DO_OURO} escolhida={ap.mestre.corDoTitulo} rotulo="Cor do título"
+                      tons={outra?.tonsDoTitulo ?? TONS_DO_OURO} escolhida={ap.mestre.corDoTitulo} rotulo="Cor do título"
                       aoEscolher={hex => mudarAp(a => ({ ...a, mestre: { ...a.mestre, corDoTitulo: hex } }))}
                     />
                   </CampoDoMestre>
@@ -646,7 +676,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
                   </CampoDoMestre>
                   <CampoDoMestre rotulo="Cor">
                     <SeletorDeCorDoPowerPoint
-                      tons={TONS_DO_VERDE} escolhida={ap.mestre.corDoCorpo} rotulo="Cor do corpo"
+                      tons={outra?.tonsDoCorpo ?? TONS_DO_VERDE} escolhida={ap.mestre.corDoCorpo} rotulo="Cor do corpo"
                       aoEscolher={hex => mudarAp(a => ({ ...a, mestre: { ...a.mestre, corDoCorpo: hex } }))}
                     />
                   </CampoDoMestre>
@@ -703,7 +733,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <Table2 className="w-4 h-4" />
-              <span style={{ fontWeight: 600 }}>{PLANILHA_DOS_CUSTOS}</span>
+              <span style={{ fontWeight: 600 }}>{planilha}</span>
               <span style={{ opacity: .85 }}>— Excel</span>
             </div>
             <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 14 }}>
@@ -997,7 +1027,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
                 borderRadius: 3, background: tela === 'normal' ? '#3A3A3A' : 'transparent',
                 borderBottom: tela === 'normal' ? '2px solid #B7472A' : '2px solid transparent',
               }}>
-              <FileText className="w-3.5 h-3.5" /> Acampamento de Inverno 2026
+              <FileText className="w-3.5 h-3.5" /> {arquivo}
             </button>
             <button type="button" onClick={() => setTela('planilha')}
               aria-current={tela === 'planilha'}
@@ -1006,7 +1036,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
                 borderRadius: 3, background: tela === 'planilha' ? '#3A3A3A' : 'transparent',
                 borderBottom: tela === 'planilha' ? '2px solid #217346' : '2px solid transparent',
               }}>
-              <Table2 className="w-3.5 h-3.5" /> {PLANILHA_DOS_CUSTOS}
+              <Table2 className="w-3.5 h-3.5" /> {planilha}
             </button>
           </div>
         )}
@@ -1017,7 +1047,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
             aoConfirmar={() => setDialogo(null)} aoFechar={() => setDialogo(null)}
           >
             <p>Imagens em <strong>Este Computador › Clube › Fotos</strong></p>
-            {IMAGENS_DO_CLUBE.map(f => (
+            {imagensDaPasta.map(f => (
               <button key={f.arquivo} type="button" className="pp-bt-dialogo"
                 style={{ textAlign: 'left' }} onClick={() => inserirImagem(f.arquivo)}>
                 {f.arquivo} <span style={{ color: '#605E5C' }}>· {f.px} × {f.py} px</span>
@@ -1032,7 +1062,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
             aoConfirmar={() => setDialogo(null)} aoFechar={() => setDialogo(null)}
           >
             <p>Escolha o arquivo que vai no lugar.</p>
-            {IMAGENS_DO_CLUBE.map(f => (
+            {imagensDaPasta.map(f => (
               <button key={f.arquivo} type="button" className="pp-bt-dialogo"
                 style={{ textAlign: 'left' }}
                 onClick={() => trocarImagem(dialogo.slice('trocar:'.length), f.arquivo)}>
