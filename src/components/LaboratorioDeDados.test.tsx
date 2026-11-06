@@ -8,6 +8,7 @@ import {
   LICOES_DA_CC_ES008, NOME_DO_CSV, UNIDADE_DA_EDUARDA, type LicaoDaCcEs008,
 } from '../labs/metasDaCcEs008';
 import { NOME_DO_TIPO, UNIDADES } from '../labs/formulario';
+import { CSS_DO_CONSTRUTOR } from '../labs/construtorDeFormularios';
 import { ROTULO_VAZIO } from '../labs/planilha';
 import type { LicaoDeVereda, Vereda } from '../curriculum/veredas';
 
@@ -240,6 +241,27 @@ describe('as lições da CC-ES008 se vencem clicando', () => {
     clicar(porTexto('.fb-bt', 'Enviar'));
 
     expect(abertas(), 'a lição da validação não fecha clicando').toBe(0);
+  });
+
+  it('Visualizar mostra o formulário no lugar das perguntas, e Fechar as devolve', () => {
+    montar('validacao');
+    expect(container.querySelector('.fb-previa')).toBeNull();
+    clicar(botao('Visualizar'));
+    /* Empilhada embaixo das perguntas, a prévia ficava numa faixa de meia tela
+       com a recusa abaixo da dobra — e a recusa é o que a lição manda ver. */
+    expect(container.querySelector('.fb-previa')).not.toBeNull();
+    expect(container.querySelector('.fb-tipo'), 'as perguntas continuaram embaixo da prévia').toBeNull();
+    clicar(porTexto('.fb-bt', 'Fechar a visualização'));
+    expect(container.querySelector('.fb-previa')).toBeNull();
+    expect(container.querySelector('.fb-tipo')).not.toBeNull();
+  });
+
+  it('os dois campos da faixa cabem no diálogo de validação', () => {
+    /* Sem o min-width zero cada metade guarda a largura natural do campo, e o
+       Até vaza pela borda direita do diálogo. O jsdom não mede largura
+       nenhuma; o que se confere é a regra que o Chromium precisa. */
+    expect(CSS_DO_CONSTRUTOR).toMatch(/\.fb-dois > \* \{[^}]*min-width: 0/);
+    expect(CSS_DO_CONSTRUTOR).toMatch(/\.fb-dois input \{[^}]*min-width: 0/);
   });
 
   /* ── Módulo 3 a 7: a planilha ──────────────────────────────────────────── */

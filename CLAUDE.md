@@ -1043,6 +1043,27 @@ lição de restaurar pedia para conferir o que a versão antiga dizia sem ter
 onde ler. A versão escolhida aparece na folha, só para ler, e
 `LaboratorioDaNuvem.test.tsx` cobra.
 
+A CC-ES008 fotografa a encomenda da camiseta do clube, de
+`src/exemplos/camisetaDoClube.ts` — o mesmo clube e as mesmas unidades,
+pedindo outra coisa —, e não a inscrição do acampamento: lá o Falcão escrito
+de quatro jeitos, a família sem unidade que é do Tucano, as diárias com ponto
+e a agenda das vinte e cinco famílias são as respostas. As três telas do
+laboratório aparecem, cada uma no seu tópico: o construtor, o Excel e o Bloco
+de Notas. `LaboratorioDeDados` ganhou `outra`, com o contexto de partida, o
+nome do arquivo na barra de título e o do CSV exportado, e
+`exemplosDosDados.test.ts` confere as legendas pelos motores e reprova se a
+encomenda dividir uma pessoa, um telefone ou um endereço com o laboratório. Os
+três tópicos do dado pessoal ficam em prosa: classificar e escolher cuidado
+são tela da plataforma, e não programa.
+
+A primeira captura achou dois defeitos do construtor. **Visualizar empilhava a
+prévia embaixo das perguntas**, numa faixa de meia tela: o campo recusado e a
+recusa ficavam abaixo da dobra, e a recusa é o que o módulo 2 manda ver. A
+prévia toma o lugar das perguntas agora, como o formulário aberto para quem
+responde. E **o campo "Até" vazava pela borda direita** do diálogo de
+validação: as duas metades da faixa guardavam a largura natural do campo, e só
+`min-width: 0` as deixa encolher. `LaboratorioDeDados.test.tsx` cobra as duas.
+
 A teoria ensinava a buscar escrevendo `tipo:imagem` na caixa, e a janela do
 laboratório filtra numa caixa com Tipo e Data: a lição descrevia um gesto que
 a pessoa não ia encontrar. E a primeira captura achou um defeito do
@@ -5213,6 +5234,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDeComunicacao.test.tsx` | caixa de excluir sem "Este e os seguintes", ou com ela apagando o que veio antes |
 | `src/curriculum/exemplosDaNuvem.test.ts` | legenda da teoria da CC-ES006 que a pasta da fanfarra não devolve, ou a fanfarra dividindo arquivo ou linha com a nuvem do acampamento |
 | `src/components/LaboratorioDaNuvem.test.tsx` | versão escolhida no histórico que não aparece na folha, ou que aparece editável |
+| `src/curriculum/exemplosDosDados.test.ts` | legenda da teoria da CC-ES008 que a encomenda da camiseta não devolve, ou a encomenda dividindo pessoa, telefone ou endereço com o acampamento do laboratório |
+| `src/components/LaboratorioDeDados.test.tsx` | Visualizar que empilha a prévia embaixo das perguntas, ou faixa de validação que vaza do diálogo |
 | `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |
