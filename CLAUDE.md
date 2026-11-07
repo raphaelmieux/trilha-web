@@ -1155,6 +1155,27 @@ ganhou a base como parâmetro, `LaboratorioDaAnalise` ganhou `outra`, e
 `exemplosDaAnalise.test.ts` confere a teoria contra o campori e as questões
 contra o acampamento.
 
+A CC-ES010 fotografa a mesma inscrição do campori, e pelo mesmo motivo: a
+teoria citava o r de 0,91, a reta de 8,4 centímetros por ano, os 2,58 m aos
+25 anos, o r² de 0,83 a 0,94 e a Arara contra a Águia, e todos são respostas
+das lições. O campori tem o mesmo arranjo com outros números — o par espúrio
+entre altura e acampamentos, um atípico só na altura, uma reta que extrapola
+para o absurdo —, e o que a lição pergunta a teoria pergunta de outro jeito:
+prevê para 12 e 22 anos, e não para 13 e 25, e embaralha a Arara com o
+Jaguar, e não com a Águia. `contextoInicial` ganhou a base como parâmetro,
+`LaboratorioDaEstatistica` ganhou `outra` — com o arquivo e as duas unidades
+do embaralho —, e `exemplosDaEstatistica.test.ts` confere a teoria contra o
+campori e as questões contra o acampamento.
+
+O atípico do campori é uma digitação, o 1,61 trocado por 1,16, e não alguém
+muito baixo. A teoria usa isso: o motivo de excluir é bom e mesmo assim se
+relata, porque o r² que salta de 0,62 para 0,86 é o que alguém levaria para
+a reunião sem dizer que saiu de quarenta e uma pessoas.
+
+A foto do embaralho é cortada na altura do primeiro cartão. O segundo lista as
+leituras do resultado, e elas citam a frequência e a diferença do
+acampamento: são as alternativas da lição.
+
 **No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
 Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
 escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela
@@ -5326,6 +5347,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/exemplosDoProjetoDeDados.test.ts` | número da teoria da CC-ES013 que a base do sono não devolve, questão que a chamada do laboratório não devolve, ou a teoria citando a chamada |
 | `src/labs/planilha.test.ts` | classificar coluna com número e texto misturados sem separar os blocos, que deixa o maior valor fora da ponta |
 | `src/curriculum/exemplosDaAnalise.test.ts` | número da teoria da CC-ES009 que o campori não devolve, questão que o acampamento não devolve, ou a teoria citando o acampamento |
+| `src/curriculum/exemplosDaEstatistica.test.ts` | número da teoria da CC-ES010 que o campori não devolve, questão que o acampamento não devolve, ou a teoria citando o acampamento |
 | `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |

@@ -3,7 +3,8 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
-import LaboratorioDaEstatistica from './LaboratorioDaEstatistica';
+import LaboratorioDaEstatistica, { type OutraEstatistica } from './LaboratorioDaEstatistica';
+import { baseDoCampori } from '../exemplos/camporiDePrimavera';
 import {
   type LicaoDaCcEs010,
   CANDIDATAS_A_ESCONDIDA, CHAVE_ACASO, CHAVE_EFEITO, CHAVE_RAZOES, CHAVE_RISCO,
@@ -12,7 +13,7 @@ import {
   ROTULO_INTERCEPCAO, ROTULO_R2_SEM,
   formulaDaPrevisao, formulaDaReta, formulaDoAjuste, formulaDoR, formulaSemAtipico,
   leituraCerta, linhasAtipicasDoPar, parEspurio, piorAjusteDa, rotuloDaPrevisao,
-  rotuloDoCampo,
+  contextoInicial, rotuloDoCampo,
 } from '../labs/metasDaCcEs010';
 import { ABA_CALCULOS, ABA_RESPOSTAS, colunaDoCampo, linhaDoRotulo } from '../labs/metasDaCcEs009';
 import { COLETAS, NOME_DA_FORMA, populacaoCerta } from '../labs/amostraDoClube';
@@ -56,7 +57,7 @@ let root: Root;
 const VEREDA = { code: 'CC-ES010' } as Vereda;
 const BASE = baseDoAcampamento();
 
-function montar(qual: LicaoDaCcEs010) {
+function montar(qual: LicaoDaCcEs010, outra?: OutraEstatistica) {
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -72,7 +73,7 @@ function montar(qual: LicaoDaCcEs010) {
     root.render(
       <MemoryRouter>
         <LaboratorioDaEstatistica vereda={VEREDA} licao={licao}
-          aoVencer={async () => {}} aoSair={() => {}} />
+          aoVencer={async () => {}} aoSair={() => {}} outra={outra} />
       </MemoryRouter>,
     );
   });
@@ -705,5 +706,39 @@ describe('a tela da CC-ES010', () => {
     clicar(botao('Desfazer (Ctrl+Z)'));
     clicar(botao('Desfazer (Ctrl+Z)'));
     expect(abertas(), 'o Ctrl+Z levou a descoberta junto').toBeLessThanOrEqual(faltavam);
+  });
+});
+
+/*
+  A teoria fotografa este laboratório sobre outra base, e a pasta precisa
+  chegar inteira: o nome na barra de título, a base que as contas leem e as
+  duas unidades que o embaralho compara. Um nome esquecido no componente
+  faria a foto do campori sair com "Acampamento" na barra, e um grupo
+  esquecido faria o embaralho comparar unidades que a legenda não cita.
+*/
+describe('outra pasta, para as telas da teoria', () => {
+  it('abre com o arquivo, a base e as unidades que recebeu', () => {
+    const campori = baseDoCampori();
+    montar('acaso', {
+      inicial: () => contextoInicial(undefined, campori),
+      arquivo: 'Campori de Primavera — análise',
+      grupos: ['Arara', 'Jaguar'],
+    });
+    expect(container.textContent).toContain('Arara e Jaguar, com os rótulos embaralhados');
+    clicar([...container.querySelectorAll('button')].find(b => b.textContent?.includes('Embaralhar')));
+    expect(container.textContent).toContain('Diferença de verdade: 3,10');
+  });
+
+  it('sem ela, abre o acampamento da lição', () => {
+    montar('correlacao');
+    expect(container.textContent).toContain('Acampamento 2026 — estatística');
+    act(() => root.unmount());
+    container.remove();
+    montar('correlacao', {
+      inicial: () => contextoInicial(undefined, baseDoCampori()),
+      arquivo: 'Campori de Primavera — análise',
+    });
+    expect(container.textContent).toContain('Campori de Primavera — análise');
+    expect(container.textContent).not.toContain('Acampamento 2026 — estatística');
   });
 });

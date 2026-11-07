@@ -1420,8 +1420,13 @@ export interface LicaoDeEstatistica {
 /** A pasta como ela chega, sem nada calculado. */
 export function contextoInicial(
   blocos: BlocoDeContas[] = [blocoDosPares([PAR_DO_MODULO_2])],
+  /*
+    A base é a do acampamento, e é parâmetro só para as telas da teoria, que
+    fotografam a mesma pasta sobre as inscrições do Campori de Primavera —
+    os números do acampamento são as respostas das lições.
+  */
+  base: Formulario = baseDoAcampamento(),
 ): ContextoDaEstatistica {
-  const base = baseDoAcampamento();
   const caderno = cadernoDaAnalise(base, blocos);
   return {
     base,
@@ -1444,7 +1449,7 @@ export function contextoInicial(
  * refazê-la ensinaria que o trabalho anterior não conta. Ela chega **sem** a
  * linha de tendência, que é o que esta lição pede.
  */
-function comDispersaoPronta(c: ContextoDaEstatistica): ContextoDaEstatistica {
+export function comDispersaoPronta(c: ContextoDaEstatistica): ContextoDaEstatistica {
   const par = PAR_DO_MODULO_2;
   const r = c.caderno.planilhas.find(x => x.nome === ABA_RESPOSTAS)!;
   const cx = colunaDoCampo(par.x);
@@ -1484,7 +1489,7 @@ function comDispersaoPronta(c: ContextoDaEstatistica): ContextoDaEstatistica {
  * Os **dois** campos da pasta, como em `comDispersaoPronta`: mexendo só em
  * `caderno`, o que a lição entrega contaria como trabalho de quem abriu.
  */
-function comRetaEAjustePronto(c: ContextoDaEstatistica): ContextoDaEstatistica {
+export function comRetaEAjustePronto(c: ContextoDaEstatistica): ContextoDaEstatistica {
   const par = PAR_DO_MODULO_2;
   let calc = abaDe(c.caderno, ABA_CALCULOS);
   calc = escrever(calc, linhaDoRotulo(c.blocos, ROTULO_INCL_TODOS), 1,

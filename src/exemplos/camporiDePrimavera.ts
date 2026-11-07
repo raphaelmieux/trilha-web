@@ -1,6 +1,6 @@
 /**
- * A base que a teoria da CC-ES009 fotografa: as inscrições do Campori de
- * Primavera.
+ * A base que a teoria da CC-ES009 e a da CC-ES010 fotografam: as inscrições
+ * do Campori de Primavera.
  *
  * ── Por que outra base ───────────────────────────────────────────────────
  * O laboratório analisa as inscrições do acampamento de inverno, e cada número
@@ -97,3 +97,20 @@ export function baseDoCampori(): Formulario {
 }
 
 export const ARQUIVO_DO_CAMPORI = 'Campori de Primavera — análise';
+
+/*
+ * O que a teoria da CC-ES010 pergunta a esta base, e que não é o que a lição
+ * pergunta à do acampamento: a lição prevê para 13 e 25 anos e embaralha a
+ * Arara com a Águia, e a teoria que mostrasse as mesmas perguntas mostraria o
+ * caminho do gabarito.
+ */
+
+/** As idades que a teoria pergunta à reta: uma dentro do que se viu, outra fora. */
+export const IDADES_DA_TEORIA = [12, 22] as const;
+
+/**
+ * As duas unidades que a teoria embaralha: o Jaguar, a mais experiente do
+ * campori, e a Arara. Seis e cinco inscritos, e uma diferença de médias que o
+ * acaso alcança cerca de uma vez em dez.
+ */
+export const GRUPOS_DA_TEORIA = ['Arara', 'Jaguar'] as const;
