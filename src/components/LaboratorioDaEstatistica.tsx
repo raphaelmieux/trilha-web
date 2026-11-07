@@ -82,6 +82,10 @@ type Comum = {
   anotarVisto: (o: string) => void;
   irPara: (t: ProgramaDaCcEs010) => void;
   recomecar: () => void;
+  /** O nome do arquivo na barra de título. */
+  arquivo: string;
+  /** As duas unidades que o embaralho compara. */
+  grupos: readonly [string, string];
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
 };
@@ -370,7 +374,7 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
       <style>{CSS_DOS_ELEMENTOS}</style>
 
       <div className="pl-janela">
-        <BarraDeTituloDoExcel arquivo="Acampamento 2026 — estatística" aoAvisar={avisar} />
+        <BarraDeTituloDoExcel arquivo={c.arquivo} aoAvisar={avisar} />
         <GuiasDoExcel atual={guia} usaveis={GUIAS_USAVEIS} aoTrocar={setGuia} aoAvisar={avisar} />
 
         <div className="pl-faixa">
@@ -581,15 +585,16 @@ function TelaDoCaderno(c: Comum) {
     certo — é a trava que não pode depender de sorte, e ela injeta o sorteio
     dela pelo parâmetro que `sortearEntreGrupos` tem para isso.
   */
+  const [grupoA, grupoB] = c.grupos;
   const embaralhar = () => c.mudar((k) => {
     const { sorteadas } = sortearEntreGrupos(
-      k.base, CAMPO_DO_GRUPO, CAMPO_DA_MEDIDA, GRUPO_A, GRUPO_B, SORTEIOS_POR_VEZ,
+      k.base, CAMPO_DO_GRUPO, CAMPO_DA_MEDIDA, grupoA, grupoB, SORTEIOS_POR_VEZ,
     );
     return { ...k, sorteios: [...k.sorteios, ...sorteadas] };
   });
 
   const real = x.sorteios.length > 0
-    ? sortearEntreGrupos(x.base, CAMPO_DO_GRUPO, CAMPO_DA_MEDIDA, GRUPO_A, GRUPO_B, 0).real
+    ? sortearEntreGrupos(x.base, CAMPO_DO_GRUPO, CAMPO_DA_MEDIDA, grupoA, grupoB, 0).real
     : 0;
   const alcancaram = x.sorteios.filter(d => d >= real - 1e-9).length;
 
@@ -798,7 +803,7 @@ function TelaDoCaderno(c: Comum) {
         return (
           <>
             <Cartao
-              titulo={`${GRUPO_A} e ${GRUPO_B}, com os rótulos embaralhados`}
+              titulo={`${grupoA} e ${grupoB}, com os rótulos embaralhados`}
               abaixo="Nada muda na base: os números continuam os mesmos, e só quem é de qual unidade é sorteado de novo."
             >
               <button type="button" onClick={embaralhar} className="btn-primary text-sm">
@@ -962,15 +967,30 @@ function TelaDoCaderno(c: Comum) {
 
 /* ── O despacho ───────────────────────────────────────────────────────────── */
 
-export default function LaboratorioDaEstatistica({ vereda, licao, aoVencer, aoSair }: {
+/**
+ * Outra pasta, para as telas da teoria.
+ *
+ * A teoria fotografa o laboratório sobre as inscrições do Campori de
+ * Primavera, e não sobre as do acampamento, cujos números são as respostas das
+ * lições. Sem `outra`, abre o acampamento, no estado de partida da lição.
+ */
+export interface OutraEstatistica {
+  inicial: () => ContextoDaEstatistica;
+  arquivo: string;
+  grupos?: readonly [string, string];
+}
+
+export default function LaboratorioDaEstatistica({ vereda, licao, aoVencer, aoSair, outra }: {
   vereda: Vereda;
   licao: Extract<LicaoDeVereda, { tipo: 'estatistica' }>;
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  outra?: OutraEstatistica;
 }) {
   const daLicao = LICOES_DA_CC_ES010[licao.licao];
+  const partida = outra?.inicial ?? daLicao.inicial;
   const [hist, setHist] = useState<Historico<ContextoDaEstatistica>>(
-    () => historicoDe(daLicao.inicial()),
+    () => historicoDe(partida()),
   );
   const [tela, setTela] = useState<ProgramaDaCcEs010>(daLicao.programa);
 
@@ -1009,7 +1029,9 @@ export default function LaboratorioDaEstatistica({ vereda, licao, aoVencer, aoSa
       presente: { ...h.presente, descobertas: [...h.presente.descobertas, o] },
     })),
     irPara: setTela,
-    recomecar: () => { setHist(historicoDe(daLicao.inicial())); setTela(daLicao.programa); },
+    recomecar: () => { setHist(historicoDe(partida())); setTela(daLicao.programa); },
+    arquivo: outra?.arquivo ?? 'Acampamento 2026 — estatística',
+    grupos: outra?.grupos ?? [GRUPO_A, GRUPO_B],
     aoVencer,
     aoSair,
   };

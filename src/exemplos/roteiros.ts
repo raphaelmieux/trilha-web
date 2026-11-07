@@ -34,6 +34,7 @@ import { ROTEIROS_DO_PROJETO_DE_DESIGN } from './roteiros/projetoDeDesign';
 import { ROTEIROS_DO_PROJETO_DOCUMENTAL } from './roteiros/projetoDocumental';
 import { ROTEIROS_DO_PROJETO_DE_DADOS } from './roteiros/projetoDeDados';
 import { ROTEIROS_DA_ANALISE } from './roteiros/analiseDeDados';
+import { ROTEIROS_DA_ESTATISTICA } from './roteiros/analiseEstatistica';
 import { ROTEIROS_DE_ARQUIVOS } from './roteiros/arquivos';
 import { ROTEIROS_DE_PLANILHA } from './roteiros/planilhas';
 import { ROTEIROS_DE_PDF } from './roteiros/documentosPortateis';
@@ -106,6 +107,7 @@ export const ROTEIROS: Roteiro[] = [
   ...ROTEIROS_DO_PROJETO_DOCUMENTAL,
   ...ROTEIROS_DO_PROJETO_DE_DADOS,
   ...ROTEIROS_DA_ANALISE,
+  ...ROTEIROS_DA_ESTATISTICA,
   ...ROTEIROS_DE_ARQUIVOS,
   ...ROTEIROS_DE_PLANILHA,
   ...ROTEIROS_DE_PDF,
