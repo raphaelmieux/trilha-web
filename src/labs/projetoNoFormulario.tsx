@@ -70,7 +70,7 @@ function CartaoDoCampo({ campo, ativo, aoAtivar, aoTrocarTipo }: {
 
 /* ── Módulo 4: o formulário desenhado para a planilha ─────────────────────── */
 
-export function FormularioDaFeira({ ctx, mudar, avisar }: PropsDaSuperficie) {
+export function FormularioDaFeira({ ctx, mudar, avisar, conjunto }: PropsDaSuperficie) {
   const [aba, setAba] = useState<AbaDoConstrutor>('perguntas');
   const [ativo, setAtivo] = useState<string | null>(null);
   const f = ctx.p.formulario;
@@ -103,11 +103,11 @@ export function FormularioDaFeira({ ctx, mudar, avisar }: PropsDaSuperficie) {
           <button
             type="button" className="fb-bt"
             onClick={() => {
-              mudar(c => ({ ...c, p: { ...c.p, formulario: comFormularioArrumado(c.p.formulario) } }));
-              avisar('A pergunta virou duas, a quantidade virou número e o tema entrou. As seis respostas chegaram.');
+              mudar(c => ({ ...c, p: { ...c.p, formulario: comFormularioArrumado(c.p.formulario, conjunto, c.p.identidade) } }));
+              avisar(`A pergunta virou duas, a quantidade virou número e o tema entrou. As ${conjunto.respostasArrumadas.length} respostas chegaram.`);
             }}
           >
-            <Scissors className="w-3.5 h-3.5" /> Separar unidade e especialidade
+            <Scissors className="w-3.5 h-3.5" /> Separar a pergunta em duas
           </button>
           <button
             type="button" className="fb-bt"

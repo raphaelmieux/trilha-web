@@ -190,7 +190,7 @@ describe('o módulo 2: o regulamento', () => {
     clicar(porRotulo('Modificar Título 1: fonte'), 'modificar Título 1');
 
     clicar(porTexto('.wd-guia', 'Inserir'), 'guia Inserir');
-    clicar(porRotulo('Escrever a seção Onde está cada peça'), 'seção nova');
+    clicar(porRotulo('Escrever a seção que aponta para as outras peças'), 'seção nova');
 
     clicar(porTexto('.wd-guia', 'Referências'), 'guia Referências');
     clicar(porRotulo('Atualizar Sumário'), 'atualizar sumário');
@@ -204,7 +204,7 @@ describe('o módulo 2: o regulamento', () => {
     clicar(porTexto('.wd-guia', 'Início'), 'guia Início');
     clicar(porRotulo('Modificar Título 1: fonte'), 'modificar Título 1');
     clicar(porTexto('.wd-guia', 'Inserir'), 'guia Inserir');
-    clicar(porRotulo('Escrever a seção Onde está cada peça'), 'seção nova');
+    clicar(porRotulo('Escrever a seção que aponta para as outras peças'), 'seção nova');
     expect(faltam(), 'o sumário velho devia deixar a tarefa vermelha').toBe(1);
   });
 });
@@ -243,7 +243,7 @@ describe('o módulo 4: o formulário', () => {
   it('fecha as três pelo construtor', () => {
     montar('formulario');
     expect(faltam()).toBe(quantas('formulario'));
-    clicar(botao('Separar unidade e especialidade'), 'separar os campos');
+    clicar(botao('Separar a pergunta em duas'), 'separar os campos');
     expect(faltam(), 'arrumar o formulário não fechou as três').toBe(0);
   });
 });
@@ -276,6 +276,14 @@ describe('o módulo 5: do formulário para a planilha', () => {
     escreverNaCelula(3, '=SOMA(Respostas!D2:D20)');
 
     expect(faltam(), 'importar e as duas fórmulas não fecharam a lição').toBe(0);
+
+    /* E a célula diz o que a fórmula conta. A grade lia a fórmula contra a
+       própria aba, porque não recebia a pasta: a tarefa fechava pelo motor e a
+       tela mostrava 0 ao lado de seis respostas. */
+    const celula = (linha: number) =>
+      container.querySelectorAll('.pl-grade tbody tr')[linha]?.querySelectorAll('td')[1]?.textContent;
+    expect(celula(2), 'a contagem que atravessa a aba saiu zero na grade').toBe('6');
+    expect(celula(3)).toBe('33');
   });
 
   /* A contagem escrita sobre a própria aba de controle é fórmula, devolve o
@@ -311,6 +319,21 @@ describe('o módulo 6: a apresentação', () => {
 /* ── Módulo 7: o dossiê ───────────────────────────────────────────────────── */
 
 describe('o módulo 7: o dossiê', () => {
+  /* A régua contava a página pelo índice: o dossiê de cinco folhas abria em
+     "Página 0 de 5", e a origem saía com o id do motor, sem acento. */
+  it('a régua conta a página de um e nomeia as peças como a lista as nomeia', () => {
+    montar('dossie');
+    for (const nome of ['Documento', 'Apresentação']) {
+      const caixa = [...container.querySelectorAll('.pdf-lista label')]
+        .find(l => l.textContent?.startsWith(nome))?.querySelector('input');
+      clicar(caixa, nome);
+    }
+    clicar(container.querySelector('.pdf-bt[title="Combinar"]'), 'combinar');
+    const regua = container.querySelector('.pdf-status')?.textContent ?? '';
+    expect(regua).toContain('Página 1 de');
+    expect(regua).toContain('Reúne: Documento, Apresentação');
+  });
+
   it('fecha as duas combinando as peças de distribuição', () => {
     montar('dossie');
     expect(faltam()).toBe(quantas('dossie'));
@@ -349,6 +372,20 @@ describe('o módulo 8: o repositório', () => {
     clicar(botao('Convidar quem escreve com você'), 'convidar');
 
     expect(faltam(), 'os três gestos não fecharam a lição').toBe(0);
+  });
+
+  /*
+    O painel morava dentro da régua de espaço usado da lateral, que tem quatro
+    pixels de altura e esconde o que transborda: os três botões existiam no DOM
+    e não apareciam na tela. O jsdom não mede altura nenhuma, então o que se
+    confere é o lugar — e a folha que dá altura ao lugar.
+  */
+  it('os botões ficam fora da régua de espaço usado, num painel que a folha desenha', async () => {
+    montar('repositorio');
+    expect(container.querySelector('.nv-barra-espaco button')).toBeNull();
+    expect(container.querySelector('.nv-extra button')).not.toBeNull();
+    const { CSS_DA_NUVEM } = await import('../labs/nuvem');
+    expect(CSS_DA_NUVEM).toMatch(/\.nv-extra \{[^}]*display: flex/);
   });
 });
 

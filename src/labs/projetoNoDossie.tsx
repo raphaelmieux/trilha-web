@@ -32,7 +32,12 @@ const EXPORTAVEIS: { peca: Exclude<TipoDePeca, 'formulario' | 'dossie'>; origem:
   { peca: 'planilha', origem: 'controle' },
 ];
 
-export function DossieNoLeitor({ ctx, mudar, avisar }: PropsDaSuperficie) {
+/** O nome de cada origem na régua: o id é do motor, e a régua é lida por gente. */
+const NOME_DA_ORIGEM: Record<string, string> = Object.fromEntries(
+  EXPORTAVEIS.map(e => [e.origem, NOME_DA_PECA[e.peca]]),
+);
+
+export function DossieNoLeitor({ ctx, mudar, avisar, conjunto }: PropsDaSuperficie) {
   const [escolhidas, setEscolhidas] = useState<string[]>([]);
   const [pagina, setPagina] = useState(0);
   const [termo, setTermo] = useState('');
@@ -40,9 +45,9 @@ export function DossieNoLeitor({ ctx, mudar, avisar }: PropsDaSuperficie) {
   const dossie = ctx.p.dossie;
 
   const pdfDa = (peca: typeof EXPORTAVEIS[number]['peca']): DocumentoPdf => {
-    if (peca === 'documento') return pdfDoRegulamento(ctx.p);
-    if (peca === 'apresentacao') return pdfDaApresentacao(ctx.p.apresentacao);
-    return pdfDoControle(ctx.p.controle);
+    if (peca === 'documento') return pdfDoRegulamento(ctx.p, conjunto);
+    if (peca === 'apresentacao') return pdfDaApresentacao(ctx.p.apresentacao, conjunto);
+    return pdfDoControle(ctx.p.controle, conjunto);
   };
 
   const combinar = () => {
@@ -50,7 +55,7 @@ export function DossieNoLeitor({ ctx, mudar, avisar }: PropsDaSuperficie) {
     const docs = EXPORTAVEIS.filter(e => aJuntar.includes(e.peca)).map(e => pdfDa(e.peca));
     mudar(c => ({
       ...c,
-      p: { ...c.p, dossie: juntar(docs, 'dossie-da-feira-2026-07-20-v01') },
+      p: { ...c.p, dossie: juntar(docs, conjunto.pdfs.dossie) },
     }));
     avisar('O dossiê foi combinado. Olhe o que entrou nele.');
   };
@@ -124,8 +129,8 @@ export function DossieNoLeitor({ ctx, mudar, avisar }: PropsDaSuperficie) {
 
       {dossie && (
         <ReguaDoLeitor
-          doc={dossie} paginaAtual={pagina}
-          extra={`Reúne: ${origensDoDossie(dossie).join(', ')}`}
+          doc={dossie} paginaAtual={pagina + 1}
+          extra={`Reúne: ${origensDoDossie(dossie).map(o => NOME_DA_ORIGEM[o] ?? o).join(', ')}`}
         />
       )}
     </div>

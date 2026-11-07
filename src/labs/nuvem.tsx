@@ -97,6 +97,25 @@ export const CSS_DA_NUVEM = `
 .nv-barra-espaco > i { display: block; height: 100%; background: #0B57D0; }
 
 .nv-painel { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+/* O painel que o laboratório põe entre o caminho e a lista. Ele morava dentro
+   da régua de espaço usado, que tem quatro pixels de altura e esconde o que
+   transborda: os botões e os campos existiam e não apareciam. */
+.nv-extra {
+  display: flex; flex-direction: column; gap: 8px; padding: 4px 18px 12px;
+  border-bottom: 1px solid #E3E3E3; margin-bottom: 4px;
+}
+.nv-extra .nv-painel { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; }
+.nv-extra .nv-painel > p { flex-basis: 100%; margin: 0; }
+/* Os campos da descrição são da plataforma, medidos contra o fundo escuro dela;
+   aqui eles pousam no branco da nuvem e precisam dizer a própria cor. */
+.nv-extra {
+  --color-text-muted: #444746; --color-text-dim: #5E5E5E; --color-warning: #8A5300;
+}
+.nv-extra .input-field {
+  background: #FFFFFF; color: #1F1F1F; border: 1px solid #747775;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.nv-extra .nv-btn { display: inline-flex; align-items: center; gap: 8px; }
 .nv-caminho {
   display: flex; align-items: center; gap: 2px; padding: 12px 18px 10px; flex-wrap: wrap;
 }

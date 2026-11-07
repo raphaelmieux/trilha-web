@@ -32,7 +32,7 @@ import {
   type Bloco, type Doc, paragrafos, sumarioAtualizado, titulosDoDoc,
 } from './documento';
 import { type DocumentoPdf, type Pagina, ehPesquisavel, juntar } from './documentoPdf';
-import { type Formulario } from './formulario';
+import { type Campo, type Formulario, type Resposta } from './formulario';
 import { ehNumero } from './formulas';
 import { type Caderno, type Planilha, planilhaPorNome, valorDe } from './planilha';
 import {
@@ -46,7 +46,7 @@ import {
   type SecaoDoRegulamento,
 } from './projetoDaFeira';
 import {
-  type ProjetoDocumental, type TipoDePeca,
+  type NaEquipe, type PastaDoProjeto, type ProjetoDocumental, type TipoDePeca,
   NOME_DA_ABA_DE_CONTROLE, NOME_DA_ABA_DE_RESPOSTAS, PECAS_DE_DISTRIBUICAO,
   acessosForaDaFuncao, acompanhaAFonte, dentroDoTempo, importarRespostas,
   instrucoesCompletas, numerosDesatualizados, pastasForaDoPadrao,
@@ -99,13 +99,53 @@ export const CHAVE_DO_DOSSIE_VELHO = 'viu-o-dossie-nao-mudar';
 export const contextoDe = (p: ProjetoDocumental): ContextoDoProjeto =>
   ({ p, comecouAntes: false, descobertas: [] });
 
+/* ── O que é deste conjunto, e não de todo conjunto ───────────────────────── */
+
+/**
+ * O que as janelas mostram e os gestos produzem, e que é da feira.
+ *
+ * As derivações abaixo são o que um clique faz — vestir o mestre, partir a
+ * pergunta, renomear as pastas —, e o resultado de um clique tem nome: o
+ * arquivo na barra de título, a seção que se escreve, as respostas que chegam
+ * depois de o campo estar certo. Com esses nomes presos aqui dentro, a janela
+ * só sabia abrir a feira.
+ *
+ * A teoria fotografa as mesmas janelas com **outro** conjunto, pela regra de
+ * que o documento fotografado nunca é o do exercício. Sem este registro, o
+ * primeiro clique da foto escreveria a seção da feira dentro do regulamento do
+ * outro evento — e a teoria mostraria a resposta do módulo 2 sem ninguém ter
+ * pedido. O padrão de todo parâmetro é a feira, então a lição continua
+ * chamando as mesmas funções sem dizer nada.
+ */
+export interface ConteudoDoConjunto {
+  /** O nome de cada peça na barra de título do programa que a abre. */
+  arquivos: { regulamento: string; controle: string; apresentacao: string };
+  /** O id do gráfico que devia vir da planilha, e o que ele conta. */
+  grafico: string;
+  nomeDoGrafico: string;
+  /** A seção que aponta para as outras peças, como ela se escreve. */
+  blocosDoMapa: Bloco<string>[];
+  /** O formulário depois de partido: os campos e as respostas que chegam. */
+  camposArrumados: Campo[];
+  respostasArrumadas: Resposta[];
+  /** O que o gráfico mostra depois de passar a ler a planilha. */
+  retratoVinculado: { rotulo: string; valor: number }[];
+  /** As pastas no molde da CC-ES001, e a que abre primeiro. */
+  nomesDasPastas: Record<string, string>;
+  raiz: string;
+  /** O nome de cada PDF que sai do conjunto. */
+  pdfs: { regulamento: string; apresentacao: string; controle: string; dossie: string };
+}
+
 /* ── Derivações: o documento ──────────────────────────────────────────────── */
 
 /** O regulamento vestido com a identidade do conjunto. */
-export const comIdentidadeNoDocumento = (d: Doc<string>): Doc<string> => ({
+export const comIdentidadeNoDocumento = (
+  d: Doc<string>, cor: string = IDENTIDADE_DA_FEIRA.cor,
+): Doc<string> => ({
   ...d,
   fonte: 'sem-serifa',
-  estilos: { ...d.estilos, 'Título 1': { ...d.estilos?.['Título 1'], cor: IDENTIDADE_DA_FEIRA.cor } },
+  estilos: { ...d.estilos, 'Título 1': { ...d.estilos?.['Título 1'], cor } },
 });
 
 /** O id da seção que aponta para as outras quatro peças. */
@@ -138,8 +178,10 @@ export const BLOCOS_DO_MAPA: Bloco<SecaoDoRegulamento>[] = [
 ];
 
 /** O regulamento com a seção do mapa e o sumário refeito. */
-export function comMapaDasPecas(d: Doc<string>): Doc<string> {
-  const comBlocos = { ...d, blocos: [...d.blocos, ...BLOCOS_DO_MAPA] };
+export function comMapaDasPecas(
+  d: Doc<string>, mapa: Bloco<string>[] = BLOCOS_DO_MAPA,
+): Doc<string> {
+  const comBlocos = { ...d, blocos: [...d.blocos, ...mapa] };
   /* O sumário se refaz aqui porque mandar atualizá-lo é o gesto que acompanha
      a seção nova — e porque ele guarda o que leu, pela razão da CC-ES002. */
   return { ...comBlocos, sumario: titulosDoDoc(comBlocos) };
@@ -195,50 +237,54 @@ export const comContasSobreAsRespostas = (cad: Caderno): Caderno =>
 /* ── Derivações: o formulário ─────────────────────────────────────────────── */
 
 /** O formulário arrumado: campos separados, tipo certo, e o tema do conjunto. */
-export const comFormularioArrumado = (f: Formulario): Formulario => ({
+export const comFormularioArrumado = (
+  f: Formulario, k: ConteudoDoConjunto = CONTEUDO_DA_FEIRA,
+  identidade: { fonteDosTitulos: string; cor: string } = IDENTIDADE_DA_FEIRA,
+): Formulario => ({
   ...f,
-  campos: CAMPOS_ARRUMADOS,
-  aparencia: { fonte: IDENTIDADE_DA_FEIRA.fonteDosTitulos, cor: IDENTIDADE_DA_FEIRA.cor },
+  campos: k.camposArrumados,
+  aparencia: { fonte: identidade.fonteDosTitulos, cor: identidade.cor },
   /* As respostas chegam depois de os campos estarem certos, que é a ordem que
      a lição ensina: formulário aberto com o campo errado coleta resposta
      errada, e trocar o campo depois não conserta o que já entrou. */
-  respostas: RESPOSTAS_DA_FEIRA.map(r => ({
-    ...r,
-    valores: {
-      unidade: r.valores['unidade-e-especialidade'].split(' — ')[0],
-      especialidade: r.valores['unidade-e-especialidade'].split(' — ')[1] ?? '',
-      [CAMPO_QUANTOS]: String(
-        INSCRICOES_DA_FEIRA.find(i => i.unidade === r.valores['unidade-e-especialidade'].split(' — ')[0])?.quantos
-        ?? 0),
-      [CAMPO_RESPONSAVEL]: r.valores[CAMPO_RESPONSAVEL],
-    },
-  })),
+  respostas: k.respostasArrumadas,
 });
+
+/** As respostas da feira como chegam pelo formulário já partido. */
+const RESPOSTAS_ARRUMADAS_DA_FEIRA: Resposta[] = RESPOSTAS_DA_FEIRA.map(r => ({
+  ...r,
+  valores: {
+    unidade: r.valores['unidade-e-especialidade'].split(' — ')[0],
+    especialidade: r.valores['unidade-e-especialidade'].split(' — ')[1] ?? '',
+    [CAMPO_QUANTOS]: String(
+      INSCRICOES_DA_FEIRA.find(i => i.unidade === r.valores['unidade-e-especialidade'].split(' — ')[0])?.quantos
+      ?? 0),
+    [CAMPO_RESPONSAVEL]: r.valores[CAMPO_RESPONSAVEL],
+  },
+}));
 
 /* ── Derivações: a apresentação ───────────────────────────────────────────── */
 
-export const comIdentidadeNoMestre = (a: Apresentacao): Apresentacao => ({
+export const comIdentidadeNoMestre = (
+  a: Apresentacao,
+  identidade: { fonteDosTitulos: string; fonteDoCorpo: string; cor: string } = IDENTIDADE_DA_FEIRA,
+): Apresentacao => ({
   ...a,
   mestre: {
     ...a.mestre,
-    fonteDoTitulo: IDENTIDADE_DA_FEIRA.fonteDosTitulos,
-    fonteDoCorpo: IDENTIDADE_DA_FEIRA.fonteDoCorpo,
-    corDoTitulo: IDENTIDADE_DA_FEIRA.cor,
+    fonteDoTitulo: identidade.fonteDosTitulos,
+    fonteDoCorpo: identidade.fonteDoCorpo,
+    corDoTitulo: identidade.cor,
   },
 });
 
 /** O gráfico passa a ler a planilha, e o retrato dele se refaz com as seis. */
-export const comGraficoVinculado = (a: Apresentacao): Apresentacao => ({
+export const comGraficoVinculado = (
+  a: Apresentacao, k: ConteudoDoConjunto = CONTEUDO_DA_FEIRA,
+): Apresentacao => ({
   ...a,
-  slides: a.slides.map(s => (s.grafico?.id === GRAFICO_DA_FEIRA
-    ? {
-      ...s,
-      grafico: {
-        ...s.grafico,
-        como: 'vinculado' as const,
-        retrato: INSCRICOES_DA_FEIRA.map(i => ({ rotulo: i.unidade, valor: i.quantos })),
-      },
-    }
+  slides: a.slides.map(s => (s.grafico?.id === k.grafico
+    ? { ...s, grafico: { ...s.grafico, como: 'vinculado' as const, retrato: k.retratoVinculado } }
     : s)),
 });
 
@@ -255,8 +301,10 @@ const paginaDigital = (id: string, origem: string, linhas: string[]): Pagina =>
  * impresso recebe imagem — é a CC-ES004, e aqui aparece como o que não
  * fazer.
  */
-export const pdfDoRegulamento = (p: ProjetoDocumental): DocumentoPdf => ({
-  nome: 'regulamento-da-feira-2026-07-20-v01',
+export const pdfDoRegulamento = (
+  p: ProjetoDocumental, k: ConteudoDoConjunto = CONTEUDO_DA_FEIRA,
+): DocumentoPdf => ({
+  nome: k.pdfs.regulamento,
   /* `textoComoSeLe`, e não `textoDoBloco`: o PDF guarda o que a folha mostra.
      Gerado do texto digitado, ele sairia com o número de ontem **mesmo depois**
      de o vínculo estar funcionando — um dossiê errado ao lado de um conjunto
@@ -265,27 +313,32 @@ export const pdfDoRegulamento = (p: ProjetoDocumental): DocumentoPdf => ({
   campos: [], anotacoes: [], geradoDe: 'texto',
 });
 
-export const pdfDaApresentacao = (a: Apresentacao): DocumentoPdf => ({
-  nome: 'feira-divulgacao-2026-07-20-v01',
+export const pdfDaApresentacao = (
+  a: Apresentacao, k: ConteudoDoConjunto = CONTEUDO_DA_FEIRA,
+): DocumentoPdf => ({
+  nome: k.pdfs.apresentacao,
   paginas: a.slides.map(s =>
     paginaDigital(`p-${s.id}`, 'apresentacao', [s.titulo, ...s.topicos])),
   campos: [], anotacoes: [], geradoDe: 'apresentacao',
 });
 
 /** A planilha exportada — a peça que **não** é de distribuição. */
-export const pdfDoControle = (cad: Caderno): DocumentoPdf => {
+export const pdfDoControle = (
+  cad: Caderno, k: ConteudoDoConjunto = CONTEUDO_DA_FEIRA,
+): DocumentoPdf => {
   const aba = planilhaPorNome(cad, NOME_DA_ABA_DE_CONTROLE);
   return {
-    nome: 'controle-da-feira-2026-07-20-v01',
+    nome: k.pdfs.controle,
     paginas: [paginaDigital('p-ctrl', 'controle',
       (aba?.celulas ?? []).slice(0, 8).map(l => l.map(c => c.texto).join(' ')))],
     campos: [], anotacoes: [], geradoDe: 'planilha',
   };
 };
 
-export const DOSSIE_DAS_DUAS = (p: ProjetoDocumental): DocumentoPdf =>
-  juntar([pdfDoRegulamento(p), pdfDaApresentacao(p.apresentacao)],
-    'dossie-da-feira-2026-07-20-v01');
+export const DOSSIE_DAS_DUAS = (
+  p: ProjetoDocumental, k: ConteudoDoConjunto = CONTEUDO_DA_FEIRA,
+): DocumentoPdf =>
+  juntar([pdfDoRegulamento(p, k), pdfDaApresentacao(p.apresentacao, k)], k.pdfs.dossie);
 
 /**
  * As origens que o dossiê carrega.
@@ -307,16 +360,18 @@ export const NOMES_DAS_PASTAS: Record<string, string> = {
   [PASTA_DA_DIVULGACAO]: 'divulgacao-da-feira-2026-07-02-v01',
 };
 
-export const comPastasNoPadrao = (n: Nuvem): Nuvem => ({
+export const comPastasNoPadrao = (n: Nuvem, nomes: Record<string, string> = NOMES_DAS_PASTAS): Nuvem => ({
   ...n,
-  arquivos: n.arquivos.map(a => (NOMES_DAS_PASTAS[a.id] ? { ...a, nome: NOMES_DAS_PASTAS[a.id] } : a)),
+  arquivos: n.arquivos.map(a => (nomes[a.id] ? { ...a, nome: nomes[a.id] } : a)),
 });
 
 /** Cada pasta com exatamente quem exerce a função dela, e o mínimo que ela pede. */
-export function comAcessoPorFuncao(n: Nuvem): Nuvem {
+export function comAcessoPorFuncao(
+  n: Nuvem, pastas: PastaDoProjeto[] = PASTAS_DA_FEIRA, equipe: NaEquipe[] = EQUIPE_DA_FEIRA,
+): Nuvem {
   let saida = n;
-  for (const pasta of PASTAS_DA_FEIRA) {
-    const daFuncao = EQUIPE_DA_FEIRA.filter(e => e.funcao === pasta.funcao).map(e => e.quem);
+  for (const pasta of pastas) {
+    const daFuncao = equipe.filter(e => e.funcao === pasta.funcao).map(e => e.quem);
     const arquivo = saida.arquivos.find(a => a.id === pasta.id);
     for (const ac of arquivo?.acessos ?? []) {
       if (!daFuncao.includes(ac.quem)) saida = tirarAcessoDoArquivo(saida, pasta.id, ac.quem);
@@ -340,6 +395,29 @@ export function comConjuntoNaContaDoClube(n: Nuvem): Nuvem {
   }
   return saida;
 }
+
+/** A feira, que é o conjunto da lição. */
+export const CONTEUDO_DA_FEIRA: ConteudoDoConjunto = {
+  arquivos: {
+    regulamento: 'regulamento-da-feira-2026-07-02-v03',
+    controle: 'controle-da-feira-2026-07-02-v01',
+    apresentacao: 'feira-divulgacao-2026-07-04-v02',
+  },
+  grafico: GRAFICO_DA_FEIRA,
+  nomeDoGrafico: 'Gráfico dos estandes',
+  blocosDoMapa: BLOCOS_DO_MAPA,
+  camposArrumados: CAMPOS_ARRUMADOS,
+  respostasArrumadas: RESPOSTAS_ARRUMADAS_DA_FEIRA,
+  retratoVinculado: INSCRICOES_DA_FEIRA.map(i => ({ rotulo: i.unidade, valor: i.quantos })),
+  nomesDasPastas: NOMES_DAS_PASTAS,
+  raiz: PASTA_RAIZ,
+  pdfs: {
+    regulamento: 'regulamento-da-feira-2026-07-20-v01',
+    apresentacao: 'feira-divulgacao-2026-07-20-v01',
+    controle: 'controle-da-feira-2026-07-20-v01',
+    dossie: 'dossie-da-feira-2026-07-20-v01',
+  },
+};
 
 /* ── As instruções do ano que vem ─────────────────────────────────────────── */
 

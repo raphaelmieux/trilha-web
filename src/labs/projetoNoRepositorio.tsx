@@ -28,7 +28,6 @@ import { CampoLongo } from './caderno';
 import {
   comAcessoPorFuncao, comColaboracaoNoHistorico, comPastasNoPadrao,
 } from './metasDaCcEs012';
-import { EQUIPE_DA_FEIRA, PASTA_RAIZ, PASTAS_DA_FEIRA } from './projetoDaFeira';
 import {
   NOME_DA_FUNCAO, acessosForaDaFuncao, instrucoesCompletas,
   pastasForaDoPadrao, pecasComColaboracao, type Instrucoes,
@@ -36,16 +35,15 @@ import {
 
 import type { PropsDaSuperficie } from './projetoNaPlataforma';
 
-const funcaoDaPasta = (id: string) => PASTAS_DA_FEIRA.find(p => p.id === id)?.funcao;
-
 /* ── A lista do repositório, que as duas lições mostram ───────────────────── */
 
-function ListaDoProjeto({ ctx, mudar, avisar, extra }: PropsDaSuperficie & {
+function ListaDoProjeto({ ctx, mudar, avisar, conjunto, extra }: PropsDaSuperficie & {
   extra?: React.ReactNode;
 }) {
   const [lugar, setLugar] = useState<LugarDaNuvem>('meu');
   const [crescente, setCrescente] = useState(true);
-  const [pasta, setPasta] = useState<string | null>(PASTA_RAIZ);
+  const [pasta, setPasta] = useState<string | null>(conjunto.raiz);
+  const funcaoDaPasta = (id: string) => ctx.p.pastas.find(p => p.id === id)?.funcao;
   const [escolhido, setEscolhido] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [caixa, setCaixa] = useState<string | null>(null);
@@ -84,7 +82,7 @@ function ListaDoProjeto({ ctx, mudar, avisar, extra }: PropsDaSuperficie & {
         <div className="nv-lista">
           <CaminhoDaNuvem trilha={trilha} aoIr={setPasta} />
 
-          <div className="nv-barra-espaco">{extra}</div>
+          {extra && <div className="nv-extra">{extra}</div>}
 
           <CabecalhoDaLista crescente={crescente} aoOrdenar={() => setCrescente(c => !c)} />
           {emOrdemDaLista(dentro, crescente).map(a => (
@@ -200,7 +198,7 @@ function ListaDoProjeto({ ctx, mudar, avisar, extra }: PropsDaSuperficie & {
                 className="nv-papel" aria-label="Pessoa a adicionar"
                 value={aConvidar} onChange={e => setAConvidar(e.target.value as Pessoa)}
               >
-                {EQUIPE_DA_FEIRA
+                {ctx.p.equipe
                   .filter(e => e.quem !== aberto.dono
                     && !aberto.acessos.some(ac => ac.quem === e.quem))
                   .map(e => (
@@ -237,7 +235,7 @@ function ListaDoProjeto({ ctx, mudar, avisar, extra }: PropsDaSuperficie & {
 /* ── Módulo 8: o repositório ──────────────────────────────────────────────── */
 
 export function RepositorioDaFeira(props: PropsDaSuperficie) {
-  const { ctx, mudar, avisar } = props;
+  const { ctx, mudar, avisar, conjunto } = props;
   const fora = pastasForaDoPadrao(ctx.p);
   const desalinhados = acessosForaDaFuncao(ctx.p);
 
@@ -249,15 +247,15 @@ export function RepositorioDaFeira(props: PropsDaSuperficie) {
           <BotaoDaNuvem
             principal
             aoClicar={() => {
-              mudar(c => ({ ...c, p: { ...c.p, nuvem: comPastasNoPadrao(c.p.nuvem) } }));
-              avisar('As quatro pastas ficaram num molde só, com data e versão.');
+              mudar(c => ({ ...c, p: { ...c.p, nuvem: comPastasNoPadrao(c.p.nuvem, conjunto.nomesDasPastas) } }));
+              avisar(`As ${Object.keys(conjunto.nomesDasPastas).length} pastas ficaram num molde só, com data e versão.`);
             }}
           >
             <FolderPen size={16} aria-hidden /> Renomear no padrão da CC-ES001
           </BotaoDaNuvem>
           <BotaoDaNuvem
             aoClicar={() => {
-              mudar(c => ({ ...c, p: { ...c.p, nuvem: comAcessoPorFuncao(c.p.nuvem) } }));
+              mudar(c => ({ ...c, p: { ...c.p, nuvem: comAcessoPorFuncao(c.p.nuvem, c.p.pastas, c.p.equipe) } }));
               avisar('Cada pasta ficou com quem exerce a função dela.');
             }}
           >
