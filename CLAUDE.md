@@ -1143,6 +1143,18 @@ ponta nenhuma. Hoje são três blocos, como no Excel: em ordem crescente o
 número vem antes do texto, em decrescente o texto vem antes, e o vazio fica no
 fim nos dois sentidos.
 
+A CC-ES009 fotografa a inscrição do Campori de Primavera, de
+`src/exemplos/camporiDePrimavera.ts` — o mesmo clube, os **mesmos campos** e
+as mesmas abas do laboratório —, e não a do acampamento de inverno: lá os
+12,40 anos, os 2,85 acampamentos, os 4,71 da Arara, os 81,25% do Falcão e o
+1,05 do Davi são as respostas. A base de exemplo arma as mesmas lições com
+outros números: a idade em que as três medidas concordam, os acampamentos em
+que dois veteranos puxam a média, a altura com o 1,61 digitado 1,16, e o
+Falcão deixando mais gente de fora e mobilizando melhor. `contextoInicial`
+ganhou a base como parâmetro, `LaboratorioDaAnalise` ganhou `outra`, e
+`exemplosDaAnalise.test.ts` confere a teoria contra o campori e as questões
+contra o acampamento.
+
 **No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
 Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
 escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela
@@ -5313,6 +5325,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDoProjeto.test.tsx` | painel do repositório preso na régua de espaço usado, contagem entre abas que a grade mostra zero, ou régua do dossiê contando a página do zero |
 | `src/curriculum/exemplosDoProjetoDeDados.test.ts` | número da teoria da CC-ES013 que a base do sono não devolve, questão que a chamada do laboratório não devolve, ou a teoria citando a chamada |
 | `src/labs/planilha.test.ts` | classificar coluna com número e texto misturados sem separar os blocos, que deixa o maior valor fora da ponta |
+| `src/curriculum/exemplosDaAnalise.test.ts` | número da teoria da CC-ES009 que o campori não devolve, questão que o acampamento não devolve, ou a teoria citando o acampamento |
 | `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |
