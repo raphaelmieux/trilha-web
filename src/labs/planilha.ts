@@ -976,11 +976,28 @@ export function ordenar(p: Planilha, coluna: number, crescente: boolean): Planil
        querer dizer a mesma coisa para quem ordena e para quem soma. */
     return { num: numeroDoTexto(texto), texto };
   };
+  /*
+    Número, texto e vazio são três blocos, como no Excel: em ordem crescente os
+    números vêm antes do texto, em decrescente o texto vem antes, e o vazio fica
+    no fim nos dois sentidos.
+
+    A comparação de antes misturava as duas regras — número com número pelo
+    valor, qualquer par com texto pela letra —, e isso não é uma ordem: numa
+    coluna com "4h" e "3.5" no meio dos números, o 35 ficava abaixo do 5 e o
+    valor impossível nunca chegava à ponta. É justamente a coluna em que a
+    lição manda classificar para achá-lo.
+  */
+  const bloco = (k: { num: number | null; texto: string }) =>
+    (k.texto.trim() === '' ? 2 : k.num !== null ? 0 : 1);
   const ordenado = [...corpo].sort((a, b) => {
     const ka = chave(a);
     const kb = chave(b);
-    const d = ka.num !== null && kb.num !== null
-      ? ka.num - kb.num
+    const ba = bloco(ka);
+    const bb = bloco(kb);
+    if (ba === 2 || bb === 2) return ba === bb ? 0 : ba === 2 ? 1 : -1;
+    if (ba !== bb) return crescente ? ba - bb : bb - ba;
+    const d = ba === 0
+      ? ka.num! - kb.num!
       : ka.texto.localeCompare(kb.texto, 'pt-BR', { sensitivity: 'accent' });
     return crescente ? d : -d;
   });

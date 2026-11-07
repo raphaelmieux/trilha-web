@@ -46,6 +46,8 @@ export interface PropsDaSuperficieDeDados {
   ctx: ContextoDoProjetoDeDados;
   mudar: (f: (c: ContextoDoProjetoDeDados) => ContextoDoProjetoDeDados) => void;
   avisar: (texto: string) => void;
+  /** O nome na barra de título, quando a pasta de trabalho não é a da presença. */
+  arquivo?: string;
 }
 
 const USAVEIS = ['Página Inicial', 'Inserir', 'Dados'] as const;
@@ -111,7 +113,7 @@ type Dialogo =
   | { tipo: 'grafico'; grafico: TipoDeGrafico; titulo: string; eixoX: string; eixoY: string };
 
 
-export function AnaliseNoExcel({ ctx, mudar, avisar }: PropsDaSuperficieDeDados) {
+export function AnaliseNoExcel({ ctx, mudar, avisar, arquivo }: PropsDaSuperficieDeDados) {
   const [hist, setHist] = useState<Historico<Caderno>>(() => historicoDe(ctx.p.caderno));
   const cad = hist.presente;
   const p = planilhaAtiva(cad);
@@ -223,7 +225,7 @@ export function AnaliseNoExcel({ ctx, mudar, avisar }: PropsDaSuperficieDeDados)
   return (
     <div className="pl-janela">
       <style>{CSS_DA_LIMPEZA}</style>
-      <BarraDeTituloDoExcel arquivo="Análise da presença — bruta, tratada e contas" aoAvisar={avisar} />
+      <BarraDeTituloDoExcel arquivo={arquivo ?? 'Análise da presença — bruta, tratada e contas'} aoAvisar={avisar} />
       <GuiasDoExcel atual={guia} usaveis={USAVEIS} aoTrocar={setGuia} aoAvisar={avisar} />
 
       <div className="pl-faixa">

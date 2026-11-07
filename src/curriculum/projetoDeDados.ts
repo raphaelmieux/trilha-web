@@ -1,4 +1,5 @@
 import type { ModuloDeVereda, TopicoDeVereda } from './veredas';
+import { telasDoTopico } from './telas';
 import { QUESTOES_DO_PROJETO_DE_DADOS } from './questoesDoProjetoDeDados';
 
 /*
@@ -26,18 +27,29 @@ import { QUESTOES_DO_PROJETO_DE_DADOS } from './questoesDoProjetoDeDados';
  * O requisito 8 pede apresentar a público real do clube. Isso acontece fora
  * do aplicativo: o que a plataforma faz é preparar o roteiro e guardar o
  * registro do que aconteceu.
- *
- * ── O quadro de resultado fica desligado ────────────────────────────────
- * Os exemplos daqui são trechos de base, contas e roteiros, e não há o que
- * executar.
  */
 
+/*
+  O exemplo é a tela do Excel e da nuvem do laboratório, e não um quadro de
+  texto — e a base fotografada é outra.
+
+  A teoria nasceu com um quadro em cada tópico, e o quadro era a própria
+  chamada do semestre que o laboratório limpa: a Carla repetida, o 1.250 da
+  Isabela, a média de 15,39, a mediana de 5 km, a correlação de -0,70. Quem lia
+  a teoria chegava ao laboratório com todas as respostas. Hoje as telas
+  mostram o gesto na base do tempo de tela e do sono
+  (`src/exemplos/telaESono.ts`), e os tópicos da proposta, da conclusão e da
+  apresentação, que acontecem em tela da plataforma, ficam em prosa.
+*/
+const V = 'CC-ES013';
 const t = (
   id: string, titulo: string, resumo: string,
-  explicacao: string[], exemplo: string, atencao: string, marcas: string[],
+  explicacao: string[], atencao: string, marcas: string[],
+  telas?: [legenda: string, descricao: string][],
 ): TopicoDeVereda => ({
-  id, titulo, resumo, explicacao, exemplo, exemploComo: 'texto' as const, atencao, marcas,
-});
+  id, titulo, resumo, explicacao, atencao, marcas,
+  ...(telas ? { telas: telasDoTopico(V, id, telas) } : {}),
+})
 
 /* ── Módulo 1: a proposta ─────────────────────────────────────────────────── */
 
@@ -49,14 +61,8 @@ const A_PROPOSTA: TopicoDeVereda[] = [
     [
       'O requisito 2 pede uma proposta escrita, aprovada pelo examinador, e diz que a execução **não pode começar** antes da aprovação. Num projeto de dados isso pesa mais do que em qualquer outro: o perigo não é só fazer o trabalho errado, é fazer a pergunta errada.',
       'Quem abre a base antes de escrever a pergunta encontra alguma coisa interessante — sempre encontra — e escreve a pergunta que aquele achado responde. A análise sai bonita e não serve a ninguém, porque ninguém tinha perguntado aquilo.',
-      'Uma pergunta é diferente de um assunto. "A presença no clube" é um assunto: qualquer gráfico serve e nenhum responde. "Quem mora mais longe falta mais às reuniões?" é uma pergunta, e o dado pode dizer sim ou não.',
+      'Uma pergunta é diferente de um assunto. "O sono do clube" é um assunto: qualquer gráfico serve e nenhum responde. "Quem passa mais tempo no celular dorme menos?" é uma pergunta, e o dado pode dizer sim ou não.',
     ],
-    `Assunto ou pergunta?
-
-  A presença no clube                        assunto
-  Presença e distância                       assunto
-  Quem mora mais longe falta mais?           pergunta
-  A carona faz alguém vir mais?              pergunta`,
     'O ponto de interrogação é a parte fácil. O teste de verdade é: dá para responder com um número?',
     ['proposta antes', 'pergunta e assunto'],
   ),
@@ -66,16 +72,9 @@ const A_PROPOSTA: TopicoDeVereda[] = [
     'Um projeto de dados existe para alguém fazer alguma coisa com o resultado.',
     [
       'A proposta pede três coisas: a pergunta, a **origem dos dados** e **quem vai tomar alguma decisão** a partir do resultado. A terceira é a que separa um projeto de uma curiosidade.',
-      'Dizer só "a diretoria" não basta. Que decisão a diretoria vai tomar? "Se monta uma lista de carona para o segundo semestre, e para quem" é uma decisão: dá para saber, no fim, se o resultado ajudou a tomá-la.',
+      'Dizer só "a diretoria" não basta. Que decisão a diretoria vai tomar? "Se o clube faz com as famílias uma campanha de celular fora do quarto, e com quais unidades começa" é uma decisão: dá para saber, no fim, se o resultado ajudou a tomá-la.',
       'E é ela que decide para quem você vai apresentar no fim. Se a decisão é da diretoria, a apresentação é para a diretoria — e não para a família em casa, que ouve com gosto e não decide nada no clube.',
     ],
-    `A proposta da presença
-
-  Pergunta       Quem mora mais longe do clube falta mais às reuniões?
-  Origem         A chamada do semestre, da secretaria, cruzada com
-                 um questionário de transporte das famílias
-  Quem decide    A diretoria do clube
-  Que decisão    Se monta uma lista de carona, e para quem`,
     'A origem se escreve antes de buscar a base. Se ela não existe, a proposta descobre isso a tempo.',
     ['quem decide', 'origem dos dados'],
   ),
@@ -90,16 +89,10 @@ const A_BASE: TopicoDeVereda[] = [
     'Tamanho é o mínimo; o que pesa é a base falar da pergunta.',
     [
       'O requisito 3 pede uma base com, no mínimo, **sessenta registros e cinco campos**. Registro é uma linha — uma pessoa, um evento, uma coisa contada. Campo é uma coluna — uma informação sobre cada registro.',
-      'A base pode ser coletada por você ou vir de fonte pública. Nos dois casos, ela precisa ter **na mesma linha** o que se quer explicar e o que pode explicar. Para a pergunta da presença, isso é a presença de cada desbravador e a distância de cada um, juntas.',
-      'Uma base grande que não fala da pergunta não serve. A pesquisa pública de deslocamento do Distrito Federal é oficial e cuidadosa — e fala de regiões inteiras, não de quem falta ao clube.',
+      'A base pode ser coletada por você ou vir de fonte pública. Nos dois casos, ela precisa ter **na mesma linha** o que se quer explicar e o que pode explicar. Para a pergunta do sono, isso é o sono de cada desbravador e o tempo de tela de cada um, juntos.',
+      'Uma base grande que não fala da pergunta não serve. Uma pesquisa nacional sobre o sono de adolescentes é cuidadosa e oficial — e fala do Brasil inteiro, não de quem dorme pouco no clube.',
     ],
-    `As bases ao alcance, e por que só uma serve
-
-  Inscrições do acampamento    48 registros       poucos
-  Chamada do ano passado       66 registros, 3 campos  sem distância
-  Pesquisa pública do DF       33 registros       fala de regiões
-  Chamada deste semestre       62 registros, 6 campos  serve`,
-    'A base do acampamento é a que você já conhece, e por isso a mais tentadora. Com quarenta e oito, ela não chega aos sessenta.',
+    'A base que já está pronta é a mais tentadora. Confira se ela tem o que a pergunta pede antes de se apegar a ela.',
     ['registro e campo', 'base que responde'],
   ),
   t(
@@ -108,17 +101,10 @@ const A_BASE: TopicoDeVereda[] = [
     'Quem confere precisa buscar o mesmo arquivo de novo.',
     [
       'O requisito 3 pede que você **declare a origem e a data de obtenção**. A origem diz quem forneceu, de que sistema saiu e com o que foi cruzado — o suficiente para outra pessoa ir buscar o mesmo arquivo.',
-      'A data de obtenção é o dia em que o arquivo chegou às suas mãos. Ela é diferente do **período** dos dados: a chamada é de fevereiro a julho, e foi exportada em 3 de agosto. As duas datas aparecem juntas, e é fácil escrever a errada.',
-      'A data importa porque a base muda. A secretaria pode corrigir uma presença em setembro, e a sua análise continua sendo sobre a versão de agosto. Sem a data, ninguém sabe de que versão você fala.',
+      'A data de obtenção é o dia em que o arquivo chegou às suas mãos. Ela é diferente do **período** dos dados: o questionário do sono fala de uma semana de agosto, e foi exportado em 2 de setembro. As duas datas aparecem juntas, e é fácil escrever a errada.',
+      'A data importa porque a base muda. Uma família pode corrigir a resposta depois, e a sua análise continua sendo sobre a versão de setembro. Sem a data, ninguém sabe de que versão você fala.',
     ],
-    `Ficha da base
-
-  Arquivo     chamada_1sem_2026.xlsx
-  Origem      Exportação do sistema de chamada da secretaria,
-              cruzada com o questionário de transporte de junho
-  Período     fevereiro a julho de 2026
-  Obtida em   03/08/2026`,
-    '"Da secretaria" não é origem: é um endereço sem rua. Diga de que sistema, e cruzado com o quê.',
+    '"Da tesouraria" não é origem: é um endereço sem rua. Diga de que formulário, respondido por quem, e quando.',
     ['data de obtenção', 'período dos dados'],
   ),
 ];
@@ -132,53 +118,69 @@ const A_GRAFIA: TopicoDeVereda[] = [
     'Limpa-se numa cópia, porque a base como chegou é parte da entrega.',
     [
       'O requisito 9 pede a **base bruta** e a **base tratada** na entrega. Só consegue entregar a bruta quem nunca mexeu nela. Por isso o primeiro passo da limpeza é fazer uma cópia e trabalhar nela.',
-      'No Excel isso é **Mover ou Copiar**: clique com o botão direito na aba, ou vá em Página Inicial, Formatar. A caixa **"Criar uma cópia" nasce desmarcada** — quem esquece de marcá-la só troca a aba de lugar e continua limpando o original.',
+      'No Excel isso é **Mover ou Copiar**, em Página Inicial › Células. A caixa **"Criar uma cópia" nasce desmarcada** — quem esquece de marcá-la só troca a aba de lugar e continua limpando o original.',
       'Depois, dê à cópia um nome que diga o que ela é. "Bruta (2)" é o nome que o Excel dá, e entregar a tratada com ele é entregar duas abas que se chamam bruta.',
     ],
-    `Antes de limpar
-
-  1. Mover ou Copiar → marque "Criar uma cópia" → OK
-  2. A cópia aparece como "Bruta (2)"
-  3. Renomear → Tratada
-  4. Toda limpeza acontece na Tratada`,
-    'A bruta não ganha nem uma conta ao lado. Uma CONT.VALORES escrita para conferir os sessenta já a deixa de ser como chegou.',
+    'A bruta não ganha nem uma conta ao lado. Uma CONT.VALORES escrita para conferir as linhas já a deixa de ser como chegou.',
     ['base bruta', 'criar uma cópia'],
+    [
+      [
+        'Na aba Bruta, Página Inicial › Mover ou Copiar abre a caixa com "Criar uma cópia" desmarcada. Marque antes do OK.',
+        'Caixa Mover ou Copiar destacada sobre a base do sono, com a opção mover para o final e a caixa Criar uma cópia marcada.',
+      ],
+      [
+        'A cópia aparece ao lado com o nome que o Excel dá: Bruta (2). A Bruta original continua como chegou.',
+        'Fileira de abas destacada no pé da planilha, com Bruta e Bruta (2), a cópia ativa.',
+      ],
+      [
+        'Renomear Planilha troca o nome da cópia para Tratada — e é nela que toda a limpeza acontece.',
+        'Fileira de abas destacada com Bruta e Tratada, depois de renomear a cópia.',
+      ],
+    ],
   ),
   t(
     'a-mesma-coisa-um-jeito-so',
     'A mesma coisa escrita de um jeito só',
-    'Para a planilha, "aguia", "AGUIA" e "Águia" são três unidades.',
+    'Para a planilha, "jaguar", "JAGUAR" e "Jaguar" são três unidades.',
     [
-      'Numa conta por unidade, cada jeito de escrever vira um grupo. A Águia aparece dividida em quatro pedaços, e a média de cada pedaço é de duas ou três pessoas. Nada dá erro: a tabela só sai com grupos a mais.',
-      '**Localizar e Substituir** conserta isso, e tem duas caixas que mudam tudo. "Diferenciar maiúsculas" desmarcada faz `aguia` achar `AGUIA` e `Aguia` — mas **não** `Águia`, porque o acento é outra letra. "Coincidir conteúdo da célula inteira" faz a troca valer só quando a célula inteira é aquilo.',
-      'E o alcance: com uma célula só selecionada, o Excel procura na planilha inteira. Selecione a coluna antes. Sem isso e sem a célula inteira, trocar "aguia" por "Águia" transforma o **Pedro Aguiar** em Pedro Águiar — e a contagem de trocas parece exatamente a esperada.',
+      'Numa conta por unidade, cada jeito de escrever vira um grupo. O Jaguar aparece dividido em três pedaços, e a média de cada pedaço é de uma ou duas pessoas. Nada dá erro: a tabela só sai com grupos a mais.',
+      '**Localizar e Substituir** conserta isso, e tem duas caixas que mudam tudo. "Diferenciar maiúsculas" desmarcada faz `jaguar` achar `JAGUAR` também — mas `falcao` **não** acha `Falcão`, porque o acento é outra letra. "Coincidir conteúdo da célula inteira" faz a troca valer só quando a célula inteira é aquilo.',
+      'E o alcance: com uma célula só selecionada, o Excel procura na planilha inteira. Selecione a coluna antes — a régua de baixo da caixa diz onde ele vai procurar. Sem isso e sem a célula inteira, uma troca curta acerta o pedaço de um nome de pessoa, e a contagem de trocas parece exatamente a esperada.',
     ],
-    `Substituir na coluna Unidade, célula inteira
-
-  aguia    → Águia      pega aguia, AGUIA, Aguia
-  onça     → Onça
-  onca     → Onça       o acento é outra letra
-  tucano   → Tucano`,
     'Depois de substituir, filtre a coluna e conte os valores diferentes. Seis unidades, seis valores.',
     ['localizar e substituir', 'célula inteira'],
+    [
+      [
+        'Com a coluna B selecionada, Substituir troca "jaguar" por "Jaguar", com "célula inteira" marcada. A régua da caixa diz: dentro da seleção.',
+        'Caixa Localizar e Substituir destacada com jaguar e Jaguar, Coincidir conteúdo da célula inteira marcada e a linha Dentro: a seleção B1:B70; a coluna B destacada com jaguar na linha 6.',
+      ],
+      [
+        'Substituir tudo troca as duas grafias de uma vez: a Elisa Leite volta a ser do Jaguar.',
+        'Célula B6 destacada com Jaguar, na linha da Elisa Leite, depois da troca.',
+      ],
+    ],
   ),
   t(
     'a-linha-repetida',
     'A linha repetida, e a pessoa com o mesmo nome',
     'Remover Duplicatas compara o que está escrito.',
     [
-      'A exportação trouxe a Carla Menezes duas vezes, a segunda com "aguia" e "onibus". **Dados → Remover Duplicatas** apaga linhas repetidas — mas compara o que está escrito, e aquelas duas linhas não são iguais. Rodado antes de padronizar, ele responde que não há duplicata nenhuma.',
-      'A ordem resolve: primeiro padronize a grafia, depois remova as duplicatas. Aí as duas linhas da Carla ficam idênticas, e a de baixo sai.',
-      'A caixa abre com todas as colunas marcadas, e é assim que deve ficar. Desmarcar tudo menos o nome parece esperto e apaga gente: há **duas Ana Clara Ribeiro** no clube, uma no Tucano e outra na Arara, e são duas pessoas.',
+      'O questionário trouxe a Nina Oliveira duas vezes, a segunda com "aguia" e "fora do quarto" em minúsculas. **Dados › Remover Duplicatas** apaga linhas repetidas — mas compara o que está escrito, e antes de padronizar as duas linhas não são iguais. Rodado antes, ele responde que não há duplicata nenhuma.',
+      'A ordem resolve: primeiro padronize a grafia, depois remova as duplicatas. Aí as duas linhas da Nina ficam idênticas, e a de baixo sai.',
+      'A caixa abre com todas as colunas marcadas, e é assim que deve ficar. Desmarcar tudo menos o nome parece esperto e apaga gente: há **dois João Victor Alves** no clube, um no Jaguar e outro no Falcão, e são duas pessoas.',
     ],
-    `Remover Duplicatas
-
-  Antes de padronizar     Nenhum valor duplicado encontrado.
-  Depois de padronizar    1 valor duplicado removido;
-                          61 valores exclusivos permanecem.
-  Só com o Nome marcado   apaga uma das duas Ana Clara`,
-    '"Nenhum valor duplicado" é uma resposta que ninguém confere duas vezes. Confira a contagem de linhas depois.',
+    '"Nenhum valor duplicado" é uma resposta que ninguém confere duas vezes. Confira a contagem de linhas depois: aqui ficam 62 valores exclusivos.',
     ['remover duplicatas', 'homônimo'],
+    [
+      [
+        'Com a grafia já arrumada, as duas linhas da Nina Oliveira estão iguais. Dados › Remover Duplicatas abre com todas as colunas marcadas.',
+        'Caixa Remover Duplicatas destacada com as seis colunas marcadas, e as linhas 15 e 16 destacadas, as duas da Nina Oliveira, Águia, Fora do quarto.',
+      ],
+      [
+        'OK apaga a de baixo: na linha 16 agora está o Otávio Barreto, e os 62 respondentes ficam uma vez cada.',
+        'Linhas 15 e 16 destacadas depois do OK, com Nina Oliveira e Otávio Barreto.',
+      ],
+    ],
   ),
 ];
 
@@ -188,54 +190,56 @@ const OS_NUMEROS: TopicoDeVereda[] = [
   t(
     'numero-guardado-como-texto',
     'Número guardado como texto',
-    '"3,75 km" e "13.5" encostam à esquerda, e a média os pula.',
+    '"4 h" e "3.5" encostam à esquerda, e a média os pula.',
     [
-      'A planilha só soma o que é número. "3,75 km" tem letra, "13 anos" tem palavra, e "13.5" tem ponto no lugar da vírgula — em português, o ponto só vale como separador de milhar. Os três ficam guardados como **texto**.',
-      'Texto encosta à esquerda na célula, e a MÉDIA o pula sem avisar. A conta sai plausível, e sobre menos gente do que a base tem. Selecione a coluna e olhe a régua do Excel embaixo: a **Contagem** conta toda célula preenchida, e a **Média** só os números.',
-      'Para consertar, selecione **só os números** da coluna e use Substituir: o ponto pela vírgula, e o " km" por nada. Só os números, porque o cabeçalho "Distância (km)" também tem "km" — e selecionando pela letra da coluna ele vai junto.',
+      'A planilha só soma o que é número. "4 h" e "4h" têm letra, e "3.5" tem ponto no lugar da vírgula — em português, o ponto só vale como separador de milhar. Os três ficam guardados como **texto**.',
+      'Texto encosta à esquerda na célula, e a MÉDIA o pula sem avisar. A conta sai plausível, e sobre menos gente do que a base tem. Selecione a coluna e olhe a régua do Excel embaixo: a **Contagem** conta toda célula preenchida, e a **Média** e a **Soma**, só os números.',
+      'Para consertar, selecione **só os números** da coluna, da segunda linha até a última, e use Substituir: o " h" e o "h" por nada, e o ponto pela vírgula. Só os números, porque o cabeçalho "Tela (h por dia)" também tem "h" — e selecionando pela letra da coluna ele vai junto.',
     ],
-    `Na coluna da distância
-
-  Escrito      Para a planilha    Conserto
-  3,75 km      texto              tirar o " km"
-  13.5         texto              ponto vira vírgula
-  4,5km        texto              tirar o "km"
-  6,5          número             nada`,
-    'Substituir dentro da coluna, e nunca na planilha inteira: o nome de alguém pode ter um "km" que você não viu.',
+    'Substituir dentro da seleção, e nunca na planilha inteira: o nome de alguém pode ter a letra que você está tirando.',
     ['número como texto', 'contagem na régua'],
+    [
+      [
+        'Selecionada a coluna da tela, a régua diz Contagem 60 e Soma 250: quatro células têm "4 h", "4h", "3.5" e "2.5", que a soma pulou.',
+        'Coluna Tela com 4 h e 3.5 encostados à esquerda nas linhas 4 e 11, destacada, e a régua de status destacada com Média 4,46, Contagem 60 e Soma 250.',
+      ],
+      [
+        'Depois de tirar o " h" e o "h" e trocar o ponto pela vírgula, a Contagem continua 60 e a Soma passa a 264: as horas que eram texto entraram na conta.',
+        'A mesma coluna destacada, agora com 4 e 3,50 à direita, e a régua destacada com Média 4,40, Contagem 60 e Soma 264.',
+      ],
+    ],
   ),
   t(
     'valor-impossivel',
     'O valor impossível, com evidência e sem',
     'Corrige-se o que tem evidência; o resto vira ausência.',
     [
-      'A Isabela aparece morando a **1.250 km** do clube. A planilha lê "1.250" como mil duzentos e cinquenta — é o único defeito da base que ela aceita como número —, e a média da distância da bruta pula de 6 para perto de 30 quilômetros sem nenhuma célula com cara de errada.',
-      'Esse valor tem evidência do certo: ela vem a pé, e a mesma secretaria escreveu outros números com ponto no lugar da vírgula. O certo é **1,25**, e você pode corrigir.',
-      'A Ana Clara do Tucano aparece com **41 anos**. Pode ser 11, pode ser 14 — as teclas ficam lado a lado — e nada na base diz qual. Sem evidência, a célula fica **vazia**, e a linha fica: a presença dela vale. Adivinhar 14 seria inventar um dado com cara de dado.',
+      'O Emanuel Macedo aparece com **35 horas de tela por dia** — num dia que tem 24. A planilha lê 35 como número, e é o único defeito da base que ela aceita sem reclamar: a média da tela sobe sem nenhuma célula com cara de errada.',
+      'Esse valor tem evidência do certo: o questionário de papel da família diz "três e meia", e quem digitou esqueceu a vírgula. O certo é **3,5**, e você pode corrigir.',
+      'A Elisa Prates aparece com **21 anos**. Pode ser 11, pode ser 12 — os dois algarismos podem ter trocado de lugar — e nada na base diz qual. Sem evidência, a célula fica **vazia**, e a linha fica: o sono e a tela dela valem. Adivinhar 12 seria inventar um dado com cara de dado.',
     ],
-    `Dois impossíveis, duas decisões
-
-  Isabela      1.250 km   vem a pé; ponto no lugar da vírgula
-                          → corrige para 1,25
-  Ana Clara    41 anos    pode ser 11 ou 14
-                          → célula vazia, linha mantida`,
     'Ache os impossíveis olhando os extremos: classifique a coluna, ou peça o MÁXIMO, e pergunte se aquele número pode existir.',
     ['valor impossível', 'evidência'],
+    [
+      [
+        'Com o cursor na coluna da tela, Dados › Classificar de Z a A leva o maior para cima: 35 horas por dia, na linha do Emanuel Macedo.',
+        'Linha 2 destacada depois de classificar a tela em ordem decrescente, com Emanuel Macedo, Onça, 11 anos, No quarto, 35 horas de tela.',
+      ],
+      [
+        'Classificando a idade do mesmo jeito, o topo é a Elisa Prates com 21 anos — impossível num clube de desbravadores, e sem nada dizendo qual era o certo.',
+        'Linha 2 destacada depois de classificar a idade em ordem decrescente, com Elisa Prates, Tucano, 21 anos.',
+      ],
+    ],
   ),
   t(
     'a-ausencia',
     'O que falta não se inventa',
-    'Quatro famílias não responderam. A linha fica, e o valor fica em branco.',
+    'Três famílias não responderam. A linha fica, e o valor fica em branco.',
     [
-      'Bruno, Eduarda, Enzo e Pedro Henrique não têm distância nem jeito de chegar: as famílias não responderam ao questionário. A presença deles está na chamada e vale.',
-      'Há dois atalhos, e os dois estragam. **Excluir as linhas** derruba a base de 61 para 57 — abaixo dos sessenta do requisito — e joga fora quatro presenças verdadeiras. **Preencher com a média** inventa quatro distâncias iguais que ninguém mediu, e deixa a reta mais confiante do que o dado.',
-      'O certo é deixar as duas células em branco. As funções da planilha pulam o vazio: a média da distância passa a ser de quem respondeu, que é o que ela de fato é — e o relatório diz isso.',
+      'Letícia Aragão, Heloísa Neves e Pietra Macedo não têm celular, tela nem sono: as famílias não responderam ao questionário. O nome, a unidade e a idade delas estão na base e valem.',
+      'Há dois atalhos, e os dois estragam. **Excluir as linhas** derruba a base de 62 para 59 — abaixo dos sessenta do requisito. **Preencher com a média** inventa três tempos de tela iguais que ninguém mediu, e deixa a reta mais confiante do que o dado.',
+      'O certo é deixar as células em branco. As funções da planilha pulam o vazio: a média do sono passa a ser de quem respondeu, que é o que ela de fato é — e o relatório diz isso.',
     ],
-    `Quatro sem questionário
-
-  Excluir as linhas      base com 57: abaixo do requisito
-  Preencher com 6,43     quatro distâncias inventadas
-  Deixar em branco       a média é de quem respondeu`,
     'Ausência documentada não é defeito: é o que o diário de limpeza existe para contar.',
     ['ausência', 'não inventar'],
   ),
@@ -245,17 +249,9 @@ const OS_NUMEROS: TopicoDeVereda[] = [
     'Cada decisão por escrito: o que você fez, e por quê.',
     [
       'O requisito 4 pede para **documentar por escrito cada decisão de limpeza**. Quem abrir a base tratada no ano que vem precisa saber o que mudou da bruta para ela — e por quê.',
-      'Uma decisão tem duas metades. O que se fez: "troquei aguia, AGUIA e Aguia por Águia, só na coluna Unidade". E por quê: "para a conta por unidade não separar a mesma unidade em quatro".',
-      'Uma decisão por problema e por coluna. A idade e a distância tiveram valores impossíveis tratados de jeitos diferentes, e é exatamente isso que quem ler precisa saber: por que um foi corrigido e o outro não.',
+      'Uma decisão tem duas metades. O que se fez: "troquei jaguar e JAGUAR por Jaguar, só na coluna Unidade". E por quê: "para a conta por unidade não separar a mesma unidade em três".',
+      'Uma decisão por problema e por coluna. A tela e a idade tiveram valores impossíveis tratados de jeitos diferentes, e é exatamente isso que quem ler precisa saber: por que um foi corrigido e o outro não.',
     ],
-    `Diário de limpeza
-
-  Problema             Coluna      Decisão
-  Grafia               Unidade     padronizei pela lista do clube
-  Registro repetido    a linha     tirei a segunda da Carla
-  Valor impossível     Distância   1.250 → 1,25: ela vem a pé
-  Valor impossível     Idade       41 → vazio: não há evidência
-  Valor que falta      Distância   mantive as linhas em branco`,
     '"Arrumei a base" não é decisão. É o resumo que não deixa ninguém refazer o caminho.',
     ['documentar a decisão', 'diário'],
   ),
@@ -269,35 +265,36 @@ const AS_MEDIDAS: TopicoDeVereda[] = [
     'As medidas, sobre a tratada',
     'Média, mediana e desvio das duas variáveis da pergunta.',
     [
-      'O requisito 5.1 pede **medidas descritivas das variáveis principais**. Principais são as da pergunta: a presença, que é o que se quer explicar, e a distância, que é a suspeita. Medir todas as colunas da base transforma o relatório numa tabela que ninguém lê.',
-      'Escreva as contas numa aba própria, apontando para a **tratada**: `=MÉDIA(Tratada!F2:F62)`. A presença média é **15,39** reuniões de 20, a mediana é **16**, e o desvio padrão é **3,67**. O desvio é DESVPADP, com P, porque a base é o clube inteiro.',
-      'Apontar para a bruta é o erro que mais engana: a mediana da presença sai **igual** nas duas, porque a bruta só tem uma linha a mais. A média da distância não: com o 1.250 lá dentro, ela passa de 6 para perto de 30.',
+      'O requisito 5.1 pede **medidas descritivas das variáveis principais**. Principais são as da pergunta: o sono, que é o que se quer explicar, e o tempo de tela, que é a suspeita. Medir todas as colunas da base transforma o relatório numa tabela que ninguém lê.',
+      'Escreva as contas numa aba própria, apontando para a **tratada**: `=MÉDIA(Tratada!F2:F63)`. O sono médio é **8,41** horas por noite, a mediana é **8,5**, e o desvio padrão é **0,89**. O desvio é DESVPADP, com P, porque a base é o clube inteiro.',
+      'Apontar para a bruta é o erro que mais engana: com o 35 lá dentro e a Nina contada duas vezes, a média da tela sai maior, e nada na célula diz de que aba ela veio.',
     ],
-    `Aba Cálculos
-
-  Presenças — média            =MÉDIA(Tratada!F2:F62)     15,39
-  Presenças — mediana          =MED(Tratada!F2:F62)       16
-  Presenças — desvio padrão    =DESVPADP(Tratada!F2:F62)  3,67
-  Distância — média            =MÉDIA(Tratada!E2:E62)     6,43
-  Distância — mediana          =MED(Tratada!E2:E62)       5`,
     'Fórmula que lê a outra aba começa pelo nome dela e uma exclamação: Tratada!F2.',
     ['medidas descritivas', 'aba tratada'],
+    [
+      [
+        'Na aba Cálculos, as seis medidas leem a tratada: a tela tem média 3,87, mediana 3,50 e desvio 1,84; o sono, 8,41, 8,50 e 0,89.',
+        'Bloco A2 a B7 da aba Cálculos destacado com as seis medidas, e a barra de fórmulas destacada com =MÉDIA(Tratada!F2:F63).',
+      ],
+    ],
   ),
   t(
     'media-ou-mediana',
-    'Média ou mediana, para a distância típica',
-    'Quando poucos estão muito longe, a média anda para o lado deles.',
+    'Média ou mediana, para o tempo de tela típico',
+    'Quando poucos estão muito acima, a média anda para o lado deles.',
     [
-      'A distância média é **6,43 km**, e a mediana é **5 km**. Metade do clube mora a 5 km ou menos — e a média diz 6,43 porque uns poucos moram a mais de 13 km e puxam a conta para cima.',
+      'O tempo de tela médio é **3,87 horas** por dia, e a mediana é **3,5 horas**. Metade do clube usa a tela 3,5 horas ou menos — e a média diz 3,87 porque uns poucos passam de 9 horas e puxam a conta para cima.',
       'Quando os valores se espalham de um lado só, a **mediana** descreve melhor quem está no meio. A média continua certa como conta, e erra como resumo.',
-      'Na presença as duas ficam perto — 15,39 e 16 —, e qualquer uma serve. É comparando as duas que se sabe qual usar.',
+      'No sono as duas ficam perto — 8,41 e 8,5 —, e qualquer uma serve. É comparando as duas que se sabe qual usar.',
     ],
-    `Distância até o clube
-
-  Média      6,43 km    puxada por quem mora longe
-  Mediana    5 km       metade do clube mora até aqui`,
     'Média muito maior que a mediana é o sinal de que alguns valores altos estão puxando a conta.',
     ['média e mediana', 'assimetria'],
+    [
+      [
+        'Lado a lado, a média da tela dá 3,87 e a mediana, 3,50: os poucos que passam de 9 horas puxam a média, e a mediana fica onde está quem está no meio.',
+        'Células A2 a B3 da aba Cálculos destacadas com Tela média 3,87 e Tela mediana 3,50, e a barra de fórmulas destacada com =MED(Tratada!E2:E63).',
+      ],
+    ],
   ),
 ];
 
@@ -309,34 +306,29 @@ const OS_GRUPOS: TopicoDeVereda[] = [
     'A média de cada grupo, sem MÉDIASE',
     'A soma do grupo dividida pela quantidade dele.',
     [
-      'O requisito 5.2 pede a **comparação entre, no mínimo, dois grupos**. Aqui os grupos são os jeitos de chegar: a pé, de bicicleta, de carona e de ônibus.',
+      'O requisito 5.2 pede a **comparação entre, no mínimo, dois grupos**. Aqui os grupos são onde o celular fica à noite: no quarto, fora do quarto, e quem não tem celular.',
       'Esta planilha não tem MÉDIASE, e é a mesma conta da CC-ES009: `CONT.SE` conta quantos há no grupo, e `SOMASE` soma a coluna que interessa só para aquele grupo. A média é a soma dividida pela contagem.',
-      'Quem não respondeu ao questionário não tem jeito de chegar escrito, e por isso não entra na soma nem na contagem de grupo nenhum — a conta continua certa. Os quatro grupos somam 57, que é quem respondeu.',
+      'Quem não respondeu ao questionário não tem o celular escrito, e por isso não entra na soma nem na contagem de grupo nenhum — a conta continua certa. Os três grupos somam 59, que é quem respondeu.',
     ],
-    `Aba Grupos
-
-  Como chega   Quantos   Média de presenças   Média da distância
-  A pé           14            18,93                 1,07
-  Bicicleta       4            16,50                 2,81
-  Carona         19            17,37                 8,37
-  Ônibus         20            11,35                 9,05`,
-    'Escreva a primeira linha com cifrão no intervalo — $D$2:$D$62 — e arraste para baixo. Sem o cifrão, o intervalo desce junto e a última linha conta metade do clube.',
+    'Escreva a primeira linha com cifrão no intervalo — $D$2:$D$63 — e arraste para baixo. Sem o cifrão, o intervalo desce junto e a última linha conta metade do clube.',
     ['comparar grupos', 'SOMASE e CONT.SE'],
+    [
+      [
+        'Na aba Grupos, CONT.SE conta cada grupo e SOMASE dividido pela contagem dá as médias: no quarto são 28, com 4,29 h de tela e 7,75 h de sono; fora do quarto, 27, com 3,87 e 8,91; sem celular, 4, com 1 e 9,63.',
+        'Tabela A1 a D4 da aba Grupos destacada, e a barra de fórmulas destacada com =SOMASE(Tratada!$D$2:$D$63;A2;Tratada!$F$2:$F$63)/B2.',
+      ],
+    ],
   ),
   t(
     'o-que-a-comparacao-mostra',
     'O que a comparação mostra',
-    'Carona e ônibus moram longe parecido, e a presença é muito diferente.',
+    'No quarto e fora do quarto, a tela é parecida, e o sono é muito diferente.',
     [
-      'Quem vem de carona mora, em média, a **8,37 km**; quem vem de ônibus, a **9,05 km** — quase a mesma distância. E a presença é **17,37** para a carona e **11,35** para o ônibus: seis reuniões de diferença no semestre.',
-      'É essa comparação que muda a conversa. Se fosse só a distância, os dois grupos faltariam parecido. Não faltam — e o que os separa é o jeito de chegar.',
-      'O grupo de bicicleta tem a segunda maior presença, e tem **quatro pessoas**. Uma que falte muito muda a média inteira, e por isso ele não sustenta conclusão nenhuma. Média de grupo pequeno se mostra, e não se usa para decidir.',
+      'Quem dorme com o celular no quarto usa a tela, em média, **4,29 horas** por dia; quem o deixa fora do quarto, **3,87** — menos de meia hora de diferença. E o sono é **7,75** horas para o primeiro grupo e **8,91** para o segundo: mais de uma hora por noite.',
+      'É essa comparação que muda a conversa. Se fosse só o tempo de tela, os dois grupos dormiriam parecido. Não dormem — e o que os separa é onde o celular passa a noite.',
+      'O grupo sem celular tem o maior sono, e tem **quatro pessoas**. Uma que durma pouco muda a média inteira, e por isso ele não sustenta conclusão nenhuma. Média de grupo pequeno se mostra, e não se usa para decidir.',
     ],
-    `Mesma distância, presença diferente
-
-  Carona    8,37 km    17,37 reuniões de 20
-  Ônibus    9,05 km    11,35 reuniões de 20`,
-    'Antes de comparar médias, olhe o tamanho de cada grupo. Quatro pessoas não pesam o mesmo que vinte.',
+    'Antes de comparar médias, olhe o tamanho de cada grupo. Quatro pessoas não pesam o mesmo que vinte e oito.',
     ['grupo pequeno', 'comparação'],
   ),
 ];
@@ -347,36 +339,35 @@ const A_RELACAO: TopicoDeVereda[] = [
   t(
     'a-dispersao-da-base-inteira',
     'A dispersão, com a base inteira',
-    'Cada ponto é uma pessoa: a distância de um lado, a presença do outro.',
+    'Cada ponto é uma pessoa: a tela de um lado, o sono do outro.',
     [
       'O requisito 5.3 pede **uma relação entre duas variáveis, com gráfico de dispersão e linha de tendência**. É a mecânica da CC-ES010, agora sobre a base que você limpou.',
-      'Selecione as duas colunas inteiras da tratada — a distância e a presença, que ficam lado a lado — e insira uma dispersão. Os 57 que responderam viram 57 pontos; os quatro sem distância ficam de fora sozinhos, porque ponto precisa dos dois números.',
-      'Depois, em Elementos do Gráfico, marque **Linha de Tendência** e **Exibir Equação**. A nuvem desce da esquerda para a direita, e a reta também: a correlação é **-0,70**.',
+      'Selecione as duas colunas inteiras da tratada — a tela e o sono, que ficam lado a lado — e insira uma dispersão. Os 59 que responderam viram 59 pontos; os três sem resposta ficam de fora sozinhos, porque ponto precisa dos dois números.',
+      'Depois, nos elementos do gráfico, marque **Linha de Tendência** e **Exibir Equação**. A nuvem desce da esquerda para a direita, e a reta também: a correlação é **-0,71**.',
     ],
-    `Dispersão na tratada
-
-  Seleção     E1:F62
-  Eixo X      Distância até o clube (km)
-  Eixo Y      Presenças no semestre (de 20)
-  Pontos      57
-  Correlação  -0,70`,
     'Selecionar só uma parte das linhas desenha uma nuvem plausível sobre metade do clube.',
     ['dispersão', 'linha de tendência'],
+    [
+      [
+        'Com E1 a F63 selecionadas, Inserir › Gráfico com a dispersão escolhida, a pergunta no título e o nome de cada eixo.',
+        'Caixa Inserir Gráfico destacada com Dados de E1:F63, Tipo Dispersão, Título Quem usa mais tela dorme menos?, Tela por dia (h) e Sono por noite (h).',
+      ],
+      [
+        'No gráfico, Linha de Tendência e Exibir Equação marcadas: a reta desce, e a equação aparece ao lado dela.',
+        'Gráfico de dispersão destacado sobre a planilha, com a nuvem de pontos, a reta de tendência descendo e as caixas Linha de Tendência e Exibir Equação no gráfico marcadas.',
+      ],
+    ],
   ),
   t(
     'o-que-a-relacao-nao-prova',
     'O que a relação não prova',
-    'Quem mora longe falta mais — e quem mora longe também pega ônibus.',
+    'Quem usa mais tela dorme menos — e quem usa mais tela também dorme com o celular no quarto.',
     [
-      'Uma correlação de -0,70 é forte: quem mora mais longe tende a ir a menos reuniões. Isso **não prova** que a distância é a causa.',
-      'Quem mora longe também é quem mais pega ônibus, e o ônibus de sábado pode ser o problema — o horário, a passagem, a família que trabalha no fim de semana. A comparação de grupos já mostrou isso: a carona mora tão longe quanto e falta pouco.',
-      'É a correlação espúria da CC-ES010 do lado da decisão. Se a causa fosse a distância, a única saída seria mudar o clube de lugar. Se for o transporte, uma lista de carona resolve — e a recomendação muda inteira.',
+      'Uma correlação de -0,71 é forte: quem passa mais tempo na tela tende a dormir menos. Isso **não prova** que a tela é a causa.',
+      'Quem usa mais tela também é quem mais dorme com o celular no quarto, e o celular no quarto pode ser o problema — a notificação de madrugada, a luz da tela antes de dormir. A comparação de grupos já mostrou isso: fora do quarto, a tela é quase a mesma e o sono é muito maior.',
+      'É a correlação espúria da CC-ES010 do lado da decisão. Se a causa fosse o tempo de tela, a saída seria proibir o celular. Se for onde ele dorme, uma campanha de celular fora do quarto resolve — e a recomendação muda inteira.',
     ],
-    `Duas explicações para o mesmo desenho
-
-  A distância faz faltar         → mudar o clube de lugar
-  O ônibus de sábado faz faltar  → lista de carona`,
-    'Antes de escrever a conclusão, pergunte: que outra coisa anda junto com a distância?',
+    'Antes de escrever a conclusão, pergunte: que outra coisa anda junto com o tempo de tela?',
     ['correlação e causa', 'outra explicação'],
   ),
 ];
@@ -390,15 +381,9 @@ const O_PAINEL: TopicoDeVereda[] = [
     'O título é a pergunta, escrita como pergunta.',
     [
       'O requisito 6 pede **painel ou relatório com, no mínimo, quatro gráficos, cada um respondendo a uma pergunta declarada expressamente**. Declarada quer dizer escrita — e o lugar dela é o título.',
-      '"Presença por unidade" é um assunto. "Alguma unidade falta mais que as outras?" é uma pergunta, e quem olha o gráfico sabe o que procurar nele. As quatro perguntas são diferentes: dois gráficos para a mesma pergunta ocupam lugar e não dizem nada novo.',
+      '"Sono por unidade" é um assunto. "Alguma unidade dorme menos que as outras?" é uma pergunta, e quem olha o gráfico sabe o que procurar nele. As quatro perguntas são diferentes: dois gráficos para a mesma pergunta ocupam lugar e não dizem nada novo.',
       'Gráfico sobre faixa vazia conta como gráfico e não mostra nada. Confira que cada um desenhou.',
     ],
-    `O painel da presença
-
-  Quem mora mais longe vai a menos reuniões?           dispersão
-  Quem vem de carona falta menos que quem vem de ônibus?  colunas
-  Alguma unidade falta mais que as outras?             colunas
-  Quantos desbravadores moram longe do clube?          pizza`,
     'Escreva a pergunta antes de escolher o tipo. O tipo sai da pergunta, e não o contrário.',
     ['painel', 'pergunta no título'],
   ),
@@ -409,14 +394,8 @@ const O_PAINEL: TopicoDeVereda[] = [
     [
       'São as regras da CC-ES009, e valem aqui igual. **Colunas** comparam: qual é maior que qual. **Dispersão** relaciona duas medidas. **Pizza** mostra de que o todo é feito — e só quando as partes somam o todo.',
       '**Linha** mostra evolução ao longo do tempo, e esta base não tem tempo: ligar o Falcão ao Tucano com um traço afirma que um virou o outro.',
-      'A pizza das médias de presença por unidade sai com fatias perfeitamente plausíveis de um todo que não existe — média não soma. A pizza de **quantos** moram em cada faixa de distância soma o clube, e responde.',
+      'A pizza das médias de sono por unidade sai com fatias perfeitamente plausíveis de um todo que não existe — média não soma. A pizza de **quantos** deixam o celular em cada lugar soma o clube, e responde.',
     ],
-    `Que tipo para que pergunta
-
-  Qual é maior?                 colunas
-  Duas medidas andam juntas?    dispersão
-  De que o todo é feito?        pizza, só sobre contagem
-  Como mudou com o tempo?       linha — esta base não tem tempo`,
     'Gráfico errado não dá erro. Ele desenha certinho uma coisa que não quer dizer nada.',
     ['tipo de gráfico', 'pizza de contagem'],
   ),
@@ -432,13 +411,8 @@ const A_CONCLUSAO: TopicoDeVereda[] = [
     [
       'O requisito 7 pede uma conclusão de **no máximo duas páginas** com três partes: o que os dados mostram, o que **não permitem afirmar**, e uma recomendação prática ao clube.',
       'Duas páginas é o limite, e não a meta. A primeira versão costuma recontar a limpeza inteira — e ela já está no diário, que vai junto no relatório. O que fica na conclusão é o que muda a decisão.',
-      'O que os dados mostram vem **com os números**. "Quem mora longe falta mais" é uma impressão; "quem vem de ônibus vai a 11,35 de 20 reuniões, e quem vem de carona a 17,37" é um resultado.',
+      'O que os dados mostram vem **com os números**. "Quem usa celular dorme pouco" é uma impressão; "quem dorme com o celular no quarto dorme 7,75 horas, e quem o deixa fora, 8,91" é um resultado.',
     ],
-    `A conclusão
-
-  O que os dados mostram         com os números do painel
-  O que não permitem afirmar     o que a base não cobre
-  Recomendação ao clube          quem faz o quê`,
     'Uma página tem perto de 450 palavras. Conte antes de entregar.',
     ['duas páginas', 'três partes'],
   ),
@@ -448,17 +422,9 @@ const A_CONCLUSAO: TopicoDeVereda[] = [
     'A parte que quase ninguém escreve, e a que mais protege quem decide.',
     [
       'Toda base tem um limite, e escrever esse limite é o que impede quem decide de pedir à análise mais do que ela pode dar.',
-      'Nesta base: é **um semestre só**; **quatro famílias** não responderam ao questionário; quem já **saiu do clube** não está na chamada — e talvez tenha saído justamente por morar longe; e a relação **não prova causa**.',
-      'A recomendação vem depois disso, e diz **quem faz o quê**. "O clube deveria melhorar a presença" não tem dono, e ninguém a cumpre. "Que a diretoria monte uma lista de carona para quem vem de ônibus, e que a secretaria compare a presença em dezembro" se aprova, se faz e se confere.',
+      'Nesta base: é **uma semana só**; **três famílias** não responderam; as horas são **as que a família estimou**, e não medidas por relógio nenhum; e a relação **não prova causa**.',
+      'A recomendação vem depois disso, e diz **quem faz o quê**. "O clube deveria cuidar do sono" não tem dono, e ninguém a cumpre. "Que a diretoria proponha às famílias o celular fora do quarto, e que a secretaria repita o questionário em novembro" se aprova, se faz e se confere.',
     ],
-    `Recomendação sem dono e com dono
-
-  O clube deveria melhorar a presença.
-      ninguém faz
-
-  Que a diretoria monte uma lista de carona para quem vem
-  de ônibus, e que a secretaria compare a presença em dezembro.
-      quem, o quê, e como conferir`,
     'Escrever o limite não enfraquece a conclusão. É o que faz quem decide confiar no resto.',
     ['limites da base', 'recomendação prática'],
   ),
@@ -476,15 +442,6 @@ const A_APRESENTACAO: TopicoDeVereda[] = [
       'O roteiro que todo mundo escreve primeiro gasta seis minutos contando a limpeza. É trabalho de verdade, e quem decide não precisa dele: precisa da pergunta, do painel, da recomendação e de **tempo para perguntar**. A limpeza cabe em um minuto, e o diário vai junto para quem quiser ler.',
       'É a regra da CC-ES011, do outro lado: a fala carrega o que o slide não diz, e o slide não carrega a fala.',
     ],
-    `Roteiro de dez minutos
-
-  1   A pergunta e quem decide
-  1   De onde veio o dado
-  1   O que eu limpei
-  3   Os quatro gráficos
-  2   O que mostram e o que não permitem
-  1   A recomendação
-  1   Perguntas`,
     'A família em casa ouve com gosto e não decide nada no clube. Ensaie com ela; apresente para quem decide.',
     ['dez minutos', 'público real'],
   ),
@@ -494,15 +451,9 @@ const A_APRESENTACAO: TopicoDeVereda[] = [
     'O que aconteceu, e não o que se esperava.',
     [
       'Depois de apresentar, o requisito pede **registrar por escrito a decisão tomada ou a reação obtida**: quando foi, quem estava, e o que disseram.',
-      'O registro é do que aconteceu. "A diretoria aprovou a lista de carona e pediu a presença de dezembro para comparar" é decisão. "Vão pensar até a próxima reunião" também é registro — e diz que a recomendação ainda não virou decisão.',
+      'O registro é do que aconteceu. "A diretoria aprovou a campanha com as famílias e pediu o questionário de novembro para comparar" é decisão. "Vão pensar até a próxima reunião" também é registro — e diz que a recomendação ainda não virou decisão.',
       'Escreva com as palavras de quem decidiu, e no mesmo dia. Uma semana depois, a lembrança já virou o que você queria que eles tivessem dito.',
     ],
-    `Registro
-
-  Quando     29/08/2026
-  Quem       o diretor, a secretária e a tesoureira
-  O que      A diretoria aprovou a lista de carona e pediu à
-             secretaria a presença de dezembro para comparar.`,
     'Reação negativa também se registra. Ela é o resultado do projeto tanto quanto um sim.',
     ['registro da decisão', 'reação'],
   ),
@@ -517,16 +468,17 @@ const A_ENTREGA: TopicoDeVereda[] = [
     'Num repositório compartilhado, e só os três.',
     [
       'O requisito 9 pede entregar ao examinador **a base bruta, a base tratada e o relatório final**, mantidos em repositório compartilhado — uma pasta na nuvem, compartilhada com quem examina.',
-      'Só os três. O rascunho da conclusão e a foto da reunião são seus, e não da entrega: quem confere não deveria ter de adivinhar qual arquivo vale.',
+      'Só os três. O rascunho dos gráficos e a foto da reunião são seus, e não da entrega: quem confere não deveria ter de adivinhar qual arquivo vale.',
       'E a bruta é a que **ninguém editou**. Quem baixa o mesmo anexo duas vezes fica com duas cópias de mesmo nome; se uma delas foi aberta e mexida, ela já não é bruta. O **histórico de versões** diz qual é qual: quem escreveu cada versão, e quando.',
     ],
-    `Pasta "Projeto de dados — presença"
-
-  chamada_1sem_2026                   a bruta, uma versão só
-  Análise da presença                 a tratada e as contas
-  Relatório final — presença          a conclusão, o painel e o diário`,
     'Abra o histórico das duas cópias antes de escolher. A data da última alteração já dá a pista.',
     ['entrega', 'histórico de versões'],
+    [
+      [
+        'O histórico de "questionario_sono_2026 (1)" mostra duas versões: a da Marta, em 2 de setembro, e uma sua, dois dias depois. Essa cópia foi mexida, e não é a bruta.',
+        'Caixa Histórico de versões destacada, com 04/09/2026, versão atual, por Você, e 02/09/2026 por Marta.',
+      ],
+    ],
   ),
   t(
     'compartilhar-para-conferir',
@@ -535,14 +487,16 @@ const A_ENTREGA: TopicoDeVereda[] = [
     [
       'O examinador precisa ver os três arquivos — e não mexer neles. Compartilhe a pasta como **leitor** ou **comentarista**: editor pode mudar uma célula da bruta sem querer, e aí ela deixa de ser a prova do que chegou.',
       'Compartilhar a pasta alcança o que está dentro, como a CC-ES006 ensinou: não é preciso compartilhar arquivo por arquivo.',
-      'E o acesso geral fica **Restrito**. A base tem o nome de sessenta e uma crianças do clube, e "qualquer pessoa com o link" é qualquer pessoa — inclusive quem recebeu o link encaminhado por alguém que você nem conhece.',
+      'E o acesso geral fica **Restrito**. A base tem o nome e o sono de sessenta e duas crianças do clube, e "qualquer pessoa com o link" é qualquer pessoa — inclusive quem recebeu o link encaminhado por alguém que você nem conhece.',
     ],
-    `Compartilhar a pasta do projeto
-
-  Liderança        Leitor
-  Acesso geral     Restrito`,
     'Na caixa de compartilhar, a lista de nomes e o acesso geral são duas coisas. Confira as duas.',
     ['leitor e editor', 'link restrito'],
+    [
+      [
+        'A pasta do projeto compartilhada com a Liderança como Leitor, e o acesso geral em Restrito: só quem está na lista abre.',
+        'Caixa Compartilhar «Projeto de dados — tela e sono» destacada, com Você proprietário, Liderança leitor e o acesso geral Restrito.',
+      ],
+    ],
   ),
 ];
 
