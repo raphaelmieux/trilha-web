@@ -34,6 +34,7 @@ import { CENAS_DE_DIAGRAMACAO } from './cenasDeDiagramacao';
 import { CENAS_DO_PROJETO_DE_DESIGN } from './cenasDoProjetoDeDesign';
 import { CENAS_DO_PROJETO_DOCUMENTAL } from './cenasDoProjetoDocumental';
 import { CENAS_DO_PROJETO_DE_DADOS } from './cenasDoProjetoDeDados';
+import { CENAS_DA_ANALISE } from './cenasDaAnalise';
 import { VEREDAS, type LicaoDeVereda } from '../curriculum/veredas';
 import { blocoDe, campoDe, linhaDe, trechoDe, titulosDoDoc, type Doc, type Paragrafo, type Bloco } from '../labs/documento';
 
@@ -464,4 +465,5 @@ export const CENAS: Record<string, ComponentType> = {
   ...CENAS_DO_PROJETO_DE_DESIGN,
   ...CENAS_DO_PROJETO_DOCUMENTAL,
   ...CENAS_DO_PROJETO_DE_DADOS,
+  ...CENAS_DA_ANALISE,
 };

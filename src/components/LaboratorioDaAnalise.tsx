@@ -81,6 +81,8 @@ import type { LicaoDeVereda, Vereda } from '../curriculum/veredas';
 
 type Comum = {
   vereda: Vereda;
+  /** O nome na barra de título, quando a pasta não é a do acampamento. */
+  arquivo?: string;
   licao: { titulo: string; verificacoes: string[] };
   qual: LicaoDaCcEs009;
   metas: Meta[];
@@ -497,7 +499,7 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
       <style>{CSS_EXCEL}</style>
 
       <div className="pl-janela">
-        <BarraDeTituloDoExcel arquivo="Acampamento 2026 — análise" aoAvisar={avisar} />
+        <BarraDeTituloDoExcel arquivo={c.arquivo ?? 'Acampamento 2026 — análise'} aoAvisar={avisar} />
         <GuiasDoExcel atual={guia} usaveis={GUIAS_USAVEIS} aoTrocar={setGuia} aoAvisar={avisar} />
 
         <div className="pl-faixa">
@@ -1341,14 +1343,29 @@ function TelaDoCaderno(c: Comum) {
 */
 const SEM_CADERNO: LicaoDaCcEs009[] = ['centro'];
 
-export default function LaboratorioDaAnalise({ vereda, licao, aoVencer, aoSair }: {
+/**
+ * Outra base aberta nas mesmas abas.
+ *
+ * É o que a teoria fotografa: as telas mostram o gesto nas inscrições do
+ * Campori de Primavera, e não nas do acampamento, cujos números são as
+ * respostas das lições. Sem `outra`, abre o acampamento, no estado de partida
+ * da lição.
+ */
+export interface OutraAnalise {
+  inicial: () => ContextoDaAnalise;
+  arquivo: string;
+}
+
+export default function LaboratorioDaAnalise({ vereda, licao, aoVencer, aoSair, outra }: {
   vereda: Vereda;
   licao: Extract<LicaoDeVereda, { tipo: 'analise' }>;
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  outra?: OutraAnalise;
 }) {
   const daLicao = LICOES_DA_CC_ES009[licao.licao];
-  const [hist, setHist] = useState<Historico<ContextoDaAnalise>>(() => historicoDe(daLicao.inicial()));
+  const partida = () => (outra ? outra.inicial() : daLicao.inicial());
+  const [hist, setHist] = useState<Historico<ContextoDaAnalise>>(() => historicoDe(partida()));
   const [tela, setTela] = useState<ProgramaDaCcEs009>(daLicao.programa);
 
   /*
@@ -1382,6 +1399,7 @@ export default function LaboratorioDaAnalise({ vereda, licao, aoVencer, aoSair }
 
   const comum: Comum = {
     vereda,
+    arquivo: outra?.arquivo,
     licao,
     qual: licao.licao,
     metas: daLicao.metas,
@@ -1395,7 +1413,7 @@ export default function LaboratorioDaAnalise({ vereda, licao, aoVencer, aoSair }
       presente: { ...h.presente, descobertas: [...h.presente.descobertas, o] },
     })),
     irPara: setTela,
-    recomecar: () => { setHist(historicoDe(daLicao.inicial())); setTela(daLicao.programa); },
+    recomecar: () => { setHist(historicoDe(partida())); setTela(daLicao.programa); },
     aoVencer,
     aoSair,
   };

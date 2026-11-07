@@ -4,7 +4,7 @@ import { QUESTOES_DA_ANALISE } from './questoesDaAnalise';
 import type { TopicoDeVereda } from './veredas';
 import {
   CAMPO_ACAMPAMENTOS, CAMPO_ALTURA, CAMPO_IDADE,
-  ELENCO, adesaoPorUnidade, baseDoAcampamento, porSemana,
+  UNIDADES_DO_CLUBE, adesaoPorUnidade, baseDoAcampamento, porSemana,
 } from '../labs/baseDoAcampamento';
 import {
   amplitude, cercaDe, classesDe, colunaDe, desvioPadrao, frequenciasDe,
@@ -12,9 +12,17 @@ import {
 } from '../labs/analiseDeDados';
 import { CAMPO_UNIDADE, respostasReais } from '../labs/formulario';
 import { mostrarNumero } from '../labs/formulas';
+import { baseDoCampori } from '../exemplos/camporiDePrimavera';
 
 /*
-  Os números que a teoria da CC-ES009 cita, conferidos contra a base.
+  Os números que a teoria e as questões da CC-ES009 citam, conferidos contra a
+  base de onde cada um sai.
+
+  As **questões** falam da inscrição do acampamento de inverno, que é a base
+  do laboratório, e são conferidas contra ela. A **teoria** fala da inscrição
+  do Campori de Primavera (`src/exemplos/camporiDePrimavera.ts`), que é a que
+  as telas fotografam: os números do acampamento são as respostas das lições,
+  e a teoria que os citasse entregaria o gabarito.
 
   ── Por que esta trava existe ────────────────────────────────────────────
   É a mesma de `exemplosDePython.test.ts` e de `exemplosDePlanilha.test.ts`,
@@ -43,7 +51,8 @@ import { mostrarNumero } from '../labs/formulas';
 */
 
 const BASE = baseDoAcampamento();
-const TOTAL = respostasReais(BASE).length;
+const CAMPORI = baseDoCampori();
+const TOTAL_DO_CAMPORI = respostasReais(CAMPORI).length;
 
 const topicos = (): TopicoDeVereda[] =>
   MODULOS_DA_ANALISE.flatMap(m => m.licoes.flatMap(l => (l.tipo === 'teoria' ? l.topicos : [])));
@@ -52,7 +61,7 @@ const topicos = (): TopicoDeVereda[] =>
 function textoDoTopico(id: string): string {
   const t = topicos().find(x => x.id === id);
   if (!t) throw new Error(`O tópico ${id} sumiu da vereda.`);
-  return [t.resumo, ...t.explicacao, t.exemplo, t.atencao ?? ''].join('\n');
+  return [t.resumo, ...t.explicacao, t.exemplo ?? '', t.atencao ?? '', ...(t.telas ?? []).flatMap(x => [x.legenda, x.descricao])].join('\n');
 }
 
 /** Tudo o que uma questão escreve: enunciado, alternativas e explicação. */
@@ -96,6 +105,9 @@ const maiorDe = (ns: (number | null)[]) => Math.max(...ns.map(n => n ?? Number.N
 const menorDe = (ns: (number | null)[]) => Math.min(...ns.map(n => n ?? Number.NaN));
 
 const coluna = (campo: string) => colunaDe(BASE, campo);
+const doCampori = (campo: string) => colunaDe(CAMPORI, campo);
+/* A taxa como a prosa a escreve: "75%", e não "75,00%". */
+const pctDaProsa = (n: number | null) => `${numDaProsa(Math.round((n ?? Number.NaN) * 10000) / 100)}%`;
 
 interface Afirmacao {
   /** Onde ela está escrita: o id de um tópico ou o de uma questão. */
@@ -116,125 +128,100 @@ interface Afirmacao {
 */
 const AFIRMACOES: Afirmacao[] = [
   /* ── Módulo 2: centro e dispersão ── */
-  { onde: 'media-mediana-moda', oQue: 'a média da idade', valor: () => num(media(coluna(CAMPO_IDADE))) },
-  { onde: 'media-mediana-moda', oQue: 'quantas vezes a moda da idade aparece', valor: () => String(repeticoesDaModa(coluna(CAMPO_IDADE))) },
-  { onde: 'amplitude-e-desvio', oQue: 'o desvio padrão da idade', valor: () => num(desvioPadrao(coluna(CAMPO_IDADE))) },
-  { onde: 'amplitude-e-desvio', oQue: 'a amplitude da altura', valor: () => num(amplitude(coluna(CAMPO_ALTURA))) },
-  { onde: 'amplitude-e-desvio', oQue: 'a mediana da altura', valor: () => num(mediana(coluna(CAMPO_ALTURA))) },
-  { onde: 'amplitude-e-desvio', oQue: 'o desvio padrão dos acampamentos', valor: () => num(desvioPadrao(coluna(CAMPO_ACAMPAMENTOS))) },
-  { onde: 'amplitude-e-desvio', oQue: 'a amplitude dos acampamentos', valor: () => num(amplitude(coluna(CAMPO_ACAMPAMENTOS))) },
-  { onde: 'a-moda-nao-avisa', oQue: 'a moda da altura', valor: () => num(moda(coluna(CAMPO_ALTURA))) },
-  { onde: 'a-moda-nao-avisa', oQue: 'quantas vezes a moda da altura aparece', valor: () => String(repeticoesDaModa(coluna(CAMPO_ALTURA))) },
+  { onde: 'media-mediana-moda', oQue: 'a média da idade', valor: () => num(media(doCampori(CAMPO_IDADE))) },
+  { onde: 'media-mediana-moda', oQue: 'a mediana da idade', valor: () => num(mediana(doCampori(CAMPO_IDADE))) },
+  { onde: 'media-mediana-moda', oQue: 'a moda da idade', valor: () => String(moda(doCampori(CAMPO_IDADE))) },
+  { onde: 'amplitude-e-desvio', oQue: 'o desvio padrão da idade', valor: () => num(desvioPadrao(doCampori(CAMPO_IDADE))) },
+  { onde: 'amplitude-e-desvio', oQue: 'o desvio padrão dos acampamentos', valor: () => num(desvioPadrao(doCampori(CAMPO_ACAMPAMENTOS))) },
+  { onde: 'amplitude-e-desvio', oQue: 'a média dos acampamentos', valor: () => num(media(doCampori(CAMPO_ACAMPAMENTOS))) },
+  { onde: 'amplitude-e-desvio', oQue: 'a amplitude dos acampamentos', valor: () => String(amplitude(doCampori(CAMPO_ACAMPAMENTOS))) },
+  { onde: 'a-moda-nao-avisa', oQue: 'a moda da altura', valor: () => num(moda(doCampori(CAMPO_ALTURA))) },
+  {
+    onde: 'a-moda-nao-avisa',
+    oQue: 'quantas vezes a moda da altura aparece, de quantos',
+    valor: () => `${repeticoesDaModa(doCampori(CAMPO_ALTURA))} de ${TOTAL_DO_CAMPORI}`,
+  },
 
   /* ── Módulo 3: quando a média engana ── */
-  { onde: 'a-media-e-a-ponta', oQue: 'a média dos acampamentos', valor: () => num(media(coluna(CAMPO_ACAMPAMENTOS))) },
+  { onde: 'a-media-e-a-ponta', oQue: 'a média dos acampamentos', valor: () => num(media(doCampori(CAMPO_ACAMPAMENTOS))) },
   {
     onde: 'a-media-e-a-ponta',
     oQue: 'quantos fizeram dois acampamentos ou menos',
-    valor: () => String(numerosDe(coluna(CAMPO_ACAMPAMENTOS)).filter(n => n <= 2).length),
+    valor: () => `${numerosDe(doCampori(CAMPO_ACAMPAMENTOS)).filter(n => n <= 2).length} dos ${TOTAL_DO_CAMPORI}`,
   },
   {
     onde: 'a-razao-entre-as-duas',
-    oQue: 'quantos chegam à média de idade',
-    valor: () => String(numerosDe(coluna(CAMPO_IDADE)).filter(n => n >= media(coluna(CAMPO_IDADE))!).length),
-  },
-  {
-    onde: 'a-razao-entre-as-duas',
-    oQue: 'quantos chegam à média de acampamentos',
-    valor: () => String(numerosDe(coluna(CAMPO_ACAMPAMENTOS)).filter(n => n >= media(coluna(CAMPO_ACAMPAMENTOS))!).length),
+    oQue: 'quantos chegam à média, nas duas colunas',
+    valor: () => {
+      const chegam = (campo: string) => numerosDe(doCampori(campo)).filter(n => n >= media(doCampori(campo))!).length;
+      return `${chegam(CAMPO_ACAMPAMENTOS)} dos ${TOTAL_DO_CAMPORI} nos acampamentos e ${chegam(CAMPO_IDADE)} na idade`;
+    },
   },
   {
     onde: 'a-razao-entre-as-duas',
     oQue: 'a razão média ÷ mediana dos acampamentos',
-    valor: () => num(media(coluna(CAMPO_ACAMPAMENTOS))! / mediana(coluna(CAMPO_ACAMPAMENTOS))!),
+    valor: () => num(media(doCampori(CAMPO_ACAMPAMENTOS))! / mediana(doCampori(CAMPO_ACAMPAMENTOS))!),
   },
 
   /* ── Módulo 4: distribuição de frequências ── */
   {
     onde: 'frequencia-absoluta-relativa-acumulada',
-    oQue: 'a frequência da maior unidade',
-    valor: () => String(frequenciasDe(coluna(CAMPO_UNIDADE))[0].absoluta),
-  },
-  {
-    onde: 'frequencia-absoluta-relativa-acumulada',
     oQue: 'a frequência relativa da maior unidade',
-    valor: () => pct(frequenciasDe(coluna(CAMPO_UNIDADE))[0].relativa),
+    valor: () => pct(frequenciasDe(doCampori(CAMPO_UNIDADE), UNIDADES_DO_CLUBE)[0].relativa),
   },
   {
     onde: 'frequencia-absoluta-relativa-acumulada',
     oQue: 'o total, que a última acumulada tem de bater',
-    valor: () => String(TOTAL),
+    valor: () => `fecha em ${TOTAL_DO_CAMPORI}`,
   },
   {
     onde: 'classe',
     oQue: 'a frequência da classe mais cheia da altura',
     valor: () => {
-      const cs = classesDe(coluna(CAMPO_ALTURA), 0.1);
-      return String(Math.max(...cs.map(c => c.absoluta)));
+      const cs = classesDe(doCampori(CAMPO_ALTURA), 0.1);
+      return `com ${Math.max(...cs.map(c => c.absoluta))} pessoas`;
     },
   },
 
   /* ── Módulo 5: comparar grupos ── */
-  {
-    onde: 'comparar-grupos',
+  ...['comparar-grupos', 'o-resumo-e-uma-segunda-leitura'].map(onde => ({
+    onde,
     oQue: 'a média de acampamentos da unidade mais experiente',
-    valor: () => {
-      const m = medidaPorGrupo(BASE, CAMPO_UNIDADE, CAMPO_ACAMPAMENTOS, 'MÉDIA');
-      return num(maiorDe([...m.values()]));
-    },
-  },
-  {
-    onde: 'o-resumo-e-uma-segunda-leitura',
-    oQue: 'a mesma média, citada dos dois lados da conferência',
-    valor: () => {
-      const m = medidaPorGrupo(BASE, CAMPO_UNIDADE, CAMPO_ACAMPAMENTOS, 'MÉDIA');
-      return num(maiorDe([...m.values()]));
-    },
-  },
+    valor: () => num(maiorDe([...medidaPorGrupo(CAMPORI, CAMPO_UNIDADE, CAMPO_ACAMPAMENTOS, 'MÉDIA').values()])),
+  })),
 
   /* ── Módulo 6: taxa e número absoluto ── */
-  {
-    onde: 'taxa-e-uma-divisao',
+  ...['taxa-e-uma-divisao', 'as-duas-ordenam-ao-contrario', 'defender-com-os-dados'].map(onde => ({
+    onde,
     oQue: 'a taxa de adesão da unidade que mobilizou melhor',
-    valor: () => pct(maiorDe(adesaoPorUnidade(BASE).map(a => a.taxa))),
-  },
-  {
-    onde: 'taxa-e-uma-divisao',
-    oQue: 'quantos membros o clube tem ao todo',
-    valor: () => String(ELENCO.reduce((s, u) => s + u.membros, 0)),
-  },
-  {
-    onde: 'as-duas-ordenam-ao-contrario',
-    oQue: 'a taxa da unidade com mais ausentes',
-    valor: () => {
-      const linhas = adesaoPorUnidade(BASE);
-      const pior = linhas.reduce((a, b) => (b.fora > a.fora ? b : a));
-      return pct(pior.taxa);
-    },
-  },
+    valor: () => pctDaProsa(maiorDe(adesaoPorUnidade(CAMPORI).map(a => a.taxa))),
+  })),
 
   /* ── Módulo 7: valores atípicos ── */
   {
     onde: 'o-que-e-um-valor-atipico',
-    oQue: 'a cerca de cima da idade',
-    valor: () => numDaProsa(cercaDe(coluna(CAMPO_IDADE))!.teto),
+    oQue: 'a cerca da idade',
+    valor: () => `de ${numDaProsa(cercaDe(doCampori(CAMPO_IDADE))!.piso)} a ${numDaProsa(cercaDe(doCampori(CAMPO_IDADE))!.teto)} anos`,
+  },
+  {
+    onde: 'o-que-e-um-valor-atipico',
+    oQue: 'a cerca de cima dos acampamentos',
+    valor: () => numDaProsa(cercaDe(doCampori(CAMPO_ACAMPAMENTOS))!.teto),
   },
   {
     onde: 'duas-naturezas-de-atipico',
     oQue: 'o maior número de acampamentos da base',
-    valor: () => String(Math.max(...numerosDe(coluna(CAMPO_ACAMPAMENTOS)))),
+    valor: () => String(Math.max(...numerosDe(doCampori(CAMPO_ACAMPAMENTOS)))),
   },
 
   /* ── Módulo 8: o gráfico que responde ── */
   {
     onde: 'tres-perguntas-tres-desenhos',
-    oQue: 'as inscrições da primeira semana',
-    valor: () => String(porSemana(BASE)[0].inscricoes),
-  },
-  {
-    onde: 'tres-perguntas-tres-desenhos',
-    oQue: 'as inscrições da última semana',
-    valor: () => String(porSemana(BASE)[porSemana(BASE).length - 1].inscricoes),
+    oQue: 'as inscrições da primeira e da última semana',
+    valor: () => {
+      const semanas = porSemana(CAMPORI);
+      return `as ${semanas[0].inscricoes} inscrições da primeira semana do campori viraram as ${semanas[semanas.length - 1].inscricoes} da última`;
+    },
   },
 
   /* ── As questões, que citam os mesmos números ── */
@@ -295,6 +282,9 @@ describe('a base sustenta o que a teoria afirma sobre ela', () => {
   it('a moda da idade descreve muita gente, e a da altura quase ninguém', () => {
     expect(repeticoesDaModa(coluna(CAMPO_IDADE))).toBeGreaterThanOrEqual(10);
     expect(repeticoesDaModa(coluna(CAMPO_ALTURA))).toBeLessThanOrEqual(2);
+    /* No campori a moda da altura se repete um pouco mais, e ainda é um décimo da base. */
+    expect(repeticoesDaModa(doCampori(CAMPO_IDADE))).toBeGreaterThanOrEqual(10);
+    expect(repeticoesDaModa(doCampori(CAMPO_ALTURA))).toBeLessThanOrEqual(4);
   });
 
   it('a média engana numa coluna só, e as outras duas concordam com a mediana', () => {
@@ -302,10 +292,14 @@ describe('a base sustenta o que a teoria afirma sobre ela', () => {
     expect(razao(CAMPO_ACAMPAMENTOS)).toBeGreaterThan(1.25);
     expect(Math.abs(razao(CAMPO_IDADE) - 1)).toBeLessThan(0.1);
     expect(Math.abs(razao(CAMPO_ALTURA) - 1)).toBeLessThan(0.1);
+    const doOutro = (campo: string) => media(doCampori(campo))! / mediana(doCampori(campo))!;
+    expect(doOutro(CAMPO_ACAMPAMENTOS)).toBeGreaterThan(1.25);
+    expect(Math.abs(doOutro(CAMPO_IDADE) - 1)).toBeLessThan(0.1);
+    expect(Math.abs(doOutro(CAMPO_ALTURA) - 1)).toBeLessThan(0.1);
   });
 
-  it('a unidade com mais ausentes é a de melhor taxa, que é o requisito 4 inteiro', () => {
-    const linhas = adesaoPorUnidade(BASE);
+  it.each([['o acampamento', BASE], ['o campori', CAMPORI]] as const)('em %s, a unidade com mais ausentes é a de melhor taxa, que é o requisito 4 inteiro', (_n, base) => {
+    const linhas = adesaoPorUnidade(base);
     const maisFora = linhas.reduce((a, b) => (b.fora > a.fora ? b : a));
     const melhor = linhas.reduce((a, b) => ((b.taxa ?? -1) > (a.taxa ?? -1) ? b : a));
     expect(maisFora.unidade).toBe(melhor.unidade);
@@ -314,12 +308,33 @@ describe('a base sustenta o que a teoria afirma sobre ela', () => {
     expect(linhas.filter(l => l.fora === maisFora.fora)).toHaveLength(1);
   });
 
-  it('a maior unidade não é a mais experiente, que é a lição do módulo 5', () => {
-    const medias = medidaPorGrupo(BASE, CAMPO_UNIDADE, CAMPO_ACAMPAMENTOS, 'MÉDIA');
-    const frequencias = frequenciasDe(coluna(CAMPO_UNIDADE));
+  it.each([['o acampamento', BASE], ['o campori', CAMPORI]] as const)('em %s, a maior unidade não é a mais experiente, que é a lição do módulo 5', (_n, base) => {
+    const medias = medidaPorGrupo(base, CAMPO_UNIDADE, CAMPO_ACAMPAMENTOS, 'MÉDIA');
+    const frequencias = frequenciasDe(colunaDe(base, CAMPO_UNIDADE));
     const maior = frequencias.reduce((a, b) => (b.absoluta > a.absoluta ? b : a)).rotulo;
     const experiente = [...medias.entries()]
       .reduce((a, b) => ((b[1] ?? -1) > (a[1] ?? -1) ? b : a))[0];
     expect(maior).not.toBe(experiente);
+  });
+});
+
+describe('o campori não é o acampamento do laboratório', () => {
+  it('nenhuma pessoa coincide', () => {
+    const doLab = new Set(colunaDe(BASE, 'nome'));
+    const daqui = colunaDe(CAMPORI, 'nome');
+    expect(daqui.length).toBeGreaterThan(40);
+    expect(daqui.filter(n => doLab.has(n))).toEqual([]);
+  });
+
+  it('a teoria não cita os números nem as pessoas do acampamento', () => {
+    const teoria = topicos().map(t => textoDoTopico(t.id)).join('\n');
+    const proibidos = ['12,40', '2,85', '4,71', '81,25', '1,05', '1,58', '3,41', '1,43', 'Davi', 'Marina', 'Felipe',
+      'Matheus', 'quarenta e oito', '48'];
+    expect(proibidos.filter(p => teoria.includes(p))).toEqual([]);
+  });
+
+  it('onze tópicos ensinam um gesto na planilha, e nenhum guarda o quadro de texto', () => {
+    expect(topicos().filter(t => t.telas?.length)).toHaveLength(11);
+    expect(topicos().some(t => t.exemplo)).toBe(false);
   });
 });

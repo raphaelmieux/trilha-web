@@ -1805,8 +1805,10 @@ export function contextoInicial(
   blocos: BlocoDeContas[] = [BLOCO_DAS_MEDIDAS],
   comElenco = false,
   comPerguntas = false,
+  /* Outra base nas mesmas abas: é o que a teoria fotografa, com outra inscrição
+     do clube, para as telas não mostrarem os números que as lições cobram. */
+  base: Formulario = baseDoAcampamento(),
 ): ContextoDaAnalise {
-  const base = baseDoAcampamento();
   const caderno = cadernoDaAnalise(base, blocos, comElenco, comPerguntas);
   return {
     base, caderno, cadernoAntes: caderno, blocos,
@@ -1911,8 +1913,8 @@ export const LICOES_DA_CC_ES009: Record<LicaoDaCcEs009, LicaoDeAnalise> = {
  * caminho prova o fim e não prova o caminho — é o que deixou a lição de
  * assinar da CC-ES004 impossível de vencer.
  */
-export function comAsMedidasEscritas(): ContextoDaAnalise {
-  const c = contextoInicial([BLOCO_DAS_MEDIDAS, BLOCO_DO_ENGANO]);
+export function comAsMedidasEscritas(base: Formulario = baseDoAcampamento()): ContextoDaAnalise {
+  const c = contextoInicial([BLOCO_DAS_MEDIDAS, BLOCO_DO_ENGANO], false, false, base);
   let p = abaDe(c.caderno, ABA_CALCULOS);
   for (const medida of MEDIDAS) {
     for (const campo of COLUNAS_MEDIDAS) {
