@@ -19,7 +19,7 @@
 import { Link2, PlusCircle, RefreshCw, Send, Timer } from 'lucide-react';
 import { Cartao, CampoLongo, EscolhaMultipla } from './caderno';
 import {
-  DOSSIE_DAS_DUAS, type ContextoDoProjeto,
+  DOSSIE_DAS_DUAS, type ContextoDoProjeto, type ConteudoDoConjunto,
   CHAVE_DA_PROPAGACAO, CHAVE_DO_DOSSIE_VELHO,
 } from './metasDaCcEs012';
 import { CAMPO_QUANTOS, INSCRICOES_DA_FEIRA } from './projetoDaFeira';
@@ -34,6 +34,8 @@ export interface PropsDaSuperficie {
   ctx: ContextoDoProjeto;
   mudar: (f: (c: ContextoDoProjeto) => ContextoDoProjeto) => void;
   avisar: (texto: string) => void;
+  /** O que é deste conjunto: os nomes, a seção que se escreve, o que chega. */
+  conjunto: ConteudoDoConjunto;
 }
 
 const CINCO_PECAS: { id: TipoDePeca; rotulo: string }[] =

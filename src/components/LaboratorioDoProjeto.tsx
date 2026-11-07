@@ -9,8 +9,8 @@ import { CSS_DO_LEITOR } from '../labs/leitorDePdf';
 import { CSS_DA_NUVEM } from '../labs/nuvem';
 import { CSS_DO_BLOCO_DE_NOTAS } from '../labs/blocoDeNotas';
 import {
-  LICOES_DA_CC_ES012, contextoDe, metasDa,
-  type ContextoDoProjeto, type LicaoDaCcEs012, type ProgramaDaLicao,
+  CONTEUDO_DA_FEIRA, LICOES_DA_CC_ES012, contextoDe, metasDa,
+  type ContextoDoProjeto, type ConteudoDoConjunto, type LicaoDaCcEs012, type ProgramaDaLicao,
 } from '../labs/metasDaCcEs012';
 import {
   ConjuntoInteiro, PropostaDoConjunto, type PropsDaSuperficie,
@@ -111,16 +111,29 @@ const FOLHA: Record<ProgramaDaLicao, string> = {
   plataforma: '',
 };
 
-export default function LaboratorioDoProjeto({ vereda, licao: daLicao, aoVencer, aoSair }: {
+/**
+ * Outro conjunto aberto nas mesmas janelas.
+ *
+ * É o que a teoria fotografa: as telas mostram o gesto num conjunto do mesmo
+ * clube, e não na feira, cujos consertos são as respostas das lições. Sem
+ * `outra`, abre a feira, no estado de partida da lição.
+ */
+export interface OutroConjunto {
+  inicial: () => ContextoDoProjeto;
+  conjunto: ConteudoDoConjunto;
+}
+
+export default function LaboratorioDoProjeto({ vereda, licao: daLicao, aoVencer, aoSair, outra }: {
   vereda: Vereda;
   licao: Extract<LicaoDeVereda, { tipo: 'projeto' }>;
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  outra?: OutroConjunto;
 }) {
   const licao = daLicao.licao;
-  const [ctx, setCtx] = useState<ContextoDoProjeto>(
-    () => contextoDe(LICOES_DA_CC_ES012[licao].projeto),
-  );
+  const partida = () => (outra ? outra.inicial() : contextoDe(LICOES_DA_CC_ES012[licao].projeto));
+  const conjunto = outra?.conjunto ?? CONTEUDO_DA_FEIRA;
+  const [ctx, setCtx] = useState<ContextoDoProjeto>(partida);
   const [aviso, setAviso] = useState('');
   const [salvando, setSalvando] = useState(false);
   /*
@@ -146,7 +159,7 @@ export default function LaboratorioDoProjeto({ vereda, licao: daLicao, aoVencer,
   const mudar = (f: (c: ContextoDoProjeto) => ContextoDoProjeto) => setCtx(f);
 
   const recomecar = () => {
-    setCtx(contextoDe(LICOES_DA_CC_ES012[licao].projeto));
+    setCtx(partida());
     setVida(v => v + 1);
     setAviso('');
   };
@@ -196,7 +209,7 @@ export default function LaboratorioDoProjeto({ vereda, licao: daLicao, aoVencer,
     >
       {FOLHA[programa] !== '' && <style>{FOLHA[programa]}</style>}
       {FOLHA_EXTRA[licao] && <style>{FOLHA_EXTRA[licao]}</style>}
-      <Superficie key={`${licao}-${vida}`} ctx={ctx} mudar={mudar} avisar={avisar} />
+      <Superficie key={`${licao}-${vida}`} ctx={ctx} mudar={mudar} avisar={avisar} conjunto={conjunto} />
     </LaboratorioEmTelaCheia>
   );
 }

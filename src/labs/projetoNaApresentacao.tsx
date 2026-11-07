@@ -15,19 +15,18 @@ import {
 } from './powerpoint';
 import { DesenhoDoGrafico } from './excel';
 import { comGraficoVinculado, comIdentidadeNoMestre } from './metasDaCcEs012';
-import { GRAFICO_DA_FEIRA } from './projetoDaFeira';
 import { O_QUE_CADA_UM_FAZ, comoChegou } from './projetoDocumental';
 import type { PropsDaSuperficie } from './projetoNaPlataforma';
 
 const USAVEIS = ['Página Inicial', 'Inserir', 'Design', 'Exibir'];
 
-export function DivulgacaoNoPowerPoint({ ctx, mudar, avisar }: PropsDaSuperficie) {
+export function DivulgacaoNoPowerPoint({ ctx, mudar, avisar, conjunto }: PropsDaSuperficie) {
   const [guia, setGuia] = useState('Página Inicial');
   const [atual, setAtual] = useState(0);
   const [noMestre, setNoMestre] = useState(false);
   const ap = ctx.p.apresentacao;
   const slide = ap.slides[atual];
-  const grafico = ap.slides.find(s => s.grafico?.id === GRAFICO_DA_FEIRA)?.grafico;
+  const grafico = ap.slides.find(s => s.grafico?.id === conjunto.grafico)?.grafico;
 
   const desenharGrafico = (g: { retrato: { rotulo: string; valor: number }[] }) => (
     <DesenhoDoGrafico tipo="colunas" pontos={g.retrato} altura={78} />
@@ -36,7 +35,7 @@ export function DivulgacaoNoPowerPoint({ ctx, mudar, avisar }: PropsDaSuperficie
   return (
     <div className="pp-janela">
       <BarraDeTituloDoPowerPoint
-        arquivo="feira-divulgacao-2026-07-04-v02"
+        arquivo={conjunto.arquivos.apresentacao}
         aoAvisar={avisar}
         aoNaoFazParte={() => avisar('Isto existe no programa de verdade, e não faz parte deste exercício.')}
       />
@@ -62,8 +61,8 @@ export function DivulgacaoNoPowerPoint({ ctx, mudar, avisar }: PropsDaSuperficie
             <BotaoDoPowerPoint
               dica="Fontes e cor do conjunto" rotulo="Identidade" empilhado
               aoClicar={() => {
-                mudar(c => ({ ...c, p: { ...c.p, apresentacao: comIdentidadeNoMestre(c.p.apresentacao) } }));
-                avisar('O mestre vestiu a identidade, e os quatro slides mudaram de uma vez.');
+                mudar(c => ({ ...c, p: { ...c.p, apresentacao: comIdentidadeNoMestre(c.p.apresentacao, c.p.identidade) } }));
+                avisar(`O mestre vestiu a identidade, e os ${ap.slides.length} slides mudaram de uma vez.`);
               }}
             >
               <Palette className="w-4 h-4" />
@@ -77,7 +76,7 @@ export function DivulgacaoNoPowerPoint({ ctx, mudar, avisar }: PropsDaSuperficie
               dica="Gráfico com vínculo para a planilha de controle"
               rotulo="Gráfico" empilhado
               aoClicar={() => {
-                mudar(c => ({ ...c, p: { ...c.p, apresentacao: comGraficoVinculado(c.p.apresentacao) } }));
+                mudar(c => ({ ...c, p: { ...c.p, apresentacao: comGraficoVinculado(c.p.apresentacao, conjunto) } }));
                 avisar('O gráfico passou a ler a planilha, e já mostra as unidades de agora.');
               }}
             >
@@ -126,8 +125,8 @@ export function DivulgacaoNoPowerPoint({ ctx, mudar, avisar }: PropsDaSuperficie
       {grafico && (
         <div className="pp-status">
           <span>
-            Gráfico dos estandes: {O_QUE_CADA_UM_FAZ[comoChegou(ctx.p, {
-              id: 'x', peca: 'apresentacao', alvo: GRAFICO_DA_FEIRA,
+            {conjunto.nomeDoGrafico}: {O_QUE_CADA_UM_FAZ[comoChegou(ctx.p, {
+              id: 'x', peca: 'apresentacao', alvo: conjunto.grafico,
               como: grafico.como, de: { planilha: '', linha: 0, coluna: 0 }, retrato: 0,
             })].naoFaz}
           </span>

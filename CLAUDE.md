@@ -1094,6 +1094,33 @@ laboratório: no diálogo de versões anteriores o rótulo encostava na data —
 "domingo28/10" —, porque `.win-bt` não é flex e o `space-between` escrito no
 botão nunca valeu.
 
+A CC-ES012 fotografa o conjunto do Dia de Portas Abertas, de
+`src/exemplos/conjuntoDasPortas.ts` — o mesmo domingo que a CC-ES011
+fotografa, agora com o regulamento, a planilha de controle, a inscrição de
+barraca, a apresentação e as pastas dele —, e não a feira: lá a seção "Onde
+está cada peça", os quatro nomes de pasta errados, o 240 digitado, o "seis" e
+o "5 ou 6" e o Ronaldo na pasta da tesouraria são as respostas. As janelas
+tinham a feira escrita dentro — o nome do arquivo na barra de título, a seção
+que "Seção nova" escreve, as respostas que chegam depois de partir a
+pergunta, os nomes das pastas no padrão —, e um clique da foto escreveria a
+seção da feira no regulamento do outro evento. `ConteudoDoConjunto`, em
+`metasDaCcEs012.ts`, é o que é da feira, com ela por padrão em toda
+derivação; `LaboratorioDoProjeto` ganhou `outra`, e
+`exemplosDoProjetoDocumental.test.ts` reprova se os dois conjuntos dividirem
+uma linha, uma resposta, um slide ou uma pasta.
+
+A primeira captura achou três defeitos do laboratório, os três invisíveis no
+jsdom. **Os botões do repositório e os campos das instruções nunca
+apareceram**: moravam dentro da régua de espaço usado da lateral, que tem
+quatro pixels de altura e esconde o que transborda — as lições 8 e 9 tinham
+os gestos no DOM e nada na tela. Hoje é `.nv-extra`, e os campos da
+plataforma ali dizem a própria cor, porque pousam no branco da nuvem. **A
+contagem que atravessa a aba saía zero na grade**: o Excel da CC-ES012 não
+passava a pasta à `GradeDoExcel`, que lia `Respostas!B2:B20` contra a própria
+aba — a tarefa fechava pelo motor e a célula mostrava 0 ao lado de seis
+respostas. E **a régua do dossiê dizia "Página 0 de 5"**, com as origens no
+id do motor, sem acento.
+
 **No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
 Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
 escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela
@@ -5260,6 +5287,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/exemplosDosDados.test.ts` | legenda da teoria da CC-ES008 que a encomenda da camiseta não devolve, ou a encomenda dividindo pessoa, telefone ou endereço com o acampamento do laboratório |
 | `src/components/LaboratorioDeDados.test.tsx` | Visualizar que empilha a prévia embaixo das perguntas, ou faixa de validação que vaza do diálogo |
 | `src/curriculum/exemplosDasApresentacoes.test.ts` | contraste, palavras, pixels ou megabytes da teoria da CC-ES011 que o motor não devolve, ou a feira dividindo um título ou um tópico com o acampamento do laboratório |
+| `src/curriculum/exemplosDoProjetoDocumental.test.ts` | número, página ou pasta da teoria da CC-ES012 que o conjunto do Dia de Portas Abertas não devolve, ou o conjunto dividindo uma linha, uma resposta, um slide ou uma pasta com a feira do laboratório |
+| `src/components/LaboratorioDoProjeto.test.tsx` | painel do repositório preso na régua de espaço usado, contagem entre abas que a grade mostra zero, ou régua do dossiê contando a página do zero |
 | `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |

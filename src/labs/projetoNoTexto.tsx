@@ -17,7 +17,7 @@ import {
 } from './word';
 import { useEdicaoDoWord } from './useEdicaoDoWord';
 import { titulosDoDoc } from './documento';
-import { BLOCOS_DO_MAPA, comIdentidadeNoDocumento } from './metasDaCcEs012';
+import { comIdentidadeNoDocumento } from './metasDaCcEs012';
 import { FAMILIA_DA_FONTE } from './projetoDocumental';
 import type { PropsDaSuperficie } from './projetoNaPlataforma';
 
@@ -34,18 +34,18 @@ const USAVEIS = ['Início', 'Inserir', 'Referências', 'Revisão', 'Exibir'];
 
 /* ── Módulo 2: o regulamento ──────────────────────────────────────────────── */
 
-export function RegulamentoNoWord({ ctx, mudar, avisar }: PropsDaSuperficie) {
+export function RegulamentoNoWord({ ctx, mudar, avisar, conjunto }: PropsDaSuperficie) {
   const [guia, setGuia] = useState('Início');
   const doc = ctx.p.documento;
   /* O regulamento se edita com o cursor, como todo Word da plataforma: o que
      a lição cobra são os comandos do conjunto, e o texto continua sendo texto
      em que se escreve. */
   const edicao = useEdicaoDoWord(doc, novo => mudar(c => ({ ...c, p: { ...c.p, documento: novo } })));
-  const temMapa = doc.blocos.some(b => b.id === 'b-mapa');
+  const temMapa = doc.blocos.some(b => b.id === conjunto.blocosDoMapa[1]?.id);
 
   return (
     <div className="wd-janela">
-      <BarraDeTituloDoWord documento="regulamento-da-feira-2026-07-02-v03" aoAvisar={avisar}
+      <BarraDeTituloDoWord documento={conjunto.arquivos.regulamento} aoAvisar={avisar}
         aoDesfazer={edicao.podeDesfazer ? edicao.desfazer : undefined}
         aoRefazer={edicao.podeRefazer ? edicao.refazer : undefined} />
       <GuiasDoWord atual={guia} usaveis={USAVEIS} aoTrocar={setGuia} aoAvisar={avisar} />
@@ -97,7 +97,7 @@ export function RegulamentoNoWord({ ctx, mudar, avisar }: PropsDaSuperficie) {
                       },
                     },
                   }));
-                  avisar('Título 1 recebeu a cor do conjunto, e os cinco títulos mudaram de uma vez.');
+                  avisar(`Título 1 recebeu a cor do conjunto, e os ${doc.blocos.filter(b => b.tipo === 'paragrafo' && b.estilo === 'Título 1').length} títulos mudaram de uma vez.`);
                 }}
               >
                 <Palette className="w-4 h-4" />
@@ -106,7 +106,7 @@ export function RegulamentoNoWord({ ctx, mudar, avisar }: PropsDaSuperficie) {
                 dica="Modificar Título 1: fonte"
                 rotulo="Fonte do título" empilhado
                 aoClicar={() => {
-                  mudar(c => ({ ...c, p: { ...c.p, documento: comIdentidadeNoDocumento(c.p.documento) } }));
+                  mudar(c => ({ ...c, p: { ...c.p, documento: comIdentidadeNoDocumento(c.p.documento, c.p.identidade.cor) } }));
                   avisar('Os títulos vestiram a identidade do conjunto.');
                 }}
               >
@@ -119,7 +119,7 @@ export function RegulamentoNoWord({ ctx, mudar, avisar }: PropsDaSuperficie) {
         {guia === 'Inserir' && (
           <GrupoDaFaixa nome="Texto">
             <BotaoDaFaixa
-              dica="Escrever a seção Onde está cada peça"
+              dica="Escrever a seção que aponta para as outras peças"
               rotulo="Seção nova" empilhado
               aoClicar={() => {
                 if (temMapa) { avisar('A seção já está no documento.'); return; }
@@ -127,7 +127,7 @@ export function RegulamentoNoWord({ ctx, mudar, avisar }: PropsDaSuperficie) {
                   ...c,
                   p: {
                     ...c.p,
-                    documento: { ...c.p.documento, blocos: [...c.p.documento.blocos, ...BLOCOS_DO_MAPA] },
+                    documento: { ...c.p.documento, blocos: [...c.p.documento.blocos, ...conjunto.blocosDoMapa] },
                   },
                 }));
                 avisar('A seção entrou no fim do documento. O sumário continua com o que leu antes.');

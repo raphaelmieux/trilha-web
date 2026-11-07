@@ -34,7 +34,7 @@ import type { PropsDaSuperficie } from './projetoNaPlataforma';
 
 const USAVEIS = ['Página Inicial', 'Inserir', 'Dados', 'Revisão', 'Exibir'];
 
-export function ControleNoExcel({ ctx, mudar, avisar }: PropsDaSuperficie) {
+export function ControleNoExcel({ ctx, mudar, avisar, conjunto }: PropsDaSuperficie) {
   const [hist, setHist] = useState<Historico<Caderno>>(() => historicoDe(ctx.p.controle));
   const cad = hist.presente;
   const p = planilhaAtiva(cad);
@@ -91,7 +91,7 @@ export function ControleNoExcel({ ctx, mudar, avisar }: PropsDaSuperficie) {
 
   return (
     <div className="pl-janela">
-      <BarraDeTituloDoExcel arquivo="controle-da-feira-2026-07-02-v01" aoAvisar={avisar} />
+      <BarraDeTituloDoExcel arquivo={conjunto.arquivos.controle} aoAvisar={avisar} />
       <GuiasDoExcel atual={guia} usaveis={USAVEIS} aoTrocar={setGuia} aoAvisar={avisar} />
 
       <div className="pl-faixa">
@@ -134,6 +134,7 @@ export function ControleNoExcel({ ctx, mudar, avisar }: PropsDaSuperficie) {
 
       <GradeDoExcel
         {...g.props}
+        caderno={cad}
         aoArrastarBorda={g.aoArrastarBorda}
         aoAjustarAoConteudo={g.aoAjustarAoConteudo}
       />
