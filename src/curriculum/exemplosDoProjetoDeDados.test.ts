@@ -6,14 +6,24 @@ import {
   CORRELACAO_ESPERADA, LICOES_DA_CC_ES013, MEDIDAS, esperadoDaMedida, esperadoDoGrupo,
 } from '../labs/metasDaCcEs013';
 import {
-  INDICE, MEMBROS, MODOS, linhasBrutas, type Modo,
+  MEMBROS, type Modo,
 } from '../labs/chamadaDoClube';
 import { abaTratada, linhasDa, MINIMO_DE_REGISTROS } from '../labs/projetoDeDados';
-import { mostrarNumero, numeroDoTexto } from '../labs/formulas';
+import { mostrar, mostrarNumero, numeroDoTexto } from '../labs/formulas';
+import { contaDaSelecao, planilhaPorNome, valorCalculado, type Caderno } from '../labs/planilha';
+import {
+  DEFEITOS_DO_SONO, GRUPOS, RESPONDENTES, cadernoDoSono, linhasBrutasDoSono, type EstadoDoSono,
+} from '../exemplos/telaESono';
 
 /*
   Os números que a teoria e as questões da CC-ES013 citam, conferidos contra a
-  base.
+  base de onde eles saem.
+
+  As **questões** falam da chamada do semestre, que é a base do laboratório, e
+  são conferidas contra ela. A **teoria** fala da base do tempo de tela e do
+  sono (`src/exemplos/telaESono.ts`), que é a que as telas fotografam: os
+  números da chamada são as respostas das lições, e a teoria que os citasse
+  entregaria o gabarito. A última parte reprova se a teoria voltar a citá-los.
 
   É a trava de `exemplosDaAnalise.test.ts`, pelo motivo escrito lá: escrever
   de cabeça o que uma conta devolve erra por pouco e com frequência, nada
@@ -33,7 +43,7 @@ const topicos = (): TopicoDeVereda[] =>
 function textoDoTopico(id: string): string {
   const t = topicos().find(x => x.id === id);
   if (!t) throw new Error(`O tópico ${id} sumiu da vereda.`);
-  return [t.resumo, ...t.explicacao, t.exemplo, t.atencao ?? ''].join('\n');
+  return [t.resumo, ...t.explicacao, t.exemplo ?? '', t.atencao ?? '', ...(t.telas ?? []).flatMap(x => [x.legenda, x.descricao])].join('\n');
 }
 
 /** Tudo o que uma questão escreve: enunciado, alternativas, os porquês e a explicação. */
@@ -45,29 +55,9 @@ function textoDaQuestao(id: string): string {
   throw new Error(`A questão ${id} sumiu da vereda.`);
 }
 
-/*
-  Só a prosa do tópico, sem o exemplo. O mesmo número costuma aparecer nos
-  dois — no parágrafo e na tabela embaixo —, e a busca no texto inteiro
-  aprovaria o parágrafo errado enquanto a tabela estivesse certa.
-*/
-function prosaDoTopico(id: string): string {
-  const t = topicos().find(x => x.id === id);
-  if (!t) throw new Error(`O tópico ${id} sumiu da vereda.`);
-  return t.explicacao.join('\n');
-}
-
 const tela = (n: number) => mostrarNumero(n);
 const grupo = (m: Modo) => esperadoDoGrupo(m);
 const daMedida = (i: number) => tela(esperadoDaMedida(MEDIDAS[i]));
-
-/** A média da distância que a bruta dá, com o 1.250 dentro e o texto de fora. */
-const mediaDaBruta = () => {
-  const lidas = linhasBrutas().flatMap(l => {
-    const n = numeroDoTexto(l[INDICE.distancia]);
-    return n === null ? [] : [n];
-  });
-  return lidas.reduce((s, x) => s + x, 0) / lidas.length;
-};
 
 /** A coluna da distância da tratada como a lição 4 a recebe: preenchidas e números. */
 const distanciaNaLicao4 = () => {
@@ -84,71 +74,142 @@ const semQuestionario = MEMBROS.length - comQuestionario;
   partir da conta, e nunca à mão.
 */
 const AFIRMACOES: { onde: string; texto: () => string; deve: () => string }[] = [
-  /* As medidas, no tópico e nas questões que as citam. */
-  ...[0, 1, 2, 3, 4].map(i => ({ onde: 'medidas-sobre-a-tratada', texto: () => textoDoTopico('medidas-sobre-a-tratada'), deve: () => daMedida(i) })),
-  { onde: 'media-ou-mediana', texto: () => textoDoTopico('media-ou-mediana'), deve: () => `${daMedida(3)} km` },
-  { onde: 'media-ou-mediana', texto: () => textoDoTopico('media-ou-mediana'), deve: () => `${daMedida(4)} km` },
-  { onde: 'media-ou-mediana (prosa)', texto: () => prosaDoTopico('media-ou-mediana'), deve: () => `distância média é **${daMedida(3)} km**, e a mediana é **${daMedida(4)} km**` },
-  { onde: 'media-ou-mediana (presença)', texto: () => textoDoTopico('media-ou-mediana'), deve: () => `${daMedida(0)} e ${daMedida(1)}` },
+  /* As medidas. */
   { onde: 'ES13-M5-Q4', texto: () => textoDaQuestao('ES13-M5-Q4'), deve: () => `${daMedida(3)} km e a mediana é ${daMedida(4)} km` },
   { onde: 'ES13-M5-Q5', texto: () => textoDaQuestao('ES13-M5-Q5'), deve: () => `média ${daMedida(0)} e a mediana ${daMedida(1)}` },
   { onde: 'ES13-M5-Q2', texto: () => textoDaQuestao('ES13-M5-Q2'), deve: () => `${daMedida(1)} na tratada` },
 
-  /* Os grupos: a tabela inteira do tópico, linha por linha. */
-  ...MODOS.map(m => ({
-    onde: `a-media-de-cada-grupo (${m})`,
-    texto: () => textoDoTopico('a-media-de-cada-grupo'),
-    deve: () => `${String(grupo(m).quantos).padStart(2, ' ')}`,
-  })),
-  ...MODOS.flatMap(m => [
-    { onde: `a-media-de-cada-grupo (${m}, presença)`, texto: () => textoDoTopico('a-media-de-cada-grupo'), deve: () => tela(grupo(m).presencas) },
-    { onde: `a-media-de-cada-grupo (${m}, distância)`, texto: () => textoDoTopico('a-media-de-cada-grupo'), deve: () => tela(grupo(m).distancia) },
-  ]),
-  { onde: 'a-media-de-cada-grupo (soma)', texto: () => textoDoTopico('a-media-de-cada-grupo'), deve: () => `somam ${comQuestionario}` },
+  /* Os grupos. */
   ...(['Carona', 'Ônibus'] as Modo[]).flatMap(m => [
-    { onde: `o-que-a-comparacao-mostra (${m})`, texto: () => textoDoTopico('o-que-a-comparacao-mostra'), deve: () => `${tela(grupo(m).distancia)} km` },
-    { onde: `o-que-a-comparacao-mostra (${m})`, texto: () => textoDoTopico('o-que-a-comparacao-mostra'), deve: () => tela(grupo(m).presencas) },
     { onde: `ES13-M6-Q2 (${m})`, texto: () => textoDaQuestao('ES13-M6-Q2'), deve: () => tela(grupo(m).presencas) },
     { onde: `ES13-M6-Q2 (${m}, km)`, texto: () => textoDaQuestao('ES13-M6-Q2'), deve: () => tela(grupo(m).distancia) },
     { onde: `ES13-M6-Q7 (${m})`, texto: () => textoDaQuestao('ES13-M6-Q7'), deve: () => tela(grupo(m).presencas) },
   ]),
-  ...(['Carona', 'Ônibus'] as Modo[]).flatMap(m => [
-    { onde: `o-que-a-comparacao-mostra (prosa, ${m})`, texto: () => prosaDoTopico('o-que-a-comparacao-mostra'), deve: () => `**${tela(grupo(m).distancia)} km**` },
-    { onde: `o-que-a-comparacao-mostra (prosa, ${m})`, texto: () => prosaDoTopico('o-que-a-comparacao-mostra'), deve: () => `**${tela(grupo(m).presencas)}**` },
-  ]),
-  { onde: 'medidas-sobre-a-tratada (prosa)', texto: () => prosaDoTopico('medidas-sobre-a-tratada'), deve: () => `**${daMedida(0)}** reuniões de 20, a mediana é **${daMedida(1)}**, e o desvio padrão é **${daMedida(2)}**` },
-  { onde: 'o-que-a-comparacao-mostra (bicicleta)', texto: () => textoDoTopico('o-que-a-comparacao-mostra'), deve: () => (grupo('Bicicleta').quantos === 4 ? 'quatro pessoas' : '?') },
   { onde: 'ES13-M6-Q4', texto: () => textoDaQuestao('ES13-M6-Q4'), deve: () => `somam ${comQuestionario} pessoas, e o clube tem ${MEMBROS.length}` },
   { onde: 'ES13-M9-Q4 (ônibus)', texto: () => textoDaQuestao('ES13-M9-Q4'), deve: () => (grupo('Ônibus').quantos === 20 ? 'vinte' : '?') },
   { onde: 'ES13-M9-Q3', texto: () => textoDaQuestao('ES13-M9-Q3'), deve: () => `${tela(grupo('Ônibus').presencas)} de 20` },
 
   /* A correlação. */
-  ...['a-dispersao-da-base-inteira', 'o-que-a-relacao-nao-prova'].map(id => ({
-    onde: id, texto: () => textoDoTopico(id), deve: () => tela(CORRELACAO_ESPERADA()),
-  })),
   { onde: 'ES13-M7-Q3', texto: () => textoDaQuestao('ES13-M7-Q3'), deve: () => tela(CORRELACAO_ESPERADA()) },
   { onde: 'ES13-M9-Q4 (r)', texto: () => textoDaQuestao('ES13-M9-Q4'), deve: () => tela(CORRELACAO_ESPERADA()) },
-  { onde: 'a-dispersao-da-base-inteira (pontos)', texto: () => textoDoTopico('a-dispersao-da-base-inteira'), deve: () => `${comQuestionario} pontos` },
   { onde: 'ES13-M7-Q2', texto: () => textoDaQuestao('ES13-M7-Q2'), deve: () => `${MEMBROS.length} pessoas, e a dispersão mostra ${comQuestionario} pontos` },
 
   /* O tamanho da base, e o que excluir faria com ela. */
-  { onde: 'a-ausencia', texto: () => textoDoTopico('a-ausencia'), deve: () => `de ${MEMBROS.length} para ${MEMBROS.length - semQuestionario}` },
   { onde: 'ES13-M4-Q5', texto: () => textoDaQuestao('ES13-M4-Q5'), deve: () => `${MEMBROS.length - semQuestionario}, abaixo de ${MINIMO_DE_REGISTROS}` },
-  { onde: 'a-base-que-responde', texto: () => textoDoTopico('a-base-que-responde'), deve: () => `${linhasBrutas().length} registros, 6 campos` },
-  { onde: 'a-linha-repetida', texto: () => textoDoTopico('a-linha-repetida'), deve: () => `${MEMBROS.length} valores exclusivos` },
 
-  /* O 1.250, e a régua do Excel na lição 4. */
-  { onde: 'valor-impossivel', texto: () => textoDoTopico('valor-impossivel'), deve: () => `perto de ${Math.round(mediaDaBruta())}` },
-  { onde: 'medidas-sobre-a-tratada (bruta)', texto: () => textoDoTopico('medidas-sobre-a-tratada'), deve: () => `perto de ${Math.round(mediaDaBruta())}` },
+  /* A régua do Excel na lição 4. */
   { onde: 'ES13-M4-Q2', texto: () => textoDaQuestao('ES13-M4-Q2'), deve: () => `Contagem ${distanciaNaLicao4().preenchidas}, e a Média leva só ${distanciaNaLicao4().numeros}` },
 ];
 
-describe('os números da CC-ES013 saem da base', () => {
-  it('a tabela de afirmações tem o tamanho que cobre a vereda', () => {
-    expect(AFIRMACOES.length).toBeGreaterThanOrEqual(40);
+describe('os números das questões da CC-ES013 saem da chamada do laboratório', () => {
+  it('a tabela de afirmações tem o tamanho que cobre as questões', () => {
+    expect(AFIRMACOES.length).toBeGreaterThanOrEqual(15);
   });
 
   it.each(AFIRMACOES.map((a, i) => [i, a.onde, a] as const))('%i: %s', (_i, onde, a) => {
     expect(a.texto(), `${onde} devia dizer "${a.deve()}"`).toContain(a.deve());
+  });
+});
+
+/* ── A teoria: a base do tempo de tela e do sono ─────────────────────────── */
+
+const naAba = (cad: Caderno, nome: string) => planilhaPorNome(cad, nome)!;
+/** Escreve as fórmulas na aba e devolve o que cada célula mostra. */
+const conta = (cad: Caderno, aba: string, formulas: [number, number, string][]) => {
+  let p = naAba(cad, aba);
+  for (const [l, c, f] of formulas) {
+    p = { ...p, celulas: p.celulas.map((linha, i) => (i === l ? linha.map((x, j) => (j === c ? { ...x, texto: f } : x)) : linha)) };
+  }
+  const k = { ...cad, planilhas: cad.planilhas.map(q => (q.nome === aba ? p : q)) };
+  return (l: number, c: number) => mostrar(valorCalculado(p, l, c, k));
+};
+const FX = (c: string, abs = false) => (abs ? `Tratada!$${c}$2:$${c}$63` : `Tratada!${c}2:${c}63`);
+const caderno = (estado: EstadoDoSono) => cadernoDoSono(estado);
+
+describe('as telas da CC-ES013 contam a base do sono que fotografam', () => {
+  it('onze tópicos ensinam um gesto, e os da proposta, da conclusão e da apresentação ficam em prosa', () => {
+    expect(topicos().filter(t => t.telas?.length)).toHaveLength(11);
+    for (const id of ['a-pergunta-antes-do-dado', 'origem-e-data', 'tres-partes-duas-paginas', 'dez-minutos-para-quem-decide']) {
+      expect(topicos().find(t => t.id === id)?.telas).toBeUndefined();
+    }
+    expect(topicos().some(t => t.exemplo)).toBe(false);
+  });
+
+  it('as seis medidas da tratada', () => {
+    const v = conta(caderno('calculos'), 'Cálculos', [
+      [1, 1, `=MÉDIA(${FX('E')})`], [2, 1, `=MED(${FX('E')})`], [3, 1, `=DESVPADP(${FX('E')})`],
+      [4, 1, `=MÉDIA(${FX('F')})`], [5, 1, `=MED(${FX('F')})`], [6, 1, `=DESVPADP(${FX('F')})`],
+    ]);
+    expect([1, 2, 3, 4, 5, 6].map(l => v(l, 1))).toEqual(['3,87', '3,50', '1,84', '8,41', '8,50', '0,89']);
+    expect(textoDoTopico('medidas-sobre-a-tratada')).toMatch(/\*\*8,41\*\*[\s\S]*\*\*8,5\*\*[\s\S]*\*\*0,89\*\*/);
+    expect(textoDoTopico('medidas-sobre-a-tratada')).toMatch(/3,87, mediana 3,50 e desvio 1,84; o sono, 8,41, 8,50 e 0,89/);
+    expect(textoDoTopico('media-ou-mediana')).toMatch(/\*\*3,87 horas\*\*[\s\S]*\*\*3,5 horas\*\*/);
+  });
+
+  it('os três grupos, e os 59 que responderam', () => {
+    const v = conta(caderno('grupos'), 'Grupos', [1, 2, 3].flatMap(l => [
+      [l, 1, `=CONT.SE(${FX('D', true)};A${l + 1})`],
+      [l, 2, `=SOMASE(${FX('D', true)};A${l + 1};${FX('E', true)})/B${l + 1}`],
+      [l, 3, `=SOMASE(${FX('D', true)};A${l + 1};${FX('F', true)})/B${l + 1}`],
+    ] as [number, number, string][]));
+    expect([1, 2, 3].map(l => [v(l, 1), v(l, 2), v(l, 3)]))
+      .toEqual([['28', '4,29', '7,75'], ['27', '3,87', '8,91'], ['4', '1', '9,63']]);
+    expect(GRUPOS.reduce((t, g) => t + RESPONDENTES.filter(r => r.celular === g).length, 0)).toBe(59);
+    const texto = textoDoTopico('a-media-de-cada-grupo');
+    expect(texto).toMatch(/28, com 4,29 h de tela e 7,75 h de sono; fora do quarto, 27, com 3,87 e 8,91; sem celular, 4, com 1 e 9,63/);
+    expect(texto).toContain('somam 59');
+    expect(textoDoTopico('o-que-a-comparacao-mostra')).toMatch(/\*\*4,29 horas\*\*[\s\S]*\*\*3,87\*\*[\s\S]*\*\*7,75\*\*[\s\S]*\*\*8,91\*\*/);
+  });
+
+  it('a correlação é -0,71, com 59 pontos', () => {
+    const v = conta(caderno('calculos'), 'Cálculos', [[1, 1, `=CORREL(${FX('E')};${FX('F')})`]]);
+    expect(v(1, 1)).toBe('-0,71');
+    for (const id of ['a-dispersao-da-base-inteira', 'o-que-a-relacao-nao-prova']) expect(textoDoTopico(id)).toContain('-0,71');
+    expect(textoDoTopico('a-dispersao-da-base-inteira')).toContain('59 pontos');
+  });
+
+  it('a régua da coluna da tela: 60, 250 e 4,46 antes; 264 e 4,40 depois', () => {
+    const antesDoConserto = naAba(caderno('grafia'), 'Tratada');
+    const antes = contaDaSelecao(antesDoConserto, { l1: 1, c1: 4, l2: 63, c2: 4 })!;
+    expect([antes.contagem, mostrarNumero(antes.soma), mostrarNumero(antes.soma / antes.numeros)]).toEqual([60, '250', '4,46']);
+    expect(textoDoTopico('numero-guardado-como-texto'))
+      .toMatch(/Média 4,46, Contagem 60 e Soma 250[\s\S]*Média 4,40, Contagem 60 e Soma 264/);
+    const consertada = {
+      ...antesDoConserto,
+      celulas: antesDoConserto.celulas.map(l => l.map((x, j) =>
+        (j === 4 ? { ...x, texto: x.texto.replace(' h', '').replace('h', '').replace('.', ',') } : x))),
+    };
+    const depois = contaDaSelecao(consertada, { l1: 1, c1: 4, l2: 63, c2: 4 })!;
+    expect([depois.contagem, mostrarNumero(depois.soma), mostrarNumero(depois.soma / depois.numeros)]).toEqual([60, '264', '4,40']);
+  });
+
+  it('a base tem 62, a bruta tem a repetida, e excluir as três sem resposta dá 59', () => {
+    expect(RESPONDENTES).toHaveLength(62);
+    expect(linhasBrutasDoSono()).toHaveLength(63);
+    expect(RESPONDENTES.filter(r => r.celular === null)).toHaveLength(3);
+    expect(textoDoTopico('a-ausencia')).toContain('de 62 para 59');
+    expect(textoDoTopico('a-linha-repetida')).toContain('62 valores exclusivos');
+    expect(RESPONDENTES.filter(r => r.nome === 'João Victor Alves').map(r => r.unidade)).toEqual(['Jaguar', 'Falcão']);
+  });
+
+  it('os dois impossíveis: o 35 da tela, com evidência, e o 21 da idade, sem', () => {
+    const d = (escrito: string) => DEFEITOS_DO_SONO.find(x => x.escrito === escrito)!;
+    expect([d('35').certo, d('21').certo]).toEqual(['3,5', '']);
+    expect(textoDoTopico('valor-impossivel')).toMatch(/35 horas[\s\S]*\*\*3,5\*\*[\s\S]*\*\*21 anos\*\*/);
+  });
+});
+
+describe('a base do sono não é a chamada do laboratório', () => {
+  it('nenhuma pessoa coincide', () => {
+    const doLab = new Set(MEMBROS.map(m => m.nome));
+    expect(RESPONDENTES.length).toBeGreaterThan(60);
+    expect(RESPONDENTES.filter(r => doLab.has(r.nome)).map(r => r.nome)).toEqual([]);
+  });
+
+  it('a teoria não cita os números nem as pessoas da chamada', () => {
+    const teoria = topicos().map(t => textoDoTopico(t.id)).join('\n');
+    const proibidos = ['15,39', '6,43', '8,37', '9,05', '17,37', '11,35', '-0,70', '3,67', '1.250', 'Carla', 'Isabela',
+      'Ana Clara', 'Pedro Aguiar', 'carona', 'ônibus', ' km', 'presença', 'aguia, AGUIA'];
+    expect(proibidos.filter(p => teoria.includes(p))).toEqual([]);
   });
 });

@@ -1121,6 +1121,28 @@ aba — a tarefa fechava pelo motor e a célula mostrava 0 ao lado de seis
 respostas. E **a régua do dossiê dizia "Página 0 de 5"**, com as origens no
 id do motor, sem acento.
 
+A CC-ES013 fotografa outra pergunta do mesmo clube — **quem passa mais tempo
+no celular dorme menos?** —, sobre o questionário do sono de
+`src/exemplos/telaESono.ts`, e não a chamada do semestre: lá a média de 15,39,
+a mediana de 5 km, a Carla repetida, o 1.250 da Isabela e a correlação de
+-0,70 são as respostas, e a teoria citava todos eles. A base de exemplo tem os
+mesmos tipos de defeito em outros lugares — a grafia do Jaguar e do Falcão, a
+Nina Oliveira repetida, dois João Victor Alves, "4 h" e "3.5", o 35 com
+evidência e o 21 sem, três famílias sem resposta. As **questões** continuam
+falando da chamada e são conferidas contra ela, como as da CC-DG004; a
+**teoria** é conferida contra a base do sono, e
+`exemplosDoProjetoDeDados.test.ts` reprova se ela voltar a citar um número ou
+uma pessoa da chamada. `LaboratorioDoProjetoDeDados` ganhou `outra`.
+
+A captura achou um defeito do motor da planilha, e ele valia para toda vereda:
+**Classificar não era uma ordem** numa coluna com número e texto misturados.
+Comparava número com número pelo valor e qualquer par com texto pela letra, e
+isso não é transitivo — na coluna da tela, em ordem decrescente, o 5 ficava
+acima do 35, e o impossível que a lição manda achar nas pontas não chegava a
+ponta nenhuma. Hoje são três blocos, como no Excel: em ordem crescente o
+número vem antes do texto, em decrescente o texto vem antes, e o vazio fica no
+fim nos dois sentidos.
+
 **No CSS, o quadro do resultado precisa de uma página, e ela é escrita à mão.**
 Folha de estilo posta dentro do `<body>` é só texto: o quadro mostrava a regra
 escrita na tela em vez do efeito dela. Hoje a folha vai no `<style>` e o que ela
@@ -5289,6 +5311,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/exemplosDasApresentacoes.test.ts` | contraste, palavras, pixels ou megabytes da teoria da CC-ES011 que o motor não devolve, ou a feira dividindo um título ou um tópico com o acampamento do laboratório |
 | `src/curriculum/exemplosDoProjetoDocumental.test.ts` | número, página ou pasta da teoria da CC-ES012 que o conjunto do Dia de Portas Abertas não devolve, ou o conjunto dividindo uma linha, uma resposta, um slide ou uma pasta com a feira do laboratório |
 | `src/components/LaboratorioDoProjeto.test.tsx` | painel do repositório preso na régua de espaço usado, contagem entre abas que a grade mostra zero, ou régua do dossiê contando a página do zero |
+| `src/curriculum/exemplosDoProjetoDeDados.test.ts` | número da teoria da CC-ES013 que a base do sono não devolve, questão que a chamada do laboratório não devolve, ou a teoria citando a chamada |
+| `src/labs/planilha.test.ts` | classificar coluna com número e texto misturados sem separar os blocos, que deixa o maior valor fora da ponta |
 | `src/labs/formulas.test.ts` | SOMA que soma o número guardado como texto, apagando o defeito que o requisito 7 manda achar |
 | `src/labs/formulas.test.ts` | PROCV exato por padrão, ou ordem de texto por UTF-16, que põe Águia depois de Tucano |
 | `src/labs/formulas.test.ts` | cifrão ignorado ao arrastar a fórmula, que apaga a diferença entre relativa e absoluta |

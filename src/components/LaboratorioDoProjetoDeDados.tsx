@@ -89,16 +89,28 @@ const FOLHA: Record<ProgramaDaLicao, string> = {
 /** A régua de status do Excel, que a cápsula de tarefas sobe para não cobrir. */
 const RODAPE: Record<ProgramaDaLicao, number> = { excel: 28, nuvem: 0, plataforma: 0 };
 
-export default function LaboratorioDoProjetoDeDados({ vereda, licao: daLicao, aoVencer, aoSair }: {
+/**
+ * Outro projeto aberto nas mesmas janelas.
+ *
+ * É o que a teoria fotografa: as telas mostram o gesto na base do tempo de
+ * tela e do sono, e não na chamada do semestre, cujos números são as respostas
+ * das lições. Sem `outra`, abre a chamada, no estado de partida da lição.
+ */
+export interface OutroProjetoDeDados {
+  inicial: () => ContextoDoProjetoDeDados;
+  arquivo: string;
+}
+
+export default function LaboratorioDoProjetoDeDados({ vereda, licao: daLicao, aoVencer, aoSair, outra }: {
   vereda: Vereda;
   licao: Extract<LicaoDeVereda, { tipo: 'projeto-de-dados' }>;
   aoVencer: () => Promise<void> | void;
   aoSair: () => void;
+  outra?: OutroProjetoDeDados;
 }) {
   const licao = daLicao.licao;
-  const [ctx, setCtx] = useState<ContextoDoProjetoDeDados>(
-    () => contextoDe(LICOES_DA_CC_ES013[licao].projeto),
-  );
+  const partida = () => (outra ? outra.inicial() : contextoDe(LICOES_DA_CC_ES013[licao].projeto));
+  const [ctx, setCtx] = useState<ContextoDoProjetoDeDados>(partida);
   const [aviso, setAviso] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [noCaderno, setNoCaderno] = useState(false);
@@ -119,7 +131,7 @@ export default function LaboratorioDoProjetoDeDados({ vereda, licao: daLicao, ao
   const mudar = (f: (c: ContextoDoProjetoDeDados) => ContextoDoProjetoDeDados) => setCtx(f);
 
   const recomecar = () => {
-    setCtx(contextoDe(LICOES_DA_CC_ES013[licao].projeto));
+    setCtx(partida());
     setVida(v => v + 1);
     setNoCaderno(false);
     setAviso('');
@@ -184,11 +196,11 @@ export default function LaboratorioDoProjetoDeDados({ vereda, licao: daLicao, ao
         {programa === 'plataforma' ? (
           <Rolavel>
             <SuperficieDaLicao Tela={SUPERFICIE[licao]} key={`${licao}-${vida}`}
-              ctx={ctx} mudar={mudar} avisar={avisar} licao={licao} />
+              ctx={ctx} mudar={mudar} avisar={avisar} licao={licao} arquivo={outra?.arquivo} />
           </Rolavel>
         ) : (
           <SuperficieDaLicao Tela={SUPERFICIE[licao]} key={`${licao}-${vida}`}
-            ctx={ctx} mudar={mudar} avisar={avisar} licao={licao} />
+            ctx={ctx} mudar={mudar} avisar={avisar} licao={licao} arquivo={outra?.arquivo} />
         )}
       </div>
     </LaboratorioEmTelaCheia>

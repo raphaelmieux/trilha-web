@@ -369,6 +369,23 @@ describe('ordenar mexe nos dados, e leva a linha inteira', () => {
     expect(decrescente.celulas[1][1].texto).toBe('12');
   });
 
+  /*
+    Numa coluna com número e texto misturados — "4h" e "3.5" no meio das
+    horas —, comparar número com número pelo valor e o resto pela letra não é
+    uma ordem: o 35 ficava abaixo do 5, e o valor impossível que a lição manda
+    achar nas pontas não chegava a ponta nenhuma.
+  */
+  it('número, texto e vazio são três blocos, e o vazio fica no fim nos dois sentidos', () => {
+    const misturada = {
+      ...planilhaDe('X', [['Tela'], ['5'], ['4h'], ['35'], [''], ['3.5'], ['10,5']]),
+      tabela: { l1: 0, c1: 0, l2: 6, c2: 0 },
+    };
+    const coluna = (crescente: boolean) =>
+      ordenar(misturada, 0, crescente).celulas.slice(1, 7).map(l => l[0].texto);
+    expect(coluna(false)).toEqual(['4h', '3.5', '35', '10,5', '5', '']);
+    expect(coluna(true)).toEqual(['5', '10,5', '35', '3.5', '4h', '']);
+  });
+
   it('e guarda qual coluna, que é de onde sai a setinha do cabeçalho', () => {
     expect(ordenar(comTabela(UNIDADES), 1, false).ordenacao).toEqual({ coluna: 1, crescente: false });
   });
