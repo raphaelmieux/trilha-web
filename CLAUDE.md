@@ -3883,6 +3883,51 @@ mover não transpõe, porque a fórmula que foi levada continua apontando para a
 mesmas células. As bordas são `::after` com um lado por classe — escritas como
 fundo, a segunda classe da mesma célula apagaria o lado da primeira.
 
+**A planilha sabe o que é uma data, e data é número.** Ela não sabia: 08/11/2026
+digitado ficava texto — encostava à esquerda, não ordenava (02/10 vinha antes
+de 10/09, pela letra) e não fazia conta —, que é o número guardado como texto
+da CC-ES003 com barras no meio. Hoje é como no Excel: a data é o número de
+dias desde 30/12/1899, e o que a célula mostra é só o formato por cima. Mudar a
+coluna para Geral faz aparecer 46334, e isso não é defeito, é o que a data é
+por dentro. As regras moram em `datas.ts`, e o dia de hoje é o de Brasília, do
+mesmo relógio da ofensiva — que saiu de `ofensiva.ts` para `diaEmBrasilia.ts`
+e continua reexportado de lá, porque `ofensiva.ts` importa o currículo inteiro
+e a planilha não pode arrastá-lo junto.
+
+Cinco decisões erram calado se invertidas:
+
+- **o dia que não existe continua texto.** 31/02/2026 não vira 03/03 calado:
+  seria a planilha inventando uma data que ninguém escreveu;
+- **o formato de data é gravado ao confirmar, e não deduzido ao mostrar.** A
+  data digitada, o `=HOJE()`, o `=DATA(...)` e a data mais um número ganham o
+  formato na célula, que fica nela — escrever 5 por cima de uma data mostra
+  05/01/1900, como no Excel. Deduzido na hora de mostrar, ele passaria por
+  cima de quem escolheu Geral de propósito, e o Ctrl+Shift+~ não mudaria nada
+  na tela. Foi o Chromium que mostrou;
+- **duas datas na mesma conta não herdam o formato.** `=B2-A2` é uma
+  quantidade de dias, e mostrá-la como 03/01/1900 seria o defeito que todo
+  mundo já viu e ninguém entendeu;
+- **DIAS recebe o fim primeiro e DATADIF o começo**, cada uma com a sua ordem,
+  como no Excel — arrumar uma para ficar igual à outra ensinaria uma planilha
+  que não existe. E DATADIF conta anos **completos**: quem nasceu em
+  14/11/2014 tem 11 anos em 08/11/2026, e `=ANO(B1)-ANO(A1)` dá 12, que é o
+  número plausível e errado que ela existe para não dar. As unidades são as
+  letras do inglês mesmo no Excel em português, "Y", "M" e "D", e "A" dá
+  `#NÚM!` lá e aqui;
+- **os números antes de março de 1900 carregam o dia que não existiu.** O
+  Excel conta um 29/02/1900, e é ali que cai o número pequeno numa célula com
+  formato de data: 5 é 05/01/1900 no Excel, e mostrar 04/01, que é o dia
+  certo, faria a planilha discordar do programa justamente no caso que a
+  pessoa vai encontrar.
+
+Os gestos são os do Excel: o ano se completa ao confirmar (15/7 vira
+15/07/2026, senão a célula mudaria de ano sozinha no réveillon), Ctrl+; escreve
+a data de hoje, a alça **anda os dias** em vez de copiar a mesma data, e
+Ctrl+Shift+#, $, % e ~ trocam o formato — lidos pela tecla física, porque o
+til do teclado brasileiro é tecla morta. A lista de funções ganhou HOJE, DATA,
+DIA, MÊS, ANO, DIAS e DIA.DA.SEMANA; DATADIF calcula e fica fora da lista,
+porque o Excel a esconde.
+
 **A lista de funções e a dica de sintaxe são do Excel.** Digitar `=SO` abre a
 lista com SOMA e SOMASE; as setas escolhem, o Tab escreve o nome com o
 parêntese aberto, e o Esc fecha só a lista — o segundo Esc desiste da edição.
@@ -5888,6 +5933,10 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/powerpoint.test.tsx` | caixa à mão que não se escolhe, não se arrasta, não alarga pelas alças ou não sai pelo Delete |
 | `src/labs/desfazerDaApresentacao.test.tsx` | Ctrl+Z que apaga o PDF exportado, que desfaz letra por letra, ou que rouba o desfazer do campo de texto |
 | `src/components/LaboratorioDeApresentacao.test.tsx` | caixa arrastada até alinhar fechando a tarefa do layout, ou caixa apagada que o Ctrl+Z não devolve |
+| `src/labs/datas.test.ts` | data com número diferente do Excel, dia inexistente virando data, DIAS ou DATADIF com a ordem trocada, ou idade contando o aniversário antes de ele chegar |
+| `src/labs/planilha.test.ts` | formato de data deduzido ao mostrar, que desfaz o Geral escolhido, ou diferença de datas mostrada como data |
+| `src/labs/planilha.test.ts` | alça que copia a mesma data em vez de andar os dias, ou datas ordenadas pela letra |
+| `src/labs/gradeDoExcel.test.tsx` | planilha em que a data digitada não se completa, o Ctrl+; não escreve hoje, ou os atalhos de formato não chegam |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

@@ -31,10 +31,20 @@ import type React from 'react';
 import {
   type Direcao, type Faixa, type Planilha, type Recorte,
   ALTURA_PADRAO, LARGURA_PADRAO, larguraQuePede,
-  colar as colarEm, copiar as copiarFaixa, escrever, limpar, mover, normalizar,
+  type Formato,
+  colar as colarEm, copiar as copiarFaixa, dataDigitada, limpar, mover, normalizar,
   fimDoPreenchimento, preencherAbaixo, preencherADireita, proxima, valorDaGrade,
 } from './planilha';
-import { mostrar } from './formulas';
+import { ehFormula, mostrar } from './formulas';
+import { dataCompleta, serieDeHoje, textoDaData } from './datas';
+
+/** Ctrl+Shift mais a tecla: pela tecla física, ou pelo caractere que ela deu. */
+const FORMATO_DO_ATALHO: Record<string, Formato> = {
+  Digit3: 'data', '#': 'data',
+  Digit4: 'moeda', $: 'moeda',
+  Digit5: 'porcentagem', '%': 'porcentagem',
+  Backquote: 'geral', '~': 'geral',
+};
 import {
   alternarAncoragem, nomeApontado, podeApontar, referenciasDaFormula, regiaoAtual, saltar, ultimaUsada,
 } from './teclasDaPlanilha';
@@ -321,6 +331,16 @@ export function useGradeDoExcel({
     return null;
   };
 
+  /** Troca o formato da faixa escolhida, e só o formato. */
+  const formatarFaixa = (formato: Formato) => {
+    const n = normalizar(faixa);
+    mudar(q => ({
+      ...q,
+      celulas: q.celulas.map((linha, l) => (l < n.topo || l > n.base ? linha : linha.map((cel, c) => (
+        c >= n.esq && c <= n.dir ? { ...cel, formato } : cel)))),
+    }));
+  };
+
   const confirmar = (valor: string, andarPara?: Direcao) => {
     const porque = celulaProtegida?.(sel.l, sel.c);
     if (porque) {
@@ -329,7 +349,9 @@ export function useGradeDoExcel({
       setBarra(texto(p, sel.l, sel.c));
       return;
     }
-    mudar(q => escrever(q, sel.l, sel.c, valor));
+    /* Data digitada é completada e ganha o formato de data, como no Excel. */
+    mudar(q => dataDigitada(q, sel.l, sel.c, valor));
+    const gravado = ehFormula(valor) || valor.startsWith("'") ? valor : dataCompleta(valor) ?? valor;
     setEditando(null);
     setApontando(null);
     /* Escrever numa célula encerra o copiar, como no Excel: a borda tracejada
@@ -340,7 +362,7 @@ export function useGradeDoExcel({
       setFaixa(destino);
       setBarra(texto(p, destino.l1, destino.c1));
     } else {
-      setBarra(valor);
+      setBarra(gravado);
     }
   };
 
@@ -409,6 +431,16 @@ export function useGradeDoExcel({
       setBarra(r.texto);
       setApontando(null);
       requestAnimationFrame(() => campo.setSelectionRange?.(r.cursor, r.cursor));
+      return true;
+    }
+    /* Ctrl+; no meio da edição escreve a data de hoje onde está o cursor. */
+    if (e.key === ';' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      const ini = campo.selectionStart ?? barra.length;
+      const fim = campo.selectionEnd ?? ini;
+      const hoje = textoDaData(serieDeHoje());
+      setBarra(barra.slice(0, ini) + hoje + barra.slice(fim));
+      requestAnimationFrame(() => campo.setSelectionRange?.(ini + hoje.length, ini + hoje.length));
       return true;
     }
     /* Ctrl+Enter grava e fica na mesma célula. */
@@ -519,6 +551,29 @@ export function useGradeDoExcel({
       if (k === 'a') { e.preventDefault(); setFaixa(regiaoAtual(p, sel.l, sel.c)); return; }
       /* Ctrl+Espaço pega a coluna inteira. */
       if (e.key === ' ') { e.preventDefault(); setFaixa({ l1: 0, c1: sel.c, l2: ultimaLinha, c2: sel.c }); return; }
+      /*
+        Ctrl+; escreve a data de hoje, como no Excel: abre a célula com ela,
+        e o Enter confirma. No teclado brasileiro o ponto e vírgula sai com
+        Shift, e por isso a tecla é lida pelo caractere, com Shift ou sem.
+      */
+      if (e.key === ';') {
+        e.preventDefault();
+        setBarra(textoDaData(serieDeHoje()));
+        setModo('entrar');
+        setApontando(null);
+        comecarEdicao('celula');
+        return;
+      }
+      /*
+        Os atalhos de formato do Excel: Ctrl+Shift+# data, Ctrl+Shift+$ moeda,
+        Ctrl+Shift+% porcentagem e Ctrl+Shift+~ geral. Lidos pela tecla física,
+        porque o caractere que o Shift dá muda de teclado para teclado — e o
+        til do brasileiro é tecla morta, que nem chega como "~".
+      */
+      if (e.shiftKey) {
+        const formato = FORMATO_DO_ATALHO[e.code] ?? FORMATO_DO_ATALHO[e.key];
+        if (formato) { e.preventDefault(); formatarFaixa(formato); return; }
+      }
       return;
     }
 

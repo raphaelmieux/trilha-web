@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  CalendarDays,
   Filter, Snowflake, ChartLine, ChartPie, ChartColumn, ChartScatter,
   Sigma, ArrowDownAZ, ArrowUpZA, Eraser, Copy, ClipboardPaste, Scissors,
   FileCheck2, RotateCcw, Undo2, Redo2, Check, ChevronDown, Rows3, Percent,
@@ -368,6 +369,9 @@ export default function PlanilhaAvancadaLab({ specialtyCode, lessonCode, lessonT
                 </BotaoDoExcel>
                 <BotaoDoExcel dica="Estilo de Porcentagem" aoClicar={() => formatar('porcentagem')}>
                   <Percent className="w-4 h-4" />
+                </BotaoDoExcel>
+                <BotaoDoExcel dica="Data Abreviada (Ctrl+Shift+#)" aoClicar={() => formatar('data')}>
+                  <CalendarDays className="w-4 h-4" />
                 </BotaoDoExcel>
               </GrupoDoExcel>
               <GrupoDoExcel nome="Edição">

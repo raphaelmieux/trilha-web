@@ -9,7 +9,7 @@ import {
   valorDaGrade, planilhaAtiva, trocarAtiva, planilhaPorNome,
   moverOuCopiar, renomearAba, substituir, removerDuplicatas, planilhaDe, fimDoPreenchimento,
   numeroNaLargura, larguraQuePede, larguraDoNumero, LARGURA_PADRAO,
-  pontosDoGrafico, pontosDaDispersao, valorDe,
+  pontosDoGrafico, pontosDaDispersao, valorDe, formatoAoConfirmar, dataDigitada, valorCalculado,
 } from './planilha';
 import { mostrar } from './formulas';
 
@@ -758,5 +758,74 @@ describe('o clique duplo na alça preenche até onde a vizinha tem dado', () => 
   it('sem vizinho, não preenche — e não até o fim da planilha', () => {
     const s = planilhaDe('S', [['=1'], [''], ['']]);
     expect(fimDoPreenchimento(s, { l: 0, c: 0 })).toBe(0);
+  });
+});
+
+describe('a data na planilha', () => {
+  /*
+    O Excel escolhe o formato de data sozinho em três casos, e sem eles a data
+    aparece como 46334 e quem digitou acha que a planilha estragou o que
+    escreveu. E não escolhe num quarto, que é o que mais engana: a diferença
+    de duas datas é uma quantidade de dias, e não outra data.
+  */
+  const confirmar = (formulas: string[]) => formulas.reduce(
+    (p, f, c) => dataDigitada(p, 0, c, f),
+    planilhaDe('Datas', [['']]),
+  );
+  const formatoDe = (p: Planilha, c: number) => p.celulas[0][c].formato;
+
+  it('o formato de data é gravado onde o Excel o põe, e só lá', () => {
+    const p = confirmar(['01/08/2026', '=A1+3', '=B1-A1', '=HOJE()', '=DIAS(B1;A1)', "'01/08/2026", '=A1*2']);
+    expect(formatoDe(p, 0), 'data digitada').toBe('data');
+    expect(formatoDe(p, 1), 'data mais um número').toBe('data');
+    expect(formatoDe(p, 2), 'diferença de duas datas é número de dias').toBe('geral');
+    expect(formatoDe(p, 3), 'HOJE()').toBe('data');
+    expect(formatoDe(p, 4), 'função que devolve número').toBe('geral');
+    expect(formatoDe(p, 5), 'o apóstrofo continua sendo texto').toBe('geral');
+    expect(formatoDe(p, 6), 'multiplicar uma data não dá data').toBe('geral');
+    expect(mostrar(valorCalculado(p, 0, 2), formatoDe(p, 2))).toBe('3');
+  });
+
+  /*
+    Decidido na hora de mostrar, o formato de data passaria por cima de quem
+    escolheu Geral de propósito para ver o número que a data é.
+  */
+  it('Geral escolhido à mão fica, e formato posto à mão vence o que o Excel escolheria', () => {
+    const p = confirmar(['01/08/2026']);
+    p.celulas[0][0] = { ...p.celulas[0][0], formato: 'geral' };
+    expect(mostrar(valorCalculado(p, 0, 0), formatoDe(p, 0))).toBe('46235');
+    const moeda = planilhaDe('X', [['']]);
+    moeda.celulas[0][0] = { ...moeda.celulas[0][0], formato: 'moeda' };
+    expect(formatoAoConfirmar(moeda, 0, 0, '=HOJE()')).toBe('moeda');
+  });
+
+  it('planilha que chega com data escrita já nasce com o formato de data', () => {
+    expect(planilhaDe('X', [['01/08/2026', "'01/08/2026", 'Saída']]).celulas[0].slice(0, 3).map(x => x.formato))
+      .toEqual(['data', 'geral', 'geral']);
+  });
+
+  it('confirmar uma data a completa, e o formato fica na célula', () => {
+    const p = dataDigitada(planilhaDe('X', [['']]), 0, 0, '1/3/26');
+    expect(p.celulas[0][0]).toMatchObject({ texto: '01/03/2026', formato: 'data' });
+    /* Escrever 5 por cima mostra 05/01/1900 — é o formato que ficou na célula. */
+    const depois = dataDigitada(p, 0, 0, '5');
+    expect(mostrar(valorCalculado(depois, 0, 0), formatoDe(depois, 0))).toBe('05/01/1900');
+    expect(dataDigitada(planilhaDe('X', [['']]), 0, 0, "'1/3").celulas[0][0].texto).toBe("'1/3");
+  });
+
+  it('a alça anda os dias, para baixo e para o lado', () => {
+    const p = planilhaDe('X', [['01/08/2026']]);
+    const abaixo = preencherAbaixo(p, { l: 0, c: 0 }, 3);
+    expect([1, 2, 3].map(l => cel(abaixo, l, 0))).toEqual(['02/08/2026', '03/08/2026', '04/08/2026']);
+    const lado = preencherADireita(planilhaDe('X', [['31/08/2026']]), { l: 0, c: 0 }, 1);
+    expect(cel(lado, 0, 1), 'o mês vira junto').toBe('01/09/2026');
+  });
+
+  it('ordenar datas ordena pelo dia, e não pelo texto', () => {
+    const p = planilhaDe('X', [['Dia'], ['10/09/2026'], ['02/10/2026'], ['01/08/2026']], {
+      tabela: { l1: 0, c1: 0, l2: 3, c2: 0 },
+    });
+    const q = ordenar(p, 0, true);
+    expect([1, 2, 3].map(l => cel(q, l, 0))).toEqual(['01/08/2026', '10/09/2026', '02/10/2026']);
   });
 });

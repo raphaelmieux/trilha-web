@@ -35,6 +35,8 @@
   desbravador vai ver na tela do clube. `circular` é a exceção, e está
   explicada onde ela é produzida.
 */
+import { MAIOR_SERIE, diaDaSerie, serieDe, serieDeHoje, serieDoTexto, textoDaData } from './datas';
+
 export type Erro = 'nome' | 'valor' | 'div0' | 'ref' | 'nd' | 'num' | 'circular';
 
 export const TEXTO_DO_ERRO: Record<Erro, string> = {
@@ -163,6 +165,10 @@ export function valorDoBruto(bruto: string): Valor {
 
   const n = numeroDoTexto(t);
   if (n !== null) return num(n);
+
+  /* Data escrita é número por dentro, e é por isso que ela ordena e faz conta. */
+  const serie = serieDoTexto(t);
+  if (serie !== null) return num(serie);
 
   if (/^verdadeiro$/i.test(t)) return logico(true);
   if (/^falso$/i.test(t)) return logico(false);
@@ -415,7 +421,8 @@ function comoNumero(v: Valor): number | Valor {
     case 'vazio': return 0;
     case 'erro': return v;
     case 'texto': {
-      const n = numeroDoTexto(v.t);
+      /* "08/11/2026" entre aspas também vira número numa conta, como no Excel. */
+      const n = numeroDoTexto(v.t) ?? serieDoTexto(v.t);
       return n === null ? erro('valor') : n;
     }
   }
@@ -745,6 +752,41 @@ function desvio(ns: number[], divisor: number): Valor {
   return num(Math.sqrt(soma / divisor));
 }
 
+/**
+ * O argumento de data de uma função: número, ou texto que escreve uma data.
+ *
+ * Data antes de 01/01/1900, ou depois de 31/12/9999, é `#NÚM!` — o número
+ * existe, e o calendário do Excel não vai até lá.
+ */
+function serieDoArg(ctx: Ctx, arg: No): number | Valor {
+  const n = comoNumero(avaliar(ctx, arg));
+  if (typeof n !== 'number') return n;
+  return n < 0 || n > MAIOR_SERIE ? erro('num') : n;
+}
+
+/** Quantos anos, meses ou dias completos separam duas datas, nas unidades do DATADIF. */
+function datadif(a: number, b: number, unidade: string): number | null {
+  const x = diaDaSerie(a);
+  const y = diaDaSerie(b);
+  const meses = (y.ano - x.ano) * 12 + (y.mes - x.mes) - (y.dia < x.dia ? 1 : 0);
+  switch (unidade) {
+    case 'D': return b - a;
+    case 'M': return meses;
+    case 'Y': return Math.floor(meses / 12);
+    case 'YM': return meses % 12;
+    case 'MD': {
+      if (y.dia >= x.dia) return y.dia - x.dia;
+      /* Os dias que sobram contam a partir do mesmo dia no mês anterior ao fim. */
+      return b - serieDe(y.ano, y.mes - 1, x.dia);
+    }
+    case 'YD': {
+      const aniversario = serieDe(y.ano, x.mes, x.dia);
+      return aniversario <= b ? b - aniversario : b - serieDe(y.ano - 1, x.mes, x.dia);
+    }
+    default: return null;
+  }
+}
+
 function chamada(ctx: Ctx, nome: string, args: No[]): Valor {
   const f = semAcento(nome);
 
@@ -1005,6 +1047,105 @@ function chamada(ctx: Ctx, nome: string, args: No[]): Valor {
     case 'PROCV': return procv(ctx, args);
 
     /*
+      As funções de data. Todas leem e devolvem número de série, porque é o que
+      a data é — e quem escolhe se ele aparece como 08/11/2026 ou como 46334 é
+      o formato da célula, e não a função.
+    */
+    case 'HOJE':
+      return args.length === 0 ? num(serieDeHoje()) : erro('valor');
+
+    /*
+      DATA aceita mês 13 e dia 0, e devolve o que eles querem dizer: janeiro
+      do ano seguinte, o último dia do mês anterior. É o jeito de somar meses
+      que o Excel ensina, `=DATA(ANO(A2);MÊS(A2)+1;DIA(A2))`, e recusar o
+      transbordo tiraria a única conta de mês que não precisa de DATAM.
+    */
+    case 'DATA': {
+      if (args.length !== 3) return erro('valor');
+      const ns = args.map(a => comoNumero(avaliar(ctx, a)));
+      for (const n of ns) if (typeof n !== 'number') return n;
+      const [anoEscrito, mes, dia] = (ns as number[]).map(Math.trunc);
+      /* Ano de 0 a 1899 soma 1900, que é a regra do Excel para ano curto. */
+      const ano = anoEscrito >= 0 && anoEscrito < 1900 ? anoEscrito + 1900 : anoEscrito;
+      if (ano < 0 || ano > 9999) return erro('num');
+      const serie = serieDe(ano, mes, dia);
+      return serie < 1 || serie > MAIOR_SERIE ? erro('num') : num(serie);
+    }
+
+    case 'DIA':
+    case 'MES':
+    case 'ANO': {
+      if (args.length !== 1) return erro('valor');
+      const n = serieDoArg(ctx, args[0]);
+      if (typeof n !== 'number') return n;
+      const d = diaDaSerie(n);
+      return num(f === 'DIA' ? d.dia : f === 'MES' ? d.mes : d.ano);
+    }
+
+    /*
+      DIAS recebe o **fim primeiro**, e é a armadilha dela: =DIAS(A2;B2) com
+      a saída em A2 e a volta em B2 dá −3, e não 3. DATADIF é o contrário —
+      começo primeiro —, e as duas convivem no Excel assim, cada uma com a sua
+      ordem. Arrumar uma para ficar igual à outra ensinaria uma planilha que
+      não existe; é a decisão da INCLINAÇÃO, pelo motivo escrito lá.
+    */
+    case 'DIAS': {
+      if (args.length !== 2) return erro('valor');
+      const fim = serieDoArg(ctx, args[0]);
+      if (typeof fim !== 'number') return fim;
+      const inicio = serieDoArg(ctx, args[1]);
+      if (typeof inicio !== 'number') return inicio;
+      return num(Math.floor(fim) - Math.floor(inicio));
+    }
+
+    /*
+      DATADIF não aparece na lista do Excel — ela é de compatibilidade, e a
+      Microsoft a esconde —, e mesmo assim é a função que todo clube usa para
+      a idade: =DATADIF(nascimento;HOJE();"Y"). Ela conta anos **completos**,
+      que é o que idade quer dizer: quem faz aniversário amanhã ainda tem a
+      idade de ontem. Subtrair os anos com ANO() erraria justamente essa
+      pessoa, para mais, durante o ano inteiro até o aniversário.
+
+      As unidades são letras do inglês mesmo no Excel em português — "Y" de
+      ano, "M" de mês, "D" de dia —, e é a outra armadilha dela: quem escreve
+      "A" pensando em ano recebe #NÚM!, como recebe lá. Começo depois do fim
+      também é #NÚM!.
+    */
+    case 'DATADIF': {
+      if (args.length !== 3) return erro('valor');
+      const a = serieDoArg(ctx, args[0]);
+      if (typeof a !== 'number') return a;
+      const b = serieDoArg(ctx, args[1]);
+      if (typeof b !== 'number') return b;
+      const unidade = comoTexto(avaliar(ctx, args[2])).trim().toUpperCase();
+      if (Math.floor(a) > Math.floor(b)) return erro('num');
+      const r = datadif(Math.floor(a), Math.floor(b), unidade);
+      return r === null ? erro('num') : num(r);
+    }
+
+    /*
+      Domingo é 1 no tipo 1, que é o padrão — e segunda é 1 no tipo 2. A
+      semana do clube começa no sábado de reunião para ninguém, e o Excel não
+      tem tipo para isso; a lição que precisar escreve a conta.
+    */
+    case 'DIADASEMANA': {
+      if (args.length < 1 || args.length > 2) return erro('valor');
+      const n = serieDoArg(ctx, args[0]);
+      if (typeof n !== 'number') return n;
+      let tipo = 1;
+      if (args[1]) {
+        const t = comoNumero(avaliar(ctx, args[1]));
+        if (typeof t !== 'number') return t;
+        tipo = Math.trunc(t);
+      }
+      const semana = diaDaSerie(n).semana; // 0 = domingo
+      if (tipo === 1) return num(semana + 1);
+      if (tipo === 2) return num(semana === 0 ? 7 : semana);
+      if (tipo === 3) return num(semana === 0 ? 6 : semana - 1);
+      return erro('num');
+    }
+
+    /*
       Nome que a planilha não conhece é `#NOME?`, e não silêncio: é o erro que
       aparece quando se escreve SOMATORIO no lugar de SOMA, e ele tem de estar
       à vista para que a pessoa vá procurar a função certa.
@@ -1206,7 +1347,12 @@ export function mostrarNumero(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(2).replace('.', ',');
 }
 
-export type Formato = 'geral' | 'moeda' | 'inteiro' | 'porcentagem';
+/**
+ * `data` é dd/mm/aaaa sobre o número de série. O número continua o mesmo — é
+ * só o que a célula mostra que muda —, e é por isso que trocar o formato de
+ * uma coluna de datas para Geral faz aparecer 46334, e não estraga nada.
+ */
+export type Formato = 'geral' | 'moeda' | 'inteiro' | 'porcentagem' | 'data';
 
 export function mostrar(v: Valor, formato: Formato = 'geral'): string {
   if (v.tipo === 'erro') return TEXTO_DO_ERRO[v.e];
@@ -1223,6 +1369,8 @@ export function mostrar(v: Valor, formato: Formato = 'geral'): string {
     case 'inteiro': return String(Math.round(v.n));
     case 'porcentagem': return `${mostrarNumero(v.n * 100)}%`;
     case 'geral': return mostrarNumero(v.n);
+    /* Número negativo, ou além de 9999, não é data: o Excel enche de cerquilhas. */
+    case 'data': return v.n < 0 || v.n > MAIOR_SERIE ? '########' : textoDaData(v.n);
   }
 }
 
