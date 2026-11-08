@@ -1,8 +1,9 @@
 import {
-  ehNumero, mostrar, mostrarNumero, nomeDaColuna, numeroDoTexto, valorDaCelula,
+  ehFormula, ehNumero, mostrar, mostrarNumero, nomeDaColuna, referenciasDe, valorDaCelula, valorDoBruto,
   transporFormula,
   type Formato, type Valor,
 } from './formulas';
+import { serieDoTexto, textoDaData } from './datas';
 
 export type { Formato } from './formulas';
 export { nomeDaColuna, mostrar, ehFormula } from './formulas';
@@ -424,8 +425,11 @@ export function trocarAtiva(cad: Caderno, p: Planilha): Caderno {
 export const planilhaPorNome = (cad: Caderno, nome: string) =>
   cad.planilhas.find(p => p.nome === nome) ?? null;
 
+/* A planilha que já chega com data escrita nasce com o formato de data nela,
+   como se alguém a tivesse digitado — senão a data apareceria como 46334. */
 export const vazia = (texto = ''): Celula => ({
-  texto, h: 'padrao', v: 'abaixo', span: 1, coberta: false, negrito: false, formato: 'geral',
+  texto, h: 'padrao', v: 'abaixo', span: 1, coberta: false, negrito: false,
+  formato: !texto.startsWith("'") && serieDoTexto(texto) !== null ? 'data' : 'geral',
 });
 
 export { ehNumero };
@@ -591,6 +595,61 @@ export function valorCalculado(p: Planilha, l: number, c: number, caderno?: Cade
     const dona = !aba || aba === p.nome ? p : caderno && planilhaPorNome(caderno, aba);
     return dona ? linhaEscondida(dona, li) : false;
   });
+}
+
+/**
+ * O formato que a célula ganha quando alguém confirma o que escreveu.
+ *
+ * O Excel escolhe o formato de data sozinho em três casos, e sem eles a data
+ * aparece como 46334 e quem digitou acha que a planilha estragou o que
+ * escreveu:
+ *
+ *   · **o que se digita como data**;
+ *   · **HOJE e DATA** — a fórmula começa por uma delas;
+ *   · **uma data mais ou menos um número** — `=A2+30` herda o formato da data
+ *     que cita. Duas datas na mesma conta não herdam: `=B2-A2` é uma
+ *     quantidade de dias, e mostrá-la como 03/01/1900 seria o defeito que todo
+ *     mundo já viu numa planilha e ninguém entendeu.
+ *
+ * E escolhe **na hora de confirmar**, gravando na célula, e não na hora de
+ * mostrar. Decidido ao mostrar, ele passaria por cima de quem escolheu Geral
+ * de propósito para ver o número que a data é — o Ctrl+Shift+~ não mudaria
+ * nada na tela. Só a célula ainda em Geral é escolhida: formato posto à mão
+ * vence, como no Excel.
+ */
+export function formatoAoConfirmar(p: Planilha, l: number, c: number, texto: string, caderno?: Caderno): Formato {
+  const atual = p.celulas[l]?.[c]?.formato ?? 'geral';
+  if (atual !== 'geral') return atual;
+  if (!ehFormula(texto)) return !texto.startsWith("'") && serieDoTexto(texto) !== null ? 'data' : 'geral';
+  if (/^=\s*(HOJE|DATA)\s*\(/i.test(texto)) return 'data';
+  const semAspas = texto.replace(/"[^"]*"/g, '');
+  /* Fórmula que chama função — fora HOJE e DATA, que já voltaram — é número. */
+  if (/[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9.]*\s*\(/.test(semAspas) || /[*/^]/.test(semAspas)) return 'geral';
+  const datas = referenciasDe(texto).filter(r => {
+    const dona = !r.aba || r.aba === p.nome ? p : caderno && planilhaPorNome(caderno, r.aba);
+    return dona?.celulas[r.linha]?.[r.coluna]?.formato === 'data';
+  });
+  return datas.length === 1 ? 'data' : 'geral';
+}
+
+/**
+ * O que confirmar uma célula grava, e com que formato.
+ *
+ * Data digitada é completada — 15/7 vira 15/07/2026 — e a célula passa a ter o
+ * formato de data, que fica nela: é por isso que no Excel apagar a data e
+ * escrever 5 no lugar mostra 05/01/1900. Não é defeito nosso, é o formato que
+ * ficou na célula, e é a mesma lição do apóstrofo: o que se vê e o que se
+ * guarda são duas coisas.
+ */
+export function dataDigitada(p: Planilha, l: number, c: number, texto: string, caderno?: Caderno): Planilha {
+  const formato = formatoAoConfirmar(p, l, c, texto, caderno);
+  const s = ehFormula(texto) || texto.startsWith("'") ? null : serieDoTexto(texto);
+  const gravado = s === null ? texto : textoDaData(s);
+  return {
+    ...p,
+    celulas: p.celulas.map((linha, i) => (i !== l ? linha : linha.map((cel, j) => (
+      j === c ? { ...cel, texto: gravado, formato } : cel)))),
+  };
 }
 
 export function valorDe(p: Planilha, l: number, c: number): string {
@@ -993,9 +1052,11 @@ export function ordenar(p: Planilha, coluna: number, crescente: boolean): Planil
   const corpo = p.celulas.slice(primeira, n.base + 1);
   const chave = (linha: Celula[]) => {
     const texto = linha[coluna]?.texto ?? '';
-    /* `numeroDoTexto` e não uma conversão escrita aqui: "é número" precisa
-       querer dizer a mesma coisa para quem ordena e para quem soma. */
-    return { num: numeroDoTexto(texto), texto };
+    /* `valorDoBruto` e não uma conversão escrita aqui: "é número" precisa
+       querer dizer a mesma coisa para quem ordena e para quem soma — e data é
+       número, senão 02/10 viria antes de 10/09 pela letra. */
+    const v = valorDoBruto(texto);
+    return { num: v.tipo === 'numero' ? v.n : null, texto };
   };
   /*
     Número, texto e vazio são três blocos, como no Excel: em ordem crescente os
@@ -1039,6 +1100,23 @@ export function ordenar(p: Planilha, coluna: number, crescente: boolean): Planil
  * um efeito que se vê.
  */
 /**
+ * O que a alça escreve em cada célula que alcança.
+ *
+ * Fórmula anda as referências; **data anda os dias**, como no Excel: arrastar
+ * 01/08/2026 três células para baixo dá 02, 03 e 04 de agosto. É o jeito de
+ * fazer o calendário de um acampamento sem digitar dia por dia — e copiar a
+ * mesma data quatro vezes, que é o que acontecia, deixava a coluna inteira no
+ * primeiro dia sem nada avisando.
+ */
+function preenchido(texto: string, dLinha: number, dColuna: number): string {
+  if (!ehFormula(texto) && !texto.startsWith("'")) {
+    const s = serieDoTexto(texto);
+    if (s !== null) return textoDaData(s + dLinha + dColuna);
+  }
+  return transporFormula(texto, dLinha, dColuna);
+}
+
+/**
  * Até onde o clique duplo na alça preenche: a última linha do bloco que a
  * coluna vizinha tem, a da esquerda e, vazia ela, a da direita.
  *
@@ -1065,7 +1143,7 @@ export function preencherAbaixo(p: Planilha, origem: { l: number; c: number }, a
     ...p,
     celulas: p.celulas.map((linha, i) => (i > origem.l && i <= ate
       ? linha.map((cel, j) => (j === origem.c
-        ? { ...base, texto: transporFormula(base.texto, i - origem.l, 0) }
+        ? { ...base, texto: preenchido(base.texto, i - origem.l, 0) }
         : cel))
       : linha)),
   };
@@ -1088,7 +1166,7 @@ export function preencherADireita(p: Planilha, origem: { l: number; c: number },
     celulas: p.celulas.map((linha, i) => (i !== origem.l
       ? linha
       : linha.map((cel, j) => (j > origem.c && j <= ate
-        ? { ...base, texto: transporFormula(base.texto, 0, j - origem.c) }
+        ? { ...base, texto: preenchido(base.texto, 0, j - origem.c) }
         : cel)))),
   };
 }

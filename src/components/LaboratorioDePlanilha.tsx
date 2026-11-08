@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  CalendarDays,
   AlignLeft, AlignCenter, AlignRight, ChevronsUp, Minus, ChevronsDown,
   Combine, Sigma, Palette, ArrowDownAZ, ArrowUpZA, Filter,
   Snowflake, PieChart, Undo2, Redo2, Percent, ClipboardList,
@@ -362,6 +363,9 @@ export default function LaboratorioDePlanilha({
                 </BotaoDoExcel>
                 <BotaoDoExcel dica="Formato Geral" aoClicar={() => formatar('geral')}>
                   <span style={{ fontSize: 11 }}>Geral</span>
+                </BotaoDoExcel>
+                <BotaoDoExcel dica="Data Abreviada (Ctrl+Shift+#)" aoClicar={() => formatar('data')}>
+                  <CalendarDays className="w-4 h-4" />
                 </BotaoDoExcel>
               </GrupoDoExcel>
               <GrupoDoExcel nome="Estilos">

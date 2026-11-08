@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { act } from 'react';
@@ -221,6 +221,46 @@ const L = 8;
 type Gesto = () => void;
 
 const GESTOS: Record<string, Gesto> = {
+  /*
+    Data digitada vira data: o Excel completa o ano e mostra dd/mm/aaaa, e a
+    célula guarda um número por dentro. Sem isso a data aparecia como 46334,
+    ou ficava texto e não ordenava nem fazia conta.
+  */
+  'data digitada se completa e se mostra como data': () => {
+    escreverNaCelula(L, 1, '1/3/26');
+    expect(lido(L, 1)).toBe('01/03/2026');
+    apontar(celula(L, 1));
+    expect(container.querySelector<HTMLInputElement>('[aria-label="Barra de fórmulas"]')!.value,
+      'a barra de fórmulas não mostra a data completada').toBe('01/03/2026');
+  },
+
+  'Ctrl+; escreve a data de hoje': () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-08T15:00:00Z'));
+    try {
+      apontar(celula(L, 2));
+      teclar(grade(), ';', { ctrlKey: true, shiftKey: true });
+      expect(campoDaCelula()?.value, 'Ctrl+; não abriu a célula com a data de hoje').toBe('08/11/2026');
+      teclar(campoDaCelula()!, 'Enter');
+      /* Coluna estreita mostra cerquilhas, como no Excel: quem diz o que
+         ficou gravado é a barra de fórmulas. */
+      expect(lido(L, 2)).toMatch(/^(08\/11\/2026|#+)$/);
+      apontar(celula(L, 2));
+      expect(container.querySelector<HTMLInputElement>('[aria-label="Barra de fórmulas"]')!.value).toBe('08/11/2026');
+    } finally {
+      vi.useRealTimers();
+    }
+  },
+
+  'Ctrl+Shift+# mostra o número como data, e Ctrl+Shift+~ volta ao Geral': () => {
+    escreverNaCelula(L, 3, '46334');
+    apontar(celula(L, 3));
+    teclar(grade(), '#', { ctrlKey: true, shiftKey: true, code: 'Digit3' });
+    expect(lido(L, 3)).toBe('08/11/2026');
+    teclar(grade(), 'Dead', { ctrlKey: true, shiftKey: true, code: 'Backquote' });
+    expect(lido(L, 3), 'o Geral não mostrou o número que a data é').toBe('46334');
+  },
+
   'a seleção segue o clique, e a caixa de nome diz onde ela está': () => {
     apontar(celula(L, 1));
     expect(nomeDaCaixa()).toBe(`B${L + 1}`);
