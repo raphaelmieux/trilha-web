@@ -441,15 +441,18 @@ describe('a lista anda pelas setas e exclui pelo Delete', () => {
     gestos que todo mundo faz numa lista de arquivos sem pensar, e que aqui
     não respondiam sem nada explicar por quê.
   */
-  function Lista({ aoExcluir }: { aoExcluir?: (id: string) => void }) {
+  function Lista({ aoExcluir, embrulhada }: { aoExcluir?: (id: string) => void; embrulhada?: boolean }) {
     const [escolhido, setEscolhido] = React.useState<string | null>(null);
+    const linha = (id: string) => (
+      <LinhaDaNuvem arquivo={acharArq(id)} escolhido={escolhido === id}
+        aoEscolher={() => setEscolhido(id)} aoAbrir={() => {}}
+        aoExcluir={aoExcluir ? () => aoExcluir(id) : undefined} />
+    );
     return (
-      <div>
-        {['ata', 'escala', 'fichas'].map(id => (
-          <LinhaDaNuvem key={id} arquivo={acharArq(id)} escolhido={escolhido === id}
-            aoEscolher={() => setEscolhido(id)} aoAbrir={() => {}}
-            aoExcluir={aoExcluir ? () => aoExcluir(id) : undefined} />
-        ))}
+      <div className="nv-lista">
+        {['ata', 'escala', 'fichas'].map(id => (embrulhada
+          ? <div key={id}>{linha(id)}</div>
+          : <React.Fragment key={id}>{linha(id)}</React.Fragment>))}
       </div>
     );
   }
@@ -470,6 +473,17 @@ describe('a lista anda pelas setas e exclui pelo Delete', () => {
     teclar('ArrowDown');
     expect(escolhida(), 'a última não dá a volta').toContain(acharArq('fichas').nome);
     teclar('ArrowUp');
+    expect(escolhida()).toContain(acharArq('escala').nome);
+  });
+
+  it('a seta anda também quando cada linha mora numa caixa própria', () => {
+    /* A entrega da CC-DG006 e o repositório da CC-ES012 embrulham cada linha
+       para pôr o campo de renomear no lugar dela. Procurando a vizinha entre
+       irmãs, a linha não tinha irmã nenhuma e a seta não andava. */
+    montar(<Lista embrulhada />);
+    const linhas = container.querySelectorAll<HTMLElement>('[role="row"]');
+    act(() => { linhas[0].focus(); linhas[0].click(); });
+    teclar('ArrowDown');
     expect(escolhida()).toContain(acharArq('escala').nome);
   });
 

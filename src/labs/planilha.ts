@@ -1038,6 +1038,26 @@ export function ordenar(p: Planilha, coluna: number, crescente: boolean): Planil
  * prova; com ele, a fórmula anda na frente de quem arrasta e o `$` passa a ter
  * um efeito que se vê.
  */
+/**
+ * Até onde o clique duplo na alça preenche: a última linha do bloco que a
+ * coluna vizinha tem, a da esquerda e, vazia ela, a da direita.
+ *
+ * É a regra do Excel, e é por ela que se preenche uma coluna de duzentas
+ * linhas sem arrastar duzentas linhas. O vizinho para na primeira célula
+ * vazia — o Excel não pula buraco —, e sem vizinho nenhum o clique duplo não
+ * faz nada, em vez de preencher até o fim da planilha.
+ */
+export function fimDoPreenchimento(p: Planilha, origem: { l: number; c: number }): number {
+  const cheia = (l: number, c: number) => c >= 0 && (p.celulas[l]?.[c]?.texto ?? '').trim() !== '';
+  const desce = (c: number) => {
+    let l = origem.l;
+    while (cheia(l + 1, c)) l++;
+    return l;
+  };
+  const pelaEsquerda = desce(origem.c - 1);
+  return pelaEsquerda > origem.l ? pelaEsquerda : desce(origem.c + 1);
+}
+
 export function preencherAbaixo(p: Planilha, origem: { l: number; c: number }, ate: number): Planilha {
   const base = p.celulas[origem.l]?.[origem.c];
   if (!base || ate <= origem.l) return p;

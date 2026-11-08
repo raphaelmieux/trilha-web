@@ -186,7 +186,34 @@ export default function PlanilhaLab({
   const desfazer = semMenu(g.desfazer);
   const refazer = semMenu(g.refazer);
   const ajustar = semMenu(g.aoAjustarAoConteudo);
-  const aoTeclar = (e: React.KeyboardEvent) => { setContexto(null); g.aoTeclar(e); };
+  /*
+    Ctrl++ insere e Ctrl+− exclui, como no Excel — e, como lá, o atalho age
+    sobre a linha ou a coluna **inteira** selecionada (Shift+Espaço, Ctrl+Espaço),
+    que é o caminho de teclado que a pessoa vai usar no computador do clube.
+    Com só uma célula escolhida o Excel pergunta o que deslocar; aqui não há
+    deslocamento de células, então o atalho diz o que selecionar antes, em vez
+    de adivinhar entre linha e coluna e apagar a errada.
+  */
+  const inserirOuExcluirPeloTeclado = (e: React.KeyboardEvent): boolean => {
+    if (!(e.ctrlKey || e.metaKey) || g.editando) return false;
+    const inserir = e.key === '+' || (e.key === '=' && e.shiftKey);
+    const excluir = e.key === '-';
+    if (!inserir && !excluir) return false;
+    e.preventDefault();
+    const n = { topo: Math.min(faixa.l1, faixa.l2), base: Math.max(faixa.l1, faixa.l2), esq: Math.min(faixa.c1, faixa.c2), dir: Math.max(faixa.c1, faixa.c2) };
+    const linhaInteira = n.esq === 0 && n.dir === p.celulas[0].length - 1;
+    const colunaInteira = n.topo === 0 && n.base === p.celulas.length - 1;
+    if (linhaInteira) (inserir ? inserirLinha : excluirLinha)();
+    else if (colunaInteira) (inserir ? inserirColuna : excluirColuna)();
+    else avisar('Selecione a linha inteira (Shift+Espaço) ou a coluna inteira (Ctrl+Espaço) antes do atalho.');
+    return true;
+  };
+
+  const aoTeclar = (e: React.KeyboardEvent) => {
+    setContexto(null);
+    if (inserirOuExcluirPeloTeclado(e)) return;
+    g.aoTeclar(e);
+  };
 
   /* ── Alinhamento: vale para a faixa inteira, como no Excel ── */
 

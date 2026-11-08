@@ -86,7 +86,9 @@ export function EntregaNaNuvem({ nuvem: n, mudar, avisar, pastaDoProjeto = PASTA
       <div className="nv-corpo">
         <LateralDaNuvem lugar={lugar} aoIr={l => { setLugar(l); if (l === 'meu') setPasta(pastaDoProjeto); }} usado={0.21} />
 
-        <div className="nv-lista">
+        <div className="nv-lista"
+          onClick={e => { if (e.target === e.currentTarget) setEscolhido(null); }}
+          onKeyDown={e => { if (e.key === 'Escape' && escolhido) { e.preventDefault(); setEscolhido(null); } }}>
           <CaminhoDaNuvem trilha={trilha} aoIr={id => { setLugar('meu'); setPasta(id); }} />
 
           {!naLixeira && lugar === 'meu' && (
@@ -137,7 +139,12 @@ export function EntregaNaNuvem({ nuvem: n, mudar, avisar, pastaDoProjeto = PASTA
                       if (a.tipo === 'pasta' && !naLixeira) setPasta(a.id);
                       else if (!naLixeira) avisar(`${a.nome} abriria no programa dele. Aqui a lição é onde ele mora.`);
                     }}
-                    aoMenu={(_, onde) => setMenu({ id: a.id, ...onde })} />
+                    aoMenu={(_, onde) => setMenu({ id: a.id, ...onde })}
+                    aoExcluir={naLixeira ? undefined : () => {
+                      mudar(x => mandarParaALixeira(x, a.id));
+                      avisar(`${a.nome} foi para a lixeira.`);
+                      setEscolhido(null);
+                    }} />
                 )}
             </div>
           ))}

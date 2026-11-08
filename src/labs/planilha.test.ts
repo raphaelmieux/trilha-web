@@ -7,7 +7,7 @@ import {
   historicoDe, registrar, desfazer, refazer, PASSOS_GUARDADOS,
   linhaEscondida, estiloCondicional, ordenar, preencherAbaixo, preencherADireita,
   valorDaGrade, planilhaAtiva, trocarAtiva, planilhaPorNome,
-  moverOuCopiar, renomearAba, substituir, removerDuplicatas, planilhaDe,
+  moverOuCopiar, renomearAba, substituir, removerDuplicatas, planilhaDe, fimDoPreenchimento,
   numeroNaLargura, larguraQuePede, larguraDoNumero, LARGURA_PADRAO,
   pontosDoGrafico, pontosDaDispersao, valorDe,
 } from './planilha';
@@ -729,5 +729,34 @@ describe('colar como o Excel cola', () => {
     const p = colar(base, { l1: 1, c1: 2, l2: 1, c2: 2 }, r);
     expect(p.celulas[1][2].texto).toBe('=A1+B1');
     expect(p.celulas[0][2].texto, 'a origem continuou com a fórmula').toBe('');
+  });
+});
+
+describe('o clique duplo na alça preenche até onde a vizinha tem dado', () => {
+  /*
+    É a regra do Excel, e é o que deixa preencher duzentas linhas sem
+    arrastar duzentas linhas — no celular, sem arrastar nada.
+  */
+  const t = planilhaDe('T', [
+    ['Nome', 'Diárias', 'Valor'],
+    ['Ana', '3', '=B2*45'],
+    ['Bia', '2', ''],
+    ['Caio', '4', ''],
+    ['', '', ''],
+    ['Duda', '1', ''],
+  ]);
+
+  it('desce pela coluna da esquerda e para no primeiro buraco', () => {
+    expect(fimDoPreenchimento(t, { l: 1, c: 2 })).toBe(3);
+  });
+
+  it('sem nada à esquerda, olha a da direita', () => {
+    const d = planilhaDe('D', [['=1', 'x'], ['', 'y'], ['', 'z']]);
+    expect(fimDoPreenchimento(d, { l: 0, c: 0 })).toBe(2);
+  });
+
+  it('sem vizinho, não preenche — e não até o fim da planilha', () => {
+    const s = planilhaDe('S', [['=1'], [''], ['']]);
+    expect(fimDoPreenchimento(s, { l: 0, c: 0 })).toBe(0);
   });
 });

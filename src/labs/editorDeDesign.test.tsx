@@ -293,3 +293,18 @@ describe('o arquivo', () => {
     expect([...container.querySelectorAll('.dz-menu-botao')].map(b => b.textContent)).not.toContain('Arquivo');
   });
 });
+
+describe('recortar', () => {
+  /* Ctrl+X não fazia nada, e o menu Editar não tinha Recortar — em programa
+     de desenho nenhum isso falta. */
+  it('Ctrl+X tira a peça, e Ctrl+V a devolve no mesmo lugar', () => {
+    montar();
+    camada('Quadrado A');
+    tecla('x', { ctrlKey: true });
+    expect(prancha().objetos.some(o => o.nome === 'Quadrado A'), 'o Ctrl+X não tirou a peça').toBe(false);
+    tecla('v', { ctrlKey: true });
+    const volta = prancha().objetos.find(o => o.nome === 'Quadrado A') as { x: number; y: number } | undefined;
+    expect(volta, 'o Ctrl+V não devolveu a peça').toBeTruthy();
+    expect([volta!.x, volta!.y], 'a peça recortada voltou deslocada, como cópia').toEqual([20, 20]);
+  });
+});

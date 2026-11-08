@@ -1670,7 +1670,7 @@ function NotasDaFolha({ doc, blocos, editavel, aoEscrever }: {
 export function FolhaDoWord({
   doc, selecionado, marcas, aoEscolher, aoClicarNoVazio,
   celula, aoCursorNaCelula, aoEditarCelula, aoAcrescentarLinha, aoEscreverNaFaixa,
-  comentado, aoEscolherTrecho, margem, aoEscreverNoParagrafo, aoNovoParagrafo, edicao, aoEscreverNota,
+  comentado, aoEscolherTrecho, margem, aoEscreverNoParagrafo, aoNovoParagrafo, edicao, aoEscreverNota, aoLocalizar,
   faixasAbertas, aoAbrirFaixas, aoFecharFaixas,
 }: {
   doc: Doc<string>;
@@ -1683,6 +1683,12 @@ export function FolhaDoWord({
   aoEditarCelula?: (blocoId: string, linha: number, coluna: number, valor: string) => void;
   /** Tab na última célula de uma tabela: uma linha nova no fim dela. */
   aoAcrescentarLinha?: (blocoId: string) => void;
+  /**
+   * Ctrl+L e Ctrl+U abrem o Localizar e Substituir, que são os atalhos do
+   * Word em português. Só onde o laboratório tem a caixa: sem ela o atalho
+   * prometeria um diálogo que não existe.
+   */
+  aoLocalizar?: () => void;
   aoEscreverNaFaixa?: (onde: 'cabecalho' | 'rodape', trechoId: string, valor: string) => void;
   /** Os trechos com comentário, para o realce que o Word põe embaixo deles. */
   comentado?: Set<string>;
@@ -1725,7 +1731,7 @@ export function FolhaDoWord({
      o sumário logo depois. `null` só acontece em folha sem bloco nenhum. */
   const fechaAAbertura = doc.sumario ? blocoAntesDoSumario(doc) : null;
   const editavel = !!edicao;
-  const raiz = useFolhaEditavel(doc, edicao);
+  const raiz = useFolhaEditavel(doc, edicao, aoLocalizar);
   const [contexto, setContexto] = useState<{ x: number; y: number } | null>(null);
   /* A fonte do documento veste o **papel**, e não a janela. Ela já vestiu a
      janela inteira, e escolher uma serifada trocava a letra da faixa, das
@@ -1971,12 +1977,12 @@ function MenuDeContextoDaFolha({ onde, doc, edicao, aoFechar }: {
  * difere da que já está lá, contada em posições do modelo: reescrever uma
  * seleção igual durante um arrasto do mouse interromperia o arrasto.
  */
-function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
+function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined, aoLocalizar?: () => void) {
   const no = useRef<HTMLDivElement | null>(null);
   const [geracao, setGeracao] = useState(0);
   const compondo = useRef<Selecao | null>(null);
-  const atual = useRef({ doc, edicao });
-  atual.current = { doc, edicao };
+  const atual = useRef({ doc, edicao, aoLocalizar });
+  atual.current = { doc, edicao, aoLocalizar };
 
   const ref = (el: HTMLDivElement | null) => {
     no.current = el;
@@ -2171,10 +2177,19 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
         if (tecla === 'b') return parar({ tipo: 'marca', marca: 'negrito' });
         if (tecla === 'i') return parar({ tipo: 'marca', marca: 'italico' });
         if (tecla === 'u') return parar({ tipo: 'marca', marca: 'sublinhado' });
+        /* No editor de navegador Ctrl+[ e Ctrl+] são o recuo — é o que o
+           botão anuncia —, e não um ponto de fonte, que é o do Word. */
+        if (ev.key === '[' || ev.code === 'BracketLeft') return paragrafar({ tipo: 'recuo', delta: -1 });
+        if (ev.key === ']' || ev.code === 'BracketRight') return paragrafar({ tipo: 'recuo', delta: 1 });
       } else {
         if (tecla === 'n') return parar({ tipo: 'marca', marca: 'negrito' });
         if (tecla === 'i') return parar({ tipo: 'marca', marca: 'italico' });
         if (tecla === 's') return parar({ tipo: 'marca', marca: 'sublinhado' });
+        if ((tecla === 'l' || tecla === 'u') && !ev.shiftKey && atual.current.aoLocalizar) {
+          ev.preventDefault();
+          atual.current.aoLocalizar();
+          return;
+        }
         if (tecla === 'b' || tecla === 'u') return parar();
         /* Os de parágrafo do Word em português: Q à esquerda, E centraliza,
            G à direita, J justifica; 1, 5 e 2 são as entrelinhas simples, 1,5
@@ -2356,7 +2371,7 @@ export function DialogoDeSubstituir({
       <h4>Localizar e Substituir</h4>
       <label>
         Localizar:
-        <input type="text" value={procurar} aria-label="Localizar"
+        <input type="text" value={procurar} aria-label="Localizar" autoFocus
           onChange={ev => aoMudarProcurar(ev.target.value)} />
       </label>
       <label>

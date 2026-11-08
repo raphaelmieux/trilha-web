@@ -456,3 +456,20 @@ describe('a nuvem tem os mesmos comandos em toda lição', () => {
     }
   });
 });
+
+describe('os atalhos são os do editor de navegador', () => {
+  /* Ctrl+[ e Ctrl+] são o recuo no editor de navegador — o botão diz — e um
+     ponto de fonte no Word. O atalho do Word tinha vazado para cá. */
+  it('Ctrl+] recua o parágrafo, e não muda a fonte', () => {
+    montar('juntos');
+    const p = container.querySelector<HTMLElement>('.wd-canvas [contenteditable="true"] p[data-bloco], .wd-canvas p[data-bloco]')!;
+    const id = p.dataset.bloco!;
+    porCursor(container, id, 0);
+    const margemAntes = p.style.marginLeft;
+    tecla(container, ']', { ctrl: true, code: 'BracketRight' });
+    const depois = container.querySelector<HTMLElement>(`p[data-bloco="${id}"]`)!;
+    expect(depois.style.marginLeft, 'o Ctrl+] não recuou o parágrafo').not.toBe(margemAntes);
+    expect(depois.querySelector<HTMLElement>('[data-trecho]')?.style.fontSize ?? '', 'o Ctrl+] mudou a fonte').toBe(
+      p.querySelector<HTMLElement>('[data-trecho]')?.style.fontSize ?? '');
+  });
+});

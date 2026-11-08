@@ -264,8 +264,10 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
     const i = atual;
     const j = i + d;
     if (j < 0 || j >= ap.slides.length) return;
+    /* Tira e reinsere: arrastar a miniatura para longe leva só ela. */
     const slides = [...ap.slides];
-    [slides[i], slides[j]] = [slides[j], slides[i]];
+    const [levado] = slides.splice(i, 1);
+    slides.splice(j, 0, levado);
     mudarAp(a => ({ ...a, slides }));
     setAtual(j);
   };

@@ -1,4 +1,6 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { CAMADA_DA_PLATAFORMA } from '../labs/camadas';
+import { instalarToqueLongo } from '../labs/toqueLongo';
 import { NoBastidor } from './bastidor';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, ArrowLeft, X, ListChecks, MonitorSmartphone, LifeBuoy } from 'lucide-react';
@@ -165,9 +167,9 @@ function marcarAvisado(programa: string): void {
 
   600 fica acima de tudo que o Scratch pinta como interface, e abaixo do menu de
   contexto dele (10000) e das dicas (999) — cobrir o menu que a pessoa acabou de
-  abrir seria trocar um defeito por outro.
+  abrir seria trocar um defeito por outro — e é por isso que os menus dos
+  programas imitados ficam acima desta camada, em `camadas.ts`.
 */
-const CAMADA_DA_PLATAFORMA = 600;
 
 /*
   O painel de tarefas é branco, e o que cai dentro dele vem da plataforma.
@@ -242,6 +244,12 @@ export default function LaboratorioEmTelaCheia({
        reiniciaria sozinha para sempre. */
   }, [daVez?.id, passos.length]);
 
+  /* Segurar o dedo abre o menu do botão direito, em todo laboratório de uma
+     vez — `toqueLongo.ts` diz por quê, e por que mora aqui e não em cada
+     menu. */
+  const raiz = useRef<HTMLDivElement | null>(null);
+  useEffect(() => (raiz.current ? instalarToqueLongo(raiz.current) : undefined), []);
+
   /* A página atrás não deve rolar por baixo da moldura: no celular isso vira
      aquele arrasto que devolve a tela para um lugar que ninguém pediu. */
   useEffect(() => {
@@ -303,7 +311,7 @@ export default function LaboratorioEmTelaCheia({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: imitaPrograma ? FUNDO_DO_PROGRAMA : FUNDO_DA_PLATAFORMA }}>
+    <div ref={raiz} className="fixed inset-0 z-[60] flex flex-col" style={{ background: imitaPrograma ? FUNDO_DO_PROGRAMA : FUNDO_DA_PLATAFORMA }}>
       <style>{CSS_DA_MOLDURA}</style>
       <div className="flex-1 flex min-h-0">
         {/* O programa imitado */}

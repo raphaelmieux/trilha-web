@@ -384,3 +384,17 @@ describe('a conversa da margem, na tela', () => {
     expect(podeConcluir(), 'um comentário em branco já contou').toBe(false);
   });
 });
+
+describe('Ctrl+L e Ctrl+U abrem o Localizar e Substituir', () => {
+  /* São os atalhos do Word em português. O Ctrl+U era só parado, para o
+     Chrome não sublinhar por conta própria, e não abria nada. */
+  it('com o cursor no documento, o atalho abre a caixa e põe o cursor no Localizar', () => {
+    montar();
+    expect(container.querySelector('[aria-label="Localizar e Substituir"]')).toBeNull();
+    const p = container.querySelector<HTMLElement>('.wd-canvas p[data-bloco]')!;
+    porCursor(container, p.dataset.bloco!, 0);
+    tecla(container, 'u', { ctrl: true });
+    expect(container.querySelector('[aria-label="Localizar e Substituir"]'), 'o Ctrl+U não abriu a caixa').not.toBeNull();
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Localizar');
+  });
+});

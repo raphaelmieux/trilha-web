@@ -167,6 +167,42 @@ export function semMouse(): boolean {
   }
 }
 
+/**
+ * A seta na lista: anda uma linha a partir de onde a seleção está, e com Shift
+ * estende a faixa a partir da âncora, que fica parada — a regra do clique com
+ * Shift, pelo teclado.
+ *
+ * De onde ela anda é a ponta da faixa oposta à âncora, e não a âncora: depois
+ * de Shift+↓ três vezes, o ↓ seguinte com Shift tem de pegar a quarta linha, e
+ * medido da âncora pegaria a segunda outra vez. Sem nada escolhido, a primeira
+ * seta escolhe a primeira linha, como no Explorador.
+ */
+export type DirecaoNaLista = 'cima' | 'baixo' | 'inicio' | 'fim';
+
+export function aoAndar(atual: Selecao, visiveis: string[], direcao: DirecaoNaLista, shift: boolean): Selecao {
+  if (!visiveis.length) return atual;
+  const pos = (id: string) => visiveis.indexOf(id);
+  const ancora = atual.ancora ? pos(atual.ancora) : -1;
+  const marcadas = atual.ids.map(pos).filter(i => i >= 0);
+  let ponta = ancora;
+  if (marcadas.length > 1 && ancora >= 0) {
+    const menor = Math.min(...marcadas);
+    const maior = Math.max(...marcadas);
+    ponta = maior > ancora ? maior : menor;
+  } else if (marcadas.length) {
+    ponta = marcadas[marcadas.length - 1];
+  }
+  const ultimo = visiveis.length - 1;
+  const destino = direcao === 'inicio' ? 0
+    : direcao === 'fim' ? ultimo
+      : ponta < 0 ? 0
+        : Math.max(0, Math.min(ultimo, ponta + (direcao === 'baixo' ? 1 : -1)));
+  if (shift && ancora >= 0) {
+    return { ids: intervalo(visiveis, atual.ancora!, visiveis[destino]), ancora: atual.ancora };
+  }
+  return apenas(visiveis[destino]);
+}
+
 /* ── O teclado ───────────────────────────────────────────────────────────── */
 
 /** O que cada atalho do Explorador faz. Quem não passa um, não ganha a tecla. */
@@ -177,6 +213,14 @@ export interface AtalhosDoExplorador {
   excluir?: () => void;
   renomear?: () => void;
   selecionarTudo?: () => void;
+  /** Setas, Home e End na lista; com Shift, estendem. */
+  andar?: (direcao: DirecaoNaLista, shift: boolean) => void;
+  /** Enter abre o que está escolhido. */
+  abrir?: () => void;
+  /** Backspace e Alt+← voltam; Alt+→ avança; Alt+↑ sobe um nível. */
+  voltar?: () => void;
+  avancar?: () => void;
+  subir?: () => void;
 }
 
 /**
@@ -225,6 +269,31 @@ export function useAtalhosDoExplorador(atalhos: AtalhosDoExplorador, ativo = tru
       if (cmd && e.key.toLowerCase() === 'v') return chamar(atalhos.colar);
       if (!cmd && e.key === 'Delete') return chamar(atalhos.excluir);
       if (!cmd && e.key === 'F2') return chamar(atalhos.renomear);
+
+      /* Os de andar não valem em cima de botão, link ou item de menu: lá o
+         Enter é apertar aquele botão, e as setas são de quem tem o foco. */
+      if (alvo instanceof Element
+        && alvo.closest('button, a, select, [role="menuitem"], [role="tab"], [role="option"]')) return;
+      if (e.altKey && e.key === 'ArrowLeft') return chamar(atalhos.voltar);
+      if (e.altKey && e.key === 'ArrowRight') return chamar(atalhos.avancar);
+      if (e.altKey && e.key === 'ArrowUp') return chamar(atalhos.subir);
+      if (e.altKey) return;
+      if (!cmd && e.key === 'Backspace') return chamar(atalhos.voltar);
+      if (!cmd && e.key === 'Enter') return chamar(atalhos.abrir);
+      const direcao: DirecaoNaLista | null = e.key === 'ArrowDown' ? 'baixo' : e.key === 'ArrowUp' ? 'cima'
+        : e.key === 'Home' ? 'inicio' : e.key === 'End' ? 'fim' : null;
+      if (direcao && !cmd && atalhos.andar) {
+        const andar = atalhos.andar;
+        chamar(() => {
+          andar(direcao, e.shiftKey);
+          /* A linha escolhida vem para a vista, senão a seta desce para fora
+             da tela e a pessoa não vê o que escolheu. */
+          (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : setTimeout)(() => {
+            const linhas = document.querySelectorAll<HTMLElement>('.win-linha.escolhida');
+            linhas[linhas.length - 1]?.scrollIntoView?.({ block: 'nearest' });
+          });
+        });
+      }
     };
 
     window.addEventListener('keydown', ouvir);

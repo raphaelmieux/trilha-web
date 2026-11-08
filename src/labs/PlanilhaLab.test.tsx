@@ -174,3 +174,32 @@ describe('a janela é a do Excel', () => {
     }
   });
 });
+
+describe('Ctrl++ e Ctrl+− inserem e excluem pelo teclado', () => {
+  /* No Excel o caminho de teclado é selecionar a linha inteira e apertar o
+     atalho. Aqui ele não fazia nada, e quem sabia o atalho concluía que não
+     sabia. */
+  const grade = () => container.querySelector('.pl-grade-caixa')!;
+  const primeiraColuna = () => [...container.querySelectorAll('.pl-grade tbody tr')]
+    .slice(0, 4).map(tr => tr.querySelectorAll('td')[0].textContent?.trim());
+
+  it('com a linha inteira escolhida, Ctrl+− a exclui e Ctrl++ abre uma acima', () => {
+    act(() => { celulas(1)[0].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 })); });
+    const antes = primeiraColuna();
+    teclar(grade(), ' ', { shiftKey: true });
+    teclar(grade(), '-', { ctrlKey: true });
+    expect(primeiraColuna()[1], 'o Ctrl+− não excluiu a linha').toBe(antes[2]);
+    teclar(grade(), ' ', { shiftKey: true });
+    teclar(grade(), '+', { ctrlKey: true });
+    expect(primeiraColuna()[1], 'o Ctrl++ não abriu a linha acima').toBe('');
+    expect(primeiraColuna()[2]).toBe(antes[2]);
+  });
+
+  it('com uma célula só, o atalho não adivinha entre linha e coluna', () => {
+    act(() => { celulas(1)[0].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 })); });
+    const antes = primeiraColuna();
+    teclar(grade(), '-', { ctrlKey: true });
+    expect(primeiraColuna()).toEqual(antes);
+    expect(container.textContent).toContain('Selecione a linha inteira');
+  });
+});

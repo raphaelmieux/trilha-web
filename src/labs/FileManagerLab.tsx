@@ -14,7 +14,7 @@ import {
 } from './explorer';
 import {
   SEM_SELECAO, apenas, aoClicar, aoAbrirMenu, aoComecarArrasto, aoMarcarCaixa,
-  todos, podar, semMouse, useAtalhosDoExplorador, type Selecao,
+  todos, podar, semMouse, useAtalhosDoExplorador, aoAndar, type Selecao,
 } from './selecao';
 import { VisualizadorDe } from './visualizadores';
 import { familiaDe, PROGRAMA_DA_FAMILIA } from './tiposDeArquivo';
@@ -431,6 +431,14 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
     excluir: naLixeira ? undefined : excluir,
     renomear,
     selecionarTudo: () => setSelecao(todos(idsVisiveis)),
+    andar: (direcao, shift) => setSelecao(sel => aoAndar(podar(sel, idsVisiveis), idsVisiveis, direcao, shift)),
+    abrir: () => {
+      const n = escolhidos.length ? acharNo(arvore, escolhidos[0]) : undefined;
+      if (n) abrir(n);
+    },
+    voltar: () => { if (posicao > 0) { setPosicao(p => Math.max(0, p - 1)); limpar(); } },
+    avancar: () => { if (posicao < historico.length - 1) { setPosicao(p => Math.min(historico.length - 1, p + 1)); limpar(); } },
+    subir: () => { if (noAtual?.paiId) irPara(noAtual.paiId); },
   }, !emFoco && !salvo);
 
   if (salvo) {

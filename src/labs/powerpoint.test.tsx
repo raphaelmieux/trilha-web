@@ -211,11 +211,25 @@ describe('a tira de miniaturas responde como a do PowerPoint', () => {
     expect(container.querySelector('[role="menu"]'), 'o menu fecha depois de agir').toBeNull();
   });
 
+  it('arrastar a miniatura para outra posição a leva até lá', () => {
+    act(() => root.render(<Tira />));
+    const arrastar = (tipo: string, el: HTMLElement) => act(() => {
+      el.dispatchEvent(new Event(tipo, { bubbles: true, cancelable: true }));
+    });
+    arrastar('dragstart', item(0));
+    arrastar('dragover', item(2));
+    expect(item(2).dataset.caiAqui, 'nada mostra onde a miniatura vai cair').toBe('depois');
+    arrastar('drop', item(2));
+    expect(feito).toEqual(['mover 2']);
+    expect(item(2).dataset.caiAqui).toBeUndefined();
+  });
+
   it('sem ações, a tira só navega: nem menu nem Delete', () => {
     act(() => root.render(<Tira comAcoes={false} />));
     act(() => { item(0).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })); });
     expect(container.querySelector('[role="menu"]')).toBeNull();
     teclar(item(0), 'Delete');
     expect(feito).toEqual([]);
+    expect(item(0).getAttribute('draggable'), 'a tira que só navega deixa arrastar').toBe('false');
   });
 });

@@ -399,6 +399,7 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair, 
           comentado={comentados}
           aoEscolher={() => setAviso('')}
           margem={margem}
+          aoLocalizar={() => setBuscaAberta(true)}
         />
 
         <div className="wd-status">

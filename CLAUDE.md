@@ -513,6 +513,31 @@ continua não sendo lida.
 a moldura oferece o passo a passo da tarefa da vez, escrito em `passos`. É
 convite, não despejo: quem está achando sozinho tem o direito de achar sozinho.
 
+**Segurar o dedo é o botão direito.** É assim no Windows com tela de toque, no
+Excel e no PowerPoint do tablet, e no Drive. No celular nenhum menu de contexto
+abria: o Safari do iPhone nunca dispara `contextmenu` num toque longo, e o
+Chrome do Android dispara só às vezes. E a lição dizia "no celular, segure o
+item" — a ajuda do Explorador prometia um gesto que não existia.
+
+O detector mora na moldura (`toqueLongo.ts`), e não em cada menu: meio segundo
+de dedo parado dispara um `contextmenu` de verdade no ponto do dedo, e todo
+`onContextMenu` que já existe o recebe como receberia do mouse. Menu novo
+funciona no celular no dia em que nasce. Três decisões erram calado se
+invertidas: **texto editável fica com o sistema**, que seleciona a palavra com
+as alças dele; **o clique de soltar o dedo é engolido**, no documento inteiro e
+não só na moldura, porque há menu que se desenha no `body` e o clique cairia no
+item que acabou de abrir debaixo do dedo; e **se o navegador já disparou o
+evento dele, o nosso não dispara**, senão o menu abriria duas vezes.
+
+**O menu que acabou de abrir fica acima da plataforma.** A bolha de tarefas
+ocupa a metade de baixo da tela do celular, na camada 600, e os menus dos
+programas imitados estavam entre 40 e 80: o menu da linha do Explorador saía
+com Excluir e Propriedades atrás da bolha. É a regra que a moldura já tinha
+escrito para o menu do Scratch — cobrir o menu que alguém acabou de abrir é
+trocar um defeito por outro. As camadas moram em `camadas.ts`, e
+`camadas.test.ts` lê a folha de cada programa, e não a constante: é a folha que
+o navegador lê.
+
 **O nome da lição desce do currículo.** Laboratório não escreve o próprio
 título: recebe `lessonTitle`. Oito escreviam, e a lição "Montando um site de
 quatro páginas" abria um cartão escrito "SiteLab — Site com quatro páginas".
@@ -1602,6 +1627,14 @@ dentro do campo de renomear selecionaria a pasta em vez do texto, e o Del
 apagaria o arquivo em vez da letra. E fica **acima** do `if (salvo)` do
 `FileManagerLab`: hook depois de um return antecipado deixa de ser chamado em
 algumas renderizações, e o React conta os hooks pela ordem.
+
+**E a lista anda pelo teclado.** As teclas eram só as de comando; setas,
+Enter e Backspace não faziam nada. Hoje `useAtalhosDoExplorador` tem as do
+Explorador de verdade: setas, Home e End andam, e com Shift estendem a partir
+da âncora (`aoAndar`, em `selecao.ts`, mede da ponta da faixa, senão o segundo
+Shift+↓ repetiria o primeiro); Enter abre; Backspace e Alt+← voltam, Alt+→
+avança, Alt+↑ sobe um nível. Elas não valem com o foco num botão ou num item
+de menu, onde o Enter é apertar aquele botão.
 
 **Trava de motor não é trava de tela.** `exploradorValidator.test.ts` prova que
 cada verificação pode ficar verde chamando o motor. Isso não prova que a janela
@@ -3871,6 +3904,20 @@ E, depois de um Esc, a edição seguinte não andava com o Tab: a marca de ediç
 já resolvida ficava de pé. Toda abertura de edição passa por `comecarEdicao`,
 que a zera.
 
+**Dois cliques na alça preenchem até onde a vizinha tem dado**, que é a regra
+do Excel (`fimDoPreenchimento`): a coluna da esquerda, e vazia ela, a da
+direita, até a primeira célula vazia — o Excel não pula buraco, e sem vizinho
+não preenche nada, em vez de ir até o fim da planilha. Mora no gancho, e não
+num `onDoubleClick` da grade: os laboratórios ganham o gesto sem passar nada
+novo, e dois toques do dedo também valem — no celular arrastar a alça por
+duzentas linhas é impossível.
+
+**Ctrl++ e Ctrl+− inserem e excluem**, na AP043, que é a planilha que tem os
+comandos. Como no Excel, agem sobre a linha ou a coluna **inteira**
+selecionada (Shift+Espaço, Ctrl+Espaço); com uma célula só o Excel pergunta o
+que deslocar, e aqui, sem deslocamento de células, o atalho diz o que
+selecionar antes em vez de adivinhar e apagar a errada.
+
 **A AP044 deixou de ter uma planilha só dela.** Ela desenhava uma tabela HTML,
 com o total num painel ao lado e a fórmula num botão: as setas, o F2 e a barra
 de fórmulas que a AP043 acabara de ensinar não existiam ali. Hoje é uma pasta de
@@ -3934,6 +3981,11 @@ apresentam; no telão as setas, o espaço e o Page Down andam, e o Esc sai. A AP
 ganhou a guia Apresentação de Slides, com os dois botões onde o PowerPoint os
 põe.
 
+**Arrastar a miniatura reordena**, com uma linha mostrando onde ela cai. Mover
+passou a tirar e reinserir, e não a trocar com o destino: para uma posição dá
+no mesmo, e arrastar três lugares para baixo leva só ela — trocar traria o
+slide de lá para cá.
+
 **A lista da nuvem se comporta como a de uma nuvem.** Pastas primeiro, o resto
 em ordem de dicionário (`emOrdemDaLista`, com número como número: Ata 9 antes de
 Ata 10), e o cabeçalho do Nome inverte. O menu abre **onde se clicou** — abria
@@ -3947,7 +3999,24 @@ levam o foco junto, o Delete manda para a lixeira, e o Esc e o clique no vazio
 desfazem a escolha. A vizinha é procurada no DOM, pela ordem da tela, como o
 Shift da seleção do Explorador. O Delete entra pela presença de `aoExcluir`, e
 o laboratório só o passa onde a lixeira existe e a pessoa pode editar — o mesmo
-que desliga o item do menu.
+que desliga o item do menu. A vizinha se procura na lista inteira, e não entre
+irmãs: a entrega da CC-DG006 e o repositório da CC-ES012 embrulham cada linha
+numa caixa para pôr o campo de renomear no lugar dela, e lá a linha não tinha
+irmã nenhuma — a seta não andava.
+
+**Atalho anunciado é atalho que funciona.** O editor de foto escrevia Ctrl+D,
+Ctrl+O, Ctrl+Shift+E e Alt+Ctrl+I ao lado dos itens do menu, e o teclado não
+fazia nada com nenhum. Ao lado disso, três que faltavam no programa imitado: o
+Ctrl+X do editor de design (recortar e colar devolve a peça ao mesmo lugar,
+porque o deslocamento do colar existe para a cópia não cair em cima da
+original), o Ctrl+L e o Ctrl+U do Word, que abrem o Localizar e Substituir onde
+o laboratório tem a caixa (`aoLocalizar`), e o Ctrl+F do leitor de PDF, que
+leva à caixa dele — a busca do navegador procura no desenho da página e
+acharia a palavra no documento em imagem, que é o contrário da lição.
+
+E o atalho é o do programa imitado: Ctrl+[ e Ctrl+] são um ponto de fonte no
+Word e o recuo no editor de navegador, que é o que o botão de lá anuncia. O do
+Word tinha vazado para a CC-ES006.
 
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
@@ -5761,6 +5830,20 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/planilha.test.ts` | colar uma cópia sem transpor a referência relativa, ou mover transpondo |
 | `src/labs/ajudaDeFormulas.test.ts` | função sugerida na lista que o motor responde com `#NOME?`, ou referência abrindo a lista |
 | `src/labs/powerpoint.test.tsx` | tira de miniaturas que só se clica, ou Tab no corpo do slide que não rebaixa o tópico |
+| `src/labs/toqueLongo.test.ts` | toque longo que não vira botão direito, que abre menu no texto editável, ou cujo clique de soltar cai no menu |
+| `src/components/LaboratorioEmTelaCheia.test.tsx` | moldura que deixa de instalar o toque longo, e com ela todo menu de contexto no celular |
+| `src/labs/camadas.test.ts` | menu de contexto de programa imitado abaixo da bolha de tarefas |
+| `src/labs/selecao.test.ts` | seta da lista que não anda, ou Shift+seta medido da âncora em vez da ponta |
+| `src/components/LaboratorioDeExplorador.test.tsx` | Explorador que não anda pelas setas, não abre no Enter ou não volta no Backspace |
+| `src/labs/planilha.test.ts` | dois cliques na alça que pulam o buraco da vizinha, ou preenchem sem vizinha nenhuma |
+| `src/labs/PlanilhaLab.test.tsx` | Ctrl+− que exclui sem a linha inteira escolhida, ou que não exclui com ela |
+| `src/labs/powerpoint.test.tsx` | miniatura que não se arrasta, ou que se arrasta na tira que só navega |
+| `src/components/LaboratorioDaRevisao.test.tsx` | Ctrl+U que não abre o Localizar e Substituir |
+| `src/labs/leitorDePdf.test.tsx` | Ctrl+F que deixa a busca do navegador abrir em cima do leitor |
+| `src/labs/editorDeDesign.test.tsx` | Ctrl+X que não recorta, ou colar do recortado que o devolve deslocado |
+| `src/components/LaboratorioDeFoto.test.tsx` | atalho escrito no menu do editor de foto que o teclado não faz |
+| `src/components/LaboratorioDaNuvem.test.tsx` | Ctrl+] do Word mudando a fonte no editor de navegador, onde é o recuo |
+| `src/labs/nuvem.test.tsx` | seta que não anda quando cada linha mora numa caixa própria |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

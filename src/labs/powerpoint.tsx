@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { CAMADA_DO_MENU, CAMADA_DO_VEU_DO_MENU } from './camadas';
 import { Copy, Link2, Music, Play, Plus, Trash2 } from 'lucide-react';
 import {
   CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice, AcessibilidadeDoStatus,
@@ -89,9 +90,9 @@ export const CSS_POWERPOINT = `
 .pp-menu-item:hover { background: #EDEBE9 !important; }
 /* O menu do botão direito da miniatura. Fica dentro da janela, e não no
    body: o véu posto fora da moldura da plataforma ficaria por baixo dela. */
-.pp-veu { position: fixed; inset: 0; z-index: 50; }
+.pp-veu { position: fixed; inset: 0; z-index: ${CAMADA_DO_VEU_DO_MENU}; }
 .pp-contexto {
-  position: fixed; z-index: 60; background: #FFFFFF; border: 1px solid #C8C6C4;
+  position: fixed; z-index: ${CAMADA_DO_MENU}; background: #FFFFFF; border: 1px solid #C8C6C4;
   border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.26); min-width: 210px; padding: 4px;
 }
 .pp-contexto-item { display: flex; align-items: center; gap: 10px; }
@@ -109,6 +110,9 @@ export const CSS_POWERPOINT = `
 }
 .pp-tira-moldura { flex: 1; border: 2px solid transparent; }
 .pp-tira-item[aria-current="true"] .pp-tira-moldura { border-color: #B7472A; }
+/* A linha de onde a miniatura arrastada vai cair, como no PowerPoint. */
+.pp-tira-item[data-cai-aqui="antes"] { box-shadow: inset 0 3px 0 #B7472A; }
+.pp-tira-item[data-cai-aqui="depois"] { box-shadow: inset 0 -3px 0 #B7472A; }
 .pp-palco { flex: 1; min-width: 0; overflow: auto; padding: 16px; display: flex; justify-content: center; }
 .pp-slide {
   position: relative; aspect-ratio: 16 / 9; width: 100%;
@@ -787,7 +791,7 @@ export interface AcoesDaTira {
   novo: () => void;
   duplicar: () => void;
   excluir: () => void;
-  /** Sobe (-1) ou desce (+1) o slide atual uma posição. */
+  /** Leva o slide atual `delta` posições para baixo (negativo, para cima). */
   mover: (delta: number) => void;
 }
 
@@ -815,6 +819,10 @@ export function TiraDeSlides({ total, atual, aoIr, rotuloDe, desenhar, acoes }: 
 }) {
   const tira = useRef<HTMLDivElement | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  /* Arrastar a miniatura muda a ordem, como no PowerPoint; a linha mostra
+     onde ela vai cair. Só com `acoes`: a tira que só navega não reordena. */
+  const [arrastando, setArrastando] = useState<number | null>(null);
+  const [cairEm, setCairEm] = useState<number | null>(null);
   /* O foco acompanha o slide atual depois de andar, criar ou excluir: sem
      isso a seta seguinte cairia no botão de um slide que já saiu. */
   const andou = useRef(false);
@@ -880,6 +888,25 @@ export function TiraDeSlides({ total, atual, aoIr, rotuloDe, desenhar, acoes }: 
           aria-selected={i === atual} aria-current={i === atual}
           aria-label={rotuloDe(i)} data-slide={i}
           tabIndex={i === atual ? 0 : -1}
+          data-cai-aqui={cairEm === i && arrastando !== null && arrastando !== i ? (i > arrastando ? 'depois' : 'antes') : undefined}
+          draggable={!!acoes}
+          onDragStart={acoes ? ev => {
+            if (ev.dataTransfer) {
+              ev.dataTransfer.effectAllowed = 'move';
+              ev.dataTransfer.setData('text/plain', String(i));
+            }
+            setArrastando(i);
+            aoIr(i);
+          } : undefined}
+          onDragOver={acoes ? ev => { if (arrastando === null) return; ev.preventDefault(); setCairEm(i); } : undefined}
+          onDrop={acoes ? ev => {
+            ev.preventDefault();
+            const de = arrastando;
+            setArrastando(null);
+            setCairEm(null);
+            if (de !== null && de !== i) fazer(() => acoes.mover(i - de));
+          } : undefined}
+          onDragEnd={() => { setArrastando(null); setCairEm(null); }}
           onClick={ev => { ev.stopPropagation(); setMenu(null); aoIr(i); }}
           onContextMenu={acoes ? ev => {
             ev.preventDefault();

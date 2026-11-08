@@ -288,3 +288,23 @@ describe('o que a janela não pode deixar fácil', () => {
     expect((porRotulo('Temperatura') as HTMLInputElement).value).toBe('-50');
   }, 60000);
 });
+
+describe('os atalhos que os menus anunciam', () => {
+  /* O menu dizia "Exportar como… Ctrl+Shift+E" e "Tamanho da imagem…
+     Alt+Ctrl+I", e o teclado não fazia nada com nenhum dos dois. */
+  const teclar = (key: string, extra: KeyboardEventInit) =>
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...extra })); });
+
+  it('Alt+Ctrl+I abre o Tamanho da imagem, e Ctrl+Shift+E o Exportar como', () => {
+    montar('formatos');
+    expect(porRotulo('Nome do arquivo')).toBeNull();
+    teclar('e', { ctrlKey: true, shiftKey: true });
+    expect(porRotulo('Nome do arquivo'), 'o Ctrl+Shift+E não abriu o Exportar como').not.toBeNull();
+    act(() => root.unmount());
+    container.remove();
+    montar('formatos');
+    teclar('i', { ctrlKey: true, altKey: true });
+    expect(container.querySelector('[role="dialog"][aria-label="Tamanho da imagem"]'),
+      'o Alt+Ctrl+I não abriu o Tamanho da imagem').not.toBeNull();
+  }, 60000);
+});

@@ -79,7 +79,9 @@ function ListaDoProjeto({ ctx, mudar, avisar, conjunto, extra }: PropsDaSuperfic
       <div className="nv-corpo">
         <LateralDaNuvem lugar={lugar} aoIr={setLugar} usado={0.34} />
 
-        <div className="nv-lista">
+        <div className="nv-lista"
+          onClick={e => { if (e.target === e.currentTarget) setEscolhido(null); }}
+          onKeyDown={e => { if (e.key === 'Escape' && escolhido) { e.preventDefault(); setEscolhido(null); } }}>
           <CaminhoDaNuvem trilha={trilha} aoIr={setPasta} />
 
           {extra && <div className="nv-extra">{extra}</div>}

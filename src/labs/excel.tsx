@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState } from 'react';
+import { CAMADA_DO_MENU, CAMADA_DO_VEU_DO_MENU } from './camadas';
 import { createPortal } from 'react-dom';
 import {
   ArrowDownAZ, ArrowUpZA, Check, ChevronDown, ChevronLeft, ChevronRight, ClipboardPaste, Copy, Eraser, Filter,
@@ -181,11 +182,11 @@ export const CSS_EXCEL = `
 /* O menu do botão direito é preso à janela, e não à célula: célula com
    overflow escondido recortaria o menu pela metade. */
 .pl-contexto {
-  position: fixed; z-index: 60;
+  position: fixed; z-index: ${CAMADA_DO_MENU};
   background: #FFFFFF; border: 1px solid #C8C6C4; border-radius: 4px;
   box-shadow: 0 8px 24px rgba(0,0,0,.26); min-width: 224px; padding: 4px;
 }
-.pl-veu { position: fixed; inset: 0; z-index: 50; }
+.pl-veu { position: fixed; inset: 0; z-index: ${CAMADA_DO_VEU_DO_MENU}; }
 .pl-menu-item {
   display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
   padding: 7px 10px; font-size: 12.5px; border: none; border-radius: 2px;
@@ -985,7 +986,7 @@ export function GradeDoExcel({
                     {ancora && aoComecarPreenchimento && rascunho === null && (
                       <span
                         className="pl-alca-preencher"
-                        title="Arraste para preencher as células abaixo ou ao lado"
+                        title="Arraste para preencher as células abaixo ou ao lado; dois cliques preenchem até o fim dos dados"
                         aria-label="Alça de preenchimento"
                         onPointerDown={e => {
                           e.stopPropagation();
