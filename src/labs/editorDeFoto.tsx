@@ -279,6 +279,13 @@ export function EditorDeFoto({ documento: d, mudar, pasta = [], aoAbrir, aoExpor
       if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); voltar(); }
       else if (mod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) { e.preventDefault(); avancar(); }
       else if (e.key === 'Delete' && d.selecao) { e.preventDefault(); excluirSelecao(); }
+      /* Os atalhos que os menus anunciam. Estavam escritos ao lado de cada
+         item e nenhum fazia nada — a dica que nomeia um gesto que o programa
+         não tem ensina a pessoa a achar que ela errou. */
+      else if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'd') { e.preventDefault(); mudar({ ...d, selecao: null }); }
+      else if (mod && e.altKey && e.key.toLowerCase() === 'i') { e.preventDefault(); setDialogo('tamanho'); }
+      else if (mod && !e.shiftKey && e.key.toLowerCase() === 'o' && aoAbrir) { e.preventDefault(); setDialogo('abrir'); }
+      else if (mod && e.shiftKey && e.key.toLowerCase() === 'e' && aoExportar) { e.preventDefault(); setDialogo('exportar'); }
     };
     window.addEventListener('keydown', tecla);
     return () => window.removeEventListener('keydown', tecla);

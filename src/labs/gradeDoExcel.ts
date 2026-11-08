@@ -32,7 +32,7 @@ import {
   type Direcao, type Faixa, type Planilha, type Recorte,
   ALTURA_PADRAO, LARGURA_PADRAO, larguraQuePede,
   colar as colarEm, copiar as copiarFaixa, escrever, limpar, mover, normalizar,
-  preencherAbaixo, preencherADireita, proxima, valorDaGrade,
+  fimDoPreenchimento, preencherAbaixo, preencherADireita, proxima, valorDaGrade,
 } from './planilha';
 import { mostrar } from './formulas';
 import {
@@ -612,6 +612,30 @@ export function useGradeDoExcel({
 
   /* ── A alça de preenchimento ───────────────────────────────────────────── */
 
+  /*
+    Dois cliques seguidos na alça preenchem a coluna até onde a vizinha tem
+    dado, como no Excel. Mora aqui, e não num `onDoubleClick` da grade, por
+    dois motivos: os laboratórios ganham o gesto sem passar nada novo, e dois
+    toques do dedo também valem — no celular arrastar a alça por duzentas
+    linhas é impossível, e dois toques não.
+  */
+  const toqueNaAlca = useRef<{ l: number; c: number; quando: number } | null>(null);
+  const comecarPreenchimento = (origem: { l: number; c: number }) => {
+    const antes = toqueNaAlca.current;
+    const agora = Date.now();
+    if (antes && antes.l === origem.l && antes.c === origem.c && agora - antes.quando < 450) {
+      toqueNaAlca.current = null;
+      setPreenchendo(null);
+      const ate = fimDoPreenchimento(p, origem);
+      if (ate <= origem.l) return;
+      mudar(q => preencherAbaixo(q, origem, ate));
+      setFaixa({ l1: origem.l, c1: origem.c, l2: ate, c2: origem.c });
+      return;
+    }
+    toqueNaAlca.current = { ...origem, quando: agora };
+    setPreenchendo(origem);
+  };
+
   const soltarPreenchimento = () => {
     if (!preenchendo) return;
     const origem = preenchendo;
@@ -633,7 +657,7 @@ export function useGradeDoExcel({
     selecionar, selecionarFaixa, confirmar, cancelarEdicao, desfazer, refazer,
     copiar, recortar, colar, limparConteudo,
     aoTeclar, aoArrastarBorda, aoAjustarAoConteudo,
-    aoComecarPreenchimento: setPreenchendo,
+    aoComecarPreenchimento: comecarPreenchimento,
     propsDaBarra: {
       value: editando ? barra : texto(p, sel.l, sel.c),
       onFocus: () => { setModo('editar'); comecarEdicao('barra'); },

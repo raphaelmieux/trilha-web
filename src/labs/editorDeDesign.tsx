@@ -618,6 +618,16 @@ export function EditorDeDesign({
       if (os.length === 0) { avisar('Selecione o que copiar.'); return; }
       setCopiados({ de: p.id, objetos: os });
     },
+    /* Recortar e colar devolve a peça ao mesmo lugar, como em todo editor:
+       o deslocamento do colar existe para a cópia não cair em cima da
+       original, e depois de recortar não há original nenhuma. */
+    recortar: () => {
+      const os = p.objetos.filter(o => selecao.includes(o.id) && o.tipo !== 'referencia');
+      if (os.length === 0) { avisar('Selecione o que recortar.'); return; }
+      setCopiados({ de: '', objetos: os });
+      naPrancha(q => excluir(q, os.map(o => o.id)));
+      setSelecao([]);
+    },
     /* Colar na mesma prancha desloca a cópia, para ela não cair em cima da
        original e parecer que nada aconteceu; em outra prancha, ela cai no
        mesmo lugar, que é o que se quer quando a peça tem o mesmo tamanho. */
@@ -835,6 +845,7 @@ export function EditorDeDesign({
     if (ctrl && e.key.toLowerCase() === 'y') { e.preventDefault(); avancar(); return; }
     if (ctrl && e.key.toLowerCase() === 'a') { e.preventDefault(); comandos.tudo(); return; }
     if (ctrl && e.key.toLowerCase() === 'c') { e.preventDefault(); comandos.copiar(); return; }
+    if (ctrl && e.key.toLowerCase() === 'x') { e.preventDefault(); comandos.recortar(); return; }
     if (ctrl && e.key.toLowerCase() === 'v') { e.preventDefault(); comandos.colar(); return; }
     if (ctrl && e.key.toLowerCase() === 'd') { e.preventDefault(); comandos.duplicar(); return; }
     if (ctrl && e.key.toLowerCase() === 'g') { e.preventDefault(); if (e.shiftKey) comandos.desagrupar(); else comandos.agrupar(); return; }
@@ -914,6 +925,7 @@ export function EditorDeDesign({
                   {item('Desfazer', voltar, 'Ctrl+Z')}
                   {item('Refazer', avancar, 'Ctrl+Y')}
                   <div className="dz-menu-divisoria" />
+                  {item('Recortar', comandos.recortar, 'Ctrl+X')}
                   {item('Copiar', comandos.copiar, 'Ctrl+C')}
                   {item('Colar', () => comandos.colar(), 'Ctrl+V')}
                   {item('Duplicar', comandos.duplicar, 'Ctrl+D')}

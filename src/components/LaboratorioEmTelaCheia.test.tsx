@@ -229,3 +229,36 @@ describe('o fundo atrás do conteúdo', () => {
     expect(folha).toContain(`background: ${FUNDO_DA_PLATAFORMA};`);
   });
 });
+
+describe('o toque longo é o botão direito, na moldura inteira', () => {
+  /*
+    O detector mora aqui, e não em cada menu, para que menu novo funcione no
+    celular no dia em que nasce. Se a moldura deixar de instalá-lo, todo menu
+    de contexto volta a ser inalcançável no celular, sem nada reprovar no
+    computador.
+  */
+  it('segurar o dedo num elemento do programa dispara o onContextMenu dele', () => {
+    vi.useFakeTimers();
+    let abriu = 0;
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    root = createRoot(container);
+    act(() => {
+      root.render(
+        <MemoryRouter>
+          <LaboratorioEmTelaCheia trilha="AP041" voltarPara="/" titulo="t" programa="explorador" tarefas={[]}>
+            <div data-alvo onContextMenu={e => { e.preventDefault(); abriu++; }}>linha</div>
+          </LaboratorioEmTelaCheia>
+        </MemoryRouter>,
+      );
+    });
+    const alvo = container.querySelector('[data-alvo]')!;
+    act(() => {
+      alvo.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch', clientX: 5, clientY: 5 }));
+      vi.advanceTimersByTime(600);
+    });
+    expect(abriu).toBe(1);
+    vi.useRealTimers();
+    desmontar();
+  });
+});

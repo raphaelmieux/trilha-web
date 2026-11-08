@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useEffect, useRef } from 'react';
 import {
   FileText, Search, Combine, Scissors, Minimize2, PenLine, MessageSquare,
   Lock, ScanLine, Download, ChevronLeft, ChevronRight, Highlighter,
@@ -353,10 +354,26 @@ export function CaixaDeProcurar({ termo, achados, aoMudar }: {
   achados: number | null;
   aoMudar: (t: string) => void;
 }) {
+  /* Ctrl+F leva o cursor para a caixa, como em todo leitor de PDF. Sem isto
+     o Ctrl+F abria a busca do navegador, que procura no desenho da página —
+     e acharia a palavra no documento em imagem, que é justamente o que a
+     lição diz que não se acha. */
+  const campo = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    const ouvir = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'f' || e.altKey || e.shiftKey) return;
+      if (!campo.current) return;
+      e.preventDefault();
+      campo.current.focus();
+      campo.current.select();
+    };
+    window.addEventListener('keydown', ouvir);
+    return () => window.removeEventListener('keydown', ouvir);
+  }, []);
   return (
     <div className="pdf-procurar">
       <Search className="w-3.5 h-3.5" style={{ color: '#57606A' }} />
-      <input value={termo} onChange={e => aoMudar(e.target.value)}
+      <input ref={campo} value={termo} onChange={e => aoMudar(e.target.value)}
         placeholder="Procurar no documento" aria-label="Procurar no documento" />
       {achados !== null && (
         <span className="pdf-achados" data-vazio={achados === 0 ? 'sim' : 'nao'}>

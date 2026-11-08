@@ -200,6 +200,16 @@ describe('o contador de procura', () => {
     const el = montar(<CaixaDeProcurar termo="ata" achados={3} aoMudar={() => {}} />);
     expect(el.querySelector('.pdf-achados')!.textContent).toBe('3 páginas');
   });
+
+  it('Ctrl+F leva o cursor para a caixa, e não para a busca do navegador', () => {
+    /* A busca do navegador procura no desenho da página, e acharia a palavra
+       no documento em imagem — o contrário do que a lição ensina. */
+    const el = montar(<CaixaDeProcurar termo="" achados={null} aoMudar={() => {}} />);
+    const ev = new KeyboardEvent('keydown', { key: 'f', ctrlKey: true, bubbles: true, cancelable: true });
+    act(() => { window.dispatchEvent(ev); });
+    expect(ev.defaultPrevented, 'o navegador abriria a busca dele').toBe(true);
+    expect(document.activeElement).toBe(el.querySelector('input'));
+  });
 });
 
 /* ── Miniaturas ───────────────────────────────────────────────────────────── */

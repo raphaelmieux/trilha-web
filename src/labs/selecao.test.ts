@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   SEM_SELECAO, apenas, aoClicar, aoAbrirMenu, aoComecarArrasto, aoMarcarCaixa,
-  intervalo, podar, todos, semMouse,
+  intervalo, podar, todos, semMouse, aoAndar,
 } from './selecao';
 
 /*
@@ -173,5 +173,35 @@ describe('as caixas nascem ligadas em quem não tem mouse', () => {
       teclado — e as caixas continuam a um clique no menu Exibir.
     */
     expect(semMouse()).toBe(false);
+  });
+});
+
+describe('a seta anda pela lista, e com Shift estende', () => {
+  /* O Explorador aceitava o clique e mais nada: a seta para baixo não descia,
+     o Enter não abria e o Backspace não voltava. É o caminho de quem usa o
+     teclado, e o de quem aprendeu o Windows num computador sem mouse bom. */
+  const v = ['a', 'b', 'c', 'd', 'e'];
+
+  it('sem nada escolhido, a primeira seta escolhe a primeira linha', () => {
+    expect(aoAndar(SEM_SELECAO, v, 'baixo', false)).toEqual(apenas('a'));
+  });
+
+  it('desce e sobe uma linha, e para nas pontas', () => {
+    expect(aoAndar(apenas('b'), v, 'baixo', false)).toEqual(apenas('c'));
+    expect(aoAndar(apenas('a'), v, 'cima', false)).toEqual(apenas('a'));
+    expect(aoAndar(apenas('e'), v, 'baixo', false)).toEqual(apenas('e'));
+    expect(aoAndar(apenas('c'), v, 'fim', false)).toEqual(apenas('e'));
+  });
+
+  it('com Shift a âncora fica, e a faixa cresce a partir da ponta oposta', () => {
+    const um = aoAndar(apenas('b'), v, 'baixo', true);
+    expect(um).toEqual({ ids: ['b', 'c'], ancora: 'b' });
+    const dois = aoAndar(um, v, 'baixo', true);
+    expect(dois.ids, 'medido da âncora, o segundo Shift+↓ repetiria a mesma faixa').toEqual(['b', 'c', 'd']);
+    expect(aoAndar(dois, v, 'cima', true).ids, 'subir encolhe a faixa').toEqual(['b', 'c']);
+  });
+
+  it('a seta sem Shift, depois de uma faixa, anda a partir da ponta dela', () => {
+    expect(aoAndar({ ids: ['b', 'c', 'd'], ancora: 'b' }, v, 'baixo', false)).toEqual(apenas('e'));
   });
 });

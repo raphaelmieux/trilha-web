@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import { CAMADA_DO_MENU, CAMADA_DO_VEU_DO_MENU } from './camadas';
 import {
   HardDrive, Users, Trash2, Search, ChevronRight, ChevronDown, ArrowUp, ArrowDown, Plus, X,
   FileText, Table2, Folder, Image, FileType, MoreVertical, type LucideIcon,
@@ -185,7 +186,7 @@ export const CSS_DA_NUVEM = `
 .nv-selecao button:disabled { color: #A8ABAE; cursor: default; }
 
 .nv-menu {
-  position: absolute; z-index: 40; min-width: 232px; padding: 7px 0;
+  position: absolute; z-index: ${CAMADA_DO_MENU}; min-width: 232px; padding: 7px 0;
   background: #FFFFFF; border-radius: 9px; box-shadow: 0 2px 12px rgba(0,0,0,.28);
 }
 .nv-item {
@@ -470,11 +471,12 @@ export function LinhaDaNuvem({ arquivo, escolhido, aoEscolher, aoAbrir, aoMenu, 
         /* As setas andam pela lista como na nuvem de verdade: a linha de
            baixo fica escolhida e com o foco. A vizinha é procurada no DOM, e
            não numa lista de ids, porque é a ordem da tela que vale — a mesma
-           razão do Shift da seleção do Explorador. */
+           razão do Shift da seleção do Explorador. E na lista inteira, e não
+           entre irmãs: há laboratório que embrulha cada linha numa caixa
+           própria, e aí a linha não tem irmã nenhuma. */
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'End') {
-          const linhas = Array.from(
-            e.currentTarget.parentElement?.querySelectorAll<HTMLElement>(':scope > [role="row"]') ?? [],
-          );
+          const lista = e.currentTarget.closest('.nv-lista') ?? e.currentTarget.parentElement;
+          const linhas = Array.from(lista?.querySelectorAll<HTMLElement>('[role="row"]') ?? []);
           const i = linhas.indexOf(e.currentTarget);
           const j = e.key === 'Home' ? 0 : e.key === 'End' ? linhas.length - 1
             : i + (e.key === 'ArrowDown' ? 1 : -1);
@@ -533,7 +535,7 @@ export function MenuDoArquivo({ onde, aoFechar, children }: {
   }, [ox, oy]);
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, zIndex: 39 }} onClick={aoFechar}
+      <div style={{ position: 'absolute', inset: 0, zIndex: CAMADA_DO_VEU_DO_MENU }} onClick={aoFechar}
         onContextMenu={e => { e.preventDefault(); aoFechar(); }} />
       <div ref={ref} className="nv-menu" role="menu" style={{ left: pos.x, top: pos.y }}>
         {children}

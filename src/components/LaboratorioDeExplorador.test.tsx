@@ -713,3 +713,36 @@ describe('a seleção múltipla do Explorador', () => {
   });
 });
 
+
+describe('o teclado anda pela lista e pelas pastas', () => {
+  /* Setas, Enter e Backspace são o Explorador de quem usa o teclado. Aqui só
+     existiam os atalhos de comando — Ctrl+C, F2, Del —, e a lista não andava. */
+  const endereco = () => container.querySelector('.win-endereco')?.textContent ?? '';
+
+  it('↓ escolhe a linha seguinte, Shift+↓ estende, End vai ao fim', () => {
+    montar('m1-lab');
+    const nomes = [...container.querySelectorAll('.win-linha .win-c-nome span')].map(s => s.textContent?.trim());
+    escolher(nomes[0]!);
+    teclar('ArrowDown');
+    expect(selecionadas()).toEqual([nomes[1]]);
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', shiftKey: true, bubbles: true })); });
+    expect(selecionadas()).toEqual([nomes[1], nomes[2]]);
+    teclar('End');
+    expect(selecionadas()).toEqual([nomes[nomes.length - 1]]);
+  });
+
+  it('Enter abre a pasta escolhida, e Backspace volta', () => {
+    montar('m1-lab');
+    irPara('Documentos');
+    const pasta = [...container.querySelectorAll('.win-linha')]
+      .find(l => l.querySelector('svg') && !(l.textContent ?? '').includes('KB'));
+    const nome = pasta?.querySelector('.win-c-nome span')?.textContent?.trim();
+    expect(nome, 'Documentos não tem pasta para abrir').toBeTruthy();
+    escolher(nome!);
+    teclar('Enter');
+    expect(endereco()).toContain(nome!);
+    teclar('Backspace');
+    expect(endereco()).not.toContain(nome!);
+    expect(endereco()).toContain('Documentos');
+  });
+});

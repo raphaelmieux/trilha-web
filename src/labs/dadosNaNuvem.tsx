@@ -74,7 +74,9 @@ export function EntregaDosDados({ ctx, mudar }: PropsDaSuperficieDeDados) {
           aoIr={l => { setLugar(l); setPasta(null); setEscolhido(null); }} />
         <div className="nv-painel">
           {lugar === 'meu' && <CaminhoDaNuvem trilha={trilha} aoIr={setPasta} />}
-          <div className="nv-lista">
+          <div className="nv-lista"
+            onClick={e => { if (e.target === e.currentTarget) setEscolhido(null); }}
+            onKeyDown={e => { if (e.key === 'Escape' && escolhido) { e.preventDefault(); setEscolhido(null); } }}>
             <CabecalhoDaLista />
             {daLista.map(a => (
               <LinhaDaNuvem key={a.id} arquivo={a} escolhido={escolhido === a.id}

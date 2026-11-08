@@ -1,4 +1,5 @@
 import { Minus, Square, X } from 'lucide-react';
+import { CAMADA_DO_MENU } from './camadas';
 
 /*
  * As peças de janela do Windows, compartilhadas pelos laboratórios que imitam
@@ -165,7 +166,7 @@ export const CSS_WINDOWS = `
   }
 
   .win-menu {
-    position: fixed; z-index: 80; min-width: 210px; padding: 5px;
+    position: fixed; z-index: ${CAMADA_DO_MENU}; min-width: 210px; padding: 5px;
     background: #F9F9F9; border: 1px solid #E0E0E0; border-radius: 8px;
     box-shadow: 0 10px 28px rgba(0,0,0,.22);
   }

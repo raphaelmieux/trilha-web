@@ -182,9 +182,13 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
     fecharMenu();
     const destino = atual + delta;
     if (destino < 0 || destino >= ap.slides.length) return;
+    /* Tira e reinsere, e não troca com o destino: para uma posição dá no
+       mesmo, e arrastar a miniatura três lugares para baixo leva só ela —
+       trocar levaria o slide de lá para cá. */
     setAp(a => {
       const s = [...a.slides];
-      [s[atual], s[destino]] = [s[destino], s[atual]];
+      const [levado] = s.splice(atual, 1);
+      s.splice(destino, 0, levado);
       return { ...a, slides: s };
     });
     setAtual(destino);
