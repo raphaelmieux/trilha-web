@@ -117,3 +117,47 @@ export function colar(c: HTMLElement, texto: string) {
     }));
   });
 }
+
+/**
+ * Arrasta a seleção de agora e solta em `para`, como o mouse faria — com Ctrl,
+ * copia. O jsdom não sabe onde cai um ponto da tela, então o lugar da soltura
+ * é dito pelo `caretRangeFromPoint`, que é a pergunta que a folha faz ao
+ * Chromium.
+ */
+export function arrastarSelecao(
+  c: HTMLElement, para: { bloco: string; offset: number }, mods: { ctrl?: boolean } = {},
+) {
+  const f = folhaEditavel(c);
+  const dados = new Map<string, string>();
+  const transferencia = {
+    get types() { return [...dados.keys()]; },
+    getData: (t: string) => dados.get(t) ?? '',
+    setData: (t: string, v: string) => { dados.set(t, v); },
+    effectAllowed: 'all', dropEffect: 'none',
+  };
+  const evento = (tipo: string) => {
+    const ev = new MouseEvent(tipo, { bubbles: true, cancelable: true, ctrlKey: !!mods.ctrl });
+    Object.defineProperty(ev, 'dataTransfer', { value: transferencia });
+    return ev;
+  };
+  const alvo = domDoPonto(f, para);
+  if (!alvo) throw new Error(`não achei ${para.bloco}:${para.offset} na folha`);
+  const doc = document as Document & { caretRangeFromPoint?: (x: number, y: number) => Range | null };
+  const antes = doc.caretRangeFromPoint;
+  doc.caretRangeFromPoint = () => {
+    const r = document.createRange();
+    r.setStart(alvo.no, alvo.offset);
+    return r;
+  };
+  try {
+    act(() => {
+      f.dispatchEvent(evento('dragstart'));
+      f.dispatchEvent(evento('dragover'));
+      f.dispatchEvent(evento('drop'));
+      f.dispatchEvent(evento('dragend'));
+    });
+  } finally {
+    doc.caretRangeFromPoint = antes;
+  }
+  return transferencia;
+}

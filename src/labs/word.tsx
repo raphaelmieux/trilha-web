@@ -25,8 +25,8 @@ import { createPortal } from 'react-dom';
  */
 
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { lerSelecao, escreverSelecao } from './cursorNaFolha';
-import { mesmaSelecao, textoDaSelecao, recolhida, cursorEm, tamanhoDoParagrafo, selecaoDoTrecho, type Selecao } from './edicao';
+import { lerSelecao, escreverSelecao, pontoDoDom } from './cursorNaFolha';
+import { mesmaSelecao, textoDaSelecao, recolhida, cursorEm, tamanhoDoParagrafo, selecaoDoTrecho, type Ponto, type Selecao } from './edicao';
 import type { EdicaoDaFolha, ComandoDeTexto, FormatacaoDeParagrafo } from './useEdicaoDoWord';
 import {
   CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice,
@@ -2122,9 +2122,59 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined, a
       setGeracao(g => g + 1);
     };
 
-    /* Arrastar texto de um lugar para outro escreveria no DOM sem passar
-       pelo modelo. O Word deixa; aqui, por ora, não. */
-    const semArrastar = (ev: Event) => ev.preventDefault();
+    /*
+      Arrastar a seleção e soltar noutro ponto move o texto; com Ctrl, copia.
+      É o Word, e é o primeiro jeito que muita gente tenta de trocar duas
+      frases de lugar. O navegador faria o mesmo sozinho, escrevendo direto no
+      DOM — e a tela mostraria o que o documento não tem. Então o arrasto é
+      dele, para o cursor de soltar aparecer onde a mão está, e a soltura é
+      nossa: vira um comando, e o desenho vem do modelo.
+
+      O que vem de fora — texto arrastado de outra janela — entra como
+      digitado, no ponto onde caiu. Imagem, arquivo e o que não for texto não
+      entram: não há onde guardá-los no documento.
+    */
+    const arrastando = { origem: null as Selecao | null };
+    const aoComecarAArrastar = (ev: DragEvent) => {
+      sincronizar();
+      const sel = atual.current.edicao?.selecao;
+      if (!sel || recolhida(sel)) { ev.preventDefault(); return; }
+      arrastando.origem = sel;
+      if (ev.dataTransfer) {
+        ev.dataTransfer.setData('text/plain', textoDaSelecao(atual.current.doc, sel));
+        ev.dataTransfer.effectAllowed = 'copyMove';
+      }
+    };
+    const aoPassarPorCima = (ev: DragEvent) => {
+      if (!ev.dataTransfer || ![...ev.dataTransfer.types].includes('text/plain')) return;
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = arrastando.origem && !(ev.ctrlKey || ev.metaKey) ? 'move' : 'copy';
+    };
+    const pontoDaSoltura = (ev: DragEvent): Ponto | null => {
+      const d = documento as Document & {
+        caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
+      };
+      const pos = d.caretPositionFromPoint?.(ev.clientX, ev.clientY);
+      if (pos) return pontoDoDom(r, pos.offsetNode, pos.offset);
+      const intervalo = documento.caretRangeFromPoint?.(ev.clientX, ev.clientY);
+      if (intervalo) return pontoDoDom(r, intervalo.startContainer, intervalo.startOffset);
+      return null;
+    };
+    const aoSoltar = (ev: DragEvent) => {
+      ev.preventDefault();
+      const origem = arrastando.origem;
+      arrastando.origem = null;
+      const destino = pontoDaSoltura(ev);
+      if (!destino) return;
+      r.focus();
+      if (origem) {
+        atual.current.edicao?.aoComando({ tipo: 'mover', origem, destino, copiar: ev.ctrlKey || ev.metaKey });
+        return;
+      }
+      const texto = ev.dataTransfer?.getData('text/plain') ?? '';
+      if (texto) atual.current.edicao?.aoComando({ tipo: 'inserir', texto, alvo: { ancora: destino, foco: destino } });
+    };
+    const aoTerminarDeArrastar = () => { arrastando.origem = null; };
 
     documento.addEventListener('selectionchange', aoMudarSelecao);
     r.addEventListener('beforeinput', aoAntesDeEscrever);
@@ -2133,8 +2183,10 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined, a
     r.addEventListener('copy', aoCopiar);
     r.addEventListener('compositionstart', aoComecarAComposicao);
     r.addEventListener('compositionend', aoTerminarAComposicao);
-    r.addEventListener('dragstart', semArrastar);
-    r.addEventListener('drop', semArrastar);
+    r.addEventListener('dragstart', aoComecarAArrastar);
+    r.addEventListener('dragover', aoPassarPorCima);
+    r.addEventListener('drop', aoSoltar);
+    r.addEventListener('dragend', aoTerminarDeArrastar);
     return () => {
       documento.removeEventListener('selectionchange', aoMudarSelecao);
       r.removeEventListener('beforeinput', aoAntesDeEscrever);
@@ -2143,8 +2195,10 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined, a
       r.removeEventListener('copy', aoCopiar);
       r.removeEventListener('compositionstart', aoComecarAComposicao);
       r.removeEventListener('compositionend', aoTerminarAComposicao);
-      r.removeEventListener('dragstart', semArrastar);
-      r.removeEventListener('drop', semArrastar);
+      r.removeEventListener('dragstart', aoComecarAArrastar);
+      r.removeEventListener('dragover', aoPassarPorCima);
+      r.removeEventListener('drop', aoSoltar);
+      r.removeEventListener('dragend', aoTerminarDeArrastar);
     };
   }, [ativa]);
 

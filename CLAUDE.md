@@ -3986,6 +3986,28 @@ passou a tirar e reinserir, e não a trocar com o destino: para uma posição d�
 no mesmo, e arrastar três lugares para baixo leva só ela — trocar traria o
 slide de lá para cá.
 
+**A caixa desenhada à mão se arrasta, e arrastar não é aplicar layout.** O
+primeiro clique escolhe a caixa, com as oito alças; arrastar a leva, as alças
+dos lados mudam a largura (a altura acompanha o texto, como numa caixa de
+texto do PowerPoint), as setas empurram — com Ctrl, de pouquinho —, o Delete
+apaga, e o segundo clique, F2 ou Enter entram no texto. A tarefa do requisito
+4.2 da CC-ES011 confere que não sobrou caixa nenhuma, e não que as caixas
+estão na mesma altura: arrastar até parecer alinhado é o que todo mundo tenta
+antes do layout, e a simulação deixa tentar. Proibir o arrasto ensinaria que
+caixa solta não se mexe, e ela se mexe em todo programa. Entra pela presença
+de `aoMexerNaCaixa`, e na miniatura ela continua sendo desenho.
+
+**O PowerPoint desfaz.** Não desfazia: excluir o slide errado ou apagar uma
+caixa só tinha Recomeçar como volta, e o Desfazer da barra de acesso rápido
+dizia que não fazia parte do exercício. `useDesfazerDaApresentacao` guarda as
+versões do modelo, do mestre e dos slides — e **não** o PDF exportado: Ctrl+Z
+depois de exportar não apaga o arquivo da pasta, e desfazê-lo reabriria a
+tarefa do PDF sem ninguém ter mexido nele. As letras de um título se juntam
+num passo, senão o Ctrl+Z apagaria o título de trás para a frente; dois
+comandos seguidos continuam sendo dois. Dentro de um campo de texto o Ctrl+Z é
+do campo. Na CC-ES011 desfaz-se a apresentação e não o contexto: o que a
+pessoa descobriu não volta com o Ctrl+Z.
+
 **A lista da nuvem se comporta como a de uma nuvem.** Pastas primeiro, o resto
 em ordem de dicionário (`emOrdemDaLista`, com número como número: Ata 9 antes de
 Ata 10), e o cabeçalho do Nome inverte. O menu abre **onde se clicou** — abria
@@ -4017,6 +4039,23 @@ acharia a palavra no documento em imagem, que é o contrário da lição.
 E o atalho é o do programa imitado: Ctrl+[ e Ctrl+] são um ponto de fonte no
 Word e o recuo no editor de navegador, que é o que o botão de lá anuncia. O do
 Word tinha vazado para a CC-ES006.
+
+**Arrastar o texto selecionado move, e com Ctrl copia.** É o primeiro jeito
+que muita gente tenta de trocar duas frases de lugar, e a folha o recusava. O
+arrasto é do navegador, para o cursor de soltar aparecer onde a mão está; a
+soltura é nossa — vira o comando `mover`, num passo de desfazer só, e o
+desenho vem do modelo. Texto arrastado de outra janela entra como digitado.
+Três decisões de `moverSelecao` erram calado se invertidas:
+
+- **o destino se mede do fim do parágrafo**, e não do começo: o que vem
+  depois da seleção não muda quando ela sai, com o controle de alterações ou
+  sem ele, e contar do começo erraria num dos dois;
+- **soltar dentro da seleção, ou na beirada dela, não faz nada**, que é o que
+  acontece quando a mão treme no meio de um clique;
+- **os espaços se acertam**, que é o recortar e colar inteligente ligado de
+  fábrica no Word: o clique duplo pega a palavra sem o espaço, e sem o ajuste
+  ficariam dois espaços onde ela estava e nenhum onde chegou. Com o controle de
+  alterações o ajuste não acontece, porque cada espaço viraria mais uma marca.
 
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
@@ -5844,6 +5883,11 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDeFoto.test.tsx` | atalho escrito no menu do editor de foto que o teclado não faz |
 | `src/components/LaboratorioDaNuvem.test.tsx` | Ctrl+] do Word mudando a fonte no editor de navegador, onde é o recuo |
 | `src/labs/nuvem.test.tsx` | seta que não anda quando cada linha mora numa caixa própria |
+| `src/labs/edicao.test.ts` | texto arrastado que cai algumas letras longe de onde se soltou, ou palavra arrastada que deixa dois espaços para trás |
+| `src/labs/FormatacaoTextoLab.test.tsx` | arrastar a seleção que não move, que move sem desfazer num passo, ou que copia sem o Ctrl |
+| `src/labs/powerpoint.test.tsx` | caixa à mão que não se escolhe, não se arrasta, não alarga pelas alças ou não sai pelo Delete |
+| `src/labs/desfazerDaApresentacao.test.tsx` | Ctrl+Z que apaga o PDF exportado, que desfaz letra por letra, ou que rouba o desfazer do campo de texto |
+| `src/components/LaboratorioDeApresentacao.test.tsx` | caixa arrastada até alinhar fechando a tarefa do layout, ou caixa apagada que o Ctrl+Z não devolve |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

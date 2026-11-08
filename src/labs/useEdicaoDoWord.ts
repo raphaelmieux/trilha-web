@@ -6,13 +6,13 @@ import {
   aplicarCaixa, ehParagrafo,
 } from './documento';
 import {
-  type Edicao, type Marca, type QuemEdita, type Selecao,
+  type Edicao, type Marca, type Ponto, type QuemEdita, type Selecao,
   alternarMarca, alternarPosicao, aplicarEstilo, transformarSelecao, definirCor, definirFonte, definirRealce, definirTamanho,
   limparFormatacao, limparTudo, mudarTamanhoEmDegrau, mudarTamanhoEmUmPonto, apagar, apagarSelecao, formatoDaSelecao, inserirTexto, mesmaSelecao,
   palavraEmVolta, quebraDeLinha, quebraDePagina, quebrarParagrafo, recolhida, selecaoValida,
   selecionarTudo, tamanhoDoParagrafo, unidadesDoTrecho,
   alinhar, alternarLista, colarFragmento, definirEntrelinha, formatoDoParagrafoDaSelecao,
-  fragmentoDaSelecao, mudarRecuo, tabular, textoDaSelecao,
+  fragmentoDaSelecao, moverSelecao, mudarRecuo, tabular, textoDaSelecao,
 } from './edicao';
 
 /**
@@ -35,6 +35,7 @@ export type ComandoDeTexto =
   | { tipo: 'copiar' }
   | { tipo: 'recortar' }
   | { tipo: 'colar'; texto?: string }
+  | { tipo: 'mover'; origem: Selecao; destino: Ponto; copiar: boolean }
   | { tipo: 'desfazer' }
   | { tipo: 'refazer' }
   | { tipo: 'selecionar-tudo' };
@@ -318,7 +319,8 @@ export function useEdicaoDoWord<S extends string>(
     if (c.tipo === 'formatar') { formatar(c.formatacao); return; }
     if (c.tipo === 'paragrafar') { paragrafar(c.formatacao); return; }
     if (c.tipo === 'copiar') { copiar(); return; }
-    const alvo = ('alvo' in c && c.alvo) ? selecaoValida(d, c.alvo) : s;
+    const alvo = ('alvo' in c && c.alvo) ? selecaoValida(d, c.alvo)
+      : c.tipo === 'mover' ? selecaoValida(d, c.origem) : s;
     if (!alvo) return;
     const q = o.quem;
     let r: Edicao<S>;
@@ -359,6 +361,12 @@ export function useEdicaoDoWord<S extends string>(
         digitando.current = false;
         break;
       }
+      /* Arrastar a seleção: move, ou copia com Ctrl. Um passo de desfazer só,
+         como no Word — desfazer a metade deixaria o texto em dois lugares. */
+      case 'mover':
+        r = moverSelecao(d, alvo, c.destino, c.copiar, q);
+        digitando.current = false;
+        break;
       default: {
         const naoTratado: never = c;
         throw new Error(`comando não tratado: ${JSON.stringify(naoTratado)}`);
