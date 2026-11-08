@@ -6,7 +6,7 @@ import {
 } from './office';
 import {
   PX_POR_PONTO, NIVEIS_DO_TOPICO, aparenciaDoSlide, nivelDoTopico, semVaziosNoFim,
-  type GraficoNoSlide, type Slide, type SlideMestre,
+  type CaixaAMao, type GraficoNoSlide, type Slide, type SlideMestre,
 } from './apresentacao';
 
 /**
@@ -144,6 +144,30 @@ export const CSS_POWERPOINT = `
   reservado do layout não tem posição própria nenhuma, e é essa a diferença.
 */
 .pp-caixa { position: absolute; white-space: pre-wrap; }
+/*
+  A caixa que se mexe: tracejada ao passar o ponteiro, com moldura e alças
+  quando escolhida, e a moldura tracejada de novo com o cursor no texto —
+  as três aparências do PowerPoint, que dizem o que o próximo clique faz.
+*/
+.pp-caixa-mexe { outline: 1px dashed transparent; cursor: move; touch-action: none; user-select: none; }
+.pp-caixa-mexe:hover { outline-color: #A6A6A6; }
+.pp-caixa-mexe[data-escolhida="sim"] { outline: 1px solid #7A7A7A; }
+.pp-caixa-mexe[data-escrevendo="sim"] { outline: 1px dashed #7A7A7A; cursor: text; user-select: text; }
+.pp-caixa-mexe:focus-visible { outline: 2px solid #B7472A; }
+.pp-caixa-texto { outline: none; min-height: 1em; }
+.pp-alca {
+  position: absolute; width: 9px; height: 9px; background: #FFFFFF;
+  border: 1px solid #7A7A7A; border-radius: 50%; transform: translate(-50%, -50%);
+  touch-action: none;
+}
+.pp-alca[data-alca="nw"] { left: 0; top: 0; cursor: nwse-resize; }
+.pp-alca[data-alca="n"] { left: 50%; top: 0; cursor: ns-resize; }
+.pp-alca[data-alca="ne"] { left: 100%; top: 0; cursor: nesw-resize; }
+.pp-alca[data-alca="e"] { left: 100%; top: 50%; cursor: ew-resize; }
+.pp-alca[data-alca="se"] { left: 100%; top: 100%; cursor: nwse-resize; }
+.pp-alca[data-alca="s"] { left: 50%; top: 100%; cursor: ns-resize; }
+.pp-alca[data-alca="sw"] { left: 0; top: 100%; cursor: nesw-resize; }
+.pp-alca[data-alca="w"] { left: 0; top: 50%; cursor: ew-resize; }
 .pp-logo {
   position: absolute; right: 2.5%; bottom: 4%; background: rgba(0,0,0,.08);
   letter-spacing: .06em; text-transform: uppercase; font-weight: 600;
@@ -330,14 +354,17 @@ export const GUIAS_DO_POWERPOINT = [
 /* ── As peças da janela ───────────────────────────────────────────────────── */
 
 /** A barra de título, com o nome do arquivo e os três botões da direita. */
-export function BarraDeTituloDoPowerPoint({ arquivo, aoAvisar, aoNaoFazParte }: {
+export function BarraDeTituloDoPowerPoint({ arquivo, aoAvisar, aoNaoFazParte, aoDesfazer, aoRefazer }: {
   arquivo: string;
   aoAvisar: (recado: string) => void;
   aoNaoFazParte: (nome: string) => void;
+  /** Desfazer e Refazer do acesso rápido, quando o laboratório os tem. */
+  aoDesfazer?: () => void;
+  aoRefazer?: () => void;
 }) {
   return (
     <BarraDeTituloDoOffice app="powerpoint" classe="pp-titulo" arquivo={arquivo}
-      aoAvisar={aoAvisar} aoNaoFazParte={aoNaoFazParte} />
+      aoAvisar={aoAvisar} aoNaoFazParte={aoNaoFazParte} aoDesfazer={aoDesfazer} aoRefazer={aoRefazer} />
   );
 }
 
@@ -476,7 +503,7 @@ export function ItemDeMenuDoPowerPoint({ aoClicar, ativo, children }: {
  */
 export function FolhaDoSlide({
   slide, mestre, mini, numero, caminhoDoVideo, nomeDoAudio, caminhoDoAudio,
-  aoEscreverNoTitulo, rotuloDoTitulo, aoEscreverNoCorpo, rotuloDoCorpo, desenharGrafico,
+  aoEscreverNoTitulo, rotuloDoTitulo, aoEscreverNoCorpo, rotuloDoCorpo, desenharGrafico, aoMexerNaCaixa,
 }: {
   slide: Slide;
   mestre: SlideMestre;
@@ -505,6 +532,12 @@ export function FolhaDoSlide({
    * mostrar uma coisa e a planilha outra.
    */
   desenharGrafico?: (g: GraficoNoSlide) => React.ReactNode;
+  /**
+   * A caixa desenhada à mão se arrasta, se alarga pelas alças, anda pelas
+   * setas, se apaga pelo Delete e se reescreve, quando há quem receba a
+   * mudança — `null` é a caixa apagada. Sem isso, ela é desenho.
+   */
+  aoMexerNaCaixa?: (id: string, mudanca: Partial<CaixaAMao> | null) => void;
 }) {
   const f = mini ? 0.28 : 1;
   const s = slide;
@@ -578,19 +611,23 @@ export function FolhaDoSlide({
         Elas vão por cima, em posição absoluta, porque é isso que uma caixa de
         texto solta é — e é a posição de cada uma que o requisito 4.2 cobra.
       */}
-      {s.caixas.map(c => (
-        <div
-          key={c.id} className="pp-caixa"
-          style={{
-            left: `${c.x}%`, top: `${c.y}%`, width: `${c.largura}%`,
-            ...estilo(c.papel === 'titulo' ? doTitulo : doCorpo),
-            fontSize: pt(c.tamanho),
-            lineHeight: c.papel === 'titulo' ? 1.15 : 1.4,
-          }}
-        >
-          {c.texto}
-        </div>
-      ))}
+      {s.caixas.map(c => {
+        const visual = {
+          ...estilo(c.papel === 'titulo' ? doTitulo : doCorpo),
+          fontSize: pt(c.tamanho),
+          lineHeight: c.papel === 'titulo' ? 1.15 : 1.4,
+        };
+        return aoMexerNaCaixa && !mini ? (
+          <CaixaNoSlide key={c.id} caixa={c} visual={visual} aoMexer={m => aoMexerNaCaixa(c.id, m)} />
+        ) : (
+          <div
+            key={c.id} className="pp-caixa"
+            style={{ left: `${c.x}%`, top: `${c.y}%`, width: `${c.largura}%`, ...visual }}
+          >
+            {c.texto}
+          </div>
+        );
+      })}
       {s.grafico && desenharGrafico && (
         <div className="pp-grafico" style={{ padding: `${4 * f}px ${28 * f}px` }}>
           {desenharGrafico(s.grafico)}
@@ -661,6 +698,183 @@ export function FolhaDoSlide({
           {numero}
         </span>
       )}
+    </div>
+  );
+}
+
+/** As oito alças da caixa: os quatro cantos e o meio de cada lado. */
+const ALCAS = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const;
+type Alca = typeof ALCAS[number];
+
+/** A menor largura que uma caixa pode ter, em por cento do slide. */
+const LARGURA_MINIMA = 4;
+
+/**
+ * A caixa de texto desenhada à mão, como ela se mexe no PowerPoint.
+ *
+ * O primeiro clique escolhe a caixa: aparece a moldura com as oito alças, e
+ * arrastar leva a caixa junto. Arrastar uma alça muda a largura — a altura da
+ * caixa de texto acompanha o texto, como no PowerPoint, que é por que as
+ * alças de cima e de baixo não mudam nada que fique. Com a caixa escolhida,
+ * as setas a empurram (com Ctrl, de pouquinho), o Delete a apaga e o Esc a
+ * solta. Clicar de novo, F2 ou Enter entram no texto.
+ *
+ * ── Alinhar no olho é o defeito, e ele continua possível ────────────────
+ * O requisito 4.2 da CC-ES011 pede layout **em vez de** caixa à mão, e a
+ * tarefa confere que não sobrou caixa nenhuma — e não que as caixas estão na
+ * mesma altura. Arrastar até parecer alinhado é o que todo mundo tenta antes,
+ * e a simulação deixa tentar: proibir o arrasto ensinaria que caixa solta não
+ * se mexe, e ela se mexe em todo programa. O que ela não faz é aparecer no
+ * mesmo lugar no slide seguinte.
+ *
+ * As posições são em por cento do slide, que é o que o modelo guarda: o
+ * mesmo arrasto no palco e no telão leva a caixa ao mesmo ponto do slide.
+ */
+function CaixaNoSlide({ caixa: c, visual, aoMexer }: {
+  caixa: CaixaAMao;
+  visual: React.CSSProperties;
+  aoMexer: (m: Partial<CaixaAMao> | null) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const texto = useRef<HTMLDivElement>(null);
+  const [escolhida, setEscolhida] = useState(false);
+  const [escrevendo, setEscrevendo] = useState(false);
+  const [arrasto, setArrasto] = useState<{ x: number; y: number; largura: number } | null>(null);
+  const gesto = useRef<{
+    alca: Alca | null; px: number; py: number; slideL: number; slideA: number;
+    x: number; y: number; largura: number; andou: boolean; jaEscolhida: boolean;
+  } | null>(null);
+
+  /* Clicar fora solta a caixa, como em todo programa de desenho. */
+  useEffect(() => {
+    if (!escolhida) return;
+    const fora = (ev: PointerEvent) => {
+      if (!ref.current?.contains(ev.target as Node)) { setEscolhida(false); setEscrevendo(false); }
+    };
+    document.addEventListener('pointerdown', fora, true);
+    return () => document.removeEventListener('pointerdown', fora, true);
+  }, [escolhida]);
+
+  /* Ao entrar no texto, o cursor vai para o fim dele. */
+  useLayoutEffect(() => {
+    const el = texto.current;
+    if (!escrevendo || !el) return;
+    el.focus();
+    const sel = el.ownerDocument.getSelection();
+    if (sel) { sel.selectAllChildren(el); sel.collapseToEnd(); }
+  }, [escrevendo]);
+
+  const limitar = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+  const arredondar = (v: number) => Math.round(v * 10) / 10;
+
+  const comecar = (alca: Alca | null) => (ev: React.PointerEvent) => {
+    if (escrevendo && alca === null) return;
+    if (ev.button !== 0) return;
+    ev.stopPropagation();
+    const slide = ref.current?.closest('.pp-slide')?.getBoundingClientRect();
+    gesto.current = {
+      alca, px: ev.clientX, py: ev.clientY,
+      slideL: slide?.width || 1, slideA: slide?.height || 1,
+      x: c.x, y: c.y, largura: c.largura, andou: false, jaEscolhida: escolhida,
+    };
+    setEscolhida(true);
+    (ev.currentTarget as Element).setPointerCapture?.(ev.pointerId);
+    ref.current?.focus({ preventScroll: true });
+  };
+
+  const andar = (ev: React.PointerEvent) => {
+    const g = gesto.current;
+    if (!g) return;
+    const dx = ((ev.clientX - g.px) / g.slideL) * 100;
+    const dy = ((ev.clientY - g.py) / g.slideA) * 100;
+    if (!g.andou && Math.hypot(ev.clientX - g.px, ev.clientY - g.py) < 3) return;
+    g.andou = true;
+    let { x, y, largura } = g;
+    if (g.alca === null) {
+      x = limitar(g.x + dx, -largura + 2, 98);
+      y = limitar(g.y + dy, -5, 98);
+    } else {
+      if (g.alca.includes('e')) largura = limitar(g.largura + dx, LARGURA_MINIMA, 100 - g.x);
+      if (g.alca.includes('w')) {
+        largura = limitar(g.largura - dx, LARGURA_MINIMA, g.x + g.largura);
+        x = g.x + g.largura - largura;
+      }
+    }
+    setArrasto({ x: arredondar(x), y: arredondar(y), largura: arredondar(largura) });
+  };
+
+  const soltar = () => {
+    const g = gesto.current;
+    gesto.current = null;
+    if (!g) return;
+    if (g.andou && arrasto) {
+      aoMexer(arrasto);
+    } else if (g.alca === null && g.jaEscolhida) {
+      setEscrevendo(true);
+    }
+    setArrasto(null);
+  };
+
+  const sairDoTexto = () => {
+    const novo = (texto.current?.innerText ?? c.texto).replace(/\n$/, '');
+    setEscrevendo(false);
+    if (novo !== c.texto) aoMexer({ texto: novo });
+    ref.current?.focus({ preventScroll: true });
+  };
+
+  const teclar = (ev: React.KeyboardEvent) => {
+    if (escrevendo) {
+      if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); sairDoTexto(); }
+      return;
+    }
+    if (!escolhida) return;
+    const passo = ev.ctrlKey || ev.metaKey ? 0.25 : 1;
+    const setas: Record<string, [number, number]> = {
+      ArrowLeft: [-passo, 0], ArrowRight: [passo, 0], ArrowUp: [0, -passo], ArrowDown: [0, passo],
+    };
+    const seta = setas[ev.key];
+    if (seta) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      aoMexer({ x: arredondar(c.x + seta[0]), y: arredondar(c.y + seta[1]) });
+      return;
+    }
+    if (ev.key === 'Delete' || ev.key === 'Backspace') {
+      ev.preventDefault();
+      ev.stopPropagation();
+      aoMexer(null);
+      return;
+    }
+    if (ev.key === 'Escape') { ev.stopPropagation(); setEscolhida(false); return; }
+    if (ev.key === 'Enter' || ev.key === 'F2') { ev.preventDefault(); setEscrevendo(true); }
+  };
+
+  const onde = arrasto ?? c;
+  return (
+    <div
+      ref={ref} className="pp-caixa pp-caixa-mexe" tabIndex={0} role="group"
+      aria-label={`Caixa de texto: ${c.texto}`}
+      data-escolhida={escolhida ? 'sim' : undefined}
+      data-escrevendo={escrevendo ? 'sim' : undefined}
+      style={{ left: `${onde.x}%`, top: `${onde.y}%`, width: `${onde.largura}%`, ...visual }}
+      onPointerDown={comecar(null)} onPointerMove={andar} onPointerUp={soltar} onPointerCancel={soltar}
+      onDoubleClick={() => setEscrevendo(true)}
+      onKeyDown={teclar}
+    >
+      <div
+        ref={texto} className="pp-caixa-texto"
+        contentEditable={escrevendo ? 'plaintext-only' : false}
+        suppressContentEditableWarning
+        onBlur={escrevendo ? sairDoTexto : undefined}
+      >
+        {c.texto}
+      </div>
+      {escolhida && !escrevendo && ALCAS.map(a => (
+        <span
+          key={a} className="pp-alca" data-alca={a} aria-hidden="true"
+          onPointerDown={comecar(a)} onPointerMove={andar} onPointerUp={soltar} onPointerCancel={soltar}
+        />
+      ))}
     </div>
   );
 }

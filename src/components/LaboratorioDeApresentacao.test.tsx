@@ -223,6 +223,47 @@ describe('o módulo 2: layout e não caixa à mão', () => {
   });
 });
 
+describe('a caixa à mão se mexe, e mexer não é aplicar layout', () => {
+  const caixaDoPalco = () => container.querySelector<HTMLElement>('.pp-palco .pp-caixa-mexe');
+  const escolherCaixa = (el: HTMLElement) => act(() => {
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, clientX: 5, clientY: 5 }));
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, clientX: 5, clientY: 5 }));
+  });
+  const teclarNa = (el: Element, key: string, ctrl = false) => act(() => {
+    el.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: ctrl, bubbles: true, cancelable: true }));
+  });
+
+  /* Arrastar até parecer alinhado é o que todo mundo tenta antes do layout,
+     e a simulação deixa tentar — mas a tarefa confere que não sobrou caixa,
+     e não que as caixas estão na mesma altura. */
+  it('empurrar a caixa pelas setas move a caixa, e a tarefa do layout continua vermelha', () => {
+    montar('layout');
+    const caixa = caixaDoPalco();
+    expect(caixa, 'a caixa à mão do palco não se escolhe').not.toBeNull();
+    const antes = caixa!.style.top;
+    escolherCaixa(caixa!);
+    expect(caixa!.dataset.escolhida).toBe('sim');
+    teclarNa(caixa!, 'ArrowDown');
+    expect(caixaDoPalco()!.style.top).not.toBe(antes);
+    expect(feitas('layout')).not.toContain('sem-caixa-a-mao');
+  });
+
+  it('Delete apaga a caixa, e Ctrl+Z e o Desfazer do acesso rápido a devolvem', () => {
+    montar('layout');
+    const quantas = () => container.querySelectorAll('.pp-palco .pp-caixa').length;
+    const n = quantas();
+    escolherCaixa(caixaDoPalco()!);
+    teclarNa(caixaDoPalco()!, 'Delete');
+    expect(quantas()).toBe(n - 1);
+    teclarNa(document.body, 'z', true);
+    expect(quantas(), 'o Ctrl+Z não devolveu a caixa').toBe(n);
+    escolherCaixa(caixaDoPalco()!);
+    teclarNa(caixaDoPalco()!, 'Delete');
+    clicar(container.querySelector('.pp-titulo [aria-label="Desfazer"]'), 'Desfazer do acesso rápido');
+    expect(quantas(), 'o Desfazer da barra não devolveu a caixa').toBe(n);
+  });
+});
+
 /* ── A hierarquia ─────────────────────────────────────────────────────────── */
 
 describe('o módulo 3: hierarquia visual', () => {

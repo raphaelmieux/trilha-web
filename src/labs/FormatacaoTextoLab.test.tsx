@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import { GUIAS_DO_WORD } from './word';
 import FormatacaoTextoLab from './FormatacaoTextoLab';
-import { colarDaArea, copiar, porCursor, tecla } from './tecladoDaFolha';
+import { arrastarSelecao, colarDaArea, copiar, porCursor, tecla } from './tecladoDaFolha';
 import { NOME_DO_LIVRO } from './metasDaAp042';
 
 /*
@@ -123,6 +123,40 @@ describe('a folha se edita com cursor', () => {
     porCursor(container, 'titulo', 4);
     tecla(container, 'e', { ctrl: true });
     expect(paragrafo('titulo').style.textAlign).toBe('center');
+  });
+});
+
+describe('arrastar o texto selecionado', () => {
+  /* É o primeiro jeito que muita gente tenta de trocar duas palavras de
+     lugar. O navegador escreveria direto no DOM; a folha transforma a soltura
+     num comando, e o desenho vem do modelo. */
+  it('move a palavra para onde se soltou, acerta os espaços e desfaz num passo só', () => {
+    const antes = paragrafo('p1').textContent!;
+    const comeco = antes.indexOf('nossa');
+    porCursor(container, 'p1', comeco, { bloco: 'p1', offset: comeco + 5 });
+    const fim = antes.indexOf(' do domingo');
+    const levou = arrastarSelecao(container, { bloco: 'p1', offset: fim });
+    expect(levou.getData('text/plain'), 'o texto vai junto, para outra janela poder recebê-lo').toBe('nossa');
+    const depois = paragrafo('p1').textContent!;
+    expect(depois.startsWith('A unidade passou'), 'ficaram dois espaços onde a palavra estava').toBe(true);
+    expect(depois).toContain('refeições nossa do domingo');
+    tecla(container, 'z', { ctrl: true });
+    expect(paragrafo('p1').textContent).toBe(antes);
+  });
+
+  it('com Ctrl, copia e deixa a origem', () => {
+    const antes = paragrafo('p1').textContent!;
+    porCursor(container, 'p1', 2, { bloco: 'p1', offset: 7 });
+    arrastarSelecao(container, { bloco: 'p2', offset: 0 }, { ctrl: true });
+    expect(paragrafo('p1').textContent).toBe(antes);
+    expect(paragrafo('p2').textContent!.startsWith('nossa ')).toBe(true);
+  });
+
+  it('sem nada selecionado não há o que arrastar', () => {
+    const antes = paragrafo('p1').textContent!;
+    porCursor(container, 'p1', 4);
+    arrastarSelecao(container, { bloco: 'p2', offset: 0 });
+    expect(paragrafo('p1').textContent).toBe(antes);
   });
 });
 

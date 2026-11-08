@@ -8,7 +8,7 @@ import {
   alternarMarca, aplicarEstilo, formatoDaSelecao, palavraEmVolta, selecaoValida, selecionarTudo,
   textoDaSelecao, tamanhoDoParagrafo, isolarSelecao, limparFormatacao, definirTamanho, apagarSelecao,
   alternarLista, alinhar, tabular, limparTudo, fragmentoDaSelecao, colarFragmento, formatoDoParagrafoDaSelecao,
-  mudarTamanhoEmUmPonto,
+  mudarTamanhoEmUmPonto, moverSelecao,
 } from './edicao';
 
 /*
@@ -366,5 +366,65 @@ describe('copiar e colar com a formatação', () => {
     const semMarca = { ...riscado, controlarAlteracoes: false };
     const frag = fragmentoDaSelecao(semMarca, sel('p1', 0, 'p1', 22));
     expect(frag[0].map(x => x.texto).join('')).toBe('Acampament de inverno');
+  });
+});
+
+describe('arrastar a seleção', () => {
+  it('soltar depois, no mesmo parágrafo, move a palavra para onde se soltou', () => {
+    // "Acampamento de inverno": arrasta " de" (11..14) para o fim (22)
+    const d = base();
+    const r = moverSelecao(d, sel('p1', 11, 'p1', 14), { bloco: 'p1', offset: 22 }, false);
+    expect(texto(r.doc, 'p1')).toBe('Acampamento inverno de');
+    expect(textoDaSelecao(r.doc, r.selecao), 'o texto que chegou fica selecionado').toBe(' de');
+  });
+
+  it('soltar antes move sem empurrar o destino', () => {
+    const r = moverSelecao(base(), sel('p1', 15, 'p1', 22), { bloco: 'p1', offset: 0 }, false);
+    expect(texto(r.doc, 'p1')).toBe('inverno Acampamento de');
+  });
+
+  it('com Ctrl copia, e a origem fica', () => {
+    const r = moverSelecao(base(), sel('p1', 0, 'p1', 11), { bloco: 'p2', offset: 0 }, true);
+    expect(texto(r.doc, 'p1')).toBe('Acampamento de inverno');
+    expect(texto(r.doc, 'p2')).toBe('Acampamento Saída às sete');
+  });
+
+  it('para outro parágrafo, a origem sai e o resto não muda de id', () => {
+    const r = moverSelecao(base(), sel('p1', 11, 'p1', 22), { bloco: 'p2', offset: 13 }, false);
+    expect(texto(r.doc, 'p1')).toBe('Acampamento');
+    expect(texto(r.doc, 'p2')).toBe('Saída às sete de inverno');
+    expect(ids(r.doc)).toEqual(['p1', 'p2']);
+  });
+
+  it('seleção que atravessa parágrafos cai no ponto certo depois da junção', () => {
+    // apaga "inverno|Saída" e solta no fim do segundo: a cauda " às sete" fica antes
+    const r = moverSelecao(base(), sel('p1', 15, 'p2', 5), { bloco: 'p2', offset: 13 }, false);
+    expect(texto(r.doc, 'p1')).toBe('Acampamento de  às seteinverno');
+    expect(ids(r.doc)).toContain('p1');
+    expect(textoDaSelecao(r.doc, r.selecao)).toBe('inverno\nSaída');
+  });
+
+  it('a palavra do clique duplo não deixa dois espaços para trás nem gruda onde chega', () => {
+    // "Saída às sete": arrasta "às" (6..8) para logo depois de "sete"
+    const r = moverSelecao(base(), sel('p2', 6, 'p2', 8), { bloco: 'p2', offset: 13 }, false);
+    expect(texto(r.doc, 'p2')).toBe('Saída sete às');
+    expect(textoDaSelecao(r.doc, r.selecao)).toBe('às');
+    // e para o meio de uma palavra vizinha, com espaço dos dois lados
+    const r2 = moverSelecao(base(), sel('p2', 0, 'p2', 5), { bloco: 'p1', offset: 11 }, true);
+    expect(texto(r2.doc, 'p1')).toBe('Acampamento Saída de inverno');
+  });
+
+  it('soltar dentro da própria seleção, ou na beirada dela, não faz nada', () => {
+    const d = base();
+    expect(moverSelecao(d, sel('p1', 0, 'p1', 11), { bloco: 'p1', offset: 5 }, false).doc).toBe(d);
+    expect(moverSelecao(d, sel('p1', 0, 'p1', 11), { bloco: 'p1', offset: 11 }, false).doc).toBe(d);
+  });
+
+  it('com o controle de alterações, a origem sai riscada e o destino não escorrega', () => {
+    const d = { ...base(), controlarAlteracoes: true };
+    const r = moverSelecao(d, sel('p1', 12, 'p1', 15), { bloco: 'p1', offset: 22 }, false);
+    // o riscado continua no documento, e o que chegou entra no fim
+    expect(texto(r.doc, 'p1')).toBe('Acampamento de invernode ');
+    expect(textoVisivel(r.doc)).toContain('Acampamento inverno');
   });
 });

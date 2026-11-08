@@ -233,3 +233,99 @@ describe('a tira de miniaturas responde como a do PowerPoint', () => {
     expect(item(0).getAttribute('draggable'), 'a tira que só navega deixa arrastar').toBe('false');
   });
 });
+
+describe('a caixa desenhada à mão se mexe como no PowerPoint', () => {
+  /*
+    O jsdom não mede nada: a caixa do slide sai com tamanho zero. O slide aqui
+    passa a ter 600 por 337,5, e um arrasto de 60 pixels é 10% do slide.
+  */
+  let mudancas: (Partial<import('./apresentacao').CaixaAMao> | null)[] = [];
+  function ComCaixa({ comSetter = true }: { comSetter?: boolean }) {
+    const [slide, setSlide] = useState<Slide>({
+      ...slideNovo('s1', 'em-branco'),
+      caixas: [{ id: 'c1', texto: 'Saída às 19h', x: 10, y: 20, largura: 50, tamanho: 20, papel: 'corpo' }],
+    });
+    return (
+      <FolhaDoSlide slide={slide} mestre={mestreDoModelo('branco')}
+        aoMexerNaCaixa={comSetter ? (id, m) => {
+          mudancas.push(m);
+          setSlide(s => ({
+            ...s,
+            caixas: m === null ? s.caixas.filter(c => c.id !== id) : s.caixas.map(c => (c.id === id ? { ...c, ...m } : c)),
+          }));
+        } : undefined} />
+    );
+  }
+  const caixa = () => container.querySelector<HTMLElement>('.pp-caixa')!;
+  const ponteiro = (el: Element, tipo: string, x: number, y: number) =>
+    act(() => { el.dispatchEvent(new PointerEvent(tipo, { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0 })); });
+  const tecla = (key: string, ctrl = false) =>
+    act(() => { caixa().dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ctrlKey: ctrl })); });
+  const montarCaixa = (comSetter = true) => {
+    mudancas = [];
+    act(() => { root.render(<ComCaixa comSetter={comSetter} />); });
+    const slide = container.querySelector<HTMLElement>('.pp-slide')!;
+    slide.getBoundingClientRect = () => ({ x: 0, y: 0, left: 0, top: 0, right: 600, bottom: 337.5, width: 600, height: 337.5, toJSON: () => ({}) });
+  };
+
+  it('o primeiro clique escolhe, com as oito alças; arrastar leva a caixa', () => {
+    montarCaixa();
+    ponteiro(caixa(), 'pointerdown', 100, 100);
+    expect(caixa().dataset.escolhida).toBe('sim');
+    expect(container.querySelectorAll('.pp-alca')).toHaveLength(8);
+    ponteiro(caixa(), 'pointermove', 160, 100);
+    ponteiro(caixa(), 'pointerup', 160, 100);
+    expect(mudancas).toEqual([{ x: 20, y: 20, largura: 50 }]);
+    expect(caixa().style.left).toBe('20%');
+  });
+
+  it('a alça da direita alarga, e a da esquerda alarga mantendo a borda direita', () => {
+    montarCaixa();
+    ponteiro(caixa(), 'pointerdown', 100, 100);
+    ponteiro(caixa(), 'pointerup', 100, 100);
+    const direita = container.querySelector('.pp-alca[data-alca="e"]')!;
+    ponteiro(direita, 'pointerdown', 360, 100);
+    ponteiro(direita, 'pointermove', 420, 100);
+    ponteiro(direita, 'pointerup', 420, 100);
+    expect(mudancas[mudancas.length - 1]).toEqual({ x: 10, y: 20, largura: 60 });
+    const esquerda = container.querySelector('.pp-alca[data-alca="w"]')!;
+    ponteiro(esquerda, 'pointerdown', 60, 100);
+    ponteiro(esquerda, 'pointermove', 30, 100);
+    ponteiro(esquerda, 'pointerup', 30, 100);
+    expect(mudancas[mudancas.length - 1], 'a borda direita (10 + 60) ficou onde estava').toEqual({ x: 5, y: 20, largura: 65 });
+  });
+
+  it('com a caixa escolhida, as setas empurram, o Ctrl empurra de pouquinho e o Delete apaga', () => {
+    montarCaixa();
+    ponteiro(caixa(), 'pointerdown', 100, 100);
+    ponteiro(caixa(), 'pointerup', 100, 100);
+    tecla('ArrowRight');
+    tecla('ArrowDown', true);
+    expect(mudancas).toEqual([{ x: 11, y: 20 }, { x: 11, y: 20.3 }]);
+    tecla('Delete');
+    expect(mudancas[mudancas.length - 1]).toBeNull();
+    expect(container.querySelector('.pp-caixa')).toBeNull();
+  });
+
+  it('o segundo clique entra no texto, e sair grava o que se escreveu', () => {
+    montarCaixa();
+    ponteiro(caixa(), 'pointerdown', 100, 100);
+    ponteiro(caixa(), 'pointerup', 100, 100);
+    expect(caixa().dataset.escrevendo).toBeUndefined();
+    ponteiro(caixa(), 'pointerdown', 100, 100);
+    ponteiro(caixa(), 'pointerup', 100, 100);
+    expect(caixa().dataset.escrevendo).toBe('sim');
+    const texto = container.querySelector<HTMLElement>('.pp-caixa-texto')!;
+    texto.textContent = 'Saída às 20h';
+    Object.defineProperty(texto, 'innerText', { value: 'Saída às 20h', configurable: true });
+    act(() => { texto.dispatchEvent(new FocusEvent('blur')); texto.dispatchEvent(new FocusEvent('focusout', { bubbles: true })); });
+    expect(mudancas[mudancas.length - 1]).toEqual({ texto: 'Saída às 20h' });
+  });
+
+  it('sem quem receba a mudança, a caixa é desenho', () => {
+    montarCaixa(false);
+    expect(caixa().classList.contains('pp-caixa-mexe')).toBe(false);
+    ponteiro(caixa(), 'pointerdown', 100, 100);
+    expect(container.querySelector('.pp-alca')).toBeNull();
+  });
+});

@@ -285,7 +285,7 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair, ou
         setAviso('Você está em modo de Visualização: aqui só se lê. Troque o modo no canto da barra para escrever.');
         return false;
       }
-      if (c.tipo === 'inserir' || c.tipo === 'apagar' || c.tipo === 'paragrafo') {
+      if (c.tipo === 'inserir' || c.tipo === 'apagar' || c.tipo === 'paragrafo' || c.tipo === 'mover') {
         if (soComento) {
           descobrir('comentarista-so-sugere');
           setAviso('Você é comentarista aqui: o que escreveu virou sugestão.');

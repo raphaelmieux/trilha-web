@@ -655,6 +655,84 @@ export function colarFragmento<S extends string>(
 }
 
 /**
+ * Arrastar a seleção e soltar noutro ponto: no Word isso move o texto, e com
+ * Ctrl apertado copia. A formatação vai junto, como no Colar.
+ *
+ * Soltar dentro da própria seleção, ou na beirada dela, não faz nada — é o
+ * que o Word faz, e é o que acontece quando a mão treme no meio de um clique.
+ *
+ * O destino se mede **antes** de apagar a origem, e o que o protege é contar a
+ * partir do fim do parágrafo: o que vem depois da seleção não muda quando ela
+ * sai, com o controle de alterações ou sem ele. Sem marca a origem some e o
+ * parágrafo se junta; com marca ela fica riscada e nada se junta. Contar do
+ * começo erraria num dos dois, e o texto cairia algumas letras longe de onde
+ * a pessoa soltou.
+ *
+ * E os espaços se acertam sozinhos, que é o "recortar e colar inteligente"
+ * ligado de fábrica no Word: o clique duplo pega a palavra sem o espaço, e
+ * arrastá-la deixaria dois espaços onde ela estava e nenhum onde chegou —
+ * "A  unidade" e "refeiçõesnossa". Quem arrasta uma palavra quer a frase
+ * certa nos dois lugares. Com o controle de alterações o ajuste não acontece:
+ * cada espaço tirado ou posto seria mais uma marca para alguém revisar.
+ */
+export function moverSelecao<S extends string>(
+  d: Doc<S>, origem: Selecao, destino: Ponto, copiar: boolean, q?: QuemEdita,
+): Edicao<S> {
+  if (recolhida(origem)) return { doc: d, selecao: origem };
+  let { inicio, fim } = ordenar(d, origem);
+  if (compararPontos(d, destino, inicio) >= 0 && compararPontos(d, destino, fim) <= 0) {
+    return { doc: d, selecao: origem };
+  }
+  const fragmento = fragmentoDaSelecao(d, origem);
+  const ajustar = !marcando(d, q) && fragmento.length === 1;
+  let doc = d;
+  let alvo = destino;
+  if (!copiar) {
+    /* O espaço que sobraria na origem sai junto com ela. */
+    const pa = paragrafoPorId(d, inicio.bloco);
+    if (ajustar && pa && inicio.bloco === fim.bloco) {
+      const u = unidadesDoParagrafo(pa);
+      const antesDele = u[inicio.offset - 1];
+      const depoisDele = u[fim.offset];
+      if (antesDele === ' ' && (depoisDele === undefined || depoisDele === ' ' || PONTUACAO.test(depoisDele))) {
+        if (!(destino.bloco === inicio.bloco && destino.offset === inicio.offset - 1)) {
+          inicio = { ...inicio, offset: inicio.offset - 1 };
+        }
+      } else if (antesDele === undefined && depoisDele === ' ') {
+        fim = { ...fim, offset: fim.offset + 1 };
+      }
+    }
+    const pf = paragrafoPorId(d, fim.bloco);
+    const depoisDoFim = compararPontos(d, destino, fim) >= 0 && destino.bloco === fim.bloco;
+    const doFim = pf ? tamanhoDoParagrafo(pf) - destino.offset : 0;
+    const limpo = apagarSelecao(d, { ancora: inicio, foco: fim }, q);
+    doc = limpo.doc;
+    if (depoisDoFim) {
+      const p = paragrafoPorId(doc, fim.bloco) ?? paragrafoPorId(doc, limpo.selecao.foco.bloco);
+      if (p) alvo = { bloco: p.id, offset: tamanhoDoParagrafo(p) - doFim };
+    }
+  }
+  /* E o que chegou não gruda nas palavras vizinhas. */
+  const texto = fragmento[0]?.map(x => (x.campo ? '￼' : x.texto)).join('') ?? '';
+  const pd = paragrafoPorId(doc, alvo.bloco);
+  const vizinhas = pd ? unidadesDoParagrafo(pd) : '';
+  const espacoAntes = ajustar && LETRA.test(texto[0] ?? '') && LETRA.test(vizinhas[alvo.offset - 1] ?? '');
+  const espacoDepois = ajustar && LETRA.test(texto[texto.length - 1] ?? '') && LETRA.test(vizinhas[alvo.offset] ?? '');
+  if (espacoAntes) {
+    doc = inserirTexto(doc, cursorEm(alvo.bloco, alvo.offset), ' ', q).doc;
+    alvo = { ...alvo, offset: alvo.offset + 1 };
+  }
+  const r = colarFragmento(doc, cursorEm(alvo.bloco, alvo.offset), fragmento, q);
+  doc = r.doc;
+  if (espacoDepois) doc = inserirTexto(doc, r.selecao, ' ', q).doc;
+  /* O Word deixa o texto que chegou selecionado, para o próximo gesto. */
+  return { doc, selecao: { ancora: alvo, foco: r.selecao.foco } };
+}
+
+const LETRA = /[\p{L}\p{N}]/u;
+const PONTUACAO = /[.,;:!?)\]]/;
+
+/**
  * Shift+Enter: desce uma linha sem fechar o parágrafo.
  *
  * É a diferença que o requisito 2.3 da CC-ES002 pede, e ela precisa de um

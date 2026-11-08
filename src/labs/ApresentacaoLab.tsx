@@ -7,6 +7,7 @@ import {
   FileCheck2, RotateCcw, ArrowLeft, Play, MonitorPlay,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
+import { useDesfazerDaApresentacao, useTeclasDeDesfazer } from './desfazerDaApresentacao';
 import {
   CSS_POWERPOINT, BarraDeTituloDoPowerPoint, GuiasDoPowerPoint, ReguaDoPowerPoint,
   GrupoDoPowerPoint, BotaoDoPowerPoint, MenuDoPowerPoint, ItemDeMenuDoPowerPoint,
@@ -93,6 +94,8 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
 
   const slide = ap.slides[Math.min(atual, ap.slides.length - 1)];
   const mestre = ap.mestre;
+  const historico = useDesfazerDaApresentacao(ap, setAp);
+  useTeclasDeDesfazer(historico, tela === 'normal');
 
   /*
     F5 começa a apresentação do primeiro slide, e Shift+F5 do atual — o atalho
@@ -346,6 +349,7 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
       <div className="pp-janela" onClick={fecharMenu}>
         <BarraDeTituloDoPowerPoint
           arquivo="Acampamento de Inverno" aoAvisar={avisar} aoNaoFazParte={naoFazParte}
+          aoDesfazer={historico.desfazer} aoRefazer={historico.refazer}
         />
 
         {tela === 'normal' && (

@@ -7,6 +7,7 @@ import {
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import { Cartao, CampoLongo, Escolha } from '../labs/caderno';
 import { DesenhoDoGrafico } from '../labs/excel';
+import { useDesfazerDaApresentacao, useTeclasDeDesfazer } from '../labs/desfazerDaApresentacao';
 import {
   AchadoDoPainel, AvisoDoMestre, BarraDeTituloDoPowerPoint, BotaoDoPowerPoint,
   CSS_POWERPOINT, CampoDoMestre, DialogoDoPowerPoint, FolhaDoSlide,
@@ -155,6 +156,10 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
     setCtx(c => ({ ...c, ap: f(c.ap) }));
   const mudarSlide = (id: string, m: Partial<Slide>) =>
     mudarAp(a => ({ ...a, slides: a.slides.map(s => (s.id === id ? { ...s, ...m } : s)) }));
+  /* Desfaz-se a apresentação, e não o contexto: o que a pessoa descobriu e o
+     caderno não voltam com o Ctrl+Z. */
+  const historico = useDesfazerDaApresentacao(ap, mudarAp);
+  useTeclasDeDesfazer(historico, tela === 'normal');
   const descobrir = (chave: string) => setCtx(c => (
     c.descobertas.includes(chave) ? c : { ...c, descobertas: [...c.descobertas, chave] }));
   const mudarCaderno = (f: (k: ContextoDaApresentacao['caderno']) => ContextoDaApresentacao['caderno']) =>
@@ -470,6 +475,7 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
       <div className="pp-janela" onClick={fecharMenu}>
         <BarraDeTituloDoPowerPoint
           arquivo={arquivo} aoAvisar={avisar} aoNaoFazParte={naoFazParte}
+          aoDesfazer={historico.desfazer} aoRefazer={historico.refazer}
         />
 
         {tela === 'telao' && (
@@ -974,6 +980,11 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
                       rotuloDoCorpo={`Tópicos do slide ${atual + 1}`}
                       aoEscreverNoCorpo={topicos => mudarSlide(slide.id, { topicos })}
                       desenharGrafico={desenharGrafico} nomeDoAudio="hino-do-clube.mp3"
+                      aoMexerNaCaixa={(id, m) => mudarSlide(slide.id, {
+                        caixas: m === null
+                          ? slide.caixas.filter(c => c.id !== id)
+                          : slide.caixas.map(c => (c.id === id ? { ...c, ...m } : c)),
+                      })}
                     />
                   </div>
                 </div>
