@@ -12,7 +12,7 @@ import {
   CSS_POWERPOINT, CampoDoMestre, DialogoDoPowerPoint, FolhaDoSlide,
   GrupoDoPowerPoint, GuiasDoPowerPoint, ItemDeMenuDoPowerPoint, MenuDoPowerPoint,
   PainelDeNotas, PainelDoPowerPoint, ReguaDoPowerPoint,
-  SeletorDeCorDoPowerPoint, TelaDeApresentacao,
+  SeletorDeCorDoPowerPoint, TelaDeApresentacao, TiraDeSlides,
 } from '../labs/powerpoint';
 import {
   NOMES_DOS_LAYOUTS, aplicarLayout, compactarImagem, limparFormatacaoDireta,
@@ -197,6 +197,22 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
     quebrada, sem nada estourar. É a irmã do Enter que deixava o cursor no
     parágrafo de cima na CC-ES006.
   */
+  /* F5 e Shift+F5 começam a apresentação, como no PowerPoint — no navegador
+     a tecla recarregaria a página e apagaria o trabalho da lição. */
+  useEffect(() => {
+    if (tela !== 'normal') return;
+    const aoTeclar = (ev: KeyboardEvent) => {
+      if (ev.key !== 'F5') return;
+      ev.preventDefault();
+      if (!ev.shiftKey) setAtual(0);
+      setApresentador(false);
+      setLuz(false);
+      setTela('telao');
+    };
+    window.addEventListener('keydown', aoTeclar);
+    return () => window.removeEventListener('keydown', aoTeclar);
+  });
+
   useEffect(() => {
     if (tela !== 'telao') return;
     const aoTeclar = (ev: KeyboardEvent) => {
@@ -933,16 +949,13 @@ export default function LaboratorioDeApresentacao({ vereda, licao: daLicao, aoVe
             </div>
 
             <div className="pp-corpo">
-              <div className="pp-tira">
-                {ap.slides.map((s, i) => (
-                  <button key={s.id} type="button" className="pp-tira-item" aria-current={i === atual}
-                    aria-label={`Slide ${i + 1}${s.titulo ? `: ${s.titulo}` : ' (vazio)'}`}
-                    onClick={ev => { ev.stopPropagation(); setAtual(i); fecharMenu(); }}>
-                    <span>{i + 1}</span>
-                    <span className="pp-tira-moldura">{folhaDoSlide(s, true)}</span>
-                  </button>
-                ))}
-              </div>
+              <TiraDeSlides
+                total={ap.slides.length} atual={atual}
+                aoIr={i => { setAtual(i); fecharMenu(); }}
+                rotuloDe={i => `Slide ${i + 1}${ap.slides[i].titulo ? `: ${ap.slides[i].titulo}` : ' (vazio)'}`}
+                desenhar={i => folhaDoSlide(ap.slides[i], true)}
+                acoes={{ novo: () => criarSlide('titulo-conteudo'), duplicar, excluir, mover }}
+              />
 
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 <div className="pp-palco" onClick={ev => ev.stopPropagation()}>

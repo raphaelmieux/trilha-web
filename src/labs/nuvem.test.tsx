@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach } from 'vitest';
 import { act } from 'react';
+import * as React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import {
   CSS_DA_NUVEM, TopoDaNuvem, LateralDaNuvem, CaminhoDaNuvem, CabecalhoDaLista,
@@ -428,5 +429,60 @@ describe('o Novo e a barra da seleção', () => {
     });
     expect(escolheu).toBe(true);
     expect(onde).toEqual({ x: 300, y: 150 });
+  });
+});
+
+/* ── O teclado da lista é o da nuvem de verdade ────────────────────────────── */
+
+describe('a lista anda pelas setas e exclui pelo Delete', () => {
+  /*
+    A lista aceitava Enter e espaço e mais nada: a seta para baixo não descia
+    para o arquivo seguinte, e o Delete não mandava nada para a lixeira — dois
+    gestos que todo mundo faz numa lista de arquivos sem pensar, e que aqui
+    não respondiam sem nada explicar por quê.
+  */
+  function Lista({ aoExcluir }: { aoExcluir?: (id: string) => void }) {
+    const [escolhido, setEscolhido] = React.useState<string | null>(null);
+    return (
+      <div>
+        {['ata', 'escala', 'fichas'].map(id => (
+          <LinhaDaNuvem key={id} arquivo={acharArq(id)} escolhido={escolhido === id}
+            aoEscolher={() => setEscolhido(id)} aoAbrir={() => {}}
+            aoExcluir={aoExcluir ? () => aoExcluir(id) : undefined} />
+        ))}
+      </div>
+    );
+  }
+  const escolhida = () => container.querySelector('[aria-selected="true"]')?.textContent ?? '';
+  const teclar = (key: string) => act(() => {
+    (document.activeElement as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  });
+
+  it('seta para baixo e para cima mudam a escolhida e levam o foco junto', () => {
+    montar(<Lista />);
+    const linhas = container.querySelectorAll<HTMLElement>('[role="row"]');
+    act(() => { linhas[0].focus(); linhas[0].click(); });
+    teclar('ArrowDown');
+    expect(escolhida()).toContain(acharArq('escala').nome);
+    expect(document.activeElement).toBe(linhas[1]);
+    teclar('End');
+    expect(escolhida()).toContain(acharArq('fichas').nome);
+    teclar('ArrowDown');
+    expect(escolhida(), 'a última não dá a volta').toContain(acharArq('fichas').nome);
+    teclar('ArrowUp');
+    expect(escolhida()).toContain(acharArq('escala').nome);
+  });
+
+  it('o Delete só age onde a lixeira existe', () => {
+    const excluidos: string[] = [];
+    montar(<Lista aoExcluir={id => excluidos.push(id)} />);
+    const linha = container.querySelector<HTMLElement>('[role="row"]')!;
+    act(() => linha.focus());
+    teclar('Delete');
+    expect(excluidos).toEqual(['ata']);
+
+    act(() => root.render(<Lista />));
+    act(() => container.querySelector<HTMLElement>('[role="row"]')!.focus());
+    expect(() => teclar('Delete')).not.toThrow();
   });
 });

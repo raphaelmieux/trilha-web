@@ -1,4 +1,11 @@
-import { ArrowDownAZ, ArrowUpZA, Check, ChevronDown, ChevronLeft, ChevronRight, Filter, MoreHorizontal, Plus, X } from 'lucide-react';
+import { useLayoutEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  ArrowDownAZ, ArrowUpZA, Check, ChevronDown, ChevronLeft, ChevronRight, ClipboardPaste, Copy, Eraser, Filter,
+  MoreHorizontal, Plus, Scissors, X,
+} from 'lucide-react';
+import type { AjudaDaFormula, MenuDeContextoDaGrade } from './gradeDoExcel';
+import { argumentoEmDestaque } from './ajudaDeFormulas';
 import {
   CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice, AcessibilidadeDoStatus,
 } from './office';
@@ -283,6 +290,45 @@ export const CSS_EXCEL = `
   background: #217346; border: 1px solid #FFFFFF; cursor: crosshair; z-index: 5;
 }
 .pl-grade td.pl-ativa { position: relative; }
+/* As formiguinhas: a borda tracejada em volta do que foi copiado ou
+   recortado, até o Esc ou até alguém escrever numa célula. Ela é o único
+   jeito de saber, olhando a planilha, que há alguma coisa para colar. Cada
+   lado é uma propriedade própria do mesmo ::after, e por isso a célula que é
+   canto ganha os dois lados sem uma regra apagar a outra. */
+.pl-grade td.pl-copiado-cima, .pl-grade td.pl-copiado-baixo,
+.pl-grade td.pl-copiado-esq, .pl-grade td.pl-copiado-dir { position: relative; }
+.pl-grade td.pl-copiado-cima::after, .pl-grade td.pl-copiado-baixo::after,
+.pl-grade td.pl-copiado-esq::after, .pl-grade td.pl-copiado-dir::after {
+  content: ''; position: absolute; inset: -1px; pointer-events: none; z-index: 2;
+  border: 0 dashed #217346;
+}
+.pl-grade td.pl-copiado-cima::after { border-top-width: 2px; }
+.pl-grade td.pl-copiado-baixo::after { border-bottom-width: 2px; }
+.pl-grade td.pl-copiado-esq::after { border-left-width: 2px; }
+.pl-grade td.pl-copiado-dir::after { border-right-width: 2px; }
+/* A lista de funções e a dica de sintaxe, do jeito do Excel: branca, com o
+   "fx" verde em cada nome, a frase do que a função faz ao lado da escolhida, e
+   o molde da função com o argumento da vez em negrito. */
+.pl-ajuda { position: fixed; z-index: 1000; font-family: system-ui, 'Segoe UI', Roboto, sans-serif; }
+.pl-ajuda-linha { display: flex; align-items: flex-start; gap: 4px; }
+.pl-ajuda-lista {
+  background: #FFFFFF; border: 1px solid #A19F9D; box-shadow: 0 3px 8px rgba(0,0,0,.18);
+  max-height: 180px; overflow-y: auto; min-width: 170px; padding: 2px 0;
+}
+.pl-ajuda-item {
+  display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; border: none;
+  background: none; padding: 3px 8px; font-size: 12px; color: #201F1E; cursor: pointer;
+}
+.pl-ajuda-item[aria-selected="true"] { background: #DCE9F5; }
+.pl-ajuda-fx { font-style: italic; font-weight: 700; color: #217346; font-size: 11px; }
+.pl-ajuda-descricao {
+  background: #FFFFFF; border: 1px solid #A19F9D; box-shadow: 0 3px 8px rgba(0,0,0,.18);
+  font-size: 11.5px; color: #323130; padding: 5px 8px; max-width: 220px;
+}
+.pl-ajuda-dica {
+  display: inline-block; background: #FFFFFF; border: 1px solid #A19F9D;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15); font-size: 11.5px; color: #323130; padding: 3px 7px;
+}
 
 /* A setinha do filtro e a da ordenação moram no cabeçalho, como no Excel. */
 .pl-cab-marca {
@@ -704,6 +750,8 @@ export interface PropsDaGradeDoExcel {
 
   /** Menu do botão direito. Sem ele, a grade não abre menu nenhum. */
   aoContexto?: (e: React.MouseEvent, alvo: 'celula' | 'coluna' | 'linha', l: number, c: number) => void;
+  /** O menu básico que o gancho abriu. Quem passa `aoContexto` próprio desenha o seu. */
+  menuDeContexto?: MenuDeContextoDaGrade | null;
   /** Arrastar a borda do cabeçalho. Sem ele, as alças de tamanho não aparecem. */
   aoArrastarBorda?: (tipo: 'coluna' | 'linha', indice: number, e: React.PointerEvent) => void;
   aoAjustarAoConteudo?: (tipo: 'coluna' | 'linha', indice: number) => void;
@@ -721,6 +769,10 @@ export interface PropsDaGradeDoExcel {
   /** Quais células o estilo de tabela pinta. Só a AP043 usa. */
   naTabela?: (l: number, c: number) => boolean;
   /** A setinha do filtro no cabeçalho. Sem ela, o cabeçalho não tem botão. */
+  /** De onde saiu o que está copiado: a borda tracejada do Excel em volta dela. */
+  copiado?: Faixa | null;
+  /** A lista de funções e a dica de sintaxe, embaixo do campo em edição. */
+  ajuda?: AjudaDaFormula | null;
   /** Abre a lista do filtro; o retângulo é o da setinha, para a lista abrir embaixo dela. */
   aoAbrirFiltro?: (c: number, onde?: DOMRect) => void;
   /**
@@ -743,8 +795,20 @@ export function GradeDoExcel({
   aoMoverPonteiro, aoSoltarPonteiro, aoSairDaGrade,
   aoAbrirEdicao, aoEscrever, aoConfirmar, aoCancelar, apontavel, referencias, aoTeclarNaEdicao,
   aoContexto, aoArrastarBorda, aoAjustarAoConteudo, aoComecarPreenchimento, naTabela, aoAbrirFiltro,
-  sobreposicao,
+  sobreposicao, copiado, ajuda, menuDeContexto,
 }: PropsDaGradeDoExcel) {
+  const nCopiado = copiado ? normalizar(copiado) : null;
+  /* As bordas tracejadas do copiado, só nos lados de fora da faixa. */
+  const bordaDoCopiado = (l: number, c: number): string | undefined => {
+    const n = nCopiado;
+    if (!n || l < n.topo || l > n.base || c < n.esq || c > n.dir) return undefined;
+    return [
+      l === n.topo ? 'pl-copiado-cima' : '',
+      l === n.base ? 'pl-copiado-baixo' : '',
+      c === n.esq ? 'pl-copiado-esq' : '',
+      c === n.dir ? 'pl-copiado-dir' : '',
+    ].filter(Boolean).join(' ') || undefined;
+  };
   /* O contorno colorido de cada referência da fórmula em edição: só as bordas
      da faixa, como o Excel desenha, e não a faixa inteira pintada. */
   const contornoDasReferencias = (l: number, c: number): string | undefined => {
@@ -871,6 +935,7 @@ export function GradeDoExcel({
                       ancora ? 'pl-ativa' : '',
                       dentro && !ancora ? 'pl-na-faixa' : '',
                       naTabela?.(l, c) ? 'pl-na-tabela' : '',
+                      bordaDoCopiado(l, c) ?? '',
                       doResumo !== null ? 'pl-resumo' : '',
                       cond ? `pl-cond-${cond}` : '',
                     ].filter(Boolean).join(' ')}
@@ -946,6 +1011,34 @@ export function GradeDoExcel({
           {sobreposicao}
         </div>
       )}
+      {ajuda && <AjudaDaFormulaNaTela ajuda={ajuda} />}
+      {/* Dentro da janela, e não no body: a moldura da plataforma é uma camada
+          própria, e o véu posto fora dela ficaria por baixo — o clique fora do
+          menu não chegaria a ele, e o menu não fecharia. */}
+      {menuDeContexto && (
+        <>
+          <div className="pl-veu" onPointerDown={menuDeContexto.fechar}
+            onContextMenu={e => { e.preventDefault(); menuDeContexto.fechar(); }} />
+          <div className="pl-contexto" role="menu" aria-label="Menu da planilha"
+            style={{ left: Math.min(menuDeContexto.x, window.innerWidth - 240), top: Math.min(menuDeContexto.y, window.innerHeight - 180) }}>
+            {([
+              [Scissors, 'Recortar', 'Ctrl+X', menuDeContexto.recortar],
+              [Copy, 'Copiar', 'Ctrl+C', menuDeContexto.copiar],
+              [ClipboardPaste, 'Colar', 'Ctrl+V', menuDeContexto.colar],
+            ] as const).map(([Icone, nome, atalho, fazer]) => (
+              <button key={nome} type="button" role="menuitem" className="pl-menu-item" onClick={fazer}>
+                <span className="pl-menu-rotulo"><Icone className="w-3.5 h-3.5" /> {nome}</span>
+                <span className="pl-menu-atalho">{atalho}</span>
+              </button>
+            ))}
+            <div className="pl-menu-risco" />
+            <button type="button" role="menuitem" className="pl-menu-item" onClick={menuDeContexto.limpar}>
+              <span className="pl-menu-rotulo"><Eraser className="w-3.5 h-3.5" /> Limpar conteúdo</span>
+              <span className="pl-menu-atalho">Delete</span>
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -960,6 +1053,64 @@ const dentroDasLinhas = (f: Faixa, l: number) => l >= Math.min(f.l1, f.l2) && l 
  * prometeria filtrar a coluna vazia da direita, que é um gesto sem efeito — e
  * gesto sem efeito é o que ensina a pessoa a desconfiar do programa.
  */
+/**
+ * A lista de funções e a dica de sintaxe, presas embaixo do campo em edição.
+ *
+ * Vão para o body e se medem pelo campo que tem o foco — o da célula ou o da
+ * barra de fórmulas —, porque a mesma ajuda serve aos dois, como no Excel.
+ * Dentro da grade, a caixa que rola cortaria a lista na última linha à vista.
+ */
+function AjudaDaFormulaNaTela({ ajuda }: { ajuda: AjudaDaFormula }) {
+  const [onde, setOnde] = useState<{ x: number; y: number } | null>(null);
+  /* Mede a cada desenho, porque o campo anda junto com a célula e a barra
+     de fórmulas não avisa quando o foco muda de um para o outro. O que
+     impede o laço é devolver o mesmo objeto quando a posição não mudou — o
+     React não redesenha um estado igual. A dependência é a ajuda, que muda a
+     cada tecla; sem lista nenhuma o lint acusaria o laço que a guarda evita. */
+  useLayoutEffect(() => {
+    const campo = document.activeElement as HTMLElement | null;
+    if (!campo?.matches('.pl-celula-entrada, .pl-entrada')) { setOnde(null); return; }
+    const r = campo.getBoundingClientRect();
+    const x = Math.max(4, Math.min(r.left, window.innerWidth - 330));
+    setOnde(o => (o && o.x === x && o.y === r.bottom + 2 ? o : { x, y: r.bottom + 2 }));
+  }, [ajuda]);
+  if (!onde) return null;
+  const { sugestoes, escolhida, dica } = ajuda;
+  return createPortal(
+    <div className="pl-ajuda" style={{ left: onde.x, top: onde.y }}>
+      {sugestoes.length > 0 && (
+        <div className="pl-ajuda-linha">
+          <div className="pl-ajuda-lista" role="listbox" aria-label="Funções">
+            {sugestoes.map((f, i) => (
+              <button key={f.nome} type="button" role="option" aria-selected={i === escolhida}
+                className="pl-ajuda-item"
+                onMouseDown={e => e.preventDefault()}
+                onDoubleClick={() => ajuda.aoEscolher(i)}
+                onClick={() => ajuda.aoEscolher(i)}>
+                <span className="pl-ajuda-fx">fx</span> {f.nome}
+              </button>
+            ))}
+          </div>
+          <div className="pl-ajuda-descricao">{sugestoes[escolhida]?.descricao}</div>
+        </div>
+      )}
+      {dica && (
+        <div className="pl-ajuda-dica" role="tooltip">
+          {dica.funcao.nome}(
+          {dica.funcao.argumentos.map((a, i) => (
+            <span key={i}>
+              {i > 0 && '; '}
+              {i === argumentoEmDestaque(dica.funcao, dica.argumento) ? <b>{a}</b> : a}
+            </span>
+          ))}
+          )
+        </div>
+      )}
+    </div>,
+    document.body,
+  );
+}
+
 function ehCelulaDoCabecalho(p: Planilha, l: number, c: number): boolean {
   if (!p.tabela) return false;
   const esq = Math.min(p.tabela.c1, p.tabela.c2);

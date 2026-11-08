@@ -490,3 +490,15 @@ export function semVaziosNoFim(linhas: string[]): string[] {
   while (fim.length > 0 && fim[fim.length - 1].trim() === '') fim.pop();
   return fim;
 }
+
+/**
+ * O nível de um tópico: tabulações no começo do texto, como o PowerPoint
+ * grava num texto sem formatação. Zero é o tópico; um e dois, os de dentro.
+ * Guardar o nível no próprio texto deixa `topicos` continuar sendo uma lista
+ * de linhas — que é o que as contas de palavras e de tópicos já leem.
+ */
+export const NIVEIS_DO_TOPICO = 3;
+export function nivelDoTopico(t: string): { nivel: number; texto: string } {
+  const m = /^\t*/.exec(t)![0].length;
+  return { nivel: Math.min(m, NIVEIS_DO_TOPICO - 1), texto: t.slice(m) };
+}

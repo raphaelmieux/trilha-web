@@ -2,8 +2,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { act, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { FolhaDoSlide } from './powerpoint';
-import { mestreDoModelo, slideNovo, type Slide } from './apresentacao';
+import { FolhaDoSlide, TiraDeSlides } from './powerpoint';
+import { mestreDoModelo, nivelDoTopico, slideNovo, type Slide } from './apresentacao';
 
 /*
   O corpo do slide se escreve no próprio slide.
@@ -108,5 +108,114 @@ describe('o corpo do slide é o espaço reservado, e não um campo à parte', ()
       );
     });
     expect(container.querySelector('[contenteditable]')).toBeNull();
+  });
+});
+
+/* ── O nível do tópico ─────────────────────────────────────────────────────── */
+
+describe('Tab rebaixa o tópico, como no PowerPoint', () => {
+  /*
+    O Tab tirava o cursor do slide e o levava para a faixa: não havia como
+    escrever um tópico dentro de outro, que é o primeiro gesto de quem monta
+    uma lista de verdade num slide.
+  */
+  const tabNoItem = (i: number, shift = false) => act(() => {
+    const li = corpo().querySelectorAll('li')[i];
+    const r = document.createRange();
+    r.selectNodeContents(li);
+    r.collapse(false);
+    const sel = window.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(r);
+    corpo().dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: shift, bubbles: true, cancelable: true }));
+  });
+
+  it('o nível é guardado como tabulação no começo da linha', () => {
+    montar(['Saída às 19h', 'Levar lanterna']);
+    tabNoItem(1);
+    expect(gravados[gravados.length - 1]).toEqual(['Saída às 19h', '\tLevar lanterna']);
+    tabNoItem(1, true);
+    expect(gravados[gravados.length - 1]).toEqual(['Saída às 19h', 'Levar lanterna']);
+  });
+
+  it('o nível não passa do terceiro, e a tabulação não entra no texto lido', () => {
+    expect(nivelDoTopico('\t\t\t\tFundo')).toEqual({ nivel: 2, texto: 'Fundo' });
+    expect(nivelDoTopico('Topo')).toEqual({ nivel: 0, texto: 'Topo' });
+  });
+});
+
+/* ── A tira de miniaturas tem o teclado e o menu do PowerPoint ─────────────── */
+
+describe('a tira de miniaturas responde como a do PowerPoint', () => {
+  /*
+    A tira estava escrita três vezes e as três só sabiam ser clicadas: Ctrl+M
+    não criava slide, Delete não apagava a miniatura escolhida e o botão
+    direito não tinha menu. O desbravador que sabe o atalho aperta, nada
+    acontece, e conclui que errou.
+  */
+  let feito: string[] = [];
+  function Tira({ comAcoes = true }: { comAcoes?: boolean }) {
+    const [atual, setAtual] = useState(0);
+    return (
+      <div className="pp-janela">
+        <TiraDeSlides total={3} atual={atual} aoIr={setAtual}
+          rotuloDe={i => `Slide ${i + 1}`} desenhar={() => null}
+          acoes={comAcoes ? {
+            novo: () => feito.push('novo'), duplicar: () => feito.push('duplicar'),
+            excluir: () => feito.push('excluir'), mover: d => feito.push(`mover ${d}`),
+          } : undefined} />
+        <input aria-label="fora da tira" />
+      </div>
+    );
+  }
+  const item = (i: number) => container.querySelector<HTMLElement>(`[data-slide="${i}"]`)!;
+  const teclar = (alvo: HTMLElement, key: string, ctrl = false) => act(() => {
+    alvo.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: ctrl, bubbles: true, cancelable: true }));
+  });
+  beforeEach(() => { feito = []; });
+
+  it('as setas andam, e só a miniatura atual fica na ordem do Tab', () => {
+    act(() => root.render(<Tira />));
+    teclar(item(0), 'ArrowDown');
+    expect(item(1).getAttribute('aria-selected')).toBe('true');
+    expect(item(1).tabIndex).toBe(0);
+    expect(item(0).tabIndex).toBe(-1);
+    teclar(item(1), 'End');
+    expect(item(2).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('Enter, Delete, Ctrl+D e Ctrl+seta chegam às ações', () => {
+    act(() => root.render(<Tira />));
+    teclar(item(0), 'Enter');
+    teclar(item(0), 'Delete');
+    teclar(item(0), 'd', true);
+    teclar(item(0), 'ArrowDown', true);
+    expect(feito).toEqual(['novo', 'excluir', 'duplicar', 'mover 1']);
+  });
+
+  it('Ctrl+M cria slide com o cursor em qualquer lugar da janela', () => {
+    act(() => root.render(<Tira />));
+    teclar(container.querySelector<HTMLElement>('[aria-label="fora da tira"]')!, 'm', true);
+    expect(feito).toEqual(['novo']);
+  });
+
+  it('o botão direito abre o menu do slide, e o item age', () => {
+    act(() => root.render(<Tira />));
+    act(() => { item(1).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 10, clientY: 10 })); });
+    expect(item(1).getAttribute('aria-selected'), 'o botão direito escolhe a miniatura').toBe('true');
+    const menu = container.querySelector('[role="menu"]')!;
+    expect([...menu.querySelectorAll('[role="menuitem"]')].map(b => b.textContent?.trim()))
+      .toEqual(['Novo Slide Ctrl+M', 'Duplicar Slide Ctrl+D', 'Excluir Slide Delete']);
+    act(() => (menu.querySelectorAll('[role="menuitem"]')[1] as HTMLElement).click());
+    expect(feito).toEqual(['duplicar']);
+    expect(container.querySelector('[role="menu"]'), 'o menu fecha depois de agir').toBeNull();
+  });
+
+  it('sem ações, a tira só navega: nem menu nem Delete', () => {
+    act(() => root.render(<Tira comAcoes={false} />));
+    act(() => { item(0).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })); });
+    expect(container.querySelector('[role="menu"]')).toBeNull();
+    teclar(item(0), 'Delete');
+    expect(feito).toEqual([]);
   });
 });

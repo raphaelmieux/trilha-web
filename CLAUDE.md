@@ -3804,6 +3804,28 @@ fragmento com a formatação (`fragmentoDaSelecao`), colar o insere pelo motor
 (`colarFragmento`). O navegador colaria HTML de qualquer lugar e o modelo não o
 leria — a tela mostraria o que o documento não tem.
 
+**O botão direito da folha é o menu do Word, e não o do navegador.** Sem ele, o
+clique direito abria "Salvar página como" e "Inspecionar" em cima do documento
+— que é o primeiro lugar onde quem não sabe atalho procura Copiar. O menu traz a
+mini barra (Negrito, Itálico, Sublinhado) e Recortar, Copiar e Colar, que
+passam pelo motor como as teclas; Recortar e Copiar ficam desligados sem
+seleção, porque é o que o Word faz e porque agir sobre nada pareceria funcionar.
+Ele vai para o `body`, sem véu: não tem nada que precisar cobrir, e fecha no
+clique fora, no Esc e na rolagem.
+
+Três gestos que só se notam quando faltam:
+
+- **arrastar numa linha só é seleção, e não clique.** A folha reconhecia o
+  clique pela seleção "velha" e a recolhia: arrastar sobre duas palavras da
+  mesma linha selecionava e desfazia no mesmo gesto. Hoje o `mousedown` guarda
+  o ponto, e mais de três pixels até o `click` é arrasto;
+- **Ctrl+] e Ctrl+[ mudam um ponto por vez**, e o Ctrl+Shift+> sobe pela escada
+  de tamanhos. São dois atalhos no Word e os dois existem aqui. Voltar ao
+  tamanho do estilo apaga a direta, pela regra de tirar o negrito;
+- **na tabela, Tab anda e o Tab da última célula abre uma linha**, e as setas
+  sobem e descem. O Tab saía da tabela e caía na faixa, e preencher uma tabela
+  pedia o mouse a cada célula. Inserir a tabela já põe o cursor na primeira.
+
 **O Excel tem modos, e a barra de status diz qual.** Pronto, Inserir, Editar e
 Apontar, como no programa: de onde a edição começou decide o que a seta faz.
 Escrevendo uma fórmula logo depois de `=`, de um operador, de `(` ou de `;`, a
@@ -3818,6 +3840,36 @@ noutra célula é sair da edição. As regras puras moram em `teclasDaPlanilha.t
 - **Ctrl+seta para na borda do bloco de dados**, e não na da grade;
 - **Tab e depois Enter volta à coluna de onde o Tab começou**, que é como se
   preenche uma tabela linha a linha sem tirar a mão do teclado.
+
+**Copiar marca a origem, e recortar só tira quando cola.** O Excel desenha a
+borda tracejada em volta do que foi copiado ou recortado, e o Esc a tira. O
+recortado continua na origem até o Ctrl+V: recortar e desistir não custa o
+dado, e a primeira versão daqui o apagava no Ctrl+X. Colar uma cópia transpõe as
+referências relativas da fórmula pela distância, como arrastar a alça;
+mover não transpõe, porque a fórmula que foi levada continua apontando para as
+mesmas células. As bordas são `::after` com um lado por classe — escritas como
+fundo, a segunda classe da mesma célula apagaria o lado da primeira.
+
+**A lista de funções e a dica de sintaxe são do Excel.** Digitar `=SO` abre a
+lista com SOMA e SOMASE; as setas escolhem, o Tab escreve o nome com o
+parêntese aberto, e o Esc fecha só a lista — o segundo Esc desiste da edição.
+Com o parêntese aberto aparece o molde, `SOMA(núm1; [núm2]; ...)`, com o
+argumento da vez em negrito: é ali que o ponto e vírgula brasileiro está
+escrito. O catálogo (`ajudaDeFormulas.ts`) é só o que `formulas.ts` calcula:
+sugerir uma função que o motor responde com `#NOME?` seria a plataforma
+ensinando a fórmula errada, e `ajudaDeFormulas.test.ts` confere cada nome.
+
+**O botão direito na grade abre Recortar, Copiar, Colar e Limpar** em toda
+planilha, pelo gancho. A AP043 entrega o seu `aoContexto`, com inserir e excluir
+linha, e aí desenha o seu; os outros recebem o básico. O menu e o véu ficam
+**dentro** da janela: a moldura da plataforma é uma camada própria, e o véu
+posto no `body` ficaria por baixo dela — o clique fora não fecharia nada. A
+lista de funções vai para o `body`, porque não tem véu e a caixa que rola a
+cortaria.
+
+E, depois de um Esc, a edição seguinte não andava com o Tab: a marca de edição
+já resolvida ficava de pé. Toda abertura de edição passa por `comecarEdicao`,
+que a zera.
 
 **A AP044 deixou de ter uma planilha só dela.** Ela desenhava uma tabela HTML,
 com o total num painel ao lado e a fórmula num botão: as setas, o F2 e a barra
@@ -3862,6 +3914,26 @@ os dois discordam, e as duas leituras aparam as linhas vazias do fim **do mesmo
 jeito** — senão o Enter no último tópico abria a linha, o modelo a aparava, e
 ela sumia debaixo do cursor.
 
+**A tira de miniaturas tem o teclado e o menu do PowerPoint.** Ela estava
+escrita três vezes, e as três só sabiam ser clicadas. `TiraDeSlides`, em
+`powerpoint.tsx`, é uma só: setas, Home e End andam; Enter cria o slide
+seguinte, Delete apaga o escolhido, Ctrl+D duplica e Ctrl+seta move; o botão
+direito abre Novo, Duplicar e Excluir. Só a miniatura atual fica na ordem do
+Tab, e o foco acompanha o slide depois de criar ou excluir — senão a seta
+seguinte cairia num botão que já saiu. Ctrl+M cria slide de qualquer ponto da
+janela, com o cursor no título também. As ações entram pela presença de
+`acoes`: a tira da CC-ES012 só navega, porque aquela apresentação não se monta.
+
+**Tab rebaixa o tópico.** Ele tirava o cursor do slide e o levava para a faixa.
+O nível mora no texto, como tabulações no começo da linha (`nivelDoTopico`, em
+`apresentacao.ts`): `topicos` continua sendo uma lista de linhas, e as contas de
+palavras e de tópicos não precisam saber de nível nenhum.
+
+**F5 apresenta do começo, Shift+F5 do slide atual**, nos dois laboratórios que
+apresentam; no telão as setas, o espaço e o Page Down andam, e o Esc sai. A AP044
+ganhou a guia Apresentação de Slides, com os dois botões onde o PowerPoint os
+põe.
+
 **A lista da nuvem se comporta como a de uma nuvem.** Pastas primeiro, o resto
 em ordem de dicionário (`emOrdemDaLista`, com número como número: Ata 9 antes de
 Ata 10), e o cabeçalho do Nome inverte. O menu abre **onde se clicou** — abria
@@ -3869,6 +3941,13 @@ sempre no mesmo canto, longe da linha, sem dizer de qual arquivo falava — e n�
 sai da janela. Com um arquivo escolhido aparece a barra da seleção, que ocupa o
 lugar mesmo vazia para a lista não pular a cada clique. O dono vem com a bolha
 dele.
+
+E o teclado é o da lista de arquivos: as setas, Home e End mudam a escolhida e
+levam o foco junto, o Delete manda para a lixeira, e o Esc e o clique no vazio
+desfazem a escolha. A vizinha é procurada no DOM, pela ordem da tela, como o
+Shift da seleção do Explorador. O Delete entra pela presença de `aoExcluir`, e
+o laboratório só o passa onde a lixeira existe e a pessoa pode editar — o mesmo
+que desliga o item do menu.
 
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
@@ -5674,6 +5753,14 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/PlanilhaAvancadaLab.test.tsx` | AP044 fora da grade do Excel, ou Design do Gráfico que fica sem gráfico escolhido |
 | `src/labs/powerpoint.test.tsx` | corpo do slide escrito fora do slide, ou Enter cuja linha some debaixo do cursor |
 | `src/labs/nuvem.test.tsx` | lista fora da ordem da nuvem, ou menu que não abre onde se clicou |
+| `src/labs/nuvem.test.tsx` | seta que não muda a escolhida nem leva o foco, ou Delete que age onde não há lixeira |
+| `src/labs/InsercaoTextoLab.test.tsx` | Tab que sai da tabela, última célula que não abre linha, ou botão direito sem o menu do Word |
+| `src/labs/edicao.test.ts` | Ctrl+] que pula pela escada de tamanhos, ou que deixa formatação direta ao voltar ao estilo |
+| `src/labs/gradeDoExcel.test.tsx` | Ctrl+X que esvazia a origem antes de colar, ou cópia sem a borda tracejada que o Esc tira |
+| `src/labs/gradeDoExcel.test.tsx` | planilha sem o menu do botão direito, ou sem a lista de funções que o Tab completa |
+| `src/labs/planilha.test.ts` | colar uma cópia sem transpor a referência relativa, ou mover transpondo |
+| `src/labs/ajudaDeFormulas.test.ts` | função sugerida na lista que o motor responde com `#NOME?`, ou referência abrindo a lista |
+| `src/labs/powerpoint.test.tsx` | tira de miniaturas que só se clica, ou Tab no corpo do slide que não rebaixa o tópico |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

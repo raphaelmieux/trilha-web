@@ -38,6 +38,9 @@ import { mostrar } from './formulas';
 import {
   alternarAncoragem, nomeApontado, podeApontar, referenciasDaFormula, regiaoAtual, saltar, ultimaUsada,
 } from './teclasDaPlanilha';
+import {
+  sugestoesDeFuncao, completarFuncao, funcaoAberta, type FuncaoDoCatalogo,
+} from './ajudaDeFormulas';
 
 /**
  * O que a barra de status do Excel escreve no canto esquerdo.
@@ -149,6 +152,13 @@ export interface GradeControlada {
     /** As faixas que a fórmula em edição cita, com a cor de cada uma. */
     referencias: { faixa: Faixa; cor: string }[];
     aoTeclarNaEdicao: (e: React.KeyboardEvent<HTMLInputElement>) => boolean;
+    /** De onde saiu o que está copiado: a grade desenha a borda tracejada ali. */
+    copiado: Faixa | null;
+    /** A lista de funções e a dica de sintaxe da fórmula em edição. */
+    ajuda: AjudaDaFormula | null;
+    /** O botão direito abre o menu básico; um laboratório com menu próprio passa o seu por cima. */
+    aoContexto: (e: React.MouseEvent, alvo: 'celula' | 'coluna' | 'linha', l: number, c: number) => void;
+    menuDeContexto: MenuDeContextoDaGrade | null;
     planilha: Planilha;
     faixa: Faixa;
     ativa: { l: number; c: number };
@@ -171,6 +181,27 @@ export interface GradeControlada {
 
 const texto = (p: Planilha, l: number, c: number) => p.celulas[l]?.[c]?.texto ?? '';
 
+/** O menu do botão direito que toda grade tem: os comandos que valem em qualquer planilha. */
+export interface MenuDeContextoDaGrade {
+  x: number;
+  y: number;
+  fechar: () => void;
+  recortar: () => void;
+  copiar: () => void;
+  colar: () => void;
+  limpar: () => void;
+}
+
+/** O que a grade desenha embaixo do campo enquanto se escreve uma fórmula. */
+export interface AjudaDaFormula {
+  /** As funções que começam pelo que se digitou; vazia, não há lista. */
+  sugestoes: FuncaoDoCatalogo[];
+  escolhida: number;
+  aoEscolher: (i: number) => void;
+  /** A função de parêntese aberto e o argumento da vez. */
+  dica: { funcao: FuncaoDoCatalogo; argumento: number } | null;
+}
+
 export function useGradeDoExcel({
   planilha: p, mudar, desfazer: desfazerHist, refazer: refazerHist, avisar,
   celulaProtegida,
@@ -189,6 +220,21 @@ export function useGradeDoExcel({
   const [recorte, setRecorte] = useState<Recorte | null>(null);
   const gradeRef = useRef<HTMLDivElement>(null);
   /*
+    A lista de funções: qual está destacada, e em que texto o Esc a fechou.
+    Fechada, ela só volta quando o texto muda — é o que o Excel faz, e é o que
+    deixa um segundo Esc cancelar a edição em vez de reabrir a lista.
+  */
+  const [escolhidaNaLista, setEscolhidaNaLista] = useState<{ prefixo: string; i: number }>({ prefixo: '', i: 0 });
+  const [listaFechadaEm, setListaFechadaEm] = useState<string | null>(null);
+  /*
+    O menu do botão direito. Ele era de um laboratório só, o da AP043, e nos
+    outros sete o clique direito abria o menu do navegador — "Voltar",
+    "Inspecionar" — no meio de uma planilha. Recortar, Copiar, Colar e Limpar
+    valem em qualquer planilha e moram aqui; quem tem comandos a mais, como a
+    AP043 com inserir e excluir linha, passa o próprio menu por cima.
+  */
+  const [contexto, setContexto] = useState<{ x: number; y: number } | null>(null);
+  /*
     A edição já foi resolvida, e o blur que vem atrás não a resolve de novo.
 
     O campo da célula grava no blur — o que está certo, porque no Excel clicar
@@ -204,6 +250,17 @@ export function useGradeDoExcel({
     re-renderização: um estado ainda estaria com o valor velho quando ele lê.
   */
   const jaResolvida = useRef(false);
+  /*
+    Toda edição nova começa com a bandeira abaixada. Ela é baixada pelo blur
+    que vem atrás de Enter, Tab e Esc — só que nem sempre ele vem: o Esc
+    desmonta o campo, e campo desmontado com foco não dispara blur em todo
+    navegador. A bandeira ficava de pé, e a edição seguinte perdia o Tab: a
+    célula gravava pelo blur e o cursor não andava para a do lado.
+  */
+  const comecarEdicao = (onde: 'celula' | 'barra') => {
+    jaResolvida.current = false;
+    setEditando(onde);
+  };
   /*
     Inserir ou Editar: de onde a edição começou decide o que as setas fazem.
     Quem digita por cima de uma célula e aperta seta quer ir para a próxima —
@@ -275,6 +332,9 @@ export function useGradeDoExcel({
     mudar(q => escrever(q, sel.l, sel.c, valor));
     setEditando(null);
     setApontando(null);
+    /* Escrever numa célula encerra o copiar, como no Excel: a borda tracejada
+       some e o Ctrl+V seguinte não tem mais o que colar. */
+    setRecorte(null);
     if (andarPara) {
       const destino = andarComTab(andarPara);
       setFaixa(destino);
@@ -310,8 +370,38 @@ export function useGradeDoExcel({
    * As teclas que valem **durante** a edição, na célula ou na barra. Devolve
    * se tratou a tecla, para o campo não tratá-la de novo.
    */
+  const sugestoes = editando && listaFechadaEm !== barra ? sugestoesDeFuncao(barra) : null;
+  const escolhida = sugestoes && escolhidaNaLista.prefixo === sugestoes.prefixo
+    ? Math.min(escolhidaNaLista.i, sugestoes.nomes.length - 1) : 0;
+  const completar = (i: number, campo?: HTMLInputElement | null) => {
+    if (!sugestoes) return;
+    const novo = completarFuncao(barra, sugestoes.prefixo, sugestoes.nomes[i]);
+    setBarra(novo);
+    setApontando(null);
+    /* O cursor vai para depois do parêntese, que é onde o primeiro argumento
+       começa — e onde o clique seguinte numa célula a aponta. */
+    requestAnimationFrame(() => {
+      const alvo = campo ?? (document.activeElement as HTMLInputElement | null);
+      alvo?.setSelectionRange?.(novo.length, novo.length);
+    });
+  };
+
   const aoTeclarNaEdicao = (e: React.KeyboardEvent<HTMLInputElement>, onde: 'celula' | 'barra' = 'celula'): boolean => {
     const campo = e.currentTarget;
+    /* Com a lista de funções aberta, as setas andam nela, o Tab escreve a
+       escolhida e o Esc fecha só a lista — como no Excel. */
+    if (sugestoes) {
+      const n = sugestoes.nomes.length;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const passo = e.key === 'ArrowDown' ? 1 : -1;
+        setEscolhidaNaLista({ prefixo: sugestoes.prefixo, i: (escolhida + passo + n) % n });
+        return true;
+      }
+      if (e.key === 'Tab') { e.preventDefault(); completar(escolhida, campo); return true; }
+      /* O Esc para aqui: subindo até a grade, ele cancelaria a edição inteira. */
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setListaFechadaEm(barra); return true; }
+    }
     if (e.key === 'F2') { e.preventDefault(); setModo(m => (m === 'entrar' ? 'editar' : 'entrar')); return true; }
     if (e.key === 'F4') {
       e.preventDefault();
@@ -355,10 +445,10 @@ export function useGradeDoExcel({
 
   const copiar = () => setRecorte(copiarFaixa(p, faixa));
 
-  const recortar = () => {
-    setRecorte(copiarFaixa(p, faixa));
-    mudar(q => limpar(q, faixa));
-  };
+  /* Recortar não esvazia nada: no Excel o conteúdo só sai da origem quando é
+     colado, e recortar sem colar não muda a planilha. Apagar na hora fazia o
+     Ctrl+X perder o dado de quem recortava e desistia. */
+  const recortar = () => setRecorte({ ...copiarFaixa(p, faixa), mover: true });
 
   const colar = () => {
     if (!recorte) {
@@ -372,6 +462,9 @@ export function useGradeDoExcel({
     });
     if (porque) { avisar?.(porque); return; }
     mudar(q => colarEm(q, faixa, recorte));
+    /* O recortado só se cola uma vez — depois de mover, a origem está vazia e
+       a borda tracejada some. O copiado continua valendo até o Esc. */
+    if (recorte.mover) setRecorte(null);
   };
 
   const limparConteudo = () => {
@@ -396,6 +489,9 @@ export function useGradeDoExcel({
       if (e.key === 'Escape') { e.preventDefault(); cancelarEdicao(); }
       return;
     }
+
+    /* Esc fora da edição desfaz a borda tracejada do que foi copiado. */
+    if (e.key === 'Escape' && recorte) { e.preventDefault(); setRecorte(null); return; }
 
     const ctrl = e.ctrlKey || e.metaKey;
     const setas: Record<string, Direcao> = {
@@ -447,7 +543,7 @@ export function useGradeDoExcel({
     }
     if (e.key === 'Enter') { e.preventDefault(); selecionarFaixa(andarComTab(e.shiftKey ? 'cima' : 'baixo')); return; }
     if (e.key === 'Tab') { e.preventDefault(); selecionarFaixa(andarComTab(e.shiftKey ? 'esquerda' : 'direita')); return; }
-    if (e.key === 'F2') { e.preventDefault(); setBarra(texto(p, sel.l, sel.c)); setModo('editar'); setEditando('celula'); return; }
+    if (e.key === 'F2') { e.preventDefault(); setBarra(texto(p, sel.l, sel.c)); setModo('editar'); comecarEdicao('celula'); return; }
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); limparConteudo(); return; }
     if (e.key === 'Escape') { e.preventDefault(); cancelarEdicao(); return; }
 
@@ -458,7 +554,7 @@ export function useGradeDoExcel({
       setBarra(e.key);
       setModo('entrar');
       setApontando(null);
-      setEditando('celula');
+      comecarEdicao('celula');
     }
   };
 
@@ -540,7 +636,7 @@ export function useGradeDoExcel({
     aoComecarPreenchimento: setPreenchendo,
     propsDaBarra: {
       value: editando ? barra : texto(p, sel.l, sel.c),
-      onFocus: () => { setModo('editar'); setEditando('barra'); },
+      onFocus: () => { setModo('editar'); comecarEdicao('barra'); },
       onChange: (e: React.ChangeEvent<HTMLInputElement>) => { setBarra(e.target.value); setApontando(null); },
       onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (aoTeclarNaEdicao(e, 'barra')) return;
@@ -573,6 +669,34 @@ export function useGradeDoExcel({
       aoTeclar,
       apontavel,
       referencias: editando ? referenciasDaFormula(barra) : [],
+      copiado: recorte?.origem ?? null,
+      aoContexto: (e, alvo, l, c) => {
+        e.preventDefault();
+        gradeRef.current?.focus();
+        /* Como no Excel: o botão direito dentro da seleção a mantém; fora
+           dela, escolhe a célula, a coluna ou a linha clicada. */
+        if (alvo === 'coluna') setFaixa({ l1: 0, c1: c, l2: p.celulas.length - 1, c2: c });
+        else if (alvo === 'linha') setFaixa({ l1: l, c1: 0, l2: l, c2: p.celulas[0].length - 1 });
+        else {
+          const n = normalizar(faixa);
+          if (l < n.topo || l > n.base || c < n.esq || c > n.dir) selecionar(l, c);
+        }
+        setContexto({ x: e.clientX, y: e.clientY });
+      },
+      menuDeContexto: contexto ? {
+        ...contexto,
+        fechar: () => setContexto(null),
+        recortar: () => { setContexto(null); recortar(); },
+        copiar: () => { setContexto(null); copiar(); },
+        colar: () => { setContexto(null); colar(); },
+        limpar: () => { setContexto(null); limparConteudo(); },
+      } : null,
+      ajuda: editando && (sugestoes || funcaoAberta(barra)) ? {
+        sugestoes: sugestoes?.nomes ?? [],
+        escolhida,
+        aoEscolher: (i: number) => completar(i),
+        dica: sugestoes ? null : funcaoAberta(barra),
+      } : null,
       aoTeclarNaEdicao,
       aoApontarCelula: (l, c, e) => {
         /* No modo Apontar o clique escreve o nome da célula na fórmula, e o
@@ -612,7 +736,7 @@ export function useGradeDoExcel({
         soltarPreenchimento();
       },
       aoSairDaGrade: () => setArrastandoFaixa(false),
-      aoAbrirEdicao: (t) => { setBarra(t); setModo('editar'); setApontando(null); setEditando('celula'); },
+      aoAbrirEdicao: (t) => { setBarra(t); setModo('editar'); setApontando(null); comecarEdicao('celula'); },
       aoEscrever: (t) => { setBarra(t); setApontando(null); },
       aoConfirmar: (t, direcao) => {
         if (jaResolvida.current) { jaResolvida.current = false; return; }

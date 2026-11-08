@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   LayoutTemplate, Copy, Trash2, Plus, ChevronUp, ChevronDown,
   Image as ImageIcon, Video, Music, Layers,
   FileDown, FileText, Square as SquareIcon, Type,
-  FileCheck2, RotateCcw, ArrowLeft,
+  FileCheck2, RotateCcw, ArrowLeft, Play, MonitorPlay,
 } from 'lucide-react';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
   CSS_POWERPOINT, BarraDeTituloDoPowerPoint, GuiasDoPowerPoint, ReguaDoPowerPoint,
   GrupoDoPowerPoint, BotaoDoPowerPoint, MenuDoPowerPoint, ItemDeMenuDoPowerPoint,
-  FolhaDoSlide,
+  FolhaDoSlide, TiraDeSlides, TelaDeApresentacao,
 } from './powerpoint';
 import {
   CORES_DO_MODELO, NOMES_DOS_LAYOUTS, NOMES_DOS_MODELOS, vazio,
@@ -53,7 +53,7 @@ import type { PropsDeLaboratorio as Props } from './tipos';
  */
 
 /** As guias que respondem neste exercício; a fileira inteira é do programa. */
-const USAVEIS = ['Página Inicial', 'Inserir', 'Design'];
+const USAVEIS = ['Página Inicial', 'Inserir', 'Design', 'Apresentação de Slides'];
 
 /**
  * Os arquivos que o computador do clube tem, para os diálogos de inserir.
@@ -84,7 +84,7 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
   const [ap, setAp] = useState<Apresentacao>(APRESENTACAO_INICIAL);
   const [guia, setGuia] = useState('Design');
   const [atual, setAtual] = useState(0);
-  const [tela, setTela] = useState<'normal' | 'bastidores' | 'pdf'>('normal');
+  const [tela, setTela] = useState<'normal' | 'bastidores' | 'pdf' | 'telao'>('normal');
   const [menu, setMenu] = useState<string | null>(null);
   const [aviso, setAviso] = useState('');
   const [pronto, setPronto] = useState(false);
@@ -93,6 +93,35 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
 
   const slide = ap.slides[Math.min(atual, ap.slides.length - 1)];
   const mestre = ap.mestre;
+
+  /*
+    F5 começa a apresentação do primeiro slide, e Shift+F5 do atual — o atalho
+    que todo mundo que já apresentou aperta. No navegador F5 recarrega a
+    página, e aqui isso apagaria a apresentação inteira: a tecla é parada e
+    faz o que faz no PowerPoint. Na tela cheia, as setas, o espaço e o Esc.
+  */
+  useEffect(() => {
+    const aoTeclar = (ev: KeyboardEvent) => {
+      if (ev.key === 'F5') {
+        ev.preventDefault();
+        if (!ev.shiftKey) setAtual(0);
+        setTela('telao');
+        return;
+      }
+      if (tela !== 'telao') return;
+      if (ev.key === 'Escape') setTela('normal');
+      if (ev.key === 'ArrowRight' || ev.key === 'ArrowDown' || ev.key === ' ' || ev.key === 'PageDown' || ev.key === 'Enter') {
+        ev.preventDefault();
+        if (atual + 1 >= ap.slides.length) setTela('normal'); else setAtual(atual + 1);
+      }
+      if (ev.key === 'ArrowLeft' || ev.key === 'ArrowUp' || ev.key === 'PageUp' || ev.key === 'Backspace') {
+        ev.preventDefault();
+        setAtual(Math.max(0, atual - 1));
+      }
+    };
+    window.addEventListener('keydown', aoTeclar);
+    return () => window.removeEventListener('keydown', aoTeclar);
+  });
 
   const tarefas = METAS_DA_APRESENTACAO.map(m => ({
     id: m.id, titulo: m.titulo, detalhe: m.detalhe, onde: m.onde,
@@ -430,6 +459,19 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
                 </>
               )}
 
+              {guia === 'Apresentação de Slides' && (
+                <GrupoDoPowerPoint nome="Iniciar Apresentação de Slides">
+                  <BotaoDoPowerPoint dica="Do Começo (F5)" rotulo="Do Começo" empilhado
+                    aoClicar={() => { setAtual(0); setTela('telao'); }}>
+                    <Play className="w-5 h-5" />
+                  </BotaoDoPowerPoint>
+                  <BotaoDoPowerPoint dica="Do Slide Atual (Shift+F5)" rotulo="Do Slide Atual" empilhado
+                    aoClicar={() => setTela('telao')}>
+                    <MonitorPlay className="w-5 h-5" />
+                  </BotaoDoPowerPoint>
+                </GrupoDoPowerPoint>
+              )}
+
               {guia === 'Design' && (
                 <GrupoDoPowerPoint nome="Temas">
                   {(Object.keys(NOMES_DOS_MODELOS) as Modelo[]).map(m => (
@@ -458,16 +500,16 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
             </div>
 
             <div className="pp-corpo">
-              <div className="pp-tira">
-                {ap.slides.map((s, i) => (
-                  <button key={s.id} type="button" className="pp-tira-item" aria-current={i === atual}
-                    aria-label={`Slide ${i + 1}${s.titulo ? `: ${s.titulo}` : ' (vazio)'}`}
-                    onClick={ev => { ev.stopPropagation(); setAtual(i); fecharMenu(); }}>
-                    <span>{i + 1}</span>
-                    <span className="pp-tira-moldura">{desenharSlide(s, true)}</span>
-                  </button>
-                ))}
-              </div>
+              <TiraDeSlides
+                total={ap.slides.length} atual={atual}
+                aoIr={i => { setAtual(i); fecharMenu(); }}
+                rotuloDe={i => `Slide ${i + 1}${ap.slides[i].titulo ? `: ${ap.slides[i].titulo}` : ' (vazio)'}`}
+                desenhar={i => desenharSlide(ap.slides[i], true)}
+                acoes={{
+                  novo: () => criarSlide('titulo-conteudo'), duplicar: duplicarSlide,
+                  excluir: excluirSlide, mover,
+                }}
+              />
 
               <div className="pp-palco" onClick={ev => ev.stopPropagation()}>
                 <div style={{ width: '100%', maxWidth: 620 }}>
@@ -498,6 +540,17 @@ export default function ApresentacaoLab({ specialtyCode, lessonCode, lessonTitle
               )}
             />
           </>
+        )}
+
+        {tela === 'telao' && (
+          <TelaDeApresentacao
+            slide={slide} mestre={mestre} numero={atual + 1} total={ap.slides.length}
+            luz={false} apresentador={false}
+            aoAvancar={() => (atual + 1 >= ap.slides.length ? setTela('normal') : setAtual(atual + 1))}
+            aoVoltar={() => setAtual(Math.max(0, atual - 1))}
+            aoSair={() => setTela('normal')}
+            nomeDoAudio={AUDIOS[0]}
+          />
         )}
 
         {tela === 'bastidores' && (

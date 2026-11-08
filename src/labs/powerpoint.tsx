@@ -1,10 +1,10 @@
-import { useLayoutEffect, useRef } from 'react';
-import { Link2, Music, Play } from 'lucide-react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Copy, Link2, Music, Play, Plus, Trash2 } from 'lucide-react';
 import {
   CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice, AcessibilidadeDoStatus,
 } from './office';
 import {
-  PX_POR_PONTO, aparenciaDoSlide, semVaziosNoFim,
+  PX_POR_PONTO, NIVEIS_DO_TOPICO, aparenciaDoSlide, nivelDoTopico, semVaziosNoFim,
   type GraficoNoSlide, type Slide, type SlideMestre,
 } from './apresentacao';
 
@@ -87,6 +87,16 @@ export const CSS_POWERPOINT = `
   font-size: 12.5px; border: none; border-radius: 2px; cursor: pointer; color: #201F1E;
 }
 .pp-menu-item:hover { background: #EDEBE9 !important; }
+/* O menu do botão direito da miniatura. Fica dentro da janela, e não no
+   body: o véu posto fora da moldura da plataforma ficaria por baixo dela. */
+.pp-veu { position: fixed; inset: 0; z-index: 50; }
+.pp-contexto {
+  position: fixed; z-index: 60; background: #FFFFFF; border: 1px solid #C8C6C4;
+  border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.26); min-width: 210px; padding: 4px;
+}
+.pp-contexto-item { display: flex; align-items: center; gap: 10px; }
+.pp-contexto-atalho { margin-left: auto; color: #605E5C; font-size: 11px; padding-left: 16px; }
+.pp-tira-item:focus-visible { outline: 2px solid #B7472A; outline-offset: -2px; }
 .pp-corpo { flex: 1; min-height: 0; display: flex; background: #F3F2F1; }
 .pp-tira {
   width: 168px; flex: none; background: #EDEBE9; border-right: 1px solid #C8C6C4;
@@ -552,7 +562,10 @@ export function FolhaDoSlide({
           listStyle: s.layout === 'titulo' ? 'none' : 'disc',
           lineHeight: 1.5,
         }}>
-          {s.topicos.map((t, i) => <li key={i} style={{ marginBottom: 3 * f }}>{t}</li>)}
+          {s.topicos.map((t, i) => {
+            const { nivel, texto } = nivelDoTopico(t);
+            return <li key={i} style={{ marginBottom: 3 * f, ...estiloDoNivel(nivel) }}>{texto}</li>;
+          })}
         </ul>
       )}
       {/*
@@ -678,7 +691,12 @@ function CorpoEditavel({ topicos, aoEscrever, rotulo, centrado, estilo }: {
     if (el.querySelector('li') && semVaziosNoFim(linhasDoCorpo(el)).join('\n') === topicos.join('\n')) return;
     el.replaceChildren(...(topicos.length ? topicos : ['']).map(t => {
       const li = document.createElement('li');
-      if (t) li.textContent = t;
+      const { nivel, texto } = nivelDoTopico(t);
+      if (nivel) {
+        li.dataset.nivel = String(nivel);
+        Object.assign(li.style, estiloDoNivel(nivel));
+      }
+      if (texto) li.textContent = texto;
       else li.appendChild(document.createElement('br'));
       return li;
     }));
@@ -727,17 +745,172 @@ function CorpoEditavel({ topicos, aoEscrever, rotulo, centrado, estilo }: {
          guarda. */
       onKeyDown={ev => {
         if ((ev.ctrlKey || ev.metaKey) && ['b', 'i', 'u', 'n', 's'].includes(ev.key.toLowerCase())) ev.preventDefault();
+        /* Tab rebaixa o tópico e Shift+Tab o sobe, como no PowerPoint. Sem
+           isto o Tab tirava o cursor do slide e o levava para a faixa. */
+        if (ev.key === 'Tab') {
+          ev.preventDefault();
+          const no = window.getSelection()?.anchorNode ?? null;
+          const li = (no instanceof Element ? no : no?.parentElement)?.closest('li');
+          if (!li || !ref.current?.contains(li)) return;
+          const agora = Number(li.dataset.nivel ?? 0);
+          const novo = Math.max(0, Math.min(NIVEIS_DO_TOPICO - 1, agora + (ev.shiftKey ? -1 : 1)));
+          if (novo === agora) return;
+          if (novo) li.dataset.nivel = String(novo); else delete li.dataset.nivel;
+          li.removeAttribute('style');
+          Object.assign(li.style, estiloDoNivel(novo));
+          aoDigitar();
+        }
       }}
     />
   );
 }
 
+const estiloDoNivel = (nivel: number): React.CSSProperties => (nivel === 0 ? {} : {
+  marginLeft: `${nivel * 1.4}em`, listStyleType: nivel === 1 ? 'circle' : 'square', fontSize: '0.9em',
+});
+
 /** As linhas da lista, uma por item; sem item nenhum, o texto solto. */
 function linhasDoCorpo(el: HTMLElement): string[] {
   const itens = [...el.querySelectorAll('li')];
-  if (itens.length) return itens.map(li => (li.textContent ?? '').replace(/\u00a0/g, ' '));
+  if (itens.length) {
+    return itens.map(li => '\t'.repeat(Number(li.dataset.nivel ?? 0))
+      + (li.textContent ?? '').replace(/\u00a0/g, ' '));
+  }
   const t = el.textContent ?? '';
   return t ? t.split('\n') : [];
+}
+
+/* ── A tira de slides ─────────────────────────────────────────────────────── */
+
+/** O que se faz com os slides pela tira. Ausente, a tira só navega. */
+export interface AcoesDaTira {
+  novo: () => void;
+  duplicar: () => void;
+  excluir: () => void;
+  /** Sobe (-1) ou desce (+1) o slide atual uma posição. */
+  mover: (delta: number) => void;
+}
+
+/**
+ * A tira de miniaturas à esquerda, com o teclado e o menu do PowerPoint.
+ *
+ * Ela estava escrita três vezes, uma em cada laboratório de apresentação, e as
+ * três só sabiam ser clicadas: Ctrl+M não criava slide, Delete não apagava a
+ * miniatura escolhida, as setas não andavam, e o botão direito abria o menu
+ * do navegador. É o que mais se usa numa apresentação de verdade — montar e
+ * reordenar slides pela tira —, e quem aprendeu aqui procurava na faixa o que
+ * no programa se faz sem tirar a mão do teclado.
+ *
+ * Os comandos são do laboratório (`acoes`), porque é ele que guarda a
+ * apresentação; aqui fica o gesto. Sem `acoes`, a tira só navega — é a regra
+ * da presença do setter, e a CC-ES012, que não monta slide, fica assim.
+ */
+export function TiraDeSlides({ total, atual, aoIr, rotuloDe, desenhar, acoes }: {
+  total: number;
+  atual: number;
+  aoIr: (i: number) => void;
+  rotuloDe: (i: number) => string;
+  desenhar: (i: number) => React.ReactNode;
+  acoes?: AcoesDaTira;
+}) {
+  const tira = useRef<HTMLDivElement | null>(null);
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  /* O foco acompanha o slide atual depois de andar, criar ou excluir: sem
+     isso a seta seguinte cairia no botão de um slide que já saiu. */
+  const andou = useRef(false);
+  useEffect(() => {
+    if (!andou.current) return;
+    andou.current = false;
+    tira.current?.querySelector<HTMLElement>(`[data-slide="${atual}"]`)?.focus();
+  }, [atual, total]);
+
+  /*
+    Ctrl+M cria slide de qualquer lugar da janela — com o cursor no título ou
+    no corpo também, como no PowerPoint. A tira escuta a janela inteira, e não
+    só a si mesma, porque é ela quem sabe criar.
+  */
+  const acoesAtuais = useRef(acoes);
+  acoesAtuais.current = acoes;
+  useEffect(() => {
+    const janela = tira.current?.closest('.pp-janela');
+    if (!janela) return;
+    const aoTeclar = (ev: Event) => {
+      const e = ev as KeyboardEvent;
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'm' || !acoesAtuais.current) return;
+      if (tira.current?.contains(e.target as Node)) return; // a tira trata o dela
+      e.preventDefault();
+      andou.current = true;
+      acoesAtuais.current.novo();
+    };
+    janela.addEventListener('keydown', aoTeclar);
+    return () => janela.removeEventListener('keydown', aoTeclar);
+  }, []);
+
+  const fazer = (f: () => void) => { andou.current = true; setMenu(null); f(); };
+  const ir = (i: number) => {
+    if (i < 0 || i >= total) return;
+    fazer(() => aoIr(i));
+  };
+
+  const teclar = (ev: React.KeyboardEvent) => {
+    const ctrl = ev.ctrlKey || ev.metaKey;
+    const tecla = ev.key;
+    let feito = true;
+    if (ctrl && acoes && tecla === 'ArrowUp') fazer(() => acoes.mover(-1));
+    else if (ctrl && acoes && tecla === 'ArrowDown') fazer(() => acoes.mover(1));
+    else if (ctrl && acoes && tecla.toLowerCase() === 'd') fazer(acoes.duplicar);
+    else if (ctrl && acoes && tecla.toLowerCase() === 'm') fazer(acoes.novo);
+    else if (ctrl) feito = false;
+    else if (tecla === 'ArrowDown' || tecla === 'ArrowRight' || tecla === 'PageDown') ir(atual + 1);
+    else if (tecla === 'ArrowUp' || tecla === 'ArrowLeft' || tecla === 'PageUp') ir(atual - 1);
+    else if (tecla === 'Home') ir(0);
+    else if (tecla === 'End') ir(total - 1);
+    /* Enter na tira cria o slide seguinte, e Delete apaga o escolhido — como
+       no painel de miniaturas do PowerPoint. */
+    else if (acoes && tecla === 'Enter') fazer(acoes.novo);
+    else if (acoes && (tecla === 'Delete' || tecla === 'Backspace')) fazer(acoes.excluir);
+    else feito = false;
+    if (feito) ev.preventDefault();
+  };
+
+  return (
+    <div className="pp-tira" ref={tira} role="listbox" aria-label="Slides" onKeyDown={teclar}>
+      {Array.from({ length: total }, (_, i) => (
+        <button key={i} type="button" className="pp-tira-item" role="option"
+          aria-selected={i === atual} aria-current={i === atual}
+          aria-label={rotuloDe(i)} data-slide={i}
+          tabIndex={i === atual ? 0 : -1}
+          onClick={ev => { ev.stopPropagation(); setMenu(null); aoIr(i); }}
+          onContextMenu={acoes ? ev => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            aoIr(i);
+            setMenu({ x: ev.clientX, y: ev.clientY });
+          } : undefined}>
+          <span>{i + 1}</span>
+          <span className="pp-tira-moldura">{desenhar(i)}</span>
+        </button>
+      ))}
+      {menu && acoes && (
+        <>
+          <div className="pp-veu" onPointerDown={() => setMenu(null)}
+            onContextMenu={ev => { ev.preventDefault(); setMenu(null); }} />
+          <div className="pp-contexto" role="menu" aria-label="Menu do slide"
+            style={{ left: Math.min(menu.x, window.innerWidth - 230), top: Math.min(menu.y, window.innerHeight - 150) }}>
+            <button type="button" role="menuitem" className="pp-menu-item pp-contexto-item" onClick={() => fazer(acoes.novo)}>
+              <Plus className="w-3.5 h-3.5" /> Novo Slide <span className="pp-contexto-atalho">Ctrl+M</span>
+            </button>
+            <button type="button" role="menuitem" className="pp-menu-item pp-contexto-item" onClick={() => fazer(acoes.duplicar)}>
+              <Copy className="w-3.5 h-3.5" /> Duplicar Slide <span className="pp-contexto-atalho">Ctrl+D</span>
+            </button>
+            <button type="button" role="menuitem" className="pp-menu-item pp-contexto-item" onClick={() => fazer(acoes.excluir)}>
+              <Trash2 className="w-3.5 h-3.5" /> Excluir Slide <span className="pp-contexto-atalho">Delete</span>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 /* ── O painel de notas ────────────────────────────────────────────────────── */

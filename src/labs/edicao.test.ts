@@ -8,6 +8,7 @@ import {
   alternarMarca, aplicarEstilo, formatoDaSelecao, palavraEmVolta, selecaoValida, selecionarTudo,
   textoDaSelecao, tamanhoDoParagrafo, isolarSelecao, limparFormatacao, definirTamanho, apagarSelecao,
   alternarLista, alinhar, tabular, limparTudo, fragmentoDaSelecao, colarFragmento, formatoDoParagrafoDaSelecao,
+  mudarTamanhoEmUmPonto,
 } from './edicao';
 
 /*
@@ -240,6 +241,23 @@ describe('formatar', () => {
     const d = definirTamanho(base(), sel('p1', 0, 'p1', 5), 16).doc;
     expect(formatoDaSelecao(d, sel('p1', 0, 'p1', 22)).tamanho).toBeNull();
     expect(formatoDaSelecao(d, sel('p1', 0, 'p1', 5)).tamanho).toBe(16);
+  });
+
+  it('Ctrl+] sobe um ponto, e não o degrau seguinte da escada de tamanhos', () => {
+    /* O Ctrl+Shift+> pula de 11 para 12, de 12 para 14; o Ctrl+] vai de um em
+       um. Voltar ao tamanho do estilo apaga a direta, como tirar o negrito. */
+    const doze = mudarTamanhoEmUmPonto(base(), sel('p1', 0, 'p1', 11), true);
+    expect(formatoDaSelecao(doze.doc, sel('p1', 0, 'p1', 11)).tamanho).toBe(12);
+    const treze = mudarTamanhoEmUmPonto(doze.doc, doze.selecao, true);
+    expect(formatoDaSelecao(treze.doc, sel('p1', 0, 'p1', 11)).tamanho).toBe(13);
+    const volta = mudarTamanhoEmUmPonto(mudarTamanhoEmUmPonto(treze.doc, treze.selecao, false).doc, treze.selecao, false);
+    expect(comFormatacaoDireta(volta.doc), 'voltar ao 11 do estilo deixou formatação direta').toEqual([]);
+  });
+
+  it('o Ctrl+[ não desce abaixo de um ponto', () => {
+    let r = definirTamanho(base(), sel('p1', 0, 'p1', 11), 1);
+    r = mudarTamanhoEmUmPonto(r.doc, sel('p1', 0, 'p1', 11), false);
+    expect(formatoDaSelecao(r.doc, sel('p1', 0, 'p1', 11)).tamanho).toBe(1);
   });
 
   it('o cursor dentro de uma palavra acha a palavra; num espaço, não acha nada', () => {

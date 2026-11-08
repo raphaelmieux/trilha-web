@@ -4,7 +4,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import InsercaoTextoLab from './InsercaoTextoLab';
-import { porCursor } from './tecladoDaFolha';
+import { porCursor, tecla, folhaEditavel } from './tecladoDaFolha';
 
 /*
   A trava que clica do laboratório de inserção da AP043.
@@ -130,5 +130,85 @@ describe('as quatro tarefas, pelos gestos de verdade', () => {
     const numeros = [...container.querySelectorAll('.wd-campo[data-campo="pagina"]')].map(n => n.textContent);
     expect(numeros, 'o número de página não muda sozinho de folha para folha').toEqual(['1', '2']);
     expect([...container.querySelectorAll('button')].some(b => b.textContent === 'Entregar o documento')).toBe(true);
+  });
+});
+
+describe('a tabela se percorre pelo teclado, como no Word', () => {
+  /*
+    O Tab saía da tabela e ia parar na faixa, e a última célula não abria
+    linha nova: preencher uma tabela pedia o mouse a cada célula, que não é
+    como ninguém preenche uma tabela no Word.
+  */
+  const celula = (l: number, c: number) =>
+    container.querySelector<HTMLInputElement>(`input[aria-label="Linha ${l}, coluna ${c}"]`);
+  const teclarNa = (el: HTMLElement, key: string, shift = false) => act(() => {
+    el.dispatchEvent(new KeyboardEvent('keydown', { key, shiftKey: shift, bubbles: true, cancelable: true }));
+  });
+
+  it('inserir a tabela põe o cursor na primeira célula', async () => {
+    porCursor(container, 'p2', 'fim');
+    clicar(porTitulo('Tabela'));
+    clicar(container.querySelector('[aria-label="Tabela de 2 colunas por 2 linhas"]'));
+    await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+    expect(document.activeElement).toBe(celula(1, 1));
+  });
+
+  it('Tab anda, Shift+Tab volta, e o Tab da última célula abre uma linha', async () => {
+    porCursor(container, 'p2', 'fim');
+    clicar(porTitulo('Tabela'));
+    clicar(container.querySelector('[aria-label="Tabela de 2 colunas por 2 linhas"]'));
+    act(() => celula(1, 1)!.focus());
+    teclarNa(celula(1, 1)!, 'Tab');
+    expect(document.activeElement).toBe(celula(1, 2));
+    teclarNa(celula(1, 2)!, 'Tab');
+    expect(document.activeElement, 'o Tab não desceu para a linha seguinte').toBe(celula(2, 1));
+    teclarNa(celula(2, 1)!, 'Tab', true);
+    expect(document.activeElement).toBe(celula(1, 2));
+    teclarNa(celula(1, 2)!, 'ArrowDown');
+    expect(document.activeElement).toBe(celula(2, 2));
+    expect(celula(3, 1)).toBeNull();
+    teclarNa(celula(2, 2)!, 'Tab');
+    await act(async () => { await new Promise(r => setTimeout(r, 0)); });
+    expect(celula(3, 1), 'o Tab da última célula não abriu linha').not.toBeNull();
+    expect(document.activeElement).toBe(celula(3, 1));
+  });
+});
+
+describe('o botão direito na folha abre o menu do Word', () => {
+  it('Recortar e Copiar dependem de haver seleção, e a mini barra formata', () => {
+    porCursor(container, 'p1', 0);
+    const abrir = () => act(() => {
+      folhaEditavel(container).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 50, clientY: 50 }));
+    });
+    abrir();
+    const menu = () => document.querySelector<HTMLElement>('.wd-contexto');
+    expect(menu(), 'o botão direito não abriu menu nenhum').not.toBeNull();
+    const itemDoMenu = (nome: string) => [...menu()!.querySelectorAll<HTMLButtonElement>('.wd-contexto-item')]
+      .find(b => b.textContent?.includes(nome))!;
+    expect(itemDoMenu('Copiar').disabled, 'Copiar sem nada selecionado').toBe(true);
+    expect(itemDoMenu('Colar').disabled).toBe(false);
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(menu(), 'o Esc não fechou o menu').toBeNull();
+
+    porCursor(container, 'p1', 0, { bloco: 'p1', offset: 4 });
+    abrir();
+    expect(itemDoMenu('Copiar').disabled).toBe(false);
+    const negrito = menu()!.querySelector<HTMLElement>('.wd-contexto-mini [title^="Negrito"]')!;
+    act(() => negrito.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    const trecho = folhaEditavel(container).querySelector<HTMLElement>('p[data-bloco="p1"] [data-trecho]')!;
+    expect(trecho.style.fontWeight, 'a mini barra não aplicou o negrito na seleção').toBe('700');
+  });
+});
+
+describe('Ctrl+] e Ctrl+[ mudam o tamanho de um em um ponto', () => {
+  it('como no Word, e não pela escada de tamanhos', () => {
+    porCursor(container, 'p1', 0, { bloco: 'p1', offset: 4 });
+    const tamanho = () => folhaEditavel(container).querySelector<HTMLElement>('p[data-bloco="p1"] [data-trecho]')!.style.fontSize;
+    const antes = tamanho();
+    tecla(container, ']', { ctrl: true, code: 'BracketRight' });
+    const depois = tamanho();
+    expect(depois, 'o Ctrl+] não mudou nada').not.toBe(antes);
+    tecla(container, '[', { ctrl: true, code: 'BracketLeft' });
+    expect(tamanho(), 'o Ctrl+[ não voltou ao tamanho de antes').toBe(antes);
   });
 });
