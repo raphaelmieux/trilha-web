@@ -1,8 +1,9 @@
 import {
   ArrowLeft, Printer, Save, FileType2, FolderOpen, Cloud, Clock, HardDrive,
-  Plus, Info, Share2, X,
+  Plus, Info, Share2, X, Scissors, Copy, ClipboardPaste,
   Image as ImageIcon,
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 /*
  * A moldura do Word 365, compartilhada.
@@ -29,6 +30,7 @@ import { mesmaSelecao, textoDaSelecao, recolhida, cursorEm, tamanhoDoParagrafo, 
 import type { EdicaoDaFolha, ComandoDeTexto, FormatacaoDeParagrafo } from './useEdicaoDoWord';
 import {
   CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice,
+  IconeNegrito, IconeItalico, IconeSublinhado,
 } from './office';
 
 import {
@@ -730,6 +732,26 @@ export function ZoomDoWord({ zoom, aoMudar, aoAvisar }: {
 
 export const CSS_FOLHA = `
   .wd-bloco { cursor: text; }
+  /* O menu do botão direito: a minibarra em cima e os comandos embaixo, como
+     o Word desenha. Ele mora no body, fora da folha editável, senão o
+     navegador o trataria como texto do documento. */
+  .wd-contexto {
+    position: fixed; z-index: 1000; background: #FFFFFF; color: #201F1E;
+    border: 1px solid #C8C6C4; border-radius: 4px; box-shadow: 0 6px 18px rgba(0,0,0,.22);
+    padding: 4px 0; min-width: 210px; font-size: 12.5px;
+    font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  }
+  .wd-contexto-mini { display: flex; gap: 2px; padding: 2px 6px 6px; border-bottom: 1px solid #E1DFDD; margin-bottom: 4px; }
+  .wd-contexto-mini button {
+    width: 28px; height: 26px; display: grid; place-items: center; border: none; background: none;
+    border-radius: 3px; cursor: pointer; color: #201F1E;
+  }
+  .wd-contexto-item {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    padding: 6px 14px; border: none; background: none; cursor: pointer; color: #201F1E; font-size: 12.5px;
+  }
+  .wd-contexto-mini button:hover, .wd-contexto-item:hover { background: #EDEBE9; }
+  .wd-contexto-atalho { margin-left: auto; color: #605E5C; font-size: 11px; padding-left: 18px; }
   /* O marcador da lista mora no recuo pendente, à esquerda da primeira letra.
      Ele não é texto: não se seleciona, não se apaga com Delete, e o número se
      refaz quando um item sai do meio. */
@@ -1277,7 +1299,7 @@ export function ParagrafoDaFolha({
  * tarefa estivesse cumprida ou não.
  */
 export function TabelaDaFolha({
-  tabela, escolhido, aoEscolher, celula, aoCursorNaCelula, aoEditarCelula,
+  tabela, escolhido, aoEscolher, celula, aoCursorNaCelula, aoEditarCelula, aoAcrescentarLinha,
 }: {
   tabela: TabelaDoDoc<string>;
   escolhido?: boolean;
@@ -1293,8 +1315,50 @@ export function TabelaDaFolha({
   celula?: { linha: number; coluna: number } | null;
   aoCursorNaCelula?: (linha: number, coluna: number) => void;
   aoEditarCelula?: (linha: number, coluna: number, valor: string) => void;
+  /**
+   * Tab na última célula acrescenta uma linha no fim, como no Word — é como se
+   * preenche uma tabela sem largar o teclado. Sem ele, o Tab da última célula
+   * para ali, e nada promete uma linha que o exercício não quer.
+   */
+  aoAcrescentarLinha?: () => void;
 }) {
   const largura = larguraDaTabela(tabela);
+  /*
+    O teclado da célula é o do Word: Tab vai para a próxima, Shift+Tab volta,
+    e as setas de cima e de baixo trocam de linha. Sem isso o Tab saía da
+    tabela para o botão seguinte da página, e quem preenchia a tabela pelo
+    teclado ia parar na faixa sem saber como.
+  */
+  const teclarNaCelula = (ev: React.KeyboardEvent<HTMLInputElement>, i: number, j: number) => {
+    const tabelaEl = ev.currentTarget.closest('table');
+    const campo = (l: number, c: number) =>
+      tabelaEl?.querySelector<HTMLInputElement>(`input[aria-label="Linha ${l + 1}, coluna ${c + 1}"]`) ?? null;
+    const ir = (l: number, c: number) => {
+      const alvo = campo(l, c);
+      if (!alvo) return false;
+      ev.preventDefault();
+      alvo.focus();
+      alvo.select();
+      return true;
+    };
+    if (ev.key === 'Tab') {
+      const passo = ev.shiftKey ? -1 : 1;
+      let l = i;
+      let c = j + passo;
+      if (c >= largura) { c = 0; l += 1; }
+      if (c < 0) { c = largura - 1; l -= 1; }
+      if (ir(l, c)) return;
+      if (!ev.shiftKey && l >= tabela.linhas.length && aoAcrescentarLinha) {
+        ev.preventDefault();
+        aoAcrescentarLinha();
+        /* A linha nova só existe depois de desenhada. */
+        setTimeout(() => { campo(tabela.linhas.length, 0)?.focus(); }, 0);
+      }
+      return;
+    }
+    if (ev.key === 'ArrowUp') ir(i - 1, j);
+    if (ev.key === 'ArrowDown') ir(i + 1, j);
+  };
   const classeDoEstilo = tabela.estilo === 'Tabela de Lista 3' ? ' est-lista'
     : tabela.estilo === 'Tabela de Grade 4 — Ênfase 1' ? ' est-grade4'
       : '';
@@ -1335,6 +1399,7 @@ export function TabelaDaFolha({
                         value={linha[j] ?? ''}
                         aria-label={`Linha ${i + 1}, coluna ${j + 1}`}
                         onFocus={() => aoCursorNaCelula?.(i, j)}
+                        onKeyDown={ev => teclarNaCelula(ev, i, j)}
                         onChange={ev => aoEditarCelula(i, j, ev.target.value)}
                       />
                     ) : (linha[j] ?? '')}
@@ -1437,7 +1502,7 @@ export function SumarioDaFolha({ itens }: { itens: ItemDeSumario[] }) {
  * de três travas nesta vereda quando o tipo `'word'` entrou no currículo.
  */
 export function BlocoDaFolha({
-  doc, bloco, escolhido, marcas, aoEscolher, celula, aoCursorNaCelula, aoEditarCelula, classe,
+  doc, bloco, escolhido, marcas, aoEscolher, celula, aoCursorNaCelula, aoEditarCelula, aoAcrescentarLinha, classe,
   comentado, aoEscolherTrecho, aoEscrever, aoNovoParagrafo, editavel,
 }: {
   doc: Doc<string>;
@@ -1450,6 +1515,7 @@ export function BlocoDaFolha({
   celula?: { linha: number; coluna: number } | null;
   aoCursorNaCelula?: (linha: number, coluna: number) => void;
   aoEditarCelula?: (linha: number, coluna: number, valor: string) => void;
+  aoAcrescentarLinha?: () => void;
   comentado?: Set<string>;
   aoEscolherTrecho?: (trechoId: string) => void;
   /** Digitar no parágrafo. Só o parágrafo a recebe: tabela e imagem não têm texto. */
@@ -1469,7 +1535,8 @@ export function BlocoDaFolha({
     case 'tabela': {
       const tabela = (
         <TabelaDaFolha tabela={bloco} escolhido={escolhido} aoEscolher={aoEscolher}
-          celula={celula} aoCursorNaCelula={aoCursorNaCelula} aoEditarCelula={aoEditarCelula} />
+          celula={celula} aoCursorNaCelula={aoCursorNaCelula} aoEditarCelula={aoEditarCelula}
+          aoAcrescentarLinha={aoAcrescentarLinha} />
       );
       return editavel ? <div contentEditable={false} className="wd-ilha">{tabela}</div> : tabela;
     }
@@ -1602,7 +1669,7 @@ function NotasDaFolha({ doc, blocos, editavel, aoEscrever }: {
  */
 export function FolhaDoWord({
   doc, selecionado, marcas, aoEscolher, aoClicarNoVazio,
-  celula, aoCursorNaCelula, aoEditarCelula, aoEscreverNaFaixa,
+  celula, aoCursorNaCelula, aoEditarCelula, aoAcrescentarLinha, aoEscreverNaFaixa,
   comentado, aoEscolherTrecho, margem, aoEscreverNoParagrafo, aoNovoParagrafo, edicao, aoEscreverNota,
   faixasAbertas, aoAbrirFaixas, aoFecharFaixas,
 }: {
@@ -1614,6 +1681,8 @@ export function FolhaDoWord({
   celula?: { linha: number; coluna: number } | null;
   aoCursorNaCelula?: (blocoId: string, linha: number, coluna: number) => void;
   aoEditarCelula?: (blocoId: string, linha: number, coluna: number, valor: string) => void;
+  /** Tab na última célula de uma tabela: uma linha nova no fim dela. */
+  aoAcrescentarLinha?: (blocoId: string) => void;
   aoEscreverNaFaixa?: (onde: 'cabecalho' | 'rodape', trechoId: string, valor: string) => void;
   /** Os trechos com comentário, para o realce que o Word põe embaixo deles. */
   comentado?: Set<string>;
@@ -1657,6 +1726,7 @@ export function FolhaDoWord({
   const fechaAAbertura = doc.sumario ? blocoAntesDoSumario(doc) : null;
   const editavel = !!edicao;
   const raiz = useFolhaEditavel(doc, edicao);
+  const [contexto, setContexto] = useState<{ x: number; y: number } | null>(null);
   /* A fonte do documento veste o **papel**, e não a janela. Ela já vestiu a
      janela inteira, e escolher uma serifada trocava a letra da faixa, das
      guias e da barra de título junto — o Word mudando de cara porque alguém
@@ -1676,6 +1746,7 @@ export function FolhaDoWord({
   const modo: 'aberta' | 'fechada' | undefined = comModo ? (faixasAbertas ? 'aberta' : 'fechada') : undefined;
   const escreverNaFaixa = comModo && !faixasAbertas ? undefined : aoEscreverNaFaixa;
   return (
+    <>
     <div
       className={`wd-canvas${editavel ? ' wd-editavel' : ''}${faixasAbertas ? ' wd-faixas-abertas' : ''}`}
       onClick={editavel
@@ -1693,6 +1764,16 @@ export function FolhaDoWord({
         'aria-multiline': true,
         'aria-label': 'Documento',
         onKeyDown: raiz.aoTeclar,
+        onMouseDown: raiz.aoApertar,
+        /* O botão direito abre o menu do Word, e não o do navegador: é nele
+           que a pessoa procura Copiar e Colar, e o do navegador oferece
+           "Inspecionar" no lugar. O clique já pôs o cursor onde se apontou —
+           ou manteve a seleção, se foi dentro dela —, e o menu age ali. */
+        onContextMenu: (ev: React.MouseEvent) => {
+          if ((ev.target as HTMLElement).closest('input, textarea, .wd-ilha')) return;
+          ev.preventDefault();
+          setContexto({ x: ev.clientX, y: ev.clientY });
+        },
       } : {})}
     >
       <Fragment key={raiz.geracao}>
@@ -1743,6 +1824,7 @@ export function FolhaDoWord({
                           ? (linha, coluna) => aoCursorNaCelula(b.id, linha, coluna) : undefined}
                         aoEditarCelula={aoEditarCelula
                           ? (linha, coluna, valor) => aoEditarCelula(b.id, linha, coluna, valor) : undefined}
+                        aoAcrescentarLinha={aoAcrescentarLinha ? () => aoAcrescentarLinha(b.id) : undefined}
                         classe={flutuaComAFigura ? 'wd-legenda-flutua' : undefined}
                       />
                       {numero === 1 && doc.sumario && b.id === fechaAAbertura && (
@@ -1783,6 +1865,85 @@ export function FolhaDoWord({
       })}
       </Fragment>
     </div>
+    {/* Irmão da folha, e não filho: os cliques do menu não podem subir até o
+        clique da folha, que poria o cursor de novo. */}
+    {contexto && edicao && (
+      <MenuDeContextoDaFolha onde={contexto} doc={doc} edicao={edicao} aoFechar={() => setContexto(null)} />
+    )}
+    </>
+  );
+}
+
+/**
+ * O menu do botão direito do Word: a minibarra e Recortar, Copiar e Colar.
+ *
+ * Os comandos passam pelo mesmo `aoComando` das teclas, e por isso entram no
+ * mesmo Ctrl+Z e na mesma área de transferência do gancho, que guarda a
+ * formatação. Copiar e recortar também escrevem na do sistema, para o texto
+ * poder ir para fora. Colar usa a do gancho: ler a do sistema por um botão
+ * pede permissão ao navegador, e quem traz texto de fora tem o Ctrl+V, que
+ * entra pelo evento de colar sem pedir nada.
+ */
+function MenuDeContextoDaFolha({ onde, doc, edicao, aoFechar }: {
+  onde: { x: number; y: number };
+  doc: Doc<string>;
+  edicao: EdicaoDaFolha;
+  aoFechar: () => void;
+}) {
+  const caixa = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const fora = (ev: MouseEvent) => { if (!caixa.current?.contains(ev.target as Node)) aoFechar(); };
+    const esc = (ev: KeyboardEvent) => { if (ev.key === 'Escape') aoFechar(); };
+    document.addEventListener('mousedown', fora);
+    document.addEventListener('keydown', esc);
+    window.addEventListener('scroll', aoFechar, true);
+    return () => {
+      document.removeEventListener('mousedown', fora);
+      document.removeEventListener('keydown', esc);
+      window.removeEventListener('scroll', aoFechar, true);
+    };
+  }, [aoFechar]);
+  const sel = edicao.selecao;
+  const temSelecao = !!sel && !recolhida(sel);
+  const fazer = (c: ComandoDeTexto) => {
+    aoFechar();
+    edicao.aoComando(c);
+    edicao.raiz.current?.focus();
+  };
+  const levarParaOSistema = () => {
+    if (!sel || recolhida(sel)) return;
+    void navigator.clipboard?.writeText?.(textoDaSelecao(doc, sel)).catch(() => {});
+  };
+
+  /* O menu não sai da tela: perto da borda ele abre para o outro lado. */
+  const x = Math.max(4, Math.min(onde.x, window.innerWidth - 230));
+  const y = Math.max(4, Math.min(onde.y, window.innerHeight - 190));
+  return createPortal(
+    <div ref={caixa} className="wd-contexto" role="menu" aria-label="Menu do documento"
+      style={{ left: x, top: y }} onMouseDown={ev => ev.preventDefault()}>
+      <div className="wd-contexto-mini">
+        <button type="button" title="Negrito (Ctrl+N)" aria-label="Negrito"
+          onClick={() => fazer({ tipo: 'marca', marca: 'negrito' })}><IconeNegrito /></button>
+        <button type="button" title="Itálico (Ctrl+I)" aria-label="Itálico"
+          onClick={() => fazer({ tipo: 'marca', marca: 'italico' })}><IconeItalico /></button>
+        <button type="button" title="Sublinhado (Ctrl+S)" aria-label="Sublinhado"
+          onClick={() => fazer({ tipo: 'marca', marca: 'sublinhado' })}><IconeSublinhado /></button>
+      </div>
+      <button type="button" role="menuitem" className="wd-contexto-item" disabled={!temSelecao}
+        style={temSelecao ? undefined : { color: '#A19F9D', cursor: 'default' }}
+        onClick={() => { levarParaOSistema(); fazer({ tipo: 'recortar' }); }}>
+        <Scissors className="w-3.5 h-3.5" /> Recortar <span className="wd-contexto-atalho">Ctrl+X</span>
+      </button>
+      <button type="button" role="menuitem" className="wd-contexto-item" disabled={!temSelecao}
+        style={temSelecao ? undefined : { color: '#A19F9D', cursor: 'default' }}
+        onClick={() => { levarParaOSistema(); fazer({ tipo: 'copiar' }); }}>
+        <Copy className="w-3.5 h-3.5" /> Copiar <span className="wd-contexto-atalho">Ctrl+C</span>
+      </button>
+      <button type="button" role="menuitem" className="wd-contexto-item" onClick={() => fazer({ tipo: 'colar' })}>
+        <ClipboardPaste className="w-3.5 h-3.5" /> Colar <span className="wd-contexto-atalho">Ctrl+V</span>
+      </button>
+    </div>,
+    document.body,
   );
 }
 
@@ -2033,6 +2194,8 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
       if (ev.key === ' ') return parar({ tipo: 'formatar', formatacao: { tipo: 'limpar-caractere' } });
       if (ev.key === '>' || (ev.shiftKey && ev.key === '.')) return parar({ tipo: 'formatar', formatacao: { tipo: 'crescer' } });
       if (ev.key === '<' || (ev.shiftKey && ev.key === ',')) return parar({ tipo: 'formatar', formatacao: { tipo: 'encolher' } });
+      if (ev.key === ']' || ev.code === 'BracketRight') return parar({ tipo: 'formatar', formatacao: { tipo: 'um-ponto', sobe: true } });
+      if (ev.key === '[' || ev.code === 'BracketLeft') return parar({ tipo: 'formatar', formatacao: { tipo: 'um-ponto', sobe: false } });
       if (ev.key === '=' && !ev.shiftKey) return parar({ tipo: 'formatar', formatacao: { tipo: 'subscrito' } });
       if (ev.key === '+' || (ev.shiftKey && ev.key === '=')) return parar({ tipo: 'formatar', formatacao: { tipo: 'sobrescrito' } });
       if (ev.key === 'Enter') return parar({ tipo: 'quebra-de-pagina' });
@@ -2055,10 +2218,25 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
    * e o cursor vai para o fim do parágrafo clicado, que é onde o Word o põe
    * quando se clica à direita do texto.
    */
+  /*
+    Onde o botão do mouse desceu. Um clique que sobe longe dali foi um arrasto,
+    e a seleção estendida que ele deixa é a que a pessoa acabou de fazer — não
+    a de antes. Sem isto, arrastar sobre uma palavra na mesma linha selecionava
+    durante o gesto e recolhia tudo ao soltar: o clique do fim do arrasto caía
+    na regra da "seleção velha" logo abaixo.
+  */
+  const apertou = useRef<{ x: number; y: number } | null>(null);
+  const aoApertar = (ev: React.MouseEvent<HTMLDivElement>) => {
+    apertou.current = { x: ev.clientX, y: ev.clientY };
+  };
+
   const aoClicar = (ev: React.MouseEvent<HTMLDivElement>) => {
     const r = no.current;
     const e = atual.current.edicao;
     if (!r || !e) return;
+    const de = apertou.current;
+    apertou.current = null;
+    const arrastou = !!de && Math.hypot(ev.clientX - de.x, ev.clientY - de.y) > 3;
     const lida = lerSelecao(r);
     const p = (ev.target as HTMLElement).closest<HTMLElement>('p[data-bloco][data-editavel]');
     /* No navegador o clique já moveu a seleção para o parágrafo clicado. Uma
@@ -2069,7 +2247,7 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
     /* Um clique simples sem Shift sempre recolhe a seleção no navegador; uma
        seleção estendida que sobrevive a ele é a de antes. Duplo e triplo
        clique selecionam de propósito, e `detail` conta os cliques. */
-    const velha = lida && p && !ev.shiftKey && (
+    const velha = lida && p && !ev.shiftKey && !arrastou && (
       (!recolhida(lida) && ev.detail <= 1)
       || (recolhida(lida) && (lida.foco.bloco !== p.dataset.bloco || (!!t && !!ancora && !t.contains(ancora)))));
     if (lida && !velha) { e.aoSelecionar(lida); return; }
@@ -2083,7 +2261,7 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined) {
     e.aoSelecionar(noTrecho ? cursorEm(b.id, noTrecho.ancora.offset) : cursorEm(b.id, tamanhoDoParagrafo(b)));
   };
 
-  return { ref, geracao, aoTeclar, aoClicar };
+  return { ref, geracao, aoTeclar, aoClicar, aoApertar };
 }
 
 /* ── Revisão: os balões da margem ─────────────────────────────────────────── */

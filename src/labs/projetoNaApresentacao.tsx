@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { BarChart3, Image as ImageIcon, Palette, Type } from 'lucide-react';
 import {
-  BarraDeTituloDoPowerPoint, BotaoDoPowerPoint, FolhaDoSlide,
+  BarraDeTituloDoPowerPoint, BotaoDoPowerPoint, FolhaDoSlide, TiraDeSlides,
   GrupoDoPowerPoint, GuiasDoPowerPoint,
 } from './powerpoint';
 import { DesenhoDoGrafico } from './excel';
@@ -94,23 +94,14 @@ export function DivulgacaoNoPowerPoint({ ctx, mudar, avisar, conjunto }: PropsDa
       </div>
 
       <div className="pp-corpo">
-        <div className="pp-tira">
-          {ap.slides.map((s, i) => (
-            <button
-              key={s.id} type="button" className="pp-tira-item" aria-current={i === atual}
-              aria-label={`Slide ${i + 1}${s.titulo ? `: ${s.titulo}` : ' (vazio)'}`}
-              onClick={() => setAtual(i)}
-            >
-              <span>{i + 1}</span>
-              <span className="pp-tira-moldura">
-                <FolhaDoSlide
-                  slide={s} mestre={ap.mestre} mini numero={i + 1}
-                  desenharGrafico={desenharGrafico}
-                />
-              </span>
-            </button>
-          ))}
-        </div>
+        <TiraDeSlides
+          total={ap.slides.length} atual={atual} aoIr={setAtual}
+          rotuloDe={i => `Slide ${i + 1}${ap.slides[i].titulo ? `: ${ap.slides[i].titulo}` : ' (vazio)'}`}
+          desenhar={i => (
+            <FolhaDoSlide slide={ap.slides[i]} mestre={ap.mestre} mini numero={i + 1}
+              desenharGrafico={desenharGrafico} />
+          )}
+        />
 
         <div className="pp-palco">
           <div style={{ width: '100%', maxWidth: 620 }}>

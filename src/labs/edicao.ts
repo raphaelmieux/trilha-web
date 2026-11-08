@@ -925,6 +925,19 @@ export function mudarTamanhoEmDegrau<S extends string>(d: Doc<S>, s: Selecao, so
   });
 }
 
+/**
+ * Ctrl+] e Ctrl+[: um ponto para cima ou para baixo, e não um degrau da lista.
+ * São os dois atalhos do Word que não pulam de 12 para 14 — quem quer 13 chega
+ * nele por aqui. O chão é 1, que é o menor tamanho que a caixa aceita.
+ */
+export function mudarTamanhoEmUmPonto<S extends string>(d: Doc<S>, s: Selecao, sobe: boolean): Edicao<S> {
+  return transformarSelecao(d, s, (x, b) => {
+    const doEstilo = Number(aparenciaDe(d, b.estilo).fontSize);
+    const agora = x.direta?.tamanho ?? doEstilo;
+    return comDireta(x, 'tamanho', Math.max(1, agora + (sobe ? 1 : -1)), doEstilo);
+  });
+}
+
 /** Subscrito e sobrescrito: apertar de novo volta ao normal. */
 export function alternarPosicao<S extends string>(d: Doc<S>, s: Selecao, posicao: Exclude<Posicao, 'normal'>): Edicao<S> {
   const todos = trechosDaSelecao(d, s);

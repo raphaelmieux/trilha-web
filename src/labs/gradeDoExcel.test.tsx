@@ -276,14 +276,70 @@ const GESTOS: Record<string, Gesto> = {
     expect(lido(L, 0), 'o Ctrl+C levou o original junto').toBe('Falcão');
   },
 
-  'Ctrl+X tira do lugar de origem, e o Ctrl+V põe no destino': () => {
+  /* No Excel o recortado só sai da origem quando é colado: recortar e
+     desistir não pode custar o dado. */
+  'Ctrl+X marca a origem, e o Ctrl+V a move para o destino': () => {
     escreverNaCelula(L, 0, 'Águia');
     apontar(celula(L, 0));
     teclar(grade(), 'x', { ctrlKey: true });
-    expect(lido(L, 0), 'o Ctrl+X não esvaziou a origem').toBe('');
+    expect(lido(L, 0), 'o Ctrl+X esvaziou a origem antes de colar').toBe('Águia');
+    expect(celula(L, 0).className, 'a origem recortada sem a borda tracejada').toContain('pl-copiado');
     apontar(celula(L + 2, 0));
     teclar(grade(), 'v', { ctrlKey: true });
     expect(lido(L + 2, 0), 'o Ctrl+V não colou o que foi recortado').toBe('Águia');
+    expect(lido(L, 0), 'colar o recortado não esvaziou a origem').toBe('');
+    expect(container.querySelector('.pl-copiado-cima'), 'a borda ficou depois de mover').toBeNull();
+  },
+
+  'Esc tira a borda tracejada do que foi copiado': () => {
+    escreverNaCelula(L, 0, 'Arara');
+    apontar(celula(L, 0));
+    teclar(grade(), 'c', { ctrlKey: true });
+    expect(container.querySelector('.pl-copiado-cima'), 'copiar não desenhou a borda').not.toBeNull();
+    teclar(grade(), 'Escape');
+    expect(container.querySelector('.pl-copiado-cima'), 'o Esc não tirou a borda').toBeNull();
+  },
+
+  /* Quem usa Excel copia e cola pelo botão direito antes de saber os
+     atalhos. Um laboratório sem esse menu fazia o clique direito abrir o
+     menu do navegador, com "Salvar página como" no lugar de Colar. */
+  'o botão direito numa célula abre Recortar, Copiar e Colar, e eles agem': () => {
+    escreverNaCelula(L, 0, 'Jaguar');
+    act(() => {
+      celula(L, 0).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 40, clientY: 40 }));
+    });
+    const menu = () => container.querySelector('.pl-contexto');
+    expect(menu(), 'o botão direito não abriu menu da planilha').not.toBeNull();
+    const item = (nome: string) => [...menu()!.querySelectorAll<HTMLElement>('[role="menuitem"]')]
+      .find(b => b.textContent?.includes(nome));
+    for (const nome of ['Recortar', 'Copiar', 'Colar']) expect(item(nome), `faltou ${nome}`).toBeDefined();
+    act(() => item('Copiar')!.click());
+    expect(menu(), 'o menu ficou aberto depois de agir').toBeNull();
+    apontar(celula(L + 2, 0));
+    act(() => {
+      celula(L + 2, 0).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 40, clientY: 60 }));
+    });
+    act(() => item('Colar')!.click());
+    expect(lido(L + 2, 0), 'o Colar do menu não colou').toBe('Jaguar');
+  },
+
+  /* A lista de funções é o que faz alguém descobrir que é MÉDIA e não
+     MEDIA, e o Tab a escreve com o parêntese aberto. */
+  'escrever o começo de uma função abre a lista, e o Tab a completa': () => {
+    apontar(celula(L, 3));
+    teclar(grade(), '=');
+    digitar('so');
+    const lista = () => document.querySelector('.pl-ajuda-lista');
+    expect(lista(), 'a lista de funções não abriu').not.toBeNull();
+    expect([...lista()!.querySelectorAll('[role="option"]')].map(o => o.textContent))
+      .toEqual(expect.arrayContaining([expect.stringContaining('SOMA')]));
+    teclar(campoDaCelula()!, 'Tab');
+    expect(campoDaCelula()!.value, 'o Tab não completou a função').toBe('=SOMA(');
+    expect(nomeDaCaixa(), 'o Tab da lista andou de célula em vez de completar').toBe(`D${L + 1}`);
+    const dica = document.querySelector('.pl-ajuda-dica');
+    expect(dica?.textContent, 'a dica de sintaxe não apareceu').toContain('SOMA(');
+    expect(dica?.textContent).toContain(';');
+    teclar(campoDaCelula()!, 'Escape');
   },
 
   'Ctrl+Z desfaz o que acabou de ser escrito, e Ctrl+Y traz de volta': () => {
@@ -426,7 +482,10 @@ describe('a lista de laboratórios sai do repositório', () => {
         if (item.name.includes('.test.')) continue;
         if (item.name === 'gradeDoExcel.ts') continue;
         const fonte = readFileSync(join('src', pasta, item.name), 'utf8');
-        if (/from '[^']*gradeDoExcel'/.test(fonte)) achados.push(relativo);
+        /* Quem usa o gancho é quem o chama. Importar só o tipo — como a janela
+           de excel.tsx importa o da ajuda de fórmula — não faz de ninguém um
+           laboratório. */
+        if (/useGradeDoExcel\(/.test(fonte)) achados.push(relativo);
       }
     };
     varrer('.', '');

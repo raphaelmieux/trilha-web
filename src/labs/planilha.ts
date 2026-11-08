@@ -705,13 +705,24 @@ export function limpar(p: Planilha, f: Faixa): Planilha {
 
 /* ── Área de transferência ────────────────────────────────────────────────── */
 
-export type Recorte = { celulas: Celula[][] };
+/**
+ * O que está na área de transferência da planilha.
+ *
+ * `origem` é de onde saiu, e é ela que faz duas coisas do Excel: as
+ * referências relativas de uma fórmula copiada andam o mesmo tanto que a
+ * célula andou (`=A1+B1` copiada uma linha abaixo vira `=A2+B2`), e a borda
+ * tracejada se desenha em volta do que foi copiado. `mover` é o Ctrl+X: o
+ * conteúdo só sai da origem quando é colado — recortar e não colar não muda
+ * nada, como lá.
+ */
+export type Recorte = { celulas: Celula[][]; origem?: Faixa; mover?: boolean };
 
 export function copiar(p: Planilha, f: Faixa): Recorte {
   const a = normalizar(f);
   return {
     celulas: p.celulas.slice(a.topo, a.base + 1)
       .map(linha => linha.slice(a.esq, a.dir + 1).map(cel => ({ ...cel }))),
+    origem: { l1: a.topo, c1: a.esq, l2: a.base, c2: a.dir },
   };
 }
 
@@ -724,11 +735,21 @@ export function copiar(p: Planilha, f: Faixa): Recorte {
  */
 export function colar(p: Planilha, f: Faixa, recorte: Recorte): Planilha {
   const a = normalizar(f);
-  const celulas = p.celulas.map(linha => linha.map(cel => ({ ...cel })));
+  /* Recortar e colar move: a origem se esvazia agora, antes de o destino ser
+     escrito — destino que se sobreponha à origem fica com o que foi colado. */
+  const base = recorte.mover && recorte.origem ? limpar(p, recorte.origem) : p;
+  const celulas = base.celulas.map(linha => linha.map(cel => ({ ...cel })));
+  /* Copiar e colar anda com as referências relativas; recortar e colar não —
+     no Excel a fórmula movida continua apontando para as mesmas células. */
+  const o = recorte.origem && !recorte.mover ? normalizar(recorte.origem) : null;
+  const dLinha = o ? a.topo - o.topo : 0;
+  const dColuna = o ? a.esq - o.esq : 0;
   recorte.celulas.forEach((linha, dl) => linha.forEach((cel, dc) => {
     const l = a.topo + dl;
     const c = a.esq + dc;
-    if (l < celulas.length && c < celulas[l].length) celulas[l][c] = { ...cel };
+    if (l < celulas.length && c < celulas[l].length) {
+      celulas[l][c] = { ...cel, texto: o ? transporFormula(cel.texto, dLinha, dColuna) : cel.texto };
+    }
   }));
   return { ...p, celulas: refazerMesclagens(celulas) };
 }

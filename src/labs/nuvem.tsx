@@ -437,12 +437,14 @@ function ondeAbrirOMenu(e: React.MouseEvent): { x: number; y: number } {
   return { x: b.right - ox - 232, y: b.bottom - oy + 2 };
 }
 
-export function LinhaDaNuvem({ arquivo, escolhido, aoEscolher, aoAbrir, aoMenu }: {
+export function LinhaDaNuvem({ arquivo, escolhido, aoEscolher, aoAbrir, aoMenu, aoExcluir }: {
   arquivo: ArquivoDaNuvem;
   escolhido: boolean;
   aoEscolher: () => void;
   aoAbrir: () => void;
   aoMenu?: (e: React.MouseEvent, onde: { x: number; y: number }) => void;
+  /** O Delete da lista. Só existe onde a lixeira existe — a presença diz. */
+  aoExcluir?: () => void;
 }) {
   const Icone = ICONE_DO_TIPO[arquivo.tipo];
   const ultima = arquivo.versoes[arquivo.versoes.length - 1];
@@ -464,6 +466,24 @@ export function LinhaDaNuvem({ arquivo, escolhido, aoEscolher, aoAbrir, aoMenu }
       onKeyDown={e => {
         if (e.key === 'Enter') { e.preventDefault(); aoAbrir(); }
         if (e.key === ' ') { e.preventDefault(); aoEscolher(); }
+        if (e.key === 'Delete' && aoExcluir) { e.preventDefault(); aoExcluir(); }
+        /* As setas andam pela lista como na nuvem de verdade: a linha de
+           baixo fica escolhida e com o foco. A vizinha é procurada no DOM, e
+           não numa lista de ids, porque é a ordem da tela que vale — a mesma
+           razão do Shift da seleção do Explorador. */
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'End') {
+          const linhas = Array.from(
+            e.currentTarget.parentElement?.querySelectorAll<HTMLElement>(':scope > [role="row"]') ?? [],
+          );
+          const i = linhas.indexOf(e.currentTarget);
+          const j = e.key === 'Home' ? 0 : e.key === 'End' ? linhas.length - 1
+            : i + (e.key === 'ArrowDown' ? 1 : -1);
+          const alvo = linhas[j];
+          if (!alvo || alvo === e.currentTarget) return;
+          e.preventDefault();
+          alvo.focus();
+          alvo.click();
+        }
       }}
     >
       <span className="nv-nome">

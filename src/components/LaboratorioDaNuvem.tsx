@@ -365,13 +365,19 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair, ou
               </>
             )}
           </BarraDaSelecao>
-          <div className="nv-lista">
+          {/* Clicar no vazio da lista e o Esc desfazem a escolha, como na
+              nuvem de verdade — senão a barra da seleção fica presa num
+              arquivo que a pessoa já deixou de olhar. */}
+          <div className="nv-lista"
+            onClick={e => { if (e.target === e.currentTarget) setEscolhido(null); }}
+            onKeyDown={e => { if (e.key === 'Escape' && escolhido) { e.preventDefault(); setEscolhido(null); } }}>
             <CabecalhoDaLista crescente={crescente} aoOrdenar={() => setCrescente(c => !c)} />
             {emOrdemDaLista(naPasta, crescente).map(a => (
               <LinhaDaNuvem key={a.id} arquivo={a} escolhido={escolhido === a.id}
                 aoEscolher={() => setEscolhido(a.id)}
                 aoAbrir={() => abrir(a)}
-                aoMenu={(_, onde) => setMenu({ id: a.id, ...onde })} />
+                aoMenu={(_, onde) => setMenu({ id: a.id, ...onde })}
+                aoExcluir={lugar !== 'lixeira' && podeEditar(nuvem, a.id, 'voce') ? () => paraALixeira(a.id) : undefined} />
             ))}
           </div>
         </div>

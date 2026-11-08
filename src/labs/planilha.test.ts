@@ -707,3 +707,27 @@ describe('o número que não cabe vira cerquilhas', () => {
     expect(numeroNaLargura('123456', 5)).toBe('#');
   });
 });
+
+describe('colar como o Excel cola', () => {
+  const base = planilhaDe('X', [['1', '2', '=A1+B1'], ['3', '4', '']]);
+
+  it('copiar e colar anda com as referências relativas', () => {
+    const r = copiar(base, { l1: 0, c1: 2, l2: 0, c2: 2 });
+    const p = colar(base, { l1: 1, c1: 2, l2: 1, c2: 2 }, r);
+    expect(p.celulas[1][2].texto).toBe('=A2+B2');
+    expect(valorDe(p, 1, 2)).toBe('7');
+  });
+
+  it('o cifrão segura a referência ao colar', () => {
+    const q = planilhaDe('X', [['1', '2', '=$A$1+B1'], ['3', '4', '']]);
+    const p = colar(q, { l1: 1, c1: 2, l2: 1, c2: 2 }, copiar(q, { l1: 0, c1: 2, l2: 0, c2: 2 }));
+    expect(p.celulas[1][2].texto).toBe('=$A$1+B2');
+  });
+
+  it('recortar e colar move, sem mexer nas referências', () => {
+    const r = { ...copiar(base, { l1: 0, c1: 2, l2: 0, c2: 2 }), mover: true };
+    const p = colar(base, { l1: 1, c1: 2, l2: 1, c2: 2 }, r);
+    expect(p.celulas[1][2].texto).toBe('=A1+B1');
+    expect(p.celulas[0][2].texto, 'a origem continuou com a fórmula').toBe('');
+  });
+});

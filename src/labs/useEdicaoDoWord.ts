@@ -8,7 +8,7 @@ import {
 import {
   type Edicao, type Marca, type QuemEdita, type Selecao,
   alternarMarca, alternarPosicao, aplicarEstilo, transformarSelecao, definirCor, definirFonte, definirRealce, definirTamanho,
-  limparFormatacao, limparTudo, mudarTamanhoEmDegrau, apagar, apagarSelecao, formatoDaSelecao, inserirTexto, mesmaSelecao,
+  limparFormatacao, limparTudo, mudarTamanhoEmDegrau, mudarTamanhoEmUmPonto, apagar, apagarSelecao, formatoDaSelecao, inserirTexto, mesmaSelecao,
   palavraEmVolta, quebraDeLinha, quebraDePagina, quebrarParagrafo, recolhida, selecaoValida,
   selecionarTudo, tamanhoDoParagrafo, unidadesDoTrecho,
   alinhar, alternarLista, colarFragmento, definirEntrelinha, formatoDoParagrafoDaSelecao,
@@ -53,6 +53,7 @@ export type Formatacao =
   | { tipo: 'cor'; cor: string }
   | { tipo: 'crescer' }
   | { tipo: 'encolher' }
+  | { tipo: 'um-ponto'; sobe: boolean }
   | { tipo: 'limpar' }
   | { tipo: 'limpar-caractere' }
   | { tipo: 'realce'; realce: Realce }
@@ -238,6 +239,7 @@ export function useEdicaoDoWord<S extends string>(
       case 'cor': r = definirCor(d, alvo, f.cor); break;
       case 'crescer': r = mudarTamanhoEmDegrau(d, alvo, true); break;
       case 'encolher': r = mudarTamanhoEmDegrau(d, alvo, false); break;
+      case 'um-ponto': r = mudarTamanhoEmUmPonto(d, alvo, f.sobe); break;
       case 'limpar': r = limparTudo(d, alvo); break;
       case 'limpar-caractere': r = limparFormatacao(d, alvo); break;
       case 'realce': r = definirRealce(d, alvo, f.realce); break;

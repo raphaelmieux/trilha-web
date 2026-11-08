@@ -309,6 +309,17 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
     }));
   };
 
+  /* Tab na última célula: uma linha vazia no fim, e o cursor nela — o jeito do
+     Word de acrescentar quem faltou sem procurar Inserir Abaixo. */
+  const acrescentarLinha = (id: string) => {
+    setDoc(d => ({
+      ...d,
+      blocos: d.blocos.map(b => (b.id === id && b.tipo === 'tabela'
+        ? { ...b, linhas: [...b.linhas, Array.from({ length: larguraDaTabela(b) }, () => '')] }
+        : b)),
+    }));
+  };
+
   /* ── Imagem ──────────────────────────────────────────────────────────────── */
 
   const inserirImagem = () => {
@@ -584,6 +595,7 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
           celula={celula}
           aoCursorNaCelula={cursorNaCelula}
           aoEditarCelula={escreverNaCelula}
+          aoAcrescentarLinha={acrescentarLinha}
         />
 
         <div className="wd-status">

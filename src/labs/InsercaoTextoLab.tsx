@@ -158,6 +158,11 @@ export default function InsercaoTextoLab({
     inserirBloco(nova);
     setEscolha(id);
     setCelula({ linha: 0, coluna: 0 });
+    /* O cursor vai para a primeira célula, como no Word: quem acabou de
+       criar a tabela começa a escrever nela, e não no parágrafo de antes. */
+    setTimeout(() => {
+      document.querySelector<HTMLInputElement>(`table[data-bloco="${id}"] input[aria-label="Linha 1, coluna 1"]`)?.focus();
+    }, 0);
     setGuia('Layout da Tabela');
     setAviso(`Tabela de ${colunas} por ${linhas} inserida, com as unidades que a secretaria mandou. Repare nas duas guias novas no alto: elas só existem com o cursor dentro da tabela.`);
   };
@@ -234,6 +239,17 @@ export default function InsercaoTextoLab({
       ...d,
       blocos: d.blocos.map(b => (b.id === id && b.tipo === 'tabela'
         ? { ...b, linhas: b.linhas.map((l, i) => (i === linha ? l.map((c, j) => (j === coluna ? valor : c)) : l)) }
+        : b)),
+    }));
+  };
+
+  /* Tab na última célula: uma linha vazia no fim, e o cursor nela — o jeito do
+     Word de acrescentar quem faltou sem procurar Inserir Abaixo. */
+  const acrescentarLinha = (id: string) => {
+    setDoc(d => ({
+      ...d,
+      blocos: d.blocos.map(b => (b.id === id && b.tipo === 'tabela'
+        ? { ...b, linhas: [...b.linhas, Array.from({ length: larguraDaTabela(b) }, () => '')] }
         : b)),
     }));
   };
@@ -655,6 +671,7 @@ export default function InsercaoTextoLab({
           celula={celula}
           aoCursorNaCelula={cursorNaCelula}
           aoEditarCelula={escreverNaCelula}
+          aoAcrescentarLinha={acrescentarLinha}
           aoEscreverNaFaixa={escreverNaFaixa}
           faixasAbertas={faixasAbertas}
           aoAbrirFaixas={() => abrirFaixa('cabecalho')}
