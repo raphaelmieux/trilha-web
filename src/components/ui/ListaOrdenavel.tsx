@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
+import { posicaoAoArrastar } from '../../lib/ordenar';
 
 /*
  * Pôr coisas em ordem — a única forma de fazer isso na plataforma.
@@ -14,16 +15,48 @@ import { GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
  * em ordem usa este componente — e ganha os dois caminhos de graça.
  *
  * ── Por que dois caminhos ────────────────────────────────────────────────
- * Arrastar é o gesto que a pessoa já conhece de outras listas, e é o principal
- * no computador. As setas existem porque o evento de arrastar do HTML não existe
- * em tela de toque, e boa parte dos desbravadores abre a trilha pelo celular.
+ * Arrastar é o gesto que a pessoa já conhece de outras listas. As setas são o
+ * caminho de quem usa teclado ou leitor de tela, e de quem não acerta o gesto.
  * Nenhuma tarefa pode depender de só um dos dois.
+ *
+ * ── Por que ponteiro, e não o arrastar do HTML ───────────────────────────
+ * O arrastar nativo (`draggable`, `dragstart`, `dragover`) era o que estava
+ * aqui, e ele funciona no Chrome e em mais nenhum lugar com certeza: o Firefox
+ * só começa o gesto se o `dragstart` gravar alguma coisa em `dataTransfer`, e
+ * em tela de toque o evento simplesmente não existe. A lista parecia pronta —
+ * alça desenhada, cursor de mão, "arraste para trocar de lugar" escrito embaixo
+ * — e não respondia, sem erro nenhum no console. É o pior jeito de falhar: a
+ * pessoa conclui que não entendeu o gesto.
+ *
+ * Os eventos de ponteiro são os mesmos para mouse, caneta e dedo, em todo
+ * navegador. Três decisões erram calado se invertidas:
+ *
+ * - **o movimento é ouvido na janela, e não na linha.** A linha que está sendo
+ *   arrastada muda de lugar no DOM a cada troca, e o navegador pode soltar a
+ *   captura do ponteiro de um nó que saiu e voltou; a janela não sai de lugar;
+ * - **no dedo, só a alça arrasta.** Encostar no resto da linha precisa continuar
+ *   rolando a página, senão uma lista de cinco linhas prende a tela inteira do
+ *   celular. A alça tem `touch-action: none`, e é por ela que o gesto começa;
+ * - **quatro pixels antes de virar arrasto.** Um clique para ler a linha não
+ *   pode trocar nada de lugar.
  */
 
 export interface ItemOrdenavel {
   id: string;
   /** O que aparece na linha. Texto simples ou algo montado por quem chama. */
   conteudo: ReactNode;
+}
+
+/** Quanto o ponteiro anda antes de o aperto virar arrasto. */
+const FOLGA_DO_CLIQUE = 4;
+
+interface Gesto {
+  id: string;
+  pointerId: number;
+  x0: number;
+  y0: number;
+  ativo: boolean;
+  soltar: () => void;
 }
 
 export default function ListaOrdenavel({
@@ -45,6 +78,18 @@ export default function ListaOrdenavel({
   numerar?: boolean;
 }) {
   const [arrastando, setArrastando] = useState<string | null>(null);
+  const linhas = useRef(new Map<string, HTMLLIElement>());
+  const gesto = useRef<Gesto | null>(null);
+
+  /* Os ouvintes da janela vivem entre renderizações; sem os refs eles leriam a
+     ordem de quando o gesto começou, e cada troca desfaria a anterior. */
+  const ordemAtual = useRef(ordem);
+  ordemAtual.current = ordem;
+  const reordenar = useRef(aoReordenar);
+  reordenar.current = aoReordenar;
+
+  /* Desmontar no meio do gesto não pode deixar ouvinte pendurado na janela. */
+  useEffect(() => () => gesto.current?.soltar(), []);
 
   const trocar = (id: string, dir: -1 | 1) => {
     if (travada) return;
@@ -57,18 +102,54 @@ export default function ListaOrdenavel({
   };
 
   /*
-    Reordena enquanto o item passa por cima, e não só ao soltar.
+    Reordena enquanto a peça passa, e não só ao soltar.
     A lista acompanha o gesto, então dá para ver onde a peça vai cair antes de
     largá-la — soltar às cegas e conferir depois é o que torna arrastar ruim.
   */
-  const passarSobre = (idAlvo: string) => {
-    if (travada || !arrastando || arrastando === idAlvo) return;
-    const arr = [...ordem];
-    const de = arr.indexOf(arrastando);
-    const para = arr.indexOf(idAlvo);
-    if (de < 0 || para < 0) return;
-    arr.splice(para, 0, ...arr.splice(de, 1));
-    aoReordenar(arr);
+  const mover = (id: string, y: number) => {
+    const atual = ordemAtual.current;
+    const outros = atual.filter(i => i !== id);
+    const centros = outros.map(i => {
+      const r = linhas.current.get(i)?.getBoundingClientRect();
+      return r ? r.top + r.height / 2 : 0;
+    });
+    const nova = [...outros];
+    nova.splice(posicaoAoArrastar(centros, y), 0, id);
+    if (nova.some((v, k) => v !== atual[k])) reordenar.current(nova);
+  };
+
+  const apertar = (id: string, e: React.PointerEvent<HTMLLIElement>) => {
+    if (travada || gesto.current || e.button !== 0) return;
+    const alvo = e.target as Element;
+    if (alvo.closest('button, a, input, select, textarea')) return;
+    if (e.pointerType !== 'mouse' && !alvo.closest('[data-alca]')) return;
+
+    const aoMover = (ev: PointerEvent) => {
+      const g = gesto.current;
+      if (!g || ev.pointerId !== g.pointerId) return;
+      if (!g.ativo) {
+        if (Math.hypot(ev.clientX - g.x0, ev.clientY - g.y0) < FOLGA_DO_CLIQUE) return;
+        g.ativo = true;
+        setArrastando(g.id);
+      }
+      ev.preventDefault();
+      mover(g.id, ev.clientY);
+    };
+    const aoSoltar = (ev: PointerEvent) => {
+      if (gesto.current && ev.pointerId === gesto.current.pointerId) gesto.current.soltar();
+    };
+    const soltar = () => {
+      window.removeEventListener('pointermove', aoMover);
+      window.removeEventListener('pointerup', aoSoltar);
+      window.removeEventListener('pointercancel', aoSoltar);
+      gesto.current = null;
+      setArrastando(null);
+    };
+
+    gesto.current = { id, pointerId: e.pointerId, x0: e.clientX, y0: e.clientY, ativo: false, soltar };
+    window.addEventListener('pointermove', aoMover);
+    window.addEventListener('pointerup', aoSoltar);
+    window.addEventListener('pointercancel', aoSoltar);
   };
 
   return (
@@ -80,23 +161,26 @@ export default function ListaOrdenavel({
           return (
             <li
               key={id}
-              draggable={!travada}
-              onDragStart={() => setArrastando(id)}
-              onDragEnd={() => setArrastando(null)}
-              onDragOver={e => { e.preventDefault(); passarSobre(id); }}
-              onDrop={e => { e.preventDefault(); setArrastando(null); }}
+              ref={el => { if (el) linhas.current.set(id, el); else linhas.current.delete(id); }}
+              data-ordenavel={travada ? undefined : 'true'}
+              onPointerDown={e => apertar(id, e)}
               className="flex items-center gap-2 p-3 rounded-lg transition"
               style={{
                 backgroundColor: 'var(--color-bg-input)',
                 border: '1px solid var(--color-border)',
                 ...estiloDaLinha?.(id, idx),
                 opacity: arrastando === id ? 0.5 : 1,
-                cursor: travada ? 'default' : 'grab',
+                cursor: travada ? 'default' : arrastando === id ? 'grabbing' : 'grab',
+                /* Sem isso, arrastar com o mouse pinta de azul o texto das
+                   linhas por onde ele passa. */
+                userSelect: travada ? undefined : 'none',
               }}
             >
               {!travada && (
-                <GripVertical className="w-4 h-4 flex-shrink-0"
-                  style={{ color: 'var(--color-text-faint)' }} aria-hidden="true" />
+                <span data-alca className="flex-shrink-0 -m-2 p-2" style={{ touchAction: 'none' }}>
+                  <GripVertical className="w-4 h-4"
+                    style={{ color: 'var(--color-text-faint)' }} aria-hidden="true" />
+                </span>
               )}
               {numerar && (
                 <span className="w-6 text-center text-sm font-bold"
@@ -117,7 +201,7 @@ export default function ListaOrdenavel({
       </ol>
       {!travada && (
         <p className="text-xs mt-2" style={{ color: 'var(--color-text-faint)' }}>
-          Arraste para trocar de lugar, ou use as setas.
+          Arraste para trocar de lugar, ou use as setas. No celular, arraste pelos pontinhos.
         </p>
       )}
     </div>

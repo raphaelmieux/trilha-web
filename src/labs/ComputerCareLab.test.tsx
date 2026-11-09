@@ -4,6 +4,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import ComputerCareLab from './ComputerCareLab';
+import { arrastarLinha, comAlturas } from '../components/ui/arrastoNaLista';
 
 /*
   Os passos de desligar o computador, postos em ordem.
@@ -25,8 +26,10 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 let container: HTMLDivElement;
 let root: Root;
+let semAlturas: () => void;
 
 beforeEach(() => {
+  semAlturas = comAlturas();
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -45,9 +48,10 @@ beforeEach(() => {
 afterEach(() => {
   act(() => root.unmount());
   container.remove();
+  semAlturas();
 });
 
-const passos = () => [...container.querySelectorAll<HTMLElement>('[draggable]')];
+const passos = () => [...container.querySelectorAll<HTMLElement>('li[data-ordenavel]')];
 const textos = () => passos().map(l => l.querySelector('span.flex-1')?.textContent);
 
 /*
@@ -80,7 +84,7 @@ beforeEach(() => resolverClassificacoes());
 describe('a etapa de pôr os passos em ordem', () => {
   it('deixa cada passo ser arrastado', () => {
     expect(passos().length).toBeGreaterThan(1);
-    for (const p of passos()) expect(p.getAttribute('draggable')).toBe('true');
+    for (const p of passos()) expect(p.querySelector('[data-alca]')).not.toBeNull();
   });
 
   it('avisa que dá para arrastar', () => {
@@ -91,15 +95,13 @@ describe('a etapa de pôr os passos em ordem', () => {
     const antes = textos();
     const origem = passos()[antes.length - 1];
     const alvo = passos()[0];
-    act(() => { origem.dispatchEvent(new MouseEvent('dragstart', { bubbles: true })); });
-    act(() => { alvo.dispatchEvent(new MouseEvent('dragover', { bubbles: true, cancelable: true })); });
-    act(() => { alvo.dispatchEvent(new MouseEvent('drop', { bubbles: true, cancelable: true })); });
+    arrastarLinha(origem, alvo);
     expect(textos()[0]).toBe(antes[antes.length - 1]);
   });
 
-  /* As setas ficam porque arrastar não existe em tela de toque, e o requisito
-     não pode depender de um dos dois caminhos. */
-  it('mantém as setas para quem está no celular', () => {
+  /* As setas ficam porque o requisito não pode depender de um caminho só: elas
+     são o de quem usa teclado, e o de quem não acerta o gesto. */
+  it('mantém as setas para quem não arrasta', () => {
     const antes = textos();
     const subir = passos()[1].querySelector<HTMLButtonElement>('button[aria-label="Subir um lugar"]')!;
     act(() => { subir.click(); });
