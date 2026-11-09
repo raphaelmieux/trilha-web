@@ -88,6 +88,67 @@ describe('o toque longo abre o menu do botão direito', () => {
   });
 });
 
+describe('o contextmenu do próprio navegador sobre texto editável', () => {
+  /*
+    O Chrome do Android dispara o contextmenu dele num toque longo, e a folha
+    do Word o recebia como botão direito: abria o menu dela, chamava
+    preventDefault, e o sistema desistia de selecionar a palavra. Sem seleção
+    não há Recortar, e mover texto pelo celular era impossível.
+  */
+  const folhaComIlha = () => {
+    const folha = document.createElement('div');
+    folha.setAttribute('contenteditable', 'true');
+    const palavra = document.createElement('span');
+    const ilha = document.createElement('div');
+    ilha.setAttribute('contenteditable', 'false');
+    folha.append(palavra, ilha);
+    raiz.appendChild(folha);
+    let abriu = 0;
+    folha.addEventListener('contextmenu', e => { e.preventDefault(); abriu++; });
+    return { palavra, ilha, abriu: () => abriu };
+  };
+  const nativo = (el: Element) => {
+    const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    el.dispatchEvent(ev);
+    return ev;
+  };
+
+  it('não chega à folha, e o sistema segue selecionando', () => {
+    const f = folhaComIlha();
+    apertar(f.palavra);
+    vi.advanceTimersByTime(ESPERA_DO_TOQUE_LONGO);
+    const ev = nativo(f.palavra);
+    expect(f.abriu(), 'a folha abriu o menu dela por cima da seleção do sistema').toBe(0);
+    expect(ev.defaultPrevented, 'o padrão do evento é o sistema selecionar').toBe(false);
+  });
+
+  it('o botão direito do mouse na folha continua abrindo o menu dela', () => {
+    const f = folhaComIlha();
+    apertar(f.palavra, 'touch');
+    apertar(f.palavra, 'mouse');
+    nativo(f.palavra);
+    expect(f.abriu()).toBe(1);
+  });
+
+  it('a ilha que não se edita, e o corpo do slide, contam pelo contenteditable mais próximo', () => {
+    const f = folhaComIlha();
+    apertar(f.ilha);
+    vi.advanceTimersByTime(ESPERA_DO_TOQUE_LONGO);
+    expect(f.abriu(), 'na ilha o toque longo é botão direito, como fora da folha').toBe(1);
+
+    const corpo = document.createElement('div');
+    corpo.setAttribute('contenteditable', 'plaintext-only');
+    raiz.appendChild(corpo);
+    let noCorpo = 0;
+    corpo.addEventListener('contextmenu', () => { noCorpo++; });
+    vi.advanceTimersByTime(1000);
+    apertar(corpo);
+    vi.advanceTimersByTime(ESPERA_DO_TOQUE_LONGO);
+    nativo(corpo);
+    expect(noCorpo, 'o corpo do slide é texto, e o toque longo nele é do sistema').toBe(0);
+  });
+});
+
 describe('o que vem depois do toque longo', () => {
   it('o clique de soltar o dedo é engolido, inclusive num menu fora da moldura', () => {
     const noBody = document.createElement('button');

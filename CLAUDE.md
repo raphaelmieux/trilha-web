@@ -529,6 +529,19 @@ não só na moldura, porque há menu que se desenha no `body` e o clique cairia 
 item que acabou de abrir debaixo do dedo; e **se o navegador já disparou o
 evento dele, o nosso não dispara**, senão o menu abriria duas vezes.
 
+**E o texto editável fica com o sistema também quando quem dispara é o
+navegador.** O detector não disparava nada sobre texto, mas o Chrome do
+Android dispara o `contextmenu` dele num toque longo, e a folha do Word o
+recebia como botão direito: chamava `preventDefault`, abria o menu dela, e o
+sistema desistia de selecionar a palavra. Sem seleção não há Recortar — mover
+uma frase pelo celular era impossível, e o desbravador via um menu com Copiar
+desligado, sem nada explicando por quê. Medido no Chromium com toque emulado.
+O evento nativo que nasce de um dedo em texto editável é parado no documento,
+antes de chegar a qualquer `onContextMenu`, e o padrão dele — selecionar e
+mostrar a barra — segue. Editável é decidido pelo `contenteditable` **mais
+próximo**: a folha tem ilhas `false` (cabeçalho, tabela), onde o toque longo
+volta a ser botão direito, e o corpo do slide é `plaintext-only`.
+
 **O menu que acabou de abrir fica acima da plataforma.** A bolha de tarefas
 ocupa a metade de baixo da tela do celular, na camada 600, e os menus dos
 programas imitados estavam entre 40 e 80: o menu da linha do Explorador saía
@@ -4101,6 +4114,9 @@ Três decisões de `moverSelecao` erram calado se invertidas:
   fábrica no Word: o clique duplo pega a palavra sem o espaço, e sem o ajuste
   ficariam dois espaços onde ela estava e nenhum onde chegou. Com o controle de
   alterações o ajuste não acontece, porque cada espaço viraria mais uma marca.
+  E vale também para recortar e colar (`recortarSelecao`, `colarSemGrudar`),
+  como no Word: no celular não há arrasto, e a palavra vai pela barra do
+  sistema — que dispara os mesmos `cut` e `paste` da folha.
 
 **Editor de código não imita marca.** Word e Explorador são *aquele* programa;
 editor de código não é — o desbravador pode encontrar o VS Code, o Notepad++ ou
@@ -5915,6 +5931,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/ajudaDeFormulas.test.ts` | função sugerida na lista que o motor responde com `#NOME?`, ou referência abrindo a lista |
 | `src/labs/powerpoint.test.tsx` | tira de miniaturas que só se clica, ou Tab no corpo do slide que não rebaixa o tópico |
 | `src/labs/toqueLongo.test.ts` | toque longo que não vira botão direito, que abre menu no texto editável, ou cujo clique de soltar cai no menu |
+| `src/labs/toqueLongo.test.ts` | contextmenu do próprio navegador sobre texto editável chegando à folha, que impede o sistema de selecionar |
 | `src/components/LaboratorioEmTelaCheia.test.tsx` | moldura que deixa de instalar o toque longo, e com ela todo menu de contexto no celular |
 | `src/labs/camadas.test.ts` | menu de contexto de programa imitado abaixo da bolha de tarefas |
 | `src/labs/selecao.test.ts` | seta da lista que não anda, ou Shift+seta medido da âncora em vez da ponta |
@@ -5929,6 +5946,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDaNuvem.test.tsx` | Ctrl+] do Word mudando a fonte no editor de navegador, onde é o recuo |
 | `src/labs/nuvem.test.tsx` | seta que não anda quando cada linha mora numa caixa própria |
 | `src/labs/edicao.test.ts` | texto arrastado que cai algumas letras longe de onde se soltou, ou palavra arrastada que deixa dois espaços para trás |
+| `src/labs/edicao.test.ts` | palavra recortada que deixa dois espaços, ou colada que gruda na vizinha |
 | `src/labs/FormatacaoTextoLab.test.tsx` | arrastar a seleção que não move, que move sem desfazer num passo, ou que copia sem o Ctrl |
 | `src/labs/powerpoint.test.tsx` | caixa à mão que não se escolhe, não se arrasta, não alarga pelas alças ou não sai pelo Delete |
 | `src/labs/desfazerDaApresentacao.test.tsx` | Ctrl+Z que apaga o PDF exportado, que desfaz letra por letra, ou que rouba o desfazer do campo de texto |

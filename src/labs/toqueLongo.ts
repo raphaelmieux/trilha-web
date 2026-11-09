@@ -19,7 +19,14 @@
  *   · **texto editável fica de fora.** Na folha do Word, num campo ou numa
  *     célula em edição, segurar o dedo é selecionar a palavra, com as alças e a
  *     barra do próprio celular — que é o que todo editor de texto faz no
- *     toque. Abrir o nosso menu por cima disputaria o gesto com o sistema;
+ *     toque. Abrir o nosso menu por cima disputaria o gesto com o sistema.
+ *     E não basta o detector não disparar: o Chrome do Android dispara o
+ *     `contextmenu` dele ali, e a folha do Word o recebia como botão direito —
+ *     chamava `preventDefault`, abria o menu dela, e o sistema desistia de
+ *     selecionar. Sem seleção não há Recortar, e mover um parágrafo pelo
+ *     celular ficava impossível. O evento nativo que nasce de um toque em
+ *     texto editável é parado aqui, antes de chegar a quem quer que o escute,
+ *     e o padrão dele — selecionar e mostrar a barra — segue intacto;
  *   · **depois do menu, o clique é engolido.** Soltar o dedo produz um
  *     `click` no mesmo ponto, e ele cairia no item do menu que acabou de abrir
  *     debaixo do dedo — ou no fundo que o fecha. O menu piscaria e sumiria;
@@ -38,7 +45,20 @@ export const ESPERA_DO_TOQUE_LONGO = 500;
 const FOLGA_EM_PIXELS = 10;
 
 /** Onde segurar o dedo é selecionar texto, e é do sistema. */
-const EDITAVEL = 'input, textarea, select, [contenteditable="true"], [contenteditable=""]';
+const CAMPO = 'input, textarea, select';
+
+/*
+  O texto editável se lê pelo `contenteditable` mais próximo, e não por um
+  seletor que o procure em qualquer ancestral: a folha do Word é editável e
+  tem ilhas que não são — o cabeçalho, a tabela —, marcadas com `false`. E o
+  corpo do slide é `plaintext-only`, que também é editável.
+*/
+function ehEditavel(el: Element | null): boolean {
+  if (!el) return false;
+  if (el.closest(CAMPO)) return true;
+  const ce = el.closest('[contenteditable]');
+  return !!ce && ce.getAttribute('contenteditable') !== 'false';
+}
 
 const NOSSO = new WeakSet<Event>();
 
@@ -49,6 +69,9 @@ export function instalarToqueLongo(raiz: HTMLElement): () => void {
      contextmenu do próprio navegador que vierem com o mesmo dedo. */
   let engolir = false;
   let soltarEngolir: ReturnType<typeof setTimeout> | null = null;
+  /* O último dedo pousou em texto editável: o contextmenu do navegador que
+     vier dele é do sistema. */
+  let dedoNoTexto = false;
 
   const esquecer = () => {
     if (prazo) clearTimeout(prazo);
@@ -57,11 +80,13 @@ export function instalarToqueLongo(raiz: HTMLElement): () => void {
   };
 
   const aoApertar = (e: PointerEvent) => {
+    dedoNoTexto = false;
     if (e.pointerType !== 'touch') return;
     esquecer();
     engolir = false;
     const alvo = e.target as Element | null;
-    if (!alvo || alvo.closest(EDITAVEL)) return;
+    if (!alvo) return;
+    if (ehEditavel(alvo)) { dedoNoTexto = true; return; }
     toque = { x: e.clientX, y: e.clientY, alvo };
     prazo = setTimeout(() => {
       const t = toque;
@@ -81,7 +106,7 @@ export function instalarToqueLongo(raiz: HTMLElement): () => void {
       const s = document.getSelection();
       const no = s?.anchorNode;
       const el = no instanceof Element ? no : no?.parentElement;
-      if (s && s.rangeCount && !el?.closest(EDITAVEL)) s.removeAllRanges();
+      if (s && s.rangeCount && !ehEditavel(el ?? null)) s.removeAllRanges();
     }, ESPERA_DO_TOQUE_LONGO);
   };
 
@@ -102,6 +127,11 @@ export function instalarToqueLongo(raiz: HTMLElement): () => void {
 
   const aoMenuNativo = (e: Event) => {
     if (NOSSO.has(e)) return;
+    if (dedoNoTexto && ehEditavel(e.target as Element | null)) {
+      /* Só a propagação: o padrão do evento é o sistema selecionar a palavra. */
+      e.stopPropagation();
+      return;
+    }
     if (engolir) {
       e.preventDefault();
       e.stopPropagation();
