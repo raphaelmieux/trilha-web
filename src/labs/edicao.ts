@@ -689,17 +689,11 @@ export function moverSelecao<S extends string>(
   let alvo = destino;
   if (!copiar) {
     /* O espaço que sobraria na origem sai junto com ela. */
-    const pa = paragrafoPorId(d, inicio.bloco);
-    if (ajustar && pa && inicio.bloco === fim.bloco) {
-      const u = unidadesDoParagrafo(pa);
-      const antesDele = u[inicio.offset - 1];
-      const depoisDele = u[fim.offset];
-      if (antesDele === ' ' && (depoisDele === undefined || depoisDele === ' ' || PONTUACAO.test(depoisDele))) {
-        if (!(destino.bloco === inicio.bloco && destino.offset === inicio.offset - 1)) {
-          inicio = { ...inicio, offset: inicio.offset - 1 };
-        }
-      } else if (antesDele === undefined && depoisDele === ' ') {
-        fim = { ...fim, offset: fim.offset + 1 };
+    if (ajustar) {
+      const c = comOEspacoQueSobraria(d, inicio, fim);
+      /* Soltar logo antes do espaço que sairia é soltar no lugar dele. */
+      if (!(c.inicio !== inicio && destino.bloco === inicio.bloco && destino.offset === inicio.offset - 1)) {
+        ({ inicio, fim } = c);
       }
     }
     const pf = paragrafoPorId(d, fim.bloco);
@@ -712,7 +706,49 @@ export function moverSelecao<S extends string>(
       if (p) alvo = { bloco: p.id, offset: tamanhoDoParagrafo(p) - doFim };
     }
   }
-  /* E o que chegou não gruda nas palavras vizinhas. */
+  const r = colarComEspacos(doc, cursorEm(alvo.bloco, alvo.offset), fragmento, q, ajustar);
+  /* O Word deixa o texto que chegou selecionado, para o próximo gesto. */
+  return { doc: r.doc, selecao: { ancora: r.inicio, foco: r.selecao.foco } };
+}
+
+const LETRA = /[\p{L}\p{N}]/u;
+const PONTUACAO = /[.,;:!?)\]]/;
+
+/*
+  O "recortar e colar inteligente" do Word, que vem ligado de fábrica e vale
+  para arrastar, recortar e colar — os três são o mesmo gesto para quem o
+  faz. O clique duplo e o toque longo do celular pegam a palavra sem o espaço,
+  e sem o ajuste ela deixaria dois espaços onde estava ("A  unidade") e
+  grudaria onde chegou ("nossaNas"). Quem tira uma palavra de um lugar e a
+  põe noutro quer a frase certa nos dois.
+
+  Com o controle de alterações o ajuste não acontece: cada espaço tirado ou
+  posto seria mais uma marca para alguém revisar. E só vale para o que cabe
+  numa linha — um parágrafo inteiro levado junto já traz a quebra que o
+  separa.
+*/
+
+/** A seleção alargada para levar junto o espaço que sobraria quando ela sair. */
+function comOEspacoQueSobraria(d: Doc<string>, inicio: Ponto, fim: Ponto): { inicio: Ponto; fim: Ponto } {
+  const pa = paragrafoPorId(d, inicio.bloco);
+  if (!pa || inicio.bloco !== fim.bloco) return { inicio, fim };
+  const u = unidadesDoParagrafo(pa);
+  const antesDele = u[inicio.offset - 1];
+  const depoisDele = u[fim.offset];
+  if (antesDele === ' ' && (depoisDele === undefined || depoisDele === ' ' || PONTUACAO.test(depoisDele))) {
+    return { inicio: { ...inicio, offset: inicio.offset - 1 }, fim };
+  }
+  if (antesDele === undefined && depoisDele === ' ') return { inicio, fim: { ...fim, offset: fim.offset + 1 } };
+  return { inicio, fim };
+}
+
+/** Cola o fragmento sem grudá-lo nas palavras vizinhas. `inicio` é onde o texto colado começa. */
+function colarComEspacos<S extends string>(
+  d: Doc<S>, s: Selecao, fragmento: Trecho[][], q: QuemEdita | undefined, ajustar: boolean,
+): Edicao<S> & { inicio: Ponto } {
+  const limpo = apagarSelecao(d, s, q);
+  let doc = limpo.doc;
+  let alvo = limpo.selecao.foco;
   const texto = fragmento[0]?.map(x => (x.campo ? '￼' : x.texto)).join('') ?? '';
   const pd = paragrafoPorId(doc, alvo.bloco);
   const vizinhas = pd ? unidadesDoParagrafo(pd) : '';
@@ -723,14 +759,32 @@ export function moverSelecao<S extends string>(
     alvo = { ...alvo, offset: alvo.offset + 1 };
   }
   const r = colarFragmento(doc, cursorEm(alvo.bloco, alvo.offset), fragmento, q);
-  doc = r.doc;
-  if (espacoDepois) doc = inserirTexto(doc, r.selecao, ' ', q).doc;
-  /* O Word deixa o texto que chegou selecionado, para o próximo gesto. */
-  return { doc, selecao: { ancora: alvo, foco: r.selecao.foco } };
+  if (!espacoDepois) return { ...r, inicio: alvo };
+  /* O cursor fica antes do espaço posto, colado ao fim do que entrou. */
+  return { doc: inserirTexto(r.doc, r.selecao, ' ', q).doc, selecao: r.selecao, inicio: alvo };
 }
 
-const LETRA = /[\p{L}\p{N}]/u;
-const PONTUACAO = /[.,;:!?)\]]/;
+/**
+ * Recortar, com o espaço que sobraria indo junto. Ver a nota do recortar e
+ * colar inteligente.
+ */
+export function recortarSelecao<S extends string>(d: Doc<S>, s: Selecao, q?: QuemEdita): Edicao<S> {
+  if (recolhida(s) || marcando(d, q)) return apagarSelecao(d, s, q);
+  const { inicio, fim } = ordenar(d, s);
+  const c = comOEspacoQueSobraria(d, inicio, fim);
+  return apagarSelecao(d, { ancora: c.inicio, foco: c.fim }, q);
+}
+
+/**
+ * Colar o que saiu daqui, sem grudar nas palavras vizinhas nem deixar dois
+ * espaços. Ver a nota do recortar e colar inteligente.
+ */
+export function colarSemGrudar<S extends string>(
+  d: Doc<S>, s: Selecao, fragmento: Trecho[][], q?: QuemEdita,
+): Edicao<S> {
+  const r = colarComEspacos(d, s, fragmento, q, !marcando(d, q) && fragmento.length === 1);
+  return { doc: r.doc, selecao: r.selecao };
+}
 
 /**
  * Shift+Enter: desce uma linha sem fechar o parágrafo.

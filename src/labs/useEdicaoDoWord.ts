@@ -11,7 +11,7 @@ import {
   limparFormatacao, limparTudo, mudarTamanhoEmDegrau, mudarTamanhoEmUmPonto, apagar, apagarSelecao, formatoDaSelecao, inserirTexto, mesmaSelecao,
   palavraEmVolta, quebraDeLinha, quebraDePagina, quebrarParagrafo, recolhida, selecaoValida,
   selecionarTudo, tamanhoDoParagrafo, unidadesDoTrecho,
-  alinhar, alternarLista, colarFragmento, definirEntrelinha, formatoDoParagrafoDaSelecao,
+  alinhar, alternarLista, colarSemGrudar, recortarSelecao, definirEntrelinha, formatoDoParagrafoDaSelecao,
   fragmentoDaSelecao, moverSelecao, mudarRecuo, tabular, textoDaSelecao,
 } from './edicao';
 
@@ -345,7 +345,7 @@ export function useEdicaoDoWord<S extends string>(
       case 'recortar': {
         if (recolhida(alvo)) return;
         copiar();
-        r = apagarSelecao(d, alvo, q);
+        r = recortarSelecao(d, alvo, q);
         digitando.current = false;
         break;
       }
@@ -354,7 +354,7 @@ export function useEdicaoDoWord<S extends string>(
       case 'colar': {
         const t = transferencia.current;
         if (t && (c.texto === undefined || c.texto.replace(/\r\n?/g, '\n') === t.texto)) {
-          r = colarFragmento(d, alvo, t.fragmento, q);
+          r = colarSemGrudar(d, alvo, t.fragmento, q);
         } else if (c.texto) {
           r = inserirTexto(d, alvo, c.texto, q, p);
         } else return;

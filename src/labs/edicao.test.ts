@@ -8,7 +8,7 @@ import {
   alternarMarca, aplicarEstilo, formatoDaSelecao, palavraEmVolta, selecaoValida, selecionarTudo,
   textoDaSelecao, tamanhoDoParagrafo, isolarSelecao, limparFormatacao, definirTamanho, apagarSelecao,
   alternarLista, alinhar, tabular, limparTudo, fragmentoDaSelecao, colarFragmento, formatoDoParagrafoDaSelecao,
-  mudarTamanhoEmUmPonto, moverSelecao,
+  mudarTamanhoEmUmPonto, moverSelecao, recortarSelecao, colarSemGrudar,
 } from './edicao';
 
 /*
@@ -366,6 +366,38 @@ describe('copiar e colar com a formatação', () => {
     const semMarca = { ...riscado, controlarAlteracoes: false };
     const frag = fragmentoDaSelecao(semMarca, sel('p1', 0, 'p1', 22));
     expect(frag[0].map(x => x.texto).join('')).toBe('Acampament de inverno');
+  });
+});
+
+describe('recortar e colar sem grudar', () => {
+  /*
+    O recortar e colar inteligente do Word vale para os três gestos de levar
+    uma palavra: arrastar, recortar e colar. No celular só há os dois últimos
+    — o toque longo pega a palavra sem o espaço, e a barra do sistema oferece
+    Recortar e Colar —, e sem o ajuste a frase saía "Saída  sete" num lugar e
+    "àsAcampamento" no outro.
+  */
+  it('recortar a palavra leva o espaço que sobraria', () => {
+    expect(texto(recortarSelecao(base(), sel('p2', 6, 'p2', 8)).doc, 'p2')).toBe('Saída sete');
+    expect(texto(recortarSelecao(base(), sel('p2', 9, 'p2', 13)).doc, 'p2'), 'a última palavra leva o espaço de antes').toBe('Saída às');
+    expect(texto(recortarSelecao(base(), sel('p2', 0, 'p2', 5)).doc, 'p2'), 'a primeira leva o de depois').toBe('às sete');
+  });
+
+  it('colar entre duas palavras põe o espaço que falta, e o cursor fica no fim do que entrou', () => {
+    const d = base();
+    const frag = fragmentoDaSelecao(d, sel('p2', 6, 'p2', 8));
+    const r = colarSemGrudar(d, cursorEm('p1', 0), frag);
+    expect(texto(r.doc, 'p1')).toBe('às Acampamento de inverno');
+    expect(r.selecao.foco).toEqual({ bloco: 'p1', offset: 2 });
+    expect(texto(colarSemGrudar(d, cursorEm('p1', 22), frag).doc, 'p1')).toBe('Acampamento de inverno às');
+    expect(texto(colarSemGrudar(d, cursorEm('p1', 11), frag).doc, 'p1'), 'ao lado de um espaço não põe outro').toBe('Acampamento às de inverno');
+  });
+
+  it('com o controle de alterações nada se ajusta, porque cada espaço seria uma marca', () => {
+    const d = { ...base(), controlarAlteracoes: true };
+    expect(textoVisivel(recortarSelecao(d, sel('p2', 6, 'p2', 8)).doc)).toContain('Saída  sete');
+    const frag = fragmentoDaSelecao(base(), sel('p2', 6, 'p2', 8));
+    expect(textoVisivel(colarSemGrudar(d, cursorEm('p1', 0), frag).doc)).toContain('àsAcampamento');
   });
 });
 
