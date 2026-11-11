@@ -3,7 +3,7 @@ import {
   type Doc, type Paragrafo, blocoDe, campoDe, linhaDe, trechoDe, textoDoDoc, textoVisivel,
   comFormatacaoDireta, paragrafos, marcadorDaLista,
   revisoesPendentes, aceitarRevisao, rejeitarRevisao, aceitarTodasAsRevisoes, rejeitarTodasAsRevisoes,
-  idDaQuebra, rotuloDaRevisao,
+  idDaQuebra, rotuloDaRevisao, idDoFormato, idDoFormatoDoParagrafo, descricaoDaMarca,
 } from './documento';
 import {
   type Selecao, cursorEm, inserirTexto, apagar, quebrarParagrafo, quebraDeLinha, quebraDePagina,
@@ -11,6 +11,7 @@ import {
   textoDaSelecao, tamanhoDoParagrafo, isolarSelecao, limparFormatacao, definirTamanho, apagarSelecao,
   alternarLista, alinhar, tabular, limparTudo, fragmentoDaSelecao, colarFragmento, formatoDoParagrafoDaSelecao,
   mudarTamanhoEmUmPonto, moverSelecao, recortarSelecao, colarSemGrudar, marcaEmVolta,
+  comFormatacaoMarcada, selecaoDoTrecho, sugestaoDoTrecho,
 } from './edicao';
 
 /*
@@ -580,5 +581,142 @@ describe('o controle de alterações', () => {
     const id = revisoesPendentes(riscado.doc)[0].trecho.id;
     expect(marcaEmVolta(riscado.doc, sel('p1', 21, 'p1', 22))).toBe(id);
     expect(marcaEmVolta(riscado.doc, cursorEm('p1', 0))).toBeNull();
+  });
+});
+
+describe('a marca de formatação', () => {
+  /*
+    O negrito aplicado com o controle ligado entrava calado: nenhuma marca
+    contava, Rejeitar Todas não o desfazia, e quem revisava recebia outro
+    documento sem nada dizendo onde. O Word escreve "Formatado: Negrito" na
+    margem, e é isso que estas travas cobram.
+  */
+  const controlado = () => ({ ...base(), controlarAlteracoes: true });
+  const formatado = (d: Doc<S>, f: (d: Doc<S>) => Doc<S>) => comFormatacaoMarcada(d, f(d));
+  const marcas = (d: Doc<S>) => revisoesPendentes(d).map(r => `${r.trecho.revisao.tipo}:${r.trecho.texto}:${r.trecho.revisao.mudou ?? ''}`);
+
+  it('negrito com o controle ligado vira uma marca, e rejeitar devolve a aparência de antes', () => {
+    const d = formatado(controlado(), x => alternarMarca(x, sel('p1', 0, 'p1', 11), 'negrito').doc);
+    expect(marcas(d)).toEqual(['formatado:Acampamento:Negrito']);
+    expect(textoDoDoc(d), 'formatar não muda uma letra').toBe(textoDoDoc(base()));
+    const id = revisoesPendentes(d)[0].trecho.id;
+    expect(id.startsWith('ƒ:'), 'a marca tem id próprio, que não colide com o do trecho').toBe(true);
+    const rejeitado = rejeitarRevisao(d, id);
+    expect(comFormatacaoDireta(rejeitado)).toHaveLength(0);
+    expect(revisoesPendentes(rejeitado)).toHaveLength(0);
+    const aceito = aceitarRevisao(d, id);
+    expect(paragrafos(aceito)[0].trechos[0].direta?.negrito, 'aceitar deixa o negrito').toBe(true);
+    expect(revisoesPendentes(aceito)).toHaveLength(0);
+  });
+
+  it('sem o controle, formatar não deixa marca nenhuma', () => {
+    const d = formatado(base(), x => alternarMarca(x, sel('p1', 0, 'p1', 11), 'negrito').doc);
+    expect(revisoesPendentes(d)).toHaveLength(0);
+  });
+
+  it('o modo Sugestão marca mesmo com o controle do documento desligado, e com o autor dele', () => {
+    const d0 = base();
+    const d = comFormatacaoMarcada(d0, alternarMarca(d0, sel('p1', 0, 'p1', 11), 'italico').doc, { autor: 'marta', marcar: true });
+    expect(revisoesPendentes(d)[0].trecho.revisao).toMatchObject({ autor: 'marta', tipo: 'formatado', mudou: 'Itálico' });
+  });
+
+  it('a marca guarda a aparência de antes da primeira mudança, e voltar a ela não deixa rastro', () => {
+    const d0 = controlado();
+    const d1 = formatado(d0, x => definirTamanho(x, sel('p1', 0, 'p1', 11), 14).doc);
+    const d2 = formatado(d1, x => alternarMarca(x, sel('p1', 0, 'p1', 11), 'negrito').doc);
+    expect(marcas(d2), 'uma marca só, com as duas mudanças').toEqual(['formatado:Acampamento:Negrito, 14 pt']);
+    const rejeitado = rejeitarRevisao(d2, revisoesPendentes(d2)[0].trecho.id);
+    expect(comFormatacaoDireta(rejeitado), 'rejeitar tira as duas').toHaveLength(0);
+    const d3 = formatado(d2, x => alternarMarca(x, sel('p1', 0, 'p1', 11), 'negrito').doc);
+    const d4 = formatado(d3, x => definirTamanho(x, sel('p1', 0, 'p1', 11), 11).doc);
+    expect(revisoesPendentes(d4), 'negrito e depois tirar o negrito não é mudança').toHaveLength(0);
+  });
+
+  it('rejeitar devolve a formatação direta que o trecho já tinha, e não "sem negrito"', () => {
+    const d0 = doc({ ...linhaDe('p1', 'corpo', ''), trechos: [{ ...trechoDe('a', 'Pioneiros'), direta: { tamanho: 16, cor: '#C00000' } }] });
+    const d = formatado({ ...d0, controlarAlteracoes: true }, x => alternarMarca(x, sel('p1', 0, 'p1', 9), 'negrito').doc);
+    const rejeitado = rejeitarRevisao(d, revisoesPendentes(d)[0].trecho.id);
+    expect(paragrafos(rejeitado)[0].trechos[0].direta).toEqual({ tamanho: 16, cor: '#C00000' });
+  });
+
+  it('uma seleção que atravessa três trechos iguais dá uma marca, e não três', () => {
+    const d0 = doc({ ...linhaDe('p1', 'corpo', ''), trechos: [trechoDe('a', 'Clube '), trechoDe('b', 'dos '), trechoDe('c', 'Pioneiros')] });
+    const d = formatado({ ...d0, controlarAlteracoes: true }, x => alternarMarca(x, sel('p1', 0, 'p1', 19), 'negrito').doc);
+    expect(marcas(d)).toEqual(['formatado:Clube dos Pioneiros:Negrito']);
+    expect(paragrafos(d)[0].trechos[0].id, 'fica o id que já existia').toBe('a');
+  });
+
+  it('o que a própria pessoa acabou de inserir não ganha marca de formatação', () => {
+    const digitado = inserirTexto(controlado(), cursorEm('p1', 0), 'Grande ');
+    const d = formatado(digitado.doc, x => alternarMarca(x, sel('p1', 0, 'p1', 7), 'negrito').doc);
+    expect(revisoesPendentes(d).map(r => r.trecho.revisao.tipo)).toEqual(['inserido']);
+  });
+
+  it('a sugestão de outra pessoa formatada tem duas marcas, e cada uma se resolve sozinha', () => {
+    const d0 = doc({
+      ...linhaDe('p1', 'corpo', ''),
+      trechos: [trechoDe('a', 'Clube '), { ...trechoDe('b', 'Pioneiros'), revisao: { autor: 'lideranca', tipo: 'inserido' } }],
+    });
+    const d = formatado({ ...d0, controlarAlteracoes: true }, x => alternarMarca(x, sel('p1', 6, 'p1', 15), 'negrito').doc);
+    expect(revisoesPendentes(d).map(r => r.trecho.id)).toEqual(['b', idDoFormato('b')]);
+    const soAFormatacao = rejeitarRevisao(d, idDoFormato('b'));
+    expect(revisoesPendentes(soAFormatacao).map(r => r.trecho.id), 'a inserção continua esperando').toEqual(['b']);
+    expect(paragrafos(soAFormatacao)[0].trechos[1].direta).toBeUndefined();
+    expect(sugestaoDoTrecho(d, idDoFormato('b')), 'na nuvem, a formatação é uma sugestão à parte').toEqual([idDoFormato('b')]);
+  });
+
+  it('o mesmo texto com duas marcas: a escolhida por Próxima vale enquanto a seleção for a dela', () => {
+    const d0 = doc({
+      ...linhaDe('p1', 'corpo', ''),
+      trechos: [trechoDe('a', 'Clube '), { ...trechoDe('b', 'Pioneiros'), revisao: { autor: 'lideranca', tipo: 'inserido' } }],
+    });
+    const d = formatado({ ...d0, controlarAlteracoes: true }, x => alternarMarca(x, sel('p1', 6, 'p1', 15), 'negrito').doc);
+    const s = selecaoDoTrecho(d, idDoFormato('b'))!;
+    expect(s).toEqual(selecaoDoTrecho(d, 'b'));
+    expect(marcaEmVolta(d, s), 'sem preferência, a de inserção vem primeiro').toBe('b');
+    expect(marcaEmVolta(d, s, idDoFormato('b'))).toBe(idDoFormato('b'));
+    expect(marcaEmVolta(d, cursorEm('p1', 2), idDoFormato('b')), 'o cursor andou: a preferência acabou').toBeNull();
+  });
+
+  it('formatação de parágrafo é marca do parágrafo, e rejeitar devolve estilo e alinhamento', () => {
+    const d0 = controlado();
+    const d1 = formatado(d0, x => alinhar(x, cursorEm('p1', 3), 'centro').doc);
+    const d2 = formatado(d1, x => aplicarEstilo(x, cursorEm('p1', 3), 'Título 1').doc);
+    expect(marcas(d2)).toEqual(['formatado:Acampamento de inverno:Estilo: Título 1, Centralizado']);
+    const id = revisoesPendentes(d2)[0].trecho.id;
+    expect(id).toBe(idDoFormatoDoParagrafo('p1'));
+    expect(marcaEmVolta(d2, cursorEm('p1', 3)), 'o cursor em qualquer ponto do parágrafo acha a marca dele').toBe(id);
+    expect(descricaoDaMarca(revisoesPendentes(d2)[0].trecho)).toBe('Marca de Você: o parágrafo mudou de formatação — Estilo: Título 1, Centralizado.');
+    const rejeitado = rejeitarRevisao(d2, id);
+    expect(paragrafos(rejeitado)[0].estilo).toBe('Normal');
+    expect(paragrafos(rejeitado)[0].formato).toBeUndefined();
+  });
+
+  it('o rótulo da dica é o do Word, e Rejeitar Todas desfaz texto e formatação juntos', () => {
+    const d1 = formatado(controlado(), x => alternarMarca(x, sel('p2', 0, 'p2', 5), 'sublinhado').doc);
+    const d2 = inserirTexto(d1, cursorEm('p1', 0), 'Novo ').doc;
+    const d3 = formatado(d2, x => alternarLista(x, cursorEm('p2', 1), 'marcadores').doc);
+    expect(rotuloDaRevisao(revisoesPendentes(d3).find(r => r.trecho.revisao.tipo === 'formatado' && r.trecho.texto === 'Saída')!.trecho.revisao))
+      .toBe('Formatado por Você: Sublinhado');
+    const limpo = rejeitarTodasAsRevisoes(d3);
+    expect(revisoesPendentes(limpo)).toHaveLength(0);
+    expect(textoDoDoc(limpo)).toBe(textoDoDoc(base()));
+    expect(comFormatacaoDireta(limpo)).toHaveLength(0);
+    expect(paragrafos(limpo)[1].formato).toBeUndefined();
+  });
+
+  it('o Tab que recua ganha marca, e o que escreve uma tabulação não', () => {
+    const lista = formatado(base(), x => alternarLista(x, cursorEm('p2', 0), 'numeracao').doc);
+    const d0 = { ...lista, controlarAlteracoes: true };
+    const recuado = formatado(d0, x => tabular(x, cursorEm('p2', 0), false).doc);
+    expect(marcas(recuado)).toEqual(['formatado:Saída às sete:Recuo à esquerda: 1,25 cm']);
+    const escrito = formatado(d0, x => tabular(x, cursorEm('p1', 3), false).doc);
+    expect(revisoesPendentes(escrito).map(r => r.trecho.revisao.tipo)).toEqual(['inserido']);
+  });
+
+  it('copiar texto formatado não leva a marca junto', () => {
+    const d = formatado(controlado(), x => alternarMarca(x, sel('p1', 0, 'p1', 11), 'negrito').doc);
+    const fragmento = fragmentoDaSelecao(d, sel('p1', 0, 'p1', 11));
+    expect(fragmento.flat().some(x => x.formatacao)).toBe(false);
   });
 });

@@ -272,6 +272,34 @@ describe('com o controle ligado, o que se digita sai marcado', () => {
   });
 });
 
+describe('com o controle ligado, a formatação também sai marcada', () => {
+  it('Ctrl+N vira balão "Formatado: Negrito" na margem, e Rejeitar devolve a letra de antes', () => {
+    /* O Word marca formatação; o laboratório não marcava, e o negrito
+       aplicado com o controle ligado entrava calado — nenhuma marca a mais na
+       contagem, e Rejeitar Todas não o desfazia. */
+    montar();
+    clicar(guia('Revisão'), 'a guia Revisão');
+    clicar(comando('Controlar Alterações'), 'Controlar Alterações');
+    const antes = estado();
+    porCursor(container, 'fe-1', 2);
+    tecla(container, 'n', { ctrl: true });
+    const formatado = container.querySelector('[data-formatado="voce"]') as HTMLElement | null;
+    expect(formatado, 'o negrito não ficou marcado').toBeTruthy();
+    const id = formatado!.getAttribute('data-trecho')!;
+    const peso = () => (trecho(id) as HTMLElement).style.fontWeight;
+    const negrito = peso();
+    expect(['700', 'bold']).toContain(negrito);
+    expect(estado(), 'a contagem não contou a marca nova').not.toBe(antes);
+    const balaoDoFormato = container.querySelector('[data-formato]');
+    expect(balaoDoFormato?.textContent).toContain('Formatado: Negrito');
+    clicar(balaoDoFormato, 'o balão da formatação');
+    clicar(comando('Rejeitar'), 'Rejeitar');
+    expect(container.querySelector('[data-formatado]'), 'Rejeitar não tirou a marca').toBeNull();
+    expect(estado()).toBe(antes);
+    expect(peso(), 'Rejeitar deixou o negrito').not.toBe(negrito);
+  });
+});
+
 describe('os dois botões grossos não fecham a tarefa', () => {
   it('Aceitar Todas resolve as marcas e deixa a data errada na folha', () => {
     montar();

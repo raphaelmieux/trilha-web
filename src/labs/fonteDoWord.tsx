@@ -9,7 +9,7 @@ import {
 import { BotaoDaFaixa, GrupoDaFaixa } from './word';
 import { IconeItalico, IconeNegrito, IconeSublinhado } from './office';
 import {
-  FONTES_DO_WORD, COR_DO_REALCE, APARENCIA_DO_ESTILO, NOMES_DA_CAIXA, MEDIDAS_DO_PAPEL, PAGINA_PADRAO,
+  FONTES_DO_WORD, COR_DO_REALCE, APARENCIA_DO_ESTILO, CORES_DA_FONTE, NOMES_DO_REALCE, NOMES_DA_CAIXA, MEDIDAS_DO_PAPEL, PAGINA_PADRAO,
   type ConfiguracaoDaPagina, type Estilo, type Margens, type ModoDeCaixa, type Orientacao, type Papel, type Realce,
 } from './documento';
 import {
@@ -81,22 +81,6 @@ function ListaSuspensa({ ancora, aoFechar, children, largura }: {
     document.body,
   );
 }
-
-const CORES_DA_FONTE: { nome: string; cor: string }[] = [
-  { nome: 'Automático', cor: '#000000' },
-  { nome: 'Vermelho Escuro', cor: '#C00000' },
-  { nome: 'Vermelho', cor: '#FF0000' },
-  { nome: 'Laranja', cor: '#FFC000' },
-  { nome: 'Verde', cor: '#00B050' },
-  { nome: 'Azul', cor: '#0070C0' },
-  { nome: 'Azul-Escuro', cor: '#002060' },
-  { nome: 'Roxo', cor: '#7030A0' },
-  { nome: 'Cinza', cor: '#7F7F7F' },
-];
-
-const NOMES_DO_REALCE: Record<Exclude<Realce, 'nenhum'>, string> = {
-  amarelo: 'Amarelo', verde: 'Verde Brilhante', ciano: 'Turquesa', rosa: 'Rosa',
-};
 
 export const CSS_FONTE_DO_WORD = `
 .wd-lista-suspensa {

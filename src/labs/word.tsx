@@ -35,7 +35,8 @@ import {
 
 import {
   aparenciaDe, aparenciaDoTrecho, textoDoTrecho, larguraDaTabela,
-  paginasDoDoc, blocoAntesDoSumario, NOME_DO_AUTOR, COR_DO_AUTOR, rotuloDaRevisao,
+  paginasDoDoc, blocoAntesDoSumario, NOME_DO_AUTOR, COR_DO_AUTOR, rotuloDaRevisao, marcaDeFormatacao,
+  revisoesPendentes, type Trecho,
   FONTES, DEGRAU_DE_RECUO_CM, marcadorDaLista, medidasDaPagina,
   type Doc, type Bloco, type Paragrafo, type TabelaDoDoc, type ImagemDoDoc,
   type Disposicao, type ItemDeSumario, type FaixaDaPagina,
@@ -797,6 +798,11 @@ export const CSS_FOLHA = `
      quem não distingue as duas cores continua vendo o traço e o sublinhado. */
   .wd-rev-inserido { text-decoration: underline; }
   .wd-rev-excluido { text-decoration: line-through; }
+  /* A marca de formatação não pinta o texto: a cor é a da formatação nova, que
+     é o que se está revisando. O que liga o texto ao balão é o pontilhado, na
+     cor de quem formatou — é a linha que o Word puxa até a margem. Borda, e
+     não sublinhado, porque o trecho pode ter ganhado justamente sublinhado. */
+  .wd-formatado { border-bottom: 1.5px dotted var(--cor-do-formato); }
   /* O realce do comentário é o do Word: fundo amarelo claro debaixo do texto
      a que ele está preso, e não um ícone na margem que não diz de onde é. */
   .wd-comentado { background: #FFF4CE; cursor: pointer; }
@@ -826,6 +832,14 @@ export const CSS_FOLHA = `
     border: 1px solid #D1D1D1; background: #FFFFFF; color: #201F1E; cursor: pointer;
   }
   .wd-balao-acoes button:hover { background: #F3F2F1; }
+  /* O balão de formatação é botão — clicar leva até a marca —, e botão não
+     herda a letra: sem a família e o tamanho escritos aqui, ele sai maior que
+     o balão de comentário logo acima. */
+  .wd-balao-formato {
+    display: block; width: 100%; text-align: left; cursor: pointer;
+    font-family: inherit; font-size: 11px; line-height: 1.35;
+  }
+  .wd-balao-formato:hover { background: #F3F2F1; }
 
   /* No celular não há 210 px de sobra ao lado do papel: a margem desce para
      baixo dele, inteira. Esconder os balões tiraria o único caminho até duas
@@ -1188,16 +1202,16 @@ export function ParagrafoDaFolha({
                   className={[
                     x.texto.includes('\t') ? 'wd-tab' : '',
                     x.revisao ? `wd-rev wd-rev-${x.revisao.tipo} wd-autor-${x.revisao.autor}` : '',
+                    x.formatacao ? 'wd-formatado' : '',
                     comentado?.has(x.id) ? 'wd-comentado' : '',
                   ].filter(Boolean).join(' ') || undefined}
-                  style={x.revisao
-                    ? emPontos({ ...aparenciaDoTrecho(doc, bloco, x), color: COR_DO_AUTOR[x.revisao.autor] })
-                    : emPontos(aparenciaDoTrecho(doc, bloco, x))}
-                  title={x.revisao ? rotuloDaRevisao(x.revisao) : undefined}
+                  style={estiloDoTrechoMarcado(doc, bloco, x)}
+                  title={rotuloDoTrecho(x)}
                   onClick={aoEscolherTrecho ? () => aoEscolherTrecho(x.id) : undefined}
                   data-trecho={x.id}
                   data-revisao={x.revisao?.tipo}
                   data-autor={x.revisao?.autor}
+                  data-formatado={x.formatacao?.autor}
                 >
                   {x.texto}
                 </span>
@@ -1270,17 +1284,17 @@ export function ParagrafoDaFolha({
                    isso duas pessoas revisando o mesmo documento produzem um
                    texto colorido que não diz de quem é nada. */
                 x.revisao ? `wd-rev wd-rev-${x.revisao.tipo} wd-autor-${x.revisao.autor}` : '',
+                x.formatacao ? 'wd-formatado' : '',
                 comentado?.has(x.id) ? 'wd-comentado' : '',
               ].filter(Boolean).join(' ') || undefined}
-              style={x.revisao
-                ? emPontos({ ...aparenciaDoTrecho(doc, bloco, x), color: COR_DO_AUTOR[x.revisao.autor] })
-                : emPontos(aparenciaDoTrecho(doc, bloco, x))}
-              title={x.revisao ? rotuloDaRevisao(x.revisao) : undefined}
+              style={estiloDoTrechoMarcado(doc, bloco, x)}
+              title={rotuloDoTrecho(x)}
               onClick={aoEscolherTrecho
                 ? ev => { ev.stopPropagation(); aoEscolherTrecho(x.id); } : undefined}
               data-trecho={x.id}
               data-revisao={x.revisao?.tipo}
               data-autor={x.revisao?.autor}
+              data-formatado={x.formatacao?.autor}
               data-campo={x.campo}
             >
               {textoDoTrecho(doc, x)}
@@ -2361,6 +2375,56 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined, a
  * perguntou. Um botão só — "Resolver", que gravasse o texto junto — apagaria a
  * diferença e faria a tarefa premiar o clique.
  */
+/** A aparência do trecho na folha: a do documento, com a cor de quem inseriu ou apagou por cima. */
+function estiloDoTrechoMarcado(doc: Doc<string>, bloco: Paragrafo<string>, x: Trecho): React.CSSProperties {
+  const base = aparenciaDoTrecho(doc, bloco, x);
+  const comCor = x.revisao ? { ...base, color: COR_DO_AUTOR[x.revisao.autor] } : base;
+  return x.formatacao
+    ? { ...emPontos(comCor), '--cor-do-formato': COR_DO_AUTOR[x.formatacao.autor] } as React.CSSProperties
+    : emPontos(comCor);
+}
+
+/** A dica do trecho: as duas marcas, quando ele tem as duas. */
+function rotuloDoTrecho(x: Trecho): string | undefined {
+  const partes = [
+    x.revisao ? rotuloDaRevisao(x.revisao) : '',
+    x.formatacao ? rotuloDaRevisao(marcaDeFormatacao(x.formatacao, x)) : '',
+  ].filter(Boolean);
+  return partes.length > 0 ? partes.join('\n') : undefined;
+}
+
+/**
+ * Os balões de formatação da margem — o "Formatado: Negrito" do Word.
+ *
+ * Inserção e exclusão se leem no próprio texto, sublinhado ou riscado; a
+ * formatação não tem como: o negrito novo é só negrito. Sem o balão, a marca
+ * existiria na contagem e em lugar nenhum da tela. Clicar leva até ela, que é
+ * o que o balão do Word faz.
+ */
+export function BaloesDeFormatacao({ doc, aoEscolher }: {
+  doc: Doc<string>;
+  aoEscolher: (marcaId: string) => void;
+}) {
+  const marcas = revisoesPendentes(doc).filter(r => r.trecho.revisao.tipo === 'formatado');
+  return (
+    <>
+      {marcas.map(({ trecho }) => (
+        <button
+          key={trecho.id}
+          type="button"
+          className={`wd-balao wd-balao-formato${trecho.revisao.autor === 'voce' ? ' meu' : ''}`}
+          style={{ borderLeftColor: COR_DO_AUTOR[trecho.revisao.autor] }}
+          data-formato={trecho.id}
+          onClick={() => aoEscolher(trecho.id)}
+        >
+          <span className="wd-balao-autor" style={{ display: 'block' }}>{NOME_DO_AUTOR[trecho.revisao.autor]}</span>
+          <span>Formatado: {trecho.revisao.mudou}</span>
+        </button>
+      ))}
+    </>
+  );
+}
+
 export function BalaoDeComentario({
   comentario, rascunho, aoEscrever, aoResponder, aoResolver, aoExcluir,
 }: {

@@ -567,6 +567,10 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair, ou
         autor: trecho.revisao.autor,
         tirar: marcados.filter(x => x.revisao.tipo === 'excluido').map(x => x.texto).join(''),
         por: marcados.filter(x => x.revisao.tipo === 'inserido').map(x => x.texto).join(''),
+        /* Negrito aplicado em modo de Sugestão é sugestão também: o editor de
+           navegador mostra "Formatar: Negrito" no balão, e ele se aceita ou se
+           rejeita como os outros. */
+        formatar: marcados.filter(x => x.revisao.tipo === 'formatado').map(x => x.revisao.mudou ?? '').join(', '),
       }];
     });
   })();
@@ -603,6 +607,7 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair, ou
           <div className="wd-balao-autor">{NOME_DO_AUTOR[g.autor]} sugeriu</div>
           {g.tirar && <div>Excluir: <s>{g.tirar}</s></div>}
           {g.por && <div>{g.tirar ? 'Adicionar: ' : ''}{g.por}</div>}
+          {g.formatar && <div>Formatar: {g.formatar}</div>}
           <div className="wd-balao-acoes">
             <button type="button" onClick={() => resolverSugestao(true, g.ids[0])}>Aceitar</button>
             <button type="button" onClick={() => resolverSugestao(false, g.ids[0])}>Rejeitar</button>

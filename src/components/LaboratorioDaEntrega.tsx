@@ -8,7 +8,7 @@ import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
 import { marcaEmVolta, selecaoDoTrecho } from '../labs/edicao';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa, BotaoDaFaixa, ReguaDoWord,
-  ZoomDoWord, FolhaDoWord, BastidoresDoWord, type PainelDosBastidores, type AjustesDeImpressao,
+  ZoomDoWord, FolhaDoWord, BaloesDeFormatacao, BastidoresDoWord, type PainelDosBastidores, type AjustesDeImpressao,
 } from '../labs/word';
 import {
   RELATORIO_DA_ENTREGA_INICIAL, ENTREGA_INICIAL, METAS_DA_ENTREGA,
@@ -75,6 +75,8 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair, 
   const [aviso, setAviso] = useState('');
   const [zoom, setZoom] = useState(1);
   const [marcas, setMarcas] = useState(false);
+  /* A marca a que Próxima acabou de levar — ver o laboratório da revisão. */
+  const [escolhidaAgora, setEscolhidaAgora] = useState<string | null>(null);
   const jaGravou = useRef(false);
   const edicao = useEdicaoDoWord(doc, setDoc, { quem: { autor: 'voce' } });
 
@@ -102,17 +104,28 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair, 
 
   const pendentes = revisoesPendentes(doc);
   /* A marca escolhida é a que está debaixo do cursor, dos dois lados dele. */
-  const trecho = marcaEmVolta(doc, edicao.selecao);
+  const trecho = marcaEmVolta(doc, edicao.selecao, escolhidaAgora);
   const marcaEscolhida = trecho && pendentes.some(r => r.trecho.id === trecho) ? trecho : null;
 
   const proximaMarca = () => {
     if (pendentes.length === 0) { setAviso('Não há mais marcas para resolver.'); return; }
     const atual = pendentes.findIndex(r => r.trecho.id === trecho);
-    const proxima = pendentes[(atual + 1) % pendentes.length];
-    edicao.folha.aoSelecionar(selecaoDoTrecho(doc, proxima.trecho.id));
-    edicao.focar();
-    setAviso(descricaoDaMarca(proxima.trecho));
+    irParaAMarca(pendentes[(atual + 1) % pendentes.length].trecho.id);
   };
+
+  const irParaAMarca = (id: string) => {
+    const marca = pendentes.find(r => r.trecho.id === id);
+    if (!marca) return;
+    setEscolhidaAgora(id);
+    edicao.folha.aoSelecionar(selecaoDoTrecho(doc, id));
+    edicao.focar();
+    setAviso(descricaoDaMarca(marca.trecho));
+  };
+
+  /* A margem só existe quando há formatação a revisar: este relatório não tem
+     comentário nenhum, e uma coluna vazia ao lado do papel diria que falta
+     alguma coisa nela. */
+  const temFormatacao = pendentes.some(r => r.trecho.revisao.tipo === 'formatado');
 
   /* Sem marca escolhida os dois botões não agem calados: agir na primeira
      pendente pareceria funcionar e resolveria a marca errada. */
@@ -309,7 +322,8 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair, 
 
           <ReguaDoWord larguraCm={21} margemCm={2.5} />
 
-          <FolhaDoWord doc={doc} marcas={marcas} edicao={edicao.folha} aoEscolher={() => setAviso('')} />
+          <FolhaDoWord doc={doc} marcas={marcas} edicao={edicao.folha} aoEscolher={() => { setAviso(''); setEscolhidaAgora(null); }}
+            margem={temFormatacao ? <BaloesDeFormatacao doc={doc} aoEscolher={irParaAMarca} /> : undefined} />
 
           <div className="wd-status">
             <span>{quantasPaginas(doc)} folhas</span>

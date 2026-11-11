@@ -2133,10 +2133,41 @@ com outro id — percorrida uma vez, a lista a deixaria de pé. E a marca em que
 cursor está saiu dos três laboratórios para `marcaEmVolta`: era a mesma conta
 escrita três vezes, e nenhuma das três sabia da quebra.
 
-O que ele **não** marca é formatação. O Word marca "Formatado: Negrito" na
-margem; aqui o negrito aplicado com o controle ligado entra direto, sem marca.
-Não é defeito do que existe, é peça que falta, e pediria um terceiro tipo de
-marca com o estado de antes guardado no trecho.
+**E marca formatação, com o estado de antes guardado.** O negrito aplicado com
+o controle ligado entrava calado: nenhuma marca a mais na contagem, Rejeitar
+Todas não o desfazia, e quem revisava recebia outro documento sem nada dizendo
+onde. Hoje é o "Formatado: Negrito" do Word: `Trecho.formatacao` guarda quem
+formatou e a aparência de **antes** — a exata, para Rejeitar devolver os 14 pt
+que o trecho já tinha, e não um "sem negrito" genérico —, e
+`Paragrafo.formatacaoDoParagrafo` guarda estilo e grupo Parágrafo. Na lista de
+marcas elas entram com id próprio (`ƒ:` e `ƒ¶:`), como o ¶ da quebra: o
+pedaço que a liderança inseriu e você pôs em negrito tem **duas** marcas, e
+Aceitar uma não pode aceitar a outra.
+
+Quem cria a marca é `comFormatacaoMarcada`, que compara o documento antes e
+depois do comando, e não um parâmetro em cada botão. São quinze comandos de
+formatar, e o que esquecesse de passar o autor adiante formataria calado — que
+é o defeito inteiro. Quatro decisões dela erram calado se invertidas:
+
+- **compara-se o trecho que cobria o mesmo lugar**, e não o do mesmo id:
+  formatar meia palavra parte o trecho, e o pedaço novo nasce com outro id. Só
+  vale em parágrafo cujo texto não mudou — e é por isso que Maiúsculas e
+  Minúsculas, que troca as letras, fica de fora sozinha;
+- **o antes é o da primeira mudança**: negrito e depois tirar o negrito não
+  deixa rastro, como no Word;
+- **o que a própria pessoa acabou de inserir não ganha marca de formatação**:
+  aquilo ainda é proposta dela, e a formatação vai junto com a proposta;
+- **pedaços vizinhos marcados no mesmo comando viram uma marca só**, senão
+  Próxima andaria pedaço por pedaço.
+
+Formatação não se lê no texto — o negrito novo é só negrito —, então ela tem
+**balão na margem** (`BaloesDeFormatacao`), e o texto ganha um pontilhado na
+cor de quem formatou, que é a linha que o Word puxa até o balão. Na nuvem, o
+modo Sugestão mostra "Formatar: Negrito" no balão da sugestão. E a marca que
+Próxima ou o balão escolheu vale enquanto a seleção estiver **dentro** dela, e
+não igual a ela: a folha devolve a seleção que o navegador desenhou, e a do
+parágrafo inteiro volta com outra ponta — medido no Chromium, onde Rejeitar
+resolvia o negrito de dentro do parágrafo em vez do alinhamento dele.
 
 **Comando sem alvo escolhido não age.** Aceitar e Rejeitar sem marca
 selecionada avisam, em vez de agir na primeira pendente: agir pareceria
@@ -6007,6 +6038,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/edicao.test.ts` | tecla apagada com o controle ligado virando uma marca por letra, ou fusão que some com trecho comentado |
 | `src/labs/edicao.test.ts` | Enter ou Backspace no começo do parágrafo sem marca, ou Rejeitar Todas que deixa uma quebra de pé |
 | `src/labs/edicao.test.ts` | sugestão alheia apagada que volta como texto comum ao rejeitar a exclusão |
+| `src/labs/edicao.test.ts` | formatação com o controle ligado que entra sem marca, ou rejeição que não devolve a aparência exata de antes |
+| `src/labs/edicao.test.ts` | pedaço com duas marcas em que Próxima fica preso, ou a formatação da própria inserção ganhando marca |
+| `src/components/LaboratorioDaRevisao.test.tsx` | negrito com o controle ligado sem balão na margem, ou que Rejeitar não tira |
 | `src/labs/FormatacaoTextoLab.test.tsx` | arrastar a seleção que não move, que move sem desfazer num passo, ou que copia sem o Ctrl |
 | `src/labs/powerpoint.test.tsx` | caixa à mão que não se escolhe, não se arrasta, não alarga pelas alças ou não sai pelo Delete |
 | `src/labs/desfazerDaApresentacao.test.tsx` | Ctrl+Z que apaga o PDF exportado, que desfaz letra por letra, ou que rouba o desfazer do campo de texto |
