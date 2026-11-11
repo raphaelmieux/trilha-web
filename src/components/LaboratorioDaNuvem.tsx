@@ -20,7 +20,7 @@ import {
 import { CSS_FOLHA, FolhaDoWord, BalaoDeComentario } from '../labs/word';
 import { useEdicaoDoWord, type ComandoDeTexto } from '../labs/useEdicaoDoWord';
 import {
-  isolarSelecao, palavraEmVolta, recolhida, sugestaoDoTrecho, tamanhoDoParagrafo, trechosEmVolta,
+  isolarSelecao, marcaEmVolta, palavraEmVolta, recolhida, sugestaoDoTrecho, tamanhoDoParagrafo,
 } from '../labs/edicao';
 import {
   type ArquivoDaNuvem, type ModoDeTrabalho, type Nuvem, type Papel, type Pessoa,
@@ -646,9 +646,7 @@ export default function LaboratorioDaNuvem({ vereda, licao, aoVencer, aoSair, ou
    */
   const resolverSugestao = (aceitar: boolean, trechoId?: string) => {
     if (!arquivoAberto || !doc) return;
-    const emVolta = edicao.selecao ? trechosEmVolta(doc, edicao.selecao.foco) : null;
-    const debaixo = (emVolta?.depois?.revisao ? emVolta.depois.id : null)
-      ?? (emVolta?.antes?.revisao ? emVolta.antes.id : null);
+    const debaixo = marcaEmVolta(doc, edicao.selecao);
     const alvoId = trechoId ?? debaixo ?? pendentes[0]?.trecho.id;
     if (!alvoId) return;
     const grupo = sugestaoDoTrecho(doc, alvoId);

@@ -5,7 +5,7 @@ import {
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import { GrupoDeFonte, CSS_FONTE_DO_WORD, GrupoDeParagrafo, GrupoAreaDeTransferencia } from '../labs/fonteDoWord';
 import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
-import { selecaoDoTrecho, trechosEmVolta } from '../labs/edicao';
+import { marcaEmVolta, selecaoDoTrecho } from '../labs/edicao';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa, BotaoDaFaixa, ReguaDoWord,
   ZoomDoWord, FolhaDoWord, BastidoresDoWord, type PainelDosBastidores, type AjustesDeImpressao,
@@ -16,7 +16,7 @@ import {
   sumarioAtualizado, titulosDoDoc,
   type Doc, type Entrega, type FormatoDeArquivo,
 } from '../labs/entregaDoRelatorio';
-import { aceitarRevisao, rejeitarRevisao, paragrafos, NOME_DO_AUTOR } from '../labs/documento';
+import { aceitarRevisao, rejeitarRevisao, paragrafos, descricaoDaMarca } from '../labs/documento';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
 
 /*
@@ -102,9 +102,7 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair, 
 
   const pendentes = revisoesPendentes(doc);
   /* A marca escolhida é a que está debaixo do cursor, dos dois lados dele. */
-  const emVolta = edicao.selecao ? trechosEmVolta(doc, edicao.selecao.foco) : null;
-  const trecho = (emVolta?.depois?.revisao ? emVolta.depois.id : null)
-    ?? (emVolta?.antes?.revisao ? emVolta.antes.id : null);
+  const trecho = marcaEmVolta(doc, edicao.selecao);
   const marcaEscolhida = trecho && pendentes.some(r => r.trecho.id === trecho) ? trecho : null;
 
   const proximaMarca = () => {
@@ -113,8 +111,7 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair, 
     const proxima = pendentes[(atual + 1) % pendentes.length];
     edicao.folha.aoSelecionar(selecaoDoTrecho(doc, proxima.trecho.id));
     edicao.focar();
-    setAviso(`Marca de ${NOME_DO_AUTOR[proxima.trecho.revisao.autor]}: "${proxima.trecho.texto}" `
-      + `${proxima.trecho.revisao.tipo === 'inserido' ? 'entrou' : 'saiu'}.`);
+    setAviso(descricaoDaMarca(proxima.trecho));
   };
 
   /* Sem marca escolhida os dois botões não agem calados: agir na primeira

@@ -237,6 +237,35 @@ export const COR_DO_AUTOR: Record<Autor, string> = {
 export interface Revisao {
   autor: Autor;
   tipo: 'inserido' | 'excluido';
+  /**
+   * Numa exclusão: o texto apagado era a inserção ainda pendente de outra
+   * pessoa, e de quem.
+   *
+   * Sem isto, apagar duas letras do "Pioneiros" que a liderança sugeriu
+   * transformava as duas em texto comum riscado, e rejeitar a própria exclusão
+   * as devolvia como se sempre tivessem estado no documento — a sugestão da
+   * liderança perdia dois pedaços, e quem fosse rejeitá-la depois ficava com
+   * eles soltos no meio da palavra. É o que o Word guarda: a inserção dela, e a
+   * sua exclusão por cima.
+   */
+  sobre?: Autor;
+}
+
+/**
+ * O aviso que Próxima dá ao chegar numa marca: de quem, o quê, e se entrou ou
+ * saiu. A quebra de parágrafo tem nome próprio, porque "¶" entre aspas não diz
+ * a quem nunca ligou as marcas de formatação o que é.
+ */
+export function descricaoDaMarca(t: { id: string; texto: string; revisao: Revisao }): string {
+  const oQue = blocoDaQuebra(t.id) ? 'uma quebra de parágrafo' : `"${t.texto}"`;
+  return `Marca de ${NOME_DO_AUTOR[t.revisao.autor]}: ${oQue} ${t.revisao.tipo === 'inserido' ? 'entrou' : 'saiu'}.`;
+}
+
+/** Como a marca se apresenta na dica, do jeito que o Word escreve: o que foi feito e por quem. */
+export function rotuloDaRevisao(r: Revisao): string {
+  const feito = r.tipo === 'inserido' ? 'Inserido' : 'Excluído';
+  const antes = r.sobre ? ` (inserido por ${NOME_DO_AUTOR[r.sobre]})` : '';
+  return `${feito} por ${NOME_DO_AUTOR[r.autor]}${antes}`;
 }
 
 export interface Trecho {
@@ -322,7 +351,34 @@ export interface Paragrafo<S extends string = string> extends BlocoBase<S> {
   nota?: string;
   /** A formatação de parágrafo aplicada à mão. Ausente é a do estilo. */
   formato?: FormatoDoParagrafo;
+  /**
+   * A marca de revisão da **quebra de parágrafo** que fecha este parágrafo — o
+   * ¶ do fim dele.
+   *
+   * O Enter também é edição. Com o controle ligado, ele partia o parágrafo sem
+   * marca nenhuma: o documento mudava, a contagem de marcas não, e nem
+   * Rejeitar Todas o desfazia. E o Backspace no começo de um parágrafo não
+   * fazia nada, porque não havia onde marcar que a quebra tinha saído. No Word
+   * a quebra é um caractere como outro qualquer, e é assim que ela é marcada:
+   * inserida, ela se rejeita juntando os dois parágrafos de volta; excluída,
+   * os dois continuam separados na tela até alguém aceitar.
+   *
+   * Mora no parágrafo, e não num trecho, porque a quebra não é texto do
+   * parágrafo — ela é a fronteira entre ele e o seguinte.
+   */
+  revisaoDaQuebra?: Revisao;
 }
+
+/**
+ * A quebra de parágrafo aparece na lista de marcas como um trecho de um
+ * caractere, o ¶, com um id que não colide com id de trecho nenhum. Assim
+ * Próxima, Aceitar e Rejeitar a percorrem como percorrem uma palavra, sem cada
+ * laboratório precisar saber que existem dois tipos de marca.
+ */
+const PREFIXO_DA_QUEBRA = '¶:';
+export const idDaQuebra = (blocoId: string) => PREFIXO_DA_QUEBRA + blocoId;
+export const blocoDaQuebra = (id: string): string | null =>
+  (id.startsWith(PREFIXO_DA_QUEBRA) ? id.slice(PREFIXO_DA_QUEBRA.length) : null);
 
 export type Alinhamento = 'esquerda' | 'centro' | 'direita' | 'justificado';
 export type TipoDeLista = 'marcadores' | 'numeracao';
@@ -797,11 +853,22 @@ export const textoVisivel = (d: Doc<string>): string =>
       .join(''))
     .join('\n');
 
-/** As marcas de revisão que ainda esperam alguém, na ordem do documento. */
+/**
+ * As marcas de revisão que ainda esperam alguém, na ordem do documento — a
+ * quebra de parágrafo marcada vem depois do texto do parágrafo que ela fecha.
+ */
 export const revisoesPendentes = <S extends string>(d: Doc<S>) =>
-  paragrafos(d).flatMap(b => b.trechos
-    .filter((x): x is Trecho & { revisao: Revisao } => !!x.revisao)
-    .map(x => ({ bloco: b.id, trecho: x })));
+  paragrafos(d).flatMap((b) => {
+    const doTexto = b.trechos
+      .filter((x): x is Trecho & { revisao: Revisao } => !!x.revisao)
+      .map(x => ({ bloco: b.id, trecho: x }));
+    if (!b.revisaoDaQuebra) return doTexto;
+    const quebra: Trecho & { revisao: Revisao } = {
+      id: idDaQuebra(b.id), texto: '¶', posicao: 'normal', realce: 'nenhum', enfase: false,
+      revisao: b.revisaoDaQuebra,
+    };
+    return [...doTexto, { bloco: b.id, trecho: quebra }];
+  });
 
 /** As marcas de um autor só — "as que a liderança fez". */
 export const revisoesDe = <S extends string>(d: Doc<S>, autor: Autor) =>
@@ -819,7 +886,10 @@ export const revisoesDe = <S extends string>(d: Doc<S>, autor: Autor) =>
  */
 const resolverMarca = <S extends string>(
   d: Doc<S>, trechoId: string, fica: 'inserido' | 'excluido',
-): Doc<S> => ({
+): Doc<S> => {
+  const daQuebra = blocoDaQuebra(trechoId);
+  if (daQuebra) return resolverQuebra(d, daQuebra, fica);
+  return {
   ...d,
   blocos: d.blocos.map(b => {
     if (!ehParagrafo(b)) return b;
@@ -828,6 +898,11 @@ const resolverMarca = <S extends string>(
       ...b,
       trechos: b.trechos.flatMap(x => {
         if (x.id !== trechoId || !x.revisao) return [x];
+        /* Rejeitar a exclusão de uma inserção alheia devolve a inserção, e não
+           texto comum: a sugestão da outra pessoa continua esperando alguém. */
+        if (x.revisao.tipo === 'excluido' && x.revisao.sobre && fica === 'excluido') {
+          return [{ ...x, revisao: { autor: x.revisao.sobre, tipo: 'inserido' as const } }];
+        }
         if (x.revisao.tipo !== fica) return [];
         /* A marca sai, e o resto do trecho fica: `delete` numa cópia, e não
            `revisao: undefined`, porque a chave presente com `undefined`
@@ -840,7 +915,44 @@ const resolverMarca = <S extends string>(
       }),
     };
   }),
-});
+  };
+};
+
+/**
+ * A quebra de parágrafo marcada, resolvida. Ela some do documento quando sai —
+ * a inserção rejeitada ou a exclusão aceita —, e aí o parágrafo se junta ao
+ * seguinte, que é o que tirar um Enter faz. A quebra que fica só perde a marca.
+ *
+ * O parágrafo de cima guarda o id e o estilo: é ele que a quebra fechava, e o
+ * de baixo é o que deixa de existir. A marca da quebra de baixo passa a ser a
+ * do parágrafo juntado, porque é ela que agora fecha os dois.
+ */
+function resolverQuebra<S extends string>(d: Doc<S>, blocoId: string, fica: 'inserido' | 'excluido'): Doc<S> {
+  const i = d.blocos.findIndex(b => b.id === blocoId);
+  const a = d.blocos[i];
+  if (!a || !ehParagrafo(a) || !a.revisaoDaQuebra) return d;
+  const rq = a.revisaoDaQuebra;
+  if (rq.tipo === 'excluido' && rq.sobre && fica === 'excluido') {
+    const devolvida: Paragrafo<S> = { ...a, revisaoDaQuebra: { autor: rq.sobre, tipo: 'inserido' } };
+    return { ...d, blocos: d.blocos.map(x => (x.id === blocoId ? devolvida : x)) };
+  }
+  const semMarca: Paragrafo<S> = { ...a };
+  delete semMarca.revisaoDaQuebra;
+  const sai = rq.tipo !== fica;
+  const b = d.blocos[i + 1];
+  /* Sem parágrafo embaixo — tabela, imagem, ou o fim — não há com quem juntar,
+     e a marca só sai. */
+  if (!sai || !b || !ehParagrafo(b)) {
+    return { ...d, blocos: d.blocos.map(x => (x.id === blocoId ? semMarca : x)) };
+  }
+  const vazioA = a.trechos.every(x => !x.texto && !x.campo && !x.quebra);
+  const vazioB = b.trechos.every(x => !x.texto && !x.campo && !x.quebra);
+  const trechos = vazioA ? b.trechos : vazioB ? a.trechos : [...a.trechos, ...b.trechos];
+  const junto: Paragrafo<S> = { ...semMarca, trechos };
+  if (b.revisaoDaQuebra) junto.revisaoDaQuebra = b.revisaoDaQuebra;
+  if (!junto.nota && b.nota) junto.nota = b.nota;
+  return { ...d, blocos: d.blocos.filter(x => x.id !== b.id).map(x => (x.id === blocoId ? junto : x)) };
+}
 
 /** O texto inserido fica; o riscado vai embora. */
 export const aceitarRevisao = <S extends string>(d: Doc<S>, trechoId: string) =>
@@ -850,12 +962,36 @@ export const aceitarRevisao = <S extends string>(d: Doc<S>, trechoId: string) =>
 export const rejeitarRevisao = <S extends string>(d: Doc<S>, trechoId: string) =>
   resolverMarca(d, trechoId, 'excluido');
 
-/** Os dois botões grossos da guia Revisão, que resolvem tudo de uma vez. */
+/*
+  Os dois botões grossos da guia Revisão, que resolvem tudo de uma vez.
+
+  A lista se refaz a cada passo, e não é lida uma vez só: resolver uma quebra de
+  parágrafo junta dois parágrafos, e a marca da quebra de baixo passa a morar no
+  de cima, com outro id. Percorrendo a lista do começo, essa marca ficaria para
+  trás — Rejeitar Todas deixaria uma marca de pé. E rejeitar a exclusão de uma
+  inserção alheia devolve a inserção, que é outra marca pendente: Rejeitar Todas
+  rejeita essa também, porque é o que ela promete.
+*/
+function resolverTodas<S extends string>(d: Doc<S>, f: (d: Doc<S>, id: string) => Doc<S>): Doc<S> {
+  let doc = d;
+  /* Cada passo resolve uma marca, e só a rejeição de uma exclusão por cima de
+     inserção alheia cria outra: o dobro das marcas de partida é o teto, e ele
+     existe para que um id que não se resolve não prenda a aba num laço. */
+  for (let passos = revisoesPendentes(d).length * 2 + 1; passos > 0; passos--) {
+    const primeira = revisoesPendentes(doc)[0];
+    if (!primeira) return doc;
+    const proximo = f(doc, primeira.trecho.id);
+    if (proximo === doc) return doc;
+    doc = proximo;
+  }
+  return doc;
+}
+
 export const aceitarTodasAsRevisoes = <S extends string>(d: Doc<S>): Doc<S> =>
-  revisoesPendentes(d).reduce((acc, r) => aceitarRevisao(acc, r.trecho.id), d);
+  resolverTodas(d, aceitarRevisao);
 
 export const rejeitarTodasAsRevisoes = <S extends string>(d: Doc<S>): Doc<S> =>
-  revisoesPendentes(d).reduce((acc, r) => rejeitarRevisao(acc, r.trecho.id), d);
+  resolverTodas(d, rejeitarRevisao);
 
 /* ── Localizar e substituir ───────────────────────────────────────────────── */
 

@@ -35,7 +35,7 @@ import {
 
 import {
   aparenciaDe, aparenciaDoTrecho, textoDoTrecho, larguraDaTabela,
-  paginasDoDoc, blocoAntesDoSumario, NOME_DO_AUTOR, COR_DO_AUTOR,
+  paginasDoDoc, blocoAntesDoSumario, NOME_DO_AUTOR, COR_DO_AUTOR, rotuloDaRevisao,
   FONTES, DEGRAU_DE_RECUO_CM, marcadorDaLista, medidasDaPagina,
   type Doc, type Bloco, type Paragrafo, type TabelaDoDoc, type ImagemDoDoc,
   type Disposicao, type ItemDeSumario, type FaixaDaPagina,
@@ -997,6 +997,14 @@ export const CSS_FOLHA = `
   .wd-editavel p[data-editavel] { white-space: pre-wrap; tab-size: 32; outline: none; }
   .wd-editavel .wd-bloco.escolhido { outline: none; }
   .wd-editavel p[data-marca="paragrafo"]::after { content: '¶'; color: #9AA0A6; }
+  /* A quebra de parágrafo marcada aparece sempre, com ou sem as marcas de
+     formatação ligadas, na cor de quem a fez e com o traço do tipo dela: é a
+     única coisa na tela que diz que aquele Enter está esperando revisão. Vem
+     depois da regra de cima, que tem a mesma especificidade — escrita antes,
+     o ¶ cinza das marcas a cobriria. */
+  .wd-editavel p[data-quebra-revisao]::after { content: '¶'; color: var(--cor-da-quebra); }
+  .wd-editavel p[data-quebra-revisao="inserido"]::after { text-decoration: underline; }
+  .wd-editavel p[data-quebra-revisao="excluido"]::after { text-decoration: line-through; }
   /* A seleção do Word é cinza, e o texto continua com a cor dele. A da
      plataforma, vermelha com letra branca, faria o documento parecer outro
      programa no instante em que alguém seleciona uma palavra. */
@@ -1146,10 +1154,14 @@ export function ParagrafoDaFolha({
         )}
         <p
           className={`wd-bloco${classe ? ` ${classe}` : ''}`}
-          style={estiloDoParagrafo(doc, bloco)}
+          style={bloco.revisaoDaQuebra
+            ? { ...estiloDoParagrafo(doc, bloco), '--cor-da-quebra': COR_DO_AUTOR[bloco.revisaoDaQuebra.autor] } as React.CSSProperties
+            : estiloDoParagrafo(doc, bloco)}
           data-bloco={bloco.id}
           data-estilo={bloco.estilo}
           data-marcador={marcadorDaLista(doc, bloco.id) ?? undefined}
+          data-quebra-revisao={bloco.revisaoDaQuebra?.tipo}
+          data-quebra-autor={bloco.revisaoDaQuebra?.autor}
           data-editavel=""
           /* O ¶ da folha editável é desenhado pela folha de estilo, e não por
              um elemento: um elemento que não se edita no fim de um parágrafo
@@ -1181,7 +1193,7 @@ export function ParagrafoDaFolha({
                   style={x.revisao
                     ? emPontos({ ...aparenciaDoTrecho(doc, bloco, x), color: COR_DO_AUTOR[x.revisao.autor] })
                     : emPontos(aparenciaDoTrecho(doc, bloco, x))}
-                  title={x.revisao ? `${NOME_DO_AUTOR[x.revisao.autor]}: ${x.revisao.tipo}` : undefined}
+                  title={x.revisao ? rotuloDaRevisao(x.revisao) : undefined}
                   onClick={aoEscolherTrecho ? () => aoEscolherTrecho(x.id) : undefined}
                   data-trecho={x.id}
                   data-revisao={x.revisao?.tipo}
@@ -1263,7 +1275,7 @@ export function ParagrafoDaFolha({
               style={x.revisao
                 ? emPontos({ ...aparenciaDoTrecho(doc, bloco, x), color: COR_DO_AUTOR[x.revisao.autor] })
                 : emPontos(aparenciaDoTrecho(doc, bloco, x))}
-              title={x.revisao ? `${NOME_DO_AUTOR[x.revisao.autor]}: ${x.revisao.tipo}` : undefined}
+              title={x.revisao ? rotuloDaRevisao(x.revisao) : undefined}
               onClick={aoEscolherTrecho
                 ? ev => { ev.stopPropagation(); aoEscolherTrecho(x.id); } : undefined}
               data-trecho={x.id}
@@ -1274,8 +1286,14 @@ export function ParagrafoDaFolha({
               {textoDoTrecho(doc, x)}
             </span>
             {/* O ¶ vai depois do último trecho: ele marca o fim do parágrafo, e
-                não o fim de cada pedaço dele. */}
-            {marcas && i === bloco.trechos.length - 1 && (
+                não o fim de cada pedaço dele. A quebra marcada aparece sempre,
+                na cor de quem a fez — ver a regra da folha editável. */}
+            {i === bloco.trechos.length - 1 && bloco.revisaoDaQuebra ? (
+              <span className={`wd-rev wd-rev-${bloco.revisaoDaQuebra.tipo}`} data-marca="paragrafo"
+                data-revisao={bloco.revisaoDaQuebra.tipo} data-autor={bloco.revisaoDaQuebra.autor}
+                style={{ color: COR_DO_AUTOR[bloco.revisaoDaQuebra.autor] }}
+                title={rotuloDaRevisao(bloco.revisaoDaQuebra)}>¶</span>
+            ) : marcas && i === bloco.trechos.length - 1 && (
               <span className="wd-marca" data-marca="paragrafo">¶</span>
             )}
           </span>

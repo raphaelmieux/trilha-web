@@ -2,13 +2,15 @@ import { describe, it, expect } from 'vitest';
 import {
   type Doc, type Paragrafo, blocoDe, campoDe, linhaDe, trechoDe, textoDoDoc, textoVisivel,
   comFormatacaoDireta, paragrafos, marcadorDaLista,
+  revisoesPendentes, aceitarRevisao, rejeitarRevisao, aceitarTodasAsRevisoes, rejeitarTodasAsRevisoes,
+  idDaQuebra, rotuloDaRevisao,
 } from './documento';
 import {
   type Selecao, cursorEm, inserirTexto, apagar, quebrarParagrafo, quebraDeLinha, quebraDePagina,
   alternarMarca, aplicarEstilo, formatoDaSelecao, palavraEmVolta, selecaoValida, selecionarTudo,
   textoDaSelecao, tamanhoDoParagrafo, isolarSelecao, limparFormatacao, definirTamanho, apagarSelecao,
   alternarLista, alinhar, tabular, limparTudo, fragmentoDaSelecao, colarFragmento, formatoDoParagrafoDaSelecao,
-  mudarTamanhoEmUmPonto, moverSelecao, recortarSelecao, colarSemGrudar,
+  mudarTamanhoEmUmPonto, moverSelecao, recortarSelecao, colarSemGrudar, marcaEmVolta,
 } from './edicao';
 
 /*
@@ -458,5 +460,125 @@ describe('arrastar a seleção', () => {
     // o riscado continua no documento, e o que chegou entra no fim
     expect(texto(r.doc, 'p1')).toBe('Acampamento de invernode ');
     expect(textoVisivel(r.doc)).toContain('Acampamento inverno');
+  });
+});
+
+describe('o controle de alterações', () => {
+  /*
+    O que o Word faz com o controle ligado, e o motor não fazia: cada tecla
+    apagada virava uma marca, o Enter partia o parágrafo sem marca nenhuma, o
+    Backspace no começo de um parágrafo não fazia nada, e apagar a sugestão de
+    outra pessoa a transformava em texto comum riscado.
+  */
+  const controlado = () => ({ ...base(), controlarAlteracoes: true });
+  const pendentes = (d: Doc<S>) => revisoesPendentes(d).map(r => `${r.trecho.revisao.tipo[0]}:${r.trecho.texto}`);
+  const teclar = (d: Doc<S>, s0: Selecao, n: number, direcao: 'tras' | 'frente') => {
+    let r = { doc: d, selecao: s0 };
+    for (let i = 0; i < n; i++) r = apagar(r.doc, r.selecao, direcao);
+    return r;
+  };
+
+  it('três Backspaces seguidos são uma marca só, e Aceitar resolve as três letras de uma vez', () => {
+    const r = teclar(controlado(), cursorEm('p1', 22), 3, 'tras');
+    expect(pendentes(r.doc)).toEqual(['e:rno']);
+    expect(r.selecao.foco.offset, 'o cursor anda para trás por cima do riscado').toBe(19);
+    const aceita = aceitarRevisao(r.doc, revisoesPendentes(r.doc)[0].trecho.id);
+    expect(texto(aceita, 'p1')).toBe('Acampamento de inve');
+  });
+
+  it('Delete adiante também funde, e sobre a própria inserção não pula a letra seguinte', () => {
+    const r = teclar(controlado(), cursorEm('p1', 0), 4, 'frente');
+    expect(pendentes(r.doc)).toEqual(['e:Acam']);
+    const digitado = inserirTexto(controlado(), cursorEm('p1', 0), 'XY');
+    const r2 = teclar(digitado.doc, cursorEm('p1', 0), 2, 'frente');
+    expect(texto(r2.doc, 'p1'), 'a inserção própria sai de verdade').toBe('Acampamento de inverno');
+    expect(r2.selecao.foco.offset, 'o Delete não andou por cima do A').toBe(0);
+  });
+
+  it('a fusão não some com um trecho comentado, e não junta marcas que já chegaram vizinhas', () => {
+    const d0 = controlado();
+    const r1 = apagar(d0, cursorEm('p1', 22), 'tras');
+    const marcado = revisoesPendentes(r1.doc)[0].trecho.id;
+    const comComentario: Doc<S> = { ...r1.doc, comentarios: [{ id: 'c', trecho: marcado, autor: 'lideranca', texto: '?', respostas: [], resolvido: false }] };
+    const r2 = apagar(comComentario, r1.selecao, 'tras');
+    expect(revisoesPendentes(r2.doc).map(x => x.trecho.id), 'o trecho comentado continua lá').toContain(marcado);
+    expect(r2.doc.comentarios).toHaveLength(1);
+
+    const vizinhas = doc({
+      ...linhaDe('p1', 'corpo', ''),
+      trechos: [
+        { ...trechoDe('a', 'Pio'), revisao: { autor: 'lideranca', tipo: 'inserido' } },
+        { ...trechoDe('b', 'neiros'), revisao: { autor: 'lideranca', tipo: 'inserido' } },
+        trechoDe('c', ' clube'),
+      ],
+    });
+    const r3 = apagar({ ...vizinhas, controlarAlteracoes: true }, cursorEm('p1', 15), 'tras');
+    expect(paragrafos(r3.doc)[0].trechos.map(x => x.id).slice(0, 2), 'as duas da liderança continuam duas').toEqual(['a', 'b']);
+  });
+
+  it('apagar a sugestão de outra pessoa guarda de quem ela era, e rejeitar devolve a sugestão', () => {
+    const d = doc({
+      ...linhaDe('p1', 'corpo', ''),
+      trechos: [trechoDe('a', 'Clube '), { ...trechoDe('b', 'Pioneiros'), revisao: { autor: 'lideranca', tipo: 'inserido' } }],
+    });
+    const r = apagarSelecao({ ...d, controlarAlteracoes: true }, sel('p1', 9, 'p1', 11));
+    const minha = revisoesPendentes(r.doc).find(x => x.trecho.revisao.autor === 'voce')!.trecho;
+    expect(minha.revisao).toEqual({ autor: 'voce', tipo: 'excluido', sobre: 'lideranca' });
+    expect(rotuloDaRevisao(minha.revisao!)).toBe('Excluído por Você (inserido por Liderança)');
+    const rejeitada = rejeitarRevisao(r.doc, minha.id);
+    expect(paragrafos(rejeitada)[0].trechos.every(x => x.texto === 'Clube ' || x.revisao?.autor === 'lideranca'),
+      'o pedaço voltou a ser sugestão da liderança').toBe(true);
+    expect(texto(rejeitarTodasAsRevisoes(r.doc), 'p1'), 'rejeitar tudo leva também a sugestão dela').toBe('Clube ');
+  });
+
+  it('Enter fica marcado: rejeitar junta os dois de volta, com o id de antes', () => {
+    const r = quebrarParagrafo(controlado(), cursorEm('p1', 11));
+    expect(ids(r.doc)).toHaveLength(3);
+    expect(revisoesPendentes(r.doc).map(x => x.trecho.id)).toEqual([idDaQuebra('p1')]);
+    const rejeitada = rejeitarRevisao(r.doc, idDaQuebra('p1'));
+    expect(ids(rejeitada)).toEqual(['p1', 'p2']);
+    expect(texto(rejeitada, 'p1')).toBe('Acampamento de inverno');
+    const aceita = aceitarRevisao(r.doc, idDaQuebra('p1'));
+    expect(ids(aceita)).toHaveLength(3);
+    expect(revisoesPendentes(aceita)).toEqual([]);
+  });
+
+  it('Backspace no começo marca a quebra que sai; aceitar junta, e Enter seguido de Backspace não deixa rastro', () => {
+    const r = apagar(controlado(), cursorEm('p2', 0), 'tras');
+    expect(ids(r.doc), 'os dois continuam separados até alguém aceitar').toEqual(['p1', 'p2']);
+    expect(pendentes(r.doc)).toEqual(['e:¶']);
+    expect(r.selecao.foco).toEqual({ bloco: 'p1', offset: 22 });
+    const aceita = aceitarRevisao(r.doc, idDaQuebra('p1'));
+    expect(ids(aceita)).toEqual(['p1']);
+    expect(texto(aceita, 'p1')).toBe('Acampamento de invernoSaída às sete');
+
+    const enter = quebrarParagrafo(controlado(), cursorEm('p1', 11));
+    const volta = apagar(enter.doc, enter.selecao, 'tras');
+    expect(ids(volta.doc)).toEqual(['p1', 'p2']);
+    expect(revisoesPendentes(volta.doc)).toEqual([]);
+  });
+
+  it('apagar de um parágrafo até o seguinte marca a quebra do meio', () => {
+    const r = apagarSelecao(controlado(), sel('p1', 15, 'p2', 5));
+    expect(pendentes(r.doc)).toEqual(['e:inverno', 'e:¶', 'e:Saída']);
+    expect(texto(aceitarTodasAsRevisoes(r.doc), 'p1')).toBe('Acampamento de  às sete');
+  });
+
+  it('Rejeitar Todas desfaz dois Enters seguidos, embora o segundo mude de parágrafo ao primeiro ser rejeitado', () => {
+    const a = quebrarParagrafo(controlado(), cursorEm('p1', 11));
+    const b = quebrarParagrafo(a.doc, cursorEm(a.selecao.foco.bloco, 3));
+    expect(revisoesPendentes(b.doc)).toHaveLength(2);
+    const rejeitada = rejeitarTodasAsRevisoes(b.doc);
+    expect(ids(rejeitada)).toEqual(['p1', 'p2']);
+    expect(texto(rejeitada, 'p1')).toBe('Acampamento de inverno');
+  });
+
+  it('a marca em volta do cursor: a da seleção que Próxima deixa, e a quebra no fim do parágrafo', () => {
+    const r = apagar(controlado(), cursorEm('p2', 0), 'tras');
+    expect(marcaEmVolta(r.doc, cursorEm('p1', 22))).toBe(idDaQuebra('p1'));
+    const riscado = apagar(controlado(), cursorEm('p1', 22), 'tras');
+    const id = revisoesPendentes(riscado.doc)[0].trecho.id;
+    expect(marcaEmVolta(riscado.doc, sel('p1', 21, 'p1', 22))).toBe(id);
+    expect(marcaEmVolta(riscado.doc, cursorEm('p1', 0))).toBeNull();
   });
 });
