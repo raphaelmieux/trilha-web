@@ -5,7 +5,7 @@ import {
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import { GrupoDeFonte, CSS_FONTE_DO_WORD, GrupoDeParagrafo, GrupoAreaDeTransferencia } from '../labs/fonteDoWord';
 import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
-import { isolarSelecao, palavraEmVolta, recolhida, selecaoDoTrecho, tamanhoDoParagrafo, trechosEmVolta } from '../labs/edicao';
+import { isolarSelecao, marcaEmVolta, palavraEmVolta, recolhida, selecaoDoTrecho, tamanhoDoParagrafo } from '../labs/edicao';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa, BotaoDaFaixa, ReguaDoWord,
   ZoomDoWord, FolhaDoWord, BalaoDeComentario, DialogoDeSubstituir,
@@ -17,7 +17,7 @@ import {
   aceitarRevisao, rejeitarRevisao, aceitarTodasAsRevisoes, rejeitarTodasAsRevisoes,
   revisoesPendentes, substituirTudo, ocorrencias, comentariosDoDoc,
   acrescentarComentario, responderComentario, resolverComentario, removerComentario,
-  paragrafos, NOME_DO_AUTOR, type OpcoesDeBusca,
+  paragrafos, descricaoDaMarca, type OpcoesDeBusca,
 } from '../labs/documento';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
 
@@ -119,9 +119,7 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair, 
 
   /* A marca escolhida é a que está debaixo do cursor — no Word é o cursor
      dentro da marca que diz qual Aceitar aceita. */
-  const emVolta = edicao.selecao ? trechosEmVolta(doc, edicao.selecao.foco) : null;
-  const debaixoDoCursor = (emVolta?.depois?.revisao ? emVolta.depois.id : null)
-    ?? (emVolta?.antes?.revisao ? emVolta.antes.id : null);
+  const debaixoDoCursor = marcaEmVolta(doc, edicao.selecao);
   const marcaEscolhida = debaixoDoCursor && pendentes.some(r => r.trecho.id === debaixoDoCursor) ? debaixoDoCursor : null;
 
   const proximaMarca = () => {
@@ -130,8 +128,7 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair, 
     const proxima = pendentes[(atual + 1) % pendentes.length];
     edicao.folha.aoSelecionar(selecaoDoTrecho(doc, proxima.trecho.id));
     edicao.focar();
-    setAviso(`Marca de ${NOME_DO_AUTOR[proxima.trecho.revisao.autor]}: "${proxima.trecho.texto}" `
-      + `${proxima.trecho.revisao.tipo === 'inserido' ? 'entrou' : 'saiu'}.`);
+    setAviso(descricaoDaMarca(proxima.trecho));
   };
 
   /* Sem marca escolhida os dois botões não agem calados: agir na primeira

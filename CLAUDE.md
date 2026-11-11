@@ -2082,6 +2082,45 @@ celular não há 210 px de sobra ao lado, e ela desce para baixo do papel
 **inteira** — esconder os balões tiraria o único caminho até duas das cinco
 tarefas, e reduzir a tela nunca reduz o que dá para fazer nela.
 
+**O controle de alterações marca o que o Word marca, e no tamanho que o Word
+marca.** Ele marcava texto digitado e texto apagado, e parava aí — e quatro
+coisas erravam caladas, todas no motor (`edicao.ts`), e por isso em todo lugar
+que o usa: a revisão e a entrega da CC-ES002 e o modo Sugestão da CC-ES006.
+
+- **Cada tecla apagada virava uma marca.** Três Backspaces riscavam "ve " em
+  três pedaços, a régua contava três marcas, Próxima andava letra por letra e
+  Aceitar resolvia uma letra de cada vez. `fundirMarcas` junta a marca recém-
+  feita com a vizinha igual — mesmo autor, mesmo tipo, mesma formatação —, e só
+  a recém-feita: duas marcas que chegaram vizinhas no documento de partida
+  continuam duas, porque uma meta pode seguir cada id. Quando funde, fica o id
+  que já existia, e trecho com comentário nunca some;
+- **o Enter não era marcado.** Partia o parágrafo, a contagem não mudava e nem
+  Rejeitar Todas o desfazia. E o Backspace no começo de um parágrafo não fazia
+  nada. A quebra é um caractere no Word, e aqui ela ganhou marca:
+  `Paragrafo.revisaoDaQuebra`, a do ¶ que fecha o parágrafo. Inserida, ela se
+  rejeita juntando os dois de volta, com o id de antes; excluída, os dois
+  continuam separados na tela até alguém aceitar. Ela entra em
+  `revisoesPendentes` como um trecho de um caractere com id `idDaQuebra`, para
+  Próxima, Aceitar e Rejeitar a percorrerem sem cada laboratório saber que há
+  dois tipos de marca, e aparece sempre, na cor de quem a fez;
+- **apagar a sugestão de outra pessoa a transformava em texto comum riscado.**
+  Rejeitar a própria exclusão devolvia o pedaço como se sempre tivesse estado
+  ali, solto no meio da sugestão dela. `Revisao.sobre` guarda de quem era, e
+  rejeitar devolve a sugestão;
+- **o Delete sobre a própria inserção pulava a letra seguinte.** O texto sai de
+  verdade, a letra de depois vem para debaixo do cursor, e andar a pularia.
+
+Rejeitar Todas e Aceitar Todas refazem a lista a cada passo: resolver uma quebra
+junta dois parágrafos, e a marca da quebra de baixo passa a morar no de cima,
+com outro id — percorrida uma vez, a lista a deixaria de pé. E a marca em que o
+cursor está saiu dos três laboratórios para `marcaEmVolta`: era a mesma conta
+escrita três vezes, e nenhuma das três sabia da quebra.
+
+O que ele **não** marca é formatação. O Word marca "Formatado: Negrito" na
+margem; aqui o negrito aplicado com o controle ligado entra direto, sem marca.
+Não é defeito do que existe, é peça que falta, e pediria um terceiro tipo de
+marca com o estado de antes guardado no trecho.
+
 **Comando sem alvo escolhido não age.** Aceitar e Rejeitar sem marca
 selecionada avisam, em vez de agir na primeira pendente: agir pareceria
 funcionar e resolveria a marca errada — a pessoa clicaria pensando no nome do
@@ -5947,6 +5986,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/nuvem.test.tsx` | seta que não anda quando cada linha mora numa caixa própria |
 | `src/labs/edicao.test.ts` | texto arrastado que cai algumas letras longe de onde se soltou, ou palavra arrastada que deixa dois espaços para trás |
 | `src/labs/edicao.test.ts` | palavra recortada que deixa dois espaços, ou colada que gruda na vizinha |
+| `src/labs/edicao.test.ts` | tecla apagada com o controle ligado virando uma marca por letra, ou fusão que some com trecho comentado |
+| `src/labs/edicao.test.ts` | Enter ou Backspace no começo do parágrafo sem marca, ou Rejeitar Todas que deixa uma quebra de pé |
+| `src/labs/edicao.test.ts` | sugestão alheia apagada que volta como texto comum ao rejeitar a exclusão |
 | `src/labs/FormatacaoTextoLab.test.tsx` | arrastar a seleção que não move, que move sem desfazer num passo, ou que copia sem o Ctrl |
 | `src/labs/powerpoint.test.tsx` | caixa à mão que não se escolhe, não se arrasta, não alarga pelas alças ou não sai pelo Delete |
 | `src/labs/desfazerDaApresentacao.test.tsx` | Ctrl+Z que apaga o PDF exportado, que desfaz letra por letra, ou que rouba o desfazer do campo de texto |

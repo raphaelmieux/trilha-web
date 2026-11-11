@@ -35,13 +35,14 @@
  * achá-la, sem nada na tela explicando.
  *
  * Trechos vizinhos com a mesma formatação não são fundidos, pelo mesmo motivo:
- * fundir mudaria ids que alguém pode estar seguindo.
+ * fundir mudaria ids que alguém pode estar seguindo. A exceção é a marca de
+ * revisão que acabou de nascer encostada noutra igual — ver `fundirMarcas`.
  */
 
 import {
   type Alinhamento, type Autor, type Bloco, type Direta, type Doc, type Estilo,
-  type FormatoDoParagrafo, type Paragrafo, type Posicao, type Realce, type TipoDeLista, type Trecho,
-  aparenciaDe, ehParagrafo, fonteDoCorpo, textoDoTrecho,
+  type FormatoDoParagrafo, type Paragrafo, type Posicao, type Realce, type Revisao, type TipoDeLista, type Trecho,
+  aparenciaDe, blocoDaQuebra, ehParagrafo, fonteDoCorpo, idDaQuebra, textoDoTrecho,
 } from './documento';
 
 /* ── Posição e seleção ────────────────────────────────────────────────────── */
@@ -336,26 +337,84 @@ const autorDe = (q?: QuemEdita): Autor => q?.autor ?? 'voce';
  */
 function apagarNoParagrafo<S extends string>(
   b: Paragrafo<S>, a: number, z: number, ids: Ids, marcar: boolean, autor: Autor,
+  protegidos: ReadonlySet<string> = new Set(),
 ): Paragrafo<S> {
   if (z <= a) return b;
   const { trechos, de, ate } = isolar(b.trechos, a, z, ids);
   const modelo = trechos[de] ?? trechos[trechos.length - 1];
   let meio: Trecho[];
+  const marcados = new Set<string>();
   if (marcar) {
     meio = trechos.slice(de, ate).flatMap(x => {
       if (x.revisao?.tipo === 'inserido' && x.revisao.autor === autor) return [];
       if (x.revisao?.tipo === 'excluido') return [x];
-      return [{ ...x, revisao: { autor, tipo: 'excluido' as const } }];
+      marcados.add(x.id);
+      return [{ ...x, revisao: marcaDeExclusao(x.revisao, autor) }];
     });
   } else {
     meio = [];
   }
-  const juntos = [...trechos.slice(0, de), ...meio, ...trechos.slice(ate)];
+  const juntos = fundirMarcas([...trechos.slice(0, de), ...meio, ...trechos.slice(ate)], marcados, protegidos);
   /* O primeiro trecho do parágrafo guarda a formatação que o próximo caractere
      digitado herda; se ele sumiu inteiro, um vazio fica no lugar dele, com o
      mesmo id. */
   return { ...b, trechos: comAoMenosUm(semVazios(juntos), modelo, ids, b.trechos[0]?.id) };
 }
+
+/**
+ * A marca de quem apaga, por cima do que já estava lá.
+ *
+ * Apagar a inserção ainda pendente de outra pessoa não a transforma em texto
+ * comum riscado: guarda de quem ela era, para que rejeitar a exclusão a
+ * devolva como a sugestão que ela continua sendo.
+ */
+function marcaDeExclusao(antes: Revisao | undefined, autor: Autor): Revisao {
+  if (antes?.tipo === 'inserido' && antes.autor !== autor) return { autor, tipo: 'excluido', sobre: antes.autor };
+  return { autor, tipo: 'excluido' };
+}
+
+/**
+ * Marcas iguais e vizinhas viram uma só, como no Word.
+ *
+ * Três Backspaces com o controle ligado riscavam três letras e deixavam **três**
+ * marcas: Próxima andava letra por letra, Aceitar resolvia uma letra de cada
+ * vez, e a régua dizia "9 marcas pendentes" de uma palavra só. O Word conta
+ * "Excluído: ve" uma vez.
+ *
+ * O que se funde é estreito, pela regra de ids do alto deste arquivo: só marca
+ * com marca do mesmo autor, do mesmo tipo e com a mesma formatação, e só quando
+ * uma das duas acabou de ser feita (`novos`) — duas marcas que já chegaram
+ * vizinhas no documento de partida continuam como chegaram, porque uma meta
+ * pode estar seguindo cada uma. Quando funde, fica o id que já existia, e
+ * trecho com comentário (`protegidos`) não some nunca: o comentário se pendura
+ * no id, e a margem esvaziaria sozinha.
+ */
+function fundirMarcas(trechos: Trecho[], novos: ReadonlySet<string>, protegidos: ReadonlySet<string>): Trecho[] {
+  if (novos.size === 0) return trechos;
+  const r: Trecho[] = [];
+  for (const x of trechos) {
+    const ultimo = r[r.length - 1];
+    const funde = ultimo && ultimo.revisao && x.revisao
+      && (novos.has(ultimo.id) || novos.has(x.id))
+      && ultimo.revisao.autor === x.revisao.autor
+      && ultimo.revisao.tipo === x.revisao.tipo
+      && ultimo.revisao.sobre === x.revisao.sobre
+      && !x.quebra && !x.campo && !ultimo.campo
+      && mesmaDireta(ultimo.direta, x.direta)
+      && ultimo.posicao === x.posicao && ultimo.realce === x.realce
+      && ultimo.enfase === x.enfase && !!ultimo.deFora === !!x.deFora;
+    if (!funde) { r.push(x); continue; }
+    /* Fica o id do que já existia; se os dois são novos, o da esquerda. */
+    const ficaODaDireita = novos.has(ultimo.id) && !novos.has(x.id);
+    const somem = ficaODaDireita ? ultimo : x;
+    if (protegidos.has(somem.id)) { r.push(x); continue; }
+    r[r.length - 1] = { ...(ficaODaDireita ? x : ultimo), texto: ultimo.texto + x.texto };
+  }
+  return r;
+}
+
+/** Os ids de trecho que têm comentário pendurado — o que `fundirMarcas` não pode sumir. */
+const comentados = (d: Doc<string>): ReadonlySet<string> => new Set((d.comentarios ?? []).map(c => c.trecho));
 
 /**
  * Junta o parágrafo `b` ao de cima, `a`.
@@ -377,6 +436,10 @@ function juntar<S extends string>(d: Doc<S>, a: Paragrafo<S>, b: Paragrafo<S>): 
   const trechosDeB = tamanhoDoParagrafo(b) === 0 ? [] : b.trechos;
   const junto: Paragrafo<S> = { ...a, trechos: semVazios([...a.trechos, ...trechosDeB]) };
   if (!junto.nota && b.nota) junto.nota = b.nota;
+  /* A quebra que saiu era a de `a`; a que fecha o parágrafo juntado é a de `b`,
+     com a marca que ela tiver. */
+  if (b.revisaoDaQuebra) junto.revisaoDaQuebra = b.revisaoDaQuebra;
+  else delete junto.revisaoDaQuebra;
   const blocos = d.blocos.filter(x => x.id !== b.id).map(x => (x.id === a.id ? junto : x));
   return { doc: { ...d, blocos }, selecao: cursorEm(a.id, fimDeA) };
 }
@@ -400,24 +463,53 @@ export function apagarSelecao<S extends string>(d: Doc<S>, s: Selecao, q?: QuemE
   const pb = paragrafoPorId(d, fim.bloco);
   if (!pa || !pb) return { doc: d, selecao: s };
 
+  const protegidos = comentados(d);
   if (pa.id === pb.id) {
-    const novo = apagarNoParagrafo(pa, inicio.offset, fim.offset, ids, marcar, autor);
+    const novo = apagarNoParagrafo(pa, inicio.offset, fim.offset, ids, marcar, autor, protegidos);
     const doc = semComentariosOrfaos(trocarBloco(d, pa.id, [novo]));
-    return { doc, selecao: cursorEm(pa.id, marcar ? fim.offset : inicio.offset) };
+    const n0 = tamanhoDoParagrafo(pa);
+    const n1 = tamanhoDoParagrafo(novo);
+    /* Com marca, o cursor fica depois do que foi riscado — e, se a fusão ou a
+       saída de uma inserção própria encolheu o parágrafo, a conta acompanha. */
+    return { doc, selecao: cursorEm(pa.id, marcar ? fim.offset - (n0 - n1) : inicio.offset) };
   }
 
   if (marcar) {
+    /* Cada parágrafo ganha a marca no pedaço dele, e as quebras do meio também:
+       apagar de um parágrafo até o seguinte apaga o Enter entre eles. A quebra
+       que a própria pessoa tinha inserido sai de verdade, como o texto que ela
+       mesma tinha inserido — e aí os dois parágrafos se juntam. */
     let doc = d;
-    for (const b of paragrafosDaSelecao(d, s)) {
+    const doMeio = paragrafosDaSelecao(d, s);
+    const quebrasProprias: string[] = [];
+    for (const b of doMeio) {
       const de = b.id === pa.id ? inicio.offset : 0;
       const ate = b.id === pb.id ? fim.offset : tamanhoDoParagrafo(b);
-      doc = trocarBloco(doc, b.id, [apagarNoParagrafo(b, de, ate, ids, true, autor)]);
+      let novo = apagarNoParagrafo(b, de, ate, ids, true, autor, protegidos);
+      if (b.id !== pb.id) {
+        const rq = b.revisaoDaQuebra;
+        if (rq?.tipo === 'inserido' && rq.autor === autor) quebrasProprias.push(b.id);
+        else if (rq?.tipo !== 'excluido') novo = { ...novo, revisaoDaQuebra: marcaDeExclusao(rq, autor) };
+      }
+      doc = trocarBloco(doc, b.id, [novo]);
     }
-    return { doc, selecao: cursorEm(pb.id, fim.offset) };
+    let selecao = cursorEm(pb.id, fim.offset);
+    for (const id of quebrasProprias.reverse()) {
+      const a = paragrafoPorId(doc, id);
+      const seguinte = a ? doc.blocos[indiceDoBloco(doc, a.id) + 1] : undefined;
+      if (!a || !seguinte || !ehParagrafo(seguinte)) continue;
+      const deslocamento = tamanhoDoParagrafo(a);
+      const juntou = juntar(doc, a, seguinte);
+      doc = juntou.doc;
+      if (selecao.foco.bloco === seguinte.id) {
+        selecao = cursorEm(juntou.selecao.foco.bloco, deslocamento + selecao.foco.offset);
+      }
+    }
+    return { doc: semComentariosOrfaos(doc), selecao };
   }
 
-  const novoA = apagarNoParagrafo(pa, inicio.offset, tamanhoDoParagrafo(pa), ids, false, autor);
-  const novoB = apagarNoParagrafo(pb, 0, fim.offset, ids, false, autor);
+  const novoA = apagarNoParagrafo(pa, inicio.offset, tamanhoDoParagrafo(pa), ids, false, autor, protegidos);
+  const novoB = apagarNoParagrafo(pb, 0, fim.offset, ids, false, autor, protegidos);
   const ia = indiceDoBloco(d, pa.id);
   const ib = indiceDoBloco(d, pb.id);
   const blocos = [...d.blocos.slice(0, ia), novoA, novoB, ...d.blocos.slice(ib + 1)];
@@ -467,14 +559,14 @@ export function apagar<S extends string>(
       }
       return { doc: d, selecao: s };
     }
-    if (marcando(d, q)) return { doc: d, selecao: cursorEm(anterior.id, tamanhoDoParagrafo(anterior)) };
+    if (marcando(d, q)) return excluirQuebra(d, anterior, p, q, cursorEm(anterior.id, tamanhoDoParagrafo(anterior)));
     return juntar(d, anterior, p);
   }
 
   if (direcao === 'frente' && k === n) {
     const seguinte = d.blocos[i + 1];
     if (!seguinte || !ehParagrafo(seguinte)) return { doc: d, selecao: s };
-    if (marcando(d, q)) return { doc: d, selecao: cursorEm(seguinte.id, 0) };
+    if (marcando(d, q)) return excluirQuebra(d, p, seguinte, q, cursorEm(seguinte.id, 0));
     return juntar(d, p, seguinte);
   }
 
@@ -488,9 +580,34 @@ export function apagar<S extends string>(
   const sel: Selecao = { ancora: { bloco: p.id, offset: outra }, foco: { bloco: p.id, offset: k } };
   const r = apagarSelecao(d, sel, q);
   /* Com marca, o cursor passa por cima do que foi riscado, para o lado da
-     tecla: o Backspace anda para trás e o Delete para a frente. */
-  if (marcando(d, q)) return { ...r, selecao: cursorEm(p.id, direcao === 'tras' ? Math.min(k, outra) : Math.max(k, outra)) };
+     tecla: o Backspace anda para trás e o Delete para a frente. O que a
+     própria pessoa tinha inserido sai de verdade, e aí o Delete não anda: a
+     letra seguinte veio para debaixo do cursor, e andar a pularia. */
+  if (marcando(d, q)) {
+    const saiu = n - tamanhoDoParagrafo(paragrafoPorId(r.doc, p.id) ?? p);
+    const para = direcao === 'tras' ? Math.min(k, outra) : Math.max(k, outra) - saiu;
+    return { ...r, selecao: cursorEm(p.id, para) };
+  }
   return r;
+}
+
+/**
+ * Backspace no começo de um parágrafo, ou Delete no fim, com o controle ligado:
+ * a quebra entre `a` e `b` é que sai, e ela sai marcada.
+ *
+ * Os dois parágrafos continuam separados na tela até alguém aceitar, como no
+ * Word — a marca é sobre a quebra, e juntá-los agora mudaria o documento antes
+ * de qualquer revisão. A quebra que a própria pessoa tinha inserido sai de
+ * verdade, pela mesma regra do texto: ela nunca chegou a ser do documento.
+ */
+function excluirQuebra<S extends string>(
+  d: Doc<S>, a: Paragrafo<S>, b: Paragrafo<S>, q: QuemEdita | undefined, cursor: Selecao,
+): Edicao<S> {
+  const autor = autorDe(q);
+  const rq = a.revisaoDaQuebra;
+  if (rq?.tipo === 'inserido' && rq.autor === autor) return juntar(d, a, b);
+  if (rq?.tipo === 'excluido') return { doc: d, selecao: cursor };
+  return { doc: trocarBloco(d, a.id, [{ ...a, revisaoDaQuebra: marcaDeExclusao(rq, autor) }]), selecao: cursor };
 }
 
 const ehLetra = (c: string | undefined) => !!c && /[\p{L}\p{N}_]/u.test(c);
@@ -839,6 +956,15 @@ export function quebrarParagrafo<S extends string>(d: Doc<S>, s: Selecao, q?: Qu
   const k = limpo.selecao.foco.offset;
   const n = tamanhoDoParagrafo(p);
   const ids = new Ids(doc0);
+  /* A quebra nova sai marcada com o controle ligado. A que já fechava `p`
+     continua fechando o mesmo texto — vai para o parágrafo de baixo quando ele
+     nasce embaixo —, e a nova fica onde o Enter foi apertado. */
+  const marcaNova: Revisao | undefined = marcando(doc0, q) ? { autor: autorDe(q), tipo: 'inserido' } : undefined;
+  const comQuebra = <B extends Paragrafo<S>>(x: B, r: Revisao | undefined): B => {
+    const y = { ...x };
+    if (r) y.revisaoDaQuebra = r; else delete y.revisaoDaQuebra;
+    return y;
+  };
 
   /* Enter num item de lista vazio fecha a lista, como no Word: sobe um
      nível se estiver recuado, e sai da lista se já estiver na margem. Sem
@@ -864,7 +990,7 @@ export function quebrarParagrafo<S extends string>(d: Doc<S>, s: Selecao, q?: Qu
       depois = { ...p };
       delete depois.quebraDePagina;
     }
-    return { doc: trocarBloco(doc0, p.id, [vazio, depois]), selecao: cursorEm(p.id, 0) };
+    return { doc: trocarBloco(doc0, p.id, [comQuebra(vazio, marcaNova), depois]), selecao: cursorEm(p.id, 0) };
   }
 
   if (n === 0) {
@@ -875,7 +1001,10 @@ export function quebrarParagrafo<S extends string>(d: Doc<S>, s: Selecao, q?: Qu
       trechos: [vazioComo(p.trechos[0], ids.novo(p.trechos[0].id))],
       ...(p.formato && estilo === p.estilo ? { formato: p.formato } : {}),
     };
-    return { doc: trocarBloco(doc0, p.id, [p, novo]), selecao: cursorEm(novo.id, 0) };
+    return {
+      doc: trocarBloco(doc0, p.id, [comQuebra(p, marcaNova), comQuebra(novo, p.revisaoDaQuebra)]),
+      selecao: cursorEm(novo.id, 0),
+    };
   }
 
   const { trechos, i } = partir(p.trechos, k, ids);
@@ -895,7 +1024,10 @@ export function quebrarParagrafo<S extends string>(d: Doc<S>, s: Selecao, q?: Qu
      centralizada. */
   if (novo.estilo !== p.estilo) novo.trechos = novo.trechos.map(x => (x.texto || x.campo ? x : semDireta(x)));
   else if (p.formato) novo.formato = p.formato;
-  return { doc: trocarBloco(doc0, p.id, [antes, novo]), selecao: cursorEm(novo.id, 0) };
+  return {
+    doc: trocarBloco(doc0, p.id, [comQuebra(antes, marcaNova), comQuebra(novo, p.revisaoDaQuebra)]),
+    selecao: cursorEm(novo.id, 0),
+  };
 }
 
 function semDireta(x: Trecho): Trecho {
@@ -1316,6 +1448,13 @@ export function isolarSelecao<S extends string>(d: Doc<S>, s: Selecao): { doc: D
 
 /** Onde, no parágrafo, um trecho começa e termina — para selecionar um trecho inteiro. */
 export function selecaoDoTrecho(d: Doc<string>, trechoId: string): Selecao | null {
+  /* A quebra de parágrafo marcada não tem largura: o cursor vai para o fim do
+     parágrafo, que é onde o ¶ dela fica. */
+  const daQuebra = blocoDaQuebra(trechoId);
+  if (daQuebra) {
+    const b = paragrafoPorId(d, daQuebra);
+    return b ? cursorEm(b.id, tamanhoDoParagrafo(b)) : null;
+  }
   for (const b of d.blocos) {
     if (!ehParagrafo(b)) continue;
     let pos = 0;
@@ -1353,6 +1492,27 @@ export function trechosEmVolta(d: Doc<string>, p: Ponto): { antes: Trecho | null
 }
 
 /**
+ * A marca de revisão em que o cursor está — a que Aceitar e Rejeitar resolvem.
+ *
+ * Com uma seleção, é a marca que começa nela: é assim que Próxima a deixa,
+ * selecionando o trecho inteiro. Com o cursor parado, a de depois dele, e no
+ * fim de um parágrafo cuja quebra está marcada, a quebra; só então a de antes.
+ * Era uma conta repetida em três laboratórios, e nenhuma das três sabia da
+ * quebra de parágrafo.
+ */
+export function marcaEmVolta(d: Doc<string>, s: Selecao | null): string | null {
+  if (!s) return null;
+  const ponto = recolhida(s) ? s.foco : ordenar(d, s).inicio;
+  const { antes, depois } = trechosEmVolta(d, ponto);
+  if (depois?.revisao) return depois.id;
+  if (recolhida(s)) {
+    const b = paragrafoPorId(d, ponto.bloco);
+    if (b?.revisaoDaQuebra && ponto.offset === tamanhoDoParagrafo(b)) return idDaQuebra(b.id);
+  }
+  return antes?.revisao ? antes.id : null;
+}
+
+/**
  * A sugestão inteira a que um trecho marcado pertence: os trechos marcados
  * vizinhos, do mesmo autor, no mesmo parágrafo.
  *
@@ -1362,6 +1522,7 @@ export function trechosEmVolta(d: Doc<string>, p: Ponto): { antes: Trecho | null
  * nova ao lado da velha ainda riscada, um meio-termo que ninguém propôs.
  */
 export function sugestaoDoTrecho(d: Doc<string>, trechoId: string): string[] {
+  if (blocoDaQuebra(trechoId)) return [trechoId];
   for (const b of d.blocos) {
     if (!ehParagrafo(b)) continue;
     const i = b.trechos.findIndex(x => x.id === trechoId);
