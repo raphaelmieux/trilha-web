@@ -4,6 +4,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import QuestionRenderer from './QuestionRenderer';
 import { checkAnswer } from '../../lib/checkAnswer';
+import { arrastarLinha, comAlturas } from '../ui/arrastoNaLista';
 import type { Question } from '../../types';
 
 /*
@@ -11,8 +12,8 @@ import type { Question } from '../../types';
 
   Ela já chegava embaralhada — o que faltava era poder arrastar o item até o
   lugar, em vez de subir de um em um pelas setas. As setas continuam, porque
-  arrastar não existe em tela de toque e boa parte dos desbravadores abre a
-  trilha pelo celular: nenhuma questão pode depender de um dos dois caminhos.
+  são o caminho de quem usa teclado e de quem não acerta o gesto: nenhuma
+  questão pode depender de um dos dois caminhos.
 */
 
 declare global {
@@ -36,9 +37,11 @@ const questao: Question = {
 let container: HTMLDivElement;
 let root: Root;
 let ultimaResposta: string[] | null = null;
+let semAlturas: () => void;
 
 beforeEach(() => {
   ultimaResposta = null;
+  semAlturas = comAlturas();
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -57,24 +60,19 @@ beforeEach(() => {
 afterEach(() => {
   act(() => root.unmount());
   container.remove();
+  semAlturas();
 });
 
-const linhas = () => [...container.querySelectorAll<HTMLElement>('[draggable]')];
+const linhas = () => [...container.querySelectorAll<HTMLElement>('li[data-ordenavel]')];
 const textos = () => linhas().map(l => l.querySelector('span.flex-1')?.textContent);
 const linhaDe = (texto: string) => linhas().find(l => l.textContent?.includes(texto))!;
 
-const arrastar = (de: string, para: string) => {
-  const origem = linhaDe(de);
-  const alvo = linhaDe(para);
-  act(() => { origem.dispatchEvent(new MouseEvent('dragstart', { bubbles: true })); });
-  act(() => { alvo.dispatchEvent(new MouseEvent('dragover', { bubbles: true, cancelable: true })); });
-  act(() => { alvo.dispatchEvent(new MouseEvent('drop', { bubbles: true, cancelable: true })); });
-};
+const arrastar = (de: string, para: string) => arrastarLinha(linhaDe(de), linhaDe(para));
 
 describe('mexer nos itens', () => {
   it('deixa cada item ser arrastado', () => {
     expect(linhas()).toHaveLength(4);
-    for (const l of linhas()) expect(l.getAttribute('draggable')).toBe('true');
+    for (const l of linhas()) expect(l.querySelector('[data-alca]')).not.toBeNull();
   });
 
   it('avisa que dá para arrastar', () => {
@@ -92,13 +90,15 @@ describe('mexer nos itens', () => {
   it('reordena já ao passar por cima, antes de soltar', () => {
     const antes = textos();
     const origem = linhaDe(antes[2]!);
-    const alvo = linhaDe(antes[0]!);
-    act(() => { origem.dispatchEvent(new MouseEvent('dragstart', { bubbles: true })); });
-    act(() => { alvo.dispatchEvent(new MouseEvent('dragover', { bubbles: true, cancelable: true })); });
+    const base = { pointerId: 3, pointerType: 'mouse', clientX: 100, bubbles: true };
+    act(() => { origem.querySelector('span.flex-1')!.dispatchEvent(new PointerEvent('pointerdown', { ...base, button: 0, clientY: 120 })); });
+    act(() => { window.dispatchEvent(new PointerEvent('pointermove', { ...base, clientY: 110 })); });
+    act(() => { window.dispatchEvent(new PointerEvent('pointermove', { ...base, clientY: 5 })); });
     expect(textos()[0]).toBe(antes[2]);
+    act(() => { window.dispatchEvent(new PointerEvent('pointerup', { ...base, clientY: 5 })); });
   });
 
-  it('as setas continuam funcionando, para quem está no celular', () => {
+  it('as setas continuam funcionando, para quem não arrasta', () => {
     const antes = textos();
     const subir = linhaDe(antes[1]!).querySelector<HTMLButtonElement>('button[aria-label="Subir um lugar"]')!;
     act(() => { subir.click(); });

@@ -457,6 +457,23 @@ pede `passos` completos, e o teste cobra os dois juntos.
 setas. A resposta sai do campo `order`, nunca da posição no array, porque os
 itens são embaralhados antes de aparecer.
 
+**E o arrasto dela é de ponteiro, e não o arrastar do HTML.** Ela nasceu com
+`draggable` e `dragstart`, sem gravar nada em `dataTransfer` — e o Firefox só
+começa o gesto se alguma coisa for gravada ali; em tela de toque o evento nem
+existe. No Chrome funcionava, e em todo o resto a lista desenhava a alça, o
+cursor de mão e "arraste para trocar de lugar" e não respondia, sem erro
+nenhum: todas as questões de ordenar das trilhas, das veredas e das provas ao
+mesmo tempo. Os testes disparavam `dragstart` à mão, que é justamente o que o
+Firefox não faz, e passavam com a lista quebrada.
+
+Hoje são eventos de ponteiro, os mesmos para mouse, caneta e dedo. O movimento
+se ouve na janela, porque a linha arrastada muda de lugar no DOM a cada troca;
+no dedo só a alça arrasta, com `touch-action: none` nela e só nela, senão uma
+lista de cinco linhas prende a rolagem do celular; e o destino conta os meios
+das outras linhas (`posicaoAoArrastar`), em vez de perguntar sobre qual o
+ponteiro está — que faz a peça curta e a vizinha alta trocarem de lugar a cada
+pixel.
+
 **"Parecer um aplicativo" quer dizer a tela inteira.** Quando um laboratório
 imita um programa, ele não é um cartão dentro da página: ocupa a tela e a
 plataforma sai de cena. `LaboratorioEmTelaCheia` é a moldura que faz isso, e ela
@@ -5930,6 +5947,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/planilha.test.ts` | colar uma cópia sem transpor a referência relativa, ou mover transpondo |
 | `src/labs/ajudaDeFormulas.test.ts` | função sugerida na lista que o motor responde com `#NOME?`, ou referência abrindo a lista |
 | `src/labs/powerpoint.test.tsx` | tira de miniaturas que só se clica, ou Tab no corpo do slide que não rebaixa o tópico |
+| `src/components/ui/ListaOrdenavel.test.tsx` | lista de ordenar que volta ao arrastar nativo do HTML, que o Firefox e o celular não começam, ou dedo no texto que arrasta em vez de rolar |
 | `src/labs/toqueLongo.test.ts` | toque longo que não vira botão direito, que abre menu no texto editável, ou cujo clique de soltar cai no menu |
 | `src/labs/toqueLongo.test.ts` | contextmenu do próprio navegador sobre texto editável chegando à folha, que impede o sistema de selecionar |
 | `src/components/LaboratorioEmTelaCheia.test.tsx` | moldura que deixa de instalar o toque longo, e com ela todo menu de contexto no celular |
