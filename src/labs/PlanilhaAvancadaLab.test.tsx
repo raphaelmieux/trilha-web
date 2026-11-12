@@ -65,7 +65,7 @@ const escrever = (campo: Element | null | undefined, texto: string, nome: string
   expect(campo, `não achei o campo "${nome}"`).toBeTruthy();
   act(() => {
     const el = campo as HTMLInputElement;
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(el, texto);
+    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value')!.set!.call(el, texto);
     el.dispatchEvent(new Event('input', { bubbles: true }));
   });
 };

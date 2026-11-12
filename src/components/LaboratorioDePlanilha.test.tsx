@@ -7,6 +7,13 @@ import LaboratorioDePlanilha from './LaboratorioDePlanilha';
 import { CADERNOS_DA_CC_ES003, type CadernoDaLicao } from '../labs/cadernosDaCcEs003';
 import type { LicaoDeVereda, Vereda } from '../curriculum/veredas';
 
+/* O valor gravado pelo setter do próprio protótipo: a barra e o campo da célula
+   são textarea (pelo Alt+Enter), e os diálogos continuam sendo input. */
+const valorNativo = {
+  call: (el: Element, v: string) =>
+    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value')!.set!.call(el, v),
+};
+
 /*
   As sete lições da CC-ES003, levadas até o fim pelos mesmos cliques que o
   desbravador daria.
@@ -110,8 +117,7 @@ const guia = (nome: string) => {
 
 const escreverValor = (campo: HTMLInputElement, texto: string) => {
   act(() => {
-    const setter = Object.getOwnPropertyDescriptor(
-      window.HTMLInputElement.prototype, 'value')!.set!;
+    const setter = valorNativo;
     setter.call(campo, texto);
     campo.dispatchEvent(new Event('input', { bubbles: true }));
   });

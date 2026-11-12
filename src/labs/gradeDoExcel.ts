@@ -29,7 +29,8 @@
 import { useRef, useState } from 'react';
 import type React from 'react';
 import {
-  type Direcao, type Faixa, type Planilha, type Recorte,
+  type AlinhaH, type AlinhaV, type Direcao, type Faixa, type Planilha, type Recorte,
+  alinharNaFaixa, alternarQuebra, quebraEmTodaAFaixa,
   ALTURA_PADRAO, LARGURA_PADRAO, larguraQuePede,
   type Formato,
   colar as colarEm, copiar as copiarFaixa, dataDigitada, limpar, mover, normalizar,
@@ -97,6 +98,15 @@ export interface UsoDaGrade {
  * regra do `aoBuscar` do Explorador: a peça existe quando a lição tem o que
  * fazer com ela.
  */
+/**
+ * O campo em que se escreve: o da célula e o da barra de fórmulas.
+ *
+ * São `<textarea>`, e não `<input>`, por causa do Alt+Enter. Um `<input>` tira
+ * as quebras de linha do valor por especificação — a célula de duas linhas,
+ * aberta na barra e confirmada, voltaria com uma só, sem nada avisar.
+ */
+export type CampoDaEdicao = HTMLTextAreaElement | HTMLInputElement;
+
 export interface GradeControlada {
   faixa: Faixa;
   setFaixa: React.Dispatch<React.SetStateAction<Faixa>>;
@@ -133,6 +143,19 @@ export interface GradeControlada {
   colar: () => void;
   limparConteudo: () => void;
 
+  /**
+   * O grupo Alinhamento da guia Início, sobre a faixa selecionada.
+   *
+   * Mora no gancho para que toda planilha o tenha: seis dos oito laboratórios
+   * não desenhavam o grupo, e a faixa completada mostrava os botões avisando
+   * que não faziam parte do exercício — numa planilha, onde alinhar e quebrar
+   * texto é o que se faz o tempo todo.
+   */
+  alinhar: (mudanca: { h?: AlinhaH; v?: AlinhaV }) => void;
+  quebrarTexto: () => void;
+  /** A quebra está ligada em toda a faixa: o botão aparece apertado. */
+  quebraAtiva: boolean;
+
   aoTeclar: (e: React.KeyboardEvent) => void;
   /** As alças de tamanho do cabeçalho. O laboratório decide se as oferece. */
   aoArrastarBorda: (tipo: 'coluna' | 'linha', indice: number, e: React.PointerEvent) => void;
@@ -151,8 +174,8 @@ export interface GradeControlada {
   propsDaBarra: {
     value: string;
     onFocus: () => void;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+    onChange: (e: React.ChangeEvent<CampoDaEdicao>) => void;
+    onKeyDown: (e: React.KeyboardEvent<CampoDaEdicao>) => void;
     onBlur: () => void;
   };
 
@@ -161,7 +184,7 @@ export interface GradeControlada {
     apontavel: boolean;
     /** As faixas que a fórmula em edição cita, com a cor de cada uma. */
     referencias: { faixa: Faixa; cor: string }[];
-    aoTeclarNaEdicao: (e: React.KeyboardEvent<HTMLInputElement>) => boolean;
+    aoTeclarNaEdicao: (e: React.KeyboardEvent<CampoDaEdicao>) => boolean;
     /** De onde saiu o que está copiado: a grade desenha a borda tracejada ali. */
     copiado: Faixa | null;
     /** A lista de funções e a dica de sintaxe da fórmula em edição. */
@@ -395,7 +418,7 @@ export function useGradeDoExcel({
   const sugestoes = editando && listaFechadaEm !== barra ? sugestoesDeFuncao(barra) : null;
   const escolhida = sugestoes && escolhidaNaLista.prefixo === sugestoes.prefixo
     ? Math.min(escolhidaNaLista.i, sugestoes.nomes.length - 1) : 0;
-  const completar = (i: number, campo?: HTMLInputElement | null) => {
+  const completar = (i: number, campo?: CampoDaEdicao | null) => {
     if (!sugestoes) return;
     const novo = completarFuncao(barra, sugestoes.prefixo, sugestoes.nomes[i]);
     setBarra(novo);
@@ -403,12 +426,12 @@ export function useGradeDoExcel({
     /* O cursor vai para depois do parêntese, que é onde o primeiro argumento
        começa — e onde o clique seguinte numa célula a aponta. */
     requestAnimationFrame(() => {
-      const alvo = campo ?? (document.activeElement as HTMLInputElement | null);
+      const alvo = campo ?? (document.activeElement as CampoDaEdicao | null);
       alvo?.setSelectionRange?.(novo.length, novo.length);
     });
   };
 
-  const aoTeclarNaEdicao = (e: React.KeyboardEvent<HTMLInputElement>, onde: 'celula' | 'barra' = 'celula'): boolean => {
+  const aoTeclarNaEdicao = (e: React.KeyboardEvent<CampoDaEdicao>, onde: 'celula' | 'barra' = 'celula'): boolean => {
     const campo = e.currentTarget;
     /* Com a lista de funções aberta, as setas andam nela, o Tab escreve a
        escolhida e o Esc fecha só a lista — como no Excel. */
@@ -423,6 +446,20 @@ export function useGradeDoExcel({
       if (e.key === 'Tab') { e.preventDefault(); completar(escolhida, campo); return true; }
       /* O Esc para aqui: subindo até a grade, ele cancelaria a edição inteira. */
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setListaFechadaEm(barra); return true; }
+    }
+    /*
+      Alt+Enter quebra a linha dentro da célula, e confirmar liga a quebra de
+      texto sozinho (`dataDigitada`). Sem isto o Enter com Alt confirmava e
+      descia, que é o contrário do que quem pediu uma segunda linha queria.
+    */
+    if (e.key === 'Enter' && e.altKey) {
+      e.preventDefault();
+      const ini = campo.selectionStart ?? barra.length;
+      const fim = campo.selectionEnd ?? ini;
+      setBarra(barra.slice(0, ini) + '\n' + barra.slice(fim));
+      setApontando(null);
+      requestAnimationFrame(() => campo.setSelectionRange?.(ini + 1, ini + 1));
+      return true;
     }
     if (e.key === 'F2') { e.preventDefault(); setModo(m => (m === 'entrar' ? 'editar' : 'entrar')); return true; }
     if (e.key === 'F4') {
@@ -711,13 +748,16 @@ export function useGradeDoExcel({
     modo: !editando ? 'Pronto' : apontando ? 'Apontar' : modo === 'entrar' ? 'Inserir' : 'Editar',
     selecionar, selecionarFaixa, confirmar, cancelarEdicao, desfazer, refazer,
     copiar, recortar, colar, limparConteudo,
+    alinhar: mudanca => mudar(q => alinharNaFaixa(q, faixa, mudanca)),
+    quebrarTexto: () => mudar(q => alternarQuebra(q, faixa)),
+    quebraAtiva: quebraEmTodaAFaixa(p, faixa),
     aoTeclar, aoArrastarBorda, aoAjustarAoConteudo,
     aoComecarPreenchimento: comecarPreenchimento,
     propsDaBarra: {
       value: editando ? barra : texto(p, sel.l, sel.c),
       onFocus: () => { setModo('editar'); comecarEdicao('barra'); },
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => { setBarra(e.target.value); setApontando(null); },
-      onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+      onChange: (e: React.ChangeEvent<CampoDaEdicao>) => { setBarra(e.target.value); setApontando(null); },
+      onKeyDown: (e: React.KeyboardEvent<CampoDaEdicao>) => {
         if (aoTeclarNaEdicao(e, 'barra')) return;
         if (e.key === 'Enter') { e.preventDefault(); confirmar(barra, 'baixo'); gradeRef.current?.focus(); }
         if (e.key === 'Escape') { e.preventDefault(); cancelarEdicao(); gradeRef.current?.focus(); }

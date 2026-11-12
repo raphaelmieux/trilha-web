@@ -109,7 +109,7 @@ const escreverEm = (campo: HTMLInputElement | HTMLSelectElement, valor: string) 
   act(() => {
     const proto = campo instanceof HTMLSelectElement
       ? window.HTMLSelectElement.prototype
-      : window.HTMLInputElement.prototype;
+      : Object.getPrototypeOf(campo);
     Object.getOwnPropertyDescriptor(proto, 'value')!.set!.call(campo, valor);
     campo.dispatchEvent(new Event(campo instanceof HTMLSelectElement ? 'change' : 'input', { bubbles: true }));
   });

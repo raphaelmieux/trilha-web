@@ -10,7 +10,7 @@ import { IconeNegrito } from '../labs/office';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
   CSS_EXCEL, BarraDeStatusDoExcel, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
-  DesenhoDoGrafico,
+  DesenhoDoGrafico, BotaoQuebrarTexto,
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
 import {
@@ -356,6 +356,7 @@ export default function LaboratorioDePlanilha({
                 <BotaoDoExcel dica="Mesclar e Centralizar" aoClicar={mesclarFaixa}>
                   <Combine className="w-4 h-4" />
                 </BotaoDoExcel>
+                <BotaoQuebrarTexto grade={g} />
               </GrupoDoExcel>
               <GrupoDoExcel nome="Número">
                 <BotaoDoExcel dica="Formato de Moeda" aoClicar={() => formatar('moeda')}>

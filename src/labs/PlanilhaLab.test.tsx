@@ -5,6 +5,13 @@ import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import PlanilhaLab from './PlanilhaLab';
 
+/* O valor gravado pelo setter do próprio protótipo: a barra e o campo da célula
+   são textarea (pelo Alt+Enter), e os diálogos continuam sendo input. */
+const valorNativo = {
+  call: (el: Element, v: string) =>
+    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value')!.set!.call(el, v),
+};
+
 /*
   Escrever numa planilha, conferido escrevendo.
 
@@ -53,8 +60,7 @@ afterEach(() => {
 const digitar = (campo: HTMLInputElement, texto: string) => {
   for (const letra of texto) {
     act(() => {
-      const setter = Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype, 'value')!.set!;
+      const setter = valorNativo;
       /* O campo em foco pode ter mudado no meio da digitação — que é
          exatamente o defeito. Escreve-se em quem está com o foco agora, como o
          teclado faria, e não no elemento capturado antes de começar. */
@@ -70,8 +76,7 @@ const barra = () => container.querySelector<HTMLInputElement>('.pl-entrada')!;
 /** Apaga o que está no campo antes de escrever, como quem seleciona e digita. */
 const esvaziar = (campo: HTMLInputElement) => {
   act(() => {
-    const setter = Object.getOwnPropertyDescriptor(
-      window.HTMLInputElement.prototype, 'value')!.set!;
+    const setter = valorNativo;
     setter.call(campo, '');
     campo.dispatchEvent(new Event('input', { bubbles: true }));
   });

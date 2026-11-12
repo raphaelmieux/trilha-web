@@ -203,7 +203,9 @@ const decidir = (problema: string, coluna: string, texto: string) => {
   const n = container.querySelectorAll('[aria-label^="Problema da decisão"]').length;
   escolher(porRotulo(`Problema da decisão ${n}`), problema, 'problema');
   escolher(porRotulo(`Coluna da decisão ${n}`), coluna, 'coluna');
-  const textos = container.querySelectorAll('textarea');
+  /* A barra de fórmulas e o campo da célula também são textarea, pelo
+     Alt+Enter: a decisão é o último textarea que não é da planilha. */
+  const textos = container.querySelectorAll('textarea:not(.pl-entrada):not(.pl-celula-entrada)');
   escrever(textos[textos.length - 1], texto, 'decisão');
 };
 

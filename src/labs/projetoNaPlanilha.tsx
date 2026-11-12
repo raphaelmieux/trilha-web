@@ -21,7 +21,7 @@ import { Palette, Redo2, Sigma, Undo2 } from 'lucide-react';
 import {
   AbasDoExcel, BarraDeFormulas, BarraDeTituloDoExcel, BotaoDoExcel,
   GradeDoExcel, GrupoDoExcel, GuiasDoExcel,
-  BarraDeStatusDoExcel,
+  BarraDeStatusDoExcel, GrupoDeAlinhamentoDoExcel,
 } from './excel';
 import { useGradeDoExcel } from './gradeDoExcel';
 import {
@@ -107,6 +107,7 @@ export function ControleNoExcel({ ctx, mudar, avisar, conjunto }: PropsDaSuperfi
             <Redo2 className="w-4 h-4" />
           </BotaoDoExcel>
         </GrupoDoExcel>
+        <GrupoDeAlinhamentoDoExcel grade={g} celula={g.props.planilha.celulas[g.sel.l]?.[g.sel.c]} />
 
         <GrupoDoExcel nome="Fonte">
           <BotaoDoExcel

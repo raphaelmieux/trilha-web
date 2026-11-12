@@ -7,7 +7,7 @@ import {
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
   CSS_EXCEL, BarraDeStatusDoExcel, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel,
-  GradeDoExcel, DesenhoDoGrafico,
+  GradeDoExcel, DesenhoDoGrafico, GrupoDeAlinhamentoDoExcel,
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
 import { CampoLongo, Cartao, Escolha } from '../labs/caderno';
@@ -512,6 +512,7 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
                 {botao('Desfazer (Ctrl+Z)', grade.desfazer, <Undo2 className="w-4 h-4" />)}
                 {botao('Refazer (Ctrl+Y)', grade.refazer, <Redo2 className="w-4 h-4" />)}
               </GrupoDoExcel>
+              <GrupoDeAlinhamentoDoExcel grade={grade} celula={grade.props.planilha.celulas[grade.sel.l]?.[grade.sel.c]} />
               <GrupoDoExcel nome="Edição">
                 {botao('AutoSoma', () => {
                   setBarra(`=SOMA(${nomeDaFaixa({ l1: 1, c1: sel.c, l2: Math.max(1, sel.l - 1), c2: sel.c })})`);
