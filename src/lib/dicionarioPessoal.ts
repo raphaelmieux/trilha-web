@@ -13,42 +13,77 @@
   mundo precisa ver aceitas, porque os documentos da plataforma as escrevem,
   moram em `PALAVRAS_DO_CLUBE`, no código, e não passam por aqui.
 
-  ── Onde ele fica guardado ──────────────────────────────────────────────────
-  No navegador, por uma chave própria. A conta é a fonte que vem por cima disto
-  (`dicionario_pessoal`, no banco): a palavra acrescentada no celular precisa
-  deixar de ser sublinhada no computador do clube.
+  ── A conta é a fonte; o aparelho é a cópia ─────────────────────────────────
+  Com alguém entrado, a verdade é a tabela `dicionario_pessoal`: a palavra
+  acrescentada no celular deixa de ser sublinhada no computador do clube. O
+  navegador guarda uma cópia **por conta** — a chave leva o id —, para que o
+  dicionário valha antes de a rede responder, e para que o computador do clube,
+  que é de todo mundo, não dê as palavras de um ao próximo que entrar.
+
+  O que se acrescentou sem rede fica **pendente** na cópia e sobe na próxima
+  conexão. Pendente é uma lista à parte, e não "o que está na cópia e falta no
+  banco": essa conta também acharia a palavra que a pessoa tirou no outro
+  aparelho, e a ressuscitaria.
+
+  Sem ninguém entrado, o dicionário fica só no navegador, numa chave própria —
+  e nunca é juntado à conta de quem entrar depois, pela mesma razão do
+  computador do clube.
 
   ── Por que é um módulo com ouvintes, e não estado de React ────────────────
   O corretor carrega uma vez por página e serve a todas as telas; uma palavra
-  acrescentada num lugar tem de tirar o vermelho de todos os outros na hora,
-  inclusive de uma folha que já está desenhada. Quem desenha sublinhado ouve
+  acrescentada num lugar, ou chegada da conta depois de a página abrir, tem de
+  tirar o vermelho de todos os outros na hora. Quem desenha sublinhado ouve
   `ouvirDicionario` e se redesenha.
 */
 
-const CHAVE_NO_APARELHO = 'trilha-web:dicionario-do-usuario';
+/** A chave de quem não entrou. É a de antes da conta, e continua sendo lida. */
+const CHAVE_SEM_CONTA = 'trilha-web:dicionario-do-usuario';
+const chaveDe = (dono: string | null) => (dono ? `trilha-web:dicionario:${dono}` : CHAVE_SEM_CONTA);
 
 /** O mesmo teto da coluna no banco: uma palavra, e não um texto. */
 export const TAMANHO_MAXIMO_DA_PALAVRA = 64;
 
-let palavras: Set<string> = new Set(lerDoAparelho());
+/** Onde a conta guarda as palavras. É uma porta para que as travas não precisem de banco. */
+export interface FonteDaConta {
+  ler: () => Promise<string[]>;
+  gravar: (palavra: string) => Promise<void>;
+  apagar: (palavra: string) => Promise<void>;
+}
+
+/** O que o navegador guarda de uma conta: as palavras e as que ainda não subiram. */
+type Copia = { palavras: string[]; pendentes: string[] };
+
+let dono: string | null = null;
+let fonte: FonteDaConta | null = null;
+/* Cada conexão leva um número; a resposta que chega depois de outra conexão
+   começar é de uma conta que já saiu, e é descartada. */
+let geracao = 0;
+let palavras: Set<string> = new Set(lerDoAparelho(null).palavras);
+let pendentes: Set<string> = new Set();
 const ouvintes = new Set<(palavras: ReadonlySet<string>) => void>();
 
-function lerDoAparelho(): string[] {
+function lerDoAparelho(de: string | null): Copia {
+  const lista = (x: unknown) => (Array.isArray(x) ? x.filter((p): p is string => typeof p === 'string' && palavraValida(p)) : []);
   try {
-    const bruto = globalThis.localStorage?.getItem(CHAVE_NO_APARELHO);
-    const lista: unknown = bruto ? JSON.parse(bruto) : [];
-    return Array.isArray(lista) ? lista.filter((x): x is string => typeof x === 'string' && palavraValida(x)) : [];
+    const bruto = globalThis.localStorage?.getItem(chaveDe(de));
+    const lido: unknown = bruto ? JSON.parse(bruto) : [];
+    /* A chave sem conta nasceu guardando só a lista; a cópia de conta guarda
+       as duas. As duas formas se leem. */
+    if (Array.isArray(lido)) return { palavras: lista(lido), pendentes: [] };
+    const c = lido as Partial<Copia> | null;
+    return { palavras: lista(c?.palavras), pendentes: lista(c?.pendentes) };
   } catch {
-    return [];
+    return { palavras: [], pendentes: [] };
   }
 }
 
 function guardarNoAparelho() {
   try {
-    globalThis.localStorage?.setItem(CHAVE_NO_APARELHO, JSON.stringify([...palavras]));
+    const valor = dono ? { palavras: [...palavras], pendentes: [...pendentes] } : [...palavras];
+    globalThis.localStorage?.setItem(chaveDe(dono), JSON.stringify(valor));
   } catch {
     /* Sem armazenamento — janela anônima, armazenamento cheio —, a palavra vale
-       até fechar a página, que é o que dá para fazer. */
+       até fechar a página, e sobe para a conta se houver rede. */
   }
 }
 
@@ -70,10 +105,24 @@ export function palavrasDoDicionario(): ReadonlySet<string> {
   return palavras;
 }
 
+/** Sobe uma palavra pendente; se a rede falhar, ela continua pendente. */
+function subir(palavra: string, f: FonteDaConta, g: number) {
+  f.gravar(palavra).then(() => {
+    if (g !== geracao || !pendentes.has(palavra)) return;
+    pendentes = new Set(pendentes);
+    pendentes.delete(palavra);
+    guardarNoAparelho();
+  }).catch(() => { /* fica pendente para a próxima conexão */ });
+}
+
 /** Adicionar ao Dicionário, de qualquer simulação. */
 export function acrescentarAoDicionario(palavra: string): void {
   if (!palavraValida(palavra) || palavras.has(palavra)) return;
   palavras = new Set(palavras).add(palavra);
+  if (dono && fonte) {
+    pendentes = new Set(pendentes).add(palavra);
+    subir(palavra, fonte, geracao);
+  }
   guardarNoAparelho();
   avisar();
 }
@@ -81,9 +130,15 @@ export function acrescentarAoDicionario(palavra: string): void {
 /** Tirar do dicionário: quem adicionou "acampamneto" por engano quer o vermelho de volta. */
 export function tirarDoDicionario(palavra: string): void {
   if (!palavras.has(palavra)) return;
-  const nova = new Set(palavras);
-  nova.delete(palavra);
-  palavras = nova;
+  palavras = new Set(palavras);
+  palavras.delete(palavra);
+  if (pendentes.has(palavra)) {
+    /* Nunca chegou ao banco: basta não mandar. */
+    pendentes = new Set(pendentes);
+    pendentes.delete(palavra);
+  } else if (dono && fonte) {
+    fonte.apagar(palavra).catch(() => { /* volta na próxima leitura, que é o lado seguro */ });
+  }
   guardarNoAparelho();
   avisar();
 }
@@ -94,8 +149,52 @@ export function ouvirDicionario(f: (palavras: ReadonlySet<string>) => void): () 
   return () => { ouvintes.delete(f); };
 }
 
-/** Para as travas: volta ao que o aparelho guarda. */
+/**
+ * Liga o dicionário à conta de quem entrou (`null`: ninguém entrou). Mostra
+ * na hora a cópia do aparelho, lê a conta, junta o que estava pendente e o
+ * sobe. Devolve quando a leitura termina — com ou sem rede.
+ */
+export async function conectarDicionario(novoDono: string | null, novaFonte: FonteDaConta | null): Promise<void> {
+  const g = ++geracao;
+  dono = novoDono;
+  fonte = novoDono ? novaFonte : null;
+  const copia = lerDoAparelho(dono);
+  palavras = new Set(copia.palavras);
+  pendentes = new Set(dono ? copia.pendentes : []);
+  avisar();
+  if (!dono || !fonte) return;
+  let daConta: string[];
+  try {
+    daConta = await fonte.ler();
+  } catch {
+    return; /* sem rede: vale a cópia, e as pendentes esperam */
+  }
+  if (g !== geracao) return;
+  /* A conta é a verdade, mais o que ainda não subiu. */
+  palavras = new Set([...daConta.filter(palavraValida), ...pendentes]);
+  guardarNoAparelho();
+  avisar();
+  for (const p of pendentes) subir(p, fonte, g);
+}
+
+/**
+ * Apaga a cópia da conta neste navegador, ao sair. As palavras continuam na
+ * conta; o que sai é o rastro delas no computador que é de todo mundo. O que
+ * ainda estava pendente se perde — é o preço de sair sem rede, e é pequeno.
+ */
+export function esquecerDicionarioDoAparelho(): void {
+  if (dono) {
+    try { globalThis.localStorage?.removeItem(chaveDe(dono)); } catch { /* nada a apagar */ }
+  }
+  void conectarDicionario(null, null);
+}
+
+/** Para as travas: volta ao que o aparelho guarda, sem conta. */
 export function recarregarDicionario(): void {
-  palavras = new Set(lerDoAparelho());
+  geracao++;
+  dono = null;
+  fonte = null;
+  pendentes = new Set();
+  palavras = new Set(lerDoAparelho(null).palavras);
   avisar();
 }

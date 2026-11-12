@@ -331,6 +331,39 @@ export type Database = {
         }
         Relationships: []
       }
+      dicionario_pessoal: {
+        Row: {
+          criada_em: string
+          palavra: string
+          user_id: string
+        }
+        Insert: {
+          criada_em?: string
+          palavra: string
+          user_id?: string
+        }
+        Update: {
+          criada_em?: string
+          palavra?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dicionario_pessoal_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dicionario_pessoal_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           completed_at: string | null
