@@ -17,4 +17,13 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1000,
   },
+  /*
+    O corretor ortográfico acha o próprio .wasm por new URL ao lado do módulo.
+    Pré-empacotado pelo servidor de desenvolvimento, o módulo muda de pasta e o
+    endereço passa a apontar para uma página de erro — a folha ficava sem
+    sublinhado só no npm run dev, e a build funcionava.
+  */
+  optimizeDeps: {
+    exclude: ['hunspell-wasm'],
+  },
 });

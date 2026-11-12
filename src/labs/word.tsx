@@ -1,3 +1,4 @@
+import { useOrtografia, type OrtografiaDaFolha } from './sublinhadoOrtografico';
 import {
   ArrowLeft, Printer, Save, FileType2, FolderOpen, Cloud, Clock, HardDrive,
   Plus, Info, Share2, X, Scissors, Copy, ClipboardPaste,
@@ -778,6 +779,10 @@ export const CSS_FOLHA = `
   }
   .wd-contexto-mini button:hover, .wd-contexto-item:hover { background: #EDEBE9; }
   .wd-contexto-atalho { margin-left: auto; color: #605E5C; font-size: 11px; padding-left: 18px; }
+  /* As sugestões de ortografia abrem o menu, em negrito, como no Word, e uma
+     linha as separa da minibarra. */
+  .wd-contexto-ortografia { border-bottom: 1px solid #E1DFDD; margin-bottom: 4px; padding-bottom: 4px; }
+  .wd-contexto-sugestao { font-weight: 700; }
   /* O marcador da lista mora no recuo pendente, à esquerda da primeira letra.
      Ele não é texto: não se seleciona, não se apaga com Delete, e o número se
      refaz quando um item sai do meio. */
@@ -1795,7 +1800,8 @@ export function FolhaDoWord({
   const fechaAAbertura = doc.sumario ? blocoAntesDoSumario(doc) : null;
   const editavel = !!edicao;
   const raiz = useFolhaEditavel(doc, edicao, aoLocalizar);
-  const [contexto, setContexto] = useState<{ x: number; y: number } | null>(null);
+  const ortografia = useOrtografia(doc, edicao?.raiz, edicao?.selecao);
+  const [contexto, setContexto] = useState<{ x: number; y: number; ponto: Ponto | null } | null>(null);
   /* A fonte do documento veste o **papel**, e não a janela. Ela já vestiu a
      janela inteira, e escolher uma serifada trocava a letra da faixa, das
      guias e da barra de título junto — o Word mudando de cara porque alguém
@@ -1841,7 +1847,10 @@ export function FolhaDoWord({
         onContextMenu: (ev: React.MouseEvent) => {
           if ((ev.target as HTMLElement).closest('input, textarea, .wd-ilha')) return;
           ev.preventDefault();
-          setContexto({ x: ev.clientX, y: ev.clientY });
+          /* A palavra que se pergunta ao corretor é a que está debaixo do
+             ponteiro: a seleção guardada só chega depois, e o menu abria
+             sem as sugestões da palavra em que se clicou. */
+          setContexto({ x: ev.clientX, y: ev.clientY, ponto: pontoNaTela(ev.currentTarget as HTMLElement, ev.clientX, ev.clientY) });
         },
       } : {})}
     >
@@ -1937,10 +1946,22 @@ export function FolhaDoWord({
     {/* Irmão da folha, e não filho: os cliques do menu não podem subir até o
         clique da folha, que poria o cursor de novo. */}
     {contexto && edicao && (
-      <MenuDeContextoDaFolha onde={contexto} doc={doc} edicao={edicao} aoFechar={() => setContexto(null)} />
+      <MenuDeContextoDaFolha onde={contexto} doc={doc} edicao={edicao} ortografia={ortografia} aoFechar={() => setContexto(null)} />
     )}
     </>
   );
+}
+
+/** A posição do modelo debaixo de um ponto da tela, pelo cursor que o navegador poria ali. */
+function pontoNaTela(raiz: HTMLElement, x: number, y: number): Ponto | null {
+  const d = raiz.ownerDocument as Document & {
+    caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
+  };
+  const pos = d.caretPositionFromPoint?.(x, y);
+  if (pos) return pontoDoDom(raiz, pos.offsetNode, pos.offset);
+  const intervalo = d.caretRangeFromPoint?.(x, y);
+  if (intervalo) return pontoDoDom(raiz, intervalo.startContainer, intervalo.startOffset);
+  return null;
 }
 
 /**
@@ -1953,10 +1974,11 @@ export function FolhaDoWord({
  * pede permissão ao navegador, e quem traz texto de fora tem o Ctrl+V, que
  * entra pelo evento de colar sem pedir nada.
  */
-function MenuDeContextoDaFolha({ onde, doc, edicao, aoFechar }: {
-  onde: { x: number; y: number };
+function MenuDeContextoDaFolha({ onde, doc, edicao, ortografia, aoFechar }: {
+  onde: { x: number; y: number; ponto: Ponto | null };
   doc: Doc<string>;
   edicao: EdicaoDaFolha;
+  ortografia: OrtografiaDaFolha | null;
   aoFechar: () => void;
 }) {
   const caixa = useRef<HTMLDivElement | null>(null);
@@ -1974,6 +1996,9 @@ function MenuDeContextoDaFolha({ onde, doc, edicao, aoFechar }: {
   }, [aoFechar]);
   const sel = edicao.selecao;
   const temSelecao = !!sel && !recolhida(sel);
+  /* Em cima de uma palavra sublinhada, o Word abre o menu pelas sugestões: é o
+     caminho mais curto até consertá-la, e é onde quem conhece o Word procura. */
+  const erro = ortografia?.erroEm(onde.ponto ? { ancora: onde.ponto, foco: onde.ponto } : sel ?? null) ?? null;
   const fazer = (c: ComandoDeTexto) => {
     aoFechar();
     edicao.aoComando(c);
@@ -1986,10 +2011,34 @@ function MenuDeContextoDaFolha({ onde, doc, edicao, aoFechar }: {
 
   /* O menu não sai da tela: perto da borda ele abre para o outro lado. */
   const x = Math.max(4, Math.min(onde.x, window.innerWidth - 230));
-  const y = Math.max(4, Math.min(onde.y, window.innerHeight - 190));
+  const alturaDaOrtografia = erro ? 30 * (Math.max(1, erro.sugestoes.length) + 2) + 9 : 0;
+  const y = Math.max(4, Math.min(onde.y, window.innerHeight - 190 - alturaDaOrtografia));
   return createPortal(
     <div ref={caixa} className="wd-contexto" role="menu" aria-label="Menu do documento"
       style={{ left: x, top: y }} onMouseDown={ev => ev.preventDefault()}>
+      {erro && (
+        <div className="wd-contexto-ortografia" aria-label={`Ortografia: ${erro.palavra}`}>
+          {erro.sugestoes.length > 0 ? erro.sugestoes.map(s => (
+            <button key={s} type="button" role="menuitem" className="wd-contexto-item wd-contexto-sugestao"
+              onClick={() => fazer({ tipo: 'inserir', texto: s, alvo: erro.alvo })}>
+              {s}
+            </button>
+          )) : (
+            <button type="button" role="menuitem" className="wd-contexto-item" disabled
+              style={{ color: '#A19F9D', cursor: 'default' }}>
+              (Nenhuma sugestão de ortografia)
+            </button>
+          )}
+          <button type="button" role="menuitem" className="wd-contexto-item"
+            onClick={() => { aoFechar(); ortografia?.ignorar(erro.palavra); edicao.raiz.current?.focus(); }}>
+            Ignorar Tudo
+          </button>
+          <button type="button" role="menuitem" className="wd-contexto-item"
+            onClick={() => { aoFechar(); ortografia?.acrescentar(erro.palavra); edicao.raiz.current?.focus(); }}>
+            Adicionar ao Dicionário
+          </button>
+        </div>
+      )}
       <div className="wd-contexto-mini">
         <button type="button" title="Negrito (Ctrl+N)" aria-label="Negrito"
           onClick={() => fazer({ tipo: 'marca', marca: 'negrito' })}><IconeNegrito /></button>
@@ -2213,16 +2262,7 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined, a
       ev.preventDefault();
       ev.dataTransfer.dropEffect = arrastando.origem && !(ev.ctrlKey || ev.metaKey) ? 'move' : 'copy';
     };
-    const pontoDaSoltura = (ev: DragEvent): Ponto | null => {
-      const d = documento as Document & {
-        caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
-      };
-      const pos = d.caretPositionFromPoint?.(ev.clientX, ev.clientY);
-      if (pos) return pontoDoDom(r, pos.offsetNode, pos.offset);
-      const intervalo = documento.caretRangeFromPoint?.(ev.clientX, ev.clientY);
-      if (intervalo) return pontoDoDom(r, intervalo.startContainer, intervalo.startOffset);
-      return null;
-    };
+    const pontoDaSoltura = (ev: DragEvent): Ponto | null => pontoNaTela(r, ev.clientX, ev.clientY);
     const aoSoltar = (ev: DragEvent) => {
       ev.preventDefault();
       const origem = arrastando.origem;

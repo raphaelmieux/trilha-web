@@ -1,9 +1,13 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { FolhaDoSlide, TiraDeSlides } from './powerpoint';
 import { mestreDoModelo, nivelDoTopico, slideNovo, type Slide } from './apresentacao';
+import { instalarCorretor } from './ortografia';
+import {
+  acrescentarAoDicionario, palavrasDoDicionario, recarregarDicionario, tirarDoDicionario,
+} from '../lib/dicionarioPessoal';
 
 /*
   O corpo do slide se escreve no próprio slide.
@@ -327,5 +331,103 @@ describe('a caixa desenhada à mão se mexe como no PowerPoint', () => {
     expect(caixa().classList.contains('pp-caixa-mexe')).toBe(false);
     ponteiro(caixa(), 'pointerdown', 100, 100);
     expect(container.querySelector('.pp-alca')).toBeNull();
+  });
+});
+
+/* ── A ortografia no corpo do slide ───────────────────────────────────────── */
+
+/*
+  O corpo do slide confere ortografia com o corretor da plataforma, e não com o
+  do navegador: é o mesmo vermelho da folha do Word, e é o mesmo dicionário
+  pessoal. No jsdom não há API de destaque nem `caretRangeFromPoint`, então as
+  duas entram aqui de mentira — o que se confere é o que o slide faz com elas.
+*/
+describe('o corpo do slide sublinha e sugere com o corretor da plataforma', () => {
+  const CERTAS = new Set(['Saída', 'às', 'h', 'e', 'Levar', 'lanterna', 'acampamento']);
+  const pintadas = new Set<AbstractRange>();
+  let acrescentadas: string[] = [];
+
+  beforeEach(() => {
+    acrescentadas = [];
+    pintadas.clear();
+    const registro = new Map<string, Set<AbstractRange>>();
+    vi.stubGlobal('CSS', { highlights: registro });
+    vi.stubGlobal('Highlight', class extends Set<AbstractRange> {
+      add(r: AbstractRange) { pintadas.add(r); return super.add(r); }
+      delete(r: AbstractRange) { pintadas.delete(r); return super.delete(r); }
+    });
+    recarregarDicionario();
+    instalarCorretor({
+      confere: p => CERTAS.has(p) || palavrasDoDicionario().has(p),
+      sugere: p => (p === 'acampamneto' ? ['acampamento', 'acampam neto'] : []),
+      acrescentar: p => { acrescentadas.push(p); acrescentarAoDicionario(p); },
+    });
+  });
+  afterEach(() => {
+    instalarCorretor(null);
+    vi.unstubAllGlobals();
+    tirarDoDicionario('Brasilândia');
+    Reflect.deleteProperty(document, 'caretRangeFromPoint');
+  });
+
+  const palavrasPintadas = () => [...pintadas].map(r => r.toString()).sort();
+  /* O botão direito em cima da palavra: o ponto vira o nó de texto dela. */
+  const botaoDireitoEm = (palavra: string) => {
+    const no = [...corpo().querySelectorAll('li')].map(li => li.firstChild).find(n => n?.textContent?.includes(palavra)) as Text;
+    const offset = no.data.indexOf(palavra) + 1;
+    Object.defineProperty(document, 'caretRangeFromPoint', {
+      configurable: true,
+      value: () => { const r = document.createRange(); r.setStart(no, offset); return r; },
+    });
+    act(() => { corpo().dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 10, clientY: 10 })); });
+  };
+  const menu = () => document.querySelector<HTMLElement>('.ort-menu');
+  const item = (nome: string) => [...menu()!.querySelectorAll('button')].find(b => b.textContent === nome)!;
+
+  it('o corretor do navegador sai de cena, e o vermelho é o da plataforma', () => {
+    montar(['Levar lanterna', 'acampamneto às 19h']);
+    expect(corpo().getAttribute('spellcheck')).toBe('false');
+    expect(palavrasPintadas()).toEqual(['acampamneto']);
+  });
+
+  it('a sugestão troca a palavra como digitação, e o modelo lê de volta', async () => {
+    montar(['acampamneto às 19h']);
+    botaoDireitoEm('acampamneto');
+    expect(menu(), 'o botão direito na palavra sublinhada não abriu as sugestões').not.toBeNull();
+    /* Assíncrono porque quem repinta é o MutationObserver, que responde
+       depois da tarefa que mudou o texto. */
+    await act(async () => { item('acampamento').click(); });
+    expect(gravados[gravados.length - 1]).toEqual(['acampamento às 19h']);
+    expect(menu()).toBeNull();
+    expect(palavrasPintadas()).toEqual([]);
+  });
+
+  it('em palavra certa o menu continua sendo o do sistema', () => {
+    montar(['Levar lanterna']);
+    botaoDireitoEm('lanterna');
+    expect(menu()).toBeNull();
+  });
+
+  it('Ignorar Tudo tira o vermelho sem pôr a palavra no dicionário', () => {
+    montar(['Brasilândia e acampamneto']);
+    botaoDireitoEm('Brasilândia');
+    act(() => { item('Ignorar Tudo').click(); });
+    expect(palavrasPintadas()).toEqual(['acampamneto']);
+    expect(palavrasDoDicionario().has('Brasilândia')).toBe(false);
+  });
+
+  /*
+    O dicionário é um só: a palavra acrescentada em qualquer simulação tira o
+    vermelho do slide que já está desenhado, sem recarregar.
+  */
+  it('Adicionar ao Dicionário vale para a plataforma, e o slide desenhado acompanha', () => {
+    montar(['Brasilândia']);
+    expect(palavrasPintadas()).toEqual(['Brasilândia']);
+    botaoDireitoEm('Brasilândia');
+    act(() => { item('Adicionar ao Dicionário').click(); });
+    expect(acrescentadas).toEqual(['Brasilândia']);
+    expect(palavrasPintadas()).toEqual([]);
+    act(() => { tirarDoDicionario('Brasilândia'); });
+    expect(palavrasPintadas(), 'tirar do dicionário em outra tela não devolveu o vermelho').toEqual(['Brasilândia']);
   });
 });
