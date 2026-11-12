@@ -1,12 +1,13 @@
 import type React from 'react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type Alinhamento, type Direta, type Doc, type Estilo, type ModoDeCaixa, type Paragrafo, type Realce,
   type TipoDeLista, type Trecho,
   aplicarCaixa, ehParagrafo,
 } from './documento';
 import {
-  type Edicao, type Marca, type Ponto, type QuemEdita, type Selecao,
+  type Edicao, type Marca, type MoldeDoPincel, type Ponto, type QuemEdita, type Selecao,
+  aplicarFormato, pegarFormato,
   alternarMarca, alternarPosicao, aplicarEstilo, comFormatacaoMarcada, transformarSelecao, definirCor, definirFonte, definirRealce, definirTamanho,
   limparFormatacao, limparTudo, mudarTamanhoEmDegrau, mudarTamanhoEmUmPonto, apagar, apagarSelecao, formatoDaSelecao, inserirTexto, mesmaSelecao,
   palavraEmVolta, quebraDeLinha, quebraDePagina, quebrarParagrafo, recolhida, selecaoValida,
@@ -77,6 +78,14 @@ export interface EdicaoDaFolha {
    * um gesto que não funciona lá fora.
    */
   atalhos: 'word' | 'navegador';
+  /**
+   * O botão do mouse subiu em cima do texto — é quando o Pincel pinta. A
+   * seleção muda a cada pixel de um arrasto, e pintar a cada mudança pintaria
+   * o caminho da mão em vez do que ela escolheu.
+   */
+  aoSoltar?: () => void;
+  /** O Pincel está na mão: a folha troca o cursor, como o Word troca. */
+  comPincel?: boolean;
 }
 
 interface Passo<S extends string> {
@@ -126,6 +135,11 @@ export function useEdicaoDoWord<S extends string>(
      no Ctrl+V, e os pedaços com a formatação, que é o que o Colar do Word
      cola. O texto que chega de fora — de outra janela — entra puro. */
   const transferencia = useRef<{ texto: string; fragmento: Trecho[][] } | null>(null);
+  /* O Pincel na mão: o que ele leva e se fica preso nela. Um clique pinta uma
+     vez e solta; dois cliques ficam até o Esc ou até apertar o botão de novo. */
+  const [pincel, setPincel] = useState<{ molde: MoldeDoPincel; fixo: boolean } | null>(null);
+  const pincelAgora = useRef(pincel);
+  pincelAgora.current = pincel;
   const [temTransferencia, setTemTransferencia] = useState(false);
 
   /* O documento pode mudar por baixo do cursor — um comando do laboratório
@@ -427,9 +441,48 @@ export function useEdicaoDoWord<S extends string>(
   }, []);
 
   const atalhos = opcoes.atalhos ?? 'word';
+  /**
+   * Pegar o Pincel: lê a formatação de onde o cursor está. Sem nada a ler — o
+   * cursor fora do documento — devolve falso, e a faixa avisa.
+   */
+  const pegarPincel = useCallback((fixo: boolean) => {
+    const { doc: d, selecao: s } = atual.current;
+    if (!s) return false;
+    const molde = pegarFormato(d, s);
+    if (!molde) return false;
+    setPincel({ molde, fixo });
+    return true;
+  }, []);
+  const soltarPincel = useCallback(() => setPincel(null), []);
+
+  /* Pintar quando o botão sobe. Com o cursor parado, pinta a palavra em volta
+     dele — no Word, clicar numa palavra com o pincel a pinta inteira. */
+  const aoSoltar = useCallback(() => {
+    const p = pincelAgora.current;
+    const { doc: d, selecao: s, opcoes: o } = atual.current;
+    if (!p || !s) return;
+    const alvo = recolhida(s) ? (palavraEmVolta(d, s.foco) ?? s) : s;
+    digitando.current = false;
+    const r = aplicarFormato(d, alvo, p.molde);
+    gravar(comFormatacaoMarcada(d, r.doc, o.quem), s);
+    if (!p.fixo) setPincel(null);
+  }, [gravar]);
+
+  /* O Esc larga o pincel, preso ou não. Ouve-se no documento, porque o foco
+     pode estar na faixa — onde o segundo clique do botão o deixou. */
+  useEffect(() => {
+    if (!pincel) return;
+    const r = raiz.current;
+    const documento = r?.ownerDocument ?? (typeof document !== 'undefined' ? document : null);
+    if (!documento) return;
+    const aoTeclar = (ev: KeyboardEvent) => { if (ev.key === 'Escape') setPincel(null); };
+    documento.addEventListener('keydown', aoTeclar);
+    return () => documento.removeEventListener('keydown', aoTeclar);
+  }, [pincel]);
+
   const folha: EdicaoDaFolha = useMemo(() => ({
-    selecao, aoSelecionar, aoComando: executar, raiz, atalhos,
-  }), [selecao, aoSelecionar, executar, atalhos]);
+    selecao, aoSelecionar, aoComando: executar, raiz, atalhos, aoSoltar, comPincel: !!pincel,
+  }), [selecao, aoSelecionar, executar, atalhos, aoSoltar, pincel]);
 
   /* O parágrafo e o trecho em que o cursor está — "a marca escolhida" do
      painel de revisão é a que está debaixo do cursor, como no Word. */
@@ -460,6 +513,10 @@ export function useEdicaoDoWord<S extends string>(
     copiar,
     /** Há o que colar? O botão Colar do Word fica apagado enquanto não há. */
     temTransferencia,
+    /** O Pincel de Formatação: `null` quando não está na mão. */
+    pincel: pincel ? { fixo: pincel.fixo } : null,
+    pegarPincel,
+    soltarPincel,
     pendente,
     paragrafo,
     trecho,

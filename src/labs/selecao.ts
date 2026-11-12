@@ -221,6 +221,9 @@ export interface AtalhosDoExplorador {
   voltar?: () => void;
   avancar?: () => void;
   subir?: () => void;
+  /** Ctrl+Z e Ctrl+Y — Ctrl+Shift+Z também refaz, como no Windows. */
+  desfazer?: () => void;
+  refazer?: () => void;
 }
 
 /**
@@ -269,6 +272,10 @@ export function useAtalhosDoExplorador(atalhos: AtalhosDoExplorador, ativo = tru
       if (cmd && e.key.toLowerCase() === 'v') return chamar(atalhos.colar);
       if (!cmd && e.key === 'Delete') return chamar(atalhos.excluir);
       if (!cmd && e.key === 'F2') return chamar(atalhos.renomear);
+      if (cmd && e.key.toLowerCase() === 'z' && !e.shiftKey) return chamar(atalhos.desfazer);
+      if (cmd && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+        return chamar(atalhos.refazer);
+      }
 
       /* Os de andar não valem em cima de botão, link ou item de menu: lá o
          Enter é apertar aquele botão, e as setas são de quem tem o foco. */

@@ -11,7 +11,7 @@ import {
   textoDaSelecao, tamanhoDoParagrafo, isolarSelecao, limparFormatacao, definirTamanho, apagarSelecao,
   alternarLista, alinhar, tabular, limparTudo, fragmentoDaSelecao, colarFragmento, formatoDoParagrafoDaSelecao,
   mudarTamanhoEmUmPonto, moverSelecao, recortarSelecao, colarSemGrudar, marcaEmVolta,
-  comFormatacaoMarcada, selecaoDoTrecho, sugestaoDoTrecho,
+  comFormatacaoMarcada, selecaoDoTrecho, sugestaoDoTrecho, pegarFormato, aplicarFormato, contagemDePalavras,
 } from './edicao';
 
 /*
@@ -718,5 +718,65 @@ describe('a marca de formatação', () => {
     const d = formatado(controlado(), x => alternarMarca(x, sel('p1', 0, 'p1', 11), 'negrito').doc);
     const fragmento = fragmentoDaSelecao(d, sel('p1', 0, 'p1', 11));
     expect(fragmento.flat().some(x => x.formatacao)).toBe(false);
+  });
+});
+
+describe('o Pincel de Formatação', () => {
+  /* O botão estava na faixa e só avisava que não fazia parte do exercício. */
+  const trechos = (d: Doc<S>, id: string) => paragrafos(d).find(b => b.id === id)!.trechos;
+
+  it('leva a aparência como ela se vê: o negrito do título vem mesmo sem formatação direta', () => {
+    /* Título 2 é negrito pelo estilo; o Título 1 do Word moderno não é. */
+    const d0 = aplicarEstilo(base(), cursorEm('p1', 0), 'Título 2').doc;
+    const molde = pegarFormato(d0, cursorEm('p1', 3))!;
+    expect(molde.efetiva.negrito).toBe(true);
+    expect(molde.efetiva.tamanho, 'e o tamanho do estilo, e não o do Normal').toBe(13);
+    expect(molde.paragrafo?.estilo, 'com o cursor parado, o parágrafo vai junto').toBe('Título 2');
+    const pintado = aplicarFormato(d0, sel('p2', 0, 'p2', 5), { ...molde, paragrafo: undefined }).doc;
+    expect(trechos(pintado, 'p2')[0].direta, 'o Normal ganha o negrito, o tamanho e a cor diretos')
+      .toEqual({ negrito: true, tamanho: 13, cor: '#2F5496' });
+    expect(paragrafos(pintado)[1].estilo, 'meia frase pintada não leva o estilo').toBe('Normal');
+  });
+
+  it('só grava como direta o que difere do estilo de destino, e o texto não muda', () => {
+    const d0 = doc(
+      { ...linhaDe('p1', 'corpo', ''), trechos: [{ ...trechoDe('a', 'Pioneiros'), direta: { tamanho: 16, cor: '#C00000' } }] },
+      linhaDe('p2', 'corpo', 'Saída às sete'),
+    );
+    const molde = pegarFormato(d0, sel('p1', 0, 'p1', 4))!;
+    expect(molde.paragrafo, 'seleção dentro do parágrafo leva só a letra').toBeUndefined();
+    const pintado = aplicarFormato(d0, sel('p2', 0, 'p2', 5), molde).doc;
+    expect(trechos(pintado, 'p2')[0].direta).toEqual({ tamanho: 16, cor: '#C00000' });
+    expect(textoDoDoc(pintado)).toBe(textoDoDoc(d0));
+    const devolta = aplicarFormato(pintado, sel('p2', 0, 'p2', 5), pegarFormato(pintado, sel('p2', 6, 'p2', 9))!).doc;
+    expect(trechos(devolta, 'p2')[0].direta, 'pintar com a cara do Normal tira a direta, e não grava "falso"').toBeUndefined();
+  });
+
+  it('a seleção do parágrafo inteiro leva o alinhamento e o estilo', () => {
+    const d0 = alinhar(aplicarEstilo(base(), cursorEm('p1', 0), 'Citação').doc, cursorEm('p1', 0), 'centro').doc;
+    const molde = pegarFormato(d0, sel('p1', 0, 'p1', tamanhoDoParagrafo(paragrafos(d0)[0])))!;
+    const pintado = aplicarFormato(d0, cursorEm('p2', 2), molde).doc;
+    expect(paragrafos(pintado)[1].estilo).toBe('Citação');
+    expect(paragrafos(pintado)[1].formato?.alinhamento).toBe('centro');
+  });
+
+  it('com o controle ligado, a pintura sai marcada como formatação', () => {
+    const d0 = { ...alternarMarca(base(), sel('p1', 0, 'p1', 11), 'negrito').doc, controlarAlteracoes: true };
+    const molde = pegarFormato(d0, sel('p1', 0, 'p1', 4))!;
+    const pintado = comFormatacaoMarcada(d0, aplicarFormato(d0, sel('p2', 0, 'p2', 5), molde).doc);
+    expect(revisoesPendentes(pintado).map(r => r.trecho.revisao.mudou)).toEqual(['Negrito']);
+  });
+});
+
+describe('a contagem de palavras', () => {
+  it('conta o documento, e com seleção diz quantas de quantas', () => {
+    expect(contagemDePalavras(base(), null)).toEqual({ total: 6, selecionadas: null });
+    expect(contagemDePalavras(base(), cursorEm('p1', 3)).selecionadas, 'cursor parado não é seleção').toBeNull();
+    expect(contagemDePalavras(base(), sel('p1', 0, 'p2', 5))).toEqual({ total: 6, selecionadas: 4 });
+  });
+
+  it('o texto riscado de uma revisão não conta', () => {
+    const riscado = apagarSelecao({ ...base(), controlarAlteracoes: true }, sel('p1', 11, 'p1', 22)).doc;
+    expect(contagemDePalavras(riscado, null).total).toBe(4);
   });
 });

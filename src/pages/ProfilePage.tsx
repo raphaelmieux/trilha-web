@@ -1,3 +1,4 @@
+import { useAgendar } from '../hooks/useAgendar';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import ClubPicker, { type ClubeEscolhido } from '../components/ui/ClubPicker';
@@ -37,6 +38,8 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { badges, loading: badgesLoading } = useBadges(profile?.id);
 
+  /* Os avisos de "salvo" somem sozinhos — e não depois de a tela sair. */
+  const agendar = useAgendar();
   const [displayName, setDisplayName] = useState('');
   const [clube, setClube] = useState<ClubeEscolhido>({ nome: '', codigo: null, cidade: null, associacao: null });
   const [unit, setUnit] = useState('');
@@ -156,7 +159,7 @@ export default function ProfilePage() {
 
       if (updateError) throw updateError;
       setProfileSaved(true);
-      setTimeout(() => setProfileSaved(false), 3000);
+      agendar(() => setProfileSaved(false), 3000);
     } catch (err) {
       setError(mensagemDoErro(err) || 'Erro ao salvar perfil.');
     } finally {
@@ -178,7 +181,7 @@ export default function ProfilePage() {
       setNewPassword('');
       setConfirmPassword('');
       setPasswordSaved(true);
-      setTimeout(() => setPasswordSaved(false), 3000);
+      agendar(() => setPasswordSaved(false), 3000);
     } catch (err) {
       setError(mensagemDoErro(err) || 'Erro ao alterar senha.');
     } finally {
@@ -208,7 +211,7 @@ export default function ProfilePage() {
       if (updateError) throw updateError;
       setSecurityAnswer('');
       setSecuritySaved(true);
-      setTimeout(() => setSecuritySaved(false), 3000);
+      agendar(() => setSecuritySaved(false), 3000);
     } catch (err) {
       setError(mensagemDoErro(err) || 'Erro ao salvar pergunta de segurança.');
     } finally {

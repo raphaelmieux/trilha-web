@@ -9,12 +9,13 @@ import { aplicarEstilo as estiloNaSelecao } from '../labs/edicao';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
   BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
+  ContagemDePalavras,
 } from '../labs/word';
 import {
   OFICIO_INICIAL, METAS_DO_OFICIO, type Doc,
 } from '../labs/oficioDoClube';
 import {
-  aparenciaDe, ehTitulo, titulosDoDoc, paragrafos, textoVisivel, quantasPaginas,
+  aparenciaDe, ehTitulo, titulosDoDoc, paragrafos, quantasPaginas,
   type Estilo, type AjusteDeEstilo,
 } from '../labs/documento';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
@@ -353,7 +354,7 @@ export default function LaboratorioDeWord({ vereda, licao, aoVencer, aoSair, ini
 
         <div className="wd-status">
           <span>Página 1 de {quantasPaginas(doc)}</span>
-          <span>{textoVisivel(doc).split(/\s+/).filter(Boolean).length} palavras</span>
+          <ContagemDePalavras doc={doc} selecao={edicao.selecao} />
           <span>{alvo ? alvo.estilo : 'Português (Brasil)'}</span>
           <ZoomDoWord zoom={zoom} aoMudar={setZoom} aoAvisar={setAviso} />
         </div>

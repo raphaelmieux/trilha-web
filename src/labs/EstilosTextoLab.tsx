@@ -8,11 +8,12 @@ import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
   BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
+  ContagemDePalavras,
 } from './word';
 import { GrupoDeFonte, CSS_FONTE_DO_WORD, GrupoDeParagrafo } from './fonteDoWord';
 import { useEdicaoDoWord } from './useEdicaoDoWord';
 import {
-  DOC_INICIAL, METAS_DOS_ESTILOS, TEXTO_DO_SITE, titulosDoDoc, textoVisivel,
+  DOC_INICIAL, METAS_DOS_ESTILOS, TEXTO_DO_SITE, titulosDoDoc,
   APARENCIA_DO_ESTILO, LETRA_DE_FORA, ehParagrafo,
   type Doc, type Paragrafo, type Estilo,
 } from './metasDaAp044';
@@ -238,7 +239,6 @@ export default function EstilosTextoLab({ specialtyCode, lessonCode, lessonTitle
 
   const abrir = (id: string) => setMenu(m => (m === id ? null : id));
 
-  const palavras = textoVisivel(doc).split(/\s+/).filter(Boolean).length;
   const enfaseLigada = !!edicao.trecho?.enfase;
 
   const acoes = (
@@ -465,7 +465,7 @@ export default function EstilosTextoLab({ specialtyCode, lessonCode, lessonTitle
 
         <div className="wd-status">
           <span>Página 1 de 1</span>
-          <span className="hidden sm:inline">{palavras} palavras</span>
+          <ContagemDePalavras className="hidden sm:inline" doc={doc} selecao={edicao.selecao} />
           <span className="hidden md:inline">
             {doc.sumario ? `Sumário com ${doc.sumario.length}` : 'Sem sumário'}
           </span>

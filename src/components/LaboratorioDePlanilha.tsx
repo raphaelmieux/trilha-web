@@ -1,3 +1,4 @@
+import { useAgendar } from '../hooks/useAgendar';
 import { useState } from 'react';
 import {
   CalendarDays,
@@ -117,9 +118,11 @@ export default function LaboratorioDePlanilha({
   const [aviso, setAviso] = useState('');
   const [salvando, setSalvando] = useState(false);
 
+  const agendar = useAgendar();
+
   const avisar = (texto: string) => {
     setAviso(texto);
-    window.setTimeout(() => setAviso(a => (a === texto ? '' : a)), 7000);
+    agendar(() => setAviso(a => (a === texto ? '' : a)), 7000);
   };
 
   /** Toda mudança passa por aqui, e por isso Ctrl+Z alcança todas elas. */

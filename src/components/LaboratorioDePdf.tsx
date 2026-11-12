@@ -1,3 +1,4 @@
+import { useAgendar } from '../hooks/useAgendar';
 import { useState } from 'react';
 import { Printer, Pencil, FileSignature, Undo2 } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
@@ -182,9 +183,11 @@ export default function LaboratorioDePdf({ vereda, licao, aoVencer, aoSair, outr
 
   const doc = aberto ? pdfDe(pasta, aberto) : undefined;
 
+  const agendar = useAgendar();
+
   const avisar = (texto: string) => {
     setAviso(texto);
-    window.setTimeout(() => setAviso(a => (a === texto ? '' : a)), 7000);
+    agendar(() => setAviso(a => (a === texto ? '' : a)), 7000);
   };
 
   /**

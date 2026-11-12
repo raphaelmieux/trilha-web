@@ -1,3 +1,4 @@
+import { useAgendar } from '../hooks/useAgendar';
 import { useMemo, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
@@ -151,9 +152,11 @@ export default function LaboratorioDoProjeto({ vereda, licao: daLicao, aoVencer,
   const programa = LICOES_DA_CC_ES012[licao].programa;
   const Superficie = SUPERFICIE[licao];
 
+  const agendar = useAgendar();
+
   const avisar = (texto: string) => {
     setAviso(texto);
-    window.setTimeout(() => setAviso(a => (a === texto ? '' : a)), 7000);
+    agendar(() => setAviso(a => (a === texto ? '' : a)), 7000);
   };
 
   const mudar = (f: (c: ContextoDoProjeto) => ContextoDoProjeto) => setCtx(f);

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useAgendar } from '../hooks/useAgendar';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Folder, FileText, FileImage, Trash2, Monitor, HardDrive, Cpu, MemoryStick,
@@ -89,10 +90,12 @@ export default function AreaDeTrabalhoLab({
   const [erro, setErro] = useState('');
   const [pronto, setPronto] = useState(false);
 
-  const avisar = (texto: string) => {
+  const agendar = useAgendar();
+
+  const avisar = useCallback((texto: string) => {
     setAviso(texto);
-    window.setTimeout(() => setAviso(a => (a === texto ? '' : a)), 8000);
-  };
+    agendar(() => setAviso(a => (a === texto ? '' : a)), 8000);
+  }, [agendar]);
 
   const abrir = (p: Programa) => {
     setAbertos(a => (a.includes(p) ? a : [...a, p]));
@@ -123,7 +126,7 @@ export default function AreaDeTrabalhoLab({
     };
     window.addEventListener('keyup', aoTeclar);
     return () => window.removeEventListener('keyup', aoTeclar);
-  }, []);
+  }, [avisar]);
 
   const abrirMenu = (ev: React.MouseEvent, alvo: 'area' | string) => {
     ev.preventDefault();

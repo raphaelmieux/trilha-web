@@ -1,3 +1,4 @@
+import { useAgendar } from '../hooks/useAgendar';
 import { useCallback, useMemo, useState } from 'react';
 import { Layers, NotebookPen, RotateCcw } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
@@ -31,10 +32,12 @@ export default function LaboratorioDeIdentidade({ vereda, licao: daLicao, aoVenc
   const [noCaderno, setNoCaderno] = useState(naPlataforma);
   const [vida, setVida] = useState(0);
 
+  const agendar = useAgendar();
+
   const avisar = useCallback((texto: string) => {
     setAviso(texto);
-    window.setTimeout(() => setAviso(a => (a === texto ? '' : a)), 7000);
-  }, []);
+    agendar(() => setAviso(a => (a === texto ? '' : a)), 7000);
+  }, [agendar]);
   const aoVer = useCallback((chave: string) => setCtx(c => (
     c.descobertas.includes(chave) ? c : { ...c, descobertas: [...c.descobertas, chave] }
   )), []);

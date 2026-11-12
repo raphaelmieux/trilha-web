@@ -7,6 +7,7 @@ import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa, BotaoDaFaixa,
   EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
+  ContagemDePalavras,
 } from './word';
 import {
   CSS_FONTE_DO_WORD, GrupoAreaDeTransferencia, GrupoDeConfigurarPagina, GrupoDeEstilos, GrupoDeFonte,
@@ -14,7 +15,7 @@ import {
 } from './fonteDoWord';
 import {
   DEGRAU_DE_RECUO_CM, MEDIDAS_DAS_MARGENS, PAGINA_PADRAO,
-  medidasDaPagina, quantasPaginas, textoVisivel,
+  medidasDaPagina, quantasPaginas,
   type ConfiguracaoDaPagina,
 } from './documento';
 import { useEdicaoDoWord } from './useEdicaoDoWord';
@@ -88,7 +89,6 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTi
     feita: m.feita(contexto),
   }));
   const tudoFeito = tarefas.every(t => t.feita);
-  const palavras = textoVisivel(doc).split(/\s+/).filter(Boolean).length;
   const pagina = doc.pagina ?? PAGINA_PADRAO;
   const medidas = medidasDaPagina(doc);
 
@@ -267,7 +267,7 @@ export default function FormatacaoTextoLab({ specialtyCode, lessonCode, lessonTi
 
         <div className="wd-status">
           <span>Página 1 de {quantasPaginas(doc)}</span>
-          <span>{palavras} palavras</span>
+          <ContagemDePalavras doc={doc} selecao={edicao.selecao} />
           <span className="hidden sm:inline">Português (Brasil)</span>
           <ZoomDoWord zoom={zoom} aoMudar={setZoom} aoAvisar={setAviso} />
         </div>

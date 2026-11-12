@@ -1,3 +1,4 @@
+import { useAgendar } from '../hooks/useAgendar';
 import { useMemo, useState } from 'react';
 import { NotebookPen, RotateCcw, Table2 } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
@@ -123,9 +124,11 @@ export default function LaboratorioDoProjetoDeDados({ vereda, licao: daLicao, ao
   const caderno = CADERNO[licao];
   const imita = !(noCaderno && caderno) && programa !== 'plataforma';
 
+  const agendar = useAgendar();
+
   const avisar = (texto: string) => {
     setAviso(texto);
-    window.setTimeout(() => setAviso(a => (a === texto ? '' : a)), 7000);
+    agendar(() => setAviso(a => (a === texto ? '' : a)), 7000);
   };
 
   const mudar = (f: (c: ContextoDoProjetoDeDados) => ContextoDoProjetoDeDados) => setCtx(f);

@@ -300,6 +300,77 @@ describe('com o controle ligado, a formatação também sai marcada', () => {
   });
 });
 
+describe('o Pincel de Formatação e a contagem de palavras', () => {
+  /*
+    O Pincel estava na faixa e só avisava que "não faz parte do exercício", e a
+    barra de status deste laboratório não dizia quantas palavras o relato tem.
+  */
+  const pincel = () => comando('Pincel de Formatação');
+  const soltarMouseEm = (bloco: string) => {
+    const p = container.querySelector(`p[data-bloco="${bloco}"]`)!;
+    act(() => {
+      p.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: 0, clientY: 0 }));
+      p.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 40, clientY: 0, detail: 1 }));
+    });
+  };
+  const pesoDe = (bloco: string, offset: number) => {
+    const p = container.querySelector(`p[data-bloco="${bloco}"]`)!;
+    let pos = 0;
+    for (const el of p.querySelectorAll<HTMLElement>('[data-trecho]')) {
+      const n = (el.textContent ?? '').length;
+      if (offset >= pos && offset < pos + n) return el.style.fontWeight;
+      pos += n;
+    }
+    return '';
+  };
+
+  it('um clique pinta uma vez e solta; dois cliques pintam vários trechos até o Esc', () => {
+    montar();
+    clicar(guia('Início'), 'a guia Início');
+    porCursor(container, 'fe-1', 2);
+    tecla(container, 'n', { ctrl: true });
+    expect(['700', 'bold']).toContain(pesoDe('fe-1', 1));
+
+    porCursor(container, 'fe-1', 2);
+    clicar(pincel(), 'o Pincel');
+    expect(pincel()!.getAttribute('aria-pressed'), 'o Pincel não ficou na mão').toBe('true');
+    expect(container.querySelector('.wd-com-pincel'), 'o cursor não virou pincel').toBeTruthy();
+    porCursor(container, 'fe-1', 10, { bloco: 'fe-1', offset: 16 });
+    soltarMouseEm('fe-1');
+    expect(['700', 'bold'], 'o trecho pintado não ficou em negrito').toContain(pesoDe('fe-1', 12));
+    expect(pincel()!.getAttribute('aria-pressed'), 'um clique pinta uma vez só').not.toBe('true');
+
+    porCursor(container, 'fe-1', 2);
+    act(() => { pincel()!.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); });
+    porCursor(container, 'fe-1', 20, { bloco: 'fe-1', offset: 25 });
+    soltarMouseEm('fe-1');
+    porCursor(container, 'fe-1', 30, { bloco: 'fe-1', offset: 35 });
+    soltarMouseEm('fe-1');
+    expect(['700', 'bold']).toContain(pesoDe('fe-1', 22));
+    expect(['700', 'bold']).toContain(pesoDe('fe-1', 32));
+    expect(pincel()!.getAttribute('aria-pressed'), 'o pincel preso soltou sozinho').toBe('true');
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+    expect(pincel()!.getAttribute('aria-pressed'), 'o Esc não largou o pincel').not.toBe('true');
+  });
+
+  it('sem cursor no documento, o Pincel avisa em vez de pegar nada', () => {
+    montar();
+    clicar(guia('Início'), 'a guia Início');
+    clicar(pincel(), 'o Pincel');
+    expect(pincel()!.getAttribute('aria-pressed')).not.toBe('true');
+  });
+
+  it('a barra de status conta as palavras, e com seleção diz quantas de quantas', () => {
+    montar();
+    const contagem = () => container.querySelector('.wd-status [data-palavras]');
+    const total = Number(contagem()!.getAttribute('data-palavras'));
+    expect(total).toBeGreaterThan(50);
+    expect(contagem()!.textContent).toBe(`${total} palavras`);
+    porCursor(container, 'fe-1', 0, { bloco: 'fe-1', offset: 11 });
+    expect(contagem()!.textContent).toBe(`3 de ${total} palavras`);
+  });
+});
+
 describe('os dois botões grossos não fecham a tarefa', () => {
   it('Aceitar Todas resolve as marcas e deixa a data errada na folha', () => {
     montar();

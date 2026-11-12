@@ -1,3 +1,4 @@
+import { useAgendar } from '../hooks/useAgendar';
 import { useState } from 'react';
 import {
   ArrowDownAZ, ArrowUpZA, BarChart3, NotebookPen, RefreshCw, Sigma, Table2,
@@ -237,9 +238,11 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
   const [filtroAberto, setFiltroAberto] = useState<{ coluna: number; x: number; y: number } | null>(null);
   const [aviso, setAviso] = useState('');
 
+  const agendar = useAgendar();
+
   const avisar = (texto: string) => {
     setAviso(texto);
-    window.setTimeout(() => setAviso(a => (a === texto ? '' : a)), 8000);
+    agendar(() => setAviso(a => (a === texto ? '' : a)), 8000);
   };
 
   const mudarCaderno = (g: (k: Caderno) => Caderno) =>

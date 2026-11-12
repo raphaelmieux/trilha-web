@@ -26,7 +26,7 @@ import { createPortal } from 'react-dom';
 
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { lerSelecao, escreverSelecao, pontoDoDom } from './cursorNaFolha';
-import { mesmaSelecao, textoDaSelecao, recolhida, cursorEm, tamanhoDoParagrafo, selecaoDoTrecho, type Ponto, type Selecao } from './edicao';
+import { mesmaSelecao, textoDaSelecao, recolhida, cursorEm, tamanhoDoParagrafo, selecaoDoTrecho, contagemDePalavras, type Ponto, type Selecao } from './edicao';
 import type { EdicaoDaFolha, ComandoDeTexto, FormatacaoDeParagrafo } from './useEdicaoDoWord';
 import {
   CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice,
@@ -591,18 +591,43 @@ export function GrupoDaFaixa({ nome, children }: { nome: string; children: React
  * Botão da faixa. `empilhado` é o botão grande do Word — ícone em cima,
  * palavra embaixo —, que é como Colar, Tabela e Imagens aparecem lá.
  */
-export function BotaoDaFaixa({ dica, rotulo, ativo, aoClicar, children, empilhado }: {
+/**
+ * A contagem de palavras da barra de status, como o Word a escreve: "245
+ * palavras", e com texto selecionado "12 de 245 palavras".
+ *
+ * Ela estava em cinco laboratórios, cada um com a sua conta, e faltava nos
+ * outros quatro — a mesma barra dizendo uma coisa num documento e calando no
+ * seguinte. A conta é uma só, em `contagemDePalavras`.
+ */
+export function ContagemDePalavras({ doc, selecao, className }: {
+  doc: Doc<string>;
+  selecao: Selecao | null;
+  className?: string;
+}) {
+  const { total, selecionadas } = contagemDePalavras(doc, selecao);
+  const nome = (n: number) => (n === 1 ? 'palavra' : 'palavras');
+  return (
+    <span className={className} data-palavras={total} data-selecionadas={selecionadas ?? undefined}>
+      {selecionadas === null ? `${total} ${nome(total)}` : `${selecionadas} de ${total} ${nome(total)}`}
+    </span>
+  );
+}
+
+export function BotaoDaFaixa({ dica, rotulo, ativo, aoClicar, aoClicarDuasVezes, children, empilhado }: {
   dica: string;
   rotulo?: string;
   ativo?: boolean;
   aoClicar: () => void;
+  /** O duplo clique, para os botões em que ele quer dizer outra coisa — o Pincel preso. */
+  aoClicarDuasVezes?: () => void;
   children: React.ReactNode;
   empilhado?: boolean;
 }) {
   return (
     <button
       type="button" title={dica} aria-label={dica} aria-pressed={ativo}
-      onClick={aoClicar}
+      onClick={() => aoClicar()}
+      onDoubleClick={aoClicarDuasVezes}
       /* O clique na faixa não tira o cursor do documento, como no Word: o
          negrito apertado vale para a seleção que estava lá, e o cursor
          continua piscando no mesmo lugar depois. */
@@ -1023,6 +1048,12 @@ export const CSS_FOLHA = `
      plataforma, vermelha com letra branca, faria o documento parecer outro
      programa no instante em que alguém seleciona uma palavra. */
   .wd-editavel ::selection { background: rgba(0, 0, 0, 0.17); color: currentColor; }
+  /* O Pincel na mão troca o cursor do texto por um pincel, como no Word. É o
+     único aviso que o programa dá de que o próximo clique pinta, e sem ele
+     quem apertou o botão e foi olhar outra coisa volta e pinta sem querer. */
+  .wd-editavel.wd-com-pincel, .wd-editavel.wd-com-pincel * {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6'%3E%3Cpath d='M4 2v20M2 2h4M2 22h4'/%3E%3Cpath d='M11 4h9v5h-9z' fill='white'/%3E%3Cpath d='M15 9v4h-2v6' /%3E%3C/svg%3E") 4 12, text;
+  }
   .wd-ilha { cursor: default; }
   /* As notas de rodapé: um traço curto e o texto pequeno, no pé da folha. */
   .wd-notas { margin-top: auto; padding-top: 6px; font-size: 9px; color: #201F1E; }
@@ -1786,7 +1817,7 @@ export function FolhaDoWord({
   return (
     <>
     <div
-      className={`wd-canvas${editavel ? ' wd-editavel' : ''}${faixasAbertas ? ' wd-faixas-abertas' : ''}`}
+      className={`wd-canvas${editavel ? ' wd-editavel' : ''}${faixasAbertas ? ' wd-faixas-abertas' : ''}${edicao?.comPincel ? ' wd-com-pincel' : ''}`}
       onClick={editavel
         /* Tabela e imagem param o clique antes daqui: o que chega é clique no
            texto, e ele tira o objeto de escolhido, como o cursor do Word. */
@@ -2351,7 +2382,7 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined, a
     const velha = lida && p && !ev.shiftKey && !arrastou && (
       (!recolhida(lida) && ev.detail <= 1)
       || (recolhida(lida) && (lida.foco.bloco !== p.dataset.bloco || (!!t && !!ancora && !t.contains(ancora)))));
-    if (lida && !velha) { e.aoSelecionar(lida); return; }
+    if (lida && !velha) { e.aoSelecionar(lida); e.aoSoltar?.(); return; }
     if (!p) return;
     const b = atual.current.doc.blocos.find(x => x.id === p.dataset.bloco);
     if (!b || b.tipo !== 'paragrafo') return;
@@ -2360,6 +2391,7 @@ function useFolhaEditavel(doc: Doc<string>, edicao: EdicaoDaFolha | undefined, a
        debaixo do cursor" ser a marca clicada. */
     const noTrecho = t ? selecaoDoTrecho(atual.current.doc, t.dataset.trecho!) : null;
     e.aoSelecionar(noTrecho ? cursorEm(b.id, noTrecho.ancora.offset) : cursorEm(b.id, tamanhoDoParagrafo(b)));
+    e.aoSoltar?.();
   };
 
   return { ref, geracao, aoTeclar, aoClicar, aoApertar };

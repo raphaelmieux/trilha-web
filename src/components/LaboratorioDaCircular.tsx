@@ -6,6 +6,7 @@ import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
   BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
+  ContagemDePalavras,
 } from '../labs/word';
 import { GrupoDeFonte, CSS_FONTE_DO_WORD, GrupoDeParagrafo, GrupoAreaDeTransferencia } from '../labs/fonteDoWord';
 import {
@@ -13,7 +14,7 @@ import {
   gestosVazios,
   type Doc, type GestosDaCircular,
 } from '../labs/circularDoClube';
-import { quantasPaginas, textoVisivel } from '../labs/documento';
+import { quantasPaginas } from '../labs/documento';
 import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
 
@@ -153,7 +154,6 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair,
     </>
   );
 
-  const palavras = textoVisivel(doc).split(/\s+/).filter(Boolean).length;
 
   return (
     <LaboratorioEmTelaCheia
@@ -226,7 +226,7 @@ export default function LaboratorioDaCircular({ vereda, licao, aoVencer, aoSair,
 
         <div className="wd-status">
           <span>Página {Math.min(paginaDoCursor(doc, edicao.selecao?.foco.bloco), quantasPaginas(doc))} de {quantasPaginas(doc)}</span>
-          <span>{palavras} palavras</span>
+          <ContagemDePalavras doc={doc} selecao={edicao.selecao} />
           <span>Português (Brasil)</span>
           <ZoomDoWord zoom={zoom} aoMudar={setZoom} aoAvisar={setAviso} />
         </div>
