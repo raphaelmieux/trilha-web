@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CAMADA_DO_MENU, CAMADA_DO_VEU_DO_MENU } from './camadas';
+import { useOrtografiaNoElemento } from './ortografiaNoElemento';
 import { Copy, Link2, Music, Play, Plus, Trash2 } from 'lucide-react';
 import {
   CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice, AcessibilidadeDoStatus,
@@ -900,6 +901,9 @@ function CorpoEditavel({ topicos, aoEscrever, rotulo, centrado, estilo }: {
   estilo: React.CSSProperties;
 }) {
   const ref = useRef<HTMLUListElement>(null);
+  /* O corretor da plataforma, e não o do navegador: é ele que conhece o
+     dicionário pessoal, e é o mesmo vermelho da folha do Word. */
+  const ortografia = useOrtografiaNoElemento(ref);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -940,11 +944,15 @@ function CorpoEditavel({ topicos, aoEscrever, rotulo, centrado, estilo }: {
   };
 
   return (
+    <>
+    {ortografia.menu}
     <ul
       ref={ref}
       className="pp-corpo-campo"
       contentEditable
       suppressContentEditableWarning
+      spellCheck={false}
+      onContextMenu={ortografia.aoMenu}
       role="textbox"
       aria-multiline="true"
       aria-label={rotulo}
@@ -980,6 +988,7 @@ function CorpoEditavel({ topicos, aoEscrever, rotulo, centrado, estilo }: {
         }
       }}
     />
+    </>
   );
 }
 

@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import InsercaoTextoLab from './InsercaoTextoLab';
-import { porCursor, tecla, folhaEditavel } from './tecladoDaFolha';
+import { porCursor, tecla, folhaEditavel, digitar } from './tecladoDaFolha';
+import { instalarCorretor } from './ortografia';
 
 /*
   A trava que clica do laboratório de inserção da AP043.
@@ -210,5 +211,82 @@ describe('Ctrl+] e Ctrl+[ mudam o tamanho de um em um ponto', () => {
     expect(depois, 'o Ctrl+] não mudou nada').not.toBe(antes);
     tecla(container, '[', { ctrl: true, code: 'BracketLeft' });
     expect(tamanho(), 'o Ctrl+[ não voltou ao tamanho de antes').toBe(antes);
+  });
+});
+
+/*
+  As sugestões de ortografia no botão direito. O dicionário de verdade é o
+  Hunspell em WebAssembly, que o jsdom não serve; aqui entra um corretor que
+  só não conhece "acampamneto", e o que se confere é o que a folha faz com a
+  resposta — o dicionário tem trava própria em ortografia.test.ts.
+*/
+describe('em cima de uma palavra sublinhada, o botão direito sugere a certa', () => {
+  const acrescentadas: string[] = [];
+  beforeAll(() => instalarCorretor({
+    confere: w => w !== 'acampamneto' || acrescentadas.includes(w),
+    sugere: () => ['acampamento', 'acampam neto'],
+    acrescentar: w => { acrescentadas.push(w); },
+  }));
+  afterAll(() => instalarCorretor(null));
+
+  const abrir = () => act(() => {
+    folhaEditavel(container).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 50, clientY: 50 }));
+  });
+  const menu = () => document.querySelector<HTMLElement>('.wd-contexto');
+  const sugestoes = () => [...(menu()?.querySelectorAll<HTMLButtonElement>('.wd-contexto-sugestao') ?? [])].map(b => b.textContent);
+  const itemDoMenu = (nome: string) => [...menu()!.querySelectorAll<HTMLButtonElement>('.wd-contexto-item')]
+    .find(b => b.textContent?.includes(nome))!;
+  const textoDe = (bloco: string) => folhaEditavel(container).querySelector(`p[data-bloco="${bloco}"]`)?.textContent ?? '';
+
+  it('a sugestão escolhida troca a palavra inteira, e o Ctrl+Z a devolve', () => {
+    porCursor(container, 'p1', 'fim');
+    digitar(container, ' acampamneto');
+    porCursor(container, 'p1', textoDe('p1').length - 3);
+    abrir();
+    expect(sugestoes(), 'o menu não abriu pelas sugestões').toEqual(['acampamento', 'acampam neto']);
+    act(() => menu()!.querySelector<HTMLButtonElement>('.wd-contexto-sugestao')!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    expect(textoDe('p1')).toMatch(/ acampamento$/);
+    expect(textoDe('p1')).not.toContain('acampamneto');
+    tecla(container, 'z', { ctrl: true });
+    expect(textoDe('p1'), 'o Ctrl+Z não devolveu a palavra de antes').toMatch(/ acampamneto$/);
+  });
+
+  it('palavra que o dicionário conhece não abre sugestão nenhuma', () => {
+    porCursor(container, 'p1', 1);
+    abrir();
+    expect(menu()).not.toBeNull();
+    expect(sugestoes()).toEqual([]);
+    expect(menu()!.textContent).not.toContain('Ignorar Tudo');
+  });
+
+  it('Ignorar Tudo cala a palavra no documento inteiro, sem mexer no dicionário', () => {
+    porCursor(container, 'p1', 'fim');
+    digitar(container, ' acampamneto');
+    porCursor(container, 'p1', textoDe('p1').length - 3);
+    abrir();
+    act(() => itemDoMenu('Ignorar Tudo').dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    porCursor(container, 'p1', textoDe('p1').length - 3);
+    abrir();
+    expect(sugestoes(), 'a palavra ignorada voltou a pedir correção').toEqual([]);
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+
+    porCursor(container, 'p2', 'fim');
+    digitar(container, ' acampamneto');
+    porCursor(container, 'p2', textoDe('p2').length - 3);
+    abrir();
+    expect(sugestoes(), 'Ignorar Tudo deveria valer para o documento inteiro').toEqual([]);
+    expect(acrescentadas, 'ignorar não é adicionar ao dicionário').toEqual([]);
+  });
+
+  it('Adicionar ao Dicionário ensina a palavra ao corretor', () => {
+    porCursor(container, 'p1', 'fim');
+    digitar(container, ' acampamneto');
+    porCursor(container, 'p1', textoDe('p1').length - 3);
+    abrir();
+    act(() => itemDoMenu('Adicionar ao Dicionário').dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    expect(acrescentadas).toEqual(['acampamneto']);
+    porCursor(container, 'p1', textoDe('p1').length - 3);
+    abrir();
+    expect(sugestoes()).toEqual([]);
   });
 });

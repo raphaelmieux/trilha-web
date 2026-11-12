@@ -2197,6 +2197,93 @@ palavras", e com texto selecionado "12 de 245 palavras", como o Word. O texto
 riscado de uma revisão não conta: quem corta com o controle ligado precisa ver
 o número cair.
 
+**O Word sublinha de vermelho o que o dicionário não conhece.** O dicionário é o
+VERO, o do LibreOffice para o português do Brasil (`dictionary-pt`, LGPL-3.0 ou
+MPL-2.0), lido pelo próprio Hunspell compilado para WebAssembly
+(`hunspell-wasm`). Os dois caminhos óbvios não cabem, e foram medidos: o nspell,
+em JavaScript, não termina de carregar o VERO em três minutos, e expandi-lo numa
+lista de palavras dá 83 milhões de formas (1,4 GB). O Hunspell o carrega em um
+terço de segundo, e o `.wasm` e o dicionário só são baixados quando uma folha
+editável abre. O servidor de desenvolvimento precisa de `optimizeDeps.exclude`
+para ele: pré-empacotado, o módulo muda de pasta e o `new URL` do `.wasm` passa
+a apontar para uma página de erro, e a folha ficava sem sublinhado só no
+`npm run dev`.
+
+As palavras saem do **modelo**, e não do texto da tela: o campo ("Figura 1") é
+objeto, o texto riscado de uma revisão já saiu do documento, e nenhum dos dois
+se confere. O sublinhado é pintado pela API de destaque do CSS
+(`CSS.highlights`), que marca intervalos sem tocar no HTML — pôr um `<span>` em
+volta da palavra faria a tela ter o que o documento não tem. Navegador sem a
+API fica sem o vermelho e não baixa o dicionário. Quatro decisões erram calado
+se invertidas:
+
+- **o que o Word não confere, este também não**: palavra em MAIÚSCULAS, com
+  número ou dentro de endereço, que são as três caixas que o Word traz
+  marcadas. Sublinhar "PIX" ensinaria a ignorar o vermelho;
+- **a palavra que se está digitando espera o espaço**: a que termina onde está
+  o cursor, com a folha em foco, não fica vermelha a cada letra;
+- **o botão direito pergunta pela palavra debaixo do ponteiro**, e não pela
+  seleção guardada, que só chega depois — o menu abria sem as sugestões da
+  palavra em que se clicou. A sugestão entra pelo comando `inserir` com `alvo`,
+  e por isso passa pelo Ctrl+Z e pelo controle de alterações como uma tecla;
+- **Ignorar Tudo vale para o documento; Adicionar ao Dicionário, para a
+  pessoa**, em toda simulação — é o dicionário pessoal, logo abaixo.
+
+`PALAVRAS_DO_CLUBE`, em `ortografia.ts`, é o dicionário personalizado da
+plataforma: o que os documentos escrevem de propósito e o VERO não traz.
+"Raphael" é a grafia do nome de quem fez a plataforma, e o VERO só conhece
+"Rafael". `ortografia.test.ts` lê todo documento dos laboratórios de texto e
+reprova palavra sublinhada — é erro de digitação no conteúdo, ou palavra que
+falta no dicionário do clube —, e reprova palavra do clube que o VERO já
+conheça, que estaria na lista à toa.
+
+**O dicionário pessoal é um só, e vale em toda simulação.** São duas camadas
+por cima do VERO, e não se misturam. `PALAVRAS_DO_CLUBE` é da plataforma: está
+no código porque os documentos que ela entrega a escrevem, e entra por PR. O
+**dicionário pessoal** é de cada pessoa: o que ela mandou aceitar com
+"Adicionar ao Dicionário", em qualquer programa imitado. Nada dele é
+compartilhado entre contas — termo de clube que todo mundo precisa vira
+palavra do clube, por PR, e não voto de quem adicionou primeiro.
+
+Ele mora em `lib/dicionarioPessoal.ts`, e é a **única** porta: o corretor
+(`carregarCorretor`) o põe no Hunspell ao carregar e o **ouve**, e toda
+superfície que sublinha o ouve também, para tirar o vermelho na hora em que
+outra tela acrescenta a palavra. Um dicionário por programa seria o defeito de
+sempre — a palavra aceita no Word continuaria vermelha no slide, e a pessoa
+concluiria que adicionar não funciona. No Office também é um arquivo só.
+
+Ele vale **na conta**, e não no aparelho: o desbravador estuda metade no
+celular e metade no computador do clube, e o computador do clube é de todo
+mundo — guardado só no navegador, a palavra de um passaria à próxima pessoa
+que sentasse ali. A tabela é `dicionario_pessoal`
+(`20261112170000_dicionario_pessoal`), com RLS de dono e o mesmo teto de
+`palavraValida` — 64 caracteres, sem espaço —, para que nada aceito na tela
+seja recusado calado no banco. A leitura dela entra num push depois da
+migration, que é a ordem de sempre; até lá ele fica no navegador.
+
+**Para pôr ortografia numa simulação nova**, a superfície escolhe uma de duas
+peças, conforme quem guarda o texto enquanto se digita:
+
+- **o modelo** (a folha do Word, desenhada do documento): `useOrtografia`, que
+  lê as palavras do modelo e as pinta na tela;
+- **o DOM** (o corpo do slide, uma lista editável que o modelo lê de volta):
+  `useOrtografiaNoElemento`, que confere os nós de texto, refaz o sublinhado
+  por `MutationObserver` e troca a palavra por `insertText` — o mesmo `input`
+  de uma tecla, e por isso o mesmo Ctrl+Z.
+
+E em qualquer das duas: `spellCheck={false}` no elemento, senão o corretor do
+navegador sublinha por cima, com outro dicionário que não conhece o pessoal; o
+vermelho é o `::highlight(ortografia)` do `index.css`, um só para a plataforma;
+e **nunca** um dicionário próprio, nem uma lista de "palavras aceitas" ao lado.
+
+`<input>` e `<textarea>` não recebem destaque — a API pinta intervalos do
+documento, e o texto de um campo não está nele. Por isso o título do slide, que
+é um `<input>`, continua com o corretor do navegador, e as caixas de texto da
+plataforma (a redação guiada, o corpo do correio) também. Trazê-los para o
+dicionário pessoal pede trocar o campo por elemento editável, e não um
+contorno: sobrepor uma camada pintada a um `<textarea>` desalinha na primeira
+quebra de linha, que é o defeito que a régua do editor de código já ensinou.
+
 **O Explorador desfaz.** Ctrl+Z desfaz mover, copiar, renomear, excluir e criar
 pasta, e Ctrl+Y refaz, nos dois Exploradores — antes, renomear errado só tinha
 volta digitando o nome de antes de memória. `useDesfazerDoDisco` guarda o disco
@@ -6127,6 +6214,11 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/planilha.test.ts` | alça que copia a mesma data em vez de andar os dias, ou datas ordenadas pela letra |
 | `src/labs/gradeDoExcel.test.tsx` | planilha em que a data digitada não se completa, o Ctrl+; não escreve hoje, ou os atalhos de formato não chegam |
 | `src/labs/gradeDoExcel.test.tsx` | planilha sem o botão Quebrar Texto, ou em que o Alt+Enter confirma em vez de quebrar a linha |
+| `src/labs/ortografia.test.ts` | documento de laboratório que chega com palavra sublinhada, ou sigla, número e endereço sublinhados |
+| `src/labs/ortografia.test.ts` | texto riscado ou campo conferido como palavra, ou palavra do clube que o dicionário já conhece |
+| `src/lib/dicionarioPessoal.test.ts` | palavra acrescentada que some ao recarregar, ouvinte que não fica sabendo, ou palavra que o banco recusaria aceita no aparelho |
+| `src/labs/powerpoint.test.tsx` | corpo do slide com o corretor do navegador, sugestão que não volta ao modelo, ou palavra acrescentada noutra tela que continua vermelha |
+| `src/labs/InsercaoTextoLab.test.tsx` | sugestão do botão direito que não troca a palavra inteira, que o Ctrl+Z não desfaz, ou Ignorar Tudo que vale só para um parágrafo |
 | `src/labs/planilha.test.ts` | quebra de texto que deixa a faixa meio a meio, ou que grava `false` em vez de devolver a célula ao que era |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |

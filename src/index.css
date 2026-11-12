@@ -850,3 +850,14 @@
 @media (max-width: 640px) {
   .report-id { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* O sublinhado vermelho ondulado da ortografia, pintado pela API de destaque
+   do CSS em toda simulação que confere ortografia — a folha do Word, o corpo
+   do slide e as que vierem. Mora aqui, e não na folha de um programa, porque
+   é um vermelho só: o destaque se chama "ortografia" no documento inteiro, e
+   duas regras para o mesmo nome divergiriam no primeiro ajuste. */
+::highlight(ortografia) {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: #E81123;
+}

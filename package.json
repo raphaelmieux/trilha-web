@@ -16,6 +16,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "acorn": "^8.19.0",
+    "dictionary-pt": "^4.0.0",
+    "hunspell-wasm": "^0.3.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.33.0",
     "opentype.js": "^2.0.0",
