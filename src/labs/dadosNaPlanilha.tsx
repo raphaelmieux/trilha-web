@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import {
   AbasDoExcel, BarraDeStatusDoExcel, BarraDeFormulas, BarraDeTituloDoExcel, BotaoDoExcel, DesenhoDoGrafico,
-  GradeDoExcel, GrupoDoExcel, GuiasDoExcel,
+  GradeDoExcel, GrupoDoExcel, GuiasDoExcel, GrupoDeAlinhamentoDoExcel,
 } from './excel';
 import { useGradeDoExcel } from './gradeDoExcel';
 import {
@@ -235,6 +235,7 @@ export function AnaliseNoExcel({ ctx, mudar, avisar, arquivo }: PropsDaSuperfici
               {botao('Desfazer', () => g.desfazer(), <Undo2 className="w-4 h-4" />)}
               {botao('Refazer', () => g.refazer(), <Redo2 className="w-4 h-4" />)}
             </GrupoDoExcel>
+            <GrupoDeAlinhamentoDoExcel grade={g} celula={g.props.planilha.celulas[g.sel.l]?.[g.sel.c]} />
             <GrupoDoExcel nome="Células">
               {botao('Formatar: Mover ou Copiar Planilha', () => setDialogo({
                 tipo: 'mover', antesDe: cad.ativa + 1, copia: false,

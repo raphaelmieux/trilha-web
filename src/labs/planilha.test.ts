@@ -10,6 +10,7 @@ import {
   moverOuCopiar, renomearAba, substituir, removerDuplicatas, planilhaDe, fimDoPreenchimento,
   numeroNaLargura, larguraQuePede, larguraDoNumero, LARGURA_PADRAO,
   pontosDoGrafico, pontosDaDispersao, valorDe, formatoAoConfirmar, dataDigitada, valorCalculado,
+  alinharNaFaixa, alternarQuebra, quebraEmTodaAFaixa,
 } from './planilha';
 import { mostrar } from './formulas';
 
@@ -827,5 +828,46 @@ describe('a data na planilha', () => {
     });
     const q = ordenar(p, 0, true);
     expect([1, 2, 3].map(l => cel(q, l, 0))).toEqual(['01/08/2026', '10/09/2026', '02/10/2026']);
+  });
+});
+
+describe('Quebrar Texto Automaticamente', () => {
+  const base = () => planilhaDe('Teste', [['Nome completo', 'Unidade'], ['Ana', 'Águia']]);
+  const tudo = { l1: 0, c1: 0, l2: 1, c2: 1 };
+  /* A grade tem folga além do que foi escrito; a conta olha só a faixa. */
+  const daFaixa = (p: Planilha) => p.celulas.slice(0, 2).flatMap(l => l.slice(0, 2));
+
+  it('liga em toda a faixa, e desliga em toda quando todas já tinham', () => {
+    const ligada = alternarQuebra(base(), tudo);
+    expect(daFaixa(ligada).every(c => c.quebra)).toBe(true);
+    expect(quebraEmTodaAFaixa(ligada, tudo)).toBe(true);
+    const desligada = alternarQuebra(ligada, tudo);
+    expect(desligada.celulas.flat().some(c => c.quebra)).toBe(false);
+  });
+
+  /* Meio a meio depois de um clique seria um botão que não diz o que fez. */
+  it('com a faixa meio a meio, liga nas que faltam em vez de inverter cada uma', () => {
+    const umaSo = alternarQuebra(base(), { l1: 0, c1: 0, l2: 0, c2: 0 });
+    const depois = alternarQuebra(umaSo, tudo);
+    expect(daFaixa(depois).every(c => c.quebra)).toBe(true);
+  });
+
+  /* Gravar `false` deixaria a célula diferente da de partida, e conferências
+     que comparam a grade inteira acusariam uma mudança que se desfez. */
+  it('desligar devolve a célula exatamente ao que era', () => {
+    const p = base();
+    expect(alternarQuebra(alternarQuebra(p, tudo), tudo)).toEqual(p);
+  });
+
+  it('o texto confirmado com quebra de linha liga a quebra sozinho, e o sem quebra não', () => {
+    expect(dataDigitada(base(), 1, 0, 'Ana\nClara').celulas[1][0].quebra).toBe(true);
+    expect(dataDigitada(base(), 1, 0, 'Ana Clara').celulas[1][0].quebra).toBeUndefined();
+  });
+
+  it('alinhar mexe só na faixa, e só no eixo pedido', () => {
+    const p = alinharNaFaixa(base(), { l1: 1, c1: 0, l2: 1, c2: 0 }, { h: 'centro' });
+    expect(p.celulas[1][0].h).toBe('centro');
+    expect(p.celulas[1][0].v).toBe(base().celulas[1][0].v);
+    expect(p.celulas[0][0].h).toBe(base().celulas[0][0].h);
   });
 });

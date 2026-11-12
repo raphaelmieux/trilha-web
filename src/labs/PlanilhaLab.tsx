@@ -6,7 +6,7 @@ import {
   Combine, Split, Rows3, Trash2, Table2, Paintbrush, Grid2x2,
   Sigma, FileCheck2, RotateCcw, Percent, Palette,
   ChevronDown, Ruler, Copy, ClipboardPaste, Scissors, Eraser, Undo2, Redo2,
-  PaintBucket,
+  PaintBucket, WrapText,
 } from 'lucide-react';
 import { IconeItalico, IconeNegrito, IconeSublinhado } from './office';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
@@ -577,6 +577,12 @@ export default function PlanilhaLab({
               <span className="flex items-center gap-1">
                 <Split className="w-4 h-4" />
                 <span style={{ fontSize: 10 }}>Desfazer</span>
+              </span>
+            </Bt>
+            <Bt dica="Quebrar Texto Automaticamente" ativo={g.quebraAtiva} aoClicar={g.quebrarTexto}>
+              <span className="flex items-center gap-1">
+                <WrapText className="w-4 h-4" />
+                <span style={{ fontSize: 10 }}>Quebrar Texto</span>
               </span>
             </Bt>
           </Grupo>

@@ -82,6 +82,21 @@ export interface Celula {
    * acusar a planilha que chega sem identidade nenhuma.
    */
   cor?: string;
+  /**
+   * Quebrar Texto Automaticamente, que é o botão do grupo Alinhamento.
+   *
+   * Desligado, a célula escreve numa linha só e corta o que não cabe — que é
+   * o que a tarefa do módulo 1 da CC-ES003 manda notar. Ligado, o texto desce
+   * em quantas linhas precisar e a linha da planilha cresce junto, como o
+   * AutoAjuste do Excel faz.
+   *
+   * Opcional pela razão de `cor`: planilha nasce sem, e a ausência é o
+   * desligado. Quem desliga **apaga** o campo, e não grava `false`, para que
+   * ligar e desligar devolva a célula exatamente ao que era — conferências que
+   * comparam a grade inteira, como `brutaIntacta` da CC-ES013, não podem
+   * acusar diferença numa célula que voltou ao estado de partida.
+   */
+  quebra?: boolean;
 }
 
 export interface Planilha {
@@ -645,10 +660,56 @@ export function dataDigitada(p: Planilha, l: number, c: number, texto: string, c
   const formato = formatoAoConfirmar(p, l, c, texto, caderno);
   const s = ehFormula(texto) || texto.startsWith("'") ? null : serieDoTexto(texto);
   const gravado = s === null ? texto : textoDaData(s);
+  /* Alt+Enter liga a quebra sozinho, como no Excel: a quebra de linha que
+     alguém digitou só se vê com ela ligada, e um texto de duas linhas escrito
+     numa só seria a planilha engolindo o gesto. */
+  const quebrou = texto.includes('\n');
   return {
     ...p,
     celulas: p.celulas.map((linha, i) => (i !== l ? linha : linha.map((cel, j) => (
-      j === c ? { ...cel, texto: gravado, formato } : cel)))),
+      j === c ? { ...cel, texto: gravado, formato, ...(quebrou ? { quebra: true } : {}) } : cel)))),
+  };
+}
+
+/** Toda célula da faixa tem a quebra ligada: é o que acende o botão. */
+export function quebraEmTodaAFaixa(p: Planilha, f: Faixa): boolean {
+  const n = normalizar(f);
+  for (let l = n.topo; l <= n.base; l++) {
+    for (let c = n.esq; c <= n.dir; c++) {
+      const cel = p.celulas[l]?.[c];
+      if (cel && !cel.coberta && !cel.quebra) return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * O botão Quebrar Texto Automaticamente sobre a faixa selecionada.
+ *
+ * Alterna como o Excel: se alguma célula da faixa está sem a quebra, liga em
+ * todas; se todas já têm, desliga em todas. Ligar só nas que faltam e
+ * desligar nas que tinham deixaria a faixa meio a meio depois de um clique.
+ */
+export function alternarQuebra(p: Planilha, f: Faixa): Planilha {
+  const ligar = !quebraEmTodaAFaixa(p, f);
+  return {
+    ...p,
+    celulas: p.celulas.map((linha, l) => linha.map((cel, c) => {
+      if (!naFaixa(f, l, c)) return cel;
+      if (ligar) return { ...cel, quebra: true };
+      const resto = { ...cel };
+      delete resto.quebra;
+      return resto;
+    })),
+  };
+}
+
+/** Os seis botões de alinhar do grupo Alinhamento, sobre a faixa selecionada. */
+export function alinharNaFaixa(p: Planilha, f: Faixa, mudanca: { h?: AlinhaH; v?: AlinhaV }): Planilha {
+  return {
+    ...p,
+    celulas: p.celulas.map((linha, l) => linha.map((cel, c) => (
+      naFaixa(f, l, c) ? { ...cel, ...mudanca } : cel))),
   };
 }
 

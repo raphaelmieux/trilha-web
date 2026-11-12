@@ -4102,6 +4102,28 @@ selecionada (Shift+Espaço, Ctrl+Espaço); com uma célula só o Excel pergunta 
 que deslocar, e aqui, sem deslocamento de células, o atalho diz o que
 selecionar antes em vez de adivinhar e apagar a errada.
 
+**Quebrar Texto Automaticamente e Alt+Enter existem em toda planilha.** Seis
+dos oito laboratórios não desenhavam o grupo Alinhamento, e a faixa completada
+o mostrava com botões que só avisavam que não faziam parte do exercício — num
+programa em que alinhar e quebrar texto é gesto de todo dia. Os comandos moram
+no gancho (`alinhar`, `quebrarTexto`), e `GrupoDeAlinhamentoDoExcel` é o grupo
+dos seis; os dois que já tinham o seu, com o Mesclar do exercício, ganharam
+`BotaoQuebrarTexto`. Três decisões erram calado se invertidas:
+
+- **o campo da célula e a barra de fórmulas são `<textarea>`.** Um `<input>`
+  tira as quebras de linha do valor por especificação: a célula de duas linhas,
+  aberta na barra e confirmada, voltaria com uma só. O textarea abre com o
+  cursor no começo, e por isso o da célula o põe no fim ao receber o foco —
+  sem isso, começar a digitar por cima escrevia "na" antes do "A" da primeira
+  tecla. Teste que escreve na barra usa o setter do **protótipo do elemento**,
+  e não o de `HTMLInputElement`, que recusa um textarea;
+- **desligar a quebra apaga o campo**, e não grava `false`: ligar e desligar
+  devolve a célula ao que era, e conferências que comparam a grade inteira não
+  acusam diferença onde nada mudou;
+- **a linha cresce sozinha**, porque a altura de linha de tabela é um mínimo e
+  não um teto — é o AutoAjuste que o Excel faz ao ligar a quebra. Confirmar
+  texto com quebra de linha liga a quebra, como o Alt+Enter do Excel.
+
 **A AP044 deixou de ter uma planilha só dela.** Ela desenhava uma tabela HTML,
 com o total num painel ao lado e a fórmula num botão: as setas, o F2 e a barra
 de fórmulas que a AP043 acabara de ensinar não existiam ali. Hoje é uma pasta de
@@ -6104,6 +6126,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/planilha.test.ts` | formato de data deduzido ao mostrar, que desfaz o Geral escolhido, ou diferença de datas mostrada como data |
 | `src/labs/planilha.test.ts` | alça que copia a mesma data em vez de andar os dias, ou datas ordenadas pela letra |
 | `src/labs/gradeDoExcel.test.tsx` | planilha em que a data digitada não se completa, o Ctrl+; não escreve hoje, ou os atalhos de formato não chegam |
+| `src/labs/gradeDoExcel.test.tsx` | planilha sem o botão Quebrar Texto, ou em que o Alt+Enter confirma em vez de quebrar a linha |
+| `src/labs/planilha.test.ts` | quebra de texto que deixa a faixa meio a meio, ou que grava `false` em vez de devolver a célula ao que era |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

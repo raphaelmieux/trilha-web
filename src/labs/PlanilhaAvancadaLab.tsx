@@ -10,7 +10,7 @@ import { IconeNegrito } from './office';
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
   CSS_EXCEL, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, AbasDoExcel,
-  BarraDeFormulas, GradeDoExcel, DesenhoDoGrafico, BarraDeStatusDoExcel,
+  BarraDeFormulas, GradeDoExcel, DesenhoDoGrafico, BarraDeStatusDoExcel, GrupoDeAlinhamentoDoExcel,
 } from './excel';
 import { useGradeDoExcel } from './gradeDoExcel';
 import { regiaoAtual } from './teclasDaPlanilha';
@@ -353,6 +353,7 @@ export default function PlanilhaAvancadaLab({ specialtyCode, lessonCode, lessonT
                 <BotaoDoExcel dica="Desfazer (Ctrl+Z)" aoClicar={g.desfazer}><Undo2 className="w-4 h-4" /></BotaoDoExcel>
                 <BotaoDoExcel dica="Refazer (Ctrl+Y)" aoClicar={g.refazer}><Redo2 className="w-4 h-4" /></BotaoDoExcel>
               </GrupoDoExcel>
+              <GrupoDeAlinhamentoDoExcel grade={g} celula={g.props.planilha.celulas[g.sel.l]?.[g.sel.c]} />
               <GrupoDoExcel nome="Área de Transferência">
                 <BotaoDoExcel dica="Colar (Ctrl+V)" aoClicar={g.colar}><ClipboardPaste className="w-4 h-4" /></BotaoDoExcel>
                 <BotaoDoExcel dica="Recortar (Ctrl+X)" aoClicar={g.recortar}><Scissors className="w-4 h-4" /></BotaoDoExcel>

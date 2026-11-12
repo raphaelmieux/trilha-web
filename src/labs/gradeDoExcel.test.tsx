@@ -21,6 +21,13 @@ import { AnaliseNoExcel } from './dadosNaPlanilha';
 import { LICOES_DA_CC_ES013, contextoDe as contextoDaCcEs013 } from './metasDaCcEs013';
 import type { LicaoDeVereda, Vereda } from '../curriculum/veredas';
 
+/* O valor gravado pelo setter do próprio protótipo: a barra e o campo da célula
+   são textarea (pelo Alt+Enter), e os diálogos continuam sendo input. */
+const valorNativo = {
+  call: (el: Element, v: string) =>
+    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value')!.set!.call(el, v),
+};
+
 /*
   Os laboratórios de planilha teclam igual, e é isto que se confere aqui.
 
@@ -185,8 +192,7 @@ const teclar = (alvo: Element, key: string, extra: KeyboardEventInit = {}) => {
 const digitar = (texto: string) => {
   for (const letra of texto) {
     act(() => {
-      const setter = Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype, 'value')!.set!;
+      const setter = valorNativo;
       const campo = document.activeElement as HTMLInputElement;
       setter.call(campo, campo.value + letra);
       campo.dispatchEvent(new Event('input', { bubbles: true }));
@@ -412,8 +418,7 @@ const GESTOS: Record<string, Gesto> = {
       campo.dispatchEvent(new FocusEvent('focus', { bubbles: true }));
     });
     act(() => {
-      const setter = Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype, 'value')!.set!;
+      const setter = valorNativo;
       setter.call(campo, 'Semeadores');
       campo.dispatchEvent(new Event('input', { bubbles: true }));
     });
@@ -425,8 +430,7 @@ const GESTOS: Record<string, Gesto> = {
     act(() => {
       campo.focus();
       campo.dispatchEvent(new FocusEvent('focus', { bubbles: true }));
-      const setter = Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype, 'value')!.set!;
+      const setter = valorNativo;
       setter.call(campo, 'Semeadores');
       campo.dispatchEvent(new Event('input', { bubbles: true }));
     });
@@ -496,6 +500,37 @@ const GESTOS: Record<string, Gesto> = {
     apontar(celula(L + 5, 0));
     teclar(grade(), 'ArrowDown', { ctrlKey: true });
     expect(Number(nomeDaCaixa().slice(1)), 'Ctrl+seta para baixo não saltou').toBeGreaterThan(L + 6);
+  },
+
+  /*
+    Alt+Enter quebra a linha dentro da célula, e confirmar liga a quebra de
+    texto sozinho. Antes ele confirmava e descia, e um campo de uma linha
+    jogaria a quebra fora de qualquer jeito — a barra aberta e confirmada
+    devolvia a célula com uma linha só.
+  */
+  'Alt+Enter quebra a linha dentro da célula, e a barra guarda as duas': () => {
+    apontar(celula(L, 1));
+    teclar(grade(), 'A');
+    digitar('na');
+    teclar(campoDaCelula()!, 'Enter', { altKey: true });
+    expect(campoDaCelula(), 'Alt+Enter saiu da célula em vez de quebrar a linha').not.toBeNull();
+    digitar('Clara');
+    teclar(campoDaCelula()!, 'Enter');
+    expect(celula(L, 1).classList.contains('pl-quebra'), 'a quebra de texto não ligou sozinha').toBe(true);
+    apontar(celula(L, 1));
+    expect(container.querySelector<HTMLTextAreaElement>('[aria-label="Barra de fórmulas"]')!.value).toBe('Ana\nClara');
+  },
+
+  'Quebrar Texto Automaticamente liga e desliga na célula escolhida': () => {
+    apontar(celula(L, 1));
+    const botao = () => container.querySelector<HTMLButtonElement>('button[aria-label="Quebrar Texto Automaticamente"]')!;
+    expect(container.querySelectorAll('button[aria-label="Quebrar Texto Automaticamente"]'),
+      'o botão falta na guia Início, ou aparece duas vezes').toHaveLength(1);
+    act(() => { botao().click(); });
+    expect(celula(L, 1).classList.contains('pl-quebra')).toBe(true);
+    expect(botao().getAttribute('aria-pressed')).toBe('true');
+    act(() => { botao().click(); });
+    expect(celula(L, 1).classList.contains('pl-quebra')).toBe(false);
   },
 };
 

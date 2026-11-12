@@ -7,7 +7,7 @@ import {
 import { IconeNegrito } from '../labs/office';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import {
-  CSS_EXCEL, BarraDeStatusDoExcel, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel,
+  CSS_EXCEL, BarraDeStatusDoExcel, BarraDeFormulas, AbasDoExcel, BarraDeTituloDoExcel, GuiasDoExcel, GrupoDoExcel, BotaoDoExcel, GradeDoExcel, GrupoDeAlinhamentoDoExcel,
 } from '../labs/excel';
 import { useGradeDoExcel } from '../labs/gradeDoExcel';
 import {
@@ -668,6 +668,7 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
                     {botao('Desfazer (Ctrl+Z)', grade.desfazer, <Undo2 className="w-4 h-4" />)}
                     {botao('Refazer (Ctrl+Y)', grade.refazer, <Redo2 className="w-4 h-4" />)}
                   </GrupoDoExcel>
+                  <GrupoDeAlinhamentoDoExcel grade={grade} celula={grade.props.planilha.celulas[grade.sel.l]?.[grade.sel.c]} />
                   <GrupoDoExcel nome="Fonte">
                     {botao('Negrito', negritar, <IconeNegrito />, p.celulas[sel.l][sel.c].negrito)}
                   </GrupoDoExcel>

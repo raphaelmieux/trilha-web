@@ -2,10 +2,11 @@ import { useLayoutEffect, useState } from 'react';
 import { CAMADA_DO_MENU, CAMADA_DO_VEU_DO_MENU } from './camadas';
 import { createPortal } from 'react-dom';
 import {
-  ArrowDownAZ, ArrowUpZA, Check, ChevronDown, ChevronLeft, ChevronRight, ClipboardPaste, Copy, Eraser, Filter,
-  MoreHorizontal, Plus, Scissors, X,
+  AlignCenter, AlignLeft, AlignRight, ArrowDownAZ, ArrowUpZA, Check, ChevronDown, ChevronLeft, ChevronRight,
+  ChevronUp, ChevronsDown, ChevronsUp, ClipboardPaste, Copy, Eraser, Filter, Minus,
+  MoreHorizontal, Plus, Scissors, WrapText, X,
 } from 'lucide-react';
-import type { AjudaDaFormula, MenuDeContextoDaGrade } from './gradeDoExcel';
+import type { AjudaDaFormula, CampoDaEdicao, GradeControlada, MenuDeContextoDaGrade } from './gradeDoExcel';
 import { argumentoEmDestaque } from './ajudaDeFormulas';
 import {
   CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice, AcessibilidadeDoStatus,
@@ -103,7 +104,12 @@ export const CSS_EXCEL = `
 .pl-entrada {
   flex: 1; min-width: 0; height: 24px; border: 1px solid #D1D1D1; border-radius: 0; padding: 0 6px;
   font-size: 12.5px; font-family: inherit; background: #FFFFFF; color: #242424;
+  /* É um textarea por causa do Alt+Enter, vestido de campo de uma linha: a
+     célula de duas linhas mostra a primeira, como a barra fechada do Excel. */
+  resize: none; overflow: hidden; line-height: 22px; white-space: pre; display: block;
 }
+/* Expandida, ela mostra as linhas todas e rola, como a do Excel. */
+.pl-entrada.pl-entrada-aberta { height: 64px; line-height: 17px; padding-top: 3px; overflow: auto; white-space: pre-wrap; }
 .pl-formula-expandir {
   height: 24px; width: 22px; display: grid; place-items: center; background: #FFFFFF; color: #616161;
   border: 1px solid #D1D1D1; border-left: none; border-radius: 0 4px 4px 0; cursor: pointer;
@@ -150,7 +156,16 @@ export const CSS_EXCEL = `
 .pl-celula-entrada {
   width: 100%; border: none; outline: none; background: transparent;
   font: inherit; color: inherit;
+  display: block; padding: 0; resize: none; overflow: hidden; line-height: 15px; white-space: pre;
 }
+/*
+  Quebrar Texto Automaticamente. A linha da planilha cresce sozinha, porque a
+  altura de uma linha de tabela é um mínimo e não um teto — é o AutoAjuste do
+  Excel, que aumenta a linha quando a quebra é ligada. A regra precisa vencer
+  o nowrap de toda célula, e por isso leva o td junto.
+*/
+.pl-grade td.pl-quebra { white-space: pre-wrap; overflow-wrap: anywhere; }
+.pl-quebra .pl-celula-entrada { white-space: pre-wrap; }
 
 /* Formatação automática: o estilo pronto, com cabeçalho pintado e faixas.
 
@@ -508,6 +523,62 @@ export function BotaoDoExcel({ dica, aoClicar, ativo, children }: {
   );
 }
 
+/** O botão Quebrar Texto Automaticamente, que acende quando a faixa toda tem a quebra. */
+export function BotaoQuebrarTexto({ grade }: { grade: Pick<GradeControlada, 'quebrarTexto' | 'quebraAtiva'> }) {
+  return (
+    <BotaoDoExcel dica="Quebrar Texto Automaticamente" ativo={grade.quebraAtiva} aoClicar={grade.quebrarTexto}>
+      <span className="flex items-center gap-1">
+        <WrapText className="w-4 h-4" />
+        <span style={{ fontSize: 10 }}>Quebrar Texto</span>
+      </span>
+    </BotaoDoExcel>
+  );
+}
+
+/**
+ * O grupo Alinhamento inteiro, para a planilha que não desenha o seu.
+ *
+ * Seis dos oito laboratórios de planilha não tinham o grupo, e a faixa
+ * completada o mostrava com botões que só avisavam que não faziam parte do
+ * exercício — num programa em que alinhar e quebrar texto é gesto de todo
+ * dia. Quem age é o gancho, sobre a faixa selecionada, e por isso o grupo é
+ * igual nos seis. Os dois laboratórios que já tinham o grupo continuam com o
+ * deles, porque o Mesclar de cada um é do exercício, e ganham o botão de
+ * quebrar.
+ */
+export function GrupoDeAlinhamentoDoExcel({ grade, celula }: {
+  grade: Pick<GradeControlada, 'alinhar' | 'quebrarTexto' | 'quebraAtiva'>;
+  /** A célula ativa, de onde os botões leem o que está apertado. */
+  celula: { h: string; v: string } | undefined;
+}) {
+  const { alinhar } = grade;
+  return (
+    <GrupoDoExcel nome="Alinhamento">
+      <BotaoDoExcel dica="Alinhar em Cima" ativo={celula?.v === 'acima'} aoClicar={() => alinhar({ v: 'acima' })}>
+        <ChevronsUp className="w-4 h-4" />
+      </BotaoDoExcel>
+      <BotaoDoExcel dica="Alinhar no Meio" ativo={celula?.v === 'meio'} aoClicar={() => alinhar({ v: 'meio' })}>
+        <Minus className="w-4 h-4" />
+      </BotaoDoExcel>
+      <BotaoDoExcel dica="Alinhar Embaixo" ativo={celula?.v === 'abaixo'} aoClicar={() => alinhar({ v: 'abaixo' })}>
+        <ChevronsDown className="w-4 h-4" />
+      </BotaoDoExcel>
+      <span className="pl-sep" />
+      <BotaoDoExcel dica="Alinhar à Esquerda" ativo={celula?.h === 'esquerda'} aoClicar={() => alinhar({ h: 'esquerda' })}>
+        <AlignLeft className="w-4 h-4" />
+      </BotaoDoExcel>
+      <BotaoDoExcel dica="Centralizar" ativo={celula?.h === 'centro'} aoClicar={() => alinhar({ h: 'centro' })}>
+        <AlignCenter className="w-4 h-4" />
+      </BotaoDoExcel>
+      <BotaoDoExcel dica="Alinhar à Direita" ativo={celula?.h === 'direita'} aoClicar={() => alinhar({ h: 'direita' })}>
+        <AlignRight className="w-4 h-4" />
+      </BotaoDoExcel>
+      <span className="pl-sep" />
+      <BotaoQuebrarTexto grade={grade} />
+    </GrupoDoExcel>
+  );
+}
+
 /**
  * A fileira de abas do pé.
  *
@@ -548,7 +619,7 @@ export function BotaoDoExcel({ dica, aoClicar, ativo, children }: {
 export function BarraDeFormulas({ nome, props, editando, aoCancelar, aoConfirmar, aoAvisar }: {
   /** O nome da faixa selecionada, por `nomeDaFaixa`. */
   nome: string;
-  props: React.ComponentProps<'input'>;
+  props: React.ComponentProps<'textarea'>;
   /**
    * Se há edição em curso. Acende o ✕ e o ✓, que no Excel ficam cinzentos
    * enquanto não há o que cancelar nem confirmar. Sem o laboratório dizer,
@@ -560,6 +631,9 @@ export function BarraDeFormulas({ nome, props, editando, aoCancelar, aoConfirmar
   aoAvisar?: (r: string) => void;
 }) {
   const avisar = (r: string) => aoAvisar?.(`${r} existe no Excel de verdade, e não faz parte deste exercício.`);
+  /* A setinha da ponta abre a barra em três linhas, que é onde se lê uma
+     célula com Alt+Enter inteira. Fechada, só a primeira linha aparece. */
+  const [aberta, setAberta] = useState(false);
   return (
     <div className="pl-formula">
       <span className="pl-nome" aria-label="Caixa de nome">
@@ -581,14 +655,18 @@ export function BarraDeFormulas({ nome, props, editando, aoCancelar, aoConfirmar
           <span className="pl-fx">fx</span>
         </button>
       </span>
-      <input
-        className="pl-entrada"
+      <textarea
+        className={`pl-entrada${aberta ? ' pl-entrada-aberta' : ''}`}
         aria-label="Barra de fórmulas"
         placeholder="Escreva aqui, ou uma fórmula começando por ="
+        rows={1}
         {...props} />
-      <button type="button" className="pl-formula-expandir" aria-label="Expandir a Barra de Fórmulas"
-        title="Expandir a Barra de Fórmulas" onClick={() => avisar('Expandir a barra de fórmulas')}>
-        <ChevronDown className="w-3 h-3" />
+      <button type="button" className="pl-formula-expandir"
+        aria-label={aberta ? 'Recolher a Barra de Fórmulas' : 'Expandir a Barra de Fórmulas'}
+        title={aberta ? 'Recolher a Barra de Fórmulas' : 'Expandir a Barra de Fórmulas'}
+        aria-expanded={aberta}
+        onClick={() => setAberta(a => !a)}>
+        {aberta ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
       </button>
     </div>
   );
@@ -747,7 +825,7 @@ export interface PropsDaGradeDoExcel {
   /** As faixas que a fórmula em edição cita, contornadas cada uma na sua cor. */
   referencias?: { faixa: Faixa; cor: string }[];
   /** As teclas da edição — F2, F4, Ctrl+Enter, as setas do modo Inserir. */
-  aoTeclarNaEdicao?: (e: React.KeyboardEvent<HTMLInputElement>) => boolean;
+  aoTeclarNaEdicao?: (e: React.KeyboardEvent<CampoDaEdicao>) => boolean;
 
   /** Menu do botão direito. Sem ele, a grade não abre menu nenhum. */
   aoContexto?: (e: React.MouseEvent, alvo: 'celula' | 'coluna' | 'linha', l: number, c: number) => void;
@@ -939,6 +1017,7 @@ export function GradeDoExcel({
                       bordaDoCopiado(l, c) ?? '',
                       doResumo !== null ? 'pl-resumo' : '',
                       cond ? `pl-cond-${cond}` : '',
+                      cel.quebra && doResumo === null ? 'pl-quebra' : '',
                     ].filter(Boolean).join(' ')}
                     style={{
                       textAlign: h === 'centro' ? 'center' : h === 'direita' ? 'right' : 'left',
@@ -950,9 +1029,21 @@ export function GradeDoExcel({
                         dado à célula durante a digitação na barra, era ele que
                         roubava o foco a cada tecla. */}
                     {ancora && rascunho !== null && doResumo === null ? (
-                      <input
+                      /* Textarea pelo Alt+Enter: cresce uma linha por quebra
+                         digitada, como a célula em edição do Excel. */
+                      <textarea
                         className="pl-celula-entrada"
                         autoFocus
+                        /* O textarea recebe o foco com o cursor no começo,
+                           e o input o punha no fim: começar a digitar por
+                           cima da célula escrevia "na" antes do "A" da
+                           primeira tecla. O clique que vem depois continua
+                           pondo o cursor onde a pessoa clicou. */
+                        onFocus={e => {
+                          const n = e.currentTarget.value.length;
+                          e.currentTarget.setSelectionRange(n, n);
+                        }}
+                        rows={rascunho.split('\n').length}
                         value={rascunho}
                         onChange={e => aoEscrever(e.target.value)}
                         onKeyDown={e => {
