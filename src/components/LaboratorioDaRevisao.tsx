@@ -8,7 +8,7 @@ import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
 import { isolarSelecao, marcaEmVolta, palavraEmVolta, recolhida, selecaoDoTrecho, tamanhoDoParagrafo } from '../labs/edicao';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa, BotaoDaFaixa, ReguaDoWord,
-  ZoomDoWord, FolhaDoWord, BalaoDeComentario, DialogoDeSubstituir,
+  ZoomDoWord, FolhaDoWord, BalaoDeComentario, BaloesDeFormatacao, DialogoDeSubstituir,
 } from '../labs/word';
 import {
   DIA_DO_DESBRAVADOR_INICIAL, METAS_DA_REVISAO, type Doc,
@@ -74,6 +74,11 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair, 
   const [por, setPor] = useState('');
   const [opcoes, setOpcoes] = useState<OpcoesDeBusca>(SEM_OPCOES);
   const [rascunhos, setRascunhos] = useState<Record<string, string>>({});
+  /* A marca a que Próxima ou o balão acabou de levar. O mesmo pedaço pode ter
+     duas — inserido pela liderança e formatado por você —, e as duas
+     selecionam o mesmo texto: sem lembrar qual foi escolhida, Aceitar
+     resolveria a outra. */
+  const [escolhidaAgora, setEscolhidaAgora] = useState<string | null>(null);
   const jaGravou = useRef(false);
   /* O controle de alterações é do documento: com ele ligado, o que se digita
      sai marcado com o seu nome, sem nada mais a fazer. O Desfazer é o mesmo
@@ -119,16 +124,22 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair, 
 
   /* A marca escolhida é a que está debaixo do cursor — no Word é o cursor
      dentro da marca que diz qual Aceitar aceita. */
-  const debaixoDoCursor = marcaEmVolta(doc, edicao.selecao);
+  const debaixoDoCursor = marcaEmVolta(doc, edicao.selecao, escolhidaAgora);
   const marcaEscolhida = debaixoDoCursor && pendentes.some(r => r.trecho.id === debaixoDoCursor) ? debaixoDoCursor : null;
 
   const proximaMarca = () => {
     if (pendentes.length === 0) { setAviso('Não há mais marcas para resolver.'); return; }
     const atual = pendentes.findIndex(r => r.trecho.id === debaixoDoCursor);
-    const proxima = pendentes[(atual + 1) % pendentes.length];
-    edicao.folha.aoSelecionar(selecaoDoTrecho(doc, proxima.trecho.id));
+    irParaAMarca(pendentes[(atual + 1) % pendentes.length].trecho.id);
+  };
+
+  const irParaAMarca = (id: string) => {
+    const marca = pendentes.find(r => r.trecho.id === id);
+    if (!marca) return;
+    setEscolhidaAgora(id);
+    edicao.folha.aoSelecionar(selecaoDoTrecho(doc, id));
     edicao.focar();
-    setAviso(descricaoDaMarca(proxima.trecho));
+    setAviso(descricaoDaMarca(marca.trecho));
   };
 
   /* Sem marca escolhida os dois botões não agem calados: agir na primeira
@@ -269,7 +280,8 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair, 
             : undefined}
         />
       ))}
-      {comentarios.length === 0 && (
+      <BaloesDeFormatacao doc={doc} aoEscolher={irParaAMarca} />
+      {comentarios.length === 0 && pendentes.every(r => r.trecho.revisao.tipo !== 'formatado') && (
         <div style={{ fontSize: 11, color: '#605E5C' }}>Sem comentários.</div>
       )}
     </>
@@ -394,7 +406,7 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair, 
           marcas={marcas}
           edicao={edicao.folha}
           comentado={comentados}
-          aoEscolher={() => setAviso('')}
+          aoEscolher={() => { setAviso(''); setEscolhidaAgora(null); }}
           margem={margem}
           aoLocalizar={() => setBuscaAberta(true)}
         />

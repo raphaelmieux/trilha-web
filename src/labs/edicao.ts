@@ -41,8 +41,10 @@
 
 import {
   type Alinhamento, type Autor, type Bloco, type Direta, type Doc, type Estilo,
-  type FormatoDoParagrafo, type Paragrafo, type Posicao, type Realce, type Revisao, type TipoDeLista, type Trecho,
-  aparenciaDe, blocoDaQuebra, ehParagrafo, fonteDoCorpo, idDaQuebra, textoDoTrecho,
+  type FormatoDoParagrafo, type MudancaDeFormatacao, type Paragrafo, type Posicao, type Realce, type Revisao,
+  type TipoDeLista, type Trecho,
+  aparenciaDe, blocoDaQuebra, blocoDoFormato, ehParagrafo, fonteDoCorpo, formatoDoTrecho, idDaQuebra, idDoFormato,
+  idDoFormatoDoParagrafo, mesmoFormato, textoDoTrecho, trechoDoFormato,
 } from './documento';
 
 /* ── Posição e seleção ────────────────────────────────────────────────────── */
@@ -182,6 +184,7 @@ export function fragmentoDaSelecao(d: Doc<string>, s: Selecao): Trecho[][] {
       .map(x => {
         const t: Trecho = { ...x };
         delete t.revisao;
+        delete t.formatacao;
         if (t.campo) {
           t.texto = textoDoTrecho(d, x);
           delete t.campo;
@@ -227,6 +230,7 @@ function vazioComo(x: Trecho, id: string): Trecho {
   delete t.quebra;
   delete t.campo;
   delete t.revisao;
+  delete t.formatacao;
   return t;
 }
 
@@ -402,7 +406,8 @@ function fundirMarcas(trechos: Trecho[], novos: ReadonlySet<string>, protegidos:
       && !x.quebra && !x.campo && !ultimo.campo
       && mesmaDireta(ultimo.direta, x.direta)
       && ultimo.posicao === x.posicao && ultimo.realce === x.realce
-      && ultimo.enfase === x.enfase && !!ultimo.deFora === !!x.deFora;
+      && ultimo.enfase === x.enfase && !!ultimo.deFora === !!x.deFora
+      && mesmaMarcaDeFormatacao(ultimo.formatacao, x.formatacao);
     if (!funde) { r.push(x); continue; }
     /* Fica o id do que já existia; se os dois são novos, o da esquerda. */
     const ficaODaDireita = novos.has(ultimo.id) && !novos.has(x.id);
@@ -411,6 +416,12 @@ function fundirMarcas(trechos: Trecho[], novos: ReadonlySet<string>, protegidos:
     r[r.length - 1] = { ...(ficaODaDireita ? x : ultimo), texto: ultimo.texto + x.texto };
   }
   return r;
+}
+
+/** Duas marcas de formatação que contam como uma: mesmo autor, e a mesma aparência guardada. */
+function mesmaMarcaDeFormatacao(a?: MudancaDeFormatacao, b?: MudancaDeFormatacao): boolean {
+  if (!a || !b) return !a && !b;
+  return a.autor === b.autor && mesmoFormato(a.antes, b.antes);
 }
 
 /** Os ids de trecho que têm comentário pendurado — o que `fundirMarcas` não pode sumir. */
@@ -1340,6 +1351,129 @@ export function tabular<S extends string>(d: Doc<S>, s: Selecao, voltar: boolean
   return inserirTexto(d, s, '\t', q);
 }
 
+/* ── A marca de formatação ────────────────────────────────────────────────── */
+
+/** O que o parágrafo diz, letra a letra — campo e quebra de linha contam uma unidade cada. */
+const assinaturaDoTexto = (b: Paragrafo<string>) =>
+  b.trechos.map(x => (x.quebra ? '\n' : '') + (x.campo ? `\u0000${x.campo}` : x.texto)).join('');
+
+const mesmoFormatoDeParagrafo = (a: Paragrafo<string>, b: Paragrafo<string>) =>
+  a.estilo === b.estilo && JSON.stringify(normalizarFormato(a.formato)) === JSON.stringify(normalizarFormato(b.formato));
+
+function normalizarFormato(f?: FormatoDoParagrafo): FormatoDoParagrafo {
+  const n: FormatoDoParagrafo = {};
+  if (f?.alinhamento && f.alinhamento !== 'esquerda') n.alinhamento = f.alinhamento;
+  if (f?.entrelinha && f.entrelinha !== 1) n.entrelinha = f.entrelinha;
+  if (f?.lista) n.lista = f.lista;
+  if (f?.recuo) n.recuo = f.recuo;
+  return n;
+}
+
+/**
+ * O documento depois de um comando de formatação, com a marca do que mudou —
+ * quando o controle de alterações está ligado.
+ *
+ * É uma comparação entre o antes e o depois, e não um parâmetro em cada botão
+ * da faixa. São quinze comandos de formatar, de Negrito a Recuo, e um que
+ * esquecesse de passar o autor adiante formataria calado com o controle
+ * ligado — que é exatamente o defeito que esta função existe para consertar.
+ * Comparando, o décimo sexto comando ganha a marca no dia em que nasce.
+ *
+ * Quatro decisões erram calado se invertidas:
+ *
+ * - **o que se compara é o trecho de antes que cobria o mesmo lugar**, e não o
+ *   do mesmo id: formatar meia palavra parte o trecho, e o pedaço novo nasce
+ *   com outro id. Por isso a comparação só acontece em parágrafo cujo texto
+ *   não mudou — formatar não muda texto, e um parágrafo que mudou de texto
+ *   não teria lugar correspondente;
+ * - **o antes da marca é o primeiro**: formatar de novo um trecho já marcado
+ *   guarda o de antes da primeira mudança, e voltar a ele apaga a marca. É o
+ *   que o Word faz — negrito e depois tirar o negrito não deixa rastro;
+ * - **o que a própria pessoa acabou de inserir não ganha marca**: aquilo
+ *   ainda não é texto do documento, é proposta dela, e a formatação vai junto
+ *   com a proposta. Aceitar ou rejeitar a inserção resolve as duas;
+ * - **pedaços vizinhos marcados agora, com a mesma marca, viram um só**:
+ *   selecionar uma frase que atravessa três trechos de formatação igual dá
+ *   uma marca, e não três — senão Próxima andaria pedaço por pedaço, que é o
+ *   defeito que o apagar já teve. Trecho com comentário não some.
+ */
+export function comFormatacaoMarcada<S extends string>(antes: Doc<S>, depois: Doc<S>, q?: QuemEdita): Doc<S> {
+  if (antes === depois || !marcando(depois, q)) return depois;
+  const autor = autorDe(q);
+  const protegidos = comentados(depois);
+  const deAntes = new Map(antes.blocos.filter(ehParagrafo).map(b => [b.id, b]));
+  let mudou = false;
+  const blocos = depois.blocos.map((b) => {
+    if (!ehParagrafo(b)) return b;
+    const a = deAntes.get(b.id);
+    if (!a) return b;
+    let p: Paragrafo<S> = b;
+
+    if (!mesmoFormatoDeParagrafo(a, b)) {
+      const base = a.formatacaoDoParagrafo?.antes ?? { estilo: a.estilo, ...(a.formato ? { formato: { ...a.formato } } : {}) };
+      p = { ...p };
+      const voltou = base.estilo === b.estilo
+        && JSON.stringify(normalizarFormato(base.formato)) === JSON.stringify(normalizarFormato(b.formato));
+      if (voltou) delete p.formatacaoDoParagrafo;
+      else p.formatacaoDoParagrafo = { autor, antes: base };
+      mudou = true;
+    }
+
+    if (a === b || assinaturaDoTexto(a) !== assinaturaDoTexto(b)) return p;
+    const frescos = new Set<string>();
+    let pos = 0;
+    const trechos = b.trechos.map((y) => {
+      const comeco = pos;
+      pos += unidadesDoTrecho(y);
+      if (unidadesDoTrecho(y) === 0) return y;
+      const x = trechoQueCobria(a.trechos, comeco);
+      if (!x) return y;
+      const agora = formatoDoTrecho(y);
+      if (mesmoFormato(agora, formatoDoTrecho(x))) return y;
+      if (y.revisao?.tipo === 'inserido' && y.revisao.autor === autor) return y;
+      const base = x.formatacao?.antes ?? formatoDoTrecho(x);
+      const t: Trecho = { ...y };
+      if (mesmoFormato(agora, base)) delete t.formatacao;
+      else t.formatacao = { autor, antes: base };
+      frescos.add(t.id);
+      return t;
+    });
+    if (frescos.size === 0) return p;
+    mudou = true;
+    return { ...p, trechos: fundirFormatados(trechos, frescos, protegidos) };
+  });
+  return mudou ? { ...depois, blocos } : depois;
+}
+
+/** O trecho que, no parágrafo de antes, cobria a posição `k`. */
+function trechoQueCobria(trechos: Trecho[], k: number): Trecho | null {
+  let pos = 0;
+  for (const x of trechos) {
+    const n = unidadesDoTrecho(x);
+    if (n > 0 && k >= pos && k < pos + n) return x;
+    pos += n;
+  }
+  return null;
+}
+
+/** Junta os pedaços vizinhos que acabaram de ganhar a mesma marca e são iguais em tudo o mais. */
+function fundirFormatados(trechos: Trecho[], frescos: ReadonlySet<string>, protegidos: ReadonlySet<string>): Trecho[] {
+  const r: Trecho[] = [];
+  for (const x of trechos) {
+    const ultimo = r[r.length - 1];
+    const funde = ultimo && frescos.has(ultimo.id) && frescos.has(x.id)
+      && ultimo.formatacao && x.formatacao
+      && mesmaMarcaDeFormatacao(ultimo.formatacao, x.formatacao)
+      && mesmoFormato(formatoDoTrecho(ultimo), formatoDoTrecho(x))
+      && JSON.stringify(ultimo.revisao ?? null) === JSON.stringify(x.revisao ?? null)
+      && !x.quebra && !x.campo && !ultimo.campo
+      && !protegidos.has(x.id);
+    if (funde) r[r.length - 1] = { ...ultimo, texto: ultimo.texto + x.texto };
+    else r.push(x);
+  }
+  return r;
+}
+
 /** O estado do grupo Parágrafo da faixa. `null` quando a seleção mistura dois. */
 export interface FormatoDoParagrafoDaSelecao {
   alinhamento: Alinhamento | null;
@@ -1438,6 +1572,7 @@ export function isolarSelecao<S extends string>(d: Doc<S>, s: Selecao): { doc: D
     const igual = !x.quebra && !x.campo && !ultimo.campo
       && mesmaDireta(x.direta, ultimo.direta)
       && JSON.stringify(x.revisao ?? null) === JSON.stringify(ultimo.revisao ?? null)
+      && mesmaMarcaDeFormatacao(x.formatacao, ultimo.formatacao)
       && x.enfase === ultimo.enfase && x.realce === ultimo.realce && x.posicao === ultimo.posicao;
     if (igual) fundidos[fundidos.length - 1] = { ...ultimo, texto: ultimo.texto + x.texto };
     else fundidos.push(x);
@@ -1455,12 +1590,23 @@ export function selecaoDoTrecho(d: Doc<string>, trechoId: string): Selecao | nul
     const b = paragrafoPorId(d, daQuebra);
     return b ? cursorEm(b.id, tamanhoDoParagrafo(b)) : null;
   }
+  /* A formatação do parágrafo vale para ele inteiro, e é ele inteiro que fica
+     selecionado — como o Word faz ao andar até "Formatado: Centralizado". */
+  const doParagrafo = blocoDoFormato(trechoId);
+  if (doParagrafo) {
+    const b = paragrafoPorId(d, doParagrafo);
+    if (!b?.formatacaoDoParagrafo) return null;
+    return { ancora: { bloco: b.id, offset: 0 }, foco: { bloco: b.id, offset: tamanhoDoParagrafo(b) } };
+  }
+  const doFormato = trechoDoFormato(trechoId);
+  const alvo = doFormato ?? trechoId;
   for (const b of d.blocos) {
     if (!ehParagrafo(b)) continue;
     let pos = 0;
     for (const x of b.trechos) {
       const n = unidadesDoTrecho(x);
-      if (x.id === trechoId) {
+      if (x.id === alvo) {
+        if (doFormato && !x.formatacao) return null;
         const de = pos + (x.quebra ? 1 : 0);
         return { ancora: { bloco: b.id, offset: de }, foco: { bloco: b.id, offset: pos + n } };
       }
@@ -1500,16 +1646,33 @@ export function trechosEmVolta(d: Doc<string>, p: Ponto): { antes: Trecho | null
  * Era uma conta repetida em três laboratórios, e nenhuma das três sabia da
  * quebra de parágrafo.
  */
-export function marcaEmVolta(d: Doc<string>, s: Selecao | null): string | null {
+export function marcaEmVolta(d: Doc<string>, s: Selecao | null, preferida?: string | null): string | null {
   if (!s) return null;
+  /* O mesmo pedaço pode ter duas marcas — entrou pela mão da liderança e
+     ganhou negrito pela sua — e as duas selecionam o mesmo texto. A que
+     Próxima acabou de escolher vale enquanto a seleção estiver dentro dela: sem isso,
+     Próxima escolheria a de formatação, esta função devolveria a de
+     inserção, e o Próxima seguinte voltaria à de formatação para sempre. */
+  if (preferida) {
+    /* "Dentro", e não "igual": a folha devolve a seleção que o navegador
+       desenhou, e a do parágrafo inteiro volta com outra ponta — medido no
+       Chromium, onde Rejeitar resolvia o negrito de dentro do parágrafo em vez
+       do alinhamento dele. */
+    const dela = selecaoDoTrecho(d, preferida);
+    if (dela) {
+      const marca = ordenar(d, dela);
+      const agora = ordenar(d, s);
+      if (compararPontos(d, agora.inicio, marca.inicio) >= 0 && compararPontos(d, agora.fim, marca.fim) <= 0) return preferida;
+    }
+  }
   const ponto = recolhida(s) ? s.foco : ordenar(d, s).inicio;
   const { antes, depois } = trechosEmVolta(d, ponto);
-  if (depois?.revisao) return depois.id;
-  if (recolhida(s)) {
-    const b = paragrafoPorId(d, ponto.bloco);
-    if (b?.revisaoDaQuebra && ponto.offset === tamanhoDoParagrafo(b)) return idDaQuebra(b.id);
-  }
-  return antes?.revisao ? antes.id : null;
+  const marcaDe = (x: Trecho | null) => (x?.revisao ? x.id : x?.formatacao ? idDoFormato(x.id) : null);
+  if (marcaDe(depois)) return marcaDe(depois);
+  const b = paragrafoPorId(d, ponto.bloco);
+  if (recolhida(s) && b?.revisaoDaQuebra && ponto.offset === tamanhoDoParagrafo(b)) return idDaQuebra(b.id);
+  if (marcaDe(antes)) return marcaDe(antes);
+  return b?.formatacaoDoParagrafo ? idDoFormatoDoParagrafo(b.id) : null;
 }
 
 /**
@@ -1522,7 +1685,7 @@ export function marcaEmVolta(d: Doc<string>, s: Selecao | null): string | null {
  * nova ao lado da velha ainda riscada, um meio-termo que ninguém propôs.
  */
 export function sugestaoDoTrecho(d: Doc<string>, trechoId: string): string[] {
-  if (blocoDaQuebra(trechoId)) return [trechoId];
+  if (blocoDaQuebra(trechoId) || trechoDoFormato(trechoId) || blocoDoFormato(trechoId)) return [trechoId];
   for (const b of d.blocos) {
     if (!ehParagrafo(b)) continue;
     const i = b.trechos.findIndex(x => x.id === trechoId);

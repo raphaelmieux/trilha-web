@@ -236,7 +236,16 @@ export const COR_DO_AUTOR: Record<Autor, string> = {
 /** O que a marca fez com o trecho: ele entrou, ou ele saiu. */
 export interface Revisao {
   autor: Autor;
-  tipo: 'inserido' | 'excluido';
+  /**
+   * `'formatado'` só aparece na lista de marcas pendentes, e nunca num trecho
+   * de verdade: a marca de formatação mora em `Trecho.formatacao`, ao lado da
+   * de inserção, porque o mesmo pedaço pode ter entrado pela mão de uma pessoa
+   * e ganhado negrito pela de outra — e no Word são duas marcas, que se
+   * aceitam separadas.
+   */
+  tipo: 'inserido' | 'excluido' | 'formatado';
+  /** Numa marca de formatação: o que mudou, como o balão do Word escreve — "Negrito, 14 pt". */
+  mudou?: string;
   /**
    * Numa exclusão: o texto apagado era a inserção ainda pendente de outra
    * pessoa, e de quem.
@@ -257,12 +266,18 @@ export interface Revisao {
  * a quem nunca ligou as marcas de formatação o que é.
  */
 export function descricaoDaMarca(t: { id: string; texto: string; revisao: Revisao }): string {
+  const quem = `Marca de ${NOME_DO_AUTOR[t.revisao.autor]}`;
+  if (t.revisao.tipo === 'formatado') {
+    const oQue = blocoDoFormato(t.id) ? 'o parágrafo' : `"${t.texto}"`;
+    return `${quem}: ${oQue} mudou de formatação — ${t.revisao.mudou ?? 'Formatado'}.`;
+  }
   const oQue = blocoDaQuebra(t.id) ? 'uma quebra de parágrafo' : `"${t.texto}"`;
-  return `Marca de ${NOME_DO_AUTOR[t.revisao.autor]}: ${oQue} ${t.revisao.tipo === 'inserido' ? 'entrou' : 'saiu'}.`;
+  return `${quem}: ${oQue} ${t.revisao.tipo === 'inserido' ? 'entrou' : 'saiu'}.`;
 }
 
 /** Como a marca se apresenta na dica, do jeito que o Word escreve: o que foi feito e por quem. */
 export function rotuloDaRevisao(r: Revisao): string {
+  if (r.tipo === 'formatado') return `Formatado por ${NOME_DO_AUTOR[r.autor]}: ${r.mudou ?? 'Formatação'}`;
   const feito = r.tipo === 'inserido' ? 'Inserido' : 'Excluído';
   const antes = r.sobre ? ` (inserido por ${NOME_DO_AUTOR[r.sobre]})` : '';
   return `${feito} por ${NOME_DO_AUTOR[r.autor]}${antes}`;
@@ -319,6 +334,43 @@ export interface Trecho {
    * riscado, e volta inteiro se for rejeitado.
    */
   revisao?: Revisao;
+  /**
+   * A marca de formatação: alguém mudou a aparência deste trecho com o
+   * controle de alterações ligado, e `antes` é como ele estava.
+   *
+   * É o "Formatado: Negrito" da margem do Word. Sem ela, o negrito aplicado
+   * com o controle ligado entrava calado: nenhuma marca contava, Rejeitar
+   * Todas não o desfazia, e quem revisava recebia um documento diferente do
+   * que mandou sem nada dizendo onde. Guardar o `antes` é o que deixa a
+   * rejeição devolver a aparência exata — inclusive a formatação direta que
+   * o trecho já tinha, que um "tirar o negrito" genérico apagaria junto.
+   */
+  formatacao?: MudancaDeFormatacao;
+}
+
+/** A aparência de um trecho, a parte que uma marca de formatação guarda para devolver. */
+export interface FormatoDoTrecho {
+  direta?: Direta;
+  enfase: boolean;
+  realce: Realce;
+  posicao: Posicao;
+  deFora?: boolean;
+}
+
+export interface MudancaDeFormatacao {
+  autor: Autor;
+  antes: FormatoDoTrecho;
+}
+
+/** O formato de parágrafo que uma marca guarda: o estilo e o que o grupo Parágrafo mudou. */
+export interface FormatoGuardadoDoParagrafo {
+  estilo: Estilo;
+  formato?: FormatoDoParagrafo;
+}
+
+export interface MudancaDoParagrafo {
+  autor: Autor;
+  antes: FormatoGuardadoDoParagrafo;
 }
 
 /**
@@ -367,6 +419,13 @@ export interface Paragrafo<S extends string = string> extends BlocoBase<S> {
    * parágrafo — ela é a fronteira entre ele e o seguinte.
    */
   revisaoDaQuebra?: Revisao;
+  /**
+   * A marca de formatação do parágrafo: estilo, alinhamento, entrelinha,
+   * lista ou recuo mudados com o controle ligado. Mora no parágrafo pela
+   * razão de `formato` morar nele — no Word não se centraliza meia frase, e
+   * "Formatado: Centralizado" é do parágrafo inteiro.
+   */
+  formatacaoDoParagrafo?: MudancaDoParagrafo;
 }
 
 /**
@@ -379,6 +438,21 @@ const PREFIXO_DA_QUEBRA = '¶:';
 export const idDaQuebra = (blocoId: string) => PREFIXO_DA_QUEBRA + blocoId;
 export const blocoDaQuebra = (id: string): string | null =>
   (id.startsWith(PREFIXO_DA_QUEBRA) ? id.slice(PREFIXO_DA_QUEBRA.length) : null);
+
+/*
+  As marcas de formatação entram na lista pelo mesmo caminho: um id próprio,
+  que não colide com o do trecho. O trecho que entrou pela mão de uma pessoa e
+  ganhou negrito pela de outra tem duas marcas, e Aceitar uma não pode aceitar
+  a outra — com o mesmo id, as duas seriam uma só.
+*/
+const PREFIXO_DO_FORMATO = 'ƒ:';
+const PREFIXO_DO_FORMATO_DO_PARAGRAFO = 'ƒ¶:';
+export const idDoFormato = (trechoId: string) => PREFIXO_DO_FORMATO + trechoId;
+export const trechoDoFormato = (id: string): string | null =>
+  (id.startsWith(PREFIXO_DO_FORMATO) ? id.slice(PREFIXO_DO_FORMATO.length) : null);
+export const idDoFormatoDoParagrafo = (blocoId: string) => PREFIXO_DO_FORMATO_DO_PARAGRAFO + blocoId;
+export const blocoDoFormato = (id: string): string | null =>
+  (id.startsWith(PREFIXO_DO_FORMATO_DO_PARAGRAFO) ? id.slice(PREFIXO_DO_FORMATO_DO_PARAGRAFO.length) : null);
 
 export type Alinhamento = 'esquerda' | 'centro' | 'direita' | 'justificado';
 export type TipoDeLista = 'marcadores' | 'numeracao';
@@ -859,9 +933,28 @@ export const textoVisivel = (d: Doc<string>): string =>
  */
 export const revisoesPendentes = <S extends string>(d: Doc<S>) =>
   paragrafos(d).flatMap((b) => {
-    const doTexto = b.trechos
-      .filter((x): x is Trecho & { revisao: Revisao } => !!x.revisao)
-      .map(x => ({ bloco: b.id, trecho: x }));
+    type Pendente = { bloco: string; trecho: Trecho & { revisao: Revisao } };
+    const doParagrafo: Pendente[] = b.formatacaoDoParagrafo ? [{
+      bloco: b.id,
+      trecho: {
+        id: idDoFormatoDoParagrafo(b.id), texto: textoDoBloco(b), posicao: 'normal', realce: 'nenhum', enfase: false,
+        revisao: {
+          autor: b.formatacaoDoParagrafo.autor, tipo: 'formatado',
+          mudou: descreverMudancaDoParagrafo(b.formatacaoDoParagrafo.antes, { estilo: b.estilo, formato: b.formato }),
+        },
+      },
+    }] : [];
+    const doTexto: Pendente[] = [...doParagrafo, ...b.trechos.flatMap((x): Pendente[] => {
+      const marcas: Pendente[] = [];
+      if (x.revisao) marcas.push({ bloco: b.id, trecho: { ...x, revisao: x.revisao } });
+      if (x.formatacao) {
+        marcas.push({
+          bloco: b.id,
+          trecho: { ...x, id: idDoFormato(x.id), revisao: marcaDeFormatacao(x.formatacao, x) },
+        });
+      }
+      return marcas;
+    })];
     if (!b.revisaoDaQuebra) return doTexto;
     const quebra: Trecho & { revisao: Revisao } = {
       id: idDaQuebra(b.id), texto: '¶', posicao: 'normal', realce: 'nenhum', enfase: false,
@@ -889,6 +982,10 @@ const resolverMarca = <S extends string>(
 ): Doc<S> => {
   const daQuebra = blocoDaQuebra(trechoId);
   if (daQuebra) return resolverQuebra(d, daQuebra, fica);
+  const doFormato = trechoDoFormato(trechoId);
+  if (doFormato) return resolverFormato(d, doFormato, fica === 'inserido');
+  const doParagrafo = blocoDoFormato(trechoId);
+  if (doParagrafo) return resolverFormatoDoParagrafo(d, doParagrafo, fica === 'inserido');
   return {
   ...d,
   blocos: d.blocos.map(b => {
@@ -954,6 +1051,47 @@ function resolverQuebra<S extends string>(d: Doc<S>, blocoId: string, fica: 'ins
   return { ...d, blocos: d.blocos.filter(x => x.id !== b.id).map(x => (x.id === blocoId ? junto : x)) };
 }
 
+/**
+ * A marca de formatação resolvida. Aceitar deixa a aparência nova e tira a
+ * marca; rejeitar devolve a de antes — a exata, guardada na marca, e não "sem
+ * negrito": o trecho que já tinha 14 pt antes de ganhar negrito volta com os
+ * 14 pt.
+ */
+function resolverFormato<S extends string>(d: Doc<S>, trechoId: string, aceitar: boolean): Doc<S> {
+  return {
+    ...d,
+    blocos: d.blocos.map((b) => {
+      if (!ehParagrafo(b) || !b.trechos.some(x => x.id === trechoId && x.formatacao)) return b;
+      return {
+        ...b,
+        trechos: b.trechos.map((x) => {
+          if (x.id !== trechoId || !x.formatacao) return x;
+          const t: Trecho = aceitar ? { ...x } : comFormatoDoTrecho(x, x.formatacao.antes);
+          delete t.formatacao;
+          return t;
+        }),
+      };
+    }),
+  };
+}
+
+function resolverFormatoDoParagrafo<S extends string>(d: Doc<S>, blocoId: string, aceitar: boolean): Doc<S> {
+  return {
+    ...d,
+    blocos: d.blocos.map((b) => {
+      if (b.id !== blocoId || !ehParagrafo(b) || !b.formatacaoDoParagrafo) return b;
+      const p: Paragrafo<S> = { ...b };
+      if (!aceitar) {
+        const antes = b.formatacaoDoParagrafo.antes;
+        p.estilo = antes.estilo;
+        if (antes.formato) p.formato = { ...antes.formato }; else delete p.formato;
+      }
+      delete p.formatacaoDoParagrafo;
+      return p;
+    }),
+  };
+}
+
 /** O texto inserido fica; o riscado vai embora. */
 export const aceitarRevisao = <S extends string>(d: Doc<S>, trechoId: string) =>
   resolverMarca(d, trechoId, 'inserido');
@@ -992,6 +1130,119 @@ export const aceitarTodasAsRevisoes = <S extends string>(d: Doc<S>): Doc<S> =>
 
 export const rejeitarTodasAsRevisoes = <S extends string>(d: Doc<S>): Doc<S> =>
   resolverTodas(d, rejeitarRevisao);
+
+/* ── A marca de formatação ────────────────────────────────────────────────── */
+
+/** A aparência de um trecho, copiada — o que a marca guarda. */
+export function formatoDoTrecho(x: Trecho): FormatoDoTrecho {
+  const f: FormatoDoTrecho = { enfase: x.enfase, realce: x.realce, posicao: x.posicao };
+  if (x.direta && Object.keys(x.direta).length > 0) f.direta = { ...x.direta };
+  if (x.deFora) f.deFora = true;
+  return f;
+}
+
+/** O trecho vestido com uma aparência guardada, sem chave vazia sobrando. */
+export function comFormatoDoTrecho(x: Trecho, f: FormatoDoTrecho): Trecho {
+  const t: Trecho = { ...x, enfase: f.enfase, realce: f.realce, posicao: f.posicao };
+  if (f.direta && Object.keys(f.direta).length > 0) t.direta = { ...f.direta }; else delete t.direta;
+  if (f.deFora) t.deFora = true; else delete t.deFora;
+  return t;
+}
+
+const CHAVES_DA_DIRETA: (keyof Direta)[] = ['negrito', 'italico', 'sublinhado', 'fonte', 'tamanho', 'cor'];
+
+/** Duas aparências iguais — comparadas campo a campo, e não pelo JSON, cuja ordem de chaves é acaso. */
+export function mesmoFormato(a: FormatoDoTrecho, b: FormatoDoTrecho): boolean {
+  return a.enfase === b.enfase && a.realce === b.realce && a.posicao === b.posicao
+    && !!a.deFora === !!b.deFora
+    && CHAVES_DA_DIRETA.every(k => a.direta?.[k] === b.direta?.[k]);
+}
+
+/** As cores da caixa Cor da Fonte, com o nome que ela mostra. */
+export const CORES_DA_FONTE: { nome: string; cor: string }[] = [
+  { nome: 'Automático', cor: '#000000' },
+  { nome: 'Vermelho Escuro', cor: '#C00000' },
+  { nome: 'Vermelho', cor: '#FF0000' },
+  { nome: 'Laranja', cor: '#FFC000' },
+  { nome: 'Verde', cor: '#00B050' },
+  { nome: 'Azul', cor: '#0070C0' },
+  { nome: 'Azul-Escuro', cor: '#002060' },
+  { nome: 'Roxo', cor: '#7030A0' },
+  { nome: 'Cinza', cor: '#7F7F7F' },
+];
+
+export const NOMES_DO_REALCE: Record<Exclude<Realce, 'nenhum'>, string> = {
+  amarelo: 'Amarelo', verde: 'Verde Brilhante', ciano: 'Turquesa', rosa: 'Rosa',
+};
+
+const numeroEmPortugues = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',');
+
+/** Uma propriedade direta como o balão a escreve. `undefined` é a que voltou ao estilo. */
+function descreverDireta(k: keyof Direta, agora: Direta[keyof Direta], antes: Direta[keyof Direta]): string {
+  const liga = (nome: string, v: unknown) => (v ? nome : `Não ${nome}`);
+  if (k === 'negrito') return liga('Negrito', agora ?? !antes);
+  if (k === 'italico') return liga('Itálico', agora ?? !antes);
+  if (k === 'sublinhado') return liga('Sublinhado', agora ?? !antes);
+  if (agora === undefined) {
+    return k === 'fonte' ? 'Fonte do estilo' : k === 'tamanho' ? 'Tamanho do estilo' : 'Cor do estilo';
+  }
+  if (k === 'fonte') return `Fonte: ${agora}`;
+  if (k === 'tamanho') return `${numeroEmPortugues(Number(agora))} pt`;
+  const nome = CORES_DA_FONTE.find(c => c.cor.toUpperCase() === String(agora).toUpperCase())?.nome;
+  return `Cor da fonte: ${nome ?? String(agora).toUpperCase()}`;
+}
+
+/**
+ * O que mudou de uma aparência para a outra, como o balão do Word escreve:
+ * "Negrito, 14 pt". Só o que mudou entra — a lista inteira do formato
+ * esconderia a mudança no meio do que já era assim.
+ */
+export function descreverMudancaDoTrecho(antes: FormatoDoTrecho, agora: FormatoDoTrecho): string {
+  const partes: string[] = [];
+  for (const k of CHAVES_DA_DIRETA) {
+    const a = antes.direta?.[k];
+    const b = agora.direta?.[k];
+    if (a !== b) partes.push(descreverDireta(k, b, a));
+  }
+  if (antes.enfase !== agora.enfase) partes.push(agora.enfase ? 'Ênfase' : 'Sem Ênfase');
+  if (antes.realce !== agora.realce) {
+    partes.push(agora.realce === 'nenhum' ? 'Sem realce' : `Realce: ${NOMES_DO_REALCE[agora.realce]}`);
+  }
+  if (antes.posicao !== agora.posicao) {
+    partes.push(agora.posicao === 'sobrescrito' ? 'Sobrescrito' : agora.posicao === 'subscrito' ? 'Subscrito' : 'Posição normal');
+  }
+  return partes.length > 0 ? partes.join(', ') : 'Formatação';
+}
+
+const NOMES_DO_ALINHAMENTO: Record<Alinhamento, string> = {
+  esquerda: 'À esquerda', centro: 'Centralizado', direita: 'À direita', justificado: 'Justificado',
+};
+
+export function descreverMudancaDoParagrafo(antes: FormatoGuardadoDoParagrafo, agora: FormatoGuardadoDoParagrafo): string {
+  const partes: string[] = [];
+  if (antes.estilo !== agora.estilo) partes.push(`Estilo: ${agora.estilo}`);
+  const a = antes.formato ?? {};
+  const b = agora.formato ?? {};
+  if ((a.alinhamento ?? 'esquerda') !== (b.alinhamento ?? 'esquerda')) {
+    partes.push(NOMES_DO_ALINHAMENTO[b.alinhamento ?? 'esquerda']);
+  }
+  if ((a.entrelinha ?? 1) !== (b.entrelinha ?? 1)) {
+    partes.push(`Espaçamento entre linhas: ${(b.entrelinha ?? 1) === 1 ? 'simples' : `${numeroEmPortugues(b.entrelinha ?? 1)} linhas`}`);
+  }
+  if (a.lista !== b.lista) {
+    partes.push(b.lista === 'marcadores' ? 'Marcadores' : b.lista === 'numeracao' ? 'Numeração' : 'Sem lista');
+  }
+  if ((a.recuo ?? 0) !== (b.recuo ?? 0)) {
+    const cm = (b.recuo ?? 0) * DEGRAU_DE_RECUO_CM;
+    partes.push(cm === 0 ? 'Sem recuo' : `Recuo à esquerda: ${numeroEmPortugues(cm)} cm`);
+  }
+  return partes.length > 0 ? partes.join(', ') : 'Formatação';
+}
+
+/** A marca de formatação de um trecho, na forma em que a lista de marcas a mostra. */
+export function marcaDeFormatacao(m: MudancaDeFormatacao, x: Trecho): Revisao {
+  return { autor: m.autor, tipo: 'formatado', mudou: descreverMudancaDoTrecho(m.antes, formatoDoTrecho(x)) };
+}
 
 /* ── Localizar e substituir ───────────────────────────────────────────────── */
 

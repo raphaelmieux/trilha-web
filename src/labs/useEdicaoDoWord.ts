@@ -7,7 +7,7 @@ import {
 } from './documento';
 import {
   type Edicao, type Marca, type Ponto, type QuemEdita, type Selecao,
-  alternarMarca, alternarPosicao, aplicarEstilo, transformarSelecao, definirCor, definirFonte, definirRealce, definirTamanho,
+  alternarMarca, alternarPosicao, aplicarEstilo, comFormatacaoMarcada, transformarSelecao, definirCor, definirFonte, definirRealce, definirTamanho,
   limparFormatacao, limparTudo, mudarTamanhoEmDegrau, mudarTamanhoEmUmPonto, apagar, apagarSelecao, formatoDaSelecao, inserirTexto, mesmaSelecao,
   palavraEmVolta, quebraDeLinha, quebraDePagina, quebrarParagrafo, recolhida, selecaoValida,
   selecionarTudo, tamanhoDoParagrafo, unidadesDoTrecho,
@@ -189,14 +189,14 @@ export function useEdicaoDoWord<S extends string>(
    * sem nada ficar em negrito.
    */
   const marcar = useCallback((m: Marca) => {
-    const { doc: d, selecao: s, pendente: p } = atual.current;
+    const { doc: d, selecao: s, pendente: p, opcoes: o } = atual.current;
     if (!s) return;
     digitando.current = false;
     if (recolhida(s)) {
       const palavra = palavraEmVolta(d, s.foco);
       if (palavra) {
         const r = alternarMarca(d, palavra, m);
-        gravar(r.doc, s);
+        gravar(comFormatacaoMarcada(d, r.doc, o.quem), s);
         return;
       }
       const agora = formatoDaSelecao(d, s, p)[m];
@@ -204,7 +204,7 @@ export function useEdicaoDoWord<S extends string>(
       return;
     }
     const r = alternarMarca(d, s, m);
-    gravar(r.doc, r.selecao);
+    gravar(comFormatacaoMarcada(d, r.doc, o.quem), r.selecao);
   }, [gravar]);
 
   /**
@@ -213,7 +213,7 @@ export function useEdicaoDoWord<S extends string>(
    * digitado — os que o Word deixa pendentes, que são os de caractere.
    */
   const formatar = useCallback((f: Formatacao) => {
-    const { doc: d, selecao: s, pendente: p } = atual.current;
+    const { doc: d, selecao: s, pendente: p, opcoes: o } = atual.current;
     if (!s) return;
     digitando.current = false;
     let alvo: Selecao = s;
@@ -264,15 +264,18 @@ export function useEdicaoDoWord<S extends string>(
         throw new Error(`formatação não tratada: ${JSON.stringify(naoTratado)}`);
       }
     }
-    gravar(r.doc, s);
+    /* Maiúsculas e Minúsculas troca as letras, e não a aparência: a marca de
+       formatação não vale para ela, e a comparação a pula sozinha, porque o
+       texto do parágrafo mudou. */
+    gravar(comFormatacaoMarcada(d, r.doc, o.quem), s);
   }, [gravar]);
 
   /** Um estilo da galeria: vale para todo parágrafo que a seleção toca. */
   const estilo = useCallback((e: Estilo) => {
-    const { doc: d, selecao: s } = atual.current;
+    const { doc: d, selecao: s, opcoes: o } = atual.current;
     if (!s) return false;
     digitando.current = false;
-    gravar(aplicarEstilo(d, s, e).doc, s);
+    gravar(comFormatacaoMarcada(d, aplicarEstilo(d, s, e).doc, o.quem), s);
     return true;
   }, [gravar]);
 
@@ -282,7 +285,7 @@ export function useEdicaoDoWord<S extends string>(
    * Não há pendente, porque não há o que esperar: o parágrafo já existe.
    */
   const paragrafar = useCallback((f: FormatacaoDeParagrafo) => {
-    const { doc: d, selecao: s } = atual.current;
+    const { doc: d, selecao: s, opcoes: o } = atual.current;
     if (!s) return;
     digitando.current = false;
     let r: Edicao<S>;
@@ -296,7 +299,7 @@ export function useEdicaoDoWord<S extends string>(
         throw new Error(`formatação de parágrafo não tratada: ${JSON.stringify(naoTratado)}`);
       }
     }
-    gravar(r.doc, s);
+    gravar(comFormatacaoMarcada(d, r.doc, o.quem), s);
   }, [gravar]);
 
   /** Copiar: devolve o texto, para quem precisar pô-lo na área do sistema. */
@@ -340,7 +343,14 @@ export function useEdicaoDoWord<S extends string>(
       case 'paragrafo': r = quebrarParagrafo(d, alvo, q); digitando.current = false; break;
       case 'quebra-de-linha': r = quebraDeLinha(d, alvo, q); digitando.current = false; break;
       case 'quebra-de-pagina': r = quebraDePagina(d, alvo, q); digitando.current = false; break;
-      case 'tab': r = tabular(d, alvo, c.voltar, q); digitando.current = false; break;
+      /* O Tab que recua é formatação de parágrafo, e ganha a marca dela; o que
+         escreve uma tabulação muda o texto, e a comparação o deixa de fora. */
+      case 'tab': {
+        const t = tabular(d, alvo, c.voltar, q);
+        r = { ...t, doc: comFormatacaoMarcada(d, t.doc, q) };
+        digitando.current = false;
+        break;
+      }
       /* Recortar é copiar e apagar, no mesmo passo de desfazer. */
       case 'recortar': {
         if (recolhida(alvo)) return;
