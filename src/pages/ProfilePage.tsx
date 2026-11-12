@@ -10,6 +10,7 @@ import { User, Lock, Eye, EyeOff, Camera, Shield, Save, CheckCircle2, AlertCircl
 import { mensagemDoErro } from '../lib/authErrors';
 import AdminPage from './AdminPage';
 import type { FormaDeNome } from '../types';
+import MeuDicionario from '../components/MeuDicionario';
 
 /* A união mora em types/index.ts, ao lado do CHECK que a sustenta. */
 type PrivacyForm = FormaDeNome;
@@ -474,6 +475,8 @@ export default function ProfilePage() {
           </label>
         </div>
       </div>
+
+      <MeuDicionario />
 
       {/*
         As conquistas ficam na Estante, e aqui só o caminho até ela.

@@ -2294,12 +2294,43 @@ vermelho é o `::highlight(ortografia)` do `index.css`, um só para a plataforma
 e **nunca** um dicionário próprio, nem uma lista de "palavras aceitas" ao lado.
 
 `<input>` e `<textarea>` não recebem destaque — a API pinta intervalos do
-documento, e o texto de um campo não está nele. Por isso o título do slide, que
-é um `<input>`, continua com o corretor do navegador, e as caixas de texto da
-plataforma (a redação guiada, o corpo do correio) também. Trazê-los para o
-dicionário pessoal pede trocar o campo por elemento editável, e não um
-contorno: sobrepor uma camada pintada a um `<textarea>` desalinha na primeira
-quebra de linha, que é o defeito que a régua do editor de código já ensinou.
+documento, e o texto de um campo não está nele. Trazer um campo para o
+dicionário pessoal pede trocá-lo por elemento editável, e não um contorno:
+sobrepor uma camada pintada a um `<textarea>` desalinha na primeira quebra de
+linha, que é o defeito que a régua do editor de código já ensinou.
+
+**Onde se escreve texto corrido, o campo é `CampoComOrtografia`.** É o
+`<textarea>` com outra pele — `value` e `onChange` de texto puro, `onBlur`,
+`rows`, `placeholder` — e por dentro um elemento editável em `plaintext-only`,
+com o corretor de `useOrtografiaNoElemento`. A redação guiada foi a primeira,
+porque é onde o desbravador mais escreve. Três decisões erram calado se
+invertidas:
+
+- **o DOM é de quem digita**, e o valor só é reescrito quando os dois
+  discordam — a decisão do corpo do slide, porque reescrever a cada tecla
+  joga o cursor para o começo;
+- **o campo esvaziado lê vazio**: o navegador deixa um `<br>` sozinho ali, o
+  `innerText` o lê como uma quebra de linha, e a contagem de palavras e o
+  convite cinza achariam que há texto;
+- **o modo rico é a reserva, e não o padrão**: onde `plaintext-only` não
+  existe, o campo cai em `true`, e aí o colar e o Enter são interceptados —
+  senão chegaria HTML de outra página e o Enter abriria blocos que o texto
+  não guarda.
+
+E a redação dá ao campo a **etapa como `key`**: trocar de etapa é trocar de
+texto, e o Ctrl+Z do navegador não pode desfazer a resposta da etapa anterior
+dentro da seguinte.
+
+Continuam com o corretor do navegador o título do slide, que é um `<input>` de
+uma linha, e o corpo do correio dos laboratórios; trazê-los é trocar o campo
+por `CampoComOrtografia` do mesmo jeito.
+
+**O dicionário pessoal se vê e se edita no perfil**, em `MeuDicionario`. Um
+"Adicionar ao Dicionário" errado — em cima de "acampamneto", por pressa —
+deixaria a palavra errada aceita para sempre, em toda simulação, sem nada
+dizendo por quê. É a lista do dicionário personalizado do Word, e ela lê e ouve
+o mesmo módulo do corretor, sem cópia própria: tirar uma palavra ali devolve o
+vermelho na hora a qualquer folha aberta.
 
 **O Explorador desfaz.** Ctrl+Z desfaz mover, copiar, renomear, excluir e criar
 pasta, e Ctrl+Y refaz, nos dois Exploradores — antes, renomear errado só tinha
@@ -6236,6 +6267,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/dicionarioPessoal.test.ts` | palavra acrescentada que some ao recarregar, ouvinte que não fica sabendo, ou palavra que o banco recusaria aceita no aparelho |
 | `src/lib/dicionarioPessoal.test.ts` | palavra tirada noutro aparelho que ressuscita, palavra sem conta entrando na conta de quem entra, ou a de uma conta aparecendo para a seguinte |
 | `src/labs/powerpoint.test.tsx` | corpo do slide com o corretor do navegador, sugestão que não volta ao modelo, ou palavra acrescentada noutra tela que continua vermelha |
+| `src/components/ui/CampoComOrtografia.test.tsx` | campo de texto corrido com o corretor do navegador, sugestão que não volta pelo `onChange`, ou mudança de fora que não reescreve |
+| `src/components/MeuDicionario.test.tsx` | lista do dicionário com cópia própria, que não acompanha o corretor, ou que aceita o que o banco recusaria |
 | `src/labs/InsercaoTextoLab.test.tsx` | sugestão do botão direito que não troca a palavra inteira, que o Ctrl+Z não desfaz, ou Ignorar Tudo que vale só para um parágrafo |
 | `src/labs/planilha.test.ts` | quebra de texto que deixa a faixa meio a meio, ou que grava `false` em vez de devolver a célula ao que era |
 | `ci.yml` | `.env` rastreado pelo git |

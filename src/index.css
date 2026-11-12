@@ -415,6 +415,20 @@
   .input-field::placeholder {
     color: var(--color-text-dim);
   }
+  /* O campo de texto que passa pelo corretor da plataforma
+     (CampoComOrtografia): um elemento editável no lugar do textarea, que
+     precisa da quebra de linha e do convite cinza que o textarea tem de
+     fábrica. */
+  .campo-com-ortografia {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    cursor: text;
+  }
+  .campo-com-ortografia[data-vazio]::before {
+    content: attr(data-placeholder);
+    color: var(--color-text-dim);
+    pointer-events: none;
+  }
   .input-field:focus {
     border-color: var(--color-primary);
     box-shadow: 0 0 0 2px var(--color-primary-glow);
