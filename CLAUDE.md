@@ -2258,8 +2258,25 @@ mundo — guardado só no navegador, a palavra de um passaria à próxima pessoa
 que sentasse ali. A tabela é `dicionario_pessoal`
 (`20261112170000_dicionario_pessoal`), com RLS de dono e o mesmo teto de
 `palavraValida` — 64 caracteres, sem espaço —, para que nada aceito na tela
-seja recusado calado no banco. A leitura dela entra num push depois da
-migration, que é a ordem de sempre; até lá ele fica no navegador.
+seja recusado calado no banco. Quem liga as duas pontas é o `AuthProvider`,
+por `conectarDicionario`, pelo **id** da conta e não pela sessão — a sessão
+troca de objeto a cada renovação de token, e releria a tabela à toa.
+
+O navegador guarda uma cópia **por conta**, para valer antes de a rede
+responder, e três decisões dela erram calado se invertidas:
+
+- **o que se acrescentou sem rede é pendente, numa lista à parte**, e sobe na
+  próxima conexão. Não é "o que está na cópia e falta no banco": essa conta
+  acharia também a palavra tirada no outro aparelho, e a ressuscitaria;
+- **a palavra acrescentada sem conta nunca entra na conta de quem entrar
+  depois** — no computador do clube, quem não entrou é qualquer um;
+- **sair apaga a cópia da conta neste navegador** (`esquecerDicionarioDoAparelho`,
+  ao lado de `limparRascunhos`), e a leitura que chega depois de outra conta
+  entrar é descartada: a resposta da Ana não escreve no dicionário da Bia.
+
+`dicionarioNaConta.ts` não manda `user_id` em lugar nenhum: a coluna nasce de
+`auth.uid()` e a RLS decide de quem é a linha. Mandar o id seria confiar no
+navegador para dizer de quem é a palavra.
 
 **Para pôr ortografia numa simulação nova**, a superfície escolhe uma de duas
 peças, conforme quem guarda o texto enquanto se digita:
@@ -6217,6 +6234,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/ortografia.test.ts` | documento de laboratório que chega com palavra sublinhada, ou sigla, número e endereço sublinhados |
 | `src/labs/ortografia.test.ts` | texto riscado ou campo conferido como palavra, ou palavra do clube que o dicionário já conhece |
 | `src/lib/dicionarioPessoal.test.ts` | palavra acrescentada que some ao recarregar, ouvinte que não fica sabendo, ou palavra que o banco recusaria aceita no aparelho |
+| `src/lib/dicionarioPessoal.test.ts` | palavra tirada noutro aparelho que ressuscita, palavra sem conta entrando na conta de quem entra, ou a de uma conta aparecendo para a seguinte |
 | `src/labs/powerpoint.test.tsx` | corpo do slide com o corretor do navegador, sugestão que não volta ao modelo, ou palavra acrescentada noutra tela que continua vermelha |
 | `src/labs/InsercaoTextoLab.test.tsx` | sugestão do botão direito que não troca a palavra inteira, que o Ctrl+Z não desfaz, ou Ignorar Tudo que vale só para um parágrafo |
 | `src/labs/planilha.test.ts` | quebra de texto que deixa a faixa meio a meio, ou que grava `false` em vez de devolver a célula ao que era |

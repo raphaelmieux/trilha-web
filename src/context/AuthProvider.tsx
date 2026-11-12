@@ -2,6 +2,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { limparCacheDeProgresso } from '../lib/progress';
 import { limparRascunhos } from '../lib/rascunho';
+import { conectarDicionario, esquecerDicionarioDoAparelho } from '../lib/dicionarioPessoal';
+import { fonteDaConta } from '../lib/dicionarioNaConta';
 import { supabase } from '../lib/supabase';
 import { umDe, FORMAS_DE_NOME } from '../types';
 import type { UserProfile } from '../types';
@@ -86,6 +88,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  /*
+    O dicionário pessoal segue a conta: entrou, ele lê as palavras dela; saiu,
+    volta ao de quem não entrou. Pelo id, e não pela sessão, porque a sessão
+    troca de objeto a cada renovação de token, e isso releria a tabela à toa.
+  */
+  const dono = session?.user.id ?? null;
+  useEffect(() => {
+    void conectarDicionario(dono, dono ? fonteDaConta : null);
+  }, [dono]);
+
   const signOut = async () => {
     /*
       O servidor recusa o logout quando a sessão já morreu do lado dele, e o
@@ -108,6 +120,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     /* O clube costuma ter um computador só: o rascunho de um não pode
        aparecer para o próximo que entrar. */
     limparRascunhos();
+    /* As palavras continuam na conta; o rastro delas neste computador, não. */
+    esquecerDicionarioDoAparelho();
   };
 
   return <AuthContext.Provider value={{ session, profile, loading, signOut }}>{children}</AuthContext.Provider>;
