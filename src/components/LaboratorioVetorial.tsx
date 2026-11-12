@@ -1,3 +1,4 @@
+import { useAgendar } from '../hooks/useAgendar';
 import { useCallback, useMemo, useState } from 'react';
 import { FileText, Layers, NotebookPen, RotateCcw } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
@@ -55,10 +56,12 @@ export default function LaboratorioVetorial({ vereda, licao: daLicao, aoVencer, 
   const programa = definicao.programa;
   const imita = !noCaderno;
 
+  const agendar = useAgendar();
+
   const avisar = useCallback((texto: string) => {
     setAviso(texto);
-    window.setTimeout(() => setAviso(a => (a === texto ? '' : a)), 7000);
-  }, []);
+    agendar(() => setAviso(a => (a === texto ? '' : a)), 7000);
+  }, [agendar]);
 
   /* Toda chave que o editor avisa vira descoberta: as metas desta vereda
      pedem a chave exata — o zoom de 800% no emblema, os tamanhos do ícone, o

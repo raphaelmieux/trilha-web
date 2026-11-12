@@ -1,3 +1,4 @@
+import { useAgendar } from '../hooks/useAgendar';
 import { useState } from 'react';
 import {
   ArrowDownAZ, ArrowUpZA, RefreshCw, Rows3, Columns3, Table2, PieChart,
@@ -450,9 +451,11 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
   const [dialogo, setDialogo] = useState<DialogoDaPlanilha | null>(null);
   const [aviso, setAviso] = useState('');
 
+  const agendar = useAgendar();
+
   const avisar = (texto: string) => {
     setAviso(texto);
-    window.setTimeout(() => setAviso(a => (a === texto ? '' : a)), 7000);
+    agendar(() => setAviso(a => (a === texto ? '' : a)), 7000);
   };
 
   const mudarCaderno = (g: (k: Caderno) => Caderno) =>

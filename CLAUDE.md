@@ -4343,6 +4343,17 @@ deixaria o gancho morto pelo resto da sessão, sem nada dizendo por quê.
 E `setX(await f())` não tem onde receber guarda — a espera acontece dentro do
 setter. Parte-se em duas linhas.
 
+**O relógio solto é a mesma escrita, com outra espera.** Quinze laboratórios
+escreviam o aviso que some sozinho como
+`window.setTimeout(() => setAviso(...), 7000)`, solto num manipulador, sem
+guardar o número do relógio. A publicação de 12 de novembro reprovou por um
+deles: o relógio do laboratório de estatística disparou depois do fim do
+arquivo de teste, e o React acusou "window is not defined" com os 6517 testes
+passando. Fora de um efeito, o caminho é `useAgendar`, que guarda cada relógio
+e cancela os que sobraram quando a tela sai; dentro de um efeito, quem cancela
+é a limpeza dele. `escritaDepoisDoDesmonte.test.ts` reprova o relógio que
+escreve estado fora dos dois.
+
 **`position: fixed` só mede a janela enquanto nenhum ancestral filtrar.**
 `transform`, `filter` e `backdrop-filter` viram bloco de contenção, e aí o
 `inset: 0` de um modal passa a ser o retângulo daquele ancestral, e não a tela.
@@ -5837,6 +5848,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/insignias.test.ts` | classe de insígnia de vereda ou de trilha divergindo da que a estante desenha |
 | `src/lib/insignias.test.ts` | insígnia de laboratório cujo laboratório nenhuma lição aberta usa, que fica na estante sem ninguém poder ganhá-la |
 | `src/hooks/escritaDepoisDoDesmonte.test.ts` | efeito que escreve estado depois de esperar sem saber se a tela ainda está lá |
+| `src/hooks/escritaDepoisDoDesmonte.test.ts` | `setTimeout` que escreve estado fora de um efeito, sem `useAgendar` para cancelá-lo quando a tela sai |
 | `src/lib/ofensiva.test.ts` | evento de laboratório que ninguém classificou, e que por isso não faria a ofensiva andar |
 | `src/lib/ofensiva.test.ts` | a lista de eventos do banco divergindo da do navegador, que daria duas ofensivas à mesma pessoa |
 | `src/components/ui/marca.test.tsx` | `Trilha.Web()` ou `Token.Web()` escrito à mão no JSX, parênteses sem o vermelho da plataforma, ou o vermelho do PDF divergindo do token |

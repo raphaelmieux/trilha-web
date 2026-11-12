@@ -1,3 +1,4 @@
+import { useAgendar } from '../hooks/useAgendar';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -111,9 +112,11 @@ export default function PlanilhaLab({
   const [erro, setErro] = useState('');
   const [pronto, setPronto] = useState(false);
 
+  const agendar = useAgendar();
+
   const avisar = (texto: string) => {
     setAviso(texto);
-    window.setTimeout(() => setAviso(a => (a === texto ? '' : a)), 7000);
+    agendar(() => setAviso(a => (a === texto ? '' : a)), 7000);
   };
 
   /** Toda mudança passa por aqui, e por isso Ctrl+Z alcança todas elas. */

@@ -1,3 +1,4 @@
+import { useAgendar } from '../hooks/useAgendar';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -40,6 +41,8 @@ type LinhaDeUsuario = Pick<
 >;
 
 export default function AdminPage() {
+  /* Antes de qualquer return antecipado: o React conta os ganchos pela ordem. */
+  const agendar = useAgendar();
   const { profile } = useAuth();
   const [stats, setStats] = useState({ users: 0, events: 0 });
   const [users, setUsers] = useState<LinhaDeUsuario[]>([]);
@@ -153,11 +156,12 @@ export default function AdminPage() {
     }
   };
 
+
   const copyPassword = () => {
     if (!resetTarget?.password) return;
     navigator.clipboard.writeText(resetTarget.password);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    agendar(() => setCopied(false), 2000);
   };
 
   /*

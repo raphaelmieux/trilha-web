@@ -209,3 +209,66 @@ describe('ninguém escreve estado depois do desmonte', () => {
     ).toEqual([]);
   });
 });
+
+/*
+  O relógio solto é a mesma escrita, com outra espera.
+
+  `window.setTimeout(() => setAviso(...), 7000)` num manipulador de clique não
+  guarda o número do relógio, e ninguém o cancela quando a tela sai. Quinze
+  laboratórios escreviam o aviso que some sozinho assim, e a publicação de 12
+  de novembro reprovou por um deles: o relógio do laboratório de estatística
+  disparou depois do fim do arquivo de teste, e o React acusou "window is not
+  defined" com todos os testes passando.
+
+  Dentro de um efeito o relógio tem dono — a limpeza do efeito o cancela, e é
+  o que os efeitos daqui fazem. Fora dele, o caminho é `useAgendar`.
+*/
+const RELOGIO = /^(window\.)?setTimeout$/;
+
+function relogiosSoltos(): string[] {
+  const soltos: string[] = [];
+  for (const arquivo of arquivosDeFonte(RAIZ)) {
+    const fonte = readFileSync(arquivo, 'utf8');
+    if (!fonte.includes('setTimeout')) continue;
+    const sf = ts.createSourceFile(arquivo, fonte, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+
+    /* As faixas de texto que um efeito cobre. */
+    const efeitos: [number, number][] = [];
+    cada(sf, no => {
+      const efeito = chamadaDe(no, 'useEffect') ?? chamadaDe(no, 'useLayoutEffect');
+      if (efeito?.arguments[0]) efeitos.push([efeito.arguments[0].getStart(sf), efeito.arguments[0].getEnd()]);
+    });
+    const dentroDeEfeito = (n: ts.Node) => efeitos.some(([a, z]) => n.getStart(sf) >= a && n.getEnd() <= z);
+
+    cada(sf, no => {
+      if (!ts.isCallExpression(no) || !RELOGIO.test(no.expression.getText(sf))) return;
+      const callback = no.arguments[0];
+      if (!callback || !ehFuncao(callback)) return;
+      let escreve = false;
+      cada(callback, n => {
+        if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && ehSetter(n.expression.text)) escreve = true;
+      });
+      if (!escreve || dentroDeEfeito(no)) return;
+      const linha = sf.getLineAndCharacterOfPosition(no.getStart(sf)).line + 1;
+      soltos.push(`${relative(RAIZ, arquivo)}:${linha}`);
+    });
+  }
+  return soltos;
+}
+
+describe('nenhum relógio solto escreve estado', () => {
+  it('setTimeout que escreve estado mora num efeito com limpeza, ou passa por useAgendar', () => {
+    expect(relogiosSoltos(), 'relógio que escreve estado e que ninguém cancela: ver useAgendar').toEqual([]);
+  });
+
+  /* A guarda contra o vazio: a leitura precisa enxergar os relógios que já
+     moram em efeitos, senão "nenhum solto" seria não ter olhado. */
+  it('enxerga os relógios que moram em efeitos', () => {
+    let vistos = 0;
+    for (const arquivo of arquivosDeFonte(RAIZ)) {
+      const fonte = readFileSync(arquivo, 'utf8');
+      vistos += (fonte.match(/setTimeout\(\(\) => set[A-Z]/g) ?? []).length;
+    }
+    expect(vistos).toBeGreaterThanOrEqual(5);
+  });
+});

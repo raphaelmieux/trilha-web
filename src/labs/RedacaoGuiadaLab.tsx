@@ -1,3 +1,4 @@
+import { useAgendar } from '../hooks/useAgendar';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -314,11 +315,13 @@ export default function RedacaoGuiadaLab({
       wordCount: palavrasDoTexto, etapas: prontas,
     });
   };
+  const agendar = useAgendar();
+
 
   const salvarRascunho = async () => {
     setErro('');
     if (await gravar('draft', { respostas, corpo: textoFinal })) {
-      setSalvo(true); setTimeout(() => setSalvo(false), 2000);
+      setSalvo(true); agendar(() => setSalvo(false), 2000);
     }
   };
 

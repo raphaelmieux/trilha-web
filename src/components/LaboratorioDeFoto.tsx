@@ -1,3 +1,4 @@
+import { useAgendar } from '../hooks/useAgendar';
 import { useCallback, useMemo, useState } from 'react';
 import { Image as IconeDeImagem, NotebookPen, RotateCcw } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
@@ -37,10 +38,12 @@ export default function LaboratorioDeFoto({ vereda, licao: daLicao, aoVencer, ao
      depois compara, e não contra o último passo. */
   const antes = useMemo(() => { const d0 = definicao.contexto().documento; return d0 ? imagemDo(d0) : undefined; }, [definicao]);
 
+  const agendar = useAgendar();
+
   const avisar = useCallback((texto: string) => {
     setAviso(texto);
-    window.setTimeout(() => setAviso(a => (a === texto ? '' : a)), 7000);
-  }, []);
+    agendar(() => setAviso(a => (a === texto ? '' : a)), 7000);
+  }, [agendar]);
   const aoVer = useCallback((chave: string) => setCtx(c => (
     c.descobertas.includes(chave) ? c : { ...c, descobertas: [...c.descobertas, chave] }
   )), []);
