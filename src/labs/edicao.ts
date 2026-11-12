@@ -44,7 +44,7 @@ import {
   type FormatoDoParagrafo, type MudancaDeFormatacao, type Paragrafo, type Posicao, type Realce, type Revisao,
   type TipoDeLista, type Trecho,
   aparenciaDe, blocoDaQuebra, blocoDoFormato, ehParagrafo, fonteDoCorpo, formatoDoTrecho, idDaQuebra, idDoFormato,
-  idDoFormatoDoParagrafo, mesmoFormato, textoDoTrecho, trechoDoFormato,
+  idDoFormatoDoParagrafo, mesmoFormato, paragrafos, textoDoTrecho, trechoDoFormato,
 } from './documento';
 
 /* ── Posição e seleção ────────────────────────────────────────────────────── */
@@ -1266,6 +1266,132 @@ export function aplicarEstilo<S extends string>(d: Doc<S>, s: Selecao, estilo: E
   const alvos = new Set(paragrafosAlcancados(d, s).map(b => b.id));
   return {
     doc: { ...d, blocos: d.blocos.map(b => (alvos.has(b.id) && ehParagrafo(b) ? { ...b, estilo } : b)) },
+    selecao: s,
+  };
+}
+
+/* ── Contar palavras ──────────────────────────────────────────────────────── */
+
+const contar = (t: string) => t.split(/\s+/).filter(Boolean).length;
+
+/**
+ * O que a barra de status do Word diz: o total, e quantas a seleção tem —
+ * "12 de 245 palavras".
+ *
+ * O texto riscado de uma revisão não conta: ele já saiu do documento, e quem
+ * corta um parágrafo com o controle ligado precisa ver o número cair, que é a
+ * pergunta que faz alguém olhar para a barra. O campo conta pelo que mostra.
+ */
+export function contagemDePalavras(d: Doc<string>, s: Selecao | null): { total: number; selecionadas: number | null } {
+  const visivel = (x: Trecho) => (x.revisao?.tipo === 'excluido' ? '' : textoDoTrecho(d, x));
+  const total = contar(paragrafos(d).map(b => b.trechos.map(visivel).join('')).join('\n'));
+  if (!s || recolhida(s)) return { total, selecionadas: null };
+  const porParagrafo = new Map<string, string>();
+  transformarSelecao(d, s, (x, b) => {
+    porParagrafo.set(b.id, (porParagrafo.get(b.id) ?? '') + (x.quebra ? '\n' : '') + visivel(x));
+    return x;
+  });
+  return { total, selecionadas: contar([...porParagrafo.values()].join('\n')) };
+}
+
+/* ── O Pincel de Formatação ───────────────────────────────────────────────── */
+
+/**
+ * O que o Pincel leva: a aparência de um trecho **como ela se vê**, e, quando
+ * a origem inclui o parágrafo, o estilo e o formato dele.
+ *
+ * Como se vê, e não como está guardada. Um título é negrito pelo estilo, sem
+ * negrito direto nenhum; copiar só a formatação direta dele levaria nada, e o
+ * texto pintado continuaria sem negrito — o pincel pareceria quebrado logo no
+ * primeiro uso, que é copiar a cara de um título.
+ */
+export interface MoldeDoPincel {
+  efetiva: Required<Pick<Direta, 'negrito' | 'italico' | 'sublinhado' | 'tamanho' | 'fonte'>> & { cor: string };
+  enfase: boolean;
+  realce: Realce;
+  posicao: Posicao;
+  paragrafo?: { estilo: Estilo; formato?: FormatoDoParagrafo };
+}
+
+const corDoEstilo = (d: Doc<string>, estilo: Estilo) => String(aparenciaDe(d, estilo).color ?? '').toUpperCase();
+const tamanhoDoEstilo = (d: Doc<string>, estilo: Estilo) => Number(aparenciaDe(d, estilo).fontSize);
+
+/**
+ * Pegar a formatação de onde o cursor está — o primeiro clique do Pincel.
+ *
+ * O parágrafo vai junto quando a origem é o cursor parado, ou quando a seleção
+ * pega o parágrafo inteiro: é o que o Word faz, porque é assim que se diz "a
+ * cara deste parágrafo". Meia frase selecionada leva só a letra.
+ */
+export function pegarFormato(d: Doc<string>, s: Selecao): MoldeDoPincel | null {
+  const { inicio, fim } = ordenar(d, s);
+  const b = paragrafoPorId(d, inicio.bloco);
+  if (!b) return null;
+  const k = recolhida(s) ? s.foco.offset : inicio.offset + 1;
+  const { i } = trechoDeOrigem(b.trechos, Math.min(k, Math.max(1, tamanhoDoParagrafo(b))));
+  const x = b.trechos[i];
+  if (!x) return null;
+  const fimDoBloco = paragrafoPorId(d, fim.bloco);
+  const pegaOParagrafo = recolhida(s)
+    || (fim.bloco !== inicio.bloco && fim.offset === 0)
+    || (inicio.offset === 0 && !!fimDoBloco && fim.offset === tamanhoDoParagrafo(fimDoBloco));
+  const molde: MoldeDoPincel = {
+    efetiva: {
+      negrito: marcaEfetiva(d, b, x, 'negrito'),
+      italico: marcaEfetiva(d, b, x, 'italico'),
+      sublinhado: marcaEfetiva(d, b, x, 'sublinhado'),
+      tamanho: x.direta?.tamanho ?? tamanhoDoEstilo(d, b.estilo),
+      fonte: x.direta?.fonte ?? fonteDoCorpo(d),
+      cor: (x.direta?.cor ?? corDoEstilo(d, b.estilo)).toUpperCase(),
+    },
+    enfase: x.enfase,
+    realce: x.realce,
+    posicao: x.posicao,
+  };
+  if (pegaOParagrafo) molde.paragrafo = { estilo: b.estilo, ...(b.formato ? { formato: { ...b.formato } } : {}) };
+  return molde;
+}
+
+/**
+ * Pintar a seleção com o molde — o segundo clique, o que solta o botão do
+ * mouse em cima do texto.
+ *
+ * A letra é gravada como formatação direta **só onde ela difere do estilo do
+ * parágrafo de destino**: pintar negrito de título num parágrafo Normal grava
+ * negrito; pintar num outro título não grava nada, porque ele já é. Gravar
+ * tudo sempre deixaria formatação direta em todo lugar que o pincel tocou, e a
+ * meta da CC-ES002 que pede o documento sem formatação direta nunca fecharia
+ * para quem usou o pincel para consertá-lo.
+ */
+export function aplicarFormato<S extends string>(d: Doc<S>, s: Selecao, molde: MoldeDoPincel): Edicao<S> {
+  let doc = d;
+  if (molde.paragrafo) {
+    const { estilo, formato } = molde.paragrafo;
+    const alvos = new Set(paragrafosAlcancados(d, s).map(b => b.id));
+    doc = {
+      ...doc,
+      blocos: doc.blocos.map((b) => {
+        if (!alvos.has(b.id) || !ehParagrafo(b)) return b;
+        return comFormato({ ...b, estilo }, formato ?? {});
+      }),
+    };
+  }
+  if (recolhida(s)) return { doc, selecao: s };
+  return {
+    doc: transformarSelecao(doc, s, (x, b) => {
+      const e = molde.efetiva;
+      let t: Trecho = { ...x, enfase: molde.enfase, realce: molde.realce, posicao: molde.posicao };
+      delete t.deFora;
+      t = comDireta(t, 'negrito', e.negrito, marcaDoEstilo(doc, b.estilo, 'negrito'));
+      t = comDireta(t, 'italico', e.italico, marcaDoEstilo(doc, b.estilo, 'italico'));
+      t = comDireta(t, 'sublinhado', e.sublinhado, false);
+      t = comDireta(t, 'tamanho', e.tamanho, tamanhoDoEstilo(doc, b.estilo));
+      t = comDireta(t, 'fonte', e.fonte, fonteDoCorpo(doc));
+      /* Cor vazia é "a do estilo": gravá-la como direta pintaria o texto de
+         nada, e o navegador o desenharia na cor herdada sem o modelo saber. */
+      const doEstilo = corDoEstilo(doc, b.estilo);
+      return comDireta(t, 'cor', e.cor || doEstilo, doEstilo);
+    }).doc,
     selecao: s,
   };
 }

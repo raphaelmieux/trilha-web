@@ -8,6 +8,7 @@ import { useEdicaoDoWord } from '../labs/useEdicaoDoWord';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa, BotaoDaFaixa, ReguaDoWord,
   ZoomDoWord, FolhaDoWord,
+  ContagemDePalavras,
 } from '../labs/word';
 import {
   RELATORIO_ANUAL_INICIAL, METAS_DO_RELATORIO_ANUAL, SECAO_QUE_FALTA,
@@ -307,6 +308,7 @@ export default function LaboratorioDoRelatorioAnual({ vereda, licao, aoVencer, a
 
         <div className="wd-status">
           <span>{quantasPaginas(doc)} folhas</span>
+          <ContagemDePalavras doc={doc} selecao={edicao.selecao} />
           <span>
             {doc.sumario
               ? (sumarioAtualizado(doc) ? 'Sumário em dia' : 'Sumário desatualizado')

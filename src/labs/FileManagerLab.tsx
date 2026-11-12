@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useDesfazerDoDisco } from './desfazerDoDisco';
 import { Link } from 'react-router-dom';
 import {
   Folder, FolderOpen, File as FileIcon, Link2, Trash2,
@@ -113,6 +114,8 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
   const novoId = useRef(criarGerador('n')).current;
 
   const [arvore, setArvore] = useState<No[]>(() => arvoreInicial(agora));
+  /* O Ctrl+Z do Explorador — ver `desfazerDoDisco.ts`. */
+  const historicoDoDisco = useDesfazerDoDisco(arvore, setArvore);
   const [historico, setHistorico] = useState<string[]>([AREA]);
   const [posicao, setPosicao] = useState(0);
   const [selecao, setSelecao] = useState<Selecao>(SEM_SELECAO);
@@ -225,7 +228,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
   const criarPasta = () => {
     const nome = nomeDisponivel(arvore, pastaAtual, 'Nova pasta');
     const id = novoId();
-    setArvore(a => [...a, { id, nome, tipo: 'pasta', paiId: pastaAtual, tamanhoKb: 0, modificadoEm: Date.now() }]);
+    historicoDoDisco.mudar(a => [...a, { id, nome, tipo: 'pasta', paiId: pastaAtual, tamanhoKb: 0, modificadoEm: Date.now() }]);
     setSelecao(apenas(id));
     setRenomeando(id);
     setRascunho(nome);
@@ -238,7 +241,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
     if (!desejado) { setAviso('O nome não pode ficar vazio.'); return; }
     const alvo = acharNo(arvore, renomeando)!;
     const nome = nomeDisponivel(arvore, alvo.paiId!, desejado, renomeando);
-    setArvore(a => a.map(n => (n.id === renomeando ? { ...n, nome, modificadoEm: Date.now() } : n)));
+    historicoDoDisco.mudar(a => a.map(n => (n.id === renomeando ? { ...n, nome, modificadoEm: Date.now() } : n)));
     /* Só conta como cumprida quando o nome deixou de ser o padrão: criar e
        aceitar "Nova pasta" não é dar nome a nada. */
     if (alvo.tipo === 'pasta' && !nome.startsWith('Nova pasta')) concluir('t1');
@@ -260,12 +263,12 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
         setAviso('Não dá para mover uma pasta para dentro dela mesma.');
         return;
       }
-      setArvore(a => podem.reduce((acc, o) => moverPara(acc, o.id, destino, Date.now()), a));
+      historicoDoDisco.mudar(a => podem.reduce((acc, o) => moverPara(acc, o.id, destino, Date.now()), a));
       if (podem.some(o => o.tipo === 'pasta')) concluir('t3');
       setAviso(`Movido${plural}. No lugar de origem não ficou nenhuma cópia.`);
       setTransferencia(null);
     } else {
-      setArvore(a => origens.reduce((acc, o) => copiarPara(acc, o.id, destino, novoId, Date.now()), a));
+      historicoDoDisco.mudar(a => origens.reduce((acc, o) => copiarPara(acc, o.id, destino, novoId, Date.now()), a));
       if (origens.some(o => o.tipo === 'pasta' && o.paiId !== destino)) concluir('t2');
       setAviso(`Copiado${plural}. ${origens.length === 1 ? 'O original continua' : 'Os originais continuam'} onde estava${plural}.`);
     }
@@ -298,7 +301,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
   const criarAtalho = () => {
     if (!item || itens.length !== 1) return;
     const nome = nomeDisponivel(arvore, pastaAtual, `${item.nome} — Atalho`);
-    setArvore(a => [...a, {
+    historicoDoDisco.mudar(a => [...a, {
       id: novoId(), nome, tipo: 'atalho', paiId: pastaAtual,
       tamanhoKb: 1, modificadoEm: Date.now(), apontaPara: item.id,
     }]);
@@ -309,7 +312,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
   const excluir = () => {
     if (!mexiveis.length) return;
     const ids = mexiveis.map(n => n.id);
-    setArvore(a => ids.reduce((acc, id) => mandarParaLixeira(acc, id), a));
+    historicoDoDisco.mudar(a => ids.reduce((acc, id) => mandarParaLixeira(acc, id), a));
     limpar();
     setAviso(`${ids.length === 1 ? 'Foi' : 'Foram'} para a Lixeira. Enquanto `
       + `${ids.length === 1 ? 'estiver' : 'estiverem'} lá, ainda dá para recuperar.`);
@@ -318,7 +321,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
   const devolver = () => {
     if (!itens.length) return;
     const ids = itens.map(n => n.id);
-    setArvore(a => ids.reduce((acc, id) => restaurar(acc, id), a));
+    historicoDoDisco.mudar(a => ids.reduce((acc, id) => restaurar(acc, id), a));
     limpar();
     setAviso(`Restaurado${ids.length === 1 ? '' : 's'} para o lugar de onde saiu.`);
   };
@@ -328,6 +331,9 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
        que nunca recebeu arquivo não demonstra a primeira metade. */
     const tinhaArquivo = arvore.some(n => n.tipo === 'arquivo' && caminhoDe(arvore, n.id).some(p => p.id === LIXEIRA));
     setArvore(a => esvaziarLixeira(a));
+    /* O que sai da Lixeira sai para sempre: desfazer até antes disto o
+       ressuscitaria, e o Windows também não desfaz. */
+    historicoDoDisco.esquecer();
     limpar();
     if (tinhaArquivo) concluir('t5');
     setAviso(tinhaArquivo
@@ -368,11 +374,11 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
     }
     const plural = podem.length === 1 ? '' : 's';
     if (copiando) {
-      setArvore(a => podem.reduce((acc, o) => copiarPara(acc, o.id, destino, novoId, Date.now()), a));
+      historicoDoDisco.mudar(a => podem.reduce((acc, o) => copiarPara(acc, o.id, destino, novoId, Date.now()), a));
       if (podem.some(o => o.tipo === 'pasta')) concluir('t2');
       setAviso(`Copiado${plural} — segurar Ctrl enquanto arrasta copia em vez de mover.`);
     } else {
-      setArvore(a => podem.reduce((acc, o) => moverPara(acc, o.id, destino, Date.now()), a));
+      historicoDoDisco.mudar(a => podem.reduce((acc, o) => moverPara(acc, o.id, destino, Date.now()), a));
       if (podem.some(o => o.tipo === 'pasta')) concluir('t3');
       setAviso(`Movido${plural} para a pasta de destino.`);
     }
@@ -439,6 +445,11 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
     voltar: () => { if (posicao > 0) { setPosicao(p => Math.max(0, p - 1)); limpar(); } },
     avancar: () => { if (posicao < historico.length - 1) { setPosicao(p => Math.min(historico.length - 1, p + 1)); limpar(); } },
     subir: () => { if (noAtual?.paiId) irPara(noAtual.paiId); },
+    /* Desfazer muda o disco por baixo do nome que se está escrevendo: o campo
+       de renomear se fecha antes, senão gravaria o nome no item de outro
+       estado. */
+    desfazer: () => { setRenomeando(null); historicoDoDisco.desfazer(); },
+    refazer: () => { setRenomeando(null); historicoDoDisco.refazer(); },
   }, !emFoco && !salvo);
 
   if (salvo) {

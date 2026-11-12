@@ -9,6 +9,7 @@ import { cursorEm, paragrafosDaSelecao, recolhida, tamanhoDoParagrafo } from '..
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa,
   BotaoDaFaixa, EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
+  ContagemDePalavras,
 } from '../labs/word';
 import {
   RELATORIO_INICIAL, METAS_DO_RELATORIO, FOTO_DA_FOGUEIRA, COLUNAS_DA_LISTA,
@@ -599,7 +600,7 @@ export default function LaboratorioDoRelatorio({ vereda, licao, aoVencer, aoSair
         />
 
         <div className="wd-status">
-          <span>{doc.blocos.length} blocos</span>
+          <ContagemDePalavras doc={doc} selecao={edicao.selecao} />
           <span>
             {tabela
               ? `Tabela: ${tabela.linhas.length} × ${larguraDaTabela(tabela)}`

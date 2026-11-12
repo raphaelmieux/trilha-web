@@ -569,6 +569,73 @@ describe('os dois Exploradores da plataforma mostram a mesma janela', () => {
   });
 });
 
+describe('o Ctrl+Z do Explorador', () => {
+  /*
+    O Windows desfaz a última operação de arquivo e o Ctrl+Y a refaz. Os dois
+    Exploradores daqui não desfaziam nada: renomear errado só tinha volta
+    digitando o nome de antes de memória.
+  */
+  const nomesNaPasta = () =>
+    [...container.querySelectorAll('.win-linha .win-c-nome span')].map(e => e.textContent!.trim());
+
+  const montarAp041 = () => {
+    act(() => root.unmount());
+    root = createRoot(container);
+    act(() => {
+      root.render(
+        <MemoryRouter>
+          <FileManagerLab
+            specialtyCode="AP041" lessonCode="AP041.5-L1"
+            lessonTitle="Organizando as pastas do clube"
+            requirementCodes={['AP041-5']}
+            userId="00000000-0000-0000-0000-000000000000" />
+        </MemoryRouter>,
+      );
+    });
+  };
+
+  const desfazRenomearEExcluir = (onde: string) => {
+    const primeiro = nomesNaPasta()[0];
+    expect(primeiro, `a pasta da ${onde} abriu vazia`).toBeTruthy();
+    escolher(primeiro);
+    teclar('F2');
+    batizar('nome-errado');
+    expect(nomesNaPasta()).toContain('nome-errado');
+    teclar('z', { ctrlKey: true });
+    expect(nomesNaPasta(), `o Ctrl+Z da ${onde} não devolveu o nome`).toContain(primeiro);
+    expect(nomesNaPasta()).not.toContain('nome-errado');
+    teclar('y', { ctrlKey: true });
+    expect(nomesNaPasta(), `o Ctrl+Y da ${onde} não refez`).toContain('nome-errado');
+
+    escolher('nome-errado');
+    teclar('Delete');
+    expect(nomesNaPasta()).not.toContain('nome-errado');
+    teclar('z', { ctrlKey: true });
+    expect(nomesNaPasta(), `o Ctrl+Z da ${onde} não desfez a exclusão`).toContain('nome-errado');
+  };
+
+  it('desfaz e refaz renomear, e desfaz excluir, nos dois Exploradores', () => {
+    montar('m5-lab');
+    desfazRenomearEExcluir('CC-ES001');
+    montarAp041();
+    desfazRenomearEExcluir('AP041');
+  });
+
+  it('esvaziar a Lixeira não se desfaz, como no Windows', () => {
+    montar('m3-lab');
+    novaPasta('pasta-de-teste');
+    escolher('pasta-de-teste');
+    teclar('Delete');
+    irPara('Lixeira');
+    expect(nomesNaPasta()).toContain('pasta-de-teste');
+    clicar(comando('Esvaziar a Lixeira'), 'Esvaziar a Lixeira');
+    teclar('z', { ctrlKey: true });
+    expect(nomesNaPasta(), 'o Ctrl+Z pôs de volta na Lixeira').not.toContain('pasta-de-teste');
+    clicar(porRotulo('Voltar'), 'Voltar');
+    expect(nomesNaPasta(), 'o Ctrl+Z ressuscitou o que saiu da Lixeira').not.toContain('pasta-de-teste');
+  });
+});
+
 /* ── A seleção múltipla ───────────────────────────────────────────────────── */
 
 describe('a seleção múltipla do Explorador', () => {

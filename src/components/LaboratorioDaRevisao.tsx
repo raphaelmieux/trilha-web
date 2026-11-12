@@ -9,6 +9,7 @@ import { isolarSelecao, marcaEmVolta, palavraEmVolta, recolhida, selecaoDoTrecho
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa, BotaoDaFaixa, ReguaDoWord,
   ZoomDoWord, FolhaDoWord, BalaoDeComentario, BaloesDeFormatacao, DialogoDeSubstituir,
+  ContagemDePalavras,
 } from '../labs/word';
 import {
   DIA_DO_DESBRAVADOR_INICIAL, METAS_DA_REVISAO, type Doc,
@@ -412,6 +413,7 @@ export default function LaboratorioDaRevisao({ vereda, licao, aoVencer, aoSair, 
         />
 
         <div className="wd-status">
+          <ContagemDePalavras doc={doc} selecao={edicao.selecao} />
           <span>
             {doc.controlarAlteracoes ? 'Alterações controladas' : 'Controle desligado'}
           </span>

@@ -444,6 +444,10 @@ interface ControleDaTransferencia {
   temTransferencia: boolean;
   selecao: unknown;
   focar: () => void;
+  /** O Pincel de Formatação. Sem os três, o botão continua só avisando. */
+  pincel?: { fixo: boolean } | null;
+  pegarPincel?: (fixo: boolean) => boolean;
+  soltarPincel?: () => void;
 }
 
 /**
@@ -478,6 +482,28 @@ export function GrupoAreaDeTransferencia({ edicao, aoAvisar }: {
     edicao.executar({ tipo: 'colar' });
     edicao.focar();
   };
+  /*
+    O Pincel: um clique pega a formatação de onde o cursor está e pinta uma
+    vez; dois cliques o deixam preso na mão até o Esc ou um novo clique. Os
+    dois cliques passam primeiro pelo clique simples — o segundo solta o que o
+    primeiro pegou —, e o duplo pega de novo, preso. É a mesma sequência de
+    eventos que o Word recebe.
+  */
+  const pincel = (fixo = false) => {
+    if (!edicao.pegarPincel || !edicao.soltarPincel) {
+      aoAvisar('O Pincel de Formatação existe no Word de verdade, e não faz parte deste exercício.');
+      return;
+    }
+    if (edicao.pincel && !fixo) { edicao.soltarPincel(); return; }
+    if (!edicao.pegarPincel(fixo)) {
+      aoAvisar('Clique primeiro no texto cuja formatação você quer copiar, e depois no Pincel.');
+      return;
+    }
+    aoAvisar(fixo
+      ? 'Pincel preso: cada trecho que você selecionar ganha esta formatação. Esc ou um clique no Pincel o solta.'
+      : 'Pincel na mão: selecione o texto que deve ficar com esta formatação.');
+    edicao.focar();
+  };
   return (
     <GrupoDaFaixa nome="Área de Transferência">
       <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -487,7 +513,8 @@ export function GrupoAreaDeTransferencia({ edicao, aoAvisar }: {
         <div className="wd-linhas">
           <BotaoDaFaixa dica="Recortar (Ctrl+X)" aoClicar={() => copiar(true)}><Scissors className="w-3.5 h-3.5" /></BotaoDaFaixa>
           <BotaoDaFaixa dica="Copiar (Ctrl+C)" aoClicar={() => copiar(false)}><Copy className="w-3.5 h-3.5" /></BotaoDaFaixa>
-          <BotaoDaFaixa dica="Pincel de Formatação" aoClicar={() => aoAvisar('O Pincel de Formatação existe no Word de verdade, e não faz parte deste exercício.')}>
+          <BotaoDaFaixa dica="Pincel de Formatação"
+            ativo={!!edicao.pincel} aoClicar={pincel} aoClicarDuasVezes={() => pincel(true)}>
             <Paintbrush className="w-3.5 h-3.5" />
           </BotaoDaFaixa>
         </div>

@@ -9,6 +9,7 @@ import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa, BotaoDaFaixa,
   EnfeiteDaFaixa, ReguaDoWord, ZoomDoWord, FolhaDoWord,
+  ContagemDePalavras,
 } from './word';
 import {
   CSS_FONTE_DO_WORD, GrupoAreaDeTransferencia, GrupoDeConfigurarPagina, GrupoDeEstilos, GrupoDeFonte,
@@ -16,7 +17,7 @@ import {
 } from './fonteDoWord';
 import {
   trechoDe, campoDe, ehParagrafo, faixaTemCampoDePagina, larguraDaTabela, medidasDaPagina,
-  quantasPaginas, textoVisivel, ESTILOS_DE_TABELA, ESTILO_PADRAO_DE_TABELA, NOMES_DA_DISPOSICAO,
+  quantasPaginas, ESTILOS_DE_TABELA, ESTILO_PADRAO_DE_TABELA, NOMES_DA_DISPOSICAO,
   type Bloco, type ConfiguracaoDaPagina, type Disposicao, type EstiloDeTabela, type FaixaDaPagina,
   type TabelaDoDoc,
 } from './documento';
@@ -422,7 +423,6 @@ export default function InsercaoTextoLab({
   );
 
   const medidas = medidasDaPagina(doc);
-  const palavras = textoVisivel(doc).split(/\s+/).filter(Boolean).length;
   const menuAberto = (id: string) => menu === id;
 
   return (
@@ -680,7 +680,7 @@ export default function InsercaoTextoLab({
 
         <div className="wd-status">
           <span>{quantasPaginas(doc)} páginas</span>
-          <span>{palavras} palavras</span>
+          <ContagemDePalavras doc={doc} selecao={edicao.selecao} />
           <span className="hidden md:inline">Português (Brasil)</span>
           <ZoomDoWord zoom={zoom} aoMudar={setZoom} aoAvisar={setAviso} />
         </div>

@@ -9,6 +9,7 @@ import { marcaEmVolta, selecaoDoTrecho } from '../labs/edicao';
 import {
   CSS_WORD, CSS_FOLHA, BarraDeTituloDoWord, GuiasDoWord, GrupoDaFaixa, BotaoDaFaixa, ReguaDoWord,
   ZoomDoWord, FolhaDoWord, BaloesDeFormatacao, BastidoresDoWord, type PainelDosBastidores, type AjustesDeImpressao,
+  ContagemDePalavras,
 } from '../labs/word';
 import {
   RELATORIO_DA_ENTREGA_INICIAL, ENTREGA_INICIAL, METAS_DA_ENTREGA,
@@ -327,6 +328,7 @@ export default function LaboratorioDaEntrega({ vereda, licao, aoVencer, aoSair, 
 
           <div className="wd-status">
             <span>{quantasPaginas(doc)} folhas</span>
+            <ContagemDePalavras doc={doc} selecao={edicao.selecao} />
             <span>
               {pendentes.length === 0
                 ? 'Sem marcas pendentes'

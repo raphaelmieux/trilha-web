@@ -2169,6 +2169,45 @@ não igual a ela: a folha devolve a seleção que o navegador desenhou, e a do
 parágrafo inteiro volta com outra ponta — medido no Chromium, onde Rejeitar
 resolvia o negrito de dentro do parágrafo em vez do alinhamento dele.
 
+**O Pincel de Formatação leva a aparência como ela se vê.** O botão estava na
+faixa e só avisava que não fazia parte do exercício. Hoje um clique pega a
+formatação de onde o cursor está e pinta o próximo trecho selecionado, e dois
+cliques o deixam preso na mão até o Esc. Três decisões dele erram calado se
+invertidas:
+
+- **leva o efetivo, e não a direta**: um título é negrito pelo estilo, sem
+  negrito direto nenhum, e copiar só a direta levaria nada — o pincel pareceria
+  quebrado logo no primeiro uso, que é copiar a cara de um título;
+- **grava como direta só o que difere do estilo de destino**: pintar a cara do
+  Normal num Normal tira a direta em vez de gravar "negrito: falso", pela
+  regra de tirar o negrito — senão a meta da CC-ES002 que pede o documento sem
+  formatação direta nunca fecharia para quem usou o pincel para consertá-lo;
+- **pinta quando o botão do mouse sobe**, e não a cada mudança de seleção: o
+  `aoSoltar` da folha é chamado no clique que fecha o gesto, e pintar a cada
+  `selectionchange` pintaria o caminho da mão em vez do que ela escolheu.
+
+O parágrafo vai junto quando a origem é o cursor parado ou o parágrafo inteiro,
+como no Word. Com o controle de alterações ligado, a pintura sai marcada como
+formatação, porque passa pelo mesmo `comFormatacaoMarcada`.
+
+**A contagem de palavras é uma peça só.** Cinco laboratórios de Word tinham a
+sua conta e quatro não tinham nenhuma — a mesma barra de status dizendo uma
+coisa num documento e calando no seguinte. `ContagemDePalavras` escreve "245
+palavras", e com texto selecionado "12 de 245 palavras", como o Word. O texto
+riscado de uma revisão não conta: quem corta com o controle ligado precisa ver
+o número cair.
+
+**O Explorador desfaz.** Ctrl+Z desfaz mover, copiar, renomear, excluir e criar
+pasta, e Ctrl+Y refaz, nos dois Exploradores — antes, renomear errado só tinha
+volta digitando o nome de antes de memória. `useDesfazerDoDisco` guarda o disco
+inteiro a cada operação, pela razão do Ctrl+Z do Word: é barato, e não tem como
+divergir do que está na tela. O que **não** entra: o que outro programa fez
+(salvar no editor de texto, restaurar uma versão pelas Propriedades), porque o
+Ctrl+Z do Explorador também não desfaz o Bloco de Notas. E esvaziar a Lixeira e
+ligar ou tirar o pen drive **apagam a história**: desfazer até antes disso
+ressuscitaria o que saiu para sempre, ou mexeria num dispositivo que não está
+mais ali, e o Windows também não desfaz nenhum dos dois.
+
 **Comando sem alvo escolhido não age.** Aceitar e Rejeitar sem marca
 selecionada avisam, em vez de agir na primeira pendente: agir pareceria
 funcionar e resolveria a marca errada — a pessoa clicaria pensando no nome do
@@ -6041,6 +6080,10 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/edicao.test.ts` | formatação com o controle ligado que entra sem marca, ou rejeição que não devolve a aparência exata de antes |
 | `src/labs/edicao.test.ts` | pedaço com duas marcas em que Próxima fica preso, ou a formatação da própria inserção ganhando marca |
 | `src/components/LaboratorioDaRevisao.test.tsx` | negrito com o controle ligado sem balão na margem, ou que Rejeitar não tira |
+| `src/labs/edicao.test.ts` | pincel que copia só a formatação direta, ou que deixa "negrito: falso" pintando a cara do Normal |
+| `src/components/LaboratorioDaRevisao.test.tsx` | Pincel que não pinta ao soltar o mouse, que não solta depois de um uso, ou preso que o Esc não larga |
+| `src/components/LaboratorioDaRevisao.test.tsx` | barra de status do Word sem a contagem de palavras, ou sem o "de" da seleção |
+| `src/components/LaboratorioDeExplorador.test.tsx` | Explorador em que Ctrl+Z não desfaz renomear ou excluir, ou que ressuscita o que saiu da Lixeira |
 | `src/labs/FormatacaoTextoLab.test.tsx` | arrastar a seleção que não move, que move sem desfazer num passo, ou que copia sem o Ctrl |
 | `src/labs/powerpoint.test.tsx` | caixa à mão que não se escolhe, não se arrasta, não alarga pelas alças ou não sai pelo Delete |
 | `src/labs/desfazerDaApresentacao.test.tsx` | Ctrl+Z que apaga o PDF exportado, que desfaz letra por letra, ou que rouba o desfazer do campo de texto |
