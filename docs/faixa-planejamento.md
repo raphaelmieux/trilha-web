@@ -376,15 +376,14 @@ sem acento, em minúsculas, com hífen no lugar do espaço).
 **Especificação da arte:**
 - Um arquivo por Mestrado, em `public/assets/mestrados/<codigo>.png`. A pasta é
   a fonte da verdade, como `specialties`.
-- PNG com fundo transparente, **600 × 600**.
-- O material é próprio, para não se confundir com nenhuma outra peça: nem oval
-  (patch de trilha), nem círculo liso (button de vereda), nem polígono regular
-  (classe), nem figura (curiosidade). A sugestão é um **escudo ou flâmula
-  bordados**, com o nome da família escrito, como a tarja de Mestrado do clube.
-- A borda bordada (overloque) vem no desenho. A sombra no tecido é a Faixa que
-  desenha.
-- Até a arte chegar, o lugar mostra uma silhueta de escudo com o nome da
-  família.
+- PNG de **970 × 600** (o retângulo áureo), sem transparência nos cantos: o
+  arredondamento é a Faixa que recorta.
+- **Material: button**, e não patch, para não se confundir com o Mestrado
+  oficial (ME006, que é patch) nem com a especialidade (o patch oval).
+- **Forma: retângulo áureo** (1,618 : 1), deitado, com os cantos um pouco
+  arredondados, do tamanho de um button de vereda. A arte é a face do button;
+  o aro de metal e o brilho do plástico são a Faixa que desenha.
+- Até a arte chegar, o lugar mostra a face lisa com o nome da família.
 
 ### O Mestrado oficial: ME006 Mestrado em Ciência e Tecnologia (segredo)
 
@@ -414,8 +413,12 @@ Sociais) não existem aqui, e a plataforma não conta o que não confere: dizer
   concluídas aqui, e que o Mestrado oficial é entregue pelo clube. Ele não
   emite Token.Web(), porque o Mestrado não é um percurso da plataforma.
 - **Código e arte:** `mestrado_me006`, com a arte em
-  `public/assets/mestrados/ME006.png`, na especificação dos outros Mestrados.
-  É a única peça desenhada a partir de uma tarja que existe de verdade.
+  `public/assets/mestrados/ME006.png`. Ela é **patch**, como a especialidade: um
+  retângulo deitado de cantos bem arredondados, com os lados maiores retos e
+  paralelos e o mesmo raio nos quatro cantos, na proporção da tarja real
+  (cerca de 1,36 : 1), com a borda de overloque no desenho e fundo
+  transparente. É a única peça desenhada a partir de uma tarja que existe de
+  verdade.
 - **Os Mestrados de família não são oficiais**, e o cartão deles precisa dizer
   isso, para que o relatório entregue ao clube não os apresente como se fossem
   da Divisão. Proposta: "Mestrado da plataforma" no cartão deles, e "Mestrado
@@ -452,3 +455,32 @@ O público começa aos dez anos, no Ensino Fundamental dos anos finais.
   e autocuidado.
 - Os temas **D** e **E** trabalham a curiosidade investigativa da Competência
   Geral 2 e o eixo Mundo Digital: o que o computador guarda e como.
+
+## 11. Materiais aprovados no P0 (13/11/2026)
+
+Protótipo: https://claude.ai/artifact/2NNp6Jm8ZRRQvAeJbeX93p (versão 2).
+
+| Peça | Material | Forma | Tamanho |
+|---|---|---|---|
+| Trilha | patch bordado, borda de overloque | oval da arte (710 × 558) | ~200 px de largura |
+| ME006 (oficial) | patch bordado | retângulo de cantos bem arredondados | como o patch de trilha |
+| Vereda | button: aro de metal, brilho do plástico | círculo | ~112 a 128 px |
+| Mestrado da plataforma | button | retângulo áureo, cantos levemente arredondados | ~150 × 93 px |
+| Pin de classe (escadas e satélites) | pin esmaltado, aro dourado | polígono da classe | **cresce com a classe**: Amigo 30 px de altura, +5 px por classe, até o Líder com 60 px, metade de um button |
+| Curiosidade | pin esmaltado recortado | silhueta do desenho | ~60 a 90 px |
+| Segredo | lugar de giz com "?" | círculo | 58 px |
+
+- **Lugar vazio:** o contorno de giz do alfaiate, com o código escrito. Pins e
+  buttons vazios mostram o furo do alfinete.
+- **Satélites:** em anel em volta da peça, a 10 px de folga da borda. O anel
+  alarga sozinho quando os pins não cabem na volta.
+- **Cachos das escadas:** o Líder no meio, os outros seis em volta.
+- **Cartão do Token.Web():** o certificado de verdade (a arte de fundo, com o
+  nome, o código e a data nas posições de `CertificateCanvas`) numa moldura de
+  madeira com passe-partout e vidro, pendurada num prego na parede, e Baixar
+  PDF e Imprimir embaixo.
+- **Rolagem:** arrasto com a mãozinha e inércia, a roda do mouse anda para o
+  lado, o dedo no celular e as setas do teclado. Arrastar e soltar em cima de
+  uma peça não abre o cartão.
+- **Régua:** fica até o produto final. Ela mostra os grupos da Faixa e a janela
+  do que está à vista; clicar ou arrastar nela leva até lá.
