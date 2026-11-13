@@ -176,7 +176,7 @@ function unidadeDoMestrado(familia, cor) {
 /* O ME006 é patch, com a arte oficial, e o overloque na cor da beirada dela
    — a mesma regra das trilhas: a cor sai do arquivo, e não de uma lista. */
 function unidadeDoMe006() {
-  const w = 196, h = Math.round(w * 709 / 965), r = h * .43;
+  const w = 196, h = Math.round(w / DADOS.me006.proporcao);
   return { chave: 'me006', formas: [{ dx: 0, dy: 0, rx: w / 2, ry: h / 2 }], desenhar(cx, cy) {
     const el = document.createElement('button'); el.type = 'button';
     el.style.setProperty('--src', 'url("art/ME006.png")');
@@ -186,11 +186,15 @@ function unidadeDoMe006() {
       el.style.width = lado[0] + 'px'; el.style.height = lado[1] + 'px';
       el.style.left = (cx - lado[0] / 2) + 'px'; el.style.top = (cy - lado[1] / 2) + 'px';
       const cor = DADOS.me006.corDaBorda;
+      /* O overloque segue o contorno da própria arte, traçado da
+         transparência dela: um retângulo arredondado desenhado à mão erra os
+         cantos, e o overloque sai para fora da tarja onde ela fecha. */
+      const c = DADOS.me006.contorno;
       el.innerHTML = cheia
-        ? `<span class="arte"></span><svg class="borda" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px)">
-            <rect x="6" y="6" width="${w - 12}" height="${h - 12}" rx="${r - 6}" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="7"/>
-            <rect x="6" y="6" width="${w - 12}" height="${h - 12}" rx="${r - 6}" fill="none" stroke="${cor}" stroke-width="6.5" stroke-dasharray="1.1 1.1"/>
-            <rect x="6" y="6" width="${w - 12}" height="${h - 12}" rx="${r - 6}" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="2" stroke-dasharray="1.1 1.1" transform="translate(-.4 -.5)"/></svg>`
+        ? `<span class="arte"></span><svg class="borda" viewBox="0 0 1000 1000" preserveAspectRatio="none" style="inset:0;width:100%;height:100%">
+            <path d="${c}" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="7" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+            <path d="${c}" fill="none" stroke="${cor}" stroke-width="6.5" stroke-dasharray="1.1 1.1" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+            <path d="${c}" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="2" stroke-dasharray="1.1 1.1" vector-effect="non-scaling-stroke" transform="translate(-1 -1.5)"/></svg>`
         : `<svg viewBox="0 0 60 60"><circle class="giz" cx="30" cy="30" r="27" stroke-width="1.4"/></svg><span class="rotulo-giz" style="font-size:34px">?</span>`;
       el.setAttribute('aria-label', cheia ? 'ME006 Mestrado em Ciência e Tecnologia — conquistado' : 'Segredo ainda não achado. Dica: sete especialidades dizem mais juntas.');
       el.title = cheia ? '' : 'Segredo · Sete especialidades dizem mais juntas.';

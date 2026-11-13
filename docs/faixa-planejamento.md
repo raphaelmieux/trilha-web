@@ -528,3 +528,8 @@ ser 31 hoje e 49 na plataforma escrita.
   fonte da verdade.
 - **A arte oficial do ME006** chegou e está em
   `public/assets/mestrados/ME006.png` (965 × 709, fundo transparente).
+- **O overloque segue o contorno da arte**, traçado da transparência da
+  imagem (240 raios a partir do centro), e não uma forma desenhada à mão. Um
+  retângulo arredondado escrito no código errava os cantos do ME006, e o
+  overloque saía para fora da tarja onde ela fecha. Na produção, o contorno
+  vale para todo patch, e não só para o ME006: sai do arquivo, como a cor.
