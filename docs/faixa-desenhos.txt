@@ -1,5 +1,6 @@
 FAIXA - DESENHOS A PRODUZIR
-Atualizado em 13/11/2026. Total: 71 desenhos (58 curiosidades + 13 Mestrados).
+Atualizado em 13/11/2026. Total: 72 desenhos (58 curiosidades + 13 Mestrados
++ o certificado do ME006).
 Marque [x] quando enviar. O nome do arquivo é o código: é por ele que a
 plataforma acha o desenho, sem lista nenhuma no código.
 
@@ -116,6 +117,22 @@ Material: button (face lisa e brilhante), NUNCA patch bordado: patch é
 [ ] mestrado_back-end.png                       Back-end (CC-BE001 a CC-BE006)
 [ ] mestrado_sistemas.png                       Sistemas (CC-SI001 a CC-SI005)
 [ ] mestrado_infraestrutura.png                 Infraestrutura (CC-IE001 a CC-IE003)
+
+=====================================================================
+C) CERTIFICADO DO ME006 - Token.Web() do Mestrado oficial (1)
+=====================================================================
+Pasta:   public/assets/certificates/ME006.png  (a mesma dos outros)
+Formato: PNG 3508 x 2481 px (A4 deitado), como os certificados das
+         trilhas e veredas.
+Layout:  igual ao dos outros, porque o nome, o código e a data são
+         escritos por cima pela plataforma, nas mesmas posições:
+         - faixa do NOME vazia no alto, por volta de 30% a 36% da altura,
+           centralizada;
+         - rodapé vazio a 92% da altura: o código à esquerda e a data à
+           direita.
+         Use o certificado de uma trilha como molde, trocando o texto
+         ("terminou com sucesso..." / "AP034 Internet") e o emblema.
+[ ] ME006.png   Certificado do Mestrado em Ciência e Tecnologia
 
 =====================================================================
 JÁ RECEBIDO

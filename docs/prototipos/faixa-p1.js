@@ -198,7 +198,7 @@ function unidadeDoMe006() {
         : `<svg viewBox="0 0 60 60"><circle class="giz" cx="30" cy="30" r="27" stroke-width="1.4"/></svg><span class="rotulo-giz" style="font-size:34px">?</span>`;
       el.setAttribute('aria-label', cheia ? 'ME006 Mestrado em Ciência e Tecnologia — conquistado' : 'Segredo ainda não achado. Dica: sete especialidades dizem mais juntas.');
       el.title = cheia ? '' : 'Segredo · Sete especialidades dizem mais juntas.';
-      el.onclick = cheia ? () => abrirInsignia('ME006 Mestrado em Ciência e Tecnologia', 'Mestrado oficial. Concluiu sete trilhas desta plataforma que estão na lista do ME006. O Mestrado oficial é entregue pelo clube.') : null;
+      el.onclick = cheia ? () => abrirToken('ME006', 'Mestrado em Ciência e Tecnologia', 'mestrado') : null;
     } });
   } };
 }
@@ -322,20 +322,33 @@ function abrirToken(codigo, nome, tipo) {
     <span class="prego" aria-hidden="true"></span>
     <div class="moldura"><div class="passepartout"><div class="certificado">
       <svg viewBox="0 0 2340 1655" role="img" aria-label="Token.Web() de ${codigo} ${nome}, em nome de Ana Clara Ribeiro">
-        <image href="art/cert-${codigo}.jpg" x="0" y="0" width="2340" height="1655"/>
+        ${codigo === 'ME006' ? fundoProvisorioDoMe006() : `<image href="art/cert-${codigo}.jpg" x="0" y="0" width="2340" height="1655"/>`}
         <text x="1170" y="598" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="140" fill="#0a0a0a">Ana Clara Ribeiro</text>
         <text x="120" y="1520" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="32" letter-spacing="1" fill="#1a1a1a">TW-7K2Q9M</text>
         <text x="2220" y="1520" text-anchor="end" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="32" fill="#1a1a1a">02 de outubro de 2026</text>
       </svg><span class="vidro" aria-hidden="true"></span></div></div></div>
     <h2>${codigo} ${nome}</h2>
-    <p>${tipo === 'trilha' ? 'Trilha concluída' : 'Vereda percorrida até o fim'} · ${marca} emitido em 02/10/2026</p>
+    <p>${tipo === 'trilha' ? 'Trilha concluída' : tipo === 'mestrado' ? 'Mestrado oficial · sete trilhas da lista concluídas aqui' : 'Vereda percorrida até o fim'} · ${marca} emitido em 02/10/2026</p>
     <div class="acoes">
       <button type="button" class="principal" data-aviso="No produto, este botão baixa o PDF do Token.Web().">Baixar PDF</button>
       <button type="button" data-aviso="No produto, este botão abre a impressão do Token.Web().">Imprimir</button>
       <button type="button" data-fechar>Fechar</button>
     </div>
-    <span class="exemplo">Nome, código e data de exemplo.</span>`;
+    <span class="exemplo">Nome, código e data de exemplo.${codigo === 'ME006' ? ' O fundo do certificado é provisório, até a sua arte chegar.' : ''}</span>`;
   dialogo.showModal();
+}
+/* Fundo provisório do certificado do ME006, no layout dos outros: a faixa do
+   nome no mesmo lugar e o rodapé no mesmo lugar, porque é ali que a
+   plataforma escreve por cima. A arte definitiva vai em
+   public/assets/certificates/ME006.png. */
+function fundoProvisorioDoMe006() {
+  return `<rect width="2340" height="1655" fill="#f7f2e6"/>
+    <rect x="60" y="60" width="2220" height="1535" fill="none" stroke="#c13516" stroke-width="16"/>
+    <rect x="96" y="96" width="2148" height="1463" fill="none" stroke="#e7c35a" stroke-width="6"/>
+    <text x="1170" y="400" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="56" fill="#333">Este documento certifica que</text>
+    <text x="1170" y="760" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="52" fill="#333">concluiu, nesta plataforma, sete trilhas da lista do</text>
+    <text x="1170" y="880" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="700" font-size="92" fill="#111">ME006 Mestrado em Ciência e Tecnologia</text>
+    <image href="art/ME006.png" x="${1170 - 260}" y="950" width="520" height="${520 * 709 / 965}"/>`;
 }
 function abrirInsignia(nome, texto, classe) {
   dialogo.classList.remove('parede');

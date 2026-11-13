@@ -533,3 +533,21 @@ ser 31 hoje e 49 na plataforma escrita.
   retângulo arredondado escrito no código errava os cantos do ME006, e o
   overloque saía para fora da tarja onde ela fecha. Na produção, o contorno
   vale para todo patch, e não só para o ME006: sai do arquivo, como a cor.
+
+### O ME006 emite Token.Web() (13/11/2026)
+
+O cartão do ME006 é igual ao das trilhas e veredas: o certificado
+emoldurado, com Baixar PDF e Imprimir. Isso substitui o que estava escrito na
+seção 8 ("ele não emite Token.Web()").
+
+- **O documento é o mesmo**: mesma tabela `certifications`, mesma verificação
+  pública em `/verificar`, mesmo PDF. `curriculum_code` = `ME006` e
+  `specialty_id` nulo, como na vereda.
+- **O que ele afirma é o que a plataforma confere:** que as sete trilhas da
+  lista foram concluídas aqui. O texto do certificado diz isso, e o Mestrado
+  oficial continua sendo entregue pelo clube.
+- **A arte do fundo** vai em `public/assets/certificates/ME006.png`, no layout
+  dos outros, porque o nome, o código e a data são escritos por cima nas
+  posições de `CertificateCanvas`. Está na lista de desenhos.
+- **Ele conta na escada do Token.Web()**, que passa a ter 65 documentos
+  possíveis: 13 trilhas, 51 veredas e o ME006.
