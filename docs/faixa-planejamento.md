@@ -48,8 +48,8 @@ em `public/curriculum files/` (seção 4). Estão marcadas com `~`.
 | Laboratórios de vereda | pin satélite do button | ~434 |
 | Escadas (13 famílias × 7 classes) | pin, em cacho | 91 |
 | Curiosidades | pin recortado | 58 (seção 7) |
-| Mestrados | tarja bordada | 13 (seção 8) |
-| **Total** | | **~706** |
+| Mestrados | tarja bordada | 13 + ME006 (seção 8) |
+| **Total** | | **~707** |
 
 Os satélites somam quase três quartos da Faixa. A largura dela, portanto, é
 decidida pelas veredas, e não pelas trilhas.
@@ -385,6 +385,43 @@ sem acento, em minúsculas, com hífen no lugar do espaço).
   desenha.
 - Até a arte chegar, o lugar mostra uma silhueta de escudo com o nome da
   família.
+
+### O Mestrado oficial: ME006 Mestrado em Ciência e Tecnologia (segredo)
+
+Este é real, e não uma invenção da plataforma: o requisito oficial está em
+`public/curriculum files/ME006 Mestrado em Ciência e Tecnologia.pdf`. Ele pede
+**sete de vinte especialidades**, e onze delas são trilhas da plataforma:
+
+| Na lista do ME006 | Trilha |
+|---|---|
+| Computação 1 a 5 | AP041, AP042, AP043, AP044, AP045 |
+| Desenvolvimento de Software | AP049 |
+| Informática Programável | AP052 |
+| Internet / Internet, Avançado | AP034, AP035 |
+| Web Designer / Web Designer, Avançado | AP063, AP064 |
+
+As outras nove (Eletrônica, Experimentos Científicos, Física, Habilidades em
+Matemática 1 e 2, Metodologia de Estudo, Óptica, Química e Segurança nas Redes
+Sociais) não existem aqui, e a plataforma não conta o que não confere: dizer
+"eu fiz Física" seria autodeclaração.
+
+- **Regra:** sete trilhas concluídas dentre as onze da tabela. A lista é
+  declarada à mão, porque sai do documento oficial, e uma trava confere que
+  todo código citado existe no registro.
+- **Segredo:** até a sétima trilha, o lugar é um "?" com a dica "Sete
+  especialidades dizem mais juntas.", e ninguém vê o que é antes de alcançar.
+- **O cartão diz o que a plataforma pode dizer:** que as sete trilhas foram
+  concluídas aqui, e que o Mestrado oficial é entregue pelo clube. Ele não
+  emite Token.Web(), porque o Mestrado não é um percurso da plataforma.
+- **Código e arte:** `mestrado_me006`, com a arte em
+  `public/assets/mestrados/ME006.png`, na especificação dos outros Mestrados.
+  É a única peça desenhada a partir de uma tarja que existe de verdade.
+- **Os Mestrados de família não são oficiais**, e o cartão deles precisa dizer
+  isso, para que o relatório entregue ao clube não os apresente como se fossem
+  da Divisão. Proposta: "Mestrado da plataforma" no cartão deles, e "Mestrado
+  oficial" no do ME006.
+
+Com ele a Faixa completa tem cerca de **707 peças**.
 
 ## 9. Especificação da arte dos pins recortados
 
