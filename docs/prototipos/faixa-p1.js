@@ -131,7 +131,7 @@ function unidadeDaTrilha(t) {
     const giro = semente('g' + t.code)() * 10 - 5;
     poe(el, { x: cx, y: cy, w, h, giro, cheia: regra(MEIO.trilhas.has(t.code)), montar(cheia) {
       el.className = 'peca patch ' + (cheia ? 'cheia' : 'vazia');
-      el.innerHTML = cheia ? `<span class="arte"></span>${bordaDoPatch('#b8321a')}` : gizOval(t.code, 'oval', !t.aberta);
+      el.innerHTML = cheia ? `<span class="arte"></span>${bordaDoPatch(t.corDaBorda)}` : gizOval(t.code, 'oval', !t.aberta);
       el.setAttribute('aria-label', `${t.code} ${t.nome} — ${cheia ? 'trilha concluída. Ver o Token.Web()' : 'ainda não concluída'}`);
       el.title = cheia ? '' : `${t.code} ${t.nome}${t.aberta ? '' : ' · em breve'}`;
       el.onclick = cheia ? () => abrirToken(t.code, t.nome, 'trilha') : null;
@@ -173,25 +173,24 @@ function unidadeDoMestrado(familia, cor) {
     } });
   } };
 }
+/* O ME006 é patch, com a arte oficial, e o overloque na cor da beirada dela
+   — a mesma regra das trilhas: a cor sai do arquivo, e não de uma lista. */
 function unidadeDoMe006() {
-  const w = 190, h = Math.round(w * 125 / 170), r = h * .36;
+  const w = 196, h = Math.round(w * 709 / 965), r = h * .43;
   return { chave: 'me006', formas: [{ dx: 0, dy: 0, rx: w / 2, ry: h / 2 }], desenhar(cx, cy) {
     const el = document.createElement('button'); el.type = 'button';
+    el.style.setProperty('--src', 'url("art/ME006.png")');
     poe(el, { x: cx, y: cy, w, h, giro: 3, cheia: regra(false), montar(cheia) {
-      el.className = 'peca ' + (cheia ? 'cheia patch' : 'vazia pin segredo');
+      el.className = 'peca ' + (cheia ? 'cheia patch me006' : 'vazia pin segredo');
       const lado = cheia ? [w, h] : [58, 58];
       el.style.width = lado[0] + 'px'; el.style.height = lado[1] + 'px';
       el.style.left = (cx - lado[0] / 2) + 'px'; el.style.top = (cy - lado[1] / 2) + 'px';
-      const estrela = x => `<path transform="translate(${x} ${h * .5}) scale(.9)" d="M0-9 2.6-2.8 9.4-2.8 3.9 1.3 6-5.4 0 9-6 5.4-3.9 1.3-9.4-2.8-2.6-2.8Z" fill="#f2d33a"/>`;
+      const cor = DADOS.me006.corDaBorda;
       el.innerHTML = cheia
-        ? `<svg viewBox="-4 -4 ${w + 8} ${h + 8}" style="width:100%;height:100%;overflow:visible">
-            <rect width="${w}" height="${h}" rx="${r}" fill="#c9221a"/>
-            <rect width="${w}" height="${h}" rx="${r}" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="8"/>
-            <rect width="${w}" height="${h}" rx="${r}" fill="none" stroke="#f2d33a" stroke-width="7" stroke-dasharray="1.1 1.1"/>
-            <text x="${w / 2}" y="${h * .27}" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="${h * .12}" fill="#f2d33a">MESTRE EM</text>
-            <g transform="translate(${w / 2} ${h * .52})" fill="none" stroke="#f4f0e2" stroke-width="2"><ellipse rx="${h * .17}" ry="${h * .06}"/><ellipse rx="${h * .17}" ry="${h * .06}" transform="rotate(60)"/><ellipse rx="${h * .17}" ry="${h * .06}" transform="rotate(-60)"/><circle r="2.6" fill="#f4f0e2"/></g>
-            ${estrela(w * .17)}${estrela(w * .83)}
-            <text x="${w / 2}" y="${h * .84}" text-anchor="middle" font-family="Inter, sans-serif" font-weight="700" font-size="${h * .1}" fill="#f2d33a">CIÊNCIA E TECNOLOGIA</text></svg>`
+        ? `<span class="arte"></span><svg class="borda" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px)">
+            <rect x="6" y="6" width="${w - 12}" height="${h - 12}" rx="${r - 6}" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="7"/>
+            <rect x="6" y="6" width="${w - 12}" height="${h - 12}" rx="${r - 6}" fill="none" stroke="${cor}" stroke-width="6.5" stroke-dasharray="1.1 1.1"/>
+            <rect x="6" y="6" width="${w - 12}" height="${h - 12}" rx="${r - 6}" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="2" stroke-dasharray="1.1 1.1" transform="translate(-.4 -.5)"/></svg>`
         : `<svg viewBox="0 0 60 60"><circle class="giz" cx="30" cy="30" r="27" stroke-width="1.4"/></svg><span class="rotulo-giz" style="font-size:34px">?</span>`;
       el.setAttribute('aria-label', cheia ? 'ME006 Mestrado em Ciência e Tecnologia — conquistado' : 'Segredo ainda não achado. Dica: sete especialidades dizem mais juntas.');
       el.title = cheia ? '' : 'Segredo · Sete especialidades dizem mais juntas.';
@@ -273,12 +272,15 @@ for (const [familia, lista] of porFamilia(DADOS.trilhas))
   grupo(familia, 'trilhas', [...lista.map(unidadeDaTrilha), unidadeDoMestrado(familia, COR_DA_FAMILIA[familia])], familia === 'Internet' ? 0 : 120);
 grupo('ME006', 'trilhas', [unidadeDoMe006()], 60);
 fronteira += 60;
-for (const [familia, lista] of porFamilia(DADOS.veredas))
-  grupo(familia, 'veredas', [...lista.map(unidadeDaVereda), unidadeDoMestrado(familia, COR_DA_FAMILIA[familia])], familia === 'Base' ? 0 : 140);
-fronteira += 60;
+/* As zonas curtas primeiro, e a longa por último: as veredas são mais da
+   metade da Faixa, e na frente elas empurrariam as escadas e as curiosidades
+   para depois de dez telas, onde quase ninguém chega. */
 grupo('Escadas', 'escadas', DADOS.escadas.map(unidadeDaEscada), 0);
 fronteira += 40;
 CURIOSIDADES.forEach((c, i) => grupo(c[0] === 'Calendário da computação' ? 'Calendário' : c[0], 'curiosidades', [unidadeDeCuriosidades(c, i)], i === 0 ? 0 : 60));
+fronteira += 60;
+for (const [familia, lista] of porFamilia(DADOS.veredas))
+  grupo(familia, 'veredas', [...lista.map(unidadeDaVereda), unidadeDoMestrado(familia, COR_DA_FAMILIA[familia])], familia === 'Base' ? 0 : 140);
 const LARGURA_TOTAL = Math.ceil(fronteira + 60);
 faixa.style.width = LARGURA_TOTAL + 'px';
 

@@ -510,3 +510,21 @@ aparecem em mais de uma trilha: `redacao_guiada` (AP034, AP041 e AP045) e
 tipos novos**, com três insígnias novas e a concessão a quem já venceu aqueles
 laboratórios naquelas trilhas. Com isso, os laboratórios de trilha passam a
 ser 31 hoje e 49 na plataforma escrita.
+
+### Decisões sobre o P1 (13/11/2026)
+
+- **Densidade:** aprovada.
+- **Largura:** fica longa de propósito, porque deve dizer à pessoa que há muito
+  a fazer.
+- **Ordem das zonas, da esquerda para a direita:** Trilhas, Escadas,
+  Curiosidades e Veredas. As zonas curtas vêm primeiro, para não ficarem
+  escondidas depois das dez telas das veredas.
+- **Os três tipos novos de laboratório** (o achado da D2) entram neste
+  trabalho.
+- **Cor do overloque:** sai da beirada da própria arte, lida do arquivo, e não
+  de uma lista por código. Hoje dá vermelho `#C13516` nas AP e no ME006, e azul
+  `#169CD8` nas HM079 e HM090. Uma arte nova chega com o overloque certo sem
+  ninguém mexer no código. A mesma regra das pastas de arte: o arquivo é a
+  fonte da verdade.
+- **A arte oficial do ME006** chegou e está em
+  `public/assets/mestrados/ME006.png` (965 × 709, fundo transparente).
