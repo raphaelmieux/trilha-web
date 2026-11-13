@@ -115,6 +115,7 @@ export const LABORATORIO_DO_EVENTO: Record<string, LabType> = {
 */
 const EVENTOS_DE_VEREDA: Record<string, string> = {
   vereda_teoria: 'Teoria da vereda concluída',
+  vereda_teoria_perfeita: 'Teoria da vereda refeita sem erro',
   vereda_laboratorio: 'Laboratório da vereda concluído',
   vereda_completed: 'Vereda concluída',
   mini_trilha_completed: 'Vereda concluída',

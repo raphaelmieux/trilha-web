@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { EDICAO_ANTIGA } from './escadasDeInsignia';
 import { CURIOSIDADES } from './catalogoDeCuriosidades';
 import { mestrados } from './mestrados';
 import { fileirasDaEstante, totalDaEstante } from './estante';
@@ -55,7 +56,10 @@ describe('a estante conhece o catálogo inteiro', () => {
       'estas insígnias existem no banco e não têm lugar na estante — quem as '
       + 'conquistar não vai encontrá-las, e a página vai parecer completa.',
     ).toEqual([]);
-    expect(totalDaEstante()).toBe(noBanco.size);
+    expect(lugares().length).toBe(noBanco.size);
+    /* O total que a página anuncia deixa de fora a edição antiga, que
+       ninguém mais ganha: ela tem lugar, mas não conta no que falta. */
+    expect(totalDaEstante()).toBe(noBanco.size - EDICAO_ANTIGA.length);
   });
 
   /* E o contrário: prateleira para insígnia que não existe é prometer prêmio

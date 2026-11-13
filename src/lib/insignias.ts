@@ -4,7 +4,7 @@ import {
   veredasAbertas, type Vereda,
 } from '../curriculum/veredas';
 import { getAllSpecialties } from '../curriculum';
-import { TODOS_OS_DEGRAUS } from './escadasDeInsignia';
+import { TODOS_OS_DEGRAUS, EDICAO_ANTIGA, alcancou } from './escadasDeInsignia';
 import { CURIOSIDADES, ICONE_DO_TEMA } from './catalogoDeCuriosidades';
 import { mestrados, mestradosConquistados } from './mestrados';
 import { NIVEIS_DA_INSIGNIA, type NivelDaInsignia } from './nivelDaInsignia';
@@ -275,7 +275,18 @@ export const INSIGNIAS: Insignia[] = [
   ...TODOS_OS_DEGRAUS.map(({ escada, ...d }): Insignia => ({
     code: d.code, nome: d.nome, descricao: d.descricao, icone: escada.icone,
     tier: d.classe, familia: escada.familia,
-    conquistou: r => escada.medir(r) >= d.alvo,
+    conquistou: r => alcancou(escada, d, r),
+  })),
+
+  /*
+    ── Edição antiga ──────────────────────────────────────────────────────
+    Os topos de antes de o sétimo degrau virar "tudo". Continuam no catálogo
+    porque quem os tem continua com eles; ninguém mais os ganha.
+  */
+  ...EDICAO_ANTIGA.map((a): Insignia => ({
+    code: a.code, nome: a.nome, descricao: a.descricao, icone: a.icone,
+    tier: a.classe, familia: a.familia,
+    conquistou: () => false,
   })),
 
   /*

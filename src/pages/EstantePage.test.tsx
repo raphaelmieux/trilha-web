@@ -62,12 +62,13 @@ afterEach(() => {
   container.remove();
 });
 
-const TODOS = fileirasDaEstante().flatMap(f => f.lugares);
+/* A edição antiga não tem lugar vazio nem entra no total: ninguém mais a ganha. */
+const TODOS = fileirasDaEstante().filter(f => !f.soConquistadas).flatMap(f => f.lugares);
 const TOTAL = TODOS.length;
 /* A fileira partida em grupos desenha os grupos fechados: os lugares dela só
    aparecem quando o grupo abre. Todo o resto aparece de saída. */
 const PARTIDAS = fileirasDaEstante().filter(f => f.grupos);
-const A_VISTA = fileirasDaEstante().filter(f => !f.grupos).flatMap(f => f.lugares);
+const A_VISTA = fileirasDaEstante().filter(f => !f.grupos && !f.soConquistadas).flatMap(f => f.lugares);
 
 /** Os desenhos da tela, pelo nome acessível que cada um carrega. */
 const rotulos = () => [...container.querySelectorAll('svg[role="img"]')]
@@ -121,9 +122,22 @@ describe('a estante mostra o catálogo inteiro', () => {
 
   it('mostra o nome de cada fileira', () => {
     desenhar();
-    for (const f of fileirasDaEstante()) {
+    /* A edição antiga só aparece para quem tem alguma: sem nenhuma, a
+       fileira inteira prometeria o que ninguém mais ganha. */
+    for (const f of fileirasDaEstante().filter(f => !f.soConquistadas)) {
       expect(container.textContent, `a fileira "${f.titulo}" sumiu`).toContain(f.titulo);
     }
+  });
+
+  it('a edição antiga aparece só com o que a pessoa tem', () => {
+    const antiga = fileirasDaEstante().find(f => f.soConquistadas)!;
+    desenhar();
+    expect(container.textContent).not.toContain(antiga.titulo);
+    estado.badges = [insignia(antiga.lugares[0])];
+    desenhar();
+    expect(container.textContent).toContain(antiga.titulo);
+    expect(cheios()).toContain(`${antiga.lugares[0].nome} — conquistada`);
+    expect(vazios().some(r => antiga.lugares.slice(1).some(l => r.startsWith(l.nome)))).toBe(false);
   });
 });
 

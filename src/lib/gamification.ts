@@ -4,6 +4,7 @@ import { laboratorioDoEvento } from './atividade';
 import { insigniasConquistadas, type ResumoDoDesbravador } from './insignias';
 import { veredasConcluidas, conquistasNasVeredas } from './veredas';
 import { curiosidadesConquistadas } from './curiosidades';
+import { xpDasVitorias } from './xp';
 import {
   diaEmBrasilia, horaEmBrasilia, diaDaSemanaEmBrasilia,
   diasDeAtividade, melhorOfensiva,
@@ -41,10 +42,9 @@ async function getCompletedRequirementCodes(userId: string): Promise<Set<string>
 export async function montarResumo(userId: string): Promise<ResumoDoDesbravador> {
   const completed = await getCompletedRequirementCodes(userId);
 
-  const [tentativas, eventos, matriculas, certificados, dicionario] = await Promise.all([
+  const [tentativas, eventos, certificados, dicionario] = await Promise.all([
     supabase.from('lesson_attempts').select('lesson_id, score, total, passed, started_at, completed_at').eq('user_id', userId),
     supabase.from('activity_events').select('event_type, created_at, metadata, curriculum_version').eq('user_id', userId),
-    supabase.from('enrollments').select('xp, streak_days').eq('user_id', userId),
     supabase.from('certifications').select('curriculum_code').eq('user_id', userId).eq('status', 'active'),
     /* Só a primeira palavra importa, para a curiosidade Palavra Própria. */
     supabase.from('dicionario_pessoal').select('criada_em').eq('user_id', userId).order('criada_em').limit(1),
@@ -142,7 +142,8 @@ export async function montarResumo(userId: string): Promise<ResumoDoDesbravador>
   return {
     requisitos: completed.size + naVereda.requisitos,
     licoes: licoes.size + naVereda.licoes,
-    licoesPerfeitas: perfeitas.size,
+    /* A teoria de vereda feita sem errar conta junto, como a lição de trilha. */
+    licoesPerfeitas: perfeitas.size + naVereda.teoriasPerfeitas,
     modulos: modulos + naVereda.modulos,
     trilhas,
     laboratorios,
@@ -160,7 +161,8 @@ export async function montarResumo(userId: string): Promise<ResumoDoDesbravador>
     diasAtivos: dias.size,
     horas,
     diasDaSemana,
-    xp: (matriculas.data ?? []).reduce((s, e) => s + (e.xp || 0), 0),
+    /* As vitórias, cada uma uma vez — a mesma conta do ranking (`lib/xp.ts`). */
+    xp: xpDasVitorias(eventos.data ?? []),
     certificados: (certificados.data ?? []).map(c => c.curriculum_code as string).filter(Boolean),
     /* Sai dos mesmos eventos já buscados acima: cada tópico lido e cada
        laboratório vencido é um evento, e a vereda está concluída quando todas

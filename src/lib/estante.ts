@@ -1,4 +1,4 @@
-import { ESCADAS, type Escada, type DegrauDaEscada } from './escadasDeInsignia';
+import { ESCADAS, EDICAO_ANTIGA, type Escada, type DegrauDaEscada } from './escadasDeInsignia';
 import {
   INSIGNIAS, SEM_CLASSE, codigoDaInsigniaDaTrilha, classeDaTrilha, classeDaVereda,
   insigniasDosLaboratoriosDeVereda,
@@ -72,6 +72,11 @@ export interface FileiraDaEstante {
   explica: string;
   /** Todos os lugares, na ordem — é por aqui que se conta e se confere. */
   lugares: LugarNaEstante[];
+  /**
+   * Só as conquistadas aparecem, e ela não entra no total: é a edição antiga,
+   * que ninguém mais ganha. Um lugar vazio ali prometeria o que não existe.
+   */
+  soConquistadas?: boolean;
   /**
    * Os mesmos lugares, partidos — só na fileira grande demais para abrir de
    * uma vez. A tela desenha os grupos fechados e abre o que for clicado.
@@ -175,7 +180,8 @@ function fileiraDosLaboratorios(): FileiraDaEstante {
     titulo: 'Laboratórios vencidos',
     explica: 'uma por laboratório — a classe é o nível da trilha dele',
     lugares: INSIGNIAS
-      .filter(i => !daEscada.has(i.code) && !SEM_CLASSE.has(i.code))
+      /* Nem as da edição antiga, que têm fileira própria. */
+      .filter(i => !daEscada.has(i.code) && !SEM_CLASSE.has(i.code) && !EDICAO_ANTIGA.some(a => a.code === i.code))
       .map(i => ({
         code: i.code, nome: i.nome, descricao: i.descricao,
         icone: i.icone, classe: i.tier,
@@ -204,6 +210,16 @@ function fileiraDasCuriosidades(): FileiraDaEstante {
     explica: 'medem como e quando se estuda, e não quanto — por isso não têm classe',
     lugares: CURIOSIDADES.map(lugar),
     grupos: temas.map(t => ({ chave: t, titulo: NOME_DO_TEMA[t], lugares: CURIOSIDADES.filter(c => c.tema === t).map(lugar) })),
+  };
+}
+
+function fileiraDaEdicaoAntiga(): FileiraDaEstante {
+  return {
+    chave: 'edicao-antiga',
+    titulo: 'Edição antiga',
+    explica: 'os topos de escada de antes de o último degrau virar "tudo" — ninguém mais os ganha',
+    soConquistadas: true,
+    lugares: EDICAO_ANTIGA.map(a => ({ code: a.code, nome: a.nome, descricao: a.descricao, icone: a.icone, classe: a.classe })),
   };
 }
 
@@ -236,10 +252,11 @@ export function fileirasDaEstante(): FileiraDaEstante[] {
     fileiraDosLaboratoriosDeVereda(),
     fileiraDosMestrados(),
     fileiraDasCuriosidades(),
+    fileiraDaEdicaoAntiga(),
   ];
 }
 
 /** Quantos lugares a estante tem ao todo. */
 export function totalDaEstante(): number {
-  return fileirasDaEstante().reduce((soma, f) => soma + f.lugares.length, 0);
+  return fileirasDaEstante().filter(f => !f.soConquistadas).reduce((soma, f) => soma + f.lugares.length, 0);
 }

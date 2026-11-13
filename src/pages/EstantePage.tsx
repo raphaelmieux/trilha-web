@@ -51,7 +51,8 @@ export default function EstantePage() {
      lista se refaz a cada `useBadges`, e um objeto guardado ficaria velho. */
   const [aberta, setAberta] = useState<string | null>(null);
   const fileiras = fileirasDaEstante();
-  const total = fileiras.reduce((soma, f) => soma + f.lugares.length, 0);
+  /* A edição antiga não entra no total: ninguém mais a ganha. */
+  const total = fileiras.filter(f => !f.soConquistadas).reduce((soma, f) => soma + f.lugares.length, 0);
 
   /* Só os ativos. Um revogado não é conquista a exibir, e mostrá-lo como
      conquista desfaria na tela a decisão que a liderança tomou. */
@@ -80,6 +81,9 @@ export default function EstantePage() {
 
       {fileiras.map(fileira => {
         const vencidos = fileira.lugares.filter(l => porCodigo.has(l.code)).length;
+        /* A edição antiga só aparece para quem tem alguma, e só com o que tem. */
+        if (fileira.soConquistadas && vencidos === 0) return null;
+        const lugaresAVista = fileira.soConquistadas ? fileira.lugares.filter(l => porCodigo.has(l.code)) : fileira.lugares;
         return (
           <section key={fileira.chave} className="card p-4 space-y-3">
             <div className="flex items-baseline justify-between gap-2 flex-wrap">
@@ -90,7 +94,7 @@ export default function EstantePage() {
                 </span>
               </h2>
               <span className="text-xs font-mono tabular-nums" style={{ color: 'var(--color-text-muted)' }}>
-                {vencidos}/{fileira.lugares.length}
+                {fileira.soConquistadas ? vencidos : `${vencidos}/${fileira.lugares.length}`}
               </span>
             </div>
             {fileira.grupos ? (
@@ -100,7 +104,7 @@ export default function EstantePage() {
                 aoAbrir={setAberta}
               />
             ) : (
-              <Prateleira lugares={fileira.lugares} porCodigo={porCodigo} aoAbrir={setAberta} />
+              <Prateleira lugares={lugaresAVista} porCodigo={porCodigo} aoAbrir={setAberta} />
             )}
           </section>
         );
