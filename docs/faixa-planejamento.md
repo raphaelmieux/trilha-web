@@ -44,12 +44,12 @@ em `public/curriculum files/` (seção 4). Estão marcadas com `~`.
 |---|---|---:|
 | Trilhas | patch bordado | 13 |
 | Veredas | button | 51 |
-| Laboratórios de trilha | pin satélite do patch | ~46 |
+| Laboratórios de trilha | pin satélite do patch | 49 (31 hoje, com D2; 18 previstos) |
 | Laboratórios de vereda | pin satélite do button | ~434 |
 | Escadas (13 famílias × 7 classes) | pin, em cacho | 91 |
 | Curiosidades | pin recortado | 58 (seção 7) |
 | Mestrados | tarja bordada | 13 + ME006 (seção 8) |
-| **Total** | | **~707** |
+| **Total** | | **~710** |
 
 Os satélites somam quase três quartos da Faixa. A largura dela, portanto, é
 decidida pelas veredas, e não pelas trilhas.
@@ -484,3 +484,29 @@ Protótipo: https://claude.ai/artifact/2NNp6Jm8ZRRQvAeJbeX93p (versão 2).
   uma peça não abre o cartão.
 - **Régua:** fica até o produto final. Ela mostra os grupos da Faixa e a janela
   do que está à vista; clicar ou arrastar nela leva até lá.
+
+## 12. P1 — a composição (13/11/2026)
+
+Protótipo: https://claude.ai/artifact/Wd4RqdPXqWCJqhQ6tUt5Lp. O código está em
+`docs/prototipos/faixa-p1.*`.
+
+**O motor.** Cada unidade (uma peça com os seus satélites, um cacho de escada,
+um Mestrado, um tema de curiosidades) procura o lugar mais à esquerda do seu
+grupo em que nenhuma das **peças** dela toque peça de outra unidade. A colisão
+é peça a peça, e não por uma elipse em volta da unidade: assim o anel de uma
+vereda se encaixa no vão do anel da vizinha. A altura é sorteada a partir do
+código, com um gerador de semente fixa, então a Faixa é a mesma para todo
+mundo e nenhuma peça muda de lugar quando outra é conquistada. Cada família
+começa um pouco antes de a anterior terminar, para as bordas se encaixarem. O
+Mestrado procura lugar a partir do fim da família, que é o grupo que ele
+fecha. Cachos e temas têm mais respiro entre si, para não se misturarem.
+
+**O resultado:** 710 peças em cerca de 12.750 px de largura, na altura de
+desenho de 520 px.
+
+**Achado — D2 ainda não vale nas trilhas abertas.** Dois tipos de laboratório
+aparecem em mais de uma trilha: `redacao_guiada` (AP034, AP041 e AP045) e
+`web_lab` (AP034 e AP044). Pela D2, cada trilha precisa do seu: são **três
+tipos novos**, com três insígnias novas e a concessão a quem já venceu aqueles
+laboratórios naquelas trilhas. Com isso, os laboratórios de trilha passam a
+ser 31 hoje e 49 na plataforma escrita.
