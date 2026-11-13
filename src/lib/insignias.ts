@@ -5,6 +5,8 @@ import {
 } from '../curriculum/veredas';
 import { getAllSpecialties } from '../curriculum';
 import { TODOS_OS_DEGRAUS } from './escadasDeInsignia';
+import { CURIOSIDADES, ICONE_DO_TEMA } from './catalogoDeCuriosidades';
+import { mestrados, mestradosConquistados } from './mestrados';
 import { NIVEIS_DA_INSIGNIA, type NivelDaInsignia } from './nivelDaInsignia';
 
 /*
@@ -56,6 +58,11 @@ export interface ResumoDoDesbravador {
   horas: Set<number>;
   /** Os dias da semana (0 = domingo) em que houve atividade. */
   diasDaSemana: Set<number>;
+  /**
+   * As curiosidades alcançadas, cada uma com o instante em que foi alcançada
+   * (`null` quando não há data que se possa afirmar) — ver `curiosidades.ts`.
+   */
+  curiosidades: Map<string, string | null>;
   /** XP somado em todas as matrículas. */
   xp: number;
   /** Certificados ativos, pelo código da trilha. */
@@ -86,8 +93,8 @@ export interface Insignia {
   /*
     Fora da escala das sete classes.
 
-    Só as de horário: elas medem **quando** se estuda, não quanto, e não têm
-    ordem interna que justifique classe. A tela as desenha em círculo
+    As curiosidades e os Mestrados: não têm ordem interna que justifique
+    classe. A tela as desenha em círculo
     off-white, que é a forma que nenhuma classe usa — é assim que se lê que
     elas são de outra natureza. O `tier` delas existe só porque a coluna é
     NOT NULL, e nada o desenha.
@@ -272,33 +279,29 @@ export const INSIGNIAS: Insignia[] = [
   })),
 
   /*
-    ── Fora das escadas ───────────────────────────────────────────────────
-    Estas quatro medem **quando** se estuda, e não quanto. Não são acúmulo e
+    ── Fora das escadas: as curiosidades ─────────────────────────────────
+    Medem **como** e **quando** se estuda, e não quanto. Não são acúmulo e
     não formam escada: dar a elas uma das sete classes fingiria uma ordem que
-    não existe, e inventar cinco degraus para completar a série seria inventar
-    conquista que ninguém pediu. Ficam sem família, e a tela as desenha em
-    círculo off-white — a forma que nenhuma classe usa.
+    não existe. O catálogo mora em `catalogoDeCuriosidades.ts` e as regras em
+    `curiosidades.ts`; aqui só se pergunta se o resumo já a traz — o resumo é
+    quem lê os eventos e sabe a data em que cada uma foi alcançada.
   */
-  {
-    code: 'coruja', nome: 'Coruja', descricao: 'Estudou entre a meia-noite e as cinco da manhã.',
-    icone: 'clock', tier: 'companheiro', semClasse: true,
-    conquistou: r => [...r.horas].some(h => h >= 0 && h < 5),
-  },
-  {
-    code: 'madrugador', nome: 'Madrugador', descricao: 'Estudou antes das sete da manhã.',
-    icone: 'clock', tier: 'companheiro', semClasse: true,
-    conquistou: r => [...r.horas].some(h => h >= 5 && h < 7),
-  },
-  {
-    code: 'fim_de_semana', nome: 'Fim de Semana', descricao: 'Estudou num sábado ou domingo.',
-    icone: 'calendar', tier: 'companheiro', semClasse: true,
-    conquistou: r => r.diasDaSemana.has(0) || r.diasDaSemana.has(6),
-  },
-  {
-    code: 'semana_inteira', nome: 'Semana Inteira', descricao: 'Estudou em todos os sete dias da semana, em algum momento.',
-    icone: 'calendar', tier: 'companheiro', semClasse: true,
-    conquistou: r => r.diasDaSemana.size === 7,
-  },
+  ...CURIOSIDADES.map((c): Insignia => ({
+    code: c.code, nome: c.nome, descricao: c.descricao, icone: ICONE_DO_TEMA[c.tema],
+    tier: 'companheiro', semClasse: true,
+    conquistou: r => r.curiosidades.has(c.code),
+  })),
+
+  /*
+    ── Os Mestrados ───────────────────────────────────────────────────────
+    Também sem classe: um Mestrado fecha um conjunto, e não é degrau de nada.
+    O da plataforma e o oficial saem de `mestrados.ts`.
+  */
+  ...mestrados().map((m): Insignia => ({
+    code: m.code, nome: m.nome, descricao: m.descricao, icone: 'award',
+    tier: 'companheiro', semClasse: true,
+    conquistou: r => mestradosConquistados(r.trilhas, r.veredas).includes(m.code),
+  })),
 
   /*
     ── Uma por laboratório ────────────────────────────────────────────────

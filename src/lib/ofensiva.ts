@@ -187,6 +187,11 @@ function moduloVencido(e: EventoDeAtividade): boolean {
  * três requisitos grava três `lesson_completed`, e três de uma vez não são
  * três dias.
  */
+/** O evento diz que um módulo foi vencido — a mesma pergunta que a ofensiva faz. */
+export function eventoDeModuloVencido(e: EventoDeAtividade): boolean {
+  return CONTA_PARA_A_OFENSIVA.has(e.event_type) && moduloVencido(e);
+}
+
 export function diasDeAtividade(eventos: readonly EventoDeAtividade[]): string[] {
   const dias = new Set<string>();
   for (const e of eventos) {

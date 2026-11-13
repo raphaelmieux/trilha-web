@@ -105,16 +105,16 @@ Material: button (face lisa e brilhante), NUNCA patch bordado: patch é
 [ ] mestrado_internet.png                       Internet (AP034, AP035)
 [ ] mestrado_computacao.png                     Computação (AP041 a AP045)
 [ ] mestrado_programacao.png                    Programação (AP049, AP052)
-[ ] mestrado_web-design.png                     Web Design (AP063, AP064)
-[ ] mestrado_artes-e-habilidades-manuais.png    Artes e Habilidades Manuais (HM079, HM090)
+[ ] mestrado_web_design.png                     Web Design (AP063, AP064)
+[ ] mestrado_artes_e_habilidades_manuais.png    Artes e Habilidades Manuais (HM079, HM090)
 
 --- Famílias de vereda (8) ---
 [ ] mestrado_base.png                           Base (CC001 a CC006)
 [ ] mestrado_escritorio.png                     Escritório (CC-ES001 a CC-ES013)
 [ ] mestrado_design.png                         Design (CC-DG001 a CC-DG006)
-[ ] mestrado_front-end.png                      Front-end (CC-FE001 a CC-FE007)
+[ ] mestrado_front_end.png                      Front-end (CC-FE001 a CC-FE007)
 [ ] mestrado_mobile.png                         Mobile (CC-MB001 a CC-MB005)
-[ ] mestrado_back-end.png                       Back-end (CC-BE001 a CC-BE006)
+[ ] mestrado_back_end.png                       Back-end (CC-BE001 a CC-BE006)
 [ ] mestrado_sistemas.png                       Sistemas (CC-SI001 a CC-SI005)
 [ ] mestrado_infraestrutura.png                 Infraestrutura (CC-IE001 a CC-IE003)
 

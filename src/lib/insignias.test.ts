@@ -53,7 +53,7 @@ const zerado = (): ResumoDoDesbravador => ({
   requisitos: 0, licoes: 0, licoesPerfeitas: 0, modulos: 0, trilhas: [],
   laboratorios: new Set(), provas: 0, provasPerfeitas: 0, melhorSequencia: 0,
   diasAtivos: 0, horas: new Set(), diasDaSemana: new Set(), xp: 0, certificados: [],
-  veredas: [], laboratoriosDeVereda: [],
+  veredas: [], laboratoriosDeVereda: [], curiosidades: new Map(),
 });
 
 const com = (mudancas: Partial<ResumoDoDesbravador>): ResumoDoDesbravador => ({ ...zerado(), ...mudancas });
@@ -322,17 +322,20 @@ describe('as trilhas', () => {
   });
 });
 
-describe('a hora do estudo', () => {
-  it('separa a madrugada do amanhecer', () => {
-    expect(insigniasConquistadas(com({ horas: new Set([2]) }))).toContain('coruja');
-    expect(insigniasConquistadas(com({ horas: new Set([2]) }))).not.toContain('madrugador');
-    expect(insigniasConquistadas(com({ horas: new Set([6]) }))).toContain('madrugador');
-    expect(insigniasConquistadas(com({ horas: new Set([14]) }))).toEqual([]);
+/*
+  As curiosidades vêm do resumo, que já leu os eventos e sabe quando cada uma
+  foi alcançada; as regras moram em `curiosidades.ts` e são conferidas lá.
+  Aqui só se confere a ponte: a curiosidade que o resumo traz vira insígnia, e
+  a que ele não traz, não.
+*/
+describe('as curiosidades', () => {
+  it('saem do que o resumo traz, e de nada mais', () => {
+    expect(insigniasConquistadas(com({ curiosidades: new Map([['madrugador', '2026-11-10T05:00:00Z']]) }))).toEqual(['madrugador']);
+    expect(insigniasConquistadas(com({ horas: new Set([2]), diasDaSemana: new Set([0, 1, 2, 3, 4, 5, 6]) }))).toEqual([]);
   });
 
-  it('pede os sete dias para a semana inteira', () => {
-    expect(insigniasConquistadas(com({ diasDaSemana: new Set([0, 1, 2, 3, 4, 5] ) }))).not.toContain('semana_inteira');
-    expect(insigniasConquistadas(com({ diasDaSemana: new Set([0, 1, 2, 3, 4, 5, 6]) }))).toContain('semana_inteira');
+  it('a Coruja não existe mais', () => {
+    expect(INSIGNIAS.some(i => i.code === 'coruja')).toBe(false);
   });
 });
 

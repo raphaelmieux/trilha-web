@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { CURIOSIDADES } from './catalogoDeCuriosidades';
+import { mestrados } from './mestrados';
 import { fileirasDaEstante, totalDaEstante } from './estante';
 import { INSIGNIAS, codigoDaInsigniaDaTrilha } from './insignias';
 import { getOpenSpecialties } from '../curriculum';
@@ -112,12 +114,12 @@ describe('o desenho de cada lugar', () => {
     for (const l of lugares()) expect(hasIcon(l.icone), `${l.code} usa ${l.icone}`).toBe(true);
   });
 
-  /* Só as de horário ficam fora da escala. Qualquer outra sem classe sairia
-     como círculo off-white, dizendo ao desbravador que ela é de outra
-     natureza quando ela é degrau de alguma coisa. */
-  it('só as curiosidades ficam sem classe', () => {
+  /* Só as curiosidades e os Mestrados ficam fora da escala. Qualquer outra
+     sem classe sairia como círculo off-white, dizendo ao desbravador que ela é
+     de outra natureza quando ela é degrau de alguma coisa. */
+  it('só as curiosidades e os Mestrados ficam sem classe', () => {
     const sem = lugares().filter(l => l.semClasse).map(l => l.code).sort();
-    expect(sem).toEqual(['coruja', 'fim_de_semana', 'madrugador', 'semana_inteira']);
+    expect(sem).toEqual([...CURIOSIDADES.map(c => c.code), ...mestrados().map(m => m.code)].sort());
   });
 
   /* O alvo é o que diz, no lugar vazio, quanto falta. Degrau sem alvo deixaria

@@ -371,7 +371,8 @@ cerca de **706**.
 **Regras.** A lista de cada Mestrado sai do registro (`familia`), e não de uma
 lista escrita à mão. O Mestrado não tem classe e não rende XP. Ele fica perto do
 cacho da família dele na Faixa, e o código é `mestrado_<familia>` (a família
-sem acento, em minúsculas, com hífen no lugar do espaço).
+sem acento, em minúsculas, com sublinhado no lugar de espaço e hífen — o
+leitor das migrations só reconhece `[a-z0-9_]`).
 
 **Especificação da arte:**
 - Um arquivo por Mestrado, em `public/assets/mestrados/<codigo>.png`. A pasta é

@@ -206,9 +206,13 @@ function Lugar({ lugar, conquistada, aoAbrir }: {
   aoAbrir: () => void;
 }) {
   const classe = CLASSES[lugar.classe];
+  /* O segredo vazio não diz o nome, que é a resposta: diz a dica. */
+  const escondido = !conquistada && lugar.segredo;
   const rotulo = conquistada
     ? `${lugar.nome} — conquistada`
-    : `${lugar.nome} — ainda não conquistada${lugar.semClasse ? '' : `. Classe ${classe.nome}`}`;
+    : escondido
+      ? `Segredo — ainda não conquistada. Dica: ${lugar.segredo!.dica}`
+      : `${lugar.nome} — ainda não conquistada${lugar.semClasse ? '' : `. Classe ${classe.nome}`}`;
 
   return (
     <div className="flex flex-col items-center gap-1" style={{ width: 78 }}>
@@ -231,7 +235,7 @@ function Lugar({ lugar, conquistada, aoAbrir }: {
       >
         {lugar.alvo !== undefined
           ? <span className="font-mono tabular-nums">{lugar.alvo.toLocaleString('pt-BR')}</span>
-          : lugar.nome}
+          : escondido ? 'Segredo' : lugar.nome}
       </span>
     </div>
   );

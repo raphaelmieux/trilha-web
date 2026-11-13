@@ -33,8 +33,8 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const insignia: InsigniaConquistada = {
   id: 'i1',
-  code: 'coruja',
-  name: 'Coruja',
+  code: 'madrugador',
+  name: 'Madrugador',
   description: 'Estudou entre a meia-noite e as cinco da manhã',
   icon: 'moon',
   tier: 'amigo',

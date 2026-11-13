@@ -75,6 +75,9 @@ const rotulos = () => [...container.querySelectorAll('svg[role="img"]')]
 const vazios = () => rotulos().filter(r => r.includes('ainda não conquistada'));
 const cheios = () => rotulos().filter(r => r.includes('— conquistada'));
 
+/* O lugar vazio de um segredo mostra a dica, e não o nome: o nome é a resposta. */
+const rotuloDoLugar = (l: typeof TODOS[number]) => (l.segredo ? 'Segredo' : l.nome);
+
 const insignia = (lugar: typeof TODOS[number]): Badge => ({
   id: lugar.code, code: lugar.code, name: lugar.nome,
   description: lugar.descricao, icon: lugar.icone, tier: lugar.classe,
@@ -148,7 +151,10 @@ describe('a fileira partida em grupos', () => {
         expect(botao!.getAttribute('aria-expanded')).toBe('true');
         expect(vazios(), `o grupo ${grupo.titulo} abriu outra coisa`)
           .toHaveLength(A_VISTA.length + grupo.lugares.length);
-        for (const l of grupo.lugares) expect(rotulos().some(r => r.startsWith(`${l.nome} — `))).toBe(true);
+        for (const l of grupo.lugares) expect(rotulos().some(r => r.startsWith(`${rotuloDoLugar(l)} — `))).toBe(true);
+        /* Fecha antes do próximo: cada fileira partida guarda o seu grupo
+           aberto, e o aberto da fileira anterior somaria lugares a esta. */
+        act(() => { botao!.click(); });
       }
     }
   });
