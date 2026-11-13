@@ -1,0 +1,123 @@
+FAIXA - DESENHOS A PRODUZIR
+Atualizado em 13/11/2026. Total: 71 desenhos (58 curiosidades + 13 Mestrados).
+Marque [x] quando enviar. O nome do arquivo é o código: é por ele que a
+plataforma acha o desenho, sem lista nenhuma no código.
+
+=====================================================================
+REGRAS GERAIS
+=====================================================================
+- Nada de logotipo ou mascote de marca (o gato do Scratch, o pinguim
+  do Linux, o logo do Python, o da Microsoft...). Desenho próprio.
+- A sombra no tecido é a Faixa que desenha. Não desenhe sombra.
+
+=====================================================================
+A) CURIOSIDADES - pins esmaltados RECORTADOS (58)
+=====================================================================
+Pasta:   public/assets/pins/<codigo>.png
+Formato: PNG com fundo transparente, 512 x 512 px.
+Forma:   a silhueta do próprio desenho (recorte). NUNCA um polígono
+         regular (triângulo, losango, pentágono...): essas são as
+         formas das classes. Círculo liso também não: é o lugar vazio.
+Acabamento: aro metálico dourado em volta, esmalte colorido dentro,
+         um brilho claro no alto. O desenho deve encostar na borda
+         maior do quadro.
+
+--- Calendário da computação (23) ---
+[ ] virada_sem_bug.png            Virada sem Bug - relógio na meia-noite, "2000"
+[ ] internet_segura.png           Internet Segura - escudo com cadeado e onda de wi-fi
+[ ] mulheres_na_ciencia.png       Mulheres na Ciência - menina com tubo de ensaio
+[ ] dia_que_quase_nao_existe.png  O Dia que Quase Não Existe - folhinha "29 FEV"
+[ ] nascimento_da_web.png         Nascimento da Web - globo com "www"
+[ ] dia_do_pi.png                 Dia do π - o símbolo π
+[ ] copia_de_seguranca.png        Cópia de Segurança - três discos empilhados (3-2-1)
+[ ] meninas_nas_tic.png           Meninas nas TIC - menina com notebook
+[ ] senha_forte.png               Senha Forte - cadeado com "****"
+[ ] homem_que_calculava.png       O Homem que Calculava - camelo com números (Malba Tahan)
+[ ] sociedade_da_informacao.png   Sociedade da Informação - antena transmitindo
+[ ] alan_turing.png               Alan Turing - máquina de fita com engrenagem
+[ ] dia_do_emoji.png              Dia do Emoji - carinha sorridente
+[ ] primeiro_site.png             Primeiro Site - janela de navegador antiga
+[ ] dia_da_fotografia.png         Dia da Fotografia - câmera fotográfica
+[ ] pinguim.png                   Pinguim - um pinguim próprio (não o Tux)
+[ ] byte_do_ano.png               Byte do Ano - "256" ou "2⁸" (os valores de um byte)
+[ ] codigo_aberto.png             Código Aberto - cadeado aberto com "</>"
+[ ] ada_lovelace.png              Ada Lovelace - pena escrevendo sobre engrenagem
+[ ] quadro_a_quadro.png           Quadro a Quadro - rolo de filme
+[ ] dia_do_designer.png           Dia do Designer - lápis e régua cruzados
+[ ] seguranca_da_informacao.png   Segurança da Informação - chave
+[ ] grace_hopper.png              Grace Hopper - a mariposa (o primeiro "bug")
+
+--- Ritmo (9) ---
+[ ] madrugador.png                Madrugador (00h-06h) - lua com estrela
+[ ] pessoa_da_manha.png           Pessoa da Manhã (06h-12h) - sol nascendo
+[ ] pessoa_da_tarde.png           Pessoa da Tarde (12h-18h) - sol a pino
+[ ] noturno.png                   Noturno (18h-24h) - lua cheia
+[ ] fim_de_semana.png             Fim de Semana - folhinha "SÁB/DOM"
+[ ] semana_inteira.png            Semana Inteira - sete bolinhas em arco
+[ ] pausa_boa.png                 Pausa Boa - xícara fumegando
+[ ] doze_meses.png                Doze Meses - calendário com 12 quadradinhos
+[ ] um_ano_de_faixa.png           Um Ano de Faixa - bolo com uma vela
+
+--- Jeito de estudar (10) ---
+[ ] revisao.png                   Revisão - setas em círculo
+[ ] de_primeira.png               De Primeira - alvo com flecha no centro
+[ ] modulo_de_uma_vez.png         Módulo de uma Vez - raio
+[ ] consulta.png                  Consulta - livro aberto com lupa
+[ ] palavra_propria.png           Palavra Própria - dicionário com "+"
+[ ] mao_no_teclado.png            Mão no Teclado - tecla "Ctrl"
+[ ] botao_direito.png             Botão Direito - mouse com o botão direito aceso
+[ ] na_parede.png                 Na Parede - quadro pendurado num prego
+[ ] relatorio_entregue.png        Relatório Entregue - pasta com folhas
+[ ] conferido.png                 Conferido - lupa sobre um selo com visto
+
+--- Explorador (5) ---
+[ ] rosa_dos_ventos.png           Rosa dos Ventos - rosa dos ventos
+[ ] tres_frentes.png              Três Frentes - três trilhas que se bifurcam
+[ ] ponte.png                     Ponte - pontezinha de madeira
+[ ] todas_as_janelas.png          Todas as Janelas - quatro janelinhas sobrepostas
+[ ] poliglota.png                 Poliglota - balão de fala com "{ }"
+
+--- Segredos (11) - só aparecem depois de achados ---
+[ ] arquivo_escondido.png         Arquivo Escondido - pasta com um olho
+[ ] extensoes_a_mostra.png        Extensões à Mostra - etiqueta ".jpg"
+[ ] lixeira_arqueologica.png      Lixeira Arqueológica - lixeira com um pincel de arqueólogo
+[ ] leitor_de_manual.png          Leitor de Manual - "--help" num terminal
+[ ] quem_sou_eu.png               Quem Sou Eu - crachá com "?"
+[ ] viajante_no_tempo.png         Viajante no Tempo - ampulheta com galho de commits
+[ ] zen_do_python.png             Zen do Python - flor de lótus (sem o logo do Python)
+[ ] mapa_do_banco.png             Mapa do Banco - cilindro de banco com planta baixa
+[ ] fim_da_planilha.png           Fim da Planilha - célula com "1.048.576"
+[ ] texto_de_enchimento.png       Texto de Enchimento - folha com "=rand()"
+[ ] gato_pintado.png              Gato Pintado - gato próprio com pincel (não o do Scratch)
+
+=====================================================================
+B) MESTRADOS DA PLATAFORMA - BUTTONS em retângulo áureo (13)
+=====================================================================
+Pasta:   public/assets/mestrados/<codigo>.png
+Formato: PNG 970 x 600 px (retângulo áureo, deitado), SEM transparência
+         nos cantos: o arredondamento e o aro de metal são a Faixa que
+         faz. Escreva "MESTRADO" e o nome da família.
+Material: button (face lisa e brilhante), NUNCA patch bordado: patch é
+         da especialidade e do Mestrado oficial.
+
+--- Famílias de trilha (5) ---
+[ ] mestrado_internet.png                       Internet (AP034, AP035)
+[ ] mestrado_computacao.png                     Computação (AP041 a AP045)
+[ ] mestrado_programacao.png                    Programação (AP049, AP052)
+[ ] mestrado_web-design.png                     Web Design (AP063, AP064)
+[ ] mestrado_artes-e-habilidades-manuais.png    Artes e Habilidades Manuais (HM079, HM090)
+
+--- Famílias de vereda (8) ---
+[ ] mestrado_base.png                           Base (CC001 a CC006)
+[ ] mestrado_escritorio.png                     Escritório (CC-ES001 a CC-ES013)
+[ ] mestrado_design.png                         Design (CC-DG001 a CC-DG006)
+[ ] mestrado_front-end.png                      Front-end (CC-FE001 a CC-FE007)
+[ ] mestrado_mobile.png                         Mobile (CC-MB001 a CC-MB005)
+[ ] mestrado_back-end.png                       Back-end (CC-BE001 a CC-BE006)
+[ ] mestrado_sistemas.png                       Sistemas (CC-SI001 a CC-SI005)
+[ ] mestrado_infraestrutura.png                 Infraestrutura (CC-IE001 a CC-IE003)
+
+=====================================================================
+JÁ RECEBIDO
+=====================================================================
+[x] ME006.png   Mestrado oficial em Ciência e Tecnologia (patch) - 13/11/2026
