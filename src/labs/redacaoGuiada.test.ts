@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { motorDoLaboratorio } from '../lib/motorDoLaboratorio';
 import {
   ROTEIROS, contarPalavras, totalDePalavras, etapaPronta, etapasPendentes,
   respostasParaUniao, podeUnir, unirLocalmente,
@@ -228,7 +229,7 @@ describe('todo laboratório de redação guiada tem roteiro', () => {
   it('nenhuma trilha aberta fica sem', () => {
     const semRoteiro: string[] = [];
     for (const e of getOpenSpecialties()) {
-      const temLab = e.modules.some(m => m.lessons.some(l => l.labType === 'redacao_guiada'));
+      const temLab = e.modules.some(m => m.lessons.some(l => !!l.labType && motorDoLaboratorio(l.labType) === 'redacao_guiada'));
       if (temLab && !ROTEIROS[e.code]) semRoteiro.push(e.code);
     }
     expect(semRoteiro, semRoteiro.join(', ')).toEqual([]);

@@ -1,4 +1,5 @@
 import { getSpecialty, getAllSpecialties } from '../curriculum';
+import { motorDoLaboratorio } from './motorDoLaboratorio';
 import { VEREDAS, licoesDaVereda } from '../curriculum/veredas';
 import type { Json, LabType } from '../types';
 
@@ -174,19 +175,25 @@ export function laboratorioDoEvento(e: EventoDeAtividade): LabType | undefined {
     }
   }
 
-  const doMapa = LABORATORIO_DO_EVENTO[e.event_type];
-  if (doMapa) return doMapa;
+  /* Entrega de texto sem lição: é a redação guiada da trilha, e só a trilha
+     diz qual. */
+  const entrega = e.event_type === 'text_submitted';
+  const doMapa = LABORATORIO_DO_EVENTO[e.event_type] ?? (entrega ? 'redacao_guiada' : undefined);
+  if (!doMapa) return undefined;
 
-  /* Entrega de texto sem lição: a trilha tem uma lição de escrita só. */
-  if (e.event_type === 'text_submitted') {
-    const trilha = trilhaDoEvento(e);
-    const t = trilha ? getSpecialty(trilha) : undefined;
-    const l = t?.modules.flatMap(x => x.lessons)
-      .find(x => x.labType === 'redacao_guiada');
-    return l?.labType;
-  }
-
-  return undefined;
+  /*
+    Sem a lição, a trilha desempata — porque um mesmo motor serve a mais de uma
+    trilha, cada uma com o seu tipo. O evento diz o motor (`web_lab_completed`
+    é o WebLab); a lição da trilha com aquele motor diz o tipo. Sem isso, a
+    visita aos sites da AP044 gravada sem a lição contaria como o laboratório
+    de navegação da AP034.
+  */
+  const trilha = trilhaDoEvento(e);
+  const t = trilha ? getSpecialty(trilha) : undefined;
+  const daTrilha = t?.modules.flatMap(x => x.lessons)
+    .find(x => x.labType && motorDoLaboratorio(x.labType) === motorDoLaboratorio(doMapa));
+  if (daTrilha?.labType) return daTrilha.labType;
+  return entrega ? undefined : doMapa;
 }
 
 /**
@@ -258,7 +265,7 @@ export function descreverAtividade(e: EventoDeAtividade): AtividadeDescrita {
        a trilha tinha um só. */
     const codigo = texto(m.lessonCode);
     const titulo = (codigo ? tituloDaLicao(trilha, l => l.code === codigo) : undefined)
-      ?? tituloDaLicao(trilha, l => l.labType === 'redacao_guiada');
+      ?? tituloDaLicao(trilha, l => !!l.labType && motorDoLaboratorio(l.labType) === 'redacao_guiada');
     return { trilha, texto: titulo ? `Relatório enviado: ${titulo}` : 'Relatório enviado' };
   }
 

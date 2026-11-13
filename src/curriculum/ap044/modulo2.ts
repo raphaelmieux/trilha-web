@@ -393,7 +393,7 @@ export const modulo2: Module = {
       type: 'lab',
       content: conteudo_L3,
       requirementCodes: ['AP044-5.1'],
-      labType: 'web_lab',
+      labType: 'sites_educativos',
     },
   ],
 };

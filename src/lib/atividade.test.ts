@@ -164,7 +164,7 @@ describe('o laboratório de que o evento fala', () => {
     expect(laboratorioDoEvento({
       event_type: 'text_submitted',
       metadata: { specialtyCode: 'AP041', lessonCode: 'AP041.1-L2' },
-    })).toBe('redacao_guiada');
+    })).toBe('redacao_historia_dos_computadores');
   });
 
   /* O desafio da tabela e a lição de HTML convivem na AP035 e gravam o mesmo
@@ -183,6 +183,16 @@ describe('o laboratório de que o evento fala', () => {
       event_type: 'text_submitted',
       metadata: { specialtyCode: 'AP034' },
     })).toBe('redacao_guiada');
+  });
+
+  /* O mesmo motor em duas trilhas, cada uma com o seu tipo: sem a lição, a
+     trilha decide. Sem isso, a visita aos sites da AP044 contaria como o
+     laboratório de navegação da AP034, e a redação da AP041 como a da AP034. */
+  it('resolve o tipo da trilha quando o motor serve a mais de uma', () => {
+    expect(laboratorioDoEvento({ event_type: 'web_lab_completed', metadata: { specialtyCode: 'AP044' } })).toBe('sites_educativos');
+    expect(laboratorioDoEvento({ event_type: 'web_lab_completed', metadata: { specialtyCode: 'AP034' } })).toBe('web_lab');
+    expect(laboratorioDoEvento({ event_type: 'text_submitted', metadata: { specialtyCode: 'AP041' } })).toBe('redacao_historia_dos_computadores');
+    expect(laboratorioDoEvento({ event_type: 'text_submitted', metadata: { specialtyCode: 'AP045', lessonCode: 'AP045.1-L2' } })).toBe('redacao_evolucao_da_computacao');
   });
 
   it('não chuta quando não há como saber', () => {
