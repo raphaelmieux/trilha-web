@@ -139,54 +139,164 @@ As sete abertas têm de 3 a 8 laboratórios distintos (28 ao todo).
 | HM090 Arte Digital | 3 | galeria de cinco obras (8); categorias (9); dois projetos autorais (13) |
 | **Total** | **18** | |
 
-## 5. O que precisa ser decidido antes do desenho
+## 5. Decisões tomadas (13/11/2026)
 
-**D1. O número estimado vira compromisso?** Recomendo que sim: cada anunciada
-ganha no registro um campo `laboratoriosPrevistos`, a Faixa reserva exatamente
-esse número de satélites, e uma trava reprova a abertura de uma vereda cujo
-número real for diferente. Mudar o número continua possível, mas em edição
-consciente do registro. Isso também protege o desenho: cada cacho tem um anel
-de tamanho fixo, e um anel que muda de tamanho empurraria os vizinhos.
+**D1. O número estimado vira compromisso.** Cada anunciada ganha
+`laboratoriosPrevistos` no registro. A Faixa reserva exatamente esse número de
+satélites, e uma trava reprova a abertura com número diferente. Mudar continua
+possível, mas editando o registro de propósito.
 
-**D2. O laboratório de trilha pertence a uma trilha só.** A insígnia é
-`lab_<tipo>`, do *tipo* de laboratório, e não da lição. Se a AP052 reutilizar
-o laboratório de pesquisa da AP045, ela ganha zero satélites, e o pin da
-pesquisa não tem como orbitar dois patches. Proposta: uma trava que exija
-`LabType` exclusivo por trilha. Um motor pode ser reaproveitado, como o Word
-foi; o que precisa ser novo é o tipo. A alternativa seria trocar a identidade
-para `lab_trilha_<código>_<lição>`, como nas veredas, mas isso mexe nos 28
-códigos que já foram concedidos.
+**D2. `LabType` exclusivo por trilha.** Uma trava exige que todo tipo de
+laboratório pertença a uma trilha só. O motor pode ser reaproveitado; o tipo
+não. Os 28 códigos atuais ficam como estão.
 
-**D3. As escadas fecham no fim, ou no meio?**
-- *(a) Manter como estão.* Tudo alcançável; Lições, Módulos e Requisitos
-  fecham cedo.
-- *(b) O sétimo degrau é "tudo".* Nas escadas que contam conteúdo, o topo
-  passa a ser calculado do currículo ("Todas as lições"), e os degraus 5 e 6
-  se redistribuem entre o que existe hoje e o todo. A Faixa só fecha com a
-  plataforma inteira percorrida. Custo: os códigos de topo atuais
-  (`licoes_110`, `modulos_45`, `requisitos_192`, `tokens_40` e outros) têm o
-  número no nome. Seria preciso criar códigos novos, e quem já tem os antigos
-  continua com eles, pela regra do CLAUDE.md de nunca tirar insígnia de quem a
-  conquistou.
+**D3. As escadas fecham no fim.** Nas escadas que contam conteúdo, o sétimo
+degrau é "tudo": todas as trilhas e veredas, as abertas e as hoje anunciadas.
+Os degraus 5 e 6 se redistribuem. Os códigos de topo com número no nome viram
+códigos novos, e quem já tem os antigos continua com eles.
 
-Recomendo (b), porque é ela que faz o último pin significar "fechou a Faixa".
+**D4. XP por primeira vitória, com as veredas dentro.** O XP passa a ter valor
+fixo por tipo de vitória e um máximo conhecido, que é o topo da escada de XP.
+As veredas entram, mas as trilhas ficam com **pelo menos 75% do XP total**, e
+uma trava confere essa proporção. Exemplo que respeita a regra, a calibrar
+depois:
 
-**D4. Que XP é esse?** Recomendo um XP por **primeira vitória** — lição,
-laboratório, prova, trilha —, com valor fixo por tipo. Assim o máximo é um
-número conhecido, e o topo da escada pode ser ele. Hoje refazer a mesma lição
-soma de novo. A vereda continua fora do XP, como está decidido.
+| Vitória | XP | Quantas | Soma |
+|---|---:|---:|---:|
+| Lição de teoria de trilha | 10 | ~126 | 1.260 |
+| Laboratório de trilha | 25 | ~56 | 1.400 |
+| Prova final | 50 | 13 | 650 |
+| Trilha concluída | 100 | 13 | 1.300 |
+| Teoria de vereda | 1 | ~434 | 434 |
+| Laboratório de vereda | 2 | ~434 | 868 |
+| Vereda concluída | 4 | 51 | 204 |
+| **Total** | | | **~6.116** (trilhas 75,4%) |
 
-**D5. "Sem erro" conta a teoria de vereda?** Ou fica só com a trilha, como
-hoje?
+Isso muda uma decisão registrada no CLAUDE.md ("a vereda fica fora do XP"), e
+o texto de lá será reescrito junto com o código.
 
-**D6. O button e o patch de quem está no meio.** Recomendação: vazio até
-concluir — só a marca da costura, ou o furo do button —, e os satélites
-acendendo um por um em volta. Assim se vê o progresso sem que a peça principal
-apareça antes da hora. O que tiver o Token.Web() revogado mostra a peça
-apagada, com o cartão dizendo que foi revogado.
+**D5. "Sem erro" conta a teoria de vereda.** Com isso o máximo da escada passa
+de ~182 para ~616: as ~182 lições de trilha mais as ~434 teorias de vereda.
+
+**D6. Peça vazia até concluir.** O patch ou button fica só na marca até a
+conclusão, e os satélites acendem um a um em volta. Se o Token.Web() for
+revogado, a peça aparece apagada e o cartão diz que foi revogado.
 
 ## 6. O que não depende destas decisões
 
 Os protótipos dos materiais (patch, button, pin, tecido e arrasto) não usam
 nenhum destes números e podem começar já. Só a composição (o P1) precisa da
 contagem final.
+
+## 7. Curiosidades — proposta (em discussão)
+
+Hoje são quatro, e as quatro medem só o **horário**: Coruja, Madrugador, Fim
+de Semana e Semana Inteira. A proposta é chegar a cerca de trinta, em cinco
+temas, e a diversidade vem dos temas, e não da contagem.
+
+### As regras que toda curiosidade cumpre
+
+1. **Ao alcance de quem percorre tudo, sem precisar fazer nada ruim.** A Faixa
+   precisa fechar de cabo a rabo. Uma curiosidade que exija parar de estudar
+   por um mês, reprovar de propósito ou ficar acordado de madrugada deixa a
+   Faixa impossível para quem faz tudo certo, ou ensina o hábito errado. Por
+   essa regra ficaram de fora "Volta por cima" (voltar depois de 30 dias
+   parado), "Segunda chance" (reprovar e depois vencer) e "Pediu o mapa" (o
+   passo a passo só aparece para quem demora, e quem é rápido nunca o veria).
+2. **Sem classe, sem XP e fora das escadas.** Elas dizem *como* e *quando*, e
+   não *quanto*.
+3. **O cartão ensina alguma coisa.** Toda curiosidade tem no cartão uma frase
+   que explica de onde ela vem: a data, a pessoa, o porquê.
+4. **Sai de dado gravado, e não de autodeclaração.** As que pedem um evento
+   novo dizem isso abaixo.
+
+### A. Calendário da computação — 10 pins
+
+Vale estudar **na semana** da data, e não só no dia: quem tem dez anos não
+controla a própria agenda. O ano inteiro rende um pin a cada um ou dois meses,
+e cada data se liga a uma trilha ou vereda da plataforma. Sai dos eventos
+datados que já existem, e dá para conceder com a data de quem já estudou
+nessas semanas.
+
+| Pin | Semana de | O que o cartão conta | Liga com |
+|---|---|---|---|
+| Virada sem Bug | 1º de janeiro | o bug do milênio, na virada de 1999 para 2000 | AP045 |
+| Internet Segura | Dia da Internet Segura (fevereiro) | o dia mundial pelo uso seguro da rede | AP034, CC-ES005 |
+| Nascimento da Web | 12 de março | a proposta de Tim Berners-Lee, em 1989 | AP034, CC-FE001 |
+| Dia do π | 14 de março | 3/14, o começo do número π | CC002 |
+| Cópia de Segurança | 31 de março, Dia Mundial do Backup | a regra 3-2-1 | CC-ES001 |
+| Senha Forte | Dia Mundial da Senha (1ª quinta-feira de maio) | senha longa e diferente em cada conta | CC-ES005 |
+| Alan Turing | 23 de junho | o nascimento de Turing, um dos pais da computação | CC001 |
+| Byte do Ano | 256º dia do ano (13 ou 12 de setembro) | o Dia do Programador: 256 é 2⁸, o que cabe num byte | CC002 |
+| Ada Lovelace | 2ª terça-feira de outubro | a primeira pessoa a escrever um programa | CC001 |
+| Grace Hopper | 9 de dezembro | a mariposa presa no computador, o "bug" de verdade | CC002, AP045 |
+
+### B. Ritmo — quando se estuda
+
+| Pin | Critério | Dado |
+|---|---|---|
+| Madrugador | estudou antes das sete da manhã | já existe |
+| Pausa Boa | duas sessões no mesmo dia, com duas horas ou mais entre elas | eventos datados |
+| Doze Meses | estudou em cada um dos doze meses do ano | eventos datados |
+| Fim de Semana | estudou num sábado ou domingo | já existe (ver a pergunta abaixo) |
+
+### C. Jeito de estudar
+
+| Pin | Critério | Dado |
+|---|---|---|
+| Revisão | refez uma lição já vencida e venceu de novo | tentativas de lição |
+| De Primeira | venceu uma prova final na primeira tentativa | tentativas de prova |
+| Módulo de uma Vez | venceu a teoria e o laboratório do mesmo módulo no mesmo dia | eventos |
+| Consulta | abriu a referência da vereda (o ícone de livro) e venceu o laboratório | **evento novo** |
+| Palavra Própria | acrescentou a primeira palavra ao dicionário pessoal | tabela `dicionario_pessoal` |
+
+### D. Explorador — variedade
+
+| Pin | Critério | Dado |
+|---|---|---|
+| Rosa dos Ventos | venceu ao menos uma lição em cada uma das oito famílias de vereda | eventos |
+| Três Frentes | avançou em três trilhas diferentes na mesma semana | eventos |
+| Ponte | concluiu uma vereda e a trilha de onde ela saiu | registro (`origem`) |
+| Todas as Janelas | venceu um laboratório em cada programa imitado (Word, Excel, PowerPoint, Explorador, correio, terminal, editor de código, editor de design) | mapa laboratório → programa |
+
+### E. Segredos — easter eggs nas simulações
+
+A Faixa mostra o lugar com um "?" e uma dica curta, e o desenho só aparece
+depois de achado. Todos pedem **evento novo** no laboratório, classificado
+como "passo do meio" em `ofensiva.test.ts`.
+
+| Pin | Onde | Dica no lugar vazio |
+|---|---|---|
+| Arquivo Escondido | Explorador: mostrar itens ocultos e abrir o arquivo que estava lá | "Nem tudo aparece na pasta." |
+| Leitor de Manual | terminal: pedir `--help` a um comando | "Todo comando tem instruções." |
+| Lixeira Arqueológica | Explorador: restaurar o item mais antigo da Lixeira | "Alguém jogou fora há muito tempo." |
+| Fim da Planilha | Excel: Ctrl+↓ numa coluna vazia, até a última linha | "Até onde vai uma planilha?" |
+| Gato Pintado | Scratch: trocar a cor do ator | "O gato não precisa ser laranja." |
+
+**Total proposto:** 10 + 4 + 5 + 4 + 5 = **28 curiosidades**, contra as 4 de
+hoje.
+
+### Perguntas em aberto
+
+- **Coruja** (entre meia-noite e cinco da manhã) contraria a regra 1: premia
+  uma criança de dez anos por estudar de madrugada. Proposta: aposentá-la.
+  Quem já a tem continua com ela, e o lugar na Faixa sai do catálogo.
+- **Semana Inteira** exige estudar num sábado. Num clube adventista isso pode
+  conflitar com a guarda do sábado, e o mesmo vale para o sábado de Fim de
+  Semana. Mantém, troca para "domingo a sexta", ou aposenta?
+- **Material:** pin redondo off-white com o glifo, como hoje, ou pin
+  **recortado na forma do próprio desenho** — a mariposa, o π, o cadeado —,
+  como os pins de verdade? O recortado deixa claro que ele não tem classe,
+  porque as classes são polígonos, mas pede 28 desenhos próprios.
+
+### Ligação com a BNCC
+
+O público começa aos dez anos, que é o Ensino Fundamental dos anos finais.
+
+- O tema **A** trabalha a Cultura Digital, um dos eixos do complemento de
+  Computação da BNCC (história da computação, segurança e cidadania digital),
+  e a Competência Geral 5.
+- Os temas **B** e **C** trabalham a Competência Geral 8, de autoconhecimento
+  e autocuidado: pausas, revisão, consultar a referência.
+- Os temas **D** e **E** trabalham a curiosidade investigativa da Competência
+  Geral 2.
