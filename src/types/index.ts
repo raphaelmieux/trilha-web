@@ -92,9 +92,16 @@ export const NOME_DO_TIPO: Record<LessonType, string> = {
 
 export type LabType =
   | 'redacao_guiada'
+  /* A redação guiada da AP041 e a da AP045: o motor é o mesmo da AP034, e o
+     tipo é próprio, porque a insígnia do laboratório é do tipo — ver
+     `motorDoLaboratorio.ts`. */
+  | 'redacao_historia_dos_computadores'
+  | 'redacao_evolucao_da_computacao'
   | 'pact_builder'
   | 'threat_lab'
   | 'web_lab'
+  /* O WebLab da AP044, pelo mesmo motivo. */
+  | 'sites_educativos'
   | 'mail_lab'
   | 'filipenses'
   | 'code_lab'

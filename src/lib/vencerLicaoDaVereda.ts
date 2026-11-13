@@ -23,8 +23,9 @@ export async function vencerLicaoDaVereda(
   vereda: Vereda,
   licao: LicaoDeVereda,
   feito: PercursoDeVereda,
+  nota?: { score: number; total: number },
 ): Promise<void> {
-  const gravou = await registrarLicaoVencida(userId, vereda, licao, feito);
+  const gravou = await registrarLicaoVencida(userId, vereda, licao, feito, nota);
   /* Lição já vencida não grava nada de novo, e avaliar seria ida ao banco por
      nada. O gatilho diz a vereda pelo código, que é o que o cartão da
      insígnia usa para escrever onde ela caiu. */

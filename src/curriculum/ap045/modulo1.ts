@@ -215,7 +215,7 @@ export const modulo1: Module = {
       type: 'lab',
       content: '',
       requirementCodes: ['AP045-2.1'],
-      labType: 'redacao_guiada',
+      labType: 'redacao_evolucao_da_computacao',
     },
   ],
 };

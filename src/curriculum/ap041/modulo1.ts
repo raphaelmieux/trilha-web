@@ -267,7 +267,7 @@ export const modulo1: Module = {
       type: 'lab',
       content: '',
       requirementCodes: ['AP041-1.1'],
-      labType: 'redacao_guiada',
+      labType: 'redacao_historia_dos_computadores',
     },
   ],
 };

@@ -1,4 +1,4 @@
-import { ESCADAS, type Escada, type DegrauDaEscada } from './escadasDeInsignia';
+import { ESCADAS, EDICAO_ANTIGA, type Escada, type DegrauDaEscada } from './escadasDeInsignia';
 import {
   INSIGNIAS, SEM_CLASSE, codigoDaInsigniaDaTrilha, classeDaTrilha, classeDaVereda,
   insigniasDosLaboratoriosDeVereda,
@@ -6,6 +6,8 @@ import {
 import { getOpenSpecialties } from '../curriculum';
 import { veredasAbertas, codigoDaInsigniaDaVereda, licoesDaVereda } from '../curriculum/veredas';
 import { nomeCompleto } from '../types';
+import { CURIOSIDADES, ICONE_DO_TEMA, NOME_DO_TEMA, type Curiosidade } from './catalogoDeCuriosidades';
+import { mestrados } from './mestrados';
 import type { NivelDaInsignia } from './nivelDaInsignia';
 
 /*
@@ -45,6 +47,12 @@ export interface LugarNaEstante {
   classe: NivelDaInsignia;
   /** As de horário não têm classe — círculo off-white. */
   semClasse?: boolean;
+  /**
+   * Segredo: o lugar vazio não mostra o nome, porque o nome é a resposta.
+   * Mostra a dica. O nome continua sendo o do banco, para a insígnia ganha
+   * aparecer com ele.
+   */
+  segredo?: { dica: string };
   /** O que é preciso alcançar, nas que são degrau de escada. */
   alvo?: number;
 }
@@ -64,6 +72,11 @@ export interface FileiraDaEstante {
   explica: string;
   /** Todos os lugares, na ordem — é por aqui que se conta e se confere. */
   lugares: LugarNaEstante[];
+  /**
+   * Só as conquistadas aparecem, e ela não entra no total: é a edição antiga,
+   * que ninguém mais ganha. Um lugar vazio ali prometeria o que não existe.
+   */
+  soConquistadas?: boolean;
   /**
    * Os mesmos lugares, partidos — só na fileira grande demais para abrir de
    * uma vez. A tela desenha os grupos fechados e abre o que for clicado.
@@ -167,7 +180,8 @@ function fileiraDosLaboratorios(): FileiraDaEstante {
     titulo: 'Laboratórios vencidos',
     explica: 'uma por laboratório — a classe é o nível da trilha dele',
     lugares: INSIGNIAS
-      .filter(i => !daEscada.has(i.code) && !SEM_CLASSE.has(i.code))
+      /* Nem as da edição antiga, que têm fileira própria. */
+      .filter(i => !daEscada.has(i.code) && !SEM_CLASSE.has(i.code) && !EDICAO_ANTIGA.some(a => a.code === i.code))
       .map(i => ({
         code: i.code, nome: i.nome, descricao: i.descricao,
         icone: i.icone, classe: i.tier,
@@ -175,17 +189,50 @@ function fileiraDosLaboratorios(): FileiraDaEstante {
   };
 }
 
-function fileiraSemClasse(): FileiraDaEstante {
+/*
+  As curiosidades: cinquenta e oito, partidas por tema.
+
+  Uma fileira só com as cinquenta e oito seria o muro que a estante evita em
+  toda parte, então elas abrem por tema, como os laboratórios das veredas.
+  Os segredos aparecem como lugar vazio com a dica no lugar do nome: o nome
+  de um segredo é a resposta dele.
+*/
+function fileiraDasCuriosidades(): FileiraDaEstante {
+  const lugar = (c: Curiosidade): LugarNaEstante => ({
+    code: c.code, nome: c.nome, descricao: c.descricao,
+    icone: ICONE_DO_TEMA[c.tema], classe: 'companheiro', semClasse: true,
+    ...(c.dica ? { segredo: { dica: c.dica } } : {}),
+  });
+  const temas = [...new Set(CURIOSIDADES.map(c => c.tema))];
   return {
-    chave: 'sem-classe',
+    chave: 'curiosidades',
     titulo: 'Curiosidades',
-    explica: 'medem quando se estuda, e não quanto — por isso não têm classe',
-    lugares: INSIGNIAS
-      .filter(i => SEM_CLASSE.has(i.code))
-      .map(i => ({
-        code: i.code, nome: i.nome, descricao: i.descricao,
-        icone: i.icone, classe: i.tier, semClasse: true,
-      })),
+    explica: 'medem como e quando se estuda, e não quanto — por isso não têm classe',
+    lugares: CURIOSIDADES.map(lugar),
+    grupos: temas.map(t => ({ chave: t, titulo: NOME_DO_TEMA[t], lugares: CURIOSIDADES.filter(c => c.tema === t).map(lugar) })),
+  };
+}
+
+function fileiraDaEdicaoAntiga(): FileiraDaEstante {
+  return {
+    chave: 'edicao-antiga',
+    titulo: 'Edição antiga',
+    explica: 'os topos de escada de antes de o último degrau virar "tudo" — ninguém mais os ganha',
+    soConquistadas: true,
+    lugares: EDICAO_ANTIGA.map(a => ({ code: a.code, nome: a.nome, descricao: a.descricao, icone: a.icone, classe: a.classe })),
+  };
+}
+
+function fileiraDosMestrados(): FileiraDaEstante {
+  return {
+    chave: 'mestrados',
+    titulo: 'Mestrados',
+    explica: 'um por família concluída, e o ME006, que é oficial',
+    lugares: mestrados().map(m => ({
+      code: m.code, nome: m.nome, descricao: m.descricao,
+      icone: 'award', classe: 'companheiro', semClasse: true,
+      ...(m.oficial ? { segredo: { dica: 'Sete especialidades dizem mais juntas.' } } : {}),
+    })),
   };
 }
 
@@ -203,11 +250,13 @@ export function fileirasDaEstante(): FileiraDaEstante[] {
     fileiraDasTrilhas(),
     fileiraDasVeredas(),
     fileiraDosLaboratoriosDeVereda(),
-    fileiraSemClasse(),
+    fileiraDosMestrados(),
+    fileiraDasCuriosidades(),
+    fileiraDaEdicaoAntiga(),
   ];
 }
 
 /** Quantos lugares a estante tem ao todo. */
 export function totalDaEstante(): number {
-  return fileirasDaEstante().reduce((soma, f) => soma + f.lugares.length, 0);
+  return fileirasDaEstante().filter(f => !f.soConquistadas).reduce((soma, f) => soma + f.lugares.length, 0);
 }

@@ -272,6 +272,7 @@ const PASSOS_DO_MEIO = [
   'mail_sent',       // uma mensagem enviada dentro do laboratório de e-mail
   'threat_sim_run',  // uma simulação rodada no laboratório de ameaças
   'redacao_montada', // o rascunho montado, antes da entrega
+  'vereda_teoria_perfeita', // a teoria já vencida, refeita sem erro: o módulo já estava vencido
 ];
 
 /* Escritos pelo servidor, e não por `logActivity`: a emissão do certificado é

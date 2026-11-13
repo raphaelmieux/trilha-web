@@ -1,0 +1,39 @@
+import { it } from 'vitest';
+import { writeFileSync } from 'node:fs';
+import { getAllSpecialties } from '../curriculum';
+import { VEREDAS, licoesDaVereda } from '../curriculum/veredas';
+import { ESCADAS } from './escadasDeInsignia';
+import { CLASSES, NIVEIS_DA_INSIGNIA } from './nivelDaInsignia';
+import { ALTURA, LARGURA, formaDaClasse, encaixeDoGlifo, corDoGlifo, CIRCULO_SEM_CLASSE } from './formaDaInsignia';
+import { iconShape, iconeCanonico, RAIO_DA_TINTA } from './badgeIcons';
+import { classeDaTrilha } from './insignias';
+const CL_LAB = { basico: 'companheiro', intermediario: 'pesquisador', avancado: 'pioneiro' } as const;
+const TAM: [number, string][] = [[2, 'amigo'], [5, 'companheiro'], [9, 'pesquisador'], [13, 'pioneiro'], [18, 'excursionista'], [25, 'guia']];
+const classeDoTamanho = (n: number) => TAM.find(([t]) => n <= t)?.[1] ?? 'lider';
+const abaixo = (c: string) => NIVEIS_DA_INSIGNIA[Math.max(0, NIVEIS_DA_INSIGNIA.indexOf(c as never) - 1)];
+const PREV_T: Record<string, number> = { AP049: 3, AP052: 3, AP063: 2, AP064: 4, HM079: 3, HM090: 3 };
+const PREV_V: Record<string, number> = { 'CC-FE004': 9, 'CC-FE005': 8, 'CC-FE006': 9, 'CC-FE007': 9, 'CC-MB001': 8, 'CC-MB002': 10, 'CC-MB003': 7, 'CC-MB004': 7, 'CC-MB005': 10, 'CC-BE001': 9, 'CC-BE002': 8, 'CC-BE003': 8, 'CC-BE004': 10, 'CC-BE005': 8, 'CC-BE006': 9, 'CC-SI001': 9, 'CC-SI002': 8, 'CC-SI003': 8, 'CC-SI004': 8, 'CC-SI005': 9, 'CC-IE001': 8, 'CC-IE002': 9, 'CC-IE003': 9 };
+it('cat', () => {
+  const glifo = (icone: string, centro: any) => { const n = iconeCanonico(icone); const e = encaixeDoGlifo(centro, RAIO_DA_TINTA[n] ?? 12); return { transform: e.transform, traco: e.traco, shape: iconShape(icone) }; };
+  const classes: any = {}; for (const n of NIVEIS_DA_INSIGNIA) { const f = formaDaClasse(n); classes[n] = { nome: CLASSES[n].nome, cor: CLASSES[n].cor, pontos: f.pontos, glifoCor: corDoGlifo(CLASSES[n].cor), centro: f, lab: glifo('lab', f) }; }
+  const circ = { pontos: '', centroX: LARGURA / 2, centroY: ALTURA / 2, raioInscrito: ALTURA / 2 };
+  const curiosos: any = {}; for (const i of ['calendar', 'clock', 'star', 'route', 'theory']) curiosos[i] = glifo(i, circ);
+  const trilhas = getAllSpecialties().map(e => {
+    const labs = new Map<string, string>();
+    for (const m of e.modules) for (const l of m.lessons) if (l.labType && l.labType !== 'final_exam' && !labs.has(l.labType)) labs.set(l.labType, l.title);
+    const aberta = !(e as any).emConstrucao;
+    const lista = aberta ? [...labs.values()] : Array.from({ length: PREV_T[e.code] ?? 3 }, (_, i) => `Laboratório ${i + 1} (previsto)`);
+    return { code: e.code, nome: e.name, familia: e.familia, nivel: e.level, aberta, classe: classeDaTrilha(e.code), classeLab: CL_LAB[e.level], labs: lista };
+  });
+  const veredas = VEREDAS.map(v => {
+    const ls = licoesDaVereda(v); const aberta = !v.emConstrucao;
+    const nLabs = aberta ? ls.filter(l => l.tipo !== 'teoria').length : (PREV_V[v.code] ?? 8);
+    const classe = classeDoTamanho(aberta ? ls.length : nLabs * 2);
+    const labs = aberta ? ls.filter(l => l.tipo !== 'teoria').map(l => l.titulo) : Array.from({ length: nLabs }, (_, i) => `Laboratório ${i + 1} (previsto)`);
+    return { code: v.code, id: v.id, nome: v.name, familia: v.familia, aberta, classe, classeLab: abaixo(classe), labs, projeto: /^Projeto/.test(v.name) };
+  });
+  const escadas = ESCADAS.map(e => ({ chave: e.chave, familia: e.familia, mede: e.mede, degraus: e.degraus.map(d => ({ nome: d.nome, classe: d.classe, alvo: d.alvo, glifo: glifo(e.icone, formaDaClasse(d.classe)) })) }));
+  writeFileSync('/tmp/claude-0/-home-user-trilha-web/882644e6-fcb4-518b-9959-b3949ce24573/scratchpad/catalogo.json', JSON.stringify({ LARGURA, ALTURA, CIRCULO_SEM_CLASSE, classes, curiosos, trilhas, veredas, escadas }));
+  console.log('T', trilhas.map(t => t.code + ':' + t.labs.length).join(' '));
+  console.log('V', veredas.reduce((s, v) => s + v.labs.length, 0), [...new Set(veredas.map(v => v.familia))].join(','));
+});

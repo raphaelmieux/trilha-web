@@ -892,7 +892,23 @@ describe('o que a vereda rende para as escadas de conquista', () => {
   });
 
   it('sem evento nenhum, nada é contado', () => {
-    expect(conquistasNasVeredas([])).toEqual({ licoes: 0, modulos: 0, requisitos: 0, laboratoriosDeVereda: [] });
+    expect(conquistasNasVeredas([])).toEqual({ licoes: 0, modulos: 0, requisitos: 0, laboratoriosDeVereda: [], teoriasPerfeitas: 0 });
+  });
+
+  /* A escada Sem erro conta a teoria de vereda feita sem errar: a vitória
+     com nota cheia, ou a refeita depois com nota cheia. Vitória com 80% não
+     conta, e o laboratório, que não tem nota, também não. */
+  it('conta a teoria sem erro, de primeira ou refeita', () => {
+    const teoria = oModulo.licoes.find(l => l.tipo === 'teoria')!;
+    const com = (event_type: string, metadata: Record<string, unknown>): EventoDeAtividade =>
+      ({ event_type, created_at: '2026-11-10T15:00:00Z', metadata: { vereda: aVereda.id, licao: teoria.id, ...metadata } as never });
+    expect(conquistasNasVeredas([com('vereda_teoria', { score: 8, total: 10 })]).teoriasPerfeitas).toBe(0);
+    expect(conquistasNasVeredas([com('vereda_teoria', { score: 10, total: 10 })]).teoriasPerfeitas).toBe(1);
+    expect(conquistasNasVeredas([
+      com('vereda_teoria', { score: 8, total: 10 }),
+      com('vereda_teoria_perfeita', {}),
+      com('vereda_teoria_perfeita', {}),
+    ]).teoriasPerfeitas).toBe(1);
   });
 
   it('cada lição vencida conta uma, e ela anda nas duas escadas', () => {

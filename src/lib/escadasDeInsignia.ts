@@ -1,5 +1,6 @@
 import type { ResumoDoDesbravador } from './insignias';
 import { classeDoDegrau, type NivelDaInsignia } from './nivelDaInsignia';
+import { TOTAIS, nadaAnunciado, tudoConcluido } from './totaisDaPlataforma';
 
 /*
  * As treze escadas, cada uma com os sete degraus das classes.
@@ -31,6 +32,11 @@ import { classeDoDegrau, type NivelDaInsignia } from './nivelDaInsignia';
 export interface DegrauDaEscada {
   /** Quanto é preciso para chegar nele. */
   alvo: number;
+  /**
+   * O degrau "tudo": o alvo é o total da plataforma, e só vale quando nada
+   * mais estiver anunciado — ver `totaisDaPlataforma.ts`.
+   */
+  todos?: boolean;
   code: string;
   nome: string;
   descricao: string;
@@ -40,6 +46,7 @@ export interface DegrauDaEscada {
 
 export interface Escada {
   chave: string;
+  bastaConcluirTudo?: boolean;
   /** Como a família se chama na estante. */
   familia: string;
   icone: string;
@@ -57,7 +64,16 @@ export interface Escada {
 type Cru = {
   chave: string; familia: string; icone: string; mede: string;
   medir: (r: ResumoDoDesbravador) => number;
-  degraus: [number, string, string, string][];
+  /** Quanto a plataforma escrita tem — o alvo do degrau "tudo". */
+  total?: () => number;
+  /**
+   * Concluir todas as trilhas e veredas também alcança o "tudo". É o que
+   * protege as escadas medidas por registro (lições, módulos, requisitos) de
+   * uma lacuna no histórico: laboratório antigo sem tentativa gravada, por
+   * exemplo, deixaria quem fez tudo um número abaixo do total para sempre.
+   */
+  bastaConcluirTudo?: boolean;
+  degraus: [number | 'todos', string, string, string][];
 };
 
 const CRUAS: Cru[] = [
@@ -65,6 +81,7 @@ const CRUAS: Cru[] = [
     chave: 'requisitos', familia: 'Requisitos', icone: 'footprints',
     mede: 'requisitos oficiais cumpridos',
     medir: r => r.requisitos,
+    total: TOTAIS.requisitos, bastaConcluirTudo: true,
     degraus: [
     [1, 'first_step', 'Primeiro Passo',
      'Cumpriu o primeiro requisito de uma trilha.'],
@@ -78,14 +95,15 @@ const CRUAS: Cru[] = [
      'Cumpriu cem requisitos oficiais.'],
     [145, 'requisitos_145', 'Cento e quarenta e cinco Requisitos',
      'Cumpriu cento e quarenta e cinco requisitos oficiais.'],
-    [192, 'requisitos_192', 'Cento e noventa e dois Requisitos',
-     'Cumpriu cento e noventa e dois requisitos oficiais.'],
+    ['todos', 'requisitos_todos', 'Todos os Requisitos',
+     'Cumpriu todos os requisitos de todas as trilhas e veredas.'],
     ],
   },
   {
     chave: 'licoes', familia: 'Lições', icone: 'theory',
     mede: 'lições de trilha vencidas',
     medir: r => r.licoes,
+    total: TOTAIS.licoes, bastaConcluirTudo: true,
     degraus: [
     [1, 'primeira_licao', 'Primeira Lição',
      'Concluiu a primeira lição.'],
@@ -99,14 +117,15 @@ const CRUAS: Cru[] = [
      'Concluiu cinquenta lições.'],
     [75, 'licoes_75', 'Setenta e cinco Lições',
      'Concluiu setenta e cinco lições.'],
-    [110, 'licoes_110', 'Cento e dez Lições',
-     'Concluiu cento e dez lições.'],
+    ['todos', 'licoes_todas', 'Todas as Lições',
+     'Venceu todas as lições de todas as trilhas e veredas.'],
     ],
   },
   {
     chave: 'modulos', familia: 'Módulos', icone: 'layers',
     mede: 'módulos concluídos',
     medir: r => r.modulos,
+    total: TOTAIS.modulos, bastaConcluirTudo: true,
     degraus: [
     [1, 'module_complete', 'Módulo Concluído',
      'Concluiu todos os requisitos de um módulo.'],
@@ -120,14 +139,15 @@ const CRUAS: Cru[] = [
      'Concluiu quinze módulos.'],
     [28, 'modulos_28', 'Vinte e oito Módulos',
      'Concluiu vinte e oito módulos por inteiro.'],
-    [45, 'modulos_45', 'Quarenta e cinco Módulos',
-     'Concluiu quarenta e cinco módulos por inteiro.'],
+    ['todos', 'modulos_todos', 'Todos os Módulos',
+     'Concluiu todos os módulos de todas as trilhas e veredas.'],
     ],
   },
   {
     chave: 'laboratorios', familia: 'Laboratórios', icone: 'lab',
     mede: 'laboratórios distintos vencidos',
     medir: r => r.laboratorios.size,
+    total: TOTAIS.laboratorios,
     degraus: [
     [1, 'primeiro_laboratorio', 'Primeiro Laboratório',
      'Concluiu o primeiro laboratório.'],
@@ -141,8 +161,8 @@ const CRUAS: Cru[] = [
      'Venceu quinze laboratórios diferentes.'],
     [21, 'laboratorios_21', 'Vinte e uma Laboratórios',
      'Venceu vinte e uma laboratórios diferentes.'],
-    [28, 'laboratorios_28', 'Vinte e oito Laboratórios',
-     'Venceu vinte e oito laboratórios diferentes.'],
+    ['todos', 'laboratorios_todos', 'Todos os Laboratórios',
+     'Venceu todos os laboratórios de todas as trilhas.'],
     ],
   },
   {
@@ -191,6 +211,7 @@ const CRUAS: Cru[] = [
     chave: 'semerro', familia: 'Sem erro', icone: 'star',
     mede: 'lições com 100% de acerto',
     medir: r => r.licoesPerfeitas,
+    total: TOTAIS.semerro,
     degraus: [
     [1, 'licao_perfeita', 'Lição sem Erro',
      'Acertou todas as questões de uma lição.'],
@@ -204,8 +225,8 @@ const CRUAS: Cru[] = [
      'Acertou tudo em quarenta e cinco lições.'],
     [65, 'semerro_65', 'Sessenta e cinco Lições sem Erro',
      'Acertou tudo em sessenta e cinco lições.'],
-    [90, 'semerro_90', 'Noventa Lições sem Erro',
-     'Acertou tudo em noventa lições.'],
+    ['todos', 'semerro_todas', 'Todas sem Erro',
+     'Acertou tudo em todas as lições que têm questão.'],
     ],
   },
   {
@@ -296,6 +317,7 @@ const CRUAS: Cru[] = [
     chave: 'tokens', familia: 'Token.Web()', icone: 'award',
     mede: 'certificados recebidos',
     medir: r => r.certificados.length,
+    total: TOTAIS.tokens,
     degraus: [
     [1, 'primeiro_token', 'Primeiro Token.Web()',
      'Recebeu o primeiro certificado.'],
@@ -309,14 +331,15 @@ const CRUAS: Cru[] = [
      'Recebeu dez certificados.'],
     [20, 'tokens_20', 'Vinte Token.Web()',
      'Recebeu vinte certificados.'],
-    [40, 'tokens_40', 'Quarenta Token.Web()',
-     'Recebeu quarenta certificados.'],
+    ['todos', 'tokens_todos', 'Todos os Token.Web()',
+     'Recebeu o Token.Web() de todas as trilhas, de todas as veredas e do ME006.'],
     ],
   },
   {
     chave: 'xp', familia: 'XP', icone: 'zap',
     mede: 'pontos de experiência somados',
     medir: r => r.xp,
+    total: TOTAIS.xp,
     degraus: [
     [100, 'xp_100', 'Cem de XP',
      'Somou cem pontos de experiência.'],
@@ -330,17 +353,48 @@ const CRUAS: Cru[] = [
      'Somou dois mil e quinhentos pontos de experiência.'],
     [6000, 'xp_6000', 'Seis Mil de XP',
      'Somou seis mil pontos de experiência.'],
-    [12000, 'xp_12000', 'Doze Mil de XP',
-     'Somou doze mil pontos de experiência.'],
+    ['todos', 'xp_todo', 'Todo o XP',
+     'Somou todo o XP que a plataforma tem para dar.'],
     ],
   },];
 
-export const ESCADAS: Escada[] = CRUAS.map(e => ({
+export const ESCADAS: Escada[] = CRUAS.map(({ total, ...e }) => ({
   ...e,
   degraus: e.degraus.map(([alvo, code, nome, descricao], i) => ({
-    alvo, code, nome, descricao, degrau: i + 1, classe: classeDoDegrau(i + 1),
+    alvo: alvo === 'todos' ? total!() : alvo,
+    ...(alvo === 'todos' ? { todos: true } : {}),
+    code, nome, descricao, degrau: i + 1, classe: classeDoDegrau(i + 1),
   })),
 }));
+
+/** Alcançou este degrau? O "tudo" pede também que nada mais esteja anunciado. */
+export function alcancou(escada: Escada, d: DegrauDaEscada, r: ResumoDoDesbravador): boolean {
+  if (!d.todos) return escada.medir(r) >= d.alvo;
+  if (!nadaAnunciado()) return false;
+  return escada.medir(r) >= d.alvo || (!!escada.bastaConcluirTudo && tudoConcluido(r));
+}
+
+/*
+  As insígnias de topo de antes — edição antiga.
+
+  Quando o sétimo degrau virou "tudo", os sete topos com número no nome
+  saíram das escadas. Quem já tinha algum continua com ele, porque insígnia
+  não se tira; mas nenhuma escada mais o tem, e ninguém mais o ganha. A Faixa
+  os mostra num cacho próprio, só para quem os tem, sem lugar vazio para os
+  outros: um lugar vazio prometeria uma conquista que não existe mais.
+
+  O nome, a descrição, o ícone e a classe são os que o banco guarda, e
+  `insignias.test.ts` confere tupla a tupla.
+*/
+export const EDICAO_ANTIGA: readonly { code: string; nome: string; descricao: string; icone: string; classe: NivelDaInsignia; familia: string }[] = [
+  { code: 'requisitos_192', nome: 'Cento e noventa e dois Requisitos', descricao: 'Cumpriu cento e noventa e dois requisitos oficiais.', icone: 'footprints', classe: 'lider', familia: 'Requisitos' },
+  { code: 'licoes_110', nome: 'Cento e dez Lições', descricao: 'Concluiu cento e dez lições.', icone: 'theory', classe: 'lider', familia: 'Lições' },
+  { code: 'modulos_45', nome: 'Quarenta e cinco Módulos', descricao: 'Concluiu quarenta e cinco módulos por inteiro.', icone: 'layers', classe: 'lider', familia: 'Módulos' },
+  { code: 'laboratorios_28', nome: 'Vinte e oito Laboratórios', descricao: 'Venceu vinte e oito laboratórios diferentes.', icone: 'lab', classe: 'lider', familia: 'Laboratórios' },
+  { code: 'semerro_90', nome: 'Noventa Lições sem Erro', descricao: 'Acertou tudo em noventa lições.', icone: 'star', classe: 'lider', familia: 'Sem erro' },
+  { code: 'tokens_40', nome: 'Quarenta Token.Web()', descricao: 'Recebeu quarenta certificados.', icone: 'award', classe: 'lider', familia: 'Token.Web()' },
+  { code: 'xp_12000', nome: 'Doze Mil de XP', descricao: 'Somou doze mil pontos de experiência.', icone: 'zap', classe: 'lider', familia: 'XP' },
+];
 
 /** Todos os degraus de todas as escadas, achatados. */
 export const TODOS_OS_DEGRAUS: (DegrauDaEscada & { escada: Escada })[] =
@@ -354,8 +408,7 @@ export const TODOS_OS_DEGRAUS: (DegrauDaEscada & { escada: Escada })[] =
  * só, que é o muro que os trinta e dois cartões de vereda já foram uma vez.
  */
 export function degrauAlcancado(escada: Escada, r: ResumoDoDesbravador): number {
-  const quanto = escada.medir(r);
   let alcancado = 0;
-  for (const d of escada.degraus) if (quanto >= d.alvo) alcancado = d.degrau;
+  for (const d of escada.degraus) if (alcancou(escada, d, r)) alcancado = d.degrau;
   return alcancado;
 }

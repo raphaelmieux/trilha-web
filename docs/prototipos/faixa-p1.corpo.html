@@ -1,0 +1,41 @@
+<header class="gutter">
+  <h1>Faixa<span class="p">()</span> · P1 da composição</h1>
+  <p class="lead">A Faixa inteira, com todas as peças da plataforma escrita, as anunciadas inclusive, posicionadas pelo algoritmo. Os materiais são os do P0. As curiosidades e os Mestrados aparecem com face provisória até a sua arte chegar.</p>
+  <div class="controles">
+    <div class="seg" role="group" aria-label="Estado da faixa">
+      <button type="button" data-modo="0" aria-pressed="false">Vazia</button>
+      <button type="button" data-modo="1" aria-pressed="true">No meio do caminho</button>
+      <button type="button" data-modo="2" aria-pressed="false">Completa</button>
+    </div>
+    <div class="seg" role="group" aria-label="Tamanho">
+      <button type="button" data-zoom="1" aria-pressed="true">100%</button>
+      <button type="button" data-zoom="0.6" aria-pressed="false">60%</button>
+      <button type="button" data-zoom="0.33" aria-pressed="false">33%</button>
+    </div>
+    <span class="contagem" id="contagem"></span>
+  </div>
+  <span class="dica-arraste" id="dica">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+    Arraste a faixa para o lado, ou use a régua embaixo dela
+  </span>
+</header>
+
+<div class="rolo" id="rolo" tabindex="0" aria-label="Faixa de conquistas. Use as setas para andar.">
+  <div class="faixa" id="faixa"></div>
+</div>
+<div class="regua-wrap gutter"><div class="regua" id="regua" tabindex="0" role="slider" aria-label="Posição na faixa" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></div>
+
+<section class="notas gutter">
+  <h2>O que conferir neste protótipo</h2>
+  <ul>
+    <li><strong>A ordem.</strong> Trilhas, Escadas, Curiosidades e Veredas, da esquerda para a direita: as zonas curtas primeiro, e a das veredas, que é mais da metade da Faixa, por último. Dentro de cada uma, as famílias, e o Mestrado da família fecha o grupo dela. A régua embaixo nomeia cada trecho.</li>
+    <li><strong>A desordem.</strong> Cada peça busca o primeiro lugar livre do seu grupo, com uma altura sorteada a partir do próprio código. O sorteio é sempre o mesmo, então a Faixa é igual para todo mundo e nenhuma peça muda de lugar quando outra é conquistada.</li>
+    <li><strong>O tamanho.</strong> Os 33% mostram a Faixa inteira de longe, para julgar a densidade e a largura total.</li>
+    <li><strong>O overloque</strong> tem a cor da beirada de cada arte, lida do próprio arquivo: vermelho nas AP e no ME006, azul nas HM.</li>
+    <li><strong>As anunciadas.</strong> As trilhas e veredas ainda em construção já têm o lugar e os satélites reservados, no número estimado no planejamento. No giz, elas trazem "em breve".</li>
+    <li><strong>"No meio do caminho"</strong> simula uma pessoa com três trilhas e cinco veredas concluídas, outras pela metade, algumas escadas começadas e algumas curiosidades. O ME006 continua "?", porque ela só tem três das sete trilhas da lista.</li>
+  </ul>
+</section>
+
+<dialog id="cartao"><div class="cartao" id="cartao-corpo"></div></dialog>
+<div class="aviso" id="aviso" hidden></div>

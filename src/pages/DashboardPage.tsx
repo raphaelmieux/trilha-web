@@ -9,6 +9,7 @@ import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
 import { useMinhasPosicoes } from '../hooks/useMinhasPosicoes';
 import { useOfensiva } from '../hooks/useOfensiva';
+import { useXp } from '../hooks/useXp';
 import { getPublicName, nomeCompleto, ROTULO_DO_NIVEL, type Specialty, type Certification, type Tabela } from '../types';
 import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
 import { descreverAtividade } from '../lib/atividade';
@@ -146,6 +147,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const { posicoes } = useMinhasPosicoes(profile?.id, noRanking);
   const { ofensiva } = useOfensiva(profile?.id);
+  /* O XP das vitórias, o mesmo do ranking — ver `useXp`. */
+  const { xp } = useXp(profile?.id);
 
   useEffect(() => {
     if (!profile) return;
@@ -186,7 +189,6 @@ export default function DashboardPage() {
       && getProgressPercent(t.requirements.map(r => r.code), progress) === 100;
   };
 
-  const xp = enrollments.reduce((sum, e) => sum + (e.xp || 0), 0);
 
   /* A última atividade de cada trilha é o `updated_at` da matrícula: toda
      lição e todo laboratório passam por `updateEnrollmentActivity`, e o
