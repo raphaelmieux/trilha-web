@@ -47,8 +47,8 @@ em `public/curriculum files/` (seção 4). Estão marcadas com `~`.
 | Laboratórios de trilha | pin satélite do patch | ~46 |
 | Laboratórios de vereda | pin satélite do button | ~434 |
 | Escadas (13 famílias × 7 classes) | pin, em cacho | 91 |
-| Curiosidades (horário) | pin redondo, em cacho | 4 |
-| **Total** | | **~639** |
+| Curiosidades | pin recortado | 58 (seção 7) |
+| **Total** | | **~693** |
 
 Os satélites somam quase três quartos da Faixa. A largura dela, portanto, é
 decidida pelas veredas, e não pelas trilhas.
@@ -188,115 +188,192 @@ Os protótipos dos materiais (patch, button, pin, tecido e arrasto) não usam
 nenhum destes números e podem começar já. Só a composição (o P1) precisa da
 contagem final.
 
-## 7. Curiosidades — proposta (em discussão)
+## 7. Curiosidades
 
-Hoje são quatro, e as quatro medem só o **horário**: Coruja, Madrugador, Fim
-de Semana e Semana Inteira. A proposta é chegar a cerca de trinta, em cinco
-temas, e a diversidade vem dos temas, e não da contagem.
+Hoje são quatro, e as quatro medem só o **horário**. A proposta tem **58**, em
+cinco temas; a diversidade vem dos temas, e não da contagem.
+
+### Decisões já tomadas (13/11/2026)
+
+- **O dia vira quatro turnos**, e a Coruja se aposenta. São quatro pins:
+  Madrugador (00:00 às 05:59), Pessoa da Manhã (06:00 às 11:59), Pessoa da
+  Tarde (12:00 às 17:59) e Noturno (18:00 às 23:59), sempre no horário de
+  Brasília. Quem não alcança o Madrugador com dez anos alcança mais velho — a
+  Faixa acompanha o desbravador por anos, incluindo as trilhas que pedem mais
+  maturidade.
+  - `madrugador` mantém o código e passa a valer de 00:00 às 05:59. Quem já o
+    tem continua com ele, mesmo que tenha ganhado às 6h30 pela regra antiga:
+    insígnia não se tira.
+  - `coruja` sai do catálogo pela regra do CLAUDE.md: a migration primeiro
+    concede `madrugador` a quem tem `coruja`, com o `awarded_at` original, e
+    só então apaga a linha. Todo horário da Coruja (00h às 05h) cabe no
+    Madrugador novo.
+- **Sábado e sexta valem.** O sábado adventista vai do pôr do sol de sexta ao
+  pôr do sol de sábado, então os dois dias têm horas em que estudar é
+  plausível. Fim de Semana e Semana Inteira ficam como estão.
+- **As curiosidades são pins recortados na forma do desenho** (a mariposa, o
+  π, o cadeado). Assim elas nunca se confundem com as classes, que são
+  polígonos regulares. A arte será fornecida depois; a especificação está no
+  fim desta seção.
 
 ### As regras que toda curiosidade cumpre
 
-1. **Ao alcance de quem percorre tudo, sem precisar fazer nada ruim.** A Faixa
-   precisa fechar de cabo a rabo. Uma curiosidade que exija parar de estudar
-   por um mês, reprovar de propósito ou ficar acordado de madrugada deixa a
-   Faixa impossível para quem faz tudo certo, ou ensina o hábito errado. Por
-   essa regra ficaram de fora "Volta por cima" (voltar depois de 30 dias
-   parado), "Segunda chance" (reprovar e depois vencer) e "Pediu o mapa" (o
-   passo a passo só aparece para quem demora, e quem é rápido nunca o veria).
+1. **Ao alcance de quem percorre tudo, sem precisar fazer nada ruim** —
+   reprovar de propósito, parar de estudar por um mês. A idade é a única
+   espera aceita, e o calendário: uma data por ano, ou a cada quatro no caso do
+   dia 29 de fevereiro.
 2. **Sem classe, sem XP e fora das escadas.** Elas dizem *como* e *quando*, e
    não *quanto*.
-3. **O cartão ensina alguma coisa.** Toda curiosidade tem no cartão uma frase
-   que explica de onde ela vem: a data, a pessoa, o porquê.
-4. **Sai de dado gravado, e não de autodeclaração.** As que pedem um evento
-   novo dizem isso abaixo.
+3. **O cartão ensina alguma coisa:** a data, a pessoa, o porquê, o atalho.
+4. **Sai de dado gravado, e não de autodeclaração.** As que pedem evento novo
+   estão marcadas, e cada evento novo precisa ser classificado como "passo do
+   meio" em `ofensiva.test.ts`.
 
-### A. Calendário da computação — 10 pins
+### A. Calendário da computação — 23
 
-Vale estudar **na semana** da data, e não só no dia: quem tem dez anos não
-controla a própria agenda. O ano inteiro rende um pin a cada um ou dois meses,
-e cada data se liga a uma trilha ou vereda da plataforma. Sai dos eventos
-datados que já existem, e dá para conceder com a data de quem já estudou
-nessas semanas.
+Vale estudar **na semana** da data: quem tem dez anos não controla a própria
+agenda. A única exceção é o dia 29 de fevereiro, que só existe se for no dia.
+Todas saem dos eventos datados que já existem, e quem já estudou nessas
+semanas recebe a concessão retroativa, com a data em que estudou. Todo mês do
+ano tem pelo menos uma.
 
-| Pin | Semana de | O que o cartão conta | Liga com |
-|---|---|---|---|
-| Virada sem Bug | 1º de janeiro | o bug do milênio, na virada de 1999 para 2000 | AP045 |
-| Internet Segura | Dia da Internet Segura (fevereiro) | o dia mundial pelo uso seguro da rede | AP034, CC-ES005 |
-| Nascimento da Web | 12 de março | a proposta de Tim Berners-Lee, em 1989 | AP034, CC-FE001 |
-| Dia do π | 14 de março | 3/14, o começo do número π | CC002 |
-| Cópia de Segurança | 31 de março, Dia Mundial do Backup | a regra 3-2-1 | CC-ES001 |
-| Senha Forte | Dia Mundial da Senha (1ª quinta-feira de maio) | senha longa e diferente em cada conta | CC-ES005 |
-| Alan Turing | 23 de junho | o nascimento de Turing, um dos pais da computação | CC001 |
-| Byte do Ano | 256º dia do ano (13 ou 12 de setembro) | o Dia do Programador: 256 é 2⁸, o que cabe num byte | CC002 |
-| Ada Lovelace | 2ª terça-feira de outubro | a primeira pessoa a escrever um programa | CC001 |
-| Grace Hopper | 9 de dezembro | a mariposa presa no computador, o "bug" de verdade | CC002, AP045 |
+| Mês | Pin | Data | O que o cartão conta | Liga com |
+|---|---|---|---|---|
+| jan | Virada sem Bug | 1º de janeiro | o bug do milênio | AP045 |
+| fev | Internet Segura | Dia da Internet Segura (terça da 2ª semana) | o dia mundial pelo uso seguro da rede | AP034, CC-ES005 |
+| fev | Mulheres na Ciência | 11 de fevereiro | o dia internacional das mulheres e meninas na ciência | — |
+| fev | O Dia que Quase Não Existe | 29 de fevereiro, só no dia | o ano bissexto, e o 29/02/1900 que o Excel conta e que nunca existiu | CC-ES003 |
+| mar | Nascimento da Web | 12 de março | a proposta de Tim Berners-Lee, em 1989 | AP034 |
+| mar | Dia do π | 14 de março | 3/14, o começo do π | CC002 |
+| mar | Cópia de Segurança | 31 de março, Dia Mundial do Backup | a regra 3-2-1 | CC-ES001 |
+| abr | Meninas nas TIC | 4ª quinta-feira de abril | o dia internacional das meninas na tecnologia | — |
+| mai | Senha Forte | Dia Mundial da Senha (1ª quinta-feira) | senha longa e diferente em cada conta | CC-ES005 |
+| mai | O Homem que Calculava | 6 de maio, Dia Nacional da Matemática | Malba Tahan, que dá nome à data | CC-ES003 |
+| mai | Sociedade da Informação | 17 de maio | o dia mundial das telecomunicações | AP034 |
+| jun | Alan Turing | 23 de junho | o nascimento de Turing | CC001 |
+| jul | Dia do Emoji | 17 de julho | por que o emoji é um caractere, e não uma imagem | CC-FE001 |
+| ago | Primeiro Site | 6 de agosto | o primeiro site público, em 1991 | CC-FE001 |
+| ago | Dia da Fotografia | 19 de agosto | a fotografia, e o que o pixel fez com ela | CC-DG003 |
+| ago | Pinguim | 25 de agosto | o anúncio do Linux, em 1991 | CC003 |
+| set | Byte do Ano | 256º dia do ano (13 ou 12 de setembro) | o Dia do Programador: 256 = 2⁸ | CC002 |
+| set | Código Aberto | Dia do Software Livre (3º sábado) | software livre, e por que esta plataforma é um | rodapé `CodigoFonte` |
+| out | Ada Lovelace | 2ª terça-feira de outubro | a primeira pessoa a escrever um programa | CC001 |
+| out | Quadro a Quadro | 28 de outubro, Dia Internacional da Animação | como a animação engana o olho | HM090 |
+| nov | Dia do Designer | 5 de novembro | Aloísio Magalhães, que dá nome à data | CC-DG004 |
+| nov | Segurança da Informação | 30 de novembro | o dia mundial da segurança de computadores | CC-ES005 |
+| dez | Grace Hopper | 9 de dezembro | a mariposa presa no computador, o "bug" de verdade | AP045 |
 
-### B. Ritmo — quando se estuda
+### B. Ritmo — quando se estuda — 9
 
 | Pin | Critério | Dado |
 |---|---|---|
-| Madrugador | estudou antes das sete da manhã | já existe |
+| Madrugador | estudou entre 00:00 e 05:59 | eventos datados |
+| Pessoa da Manhã | estudou entre 06:00 e 11:59 | eventos datados |
+| Pessoa da Tarde | estudou entre 12:00 e 17:59 | eventos datados |
+| Noturno | estudou entre 18:00 e 23:59 | eventos datados |
+| Fim de Semana | estudou num sábado ou domingo | já existe |
+| Semana Inteira | estudou em cada um dos sete dias da semana | já existe |
 | Pausa Boa | duas sessões no mesmo dia, com duas horas ou mais entre elas | eventos datados |
-| Doze Meses | estudou em cada um dos doze meses do ano | eventos datados |
-| Fim de Semana | estudou num sábado ou domingo | já existe (ver a pergunta abaixo) |
+| Doze Meses | estudou em cada um dos doze meses | eventos datados |
+| Um Ano de Faixa | estudou na semana em que fez um ano da primeira atividade | eventos datados |
 
-### C. Jeito de estudar
+### C. Jeito de estudar — 10
 
 | Pin | Critério | Dado |
 |---|---|---|
-| Revisão | refez uma lição já vencida e venceu de novo | tentativas de lição |
+| Revisão | refez uma lição de trilha já vencida e venceu de novo | tentativas de lição |
 | De Primeira | venceu uma prova final na primeira tentativa | tentativas de prova |
 | Módulo de uma Vez | venceu a teoria e o laboratório do mesmo módulo no mesmo dia | eventos |
 | Consulta | abriu a referência da vereda (o ícone de livro) e venceu o laboratório | **evento novo** |
 | Palavra Própria | acrescentou a primeira palavra ao dicionário pessoal | tabela `dicionario_pessoal` |
+| Mão no Teclado | usou cinco atalhos de teclado diferentes nas simulações | **evento novo** |
+| Botão Direito | abriu um menu de contexto, com o botão direito ou o toque longo | **evento novo** |
+| Na Parede | baixou ou imprimiu um Token.Web() | **evento novo** |
+| Relatório Entregue | gerou o relatório para o clube | **evento novo** |
+| Conferido | verificou um Token.Web() na página pública de verificação | **evento novo** |
 
-### D. Explorador — variedade
+### D. Explorador — variedade — 5
 
 | Pin | Critério | Dado |
 |---|---|---|
 | Rosa dos Ventos | venceu ao menos uma lição em cada uma das oito famílias de vereda | eventos |
 | Três Frentes | avançou em três trilhas diferentes na mesma semana | eventos |
 | Ponte | concluiu uma vereda e a trilha de onde ela saiu | registro (`origem`) |
-| Todas as Janelas | venceu um laboratório em cada programa imitado (Word, Excel, PowerPoint, Explorador, correio, terminal, editor de código, editor de design) | mapa laboratório → programa |
+| Todas as Janelas | venceu um laboratório em cada programa imitado | mapa laboratório → programa |
+| Poliglota | venceu laboratórios em cinco linguagens (blocos, Python, SQL, JavaScript, HTML/CSS, Bash…) | mapa laboratório → linguagem |
 
-### E. Segredos — easter eggs nas simulações
+### E. Segredos — easter eggs nas simulações — 11
 
-A Faixa mostra o lugar com um "?" e uma dica curta, e o desenho só aparece
-depois de achado. Todos pedem **evento novo** no laboratório, classificado
-como "passo do meio" em `ofensiva.test.ts`.
+Na Faixa o lugar aparece com "?" e uma dica curta, e o desenho só se revela
+depois de achado. Todos pedem **evento novo** no laboratório, e todos ensinam
+um recurso que o programa de verdade também tem.
 
-| Pin | Onde | Dica no lugar vazio |
+| Pin | Onde e o quê | Dica no lugar vazio |
 |---|---|---|
 | Arquivo Escondido | Explorador: mostrar itens ocultos e abrir o arquivo que estava lá | "Nem tudo aparece na pasta." |
-| Leitor de Manual | terminal: pedir `--help` a um comando | "Todo comando tem instruções." |
+| Extensões à Mostra | Explorador: ligar as extensões de nome de arquivo | "Todo nome tem um sobrenome." |
 | Lixeira Arqueológica | Explorador: restaurar o item mais antigo da Lixeira | "Alguém jogou fora há muito tempo." |
+| Leitor de Manual | terminal: pedir `--help` a um comando | "Todo comando tem instruções." |
+| Quem Sou Eu | terminal: `whoami` | "O computador sabe quem você é?" |
+| Viajante no Tempo | terminal: voltar o repositório a um commit antigo | "O Git lembra de tudo." |
+| Zen do Python | editor de Python: `import this` | "O Python tem uma filosofia escondida." |
+| Mapa do Banco | editor de SQL: consultar `sqlite_master` | "O banco guarda a própria planta." |
 | Fim da Planilha | Excel: Ctrl+↓ numa coluna vazia, até a última linha | "Até onde vai uma planilha?" |
+| Texto de Enchimento | Word: `=rand()` e Enter gera parágrafos, como no Word de verdade | "O Word escreve sozinho, se você pedir." |
 | Gato Pintado | Scratch: trocar a cor do ator | "O gato não precisa ser laranja." |
 
-**Total proposto:** 10 + 4 + 5 + 4 + 5 = **28 curiosidades**, contra as 4 de
-hoje.
+O Texto de Enchimento pede implementar o `=rand()` na folha do Word, e o Fim
+da Planilha pede que a grade conheça o número de linhas do Excel. Os outros
+nove usam o que a simulação já faz, e só precisam do evento.
 
-### Perguntas em aberto
+### Total
 
-- **Coruja** (entre meia-noite e cinco da manhã) contraria a regra 1: premia
-  uma criança de dez anos por estudar de madrugada. Proposta: aposentá-la.
-  Quem já a tem continua com ela, e o lugar na Faixa sai do catálogo.
-- **Semana Inteira** exige estudar num sábado. Num clube adventista isso pode
-  conflitar com a guarda do sábado, e o mesmo vale para o sábado de Fim de
-  Semana. Mantém, troca para "domingo a sexta", ou aposenta?
-- **Material:** pin redondo off-white com o glifo, como hoje, ou pin
-  **recortado na forma do próprio desenho** — a mariposa, o π, o cadeado —,
-  como os pins de verdade? O recortado deixa claro que ele não tem classe,
-  porque as classes são polígonos, mas pede 28 desenhos próprios.
+| Tema | Pins |
+|---|---:|
+| A. Calendário da computação | 23 |
+| B. Ritmo | 9 |
+| C. Jeito de estudar | 10 |
+| D. Explorador | 5 |
+| E. Segredos | 11 |
+| **Curiosidades** | **58** (hoje são 4) |
+
+Com isso a Faixa completa passa de ~639 para ~693 peças.
+
+### Ideia à parte: Mestrados
+
+No clube de verdade, completar um conjunto de especialidades de uma área rende
+um **Mestrado**, que vai na faixa. Isso tem tradução direta aqui: um selo por
+família de vereda concluída (Base, Escritório, Design, Front-end, Mobile,
+Back-end, Sistemas, Infraestrutura) e um por família de trilha. São mais ~10
+peças, com material próprio, perto do cacho da família. Não são curiosidades,
+e só entram se você quiser.
+
+### Especificação da arte dos pins recortados
+
+- Um arquivo por curiosidade, em `public/assets/pins/<codigo>.png`, com o
+  nome sendo o código da insígnia. É a mesma regra de `specialties`: a pasta é
+  a fonte da verdade.
+- PNG com fundo transparente, 512 × 512, com o desenho encostando na borda
+  maior. O recorte é a silhueta do próprio desenho.
+- A forma **não pode ser polígono regular** (triângulo, losango, pentágono…),
+  porque essas são as formas das classes.
+- O desenho já traz o esmalte, o aro metálico e o brilho. A sombra no tecido é
+  a Faixa que desenha.
+- Até a arte chegar, o lugar usa o círculo off-white com o glifo, como hoje. Uma
+  trava confere, nos dois sentidos, que toda curiosidade tem arte e que
+  nenhuma arte ficou sem curiosidade, a partir do dia em que a primeira leva
+  chegar.
 
 ### Ligação com a BNCC
 
-O público começa aos dez anos, que é o Ensino Fundamental dos anos finais.
+O público começa aos dez anos, no Ensino Fundamental dos anos finais.
 
-- O tema **A** trabalha a Cultura Digital, um dos eixos do complemento de
-  Computação da BNCC (história da computação, segurança e cidadania digital),
-  e a Competência Geral 5.
+- O tema **A** trabalha o eixo Cultura Digital do complemento de Computação da
+  BNCC (história da computação, quem a fez, segurança e cidadania digital) e a
+  Competência Geral 5. Mulheres na Ciência, Meninas nas TIC, Ada Lovelace e
+  Grace Hopper também trabalham a Competência Geral 9, de empatia e respeito à
+  diversidade.
 - Os temas **B** e **C** trabalham a Competência Geral 8, de autoconhecimento
-  e autocuidado: pausas, revisão, consultar a referência.
+  e autocuidado.
 - Os temas **D** e **E** trabalham a curiosidade investigativa da Competência
-  Geral 2.
+  Geral 2 e o eixo Mundo Digital: o que o computador guarda e como.
