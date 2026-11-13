@@ -48,7 +48,8 @@ em `public/curriculum files/` (seção 4). Estão marcadas com `~`.
 | Laboratórios de vereda | pin satélite do button | ~434 |
 | Escadas (13 famílias × 7 classes) | pin, em cacho | 91 |
 | Curiosidades | pin recortado | 58 (seção 7) |
-| **Total** | | **~693** |
+| Mestrados | tarja bordada | 13 (seção 8) |
+| **Total** | | **~706** |
 
 Os satélites somam quase três quartos da Faixa. A largura dela, portanto, é
 decidida pelas veredas, e não pelas trilhas.
@@ -339,16 +340,53 @@ nove usam o que a simulação já faz, e só precisam do evento.
 
 Com isso a Faixa completa passa de ~639 para ~693 peças.
 
-### Ideia à parte: Mestrados
+### Lista fechada (13/11/2026)
 
-No clube de verdade, completar um conjunto de especialidades de uma área rende
-um **Mestrado**, que vai na faixa. Isso tem tradução direta aqui: um selo por
-família de vereda concluída (Base, Escritório, Design, Front-end, Mobile,
-Back-end, Sistemas, Infraestrutura) e um por família de trilha. São mais ~10
-peças, com material próprio, perto do cacho da família. Não são curiosidades,
-e só entram se você quiser.
+As 58 curiosidades acima são a lista. Mudanças a partir daqui são edição
+consciente do planejamento.
 
-### Especificação da arte dos pins recortados
+## 8. Mestrados
+
+No clube, completar um conjunto de especialidades de uma área rende um
+**Mestrado**, que vai na faixa. Aqui, cada família de trilha e cada família de
+vereda concluída rende o seu. São **13 peças**, e a Faixa completa passa a ter
+cerca de **706**.
+
+| Família | Tipo | Percursos que fecham o Mestrado |
+|---|---|---|
+| Internet | trilhas | AP034, AP035 |
+| Computação | trilhas | AP041, AP042, AP043, AP044, AP045 |
+| Programação | trilhas | AP049, AP052 |
+| Web Design | trilhas | AP063, AP064 |
+| Artes e Habilidades Manuais | trilhas | HM079, HM090 |
+| Base | veredas | CC001 a CC006 |
+| Escritório | veredas | CC-ES001 a CC-ES013 |
+| Design | veredas | CC-DG001 a CC-DG006 |
+| Front-end | veredas | CC-FE001 a CC-FE007 |
+| Mobile | veredas | CC-MB001 a CC-MB005 |
+| Back-end | veredas | CC-BE001 a CC-BE006 |
+| Sistemas | veredas | CC-SI001 a CC-SI005 |
+| Infraestrutura | veredas | CC-IE001 a CC-IE003 |
+
+**Regras.** A lista de cada Mestrado sai do registro (`familia`), e não de uma
+lista escrita à mão. O Mestrado não tem classe e não rende XP. Ele fica perto do
+cacho da família dele na Faixa, e o código é `mestrado_<familia>` (a família
+sem acento, em minúsculas, com hífen no lugar do espaço).
+
+**Especificação da arte:**
+- Um arquivo por Mestrado, em `public/assets/mestrados/<codigo>.png`. A pasta é
+  a fonte da verdade, como `specialties`.
+- PNG com fundo transparente, **600 × 600**.
+- O material é próprio, para não se confundir com nenhuma outra peça: nem oval
+  (patch de trilha), nem círculo liso (button de vereda), nem polígono regular
+  (classe), nem figura (curiosidade). A sugestão é um **escudo ou flâmula
+  bordados**, com o nome da família escrito, como a tarja de Mestrado do clube.
+- A borda bordada (overloque) vem no desenho. A sombra no tecido é a Faixa que
+  desenha.
+- Até a arte chegar, o lugar mostra uma silhueta de escudo com o nome da
+  família.
+
+## 9. Especificação da arte dos pins recortados
 
 - Um arquivo por curiosidade, em `public/assets/pins/<codigo>.png`, com o
   nome sendo o código da insígnia. É a mesma regra de `specialties`: a pasta é
@@ -364,7 +402,7 @@ e só entram se você quiser.
   nenhuma arte ficou sem curiosidade, a partir do dia em que a primeira leva
   chegar.
 
-### Ligação com a BNCC
+## 10. Ligação das curiosidades com a BNCC
 
 O público começa aos dez anos, no Ensino Fundamental dos anos finais.
 
