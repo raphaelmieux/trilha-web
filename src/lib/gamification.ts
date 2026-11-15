@@ -231,13 +231,21 @@ export async function evaluateBadges(
     repetida já estava lá, mas a outra que só esta avaliação tinha achado
     ficava de fora até a próxima atividade. Ignorar a repetida grava o resto,
     e o `select` devolve só o que entrou de fato, que é o que se anuncia.
+
+    E `defaultToNull: false`, porque o lote mistura duas formas de linha: a
+    curiosidade leva `awarded_at`, o resto não. Num lote, o supabase-js manda a
+    união das chaves em `columns`, e a chave que falta numa linha vira `NULL`
+    explícito — `awarded_at` é NOT NULL, e o lote **inteiro** era recusado. Bastava
+    uma curiosidade pendente para nenhuma insígnia de ninguém entrar mais, e o
+    pin do laboratório recém-concluído ficava a giz sem nada na tela. Com
+    `missing=default`, a chave ausente usa o `DEFAULT now()` da coluna.
   */
   const { data: gravadas, error } = await supabase.from('user_badges').upsert(
     novas.map(b => ({
       user_id: userId, badge_id: b.id as string, context: contexto as Json,
       ...(desde(b.code as string) ? { awarded_at: desde(b.code as string) } : {}),
     })),
-    { onConflict: 'user_id,badge_id', ignoreDuplicates: true },
+    { onConflict: 'user_id,badge_id', ignoreDuplicates: true, defaultToNull: false },
   ).select('badge_id');
   /* Gravou? Então anuncia. Anunciar antes de gravar mostraria na tela uma
      conquista que o banco recusou — e ela sumiria no recarregar seguinte,

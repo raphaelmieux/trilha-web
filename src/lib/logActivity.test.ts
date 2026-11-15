@@ -98,9 +98,13 @@ describe('a gravação das insígnias', () => {
   cópia diverge calada: uma linha trocada daria o pin de um laboratório a quem
   fez outro.
 */
-describe('a migration que deu o pin a quem já tinha concluído', () => {
-  const sql = readFileSync(
-    join(__dirname, '../../supabase/migrations/20261115190000_laboratorios_de_quem_ja_tinha.sql'), 'utf8');
+/* A segunda refaz a conta para quem concluiu enquanto o lote era recusado, e é
+   uma cópia da primeira: as duas passam pela mesma conferência. */
+describe.each([
+  '20261115190000_laboratorios_de_quem_ja_tinha.sql',
+  '20261115230000_laboratorios_do_lote_recusado.sql',
+])('a migration %s, que deu o pin a quem já tinha concluído', arquivo => {
+  const sql = readFileSync(join(__dirname, '../../supabase/migrations', arquivo), 'utf8');
 
   it('liga cada lição de laboratório à insígnia do tipo dela', () => {
     const naMigration = new Map([...sql.matchAll(/\('(AP\d{3}\.\d+-L\d+)',\s*'(lab_[a-z0-9_]+)'\)/g)]
