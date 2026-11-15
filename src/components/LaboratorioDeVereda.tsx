@@ -14,6 +14,7 @@ import { validateCss } from '../lib/cssValidator';
 import { lerRascunho, descartarRascunho } from '../lib/rascunho';
 import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
+import { registrarCuriosidade } from '../lib/registroDeCuriosidades';
 
 /*
  * O laboratório de uma vereda.
@@ -170,7 +171,12 @@ export default function LaboratorioDeVereda({ vereda, licao, userId, aoVencer, a
             atual={aberto}
             aoAbrir={setAberto}
             aoAvisar={naoFazParte}
-            aoConsultar={() => setConsultando(true)}
+            aoConsultar={() => {
+              setConsultando(true);
+              /* A Consulta pede a referência aberta **nesta** lição, e vencê-la
+                 depois: a chave é a mesma que o evento do laboratório grava. */
+              registrarCuriosidade('referencia', { vereda: vereda.id, licao: licao.id });
+            }}
           />
 
           <div className="ide-painel">

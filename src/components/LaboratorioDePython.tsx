@@ -16,6 +16,8 @@ import { arquivosEditaveis } from '../labs/projetoDePython';
 import { lerRascunho, descartarRascunho } from '../lib/rascunho';
 import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
+import { acharSegredo } from '../lib/registroDeCuriosidades';
+import { pedeOZen } from '../labs/segredosDoCodigo';
 
 /**
  * O laboratório de Python.
@@ -157,6 +159,7 @@ export default function LaboratorioDePython({ vereda, licao, userId, aoVencer, a
       : await py.rodar(fonte, linhas, doProjeto.length ? naPasta : undefined, licao.banco);
 
     setExecucao(r);
+    if (!r.erro && pedeOZen(fonte)) acharSegredo('zen_do_python');
     setCodigoRodado(fonte);
     setExtrasRodados(extras);
     setRodando(false);

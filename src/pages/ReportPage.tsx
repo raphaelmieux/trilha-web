@@ -20,6 +20,7 @@ import { exportReportPdf, type ReportSection } from '../lib/pdf';
 import { emOrdemDeConquista } from '../lib/conquista';
 import { dataPorExtenso } from '../lib/explicacaoDaInsignia';
 import { Download, ArrowLeft, Loader2 } from 'lucide-react';
+import { registrarCuriosidade } from '../lib/registroDeCuriosidades';
 
 interface TextoEntregue { titulo: string; corpo: string }
 
@@ -267,6 +268,7 @@ export default function ReportPage() {
         annexNote,
         certificates: attachedCerts as NonNullable<typeof attachedCerts[number]>[],
       });
+      registrarCuriosidade('relatorio');
     } catch (err) {
       setExportError((err as Error).message || 'Não foi possível gerar o PDF.');
     } finally {

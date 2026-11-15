@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { limparCacheDeProgresso } from '../lib/progress';
+import { evaluateBadges } from '../lib/gamification';
+import { conectarCuriosidades } from '../lib/registroDeCuriosidades';
 import { limparRascunhos } from '../lib/rascunho';
 import { conectarDicionario, esquecerDicionarioDoAparelho } from '../lib/dicionarioPessoal';
 import { fonteDaConta } from '../lib/dicionarioNaConta';
@@ -96,6 +98,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const dono = session?.user.id ?? null;
   useEffect(() => {
     void conectarDicionario(dono, dono ? fonteDaConta : null);
+  }, [dono]);
+
+  /* As curiosidades que as simulações registram também seguem a conta, pelo
+     mesmo motivo: quem as grava não sabe quem entrou. */
+  useEffect(() => {
+    conectarCuriosidades(dono, dono ? {
+      /* Direto na tabela, e não por `logActivity`, que engole o erro: a
+         gravação que falhou precisa estourar para o registro tentar de novo. */
+      gravar: async (tipo, metadata) => {
+        const { error } = await supabase.from('activity_events').insert({ user_id: dono, event_type: tipo, metadata });
+        if (error) throw error;
+      },
+      avaliar: () => { evaluateBadges(dono).catch(() => {}); },
+    } : null);
   }, [dono]);
 
   const signOut = async () => {

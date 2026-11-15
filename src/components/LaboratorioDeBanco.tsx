@@ -11,6 +11,8 @@ import type { EstadoDoBanco, ExecucaoDeSql } from '../labs/sqlite';
 import { lerRascunho, descartarRascunho } from '../lib/rascunho';
 import { useRascunhoLocal } from '../hooks/useRascunhoLocal';
 import type { LicaoDeVereda, Vereda } from '../curriculum/veredas';
+import { acharSegredo } from '../lib/registroDeCuriosidades';
+import { leAPlantaDoBanco } from '../labs/segredosDoCodigo';
 
 /**
  * Os laboratórios da CC005, menos o do Python.
@@ -112,6 +114,7 @@ export default function LaboratorioDeBanco({ vereda, licao: daLicao, userId, aoV
       return;
     }
     setExecucao(r.execucao);
+    if (leAPlantaDoBanco(fonte)) acharSegredo('mapa_do_banco');
     setCodigoRodado(fonte);
   }, [codigo, rodando, definicao.semente]);
 

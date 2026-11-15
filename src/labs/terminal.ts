@@ -83,6 +83,11 @@ export interface Repositorio {
   /** Ramo → id do commit em que ele está. */
   ramos: Record<string, string | null>;
   ramoAtual: string;
+  /**
+   * O commit antigo para onde `git checkout <id>` levou o disco — o "HEAD
+   * destacado" do Git. Ausente no caminho normal, em que o disco é o do ramo.
+   */
+  destacado?: string;
   /** Caminhos preparados por `git add`, relativos à raiz. */
   preparados: string[];
   /** Endereço do remoto, quando houver. */
@@ -228,6 +233,11 @@ export interface Resposta {
   maquina: Maquina;
   /** O que o terminal escreveu. Vazio é sucesso silencioso, como no shell. */
   saida: string;
+  /**
+   * O código da curiosidade secreta que este comando achou. O motor não grava
+   * nada — ele é puro —, e quem o chama passa adiante.
+   */
+  segredo?: string;
 }
 
 const erro = (m: Maquina, texto: string): Resposta => ({ maquina: m, saida: texto });
@@ -250,6 +260,36 @@ const FORA_DO_EXERCICIO: Record<string, string> = {
   ssh: 'entra noutro computador pela rede',
   man: 'mostra o manual de um comando',
 };
+
+/* O --help de cada comando: uso e opções, como o terminal de verdade escreve,
+   só com o que este laboratório faz. */
+const AJUDA: Record<string, string> = {
+  ls: 'Uso: ls [-a] [pasta]\nLista o que há na pasta.\n  -a   mostra também os ocultos (os que começam com ponto)',
+  cd: 'Uso: cd [pasta]\nEntra na pasta.  ..  sobe um nível;  ~  vai para a casa.',
+  pwd: 'Uso: pwd\nMostra o caminho da pasta em que você está.',
+  cat: 'Uso: cat <arquivo>\nMostra o conteúdo do arquivo.',
+  mkdir: 'Uso: mkdir <pasta>\nCria uma pasta.',
+  touch: 'Uso: touch <arquivo>\nCria um arquivo vazio.',
+  cp: 'Uso: cp [-r] <de> <para>\nCopia.  -r  copia uma pasta com tudo o que tem dentro.',
+  mv: 'Uso: mv <de> <para>\nMove, ou renomeia se o destino for um nome novo na mesma pasta.',
+  rm: 'Uso: rm [-r] <caminho>\nRemove. Não há lixeira.  -r  remove uma pasta com tudo dentro.',
+  echo: 'Uso: echo <texto>\nEscreve o texto.',
+  clear: 'Uso: clear\nLimpa a tela.',
+  whoami: 'Uso: whoami\nMostra o nome da conta que está usando o terminal.',
+  git: 'Uso: git <comando> [opções]\n  init      começa um repositório\n  status    o que mudou desde o último commit\n'
+    + '  diff      as linhas que mudaram\n  add       prepara mudanças para o commit\n  commit    guarda as mudanças preparadas\n'
+    + '  log       o histórico de commits\n  restore   desfaz a mudança de um arquivo\n  branch    lista ou cria ramos\n'
+    + '  checkout  troca de ramo, ou visita um commit antigo pelo id\n  merge     mescla outro ramo neste\n'
+    + '  remote    liga o repositório a um remoto\n  push      envia os commits\n  pull      traz os commits',
+  pip: 'Uso: pip <comando>\n  list       o que está instalado\n  install    instala um pacote\n  show       os detalhes de um pacote\n'
+    + '  uninstall  remove um pacote\n  freeze     a lista no formato do requirements.txt',
+};
+
+/** O nome da conta: a pasta dentro de /home. */
+function usuarioDa(m: Maquina): string {
+  const casa = m.disco.filhos?.home?.filhos;
+  return (casa && Object.keys(casa)[0]) || 'desbravador';
+}
 
 /** Reparte a linha em palavras, respeitando aspas — `commit -m "mensagem"`. */
 export function palavras(linha: string): string[] {
@@ -403,7 +443,7 @@ const commitDe = (repo: Repositorio, id: string | null) =>
 
 /** Onde o ramo atual está, como árvore de arquivos. */
 function arvoreDoRamo(repo: Repositorio): Record<string, string> {
-  return commitDe(repo, repo.ramos[repo.ramoAtual])?.arvore ?? {};
+  return commitDe(repo, repo.destacado ?? repo.ramos[repo.ramoAtual])?.arvore ?? {};
 }
 
 /** O que mudou no disco em relação ao último commit. */
@@ -452,7 +492,7 @@ function git(m: Maquina, args: string[]): Resposta {
 
   if (sub === 'status') {
     const { modificados, novos, apagados } = mudancas(m);
-    const linhas = [`No ramo ${repo.ramoAtual}`];
+    const linhas = [repo.destacado ? `HEAD destacado em ${repo.destacado}` : `No ramo ${repo.ramoAtual}`];
     if (repo.preparados.length > 0) {
       linhas.push('', 'Mudanças a serem submetidas:');
       for (const c of repo.preparados) linhas.push(`\tmodificado: ${relativo(repo, c)}`);
@@ -484,6 +524,13 @@ function git(m: Maquina, args: string[]): Resposta {
   }
 
   if (sub === 'commit') {
+    /* Commit em HEAD destacado é o commit que ninguém acha depois: ele não
+       fica em ramo nenhum. O Git deixa, e avisa só na volta; aqui a volta é
+       pedida antes, porque a visita ao passado é para olhar. */
+    if (repo.destacado) {
+      return erro(m, `Você está visitando o commit ${repo.destacado}, fora de qualquer ramo. `
+        + `Volte com git checkout ${repo.ramoAtual} antes de fazer um commit.`);
+    }
     const i = resto.findIndex(r => r === '-m');
     const mensagem = i >= 0 ? resto[i + 1] : undefined;
     if (!mensagem) {
@@ -594,12 +641,43 @@ function git(m: Maquina, args: string[]): Resposta {
     if (!nome) return erro(m, 'fatal: falta o nome do ramo');
     if (criar) {
       if (repo.ramos[nome] !== undefined) return erro(m, `fatal: o ramo '${nome}' já existe`);
+      /* De um HEAD destacado, o ramo novo nasce no commit visitado — é como o
+         Git transforma a visita ao passado num caminho que continua dali. */
+      const { destacado, ...semDestaque } = repo;
       return ok({
         ...m,
-        repo: { ...repo, ramos: { ...repo.ramos, [nome]: repo.ramos[repo.ramoAtual] }, ramoAtual: nome },
+        repo: { ...semDestaque, ramos: { ...repo.ramos, [nome]: destacado ?? repo.ramos[repo.ramoAtual] }, ramoAtual: nome },
       }, `Mudou para o novo ramo '${nome}'`);
     }
-    if (repo.ramos[nome] === undefined) return erro(m, `error: pathspec '${nome}' não corresponde a nenhum ramo`);
+    if (repo.ramos[nome] === undefined) {
+      /*
+        Um id de commit no lugar do ramo: a viagem no tempo do Git. O disco
+        volta a ser o daquele commit, e o ramo continua onde estava — voltar
+        é `git checkout <ramo>`. É o que o `git log` existe para alimentar, e
+        o que faz o histórico parecer guardado de verdade.
+      */
+      const antigo = commitDe(repo, nome);
+      if (!antigo) return erro(m, `error: pathspec '${nome}' não corresponde a nenhum ramo`);
+      let disco = m.disco;
+      for (const caminho of Object.keys(arquivosSob(m.disco, repo.raiz))) {
+        if (!(caminho in antigo.arvore)) disco = escrever(disco, caminho, null);
+      }
+      for (const [caminho, texto] of Object.entries(antigo.arvore)) disco = escrever(disco, caminho, arquivo(texto));
+      const naPonta = antigo.id === repo.ramos[repo.ramoAtual];
+      return {
+        ...ok({ ...m, disco, repo: { ...repo, destacado: antigo.id, preparados: [] } }, [
+          `Nota: mudando para '${antigo.id}'.`,
+          '',
+          "Você está em 'HEAD destacado': o disco mostra o projeto como ele era neste commit.",
+          'Pode olhar à vontade. Para voltar ao presente:',
+          '',
+          `  git checkout ${repo.ramoAtual}`,
+          '',
+          `HEAD agora está em ${antigo.id} ${antigo.mensagem}`,
+        ].join('\n')),
+        ...(naPonta ? {} : { segredo: 'viajante_no_tempo' }),
+      };
+    }
     /* Trocar de ramo troca o disco pelo que aquele ramo registrou. Sem isso, a
        mesclagem do módulo seguinte não teria o que mesclar: o trabalho do ramo
        apareceria no main sem ninguém ter mesclado nada. */
@@ -609,10 +687,12 @@ function git(m: Maquina, args: string[]): Resposta {
       if (!(caminho in arvore)) disco = escrever(disco, caminho, null);
     }
     for (const [caminho, texto] of Object.entries(arvore)) disco = escrever(disco, caminho, arquivo(texto));
-    return ok({ ...m, disco, repo: { ...repo, ramoAtual: nome, preparados: [] } }, `Mudou para o ramo '${nome}'`);
+    const { destacado: _, ...semDestaque } = repo;
+    return ok({ ...m, disco, repo: { ...semDestaque, ramoAtual: nome, preparados: [] } }, `Mudou para o ramo '${nome}'`);
   }
 
   if (sub === 'merge') {
+    if (repo.destacado) return erro(m, `Você está visitando o commit ${repo.destacado}. Volte com git checkout ${repo.ramoAtual} antes de mesclar.`);
     const nome = resto.filter(r => !r.startsWith('-'))[0];
     if (!nome) return erro(m, 'fatal: falta o nome do ramo a mesclar');
     if (repo.ramos[nome] === undefined) return erro(m, `merge: ${nome} - não é algo que possamos mesclar`);
@@ -892,6 +972,13 @@ export function rodar(m: Maquina, linha: string): Resposta {
 
   const [comando, ...args] = palavras(texto);
 
+  /* Todo comando de verdade responde a --help; o daqui também, com o que ele
+     faz neste laboratório. É um segredo da Faixa: quem pergunta ao próprio
+     comando aprendeu onde fica o manual. */
+  if (args.includes('--help') && AJUDA[comando]) {
+    return { ...ok(registrada, AJUDA[comando]), segredo: 'leitor_de_manual' };
+  }
+
   switch (comando) {
     case 'ls': return listar(registrada, args);
     case 'cd': return entrar(registrada, args);
@@ -906,6 +993,9 @@ export function rodar(m: Maquina, linha: string): Resposta {
     case 'pip': return pip(registrada, args);
     case 'clear': return ok(registrada, '\x00limpar');
     case 'echo': return ok(registrada, args.join(' '));
+    /* O nome da conta é o da pasta de casa: é ele que o prompt mostra, e
+       responder outro faria o terminal discordar de si mesmo. */
+    case 'whoami': return { ...ok(registrada, usuarioDa(registrada)), segredo: 'quem_sou_eu' };
     case 'help':
       return ok(registrada, [
         'Comandos deste laboratório:',

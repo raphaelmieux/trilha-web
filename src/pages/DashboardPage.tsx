@@ -25,6 +25,7 @@ import { Lock, Award, Flame, Star, Clock, FileText, Medal, HardHat } from 'lucid
 import { MarcaEmTexto } from '../components/ui/BrandMark';
 import TokenNoCartao from '../components/ui/TokenNoCartao';
 import PainelDeTokens from '../components/ui/PainelDeTokens';
+import { NOMES_DOS_EVENTOS_DAS_CURIOSIDADES } from '../lib/eventosDasCuriosidades';
 
 /**
  * O card de uma trilha, em qualquer um dos seus três estados.
@@ -160,7 +161,13 @@ export default function DashboardPage() {
       const { data: enrolls } = await supabase.from('enrollments').select('*, specialties(*)').eq('user_id', profile.id);
       if (!vivo) return;
       setEnrollments(enrolls || []);
-      const { data: events } = await supabase.from('activity_events').select('*').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(10);
+      /* As curiosidades gravam eventos que não são atividade de estudo — "Menu
+         de contexto aberto" empurraria para fora do mural o que a pessoa fez.
+         O filtro é na consulta, e não na tela: filtrar depois do `limit`
+         deixaria o mural com duas linhas onde cabiam dez. */
+      const { data: events } = await supabase.from('activity_events').select('*').eq('user_id', profile.id)
+        .not('event_type', 'in', `(${NOMES_DOS_EVENTOS_DAS_CURIOSIDADES.join(',')})`)
+        .order('created_at', { ascending: false }).limit(10);
       if (!vivo) return;
       setRecentEvents(events || []);
       /* A colocação só é buscada de quem optou por aparecer: para quem não

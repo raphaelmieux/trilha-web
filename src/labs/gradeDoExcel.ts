@@ -52,6 +52,7 @@ import {
 import {
   sugestoesDeFuncao, completarFuncao, funcaoAberta, type FuncaoDoCatalogo,
 } from './ajudaDeFormulas';
+import { acharSegredo } from '../lib/registroDeCuriosidades';
 
 /**
  * O que a barra de status do Excel escreve no canto esquerdo.
@@ -579,6 +580,11 @@ export function useGradeDoExcel({
       if (setas[e.key]) {
         e.preventDefault();
         const destino = saltar(p, faixa, setas[e.key], e.shiftKey);
+        /* O Fim da Planilha: Ctrl+↓ que atravessa o vazio até a última linha
+           da grade, e não até o fim de um bloco de dados. */
+        if (setas[e.key] === 'baixo' && destino.l2 === ultimaLinha && !(p.celulas[ultimaLinha]?.[destino.c2]?.texto ?? '').trim()) {
+          acharSegredo('fim_da_planilha');
+        }
         colunaDoTab.current = null;
         if (e.shiftKey) setFaixa(destino); else selecionarFaixa(destino);
         return;

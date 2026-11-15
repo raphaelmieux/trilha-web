@@ -24,7 +24,11 @@ import { AREA, DOCUMENTOS, LIXEIRA, type No } from './arquivos';
  * - nenhuma corrente de pastas chega a três níveis, que é o que o requisito
  *   4.1 manda construir;
  * - não há nenhum `.zip`, que é o que o 4.5 manda fazer;
- * - a Lixeira está vazia;
+ * - a Lixeira tem uma coisa só, jogada fora anos atrás por alguém que já
+ *   saiu do clube — nenhuma lição fala dela, e esvaziar só conta o que a
+ *   própria pessoa excluiu (é o segredo da Lixeira Arqueológica);
+ * - e Documentos guarda um arquivo **oculto**, que só aparece pelo menu
+ *   Exibir — o segredo do Arquivo Escondido, também fora de toda lição;
  * - o pen drive não está conectado — ele nem aparece na árvore até alguém o
  *   espetar;
  * - o relatório está na **versão errada**, com as boas guardadas no histórico;
@@ -94,6 +98,10 @@ export const VERSAO_RASCUNHO = 'primeiro rascunho, só os títulos';
 /** O arquivo que sumiu de Documentos e só existe na cópia de segurança. */
 export const SUMIU = 'inscritos.docx';
 
+/** O arquivo oculto de Documentos, e o item antigo da Lixeira — os dois segredos deste disco. */
+export const ESCONDIDO = 'escondido';
+export const VELHARIA = 'velharia';
+
 export function discoDoClube(agora: number): No[] {
   const naArea = DEZ_MAL_NOMEADOS.map((nome, i) => arq(
     `bagunca${i}`, nome, AREA,
@@ -146,5 +154,19 @@ export function discoDoClube(agora: number): No[] {
     arq('bk_relatorio', RELATORIO, BACKUP, 1840, agora, 7, VERSAO_PERDIDA),
     arq('bk_sumiu', SUMIU, BACKUP, 210, agora, 7, 'a lista de inscritos do acampamento'),
     arq('bk_estatuto', 'estatuto.pdf', BACKUP, 640, agora, 7),
+
+    /* Os dois segredos. Nenhuma tarefa lê nenhum deles: o oculto não aparece
+       na lista, e a Lixeira só conta como esvaziada com o que a pessoa
+       excluiu. */
+    {
+      ...arq(ESCONDIDO, 'bilhete escondido.txt', DOCUMENTOS, 1, agora, 400,
+        'Você achou! Arquivo oculto não some: ele só não aparece. O Windows esconde assim os arquivos de que ele precisa para funcionar.'),
+      oculto: true,
+    },
+    {
+      ...arq(VELHARIA, 'convite do primeiro acampamento.doc', LIXEIRA, 38, agora, 3300,
+        'o convite do primeiro acampamento do clube, digitado em 2017'),
+      voltaPara: DOCUMENTOS,
+    },
   ];
 }

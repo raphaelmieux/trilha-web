@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import { CAMADA_DA_PLATAFORMA } from '../labs/camadas';
 import { instalarToqueLongo } from '../labs/toqueLongo';
+import { ouvirCuriosidadesDaMoldura } from '../labs/curiosidadesDaMoldura';
 import { NoBastidor } from './bastidor';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, ArrowLeft, X, ListChecks, MonitorSmartphone, LifeBuoy } from 'lucide-react';
@@ -249,6 +250,11 @@ export default function LaboratorioEmTelaCheia({
      menu. */
   const raiz = useRef<HTMLDivElement | null>(null);
   useEffect(() => (raiz.current ? instalarToqueLongo(raiz.current) : undefined), []);
+
+  /* O atalho e o botão direito que o programa imitado atendeu viram
+     curiosidade aqui, uma vez para todos os laboratórios — ver
+     `curiosidadesDaMoldura.ts`. */
+  useEffect(() => ouvirCuriosidadesDaMoldura(window), []);
 
   /* A página atrás não deve rolar por baixo da moldura: no celular isso vira
      aquele arrasto que devolve a tela para um lugar que ninguém pediu. */
