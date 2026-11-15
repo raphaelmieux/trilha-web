@@ -38,15 +38,39 @@ const tem = new Set(['ap034_complete', 'lab_web_lab', 'licoes_5']);
 
 describe('a Faixa na tela', () => {
   /* Setecentas paradas de Tab fariam a Faixa impossível de atravessar pelo
-     teclado: só a peça acesa é botão. O lugar vazio é imagem com nome, para o
-     leitor de tela dizer o que falta ali. */
-  it('só a peça conquistada é botão, e toda peça tem nome', () => {
+     teclado: toda peça é botão, mas uma só fica na ordem do Tab, e as setas
+     andam entre elas. */
+  it('toda peça é botão com nome, e uma só é parada de Tab', () => {
     act(() => root.render(<Faixa faixa={faixa} estado={p => estadoDaPeca(p, tem, [])} aoAbrir={() => {}} />));
-    const botoes = container.querySelectorAll('button.fx-peca');
-    expect(botoes.length).toBe(3);
-    const vazias = container.querySelectorAll('span.fx-peca[role="img"]');
-    expect(vazias.length).toBe(faixa.pecas.length - 3);
-    for (const el of container.querySelectorAll('.fx-peca')) expect(el.getAttribute('aria-label')).toBeTruthy();
+    const pecas = [...container.querySelectorAll<HTMLButtonElement>('button.fx-peca')];
+    expect(pecas.length).toBe(faixa.pecas.length);
+    expect(pecas.filter(b => b.tabIndex === 0).length).toBe(1);
+    for (const el of pecas) expect(el.getAttribute('aria-label')).toBeTruthy();
+  });
+
+  it('as setas levam o foco à peça seguinte na ordem de leitura', () => {
+    act(() => root.render(<Faixa faixa={faixa} estado={p => estadoDaPeca(p, tem, [])} aoAbrir={() => {}} />));
+    const ordem = [...faixa.pecas].sort((a, b) => a.x - b.x || a.y - b.y);
+    const primeira = container.querySelector<HTMLButtonElement>(`[data-peca="${ordem[0].id}"]`)!;
+    expect(primeira.tabIndex).toBe(0);
+    primeira.focus();
+    act(() => { primeira.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); });
+    const segunda = container.querySelector<HTMLButtonElement>(`[data-peca="${ordem[1].id}"]`)!;
+    expect(document.activeElement).toBe(segunda);
+    expect(segunda.tabIndex).toBe(0);
+    expect(primeira.tabIndex).toBe(-1);
+    act(() => { segunda.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true })); });
+    expect(document.activeElement).toBe(container.querySelector(`[data-peca="${ordem[ordem.length - 1].id}"]`));
+  });
+
+  /* O lugar vazio abre o que falta: um quadro de metas que não diz qual é a
+     meta é só desenho. */
+  it('o clique no lugar vazio também abre', () => {
+    const aoAbrir = vi.fn();
+    act(() => root.render(<Faixa faixa={faixa} estado={p => estadoDaPeca(p, tem, [])} aoAbrir={aoAbrir} />));
+    const vazio = container.querySelector<HTMLButtonElement>('button.fx-vazia[data-peca="ap035_complete"]')!;
+    act(() => vazio.click());
+    expect((aoAbrir.mock.calls[0][0] as PecaPosta).id).toBe('ap035_complete');
   });
 
   it('o clique na peça acesa abre o que ela rendeu', () => {

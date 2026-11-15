@@ -65,6 +65,11 @@ export const CSS_DA_FAIXA = `
 }
 button.fx-peca { cursor: pointer; }
 button.fx-peca:hover { transform: rotate(var(--giro, 0deg)) translateY(-2px) scale(1.03); }
+/* O lugar vazio não sobe no hover: giz não descola do pano. Ele acende o
+   traço, que é o que diz que ali há o que ver. */
+button.fx-peca.fx-vazia:hover { transform: rotate(var(--giro, 0deg)); }
+button.fx-vazia:hover, button.fx-vazia:focus-visible { --fx-giz: rgba(255, 244, 205, .95); }
+button.fx-vazia:hover .fx-giz { fill: rgba(255,255,255,.08); }
 .fx-peca svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .fx-recorte { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
 
