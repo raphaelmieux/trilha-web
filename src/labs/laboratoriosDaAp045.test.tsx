@@ -157,6 +157,34 @@ describe('a pesquisa', () => {
     expect(container.textContent).toContain('Fonte: Acervo Histórico da Computação');
   });
 
+  /*
+    A lista oferecia só as perguntas marcadas: sem marcar nenhuma, ela tinha
+    "Escolha…" e mais nada, e a ficha não se guardava de jeito nenhum.
+  */
+  it('a ficha escolhe a pergunta mesmo antes de marcar o recorte', () => {
+    escrever(achar('input[aria-label="Pesquisar"]'), 'bug do milênio');
+    act(() => { achar('form[role="search"]').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
+    clicar(porTexto('.pw-link', 'O bug do milênio: o problema do ano 2000'));
+    clicar(container.querySelectorAll('.pw-fichar')[0]);
+    const select = achar('.pw-ficha-nova select') as HTMLSelectElement;
+    const valores = [...select.options].map(o => o.value).filter(Boolean);
+    expect(valores.sort()).toEqual(['causa', 'correcao', 'inventor', 'rapido', 'resultado', 'temor', 'tudo']);
+    expect(document.activeElement).toBe(select);
+  });
+
+  it('as perguntas marcadas vêm primeiro na escolha da ficha', () => {
+    const marcar = (texto: string) => clicar(porTexto('.pw-check', texto).querySelector('input')!);
+    marcar('O que aconteceu de fato na virada do ano?');
+    escrever(achar('input[aria-label="Pesquisar"]'), 'bug do milênio');
+    act(() => { achar('form[role="search"]').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
+    clicar(porTexto('.pw-link', 'O bug do milênio: o problema do ano 2000'));
+    clicar(container.querySelectorAll('.pw-fichar')[0]);
+    const grupos = [...achar('.pw-ficha-nova select').querySelectorAll('optgroup')];
+    expect(grupos.map(g => g.label)).toEqual(['Perguntas que você marcou', 'As outras perguntas']);
+    expect([...grupos[0].querySelectorAll('option')].map(o => o.value)).toEqual(['resultado']);
+    expect(grupos[1].querySelectorAll('option')).toHaveLength(6);
+  });
+
   /* Dito na hora de avaliar, a avaliação vira duas tentativas. */
   it('não diz se a página é confiável', () => {
     escrever(achar('input[aria-label="Pesquisar"]'), 'bug do milênio');
