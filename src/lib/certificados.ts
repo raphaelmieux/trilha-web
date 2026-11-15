@@ -79,13 +79,21 @@ export const emCss = ([r, g, b]: Rgb) => `rgb(${r}, ${g}, ${b})`;
  * dois formatos na mesma grade quando a vereda finalmente ganhasse nome.
  */
 export function percursoDoCertificado(curriculumCode: string):
-  { nome: string; tipo: 'trilha' } | { nome: string; tipo: 'vereda' } | { nome: string; tipo: 'desconhecido' } {
+  { nome: string; tipo: 'trilha' | 'vereda' | 'mestrado' | 'desconhecido' } {
   const trilha = getSpecialty(curriculumCode);
   if (trilha) return { nome: nomeCompleto(trilha), tipo: 'trilha' };
   const vereda = getVereda(curriculumCode);
   if (vereda) return { nome: nomeCompleto(vereda), tipo: 'vereda' };
+  /* O Mestrado oficial também emite Token.Web(), e não é trilha nem vereda:
+     sem esta linha, a página pública o chamaria de especialidade. */
+  const mestrado = NOME_DO_MESTRADO_OFICIAL[curriculumCode];
+  if (mestrado) return { nome: mestrado, tipo: 'mestrado' };
   return { nome: curriculumCode, tipo: 'desconhecido' };
 }
+
+const NOME_DO_MESTRADO_OFICIAL: Record<string, string> = {
+  ME006: 'ME006 Mestrado em Ciência e Tecnologia',
+};
 
 /**
  * O que `verify_certificate()` devolve, virando certificado do domínio.

@@ -41,6 +41,26 @@ const PRE_REQUISITO: Record<string, string> = {
   AP035: "AP034",
 };
 
+/**
+ * O Mestrado oficial que a plataforma também atesta: quais trilhas daqui
+ * contam, e quantas bastam.
+ *
+ * A lista é a de `TRILHAS_DO_ME006` em `src/lib/mestrados.ts`, escrita aqui
+ * outra vez porque a Edge Function não importa o aplicativo — e duas cópias
+ * divergem no primeiro ajuste. `mestrados.test.ts` lê este arquivo e compara
+ * as duas, código por código, e o mínimo junto.
+ *
+ * O que o certificado afirma é o que a plataforma confere: que as trilhas da
+ * lista foram concluídas aqui, pelos Token.Web() ativos de cada uma. O Mestrado
+ * oficial continua sendo entregue pelo clube.
+ */
+const MESTRADOS_OFICIAIS: Record<string, { trilhas: string[]; minimo: number }> = {
+  ME006: {
+    trilhas: ["AP041", "AP042", "AP043", "AP044", "AP045", "AP049", "AP052", "AP034", "AP035", "AP063", "AP064"],
+    minimo: 7,
+  },
+};
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -91,6 +111,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const ehVereda = tipo === "vereda";
+    const ehMestrado = tipo === "mestrado";
 
     /*
       O código entra em filtro, então ele é conferido antes — e a forma é a
@@ -237,6 +258,91 @@ Deno.serve(async (req: Request) => {
         user_id: userId,
         event_type: "certification_issued",
         metadata: { code, level, specialtyCode, tipo: "vereda" },
+      });
+
+      return new Response(JSON.stringify({ success: true, code, hash: hash.substring(0, 32) }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    /*
+      ── O Mestrado oficial: conferido nos Token.Web() das trilhas ─────────
+
+      Ele não tem requisito próprio no banco nem lição: o que ele exige é ter
+      concluído trilhas da lista, e a prova de cada uma é o certificado ativo
+      dela. Revogado não conta — o Mestrado não pode valer mais do que as
+      trilhas em que se apoia.
+    */
+    if (ehMestrado) {
+      const mestrado = MESTRADOS_OFICIAIS[specialtyCode];
+      if (!mestrado) {
+        return new Response(JSON.stringify({ error: "Mestrado desconhecido." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: daLista } = await supabase
+        .from("certifications")
+        .select("id, code, curriculum_code")
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .in("curriculum_code", mestrado.trilhas);
+      const concluidas = new Set((daLista ?? []).map((c) => c.curriculum_code));
+      if (concluidas.size < mestrado.minimo) {
+        return new Response(JSON.stringify({
+          error: `O ${specialtyCode} pede ${mestrado.minimo} trilhas da lista concluídas; há ${concluidas.size}.`,
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const code = generateCode();
+      const hashInput = `${userId}:${specialtyCode}:${level}:${code}:${Date.now()}`;
+      const hash = await sha256(hashInput);
+      const signature = await sha256(hash + Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!.substring(0, 32));
+
+      const { data: cert, error: certError } = await supabase
+        .from("certifications")
+        .insert({
+          user_id: userId,
+          /* Nulo, como na vereda: o Mestrado não é `Specialty`. */
+          specialty_id: null,
+          code,
+          hash,
+          signature,
+          level,
+          curriculum_code: specialtyCode,
+          curriculum_version: "1.0",
+          status: "active",
+        })
+        .select()
+        .single();
+
+      if (certError) {
+        return new Response(JSON.stringify({ error: certError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      /* O retrato: os certificados em que ele se apoia. */
+      await supabase.from("certification_snapshots").insert({
+        certification_id: cert.id,
+        requirements_snapshot: [],
+        progress_snapshot: daLista ?? [],
+      });
+
+      await supabase.from("certification_events").insert({
+        certification_id: cert.id,
+        event_type: "issued",
+        metadata: { code, level, specialtyCode, tipo: "mestrado" },
+      });
+
+      await supabase.from("activity_events").insert({
+        user_id: userId,
+        event_type: "certification_issued",
+        metadata: { code, level, specialtyCode, tipo: "mestrado" },
       });
 
       return new Response(JSON.stringify({ success: true, code, hash: hash.substring(0, 32) }), {

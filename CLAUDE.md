@@ -455,6 +455,55 @@ está em comentário ou em texto não conta, senão o enunciado de uma lição q
 citasse o segredo o daria a quem a abrisse. O texto do `=rand()` é nosso — o do
 Word é da Microsoft — e passa pelo corretor, como todo documento.
 
+**A Faixa é a estante presa num tecido, e o desenho é o mesmo para todo
+mundo.** Patches das trilhas, buttons das veredas e dos Mestrados, pins das
+escadas, dos laboratórios e das curiosidades, numa faixa verde que corre na
+horizontal. Todo lugar existe desde o primeiro dia, as anunciadas inclusive —
+a largura é o que há para fazer —, e vai se acendendo.
+
+Três peças, e nenhuma sabe de tela. `catalogoDaFaixa.ts` monta as unidades a
+partir do registro, sem lista escrita à mão: trilha nova traz o patch e os
+laboratórios, anunciada traz os previstos. `empacotarFaixa.ts` prende cada
+unidade no lugar mais à esquerda do grupo dela em que nenhuma **peça** toca
+peça de outra unidade — peça a peça, e não uma elipse em volta da unidade,
+para o anel de uma vereda se encaixar no vão da vizinha —, com a altura
+sorteada da chave dela por semente fixa. E `estadoDaFaixa.ts` acende cada peça
+por uma pergunta só: a pessoa tem a insígnia dela? A exceção é o Token.Web()
+revogado, que apaga a peça sem tirá-la do lugar (D6).
+
+O que se conquista acende, e não se move: o empacotamento não lê nada da
+pessoa. A edição antiga é a única coisa que aparece só para alguns, e por isso
+vai no fim, onde não empurra ninguém. `empacotarFaixa.test.ts` cobra que
+nenhuma peça toque outra, que toda insígnia que a estante tem lugar para
+receber tenha lugar na Faixa, e que duas chamadas deem o mesmo desenho.
+
+Só a peça acesa é botão. São setecentas, e setecentas paradas de Tab fariam a
+Faixa impossível de atravessar pelo teclado; o lugar vazio é imagem com nome. O
+segredo vazio é um "?" de giz do tamanho de um pin, qualquer que seja a peça
+que ele vai virar — o ME006 é um patch, e a forma dele seria metade da
+resposta.
+
+O overloque do patch sai **da arte**: o contorno traçado da transparência
+(240 raios do centro) e a cor da beirada, lidos do arquivo por canvas em
+`bordaDaArte.ts`. É a regra das pastas de arte — arte nova chega com a borda
+certa sem ninguém mexer no código. Sem canvas, o oval vermelho de reserva.
+
+O patch, o button e o patch do ME006 abrem o Token.Web() **emoldurado**, o
+certificado de verdade (`CertificateCanvas`) numa moldura com passe-partout e
+vidro, presa num prego, com Baixar PDF e Imprimir. Imprimir manda só o
+certificado para o papel, em A4 deitado: a classe `imprimindo-token` vai no
+documento durante a impressão e sai no `afterprint`, senão a próxima impressão
+da plataforma sairia em branco.
+
+**O ME006 emite Token.Web(), e a conta dele existe duas vezes.** A Faixa pede
+o documento sozinha quando a insígnia `mestrado_me006` aparece e não há
+documento nenhum — as guardas de `TokenDaVereda`, pelos motivos escritos lá —,
+e a Edge Function confere sete certificados **ativos** da lista: o Mestrado
+não pode valer mais do que as trilhas em que se apoia. A lista existe no
+aplicativo e na função, e `mestrados.test.ts` compara as duas, com o mínimo.
+A arte do certificado dele é escura, e o nome, o código e a data saem em
+branco (`coresDoCertificado`), na tela e no PDF.
+
 **Os Mestrados fecham famílias.** Um por família de trilha e de vereda, ao
 concluir todas as dela, e o **ME006**, oficial: sete das onze trilhas daqui que
 estão na lista do Mestrado em Ciência e Tecnologia. A plataforma conta só as
@@ -6358,6 +6407,11 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/segredosDoCodigo.test.ts` | segredo achado em comentário ou texto, ou HEAD destacado que aceita commit e não volta pelo ramo |
 | `src/labs/textoDeEnchimento.test.ts` | `=rand()` sem o padrão de cinco por três, sem teto, ou aceito no meio de uma frase |
 | `src/components/LaboratorioDeExplorador.test.tsx` | arquivo oculto na lista antes do menu Exibir, ou o convite antigo da Lixeira fechando a tarefa de esvaziar |
+| `src/lib/faixa/empacotarFaixa.test.ts` | peça da Faixa tocando outra, insígnia da estante sem lugar na Faixa, ou desenho que muda de uma vez para outra |
+| `src/lib/faixa/empacotarFaixa.test.ts` | edição antiga que move outra peça, ou zonas fora da ordem Trilhas, Escadas, Curiosidades e Veredas |
+| `src/lib/faixa/estadoDaFaixa.test.ts` | peça acesa sem a insígnia, ou Token.Web() revogado aparecendo como se valesse |
+| `src/components/faixa/Faixa.test.tsx` | lugar vazio virando parada de Tab, segredo mostrando a forma da peça, ou impressão que deixa a página em branco depois |
+| `src/lib/mestrados.test.ts` | lista ou mínimo do ME006 diferente entre o aplicativo e a Edge Function que emite o certificado |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |
