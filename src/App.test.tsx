@@ -3,6 +3,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 
 /*
   A guarda das telas de entrar.
@@ -84,5 +86,43 @@ describe('a tela de login', () => {
     abrirLogin();
     expect(container.textContent).toContain('Carregando');
     expect(container.textContent).not.toContain('formulário de login');
+  });
+});
+
+/*
+  A Estante virou a Faixa, e o endereço antigo continua respondendo.
+
+  O aviso de conquista, o favorito e o botão voltar do navegador apontam para
+  `/estante` há meses. Endereço que some sem redirecionar cai no `*` e manda
+  para o painel quem foi ver as próprias insígnias, sem dizer por quê. Já o
+  link escrito numa tela é outra coisa: ele aponta para o endereço de hoje,
+  senão cada clique passa pelo desvio e o antigo nunca pode ser aposentado.
+*/
+describe('a Faixa no lugar da Estante', () => {
+  const fonteDoApp = readFileSync(resolve(__dirname, 'App.tsx'), 'utf8');
+
+  it('/estante leva para /faixa', () => {
+    expect(fonteDoApp).toMatch(/path="\/estante" element=\{<Navigate to="\/faixa" replace \/>\}/);
+  });
+
+  it('o menu leva à Faixa', () => {
+    expect(fonteDoApp).toContain("{ to: '/faixa', label: 'Faixa'");
+  });
+
+  it('nenhuma tela escreve um link para /estante', () => {
+    const arquivos: string[] = [];
+    const varrer = (pasta: string) => {
+      for (const nome of readdirSync(pasta)) {
+        const caminho = join(pasta, nome);
+        if (statSync(caminho).isDirectory()) varrer(caminho);
+        else if (/\.tsx?$/.test(nome) && !/\.test\.tsx?$/.test(nome)) arquivos.push(caminho);
+      }
+    };
+    varrer(__dirname);
+    /* A guarda contra o vazio: uma varredura que não achasse arquivo nenhum
+       aprovaria qualquer coisa. */
+    expect(arquivos.length).toBeGreaterThan(100);
+    const comLink = arquivos.filter(a => /to=["'{]+\/estante|navigate\(['"]\/estante/.test(readFileSync(a, 'utf8')));
+    expect(comLink, 'estas telas ainda mandam para o endereço antigo').toEqual([]);
   });
 });

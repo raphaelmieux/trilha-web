@@ -18,11 +18,10 @@ import VeredaPage from './pages/VeredaPage';
 import VerifyPage from './pages/VerifyPage';
 import CertificatePage from './pages/CertificatePage';
 import ProfilePage from './pages/ProfilePage';
-import EstantePage from './pages/EstantePage';
 import FaixaPage from './pages/FaixaPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import { useEffect, useRef, useState } from 'react';
-import { LogOut, Home, Map, FileText, Award, ShieldCheck, User, Podium, Trophy, Menu, X, ChevronDown } from 'lucide-react';
+import { LogOut, Home, Map, FileText, Award, ShieldCheck, User, Podium, Ribbon, Menu, X, ChevronDown } from 'lucide-react';
 
 /* Enquanto a sessão guardada ainda está sendo lida, as duas guardas abaixo
    esperam com a mesma tela — decidir antes seria decidir sem saber. */
@@ -74,7 +73,7 @@ const NAV_ITEMS = [
   { to: PERCURSO, label: 'Trilha Atual', icon: Map, exact: false },
   { to: '/relatorio', label: 'Relatório', icon: FileText, exact: false },
   { to: '/ranking', label: 'Ranking', icon: Podium, exact: false },
-  { to: '/estante', label: 'Estante', icon: Trophy, exact: false },
+  { to: '/faixa', label: 'Faixa', icon: Ribbon, exact: false },
   { to: '/verificar', label: 'Verificar', icon: Award, exact: false },
 ];
 
@@ -286,8 +285,12 @@ function AppRoutes() {
         <Route path="/vereda/:code" element={<ProtectedRoute><VeredaPage /></ProtectedRoute>} />
         <Route path="/relatorio" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
         <Route path="/ranking" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
-        <Route path="/estante" element={<ProtectedRoute><EstantePage /></ProtectedRoute>} />
         <Route path="/faixa" element={<ProtectedRoute><FaixaPage /></ProtectedRoute>} />
+        {/* A Estante virou a Faixa. `/estante` continua respondendo pelo motivo
+            de `/admin` logo abaixo: o aviso de conquista, o favorito e o botão
+            voltar ainda apontam para lá, e endereço que some sem redirecionar
+            manda para o painel quem foi ver as próprias insígnias. */}
+        <Route path="/estante" element={<Navigate to="/faixa" replace />} />
         {/* A administração virou guia dentro do perfil. `/admin` continua
             respondendo porque ela esteve na barra por meses: link guardado,
             favorito e botão voltar do navegador apontam para lá, e endereço

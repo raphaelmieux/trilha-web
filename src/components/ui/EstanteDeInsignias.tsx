@@ -34,7 +34,7 @@ import type { PosicaoNoRanking } from '../../hooks/useMinhasPosicoes';
  * medalha para saber o que tinha feito por ela caía num campo de nome de
  * usuário, e aprendia que aquele caminho não leva a lugar nenhum.
  *
- * É o mesmo cartão da Estante, pelo mesmo componente: a insígnia é a mesma nas
+ * É o mesmo cartão da Faixa, pelo mesmo componente: a insígnia é a mesma nas
  * duas telas, e clicar nela tem de querer dizer a mesma coisa. O topo de cada
  * família continua abrindo a escada, porque ali o clique tem outro trabalho —
  * e cada degrau vencido dentro dela abre o cartão dele.
@@ -70,7 +70,7 @@ export default function EstanteDeInsignias({ badges, total, posicoes }: {
   /* Menos as dos laboratórios de vereda. Cada vereda tem de sete a doze, e
      quem percorreu três já teria trinta ícones aqui — o muro que este cartão
      existe para não ser. Elas viram uma linha com a contagem, e a porta é a
-     Estante, onde aparecem agrupadas por vereda. */
+     Faixa, onde cada uma orbita o button da sua vereda. */
   const dasVeredas = badges.filter(b => ehInsigniaDeLaboratorioDeVereda(b.code));
   const avulsas = badges.filter(b => !emEscada.has(b.code) && !ehInsigniaDeLaboratorioDeVereda(b.code));
 
@@ -86,13 +86,13 @@ export default function EstanteDeInsignias({ badges, total, posicoes }: {
           Desenhar as cento e vinte que faltam neste cartão transformaria o
           painel numa lista de pendências em cima de quem só queria estudar —
           é a mesma decisão de mostrar o topo de cada família e não as noventa
-          e uma. O lugar de ver os vazios é a Estante, onde quem entrou foi ver
+          e uma. O lugar de ver os vazios é a Faixa, onde quem entrou foi ver
           exatamente isso.
         */}
-        <Link to="/estante" className="text-xs transition hover:opacity-80" style={{ color: 'var(--color-text-muted)' }}>
+        <Link to="/faixa" className="text-xs transition hover:opacity-80" style={{ color: 'var(--color-text-muted)' }}>
           {faltam > 0 && badges.length > 0
-            ? `faltam ${faltam} — ver a estante`
-            : 'ver a estante'}
+            ? `faltam ${faltam} — ver a faixa`
+            : 'ver a faixa'}
         </Link>
       </div>
 
@@ -138,10 +138,10 @@ export default function EstanteDeInsignias({ badges, total, posicoes }: {
           </div>
 
           {dasVeredas.length > 0 && (
-            <Link to="/estante" className="block text-xs transition hover:opacity-80" style={{ color: 'var(--color-text-dim)' }}>
+            <Link to="/faixa" className="block text-xs transition hover:opacity-80" style={{ color: 'var(--color-text-dim)' }}>
               <span className="font-bold" style={{ color: 'var(--color-text-soft)' }}>{dasVeredas.length}</span>
               {dasVeredas.length === 1 ? ' laboratório de vereda vencido' : ' laboratórios de vereda vencidos'}
-              {' — ver na estante'}
+              {' — ver na faixa'}
             </Link>
           )}
 

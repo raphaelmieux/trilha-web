@@ -222,10 +222,10 @@ export default function DashboardPage() {
             <Flame className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
             <div><span className="font-bold">{ofensiva}</span> <span className="text-sm" style={{ color: 'var(--color-text-dim)' }}>dias</span></div>
           </div>
-          {/* Para a estante, e não para o perfil: o contador prometia insígnias
+          {/* Para a Faixa, e não para o perfil: o contador prometia insígnias
               e levava ao formulário de nome de usuário, que é onde elas
-              deixaram de morar no dia em que a estante virou página. */}
-          <Link to="/estante" className="card px-4 py-2 flex items-center gap-2 transition hover:opacity-80">
+              deixaram de morar no dia em que as conquistas viraram página. */}
+          <Link to="/faixa" className="card px-4 py-2 flex items-center gap-2 transition hover:opacity-80">
             <Medal className="w-5 h-5" style={{ color: 'var(--color-tertiary-light)' }} />
             <div><span className="font-bold">{badges.length}</span> <span className="text-sm" style={{ color: 'var(--color-text-dim)' }}>
               {badges.length === 1 ? 'insígnia' : 'insígnias'}

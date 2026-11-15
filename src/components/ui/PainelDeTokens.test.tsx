@@ -138,28 +138,33 @@ describe('o painel dos Token.Web()', () => {
 });
 
 /*
-  E as duas telas mostram este painel, e não cada uma o seu.
+  O painel mostra a lista, e a Faixa mostra a mesma coisa presa no tecido.
 
   A redundância é o ponto: o Token.Web() é o prêmio maior, e obrigar alguém a
-  lembrar em qual das duas telas ele mora é cobrar esforço para achar o que já
-  foi conquistado. O que essa trava impede é o desvio que já aconteceu uma vez
-  — alguém escrever de novo a lista numa das telas, e as duas voltarem a
-  divergir no primeiro ajuste.
+  lembrar em qual das telas ele mora é cobrar esforço para achar o que já foi
+  conquistado. No painel ele é esta lista; na Faixa ele é o patch, o button e o
+  patch do ME006, e clicar abre o certificado emoldurado. O que esta trava
+  impede é o desvio que já aconteceu uma vez — alguém escrever de novo a lista
+  numa das telas, e as duas voltarem a divergir no primeiro ajuste.
 */
-describe('as duas telas usam o mesmo painel', () => {
-  const PAGINAS = ['DashboardPage.tsx', 'EstantePage.tsx'];
+describe('quem mostra o Token.Web() não monta uma lista própria', () => {
+  const fonteDe = (pagina: string) => readFileSync(resolve(__dirname, '../../pages', pagina), 'utf8');
 
-  it.each(PAGINAS)('%s desenha o painel compartilhado', pagina => {
-    const fonte = readFileSync(resolve(__dirname, '../../pages', pagina), 'utf8');
-    expect(fonte, `${pagina} não importa PainelDeTokens`).toContain("from '../components/ui/PainelDeTokens'");
-    expect(fonte, `${pagina} não desenha PainelDeTokens`).toContain('<PainelDeTokens');
+  it('o painel desenha o painel compartilhado', () => {
+    const fonte = fonteDe('DashboardPage.tsx');
+    expect(fonte, 'DashboardPage não importa PainelDeTokens').toContain("from '../components/ui/PainelDeTokens'");
+    expect(fonte, 'DashboardPage não desenha PainelDeTokens').toContain('<PainelDeTokens');
   });
 
-  it.each(PAGINAS)('%s não monta uma segunda lista de certificados', pagina => {
-    const fonte = readFileSync(resolve(__dirname, '../../pages', pagina), 'utf8');
+  it('a Faixa abre o certificado emoldurado a partir da peça', () => {
+    expect(fonteDe('FaixaPage.tsx')).toContain('<CertificadoNaParede');
+  });
+
+  it.each(['DashboardPage.tsx', 'FaixaPage.tsx'])('%s não monta uma segunda lista de certificados', pagina => {
     /* `certifications.map` e `tokens.map` eram como as duas listas nasciam.
-       Quem precisar contar continua podendo — o que não pode é desenhar. */
-    expect(fonte.match(/\b(certifications|tokens)\.map\(/), `${pagina} voltou a desenhar a própria lista`)
+       Quem precisar contar ou filtrar continua podendo — o que não pode é
+       desenhar. */
+    expect(fonteDe(pagina).match(/\b(certifications|tokens)\.map\(/), `${pagina} voltou a desenhar a própria lista`)
       .toBeNull();
   });
 });

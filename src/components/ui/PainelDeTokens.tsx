@@ -6,7 +6,7 @@ import { percursoDoCertificado } from '../../lib/certificados';
 import type { Certification } from '../../types';
 
 /*
-  Os Token.Web() de quem está olhando — o mesmo painel no painel e na estante.
+  Os Token.Web() de quem está olhando, na lista do painel inicial.
 
   ── Eram dois, e cada um tinha metade da razão ────────────────────────────
   O do painel dava **espaço** a cada documento: uma fileira larga, com o nome
@@ -19,7 +19,11 @@ import type { Certification } from '../../types';
   a outra encontrava o mesmo prêmio com duas caras. Aqui é um só: o espaço de
   lá, o nome e os emblemas de cá.
 
-  ── Por que repetir o painel nas duas telas ───────────────────────────────
+  A Estante, que desenhava a outra cópia, virou a Faixa — e lá o Token.Web()
+  não é lista: é o patch e o button presos no tecido, que abrem o certificado
+  emoldurado.
+
+  ── Por que ele aparece em duas telas ────────────────────────────────────
   Redundância aqui é economia: o Token.Web() é o prêmio maior, e obrigar
   alguém a lembrar em qual das duas telas ele mora é cobrar esforço para achar
   o que já foi conquistado.
@@ -69,9 +73,9 @@ export default function PainelDeTokens({ certifications, carregando = false }: {
       {carregando ? (
         <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>Procurando...</p>
       ) : tokens.length === 0 ? (
-        /* O convite aparece nas duas telas, e não só na estante: quem ainda
-           não tem nenhum é justamente quem precisa saber que ele existe e de
-           onde vem. */
+        /* O convite aparece aqui, e não só no giz da Faixa: quem ainda não
+           tem nenhum é justamente quem precisa saber que ele existe e de onde
+           vem. */
         <p className="text-sm" style={{ color: 'var(--color-text-dim)' }}>
           O primeiro sai sozinho quando você concluir uma trilha ou uma vereda inteira.
         </p>

@@ -36,6 +36,13 @@ import type { NivelDaInsignia } from './nivelDaInsignia';
   funções que a concessão usa. Uma segunda lista escrita à mão divergiria no
   primeiro percurso novo — a trilha abriria, a insígnia seria concedida, e a
   estante continuaria sem a prateleira dela.
+
+  ── Sem tela, e ainda a régua ─────────────────────────────────────────────
+  A página da Estante virou a Faixa, e `/estante` hoje só redireciona. Este
+  catálogo ficou, porque é ele que se confere contra o banco
+  (`insignias.test.ts`, `estante.test.ts`) e contra a Faixa
+  (`empacotarFaixa.test.ts` cobra uma peça para cada lugar daqui). Os `grupos`
+  eram como a página partia as fileiras longas; a Faixa não os lê.
 */
 
 /** Um lugar na prateleira: pode estar ocupado ou vazio. */
