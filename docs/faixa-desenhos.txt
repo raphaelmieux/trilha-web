@@ -139,8 +139,6 @@ Layout:  igual ao dos outros, porque o nome, o código e a data são
 JÁ RECEBIDO
 =====================================================================
 [x] ME006.png   Mestrado oficial em Ciência e Tecnologia (patch) - 13/11/2026
-[x] Os 13 Mestrados da plataforma - 15/11/2026 (chegaram com 288 x 178 px;
-    servem ao tamanho do button, e uma versão em 970 x 600 deixa a peça
-    nítida em tela de alta densidade)
+[x] Os 13 Mestrados da plataforma - 15/11/2026, em 970 x 600 px
 [x] Certificado do ME006 - 15/11/2026 (arte escura: a plataforma escreve
     nome, código e data em branco)
