@@ -8,7 +8,7 @@ import { veredasAbertas, licoesDaVereda } from '../curriculum/veredas';
 /*
   A lição da vereda abre pelo endereço — `?licao=<id>`.
 
-  É a porta do "Continue de onde parou": o cartão do painel diz qual é a
+  É a porta do "Continue aprendendo": o cartão do painel diz qual é a
   próxima lição e leva até ela. Se a página parar de ler o parâmetro, nada
   estoura — o cartão leva à lista de lições, que é uma tela certa, e a pessoa
   procura de novo a lição que acabou de ler no cartão. É esse o defeito que

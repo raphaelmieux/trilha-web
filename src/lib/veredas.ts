@@ -62,7 +62,7 @@ export interface PercursoDeVereda {
   /*
     Quando a pessoa venceu alguma coisa aqui pela última vez.
 
-    É o que põe a vereda em ordem no "Continue de onde parou" do painel, ao
+    É o que põe a vereda em ordem no "Continue aprendendo" do painel, ao
     lado das trilhas: quem estudou a CC002 ontem e a AP043 na semana passada
     precisa ver a CC002 primeiro. Sai do `created_at` dos mesmos eventos — nada
     novo é gravado, e o histórico de quem já percorreu entra junto.

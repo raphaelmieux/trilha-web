@@ -4665,12 +4665,12 @@ o pedido que o componente faz e com que argumentos, com a propriedade declarada
 no teste para a guarda ter o que escrever. Quem viu o defeito foi o Chromium,
 como no `float` em item de flex e no `\t` colapsado.
 
-**"Continue de onde parou" é uma fila só, e leva à lição.** O painel lista
-tudo o que existe — treze trilhas por família, cinquenta e uma veredas —, e
-quem está no meio de três coisas tinha de achar as três ali e, dentro de cada
-uma, a lição que faltava. A seção do topo mostra só o que está pela metade, da
-mais recente para a mais antiga, trilha e vereda misturadas: separadas, "o que
-eu estava fazendo?" teria duas respostas em dois lugares. A regra mora em
+**"Continue aprendendo" é uma fila só, e leva à lição.** O painel lista tudo
+o que existe — treze trilhas por família, cinquenta e uma veredas —, e quem
+está no meio de três coisas tinha de achar as três ali e, dentro de cada uma,
+a lição que faltava. A seção do topo mostra o que está pela metade, da mais
+recente para a mais antiga, trilha e vereda misturadas: separadas, "o que eu
+estava fazendo?" teria duas respostas em dois lugares. A regra mora em
 `lib/continuar.ts`, e a ordem sai do que já é gravado — o `updated_at` da
 matrícula na trilha, o `created_at` do evento mais recente na vereda.
 
@@ -4681,6 +4681,29 @@ vereda, que abre lição por estado, o endereço ganhou `?licao=<id>`, lido só 
 montagem e tirado ao sair: sem isso, recarregar reabriria a lição de que a
 pessoa acabou de sair. E a seção some enquanto o painel carrega, porque
 desenhar com metade dos dados poria a ordem errada na tela por um instante.
+
+**E o grupo parado oferece o próximo passo.** Só o que está pela metade
+deixava de fora quem terminou uma coisa e não começou a seguinte: concluir a
+CC-ES002 tirava as veredas de Escritório inteiras da seção, e a CC-ES003,
+aberta e esperando, só se achava rolando o catálogo — a seção encolhia
+justamente para quem estava avançando. Cada grupo — as famílias de trilha e as
+de vereda, **separadas**, porque a trilha de Computação pela metade não diz
+nada sobre as veredas de Computação — que não tem nada em andamento oferece a
+primeira que dá para começar: liberada, nem começada nem concluída, na ordem
+do grupo. Grupo com algo pela metade não oferece nada: dois caminhos para o
+mesmo grupo dividiriam a pessoa. E "liberada" é a regra da tela inteira — o
+pré-requisito e as veredas essenciais na trilha, as exigidas na vereda —,
+porque o cartão que diz "Começar" não pode abrir num cadeado.
+
+O cartão de começar é menor e não tem barra: uma fileira de trilhos em 0% diria
+o que a pessoa não fez, que é o contrário de convite. Quem nunca começou nada
+vê a seção também, com um começo por grupo — é quem mais precisa de por onde
+começar.
+
+**O grupo de HM079 e HM090 se chama Design.** Na classificação oficial a área
+é "Artes e Habilidades Manuais", e é de lá que vem o HM do código; no painel o
+grupo se lê ao lado das veredas de Design, que preparam para essas duas, e dois
+nomes para o mesmo assunto na mesma tela fariam parecer dois assuntos.
 
 **Link externo é sempre `<a target="_blank">`**, pelo componente `LinkExterno`.
 `window.open` funciona no computador e falha no celular.
@@ -5957,7 +5980,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/ui/ExplicacaoDaInsignia.test.tsx` | cartão de explicação desenhado dentro de quem o chamou, onde o `backdrop-filter` prende o `fixed` |
 | `src/lib/relatorioEmPdf.test.ts` | conquista sem data dizendo-se a primeira, ou sumário reservando menos folhas do que tem entradas |
 | `src/lib/continuar.test.ts` | trilha terminada na fila, próxima lição que pula a que faltou, ou a mais antiga no topo |
-| `src/components/ContinueDeOndeParou.test.tsx` | seção que aparece vazia ou antes de os dados chegarem, ou cartão que não leva à próxima lição |
+| `src/lib/continuar.test.ts` | grupo parado sem o próximo passo, próximo passo trancado, ou grupo de trilha e de vereda de mesmo nome contados como um |
+| `src/components/ContinueAprendendo.test.tsx` | seção que aparece antes de os dados chegarem, cartão que não leva à próxima lição, ou grupo com algo pela metade ganhando também um de começar |
 | `src/pages/VeredaPage.test.tsx` | `?licao=` ignorado, que manda o "Continuar" para a lista, ou deixado no endereço depois de sair |
 | `src/components/AoTopoAoNavegar.test.tsx` | tela que abre na rolagem da anterior, com o título acima da dobra |
 | `src/components/AoTopoAoNavegar.test.tsx` | troca de página que desliza, ou que vai ao topo quando só a busca muda |

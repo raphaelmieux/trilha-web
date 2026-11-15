@@ -13,8 +13,9 @@ import type { ProgressMap } from '../lib/progress';
 
   A regra mora em `lib/continuar.ts` e tem as travas dela. Aqui fica o que só a
   tela pode errar: aparecer vazia para quem nunca começou, aparecer antes de os
-  dados chegarem (com a ordem errada por um instante), e o cartão levar a
-  outro lugar que não a próxima lição.
+  dados chegarem (com a ordem errada por um instante), o cartão levar a outro
+  lugar que não a próxima lição, e o grupo com algo pela metade ganhar também
+  um cartão de começar.
 */
 
 declare global {
@@ -29,6 +30,7 @@ const estado = vi.hoisted(() => ({
 
 vi.mock('../hooks/useVeredas', () => ({
   useVeredas: () => ({
+    andamento: [],
     percursoDe: (id: string) => estado.percurso[id],
     concluida: () => true,
     carregando: estado.carregandoVeredas,
@@ -38,7 +40,7 @@ vi.mock('../hooks/useLicoesConcluidas', () => ({
   useLicoesConcluidas: () => ({ licoesFeitas: new Set<string>(), loading: false }),
 }));
 
-const { default: ContinueDeOndeParou } = await import('./ContinueDeOndeParou');
+const { default: ContinueAprendendo } = await import('./ContinueAprendendo');
 
 const trilha = getOpenSpecialties()[0];
 const vereda = veredasAbertas().find(v => licoesDaVereda(v).length > 1)!;
@@ -51,7 +53,7 @@ const desenhar = (props: { ultimaAtividade?: Record<string, string>; carregando?
   act(() => {
     root.render(
       <MemoryRouter>
-        <ContinueDeOndeParou userId="u1" progress={props.progress ?? {}}
+        <ContinueAprendendo userId="u1" progress={props.progress ?? {}}
           ultimaAtividade={props.ultimaAtividade ?? {}} liberada={() => true}
           carregando={props.carregando ?? false} />
       </MemoryRouter>,
@@ -74,10 +76,22 @@ afterEach(() => {
 
 const links = () => [...container.querySelectorAll('a')].map(a => a.getAttribute('href'));
 
-describe('Continue de onde parou', () => {
-  it('não aparece para quem não começou nada', () => {
+const titulos = () => [...container.querySelectorAll('h3')].map(h => h.textContent);
+const cartaoDe = (code: string) =>
+  [...container.querySelectorAll('a')].find(a => a.textContent?.includes(code));
+
+describe('Continue aprendendo', () => {
+  /* Quem nunca começou nada é quem mais precisa de por onde começar: a seção
+     não some, oferece a primeira de cada grupo. */
+  it('a quem não começou nada, oferece um começo por grupo e nada em andamento', () => {
     desenhar();
-    expect(container.textContent).toBe('');
+    expect(container.textContent).toContain('Continue aprendendo');
+    expect(titulos()).toContain('Próximo passo em cada grupo');
+    expect(titulos()).not.toContain('Em andamento');
+    expect(cartaoDe(trilha.code)?.getAttribute('href')).toMatch(new RegExp(`^/licao/${trilha.code}/`));
+    expect(cartaoDe(vereda.code)?.getAttribute('href'))
+      .toBe(`/vereda/${vereda.code}?licao=${encodeURIComponent(primeira.id)}`);
+    expect(container.textContent).toContain('Começar');
   });
 
   it('não aparece enquanto o painel carrega, mesmo com algo pela metade', () => {
@@ -86,12 +100,23 @@ describe('Continue de onde parou', () => {
     expect(container.textContent).toBe('');
   });
 
-  it('leva a vereda direto à próxima lição', () => {
+  it('leva a vereda pela metade direto à próxima lição', () => {
     estado.percurso = { [vereda.id]: { ...percursoVazio(), licoes: new Set([primeira.id]) } };
     desenhar();
-    expect(container.textContent).toContain('Continue de onde parou');
+    expect(titulos()).toContain('Em andamento');
     expect(container.textContent).toContain(segunda.titulo);
-    expect(links()).toEqual([`/vereda/${vereda.code}?licao=${encodeURIComponent(segunda.id)}`]);
+    expect(links()[0]).toBe(`/vereda/${vereda.code}?licao=${encodeURIComponent(segunda.id)}`);
+  });
+
+  /* O grupo da vereda pela metade já tem o próximo passo no cartão dela; um
+     segundo cartão de "Começar" no mesmo grupo dividiria a pessoa. */
+  it('não oferece começar no grupo que já tem algo pela metade', () => {
+    estado.percurso = { [vereda.id]: { ...percursoVazio(), licoes: new Set([primeira.id]) } };
+    desenhar();
+    const doGrupo = [...container.querySelectorAll('a')]
+      .filter(a => a.textContent?.includes(`Vereda de ${vereda.familia}`));
+    expect(doGrupo).toHaveLength(1);
+    expect(doGrupo[0].textContent).toContain('Continuar');
   });
 
   it('põe a mais recente primeiro, trilha e vereda misturadas', () => {

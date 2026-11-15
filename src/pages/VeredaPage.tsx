@@ -77,7 +77,7 @@ export default function VeredaPage() {
   /*
     A lição pode chegar aberta pelo endereço — `?licao=<id>`.
 
-    É a porta do "Continue de onde parou", no painel: o cartão diz qual é a
+    É a porta do "Continue aprendendo", no painel: o cartão diz qual é a
     próxima lição, e levar a pessoa à lista de lições para ela procurar de novo
     a que acabou de ler no cartão seria o caminho que o cartão existe para
     encurtar. Só a montagem lê o parâmetro; depois a lição volta a abrir e

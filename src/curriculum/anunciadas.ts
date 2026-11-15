@@ -80,7 +80,13 @@ export const ap064 = anunciada('AP064', 'Web Designer, Avançado', 'avancado', '
   'AP063');
 
 /*
-  Artes e Habilidades Manuais: a primeira família que não é de computação.
+  Design: a primeira família que não é de computação.
+
+  O nome do grupo é Design, e não "Artes e Habilidades Manuais", que é a área
+  da classificação oficial de onde as duas vêm (o HM do código). No painel o
+  grupo se lê ao lado das famílias de vereda, e a de Design é exatamente a que
+  prepara para estas duas: dois nomes para o mesmo assunto, na mesma tela,
+  fariam parecer que são dois assuntos.
 
   HM079 e HM090 são especialidades do clube, com ficha oficial própria, e o
   assunto delas é desenho e arte feitos no computador — não a máquina, e não o
@@ -94,10 +100,10 @@ export const ap064 = anunciada('AP064', 'Web Designer, Avançado', 'avancado', '
   entre si, e a ficha oficial não gradua — então é ordenação de vitrine, e nada
   mais, como diz a regra escrita no topo deste arquivo.
 */
-export const hm079 = anunciada('HM079', 'Desenho Vetorial', 'intermediario', 'Artes e Habilidades Manuais',
+export const hm079 = anunciada('HM079', 'Desenho Vetorial', 'intermediario', 'Design',
   'Desenho que se amplia sem perder qualidade, feito em programa vetorial. Os requisitos serão publicados quando a trilha abrir.');
 
-export const hm090 = anunciada('HM090', 'Arte Digital', 'intermediario', 'Artes e Habilidades Manuais',
+export const hm090 = anunciada('HM090', 'Arte Digital', 'intermediario', 'Design',
   'As formas da arte feita por computador, e dois projetos de autoria própria. Os requisitos serão publicados quando a trilha abrir.');
 
 export const anunciadas = [ap049, ap052, ap063, ap064, hm079, hm090];

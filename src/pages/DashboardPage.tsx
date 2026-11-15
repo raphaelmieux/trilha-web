@@ -17,7 +17,7 @@ import Emblema from '../components/ui/Emblema';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
 import EstanteDeInsignias from '../components/ui/EstanteDeInsignias';
 import SecaoDeVeredas from '../components/SecaoDeVeredas';
-import ContinueDeOndeParou from '../components/ContinueDeOndeParou';
+import ContinueAprendendo from '../components/ContinueAprendendo';
 import { INSIGNIAS } from '../lib/insignias';
 import type { ProgressMap } from '../lib/progress';
 import { Lock, Award, Flame, Star, Clock, FileText, Medal, HardHat } from 'lucide-react';
@@ -190,8 +190,8 @@ export default function DashboardPage() {
 
   /* A última atividade de cada trilha é o `updated_at` da matrícula: toda
      lição e todo laboratório passam por `updateEnrollmentActivity`, e o
-     gatilho do banco carimba a hora. É o que ordena o "Continue de onde
-     parou" — `last_activity_date` ao lado só sabe o dia, e duas trilhas
+     gatilho do banco carimba a hora. É o que ordena o "Continue
+     aprendendo" — `last_activity_date` ao lado só sabe o dia, e duas trilhas
      estudadas na mesma tarde empatariam. */
   const ultimaAtividade: Record<string, string> = {};
   for (const m of enrollments) {
@@ -232,9 +232,10 @@ export default function DashboardPage() {
         posicoes={posicoes}
       />
 
-      {/* Antes das listas: elas mostram tudo o que existe, e esta mostra só o
-          que a pessoa deixou pela metade — ver ContinueDeOndeParou. */}
-      <ContinueDeOndeParou
+      {/* Antes das listas: elas mostram tudo o que existe, e esta mostra o
+          que a pessoa deixou pela metade e o próximo passo de cada grupo
+          parado — ver ContinueAprendendo. */}
+      <ContinueAprendendo
         userId={profile.id}
         progress={progress}
         ultimaAtividade={ultimaAtividade}
