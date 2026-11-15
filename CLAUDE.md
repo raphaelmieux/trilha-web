@@ -4778,6 +4778,14 @@ relatório é a redação guiada com `projeto` e `fichas`: toda etapa de fato ci
 ficha, cópia sem aspas trava a etapa, e as referências entram sozinhas e não
 contam palavras.
 
+**A ficha escolhe entre as sete perguntas, e não só entre as marcadas.** A
+lista oferecia só o recorte, e quem chegava ao trecho antes de marcar — ou
+tinha marcado outras — via "Escolha…" e mais nada: a ficha não se guardava, e
+o aviso que explicava aparecia no painel de tarefas, longe, e sumia. Hoje as
+marcadas vêm num grupo em cima e as outras embaixo; o grupo é a escolha da
+pessoa, e não a certa, então não entrega o recorte. Ficha de pergunta fora do
+recorte se guarda e não conta para a tarefa das fichas.
+
 **O diagrama chega com uma seta ao contrário.** Monitor para CPU é o erro de
 quem desenha isto pela primeira vez, e é ele que a simulação mostra parando. A
 paleta lista as peças pelo nome, e não por papel: agrupar entrada e saída

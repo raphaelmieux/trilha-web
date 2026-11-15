@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft, Search, Globe, Home, NotebookPen, BookmarkPlus, Trash2, RotateCcw, FileCheck2, X, Lock,
@@ -115,8 +115,22 @@ export default function PesquisaWebLab({ specialtyCode, lessonCode, lessonTitle,
   const comecarFicha = (paragrafoId: string) => {
     setRascunho({ paragrafoId, pergunta: '', anotacao: '', desmente: false });
     setVista('caderno');
-    if (c.recorte.length === 0) setAviso('Marque antes as perguntas do caderno: a ficha diz qual delas o trecho responde.');
   };
+
+  /*
+    A ficha nova nasce no pé do caderno, abaixo das perguntas e da avaliação:
+    num notebook ela abria com a escolha da pergunta na beirada da tela e o
+    botão de guardar fora dela. Rola até ela e põe o foco na escolha, que é o
+    primeiro passo. `scrollIntoView` falta no jsdom, daí o `?.`.
+  */
+  const fichaNovaRef = useRef<HTMLElement>(null);
+  const escolhaRef = useRef<HTMLSelectElement>(null);
+  const trechoDoRascunho = rascunho?.paragrafoId;
+  useEffect(() => {
+    if (!trechoDoRascunho) return;
+    fichaNovaRef.current?.scrollIntoView?.({ block: 'nearest' });
+    escolhaRef.current?.focus({ preventScroll: true });
+  }, [trechoDoRascunho]);
 
   const problemaDoRascunho = rascunho ? problemaDaAnotacao(rascunho) : null;
 
@@ -219,7 +233,17 @@ export default function PesquisaWebLab({ specialtyCode, lessonCode, lessonTitle,
     </div>
   );
 
-  const perguntasDoRecorte = PERGUNTAS.filter(p => c.recorte.includes(p.id));
+  /*
+    A escolha da ficha oferece as sete perguntas, sempre, com as marcadas em
+    cima. Ela oferecia só as marcadas, e quem chegava ao trecho antes de marcar
+    — ou tinha marcado outras — abria uma lista com "Escolha…" e nada mais: a
+    ficha não se guardava, e o aviso que explicava aparecia longe, no painel de
+    tarefas, e sumia. Separar em dois grupos pelo que a pessoa marcou não
+    entrega o recorte: o grupo é a escolha dela, e não a certa. Ficha de
+    pergunta fora do recorte se guarda e não conta para a tarefa das fichas.
+  */
+  const perguntasMarcadas = PERGUNTAS.filter(p => c.recorte.includes(p.id));
+  const perguntasDesmarcadas = PERGUNTAS.filter(p => !c.recorte.includes(p.id));
 
   return (
     <LaboratorioEmTelaCheia
@@ -350,15 +374,24 @@ export default function PesquisaWebLab({ specialtyCode, lessonCode, lessonTitle,
             {rascunho && (() => {
               const achado = acharParagrafo(rascunho.paragrafoId);
               return (
-                <section className="pw-ficha-nova" aria-label="Nova ficha">
+                <section ref={fichaNovaRef} className="pw-ficha-nova" aria-label="Nova ficha">
                   <h3 className="pw-h3">Nova ficha</h3>
                   <blockquote className="pw-trecho">{achado?.paragrafo.texto}</blockquote>
                   <p className="pw-dica">Fonte: {achado?.pagina.site}</p>
                   <label className="pw-campo">
                     Qual pergunta este trecho responde?
-                    <select value={rascunho.pergunta} onChange={e => setRascunho({ ...rascunho, pergunta: e.target.value as PerguntaId | '' })}>
+                    <select ref={escolhaRef} value={rascunho.pergunta} onChange={e => setRascunho({ ...rascunho, pergunta: e.target.value as PerguntaId | '' })}>
                       <option value="">Escolha…</option>
-                      {perguntasDoRecorte.map(p => <option key={p.id} value={p.id}>{p.texto}</option>)}
+                      {perguntasMarcadas.length > 0 && (
+                        <optgroup label="Perguntas que você marcou">
+                          {perguntasMarcadas.map(p => <option key={p.id} value={p.id}>{p.texto}</option>)}
+                        </optgroup>
+                      )}
+                      {perguntasDesmarcadas.length > 0 && (
+                        <optgroup label={perguntasMarcadas.length > 0 ? 'As outras perguntas' : 'Perguntas do caderno'}>
+                          {perguntasDesmarcadas.map(p => <option key={p.id} value={p.id}>{p.texto}</option>)}
+                        </optgroup>
+                      )}
                     </select>
                   </label>
                   <label className="pw-campo">
