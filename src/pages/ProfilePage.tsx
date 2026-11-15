@@ -476,7 +476,7 @@ export default function ProfilePage() {
       </div>
 
       {/*
-        As conquistas ficam na Estante, e aqui só o caminho até ela.
+        As conquistas ficam na Faixa, e aqui só o caminho até ela.
 
         Esta seção listava as insígnias em tamanho grande, e virou a terceira
         cópia da mesma coisa no dia em que a Estante nasceu — painel, perfil e
@@ -486,10 +486,10 @@ export default function ProfilePage() {
         certificado.
 
         O que fica é o número e a porta. Some o número de quem ainda não tem
-        nenhuma seria esconder justamente de quem a estante deveria alcançar.
+        nenhuma seria esconder justamente de quem a Faixa deveria alcançar.
       */}
       <Link
-        to="/estante"
+        to="/faixa"
         className="card p-6 flex items-center justify-between gap-3 transition hover:opacity-80"
       >
         <span className="font-bold flex items-center gap-2">
@@ -499,8 +499,8 @@ export default function ProfilePage() {
           {badgesLoading
             ? 'contando...'
             : badges.length === 0
-              ? 'ver a estante'
-              : `${badges.length} na estante`}
+              ? 'ver a faixa'
+              : `${badges.length} na faixa`}
         </span>
       </Link>
 

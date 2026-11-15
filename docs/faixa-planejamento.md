@@ -567,8 +567,10 @@ seção 8 ("ele não emite Token.Web()").
 3. **A página da Faixa** — o empacotador como função pura testada, os
    materiais do P0, a régua, o pop-up com o certificado emoldurado (baixar e
    imprimir), os satélites, e a emissão do Token.Web() do ME006. Entregue em
-   15/11/2026, em `/faixa`; a Estante continua no menu até a etapa 4. As
+   15/11/2026, em `/faixa`. As
    curiosidades aparecem com a face provisória até a arte de cada uma chegar
    em `public/assets/pins/`, e trocam sozinhas quando o arquivo existir.
 4. **Rota e nome** — `/faixa`, com `/estante` redirecionando, menu e cartão do
-   painel.
+   painel. Entregue em 15/11/2026: a página da Estante saiu, e o menu, o
+   contador e o cartão de insígnias do painel e o cartão do perfil levam à
+   Faixa.

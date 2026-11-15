@@ -461,6 +461,13 @@ escadas, dos laboratórios e das curiosidades, numa faixa verde que corre na
 horizontal. Todo lugar existe desde o primeiro dia, as anunciadas inclusive —
 a largura é o que há para fazer —, e vai se acendendo.
 
+Ela substituiu a página da Estante, e `/estante` continua respondendo com um
+redirecionamento para `/faixa`, pelo motivo do `/admin`: o aviso de conquista,
+o favorito e o botão voltar ainda apontam para lá. Link escrito numa tela, não:
+ele aponta para o endereço de hoje, e `App.test.tsx` reprova o que voltar a
+escrever `/estante`. `lib/estante.ts` ficou sem tela e continua sendo a régua —
+o catálogo de lugares que se confere contra o banco e contra a Faixa.
+
 Três peças, e nenhuma sabe de tela. `catalogoDaFaixa.ts` monta as unidades a
 partir do registro, sem lista escrita à mão: trilha nova traz o patch e os
 laboratórios, anunciada traz os previstos. `empacotarFaixa.ts` prende cada
@@ -5941,7 +5948,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/insignias.test.ts` | laboratório de vereda aberta sem a sua insígnia semeada, ou semeada diferente do catálogo |
 | `src/lib/insignias.test.ts` | concessão retroativa que liga o evento de um laboratório à insígnia de outro |
 | `src/lib/vencerLicaoDaVereda.test.ts` | lição de vereda vencida que não avalia as insígnias, deixando o prêmio para a próxima trilha |
-| `src/pages/EstantePage.test.tsx` | fileira partida cujo grupo não abre, abre a vereda errada, ou abre todas de uma vez |
+| `src/App.test.tsx` | `/estante` que deixa de levar à Faixa, ou tela que volta a escrever o link do endereço antigo |
 | `src/labs/modeloInicial.test.ts` | laboratório de imagens que abre já atendendo ao requisito |
 | `src/labs/desafioDeHtml.test.ts` | desafio de HTML que abre com verificação já verde, ou sem passo a passo |
 | `src/labs/metasDaAp044.test.ts` | tarefa do laboratório de estilos que nasce verde, ou que ninguém consegue vencer |
