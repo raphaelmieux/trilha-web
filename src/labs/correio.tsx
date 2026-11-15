@@ -111,9 +111,12 @@ export const CSS_DO_CORREIO = `
 .co-copias { padding: 0 14px; color: #5F6368; font-size: 12.5px; background: none; border: none; cursor: pointer; }
 .co-texto {
   flex: 1; min-height: 130px; border: none; padding: 12px 14px; resize: none;
-  font: inherit; color: #202124; background: transparent;
+  font: inherit; color: #202124; background: transparent; overflow-y: auto;
 }
 .co-texto:focus { outline: none; }
+/* O corpo é o campo com a ortografia da plataforma, e o convite cinza dele
+   pousa no branco da janela, e não no fundo escuro da plataforma. */
+.co-texto[data-vazio]::before { color: #5F6368; }
 .co-assinatura { padding: 0 14px 8px; color: #5F6368; font-size: 12.5px; white-space: pre-wrap; }
 .co-historico {
   margin: 0 14px 10px; padding-left: 10px; border-left: 2px solid #DADCE0;

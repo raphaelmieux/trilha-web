@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, type CSSProperties, type RefObject } from 'react';
 import { useOrtografiaNoElemento } from '../../labs/ortografiaNoElemento';
 
 /*
@@ -40,15 +40,16 @@ const MODO_TEXTO = (() => {
  * `innerText` as dá em todo navegador, seja `\n` seja `<br>`; o jsdom não tem
  * `innerText`, e lá o `textContent` diz o mesmo porque não há `<br>`.
  */
-function textoDoCampo(el: HTMLElement): string {
+function textoDoCampo(el: HTMLElement, linhaUnica = false): string {
   const bruto = typeof el.innerText === 'string' ? el.innerText : (el.textContent ?? '');
   /* O navegador deixa um `<br>` sozinho num campo esvaziado, e o `innerText`
      o lê como uma quebra: o campo vazio diria que tem uma linha. */
-  return bruto === '\n' ? '' : bruto.replace(/\u00a0/g, ' ');
+  const texto = bruto === '\n' ? '' : bruto.replace(/\u00a0/g, ' ');
+  return linhaUnica ? texto.replace(/\r?\n/g, ' ') : texto;
 }
 
 export default function CampoComOrtografia({
-  value, onChange, onBlur, rows = 4, className = '', placeholder, rotulo,
+  value, onChange, onBlur, rows = 4, className = '', placeholder, rotulo, linhaUnica = false, estilo,
 }: {
   value: string;
   onChange: (texto: string) => void;
@@ -57,44 +58,69 @@ export default function CampoComOrtografia({
   className?: string;
   placeholder?: string;
   rotulo?: string;
+  /** Substitui o `<input>`: nenhuma quebra de linha entra, e o elemento é `<span>`. */
+  linhaUnica?: boolean;
+  /** A altura mínima sai de `rows`; com `rows={0}`, ela é da folha de quem usa. */
+  estilo?: CSSProperties;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLElement>(null);
   const ortografia = useOrtografiaNoElemento(ref);
 
   useLayoutEffect(() => {
     const el = ref.current;
-    if (el && textoDoCampo(el) !== value) el.textContent = value;
-  }, [value]);
+    if (el && textoDoCampo(el, linhaUnica) !== value) el.textContent = value;
+  }, [value, linhaUnica]);
+
+  /* A quebra pedida pelo teclado do celular não passa pelo `keydown` com a
+     tecla Enter, e sim pelo `beforeinput`; o React não entrega o `inputType`
+     dele, então a escuta é a do próprio elemento. */
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !linhaUnica) return;
+    const recusar = (ev: InputEvent) => {
+      if (ev.inputType === 'insertParagraph' || ev.inputType === 'insertLineBreak') ev.preventDefault();
+    };
+    el.addEventListener('beforeinput', recusar);
+    return () => el.removeEventListener('beforeinput', recusar);
+  }, [linhaUnica]);
+
+  const Elemento = linhaUnica ? 'span' : 'div';
+  const altura = !linhaUnica && rows > 0 ? { minHeight: `calc(${rows * 1.5}em + 1.25rem)` } : undefined;
 
   return (
     <>
       {ortografia.menu}
-      <div
-        ref={ref}
+      <Elemento
+        ref={ref as RefObject<HTMLDivElement & HTMLSpanElement>}
         className={`campo-com-ortografia ${className}`}
         contentEditable={MODO_TEXTO}
         suppressContentEditableWarning
         spellCheck={false}
         role="textbox"
-        aria-multiline="true"
+        aria-multiline={linhaUnica ? undefined : 'true'}
         aria-label={rotulo ?? placeholder}
         aria-placeholder={placeholder}
         data-placeholder={placeholder}
         data-vazio={value === '' ? 'sim' : undefined}
-        style={{ minHeight: `calc(${rows * 1.5}em + 1.25rem)` }}
-        onInput={ev => onChange(textoDoCampo(ev.currentTarget))}
+        style={{ ...altura, ...estilo }}
+        onInput={ev => onChange(textoDoCampo(ev.currentTarget, linhaUnica))}
         onBlur={onBlur}
         onContextMenu={ortografia.aoMenu}
-        /* Onde só existe o modo rico, o texto colado chega puro e o Enter
-           quebra a linha em vez de abrir um bloco que o texto não guarda. */
-        onPaste={MODO_TEXTO === 'true' ? ev => {
+        /* O texto colado chega puro onde só existe o modo rico, e sem quebra
+           de linha no campo de uma linha. */
+        onPaste={MODO_TEXTO === 'true' || linhaUnica ? ev => {
           ev.preventDefault();
-          document.execCommand('insertText', false, ev.clipboardData.getData('text/plain'));
+          const colado = ev.clipboardData.getData('text/plain');
+          document.execCommand('insertText', false, linhaUnica ? colado.replace(/\r?\n/g, ' ') : colado);
         } : undefined}
-        onKeyDown={MODO_TEXTO === 'true' ? ev => {
+        onKeyDown={ev => {
+          if (ev.key === 'Enter' && linhaUnica) { ev.preventDefault(); return; }
+          if (MODO_TEXTO !== 'true') return;
+          /* No modo rico o Enter quebraria a linha abrindo um bloco que o
+             texto não guarda, e o Ctrl+B escreveria um <b>. */
           if (ev.key === 'Enter') { ev.preventDefault(); document.execCommand('insertLineBreak'); }
           if ((ev.ctrlKey || ev.metaKey) && ['b', 'i', 'u'].includes(ev.key.toLowerCase())) ev.preventDefault();
-        } : undefined}
+        }}
       />
     </>
   );

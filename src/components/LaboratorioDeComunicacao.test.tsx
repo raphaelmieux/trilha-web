@@ -80,6 +80,14 @@ const porRotulo = (r: string) =>
 /** `value = x` não chega ao React: ele descarta o evento quando o valor bate. */
 function escrever(campo: HTMLElement | null | undefined, valor: string) {
   expect(campo, 'o campo não está na tela').toBeTruthy();
+  /* O corpo da mensagem é o campo com a ortografia da plataforma. */
+  if (campo!.hasAttribute('contenteditable')) {
+    act(() => {
+      campo!.textContent = valor;
+      campo!.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    return;
+  }
   const c = campo as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
   const proto = c instanceof HTMLSelectElement ? HTMLSelectElement.prototype
     : c instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype

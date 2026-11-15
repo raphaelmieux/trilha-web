@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CAMADA_DO_MENU, CAMADA_DO_VEU_DO_MENU } from './camadas';
 import { useOrtografiaNoElemento } from './ortografiaNoElemento';
+import CampoComOrtografia from '../components/ui/CampoComOrtografia';
 import { Copy, Link2, Music, Play, Plus, Trash2 } from 'lucide-react';
 import {
   CSS_OFFICE, BarraDeTituloDoOffice, GuiasDoOffice, ModosDeExibicao, ZoomDoOffice, AcessibilidadeDoStatus,
@@ -121,9 +122,11 @@ export const CSS_POWERPOINT = `
 }
 .pp-palco .pp-slide { max-width: 620px; }
 .pp-titulo-campo {
+  display: block; outline: none;
   background: transparent; border: 1px dashed transparent; width: 100%;
   font: inherit; color: inherit; text-align: inherit; padding: 1px 3px;
 }
+.pp-titulo-campo[data-vazio]::before { color: #7A7A7A; }
 .pp-titulo-campo:hover { border-color: #A6A6A6; }
 /* O espaço reservado do corpo: tracejado ao passar o ponteiro, contínuo com o
    cursor dentro, e o convite cinza enquanto estiver vazio — como no PowerPoint. */
@@ -575,11 +578,13 @@ export function FolhaDoSlide({
           textAlign: s.layout === 'titulo' ? 'center' : 'left',
         }}>
           {aoEscreverNoTitulo ? (
-            <input
-              className="pp-titulo-campo" value={s.titulo}
+            /* O título passa pelo corretor da plataforma, como o corpo:
+               um `<input>` só conheceria o dicionário do navegador. */
+            <CampoComOrtografia
+              linhaUnica className="pp-titulo-campo" value={s.titulo}
               placeholder="Clique para adicionar um título"
-              aria-label={rotuloDoTitulo}
-              onChange={(ev) => aoEscreverNoTitulo(ev.target.value)}
+              rotulo={rotuloDoTitulo}
+              onChange={aoEscreverNoTitulo}
             />
           ) : (
             s.titulo || (mini ? '' : 'Clique para adicionar um título')

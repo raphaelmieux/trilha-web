@@ -420,6 +420,35 @@ describe('o corpo do slide sublinha e sugere com o corretor da plataforma', () =
     O dicionário é um só: a palavra acrescentada em qualquer simulação tira o
     vermelho do slide que já está desenhado, sem recarregar.
   */
+  /*
+    O título do slide é o campo de uma linha com o mesmo corretor: um `<input>`
+    só receberia o vermelho do navegador, que não conhece o dicionário pessoal.
+  */
+  it('o título também sublinha com a plataforma, e nenhuma quebra de linha entra nele', () => {
+    const titulos: string[] = [];
+    function ComTitulo() {
+      const [slide, setSlide] = useState<Slide>({ ...slideNovo('s1', 'titulo-conteudo'), titulo: 'Levar acampamneto', topicos: [] });
+      return (
+        <FolhaDoSlide slide={slide} mestre={mestreDoModelo('branco')} rotuloDoTitulo="Título do slide 1"
+          aoEscreverNoTitulo={t => { titulos.push(t); setSlide(x => ({ ...x, titulo: t })); }} />
+      );
+    }
+    act(() => { root.render(<ComTitulo />); });
+    const titulo = container.querySelector<HTMLElement>('[aria-label="Título do slide 1"]')!;
+    expect(titulo.tagName, 'dentro do parágrafo do título, um div seria HTML inválido').toBe('SPAN');
+    expect(titulo.getAttribute('spellcheck')).toBe('false');
+    expect(palavrasPintadas()).toEqual(['acampamneto']);
+
+    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    act(() => { titulo.dispatchEvent(enter); });
+    expect(enter.defaultPrevented, 'o Enter abriu uma segunda linha no título').toBe(true);
+    act(() => {
+      titulo.textContent = 'Levar\nlanterna';
+      titulo.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(titulos[titulos.length - 1]).toBe('Levar lanterna');
+  });
+
   it('Adicionar ao Dicionário vale para a plataforma, e o slide desenhado acompanha', () => {
     montar(['Brasilândia']);
     expect(palavrasPintadas()).toEqual(['Brasilândia']);
