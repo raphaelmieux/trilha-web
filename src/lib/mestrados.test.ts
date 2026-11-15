@@ -31,3 +31,27 @@ describe('o ME006 nos dois lados', () => {
     expect(coresDoCertificado('ME006').nome).toEqual([255, 255, 255]);
   });
 });
+
+/*
+  Quem já tinha fechado as trilhas antes de os Mestrados existirem recebe pela
+  migration, e a lista de cada Mestrado está escrita lá em SQL. É a terceira
+  cópia da mesma conta — a do aplicativo, a da Edge Function e esta —, e uma
+  trilha a mais numa família faria a migration conceder com menos do que o
+  aplicativo pede, ou o contrário.
+*/
+describe('a concessão retroativa usa as listas do aplicativo', () => {
+  const sql = readFileSync('supabase/migrations/20261115130000_mestrados_de_quem_ja_tinha.sql', 'utf8');
+  const linhas = [...sql.matchAll(/\('(mestrado_[a-z0-9_]+)', ARRAY\[([^\]]*)\], (\d+)\)/g)];
+
+  it('acha as linhas', () => {
+    expect(linhas.length, 'a trava não achou nenhuma linha na migration').toBeGreaterThanOrEqual(3);
+  });
+
+  it.each(linhas.map(l => [l[1], l[2], Number(l[3])] as const))('%s', (code, lista, minimo) => {
+    const m = mestrados().find(x => x.code === code);
+    expect(m, `${code} não existe em mestrados.ts`).toBeDefined();
+    const trilhas = [...lista.matchAll(/'([A-Z]{2}\d{3})'/g)].map(x => x[1]);
+    expect([...trilhas].sort()).toEqual([...m!.trilhas].sort());
+    expect(minimo).toBe(m!.minimo);
+  });
+});
