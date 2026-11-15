@@ -375,26 +375,15 @@ export function alcancou(escada: Escada, d: DegrauDaEscada, r: ResumoDoDesbravad
 }
 
 /*
-  As insígnias de topo de antes — edição antiga.
+  Os topos de antes — a "edição antiga" — se aposentaram.
 
   Quando o sétimo degrau virou "tudo", os sete topos com número no nome
-  saíram das escadas. Quem já tinha algum continua com ele, porque insígnia
-  não se tira; mas nenhuma escada mais o tem, e ninguém mais o ganha. A Faixa
-  os mostra num cacho próprio, só para quem os tem, sem lugar vazio para os
-  outros: um lugar vazio prometeria uma conquista que não existe mais.
-
-  O nome, a descrição, o ícone e a classe são os que o banco guarda, e
-  `insignias.test.ts` confere tupla a tupla.
+  (`requisitos_192`, `licoes_110`, `modulos_45`, `laboratorios_28`,
+  `semerro_90`, `tokens_40`, `xp_12000`) saíram das escadas e ficaram um tempo
+  no catálogo só para quem os tinha. Não acrescentavam nada à Faixa, e a
+  `20261115170000_aposenta_a_edicao_antiga` os apagou, com as conquistas.
+  `escadasAteOFim.test.ts` cobra que nenhum volte.
 */
-export const EDICAO_ANTIGA: readonly { code: string; nome: string; descricao: string; icone: string; classe: NivelDaInsignia; familia: string }[] = [
-  { code: 'requisitos_192', nome: 'Cento e noventa e dois Requisitos', descricao: 'Cumpriu cento e noventa e dois requisitos oficiais.', icone: 'footprints', classe: 'lider', familia: 'Requisitos' },
-  { code: 'licoes_110', nome: 'Cento e dez Lições', descricao: 'Concluiu cento e dez lições.', icone: 'theory', classe: 'lider', familia: 'Lições' },
-  { code: 'modulos_45', nome: 'Quarenta e cinco Módulos', descricao: 'Concluiu quarenta e cinco módulos por inteiro.', icone: 'layers', classe: 'lider', familia: 'Módulos' },
-  { code: 'laboratorios_28', nome: 'Vinte e oito Laboratórios', descricao: 'Venceu vinte e oito laboratórios diferentes.', icone: 'lab', classe: 'lider', familia: 'Laboratórios' },
-  { code: 'semerro_90', nome: 'Noventa Lições sem Erro', descricao: 'Acertou tudo em noventa lições.', icone: 'star', classe: 'lider', familia: 'Sem erro' },
-  { code: 'tokens_40', nome: 'Quarenta Token.Web()', descricao: 'Recebeu quarenta certificados.', icone: 'award', classe: 'lider', familia: 'Token.Web()' },
-  { code: 'xp_12000', nome: 'Doze Mil de XP', descricao: 'Somou doze mil pontos de experiência.', icone: 'zap', classe: 'lider', familia: 'XP' },
-];
 
 /** Todos os degraus de todas as escadas, achatados. */
 export const TODOS_OS_DEGRAUS: (DegrauDaEscada & { escada: Escada })[] =

@@ -278,7 +278,7 @@ export default function Faixa({ faixa, estado, aoAbrir }: {
 }
 
 const NOME_DA_ZONA: Record<string, string> = {
-  trilhas: 'Trilhas', escadas: 'Escadas', curiosidades: 'Curiosidades', veredas: 'Veredas', antiga: 'Edição antiga',
+  trilhas: 'Trilhas', escadas: 'Escadas', curiosidades: 'Curiosidades', veredas: 'Veredas',
 };
 
 /** O que o leitor de tela diz de cada peça, cheia ou vazia. */

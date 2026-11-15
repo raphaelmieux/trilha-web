@@ -4,7 +4,7 @@ import { empacotarFaixa, FOLGA, ALTURA_DA_FAIXA } from './empacotarFaixa';
 import { getAllSpecialties } from '../../curriculum';
 import { VEREDAS, codigoDaInsigniaDaVereda } from '../../curriculum/veredas';
 import { codigoDaInsigniaDaTrilha, insigniasDosLaboratoriosDeVereda } from '../insignias';
-import { ESCADAS, EDICAO_ANTIGA } from '../escadasDeInsignia';
+import { ESCADAS } from '../escadasDeInsignia';
 import { CURIOSIDADES } from '../catalogoDeCuriosidades';
 import { mestrados } from '../mestrados';
 import { tiposDeLaboratorioDaTrilha, laboratoriosDaTrilha, laboratoriosDaVereda } from '../../curriculum/laboratoriosPrevistos';
@@ -70,16 +70,6 @@ describe('o empacotador da Faixa', () => {
       .toEqual(faixa.pecas.map(p => `${p.id}@${p.x.toFixed(1)},${p.y.toFixed(1)}`));
   });
 
-  /* A edição antiga só aparece para quem tem algum dos topos de antes, e vai no
-     fim: quem a tem não pode ver a Faixa inteira trocar de lugar por causa dela. */
-  it('a edição antiga não move nenhuma outra peça', () => {
-    const comAntiga = empacotarFaixa(gruposDaFaixa({ comEdicaoAntiga: true }));
-    const antes = new Map(faixa.pecas.map(p => [p.id, `${p.x},${p.y}`]));
-    for (const p of comAntiga.pecas) if (antes.has(p.id)) expect(`${p.x},${p.y}`, p.id).toBe(antes.get(p.id));
-    expect(comAntiga.pecas.filter(p => p.zona === 'antiga').map(p => p.id).sort())
-      .toEqual(EDICAO_ANTIGA.map(x => x.code).sort());
-  });
-
   it('lê da esquerda para a direita: trilhas, escadas, curiosidades e veredas', () => {
     const zonas = faixa.trechos.map(t => t.zona).filter((z, i, l) => z !== l[i - 1]);
     expect(zonas).toEqual(['trilhas', 'escadas', 'curiosidades', 'veredas']);
@@ -119,7 +109,7 @@ describe('o catálogo da Faixa', () => {
      ganha numa sumiria na outra. */
   it('tem lugar para toda insígnia que a estante tem', () => {
     const naFaixa = new Set(faixa.pecas.map(p => p.insignia).filter(Boolean));
-    const daEstante = fileirasDaEstante().filter(f => !f.soConquistadas).flatMap(f => f.lugares.map(l => l.code));
+    const daEstante = fileirasDaEstante().flatMap(f => f.lugares.map(l => l.code));
     expect(daEstante.length).toBeGreaterThan(200);
     expect(daEstante.filter(c => !naFaixa.has(c))).toEqual([]);
   });

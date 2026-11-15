@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { ESCADAS, EDICAO_ANTIGA, alcancou } from './escadasDeInsignia';
+import { ESCADAS, alcancou } from './escadasDeInsignia';
+import { catalogoSemeado } from '../../supabase/migrations/catalogoSemeado';
 import { INSIGNIAS, insigniasConquistadas, type ResumoDoDesbravador } from './insignias';
 import { nadaAnunciado, TOTAIS } from './totaisDaPlataforma';
 
@@ -49,12 +50,15 @@ describe('as escadas fecham no fim', () => {
     }
   });
 
-  it('o topo de antes fica no catálogo e ninguém mais o ganha', () => {
-    const codigos = EDICAO_ANTIGA.map(a => a.code);
-    expect(codigos).toHaveLength(7);
+  /* Os topos de antes se aposentaram com as conquistas, por decisão do dono
+     da plataforma. Nenhum volta: nem ao código, nem às escadas, nem ao banco. */
+  it('o topo de antes não existe mais em lugar nenhum', () => {
+    const codigos = ['requisitos_192', 'licoes_110', 'modulos_45', 'laboratorios_28', 'semerro_90', 'tokens_40', 'xp_12000'];
+    const banco = catalogoSemeado();
     for (const c of codigos) {
-      expect(INSIGNIAS.some(i => i.code === c), c).toBe(true);
+      expect(INSIGNIAS.some(i => i.code === c), c).toBe(false);
       expect(ESCADAS.some(e => e.degraus.some(d => d.code === c)), c).toBe(false);
+      expect(banco.has(c), c).toBe(false);
     }
     expect(insigniasConquistadas(enorme()).filter(c => codigos.includes(c))).toEqual([]);
   });

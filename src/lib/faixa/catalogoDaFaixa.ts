@@ -7,7 +7,7 @@ import {
   INSIGNIAS, classeDaTrilha, classeDaVereda, classeDoLaboratorio, classeDoTamanhoDaVereda,
   classeDosLaboratoriosDoNivel, codigoDaInsigniaDaTrilha, insigniasDosLaboratoriosDeVereda,
 } from '../insignias';
-import { ESCADAS, EDICAO_ANTIGA } from '../escadasDeInsignia';
+import { ESCADAS } from '../escadasDeInsignia';
 import { CURIOSIDADES, ICONE_DO_TEMA, NOME_DO_TEMA, type TemaDaCuriosidade } from '../catalogoDeCuriosidades';
 import { mestrados, slugDaFamilia as slug } from '../mestrados';
 import { NIVEIS_DA_INSIGNIA, type NivelDaInsignia } from '../nivelDaInsignia';
@@ -35,12 +35,11 @@ import { nomeCompleto } from '../../types';
 
   ── O desenho é o mesmo para todo mundo ──────────────────────────────────────
   Este catálogo não lê nada da pessoa: tamanho, giro e lugar de cada peça saem
-  do código dela. A edição antiga é a exceção declarada — ela aparece só para
-  quem tem alguma —, e por isso vai no fim, onde não empurra nenhuma outra.
+  do código dela, sem exceção: todo lugar existe para todo mundo.
 */
 
 export type Material = 'patch' | 'button' | 'button-aureo' | 'pin' | 'pin-curioso';
-export type Zona = 'trilhas' | 'escadas' | 'curiosidades' | 'veredas' | 'antiga';
+export type Zona = 'trilhas' | 'escadas' | 'curiosidades' | 'veredas';
 
 export interface PecaDaFaixa {
   /** Único na Faixa: o código da insígnia, ou `previsto:<percurso>:<n>`. */
@@ -346,37 +345,18 @@ function gruposDasVeredas(): GrupoDaFaixa[] {
   });
 }
 
-/** A edição antiga: os topos de antes, só para quem tem algum. */
-function grupoDaEdicaoAntiga(): GrupoDaFaixa {
-  return {
-    nome: 'Edição antiga', zona: 'antiga', encaixe: 0,
-    unidades: [{
-      chave: 'edicao-antiga', respiro: 22,
-      pecas: EDICAO_ANTIGA.map((x, i): PecaNaUnidade => ({
-        id: x.code, insignia: x.code, material: 'pin', classe: x.classe, icone: x.icone,
-        nome: x.nome, descricao: x.descricao, w: larguraDoPin(x.classe), h: alturaDoPin(x.classe),
-        dx: (i - (EDICAO_ANTIGA.length - 1) / 2) * 70, dy: (i % 2) * 40 - 20, giro: semente('antiga' + x.code)() * 20 - 10,
-      })),
-    }],
-  };
-}
-
 /**
  * Os grupos da Faixa, na ordem em que ela se lê: Trilhas, Escadas,
  * Curiosidades e Veredas. As zonas curtas vêm primeiro, porque as veredas são
  * mais da metade da Faixa e na frente elas empurrariam as outras para depois
  * de dez telas.
- *
- * `comEdicaoAntiga` acrescenta, no fim, o grupo dos topos de antes — só para
- * quem tem algum deles.
  */
-export function gruposDaFaixa({ comEdicaoAntiga = false } = {}): GrupoDaFaixa[] {
+export function gruposDaFaixa(): GrupoDaFaixa[] {
   return [
     ...unidadesDasTrilhas(),
     grupoDoMe006(),
     grupoDasEscadas(),
     ...gruposDasCuriosidades(),
     ...gruposDasVeredas(),
-    ...(comEdicaoAntiga ? [grupoDaEdicaoAntiga()] : []),
   ];
 }

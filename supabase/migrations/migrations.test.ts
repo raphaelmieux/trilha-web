@@ -233,7 +233,19 @@ describe('ON CONFLICT cita restrição que existe', () => {
   de `mini_html` e `lab_image_lab`. O que não é legítimo é apagar **sem**
   antes dar a de hoje a quem tem a de ontem. Esta trava cobra os dois no mesmo
   arquivo: quem escrever o DELETE sem o INSERT vai ler aqui o motivo.
+
+  A exceção é quando não há a de hoje e o dono da plataforma decidiu apagar a
+  conquista junto — foi o caso da edição antiga, cujos topos viraram o sexto
+  degrau de escadas que quem os tinha já tem. O arquivo declara isso numa
+  linha, `aposentadas sem herdeira: a, b`, e a trava confere que ela nomeia
+  **exatamente** os códigos que o DELETE apaga: uma declaração genérica viraria
+  a porta por onde o próximo DELETE passaria sem ninguém decidir nada.
 */
+const SEM_HERDEIRA = /aposentadas sem herdeira:\s*([a-z0-9_,\s]+?)\s*$/im;
+const codigosApagados = (sql: string): string[] =>
+  [...sql.matchAll(/DELETE\s+FROM\s+(?:public\.)?badges\s+WHERE\s+code\s+IN\s*\(([^)]*)\)/gi)]
+    .flatMap(m => [...m[1].matchAll(/'([^']+)'/g)].map(c => c[1]));
+
 describe('apagar insígnia não apaga o que alguém conquistou', () => {
   const comDelete = migrations.filter(
     f => /DELETE\s+FROM\s+(public\.)?badges\b/i.test(readFileSync(join(DIR, f), 'utf8')),
@@ -241,6 +253,14 @@ describe('apagar insígnia não apaga o que alguém conquistou', () => {
 
   it.each(comDelete)('%s migra as conquistas antes de apagar', arquivo => {
     const sql = readFileSync(join(DIR, arquivo), 'utf8');
+    const declarada = sql.match(SEM_HERDEIRA);
+    if (declarada) {
+      const nomeadas = declarada[1].split(',').map(c => c.trim()).filter(Boolean).sort();
+      expect(nomeadas,
+        `${arquivo} declara aposentar sem herdeira códigos diferentes dos que apaga`,
+      ).toEqual(codigosApagados(sql).sort());
+      return;
+    }
     const posicaoDoInsert = sql.search(/INSERT\s+INTO\s+(public\.)?user_badges\b/i);
     const posicaoDoDelete = sql.search(/DELETE\s+FROM\s+(public\.)?badges\b/i);
 
@@ -294,6 +314,8 @@ describe('o leitor do catálogo acompanha as migrations', () => {
     expect(catalogo.has('mini_html')).toBe(false);
     expect(catalogo.has('lab_image_lab')).toBe(false);
     expect(catalogo.has('lab_text_editor')).toBe(false);
+    expect(catalogo.has('requisitos_192')).toBe(false);
+    expect(catalogo.has('xp_12000')).toBe(false);
     expect(catalogo.has('vereda_html'), 'apagou demais').toBe(true);
     expect(catalogo.has('lab_redacao_guiada'), 'apagou demais').toBe(true);
   });

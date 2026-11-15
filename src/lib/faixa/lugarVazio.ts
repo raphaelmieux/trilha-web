@@ -1,6 +1,6 @@
 import { getSpecialty } from '../../curriculum';
 import { getVereda, codigoDaInsigniaDaVereda } from '../../curriculum/veredas';
-import { ESCADAS, EDICAO_ANTIGA } from '../escadasDeInsignia';
+import { ESCADAS } from '../escadasDeInsignia';
 import { codigoDaInsigniaDaTrilha } from '../insignias';
 import { mestrados } from '../mestrados';
 import { CLASSES } from '../nivelDaInsignia';
@@ -28,11 +28,6 @@ import type { PecaPosta } from './empacotarFaixa';
   O lugar vazio do segredo diz a dica, e nada mais: nem o nome, nem a forma,
   nem a família. O nome é a resposta, e é a regra que a Faixa já desenha — o
   "?" de giz é do mesmo tamanho para todo segredo, inclusive o ME006.
-
-  ── E não promete o que ninguém mais ganha ────────────────────────────────
-  A edição antiga não tem lugar vazio na estante. Na Faixa ela aparece inteira
-  para quem tem uma; o lugar das outras diz que elas não se ganham mais, em
-  vez de pedir um feito que nenhuma regra concede.
 */
 
 export interface PassoDoMestrado {
@@ -79,13 +74,6 @@ export function explicarLugarVazio(p: PecaPosta, conquistadas: ReadonlySet<strin
 
   const classe = p.classe ? CLASSES[p.classe].nome : undefined;
   const comClasse = (resto: string) => (classe ? `${classe} · ${resto}` : resto);
-
-  if (EDICAO_ANTIGA.some(x => x.code === p.insignia)) {
-    return {
-      titulo: p.nome, subtitulo: comClasse('Edição antiga'),
-      como: 'Este era o topo da escada antes de ela ir até o fim da plataforma. Não se ganha mais: quem a tem continua com ela.',
-    };
-  }
 
   /* O Mestrado: a família inteira, com o que já está feito. É o único lugar
      em que a resposta a "como eu ponho isto aqui?" é uma lista, e escondê-la

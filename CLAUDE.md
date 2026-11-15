@@ -388,9 +388,11 @@ fez tudo um número abaixo do total para sempre.
 
 Os sete topos de antes (`requisitos_192`, `licoes_110`, `modulos_45`,
 `laboratorios_28`, `semerro_90`, `tokens_40`, `xp_12000`) saíram das escadas e
-**ficaram no catálogo**: quem os tem continua com eles. São a **edição
-antiga** (`EDICAO_ANTIGA`), que aparece só para quem tem alguma, sem lugar
-vazio e fora do total — um lugar vazio prometeria o que ninguém mais ganha.
+ficaram um tempo no catálogo como **edição antiga**, só para quem os tinha. Não
+acrescentavam nada à Faixa, e o dono da plataforma os aposentou **com** as
+conquistas, em `20261115170000_aposenta_a_edicao_antiga`: cada um deles virou o
+sexto degrau de uma escada que quem o tinha já tem. `escadasAteOFim.test.ts`
+cobra que nenhum volte, ao código, às escadas ou ao banco.
 
 **A classe da insígnia de identidade vem da dificuldade do que ela marca.** A
 trilha pelo nível dela, o laboratório pelo nível da trilha a que pertence — um
@@ -479,8 +481,7 @@ por uma pergunta só: a pessoa tem a insígnia dela? A exceção é o Token.Web(
 revogado, que apaga a peça sem tirá-la do lugar (D6).
 
 O que se conquista acende, e não se move: o empacotamento não lê nada da
-pessoa. A edição antiga é a única coisa que aparece só para alguns, e por isso
-vai no fim, onde não empurra ninguém. `empacotarFaixa.test.ts` cobra que
+pessoa, e todo lugar existe para todo mundo. `empacotarFaixa.test.ts` cobra que
 nenhuma peça toque outra, que toda insígnia que a estante tem lugar para
 receber tenha lugar na Faixa, e que duas chamadas deem o mesmo desenho.
 
@@ -497,8 +498,7 @@ O segredo vazio é anônimo até ser achado. Na Faixa é um "?" de giz do tamanh
 de um pin, qualquer que seja a peça que ele vai virar — o ME006 é um patch, e a
 forma dele seria metade da resposta —, e o cartão dele diz "Segredo" e a dica,
 sem nome, sem família e sem caminho. `lugarVazio.test.ts` confere todo segredo
-do catálogo. A edição antiga, no lugar vazio, diz que não se ganha mais, em vez
-de pedir um feito que nenhuma regra concede.
+do catálogo.
 
 **A arte dos pins de curiosidade mora em `public/assets/pins/<code>.png`**, e o
 nome do arquivo é o código, com sublinhado: a primeira leva chegou com
@@ -615,6 +615,12 @@ de `mini_html` (a vereda de HTML de quando ela se chamava mini-trilha) e
 legítimo é apagar **sem antes dar a de hoje a quem tem a de ontem**, com o
 `awarded_at` original — reescrever a data faria o perfil dizer que a pessoa
 conquistou hoje o que conquistou no ano passado.
+
+A exceção é quando não há a de hoje e o dono da plataforma decide apagar a
+conquista junto, que foi o caso da edição antiga. A migration declara isso numa
+linha, `aposentadas sem herdeira: a, b`, e `migrations.test.ts` confere que ela
+nomeia **exatamente** os códigos que o DELETE apaga: uma declaração genérica
+viraria a porta por onde o próximo DELETE passaria sem ninguém decidir nada.
 
 O destino de cada uma não foi escolha nova: `veredasConcluidas` já lê os
 eventos de mini-trilha, e `LABORATORIO_DO_EVENTO` já traduz
@@ -6013,7 +6019,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | --- | --- |
 | `supabase/migrations/migrations.test.ts` | migration que não fecha um bloco que abre; timestamp repetido |
 | `supabase/migrations/migrations.test.ts` | `ON CONFLICT` citando coluna sem restrição UNIQUE, que derruba o arquivo inteiro |
-| `supabase/migrations/migrations.test.ts` | `DELETE FROM badges` sem reconceder a conquista antes, que apaga insígnia de quem a tinha |
+| `supabase/migrations/migrations.test.ts` | `DELETE FROM badges` sem reconceder a conquista antes, que apaga insígnia de quem a tinha, ou aposentadoria sem herdeira que não nomeia exatamente o que apaga |
 | `src/lib/certificados.test.ts` | o padrão de um certificado ilegível — inverter para `'active'` reprova |
 | `src/lib/insignias.test.ts` | insígnia com critério no código e sem linha no catálogo |
 | `src/lib/insignias.test.ts` | laboratório de trilha sem a sua insígnia `lab_<tipo>`, que concluir não daria nada |
@@ -6481,14 +6487,14 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/laboratoriosPrevistos.test.ts` | trilha ou vereda anunciada sem laboratórios previstos, ou aberta com outro número; tipo de laboratório em duas trilhas |
 | `src/lib/curiosidades.test.ts` | curiosidade sem regra que a alcance, curiosidade de graça, ou semana do calendário e virada de turno fora de Brasília |
 | `src/lib/xp.test.ts` | lição refeita rendendo XP de novo, trilhas abaixo de 75% do XP total, ou a conta do `leaderboard` divergindo da do painel |
-| `src/lib/escadasAteOFim.test.ts` | degrau "tudo" alcançável com trilha ou vereda ainda anunciada, ou topo da edição antiga sendo concedido de novo |
+| `src/lib/escadasAteOFim.test.ts` | degrau "tudo" alcançável com trilha ou vereda ainda anunciada, ou topo aposentado da edição antiga voltando ao código ou ao banco |
 | `src/lib/registroDeCuriosidades.test.ts` | curiosidade gravada a cada gesto, gravada sem conta, ou evento de curiosidade no mural, na ofensiva ou no XP |
 | `src/lib/registroDeCuriosidades.test.ts` | atalho ou menu que o programa não atendeu contando como curiosidade |
 | `src/labs/segredosDoCodigo.test.ts` | segredo achado em comentário ou texto, ou HEAD destacado que aceita commit e não volta pelo ramo |
 | `src/labs/textoDeEnchimento.test.ts` | `=rand()` sem o padrão de cinco por três, sem teto, ou aceito no meio de uma frase |
 | `src/components/LaboratorioDeExplorador.test.tsx` | arquivo oculto na lista antes do menu Exibir, ou o convite antigo da Lixeira fechando a tarefa de esvaziar |
 | `src/lib/faixa/empacotarFaixa.test.ts` | peça da Faixa tocando outra, insígnia da estante sem lugar na Faixa, ou desenho que muda de uma vez para outra |
-| `src/lib/faixa/empacotarFaixa.test.ts` | edição antiga que move outra peça, ou zonas fora da ordem Trilhas, Escadas, Curiosidades e Veredas |
+| `src/lib/faixa/empacotarFaixa.test.ts` | zonas fora da ordem Trilhas, Escadas, Curiosidades e Veredas |
 | `src/lib/faixa/estadoDaFaixa.test.ts` | peça acesa sem a insígnia, ou Token.Web() revogado aparecendo como se valesse |
 | `src/components/faixa/Faixa.test.tsx` | mais de uma peça na ordem do Tab, seta que não leva o foco à peça seguinte, lugar vazio que não abre, segredo mostrando a forma da peça, ou impressão que deixa a página em branco depois |
 | `src/lib/formaDoPin.test.ts` | arte de pin com nome que não é código de curiosidade, segredo sem arte, ou pin largo com a proporção diferente do arquivo |

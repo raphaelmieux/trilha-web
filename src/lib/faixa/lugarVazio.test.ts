@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { explicarLugarVazio } from './lugarVazio';
 import { gruposDaFaixa } from './catalogoDaFaixa';
 import { empacotarFaixa } from './empacotarFaixa';
-import { EDICAO_ANTIGA } from '../escadasDeInsignia';
 
 /*
   O lugar vazio diz o que falta, e o segredo vazio não diz o que é.
@@ -12,7 +11,7 @@ import { EDICAO_ANTIGA } from '../escadasDeInsignia';
   cartão escrevendo o nome do segredo entrega a resposta a quem só clicou.
 */
 
-const faixa = empacotarFaixa(gruposDaFaixa({ comEdicaoAntiga: true }));
+const faixa = empacotarFaixa(gruposDaFaixa());
 const peca = (id: string) => {
   const p = faixa.pecas.find(x => x.id === id);
   if (!p) throw new Error(`a Faixa não tem a peça ${id}`);
@@ -91,12 +90,5 @@ describe('o lugar vazio', () => {
   it('o degrau diz a escada e a posição nela', () => {
     const l = explicarLugarVazio(peca('licoes_5'), nada);
     expect(l.subtitulo).toMatch(/Lições, degrau \d de 7/);
-  });
-
-  /* A edição antiga não se ganha mais: pedir o feito dela seria prometer o
-     que nenhuma regra concede. */
-  it('a edição antiga diz que não se ganha mais', () => {
-    const l = explicarLugarVazio(peca(EDICAO_ANTIGA[0].code), nada);
-    expect(l.como).toContain('Não se ganha mais');
   });
 });
