@@ -4860,10 +4860,15 @@ o que a pessoa não fez, que é o contrário de convite. Quem nunca começou nad
 vê a seção também, com um começo por grupo — é quem mais precisa de por onde
 começar.
 
-**O grupo de HM079 e HM090 se chama Design.** Na classificação oficial a área
-é "Artes e Habilidades Manuais", e é de lá que vem o HM do código; no painel o
-grupo se lê ao lado das veredas de Design, que preparam para essas duas, e dois
-nomes para o mesmo assunto na mesma tela fariam parecer dois assuntos.
+**O grupo de HM079 e HM090 se chama Design na tela, e só na tela.** Na
+classificação oficial a área é "Artes e Habilidades Manuais", e é de lá que vem
+o HM do código; no painel o grupo se lê ao lado das veredas de Design, que
+preparam para essas duas, e dois nomes para o mesmo assunto na mesma tela
+fariam parecer dois assuntos. Quem escreve o rótulo é `nomeDoGrupo`, em
+`curriculum/index.ts`, e a família no registro continua a da área oficial: o
+código do Mestrado sai dela (`slugDaFamilia`), e trocá-la daria ao Mestrado da
+trilha o mesmo `mestrado_design` das veredas — duas insígnias com um código só
+— e tiraria do banco o `mestrado_artes_e_habilidades_manuais` já semeado.
 
 **Link externo é sempre `<a target="_blank">`**, pelo componente `LinkExterno`.
 `window.open` funciona no computador e falha no celular.
@@ -6140,7 +6145,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/ui/ExplicacaoDaInsignia.test.tsx` | cartão de explicação desenhado dentro de quem o chamou, onde o `backdrop-filter` prende o `fixed` |
 | `src/lib/relatorioEmPdf.test.ts` | conquista sem data dizendo-se a primeira, ou sumário reservando menos folhas do que tem entradas |
 | `src/lib/continuar.test.ts` | trilha terminada na fila, próxima lição que pula a que faltou, ou a mais antiga no topo |
-| `src/lib/continuar.test.ts` | grupo parado sem o próximo passo, próximo passo trancado, ou grupo de trilha e de vereda de mesmo nome contados como um |
+| `src/lib/continuar.test.ts` | grupo parado sem o próximo passo, próximo passo trancado, grupo de trilha e de vereda de mesmo nome contados como um, ou o rótulo Design mudando a família e o código do Mestrado |
 | `src/components/ContinueAprendendo.test.tsx` | seção que aparece antes de os dados chegarem, cartão que não leva à próxima lição, ou grupo com algo pela metade ganhando também um de começar |
 | `src/pages/VeredaPage.test.tsx` | `?licao=` ignorado, que manda o "Continuar" para a lista, ou deixado no endereço depois de sair |
 | `src/components/AoTopoAoNavegar.test.tsx` | tela que abre na rolagem da anterior, com o título acima da dobra |

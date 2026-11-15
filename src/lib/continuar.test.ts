@@ -7,6 +7,8 @@ import { percursoDosEventos, percursoVazio, EVENTO_TEORIA, EVENTO_LABORATORIO } 
 import type { ProgressMap } from './progress';
 import type { Specialty } from '../types';
 import type { Vereda } from '../curriculum/veredas';
+import { getAllSpecialties, getFamilias, nomeDoGrupo } from '../curriculum';
+import { mestrados } from './mestrados';
 
 /*
   "Continue aprendendo" — o que entra na fila, por onde cada um continua, e
@@ -287,5 +289,32 @@ describe('as duas partes da seção', () => {
       trilhaLiberada: () => false, veredaLiberada: () => true,
     });
     expect(r.paraComecar).toEqual([]);
+  });
+});
+
+/* O grupo de HM079 e HM090 se lê "Design" na tela, e só na tela: a família é
+   o que dá o código do Mestrado, e trocá-la no registro daria ao Mestrado da
+   trilha o mesmo código do Mestrado das veredas de Design. */
+describe('o nome do grupo na tela', () => {
+  it('escreve Design para a família de Artes e Habilidades Manuais', () => {
+    expect(nomeDoGrupo('Artes e Habilidades Manuais')).toBe('Design');
+    expect(nomeDoGrupo('Computação')).toBe('Computação');
+    expect(getFamilias().map(f => f.nome)).toContain('Design');
+    expect(getFamilias().map(f => f.nome)).not.toContain('Artes e Habilidades Manuais');
+  });
+
+  it('não muda a família no registro, nem o código do Mestrado', () => {
+    expect(getAllSpecialties().filter(s => s.code.startsWith('HM')).map(s => s.familia))
+      .toEqual(['Artes e Habilidades Manuais', 'Artes e Habilidades Manuais']);
+    const codigos = mestrados().map(m => m.code);
+    expect(codigos).toContain('mestrado_artes_e_habilidades_manuais');
+    expect(new Set(codigos).size).toBe(codigos.length);
+  });
+
+  it('chega ao cartão com o nome da tela', () => {
+    const hm = { ...getAllSpecialties().find(s => s.code === 'HM079')!, emConstrucao: false } as Specialty;
+    const c = trilhaParaComecar({ ...hm, modules: trilha.modules, requirements: trilha.requirements } as Specialty,
+      {}, new Set(), undefined);
+    expect(c?.grupo).toBe('Design');
   });
 });

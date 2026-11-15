@@ -2,6 +2,7 @@ import { statusDasLicoes, getProgressPercent, getProgressDetail, type ProgressMa
 import { licaoVencida, type PercursoDeVereda } from './veredas';
 import { licoesDaVereda, type Vereda } from '../curriculum/veredas';
 import { nomeCompleto, type LessonType, type Specialty } from '../types';
+import { nomeDoGrupo } from '../curriculum';
 
 /*
  * O que está em andamento, por onde continuar — e o que começar.
@@ -39,7 +40,7 @@ export interface ParaContinuar {
    * justamente o que este campo diz.
    */
   estado: 'em-andamento' | 'para-comecar';
-  /** A família da trilha ou da vereda, que é o grupo do painel. */
+  /** O grupo do painel: a família, com o nome com que a tela a escreve. */
   grupo: string;
   code: string;
   /** Código + nome, por `nomeCompleto`. */
@@ -101,7 +102,7 @@ export function trilhaParaContinuar(
   return {
     tipo: 'trilha',
     estado: 'em-andamento',
-    grupo: e.familia,
+    grupo: nomeDoGrupo(e.familia),
     code: e.code,
     nome: nomeCompleto(e),
     feitas: vencidas,
@@ -198,7 +199,7 @@ export function trilhaParaComecar(
   return {
     tipo: 'trilha',
     estado: 'para-comecar',
-    grupo: e.familia,
+    grupo: nomeDoGrupo(e.familia),
     code: e.code,
     nome: nomeCompleto(e),
     feitas: 0,
