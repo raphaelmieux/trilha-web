@@ -511,6 +511,16 @@ aplicativo e na função, e `mestrados.test.ts` compara as duas, com o mínimo.
 A arte do certificado dele é escura, e o nome, o código e a data saem em
 branco (`coresDoCertificado`), na tela e no PDF.
 
+**Insígnia nova não chega a quem já a tinha alcançado e parou.** Os Mestrados
+nasceram depois de alguém ter fechado as sete trilhas de Internet e de
+Computação, e `evaluateBadges` só roda na próxima atividade: a Faixa mostrava os
+dois Mestrados e o ME006 a giz, com as trilhas todas concluídas. A
+`20261115130000` concede pelos requisitos já vencidos, com a data da trilha que
+fechou cada um — é a decisão dos laboratórios de vereda, pelo motivo escrito
+lá. As listas dela são as de `mestrados.ts`, e `mestrados.test.ts` compara.
+Família de trilha que abrir depois disto não precisa de nada: ninguém a terá
+fechado antes de existir.
+
 **Os Mestrados fecham famílias.** Um por família de trilha e de vereda, ao
 concluir todas as dela, e o **ME006**, oficial: sete das onze trilhas daqui que
 estão na lista do Mestrado em Ciência e Tecnologia. A plataforma conta só as
@@ -6419,6 +6429,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/faixa/estadoDaFaixa.test.ts` | peça acesa sem a insígnia, ou Token.Web() revogado aparecendo como se valesse |
 | `src/components/faixa/Faixa.test.tsx` | lugar vazio virando parada de Tab, segredo mostrando a forma da peça, ou impressão que deixa a página em branco depois |
 | `src/lib/mestrados.test.ts` | lista ou mínimo do ME006 diferente entre o aplicativo e a Edge Function que emite o certificado |
+| `src/lib/mestrados.test.ts` | lista ou mínimo de um Mestrado diferente entre o aplicativo e a migration que o concedeu a quem já o tinha alcançado |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |
