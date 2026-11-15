@@ -1,4 +1,4 @@
-import { getAllSpecialties } from '../../curriculum';
+import { getAllSpecialties, nomeDoGrupo } from '../../curriculum';
 import {
   VEREDAS, codigoDaInsigniaDaVereda, licoesDaVereda,
 } from '../../curriculum/veredas';
@@ -197,7 +197,10 @@ function unidadesDasTrilhas(): GrupoDaFaixa[] {
     });
     const m = daPlataforma.get(`mestrado_${slug(familia)}`);
     if (m) unidades.push(unidadeDoMestrado(m.code, m.nome, m.descricao));
-    return { nome: familia, zona: 'trilhas', encaixe: f === 0 ? 0 : 120, unidades };
+    /* O nome que a régua escreve é o do grupo na tela (`nomeDoGrupo`), e não o
+       da família: o painel chama HM079 e HM090 de Fina Arte, e a Faixa tem de
+       chamar igual. */
+    return { nome: nomeDoGrupo(familia), zona: 'trilhas', encaixe: f === 0 ? 0 : 120, unidades };
   });
 }
 

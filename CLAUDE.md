@@ -484,11 +484,21 @@ vai no fim, onde não empurra ninguém. `empacotarFaixa.test.ts` cobra que
 nenhuma peça toque outra, que toda insígnia que a estante tem lugar para
 receber tenha lugar na Faixa, e que duas chamadas deem o mesmo desenho.
 
-Só a peça acesa é botão. São setecentas, e setecentas paradas de Tab fariam a
-Faixa impossível de atravessar pelo teclado; o lugar vazio é imagem com nome. O
-segredo vazio é um "?" de giz do tamanho de um pin, qualquer que seja a peça
-que ele vai virar — o ME006 é um patch, e a forma dele seria metade da
-resposta.
+Toda peça é botão, e a Faixa é uma parada de Tab só. A acesa abre o que
+rendeu; o lugar vazio abre o que falta (`lugarVazio.ts`): o nome, a classe e a
+família, como se conquista, o caminho até a trilha ou a vereda, e, no Mestrado,
+a família inteira com o que já foi feito. Um quadro de metas que não diz qual é
+a meta é só desenho — e por meses foi assim, com seiscentos contornos de giz
+que não respondiam ao clique. São setecentas peças, e setecentas paradas de Tab
+fariam a Faixa impossível de atravessar pelo teclado: o foco é itinerante, as
+setas andam de peça em peça na ordem de leitura e Home e End vão às pontas.
+
+O segredo vazio é anônimo até ser achado. Na Faixa é um "?" de giz do tamanho
+de um pin, qualquer que seja a peça que ele vai virar — o ME006 é um patch, e a
+forma dele seria metade da resposta —, e o cartão dele diz "Segredo" e a dica,
+sem nome, sem família e sem caminho. `lugarVazio.test.ts` confere todo segredo
+do catálogo. A edição antiga, no lugar vazio, diz que não se ganha mais, em vez
+de pedir um feito que nenhuma regra concede.
 
 O overloque do patch sai **da arte**: o contorno traçado da transparência
 (240 raios do centro) e a cor da beirada, lidos do arquivo por canvas em
@@ -6465,7 +6475,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/faixa/empacotarFaixa.test.ts` | peça da Faixa tocando outra, insígnia da estante sem lugar na Faixa, ou desenho que muda de uma vez para outra |
 | `src/lib/faixa/empacotarFaixa.test.ts` | edição antiga que move outra peça, ou zonas fora da ordem Trilhas, Escadas, Curiosidades e Veredas |
 | `src/lib/faixa/estadoDaFaixa.test.ts` | peça acesa sem a insígnia, ou Token.Web() revogado aparecendo como se valesse |
-| `src/components/faixa/Faixa.test.tsx` | lugar vazio virando parada de Tab, segredo mostrando a forma da peça, ou impressão que deixa a página em branco depois |
+| `src/components/faixa/Faixa.test.tsx` | mais de uma peça na ordem do Tab, seta que não leva o foco à peça seguinte, lugar vazio que não abre, segredo mostrando a forma da peça, ou impressão que deixa a página em branco depois |
+| `src/lib/faixa/lugarVazio.test.ts` | lugar vazio sem dizer como se conquista, segredo vazio que entrega o nome, ou Mestrado que não lista o que falta |
 | `src/lib/mestrados.test.ts` | lista ou mínimo do ME006 diferente entre o aplicativo e a Edge Function que emite o certificado |
 | `src/lib/mestrados.test.ts` | lista ou mínimo de um Mestrado diferente entre o aplicativo e a migration que o concedeu a quem já o tinha alcançado |
 | `ci.yml` | `.env` rastreado pelo git |

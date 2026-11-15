@@ -6,10 +6,12 @@ import { useMontado } from '../hooks/useMontado';
 import Faixa from '../components/faixa/Faixa';
 import CertificadoNaParede from '../components/faixa/CertificadoNaParede';
 import ExplicacaoDaInsignia from '../components/ui/ExplicacaoDaInsignia';
+import LugarVazioNaFaixa from '../components/faixa/LugarVazioNaFaixa';
 import { LoadingState } from '../components/ui/PageState';
 import { gruposDaFaixa } from '../lib/faixa/catalogoDaFaixa';
 import { empacotarFaixa, type PecaPosta } from '../lib/faixa/empacotarFaixa';
 import { certificadoDaPeca, estadoDaPeca } from '../lib/faixa/estadoDaFaixa';
+import { explicarLugarVazio } from '../lib/faixa/lugarVazio';
 import { EDICAO_ANTIGA } from '../lib/escadasDeInsignia';
 import { supabase } from '../lib/supabase';
 
@@ -47,8 +49,12 @@ export default function FaixaPage() {
 
   if (loading) return <LoadingState label="Abrindo a faixa..." />;
 
-  const cert = aberta ? certificadoDaPeca(aberta, certifications) : undefined;
-  const insignia = aberta && !cert ? badges.find(b => b.code === aberta.insignia) : undefined;
+  /* A peça vazia abre o que falta; a cheia, o que rendeu. A pergunta é a do
+     desenho — o estado —, e não "há certificado?": uma trilha concluída e
+     revogada tem documento e continua sendo peça que se abre como cheia. */
+  const vazia = aberta ? estado(aberta) === 'vazia' : false;
+  const cert = aberta && !vazia ? certificadoDaPeca(aberta, certifications) : undefined;
+  const insignia = aberta && !vazia && !cert ? badges.find(b => b.code === aberta.insignia) : undefined;
 
   return (
     <div className="space-y-4">
@@ -56,7 +62,7 @@ export default function FaixaPage() {
         <h1 className="text-2xl font-bold">Minha Faixa</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>
           <span className="font-bold" style={{ color: 'var(--color-text)' }}>{acesas}</span> de {total} peças.
-          {' '}Cada trilha, vereda e conquista já tem o seu lugar; toque numa peça acesa para ver o que ela rendeu.
+          {' '}Cada trilha, vereda e conquista já tem o seu lugar. Toque numa peça acesa para ver o que ela rendeu, ou num contorno de giz para ver o que falta.
         </p>
       </div>
 
@@ -73,6 +79,7 @@ export default function FaixaPage() {
         />
       )}
       {aberta && insignia && <ExplicacaoDaInsignia insignia={insignia} aoFechar={() => setAberta(null)} />}
+      {aberta && vazia && <LugarVazioNaFaixa lugar={explicarLugarVazio(aberta, conquistadas)} aoFechar={() => setAberta(null)} />}
     </div>
   );
 }

@@ -18,11 +18,14 @@ import type { EstadoDaPeca } from '../../lib/faixa/estadoDaFaixa';
   lado, com o dedo, com as setas e pela régua embaixo. Arrastar e soltar em
   cima de uma peça não a abre: quem arrastava não queria clicar.
 
-  ── Só a peça acesa é botão ───────────────────────────────────────────────
-  São setecentas peças. Setecentas paradas de Tab fariam a Faixa impossível de
-  atravessar pelo teclado; o lugar vazio é imagem com nome (o leitor de tela
-  diz o que falta ali), e só a peça conquistada é botão, que é o que abre
-  alguma coisa.
+  ── Toda peça é botão, e a Faixa inteira é uma parada de Tab ──────────────
+  A peça acesa abre o que rendeu; o lugar vazio abre o que falta para
+  enchê-lo — e um quadro de metas que não diz qual é a meta é só desenho.
+  São setecentas peças, e setecentas paradas de Tab fariam a Faixa impossível
+  de atravessar pelo teclado: o foco é itinerante. Uma peça só fica na ordem
+  do Tab, as setas andam de peça em peça na ordem em que elas se leem, da
+  esquerda para a direita, e Home e End vão às pontas. Enter e espaço abrem,
+  como em todo botão.
 */
 
 export default function Faixa({ faixa, estado, aoAbrir }: {
@@ -36,6 +39,26 @@ export default function Faixa({ faixa, estado, aoAbrir }: {
   const [janela, setJanela] = useState({ de: 0, largura: 0.1 });
   const [dicaVisivel, setDicaVisivel] = useState(true);
   const arrastou = useRef(false);
+
+  /* A ordem de leitura do foco itinerante: da esquerda para a direita, e de
+     cima para baixo quando duas peças dividem a coluna. */
+  const ordem = useMemo(() => [...faixa.pecas].sort((a, b) => a.x - b.x || a.y - b.y).map(p => p.id), [faixa]);
+  const [foco, setFoco] = useState<string | undefined>(undefined);
+  const daVez = foco && ordem.includes(foco) ? foco : ordem[0];
+  const andar = (de: string, tecla: string) => {
+    const i = ordem.indexOf(de);
+    const destino = ({
+      ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: ordem.length - 1,
+    } as Record<string, number>)[tecla];
+    if (destino === undefined) return false;
+    const id = ordem[Math.max(0, Math.min(ordem.length - 1, destino))];
+    setFoco(id);
+    const alvo = rolo.current?.querySelector<HTMLElement>(`[data-peca="${CSS.escape(id)}"]`);
+    alvo?.focus({ preventScroll: true });
+    const calmo = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    alvo?.scrollIntoView?.({ inline: 'center', block: 'nearest', behavior: calmo ? 'auto' : 'smooth' });
+    return true;
+  };
 
   /* A Faixa ocupa uns dois terços da altura da janela, entre 330 e 560 px: no
      celular deitado ela não esconde o resto da tela, e no monitor grande ela
@@ -210,7 +233,11 @@ export default function Faixa({ faixa, estado, aoAbrir }: {
         <div className="fx-tecido" style={{ width: faixa.largura * escala, height: faixa.altura * escala }}>
           <div className="fx-pano" style={{ width: faixa.largura, height: faixa.altura, transform: `scale(${escala})` }}>
             {faixa.pecas.map(p => (
-              <Peca key={p.id} p={p} estado={estado(p)} aoAbrir={aoAbrir} />
+              <Peca
+                key={p.id} p={p} estado={estado(p)} daVez={p.id === daVez}
+                aoAbrir={x => { setFoco(x.id); aoAbrir(x); }}
+                aoTeclar={e => { if (andar(p.id, e.key)) e.preventDefault(); }}
+              />
             ))}
           </div>
         </div>
@@ -258,13 +285,19 @@ const NOME_DA_ZONA: Record<string, string> = {
 function rotuloDaPeca(p: PecaPosta, estado: EstadoDaPeca): string {
   const classe = p.classe ? ` (${CLASSES[p.classe].nome})` : '';
   if (estado === 'vazia' && p.dica) return `Segredo ainda não achado. Dica: ${p.dica}`;
-  if (estado === 'vazia') return `${p.nome}${classe}${p.emBreve ? ', em breve' : ''} — ainda não conquistada`;
+  if (estado === 'vazia') return `${p.nome}${classe}${p.emBreve ? ', em breve' : ''} — ainda não conquistada. Ver o que falta`;
   if (estado === 'revogada') return `${p.nome} — Token.Web() revogado`;
   if (p.token) return `${p.nome} — concluída. Ver o Token.Web()`;
   return `${p.nome}${classe} — conquistada`;
 }
 
-function Peca({ p, estado, aoAbrir }: { p: PecaPosta; estado: EstadoDaPeca; aoAbrir: (p: PecaPosta) => void }) {
+function Peca({ p, estado, daVez, aoAbrir, aoTeclar }: {
+  p: PecaPosta;
+  estado: EstadoDaPeca;
+  daVez: boolean;
+  aoAbrir: (p: PecaPosta) => void;
+  aoTeclar: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
+}) {
   const cheia = estado !== 'vazia';
   /* O segredo vazio ocupa o lugar de um pin pequeno de giz com "?", qualquer
      que seja o tamanho da peça que ele vai virar — o ME006 é um patch, mas a
@@ -289,11 +322,12 @@ function Peca({ p, estado, aoAbrir }: { p: PecaPosta; estado: EstadoDaPeca; aoAb
     }
   })();
 
-  if (!cheia) {
-    return <span className={classes} style={estilo} role="img" aria-label={rotulo} title={rotulo}>{desenho}</span>;
-  }
   return (
-    <button type="button" className={classes} style={estilo} aria-label={rotulo} onClick={() => aoAbrir(p)}>
+    <button
+      type="button" className={classes} style={estilo} data-peca={p.id}
+      aria-label={rotulo} title={cheia ? undefined : rotulo} tabIndex={daVez ? 0 : -1}
+      onClick={() => aoAbrir(p)} onKeyDown={aoTeclar}
+    >
       {desenho}
     </button>
   );
