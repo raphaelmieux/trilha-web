@@ -16,10 +16,8 @@ import { descreverAtividade } from '../lib/atividade';
 import ProgressBar from '../components/ui/ProgressBar';
 import Emblema from '../components/ui/Emblema';
 import { LoadingState, EmptyState } from '../components/ui/PageState';
-import EstanteDeInsignias from '../components/ui/EstanteDeInsignias';
 import SecaoDeVeredas from '../components/SecaoDeVeredas';
 import ContinueAprendendo from '../components/ContinueAprendendo';
-import { INSIGNIAS } from '../lib/insignias';
 import type { ProgressMap } from '../lib/progress';
 import { Lock, Award, Flame, Star, Clock, FileText, Medal, HardHat } from 'lucide-react';
 import { MarcaEmTexto } from '../components/ui/BrandMark';
@@ -212,6 +210,34 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Olá, {getPublicName(profile)}!</h1>
+          {/* A colocação no ranking morava no quadro das insígnias, que saiu
+              quando a Faixa passou a mostrar as conquistas inteiras. A Faixa
+              não diz em que lugar a pessoa está no clube, então a linha fica
+              aqui, ao lado do nome — sem ela, quem está no ranking só saberia
+              abrindo a página dele. */}
+          {posicoes.length > 0 && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+              {posicoes.map(({ periodo, rotulo, posicao, total: quantos }) => (
+                <Link
+                  key={periodo}
+                  to="/ranking"
+                  className="text-xs transition hover:opacity-80"
+                  style={{ color: 'var(--color-text-dim)' }}
+                >
+                  {rotulo}:{' '}
+                  {posicao === null ? (
+                    /* Sem pontos na janela a pessoa nem entra na listagem —
+                       dizer "último lugar" seria inventar uma colocação. */
+                    <span style={{ color: 'var(--color-text-muted)' }}>sem pontos ainda</span>
+                  ) : (
+                    <span className="font-bold" style={{ color: 'var(--color-text)' }}>
+                      {posicao}º de {quantos}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex gap-4">
           <div className="card px-4 py-2 flex items-center gap-2">
@@ -233,13 +259,6 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
-
-      {/* As insígnias logo abaixo do nome — ver EstanteDeInsignias. */}
-      <EstanteDeInsignias
-        badges={badges}
-        total={INSIGNIAS.length + familias.flatMap(f => f.trilhas).filter(t => !t.emConstrucao).length}
-        posicoes={posicoes}
-      />
 
       {/* Antes das listas: elas mostram tudo o que existe, e esta mostra o
           que a pessoa deixou pela metade e o próximo passo de cada grupo
