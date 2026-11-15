@@ -223,12 +223,22 @@ export async function evaluateBadges(
     resumo não sabe quando cada uma ficou verdadeira.
   */
   const desde = (code: string) => resumo.curiosidades.get(code) ?? undefined;
-  const { error } = await supabase.from('user_badges').insert(
+  /*
+    Duas avaliações podem correr juntas — a do requisito e a do evento do
+    mesmo laboratório saem com milissegundos de diferença —, e as duas acham a
+    mesma insígnia nova. Com `insert` puro, a segunda batia no
+    `UNIQUE(user_id, badge_id)` e o lote **inteiro** era recusado: a insígnia
+    repetida já estava lá, mas a outra que só esta avaliação tinha achado
+    ficava de fora até a próxima atividade. Ignorar a repetida grava o resto,
+    e o `select` devolve só o que entrou de fato, que é o que se anuncia.
+  */
+  const { data: gravadas, error } = await supabase.from('user_badges').upsert(
     novas.map(b => ({
       user_id: userId, badge_id: b.id as string, context: contexto as Json,
       ...(desde(b.code as string) ? { awarded_at: desde(b.code as string) } : {}),
     })),
-  );
+    { onConflict: 'user_id,badge_id', ignoreDuplicates: true },
+  ).select('badge_id');
   /* Gravou? Então anuncia. Anunciar antes de gravar mostraria na tela uma
      conquista que o banco recusou — e ela sumiria no recarregar seguinte,
      sem nada explicando. */
@@ -236,8 +246,9 @@ export async function evaluateBadges(
     console.error('evaluateBadges insert error:', error);
     return [];
   }
+  const entraram = new Set((gravadas ?? []).map(g => g.badge_id as string));
 
-  const conquistadas: InsigniaConquistada[] = novas.map(b => ({
+  const conquistadas: InsigniaConquistada[] = novas.filter(b => entraram.has(b.id as string)).map(b => ({
     id: b.id as string,
     code: b.code as string,
     name: b.name as string,
