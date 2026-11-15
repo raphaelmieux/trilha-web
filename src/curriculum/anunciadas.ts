@@ -82,7 +82,7 @@ export const ap064 = anunciada('AP064', 'Web Designer, Avançado', 'avancado', '
 /*
   Artes e Habilidades Manuais: a primeira família que não é de computação.
 
-  Na tela o grupo se chama Design — ver `nomeDoGrupo`, em `curriculum/index.ts`.
+  Na tela o grupo se chama Fina Arte — ver `nomeDoGrupo`, em `curriculum/index.ts`.
   A família continua com o nome da área oficial porque é ela que dá o código do
   Mestrado (`mestrado_artes_e_habilidades_manuais`), já semeado no banco.
 

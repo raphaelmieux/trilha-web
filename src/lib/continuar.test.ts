@@ -292,14 +292,14 @@ describe('as duas partes da seção', () => {
   });
 });
 
-/* O grupo de HM079 e HM090 se lê "Design" na tela, e só na tela: a família é
-   o que dá o código do Mestrado, e trocá-la no registro daria ao Mestrado da
-   trilha o mesmo código do Mestrado das veredas de Design. */
+/* O grupo de HM079 e HM090 se lê "Fina Arte" na tela, e só na tela: a família
+   é o que dá o código do Mestrado, e trocá-la no registro tiraria do banco a
+   insígnia já semeada. */
 describe('o nome do grupo na tela', () => {
-  it('escreve Design para a família de Artes e Habilidades Manuais', () => {
-    expect(nomeDoGrupo('Artes e Habilidades Manuais')).toBe('Design');
+  it('escreve Fina Arte para a família de Artes e Habilidades Manuais', () => {
+    expect(nomeDoGrupo('Artes e Habilidades Manuais')).toBe('Fina Arte');
     expect(nomeDoGrupo('Computação')).toBe('Computação');
-    expect(getFamilias().map(f => f.nome)).toContain('Design');
+    expect(getFamilias().map(f => f.nome)).toContain('Fina Arte');
     expect(getFamilias().map(f => f.nome)).not.toContain('Artes e Habilidades Manuais');
   });
 
@@ -311,10 +311,17 @@ describe('o nome do grupo na tela', () => {
     expect(new Set(codigos).size).toBe(codigos.length);
   });
 
+  /* O grupo e o Mestrado que o fecha têm o mesmo nome na tela: mudar um sem o
+     outro faria o prêmio parecer de outro grupo. */
+  it('é o mesmo nome do Mestrado da família', () => {
+    const m = mestrados().find(x => x.code === 'mestrado_artes_e_habilidades_manuais');
+    expect(m?.nome).toBe(`Mestrado ${nomeDoGrupo('Artes e Habilidades Manuais')}`);
+  });
+
   it('chega ao cartão com o nome da tela', () => {
     const hm = { ...getAllSpecialties().find(s => s.code === 'HM079')!, emConstrucao: false } as Specialty;
     const c = trilhaParaComecar({ ...hm, modules: trilha.modules, requirements: trilha.requirements } as Specialty,
       {}, new Set(), undefined);
-    expect(c?.grupo).toBe('Design');
+    expect(c?.grupo).toBe('Fina Arte');
   });
 });

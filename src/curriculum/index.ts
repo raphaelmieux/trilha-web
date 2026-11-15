@@ -43,17 +43,16 @@ export function getOpenSpecialties(): Specialty[] {
   O nome com que um grupo de trilhas aparece na tela, quando não é o da família.
 
   A família de HM079 e HM090 é "Artes e Habilidades Manuais", a área da
-  classificação oficial, e no painel ela se lê "Design": é o nome do grupo de
-  veredas que prepara para essas duas, e dois nomes para o mesmo assunto na
-  mesma tela fariam parecer dois assuntos.
+  classificação oficial, e no painel ela se lê "Fina Arte" — o mesmo nome do
+  Mestrado que fecha a família (`NOME_DO_MESTRADO`, em `lib/mestrados.ts`),
+  para que o grupo e o prêmio dele se leiam como uma coisa só.
 
   Só o rótulo muda. A família é identidade — o código do Mestrado sai dela
-  (`slugDaFamilia`) —, e trocá-la no registro daria ao Mestrado da trilha o
-  mesmo código do Mestrado das veredas de Design, e tiraria do banco o que já
-  foi semeado com o nome antigo.
+  (`slugDaFamilia`) —, e trocá-la no registro mudaria o código do Mestrado e
+  tiraria do banco o `mestrado_artes_e_habilidades_manuais` já semeado.
 */
 const NOME_DO_GRUPO: Record<string, string> = {
-  'Artes e Habilidades Manuais': 'Design',
+  'Artes e Habilidades Manuais': 'Fina Arte',
 };
 
 export const nomeDoGrupo = (familia: string) => NOME_DO_GRUPO[familia] ?? familia;
