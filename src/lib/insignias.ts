@@ -184,6 +184,9 @@ export function classeDaTrilha(codigo: string): NivelDaInsignia {
   return trilha ? CLASSE_DA_TRILHA[trilha.level] : 'amigo';
 }
 
+/** A classe dos laboratórios de uma trilha deste nível — o da trilha anunciada, antes de o tipo existir. */
+export const classeDosLaboratoriosDoNivel = (nivel: Specialty['level']): NivelDaInsignia => CLASSE_DO_LABORATORIO[nivel];
+
 /** A classe da insígnia de um laboratório, pela trilha em que ele aparece. */
 export function classeDoLaboratorio(lab: LabType): NivelDaInsignia {
   for (const e of getAllSpecialties())
@@ -210,7 +213,15 @@ const TAMANHO_DA_VEREDA: [number, NivelDaInsignia][] = [
 export function classeDaVereda(id: string): NivelDaInsignia {
   const vereda = VEREDAS.find(v => v.id === id);
   if (!vereda) return 'amigo';
-  const licoes = licoesDaVereda(vereda).length;
+  return classeDoTamanhoDaVereda(licoesDaVereda(vereda).length);
+}
+
+/**
+ * A classe de uma vereda com tantas lições. A Faixa a pede para a vereda
+ * anunciada, que ainda não tem lição: o tamanho dela é o previsto, um módulo
+ * de teoria e um de laboratório por laboratório anunciado.
+ */
+export function classeDoTamanhoDaVereda(licoes: number): NivelDaInsignia {
   return TAMANHO_DA_VEREDA.find(([teto]) => licoes <= teto)?.[1] ?? 'lider';
 }
 
