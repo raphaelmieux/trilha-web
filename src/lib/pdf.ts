@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import type { Certification, CertificadoImprimivel } from '../types';
 import { CERT_WIDTH } from '../components/CertificateCanvas';
-import { codigoDaArte } from './certificados';
+import { codigoDaArte, coresDoCertificado } from './certificados';
 import { renderBadgeIconPng, TIER_LABELS } from './badgeIcons';
 import { VERMELHO_DA_MARCA } from './marca';
 import {
@@ -72,8 +72,9 @@ async function drawCertificate(doc: jsPDF, cert: CertificadoImprimivel, studentN
   // Edge to edge — no margin, so the artwork bleeds off all four sides.
   doc.addImage(artwork, 'PNG', 0, 0, A4_LANDSCAPE.width, A4_LANDSCAPE.height, undefined, 'FAST');
 
+  const cores = coresDoCertificado(specialtyCode);
   // Student name, centred on the artwork's clear band (baseline y=598px).
-  doc.setTextColor(10, 10, 10);
+  doc.setTextColor(...cores.nome);
   doc.setFont('helvetica', 'normal');
   let nameSize = pxToPt(150);
   doc.setFontSize(nameSize);
@@ -85,7 +86,7 @@ async function drawCertificate(doc: jsPDF, cert: CertificadoImprimivel, studentN
   doc.text(studentName, A4_LANDSCAPE.width / 2, pxToMm(598), { align: 'center', baseline: 'alphabetic' });
 
   // Footer: token code left, issue date right, sharing one baseline (y=1520px).
-  doc.setTextColor(26, 26, 26);
+  doc.setTextColor(...cores.rodape);
   doc.setFontSize(pxToPt(32));
   const footerY = pxToMm(1520);
   doc.text(cert.code, pxToMm(120), footerY, { baseline: 'alphabetic' });

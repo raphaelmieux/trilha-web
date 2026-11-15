@@ -25,9 +25,41 @@ import type { CertificadoVerificado, RetornoDe } from '../types';
  * sem ela, o certificado de uma vereda sairia vestido de Internet.
  */
 export function codigoDaArte(curriculumCode: string): string {
-  const conhecido = getSpecialty(curriculumCode) || getVereda(curriculumCode);
+  const conhecido = getSpecialty(curriculumCode) || getVereda(curriculumCode)
+    || CERTIFICADOS_FORA_DO_CURRICULO.has(curriculumCode);
   return conhecido ? curriculumCode : 'AP034';
 }
+
+/*
+  O Mestrado oficial também emite Token.Web(), e não é trilha nem vereda: o
+  currículo não o conhece, e sem ele aqui o certificado do ME006 sairia
+  vestido de Internet.
+*/
+const CERTIFICADOS_FORA_DO_CURRICULO: ReadonlySet<string> = new Set(['ME006']);
+
+/*
+  A cor do que a plataforma escreve por cima da arte: o nome, o código e a
+  data.
+
+  Toda arte de trilha e de vereda é clara, e o texto sai quase preto. A do
+  ME006 é escura — circuito e fitas sobre fundo preto —, e o mesmo quase preto
+  sumiria nela. A cor é da arte, e não do tipo de percurso: por isso é uma
+  lista de códigos, e a tela e o PDF perguntam aqui, para os dois mostrarem o
+  mesmo certificado.
+*/
+const ARTE_ESCURA: ReadonlySet<string> = new Set(['ME006']);
+
+type Rgb = [number, number, number];
+export interface CoresDoCertificado { nome: Rgb; rodape: Rgb }
+
+export function coresDoCertificado(codigoDaArteDesenhada: string): CoresDoCertificado {
+  return ARTE_ESCURA.has(codigoDaArteDesenhada)
+    ? { nome: [255, 255, 255], rodape: [255, 255, 255] }
+    : { nome: [10, 10, 10], rodape: [26, 26, 26] };
+}
+
+/** A cor em `rgb()`, para o SVG da tela. */
+export const emCss = ([r, g, b]: Rgb) => `rgb(${r}, ${g}, ${b})`;
 
 /**
  * O nome do percurso que um certificado atesta, e o que ele é.

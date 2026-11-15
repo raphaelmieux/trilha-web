@@ -53,6 +53,17 @@ export const TRILHAS_DO_ME006 = ['AP041', 'AP042', 'AP043', 'AP044', 'AP045', 'A
 
 const familias = <T extends { familia: string }>(lista: readonly T[]) => [...new Set(lista.map(x => x.familia))];
 
+/*
+  O nome do Mestrado quando ele não é o nome da família. A família continua a
+  mesma — é ela que diz quais trilhas e veredas contam —, e o código também,
+  porque é por ele que a insígnia é concedida e a arte é achada. Muda só o que
+  se lê no cartão.
+*/
+const NOME_DO_MESTRADO: Record<string, string> = {
+  'Artes e Habilidades Manuais': 'Fina Arte',
+  Base: 'Básico',
+};
+
 export function mestrados(): Mestrado[] {
   const trilhas = getAllSpecialties();
   const daPlataforma = (familia: string, ehTrilha: boolean): Mestrado => {
@@ -60,7 +71,7 @@ export function mestrados(): Mestrado[] {
     const v = ehTrilha ? [] : VEREDAS.filter(x => x.familia === familia).map(x => x.id);
     return {
       code: `mestrado_${slugDaFamilia(familia)}`,
-      nome: `Mestrado ${familia}`,
+      nome: `Mestrado ${NOME_DO_MESTRADO[familia] ?? familia}`,
       descricao: `Mestrado da plataforma: concluiu todas as ${ehTrilha ? 'trilhas' : 'veredas'} da família ${familia}.`,
       oficial: false,
       trilhas: t, veredas: v, minimo: t.length + v.length,
