@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type React from 'react';
+import CampoComOrtografia from './ui/CampoComOrtografia';
 import {
   Archive, Inbox, Mic, Send, Trash2, Undo2, Users, Video,
 } from 'lucide-react';
@@ -440,8 +441,8 @@ function NoCorreio({ contexto, mudar, rascunhoInicial, ...c }: Comum & {
               )}
             <CampoDeEndereco rotulo="Assunto" valor={rascunho.assunto}
               aoMudar={v => setRascunho(r => (r ? { ...r, assunto: v } : r))} />
-            <textarea className="co-texto" value={rascunho.corpo} aria-label="Mensagem"
-              onChange={e => setRascunho(r => (r ? { ...r, corpo: e.target.value } : r))} />
+            <CampoComOrtografia className="co-texto" rows={0} value={rascunho.corpo} rotulo="Mensagem"
+              onChange={corpo => setRascunho(r => (r ? { ...r, corpo } : r))} />
             {caixa.assinatura && <div className="co-assinatura">{caixa.assinatura}</div>}
             {rascunho.anexos.map(a => (
               <div key={a.nome} className="co-vinculo">

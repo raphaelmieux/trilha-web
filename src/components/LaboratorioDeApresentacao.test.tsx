@@ -90,6 +90,13 @@ const escrever = (campo: Element | null | undefined, texto: string, nome: string
   act(() => {
     /* O corpo do slide é a lista editável do próprio slide: escreve-se nela
        como o navegador escreveria, um item por linha, e avisa-se a digitação. */
+    /* O título é o campo de uma linha com a ortografia da plataforma: um
+       elemento editável, em que se escreve o texto e se avisa a digitação. */
+    if ((campo as HTMLElement).classList.contains('campo-com-ortografia')) {
+      (campo as HTMLElement).textContent = texto;
+      campo!.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
     if ((campo as HTMLElement).isContentEditable || (campo as HTMLElement).getAttribute('contenteditable') === 'true') {
       const ul = campo as HTMLElement;
       ul.replaceChildren(...(texto === '' ? [''] : texto.split('\n')).map(t => {

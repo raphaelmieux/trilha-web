@@ -56,6 +56,12 @@ const porRotulo = (r: string) => container.querySelector(`[aria-label="${r}"]`);
 const escrever = (campo: Element | null | undefined, texto: string, nome: string) => {
   expect(campo, `não achei o campo "${nome}"`).toBeTruthy();
   act(() => {
+    /* O corpo da mensagem é o campo com a ortografia da plataforma. */
+    if ((campo as HTMLElement).hasAttribute('contenteditable')) {
+      (campo as HTMLElement).textContent = texto;
+      campo!.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
     const el = campo as HTMLInputElement;
     const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
     Object.getOwnPropertyDescriptor(proto, 'value')!.set!.call(el, texto);

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import CampoComOrtografia from '../components/ui/CampoComOrtografia';
 import {
   Inbox, Send, Archive, Paperclip, Users, Trash2,
   FileCheck2, RotateCcw, AlertTriangle, Check,
@@ -375,9 +376,9 @@ export default function CorreioLab({ specialtyCode, lessonCode, lessonTitle, req
               aria-label="Assunto"
               onChange={e => setRascunho(r => r && ({ ...r, assunto: e.target.value }))} />
 
-            <textarea className="co-texto" placeholder="Escreva a mensagem…"
-              aria-label="Corpo da mensagem" value={rascunhoAtual.corpo}
-              onChange={e => setRascunho(r => r && ({ ...r, corpo: e.target.value }))} />
+            <CampoComOrtografia className="co-texto" rows={0} placeholder="Escreva a mensagem…"
+              rotulo="Corpo da mensagem" value={rascunhoAtual.corpo}
+              onChange={corpo => setRascunho(r => r && ({ ...r, corpo }))} />
 
             {correio.assinatura && <div className="co-assinatura">{correio.assinatura}</div>}
             {rascunhoAtual.historico && <div className="co-historico">{rascunhoAtual.historico}</div>}

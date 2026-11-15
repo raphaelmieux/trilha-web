@@ -4,6 +4,7 @@ import { logActivity, upsertRequirementProgress, ensureEnrollment, updateEnrollm
   registrarConclusaoDeLicao,
 } from '../lib/progress';
 import { assessDownload } from '../lib/webSkills';
+import CampoComOrtografia from '../components/ui/CampoComOrtografia';
 import { exportAttachmentPdf } from '../lib/pdf';
 import { useAuth } from '../context/AuthContext';
 import { getPublicName } from '../types';
@@ -371,9 +372,9 @@ export default function MailLab({ specialtyCode, lessonCode, lessonTitle, requir
             value={composeSubject} onChange={e => setComposeSubject(e.target.value)}
             className="input-field" placeholder="Assunto" aria-label="Assunto"
           />
-          <textarea
-            value={composeBody} onChange={e => setComposeBody(e.target.value)}
-            rows={4} className="input-field" placeholder="Escreva a sua mensagem." aria-label="Corpo da mensagem"
+          <CampoComOrtografia
+            value={composeBody} onChange={setComposeBody}
+            rows={4} className="input-field" placeholder="Escreva a sua mensagem." rotulo="Corpo da mensagem"
           />
         </div>
         {composeError && (

@@ -63,6 +63,13 @@ const itemDeMenu = (texto: string) =>
 const escrever = (campo: Element | null | undefined, texto: string, nome: string) => {
   expect(campo, `não achei o campo "${nome}"`).toBeTruthy();
   act(() => {
+    /* O título do slide é o campo com a ortografia da plataforma, um elemento
+       editável: escreve-se o texto nele e avisa-se a digitação. */
+    if ((campo as HTMLElement).hasAttribute('contenteditable')) {
+      (campo as HTMLElement).textContent = texto;
+      campo!.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
     const el = campo as HTMLInputElement;
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(el, texto);
     el.dispatchEvent(new Event('input', { bubbles: true }));

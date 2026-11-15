@@ -2529,9 +2529,22 @@ E a redação dá ao campo a **etapa como `key`**: trocar de etapa é trocar de
 texto, e o Ctrl+Z do navegador não pode desfazer a resposta da etapa anterior
 dentro da seguinte.
 
-Continuam com o corretor do navegador o título do slide, que é um `<input>` de
-uma linha, e o corpo do correio dos laboratórios; trazê-los é trocar o campo
-por `CampoComOrtografia` do mesmo jeito.
+O corpo da mensagem dos três correios (o da AP034, o da AP044 e o da CC-ES007)
+e o título do slide vieram depois, do mesmo jeito. O título pediu
+`linhaUnica`, que é o `CampoComOrtografia` no lugar do `<input>`, e duas
+decisões dele erram calado se invertidas:
+
+- **é um `<span>`, e não um `<div>`**: o título mora dentro do parágrafo do
+  slide, e `<div>` dentro de `<p>` é HTML inválido que o navegador desmancha;
+- **a quebra é recusada no `beforeinput`, e não só no `keydown`**: o Enter do
+  teclado do celular chega como `insertParagraph` e nem sempre passa pelo
+  `keydown`; o que se cola chega com as quebras trocadas por espaço, e o valor
+  que sai é aparado também — um título com uma linha a mais seria um título que
+  a lição mede e a tela mostra diferentes.
+
+E o `<textarea>` rolava por dentro quando o texto passava da caixa; o elemento
+editável cresce. No corpo do correio quem rola é a folha (`overflow-y: auto` em
+`.co-texto`), senão a mensagem longa cobriria o botão Enviar.
 
 **O dicionário pessoal se vê e se edita no perfil**, em `MeuDicionario`. Um
 "Adicionar ao Dicionário" errado — em cima de "acampamneto", por pressa —
@@ -6514,6 +6527,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/dicionarioPessoal.test.ts` | palavra tirada noutro aparelho que ressuscita, palavra sem conta entrando na conta de quem entra, ou a de uma conta aparecendo para a seguinte |
 | `src/labs/powerpoint.test.tsx` | corpo do slide com o corretor do navegador, sugestão que não volta ao modelo, ou palavra acrescentada noutra tela que continua vermelha |
 | `src/components/ui/CampoComOrtografia.test.tsx` | campo de texto corrido com o corretor do navegador, sugestão que não volta pelo `onChange`, ou mudança de fora que não reescreve |
+| `src/components/ui/CampoComOrtografia.test.tsx` | campo de uma linha que aceita quebra pelo Enter, pelo teclado do celular ou pelo colar |
+| `src/labs/powerpoint.test.tsx` | título do slide com o corretor do navegador, fora de um `<span>`, ou que aceita uma segunda linha |
 | `src/components/MeuDicionario.test.tsx` | lista do dicionário com cópia própria, que não acompanha o corretor, ou que aceita o que o banco recusaria |
 | `src/labs/InsercaoTextoLab.test.tsx` | sugestão do botão direito que não troca a palavra inteira, que o Ctrl+Z não desfaz, ou Ignorar Tudo que vale só para um parágrafo |
 | `src/labs/planilha.test.ts` | quebra de texto que deixa a faixa meio a meio, ou que grava `false` em vez de devolver a célula ao que era |
