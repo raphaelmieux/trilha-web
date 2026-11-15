@@ -141,7 +141,6 @@ button.fx-vazia:hover .fx-giz { fill: rgba(255,255,255,.08); }
 .fx-zona-escadas { background: rgba(210,165,58,.10); }
 .fx-zona-curiosidades { background: rgba(250,249,246,.06); }
 .fx-zona-veredas { background: rgba(22,156,216,.10); }
-.fx-zona-antiga { background: rgba(160,160,160,.10); }
 .fx-janela { position: absolute; top: 2px; bottom: 2px; border-radius: 6px; background: rgba(236,235,230,.14); border: 1px solid rgba(236,235,230,.45); pointer-events: none; }
 
 /* O Token.Web() emoldurado, pronto para a parede */

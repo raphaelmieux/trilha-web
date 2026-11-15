@@ -4,7 +4,7 @@ import { empacotarFaixa, FOLGA, ALTURA_DA_FAIXA } from './empacotarFaixa';
 import { getAllSpecialties } from '../../curriculum';
 import { VEREDAS, codigoDaInsigniaDaVereda } from '../../curriculum/veredas';
 import { codigoDaInsigniaDaTrilha, insigniasDosLaboratoriosDeVereda } from '../insignias';
-import { ESCADAS, EDICAO_ANTIGA } from '../escadasDeInsignia';
+import { ESCADAS } from '../escadasDeInsignia';
 import { CURIOSIDADES } from '../catalogoDeCuriosidades';
 import { mestrados } from '../mestrados';
 import { tiposDeLaboratorioDaTrilha, laboratoriosDaTrilha, laboratoriosDaVereda } from '../../curriculum/laboratoriosPrevistos';
@@ -38,6 +38,26 @@ describe('o empacotador da Faixa', () => {
     expect(toques).toEqual([]);
   });
 
+  /* Dentro de um cacho de curiosidades a regra é a caixa inteira, girada: a
+     arte dos pins é deitada, em pé ou larga, e a espiral medida para o pin
+     redondo pôs os desenhos dos segredos uns por cima dos outros. */
+  it('não deixa um pin de curiosidade encostar no vizinho do mesmo cacho', () => {
+    const meia = (w: number, h: number, giro: number) => {
+      const r = (Math.abs(giro) * Math.PI) / 180;
+      return [(w * Math.cos(r) + h * Math.sin(r)) / 2, (w * Math.sin(r) + h * Math.cos(r)) / 2];
+    };
+    const pins = faixa.pecas.filter(p => p.material === 'pin-curioso');
+    expect(pins.length).toBe(CURIOSIDADES.length);
+    const toques: string[] = [];
+    for (let i = 0; i < pins.length; i++) for (let j = i + 1; j < pins.length; j++) {
+      const a = pins[i], b = pins[j];
+      if (a.unidade !== b.unidade) continue;
+      const [aw, ah] = meia(a.w, a.h, a.giro), [bw, bh] = meia(b.w, b.h, b.giro);
+      if (Math.abs(a.x - b.x) < aw + bw && Math.abs(a.y - b.y) < ah + bh) toques.push(`${a.id} × ${b.id}`);
+    }
+    expect(toques).toEqual([]);
+  });
+
   it('põe toda peça dentro da altura da Faixa', () => {
     const fora = faixa.pecas.filter(p => p.y - p.h / 2 < 0 || p.y + p.h / 2 > ALTURA_DA_FAIXA || p.x - p.w / 2 < 0 || p.x + p.w / 2 > faixa.largura);
     expect(fora.map(p => p.id)).toEqual([]);
@@ -48,16 +68,6 @@ describe('o empacotador da Faixa', () => {
     expect(outra.largura).toBe(faixa.largura);
     expect(outra.pecas.map(p => `${p.id}@${p.x.toFixed(1)},${p.y.toFixed(1)}`))
       .toEqual(faixa.pecas.map(p => `${p.id}@${p.x.toFixed(1)},${p.y.toFixed(1)}`));
-  });
-
-  /* A edição antiga só aparece para quem tem algum dos topos de antes, e vai no
-     fim: quem a tem não pode ver a Faixa inteira trocar de lugar por causa dela. */
-  it('a edição antiga não move nenhuma outra peça', () => {
-    const comAntiga = empacotarFaixa(gruposDaFaixa({ comEdicaoAntiga: true }));
-    const antes = new Map(faixa.pecas.map(p => [p.id, `${p.x},${p.y}`]));
-    for (const p of comAntiga.pecas) if (antes.has(p.id)) expect(`${p.x},${p.y}`, p.id).toBe(antes.get(p.id));
-    expect(comAntiga.pecas.filter(p => p.zona === 'antiga').map(p => p.id).sort())
-      .toEqual(EDICAO_ANTIGA.map(x => x.code).sort());
   });
 
   it('lê da esquerda para a direita: trilhas, escadas, curiosidades e veredas', () => {
@@ -99,7 +109,7 @@ describe('o catálogo da Faixa', () => {
      ganha numa sumiria na outra. */
   it('tem lugar para toda insígnia que a estante tem', () => {
     const naFaixa = new Set(faixa.pecas.map(p => p.insignia).filter(Boolean));
-    const daEstante = fileirasDaEstante().filter(f => !f.soConquistadas).flatMap(f => f.lugares.map(l => l.code));
+    const daEstante = fileirasDaEstante().flatMap(f => f.lugares.map(l => l.code));
     expect(daEstante.length).toBeGreaterThan(200);
     expect(daEstante.filter(c => !naFaixa.has(c))).toEqual([]);
   });

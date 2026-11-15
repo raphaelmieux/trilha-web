@@ -35,6 +35,17 @@ export interface Curiosidade {
   tema: TemaDaCuriosidade;
   /** O que se lê no lugar vazio de um segredo, antes de achá-lo. */
   dica?: string;
+  /**
+   * Largura sobre altura do pin, quando ele passa da largura dos outros.
+   *
+   * Todo pin cabe num quadrado, e a arte se ajusta dentro dele: um desenho
+   * deitado fica com a largura do quadrado e menos altura. Este campo é a
+   * exceção de propósito, para o pin que deve se destacar dos outros: ele fica
+   * com a altura cheia e passa da largura. A Faixa precisa do número antes de
+   * a imagem carregar, porque o empacotamento reserva o lugar sem ler arte
+   * nenhuma. `formaDoPin.test.ts` compara este número com o arquivo.
+   */
+  proporcao?: number;
 }
 
 /** O glifo provisório de cada tema, até a arte recortada chegar. */
@@ -54,8 +65,8 @@ export const NOME_DO_TEMA: Record<TemaDaCuriosidade, string> = {
   segredo: 'Segredos',
 };
 
-const c = (tema: TemaDaCuriosidade) => (code: string, nome: string, descricao: string, dica?: string): Curiosidade =>
-  ({ code, nome, descricao, tema, ...(dica ? { dica } : {}) });
+const c = (tema: TemaDaCuriosidade) => (code: string, nome: string, descricao: string, dica?: string, proporcao?: number): Curiosidade =>
+  ({ code, nome, descricao, tema, ...(dica ? { dica } : {}), ...(proporcao ? { proporcao } : {}) });
 const cal = c('calendario'), rit = c('ritmo'), jei = c('jeito'), exp = c('explorador'), seg = c('segredo');
 
 export const CURIOSIDADES: readonly Curiosidade[] = [
@@ -123,7 +134,7 @@ export const CURIOSIDADES: readonly Curiosidade[] = [
   seg('viajante_no_tempo', 'Viajante no Tempo', 'Voltou um repositório a um commit antigo.', 'O Git lembra de tudo.'),
   seg('zen_do_python', 'Zen do Python', 'Escreveu import this no editor de Python.', 'O Python tem uma filosofia escondida.'),
   seg('mapa_do_banco', 'Mapa do Banco', 'Consultou sqlite_master no editor de SQL.', 'O banco guarda a própria planta.'),
-  seg('fim_da_planilha', 'Fim da Planilha', 'Foi com Ctrl+↓ até a última linha de uma planilha.', 'Até onde vai uma planilha?'),
+  seg('fim_da_planilha', 'Fim da Planilha', 'Foi com Ctrl+↓ até a última linha de uma planilha.', 'Até onde vai uma planilha?', 1029 / 641),
   seg('texto_de_enchimento', 'Texto de Enchimento', 'Escreveu =rand() no Word e viu o texto aparecer.', 'O Word escreve sozinho, se você pedir.'),
   seg('gato_pintado', 'Gato Pintado', 'Trocou a cor do ator no Scratch.', 'O gato não precisa ser laranja.'),
 ];

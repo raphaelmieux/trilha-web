@@ -12,7 +12,6 @@ import { gruposDaFaixa } from '../lib/faixa/catalogoDaFaixa';
 import { empacotarFaixa, type PecaPosta } from '../lib/faixa/empacotarFaixa';
 import { certificadoDaPeca, estadoDaPeca } from '../lib/faixa/estadoDaFaixa';
 import { explicarLugarVazio } from '../lib/faixa/lugarVazio';
-import { EDICAO_ANTIGA } from '../lib/escadasDeInsignia';
 import { supabase } from '../lib/supabase';
 
 /*
@@ -35,14 +34,13 @@ export default function FaixaPage() {
   const [aberta, setAberta] = useState<PecaPosta | null>(null);
 
   const conquistadas = useMemo(() => new Set(badges.map(b => b.code)), [badges]);
-  const comEdicaoAntiga = EDICAO_ANTIGA.some(x => conquistadas.has(x.code));
-  /* O empacotamento não depende de quem olha — só da edição antiga, que vai
-     no fim —, então ele se refaz apenas quando ela aparece. */
-  const faixa = useMemo(() => empacotarFaixa(gruposDaFaixa({ comEdicaoAntiga })), [comEdicaoAntiga]);
+  /* O empacotamento não depende de quem olha: é o mesmo desenho para todo
+     mundo, e só o estado de cada peça muda. */
+  const faixa = useMemo(() => empacotarFaixa(gruposDaFaixa()), []);
   const estado = useCallback((p: PecaPosta) => estadoDaPeca(p, conquistadas, certifications), [conquistadas, certifications]);
 
-  const total = faixa.pecas.filter(p => p.zona !== 'antiga').length;
-  const acesas = faixa.pecas.filter(p => p.zona !== 'antiga' && estado(p) !== 'vazia').length;
+  const total = faixa.pecas.length;
+  const acesas = faixa.pecas.filter(p => estado(p) !== 'vazia').length;
 
   useEmissaoDoMe006(profile?.id, conquistadas.has(INSIGNIA_DO_ME006), certifications.filter(c => c.curriculum_code === ME006).length > 0,
     carregandoCerts, refresh);
