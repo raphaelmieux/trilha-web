@@ -552,3 +552,20 @@ seção 8 ("ele não emite Token.Web()").
   posições de `CertificateCanvas`. Está na lista de desenhos.
 - **Ele conta na escada do Token.Web()**, que passa a ter 65 documentos
   possíveis: 13 trilhas, 51 veredas e o ME006.
+
+## 13. Produção por etapas
+
+1. **Catálogo e banco** — entregue em 13/11/2026 (PR #188): laboratórios
+   previstos, tipos exclusivos por trilha, 58 curiosidades, 14 Mestrados, XP
+   por vitória, escadas até o fim.
+2. **Eventos das curiosidades** — o registro único (`registroDeCuriosidades.ts`),
+   o atalho e o menu ouvidos na moldura, o Token.Web() baixado, o relatório
+   gerado, a verificação, a referência consultada e os onze segredos.
+   **Falta o `token_impresso`:** a plataforma ainda não tem botão de imprimir o
+   certificado; ele nasce na etapa 3, no pop-up do certificado emoldurado, e a
+   curiosidade Na Parede já é alcançável pelo download.
+3. **A página da Faixa** — o empacotador como função pura testada, os
+   materiais do P0, a régua, o pop-up com o certificado emoldurado (baixar e
+   imprimir), os satélites, e a emissão do Token.Web() do ME006.
+4. **Rota e nome** — `/faixa`, com `/estante` redirecionando, menu e cartão do
+   painel.

@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import { GUIAS_DO_WORD } from './word';
 import FormatacaoTextoLab from './FormatacaoTextoLab';
-import { arrastarSelecao, colarDaArea, copiar, porCursor, tecla } from './tecladoDaFolha';
+import { arrastarSelecao, colarDaArea, copiar, digitar, porCursor, tecla } from './tecladoDaFolha';
 import { NOME_DO_LIVRO } from './metasDaAp042';
 
 /*
@@ -218,5 +218,24 @@ describe('as sete tarefas, pelos gestos de verdade', () => {
 
     const entregar = [...container.querySelectorAll('button')].find(b => b.textContent === 'Entregar o documento');
     expect(entregar, 'o documento devia poder ser entregue').toBeTruthy();
+  });
+});
+
+/* O segredo do Texto de Enchimento: =rand() sozinho num parágrafo, com o
+   cursor no fim, vira texto de exemplo no Enter — e o Ctrl+Z o desfaz num
+   passo só, como qualquer coisa digitada. */
+describe('o =rand() do Word', () => {
+  it('escreve o texto de exemplo no Enter, e o Ctrl+Z desfaz', () => {
+    const contar = () => container.querySelectorAll('p[data-bloco]').length;
+    porCursor(container, 'titulo', 'fim');
+    tecla(container, 'Enter');
+    const antes = contar();
+    digitar(container, '=rand(2;1)');
+    tecla(container, 'Enter');
+    expect(contar()).toBe(antes + 1);
+    expect(container.textContent).not.toContain('=rand(2;1)');
+    expect(container.textContent).toContain('Os estilos guardam a aparência');
+    tecla(container, 'z', { ctrl: true });
+    expect(container.textContent).toContain('=rand(2;1)');
   });
 });

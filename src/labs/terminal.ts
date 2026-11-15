@@ -687,8 +687,9 @@ function git(m: Maquina, args: string[]): Resposta {
       if (!(caminho in arvore)) disco = escrever(disco, caminho, null);
     }
     for (const [caminho, texto] of Object.entries(arvore)) disco = escrever(disco, caminho, arquivo(texto));
-    const { destacado: _, ...semDestaque } = repo;
-    return ok({ ...m, disco, repo: { ...semDestaque, ramoAtual: nome, preparados: [] } }, `Mudou para o ramo '${nome}'`);
+    const semDestaque: Repositorio = { ...repo, ramoAtual: nome, preparados: [] };
+    delete semDestaque.destacado;
+    return ok({ ...m, disco, repo: semDestaque }, `Mudou para o ramo '${nome}'`);
   }
 
   if (sub === 'merge') {

@@ -422,6 +422,39 @@ quatro turnos, de Brasília: Madrugador (0h), Pessoa da Manhã (6h), Pessoa da
 Tarde (12h) e Noturno (18h). O segredo vazio mostra a dica, e não o nome, que
 é a resposta.
 
+**As curiosidades gravam por uma porta só, e uma vez.** Metade delas nasce
+em lugar que não sabe quem entrou — a moldura dos laboratórios, o terminal, a
+grade do Excel, a página pública de verificação. `registrarCuriosidade`, em
+`registroDeCuriosidades.ts`, é ligado pelo `AuthProvider` ao **id** da conta,
+como o dicionário pessoal, e grava cada evento com o mesmo conteúdo uma vez por
+conta neste navegador: abrir o menu do botão direito é gesto de todo minuto, e
+cada um virando linha em `activity_events` encheria a tabela de coisa que a
+regra lê uma vez. Sem ninguém entrado, não grava nada. Depois de gravar, avalia
+as insígnias — senão o segredo achado só renderia na próxima lição.
+
+Os nomes dos eventos moram em `eventosDasCuriosidades.ts`, sem importação
+nenhuma, porque quem grava é o laboratório e `curiosidades.ts` importa o
+currículo inteiro: importar as regras para saber um nome fecharia o laço de
+ESM. Eles não são módulo vencido, não rendem XP e **ficam fora do mural** — o
+filtro é na consulta, antes do `limit`, senão dez atalhos empurrariam para fora
+o que a pessoa estudou.
+
+O atalho e o menu se ouvem **na moldura**, e não em cada programa:
+`curiosidadesDaMoldura.ts` conta o que o programa imitado *atendeu*, que é o
+`preventDefault`, lido depois de o evento passar por todo mundo — um
+laboratório que se inscreve na janela depois da moldura ouviria depois dela.
+
+Os segredos existem de verdade nos programas: `--help`, `whoami` e `git
+checkout <id>` no terminal (a visita ao commit antigo recusa commit até a
+volta, porque commit em HEAD destacado é o que ninguém acha depois); os itens
+ocultos e as extensões no Explorador da CC-ES001, que ganhou um bilhete oculto
+em Documentos e um convite antigo na Lixeira — esvaziar continua contando só o
+que a pessoa excluiu; `import this`, `sqlite_master`, Ctrl+↓ até a última
+linha da grade, `=rand()` no Word, e a fantasia repintada no Scratch. O que
+está em comentário ou em texto não conta, senão o enunciado de uma lição que
+citasse o segredo o daria a quem a abrisse. O texto do `=rand()` é nosso — o do
+Word é da Microsoft — e passa pelo corretor, como todo documento.
+
 **Os Mestrados fecham famílias.** Um por família de trilha e de vereda, ao
 concluir todas as dela, e o **ME006**, oficial: sete das onze trilhas daqui que
 estão na lista do Mestrado em Ciência e Tecnologia. A plataforma conta só as
@@ -6320,6 +6353,11 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/curiosidades.test.ts` | curiosidade sem regra que a alcance, curiosidade de graça, ou semana do calendário e virada de turno fora de Brasília |
 | `src/lib/xp.test.ts` | lição refeita rendendo XP de novo, trilhas abaixo de 75% do XP total, ou a conta do `leaderboard` divergindo da do painel |
 | `src/lib/escadasAteOFim.test.ts` | degrau "tudo" alcançável com trilha ou vereda ainda anunciada, ou topo da edição antiga sendo concedido de novo |
+| `src/lib/registroDeCuriosidades.test.ts` | curiosidade gravada a cada gesto, gravada sem conta, ou evento de curiosidade no mural, na ofensiva ou no XP |
+| `src/lib/registroDeCuriosidades.test.ts` | atalho ou menu que o programa não atendeu contando como curiosidade |
+| `src/labs/segredosDoCodigo.test.ts` | segredo achado em comentário ou texto, ou HEAD destacado que aceita commit e não volta pelo ramo |
+| `src/labs/textoDeEnchimento.test.ts` | `=rand()` sem o padrão de cinco por três, sem teto, ou aceito no meio de uma frase |
+| `src/components/LaboratorioDeExplorador.test.tsx` | arquivo oculto na lista antes do menu Exibir, ou o convite antigo da Lixeira fechando a tarefa de esvaziar |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |
