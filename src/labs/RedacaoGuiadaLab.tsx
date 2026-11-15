@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import type { PropsDeLaboratorio } from './tipos';
 import type { FichaEntregue } from './pesquisaDoBug';
+import CampoComOrtografia from '../components/ui/CampoComOrtografia';
 import {
   faltaNaEtapa, referencias, semReferencias, TITULO_DAS_REFERENCIAS,
 } from './relatorioDePesquisa';
@@ -492,16 +493,19 @@ export default function RedacaoGuiadaLab({
             </fieldset>
           )}
 
-          <textarea
+          {/* O corretor da plataforma, e não o do navegador: é ele que conhece
+              o dicionário pessoal e as palavras do clube. A chave é a etapa,
+              porque trocar de etapa é trocar de texto, e o desfazer de uma
+              não pode desfazer a outra. */}
+          <CampoComOrtografia
+            key={etapa.id}
             value={texto}
-            onChange={ev => {
-              const novo = ev.target.value;
-              setRespostas(prev => ({ ...prev, [etapa.id]: { ...prev[etapa.id], texto: novo } }));
-            }}
+            onChange={novo => setRespostas(prev => ({ ...prev, [etapa.id]: { ...prev[etapa.id], texto: novo } }))}
             onBlur={salvarRascunho}
             rows={6}
             className="input-field text-sm"
             placeholder={etapa.exemplo}
+            rotulo={`Resposta: ${etapa.pergunta}`}
           />
 
           <div className="flex items-center justify-between mt-2 mb-3">
@@ -573,12 +577,13 @@ export default function RedacaoGuiadaLab({
 
         {textoFinal && (
           <>
-            <textarea
+            <CampoComOrtografia
               value={textoFinal}
-              onChange={ev => setTextoFinal(ev.target.value)}
+              onChange={setTextoFinal}
               onBlur={salvarRascunho}
               rows={14}
               className="input-field text-sm"
+              rotulo="Seu texto final"
             />
             <p className="text-sm mt-2" style={{ color: palavrasDoTexto >= roteiro.minPalavrasTotal ? 'var(--color-success)' : 'var(--color-primary)' }}>
               {palavrasDoTexto} palavras{fichas ? `, fora a lista de ${TITULO_DAS_REFERENCIAS.toLowerCase()},` : ''} — você pode ajustar o texto antes de enviar.
