@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { evaluateBadges } from './gamification';
-import { diaEmBrasilia, diaAnterior } from './ofensiva';
+import { diaEmBrasilia, diaAnterior, eventoDeModuloVencido } from './ofensiva';
+import { laboratorioDoEvento } from './atividade';
 import { LIMIAR_DOMINIO } from './limiarDeDominio';
 import { umDe, STATUS_DO_REQUISITO } from '../types';
 import type { Json, RequirementStatus } from '../types';
@@ -368,7 +369,7 @@ export async function logActivity(
   entityId?: string,
   curriculumVersion?: string
 ): Promise<void> {
-  await supabase.from('activity_events').insert({
+  const { error } = await supabase.from('activity_events').insert({
     user_id: userId,
     event_type: eventType,
     metadata,
@@ -377,6 +378,33 @@ export async function logActivity(
     entity_id: entityId,
     curriculum_version: curriculumVersion,
   });
+  if (error) return;
+
+  /*
+    O laboratório de trilha concluído avalia as insígnias aqui, depois de o
+    evento existir.
+
+    A insígnia `lab_<tipo>` sai **deste** evento — é por ele que
+    `laboratorioDoEvento` acha o tipo —, e os laboratórios gravam o requisito
+    antes de gravá-lo. A avaliação que o requisito dispara, então, rodava sem
+    o evento no banco: a pesquisa da AP045 foi entregue, o requisito ficou
+    verde, e o pin dela continuou a giz na Faixa até a pessoa fazer qualquer
+    outra coisa — o que, para quem tinha acabado a trilha, era nunca. Nada
+    estourava: a avaliação respondia certo sobre um banco que ainda não sabia.
+
+    Avalia-se aqui, e não em cada laboratório, porque são trinta e cada um
+    teria de lembrar; e só para o evento que conclui um laboratório de trilha,
+    porque os passos do meio do caminho não mudam insígnia nenhuma.
+  */
+  const evento = { event_type: eventType, metadata };
+  if (laboratorioDoEvento(evento) && eventoDeModuloVencido(evento)) {
+    const m = (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) ? metadata : {};
+    evaluateBadges(userId, {
+      evento: eventType,
+      ...(typeof m.specialtyCode === 'string' ? { percurso: m.specialtyCode } : {}),
+      ...(typeof m.lessonCode === 'string' ? { licao: m.lessonCode } : {}),
+    }).catch(() => {});
+  }
 }
 
 export async function ensureEnrollment(userId: string, specialtyId: string): Promise<void> {
