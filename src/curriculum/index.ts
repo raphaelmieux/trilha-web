@@ -39,6 +39,25 @@ export function getOpenSpecialties(): Specialty[] {
   return getAllSpecialties().filter(s => !s.emConstrucao);
 }
 
+/*
+  O nome com que um grupo de trilhas aparece na tela, quando não é o da família.
+
+  A família de HM079 e HM090 é "Artes e Habilidades Manuais", a área da
+  classificação oficial, e no painel ela se lê "Design": é o nome do grupo de
+  veredas que prepara para essas duas, e dois nomes para o mesmo assunto na
+  mesma tela fariam parecer dois assuntos.
+
+  Só o rótulo muda. A família é identidade — o código do Mestrado sai dela
+  (`slugDaFamilia`) —, e trocá-la no registro daria ao Mestrado da trilha o
+  mesmo código do Mestrado das veredas de Design, e tiraria do banco o que já
+  foi semeado com o nome antigo.
+*/
+const NOME_DO_GRUPO: Record<string, string> = {
+  'Artes e Habilidades Manuais': 'Design',
+};
+
+export const nomeDoGrupo = (familia: string) => NOME_DO_GRUPO[familia] ?? familia;
+
 /**
  * As trilhas agrupadas por assunto, cada família na ordem dos níveis.
  *
@@ -56,8 +75,8 @@ export function getFamilias(): { nome: string; trilhas: Specialty[] }[] {
     porFamilia.set(s.familia, [...(porFamilia.get(s.familia) ?? []), s]);
   }
 
-  return [...porFamilia.entries()].map(([nome, trilhas]) => ({
-    nome,
+  return [...porFamilia.entries()].map(([familia, trilhas]) => ({
+    nome: nomeDoGrupo(familia),
     trilhas: [...trilhas].sort((a, b) => {
       const nivel = ORDEM_DOS_NIVEIS.indexOf(a.level) - ORDEM_DOS_NIVEIS.indexOf(b.level);
       return nivel || a.code.localeCompare(b.code);

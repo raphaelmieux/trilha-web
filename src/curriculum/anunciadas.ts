@@ -82,6 +82,10 @@ export const ap064 = anunciada('AP064', 'Web Designer, Avançado', 'avancado', '
 /*
   Artes e Habilidades Manuais: a primeira família que não é de computação.
 
+  Na tela o grupo se chama Design — ver `nomeDoGrupo`, em `curriculum/index.ts`.
+  A família continua com o nome da área oficial porque é ela que dá o código do
+  Mestrado (`mestrado_artes_e_habilidades_manuais`), já semeado no banco.
+
   HM079 e HM090 são especialidades do clube, com ficha oficial própria, e o
   assunto delas é desenho e arte feitos no computador — não a máquina, e não o
   programa que se escreve. Entram aqui porque o desbravador as cumpre com as
