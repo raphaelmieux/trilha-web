@@ -231,8 +231,9 @@ com os duzentos e dezenove lugares seria o muro dos trinta e dois cartões de
 vereda outra vez. `FileiraDaEstante` ganhou `grupos`: fechado, cada vereda diz
 quantos dos laboratórios dela já vieram; aberto, um de cada vez, mostra os
 lugares. `lugares` continua sendo a lista inteira, porque é por ela que a
-estante se confere contra o banco. No cartão do painel elas viram uma linha
-com a contagem, e não trinta ícones.
+estante se confere contra o banco. O painel não tem mais quadro de
+insígnias: ele repetia a Faixa, e só a colocação no ranking, que a Faixa não
+mostra, ficou lá, ao lado do nome.
 
 **Quem já tinha vencido recebeu pela migration, com a data de quando venceu.**
 `evaluateBadges` concederia na próxima atividade de cada um, mas com a data de
@@ -545,6 +546,41 @@ fechou cada um — é a decisão dos laboratórios de vereda, pelo motivo escrit
 lá. As listas dela são as de `mestrados.ts`, e `mestrados.test.ts` compara.
 Família de trilha que abrir depois disto não precisa de nada: ninguém a terá
 fechado antes de existir.
+
+**O laboratório de trilha concluído também ficava sem pin.** Os laboratórios
+gravam o requisito antes do evento de conclusão, e a avaliação que o requisito
+dispara rodava com o evento ainda fora do banco: a insígnia `lab_<tipo>` sai
+do evento, e não achava nada. A pesquisa da AP045 foi entregue, o requisito
+ficou verde, e o pin dela continuou a giz — sem erro em lugar nenhum, até a
+pessoa fazer outra coisa, que para quem acabou de fechar a trilha é nunca.
+Hoje `logActivity` avalia **depois** de gravar o evento que conclui um
+laboratório — o que `laboratorioDoEvento` reconhece e a ofensiva conta como
+módulo vencido —, e a `20261115190000` deu o pin a quem já tinha concluído,
+com a data da primeira conclusão. A tabela de lição para insígnia e a lista de
+eventos dela são conferidas contra o código em `logActivity.test.ts`.
+
+As duas avaliações passam a correr juntas e acham a mesma insígnia, e com
+`insert` puro a segunda batia no UNIQUE e o lote **inteiro** era recusado,
+levando junto a insígnia que só ela tinha achado. A gravação é `upsert` com
+`ignoreDuplicates`, e anuncia só o que de fato entrou.
+
+**A Faixa sai em PDF, desenhada pela própria tela.** Ela é DOM e CSS — o patch
+é a arte numa máscara, com os fios em `mix-blend-mode` e sombra em
+`drop-shadow` —, e redesenhá-la num canvas seria escrever cada material duas
+vezes. O html2canvas, que vem com o jsPDF, não entende máscara nem mistura.
+`exportarFaixa.ts` copia o pano para dentro de um `foreignObject`, com
+`CSS_DA_FAIXA` e cada arte embutida como `data:` — uma imagem SVG não busca
+nada fora dela, e arte que ficasse como endereço sairia em branco —, e o
+navegador o pinta num canvas como pinta a página.
+
+Ela sai **dobrada em quatro fileiras**, porque a Faixa inteira tem vinte e
+cinco vezes a altura em largura e não cabe em tela nenhuma. A dobra não é uma
+reta: nas veredas os anéis se encaixam nos vãos dos vizinhos e não há reta que
+passe sem partir alguém. Cada unidade vai inteira para a fileira do centro
+dela, e cada fileira desenha só as suas peças. E é PDF, e não PNG, por
+medida: a textura do tecido deu quinze megabytes em PNG e quatro em JPEG da
+mesma qualidade visível, e a imagem dobrada tem quase a proporção de uma A4
+deitada — sai pronta para imprimir.
 
 **Os Mestrados fecham famílias.** Um por família de trilha e de vereda, ao
 concluir todas as dela, e o **ME006**, oficial: sete das onze trilhas daqui que
@@ -6229,7 +6265,6 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/painelDoLaboratorio.test.ts` | botão que o laboratório entrega à moldura e não se lê no painel branco, ou classe de botão que não existe |
 | `src/components/ui/TokenNoCartao.test.tsx` | cartão que anuncia certificado e não leva a ele, ou que volta a ser uma âncora em volta de tudo |
 | `src/components/ui/PainelDeTokens.test.tsx` | uma das duas telas montando a própria lista de Token.Web(), ou o revogado contando como conquista |
-| `src/components/ui/EstanteDeInsignias.test.tsx` | insígnia do painel que leva ao formulário do perfil em vez de contar o que rendeu |
 | `src/components/ui/ExplicacaoDaInsignia.test.tsx` | cartão de explicação desenhado dentro de quem o chamou, onde o `backdrop-filter` prende o `fixed` |
 | `src/lib/relatorioEmPdf.test.ts` | conquista sem data dizendo-se a primeira, ou sumário reservando menos folhas do que tem entradas |
 | `src/lib/continuar.test.ts` | trilha terminada na fila, próxima lição que pula a que faltou, ou a mais antiga no topo |
@@ -6534,6 +6569,9 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/faixa/empacotarFaixa.test.ts` | pin de curiosidade encostando no vizinho do mesmo cacho |
 | `src/lib/faixa/lugarVazio.test.ts` | lugar vazio sem dizer como se conquista, segredo vazio que entrega o nome, ou Mestrado que não lista o que falta |
 | `src/lib/mestrados.test.ts` | lista ou mínimo do ME006 diferente entre o aplicativo e a Edge Function que emite o certificado |
+| `src/lib/logActivity.test.ts` | laboratório de trilha concluído que não avalia as insígnias depois de gravar o evento, ou avaliação concorrente que derruba o lote inteiro no UNIQUE |
+| `src/lib/logActivity.test.ts` | tabela de lição para insígnia ou lista de eventos da `20261115190000` divergindo do código |
+| `src/lib/faixa/exportarFaixa.test.ts` | Faixa exportada com peça partida na dobra, patch separado dos satélites, arte que não foi embutida, ou SVG que o XML recusa |
 | `src/lib/mestrados.test.ts` | lista ou mínimo de um Mestrado diferente entre o aplicativo e a migration que o concedeu a quem já o tinha alcançado |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |

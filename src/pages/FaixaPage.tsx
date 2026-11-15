@@ -8,11 +8,15 @@ import CertificadoNaParede from '../components/faixa/CertificadoNaParede';
 import ExplicacaoDaInsignia from '../components/ui/ExplicacaoDaInsignia';
 import LugarVazioNaFaixa from '../components/faixa/LugarVazioNaFaixa';
 import { LoadingState } from '../components/ui/PageState';
+import { Download } from 'lucide-react';
 import { gruposDaFaixa } from '../lib/faixa/catalogoDaFaixa';
 import { empacotarFaixa, type PecaPosta } from '../lib/faixa/empacotarFaixa';
 import { certificadoDaPeca, estadoDaPeca } from '../lib/faixa/estadoDaFaixa';
 import { explicarLugarVazio } from '../lib/faixa/lugarVazio';
 import { supabase } from '../lib/supabase';
+import { nomeDeArquivo, pdfDaFaixa } from '../lib/faixa/exportarFaixa';
+import { diaEmBrasilia } from '../lib/diaEmBrasilia';
+import { getPublicName } from '../types';
 
 /*
   A Faixa: a página das conquistas e dos Token.Web().
@@ -32,6 +36,10 @@ export default function FaixaPage() {
   const { badges, loading } = useBadges(profile?.id);
   const { certifications, loading: carregandoCerts, refresh } = useCertifications(profile?.id);
   const [aberta, setAberta] = useState<PecaPosta | null>(null);
+  const moldura = useRef<HTMLDivElement>(null);
+  const [baixando, setBaixando] = useState(false);
+  const [erroAoBaixar, setErroAoBaixar] = useState<string | null>(null);
+  const montado = useMontado();
 
   const conquistadas = useMemo(() => new Set(badges.map(b => b.code)), [badges]);
   /* O empacotamento não depende de quem olha: é o mesmo desenho para todo
@@ -51,20 +59,60 @@ export default function FaixaPage() {
      desenho — o estado —, e não "há certificado?": uma trilha concluída e
      revogada tem documento e continua sendo peça que se abre como cheia. */
   const vazia = aberta ? estado(aberta) === 'vazia' : false;
+
+  /* A imagem sai do pano que está na tela, e não de um segundo desenho — ver
+     `exportarFaixa.ts`. */
+  const baixar = async () => {
+    const pano = moldura.current?.querySelector<HTMLElement>('.fx-pano');
+    if (!pano || !profile) return;
+    setBaixando(true);
+    setErroAoBaixar(null);
+    try {
+      const [ano, mes, dia] = diaEmBrasilia().split('-');
+      const nome = getPublicName(profile);
+      const pdf = await pdfDaFaixa(pano, faixa, {
+        nome: `Faixa de ${nome}`,
+        contagem: `${acesas} de ${total} peças`,
+        data: `${dia}/${mes}/${ano}`,
+      });
+      const url = URL.createObjectURL(pdf);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `faixa-${nomeDeArquivo(nome)}.pdf`;
+      a.click();
+      /* O clique entrega o arquivo antes de o endereço sumir; soltá-lo na hora
+         cancelaria o download em alguns navegadores. */
+      window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    } catch {
+      if (montado.current) setErroAoBaixar('Não deu para gerar o PDF agora. Tente de novo em instantes.');
+    } finally {
+      if (montado.current) setBaixando(false);
+    }
+  };
   const cert = aberta && !vazia ? certificadoDaPeca(aberta, certifications) : undefined;
   const insignia = aberta && !vazia && !cert ? badges.find(b => b.code === aberta.insignia) : undefined;
 
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Minha Faixa</h1>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h1 className="text-2xl font-bold">Minha Faixa</h1>
+          <button type="button" className="btn-secondary flex items-center gap-2 text-sm" onClick={baixar} disabled={baixando}>
+            <Download className="w-4 h-4" aria-hidden="true" />
+            {baixando ? 'Preparando o PDF...' : 'Baixar a Faixa (PDF)'}
+          </button>
+        </div>
         <p className="text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>
           <span className="font-bold" style={{ color: 'var(--color-text)' }}>{acesas}</span> de {total} peças.
           {' '}Cada trilha, vereda e conquista já tem o seu lugar. Toque numa peça acesa para ver o que ela rendeu, ou num contorno de giz para ver o que falta.
         </p>
       </div>
 
-      <Faixa faixa={faixa} estado={estado} aoAbrir={setAberta} />
+      {erroAoBaixar && <p role="alert" className="text-sm" style={{ color: 'var(--color-error)' }}>{erroAoBaixar}</p>}
+
+      <div ref={moldura}>
+        <Faixa faixa={faixa} estado={estado} aoAbrir={setAberta} />
+      </div>
 
       {aberta && cert && (
         <CertificadoNaParede
