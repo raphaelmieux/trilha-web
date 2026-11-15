@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { existsSync } from 'node:fs';
 import { getOpenSpecialties } from '../curriculum';
-import { comoCertificadoVerificado, codigoDaArte, percursoDoCertificado } from './certificados';
+import { comoCertificadoVerificado, codigoDaArte, coresDoCertificado, percursoDoCertificado } from './certificados';
 import { getSpecialty } from '../curriculum';
 import { getVereda } from '../curriculum/veredas';
 import { nomeCompleto } from '../types';
@@ -90,6 +90,24 @@ describe('codigoDaArte', () => {
 
   it('cai na AP034 para código que o currículo não conhece', () => {
     expect(codigoDaArte('AP099')).toBe('AP034');
+  });
+});
+
+/*
+  O Mestrado oficial emite Token.Web() com arte própria, e ela é escura: o
+  texto que a plataforma escreve por cima sai branco ali, e quase preto em
+  todas as outras. Escrito em preto, o nome sumiria no fundo do ME006.
+*/
+describe('o certificado do ME006', () => {
+  it('usa a arte dele, que existe na pasta dos certificados', () => {
+    expect(codigoDaArte('ME006')).toBe('ME006');
+    expect(existsSync('public/assets/certificates/ME006.png')).toBe(true);
+  });
+
+  it('escreve em branco, e as artes claras continuam em quase preto', () => {
+    expect(coresDoCertificado('ME006')).toEqual({ nome: [255, 255, 255], rodape: [255, 255, 255] });
+    expect(coresDoCertificado('AP034').nome).toEqual([10, 10, 10]);
+    for (const v of VEREDAS) expect(coresDoCertificado(v.code).nome, v.code).toEqual([10, 10, 10]);
   });
 });
 

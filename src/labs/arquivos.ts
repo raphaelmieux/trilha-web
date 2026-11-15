@@ -57,6 +57,13 @@ export interface No {
    * era, não há de onde voltar — e é essa a diferença que o módulo 7 ensina.
    */
   versoes?: VersaoAnterior[];
+  /**
+   * Arquivo com o atributo "oculto": ele existe, ocupa espaço e se copia como
+   * qualquer outro — só não aparece na lista enquanto o menu Exibir não
+   * mandar mostrar. É assim que o Windows guarda os arquivos de que ele mesmo
+   * precisa longe de quem arruma pastas.
+   */
+  oculto?: boolean;
 }
 
 /** Um retrato de um arquivo antes de alguém salvar por cima. */

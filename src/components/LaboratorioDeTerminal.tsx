@@ -9,6 +9,7 @@ import { computadorDaLicao } from '../labs/computadores';
 import { validarTerminal } from '../lib/terminalValidator';
 import { PASSOS_DO_TERMINAL } from '../labs/passosDeTerminal';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
+import { acharSegredo } from '../lib/registroDeCuriosidades';
 
 /*
  * O terminal da CC003.
@@ -135,8 +136,9 @@ export default function LaboratorioDeTerminal({ vereda, licao, aoVencer, aoSair 
       return;
     }
 
-    const { maquina: nova, saida } = rodar(maquina, texto);
+    const { maquina: nova, saida, segredo } = rodar(maquina, texto);
     setMaquina(nova);
+    if (segredo) acharSegredo(segredo);
 
     if (saida === '\x00limpar') { setLinhas([]); return; }
 

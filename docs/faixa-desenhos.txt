@@ -97,26 +97,27 @@ B) MESTRADOS DA PLATAFORMA - BUTTONS em retângulo áureo (13)
 Pasta:   public/assets/mestrados/<codigo>.png
 Formato: PNG 970 x 600 px (retângulo áureo, deitado), SEM transparência
          nos cantos: o arredondamento e o aro de metal são a Faixa que
-         faz. Escreva "MESTRADO" e o nome da família.
+         faz. Escreva "MESTRADO" e o nome do Mestrado (o da família,
+         menos Fina Arte e Básico). O nome do ARQUIVO é o da família.
 Material: button (face lisa e brilhante), NUNCA patch bordado: patch é
          da especialidade e do Mestrado oficial.
 
 --- Famílias de trilha (5) ---
-[ ] mestrado_internet.png                       Internet (AP034, AP035)
-[ ] mestrado_computacao.png                     Computação (AP041 a AP045)
-[ ] mestrado_programacao.png                    Programação (AP049, AP052)
-[ ] mestrado_web_design.png                     Web Design (AP063, AP064)
-[ ] mestrado_artes_e_habilidades_manuais.png    Artes e Habilidades Manuais (HM079, HM090)
+[x] mestrado_internet.png                       Internet (AP034, AP035)
+[x] mestrado_computacao.png                     Computação (AP041 a AP045)
+[x] mestrado_programacao.png                    Programação (AP049, AP052)
+[x] mestrado_web_design.png                     Web Design (AP063, AP064)
+[x] mestrado_artes_e_habilidades_manuais.png    Fina Arte (HM079, HM090)
 
 --- Famílias de vereda (8) ---
-[ ] mestrado_base.png                           Base (CC001 a CC006)
-[ ] mestrado_escritorio.png                     Escritório (CC-ES001 a CC-ES013)
-[ ] mestrado_design.png                         Design (CC-DG001 a CC-DG006)
-[ ] mestrado_front_end.png                      Front-end (CC-FE001 a CC-FE007)
-[ ] mestrado_mobile.png                         Mobile (CC-MB001 a CC-MB005)
-[ ] mestrado_back_end.png                       Back-end (CC-BE001 a CC-BE006)
-[ ] mestrado_sistemas.png                       Sistemas (CC-SI001 a CC-SI005)
-[ ] mestrado_infraestrutura.png                 Infraestrutura (CC-IE001 a CC-IE003)
+[x] mestrado_base.png                           Básico (CC001 a CC006)
+[x] mestrado_escritorio.png                     Escritório (CC-ES001 a CC-ES013)
+[x] mestrado_design.png                         Design (CC-DG001 a CC-DG006)
+[x] mestrado_front_end.png                      Front-end (CC-FE001 a CC-FE007)
+[x] mestrado_mobile.png                         Mobile (CC-MB001 a CC-MB005)
+[x] mestrado_back_end.png                       Back-end (CC-BE001 a CC-BE006)
+[x] mestrado_sistemas.png                       Sistemas (CC-SI001 a CC-SI005)
+[x] mestrado_infraestrutura.png                 Infraestrutura (CC-IE001 a CC-IE003)
 
 =====================================================================
 C) CERTIFICADO DO ME006 - Token.Web() do Mestrado oficial (1)
@@ -132,9 +133,12 @@ Layout:  igual ao dos outros, porque o nome, o código e a data são
            direita.
          Use o certificado de uma trilha como molde, trocando o texto
          ("terminou com sucesso..." / "AP034 Internet") e o emblema.
-[ ] ME006.png   Certificado do Mestrado em Ciência e Tecnologia
+[x] ME006.png   Certificado do Mestrado em Ciência e Tecnologia
 
 =====================================================================
 JÁ RECEBIDO
 =====================================================================
 [x] ME006.png   Mestrado oficial em Ciência e Tecnologia (patch) - 13/11/2026
+[x] Os 13 Mestrados da plataforma - 15/11/2026, em 970 x 600 px
+[x] Certificado do ME006 - 15/11/2026 (arte escura: a plataforma escreve
+    nome, código e data em branco)

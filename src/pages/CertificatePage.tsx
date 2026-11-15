@@ -8,6 +8,7 @@ import { LoadingState, ErrorState } from '../components/ui/PageState';
 import CertificateCanvas from '../components/CertificateCanvas';
 import { exportCertificatePdf } from '../lib/pdf';
 import { comoCertificadoVerificado } from '../lib/certificados';
+import { registrarCuriosidade } from '../lib/registroDeCuriosidades';
 
 export default function CertificatePage() {
   const { code } = useParams();
@@ -70,6 +71,7 @@ export default function CertificatePage() {
     setExportError('');
     try {
       await exportCertificatePdf(cert, studentName);
+      registrarCuriosidade('tokenBaixado', { code: cert.code });
     } catch (err) {
       setExportError((err as Error).message || 'Não foi possível gerar o PDF.');
     } finally {

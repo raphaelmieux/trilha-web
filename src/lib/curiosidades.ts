@@ -3,6 +3,7 @@ import { objeto, trilhaDoEvento, type EventoDeAtividade } from './atividade';
 import { diaEmBrasilia, horaEmBrasilia, diaDaSemanaEmBrasilia, eventoDeModuloVencido } from './ofensiva';
 import { LIMIAR_DOMINIO } from './limiarDeDominio';
 import { CURIOSIDADES } from './catalogoDeCuriosidades';
+import { EVENTOS_DAS_CURIOSIDADES } from './eventosDasCuriosidades';
 
 /*
   As regras das curiosidades: o que cada uma pede, lido do que já está gravado.
@@ -106,17 +107,9 @@ export const LINGUAGEM_DA_VEREDA: Record<string, string> = {
   'CC-BE005': 'R', 'CC-SI001': 'C', 'CC-SI002': 'C++', 'CC-SI003': 'Go', 'CC-SI004': 'Rust',
 };
 
-/* Os eventos que as simulações gravam para as curiosidades (etapa 2). */
-export const EVENTOS_DAS_CURIOSIDADES = {
-  referencia: 'referencia_consultada',
-  atalho: 'atalho_usado',
-  menu: 'menu_de_contexto_aberto',
-  tokenBaixado: 'token_baixado',
-  tokenImpresso: 'token_impresso',
-  relatorio: 'relatorio_gerado',
-  verificacao: 'token_verificado',
-  segredo: 'segredo_achado',
-} as const;
+/* Os eventos que as simulações gravam para as curiosidades moram à parte —
+   `eventosDasCuriosidades.ts` diz por quê. */
+export { EVENTOS_DAS_CURIOSIDADES };
 
 interface Lido { e: EventoDeAtividade; quando: string; t: number; dia: string; m: Record<string, unknown> }
 

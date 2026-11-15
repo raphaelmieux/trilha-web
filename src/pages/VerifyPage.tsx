@@ -5,6 +5,7 @@ import { Award, Search, CheckCircle2 } from 'lucide-react';
 import { MarcaEmTexto } from '../components/ui/BrandMark';
 import { ErrorState } from '../components/ui/PageState';
 import { comoCertificadoVerificado, percursoDoCertificado } from '../lib/certificados';
+import { registrarCuriosidade } from '../lib/registroDeCuriosidades';
 
 export default function VerifyPage() {
   const [code, setCode] = useState('');
@@ -43,6 +44,9 @@ export default function VerifyPage() {
     }
 
     setResult(cert);
+    /* Só grava com alguém entrado — quem verifica costuma ser a liderança do
+       clube, sem conta nenhuma, e aí o registro não faz nada. */
+    registrarCuriosidade('verificacao', { code: cert.code });
     setSearched(true);
   };
 

@@ -144,3 +144,16 @@ describe('os documentos dos laboratórios', () => {
     expect([...new Set(erros)]).toEqual([]);
   }, 60000);
 });
+
+/* O texto que o `=rand()` escreve entra na folha como se tivesse sido
+   digitado: frase com palavra sublinhada faria o próprio Word acusar o
+   texto que ele mesmo escreveu. */
+describe('o texto de enchimento', () => {
+  it('sai sem palavra sublinhada', async () => {
+    const { textoDeEnchimento } = await import('./textoDeEnchimento');
+    const erros = textoDeEnchimento(10, 1).split('\n')
+      .flatMap(t => errosDoParagrafo(paragrafo([{ id: 't', texto: t }] as Paragrafo<string>['trechos']), { confere }))
+      .map(e => e.palavra);
+    expect(erros).toEqual([]);
+  });
+});

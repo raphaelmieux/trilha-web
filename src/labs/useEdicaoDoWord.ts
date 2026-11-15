@@ -15,6 +15,8 @@ import {
   alinhar, alternarLista, colarSemGrudar, recortarSelecao, definirEntrelinha, formatoDoParagrafoDaSelecao,
   fragmentoDaSelecao, moverSelecao, mudarRecuo, tabular, textoDaSelecao,
 } from './edicao';
+import { pedidoDeEnchimento, textoDeEnchimento } from './textoDeEnchimento';
+import { acharSegredo } from '../lib/registroDeCuriosidades';
 
 /**
  * O que a folha manda quando alguém mexe nela com o teclado.
@@ -354,7 +356,26 @@ export function useEdicaoDoWord<S extends string>(
         r = c.alvo && !recolhida(alvo) ? apagarSelecao(d, alvo, q) : apagar(d, alvo, c.direcao, q, c.palavra);
         digitando.current = false;
         break;
-      case 'paragrafo': r = quebrarParagrafo(d, alvo, q); digitando.current = false; break;
+      case 'paragrafo': {
+        /* `=rand()` sozinho no parágrafo, com o cursor no fim: o Word troca o
+           pedido pelo texto de exemplo — ver `textoDeEnchimento.ts`. Entra
+           por `inserirTexto`, e por isso passa pelo Ctrl+Z e pelo controle de
+           alterações como se tivesse sido digitado. */
+        const bloco = recolhida(alvo) ? d.blocos.find(b => b.id === alvo.foco.bloco) : undefined;
+        const aqui = bloco && ehParagrafo(bloco) ? bloco : undefined;
+        const pedido = aqui && alvo.foco.offset === tamanhoDoParagrafo(aqui)
+          && !aqui.trechos.some(x => x.campo || x.quebra || x.revisao)
+          ? pedidoDeEnchimento(aqui.trechos.map(x => x.texto).join('')) : null;
+        if (aqui && pedido) {
+          const tudo: Selecao = { ancora: { bloco: aqui.id, offset: 0 }, foco: { bloco: aqui.id, offset: tamanhoDoParagrafo(aqui) } };
+          r = inserirTexto(d, tudo, textoDeEnchimento(pedido.paragrafos, pedido.frases), q, p);
+          acharSegredo('texto_de_enchimento');
+        } else {
+          r = quebrarParagrafo(d, alvo, q);
+        }
+        digitando.current = false;
+        break;
+      }
       case 'quebra-de-linha': r = quebraDeLinha(d, alvo, q); digitando.current = false; break;
       case 'quebra-de-pagina': r = quebraDePagina(d, alvo, q); digitando.current = false; break;
       /* O Tab que recua é formatação de parágrafo, e ganha a marca dela; o que
