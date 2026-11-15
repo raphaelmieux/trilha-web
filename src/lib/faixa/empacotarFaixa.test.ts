@@ -38,6 +38,26 @@ describe('o empacotador da Faixa', () => {
     expect(toques).toEqual([]);
   });
 
+  /* Dentro de um cacho de curiosidades a regra é a caixa inteira, girada: a
+     arte dos pins é deitada, em pé ou larga, e a espiral medida para o pin
+     redondo pôs os desenhos dos segredos uns por cima dos outros. */
+  it('não deixa um pin de curiosidade encostar no vizinho do mesmo cacho', () => {
+    const meia = (w: number, h: number, giro: number) => {
+      const r = (Math.abs(giro) * Math.PI) / 180;
+      return [(w * Math.cos(r) + h * Math.sin(r)) / 2, (w * Math.sin(r) + h * Math.cos(r)) / 2];
+    };
+    const pins = faixa.pecas.filter(p => p.material === 'pin-curioso');
+    expect(pins.length).toBe(CURIOSIDADES.length);
+    const toques: string[] = [];
+    for (let i = 0; i < pins.length; i++) for (let j = i + 1; j < pins.length; j++) {
+      const a = pins[i], b = pins[j];
+      if (a.unidade !== b.unidade) continue;
+      const [aw, ah] = meia(a.w, a.h, a.giro), [bw, bh] = meia(b.w, b.h, b.giro);
+      if (Math.abs(a.x - b.x) < aw + bw && Math.abs(a.y - b.y) < ah + bh) toques.push(`${a.id} × ${b.id}`);
+    }
+    expect(toques).toEqual([]);
+  });
+
   it('põe toda peça dentro da altura da Faixa', () => {
     const fora = faixa.pecas.filter(p => p.y - p.h / 2 < 0 || p.y + p.h / 2 > ALTURA_DA_FAIXA || p.x - p.w / 2 < 0 || p.x + p.w / 2 > faixa.largura);
     expect(fora.map(p => p.id)).toEqual([]);

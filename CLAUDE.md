@@ -500,6 +500,21 @@ sem nome, sem família e sem caminho. `lugarVazio.test.ts` confere todo segredo
 do catálogo. A edição antiga, no lugar vazio, diz que não se ganha mais, em vez
 de pedir um feito que nenhuma regra concede.
 
+**A arte dos pins de curiosidade mora em `public/assets/pins/<code>.png`**, e o
+nome do arquivo é o código, com sublinhado: a primeira leva chegou com
+`arquivo-escondido.png`, que a Faixa nunca pediria. Todo pin cabe num quadrado
+e a arte se ajusta dentro dele; a exceção é declarada em `proporcao`, no
+catálogo, para o pin que deve se destacar — o `fim_da_planilha` fica com a
+altura cheia e passa da largura. O número é necessário antes de a imagem
+carregar, porque o empacotamento reserva o lugar sem ler arte nenhuma, e
+`formaDoPin.test.ts` o compara com o arquivo, junto com o nome de cada arte e
+a dos segredos inteiros.
+
+E os pins do mesmo cacho não se encostam. A espiral foi medida para o pin
+redondo provisório; com a arte, deitada, em pé e larga, os segredos caíram uns
+por cima dos outros. Cada pin desce pela própria direção da espiral até a caixa
+dele, girada, sair das que vieram antes.
+
 O overloque do patch sai **da arte**: o contorno traçado da transparência
 (240 raios do centro) e a cor da beirada, lidos do arquivo por canvas em
 `bordaDaArte.ts`. É a regra das pastas de arte — arte nova chega com a borda
@@ -6476,6 +6491,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/faixa/empacotarFaixa.test.ts` | edição antiga que move outra peça, ou zonas fora da ordem Trilhas, Escadas, Curiosidades e Veredas |
 | `src/lib/faixa/estadoDaFaixa.test.ts` | peça acesa sem a insígnia, ou Token.Web() revogado aparecendo como se valesse |
 | `src/components/faixa/Faixa.test.tsx` | mais de uma peça na ordem do Tab, seta que não leva o foco à peça seguinte, lugar vazio que não abre, segredo mostrando a forma da peça, ou impressão que deixa a página em branco depois |
+| `src/lib/formaDoPin.test.ts` | arte de pin com nome que não é código de curiosidade, segredo sem arte, ou pin largo com a proporção diferente do arquivo |
+| `src/lib/faixa/empacotarFaixa.test.ts` | pin de curiosidade encostando no vizinho do mesmo cacho |
 | `src/lib/faixa/lugarVazio.test.ts` | lugar vazio sem dizer como se conquista, segredo vazio que entrega o nome, ou Mestrado que não lista o que falta |
 | `src/lib/mestrados.test.ts` | lista ou mínimo do ME006 diferente entre o aplicativo e a Edge Function que emite o certificado |
 | `src/lib/mestrados.test.ts` | lista ou mínimo de um Mestrado diferente entre o aplicativo e a migration que o concedeu a quem já o tinha alcançado |

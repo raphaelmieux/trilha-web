@@ -254,20 +254,47 @@ function grupoDasEscadas(): GrupoDaFaixa {
   return { nome: 'Escadas', zona: 'escadas', encaixe: 0, folgaDepois: 40, unidades };
 }
 
-/** Curiosidades: um cacho por tema, em espiral de girassol. */
+/*
+  Curiosidades: um cacho por tema, em espiral de girassol.
+
+  A espiral foi medida para o pin redondo provisório, e a arte não é redonda:
+  é deitada, em pé, e há um pin largo de propósito. Com o passo da espiral
+  sozinho, os desenhos dos segredos caíram uns por cima dos outros — o mapa do
+  banco tapava o crachá, a planilha tapava o terminal. Cada pin desce pela
+  própria direção da espiral até a caixa dele, já girada, não encostar em
+  nenhuma das que vieram antes. A ordem é a do catálogo e a semente é fixa,
+  então o desenho continua o mesmo para todo mundo.
+*/
+const VAO_ENTRE_PINS = 4;
+
+/** Meia largura e meia altura da caixa de uma peça girada. */
+function meiaCaixaGirada(w: number, h: number, giro: number): [number, number] {
+  const r = (Math.abs(giro) * Math.PI) / 180;
+  return [(w * Math.cos(r) + h * Math.sin(r)) / 2, (w * Math.sin(r) + h * Math.cos(r)) / 2];
+}
+
 function gruposDasCuriosidades(): GrupoDaFaixa[] {
   const temas = [...new Set(CURIOSIDADES.map(c => c.tema))] as TemaDaCuriosidade[];
   return temas.map((tema, t) => {
     const sorte = semente('cur' + tema);
     const passo = 34;
+    const postas: { dx: number; dy: number; mw: number; mh: number }[] = [];
     const pecas = CURIOSIDADES.filter(c => c.tema === tema).map((c, i): PecaNaUnidade => {
-      const r = passo * Math.sqrt(i + 0.5);
       const a = i * 2.39996 + sorte();
+      const giro = sorte() * 24 - 12;
+      const w = Math.round(CURIOSIDADE * (c.proporcao ?? 1)), h = CURIOSIDADE;
+      const [mw, mh] = meiaCaixaGirada(w, h, giro);
+      const encosta = (dx: number, dy: number) => postas.some(o =>
+        Math.abs(dx - o.dx) < mw + o.mw + VAO_ENTRE_PINS && Math.abs(dy - o.dy) < mh + o.mh + VAO_ENTRE_PINS);
+      let r = passo * Math.sqrt(i + 0.5);
+      while (encosta(r * Math.cos(a), r * Math.sin(a))) r += 2;
+      const dx = r * Math.cos(a), dy = r * Math.sin(a);
+      postas.push({ dx, dy, mw, mh });
       return {
         id: c.code, insignia: c.code, material: 'pin-curioso', icone: ICONE_DO_TEMA[tema],
-        nome: c.nome, descricao: c.descricao, w: CURIOSIDADE, h: CURIOSIDADE, arte: ARTE.pin(c.code),
+        nome: c.nome, descricao: c.descricao, w, h, arte: ARTE.pin(c.code),
         ...(c.dica ? { dica: c.dica } : {}),
-        dx: r * Math.cos(a), dy: r * Math.sin(a), giro: sorte() * 24 - 12,
+        dx, dy, giro,
       };
     });
     return {
