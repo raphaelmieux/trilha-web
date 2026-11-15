@@ -72,7 +72,8 @@ export default function TeoriaDaVereda({ vereda, licao, aoVencer, aoSair }: {
   vereda: Vereda;
   licao: Extract<LicaoDeVereda, { tipo: 'teoria' }>;
   /** Chamado uma vez, quando a lição é concluída com nota suficiente. */
-  aoVencer: () => Promise<void> | void;
+  /** Recebe a nota: a escada Sem erro conta a teoria feita sem errar. */
+  aoVencer: (nota: { score: number; total: number }) => Promise<void> | void;
   aoSair: () => void;
 }) {
   const questoes = useMemo(() => sortearQuestoes(licao.questoes, licao.perguntas), [licao]);
@@ -95,7 +96,7 @@ export default function TeoriaDaVereda({ vereda, licao, aoVencer, aoSair }: {
     /* A lição só é vencida a partir do limiar de domínio, o mesmo das trilhas.
        Abaixo dele a pessoa refaz — e o que ela já respondeu certo continua
        valendo como aprendizado, mas não como conclusão. */
-    if (percentual >= LIMIAR_DOMINIO) await aoVencer();
+    if (percentual >= LIMIAR_DOMINIO) await aoVencer({ score: certas, total: questoes.length });
     setGravando(false);
     setNota({ certas, total: questoes.length });
   };

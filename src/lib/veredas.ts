@@ -31,6 +31,16 @@ import { objeto, type EventoDeAtividade } from './atividade';
 export const EVENTO_TOPICO = 'vereda_topico';
 export const EVENTO_LABORATORIO = 'vereda_laboratorio';
 export const EVENTO_TEORIA = 'vereda_teoria';
+/*
+  A teoria já vencida, refeita com todas as questões certas.
+
+  A escada Sem erro conta a teoria de vereda feita sem errar nenhuma, e a
+  vitória grava a nota só da primeira vez. Sem este evento, quem venceu com
+  80% e voltou para fazer 100% nunca teria como registrar isso, e o topo da
+  escada ficaria fora do alcance de quem fez tudo certo depois. Não é módulo
+  vencido — o módulo já estava —, então não anda na ofensiva nem rende XP.
+*/
+export const EVENTO_TEORIA_PERFEITA = 'vereda_teoria_perfeita';
 export const EVENTO_CONCLUSAO = 'vereda_completed';
 
 /*
@@ -124,6 +134,8 @@ export function licoesVencidas(vereda: Vereda, feito: PercursoDeVereda | undefin
 export interface ConquistasNasVeredas {
   /** Lições vencidas, somadas em todas as veredas. */
   licoes: number;
+  /** Teorias de vereda feitas sem errar nenhuma questão — contam na escada Sem erro. */
+  teoriasPerfeitas: number;
   /** Módulos com todas as lições vencidas. */
   modulos: number;
   /**
@@ -216,7 +228,21 @@ export function conquistasNasVeredas(
 
   /* `requisitos` sai de `licoes` por escrito, e não por um segundo laço que
      contaria a mesma coisa e discordaria no primeiro ajuste. */
-  return { licoes, modulos, requisitos: licoes, laboratoriosDeVereda };
+  /* As teorias feitas sem errar nenhuma: a vitória com nota cheia, ou a
+     refeita depois com nota cheia. Só as que existem no registro, pela mesma
+     razão de o resto daqui só olhar o registro. */
+  const existe = new Set(registro.flatMap(v => licoesDaVereda(v).filter(l => l.tipo === 'teoria').map(l => `${v.id}/${l.id}`)));
+  const perfeitas = new Set<string>();
+  for (const e of eventos) {
+    if (e.event_type !== EVENTO_TEORIA && e.event_type !== EVENTO_TEORIA_PERFEITA) continue;
+    const m = objeto(e.metadata);
+    const chave = `${m.vereda ?? m.trilha}/${m.licao}`;
+    const cheia = e.event_type === EVENTO_TEORIA_PERFEITA
+      || (typeof m.total === 'number' && m.total > 0 && m.score === m.total);
+    if (cheia && existe.has(chave)) perfeitas.add(chave);
+  }
+
+  return { licoes, modulos, requisitos: licoes, laboratoriosDeVereda, teoriasPerfeitas: perfeitas.size };
 }
 
 /**
@@ -267,11 +293,21 @@ export async function registrarLicaoVencida(
   vereda: Vereda,
   licao: LicaoDeVereda,
   feito: PercursoDeVereda,
+  /** A nota da teoria, quando quem chama a tem. */
+  nota?: { score: number; total: number },
 ): Promise<boolean> {
-  if (licaoVencida(licao, feito)) return false;
+  const perfeita = !!nota && nota.total > 0 && nota.score === nota.total;
+  if (licaoVencida(licao, feito)) {
+    if (licao.tipo !== 'teoria' || !perfeita) return false;
+    await logActivity(userId, EVENTO_TEORIA_PERFEITA, { vereda: vereda.id, licao: licao.id });
+    return true;
+  }
 
   const evento = licao.tipo === 'teoria' ? EVENTO_TEORIA : EVENTO_LABORATORIO;
-  await logActivity(userId, evento, { vereda: vereda.id, licao: licao.id });
+  await logActivity(userId, evento, {
+    vereda: vereda.id, licao: licao.id,
+    ...(licao.tipo === 'teoria' && nota ? { score: nota.score, total: nota.total } : {}),
+  });
 
   const depois: PercursoDeVereda = {
     licoes: new Set(feito.licoes).add(licao.id),

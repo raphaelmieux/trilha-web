@@ -184,9 +184,9 @@ export default function VeredaPage() {
   const licaoAberta = licoes.find(l => l.id === aberta);
 
   /* Uma gravação só para os dois tipos: a lição diz qual evento é dela. */
-  const vencer = async () => {
+  const vencer = async (nota?: { score: number; total: number }) => {
     if (!profile?.id || !licaoAberta) return;
-    await vencerLicaoDaVereda(profile.id, vereda, licaoAberta, feito ?? percursoVazio());
+    await vencerLicaoDaVereda(profile.id, vereda, licaoAberta, feito ?? percursoVazio(), nota);
   };
 
   if (licaoAberta?.tipo === 'teoria' && profile?.id) {

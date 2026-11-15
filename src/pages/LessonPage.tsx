@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { motorDoLaboratorio } from '../lib/motorDoLaboratorio';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getSpecialty } from '../curriculum';
@@ -131,10 +132,12 @@ export default function LessonPage() {
           <span style={{ color: 'var(--color-text-faint)' }}>/</span>
           <span className="font-medium" style={{ color: 'var(--color-text)' }}>{lesson.title}</span>
         </div>
-        {lesson.labType === 'redacao_guiada' && <RedacaoGuiadaLab {...labProps} />}
+        {/* O motor, e não o tipo, escolhe a tela: três tipos de laboratório
+            usam a redação guiada, e dois usam o WebLab. */}
+        {motorDoLaboratorio(lesson.labType) === 'redacao_guiada' && <RedacaoGuiadaLab {...labProps} />}
         {lesson.labType === 'pact_builder' && <PactBuilderLab {...labProps} />}
         {lesson.labType === 'threat_lab' && <ThreatLab {...labProps} />}
-        {lesson.labType === 'web_lab' && <WebLab {...labProps} />}
+        {motorDoLaboratorio(lesson.labType) === 'web_lab' && <WebLab {...labProps} />}
         {lesson.labType === 'mail_lab' && <MailLab {...labProps} />}
         {lesson.labType === 'filipenses' && <FilipensesLab {...labProps} />}
         {lesson.labType === 'code_lab' && <CodeLab {...labProps} variant="elementos" />}

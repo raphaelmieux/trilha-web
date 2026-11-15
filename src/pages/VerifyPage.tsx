@@ -5,6 +5,7 @@ import { Award, Search, CheckCircle2 } from 'lucide-react';
 import { MarcaEmTexto } from '../components/ui/BrandMark';
 import { ErrorState } from '../components/ui/PageState';
 import { comoCertificadoVerificado, percursoDoCertificado } from '../lib/certificados';
+import { registrarCuriosidade } from '../lib/registroDeCuriosidades';
 
 export default function VerifyPage() {
   const [code, setCode] = useState('');
@@ -43,6 +44,9 @@ export default function VerifyPage() {
     }
 
     setResult(cert);
+    /* Só grava com alguém entrado — quem verifica costuma ser a liderança do
+       clube, sem conta nenhuma, e aí o registro não faz nada. */
+    registrarCuriosidade('verificacao', { code: cert.code });
     setSearched(true);
   };
 
@@ -100,10 +104,14 @@ export default function VerifyPage() {
                 Básico" ali seria inventar grau para uma vereda, que se mede
                 em lições e não em grau.
               */
-              [percurso.tipo === 'vereda' ? 'Vereda:' : 'Especialidade:', percurso.nome],
+              /* O Mestrado também não tem grau: o que ele atesta é ter
+                 concluído aqui as trilhas da lista, e é isso que se escreve. */
+              [percurso.tipo === 'vereda' ? 'Vereda:' : percurso.tipo === 'mestrado' ? 'Mestrado:' : 'Especialidade:', percurso.nome],
               ...(percurso.tipo === 'vereda'
                 ? [['O que é:', 'Vereda — estudo curto, fora do currículo oficial das especialidades']]
-                : [['Nível:', ROTULO_DO_NIVEL[result.level] ?? result.level]]),
+                : percurso.tipo === 'mestrado'
+                  ? [['O que é:', 'Sete trilhas da lista oficial concluídas nesta plataforma; o Mestrado é entregue pelo clube']]
+                  : [['Nível:', ROTULO_DO_NIVEL[result.level] ?? result.level]]),
               ['Currículo:', `${result.curriculum_code} v${result.curriculum_version}`],
               ['Emitido em:', new Date(result.issued_at).toLocaleDateString('pt-BR')],
             ].map(([label, value]) => (

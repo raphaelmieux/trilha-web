@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { CertificadoImprimivel } from '../types';
-import { codigoDaArte } from '../lib/certificados';
+import { codigoDaArte, coresDoCertificado, emCss } from '../lib/certificados';
 
 // The certificate is drawn as an SVG with a fixed viewBox matching the background
 // artwork's native resolution (2340 x 1655 px, which is A4 landscape to within a
@@ -68,6 +68,7 @@ interface Props {
 
 export default function CertificateCanvas({ cert, studentName }: Props) {
   const specialtyCode = codigoDaArte(cert.curriculum_code);
+  const cores = coresDoCertificado(specialtyCode);
   const background = `${import.meta.env.BASE_URL}assets/certificates/${specialtyCode}.png`;
 
   const issuedDate = new Date(cert.issued_at).toLocaleDateString('pt-BR', {
@@ -93,7 +94,7 @@ export default function CertificateCanvas({ cert, studentName }: Props) {
         textAnchor="middle"
         fontFamily={SANS_STACK}
         fontSize={name.fontSize}
-        fill="#0a0a0a"
+        fill={emCss(cores.nome)}
       >
         {studentName}
       </text>
@@ -104,7 +105,7 @@ export default function CertificateCanvas({ cert, studentName }: Props) {
         fontFamily={SANS_STACK}
         fontSize={FOOTER_FONT}
         letterSpacing="1"
-        fill="#1a1a1a"
+        fill={emCss(cores.rodape)}
       >
         {cert.code}
       </text>
@@ -115,7 +116,7 @@ export default function CertificateCanvas({ cert, studentName }: Props) {
         textAnchor="end"
         fontFamily={SANS_STACK}
         fontSize={FOOTER_FONT}
-        fill="#1a1a1a"
+        fill={emCss(cores.rodape)}
       >
         {issuedDate}
       </text>

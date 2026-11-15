@@ -813,3 +813,28 @@ describe('o teclado anda pela lista e pelas pastas', () => {
     expect(endereco()).toContain('Documentos');
   });
 });
+
+/*
+  Os dois segredos do disco do clube. Nenhuma lição fala deles, e as tarefas
+  não podem senti-los: o oculto não aparece até o menu Exibir mandar, e o
+  convite antigo da Lixeira não conta como algo que a pessoa excluiu.
+*/
+describe('os segredos do Explorador', () => {
+  it('o oculto só aparece pelo menu Exibir', () => {
+    montar('m4-lab');
+    irPara('Documentos');
+    expect(linhaDe('bilhete escondido.txt')).toBeUndefined();
+    clicar(comando('Exibir'), 'Exibir');
+    clicar([...container.querySelectorAll('.win-menu button')]
+      .find(b => b.textContent?.includes('Itens ocultos')), 'Itens ocultos');
+    expect(linhaDe('bilhete escondido.txt')).toBeDefined();
+  });
+
+  it('esvaziar só o convite antigo não vale pela tarefa de esvaziar', () => {
+    montar('m3-lab');
+    irPara('Lixeira');
+    expect(linhaDe('convite do primeiro acampamento.doc')).toBeDefined();
+    clicar(comando('Esvaziar a Lixeira'), 'Esvaziar Lixeira');
+    expect(oQueFalta()).toContain('Esvaziar');
+  });
+});

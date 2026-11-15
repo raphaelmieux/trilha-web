@@ -376,6 +376,22 @@ havia, 55 são novos. E o topo mira a plataforma **escrita**, e não a de hoje:
 os degraus altos existem antes de serem alcançáveis de propósito, porque é o
 conteúdo que vai subir até eles.
 
+**O sétimo degrau das escadas de conteúdo é "tudo".** Requisitos, Lições,
+Módulos, Laboratórios, Sem erro, Token.Web() e XP terminam em "todos" — o
+total da plataforma, tirado do registro por `totaisDaPlataforma.ts` —, e o
+"tudo" só vale quando nada mais estiver anunciado: a Faixa fecha no fim da
+plataforma escrita, e não no fim do que existe hoje. Os números fixos de antes
+fechavam essas escadas em menos de um quinto do caminho. Lições, Módulos e
+Requisitos aceitam também "concluiu todas as trilhas e veredas", porque um
+buraco no histórico (laboratório antigo sem tentativa gravada) deixaria quem
+fez tudo um número abaixo do total para sempre.
+
+Os sete topos de antes (`requisitos_192`, `licoes_110`, `modulos_45`,
+`laboratorios_28`, `semerro_90`, `tokens_40`, `xp_12000`) saíram das escadas e
+**ficaram no catálogo**: quem os tem continua com eles. São a **edição
+antiga** (`EDICAO_ANTIGA`), que aparece só para quem tem alguma, sem lugar
+vazio e fora do total — um lugar vazio prometeria o que ninguém mais ganha.
+
 **A classe da insígnia de identidade vem da dificuldade do que ela marca.** A
 trilha pelo nível dela, o laboratório pelo nível da trilha a que pertence — um
 patamar abaixo, porque um laboratório é uma lição dentro dela e não pode valer
@@ -383,11 +399,154 @@ o mesmo que fechá-la —, e a vereda pelo tamanho, que é a única medida hones
 dela: vereda não tem nível, grava `'basico'` justamente para não reivindicar
 grau nenhum.
 
-**As de horário ficam fora da escala.** Coruja, Madrugador, Fim de Semana e
-Semana Inteira medem **quando** se estuda, e não quanto — não são acúmulo e
-não formam escada. Dar a elas uma das sete fingiria uma ordem que não existe;
-inventar cinco degraus para completar a série seria inventar conquista que
-ninguém pediu. Vão em círculo off-white, a forma que nenhuma classe usa.
+**As curiosidades ficam fora da escala.** São cinquenta e oito, em cinco
+temas — calendário da computação, ritmo, jeito de estudar, explorador e
+segredos — e medem **como** e **quando** se estuda, e não quanto: não são
+acúmulo e não formam escada. Dar a elas uma das sete fingiria uma ordem que
+não existe. Na estante vão em círculo off-white, a forma que nenhuma classe
+usa; na Faixa, em pin recortado na forma do desenho.
+
+O catálogo mora em `catalogoDeCuriosidades.ts` e as regras em
+`curiosidades.ts`, separados para a tela que só quer um nome não arrastar o
+currículo junto. Cada regra devolve **quando** foi alcançada, e
+`evaluateBadges` grava essa data e anuncia só o que acabou de acontecer: quem
+volta depois de um semestre não recebe trinta avisos sobre coisas que não
+acabou de fazer. As regras existem uma vez só, em TypeScript — por isso nenhuma
+migration concede curiosidade a partir do histórico.
+
+Regra de toda curiosidade: **alcançável por quem percorre tudo, sem fazer nada
+ruim.** Por ela a Coruja (estudar entre meia-noite e cinco) se aposentou —
+quem a tinha recebeu o Madrugador, com a data original —, e ficaram de fora
+"voltar depois de um mês parado" e "reprovar e depois vencer". O dia tem
+quatro turnos, de Brasília: Madrugador (0h), Pessoa da Manhã (6h), Pessoa da
+Tarde (12h) e Noturno (18h). O segredo vazio mostra a dica, e não o nome, que
+é a resposta.
+
+**As curiosidades gravam por uma porta só, e uma vez.** Metade delas nasce
+em lugar que não sabe quem entrou — a moldura dos laboratórios, o terminal, a
+grade do Excel, a página pública de verificação. `registrarCuriosidade`, em
+`registroDeCuriosidades.ts`, é ligado pelo `AuthProvider` ao **id** da conta,
+como o dicionário pessoal, e grava cada evento com o mesmo conteúdo uma vez por
+conta neste navegador: abrir o menu do botão direito é gesto de todo minuto, e
+cada um virando linha em `activity_events` encheria a tabela de coisa que a
+regra lê uma vez. Sem ninguém entrado, não grava nada. Depois de gravar, avalia
+as insígnias — senão o segredo achado só renderia na próxima lição.
+
+Os nomes dos eventos moram em `eventosDasCuriosidades.ts`, sem importação
+nenhuma, porque quem grava é o laboratório e `curiosidades.ts` importa o
+currículo inteiro: importar as regras para saber um nome fecharia o laço de
+ESM. Eles não são módulo vencido, não rendem XP e **ficam fora do mural** — o
+filtro é na consulta, antes do `limit`, senão dez atalhos empurrariam para fora
+o que a pessoa estudou.
+
+O atalho e o menu se ouvem **na moldura**, e não em cada programa:
+`curiosidadesDaMoldura.ts` conta o que o programa imitado *atendeu*, que é o
+`preventDefault`, lido depois de o evento passar por todo mundo — um
+laboratório que se inscreve na janela depois da moldura ouviria depois dela.
+
+Os segredos existem de verdade nos programas: `--help`, `whoami` e `git
+checkout <id>` no terminal (a visita ao commit antigo recusa commit até a
+volta, porque commit em HEAD destacado é o que ninguém acha depois); os itens
+ocultos e as extensões no Explorador da CC-ES001, que ganhou um bilhete oculto
+em Documentos e um convite antigo na Lixeira — esvaziar continua contando só o
+que a pessoa excluiu; `import this`, `sqlite_master`, Ctrl+↓ até a última
+linha da grade, `=rand()` no Word, e a fantasia repintada no Scratch. O que
+está em comentário ou em texto não conta, senão o enunciado de uma lição que
+citasse o segredo o daria a quem a abrisse. O texto do `=rand()` é nosso — o do
+Word é da Microsoft — e passa pelo corretor, como todo documento.
+
+**A Faixa é a estante presa num tecido, e o desenho é o mesmo para todo
+mundo.** Patches das trilhas, buttons das veredas e dos Mestrados, pins das
+escadas, dos laboratórios e das curiosidades, numa faixa verde que corre na
+horizontal. Todo lugar existe desde o primeiro dia, as anunciadas inclusive —
+a largura é o que há para fazer —, e vai se acendendo.
+
+Três peças, e nenhuma sabe de tela. `catalogoDaFaixa.ts` monta as unidades a
+partir do registro, sem lista escrita à mão: trilha nova traz o patch e os
+laboratórios, anunciada traz os previstos. `empacotarFaixa.ts` prende cada
+unidade no lugar mais à esquerda do grupo dela em que nenhuma **peça** toca
+peça de outra unidade — peça a peça, e não uma elipse em volta da unidade,
+para o anel de uma vereda se encaixar no vão da vizinha —, com a altura
+sorteada da chave dela por semente fixa. E `estadoDaFaixa.ts` acende cada peça
+por uma pergunta só: a pessoa tem a insígnia dela? A exceção é o Token.Web()
+revogado, que apaga a peça sem tirá-la do lugar (D6).
+
+O que se conquista acende, e não se move: o empacotamento não lê nada da
+pessoa. A edição antiga é a única coisa que aparece só para alguns, e por isso
+vai no fim, onde não empurra ninguém. `empacotarFaixa.test.ts` cobra que
+nenhuma peça toque outra, que toda insígnia que a estante tem lugar para
+receber tenha lugar na Faixa, e que duas chamadas deem o mesmo desenho.
+
+Só a peça acesa é botão. São setecentas, e setecentas paradas de Tab fariam a
+Faixa impossível de atravessar pelo teclado; o lugar vazio é imagem com nome. O
+segredo vazio é um "?" de giz do tamanho de um pin, qualquer que seja a peça
+que ele vai virar — o ME006 é um patch, e a forma dele seria metade da
+resposta.
+
+O overloque do patch sai **da arte**: o contorno traçado da transparência
+(240 raios do centro) e a cor da beirada, lidos do arquivo por canvas em
+`bordaDaArte.ts`. É a regra das pastas de arte — arte nova chega com a borda
+certa sem ninguém mexer no código. Sem canvas, o oval vermelho de reserva.
+
+O patch, o button e o patch do ME006 abrem o Token.Web() **emoldurado**, o
+certificado de verdade (`CertificateCanvas`) numa moldura com passe-partout e
+vidro, presa num prego, com Baixar PDF e Imprimir. Imprimir manda só o
+certificado para o papel, em A4 deitado: a classe `imprimindo-token` vai no
+documento durante a impressão e sai no `afterprint`, senão a próxima impressão
+da plataforma sairia em branco.
+
+**O ME006 emite Token.Web(), e a conta dele existe duas vezes.** A Faixa pede
+o documento sozinha quando a insígnia `mestrado_me006` aparece e não há
+documento nenhum — as guardas de `TokenDaVereda`, pelos motivos escritos lá —,
+e a Edge Function confere sete certificados **ativos** da lista: o Mestrado
+não pode valer mais do que as trilhas em que se apoia. A lista existe no
+aplicativo e na função, e `mestrados.test.ts` compara as duas, com o mínimo.
+A arte do certificado dele é escura, e o nome, o código e a data saem em
+branco (`coresDoCertificado`), na tela e no PDF.
+
+**Os Mestrados fecham famílias.** Um por família de trilha e de vereda, ao
+concluir todas as dela, e o **ME006**, oficial: sete das onze trilhas daqui que
+estão na lista do Mestrado em Ciência e Tecnologia. A plataforma conta só as
+trilhas que confere — Física e Química, que estão na lista, não existem aqui, e
+dizer "eu fiz" seria autodeclaração. O da plataforma diz no cartão que é da
+plataforma: o relatório não pode apresentá-lo como Mestrado da Divisão. O
+código é `mestrado_<família>` com sublinhado, nunca hífen — o leitor das
+migrations só reconhece `[a-z0-9_]`, e o código com hífen ficaria invisível
+para as travas do catálogo.
+
+**Cada tipo de laboratório pertence a uma trilha só.** A insígnia é
+`lab_<tipo>`, do tipo e não da lição: um tipo em duas trilhas rende uma
+insígnia só para as duas, e o pin dele não tem como orbitar dois patches na
+Faixa. O **motor** pode ser o mesmo — a redação guiada monta o relatório da
+AP034, da AP041 e da AP045 —; o tipo, não. `motorDoLaboratorio.ts` diz qual tela
+monta cada tipo, e `laboratoriosPrevistos.test.ts` reprova o tipo repetido.
+
+**As trilhas e veredas anunciadas declaram quantos laboratórios terão**, em
+`laboratoriosPrevistos.ts`, porque a Faixa reserva o lugar dos satélites antes
+de a lição existir. É compromisso: abrir com outro número reprova até a tabela
+ser mudada junto.
+
+**O XP é por vitória, cada uma uma vez.** Era 10 por atividade de trilha,
+somado também na lição refeita, e a vereda não rendia nada. Hoje ele é
+derivado das vitórias já gravadas em `activity_events` (`lib/xp.ts`): lição de
+trilha 15, laboratório 30, prova final 60, trilha concluída 150; teoria de
+vereda 1, laboratório de vereda 2, vereda concluída 4. As trilhas ficam com pelo
+menos três quartos do XP total, e `xp.test.ts` confere — a vereda entrou no XP,
+e continua sendo bônus. A vitória conta na data da primeira vez: refazer não
+traz a lição para a semana do ranking. `enrollments.xp` e `xp_events` deixaram
+de ser escritos e lidos.
+
+A conta existe duas vezes: aqui, para o painel (`useXp`), e dentro do
+`leaderboard`, no Postgres — **dentro**, e não numa função à parte, pelo motivo
+da ofensiva: uma função solta com `security definer` responderia o XP de quem
+desmarcou o ranking. `xp.test.ts` lê o SQL publicado e compara valores, chaves,
+limiar e lista de eventos.
+
+**A escada Sem erro conta a teoria de vereda feita sem errar.** O evento
+`vereda_teoria` passou a gravar a nota, e a teoria já vencida refeita com nota
+cheia grava `vereda_teoria_perfeita`: sem ele, quem venceu com 80% nunca
+alcançaria o topo da escada, e a Faixa não fecharia para quem fez tudo certo
+depois.
 
 **A estante mostra o topo de cada família, e a escada abre no clique.** Com
 treze escadas, quem está adiantado tem dezenas de insígnias, e despejar todas
@@ -633,8 +792,9 @@ nenhum. É **bônus**: rende insígnia e uma seção própria no relatório.
 
 **Não vira uma `Specialty`**, e é decisão, não preguiça: uma especialidade
 precisa de linha em `specialties`, `modules`, `lessons` e `requirements` para
-gravar progresso, e a partir daí entra no percentual, na família do painel, no
-XP e nas insígnias de trilha — o contrário de bônus. O progresso da vereda sai
+gravar progresso, e a partir daí entra no percentual, na família do painel e
+nas insígnias de trilha — o contrário de bônus. (No XP ela entrou depois, por
+decisão própria e com peso pequeno: ver "O XP é por vitória".) O progresso da vereda sai
 de eventos de atividade, que é onde as insígnias já procuram tudo.
 
 A vereda aparece no painel como **último bloco de cursos, antes das
@@ -778,7 +938,7 @@ catálogo sem família não se navega.
 aprender dois: mesma tabela `certifications`, mesma verificação pública em
 `/verificar`, mesmo PDF, e conta nas insígnias de certificado. O que impedia
 era `specialty_id NOT NULL` — a vereda não tem linha em `specialties`, e não
-ter é a decisão que a mantém fora do percentual e do XP. Nenhuma tela lia essa
+ter é a decisão que a mantém fora do percentual. Nenhuma tela lia essa
 coluna, então ela passou a aceitar nulo.
 
 A emissão confere **o evento**, e não requisitos: a trilha guarda os requisitos
@@ -6262,6 +6422,20 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/powerpoint.test.tsx` | corpo do slide com o corretor do navegador, sugestão que não volta ao modelo, ou palavra acrescentada noutra tela que continua vermelha |
 | `src/labs/InsercaoTextoLab.test.tsx` | sugestão do botão direito que não troca a palavra inteira, que o Ctrl+Z não desfaz, ou Ignorar Tudo que vale só para um parágrafo |
 | `src/labs/planilha.test.ts` | quebra de texto que deixa a faixa meio a meio, ou que grava `false` em vez de devolver a célula ao que era |
+| `src/curriculum/laboratoriosPrevistos.test.ts` | trilha ou vereda anunciada sem laboratórios previstos, ou aberta com outro número; tipo de laboratório em duas trilhas |
+| `src/lib/curiosidades.test.ts` | curiosidade sem regra que a alcance, curiosidade de graça, ou semana do calendário e virada de turno fora de Brasília |
+| `src/lib/xp.test.ts` | lição refeita rendendo XP de novo, trilhas abaixo de 75% do XP total, ou a conta do `leaderboard` divergindo da do painel |
+| `src/lib/escadasAteOFim.test.ts` | degrau "tudo" alcançável com trilha ou vereda ainda anunciada, ou topo da edição antiga sendo concedido de novo |
+| `src/lib/registroDeCuriosidades.test.ts` | curiosidade gravada a cada gesto, gravada sem conta, ou evento de curiosidade no mural, na ofensiva ou no XP |
+| `src/lib/registroDeCuriosidades.test.ts` | atalho ou menu que o programa não atendeu contando como curiosidade |
+| `src/labs/segredosDoCodigo.test.ts` | segredo achado em comentário ou texto, ou HEAD destacado que aceita commit e não volta pelo ramo |
+| `src/labs/textoDeEnchimento.test.ts` | `=rand()` sem o padrão de cinco por três, sem teto, ou aceito no meio de uma frase |
+| `src/components/LaboratorioDeExplorador.test.tsx` | arquivo oculto na lista antes do menu Exibir, ou o convite antigo da Lixeira fechando a tarefa de esvaziar |
+| `src/lib/faixa/empacotarFaixa.test.ts` | peça da Faixa tocando outra, insígnia da estante sem lugar na Faixa, ou desenho que muda de uma vez para outra |
+| `src/lib/faixa/empacotarFaixa.test.ts` | edição antiga que move outra peça, ou zonas fora da ordem Trilhas, Escadas, Curiosidades e Veredas |
+| `src/lib/faixa/estadoDaFaixa.test.ts` | peça acesa sem a insígnia, ou Token.Web() revogado aparecendo como se valesse |
+| `src/components/faixa/Faixa.test.tsx` | lugar vazio virando parada de Tab, segredo mostrando a forma da peça, ou impressão que deixa a página em branco depois |
+| `src/lib/mestrados.test.ts` | lista ou mínimo do ME006 diferente entre o aplicativo e a Edge Function que emite o certificado |
 | `ci.yml` | `.env` rastreado pelo git |
 | `supabase.yml` | `src/types/database.ts` divergente do schema; função no repo que o workflow não publica; `Confirm email` religado no painel |
 | `supabase.yml` | token posto e recusado pela Management API, que saía como "Unauthorized" do CLI e parecia projeto apagado |

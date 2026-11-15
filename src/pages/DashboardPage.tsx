@@ -9,6 +9,7 @@ import { useCertifications } from '../hooks/useCertifications';
 import { useBadges } from '../hooks/useBadges';
 import { useMinhasPosicoes } from '../hooks/useMinhasPosicoes';
 import { useOfensiva } from '../hooks/useOfensiva';
+import { useXp } from '../hooks/useXp';
 import { getPublicName, nomeCompleto, ROTULO_DO_NIVEL, type Specialty, type Certification, type Tabela } from '../types';
 import { coresDoProgresso, corDoPercentual } from '../lib/coresDoProgresso';
 import { descreverAtividade } from '../lib/atividade';
@@ -24,6 +25,7 @@ import { Lock, Award, Flame, Star, Clock, FileText, Medal, HardHat } from 'lucid
 import { MarcaEmTexto } from '../components/ui/BrandMark';
 import TokenNoCartao from '../components/ui/TokenNoCartao';
 import PainelDeTokens from '../components/ui/PainelDeTokens';
+import { NOMES_DOS_EVENTOS_DAS_CURIOSIDADES } from '../lib/eventosDasCuriosidades';
 
 /**
  * O card de uma trilha, em qualquer um dos seus três estados.
@@ -146,6 +148,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const { posicoes } = useMinhasPosicoes(profile?.id, noRanking);
   const { ofensiva } = useOfensiva(profile?.id);
+  /* O XP das vitórias, o mesmo do ranking — ver `useXp`. */
+  const { xp } = useXp(profile?.id);
 
   useEffect(() => {
     if (!profile) return;
@@ -157,7 +161,13 @@ export default function DashboardPage() {
       const { data: enrolls } = await supabase.from('enrollments').select('*, specialties(*)').eq('user_id', profile.id);
       if (!vivo) return;
       setEnrollments(enrolls || []);
-      const { data: events } = await supabase.from('activity_events').select('*').eq('user_id', profile.id).order('created_at', { ascending: false }).limit(10);
+      /* As curiosidades gravam eventos que não são atividade de estudo — "Menu
+         de contexto aberto" empurraria para fora do mural o que a pessoa fez.
+         O filtro é na consulta, e não na tela: filtrar depois do `limit`
+         deixaria o mural com duas linhas onde cabiam dez. */
+      const { data: events } = await supabase.from('activity_events').select('*').eq('user_id', profile.id)
+        .not('event_type', 'in', `(${NOMES_DOS_EVENTOS_DAS_CURIOSIDADES.join(',')})`)
+        .order('created_at', { ascending: false }).limit(10);
       if (!vivo) return;
       setRecentEvents(events || []);
       /* A colocação só é buscada de quem optou por aparecer: para quem não
@@ -186,7 +196,6 @@ export default function DashboardPage() {
       && getProgressPercent(t.requirements.map(r => r.code), progress) === 100;
   };
 
-  const xp = enrollments.reduce((sum, e) => sum + (e.xp || 0), 0);
 
   /* A última atividade de cada trilha é o `updated_at` da matrícula: toda
      lição e todo laboratório passam por `updateEnrollmentActivity`, e o

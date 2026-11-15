@@ -19,6 +19,7 @@ import VerifyPage from './pages/VerifyPage';
 import CertificatePage from './pages/CertificatePage';
 import ProfilePage from './pages/ProfilePage';
 import EstantePage from './pages/EstantePage';
+import FaixaPage from './pages/FaixaPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import { useEffect, useRef, useState } from 'react';
 import { LogOut, Home, Map, FileText, Award, ShieldCheck, User, Podium, Trophy, Menu, X, ChevronDown } from 'lucide-react';
@@ -286,6 +287,7 @@ function AppRoutes() {
         <Route path="/relatorio" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
         <Route path="/ranking" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
         <Route path="/estante" element={<ProtectedRoute><EstantePage /></ProtectedRoute>} />
+        <Route path="/faixa" element={<ProtectedRoute><FaixaPage /></ProtectedRoute>} />
         {/* A administração virou guia dentro do perfil. `/admin` continua
             respondendo porque ela esteve na barra por meses: link guardado,
             favorito e botão voltar do navegador apontam para lá, e endereço

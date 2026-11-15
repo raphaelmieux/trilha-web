@@ -3,6 +3,8 @@ import { getOpenSpecialties } from '../curriculum';
 import { laboratorioDoEvento } from './atividade';
 import { insigniasConquistadas, type ResumoDoDesbravador } from './insignias';
 import { veredasConcluidas, conquistasNasVeredas } from './veredas';
+import { curiosidadesConquistadas } from './curiosidades';
+import { xpDasVitorias } from './xp';
 import {
   diaEmBrasilia, horaEmBrasilia, diaDaSemanaEmBrasilia,
   diasDeAtividade, melhorOfensiva,
@@ -40,11 +42,12 @@ async function getCompletedRequirementCodes(userId: string): Promise<Set<string>
 export async function montarResumo(userId: string): Promise<ResumoDoDesbravador> {
   const completed = await getCompletedRequirementCodes(userId);
 
-  const [tentativas, eventos, matriculas, certificados] = await Promise.all([
-    supabase.from('lesson_attempts').select('lesson_id, score, total, passed').eq('user_id', userId),
+  const [tentativas, eventos, certificados, dicionario] = await Promise.all([
+    supabase.from('lesson_attempts').select('lesson_id, score, total, passed, started_at, completed_at').eq('user_id', userId),
     supabase.from('activity_events').select('event_type, created_at, metadata, curriculum_version').eq('user_id', userId),
-    supabase.from('enrollments').select('xp, streak_days').eq('user_id', userId),
     supabase.from('certifications').select('curriculum_code').eq('user_id', userId).eq('status', 'active'),
+    /* Só a primeira palavra importa, para a curiosidade Palavra Própria. */
+    supabase.from('dicionario_pessoal').select('criada_em').eq('user_id', userId).order('criada_em').limit(1),
   ]);
 
   /* Lições distintas: refazer a mesma não conta duas vezes. */
@@ -124,11 +127,23 @@ export async function montarResumo(userId: string): Promise<ResumoDoDesbravador>
     eventos sempre estiveram lá.
   */
   const naVereda = conquistasNasVeredas(eventos.data ?? []);
+  const veredas = veredasConcluidas(eventos.data ?? []);
+  const curiosidades = curiosidadesConquistadas({
+    eventos: eventos.data ?? [],
+    tentativas: (tentativas.data ?? []).map(t => ({
+      lesson_id: t.lesson_id as string, passed: !!t.passed,
+      quando: (t.completed_at ?? t.started_at ?? null) as string | null,
+    })),
+    primeiraPalavra: (dicionario.data?.[0]?.criada_em as string | undefined) ?? null,
+    trilhasConcluidas: trilhas,
+    veredasConcluidas: veredas,
+  });
 
   return {
     requisitos: completed.size + naVereda.requisitos,
     licoes: licoes.size + naVereda.licoes,
-    licoesPerfeitas: perfeitas.size,
+    /* A teoria de vereda feita sem errar conta junto, como a lição de trilha. */
+    licoesPerfeitas: perfeitas.size + naVereda.teoriasPerfeitas,
     modulos: modulos + naVereda.modulos,
     trilhas,
     laboratorios,
@@ -146,12 +161,14 @@ export async function montarResumo(userId: string): Promise<ResumoDoDesbravador>
     diasAtivos: dias.size,
     horas,
     diasDaSemana,
-    xp: (matriculas.data ?? []).reduce((s, e) => s + (e.xp || 0), 0),
+    /* As vitórias, cada uma uma vez — a mesma conta do ranking (`lib/xp.ts`). */
+    xp: xpDasVitorias(eventos.data ?? []),
     certificados: (certificados.data ?? []).map(c => c.curriculum_code as string).filter(Boolean),
     /* Sai dos mesmos eventos já buscados acima: cada tópico lido e cada
        laboratório vencido é um evento, e a vereda está concluída quando todas
        as lições dela apareceram. */
-    veredas: veredasConcluidas(eventos.data ?? []),
+    veredas,
+    curiosidades,
     laboratoriosDeVereda: naVereda.laboratoriosDeVereda,
   };
 }
@@ -199,8 +216,18 @@ export async function evaluateBadges(
     Object.entries(gatilho ?? {}).filter(([, v]) => !!v),
   );
 
+  /*
+    A curiosidade sai com a data em que foi alcançada, e não com a de hoje:
+    quem estudou na semana do Dia do π em março e só voltou em novembro tem a
+    insígnia de março. As outras continuam com a data de agora, porque o
+    resumo não sabe quando cada uma ficou verdadeira.
+  */
+  const desde = (code: string) => resumo.curiosidades.get(code) ?? undefined;
   const { error } = await supabase.from('user_badges').insert(
-    novas.map(b => ({ user_id: userId, badge_id: b.id as string, context: contexto as Json })),
+    novas.map(b => ({
+      user_id: userId, badge_id: b.id as string, context: contexto as Json,
+      ...(desde(b.code as string) ? { awarded_at: desde(b.code as string) } : {}),
+    })),
   );
   /* Gravou? Então anuncia. Anunciar antes de gravar mostraria na tela uma
      conquista que o banco recusou — e ela sumiria no recarregar seguinte,
@@ -217,10 +244,17 @@ export async function evaluateBadges(
     description: b.description as string,
     icon: b.icon as string,
     tier: umDe(NIVEIS_DA_INSIGNIA, classeCanonica(b.tier as string) ?? '', 'amigo'),
-    conquistadaEm: new Date().toISOString(),
+    conquistadaEm: desde(b.code as string) ?? new Date().toISOString(),
     contexto,
   }));
 
-  anunciarConquistas(conquistadas);
+  /*
+    Anuncia só o que acabou de acontecer. Uma curiosidade alcançada há meses,
+    concedida agora pela primeira avaliação depois de ela existir, entra na
+    Faixa em silêncio: quem voltasse depois de um semestre receberia trinta
+    avisos de uma vez, todos sobre coisas que não acabou de fazer.
+  */
+  const RECENTE = 36 * 3_600_000;
+  anunciarConquistas(conquistadas.filter(c => !c.conquistadaEm || Date.now() - Date.parse(c.conquistadaEm) < RECENTE));
   return conquistadas;
 }

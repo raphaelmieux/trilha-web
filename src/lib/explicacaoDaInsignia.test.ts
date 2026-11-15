@@ -22,7 +22,7 @@ import type { InsigniaConquistada } from './conquista';
 */
 
 const insignia = (mudancas: Partial<InsigniaConquistada> = {}): InsigniaConquistada => ({
-  id: 'x', code: 'coruja', name: 'Coruja',
+  id: 'x', code: 'madrugador', name: 'Madrugador',
   description: 'Estudou entre a meia-noite e as cinco da manhã.',
   icon: 'clock', tier: 'companheiro',
   ...mudancas,

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, RotateCcw } from 'lucide-react';
 import LaboratorioEmTelaCheia from './LaboratorioEmTelaCheia';
 import { PASSOS_DE_SCRATCH } from '../labs/passosDeScratch';
@@ -9,6 +9,8 @@ import type { VmDeScratch } from '../labs/scratch/vm';
 import { PROJETO_INICIAL } from '../labs/scratch/projetoInicial';
 import { acrescentarNossaArte, evitarOWorkerQuebrado, guardarNossaArte } from '../labs/scratch/armazenamento';
 import type { Vereda, LicaoDeVereda } from '../curriculum/veredas';
+import { acharSegredo } from '../lib/registroDeCuriosidades';
+import { fantasiaRepintada } from '../labs/segredosDoCodigo';
 
 /**
  * O laboratório que roda o Scratch de verdade.
@@ -192,10 +194,14 @@ export default function LaboratorioDeScratch({ vereda, licao, userId, aoVencer, 
     conferir — no Scratch não há botão de conferir, e inventar um seria pedir
     que a pessoa aprendesse algo que o programa de verdade não tem.
   */
+  /* O projeto como ele abriu, para o Gato Pintado saber o que foi repintado. */
+  const comoAbriu = useRef<string | null>(null);
   const conferir = useCallback(() => {
     if (!vm) return;
     try {
       const json = vm.toJSON();
+      if (comoAbriu.current === null) comoAbriu.current = json;
+      else if (fantasiaRepintada(comoAbriu.current, json)) acharSegredo('gato_pintado');
       setProjeto(json);
       setResultados(validarScratch(JSON.parse(json) as ProjetoSb3, licao.verificacoes));
     } catch { /* projeto em transição: a próxima leitura pega */ }
