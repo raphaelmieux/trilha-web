@@ -734,7 +734,8 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
 #
 # Pergunte o nome e a idade, e responda.
 #
-# As duas perguntas são exatamente estas, com o espaço depois dos dois-pontos:
+# As duas perguntas são exatamente estas, com o espaço depois dos dois-pontos.
+# Elas vão dentro do input(...), e é por isso que aparecem no painel de saída:
 #   "Seu nome: "
 #   "Sua idade: "
 #
@@ -742,9 +743,11 @@ export const MODULOS_DE_PYTHON: ModuloDeVereda[] = [
 #   Olá, Ana
 #   Ano que vem você faz 13
 #
-# Repare no painel de saída: as perguntas aparecem grudadas, e o que foi
-# digitado não aparece. É assim mesmo — a entrada é decidida antes, no campo
-# ao lado, e por isso ela não é ecoada.
+# Repare no painel de saída: as perguntas aparecem grudadas, na frente da
+# primeira linha, e o que foi digitado não aparece. É assim mesmo — a entrada é
+# decidida antes, no campo ao lado, e por isso ela não é ecoada. Sem as
+# perguntas dentro do input(), o painel mostra só as duas linhas, e a saída não
+# é a esperada.
 `,
         ['leEExibe', 'saidaEsperada'],
         {

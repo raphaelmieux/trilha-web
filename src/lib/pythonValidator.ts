@@ -106,6 +106,39 @@ export function mesmaSaida(a: string, b: string): boolean {
   return limpar(a) === limpar(b);
 }
 
+/**
+ * Diz **onde** a saída difere da esperada e de que jeito, sem escrever a
+ * esperada.
+ *
+ * O recado antigo era "saiu diferente, confira o texto". Quem escreveu
+ * `input()` sem a pergunta via no painel exatamente as duas linhas do
+ * enunciado e concluía que a verificação estava errada: a diferença estava
+ * numa frase que o painel não tinha, e nada apontava para ela. Dizer a linha e
+ * o tipo da diferença — falta texto antes, falta depois, sobra, falta linha —
+ * leva a pessoa ao lugar sem resolver o laboratório por ela, que é o que
+ * `passosDePython.ts` também promete.
+ */
+export function descreverDiferenca(obtida: string, esperada: string): string {
+  const linhas = (s: string) => s.replace(/\r/g, '').replace(/\n+$/, '').split('\n').map(l => l.trimEnd());
+  const tem = linhas(obtida);
+  const quer = linhas(esperada);
+  const n = Math.max(tem.length, quer.length);
+  for (let i = 0; i < n; i++) {
+    const t = tem[i];
+    const q = quer[i];
+    if (t === q) continue;
+    if (q === undefined) return `A saída tem linhas a mais: a linha ${i + 1} não devia existir.`;
+    if (t === undefined) return `Falta a linha ${i + 1}: o programa parou de escrever antes dela.`;
+    const quando = `Linha ${i + 1} da saída: saiu "${t}".`;
+    if (t === '') return `${quando} Era para ter texto ali.`;
+    if (q.endsWith(t)) return `${quando} Falta texto no começo dela — se o enunciado pede uma pergunta, lembre que o que vai dentro do input() também é escrito na saída.`;
+    if (q.startsWith(t)) return `${quando} Falta texto no fim dela.`;
+    if (t.endsWith(q) || t.includes(q)) return `${quando} Tem texto a mais.`;
+    return `${quando} Não é o que o enunciado pede: confira o texto, as maiúsculas, os acentos e os espaços.`;
+  }
+  return 'A saída saiu diferente da esperada. Confira o texto, os espaços e a ordem das linhas.';
+}
+
 /** Uma verificação que só olha o que o `ast` achou. */
 const daArvore = (id: string, label: string, hint: string, faltou: string): Spec => ({
   id, label, hint,
@@ -151,7 +184,7 @@ const SPECS: Spec[] = [
       if (ctx.execucao.erro) return { passed: false, detail: 'O programa parou com erro antes de produzir a saída.' };
       return mesmaSaida(ctx.execucao.saida, ctx.saidaEsperada)
         ? { passed: true }
-        : { passed: false, detail: 'A saída saiu diferente da esperada. Confira o texto, os espaços e a ordem das linhas.' };
+        : { passed: false, detail: descreverDiferenca(ctx.execucao.saida, ctx.saidaEsperada) };
     },
   },
   {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  validarPython, linhasDePrograma, mesmaSaida, IDS_DE_PYTHON,
+  validarPython, linhasDePrograma, mesmaSaida, descreverDiferenca, IDS_DE_PYTHON,
   type ContextoDePython,
 } from './pythonValidator';
 
@@ -96,6 +96,34 @@ describe('a saída esperada', () => {
   it('passa quando bate', () => {
     const c = ctx({ saidaEsperada: 'oi\n5', execucao: rodou('oi\n5\n') });
     expect(um(c, 'saidaEsperada').passed).toBe(true);
+  });
+
+  /*
+    O caso da lição "Quantos anos você faz": `input()` sem a pergunta deixa no
+    painel exatamente as duas linhas do enunciado, e o recado antigo — "saiu
+    diferente" — não apontava para o que faltava. Ele tem de dizer a linha e o
+    tipo da diferença, e nunca escrever a saída esperada.
+  */
+  it('aponta a pergunta que faltou no input(), sem escrever a esperada', () => {
+    const esperada = 'Seu nome: Sua idade: Olá, Ana\nAno que vem você faz 13';
+    const r = um(ctx({
+      saidaEsperada: esperada,
+      execucao: rodou('Olá, Ana\nAno que vem você faz 13\n'),
+    }), 'saidaEsperada');
+    expect(r.passed).toBe(false);
+    expect(r.detail).toContain('Linha 1');
+    expect(r.detail).toContain('Falta texto no começo');
+    expect(r.detail).toContain('input()');
+    expect(r.detail).not.toContain('Seu nome');
+  });
+
+  it('classifica cada jeito de a saída divergir', () => {
+    expect(descreverDiferenca('a\n', 'a\nb')).toContain('Falta a linha 2');
+    expect(descreverDiferenca('a\nb\nc', 'a\nb')).toContain('linhas a mais');
+    expect(descreverDiferenca('Olá', 'Olá, Ana')).toContain('Falta texto no fim');
+    expect(descreverDiferenca('Olá, Ana!', 'Olá, Ana')).toContain('texto a mais');
+    expect(descreverDiferenca('oi', 'tchau')).toContain('Não é o que o enunciado pede');
+    expect(descreverDiferenca('', 'oi')).toContain('texto ali');
   });
 });
 
