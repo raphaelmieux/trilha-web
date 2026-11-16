@@ -504,12 +504,15 @@ do catálogo.
 **A arte dos pins de curiosidade mora em `public/assets/pins/<code>.png`**, e o
 nome do arquivo é o código, com sublinhado: a primeira leva chegou com
 `arquivo-escondido.png`, que a Faixa nunca pediria. Todo pin cabe num quadrado
-e a arte se ajusta dentro dele; a exceção é declarada em `proporcao`, no
-catálogo, para o pin que deve se destacar — o `fim_da_planilha` fica com a
-altura cheia e passa da largura. O número é necessário antes de a imagem
-carregar, porque o empacotamento reserva o lugar sem ler arte nenhuma, e
-`formaDoPin.test.ts` o compara com o arquivo, junto com o nome de cada arte e
-a dos segredos inteiros.
+e a arte se ajusta dentro dele; a exceção é declarada em `tamanho`, no
+catálogo, para a arte desenhada fora da tela regular de 641 pontos — a ponte,
+o teclado, a semana, o bolo, o `fim_da_planilha`. Ela guarda a escala da arte
+sobre essa tela, e não a do quadrado: espremida no quadrado, a ponte sairia com
+dois terços do tamanho que tem ao lado das outras. E nenhuma sai menor que o
+pin-padrão — a arte cujo lado maior não chega a 641 cresce até chegar. O número
+é necessário antes de a imagem carregar, porque o empacotamento reserva o lugar
+sem ler arte nenhuma, e `formaDoPin.test.ts` refaz a conta a partir do arquivo,
+junto com o nome de cada arte e a dos segredos inteiros.
 
 E os pins do mesmo cacho não se encostam. A espiral foi medida para o pin
 redondo provisório; com a arte, deitada, em pé e larga, os segredos caíram uns
@@ -6580,7 +6583,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/faixa/empacotarFaixa.test.ts` | zonas fora da ordem Trilhas, Escadas, Curiosidades e Veredas |
 | `src/lib/faixa/estadoDaFaixa.test.ts` | peça acesa sem a insígnia, ou Token.Web() revogado aparecendo como se valesse |
 | `src/components/faixa/Faixa.test.tsx` | mais de uma peça na ordem do Tab, seta que não leva o foco à peça seguinte, lugar vazio que não abre, segredo mostrando a forma da peça, ou impressão que deixa a página em branco depois |
-| `src/lib/formaDoPin.test.ts` | arte de pin com nome que não é código de curiosidade, segredo sem arte, ou pin largo com a proporção diferente do arquivo |
+| `src/lib/formaDoPin.test.ts` | arte de pin com nome que não é código de curiosidade, segredo sem arte, ou arte fora do quadrado com tamanho diferente do arquivo, ou menor que o pin-padrão |
 | `src/lib/faixa/empacotarFaixa.test.ts` | pin de curiosidade encostando no vizinho do mesmo cacho |
 | `src/lib/faixa/lugarVazio.test.ts` | lugar vazio sem dizer como se conquista, segredo vazio que entrega o nome, ou Mestrado que não lista o que falta |
 | `src/lib/mestrados.test.ts` | lista ou mínimo do ME006 diferente entre o aplicativo e a Edge Function que emite o certificado |

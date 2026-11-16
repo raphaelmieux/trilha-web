@@ -281,7 +281,8 @@ function gruposDasCuriosidades(): GrupoDaFaixa[] {
     const pecas = CURIOSIDADES.filter(c => c.tema === tema).map((c, i): PecaNaUnidade => {
       const a = i * 2.39996 + sorte();
       const giro = sorte() * 24 - 12;
-      const w = Math.round(CURIOSIDADE * (c.proporcao ?? 1)), h = CURIOSIDADE;
+      const [lw, la] = c.tamanho ?? [1, 1];
+      const w = Math.round(CURIOSIDADE * lw), h = Math.round(CURIOSIDADE * la);
       const [mw, mh] = meiaCaixaGirada(w, h, giro);
       const encosta = (dx: number, dy: number) => postas.some(o =>
         Math.abs(dx - o.dx) < mw + o.mw + VAO_ENTRE_PINS && Math.abs(dy - o.dy) < mh + o.mh + VAO_ENTRE_PINS);
