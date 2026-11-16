@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   SEM_SELECAO, apenas, aoClicar, aoAbrirMenu, aoComecarArrasto, aoMarcarCaixa,
-  intervalo, podar, todos, semMouse, aoAndar,
+  intervalo, podar, todos, semMouse, aoAndar, aoLacar,
 } from './selecao';
 
 /*
@@ -203,5 +203,17 @@ describe('a seta anda pela lista, e com Shift estende', () => {
 
   it('a seta sem Shift, depois de uma faixa, anda a partir da ponta dela', () => {
     expect(aoAndar({ ids: ['b', 'c', 'd'], ancora: 'b' }, v, 'baixo', false)).toEqual(apenas('e'));
+  });
+});
+
+describe('aoLacar', () => {
+  const base = { ids: ['a', 'b'], ancora: 'a' };
+  it('sem tecla, a faixa é a seleção inteira, com a âncora na última linha cruzada', () => {
+    expect(aoLacar(base, ['c', 'd'], false)).toEqual({ ids: ['c', 'd'], ancora: 'd' });
+    expect(aoLacar(base, [], false)).toEqual({ ids: [], ancora: null });
+  });
+  it('com Ctrl, soma sem tirar o que já estava', () => {
+    expect(aoLacar(base, ['b', 'c'], true)).toEqual({ ids: ['a', 'b', 'c'], ancora: 'c' });
+    expect(aoLacar(base, [], true)).toEqual(base);
   });
 });

@@ -89,6 +89,11 @@ export const CSS_WINDOWS = `
     background: #F9F9F9; border-right: 1px solid #E5E5E5;
   }
   .win-lista { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #FFFFFF; }
+  .win-area-da-lista { flex: 1; min-height: 0; overflow: auto; position: relative; }
+  .win-laco {
+    position: absolute; pointer-events: none;
+    border: 1px solid #0078D4; background: rgba(0, 120, 212, .15);
+  }
   .win-cabecalhos { display: flex; flex: none; border-bottom: 1px solid #E5E5E5; }
   .win-cabecalhos button {
     display: flex; align-items: center; gap: 4px; padding: 6px 8px;

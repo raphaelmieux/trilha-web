@@ -203,3 +203,47 @@ describe('a janela do Explorador', () => {
     expect(porRotulo('Explorador de Arquivos')).toBeTruthy();
   });
 });
+
+/* O jsdom não mede nada: as linhas recebem uma altura de 30 px, uma embaixo
+   da outra, e o resto continua medindo zero. */
+function medirLinhas(onde: HTMLElement) {
+  const linhas = [...onde.querySelectorAll<HTMLElement>('[data-no]')];
+  for (const [i, l] of linhas.entries()) {
+    l.getBoundingClientRect = () => ({
+      left: 0, top: 30 * i, right: 600, bottom: 30 * i + 28, width: 600, height: 28, x: 0, y: 30 * i, toJSON: () => ({}),
+    });
+  }
+  return linhas;
+}
+function lacar(area: Element, de: [number, number], ate: [number, number], opcoes: PointerEventInit = {}) {
+  const ev = (tipo: string, [x, y]: [number, number]) => act(() => {
+    area.dispatchEvent(new PointerEvent(tipo, { bubbles: true, button: 0, clientX: x, clientY: y, ...opcoes }));
+  });
+  ev('pointerdown', de);
+  ev('pointermove', [(de[0] + ate[0]) / 2, (de[1] + ate[1]) / 2]);
+  ev('pointermove', ate);
+  ev('pointerup', ate);
+  /* O clique que o navegador dispara ao soltar cai no vazio. */
+  act(() => { area.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+}
+
+describe('o laço de seleção', () => {
+  /* Escolher vários arquivos pedia Ctrl ou Shift: arrastar no vazio abaixo
+     das linhas, que é o retângulo azul do Windows, não fazia nada. */
+  it('arrastar do vazio escolhe as linhas que a faixa cruza, e o clique de soltar não desfaz', () => {
+    const area = container.querySelector('.win-area-da-lista')!;
+    const linhas = medirLinhas(container);
+    expect(linhas.length, 'a pasta inicial abriu com menos de duas linhas').toBeGreaterThan(1);
+    lacar(area, [300, 30 * linhas.length + 40], [300, 35]);
+    expect(container.querySelector('.win-laco'), 'o laço ficou desenhado depois de soltar').toBeNull();
+    const escolhidas = linhas.map(l => l.classList.contains('escolhida'));
+    expect(escolhidas).toEqual(linhas.map((_, i) => i >= 1));
+  });
+
+  it('no dedo, arrastar o vazio rola a lista e não escolhe nada', () => {
+    const area = container.querySelector('.win-area-da-lista')!;
+    const linhas = medirLinhas(container);
+    lacar(area, [300, 30 * linhas.length + 40], [300, 0], { pointerType: 'touch' });
+    expect(container.querySelectorAll('.win-linha.escolhida')).toHaveLength(0);
+  });
+});

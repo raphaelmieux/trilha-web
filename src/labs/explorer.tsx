@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useRef, useState } from 'react';
 import {
   Folder, FolderOpen, File as FileIcon, Link2, Trash2, Monitor,
   ChevronRight, ChevronDown, ArrowLeft, ArrowRight, ArrowUp, RotateCw,
@@ -9,7 +10,7 @@ import {
   formatarData, formatarTamanho, rotuloDoTipo,
   type No, type Coluna,
 } from './arquivos';
-import type { Modificadores } from './selecao';
+import { aoLacar, type Modificadores, type Selecao } from './selecao';
 
 /*
  * A janela do Explorador de Arquivos, em peças.
@@ -330,6 +331,7 @@ export function LinhaDeArquivo(p: LinhaProps) {
   return (
     <div
       className={`win-linha${escolhido ? ' escolhida' : ''}${recebendo ? ' recebendo' : ''}`}
+      data-no={n.id}
       draggable={!ehRaiz(arvore, n.id) && !renomeando}
       /* Quem ajusta a seleção ao começar o arrasto é o laboratório, dentro do
          próprio `aoArrastar`: a regra do arrasto não é a do clique — arrastar
@@ -390,6 +392,89 @@ export function LinhaDeArquivo(p: LinhaProps) {
       <span className="win-c-tam px-2" style={{ color: '#5B5B5B' }}>
         {formatarTamanho(n)}
       </span>
+    </div>
+  );
+}
+
+/**
+ * A área das linhas: rola, desfaz a seleção no clique no vazio e, quando o
+ * laboratório deixa escolher vários, desenha o laço de seleção.
+ *
+ * O laço é o retângulo azul do Explorer: arrastar a partir do vazio abaixo das
+ * linhas escolhe toda linha que a faixa cruza, e com Ctrl soma ao que havia.
+ * Ele começa no vazio, e só nele, porque arrastar uma linha é levar o arquivo
+ * para outra pasta — é assim também no Windows, com a linha inteira clicável.
+ *
+ * Ele entra pela presença de `aoSelecionar`, pela regra do `aoBuscar`: só onde
+ * existe seleção de vários ele promete alguma coisa.
+ *
+ * O dedo não começa laço: no celular, arrastar o vazio é rolar a lista, e
+ * quem escolhe vários lá tem as caixas de seleção de item.
+ */
+export function AreaDaLista({ aoLimpar, selecao, aoSelecionar, children }: {
+  aoLimpar: () => void;
+  selecao?: Selecao;
+  aoSelecionar?: (s: Selecao) => void;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const laco = useRef<{ x0: number; y0: number; base: Selecao; somar: boolean; moveu: boolean } | null>(null);
+  const [faixa, setFaixa] = useState<{ x: number; y: number; largura: number; altura: number } | null>(null);
+  /* O clique que fecha o arrasto cai no vazio, onde ele desfaria a seleção
+     que o laço acabou de fazer. */
+  const acabouDeLacar = useRef(false);
+
+  /* Em coordenadas do conteúdo, e não da tela: a lista rola, e a faixa
+     precisa ficar presa às linhas em que começou. */
+  const noConteudo = (x: number, y: number) => {
+    const el = ref.current!;
+    const r = el.getBoundingClientRect();
+    return [x - r.left + el.scrollLeft, y - r.top + el.scrollTop] as const;
+  };
+
+  const soltar = () => {
+    if (laco.current?.moveu) acabouDeLacar.current = true;
+    laco.current = null;
+    setFaixa(null);
+  };
+
+  return (
+    <div
+      ref={ref}
+      className="win-area-da-lista"
+      onClick={e => {
+        if (acabouDeLacar.current) { acabouDeLacar.current = false; return; }
+        if (e.target === e.currentTarget) aoLimpar();
+      }}
+      onPointerDown={e => {
+        if (!aoSelecionar || !selecao || e.target !== e.currentTarget || e.button !== 0 || e.pointerType === 'touch') return;
+        const [x0, y0] = noConteudo(e.clientX, e.clientY);
+        laco.current = { x0, y0, base: selecao, somar: e.ctrlKey || e.metaKey, moveu: false };
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+      }}
+      onPointerMove={e => {
+        const l = laco.current;
+        if (!l || !aoSelecionar) return;
+        const [x, y] = noConteudo(e.clientX, e.clientY);
+        if (!l.moveu && Math.abs(x - l.x0) + Math.abs(y - l.y0) < 4) return;
+        l.moveu = true;
+        const c = { x: Math.min(l.x0, x), y: Math.min(l.y0, y), largura: Math.abs(x - l.x0), altura: Math.abs(y - l.y0) };
+        setFaixa(c);
+        const cruzadas = [...ref.current!.querySelectorAll<HTMLElement>('[data-no]')].filter(linha => {
+          const lr = linha.getBoundingClientRect();
+          const [lx, ly] = noConteudo(lr.left, lr.top);
+          return lx < c.x + c.largura && c.x < lx + lr.width && ly < c.y + c.altura && c.y < ly + lr.height;
+        }).map(linha => linha.dataset.no!);
+        aoSelecionar(aoLacar(l.base, cruzadas, l.somar));
+      }}
+      onPointerUp={soltar}
+      onPointerCancel={soltar}
+    >
+      {children}
+      {faixa && (
+        <div className="win-laco" aria-hidden="true"
+          style={{ left: faixa.x, top: faixa.y, width: faixa.largura, height: faixa.altura }} />
+      )}
     </div>
   );
 }

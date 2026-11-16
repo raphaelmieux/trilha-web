@@ -125,6 +125,21 @@ export function aoMarcarCaixa(atual: Selecao, id: string): Selecao {
   };
 }
 
+/**
+ * O laço de seleção: arrastar no vazio da lista e escolher as linhas que a
+ * faixa cruza. Sem tecla, a faixa é a seleção inteira; com Ctrl, ela soma ao
+ * que já havia — a do Windows **inverte** cada linha cruzada, e soma é a regra
+ * que não tira nada de quem cercou duas faixas seguidas sem querer desfazer a
+ * primeira.
+ *
+ * A âncora vai para a última linha cruzada, na ordem da tela: é dela que o
+ * Shift seguinte mede, como depois de um clique.
+ */
+export function aoLacar(base: Selecao, cruzadas: string[], somar: boolean): Selecao {
+  const ancora = cruzadas[cruzadas.length - 1] ?? (somar ? base.ancora : null);
+  return { ids: somar ? unir(base.ids, cruzadas) : [...cruzadas], ancora };
+}
+
 /** Tudo o que está à vista. */
 export const todos = (visiveis: string[]): Selecao => ({
   ids: [...visiveis],

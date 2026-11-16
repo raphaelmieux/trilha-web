@@ -7,7 +7,7 @@ import {
   mesmaPeca, mesmoEstilo, mesmoTexto, niveisDe, nivelDoCorpo, provaDeImpressao,
   proximidadeFunciona, quemEstragaAHierarquia, sangra, textosSobrepostos, textosSoltos,
   umObjeto, umaPrancha, combinar, agrupar, desagrupar, mudarObjetos, moverObjeto, excluir, textos,
-  emCaminho, redimensionar, alturaDe,
+  emCaminho, redimensionar, alturaDe, caixaEntre, objetosNoLaco,
   type Arte, type Forma, type Foto, type Prancha, type Texto,
 } from './design';
 import { hexToRgb } from '../lib/imageTools';
@@ -371,5 +371,22 @@ describe('caminhos, grupos e booleanas', () => {
     const copia = d.pranchas[1];
     expect(umObjeto(copia, 'a')).toBeUndefined();
     expect(mesmaPeca(copia, g)).toBe(true);
+  });
+});
+
+describe('objetosNoLaco', () => {
+  const p: Prancha = {
+    id: 'p', nome: 'P', largura: 200, altura: 200, fundo: '#FFFFFF',
+    objetos: [
+      { id: 'fundo', nome: 'Fundo', tipo: 'retangulo', x: 0, y: 0, largura: 200, altura: 200, preenchimento: '#EEEEEE' },
+      { id: 'a', nome: 'A', tipo: 'retangulo', x: 20, y: 20, largura: 40, altura: 40, preenchimento: '#000000' },
+      { id: 'b', nome: 'B', tipo: 'retangulo', x: 50, y: 50, largura: 40, altura: 40, preenchimento: '#000000' },
+    ],
+  };
+  /* Com "tocou, pegou", o fundo do tamanho da prancha entraria em todo laço. */
+  it('pega só o que fica inteiro dentro, e nunca o fundo que ele toca', () => {
+    expect(objetosNoLaco(p, caixaEntre(10, 10, 70, 70))).toEqual(['a']);
+    expect(objetosNoLaco(p, caixaEntre(95, 95, 10, 10))).toEqual(['a', 'b']);
+    expect(objetosNoLaco(p, caixaEntre(-5, -5, 205, 205))).toEqual(['fundo', 'a', 'b']);
   });
 });

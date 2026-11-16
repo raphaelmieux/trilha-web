@@ -10,7 +10,7 @@ import {
 import type { Font } from 'opentype.js';
 import {
   FAMILIAS, LISTA_DE_FAMILIAS, MATRIZ_DA_DEUTERANOPIA, NOME_DA_CLASSIFICACAO, NOME_DO_PAPEL, PAPEIS,
-  alinhar, alturaDe, alturaDaLinha, caixaDe, cmykDe, colarEstilo, contrasteDoTexto, contrasteMinimo, copiarEstilo,
+  alinhar, alturaDe, alturaDaLinha, caixaDe, caixaEntre, objetosNoLaco, cmykDe, colarEstilo, contrasteDoTexto, contrasteMinimo, copiarEstilo,
   distribuir, duplicarPrancha, ehHex, ehTextoGrande, excluir, foraDaGama, fundosDoTexto, hexDeHsl,
   hslDe, idNovo, linhasDoTexto, mudarObjetos, mudarOrdem, mudarPrancha, provaDeImpressao, umaPrancha,
   EXTREMIDADE_NO_SVG, NOME_DA_EXTREMIDADE, agrupar, combinar, comCaixaRefeita, desagrupar, emCaminho,
@@ -177,6 +177,10 @@ export const CSS_DO_EDITOR_DE_DESIGN = `
    margem automática vira zero quando não cabe, e a rolagem começa nela. */
 .dz-prancha-e-guias { position: relative; flex: none; margin: 0 auto; }
 .dz-guias { position: absolute; left: 0; top: 0; overflow: visible; }
+.dz-laco {
+  position: absolute; pointer-events: none;
+  border: 1px solid #3D6FE0; background: rgba(61, 111, 224, .14);
+}
 .dz-recado { padding: 8px 10px; border-bottom: 1px solid #3A3C42; margin: 0; }
 .dz-caixa { flex-direction: row; align-items: center; gap: 6px; color: #C7C9CE; }
 .dz-tamanhos { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -509,6 +513,12 @@ export function EditorDeDesign({
   const [rascunho, setRascunho] = useState<Contorno | null>(null);
   const [recado, setRecado] = useState('');
   const mesaRef = useRef<HTMLDivElement>(null);
+  const pranchaRef = useRef<HTMLDivElement>(null);
+  /* O laço de seleção: o retângulo que o arrasto no vazio desenha. A caixa
+     mora no estado, para se desenhar; o resto mora na ref, que o `mover` lê
+     sem esperar a próxima renderização. */
+  const [laco, setLaco] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
+  const lacoAgora = useRef<{ x0: number; y0: number; cx: number; cy: number; base: string[]; moveu: boolean } | null>(null);
   const arraste = useRef<{ x: number; y: number; origem: Arte; moveu: boolean; id: string } | null>(null);
   const arrasteDoNo = useRef<{ alvo: 'no' | 'entrada' | 'saida'; origem: Arte; moveu: boolean } | null>(null);
   const arrasteDaCaneta = useRef<number | null>(null);
@@ -889,7 +899,46 @@ export function EditorDeDesign({
     mesaRef.current?.focus({ preventScroll: true });
   };
 
+  /* ── O laço de seleção ── */
+
+  /**
+   * Arrastar no vazio desenha o laço, e o que ficar inteiro dentro dele é
+   * escolhido — com Shift, somado ao que já estava. O vazio é o da prancha e
+   * o da mesa em volta dela, porque numa peça com fundo do tamanho da prancha
+   * a mesa é o único vazio que existe, como em todo editor de desenho.
+   *
+   * O aperto já tira a seleção (sem Shift): é o clique no vazio de sempre, e
+   * o laço só começa a valer depois de três pixels de tela. No dedo, o mesmo
+   * arrasto rola a mesa, e o navegador cancela o ponteiro — o laço some sem
+   * escolher nada.
+   */
+  const comecarLaco = (e: React.PointerEvent) => {
+    const r = pranchaRef.current?.getBoundingClientRect();
+    const base = e.shiftKey ? selecao : [];
+    setSelecao(base);
+    mesaRef.current?.focus({ preventScroll: true });
+    if (!r) return;
+    const [x0, y0] = [(e.clientX - r.left) / k, (e.clientY - r.top) / k];
+    lacoAgora.current = { x0, y0, cx: e.clientX, cy: e.clientY, base, moveu: false };
+    mesaRef.current?.setPointerCapture?.(e.pointerId);
+  };
+
+  const puxarLaco = (e: React.PointerEvent) => {
+    const l = lacoAgora.current;
+    if (!l) return false;
+    if (!l.moveu && Math.abs(e.clientX - l.cx) + Math.abs(e.clientY - l.cy) < 3) return true;
+    l.moveu = true;
+    const r = pranchaRef.current?.getBoundingClientRect();
+    if (!r) return true;
+    const [x1, y1] = [(e.clientX - r.left) / k, (e.clientY - r.top) / k];
+    setLaco({ x0: l.x0, y0: l.y0, x1, y1 });
+    const dentro = objetosNoLaco(p, caixaEntre(l.x0, l.y0, x1, y1));
+    setSelecao([...l.base, ...dentro.filter(id => !l.base.includes(id))]);
+    return true;
+  };
+
   const mover = (e: React.PointerEvent) => {
+    if (puxarLaco(e)) return;
     if (crescer(e)) return;
     const a = arraste.current;
     if (!a) return;
@@ -902,6 +951,8 @@ export function EditorDeDesign({
 
   const soltar = () => {
     criacao.current = null;
+    lacoAgora.current = null;
+    setLaco(null);
     const a = arraste.current;
     arraste.current = null;
     /* O arraste inteiro é um passo só no Ctrl+Z, e não um por pixel. */
@@ -1107,8 +1158,8 @@ export function EditorDeDesign({
 
         <div className="dz-mesa" ref={mesaRef} tabIndex={0} aria-label="Mesa de trabalho"
           onPointerMove={mover} onPointerUp={soltar} onPointerCancel={soltar}
-          onPointerDown={e => { if (e.target === e.currentTarget) setSelecao([]); }}>
-          <div className="dz-prancha-e-guias" style={{ width: p.largura * k, height: p.altura * k }}>
+          onPointerDown={e => { if (e.target === e.currentTarget) comecarLaco(e); }}>
+          <div className="dz-prancha-e-guias" ref={pranchaRef} style={{ width: p.largura * k, height: p.altura * k }}>
             <DesenhoDaPrancha
               prancha={p} escala={k} selecionados={selecao} visao={visao} prova={prova}
               aoApertar={(id, e) => {
@@ -1122,7 +1173,7 @@ export function EditorDeDesign({
                 if (r) criar((e.clientX - r.left) / k, (e.clientY - r.top) / k, e);
               }}
               aoApertarVazio={(x, y, e) => {
-                if (ferramenta === 'selecionar' || ferramenta === 'nos') setSelecao([]);
+                if (ferramenta === 'selecionar' || ferramenta === 'nos') comecarLaco(e);
                 else if (ferramenta !== 'caneta') criar(x, y, e);
               }}
             />
@@ -1166,6 +1217,11 @@ export function EditorDeDesign({
                 }))}
               </svg>
             )}
+            {laco && (() => {
+              const c = caixaEntre(laco.x0, laco.y0, laco.x1, laco.y1);
+              return <div className="dz-laco" aria-hidden="true"
+                style={{ left: c.x * k, top: c.y * k, width: c.largura * k, height: c.altura * k }} />;
+            })()}
           </div>
         </div>
 
