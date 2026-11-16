@@ -514,8 +514,8 @@ pin-padrão — a arte cujo lado maior não chega a 641 cresce até chegar. O n�
 sem ler arte nenhuma, e `formaDoPin.test.ts` refaz a conta a partir do arquivo,
 junto com o nome de cada arte e a dos segredos inteiros.
 
-O tamanho da arte é medida; o **destaque** é decisão. O Zen do Python sai no
-dobro do tamanho na Faixa porque o dono da plataforma pediu, e isso mora em
+O tamanho da arte é medida; o **destaque** é decisão. O Zen do Python e o Gato
+Pintado saem no dobro do tamanho na Faixa porque o dono da plataforma pediu, e isso mora em
 `destaque`, e não em `tamanho`: escrito ali, o dobro faria a trava do arquivo
 acusar a arte de um tamanho que ela não tem. A lista de quem tem destaque é
 fechada no teste — pin não cresce sem alguém decidir.

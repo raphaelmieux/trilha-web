@@ -81,6 +81,6 @@ describe('a arte dos pins de curiosidade', () => {
   /* O destaque é decisão, e não medida: a lista fechada é o que impede um
      pin de crescer sem ninguém ter decidido. */
   it('o destaque é só o que foi pedido', () => {
-    expect(CURIOSIDADES.filter(c => c.destaque).map(c => [c.code, c.destaque])).toEqual([['zen_do_python', 2]]);
+    expect(CURIOSIDADES.filter(c => c.destaque).map(c => [c.code, c.destaque])).toEqual([['zen_do_python', 2], ['gato_pintado', 2]]);
   });
 });

@@ -152,7 +152,7 @@ export const CURIOSIDADES: readonly Curiosidade[] = [
   seg('mapa_do_banco', 'Mapa do Banco', 'Consultou sqlite_master no editor de SQL.', 'O banco guarda a própria planta.'),
   seg('fim_da_planilha', 'Fim da Planilha', 'Foi com Ctrl+↓ até a última linha de uma planilha.', 'Até onde vai uma planilha?', [1029 / 641, 1]),
   seg('texto_de_enchimento', 'Texto de Enchimento', 'Escreveu =rand() no Word e viu o texto aparecer.', 'O Word escreve sozinho, se você pedir.'),
-  seg('gato_pintado', 'Gato Pintado', 'Trocou a cor do ator no Scratch.', 'O gato não precisa ser laranja.'),
+  { ...seg('gato_pintado', 'Gato Pintado', 'Trocou a cor do ator no Scratch.', 'O gato não precisa ser laranja.'), destaque: 2 },
 ];
 
 export const CODIGOS_DAS_CURIOSIDADES: ReadonlySet<string> = new Set(CURIOSIDADES.map(x => x.code));
