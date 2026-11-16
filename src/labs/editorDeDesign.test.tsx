@@ -361,6 +361,48 @@ describe('o clique no traço', () => {
   });
 });
 
+describe('o laço de seleção', () => {
+  /* Escolher vários objetos pedia Shift + clique um por um, ou a lista de
+     camadas: o arrasto no vazio não fazia nada. */
+  const escolhidos = () => [...container.querySelectorAll('[data-selecionado="true"]')]
+    .map(e => e.getAttribute('data-objeto'));
+  const ponteiroCom = (alvo: Element | null, tipo: string, x: number, y: number, shiftKey = false) => {
+    act(() => { alvo!.dispatchEvent(new PointerEvent(tipo, { bubbles: true, button: 0, clientX: x, clientY: y, shiftKey })); });
+  };
+
+  it('arrastar na mesa escolhe o que fica inteiro dentro do laço, e o Shift soma', () => {
+    montar();
+    const mesa = porRotulo('Mesa de trabalho');
+    ponteiro(mesa, 'pointerdown', 0, 0);
+    ponteiro(mesa, 'pointermove', 60, 60);
+    expect(container.querySelector('.dz-laco'), 'o laço não aparece enquanto se arrasta').toBeTruthy();
+    ponteiro(mesa, 'pointermove', 130, 130);
+    ponteiro(mesa, 'pointerup', 130, 130);
+    /* O quadrado B passa da borda do laço e fica de fora. */
+    expect(escolhidos()).toEqual(['a']);
+    expect(container.querySelector('.dz-laco'), 'o laço ficou desenhado depois de soltar').toBeNull();
+
+    ponteiroCom(mesa, 'pointerdown', 0, 150, true);
+    ponteiroCom(mesa, 'pointermove', 250, 255, true);
+    ponteiroCom(mesa, 'pointerup', 250, 255, true);
+    expect(escolhidos().sort()).toEqual(['a', 't', 'u']);
+  });
+
+  it('o laço começa também no vazio da prancha, e o clique sem arrasto tira a seleção', () => {
+    montar();
+    camada('Quadrado A');
+    const mesa = porRotulo('Mesa de trabalho');
+    ponteiro(porRotulo('Prancha Ícone'), 'pointerdown', 250, 250);
+    ponteiro(mesa, 'pointerup', 250, 250);
+    expect(escolhidos(), 'o clique no vazio não tirou a seleção').toEqual([]);
+
+    ponteiro(porRotulo('Prancha Ícone'), 'pointerdown', 250, 250);
+    ponteiro(mesa, 'pointermove', 10, 150);
+    ponteiro(mesa, 'pointerup', 10, 150);
+    expect(escolhidos().sort()).toEqual(['t', 'u']);
+  });
+});
+
 describe('colar de novo', () => {
   /* Colar três vezes empilhava as três cópias no mesmo ponto: a tela mostrava
      uma só, e a página dos usos incorretos do manual da CC-DG004 pedia três. */

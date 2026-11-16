@@ -710,6 +710,21 @@ describe('a seleção múltipla do Explorador', () => {
     expect(selecionadas()).toHaveLength(0);
   });
 
+  it('o laço escolhe as linhas que cruza, e com Ctrl soma ao que havia', () => {
+    montar('m2-lab');
+    escolher('ata.docx');
+    const area = container.querySelector('.win-area-da-lista')!;
+    const linhas = medirLinhas(container);
+    const nomes = linhas.map(l => l.querySelector('.win-c-nome span')!.textContent!.trim());
+    expect(nomes.length, 'a Área de Trabalho abriu vazia').toBeGreaterThan(4);
+
+    lacar(area, [300, 30 * linhas.length + 40], [300, 30 * (linhas.length - 2) + 5]);
+    expect(selecionadas()).toEqual(nomes.slice(-2));
+
+    lacar(area, [300, 30 * linhas.length + 40], [300, 30 * (linhas.length - 4) + 5], { ctrlKey: true });
+    expect(selecionadas()).toEqual(nomes.slice(-4));
+  });
+
   it('o botão direito num item já escolhido não encolhe a seleção', () => {
     /*
       É o detalhe que faz a ferramenta valer alguma coisa. Sem ele, escolher
@@ -838,3 +853,26 @@ describe('os segredos do Explorador', () => {
     expect(oQueFalta()).toContain('Esvaziar');
   });
 });
+
+/* O jsdom não mede nada: as linhas recebem uma altura de 30 px, uma embaixo
+   da outra, e o resto continua medindo zero. */
+function medirLinhas(onde: HTMLElement) {
+  const linhas = [...onde.querySelectorAll<HTMLElement>('[data-no]')];
+  for (const [i, l] of linhas.entries()) {
+    l.getBoundingClientRect = () => ({
+      left: 0, top: 30 * i, right: 600, bottom: 30 * i + 28, width: 600, height: 28, x: 0, y: 30 * i, toJSON: () => ({}),
+    });
+  }
+  return linhas;
+}
+function lacar(area: Element, de: [number, number], ate: [number, number], opcoes: PointerEventInit = {}) {
+  const ev = (tipo: string, [x, y]: [number, number]) => act(() => {
+    area.dispatchEvent(new PointerEvent(tipo, { bubbles: true, button: 0, clientX: x, clientY: y, ...opcoes }));
+  });
+  ev('pointerdown', de);
+  ev('pointermove', [(de[0] + ate[0]) / 2, (de[1] + ate[1]) / 2]);
+  ev('pointermove', ate);
+  ev('pointerup', ate);
+  /* O clique que o navegador dispara ao soltar cai no vazio. */
+  act(() => { area.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+}

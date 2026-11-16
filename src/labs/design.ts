@@ -299,6 +299,27 @@ const contem = (fora: Caixa, x: number, y: number) =>
 const sobrepoe = (a: Caixa, b: Caixa) =>
   a.x < b.x + b.largura && b.x < a.x + a.largura && a.y < b.y + b.altura && b.y < a.y + a.altura;
 
+/** A caixa entre dois pontos, em qualquer direção que o arrasto tenha ido. */
+export const caixaEntre = (x0: number, y0: number, x1: number, y1: number): Caixa => ({
+  x: Math.min(x0, x1), y: Math.min(y0, y1), largura: Math.abs(x1 - x0), altura: Math.abs(y1 - y0),
+});
+
+/**
+ * O que o laço de seleção pega: os objetos de primeira camada **inteiros**
+ * dentro dele, como no PowerPoint e no Inkscape.
+ *
+ * Inteiros, e não tocados: quase toda peça tem uma forma de fundo do tamanho
+ * da prancha, e com "tocou, pegou" ela entraria em todo laço — quem cercasse
+ * três linhas do aviso levaria o fundo junto, e o Alinhar seguinte alinharia
+ * as linhas pela borda do fundo. O grupo entra inteiro ou não entra, porque é
+ * isso que um grupo é; a guia do examinador fica de fora, como no Ctrl+A.
+ */
+export function objetosNoLaco(p: Prancha, laco: Caixa): string[] {
+  const dentro = (c: Caixa) => c.x >= laco.x && c.y >= laco.y
+    && c.x + c.largura <= laco.x + laco.largura && c.y + c.altura <= laco.y + laco.altura;
+  return p.objetos.filter(o => o.tipo !== 'referencia' && dentro(caixaDe(o))).map(o => o.id);
+}
+
 /* ── Contraste ───────────────────────────────────────────────────────────── */
 
 /**

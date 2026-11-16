@@ -10,7 +10,7 @@ import {
 import LaboratorioEmTelaCheia from '../components/LaboratorioEmTelaCheia';
 import { CSS_WINDOWS, BarraDeTitulo } from './windows';
 import {
-  PainelDeNavegacao, BarraDeEndereco, CabecalhosDaLista, LinhaDeArquivo,
+  PainelDeNavegacao, BarraDeEndereco, CabecalhosDaLista, LinhaDeArquivo, AreaDaLista,
   MenuFlutuante, MenuClassificar, BarraDeTarefasDoWindows,
 } from './explorer';
 import {
@@ -653,13 +653,9 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
           <div className="win-lista">
             <CabecalhosDaLista coluna={coluna} crescente={crescente} aoOrdenar={ordenarPor} />
 
-            {/* Clicar no vazio desfaz a seleção, como no Explorador. Só quando
-                o alvo é este `div`: sem a comparação, o clique que escolhe uma
-                linha borbulharia até aqui e a desfaria no mesmo gesto. */}
-            <div
-              style={{ flex: 1, minHeight: 0, overflow: 'auto' }}
-              onClick={e => { if (e.target === e.currentTarget) limpar(); }}
-            >
+            {/* Clicar no vazio desfaz a seleção, e arrastar nele desenha o laço,
+                como no Explorador — as duas coisas moram em `AreaDaLista`. */}
+            <AreaDaLista aoLimpar={limpar} selecao={selecao} aoSelecionar={setSelecao}>
               {visiveis.length === 0 && (
                 <p style={{ padding: 16, fontSize: 12.5, color: '#767676' }}>Esta pasta está vazia.</p>
               )}
@@ -695,7 +691,7 @@ export default function FileManagerLab({ specialtyCode, lessonCode, lessonTitle,
                   aoSoltar={soltarEm}
                 />
               ))}
-            </div>
+            </AreaDaLista>
           </div>
         </div>
 

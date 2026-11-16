@@ -1926,6 +1926,24 @@ Shift+↓ repetiria o primeiro); Enter abre; Backspace e Alt+← voltam, Alt+→
 avança, Alt+↑ sobe um nível. Elas não valem com o foco num botão ou num item
 de menu, onde o Enter é apertar aquele botão.
 
+**E escolhe pelo laço.** Arrastar a partir do vazio abaixo das linhas
+desenha o retângulo azul do Windows, e toda linha que a faixa cruza é
+escolhida; com Ctrl, soma ao que havia (`aoLacar`, em `selecao.ts`). O
+Windows **inverte** cada linha cruzada com o Ctrl, e aqui é soma de propósito:
+é a regra que não tira nada de quem cercou duas faixas seguidas. Ele começa no
+vazio e só nele, porque arrastar uma linha é levar o arquivo para outra
+pasta. Mora em `AreaDaLista`, de `explorer.tsx`, para os dois Exploradores
+terem o mesmo, e entra pela presença de `aoSelecionar`. Três detalhes erram
+calado: a faixa é medida no **conteúdo**, e não na tela, senão ela escorregaria
+das linhas quando a lista rola; o clique que o navegador dispara ao soltar cai
+no vazio e desfaria a seleção que o laço acabou de fazer, então ele é
+engolido; e o dedo não começa laço — arrastar o vazio no celular é rolar, e
+lá quem escolhe vários são as caixas de seleção de item.
+
+O diagramador e a lista da nuvem não ganharam laço, e é decisão: os dois
+escolhem um item por vez, e laço numa tela de seleção única prometeria um
+gesto que não faz nada.
+
 **Trava de motor não é trava de tela.** `exploradorValidator.test.ts` prova que
 cada verificação pode ficar verde chamando o motor. Isso não prova que a janela
 chama alguma delas: um botão sem `onClick`, um menu que não abre, uma caixa de
@@ -5509,6 +5527,18 @@ do manual da CC-DG004 pede três lado a lado. A cópia desce de doze em doze at�
 não cair exatamente em cima de nada; em outra prancha, a primeira continua no
 mesmo lugar.
 
+**Arrastar no vazio desenha o laço.** Escolher vários objetos pedia Shift +
+clique um por um, ou a lista de camadas, e as lições de alinhar e distribuir
+pedem quase sempre vários. O laço começa no vazio da prancha **e** no da mesa
+em volta dela — numa peça com fundo do tamanho da prancha, a mesa é o único
+vazio que existe, como em todo editor de desenho —, e o Shift soma ao que já
+estava. `objetosNoLaco`, em `design.ts`, pega o que fica **inteiro** dentro,
+como no PowerPoint e no Inkscape, e não o que ele toca: com "tocou, pegou", o
+fundo entraria em todo laço, e o Alinhar seguinte alinharia as linhas pela
+borda dele. O grupo entra inteiro ou não entra, e a guia do examinador fica
+de fora, como no Ctrl+A. No dedo o arrasto rola a mesa, o navegador cancela o
+ponteiro e o laço some sem escolher nada.
+
 **A CC-DG002 desenha forma nova, e o editor ganhou o vetor de verdade.** A
 CC-DG001 arruma peças que chegam prontas; esta desenha. As ferramentas entraram
 na janela compartilhada, e não num segundo editor — a caneta, a edição de nós,
@@ -6516,6 +6546,10 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/components/LaboratorioDeDesign.test.tsx` | clique na prancha que mantém a seleção inteira, e o Y digitado empilhando todas as linhas |
 | `src/labs/editorDeDesign.test.tsx` | ferramenta de forma que não desenha em cima de outra forma, ou arrasto que não dá o tamanho |
 | `src/labs/editorDeDesign.test.tsx` | caminho sem faixa de toque, que só se escolhe com mira, ou Ctrl+V repetido empilhando as cópias |
+| `src/labs/editorDeDesign.test.tsx` | arrasto no vazio da mesa ou da prancha que não desenha o laço, ou Shift que não soma |
+| `src/labs/design.test.ts` | laço que pega o que só toca, levando o fundo do tamanho da prancha junto |
+| `src/components/LaboratorioDeExplorador.test.tsx` | laço do Explorador que não escolhe as linhas cruzadas, ou Ctrl que não soma |
+| `src/labs/explorer.test.tsx` | clique de soltar o laço desfazendo a seleção, ou laço que começa no dedo |
 | `src/components/LaboratorioDeDiagramacao.test.tsx` | quadro que não se arrasta nem encaixa na guia, ou Delete e Ctrl+Z que não chegam à janela depois do clique |
 | `src/components/LaboratorioDeDiagramacao.test.tsx` | passo a passo do ppi que só manda mexer na largura, que não sobe o ppi |
 | `src/labs/metasDaCcDg006.test.ts` | texto ou clipart inteiro fora da prancha do post contando nas metas dele |
