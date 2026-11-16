@@ -514,6 +514,12 @@ pin-padrão — a arte cujo lado maior não chega a 641 cresce até chegar. O n�
 sem ler arte nenhuma, e `formaDoPin.test.ts` refaz a conta a partir do arquivo,
 junto com o nome de cada arte e a dos segredos inteiros.
 
+O tamanho da arte é medida; o **destaque** é decisão. O Zen do Python sai no
+dobro do tamanho na Faixa porque o dono da plataforma pediu, e isso mora em
+`destaque`, e não em `tamanho`: escrito ali, o dobro faria a trava do arquivo
+acusar a arte de um tamanho que ela não tem. A lista de quem tem destaque é
+fechada no teste — pin não cresce sem alguém decidir.
+
 E os pins do mesmo cacho não se encostam. A espiral foi medida para o pin
 redondo provisório; com a arte, deitada, em pé e larga, os segredos caíram uns
 por cima dos outros. Cada pin desce pela própria direção da espiral até a caixa
@@ -6583,7 +6589,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/lib/faixa/empacotarFaixa.test.ts` | zonas fora da ordem Trilhas, Escadas, Curiosidades e Veredas |
 | `src/lib/faixa/estadoDaFaixa.test.ts` | peça acesa sem a insígnia, ou Token.Web() revogado aparecendo como se valesse |
 | `src/components/faixa/Faixa.test.tsx` | mais de uma peça na ordem do Tab, seta que não leva o foco à peça seguinte, lugar vazio que não abre, segredo mostrando a forma da peça, ou impressão que deixa a página em branco depois |
-| `src/lib/formaDoPin.test.ts` | arte de pin com nome que não é código de curiosidade, segredo sem arte, ou arte fora do quadrado com tamanho diferente do arquivo, ou menor que o pin-padrão |
+| `src/lib/formaDoPin.test.ts` | arte de pin com nome que não é código de curiosidade, segredo sem arte, ou arte fora do quadrado com tamanho diferente do arquivo, ou menor que o pin-padrão, ou pin com destaque que ninguém decidiu |
 | `src/lib/faixa/empacotarFaixa.test.ts` | pin de curiosidade encostando no vizinho do mesmo cacho |
 | `src/lib/faixa/lugarVazio.test.ts` | lugar vazio sem dizer como se conquista, segredo vazio que entrega o nome, ou Mestrado que não lista o que falta |
 | `src/lib/mestrados.test.ts` | lista ou mínimo do ME006 diferente entre o aplicativo e a Edge Function que emite o certificado |

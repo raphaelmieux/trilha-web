@@ -52,6 +52,16 @@ export interface Curiosidade {
    * nenhuma; `formaDoPin.test.ts` refaz a conta a partir do arquivo.
    */
   tamanho?: readonly [largura: number, altura: number];
+  /**
+   * Quantas vezes o pin sai maior que o tamanho da arte dele, por decisão do
+   * dono da plataforma, e não do arquivo.
+   *
+   * É campo à parte de `tamanho` de propósito: `tamanho` se confere contra o
+   * cabeçalho do PNG, e escrever o dobro ali faria a trava acusar a arte de
+   * ter um tamanho que ela não tem — ou, pior, ensinaria a afrouxar a trava.
+   * Aqui o número é escolha, e `formaDoPin.test.ts` lista quem a tem.
+   */
+  destaque?: number;
 }
 
 /** O glifo provisório de cada tema, até a arte recortada chegar. */
@@ -138,7 +148,7 @@ export const CURIOSIDADES: readonly Curiosidade[] = [
   seg('leitor_de_manual', 'Leitor de Manual', 'Pediu --help a um comando no terminal.', 'Todo comando tem instruções.'),
   seg('quem_sou_eu', 'Quem Sou Eu', 'Perguntou whoami ao terminal.', 'O computador sabe quem você é?'),
   seg('viajante_no_tempo', 'Viajante no Tempo', 'Voltou um repositório a um commit antigo.', 'O Git lembra de tudo.'),
-  seg('zen_do_python', 'Zen do Python', 'Escreveu import this no editor de Python.', 'O Python tem uma filosofia escondida.'),
+  { ...seg('zen_do_python', 'Zen do Python', 'Escreveu import this no editor de Python.', 'O Python tem uma filosofia escondida.'), destaque: 2 },
   seg('mapa_do_banco', 'Mapa do Banco', 'Consultou sqlite_master no editor de SQL.', 'O banco guarda a própria planta.'),
   seg('fim_da_planilha', 'Fim da Planilha', 'Foi com Ctrl+↓ até a última linha de uma planilha.', 'Até onde vai uma planilha?', [1029 / 641, 1]),
   seg('texto_de_enchimento', 'Texto de Enchimento', 'Escreveu =rand() no Word e viu o texto aparecer.', 'O Word escreve sozinho, se você pedir.'),
