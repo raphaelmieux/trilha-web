@@ -126,3 +126,18 @@ describe('a Faixa no lugar da Estante', () => {
     expect(comLink, 'estas telas ainda mandam para o endereço antigo').toEqual([]);
   });
 });
+
+/*
+  A ordem do menu é decisão do dono da plataforma, e mudar um item de lugar
+  não estoura nada — a barra continua funcionando, só que na ordem que ninguém
+  escolheu. A Trilha Atual é contextual e mora colada no Início, fora da conta.
+*/
+describe('a ordem do menu', () => {
+  it('é Início, Faixa, Relatório, Verificar e Ranking', () => {
+    const fonte = readFileSync(resolve(__dirname, 'App.tsx'), 'utf8');
+    const bloco = fonte.match(/const NAV_ITEMS = \[([\s\S]*?)\];/)?.[1] ?? '';
+    const rotulos = [...bloco.matchAll(/label: '([^']+)'/g)].map(m => m[1]);
+    expect(rotulos.filter(r => r !== 'Trilha Atual')).toEqual(['Início', 'Faixa', 'Relatório', 'Verificar', 'Ranking']);
+    expect(rotulos.indexOf('Trilha Atual')).toBe(1);
+  });
+});

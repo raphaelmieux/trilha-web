@@ -12,6 +12,7 @@ import { veredasAbertas, licoesDaVereda } from '../curriculum/veredas';
 import { licaoVencida } from '../lib/veredas';
 import { comMarca } from '../components/ui/comMarca';
 import { montarRelatorioDeVeredas } from '../lib/relatorioDeVeredas';
+import { montarSecaoDoMe006, notaDeAnexo } from '../lib/relatorioDoMestrado';
 import { buildSpecialtyNarrative, buildClosingParagraph, buildBadgeParagraph, type LabEvidence } from '../lib/reportNarrative';
 import { LoadingState } from '../components/ui/PageState';
 import CertificateCanvas from '../components/CertificateCanvas';
@@ -173,7 +174,15 @@ export default function ReportPage() {
   const today = new Date().toLocaleDateString('pt-BR', {
     day: '2-digit', month: 'long', year: 'numeric',
   });
-  const attachedCerts = narratives.map(n => n.certificate).filter(c => !!c);
+  const certsDasTrilhas = narratives.map(n => n.certificate).filter(c => !!c);
+  /*
+    O ME006 entra sempre que houver certificado ativo dele, e não pela seleção
+    de trilhas: ele é do conjunto, e desmarcar uma das sete trilhas para um
+    relatório mais curto não desfaz o Mestrado. Anexado por último, depois das
+    trilhas que o sustentam — é a ordem em que se lê a explicação.
+  */
+  const secaoDoMe006 = montarSecaoDoMe006(certifications, studentName);
+  const attachedCerts = [...certsDasTrilhas, ...(secaoDoMe006 ? [secaoDoMe006.certificado] : [])];
 
   /* "A", "A e B", "A, B e C" — o relatório cobre um conjunto escolhido, e a
      enumeração precisa crescer sem virar uma lista com vírgula solta no fim. */
@@ -209,10 +218,7 @@ export default function ReportPage() {
   const relatorioDeVeredas = montarRelatorioDeVeredas(
     abertas, andamento, vencidasPorVereda, certifications, studentName);
 
-  const annexNote = attachedCerts.length === 0 ? undefined
-    : attachedCerts.length === 1
-      ? 'Segue anexo o certificado Token.Web() referente à trilha concluída.'
-      : `Seguem anexos os ${attachedCerts.length} certificados Token.Web() referentes às trilhas concluídas.`;
+  const annexNote = notaDeAnexo(certsDasTrilhas.length, !!secaoDoMe006);
 
   const handleDownload = async () => {
     setExporting(true);
@@ -240,6 +246,9 @@ export default function ReportPage() {
           prova no papel não serve a quem recebe o papel, que é a mesma razão
           pela qual o texto escrito pelo desbravador vai inteiro acima.
         */
+        /* O Mestrado logo depois das trilhas que o sustentam, e antes das
+           veredas, que não contam para ele. */
+        ...(secaoDoMe006 ? [{ heading: secaoDoMe006.titulo, paragraphs: secaoDoMe006.paragrafos }] : []),
         ...(relatorioDeVeredas.percursos.length > 0 ? [{
           heading: 'Veredas',
           paragraphs: [
@@ -388,6 +397,13 @@ export default function ReportPage() {
             </div>
           ))}
 
+          {secaoDoMe006 && (
+            <div className="report-section">
+              <h2>{secaoDoMe006.titulo}</h2>
+              {secaoDoMe006.paragrafos.map((p, i) => <p key={i}>{comMarca(p)}</p>)}
+            </div>
+          )}
+
           {/*
             As veredas entram antes das Conquistas e depois das trilhas, porque
             é isso que elas são na ordem das coisas: não é requisito cumprido, e
@@ -440,12 +456,8 @@ export default function ReportPage() {
           </div>
         </section>
 
-        {attachedCerts.length > 0 && (
-          <p className="report-annex-note">
-            {comMarca(attachedCerts.length === 1
-              ? 'Segue anexo o certificado Token.Web() referente à trilha concluída.'
-              : `Seguem anexos os ${attachedCerts.length} certificados Token.Web() referentes às trilhas concluídas.`)}
-          </p>
+        {annexNote && (
+          <p className="report-annex-note">{comMarca(annexNote)}</p>
         )}
       </article>
       )}
