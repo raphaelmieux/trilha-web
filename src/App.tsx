@@ -68,13 +68,18 @@ export function RotaDeVisitante({ children }: { children: React.ReactNode }) {
    lê é "Trilha Atual" ou "Vereda Atual", conforme o que estiver aberto. */
 const PERCURSO = '@atual';
 
+/* A ordem é decisão do dono da plataforma: Início, Faixa, Relatório,
+   Verificar, Ranking. A Trilha Atual fica colada no Início porque só aparece
+   com uma trilha ou vereda aberta, e é o atalho de volta a ela — no meio da
+   fileira, ela empurraria os outros itens de lugar a cada vez que surgisse.
+   `App.test.tsx` cobra a ordem. */
 const NAV_ITEMS = [
   { to: '/', label: 'Início', icon: Home, exact: true },
   { to: PERCURSO, label: 'Trilha Atual', icon: Map, exact: false },
-  { to: '/relatorio', label: 'Relatório', icon: FileText, exact: false },
-  { to: '/ranking', label: 'Ranking', icon: Podium, exact: false },
   { to: '/faixa', label: 'Faixa', icon: Ribbon, exact: false },
+  { to: '/relatorio', label: 'Relatório', icon: FileText, exact: false },
   { to: '/verificar', label: 'Verificar', icon: Award, exact: false },
+  { to: '/ranking', label: 'Ranking', icon: Podium, exact: false },
 ];
 
 /*
