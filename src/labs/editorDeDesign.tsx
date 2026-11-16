@@ -476,7 +476,7 @@ export function EditorDeDesign({
   const [rascunho, setRascunho] = useState<Contorno | null>(null);
   const [recado, setRecado] = useState('');
   const mesaRef = useRef<HTMLDivElement>(null);
-  const arraste = useRef<{ x: number; y: number; origem: Arte; moveu: boolean } | null>(null);
+  const arraste = useRef<{ x: number; y: number; origem: Arte; moveu: boolean; id: string } | null>(null);
   const arrasteDoNo = useRef<{ alvo: 'no' | 'entrada' | 'saida'; origem: Arte; moveu: boolean } | null>(null);
   const arrasteDaCaneta = useRef<number | null>(null);
   /* O arquivo de agora, para o que termina depois de esperar: a conversão em
@@ -812,7 +812,7 @@ export function EditorDeDesign({
       : (selecao.includes(id) ? selecao : [id]);
     setSelecao(nova);
     if (!e.shiftKey) {
-      arraste.current = { x: e.clientX, y: e.clientY, origem: arte, moveu: false };
+      arraste.current = { x: e.clientX, y: e.clientY, origem: arte, moveu: false, id };
       (e.target as Element).setPointerCapture?.(e.pointerId);
     }
     mesaRef.current?.focus({ preventScroll: true });
@@ -833,6 +833,12 @@ export function EditorDeDesign({
     arraste.current = null;
     /* O arraste inteiro é um passo só no Ctrl+Z, e não um por pixel. */
     if (a?.moveu) { setDesfazer(h => [...h.slice(-49), a.origem]); setRefazer([]); }
+    /* Clicar sem arrastar numa peça que já fazia parte de uma seleção maior
+       fica só com ela, como em todo editor de desenho. O aperto não pode
+       estreitar, senão arrastar o grupo levaria uma peça só; quem decide é o
+       soltar. Sem isto, depois de Ctrl+A e Alinhar, clicar numa linha deixava
+       as oito selecionadas, e o Y digitado empilhava todas no mesmo lugar. */
+    else if (a) setSelecao(s => (s.length > 1 && s.includes(a.id) ? [a.id] : s));
   };
 
   const teclas = (e: React.KeyboardEvent) => {

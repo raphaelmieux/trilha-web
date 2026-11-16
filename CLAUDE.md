@@ -5455,6 +5455,24 @@ mostra um texto, e não num botão a mais: abrir o plugin e clicar no texto é
 medir, como num medidor de verdade. E diz a razão, o mínimo para aquele
 tamanho de letra e se fica acima ou abaixo — nunca "tarefa cumprida".
 
+**Clicar numa peça de uma seleção maior fica só com ela, e decide no soltar.**
+Depois do Ctrl+A e do Alinhar do módulo 2, as oito linhas do aviso ficavam
+selecionadas, e clicar numa delas na prancha não estreitava nada: o aperto
+mantinha a seleção quando a peça já estava nela, para arrastar o grupo
+inteiro. O Y digitado em seguida ia para as oito, e o aviso virava uma pilha
+de texto num lugar só — a tarefa de proximidade era impossível pelo caminho
+natural, e a trava que clica não sentia, porque escolhia as linhas pela lista
+de camadas. Hoje o aperto continua sem estreitar, e o soltar sem arrasto fica
+só com a peça clicada, que é o que todo editor de desenho faz.
+
+**Linha encostada na entrelinha não está em cima da outra.** "Até ficarem
+quase coladas", como o passo a passo diz, punha as caixas das linhas quatro
+pixels uma sobre a outra — e a entrelinha é ar, não letra: na tela nada se
+tocava. `textosSobrepostos` media pela caixa inteira, acusava encavalar, e as
+duas tarefas do módulo ficavam vermelhas sem nada explicando por quê. Ele mede
+pela caixa da tinta agora (`caixaDaTinta`), sem a meia entrelinha de cima e a
+de baixo.
+
 **A CC-DG002 desenha forma nova, e o editor ganhou o vetor de verdade.** A
 CC-DG001 arruma peças que chegam prontas; esta desenha. As ferramentas entraram
 na janela compartilhada, e não num segundo editor — a caneta, a edição de nós,
@@ -6432,6 +6450,8 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/arteDoClube.test.ts` | peça da análise cujo veredito escrito diverge do que as medidas dão, ou peça que chega já consertada |
 | `src/labs/arteDoClube.test.ts` | verde e vermelho da escala que continuam distintos na simulação de deuteranopia |
 | `src/labs/metasDaCcDg001.test.ts` | meta da CC-DG001 que abre verde, ou que a solução de referência não fecha |
+| `src/labs/design.test.ts` | linhas que só se encostam na entrelinha acusadas de estar uma em cima da outra |
+| `src/components/LaboratorioDeDesign.test.tsx` | clique na prancha que mantém a seleção inteira, e o Y digitado empilhando todas as linhas |
 | `src/labs/metasDaCcDg001.test.ts` | elemento apontado que não é o que falha, ou "falha" em tudo valendo por análise |
 | `src/labs/metasDaCcDg001.test.ts` | refazer sem guardar a de antes, ou apagando uma linha do convite |
 | `src/components/LaboratorioDeDesign.test.tsx` | lição da CC-DG001 impossível de vencer clicando no editor |
