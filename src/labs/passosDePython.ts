@@ -18,6 +18,7 @@ export const PASSOS_DE_PYTHON: Record<string, string[]> = {
   ],
   saidaEsperada: [
     'Compare o painel de saída com o que o enunciado pede, linha por linha.',
+    'O que vai dentro de input("...") também sai no painel de saída: se o enunciado pede uma pergunta, ela precisa estar lá, no texto exato.',
     'Confira a ordem: um print fora de lugar muda tudo, e o programa não acusa nada.',
     'Confira o texto exato, inclusive maiúsculas e acentos.',
     'Se a diferença for num número, o problema costuma estar na conta, e não no print.',
