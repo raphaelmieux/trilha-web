@@ -62,11 +62,16 @@ describe('a arte dos pins de curiosidade', () => {
   const TELA = 641;
   const foraDoQuadrado = CURIOSIDADES.filter(c => c.tamanho);
 
-  it('a arte fora do quadrado é a que foi entregue assim', () => {
-    expect(foraDoQuadrado.map(c => c.code).sort()).toEqual([
-      'botao_direito', 'fim_da_planilha', 'mao_no_teclado', 'pessoa_da_manha', 'pessoa_da_tarde',
-      'ponte', 'relatorio_entregue', 'semana_inteira', 'um_ano_de_faixa',
-    ]);
+  /* Arte maior que a tela regular sem o tamanho declarado é espremida no
+     quadrado: sai encolhida ao lado das outras, e os contornos de duas artes
+     vizinhas deixam de ter a espessura que têm uma em relação à outra. Era
+     assim com nove pins, de 641 a 701 pontos, e nenhum teste via — a trava
+     antiga conferia uma lista escrita à mão, e não os arquivos. */
+  it.each(arquivos)('%s, maior que a tela regular, declara o tamanho', arquivo => {
+    const { largura, altura } = tamanhoDoPng(join(PASTA, arquivo));
+    if (Math.max(largura, altura) <= TELA) return;
+    const c = CURIOSIDADES.find(x => `${x.code}.png` === arquivo);
+    expect(c?.tamanho, `${arquivo} tem ${largura} × ${altura} e sairia encolhido no quadrado`).toBeDefined();
   });
 
   it.each(foraDoQuadrado)('$code tem no catálogo o tamanho do arquivo, e nunca menor que o padrão', c => {
