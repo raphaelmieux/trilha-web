@@ -196,6 +196,29 @@ describe('as oito lições da CC-DG001, pela tela', () => {
     expect(faltam()).toBe(0);
   });
 
+  it('módulo 2 pela prancha: clicar numa linha depois do Ctrl+A fica só com ela', () => {
+    /* O caminho natural, e o que a lista de camadas escondia: depois de
+       alinhar tudo, clica-se na linha na própria prancha e digita-se o Y. O
+       editor mantinha as oito selecionadas e o Y empilhava todas. E as linhas
+       vão "quase coladas", como o passo a passo diz: as caixas se encostam
+       na entrelinha e a letra não. */
+    montar('alinhamento');
+    tecla(porRotulo('Mesa de trabalho'), 'a', { ctrlKey: true });
+    clicar(porRotulo('Alinhar à esquerda'), 'alinhar à esquerda');
+    const mesa = porRotulo('Mesa de trabalho');
+    const ys: [string, number][] = [
+      ['titulo', 48], ['quando-dia', 120], ['quando-hora', 138], ['quando-local', 156],
+      ['levar-titulo', 214], ['levar-1', 232], ['levar-2', 250], ['assinatura', 320],
+    ];
+    for (const [id, y] of ys) {
+      apertar(container.querySelector(`[data-objeto="${id}"]`), `a linha ${id}`);
+      act(() => { mesa!.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0 })); });
+      expect(container.textContent).not.toMatch(/\d+ selecionados/);
+      campo('Y', y);
+    }
+    expect(faltam()).toBe(0);
+  });
+
   it('módulo 3: os cartões repetem, e tudo respira', () => {
     montar('repeticao');
     camadas('Cartão 1', 'Cartão 2', 'Cartão 3');

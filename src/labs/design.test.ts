@@ -198,6 +198,14 @@ describe('espaço negativo', () => {
   it('acha dois textos um em cima do outro', () => {
     expect(textosSobrepostos(prancha([tx('a', 0), tx('b', 10)]))).toEqual([['a', 'b']]);
   });
+
+  it('linhas que só se encostam na entrelinha não estão uma em cima da outra', () => {
+    /* 16 × 1,4: a caixa tem 22,4 e a letra, 16. Quatro de sobra entre as caixas
+       é o que "quase coladas" dá quando se arrasta a olho. */
+    const t = (id: string, y: number) => tx(id, y, { corpo: 16, entrelinha: 1.4 });
+    expect(textosSobrepostos(prancha([t('a', 120), t('b', 138)]))).toEqual([]);
+    expect(textosSobrepostos(prancha([t('a', 120), t('b', 130)]))).toEqual([['a', 'b']]);
+  });
 });
 
 describe('repetição', () => {

@@ -528,13 +528,28 @@ export function margemMinima(p: Prancha): number {
 /** A margem que a CC-DG001 cobra: 5% da largura, que num A4 é um centímetro. */
 export const margemPedida = (p: Prancha) => Math.round(p.largura * 0.05);
 
+/**
+ * A caixa da letra, sem a meia entrelinha de cima e a de baixo.
+ *
+ * A entrelinha é ar em volta da linha, e não letra: duas linhas cujas caixas
+ * se encostam nesse ar se leem coladas, e não uma em cima da outra. Medir pela
+ * caixa inteira acusava de encavalar quem seguia o "até ficarem quase coladas"
+ * da lição de proximidade — na tela as letras não se tocam, e as duas tarefas
+ * ficavam vermelhas sem nada explicando por quê.
+ */
+export function caixaDaTinta(t: Texto): Caixa {
+  const c = caixaDe(t);
+  const ar = (t.corpo * Math.max(t.entrelinha - 1, 0)) / 2;
+  return { ...c, y: c.y + ar, altura: Math.max(c.altura - 2 * ar, 0) };
+}
+
 /** Dois textos um em cima do outro, que é o espaço negativo virando zero. */
 export function textosSobrepostos(p: Prancha): [string, string][] {
   const ts = textos(p);
   const pares: [string, string][] = [];
   for (let i = 0; i < ts.length; i++) {
     for (let j = i + 1; j < ts.length; j++) {
-      if (sobrepoe(caixaDe(ts[i]), caixaDe(ts[j]))) pares.push([ts[i].id, ts[j].id]);
+      if (sobrepoe(caixaDaTinta(ts[i]), caixaDaTinta(ts[j]))) pares.push([ts[i].id, ts[j].id]);
     }
   }
   return pares;
