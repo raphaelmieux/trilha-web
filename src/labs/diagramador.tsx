@@ -54,6 +54,8 @@ export const CSS_DO_DIAGRAMADOR = `
 .dg-pagina-item[aria-current="true"] { outline: 2px solid #C2185B; }
 .dg-pagina-botao { text-align: left; color: #FFFFFF; font-weight: 600; background: transparent; }
 .dg-mesa { flex: 1; min-width: 0; min-height: 0; overflow: auto; display: flex; align-items: flex-start; justify-content: center; padding: 28px; background: #3B3C42; }
+.dg-mesa:focus { outline: none; }
+.dg-mesa:focus-visible { outline: 2px solid #8AB4F8; outline-offset: -2px; }
 .dg-papel-externo { position: relative; flex: none; }
 .dg-sangria { position: absolute; border: 1px dashed #E57373; pointer-events: none; }
 .dg-papel { position: absolute; background: #FFFFFF; box-shadow: 0 2px 14px rgba(0,0,0,0.5); overflow: visible; color: #1F2A24; }
@@ -112,6 +114,31 @@ export const CSS_DO_DIAGRAMADOR = `
 /** Pixels por milímetro na tela: A5 sai com 385 de largura. */
 export const ESCALA = 2.6;
 
+/** Até onde uma borda arrastada é puxada para a guia: seis pixels de tela. */
+const IMA = 6 / ESCALA;
+
+/** As linhas em que uma borda vertical encaixa: as guias de coluna e a sangria. */
+const alvosHorizontais = (d: Documento, pagina: number) =>
+  [...guiasVerticais(d, pagina), -d.sangria, d.formato.largura + d.sangria];
+
+/** As linhas em que uma borda horizontal encaixa: as margens de cima e de baixo, e a sangria. */
+const alvosVerticais = (d: Documento, pagina: number) => {
+  const m = margensDa(d, pagina);
+  return [m.topo, d.formato.altura - m.base, -d.sangria, d.formato.altura + d.sangria];
+};
+
+/** A posição do começo, puxada para a guia mais perto de uma das duas bordas. */
+function encaixar(inicio: number, tamanho: number, alvos: number[]): number {
+  let melhor: { d: number; inicio: number } | null = null;
+  for (const a of alvos) {
+    for (const [borda, novo] of [[inicio, a], [inicio + tamanho, a - tamanho]] as const) {
+      const dist = Math.abs(borda - a);
+      if (dist <= IMA && (!melhor || dist < melhor.d)) melhor = { d: dist, inicio: novo };
+    }
+  }
+  return Math.round((melhor ? melhor.inicio : inicio) * 10) / 10;
+}
+
 type Selecao = { tipo: 'texto' | 'imagem' | 'solto'; id: string } | null;
 type Ferramenta = 'selecionar' | 'texto' | 'imagem';
 type Dialogo = null | 'margens' | 'documento' | 'mestre' | 'pdf' | 'materia';
@@ -163,6 +190,7 @@ export function Diagramador({ documento: d, mudar, paginaInicial = 0, aoVer, aoA
   const [desfazer, setDesfazer] = useState<Documento[]>([]);
   const [refazer, setRefazer] = useState<Documento[]>([]);
   const papelRef = useRef<HTMLDivElement>(null);
+  const mesaRef = useRef<HTMLDivElement>(null);
   const avisos = useRef({ aoVer, aoAvisar });
   avisos.current = { aoVer, aoAvisar };
 
@@ -245,6 +273,16 @@ export function Diagramador({ documento: d, mudar, paginaInicial = 0, aoVer, aoA
     if (e.key === 'Escape') { setSelecao(null); setMenu(null); setDialogo(null); }
   };
 
+  /**
+   * Arrastar o quadro o leva, como em todo programa de diagramação. Ele só se
+   * escolhia, e a posição mudava apenas pelos campos — quem arrastava a foto
+   * até a coluna via a foto parada e concluía que o programa não deixava. As
+   * bordas encaixam na guia mais próxima, que é o que o diagramador de
+   * verdade faz e o que torna a malha alcançável pela mão: meio milímetro de
+   * tolerância é menos que um pixel de tela.
+   */
+  const arraste = useRef<{ s: Exclude<Selecao, null>; x0: number; y0: number; rx: number; ry: number; antes: Documento; moveu: boolean } | null>(null);
+
   /* Com uma ferramenta de criar na mão, o clique passa pelo quadro que já
      está ali e chega à página, que cria o quadro novo. Engolido aqui, ele
      não fazia nada: a foto não se punha em cima de uma coluna de texto, que
@@ -253,6 +291,41 @@ export function Diagramador({ documento: d, mudar, paginaInicial = 0, aoVer, aoA
     if (ferramenta !== 'selecionar') return;
     e.stopPropagation();
     setSelecao(s);
+    if (!s || !('pointerId' in e)) return;
+    const r = (s.tipo === 'texto' ? d.quadros : s.tipo === 'imagem' ? d.imagens : d.soltos).find(x => x.id === s.id);
+    if (!r) return;
+    const { x, y } = pontoEmMm(e);
+    arraste.current = { s, x0: x, y0: y, rx: r.x, ry: r.y, antes: d, moveu: false };
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+  };
+
+  const arrastar = (e: React.PointerEvent) => {
+    const a = arraste.current;
+    if (!a) return;
+    const { x, y } = pontoEmMm(e);
+    if (!a.moveu && Math.abs(x - a.x0) + Math.abs(y - a.y0) < 1) return;
+    a.moveu = true;
+    const lista = a.s.tipo === 'texto' ? a.antes.quadros : a.s.tipo === 'imagem' ? a.antes.imagens : a.antes.soltos;
+    const r = lista.find(q => q.id === a.s.id);
+    if (!r) return;
+    const largura = 'largura' in r ? r.largura : 0;
+    const altura = 'altura' in r ? r.altura : 0;
+    const nx = encaixar(a.rx + x - a.x0, largura, alvosHorizontais(a.antes, pagina));
+    const ny = encaixar(a.ry + y - a.y0, altura, alvosVerticais(a.antes, pagina));
+    const troca = <T extends { id: string }>(xs: T[]) => xs.map(q => (q.id === a.s.id ? { ...q, x: nx, y: ny } : q));
+    mudar({
+      ...a.antes,
+      quadros: a.s.tipo === 'texto' ? troca(a.antes.quadros) : a.antes.quadros,
+      imagens: a.s.tipo === 'imagem' ? troca(a.antes.imagens) : a.antes.imagens,
+      soltos: a.s.tipo === 'solto' ? troca(a.antes.soltos) : a.antes.soltos,
+    });
+  };
+
+  /* O arraste inteiro é um passo só no Ctrl+Z, e não um por milímetro. */
+  const soltarArraste = () => {
+    const a = arraste.current;
+    arraste.current = null;
+    if (a?.moveu) { setDesfazer(h => [...h.slice(-49), a.antes]); setRefazer([]); }
   };
 
   const item = (rotulo: string, acao: () => void, atalho?: string, marcado?: boolean) => (
@@ -361,7 +434,13 @@ export function Diagramador({ documento: d, mudar, paginaInicial = 0, aoVer, aoA
           ))}
         </div>
 
-        <div className="dg-mesa" aria-label="Mesa de montagem">
+        {/* A mesa recebe o foco no clique: sem ele, o teclado ficava no
+            corpo da página, e o Delete e o Ctrl+Z de quem acabou de escolher
+            um quadro não chegavam à janela — "exclua o quadro do clipart"
+            não fazia nada pelo teclado. */}
+        <div className="dg-mesa" aria-label="Mesa de montagem" tabIndex={0} ref={mesaRef}
+          onPointerDownCapture={() => mesaRef.current?.focus({ preventScroll: true })}
+          onPointerMove={arrastar} onPointerUp={soltarArraste} onPointerCancel={soltarArraste}>
           <div className="dg-papel-externo" style={{ width: W + 2 * S, height: H + 2 * S }}>
             {d.sangria > 0 && <div className="dg-sangria" style={{ left: 0, top: 0, width: W + 2 * S, height: H + 2 * S }} aria-hidden="true" />}
             <div ref={papelRef} className="dg-papel" aria-label={`Página ${pagina + 1}`} style={{ left: S, top: S, width: W, height: H }}

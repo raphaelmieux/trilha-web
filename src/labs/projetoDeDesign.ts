@@ -19,7 +19,7 @@
  */
 
 import {
-  achatarObjetos, contrasteFunciona, silhueta, textos, uniaoDe,
+  achatarObjetos, caixaDe, contrasteFunciona, silhueta, textos, uniaoDe,
   type Arte, type Grupo, type Objeto, type Prancha,
 } from './design';
 import { coincidencia, normalizar, type Contorno } from './vetor';
@@ -280,6 +280,24 @@ export const PROPORCOES_DIGITAIS: { nome: string; largura: number; altura: numbe
   { nome: 'Post retrato', largura: 1080, altura: 1350 },
   { nome: 'Story', largura: 1080, altura: 1920 },
 ];
+
+/**
+ * O post como ele sai: só o que toca a prancha.
+ *
+ * Trocar o tamanho da prancha não move nada, como em todo programa de
+ * desenho — e do convite em A5 para o quadrado de 1080, o crédito e o clipart
+ * do pé ficam inteiros abaixo da borda, cortados e invisíveis. Contados nas
+ * metas, eles deixavam "Letra de celular" vermelha por um texto que não
+ * aparece em lugar nenhum da tela nem do arquivo exportado. O que está meio
+ * dentro continua contando: esse aparece cortado, e é defeito que se vê.
+ */
+export function oQueSaiNoPost(p: Prancha): Prancha {
+  const toca = (o: Objeto) => {
+    const c = caixaDe(o);
+    return c.x < p.largura && c.x + c.largura > 0 && c.y < p.altura && c.y + c.altura > 0;
+  };
+  return { ...p, objetos: p.objetos.filter(toca) };
+}
 
 export const proporcaoDoMeio = (p: Prancha) =>
   PROPORCOES_DIGITAIS.some(f => Math.abs(p.largura / p.altura - f.largura / f.altura) < 0.01);

@@ -8,7 +8,7 @@ import {
   postEncolhido, simboloDeReferencia,
 } from './acampamentoDasFamilias';
 import { PRANCHA_DO_POST, PRANCHA_DO_SIMBOLO, enviarParaAprovacao, PROPOSTA_EM_BRANCO } from './projetoDeDesign';
-import { comTamanho, duplicarPrancha, excluir, mudarPrancha, type Objeto, type Prancha, type Texto } from './design';
+import { alturaDe, comTamanho, duplicarPrancha, excluir, mudarPrancha, type Objeto, type Prancha, type Texto } from './design';
 import { exportarPdf } from './diagramacao';
 import { exportar } from './formatosDeImagem';
 import { imagemDo } from './raster';
@@ -142,10 +142,24 @@ describe('os caminhos errados', () => {
     expect(feita('digital', 'so-o-essencial', longo)).toBe(false);
     expect(feita('digital', 'so-o-essencial', comTextoNoPost(c, 'pa-lugar', t => ({ ...t, texto: 'Na chácara' })))).toBe(false);
 
-    const comClipart = comPost(c, p => ({ ...p, objetos: [...p.objetos, postEncolhido().objetos.find(o => o.id === 'pe-clipart')!] }));
+    /* O clipart que fica é o que fica dentro do post: o do encolhido, nas
+       coordenadas antigas, cai abaixo do quadrado de 1080. */
+    const clipart = postEncolhido().objetos.find(o => o.id === 'pe-clipart')!;
+    const comClipart = comPost(c, p => ({ ...p, objetos: [...p.objetos, { ...clipart, y: p.altura - alturaDe(clipart) - 40 }] }));
     expect(feita('digital', 'mesmo-simbolo', comClipart)).toBe(false);
     const semSimbolo = comPost(c, () => ({ ...postAdaptado(), objetos: postAdaptado().objetos.filter(o => o.tipo !== 'grupo') }));
     expect(feita('digital', 'mesmo-simbolo', semSimbolo)).toBe(false);
+
+    /* Trocar o tamanho da prancha não move nada: o crédito miúdo e o
+       clipart do convite ficam inteiros abaixo da borda, cortados. Eles não
+       saem no post, e não podem deixar "Letra de celular" vermelha por um
+       texto que não aparece em lugar nenhum. O que está meio dentro conta. */
+    const credito = postEncolhido().objetos.find(o => o.tipo === 'texto' && /Clube/.test(o.texto))!;
+    const sobrouFora = comPost(c, p => ({ ...p, objetos: [...p.objetos, { ...credito, y: p.altura + 20 }, { ...clipart, y: p.altura + 20 }] }));
+    expect(feita('digital', 'letra-do-celular', sobrouFora), 'o texto fora da prancha contou').toBe(true);
+    expect(feita('digital', 'mesmo-simbolo', sobrouFora), 'o clipart fora da prancha contou').toBe(true);
+    const meioDentro = comPost(c, p => ({ ...p, objetos: [...p.objetos, { ...credito, y: p.altura - 5 }] }));
+    expect(feita('digital', 'letra-do-celular', meioDentro), 'o texto meio dentro não contou').toBe(false);
 
     /* Duplicar e só então refazer: o gesto que a lição pede, do começo. */
     const d = inicio('digital');

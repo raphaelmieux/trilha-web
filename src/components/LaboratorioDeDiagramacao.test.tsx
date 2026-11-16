@@ -152,6 +152,50 @@ describe('as sete lições da CC-DG005, pela tela', () => {
     expect(faltam()).toBe(0);
   });
 
+  it('módulo 3 pela mão: arrastar a capa até o canto encaixa na sangria, e o Ctrl+Z a devolve', () => {
+    /* O quadro só se escolhia, e a posição mudava só pelos campos: quem
+       arrastava a foto até o canto via a foto parada. No jsdom a página mede
+       zero, e o ponteiro chega em milímetros. */
+    montar('imagens');
+    const mesa = porRotulo('Mesa de montagem')!;
+    ponteiro(porRotulo('Imagem capa-cachoeira.jpg'), 50, 50);
+    act(() => { mesa.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 48.8, clientY: 48.6 })); });
+    act(() => { mesa.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 47.6, clientY: 47.4 })); });
+    act(() => { mesa.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 47.6, clientY: 47.4 })); });
+    expect([(porRotulo('X (mm)') as HTMLInputElement).value, (porRotulo('Y (mm)') as HTMLInputElement).value],
+      'a borda não encaixou na linha da sangria').toEqual(['-3', '-3']);
+    expect(document.activeElement, 'o clique no quadro não deu o foco à mesa').toBe(mesa);
+    act(() => { mesa.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true })); });
+    expect((porRotulo('X (mm)') as HTMLInputElement).value, 'o Ctrl+Z não desfez o arrasto num passo').toBe('0');
+  });
+
+  it('módulo 3 pelo passo a passo: só a largura não sobe o ppi, e Ajustar altura à foto sobe', () => {
+    /* O passo dizia "diminua a largura até passar de 240", e a foto enche o
+       quadro: com a altura parada em 70, o ppi ficava em 174 em qualquer
+       largura. Seguir o passo a passo à risca não fechava a tarefa nunca. */
+    montar('imagens');
+    pagina(3);
+    ponteiro(porRotulo('Imagem unidade-ipe-whatsapp.jpg'));
+    campo('X (mm)', 16); campo('Largura (mm)', 57);
+    const ppi = () => Number(container.querySelector('.dg-imagem-ppi')?.textContent?.match(/\d+/)?.[0]);
+    expect(ppi(), 'a largura sozinha subiu o ppi — o passo a passo pode voltar a dizer só a largura').toBeLessThan(240);
+    clicar(botao('Ajustar altura à foto'), 'ajustar altura à foto');
+    expect(ppi()).toBeGreaterThanOrEqual(240);
+    const passos = metasDa('imagens').find(m => m.id === 'resolucao-de-impressao')!.passos.join(' ');
+    expect(passos, 'o passo a passo não aponta o botão que resolve').toMatch(/Ajustar altura à foto/);
+  });
+
+  it('módulo 4 pelo teclado: o Delete no número digitado o apaga', () => {
+    /* Clicar na página não dava o foco a nada, e o Delete de quem acabou de
+       escolher um quadro caía no corpo da página, longe da janela. */
+    montar('paginas');
+    pagina(2);
+    ponteiro([...container.querySelectorAll('.dg-solto')].find(s => s.textContent?.trim() === '2'));
+    tecla(document.activeElement, 'Delete');
+    expect([...container.querySelectorAll('.dg-solto')].some(s => s.textContent?.trim() === '2'),
+      'o Delete não chegou à janela').toBe(false);
+  });
+
   it('módulo 4: número e cabeçalho pela página-mestre, e a capa sem ela', () => {
     montar('paginas');
     menu('Páginas', 'Página-mestre A');
