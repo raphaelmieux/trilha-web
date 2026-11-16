@@ -10,7 +10,7 @@ import {
 import type { Font } from 'opentype.js';
 import {
   FAMILIAS, LISTA_DE_FAMILIAS, MATRIZ_DA_DEUTERANOPIA, NOME_DA_CLASSIFICACAO, NOME_DO_PAPEL, PAPEIS,
-  alinhar, alturaDe, alturaDaLinha, cmykDe, colarEstilo, contrasteDoTexto, contrasteMinimo, copiarEstilo,
+  alinhar, alturaDe, alturaDaLinha, caixaDe, cmykDe, colarEstilo, contrasteDoTexto, contrasteMinimo, copiarEstilo,
   distribuir, duplicarPrancha, ehHex, ehTextoGrande, excluir, foraDaGama, fundosDoTexto, hexDeHsl,
   hslDe, idNovo, linhasDoTexto, mudarObjetos, mudarOrdem, mudarPrancha, provaDeImpressao, umaPrancha,
   EXTREMIDADE_NO_SVG, NOME_DA_EXTREMIDADE, agrupar, combinar, comCaixaRefeita, desagrupar, emCaminho,
@@ -236,6 +236,28 @@ export interface PropsDoDesenho {
 }
 
 /**
+ * A forma recém-criada levada a uma caixa, enquanto o arrasto a desenha. O
+ * triângulo se refaz dentro da caixa, com a ponta no meio de cima; o texto só
+ * ganha largura, porque a altura dele sai das linhas.
+ */
+function formaNaCaixa(o: Objeto, c: { x: number; y: number; largura: number; altura: number }): Objeto {
+  if (o.tipo === 'texto') return { ...o, x: c.x, y: c.y, largura: Math.max(c.largura, 20) };
+  if (o.tipo === 'caminho') {
+    return comCaixaRefeita<Caminho>({
+      ...o,
+      contornos: [contornoDoPoligono([
+        { x: c.x + c.largura / 2, y: c.y }, { x: c.x + c.largura, y: c.y + c.altura }, { x: c.x, y: c.y + c.altura },
+      ])],
+    });
+  }
+  if (o.tipo === 'retangulo' || o.tipo === 'elipse') return { ...o, ...c };
+  return o;
+}
+
+/** Quantos pixels de tela em volta de um traço ainda contam como clique nele. */
+const ALCANCE_DO_TRACO = 10;
+
+/**
  * Uma prancha desenhada, sem estado nenhum.
  *
  * Serve ao editor e à tela de análise, que é da plataforma: a peça que a
@@ -309,13 +331,24 @@ function DesenhoDoObjeto({ o, escala: k, cor, selecionado, aoApertar, alvo }: {
     /* O caminho se desenha num SVG do tamanho da caixa, com folga para o
        traço, e com as coordenadas da prancha no viewBox: os números do d são
        os mesmos que o arquivo exportado vai ter. */
-    const folga = o.tipo === 'caminho' && o.traco ? o.traco.espessura : 0;
-    const [vx, vy, vl, va] = [o.x - folga, o.y - folga, o.largura + 2 * folga, o.altura + 2 * folga];
     const traco = o.tipo === 'caminho' ? o.traco : null;
+    /* A faixa de toque: uma linha de 2 px só se acerta com a mira de quem
+       desenha. Um clique dois pixels ao lado da trilha caía na placa embaixo
+       dela, e a espessura digitada em seguida engrossava a placa. Todo
+       programa de desenho aceita o clique perto da linha; aqui é uma faixa de
+       ALCANCE_DO_TRACO pixels de tela, qualquer que seja o zoom. */
+    const toque = aoApertar && o.tipo === 'caminho' ? Math.max(traco?.espessura ?? 0, ALCANCE_DO_TRACO / k) : 0;
+    const folga = Math.max(traco ? traco.espessura : 0, toque / 2);
+    const [vx, vy, vl, va] = [o.x - folga, o.y - folga, o.largura + 2 * folga, o.altura + 2 * folga];
     return (
       <svg {...comum}
         style={{ ...caixa, left: vx * k, top: vy * k, width: vl * k, height: va * k, overflow: 'visible', pointerEvents: 'none' }}
         viewBox={`${vx} ${vy} ${Math.max(vl, 0.01)} ${Math.max(va, 0.01)}`} preserveAspectRatio="none">
+        {toque > 0 && (
+          <path d={dDosContornos(o.contornos)} data-toque="" fill="none" stroke="transparent" strokeWidth={toque}
+            strokeLinecap="round" strokeLinejoin="round" style={{ pointerEvents: 'stroke' }}
+            onPointerDown={comum.onPointerDown} />
+        )}
         <path d={dDosContornos(o.contornos)} fillRule="evenodd"
           style={{ pointerEvents: aoApertar && o.tipo === 'caminho' ? 'visiblePainted' : 'none' }}
           onPointerDown={comum.onPointerDown}
@@ -630,11 +663,20 @@ export function EditorDeDesign({
     },
     /* Colar na mesma prancha desloca a cópia, para ela não cair em cima da
        original e parecer que nada aconteceu; em outra prancha, ela cai no
-       mesmo lugar, que é o que se quer quando a peça tem o mesmo tamanho. */
+       mesmo lugar, que é o que se quer quando a peça tem o mesmo tamanho.
+       E o segundo Ctrl+V desce mais doze: colar três vezes empilhava as três
+       cópias no mesmo ponto, a tela mostrava uma só, e a página dos usos
+       incorretos do manual pedia três lado a lado. */
     colar: (origem = copiados) => {
       if (!origem) { avisar('Nada copiado ainda.'); return; }
-      const desloca = origem.de === p.id ? 12 : 0;
-      const novos = copiasParaColar(arte, origem.objetos).map(o => moverObjeto(o, desloca, desloca));
+      const copias = copiasParaColar(arte, origem.objetos);
+      const caiEmCima = (d: number) => copias.some(n => p.objetos.some(o => {
+        const [a, b] = [caixaDe(o), caixaDe(n)];
+        return a.x === b.x + d && a.y === b.y + d && a.largura === b.largura && a.altura === b.altura;
+      }));
+      let desloca = 0;
+      while (caiEmCima(desloca) && desloca < 12 * 50) desloca += 12;
+      const novos = copias.map(o => moverObjeto(o, desloca, desloca));
       naPrancha(q => ({ ...q, objetos: [...q.objetos, ...novos] }));
       setSelecao(novos.map(o => o.id));
     },
@@ -687,7 +729,15 @@ export function EditorDeDesign({
     },
   };
 
-  const criar = (x: number, y: number) => {
+  /**
+   * A forma nasce no aperto e cresce com o arrasto, como em todo programa de
+   * desenho; o clique sem arrasto deixa o tamanho padrão. O arrasto inteiro
+   * é um passo só no Ctrl+Z: o aperto já guardou o antes, e o resto é a mesma
+   * forma mudando de tamanho.
+   */
+  const criacao = useRef<{ id: string; x0: number; y0: number; cx: number; cy: number; depois: Arte } | null>(null);
+
+  const criar = (x: number, y: number, e?: React.PointerEvent) => {
     const [px, py] = [Math.round(x), Math.round(y)];
     const id = idNovo(arte, ferramenta === 'texto' ? 'texto' : 'forma');
     const novo: Objeto = ferramenta === 'texto'
@@ -704,10 +754,31 @@ export function EditorDeDesign({
             preenchimento: '#D9D9D9', traco: null,
           })
           : { id, nome: 'Retângulo', tipo: 'retangulo', x: px, y: py, largura: 120, altura: 60, preenchimento: '#D9D9D9' };
-    naPrancha(q => ({ ...q, objetos: [...q.objetos, novo] }));
+    const depois = mudarPrancha(arte, p.id, q => ({ ...q, objetos: [...q.objetos, novo] }));
+    aplicar(depois);
     setSelecao([id]);
     setFerramenta('selecionar');
     setAba('propriedades');
+    if (e) {
+      criacao.current = { id, x0: px, y0: py, cx: e.clientX, cy: e.clientY, depois };
+      (e.target as Element).setPointerCapture?.(e.pointerId);
+    }
+  };
+
+  const crescer = (e: React.PointerEvent) => {
+    const c = criacao.current;
+    if (!c) return false;
+    let dx = (e.clientX - c.cx) / k;
+    let dy = (e.clientY - c.cy) / k;
+    if (Math.abs(dx) + Math.abs(dy) < 3) return true;
+    /* Shift mantém a proporção, que é o que faz o círculo sair redondo. */
+    if (e.shiftKey) { const m = Math.max(Math.abs(dx), Math.abs(dy)); dx = Math.sign(dx || 1) * m; dy = Math.sign(dy || 1) * m; }
+    const caixa = {
+      x: Math.round(Math.min(c.x0, c.x0 + dx)), y: Math.round(Math.min(c.y0, c.y0 + dy)),
+      largura: Math.max(1, Math.round(Math.abs(dx))), altura: Math.max(1, Math.round(Math.abs(dy))),
+    };
+    mudar(mudarPrancha(c.depois, p.id, q => mudarObjetos(q, [c.id], o => formaNaCaixa(o, caixa))));
+    return true;
   };
 
   /* ── A caneta ── */
@@ -819,6 +890,7 @@ export function EditorDeDesign({
   };
 
   const mover = (e: React.PointerEvent) => {
+    if (crescer(e)) return;
     const a = arraste.current;
     if (!a) return;
     const dx = Math.round((e.clientX - a.x) / k);
@@ -829,6 +901,7 @@ export function EditorDeDesign({
   };
 
   const soltar = () => {
+    criacao.current = null;
     const a = arraste.current;
     arraste.current = null;
     /* O arraste inteiro é um passo só no Ctrl+Z, e não um por pixel. */
@@ -1038,10 +1111,19 @@ export function EditorDeDesign({
           <div className="dz-prancha-e-guias" style={{ width: p.largura * k, height: p.altura * k }}>
             <DesenhoDaPrancha
               prancha={p} escala={k} selecionados={selecao} visao={visao} prova={prova}
-              aoApertar={(id, e) => { if (ferramenta === 'selecionar' || ferramenta === 'nos') apertar(id, e); }}
-              aoApertarVazio={(x, y) => {
+              aoApertar={(id, e) => {
+                if (ferramenta === 'selecionar' || ferramenta === 'nos') { apertar(id, e); return; }
+                /* Com uma ferramenta de forma na mão, apertar em cima de outra
+                   forma desenha — o círculo menor por cima do maior é o
+                   primeiro passo do logotipo, e a forma de baixo engolia o
+                   clique sem nada aparecer. */
+                if (ferramenta === 'caneta') return;
+                const r = (e.currentTarget as Element).closest('.dz-prancha')?.getBoundingClientRect();
+                if (r) criar((e.clientX - r.left) / k, (e.clientY - r.top) / k, e);
+              }}
+              aoApertarVazio={(x, y, e) => {
                 if (ferramenta === 'selecionar' || ferramenta === 'nos') setSelecao([]);
-                else if (ferramenta !== 'caneta') criar(x, y);
+                else if (ferramenta !== 'caneta') criar(x, y, e);
               }}
             />
             {sobreposicao && (

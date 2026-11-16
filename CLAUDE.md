@@ -5482,6 +5482,26 @@ duas tarefas do módulo ficavam vermelhas sem nada explicando por quê. Ele mede
 pela caixa da tinta agora (`caixaDaTinta`), sem a meia entrelinha de cima e a
 de baixo.
 
+**A ferramenta de forma desenha em cima de outra forma, e arrastar dá o
+tamanho.** Com a Elipse na mão, apertar sobre uma forma que já existe não
+fazia nada: a de baixo engolia o clique para se deixar escolher, e o círculo
+menor por cima do maior — o primeiro passo do logotipo da CC-DG002, e do
+símbolo da Ipê — não aparecia. Hoje o aperto desenha onde estiver, e o arrasto
+dá a caixa, como em todo programa de desenho; o clique sem arrasto continua
+deixando o tamanho padrão, e o arrasto inteiro é um passo só no Ctrl+Z.
+
+**O traço fino tem faixa de toque.** A trilha da CC-DG002 tem 2 px, e só um
+clique em cima do pixel a escolhia: dois pixels ao lado caía na placa
+embaixo, e a espessura digitada em seguida engrossava a placa. Todo caminho
+ganha uma faixa invisível de `ALCANCE_DO_TRACO` pixels de tela em volta da
+linha, qualquer que seja o zoom — no dedo, sem ela, a trilha nem se escolhia.
+
+**E o segundo Ctrl+V desce mais doze.** Colar três vezes empilhava as três
+cópias no mesmo ponto, e a tela mostrava uma só — a página de usos incorretos
+do manual da CC-DG004 pede três lado a lado. A cópia desce de doze em doze até
+não cair exatamente em cima de nada; em outra prancha, a primeira continua no
+mesmo lugar.
+
 **A CC-DG002 desenha forma nova, e o editor ganhou o vetor de verdade.** A
 CC-DG001 arruma peças que chegam prontas; esta desenha. As ferramentas entraram
 na janela compartilhada, e não num segundo editor — a caneta, a edição de nós,
@@ -5729,6 +5749,24 @@ igual**: marcar todas as exigências da lista passaria por quem leu, e não
 leu. A gramatura vale por faixa, e não por um número — capa em 250 ou 300,
 miolo em 75, 90 ou 120 —, porque a tabela oferece mais de um papel certo.
 
+**O quadro se arrasta, e a borda encaixa na guia.** O diagramador escolhia o
+quadro no clique e não o movia: a posição só mudava pelos campos, e quem
+arrastava a foto até a coluna via a foto parada. Hoje ela anda com a mão, e
+cada borda é puxada para a guia de coluna, a margem ou a linha da sangria
+mais perto, a seis pixels de tela — a tolerância de `naMalha`, meio
+milímetro, é menos que um pixel, e sem o ímã a malha só se alcançava pelos
+campos.
+
+**E a mesa recebe o foco no clique.** Clicar na página não dava o foco a nada,
+e o Delete e o Ctrl+Z de quem acabou de escolher um quadro caíam no corpo da
+página, longe da janela: "exclua o quadro do clipart" só funcionava pelo menu.
+
+**O passo a passo do ppi dizia o que não funciona.** "Diminua a largura até
+passar de 240" — e a foto enche o quadro, então quem decide a escala é a
+maior das duas razões: com a altura parada em 70 mm, a foto da unidade ficava
+em 174 ppi em qualquer largura. O passo manda pôr a largura de uma coluna e
+apertar **Ajustar altura à foto**, que é o botão que a teoria já ensinava.
+
 **A prova de cores reaproveita o `foraDaGama` da CC-DG001.** É o mesmo
 modelo, com o mesmo aviso de que é aproximação, e as cores que perdem o
 brilho na prova são as que ele marca. Escrever outra lista à mão para esta
@@ -5759,6 +5797,14 @@ chega a sete pixels; e o parágrafo inteiro. O post adaptado perde a hora no
 corte — e é a hora que o público aponta no módulo 8. Essa premissa tem trava
 própria: um post de referência que já trouxesse a hora apagaria o retorno sem
 reprovar meta nenhuma.
+
+**O post se mede pelo que sai nele.** Trocar o tamanho da prancha não move
+nada, como em todo programa de desenho — e do convite em A5 para o quadrado
+de 1080, o crédito miúdo e o clipart do pé ficam inteiros abaixo da borda,
+cortados e invisíveis. Contados, eles deixavam "Letra de celular" vermelha por
+um texto que não aparece na tela nem no arquivo exportado. As metas do post
+leem `oQueSaiNoPost`: o que toca a prancha. O que está meio dentro continua
+contando, porque esse aparece cortado.
 
 **O retorno muda a peça, e o registro sozinho não fecha.** Cada comentário que
 pede mudança traz a conta que diz se a peça o atende; elogio, gosto e opinião
@@ -6461,6 +6507,11 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaCcDg001.test.ts` | meta da CC-DG001 que abre verde, ou que a solução de referência não fecha |
 | `src/labs/design.test.ts` | linhas que só se encostam na entrelinha acusadas de estar uma em cima da outra |
 | `src/components/LaboratorioDeDesign.test.tsx` | clique na prancha que mantém a seleção inteira, e o Y digitado empilhando todas as linhas |
+| `src/labs/editorDeDesign.test.tsx` | ferramenta de forma que não desenha em cima de outra forma, ou arrasto que não dá o tamanho |
+| `src/labs/editorDeDesign.test.tsx` | caminho sem faixa de toque, que só se escolhe com mira, ou Ctrl+V repetido empilhando as cópias |
+| `src/components/LaboratorioDeDiagramacao.test.tsx` | quadro que não se arrasta nem encaixa na guia, ou Delete e Ctrl+Z que não chegam à janela depois do clique |
+| `src/components/LaboratorioDeDiagramacao.test.tsx` | passo a passo do ppi que só manda mexer na largura, que não sobe o ppi |
+| `src/labs/metasDaCcDg006.test.ts` | texto ou clipart inteiro fora da prancha do post contando nas metas dele |
 | `src/labs/metasDaCcDg001.test.ts` | elemento apontado que não é o que falha, ou "falha" em tudo valendo por análise |
 | `src/labs/metasDaCcDg001.test.ts` | refazer sem guardar a de antes, ou apagando uma linha do convite |
 | `src/components/LaboratorioDeDesign.test.tsx` | lição da CC-DG001 impossível de vencer clicando no editor |

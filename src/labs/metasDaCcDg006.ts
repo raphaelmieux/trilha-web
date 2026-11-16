@@ -36,7 +36,7 @@ import {
 } from './acampamentoDasFamilias';
 import {
   PALAVRAS_DA_ALTERACAO, PALAVRAS_DA_DEMANDA, PALAVRAS_DA_IDEIA, PARTES_DA_FALA, PECAS_DO_PROJETO,
-  PRANCHA_DO_POST, PRANCHA_DO_SIMBOLO, PROPOSTA_EM_BRANCO, MINUTOS_DA_APRESENTACAO,
+  PRANCHA_DO_POST, PRANCHA_DO_SIMBOLO, oQueSaiNoPost, PROPOSTA_EM_BRANCO, MINUTOS_DA_APRESENTACAO,
   conviteImprimivel, creditaA, detalhesQueSomemEm, enviarParaAprovacao, essenciaisQueFaltam,
   finaisNoPadrao, imagensNa, letraDoCelular, levaOSimbolo, minutosDo, motivosProprios, origemCerta,
   palavrasDe, palavrasDoPost, pecasNoCentro, pecasNosDois, pdfDoConvitePronto, proporcaoDoMeio,
@@ -263,7 +263,10 @@ const METAS_DA_IMPRESSA: MetaDoProjetoDeDesign[] = [
 
 /* ── Módulo 5: a peça digital ─────────────────────────────────────────────── */
 
-const post = (c: ContextoDoProjetoDeDesign) => prancha(c, PRANCHA_DO_POST);
+const post = (c: ContextoDoProjetoDeDesign) => {
+  const p = prancha(c, PRANCHA_DO_POST);
+  return p && oQueSaiNoPost(p);
+};
 
 const METAS_DA_DIGITAL: MetaDoProjetoDeDesign[] = [
   {

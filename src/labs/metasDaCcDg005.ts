@@ -188,7 +188,11 @@ const METAS_DAS_IMAGENS: MetaDaDiagramacao[] = [
     id: 'resolucao-de-impressao', titulo: `Toda foto com ${PPI_DE_IMPRESSAO} ppi ou mais`,
     detalhe: 'No tamanho em que foi posta. A foto do celular, grande demais, sai serrilhada no papel.',
     onde: 'Propriedades → ppi efetivo',
-    passos: ['Selecione a foto da unidade e leia o ppi efetivo.', 'Diminua a largura até passar de 240.'],
+    passos: [
+      'Selecione a foto da unidade e leia o ppi efetivo.',
+      'Ponha nela a largura de uma coluna só.',
+      'Clique em Ajustar altura à foto: a foto enche o quadro, e enquanto a altura não cai, o ppi também não sobe.',
+    ],
     feita: c => todasAsFotos(c.documento) && fotos(c.documento).every(q => ppiEfetivo(c.documento, q) >= PPI_DE_IMPRESSAO),
   },
   {

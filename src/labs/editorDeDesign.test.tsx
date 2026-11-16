@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { readFileSync } from 'node:fs';
 import { parse } from 'opentype.js';
 import { EditorDeDesign, type ArquivoExportado } from './editorDeDesign';
-import { achatarObjetos, umObjeto, umaPrancha, type Arte, type Caminho, type Prancha } from './design';
+import { achatarObjetos, alturaDe, umObjeto, umaPrancha, type Arte, type Caminho, type Prancha } from './design';
 import { ARQUIVO_DA_FONTE } from './textoEmCurvas';
 import { areaPintada } from './vetor';
 
@@ -306,5 +306,70 @@ describe('recortar', () => {
     const volta = prancha().objetos.find(o => o.nome === 'Quadrado A') as { x: number; y: number } | undefined;
     expect(volta, 'o Ctrl+V não devolveu a peça').toBeTruthy();
     expect([volta!.x, volta!.y], 'a peça recortada voltou deslocada, como cópia').toEqual([20, 20]);
+  });
+});
+
+describe('desenhar forma', () => {
+  /* Com a Elipse na mão, apertar em cima de outra forma não desenhava nada: a
+     forma de baixo engolia o clique. O círculo menor por cima do maior é o
+     primeiro passo do logotipo da CC-DG002. */
+  it('apertar com a Elipse em cima de outra forma desenha, e arrastar dá o tamanho', () => {
+    montar();
+    clicar(porRotulo('Elipse (E)'), 'a elipse');
+    const mesa = porRotulo('Mesa de trabalho');
+    ponteiro(container.querySelector('[data-objeto="a"]'), 'pointerdown', 40, 40);
+    ponteiro(mesa, 'pointermove', 70, 70);
+    ponteiro(mesa, 'pointermove', 90, 100);
+    ponteiro(mesa, 'pointerup', 90, 100);
+    const nova = prancha().objetos.find(o => o.tipo === 'elipse');
+    expect(nova, 'apertar em cima do quadrado não desenhou a elipse').toBeTruthy();
+    expect([nova!.x, nova!.y, nova!.largura, alturaDe(nova!)]).toEqual([40, 40, 50, 60]);
+    tecla('z', { ctrlKey: true });
+    expect(prancha().objetos.some(o => o.tipo === 'elipse'), 'o Ctrl+Z não desfez a forma inteira num passo').toBe(false);
+  });
+
+  it('clicar sem arrastar deixa o tamanho padrão', () => {
+    montar();
+    clicar(porRotulo('Retângulo (R)'), 'o retângulo');
+    const mesa = porRotulo('Mesa de trabalho');
+    ponteiro(container.querySelector('[data-objeto="b"]'), 'pointerdown', 120, 60);
+    ponteiro(mesa, 'pointerup', 120, 60);
+    const novos = prancha().objetos.filter(o => o.tipo === 'retangulo' && o.id !== 'a' && o.id !== 'b');
+    expect(novos.map(o => [o.x, o.y, o.largura, alturaDe(o)])).toEqual([[120, 60, 120, 60]]);
+  });
+});
+
+describe('o clique no traço', () => {
+  /* A trilha de 2 px só se acertava com mira: um clique dois pixels ao lado
+     caía na placa embaixo, e a espessura digitada em seguida engrossava a
+     placa. O caminho ganha uma faixa de toque invisível. */
+  it('o caminho tem uma faixa de toque, e apertá-la escolhe o caminho', () => {
+    montar();
+    clicar(porRotulo('Triângulo'), 'o triângulo');
+    ponteiro(porRotulo('Prancha Ícone'), 'pointerdown', 150, 150);
+    ponteiro(porRotulo('Mesa de trabalho'), 'pointerup', 150, 150);
+    const tri = prancha().objetos.find(o => o.tipo === 'caminho')!;
+    tecla('Escape');
+    act(() => { porRotulo('Mesa de trabalho')!.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); });
+    const faixa = container.querySelector(`[data-objeto="${tri.id}"] path[data-toque]`) as SVGPathElement | null;
+    expect(faixa, 'o caminho não tem faixa de toque').toBeTruthy();
+    expect(Number(faixa!.getAttribute('stroke-width'))).toBeGreaterThanOrEqual(8);
+    expect(faixa!.getAttribute('stroke')).toBe('transparent');
+    ponteiro(faixa, 'pointerdown', 150, 150);
+    ponteiro(porRotulo('Mesa de trabalho'), 'pointerup', 150, 150);
+    expect((porRotulo('Nome da camada') as HTMLInputElement).value).toBe('Triângulo');
+  });
+});
+
+describe('colar de novo', () => {
+  /* Colar três vezes empilhava as três cópias no mesmo ponto: a tela mostrava
+     uma só, e a página dos usos incorretos do manual da CC-DG004 pedia três. */
+  it('cada Ctrl+V cai doze pixels além da cópia anterior', () => {
+    montar();
+    camada('Quadrado A');
+    tecla('c', { ctrlKey: true });
+    tecla('v', { ctrlKey: true }); tecla('v', { ctrlKey: true }); tecla('v', { ctrlKey: true });
+    const copias = prancha().objetos.filter(o => o.nome === 'Quadrado A').map(o => [o.x, o.y]);
+    expect(copias).toEqual([[20, 20], [32, 32], [44, 44], [56, 56]]);
   });
 });
