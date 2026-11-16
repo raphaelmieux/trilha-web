@@ -40,12 +40,18 @@ export interface Curiosidade {
    *
    * Todo pin cabe num quadrado, e a arte se ajusta dentro dele: um desenho
    * deitado fica com a largura do quadrado e menos altura. Este campo é a
-   * exceção de propósito, para o pin que deve se destacar dos outros: ele fica
-   * com a altura cheia e passa da largura. A Faixa precisa do número antes de
-   * a imagem carregar, porque o empacotamento reserva o lugar sem ler arte
-   * nenhuma. `formaDoPin.test.ts` compara este número com o arquivo.
+   * exceção, para a arte desenhada fora do quadrado — mais larga, mais alta
+   * ou menor que ele: largura e altura do pin, em pins-padrão.
+   *
+   * A arte regular é desenhada numa tela de 641 pontos, e a exceção guarda a
+   * escala dela em relação a essa tela, e não a do quadrado: espremida no
+   * quadrado, a ponte de 961 pontos sairia com dois terços do tamanho que tem
+   * ao lado das outras. E nenhuma sai menor que o padrão — a arte cujo lado
+   * maior não chega a 641 cresce até chegar. A Faixa precisa do número antes
+   * de a imagem carregar, porque o empacotamento reserva o lugar sem ler arte
+   * nenhuma; `formaDoPin.test.ts` refaz a conta a partir do arquivo.
    */
-  proporcao?: number;
+  tamanho?: readonly [largura: number, altura: number];
 }
 
 /** O glifo provisório de cada tema, até a arte recortada chegar. */
@@ -65,8 +71,8 @@ export const NOME_DO_TEMA: Record<TemaDaCuriosidade, string> = {
   segredo: 'Segredos',
 };
 
-const c = (tema: TemaDaCuriosidade) => (code: string, nome: string, descricao: string, dica?: string, proporcao?: number): Curiosidade =>
-  ({ code, nome, descricao, tema, ...(dica ? { dica } : {}), ...(proporcao ? { proporcao } : {}) });
+const c = (tema: TemaDaCuriosidade) => (code: string, nome: string, descricao: string, dica?: string, tamanho?: readonly [number, number]): Curiosidade =>
+  ({ code, nome, descricao, tema, ...(dica ? { dica } : {}), ...(tamanho ? { tamanho } : {}) });
 const cal = c('calendario'), rit = c('ritmo'), jei = c('jeito'), exp = c('explorador'), seg = c('segredo');
 
 export const CURIOSIDADES: readonly Curiosidade[] = [
@@ -97,14 +103,14 @@ export const CURIOSIDADES: readonly Curiosidade[] = [
 
   /* ── Ritmo: quando se estuda ── */
   rit('madrugador', 'Madrugador', 'Estudou entre a meia-noite e as seis da manhã.'),
-  rit('pessoa_da_manha', 'Pessoa da Manhã', 'Estudou entre as seis da manhã e o meio-dia.'),
-  rit('pessoa_da_tarde', 'Pessoa da Tarde', 'Estudou entre o meio-dia e as seis da tarde.'),
+  rit('pessoa_da_manha', 'Pessoa da Manhã', 'Estudou entre as seis da manhã e o meio-dia.', undefined, [801 / 641, 545 / 641]),
+  rit('pessoa_da_tarde', 'Pessoa da Tarde', 'Estudou entre o meio-dia e as seis da tarde.', undefined, [801 / 641, 545 / 641]),
   rit('noturno', 'Noturno', 'Estudou entre as seis da tarde e a meia-noite.'),
   rit('fim_de_semana', 'Fim de Semana', 'Estudou num sábado ou domingo.'),
-  rit('semana_inteira', 'Semana Inteira', 'Estudou em todos os sete dias da semana, em algum momento.'),
+  rit('semana_inteira', 'Semana Inteira', 'Estudou em todos os sete dias da semana, em algum momento.', undefined, [986 / 641, 241 / 641]),
   rit('pausa_boa', 'Pausa Boa', 'Estudou duas vezes no mesmo dia, com duas horas ou mais de pausa entre uma e outra.'),
   rit('doze_meses', 'Doze Meses', 'Estudou em cada um dos doze meses do ano.'),
-  rit('um_ano_de_faixa', 'Um Ano de Faixa', 'Estudou na semana em que fez um ano da primeira atividade.'),
+  rit('um_ano_de_faixa', 'Um Ano de Faixa', 'Estudou na semana em que fez um ano da primeira atividade.', undefined, [695 / 641, 828 / 641]),
 
   /* ── Jeito de estudar ── */
   jei('revisao', 'Revisão', 'Refez uma lição já vencida e venceu de novo.'),
@@ -112,16 +118,16 @@ export const CURIOSIDADES: readonly Curiosidade[] = [
   jei('modulo_de_uma_vez', 'Módulo de uma Vez', 'Venceu a teoria e o laboratório do mesmo módulo de vereda no mesmo dia.'),
   jei('consulta', 'Consulta', 'Abriu a referência da vereda durante um laboratório e o venceu depois.'),
   jei('palavra_propria', 'Palavra Própria', 'Acrescentou a primeira palavra ao dicionário pessoal.'),
-  jei('mao_no_teclado', 'Mão no Teclado', 'Usou cinco atalhos de teclado diferentes nas simulações.'),
-  jei('botao_direito', 'Botão Direito', 'Abriu um menu de contexto, com o botão direito ou segurando o dedo.'),
+  jei('mao_no_teclado', 'Mão no Teclado', 'Usou cinco atalhos de teclado diferentes nas simulações.', undefined, [801 / 641, 425 / 641]),
+  jei('botao_direito', 'Botão Direito', 'Abriu um menu de contexto, com o botão direito ou segurando o dedo.', undefined, [325 / 481, 1]),
   jei('na_parede', 'Na Parede', 'Baixou ou imprimiu um Token.Web().'),
-  jei('relatorio_entregue', 'Relatório Entregue', 'Gerou o relatório para o clube.'),
+  jei('relatorio_entregue', 'Relatório Entregue', 'Gerou o relatório para o clube.', undefined, [481 / 641, 687 / 641]),
   jei('conferido', 'Conferido', 'Verificou um Token.Web() na página pública de verificação.'),
 
   /* ── Explorador: variedade ── */
   exp('rosa_dos_ventos', 'Rosa dos Ventos', 'Venceu ao menos uma lição em cada família de vereda.'),
   exp('tres_frentes', 'Três Frentes', 'Avançou em três trilhas diferentes na mesma semana.'),
-  exp('ponte', 'Ponte', 'Concluiu uma vereda e a trilha ou vereda de onde ela saiu.'),
+  exp('ponte', 'Ponte', 'Concluiu uma vereda e a trilha ou vereda de onde ela saiu.', undefined, [961 / 641, 429 / 641]),
   exp('todas_as_janelas', 'Todas as Janelas', 'Venceu um laboratório em cada programa que a plataforma imita.'),
   exp('poliglota', 'Poliglota', 'Venceu laboratórios em cinco linguagens diferentes.'),
 
@@ -134,7 +140,7 @@ export const CURIOSIDADES: readonly Curiosidade[] = [
   seg('viajante_no_tempo', 'Viajante no Tempo', 'Voltou um repositório a um commit antigo.', 'O Git lembra de tudo.'),
   seg('zen_do_python', 'Zen do Python', 'Escreveu import this no editor de Python.', 'O Python tem uma filosofia escondida.'),
   seg('mapa_do_banco', 'Mapa do Banco', 'Consultou sqlite_master no editor de SQL.', 'O banco guarda a própria planta.'),
-  seg('fim_da_planilha', 'Fim da Planilha', 'Foi com Ctrl+↓ até a última linha de uma planilha.', 'Até onde vai uma planilha?', 1029 / 641),
+  seg('fim_da_planilha', 'Fim da Planilha', 'Foi com Ctrl+↓ até a última linha de uma planilha.', 'Até onde vai uma planilha?', [1029 / 641, 1]),
   seg('texto_de_enchimento', 'Texto de Enchimento', 'Escreveu =rand() no Word e viu o texto aparecer.', 'O Word escreve sozinho, se você pedir.'),
   seg('gato_pintado', 'Gato Pintado', 'Trocou a cor do ator no Scratch.', 'O gato não precisa ser laranja.'),
 ];

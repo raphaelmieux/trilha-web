@@ -14,10 +14,13 @@ import { CURIOSIDADES } from './catalogoDeCuriosidades';
   Faixa pediria o arquivo com sublinhado, não acharia, e desenharia o pin
   provisório com a arte parada na pasta, sem ninguém saber por quê.
 
-  E o pin largo tem a proporção escrita no catálogo, porque o empacotamento
-  reserva o lugar antes de a imagem carregar. O número escrito precisa ser o
-  do arquivo: arte trocada por outra de outra largura deixaria o desenho
-  espremido no lugar antigo, ou um vão sobrando ao lado dele.
+  E a arte desenhada fora do quadrado tem o tamanho escrito no catálogo,
+  porque o empacotamento reserva o lugar antes de a imagem carregar. O número
+  escrito precisa ser o do arquivo: arte trocada por outra de outro tamanho
+  deixaria o desenho espremido no lugar antigo, ou um vão sobrando ao lado
+  dele. E a conta é a da escala sobre a tela regular de 641 pontos, com o
+  padrão de chão: a arte maior que a tela sai maior que o pin-padrão, e a
+  menor cresce até ele — nenhuma fica menor do que as outras.
 */
 
 const PASTA = join(__dirname, '../../public/assets/pins');
@@ -55,14 +58,23 @@ describe('a arte dos pins de curiosidade', () => {
     expect(semArte).toEqual([]);
   });
 
-  const largos = CURIOSIDADES.filter(c => c.proporcao);
-  it('o pin largo existe, e é o que deve se destacar', () => {
-    expect(largos.map(c => c.code)).toEqual(['fim_da_planilha']);
+  /* A tela em que a arte regular é desenhada. */
+  const TELA = 641;
+  const foraDoQuadrado = CURIOSIDADES.filter(c => c.tamanho);
+
+  it('a arte fora do quadrado é a que foi entregue assim', () => {
+    expect(foraDoQuadrado.map(c => c.code).sort()).toEqual([
+      'botao_direito', 'fim_da_planilha', 'mao_no_teclado', 'pessoa_da_manha', 'pessoa_da_tarde',
+      'ponte', 'relatorio_entregue', 'semana_inteira', 'um_ano_de_faixa',
+    ]);
   });
 
-  it.each(largos)('$code tem no catálogo a proporção do arquivo', c => {
+  it.each(foraDoQuadrado)('$code tem no catálogo o tamanho do arquivo, e nunca menor que o padrão', c => {
     const { largura, altura } = tamanhoDoPng(join(PASTA, `${c.code}.png`));
-    expect(c.proporcao).toBeGreaterThan(1);
-    expect(Math.abs(c.proporcao! - largura / altura) / (largura / altura)).toBeLessThan(0.02);
+    const escala = Math.min(TELA, Math.max(largura, altura));
+    const [lw, la] = c.tamanho!;
+    expect(Math.abs(lw - largura / escala)).toBeLessThan(0.02);
+    expect(Math.abs(la - altura / escala)).toBeLessThan(0.02);
+    expect(Math.max(lw, la)).toBeGreaterThanOrEqual(1);
   });
 });
