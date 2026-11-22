@@ -60,6 +60,7 @@ import { metasDa as metasDaCcDg005 } from '../labs/metasDaCcDg005';
 import { metasDa as metasDaCcDg006 } from '../labs/metasDaCcDg006';
 import { metasDa as metasDaCc005 } from '../labs/metasDaCc005';
 import { metasDaCc006 } from '../labs/metasDaCc006';
+import { metasDaCcFe004 } from '../labs/metasDaCcFe004';
 
 /*
   Os laboratórios de Word partem de documentos diferentes, e a trava precisa
@@ -578,6 +579,10 @@ describe('os modelos dos laboratórios da vereda', () => {
           metasDaCc005(l.licao).map(m => [m.id, m.passos]));
         case 'projeto-de-programa': return Object.fromEntries(
           metasDaCc006(l.licao).map(m => [m.id, m.passos]));
+        /* E a CC-FE004 pelo mesmo motivo, com a página viva e as ferramentas
+           do navegador. */
+        case 'dom': return Object.fromEntries(
+          metasDaCcFe004(l.licao).map(m => [m.id, m.passos]));
         case 'laboratorio': return passosDe(l.linguagem);
         /* Teoria e redação não têm verificação com passo a passo. */
         case 'teoria': case 'redacao': return null;

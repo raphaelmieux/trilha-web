@@ -6076,6 +6076,78 @@ nunca muda, com um `console.log` dentro, é o primeiro laço sem fim de todo
 mundo, e "a saída foi cortada" sozinho deixaria a pessoa achando que o defeito é
 o tamanho.
 
+**A CC-FE004 roda a página de verdade, e a página não fala com a
+plataforma.** O laboratório tem três arquivos — `index.html`, `estilo.css` e
+`script.js` — e uma prévia sem servidor por trás: não há de onde baixar a folha
+e o script que a página chama. `paginaViva.ts` os põe **no lugar em que a
+pessoa os chamou**: a folha como `<style>`, o script como endereço `data:` com o
+texto dentro. Embutido no fim, ele apagaria o primeiro erro de DOM de todo
+mundo — o script no `<head>` sem `defer`, que roda antes de o `<body>` existir;
+um `<script>` embutido perderia o `defer`, e o `data:` o mantém. O painel
+Elementos desenha as duas tags como a pessoa as escreveu.
+
+A prévia é um `iframe` com `sandbox` **sem** `allow-same-origin`: o script de
+quem estuda roda numa origem opaca e não alcança a sessão nem o armazenamento
+da plataforma. Tudo atravessa por `postMessage`, e a tela só ouve o que vem
+daquele `iframe` — uma mensagem com cara de parada que chegue de outra janela
+não vira descoberta, e `LaboratorioDeDom.test.tsx` cobra.
+
+**O bastidor entra antes do que a pessoa escreveu.** `paginaViva.harness.js`
+mora logo depois do `<head>`: anota o `console.log` com a forma do console do
+navegador (`(3) [72, 38, 55]`, `<li#total>`), o erro com o arquivo e a linha, a
+promessa rejeitada sem ninguém tratando ("Uncaught (in promise) TypeError:
+Failed to fetch"), e o envio de formulário que ninguém impediu — que ele
+impede, mas anota como recarga, e a prévia remonta a página: o efeito que a
+pessoa vê é o de verdade, e a conferência sabe que aconteceu.
+
+**A BrasilAPI responde de uma cópia guardada, e quem responde é a
+plataforma.** `brasilApiGuardada.ts` tem os 27 estados e os feriados nacionais
+de qualquer ano entre 1900 e 2199, calculados pela Páscoa como a API calcula,
+com o 404 dela fora do intervalo. O `fetch` da página pergunta ao anfitrião por
+mensagem e a resposta chega 120 ms depois — sem a espera, o "Carregando…" do
+módulo 7 nunca apareceria. A página não sai para a internet por dois motivos:
+o resultado tem de ser o mesmo todo dia, e a conferência não pode depender da
+rede do computador do clube. "Sem conexão", no painel Rede, faz o `fetch`
+rejeitar com "Failed to fetch", que é o que o requisito 5 manda tratar.
+
+**A conferência roda a página, e a variante separa o certo do decorado.** Cada
+meta lê o resultado de cenários — a página montada de novo num `iframe`
+escondido, com cliques, digitação e leituras que o bastidor faz. Há muitos
+scripts certos para a mesma tela, então o que se confere é o que aparece. E
+quem escreveu `5` no contador ou os catorze feriados à mão acerta a página da
+lição: a variante muda a página ou as constantes antes de rodar, e o decorado
+erra a de seis avisos e o ano de 2025. O jsdom não faz o `<script>` externo
+bloquear a leitura, então "o script mora no lugar certo" é conferido lendo o
+HTML, e não rodando.
+
+**A parada anota, e não congela.** No navegador de verdade o programa para na
+linha. A prévia não tem como segurar a página no meio, então a linha ganha uma
+chamada ao bastidor que anota as variáveis daquele instante, e o painel Fontes
+mostra cada passagem — o que o navegador mostraria se tivesse parado, e a
+teoria diz isso com essas palavras. A chamada entra **na mesma linha**, para o
+número do erro continuar batendo com o que a pessoa vê, e lê cada variável sem
+estourar a zona morta de um `let` ainda não declarado.
+
+**A setinha de escolher fica em toda guia**, como no navegador: escolher na
+página é o caminho mais curto até Elementos, e quem está no Console não deveria
+precisar abri-la antes. Ela nasceu só na guia Elementos, e o roteiro no
+Chromium não a achou.
+
+**A trava que clica roda a conferência no jsdom.** O jsdom não executa o
+`srcdoc` de um `iframe` com sandbox, e `LaboratorioDeDom` recebe por
+`rodarCenario` quem roda cada cenário — na tela, a página escondida; na trava,
+`rodarPaginaNoJsdom` com a mesma página montada. As soluções de referência
+moram em `referenciasDaCcFe004.ts`, como as da CC005, para a trava de motor e
+a que clica escreverem o mesmo texto. As nove venceram também no Chromium, com
+os `iframe` de verdade.
+
+**Os exemplos da teoria rodam na mesma página viva.** `exemploComo: 'dom'`
+desenha o código e, ao lado, a página do tópico com o script dele rodando e o
+console embaixo; `exemplosDeDom.test.ts` roda cada um no jsdom, cobra que
+nenhum dê erro e que o console diga o que o tópico declara. Achou o primeiro na
+primeira execução: comparando com `<`, Paraná sai **antes** de Paraíba — o
+`n` vem antes do `í` no código —, e a lição tinha escrito a ordem de cabeça.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -6622,6 +6694,11 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/curriculum/laboratoriosDeJavascript.test.ts` | laboratório da CC-FE003 que abre verde, que a solução não fecha, ou que o Node faria diferente |
 | `src/curriculum/laboratoriosDeJavascript.test.ts` | var esquecido, reduce sem inicial ou JSON sem recuo passando com a saída certa |
 | `src/components/LaboratorioDeJavascript.test.tsx` | terminal sem o comando, JSON gravado que não aparece na lateral, ou lista que não envelhece |
+| `src/labs/brasilApiGuardada.test.ts` | cópia da BrasilAPI divergindo da resposta gravada: feriado móvel na data errada, estado fora da ordem, ou ano fora do intervalo sem o 404 |
+| `src/labs/paginaViva.test.ts` | script que perde o `defer` ou muda de lugar ao ser embutido, ou parada que muda o número da linha |
+| `src/labs/metasDaCcFe004.test.ts` | meta da CC-FE004 que abre verde, que a solução não fecha, ou que o número decorado passa sem a variante |
+| `src/curriculum/exemplosDeDom.test.ts` | exemplo de DOM da teoria que dá erro na página, ou cujo console não diz o que a lição declara |
+| `src/components/LaboratorioDeDom.test.tsx` | lição da CC-FE004 impossível de vencer clicando, lista que não envelhece, ou parada que chega de outra janela contando como descoberta |
 | `src/labs/metasDaAp042.test.ts` | tarefa do laboratório de formatação que nasce verde, ou que ninguém consegue vencer |
 | `src/labs/FormatacaoTextoLab.test.tsx` | margem fora da guia Layout, ou tarefa da AP042 que não fecha pelos gestos do Word |
 | `src/labs/InsercaoTextoLab.test.tsx` | guia contextual da tabela que fica sem tabela, ou cabeçalho fechado que se escreve |
