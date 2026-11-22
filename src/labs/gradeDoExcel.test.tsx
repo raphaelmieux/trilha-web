@@ -398,6 +398,37 @@ const GESTOS: Record<string, Gesto> = {
     expect(lido(L, 0), 'o Ctrl+Y não refez a escrita').toBe('Tucano');
   },
 
+  /*
+    O derramamento é do motor e mora em toda planilha: a fórmula escrita numa
+    célula ocupa as de baixo, a barra mostra em cinza a fórmula que veio de
+    cima, e escrever no caminho tranca em #DESPEJAR! sem apagar nada.
+  */
+  'a matriz derrama, a barra mostra a fórmula em cinza, e escrever no caminho tranca': () => {
+    apontar(celula(L + 1, 1));
+    teclar(grade(), 'Delete');
+    escreverNaCelula(L, 1, '={7;8}');
+    expect(lido(L, 1)).toBe('7');
+    expect(lido(L + 1, 1), 'a matriz não derramou na célula de baixo').toBe('8');
+    apontar(celula(L + 1, 1));
+    const barra = container.querySelector<HTMLTextAreaElement>('[aria-label="Barra de fórmulas"]')!;
+    expect(barra.value, 'a barra não mostra a fórmula de onde o valor veio').toBe('={7;8}');
+    expect(barra.style.color, 'a fórmula de outra célula não saiu em cinza').not.toBe('');
+    expect(celula(L, 1).className, 'a faixa derramada ficou sem borda').toMatch(/pl-derrame-cima/);
+    escreverNaCelula(L + 1, 1, 'x');
+    expect(lido(L, 1), 'escrever no caminho não trancou o derramamento').toBe('#DESPEJAR!');
+    expect(lido(L + 1, 1)).toBe('x');
+  },
+
+  /* Encaixar uma função na outra e esquecer de fechar é o erro de digitação
+     mais comum de fórmula; o Excel fecha ao confirmar, e aqui também. */
+  'os parênteses esquecidos se fecham ao confirmar': () => {
+    escreverNaCelula(L, 2, '=MÁXIMO(SEQUÊNCIA(3;1;5');
+    expect(lido(L, 2), 'a fórmula de parêntese aberto não calculou').toBe('7');
+    apontar(celula(L, 2));
+    expect(container.querySelector<HTMLTextAreaElement>('[aria-label="Barra de fórmulas"]')!.value)
+      .toBe('=MÁXIMO(SEQUÊNCIA(3;1;5))');
+  },
+
   'Delete limpa a célula selecionada': () => {
     escreverNaCelula(L, 0, 'Pioneiros');
     apontar(celula(L, 0));

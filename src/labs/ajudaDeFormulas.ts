@@ -32,11 +32,17 @@ export interface FuncaoDoCatalogo {
 
 export const FUNCOES_DO_EXCEL: FuncaoDoCatalogo[] = [
   { nome: 'ANO', argumentos: ['núm_série'], descricao: 'O ano de uma data.' },
+  { nome: 'APARARINTERVALO', argumentos: ['intervalo', '[aparar_linhas]', '[aparar_colunas]'], descricao: 'Tira as linhas e colunas vazias das pontas.' },
+  { nome: 'ARRAYFORMULA', argumentos: ['fórmula_de_matriz'], descricao: 'Do Planilhas Google: faz a conta em cada elemento.' },
   { nome: 'ARRED', argumentos: ['núm', 'núm_dígitos'], descricao: 'Arredonda um número até uma quantidade de casas.' },
+  { nome: 'CLASSIFICAR', argumentos: ['matriz', '[índice_classificação]', '[ordem_classificação]', '[por_col]'], descricao: 'Uma cópia da tabela em ordem.' },
+  { nome: 'CLASSIFICARPOR', argumentos: ['matriz', 'por_matriz1', '[ordem_classificação1]', '...'], descricao: 'Ordena pela coluna de outra tabela.' },
   { nome: 'CONT.NÚM', argumentos: ['valor1', '[valor2]', '...'], descricao: 'Conta quantas células contêm números.' },
   { nome: 'CONT.SE', argumentos: ['intervalo', 'critérios'], descricao: 'Conta as células que atendem a uma condição.' },
   { nome: 'CONT.VALORES', argumentos: ['valor1', '[valor2]', '...'], descricao: 'Conta quantas células não estão vazias.' },
   { nome: 'CORREL', argumentos: ['matriz1', 'matriz2'], descricao: 'Coeficiente de correlação entre duas faixas.' },
+  { nome: 'CORRESP', argumentos: ['valor_procurado', 'matriz_procurada', '[tipo_correspondência]'], descricao: 'A posição de um valor numa lista.' },
+  { nome: 'CORRESPX', argumentos: ['valor_procurado', 'matriz_pesquisa', '[modo_correspondência]', '[modo_pesquisa]'], descricao: 'A posição de um valor numa lista, exata por padrão.' },
   { nome: 'DATA', argumentos: ['ano', 'mês', 'dia'], descricao: 'Monta a data a partir do ano, do mês e do dia.' },
   { nome: 'DESVPAD', argumentos: ['núm1', '[núm2]', '...'], descricao: 'Desvio padrão de uma amostra.' },
   { nome: 'DESVPADA', argumentos: ['valor1', '[valor2]', '...'], descricao: 'Desvio padrão de uma amostra, contando textos e lógicos.' },
@@ -45,14 +51,20 @@ export const FUNCOES_DO_EXCEL: FuncaoDoCatalogo[] = [
   { nome: 'DIA.DA.SEMANA', argumentos: ['núm_série', '[retornar_tipo]'], descricao: 'O dia da semana, de 1 (domingo) a 7.' },
   { nome: 'DIAS', argumentos: ['data_final', 'data_inicial'], descricao: 'Quantos dias há entre duas datas.' },
   { nome: 'E', argumentos: ['lógico1', '[lógico2]', '...'], descricao: 'VERDADEIRO se todos os argumentos forem verdadeiros.' },
+  { nome: 'EMPILHARH', argumentos: ['matriz1', '[matriz2]', '...'], descricao: 'Junta tabelas lado a lado.' },
+  { nome: 'EMPILHARV', argumentos: ['matriz1', '[matriz2]', '...'], descricao: 'Junta tabelas uma embaixo da outra.' },
+  { nome: 'ESCOLHERCOLS', argumentos: ['matriz', 'núm_col1', '[núm_col2]', '...'], descricao: 'As colunas pedidas de uma tabela.' },
+  { nome: 'ESCOLHERLINS', argumentos: ['matriz', 'núm_lin1', '[núm_lin2]', '...'], descricao: 'As linhas pedidas de uma tabela.' },
+  { nome: 'FILTRO', argumentos: ['matriz', 'incluir', '[se_vazia]'], descricao: 'As linhas que atendem a uma condição.' },
   { nome: 'HOJE', argumentos: [], descricao: 'A data de hoje.' },
   { nome: 'INCLINAÇÃO', argumentos: ['val_conhecidos_y', 'val_conhecidos_x'], descricao: 'Inclinação da reta de regressão.' },
+  { nome: 'ÍNDICE', argumentos: ['matriz', 'núm_linha', '[núm_coluna]'], descricao: 'O valor numa linha e numa coluna de uma tabela.' },
   { nome: 'INTERCEPÇÃO', argumentos: ['val_conhecidos_y', 'val_conhecidos_x'], descricao: 'Ponto em que a reta de regressão corta o eixo y.' },
   { nome: 'MÁXIMO', argumentos: ['núm1', '[núm2]', '...'], descricao: 'O maior valor de um conjunto.' },
   { nome: 'MED', argumentos: ['núm1', '[núm2]', '...'], descricao: 'A mediana: o valor do meio.' },
   { nome: 'MÉDIA', argumentos: ['núm1', '[núm2]', '...'], descricao: 'A média aritmética.' },
-  { nome: 'MÍNIMO', argumentos: ['núm1', '[núm2]', '...'], descricao: 'O menor valor de um conjunto.' },
   { nome: 'MÊS', argumentos: ['núm_série'], descricao: 'O mês de uma data, de 1 a 12.' },
+  { nome: 'MÍNIMO', argumentos: ['núm1', '[núm2]', '...'], descricao: 'O menor valor de um conjunto.' },
   { nome: 'MODO', argumentos: ['núm1', '[núm2]', '...'], descricao: 'O valor que mais se repete.' },
   { nome: 'MODO.ÚNICO', argumentos: ['núm1', '[núm2]', '...'], descricao: 'O valor que mais se repete.' },
   { nome: 'NÃO', argumentos: ['lógico'], descricao: 'Inverte o valor lógico.' },
@@ -61,11 +73,17 @@ export const FUNCOES_DO_EXCEL: FuncaoDoCatalogo[] = [
   { nome: 'PREVISÃO', argumentos: ['x', 'val_conhecidos_y', 'val_conhecidos_x'], descricao: 'Prevê um valor pela reta de regressão.' },
   { nome: 'PREVISÃO.LINEAR', argumentos: ['x', 'val_conhecidos_y', 'val_conhecidos_x'], descricao: 'Prevê um valor pela reta de regressão.' },
   { nome: 'PROCV', argumentos: ['valor_procurado', 'matriz_tabela', 'núm_índice_coluna', '[procurar_intervalo]'], descricao: 'Procura na primeira coluna e devolve a da mesma linha.' },
+  { nome: 'PROCX', argumentos: ['pesquisa_valor', 'pesquisa_matriz', 'matriz_retorno', '[se_não_encontrada]', '[modo_correspondência]', '[modo_pesquisa]'], descricao: 'Procura numa lista e devolve da outra, exato por padrão.' },
   { nome: 'RQUAD', argumentos: ['val_conhecidos_y', 'val_conhecidos_x'], descricao: 'O quadrado da correlação.' },
   { nome: 'SE', argumentos: ['teste_lógico', '[valor_se_verdadeiro]', '[valor_se_falso]'], descricao: 'Um valor se a condição for verdadeira, e outro se não.' },
+  { nome: 'SEERRO', argumentos: ['valor', 'valor_se_erro'], descricao: 'Outro valor quando a conta dá erro.' },
+  { nome: 'SEQUÊNCIA', argumentos: ['linhas', '[colunas]', '[início]', '[etapa]'], descricao: 'Uma lista de números em sequência.' },
   { nome: 'SOMA', argumentos: ['núm1', '[núm2]', '...'], descricao: 'Soma os números.' },
+  { nome: 'SOMARPRODUTO', argumentos: ['matriz1', '[matriz2]', '...'], descricao: 'Multiplica as tabelas elemento a elemento e soma.' },
   { nome: 'SOMASE', argumentos: ['intervalo', 'critérios', '[intervalo_soma]'], descricao: 'Soma as células que atendem a uma condição.' },
   { nome: 'SUBTOTAL', argumentos: ['núm_função', 'ref1', '...'], descricao: 'Soma, conta ou faz a média só do que está à vista.' },
+  { nome: 'TRANSPOR', argumentos: ['matriz'], descricao: 'Deita a coluna e levanta a linha.' },
+  { nome: 'ÚNICO', argumentos: ['matriz', '[por_col]', '[exatamente_uma_vez]'], descricao: 'A lista sem as repetições.' },
 ];
 
 /** Compara sem acento, sem ponto e sem caixa, como o motor compara. */
@@ -111,10 +129,15 @@ export function funcaoAberta(texto: string): { funcao: FuncaoDoCatalogo; argumen
   if (!texto.startsWith('=')) return null;
   const pilha: { nome: string; argumento: number }[] = [];
   let aspas = false;
+  /* Dentro de `{1;2}` o ponto e vírgula separa linhas da matriz, e não argumentos. */
+  let chaves = 0;
   for (let i = 1; i < texto.length; i++) {
     const ch = texto[i];
     if (ch === '"') { aspas = !aspas; continue; }
     if (aspas) continue;
+    if (ch === '{') { chaves++; continue; }
+    if (ch === '}') { chaves = Math.max(0, chaves - 1); continue; }
+    if (chaves > 0) continue;
     if (ch === '(') {
       const m = /([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.]*)$/.exec(texto.slice(0, i));
       pilha.push({ nome: m ? m[1] : '', argumento: 0 });
@@ -139,4 +162,32 @@ export function funcaoAberta(texto: string): { funcao: FuncaoDoCatalogo; argumen
 export function argumentoEmDestaque(f: FuncaoDoCatalogo, argumento: number): number {
   if (argumento < f.argumentos.length) return argumento;
   return f.argumentos[f.argumentos.length - 1] === '...' ? f.argumentos.length - 1 : -1;
+}
+
+/**
+ * A fórmula com os parênteses que ficaram abertos fechados no fim — o que o
+ * Excel faz ao confirmar `=MÁXIMO(PROCX(D9:D12;A3:A20;B3:B20`.
+ *
+ * Contar parêntese de cabeça é o erro de digitação mais comum de quem
+ * encaixa uma função dentro da outra, e sem isto a fórmula inteira virava
+ * `#NOME?` — que manda procurar um nome errado onde não há nenhum.
+ *
+ * Só se fecha o que dá para fechar sem adivinhar. Parêntese de dentro de
+ * texto entre aspas não conta; com aspas abertas, ou com mais `)` do que `(`,
+ * nada se mexe: o Excel também recusa essas, e completar ali seria escolher
+ * por alguém onde o texto acaba.
+ */
+export function fecharParenteses(texto: string): string {
+  if (!texto.startsWith('=')) return texto;
+  let abertos = 0;
+  let aspas = false;
+  for (let i = 1; i < texto.length; i++) {
+    const ch = texto[i];
+    if (ch === '"') { aspas = !aspas; continue; }
+    if (aspas) continue;
+    if (ch === '(') abertos++;
+    else if (ch === ')' && --abertos < 0) return texto;
+  }
+  if (aspas || abertos === 0) return texto;
+  return texto.trimEnd() + ')'.repeat(abertos);
 }

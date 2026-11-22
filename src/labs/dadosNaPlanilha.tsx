@@ -143,6 +143,7 @@ export function AnaliseNoExcel({ ctx, mudar, avisar, arquivo }: PropsDaSuperfici
     desfazer: () => andarNoHistorico(desfazer),
     refazer: () => andarNoHistorico(refazer),
     avisar,
+    caderno: cad,
   });
 
   /* Trocar de aba não é um passo da planilha: não entra no Ctrl+Z. */

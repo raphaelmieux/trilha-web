@@ -246,11 +246,14 @@ describe('os erros', () => {
   });
 
   /*
-    Faixa onde se espera um valor é erro. Devolver a primeira célula calada
-    faria `=A1:A5*2` mostrar a conta de uma linha só, com cara de estar certa.
+    Faixa onde só cabe um valor é erro. Devolver a primeira célula calada
+    faria a conta de uma linha só passar por conta da coluna inteira, com cara
+    de estar certa. Numa conta, a faixa não cai aqui: ela derrama — e isso tem
+    o arquivo dele, `matrizes.test.ts`.
   */
-  it('faixa usada como valor é #VALOR!, e não a primeira célula', () => {
-    expect(ver(CLUBE, '=B2:B4+1')).toBe('#VALOR!');
+  it('faixa onde só cabe um valor é #VALOR!, e não a primeira célula', () => {
+    expect(ver(CLUBE, '=SEQUÊNCIA(B2:B4)')).toBe('#VALOR!');
+    expect(ver(CLUBE, '=SUBTOTAL(B2:B3;C2:C4)')).toBe('#VALOR!');
   });
 });
 

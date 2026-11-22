@@ -74,6 +74,7 @@ export function ControleNoExcel({ ctx, mudar, avisar, conjunto }: PropsDaSuperfi
     desfazer: () => andarNoHistorico(desfazer),
     refazer: () => andarNoHistorico(refazer),
     avisar,
+    caderno: cad,
   });
 
   const corNaSelecao = () => {

@@ -270,6 +270,7 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
   };
 
   const grade = useGradeDoExcel({
+    caderno: cad,
     planilha: p,
     mudar,
     desfazer: c.desfazer,

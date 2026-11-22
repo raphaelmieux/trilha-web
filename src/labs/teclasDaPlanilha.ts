@@ -153,7 +153,8 @@ const colunaDoNome = (letras: string) =>
 export function referenciasDaFormula(texto: string): { faixa: Faixa; cor: string }[] {
   if (!texto.startsWith('=')) return [];
   const achadas: { faixa: Faixa; cor: string; chave: string }[] = [];
-  const re = /(!)?(\$?[A-Z]{1,3}\$?\d+)(?::(\$?[A-Z]{1,3}\$?\d+))?/g;
+  /* `.:.`, `.:` e `:.` são a faixa aparada: o contorno é o da faixa escrita. */
+  const re = /(!)?(\$?[A-Z]{1,3}\$?\d+)(?:\.?:\.?(\$?[A-Z]{1,3}\$?\d+))?/g;
   for (const m of texto.matchAll(re)) {
     const ini = m.index ?? 0;
     const antes = texto[ini - 1];

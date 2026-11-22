@@ -262,6 +262,7 @@ function TelaDaPlanilha(c: Comum & { comCaderno: boolean }) {
 
   const grade = useGradeDoExcel({
     planilha: p, mudar, desfazer: c.desfazer, refazer: c.refazer, avisar,
+    caderno: cad,
   });
   const { faixa, setFaixa, sel, setBarra, setEditando } = grade;
 

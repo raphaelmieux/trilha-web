@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react';
+import { useLayoutEffect, useMemo, useState } from 'react';
 import { CAMADA_DO_MENU, CAMADA_DO_VEU_DO_MENU } from './camadas';
 import { createPortal } from 'react-dom';
 import {
@@ -14,7 +14,7 @@ import {
 import {
   type Caderno, type Direcao, type Faixa, type Planilha,
   alinhamentoDe, estiloCondicional, linhaEscondida, mostrar, naFaixa, nomeDaColuna, nomeDaCelula, normalizar,
-  textoDoResumo, valorCalculado, contaDaSelecao, numeroNaLargura,
+  textoDoResumo, sessaoDaPlanilha, contaDaSelecao, numeroNaLargura,
   type TipoDeGrafico, type PontoDoGrafico, type PontoDeDispersao, type EixoDoGrafico,
 } from './planilha';
 
@@ -322,6 +322,24 @@ export const CSS_EXCEL = `
 .pl-grade td.pl-copiado-baixo::after { border-bottom-width: 2px; }
 .pl-grade td.pl-copiado-esq::after { border-left-width: 2px; }
 .pl-grade td.pl-copiado-dir::after { border-right-width: 2px; }
+/* A borda do derramamento, no ::before para conviver com as formiguinhas do
+   copiado, que moram no ::after. Azul fina, como a do Excel; tracejada quando
+   o derramamento está trancado e mostra só onde ele cairia. Ela fica por
+   dentro da célula, e não um pixel para fora como as formiguinhas: a célula
+   corta o que passa dela, e uma linha de um pixel posta para fora some
+   inteira. */
+.pl-grade td.pl-derrame-cima, .pl-grade td.pl-derrame-baixo,
+.pl-grade td.pl-derrame-esq, .pl-grade td.pl-derrame-dir { position: relative; }
+.pl-grade td.pl-derrame-cima::before, .pl-grade td.pl-derrame-baixo::before,
+.pl-grade td.pl-derrame-esq::before, .pl-grade td.pl-derrame-dir::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  border: 0 solid #4472C4;
+}
+.pl-grade td.pl-derrame-trancado::before { border-style: dashed; }
+.pl-grade td.pl-derrame-cima::before { border-top-width: 1px; }
+.pl-grade td.pl-derrame-baixo::before { border-bottom-width: 1px; }
+.pl-grade td.pl-derrame-esq::before { border-left-width: 1px; }
+.pl-grade td.pl-derrame-dir::before { border-right-width: 1px; }
 /* A lista de funções e a dica de sintaxe, do jeito do Excel: branca, com o
    "fx" verde em cada nome, a frase do que a função faz ao lado da escolhida, e
    o molde da função com o argumento da vez em negrito. */
@@ -876,6 +894,30 @@ export function GradeDoExcel({
   aoContexto, aoArrastarBorda, aoAjustarAoConteudo, aoComecarPreenchimento, naTabela, aoAbrirFiltro,
   sobreposicao, copiado, ajuda, menuDeContexto,
 }: PropsDaGradeDoExcel) {
+  /* Uma sessão por estado da planilha: a grade inteira calculada uma vez, e
+     não cada célula refazendo as fórmulas de matriz da aba. */
+  const sessao = useMemo(() => sessaoDaPlanilha(p, caderno), [p, caderno]);
+  /*
+    A borda do derramamento: azul em volta da faixa que a fórmula ocupa,
+    quando a célula ativa é a da fórmula ou qualquer uma das derramadas, como
+    no Excel. Trancado, é tracejada e mostra onde ele cairia — é por ela que se
+    acha o que está no caminho de um #DESPEJAR!.
+  */
+  const derramada = sessao.derramamento(ativa.l, ativa.c);
+  const bordaDoDerramamento = (l: number, c: number): string | undefined => {
+    const d = derramada;
+    if (!d) return undefined;
+    const base = d.linha + d.linhas - 1;
+    const dir = d.coluna + d.colunas - 1;
+    if (l < d.linha || l > base || c < d.coluna || c > dir) return undefined;
+    return [
+      d.bloqueado ? 'pl-derrame-trancado' : '',
+      l === d.linha ? 'pl-derrame-cima' : '',
+      l === base ? 'pl-derrame-baixo' : '',
+      c === d.coluna ? 'pl-derrame-esq' : '',
+      c === dir ? 'pl-derrame-dir' : '',
+    ].filter(Boolean).join(' ');
+  };
   const nCopiado = copiado ? normalizar(copiado) : null;
   /* As bordas tracejadas do copiado, só nos lados de fora da faixa. */
   const bordaDoCopiado = (l: number, c: number): string | undefined => {
@@ -979,7 +1021,7 @@ export function GradeDoExcel({
                 const dentro = naFaixa(faixa, l, c);
                 /* O valor primeiro, e o texto a partir dele: o alinhamento
                    pergunta o **tipo**, e imprimir joga o tipo fora. */
-                const valor = valorCalculado(p, l, c, caderno);
+                const valor = sessao.valor(l, c);
                 /*
                   O resumo é desenhado **por cima** da célula, e ganha dela.
 
@@ -1015,6 +1057,7 @@ export function GradeDoExcel({
                       dentro && !ancora ? 'pl-na-faixa' : '',
                       naTabela?.(l, c) ? 'pl-na-tabela' : '',
                       bordaDoCopiado(l, c) ?? '',
+                      bordaDoDerramamento(l, c) ?? '',
                       doResumo !== null ? 'pl-resumo' : '',
                       cond ? `pl-cond-${cond}` : '',
                       cel.quebra && doResumo === null ? 'pl-quebra' : '',

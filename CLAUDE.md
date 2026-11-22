@@ -4550,6 +4550,76 @@ dos seis; os dois que já tinham o seu, com o Mesclar do exercício, ganharam
   não um teto — é o AutoAjuste que o Excel faz ao ligar a quebra. Confirmar
   texto com quebra de linha liga a quebra, como o Alt+Enter do Excel.
 
+**A fórmula pode devolver uma tabela, e a tabela derrama.** É o Excel de hoje
+e o Planilhas Google: `=C2:C40*D2:D40`, `=FILTRO(...)`, `=SEQUÊNCIA(5)` ocupam
+as células abaixo e à direita de onde foram escritas, e só a de cima à
+esquerda guarda a fórmula. A planilha não calculava isso — `=A1:A5+1` dava
+#VALOR! —, e quem aprendia aqui levava ao computador do clube uma planilha de
+dez anos atrás. As funções que vieram junto são as que só existem por causa
+disso: PROCX, CORRESPX, FILTRO, CLASSIFICAR, CLASSIFICARPOR, ÚNICO, SEQUÊNCIA,
+TRANSPOR, EMPILHARV e EMPILHARH, ESCOLHERCOLS e ESCOLHERLINS, APARARINTERVALO
+e a ARRAYFORMULA do Google; e as que o par precisa, ÍNDICE, CORRESP, SEERRO e
+SOMARPRODUTO. As de um valor só — SE, ANO, PROCV, CONT.SE — se aplicam a cada
+elemento quando recebem uma coluna onde esperavam um valor.
+
+A matriz é um tipo **do motor** e não sai dele. `valorDaCelula` continua
+devolvendo um valor, o da célula pedida, e nenhuma meta de laboratório mudou;
+quem quer saber de que fórmula um valor derramado veio pergunta à sessão.
+Cinco decisões erram calado se invertidas:
+
+- **escrever no caminho tranca, e não apaga.** Qualquer coisa escrita numa
+  célula do caminho — um espaço, outra fórmula —, a borda da grade, ou outro
+  derramamento que começa **antes** na ordem de leitura faz a fórmula dizer
+  `#DESPEJAR!`. A ordem de leitura é regra nossa: o Excel decide pela ordem de
+  cálculo, que ninguém vê, e a mesma planilha trancaria ora uma, ora a outra;
+- **vazio na origem é 0 no derramamento**, como no Excel. É o zero que todo
+  mundo já viu e ninguém entendeu, e é por ele que `A:.A` existe;
+- **quem derrama se decide pela forma, sem calcular.** Para saber se uma
+  célula vazia recebe valor, o motor olha as fórmulas acima e à esquerda que
+  *podem* devolver matriz (`podeSerMatriz`). Calcular todas faria `=B5` em A1
+  depender de A1 para saber se A1 derrama sobre B5 — um ciclo que não existe;
+- **a fórmula que lê o próprio derramamento é circular**, e não um número. A
+  célula vazia lida enquanto a fórmula ainda calcula fica anotada, e se no fim
+  ela cair dentro do resultado a conta é recusada;
+- **a sessão vale para um estado da planilha.** A grade desenha célula por
+  célula, e cada uma, calculada do zero, refaria as fórmulas de matriz da aba
+  inteira. `sessaoDaPlanilha` guarda o que calculou enquanto a planilha for o
+  mesmo objeto, e as fórmulas de cada grade se guardam pela identidade dela —
+  que vale porque nenhuma mudança da planilha é feita no lugar.
+
+A constante de matriz separa colunas com **barra invertida**, `{1\2;3\4}`: a
+vírgula já é a casa decimal e o ponto e vírgula já separa argumento, e é o que o
+Excel e o Planilhas Google em português usam. `A3#` lê o derramamento inteiro,
+`A:A` a coluna até a borda da grade, e `.:.`, `.:` e `:.` aparam as pontas
+vazias — o ponto fica do lado aparado. Aparar uma faixa inteira vazia é
+`#REF!`: uma SOMA zero ali pareceria verdadeira.
+
+Na grade, a célula derramada mostra o valor e a barra mostra a fórmula de
+origem **em cinza**, que é como se sabe que apagar ali não apaga nada; a faixa
+ganha a borda azul, tracejada quando trancada, que é por onde se acha o que
+está no caminho. A borda fica por dentro da célula: posta um pixel para fora,
+como as formiguinhas do copiado, a célula a cortava inteira — e as
+formiguinhas só sobrevivem porque têm dois.
+
+O padrão de cada função é o do Excel, armadilha inclusive: PROCX e CORRESPX
+procuram **exato**, CORRESP procura **aproximado**, como o PROCV, pelo motivo
+escrito lá. O curinga existe só no modo 2 do PROCX e do CORRESPX, onde a
+fórmula o pede pelo nome — no CONT.SE ele continua fora, pela decisão escrita
+em `testarCriterio`. E a pesquisa binária é binária de verdade: numa lista fora
+de ordem ela erra, que é o preço do modo rápido.
+
+**O parêntese esquecido se fecha ao confirmar**, como no Excel:
+`=MÁXIMO(PROCX(D9:D12;A3:A20;B3:B20` grava com os dois `)` no fim. Encaixar
+uma função na outra é onde todo mundo perde a conta, e sem isso a fórmula
+inteira virava `#NOME?`, que manda procurar um nome errado onde não há nenhum.
+`fecharParenteses` só fecha o que dá para fechar sem adivinhar: parêntese
+dentro de aspas não conta, e com aspas abertas ou `)` sobrando nada se mexe —
+completar ali seria escolher por alguém onde o texto acaba.
+
+Da mesma volta: **copiar uma fórmula perdia a aba.** `transporFormula`
+reescrevia `=Respostas!E2` como `=E3`, e a cópia passava a ler a coluna E da
+própria aba, com cara de cópia certa. A aba vai junto agora.
+
 **A AP044 deixou de ter uma planilha só dela.** Ela desenhava uma tabela HTML,
 com o total num painel ao lado e a fórmula num botão: as setas, o F2 e a barra
 de fórmulas que a AP043 acabara de ensinar não existiam ali. Hoje é uma pasta de
@@ -6662,6 +6732,14 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/office.test.tsx` | grupo completado que repete um que o laboratório já desenhou, ou B de "bold" no lugar do N |
 | `src/labs/gradeDoExcel.test.tsx` | laboratório de planilha novo fora da mesa, teclando diferente dos outros |
 | `src/labs/planilha.test.ts` | Mover ou Copiar que copia sem a caixa marcada, ou Substituir que ignora a seleção |
+| `src/labs/matrizes.test.ts` | conta de faixa que mostra a primeira célula em vez de derramar, ou tamanhos diferentes esticados com zero em vez de #N/D |
+| `src/labs/matrizes.test.ts` | derramamento que apaga o que está no caminho em vez de trancar, que passa da borda, ou que lê o próprio resultado sem dar circular |
+| `src/labs/matrizes.test.ts` | PROCX aproximado por padrão, CORRESP exato por padrão, ou curinga fora do modo 2 |
+| `src/labs/matrizes.test.ts` | FILTRO sem ninguém mostrando vazio em vez de #CALC!, ou faixa toda vazia aparada somando zero |
+| `src/labs/matrizes.test.ts` | cópia de fórmula que perde a aba, a coluna inteira ou o `#` do derramamento |
+| `src/labs/gradeDoExcel.test.tsx` | laboratório de planilha em que a matriz não derrama, a barra não mostra a fórmula de origem em cinza, ou escrever no caminho não tranca |
+| `src/labs/ajudaDeFormulas.test.ts` | função de matriz fora da lista, ou na lista sem o motor entendê-la |
+| `src/labs/ajudaDeFormulas.test.ts` | parêntese esquecido que não se fecha ao confirmar, ou fechamento que mexe em aspas abertas ou em parêntese de dentro de texto |
 | `src/labs/planilha.test.ts` | Remover Duplicatas que acha a linha antes de padronizar, ou que junta homônimos com todas as colunas marcadas |
 | `src/labs/planilha.test.ts` | gráfico que resolve a conta de outra aba contra a própria aba |
 | `src/labs/chamadaDoClube.test.ts` | base da CC-ES013 sem um defeito de cada família, ou com folga que deixa excluir as linhas sem questionário |

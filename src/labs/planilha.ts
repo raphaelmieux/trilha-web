@@ -1,5 +1,6 @@
 import {
   ehFormula, ehNumero, mostrar, mostrarNumero, nomeDaColuna, referenciasDe, valorDaCelula, valorDoBruto,
+  criarSessao, type Sessao,
   transporFormula,
   type Formato, type Valor,
 } from './formulas';
@@ -602,13 +603,59 @@ export const nomeDaFaixa = (f: Faixa) => {
  * com a fórmula já escrita — coisa que nenhum laboratório daqui faz.
  */
 export function valorCalculado(p: Planilha, l: number, c: number, caderno?: Caderno): Valor {
-  return valorDaCelula((li, ci, aba) => {
-    if (!aba || aba === p.nome) return p.celulas[li]?.[ci]?.texto ?? '';
-    const outra = caderno && planilhaPorNome(caderno, aba);
-    return outra ? outra.celulas[li]?.[ci]?.texto ?? '' : '';
-  }, l, c, p.nome, (li, aba) => {
-    const dona = !aba || aba === p.nome ? p : caderno && planilhaPorNome(caderno, aba);
-    return dona ? linhaEscondida(dona, li) : false;
+  return sessaoDaPlanilha(p, caderno).valor(l, c);
+}
+
+/*
+  As fórmulas de uma grade, na ordem de leitura, guardadas pela própria
+  grade. O motor pergunta por elas para saber se uma célula vazia recebe um
+  derramamento, e varrer a grade a cada pergunta custaria a grade inteira por
+  célula desenhada. A grade nunca é mudada no lugar — toda mudança devolve
+  outra —, então guardar pela identidade dela não envelhece.
+*/
+const FORMULAS_DA_GRADE = new WeakMap<Celula[][], Array<readonly [number, number]>>();
+
+function formulasDaGrade(celulas: Celula[][]): ReadonlyArray<readonly [number, number]> {
+  const guardadas = FORMULAS_DA_GRADE.get(celulas);
+  if (guardadas) return guardadas;
+  const achadas: Array<readonly [number, number]> = [];
+  celulas.forEach((linha, l) => linha.forEach((cel, c) => { if (ehFormula(cel?.texto ?? '')) achadas.push([l, c]); }));
+  FORMULAS_DA_GRADE.set(celulas, achadas);
+  return achadas;
+}
+
+const extensaoDaGrade = (celulas: Celula[][]) => ({
+  linhas: celulas.length,
+  colunas: celulas.reduce((m, linha) => Math.max(m, linha.length), 0),
+});
+
+/**
+ * Uma conversa com o motor sobre a planilha **neste estado**: o que ela
+ * calcula fica lembrado enquanto ela durar.
+ *
+ * A grade desenha célula por célula, e cada uma, calculada do zero, refaria
+ * as fórmulas de matriz da aba inteira. Quem desenha a grade inteira abre uma
+ * sessão e pede tudo a ela; `valorCalculado`, que serve a uma célula só, abre
+ * uma por pedido. A sessão vale para um estado: mudou a planilha, é outra.
+ */
+export function sessaoDaPlanilha(p: Planilha, caderno?: Caderno): Sessao {
+  const dona = (aba?: string) => (!aba || aba === p.nome ? p : caderno && planilhaPorNome(caderno, aba));
+  return criarSessao((li, ci, aba) => dona(aba)?.celulas[li]?.[ci]?.texto ?? '', {
+    aba: p.nome,
+    escondida: (li, aba) => {
+      const d = dona(aba);
+      return d ? linhaEscondida(d, li) : false;
+    },
+    planta: {
+      formulas: aba => {
+        const d = dona(aba);
+        return d ? formulasDaGrade(d.celulas) : [];
+      },
+      extensao: aba => {
+        const d = dona(aba);
+        return d ? extensaoDaGrade(d.celulas) : { linhas: 0, colunas: 0 };
+      },
+    },
   });
 }
 
@@ -1025,7 +1072,10 @@ export function linhaEscondida(p: Planilha, linha: number): boolean {
 
 /** O valor calculado da célula — a porta pela qual a planilha fala com o motor. */
 export const valorDaGrade = (p: Planilha, l: number, c: number): Valor =>
-  valorDaCelula((li, ci) => p.celulas[li]?.[ci]?.texto ?? '', l, c);
+  valorDaCelula((li, ci) => p.celulas[li]?.[ci]?.texto ?? '', l, c, undefined, undefined, {
+    formulas: () => formulasDaGrade(p.celulas),
+    extensao: () => extensaoDaGrade(p.celulas),
+  });
 
 /**
  * A cor que uma regra de formatação condicional pinta nesta célula.
