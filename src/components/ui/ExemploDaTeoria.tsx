@@ -6,6 +6,8 @@ import { lerExemploDeBlocos, COR_DA_CATEGORIA } from '../../labs/blocosDoScratch
 import { TextoDeBloco } from './BandeiraVerde';
 import type { TopicoDeVereda } from '../../curriculum/veredas';
 import { PassoAPasso } from './PassoAPasso';
+import { arquivosDoExemplo, ehDaPagina, montarPagina, FONTE_DA_PAGINA, type EntradaDoConsole, type MensagemDaPagina } from '../../labs/paginaViva';
+import { respostaDaBrasilApi } from '../../labs/brasilApiGuardada';
 
 /**
  * O exemplo de um tópico de teoria, desenhado do jeito que o assunto pede.
@@ -260,6 +262,41 @@ const paginaDeHtml = (html: string) =>
 const paginaDeCss = (css: string, marcacao: string) =>
   `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${ESTILO_DA_PAGINA}${css}</style></head><body>${marcacao}</body></html>`;
 
+/*
+  O exemplo de DOM roda de verdade: a mesma página viva do laboratório, com o
+  script dentro, numa origem opaca. Clicar no botão do exemplo faz o que o
+  script diz, e o console embaixo mostra o que ele escreveu — que é o que a
+  pessoa vai ver nas ferramentas do navegador logo depois.
+*/
+function PaginaComScript({ marcacao, script, titulo }: { marcacao: string; script: string; titulo: string }) {
+  const quadro = useRef<HTMLIFrameElement>(null);
+  const [entradas, setEntradas] = useState<EntradaDoConsole[]>([]);
+  const [versao, setVersao] = useState(0);
+  const pagina = montarPagina(arquivosDoExemplo(marcacao, script));
+  useEffect(() => {
+    setEntradas([]);
+    const ouvir = (e: MessageEvent) => {
+      if (!ehDaPagina(e.data) || e.source !== quadro.current?.contentWindow) return;
+      const m = e.data as MensagemDaPagina;
+      if (m.tipo === 'console') setEntradas(l => [...l, m.entrada]);
+      else if (m.tipo === 'pedido') {
+        (e.source as Window).postMessage({ fonte: FONTE_DA_PAGINA, tipo: 'resposta', id: m.id, resposta: respostaDaBrasilApi(m.url) }, '*');
+      } else if (m.tipo === 'recarga') setVersao(v => v + 1);
+    };
+    window.addEventListener('message', ouvir);
+    return () => window.removeEventListener('message', ouvir);
+  }, [pagina, versao]);
+  return (
+    <div className="ex-caixa">
+      <p className="ex-caixa-topo">E a página fica assim</p>
+      <iframe key={versao} ref={quadro} srcDoc={pagina} sandbox="allow-scripts allow-forms" title={`Resultado: ${titulo}`} />
+      {entradas.length > 0 && (
+        <pre className="ex-saida" aria-label="Console">{entradas.map(e => e.texto).join('\n')}</pre>
+      )}
+    </div>
+  );
+}
+
 export function ExemploDaTeoria({ topico, mostraResultado }: {
   topico: TopicoDeVereda;
   /** A vereda mostra o resultado? Blocos e texto nunca mostram: não há um. */
@@ -391,6 +428,24 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
               )}
             </div>
           )}
+        </div>
+      </>
+    );
+  }
+
+  if (como === 'dom') {
+    /* Sem marcação não há página em que o script mexer, e um quadro em
+       branco seria a promessa não cumprida de sempre. */
+    const temPagina = mostraResultado && topico.exemploMarcacao !== undefined;
+    return (
+      <>
+        <style>{CSS_EXEMPLO}</style>
+        <div className={temPagina ? 'ex-dupla' : ''}>
+          <div className="ex-caixa">
+            <p className="ex-caixa-topo">Você escreve, no script.js</p>
+            <Codigo linhas={realcarLinhasJavascript(exemplo)} />
+          </div>
+          {temPagina && <PaginaComScript marcacao={topico.exemploMarcacao!} script={exemplo} titulo={topico.titulo} />}
         </div>
       </>
     );

@@ -1,6 +1,7 @@
 import { MODULOS_DE_HTML } from './sintaxeHtml';
 import { MODULOS_DE_CSS } from './folhaDeEstilo';
 import { MODULOS_DE_JAVASCRIPT } from './javascript';
+import { MODULOS_DE_DOM } from './dom';
 import { MODULOS_DE_BLOCOS } from './logicaComBlocos';
 import { MODULOS_DE_PYTHON } from './sintaxeDePython';
 import { MODULOS_DE_TERMINAL } from './terminalEGit';
@@ -128,9 +129,9 @@ export interface TopicoDeVereda {
    * `'blocos'` desenha a pilha do Scratch, com a cor da categoria; `'texto'` é
    * um algoritmo ou uma tabela, e não tem resultado nenhum a mostrar.
    */
-  exemploComo?: 'html' | 'css' | 'blocos' | 'texto' | 'python' | 'sql' | 'javascript';
+  exemploComo?: 'html' | 'css' | 'blocos' | 'texto' | 'python' | 'sql' | 'javascript' | 'dom';
   /**
-   * Só para `'css'`: a marcação a que a folha se aplica.
+   * Só para `'css'` e `'dom'`: a marcação a que a folha ou o script se aplica.
    *
    * Sem ela não há resultado — uma regra de CSS sozinha não pinta nada, e era
    * essa a razão de o quadro do navegador mostrar a regra escrita em vez do
@@ -151,7 +152,8 @@ export interface TopicoDeVereda {
    */
   exemploLarguras?: number[];
   /**
-   * Só para `'python'` e `'javascript'`: o que o programa escreve ao rodar.
+   * Só para `'python'`, `'javascript'` e `'dom'`: o que o programa escreve ao
+   * rodar — no `'dom'`, o que o console do navegador mostra.
    *
    * Em CSS o resultado é uma página, e o quadro a desenha. Em Python o
    * resultado é o que sai no painel de saída — e é ele que a pessoa vai
@@ -837,6 +839,25 @@ export type LicaoDeVereda =
     titulo: string;
     resumo: string;
     licao: import('../labs/metasDaCc005').LicaoDaCc005;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
+      A página viva da CC-FE004: três arquivos, a prévia que roda o script e
+      as ferramentas do navegador. Mais um tipo pela conta de \`banco\`: o que
+      se confere não é o texto de um arquivo com um validador de linguagem, é
+      o que a página **faz** quando alguém clica, digita, envia ou derruba a
+      rede — e isso sai de cenários rodados na página, em
+      \`LICOES_DA_CC_FE004\`. Enfiá-la em \`laboratorio\` com uma linguagem
+      nova faria a escada de validadores daquele tipo conferir o modelo com o
+      de HTML, verde sem ter olhado o script.
+    */
+    id: string;
+    tipo: 'dom';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcFe004').LicaoDaCcFe004;
     /** Os ids das metas, na lista daquela lição. */
     verificacoes: string[];
   }
@@ -1658,8 +1679,24 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_JAVASCRIPT,
   },
-  anunciada('CC-FE004', 'DOM', 'Front-end',
-    'Mexer na página depois que ela abriu — achar um elemento, trocar o texto, criar outro.'),
+  {
+    id: 'cc-fe004',
+    code: 'CC-FE004',
+    name: 'DOM',
+    familia: 'Front-end',
+    description: 'Mexer na página depois que ela abriu — achar um elemento, trocar o texto, criar outro.',
+    /*
+      O requisito 1 pede as duas anteriores, a CC-FE002 e a CC-FE003, e é
+      a primeira vereda de Front-end que se apoia em duas: o CSS que ela pinta
+      pela classe e o JavaScript que ela leva de volta para a página. A origem
+      é a de JavaScript, porque é dela que a vereda continua — o terminal vira
+      a página. O id é o que o cartão anunciado já tinha.
+    */
+    origem: 'CC-FE003',
+    preRequisitos: ['css', 'cc-fe003'],
+    mostraResultado: true,
+    modulos: MODULOS_DE_DOM,
+  },
   anunciada('CC-FE005', 'TypeScript', 'Front-end',
     'Dizer de que tipo é cada coisa, e descobrir o erro antes de ele chegar na tela de alguém.'),
   anunciada('CC-FE006', 'React', 'Front-end',

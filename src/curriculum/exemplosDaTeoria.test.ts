@@ -26,7 +26,9 @@ const topicos = (): [string, TopicoDeVereda][] => VEREDAS.flatMap(v =>
     .flatMap(l => (l.tipo === 'teoria' ? l.topicos : []))
     .map(t => [`${v.code}/${t.id}`, t] as [string, TopicoDeVereda]));
 
-const comMarcacao = () => topicos().filter(([, t]) => !!t.exemploMarcacao);
+/* Os tópicos de DOM também trazem marcação, mas o exemplo deles é script e
+   não folha: quem os confere é `exemplosDeDom.test.ts`, rodando a página. */
+const comMarcacao = () => topicos().filter(([, t]) => !!t.exemploMarcacao && t.exemploComo !== 'dom');
 const comLarguras = () => topicos().filter(([, t]) => (t.exemploLarguras ?? []).length > 0);
 
 /** As condições de `@media` da folha, lidas pelo analisador e não por busca. */
@@ -57,10 +59,12 @@ describe('a marcação de exemplo dos tópicos', () => {
     expect(comMarcacao().length).toBeGreaterThan(0);
   });
 
-  /* Só o ramo de CSS lê o campo. Num tópico de HTML, de blocos ou de texto ele
-     seria escrito, revisado, e ignorado em silêncio. */
-  it('só tópico de CSS traz marcação', () => {
-    const fora = comMarcacao().filter(([, t]) => t.exemploComo !== 'css').map(([n]) => n);
+  /* Só os ramos de CSS e de DOM leem o campo. Num tópico de HTML, de blocos ou
+     de texto ele seria escrito, revisado, e ignorado em silêncio. */
+  it('só tópico de CSS ou de DOM traz marcação', () => {
+    const fora = topicos()
+      .filter(([, t]) => !!t.exemploMarcacao && t.exemploComo !== 'css' && t.exemploComo !== 'dom')
+      .map(([n]) => n);
     expect(fora).toEqual([]);
   });
 
