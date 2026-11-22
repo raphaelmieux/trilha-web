@@ -25,9 +25,18 @@ describe('o catálogo é o que o motor entende', () => {
 });
 
 describe('a lista abre onde começa um nome de função', () => {
-  it('=SO oferece SOMA e SOMASE, e não SUBTOTAL', () => {
+  it('=SO oferece SOMA, SOMARPRODUTO e SOMASE, e não SUBTOTAL', () => {
     const s = sugestoesDeFuncao('=SO');
-    expect(s?.nomes.map(f => f.nome)).toEqual(['SOMA', 'SOMASE']);
+    expect(s?.nomes.map(f => f.nome)).toEqual(['SOMA', 'SOMARPRODUTO', 'SOMASE']);
+  });
+
+  it('as funções de matriz estão na lista, com o acento do Excel', () => {
+    expect(sugestoesDeFuncao('=PROC')?.nomes.map(f => f.nome)).toEqual(['PROCV', 'PROCX']);
+    expect(sugestoesDeFuncao('=sequ')?.nomes.map(f => f.nome)).toEqual(['SEQUÊNCIA']);
+    expect(sugestoesDeFuncao('=un')?.nomes.map(f => f.nome)).toEqual(['ÚNICO']);
+    expect(funcaoAberta('=FILTRO(A2:A9;')).toMatchObject({ funcao: { nome: 'FILTRO' }, argumento: 1 });
+    /* O ponto e vírgula de dentro da constante separa linhas, e não argumentos. */
+    expect(funcaoAberta('=PROCX(A2;{1;2;3};')).toMatchObject({ funcao: { nome: 'PROCX' }, argumento: 2 });
   });
 
   it('acento e caixa não importam: =med oferece MED e MÉDIA', () => {

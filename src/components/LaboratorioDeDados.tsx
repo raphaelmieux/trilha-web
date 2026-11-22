@@ -465,6 +465,7 @@ function TelaDaPlanilha(c: Comum & { comBarraDeTarefas: boolean }) {
     mudarCaderno(k => trocarAtiva(k, g(planilhaAtiva(k))));
 
   const grade = useGradeDoExcel({
+    caderno: cad,
     planilha: p,
     mudar,
     desfazer: c.desfazer,

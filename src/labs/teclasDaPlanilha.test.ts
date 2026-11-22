@@ -74,4 +74,9 @@ describe('as cores das referências', () => {
     expect(r[2].cor).toBe(r[0].cor);
     expect(r[1].cor).not.toBe(r[0].cor);
   });
+
+  it('a faixa aparada ganha o contorno da faixa escrita, e não o de uma ponta só', () => {
+    expect(referenciasDaFormula('=SOMA(A2.:.A9)').map(x => x.faixa)).toEqual([{ l1: 1, c1: 0, l2: 8, c2: 0 }]);
+    expect(referenciasDaFormula('=A2:.A9').map(x => x.faixa)).toEqual([{ l1: 1, c1: 0, l2: 8, c2: 0 }]);
+  });
 });

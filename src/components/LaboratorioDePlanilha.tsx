@@ -147,6 +147,7 @@ export default function LaboratorioDePlanilha({
     desfazer: () => setHist(desfazer),
     refazer: () => setHist(refazer),
     avisar: (texto: string) => avisar(texto),
+    caderno: cad,
   });
   const { faixa, setFaixa, sel, setBarra, setEditando } = g;
 

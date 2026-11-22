@@ -26,10 +26,11 @@
  * escrito lá.
  */
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import {
-  type AlinhaH, type AlinhaV, type Direcao, type Faixa, type Planilha, type Recorte,
+  type AlinhaH, type AlinhaV, type Caderno, type Direcao, type Faixa, type Planilha, type Recorte,
+  sessaoDaPlanilha,
   alinharNaFaixa, alternarQuebra, quebraEmTodaAFaixa,
   ALTURA_PADRAO, LARGURA_PADRAO, larguraQuePede,
   type Formato,
@@ -88,6 +89,12 @@ export interface UsoDaGrade {
    * laboratório de Word e do Aceitar sem marca escolhida do de revisão.
    */
   celulaProtegida?: (l: number, c: number) => string | null;
+  /**
+   * A pasta inteira, quando há mais de uma aba. Só a barra de fórmulas
+   * pergunta: a fórmula derramada que ela mostra em cinza pode ler outra aba,
+   * e sem a pasta o tamanho do derramamento sairia o de uma aba vazia.
+   */
+  caderno?: Caderno;
 }
 
 /**
@@ -178,6 +185,9 @@ export interface GradeControlada {
     onChange: (e: React.ChangeEvent<CampoDaEdicao>) => void;
     onKeyDown: (e: React.KeyboardEvent<CampoDaEdicao>) => void;
     onBlur: () => void;
+    /* Cinza e com a dica quando a célula mostra uma fórmula derramada de outra. */
+    style?: React.CSSProperties;
+    title?: string;
   };
 
   props: {
@@ -238,7 +248,7 @@ export interface AjudaDaFormula {
 
 export function useGradeDoExcel({
   planilha: p, mudar, desfazer: desfazerHist, refazer: refazerHist, avisar,
-  celulaProtegida,
+  celulaProtegida, caderno,
 }: UsoDaGrade): GradeControlada {
   const [faixa, setFaixa] = useState<Faixa>({ l1: 0, c1: 0, l2: 0, c2: 0 });
   const [arrastandoFaixa, setArrastandoFaixa] = useState(false);
@@ -315,6 +325,13 @@ export function useGradeDoExcel({
   const arrasto = useRef<{ tipo: 'coluna' | 'linha'; indice: number; inicio: number; base: number } | null>(null);
 
   const sel = { l: faixa.l1, c: faixa.c1 };
+  const sessao = useMemo(() => sessaoDaPlanilha(p, caderno), [p, caderno]);
+  /* A fórmula que derrama sobre a célula ativa vazia, se alguma derrama. */
+  const formulaDerramada = (() => {
+    if (texto(p, sel.l, sel.c) !== '') return '';
+    const d = sessao.derramamento(sel.l, sel.c);
+    return d && !d.bloqueado && (d.linha !== sel.l || d.coluna !== sel.c) ? texto(p, d.linha, d.coluna) : '';
+  })();
 
   /* ── Seleção e escrita ─────────────────────────────────────────────────── */
 
@@ -760,7 +777,13 @@ export function useGradeDoExcel({
     aoTeclar, aoArrastarBorda, aoAjustarAoConteudo,
     aoComecarPreenchimento: comecarPreenchimento,
     propsDaBarra: {
-      value: editando ? barra : texto(p, sel.l, sel.c),
+      value: editando ? barra : texto(p, sel.l, sel.c) || formulaDerramada,
+      /* A fórmula de uma célula derramada é de outra célula: o Excel a mostra
+         em cinza, e é por esse cinza que se sabe que apagar aqui não apaga nada. */
+      style: !editando && texto(p, sel.l, sel.c) === '' && formulaDerramada ? { color: '#A6A6A6' } : undefined,
+      title: !editando && texto(p, sel.l, sel.c) === '' && formulaDerramada
+        ? 'Esta célula mostra o resultado de uma fórmula escrita em outra célula.'
+        : undefined,
       onFocus: () => { setModo('editar'); comecarEdicao('barra'); },
       onChange: (e: React.ChangeEvent<CampoDaEdicao>) => { setBarra(e.target.value); setApontando(null); },
       onKeyDown: (e: React.KeyboardEvent<CampoDaEdicao>) => {
