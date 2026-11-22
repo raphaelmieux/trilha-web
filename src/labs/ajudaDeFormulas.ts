@@ -163,3 +163,31 @@ export function argumentoEmDestaque(f: FuncaoDoCatalogo, argumento: number): num
   if (argumento < f.argumentos.length) return argumento;
   return f.argumentos[f.argumentos.length - 1] === '...' ? f.argumentos.length - 1 : -1;
 }
+
+/**
+ * A fórmula com os parênteses que ficaram abertos fechados no fim — o que o
+ * Excel faz ao confirmar `=MÁXIMO(PROCX(D9:D12;A3:A20;B3:B20`.
+ *
+ * Contar parêntese de cabeça é o erro de digitação mais comum de quem
+ * encaixa uma função dentro da outra, e sem isto a fórmula inteira virava
+ * `#NOME?` — que manda procurar um nome errado onde não há nenhum.
+ *
+ * Só se fecha o que dá para fechar sem adivinhar. Parêntese de dentro de
+ * texto entre aspas não conta; com aspas abertas, ou com mais `)` do que `(`,
+ * nada se mexe: o Excel também recusa essas, e completar ali seria escolher
+ * por alguém onde o texto acaba.
+ */
+export function fecharParenteses(texto: string): string {
+  if (!texto.startsWith('=')) return texto;
+  let abertos = 0;
+  let aspas = false;
+  for (let i = 1; i < texto.length; i++) {
+    const ch = texto[i];
+    if (ch === '"') { aspas = !aspas; continue; }
+    if (aspas) continue;
+    if (ch === '(') abertos++;
+    else if (ch === ')' && --abertos < 0) return texto;
+  }
+  if (aspas || abertos === 0) return texto;
+  return texto.trimEnd() + ')'.repeat(abertos);
+}

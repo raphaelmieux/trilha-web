@@ -51,7 +51,7 @@ import {
   alternarAncoragem, nomeApontado, podeApontar, referenciasDaFormula, regiaoAtual, saltar, ultimaUsada,
 } from './teclasDaPlanilha';
 import {
-  sugestoesDeFuncao, completarFuncao, funcaoAberta, type FuncaoDoCatalogo,
+  sugestoesDeFuncao, completarFuncao, funcaoAberta, fecharParenteses, type FuncaoDoCatalogo,
 } from './ajudaDeFormulas';
 import { acharSegredo } from '../lib/registroDeCuriosidades';
 
@@ -382,7 +382,9 @@ export function useGradeDoExcel({
     }));
   };
 
-  const confirmar = (valor: string, andarPara?: Direcao) => {
+  const confirmar = (escrito: string, andarPara?: Direcao) => {
+    /* O parêntese esquecido no fim se fecha sozinho, como no Excel. */
+    const valor = fecharParenteses(escrito);
     const porque = celulaProtegida?.(sel.l, sel.c);
     if (porque) {
       avisar?.(porque);

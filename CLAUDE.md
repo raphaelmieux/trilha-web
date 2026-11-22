@@ -4608,6 +4608,14 @@ fórmula o pede pelo nome — no CONT.SE ele continua fora, pela decisão escrit
 em `testarCriterio`. E a pesquisa binária é binária de verdade: numa lista fora
 de ordem ela erra, que é o preço do modo rápido.
 
+**O parêntese esquecido se fecha ao confirmar**, como no Excel:
+`=MÁXIMO(PROCX(D9:D12;A3:A20;B3:B20` grava com os dois `)` no fim. Encaixar
+uma função na outra é onde todo mundo perde a conta, e sem isso a fórmula
+inteira virava `#NOME?`, que manda procurar um nome errado onde não há nenhum.
+`fecharParenteses` só fecha o que dá para fechar sem adivinhar: parêntese
+dentro de aspas não conta, e com aspas abertas ou `)` sobrando nada se mexe —
+completar ali seria escolher por alguém onde o texto acaba.
+
 Da mesma volta: **copiar uma fórmula perdia a aba.** `transporFormula`
 reescrevia `=Respostas!E2` como `=E3`, e a cópia passava a ler a coluna E da
 própria aba, com cara de cópia certa. A aba vai junto agora.
@@ -6731,6 +6739,7 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/matrizes.test.ts` | cópia de fórmula que perde a aba, a coluna inteira ou o `#` do derramamento |
 | `src/labs/gradeDoExcel.test.tsx` | laboratório de planilha em que a matriz não derrama, a barra não mostra a fórmula de origem em cinza, ou escrever no caminho não tranca |
 | `src/labs/ajudaDeFormulas.test.ts` | função de matriz fora da lista, ou na lista sem o motor entendê-la |
+| `src/labs/ajudaDeFormulas.test.ts` | parêntese esquecido que não se fecha ao confirmar, ou fechamento que mexe em aspas abertas ou em parêntese de dentro de texto |
 | `src/labs/planilha.test.ts` | Remover Duplicatas que acha a linha antes de padronizar, ou que junta homônimos com todas as colunas marcadas |
 | `src/labs/planilha.test.ts` | gráfico que resolve a conta de outra aba contra a própria aba |
 | `src/labs/chamadaDoClube.test.ts` | base da CC-ES013 sem um defeito de cada família, ou com folga que deixa excluir as linhas sem questionário |

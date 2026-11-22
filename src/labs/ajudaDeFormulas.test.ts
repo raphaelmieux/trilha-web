@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  FUNCOES_DO_EXCEL, sugestoesDeFuncao, completarFuncao, funcaoAberta, argumentoEmDestaque,
+  FUNCOES_DO_EXCEL, sugestoesDeFuncao, completarFuncao, funcaoAberta, argumentoEmDestaque, fecharParenteses,
 } from './ajudaDeFormulas';
 import { valorDaFormula, TEXTO_DO_ERRO } from './formulas';
 
@@ -88,5 +88,27 @@ describe('a dica mostra o argumento da vez', () => {
     expect(argumentoEmDestaque(f, 5)).toBe(2);
     const se = FUNCOES_DO_EXCEL.find(x => x.nome === 'SE')!;
     expect(argumentoEmDestaque(se, 3), 'o SE não tem quarto argumento').toBe(-1);
+  });
+});
+
+describe('os parênteses que ficaram abertos', () => {
+  it('se fecham no fim ao confirmar, quantos forem', () => {
+    expect(fecharParenteses('=MÁXIMO(PROCX(D9:D12;A3:A20;B3:B20'))
+      .toBe('=MÁXIMO(PROCX(D9:D12;A3:A20;B3:B20))');
+    expect(fecharParenteses('=SOMA(A1:A9')).toBe('=SOMA(A1:A9)');
+    expect(fecharParenteses('=SE(A1>2;"sim";"não"')).toBe('=SE(A1>2;"sim";"não")');
+  });
+
+  it('fórmula fechada, texto comum e parêntese dentro de aspas ficam como estão', () => {
+    expect(fecharParenteses('=SOMA(A1:A9)')).toBe('=SOMA(A1:A9)');
+    expect(fecharParenteses('(61) 99999-0000')).toBe('(61) 99999-0000');
+    expect(fecharParenteses('=SE(A1>2;"(sim";"não")')).toBe('=SE(A1>2;"(sim";"não")');
+    expect(fecharParenteses('=CONT.SE(A1:A9;")"')).toBe('=CONT.SE(A1:A9;")")');
+  });
+
+  /* Completar aqui seria escolher por alguém onde o texto acaba. */
+  it('com aspas abertas ou parêntese a mais, nada se mexe', () => {
+    expect(fecharParenteses('=SE(A1="sim')).toBe('=SE(A1="sim');
+    expect(fecharParenteses('=SOMA(A1))')).toBe('=SOMA(A1))');
   });
 });

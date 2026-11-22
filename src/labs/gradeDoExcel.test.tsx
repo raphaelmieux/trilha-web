@@ -419,6 +419,16 @@ const GESTOS: Record<string, Gesto> = {
     expect(lido(L + 1, 1)).toBe('x');
   },
 
+  /* Encaixar uma função na outra e esquecer de fechar é o erro de digitação
+     mais comum de fórmula; o Excel fecha ao confirmar, e aqui também. */
+  'os parênteses esquecidos se fecham ao confirmar': () => {
+    escreverNaCelula(L, 2, '=MÁXIMO(SEQUÊNCIA(3;1;5');
+    expect(lido(L, 2), 'a fórmula de parêntese aberto não calculou').toBe('7');
+    apontar(celula(L, 2));
+    expect(container.querySelector<HTMLTextAreaElement>('[aria-label="Barra de fórmulas"]')!.value)
+      .toBe('=MÁXIMO(SEQUÊNCIA(3;1;5))');
+  },
+
   'Delete limpa a célula selecionada': () => {
     escreverNaCelula(L, 0, 'Pioneiros');
     apontar(celula(L, 0));
