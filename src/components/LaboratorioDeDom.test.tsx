@@ -4,7 +4,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import LaboratorioDeDom from './LaboratorioDeDom';
-import { VEREDAS, licoesDaVereda, type LicaoDeVereda } from '../curriculum/veredas';
+import { VEREDAS, licoesDaVereda } from '../curriculum/veredas';
 import { LICOES_DA_CC_FE004, type LicaoDaCcFe004 } from '../labs/metasDaCcFe004';
 import { OLHOU, SOLUCOES } from '../labs/referenciasDaCcFe004';
 import { rodarPaginaNoJsdom } from '../labs/paginaNoJsdom';
@@ -31,7 +31,7 @@ declare global {
 }
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-type Lab = Extract<LicaoDeVereda, { tipo: 'dom' }>;
+type Lab = Extract<ReturnType<typeof licoesDaVereda>[number], { tipo: 'dom' }>;
 const vereda = VEREDAS.find(v => v.id === 'cc-fe004')!;
 const labs = licoesDaVereda(vereda).filter((l): l is Lab => l.tipo === 'dom');
 const lab = (licao: LicaoDaCcFe004) => labs.find(l => l.licao === licao)!;
