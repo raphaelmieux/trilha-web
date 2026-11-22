@@ -88,29 +88,65 @@
     return '{' + corpo.join(', ') + '}';
   }
 
+  /* As bibliotecas que a página carrega de fora — o React, na CC-FE006 —,
+     pelo endereço: o erro lançado dentro delas diz o nome do arquivo, como o
+     console do navegador diz, e não "index.html". */
+  var BIBLIOTECAS = CONFIG.bibliotecas || {};
+
   function arquivoDoEndereco(endereco) {
     if (!endereco) return '';
     var m = /name=([^;,]+)/.exec(endereco);
     if (m) return decodeURIComponent(m[1]);
     if (endereco.indexOf('data:') === 0) return '';
+    if (BIBLIOTECAS[endereco]) return BIBLIOTECAS[endereco];
     return 'index.html';
   }
 
+  function escaparRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
   /* A linha de quem chamou, lida da pilha: o console do navegador escreve
-     "script.js:12" ao lado de cada linha, e é por ali que se acha o log. */
+     "script.js:12" ao lado de cada linha, e é por ali que se acha o log.
+     Quem diz quais arquivos são da pessoa é a configuração; sem ela, valem
+     os `script*.js` da CC-FE004. A pilha de um aviso do próprio React não
+     passa por arquivo nenhum da pessoa, e o aviso fica sem linha. */
+  var ARQUIVOS_DA_PESSOA = CONFIG.arquivos && CONFIG.arquivos.length
+    ? new RegExp('(' + CONFIG.arquivos.map(escaparRegex).join('|') + '):(\\d+)')
+    : /(script[\w.-]*\.js):(\d+)/;
+
   function linhaDeQuemChamou() {
     var pilha = '';
     try { throw new Error(); } catch (e) { pilha = String(e.stack || ''); }
-    var m = /(script[\w.-]*\.js):(\d+)/.exec(pilha);
+    var m = ARQUIVOS_DA_PESSOA.exec(pilha);
     return m ? { arquivo: m[1], linha: Number(m[2]) } : null;
   }
 
   /* ── Console ──────────────────────────────────────────────────────────── */
 
+  /* Os marcadores de formato do primeiro argumento — `%s`, `%d`, `%o` —
+     trocados pelos argumentos seguintes, como o console do navegador troca.
+     O React escreve os avisos assim: sem a troca, o aviso de chave sairia com
+     "%s%s" no meio da frase. */
+  function formatar(args) {
+    if (typeof args[0] !== 'string' || !/%[sdifoOc%]/.test(args[0])) {
+      return args.map(function (a) { return mostrar(a, 0); }).join(' ');
+    }
+    var resto = args.slice(1);
+    var texto = args[0].replace(/%([sdifoOc%])/g, function (m, t) {
+      if (t === '%') return '%';
+      if (!resto.length) return m;
+      var v = resto.shift();
+      if (t === 'c') return '';
+      if (t === 's') return typeof v === 'string' ? v : mostrar(v, 1);
+      if (t === 'd' || t === 'i') return String(parseInt(v, 10));
+      if (t === 'f') return String(parseFloat(v));
+      return mostrar(v, 1);
+    });
+    return [texto].concat(resto.map(function (a) { return mostrar(a, 0); })).join(' ');
+  }
+
   ['log', 'info', 'warn', 'error', 'debug'].forEach(function (nivel) {
     console[nivel] = function () {
-      var args = Array.prototype.slice.call(arguments);
-      var texto = args.map(function (a) { return mostrar(a, 0); }).join(' ');
+      var texto = formatar(Array.prototype.slice.call(arguments));
       var onde = linhaDeQuemChamou();
       var entrada = { nivel: nivel === 'debug' ? 'log' : nivel, texto: texto, arquivo: onde && onde.arquivo, linha: onde && onde.linha };
       estado.console.push(entrada);
@@ -288,6 +324,7 @@
       var a = el.attributes[i];
       if (a.name === 'data-trilha-arquivo') continue;
       if (arq && a.name === 'src') { lista.push(['src', arq]); continue; }
+      if (a.name === 'data-trilha-tipo') { lista.unshift(['type', a.value]); continue; }
       lista.push([a.name, a.value]);
     }
     return lista;
@@ -466,8 +503,22 @@
       case 'visivel': return el ? visivel(el) : null;
       case 'visiveis': return todos(passo.seletor).filter(visivel).map(textoDe);
       case 'atributo': return el ? el.getAttribute(passo.propriedade) : null;
+      case 'titulo': return document.title;
+      case 'endereco': return location.hash;
       default: return null;
     }
+  }
+
+  /* O valor se escreve pelo setter do protótipo, e não por `el.value =`. É o
+     que o teclado faz: o React guarda o último valor que ele mesmo pôs num
+     campo controlado, e um `el.value =` atualizaria essa lembrança junto —
+     o `input` chegaria sem diferença nenhuma e o `onChange` não dispararia.
+     Para a página sem React as duas formas são a mesma. */
+  function escreverValor(el, valor) {
+    var proto = Object.getPrototypeOf(el);
+    var d = proto && Object.getOwnPropertyDescriptor(proto, 'value');
+    if (d && d.set) d.set.call(el, valor);
+    else el.value = valor;
   }
 
   function digitar(el, texto) {
@@ -475,7 +526,7 @@
     for (var i = 0; i < texto.length; i++) {
       var ch = texto[i];
       el.dispatchEvent(new KeyboardEvent('keydown', { key: ch, bubbles: true }));
-      el.value = (el.value || '') + ch;
+      escreverValor(el, (el.value || '') + ch);
       el.dispatchEvent(new Event('input', { bubbles: true }));
       el.dispatchEvent(new KeyboardEvent('keyup', { key: ch, bubbles: true }));
     }
@@ -489,19 +540,27 @@
        enquanto a resposta não chegou, e o cenário que quer vê-lo lê logo. Quem
        quer a página pronta pede um passo `esperar`. */
     await tique(0);
+    /* O React desenha a primeira vez numa tarefa à parte, e não durante o
+       carregamento: sem esta espera curta o primeiro passo leria a página
+       vazia. Curta, para o "Carregando…" continuar à vista. */
+    if (CONFIG.esperaInicial) await tique(CONFIG.esperaInicial);
     for (var i = 0; i < passos.length; i++) {
       var p = passos[i];
       if (estado.recarregou) break;
       if (p.acao === 'ler') { leituras[p.chave] = ler(p); continue; }
       if (p.acao === 'esperar') { await assentar(); continue; }
+      /* Ir a um endereço é o que se faz digitando na barra — a rota que não
+         tem link nenhum que leve a ela. */
+      if (p.acao === 'endereco') { location.hash = p.texto || ''; await tique(0); continue; }
+      if (p.acao === 'rede') { estado.offline = !p.online; continue; }
       var el = um(p.seletor);
       if (!el) { falhas.push('Não achei ' + p.seletor + ' na página.'); continue; }
       try {
         if (p.acao === 'clicar') el.click();
         else if (p.acao === 'digitar') digitar(el, p.texto || '');
-        else if (p.acao === 'limpar') { el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); }
+        else if (p.acao === 'limpar') { escreverValor(el, ''); el.dispatchEvent(new Event('input', { bubbles: true })); }
         else if (p.acao === 'escolher') {
-          el.value = p.texto;
+          escreverValor(el, p.texto);
           el.dispatchEvent(new Event('input', { bubbles: true }));
           el.dispatchEvent(new Event('change', { bubbles: true }));
         } else if (p.acao === 'enviar') {
@@ -547,6 +606,10 @@
     } else if (m.tipo === 'escolher') {
       escolhendo = !!m.ligado;
       if (!escolhendo) realcar(null);
+    } else if (m.tipo === 'ir') {
+      /* O endereço digitado na barra da prévia: só o pedaço depois do #, que
+         é o que muda sem sair da página. */
+      location.hash = String(m.hash || '');
     } else if (m.tipo === 'offline') {
       estado.offline = !!m.valor;
     } else if (m.tipo === 'avaliar') {
@@ -569,6 +632,22 @@
         avisar({ tipo: 'resultado', vez: m.vez, resultado: resultado });
       });
     }
+  });
+
+  /* A barra de endereço da prévia acompanha a página. O roteador do React
+     muda o `#` por `history.pushState`, que não dispara `hashchange` — então
+     os dois métodos avisam também, além do botão voltar (`popstate`). */
+  function avisarEndereco() { avisar({ tipo: 'endereco', hash: location.hash }); }
+  window.addEventListener('hashchange', avisarEndereco);
+  window.addEventListener('popstate', avisarEndereco);
+  ['pushState', 'replaceState'].forEach(function (k) {
+    var original = history[k];
+    if (typeof original !== 'function') return;
+    history[k] = function () {
+      var r = original.apply(history, arguments);
+      avisarEndereco();
+      return r;
+    };
   });
 
   window.addEventListener('load', function () {

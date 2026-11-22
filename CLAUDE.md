@@ -6281,6 +6281,76 @@ pede o programa da vereda anterior, e o que a pessoa entregou lá não fica
 guardado depois da entrega. A lição parte do programa de referência do
 ranking da gincana, que faz a mesma coisa, com a mesma saída.
 
+**A CC-FE006 roda o React de verdade na página viva da CC-FE004.** O projeto
+é o que o `npm create vite` deixa — `index.html` com a `<div id="root">`,
+`main.tsx` que monta o `App`, os componentes em `.tsx` —, e o `index.html`, o
+`main.tsx`, a folha e o `dados.ts` chegam só de leitura: a lição é o
+componente. `compiladorReact.ts` verifica com o TypeScript da CC-FE005 e as
+declarações de verdade (`@types/react`, `@types/react-dom`, `csstype` e as do
+`react-router-dom`), que o worker baixa só na primeira compilação de React, e
+transforma cada arquivo em CommonJS com `jsx: react-jsx`. `paginaDeReact.ts`
+troca o script do `index.html` pelos arquivos de navegador dos mesmos pacotes
+(servidos pela plataforma por `?url`; nas travas, postos dentro da página), o
+carregador `paginaDeReact.runtime.js` e cada módulo, e o resto é a página viva
+de sempre — o mesmo bastidor, a mesma BrasilAPI guardada, os mesmos cenários.
+
+Três decisões dele erram calado se invertidas:
+
+- **a página roda com erro de tipo**, porque o Vite não espera a verificação; o
+  painel de Problemas é o editor sublinhando. Só o erro de sintaxe a segura,
+  com a tela vermelha do Vite por cima;
+- **o `react/jsx-runtime` é um calço** que repassa ao `createElement` com os
+  filhos como argumentos — `jsx` com um, `jsxs` com a lista espalhada. O React
+  de desenvolvimento só confere a chave dos filhos que recebe como argumento:
+  repassar `props.children` inteiro calaria o aviso de chave que a lição 5 lê;
+- **o React é o de desenvolvimento**, dez vezes maior, porque é o que avisa da
+  lista sem chave, do campo descontrolado e do `class`, e duas tarefas leem
+  esses avisos.
+
+**O roteador não roda num `about:srcdoc` sem dois consertos.** O `pushState`
+do `HashRouter` resolve `#/rota` contra a base que o `iframe` herda de quem o
+abriu, aponta para fora da origem opaca e é recusado — o `<Link>` caía num
+`location.assign` que saía da página. A página leva `<base href="about:srcdoc">`.
+E o roteador monta cada rota com `new URL('/rota', location.href)`, que contra
+`about:srcdoc` é "Invalid URL": a primeira tela já saía em branco. O carregador
+troca o `URL` por um que, **só** com base `about:`, usa uma base de mentira com
+caminho. Quem viu os dois foi o Chromium; o jsdom das travas roda com o mesmo
+endereço, `about:srcdoc`, e tropeçava igual. `BrowserRouter` não serve na
+prévia, e a lição diz por que o `HashRouter` é o que a própria plataforma usa.
+
+**O bastidor passou a servir aos dois laboratórios.** O campo se escreve pelo
+setter do protótipo, e não por `el.value =`: o React guarda o último valor que
+pôs num campo controlado, e um `el.value =` atualizaria a lembrança junto — o
+`input` chegaria sem diferença e o `onChange` não dispararia. O console troca
+`%s` como o do navegador, senão o aviso de chave sairia com "%s%s" no meio. A
+barra de endereço acompanha o `pushState`, que não dispara `hashchange`. Os
+arquivos da pessoa, para a linha de cada log, vêm da configuração; sem ela,
+valem os `script*.js` da CC-FE004.
+
+**A linha do erro volta ao `.tsx` pelo mapa de fontes.** O JSX gerado não fica
+nas linhas do escrito, e a pilha que chega ao bastidor aponta o gerado. O
+navegador de verdade traduz pelo mapa que o Vite serve; aqui quem traduz é a
+tela, com o mapa que o TypeScript gerou (`mapaDeFontes.ts`) — na linha da
+entrada do console, na pilha de componentes escrita no aviso, e no motivo das
+tarefas.
+
+**A tarefa confere a tela, e a árvore só onde a tela não responde.** A lista
+montada pelo `document` aparece igual à descrita no JSX; o cartão que importa
+os dados sozinho desenha certo; o título escrito no corpo do componente muda
+certo. Para essas três, `analiseReact.ts` lê a árvore. O resto é cenário, com
+variante trocando o `dados.ts`, e os caminhos errados que cada lição existe
+para mostrar têm trava própria: a chave na posição deixa a marca de feito pular
+para a vizinha, o efeito sem lista salva a cada letra da busca, o `fetch` sem
+conferir `resposta.ok` deixa o 404 passar calado.
+
+**O exemplo da teoria de React não é a página viva.** Montá-la pediria o
+compilador de nove megabytes só para ler a teoria. O quadro mostra a página
+linha a linha, e `exemplosDeReact.test.ts` compila cada exemplo, roda com o
+React de verdade e compara — e cobra também zero problema e zero aviso, porque
+o exemplo não pode ensinar o que o laboratório recusa. Ela achou um na primeira
+execução: `presentes === 1` com `presentes` constante 4 é comparação que o
+TypeScript recusa.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -6844,6 +6914,10 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaCcFe005.test.ts` | saída de um .ts mexido depois do último tsc valendo, ou o erro do noEmitOnError contado duas vezes |
 | `src/curriculum/exemplosDeTypescript.test.ts` | exemplo de TypeScript da teoria cujo terminal não diz o que a lição declara, ou a TS2820 voltando quebrada em português |
 | `src/components/LaboratorioDeTypescript.test.tsx` | lição da CC-FE005 impossível de vencer pelo terminal, Executar que não mostra o comando, ou .js gerado que se deixa editar |
+| `src/labs/metasDaCcFe006.test.ts` | meta da CC-FE006 que abre verde, que a solução não fecha, ou caminho errado da lição — chave na posição, efeito sem lista, `document` no componente, 404 sem `resposta.ok` — passando |
+| `src/labs/compiladorReact.test.ts` | declaração do React no worker divergindo da lista do compilador, erro de tipo segurando a página, ou linha do erro sem voltar ao `.tsx` |
+| `src/curriculum/exemplosDeReact.test.ts` | exemplo de React da teoria cuja página não mostra o que o quadro diz, ou que compila com problema ou avisa no console |
+| `src/components/LaboratorioDeReact.test.tsx` | lição da CC-FE006 impossível de vencer pela tela, ou código mudado depois de conferir valendo pela conferência velha |
 | `src/labs/metasDaAp042.test.ts` | tarefa do laboratório de formatação que nasce verde, ou que ninguém consegue vencer |
 | `src/labs/FormatacaoTextoLab.test.tsx` | margem fora da guia Layout, ou tarefa da AP042 que não fecha pelos gestos do Word |
 | `src/labs/InsercaoTextoLab.test.tsx` | guia contextual da tabela que fica sem tabela, ou cabeçalho fechado que se escreve |

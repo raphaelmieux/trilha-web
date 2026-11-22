@@ -3,6 +3,7 @@ import { MODULOS_DE_CSS } from './folhaDeEstilo';
 import { MODULOS_DE_JAVASCRIPT } from './javascript';
 import { MODULOS_DE_DOM } from './dom';
 import { MODULOS_DE_TYPESCRIPT } from './typescript';
+import { MODULOS_DE_REACT } from './react';
 import { MODULOS_DE_BLOCOS } from './logicaComBlocos';
 import { MODULOS_DE_PYTHON } from './sintaxeDePython';
 import { MODULOS_DE_TERMINAL } from './terminalEGit';
@@ -130,7 +131,7 @@ export interface TopicoDeVereda {
    * `'blocos'` desenha a pilha do Scratch, com a cor da categoria; `'texto'` é
    * um algoritmo ou uma tabela, e não tem resultado nenhum a mostrar.
    */
-  exemploComo?: 'html' | 'css' | 'blocos' | 'texto' | 'python' | 'sql' | 'javascript' | 'dom' | 'typescript';
+  exemploComo?: 'html' | 'css' | 'blocos' | 'texto' | 'python' | 'sql' | 'javascript' | 'dom' | 'typescript' | 'react';
   /**
    * Só para `'css'` e `'dom'`: a marcação a que a folha ou o script se aplica.
    *
@@ -877,6 +878,22 @@ export type LicaoDeVereda =
     titulo: string;
     resumo: string;
     licao: import('../labs/metasDaCcFe005').LicaoDaCcFe005;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
+      O laboratório de React da CC-FE006: um projeto do Vite, com o
+      compilador sublinhando e a página rodando ao lado. Não é `dom`, porque a
+      página só existe depois de compilar o projeto inteiro; não é
+      `typescript`, porque o que se confere é a página, e não o terminal. O
+      registro em `metasDaCcFe006.ts` diz o projeto de partida e o que se cobra.
+    */
+    id: string;
+    tipo: 'react';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcFe006').LicaoDaCcFe006;
     /** Os ids das metas, na lista daquela lição. */
     verificacoes: string[];
   }
@@ -1732,8 +1749,23 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_TYPESCRIPT,
   },
-  anunciada('CC-FE006', 'React', 'Front-end',
-    'Montar a tela em pedaços que se repetem, cada um cuidando do próprio estado.'),
+  {
+    id: 'cc-fe006',
+    code: 'CC-FE006',
+    name: 'React',
+    familia: 'Front-end',
+    description: 'Montar a tela em pedaços que se repetem, cada um cuidando do próprio estado.',
+    /*
+      O requisito 1 pede as duas anteriores: a CC-FE004, porque React é outra
+      maneira de mudar a página depois que ela abriu, e a CC-FE005, porque o
+      projeto é em TypeScript. A origem é a de DOM, de onde a vereda continua.
+      O id é o que o cartão anunciado já tinha.
+    */
+    origem: 'CC-FE004',
+    preRequisitos: ['cc-fe004', 'cc-fe005'],
+    mostraResultado: true,
+    modulos: MODULOS_DE_REACT,
+  },
   anunciada('CC-FE007', 'Projeto de Interface', 'Front-end',
     'Uma tela inteira do começo ao fim, com o que as veredas anteriores ensinaram.'),
 

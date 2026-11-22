@@ -21,6 +21,7 @@ import LaboratorioDeTerminal from '../components/LaboratorioDeTerminal';
 import LaboratorioDoProjetoDePrograma from '../components/LaboratorioDoProjetoDePrograma';
 import LaboratorioDeDom from '../components/LaboratorioDeDom';
 import LaboratorioDeTypescript from '../components/LaboratorioDeTypescript';
+import LaboratorioDeReact from '../components/LaboratorioDeReact';
 import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
 import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
 import LaboratorioDePdf from '../components/LaboratorioDePdf';
@@ -549,6 +550,13 @@ export default function VeredaPage() {
   if (licaoAberta?.tipo === 'typescript' && profile?.id) {
     return (
       <LaboratorioDeTypescript vereda={vereda} licao={licaoAberta} userId={profile.id}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+  /* A CC-FE006: o projeto do Vite, com a página de React rodando ao lado. */
+  if (licaoAberta?.tipo === 'react' && profile?.id) {
+    return (
+      <LaboratorioDeReact vereda={vereda} licao={licaoAberta} userId={profile.id}
         aoVencer={vencer} aoSair={fechar} />
     );
   }

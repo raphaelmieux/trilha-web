@@ -89,6 +89,11 @@ const CSS_EXEMPLO = `
     font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
     font-size: 12.5px; line-height: 19px; white-space: pre-wrap;
   }
+  /* A página que o componente de React desenha: papel branco, como a prévia
+     do laboratório, uma linha por elemento da tela. */
+  .ex-pagina-react { padding: 10px 14px; min-height: 60px; background: #FFFFFF; color: #1F2A24;
+    font-family: system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+  .ex-pagina-react p { margin: 0 0 4px; }
   /* A tabela do resultado de SQL, com as cores da grade do editor de banco. */
   .ex-grade-rolo { overflow-x: auto; background: #181818; padding: 6px; }
   .ex-grade { border-collapse: collapse; font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: 12px; }
@@ -354,6 +359,37 @@ export function ExemploDaTeoria({ topico, mostraResultado }: {
             <div className="ex-caixa">
               <p className="ex-caixa-topo">E o terminal mostra</p>
               <pre className="ex-saida">{`$ node programa.js\n${topico.exemploSaida || ''}`}</pre>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  if (como === 'react') {
+    /*
+      O quadro do lado é a página que o componente desenha, linha a linha —
+      cada título, parágrafo, item e botão, na ordem da tela. Não é a página
+      viva: montá-la pediria o compilador de nove megabytes só para ler a
+      teoria. Quem garante que é a página de verdade é
+      `exemplosDeReact.test.ts`, que compila cada exemplo com o mesmo
+      compilador do laboratório, roda com o React de verdade e compara.
+    */
+    const comSaida = mostraResultado && topico.exemploSaida !== undefined;
+    return (
+      <>
+        <style>{CSS_EXEMPLO}</style>
+        <div className={comSaida ? 'ex-dupla' : ''}>
+          <div className="ex-caixa">
+            <p className="ex-caixa-topo">Você escreve, no App.tsx</p>
+            <Codigo linhas={realcarLinhasTypescript(exemplo)} />
+          </div>
+          {comSaida && (
+            <div className="ex-caixa">
+              <p className="ex-caixa-topo">E a página mostra</p>
+              <div className="ex-pagina-react">
+                {(topico.exemploSaida ?? '').split('\n').map((linha, i) => <p key={i}>{linha}</p>)}
+              </div>
             </div>
           )}
         </div>

@@ -54,6 +54,12 @@ export interface PropsDasFerramentas {
   paradas: number[];
   aoMudarParadas: (linhas: number[]) => void;
   passagens: Parada[];
+  /**
+   * As guias que esta página oferece. Sem ela, as quatro. A CC-FE006 não
+   * oferece Fontes: a parada dela escreveria no JavaScript gerado, e a linha
+   * que a pessoa escolheu é a do `.tsx`.
+   */
+  guias?: GuiaDasFerramentas[];
 }
 
 export function FerramentasDoNavegador(p: PropsDasFerramentas) {
@@ -68,7 +74,7 @@ export function FerramentasDoNavegador(p: PropsDasFerramentas) {
           title="Escolha um elemento da página para inspecioná-lo" aria-pressed={p.escolhendoNaPagina}>
           <MousePointer2 className="w-3.5 h-3.5" />
         </button>
-        {GUIAS.map(g => (
+        {GUIAS.filter(g => !p.guias || p.guias.includes(g.id)).map(g => (
           <button key={g.id} role="tab" aria-selected={p.guia === g.id} className="fn-guia" onClick={() => p.aoTrocarDeGuia(g.id)}>
             {g.nome}
             {g.id === 'console' && erros > 0 && <span className="fn-contagem" aria-label={`${erros} erros`}>{erros}</span>}
