@@ -18,6 +18,16 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
   },
   /*
+    Os workers saem como módulo ES, e não no IIFE de fábrica. Todos já são
+    criados com { type: 'module' }, e o do compilador da CC-FE005 precisa do
+    import sob demanda: o pacote do TypeScript tem nove megabytes, e só quem
+    abre aquele laboratório deve baixá-lo. IIFE não divide o pacote, e o
+    build recusa o import dinâmico dentro dele.
+  */
+  worker: {
+    format: 'es',
+  },
+  /*
     O corretor ortográfico acha o próprio .wasm por new URL ao lado do módulo.
     Pré-empacotado pelo servidor de desenvolvimento, o módulo muda de pasta e o
     endereço passa a apontar para uma página de erro — a folha ficava sem

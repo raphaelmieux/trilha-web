@@ -2,6 +2,7 @@ import { MODULOS_DE_HTML } from './sintaxeHtml';
 import { MODULOS_DE_CSS } from './folhaDeEstilo';
 import { MODULOS_DE_JAVASCRIPT } from './javascript';
 import { MODULOS_DE_DOM } from './dom';
+import { MODULOS_DE_TYPESCRIPT } from './typescript';
 import { MODULOS_DE_BLOCOS } from './logicaComBlocos';
 import { MODULOS_DE_PYTHON } from './sintaxeDePython';
 import { MODULOS_DE_TERMINAL } from './terminalEGit';
@@ -129,7 +130,7 @@ export interface TopicoDeVereda {
    * `'blocos'` desenha a pilha do Scratch, com a cor da categoria; `'texto'` é
    * um algoritmo ou uma tabela, e não tem resultado nenhum a mostrar.
    */
-  exemploComo?: 'html' | 'css' | 'blocos' | 'texto' | 'python' | 'sql' | 'javascript' | 'dom';
+  exemploComo?: 'html' | 'css' | 'blocos' | 'texto' | 'python' | 'sql' | 'javascript' | 'dom' | 'typescript';
   /**
    * Só para `'css'` e `'dom'`: a marcação a que a folha ou o script se aplica.
    *
@@ -858,6 +859,24 @@ export type LicaoDeVereda =
     titulo: string;
     resumo: string;
     licao: import('../labs/metasDaCcFe004').LicaoDaCcFe004;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
+      O laboratório de TypeScript da CC-FE005, e por que é um tipo próprio.
+
+      Ele tem pasta com vários arquivos, terminal com `tsc` e `node`, e o
+      painel de Problemas do compilador — nada disso cabe em `laboratorio`,
+      cujo validador lê um arquivo só. Como na CC-FE004, a lição diz qual das
+      oito é, e o registro em `metasDaCcFe005.ts` diz a pasta de partida e o
+      que se cobra.
+    */
+    id: string;
+    tipo: 'typescript';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/metasDaCcFe005').LicaoDaCcFe005;
     /** Os ids das metas, na lista daquela lição. */
     verificacoes: string[];
   }
@@ -1697,8 +1716,22 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_DOM,
   },
-  anunciada('CC-FE005', 'TypeScript', 'Front-end',
-    'Dizer de que tipo é cada coisa, e descobrir o erro antes de ele chegar na tela de alguém.'),
+  {
+    id: 'cc-fe005',
+    code: 'CC-FE005',
+    name: 'TypeScript',
+    familia: 'Front-end',
+    description: 'Dizer de que tipo é cada coisa, e descobrir o erro antes de ele chegar na tela de alguém.',
+    /*
+      O requisito 1 pede só a CC-FE003: TypeScript é JavaScript com tipos, e a
+      vereda continua no terminal, onde o compilador roda. O id é o que o
+      cartão anunciado já tinha.
+    */
+    origem: 'CC-FE003',
+    preRequisitos: ['cc-fe003'],
+    mostraResultado: true,
+    modulos: MODULOS_DE_TYPESCRIPT,
+  },
   anunciada('CC-FE006', 'React', 'Front-end',
     'Montar a tela em pedaços que se repetem, cada um cuidando do próprio estado.'),
   anunciada('CC-FE007', 'Projeto de Interface', 'Front-end',
