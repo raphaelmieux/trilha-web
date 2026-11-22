@@ -149,7 +149,7 @@ export function libsDaPasta(ts: ModuloTs, pasta: Pasta): string[] {
   return libsDasOpcoes(ts, cfg?.opcoes ?? {});
 }
 
-function paraDiagnostico(ts: ModuloTs, d: TS.Diagnostic): Diagnostico {
+export function paraDiagnostico(ts: ModuloTs, d: TS.Diagnostic): Diagnostico {
   const mensagem = ts.flattenDiagnosticMessageText(d.messageText, '\n');
   if (!d.file || d.start === undefined) return { arquivo: null, linha: null, coluna: null, codigo: d.code, mensagem };
   const p = d.file.getLineAndCharacterOfPosition(d.start);

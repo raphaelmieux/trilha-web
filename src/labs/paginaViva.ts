@@ -38,7 +38,7 @@ export interface ConfiguracaoDaPagina {
   arquivoDasParadas?: string;
 }
 
-const PARA_BASE64 = (texto: string): string => {
+export const PARA_BASE64 = (texto: string): string => {
   const bytes = new TextEncoder().encode(texto);
   let bin = '';
   for (let i = 0; i < bytes.length; i += 0x8000) {
@@ -47,11 +47,26 @@ const PARA_BASE64 = (texto: string): string => {
   return btoa(bin);
 };
 
-const escaparAtributo = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+export const escaparAtributo = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
 /* O nome do arquivo de um `href` ou `src`, como o navegador o resolveria a
    partir da própria pasta: `./script.js` e `script.js` são o mesmo. */
-const nomeLocal = (endereco: string) => endereco.trim().replace(/^\.\//, '');
+export const nomeLocal = (endereco: string) => endereco.trim().replace(/^\.\//, '');
+
+/** Cada `<link rel="stylesheet">` que aponta um arquivo da pasta vira um `<style>` com o arquivo dentro, no mesmo lugar. */
+export function embutirFolhas(html: string, arquivos: Arquivos): string {
+  return html.replace(/<link\b[^>]*>/gi, tag => {
+    const href = /\bhref\s*=\s*["']?([^"'\s>]+)/i.exec(tag)?.[1];
+    const rel = /\brel\s*=\s*["']?([^"'\s>]+)/i.exec(tag)?.[1];
+    if (!href || (rel ?? '').toLowerCase() !== 'stylesheet') return tag;
+    const nome = nomeLocal(href);
+    if (!(nome in arquivos)) return tag;
+    /* `</style` dentro da folha fecharia a tag no meio. Ninguém escreve isso
+       numa folha de estilo, e se escrever o efeito é o mesmo do navegador:
+       a regra seguinte não vale. */
+    return `<style data-trilha-arquivo="${escaparAtributo(nome)}">${arquivos[nome].replace(/<\/style/gi, '<\\/style')}</style>`;
+  });
+}
 
 /**
  * Monta a página que a prévia desenha.
@@ -64,17 +79,7 @@ const nomeLocal = (endereco: string) => endereco.trim().replace(/^\.\//, '');
 export function montarPagina(arquivos: Arquivos, config: ConfiguracaoDaPagina = {}): string {
   const html = arquivos['index.html'] ?? '';
 
-  let corpo = html.replace(/<link\b[^>]*>/gi, tag => {
-    const href = /\bhref\s*=\s*["']?([^"'\s>]+)/i.exec(tag)?.[1];
-    const rel = /\brel\s*=\s*["']?([^"'\s>]+)/i.exec(tag)?.[1];
-    if (!href || (rel ?? '').toLowerCase() !== 'stylesheet') return tag;
-    const nome = nomeLocal(href);
-    if (!(nome in arquivos)) return tag;
-    /* `</style` dentro da folha fecharia a tag no meio. Ninguém escreve isso
-       numa folha de estilo, e se escrever o efeito é o mesmo do navegador:
-       a regra seguinte não vale. */
-    return `<style data-trilha-arquivo="${escaparAtributo(nome)}">${arquivos[nome].replace(/<\/style/gi, '<\\/style')}</style>`;
-  });
+  let corpo = embutirFolhas(html, arquivos);
 
   corpo = corpo.replace(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi, (tag, atributos: string) => {
     const m = /\bsrc\s*=\s*["']?([^"'\s>]+)["']?/i.exec(atributos);
@@ -90,7 +95,28 @@ export function montarPagina(arquivos: Arquivos, config: ConfiguracaoDaPagina = 
     return `<script data-trilha-arquivo="${escaparAtributo(nome)}" src="${endereco}"${resto}></script>`;
   });
 
-  const bastidor = `<script data-trilha-interno>window.__TRILHA_CONFIG__=${JSON.stringify({ offline: !!config.offline })};</script>`
+  return comBastidor(corpo, { offline: !!config.offline });
+}
+
+/** O que o bastidor lê de `window.__TRILHA_CONFIG__`. */
+export interface ConfiguracaoDoBastidor {
+  offline: boolean;
+  /** Os arquivos da pessoa, para a linha de cada `console.log`. Sem ela, os `script*.js`. */
+  arquivos?: string[];
+  /** Nome de cada biblioteca carregada de fora, pelo endereço. */
+  bibliotecas?: Record<string, string>;
+  /** Milissegundos antes do primeiro passo de um cenário. */
+  esperaInicial?: number;
+}
+
+/**
+ * Põe o bastidor na página, antes de tudo o que a pessoa escreveu e logo
+ * depois do `<head>` — antes do doctype ele faria o navegador desenhar em
+ * modo de compatibilidade, e depois do script dela chegaria tarde para
+ * anotar o primeiro erro.
+ */
+export function comBastidor(corpo: string, config: ConfiguracaoDoBastidor): string {
+  const bastidor = `<script data-trilha-interno>window.__TRILHA_CONFIG__=${JSON.stringify(config).replace(/</g, '\\u003c')};</script>`
     + `<script data-trilha-interno>${BASTIDOR}</script>`;
 
   const head = /<head\b[^>]*>/i.exec(corpo);
@@ -337,12 +363,16 @@ export type Passo =
   | { acao: 'clicar' | 'limpar' | 'enviar'; seletor: string }
   | { acao: 'digitar' | 'escolher'; seletor: string; texto: string }
   | { acao: 'esperar' }
+  /** Vai a um endereço, como quem digita na barra: `#/unidade/ipe`. */
+  | { acao: 'endereco'; texto: string }
+  /** Liga ou desliga a rede no meio do cenário. */
+  | { acao: 'rede'; online: boolean }
   | {
     acao: 'ler';
     chave: string;
     seletor: string;
     como: 'existe' | 'contagem' | 'texto' | 'textos' | 'valor' | 'classes' | 'classesDeTodos'
-      | 'estilo' | 'visivel' | 'visiveis' | 'atributo';
+      | 'estilo' | 'visivel' | 'visiveis' | 'atributo' | 'titulo' | 'endereco';
     propriedade?: string;
   };
 
@@ -367,6 +397,7 @@ export type MensagemDaPagina =
   | { tipo: 'detalhes'; detalhes: DetalhesDoElemento | null }
   | { tipo: 'escolhido'; id: number; arvore: NoDaArvore | null; detalhes: DetalhesDoElemento | null }
   | { tipo: 'parada'; parada: Parada }
+  | { tipo: 'endereco'; hash: string }
   | { tipo: 'resultado'; vez: number; resultado: ResultadoDoCenario };
 
 export const FONTE_DA_PAGINA = 'trilha-dom';

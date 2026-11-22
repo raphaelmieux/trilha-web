@@ -22,7 +22,7 @@ export async function rodarNoJsdom(
 }
 
 /** A página já montada — é o que a tela entrega à conferência. */
-export async function rodarPaginaNoJsdom(html: string, passos: Passo[]): Promise<ResultadoDoCenario> {
+export async function rodarPaginaNoJsdom(html: string, passos: Passo[], endereco = 'https://pagina.local/index.html'): Promise<ResultadoDoCenario> {
   const dom = new JSDOM(html, {
     runScripts: 'dangerously',
     resources: 'usable',
@@ -30,7 +30,7 @@ export async function rodarPaginaNoJsdom(html: string, passos: Passo[]): Promise
     /* Calado: o erro do script de quem estuda é assunto da página, e o
        bastidor já o anotou — impresso no terminal do teste, seria ruído. */
     virtualConsole: new VirtualConsole(),
-    url: 'https://pagina.local/index.html',
+    url: endereco,
     beforeParse(janela) {
       (janela as unknown as { __trilhaAnfitriao: (u: string) => unknown }).__trilhaAnfitriao = u => respostaDaBrasilApi(u);
     },

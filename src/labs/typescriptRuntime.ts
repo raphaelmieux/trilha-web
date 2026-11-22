@@ -1,6 +1,8 @@
 import type { Pasta, ResultadoDaCompilacao } from './compiladorTs';
 import type { AnaliseDeTs } from './analiseTs';
-import type { PedidoAoCompilador, RespostaDoCompilador } from './typescriptWorker';
+import type { PedidoAoCompilador, RespostaDoCompilador, RespostaDoReact } from './typescriptWorker';
+import type { ResultadoDoReact } from './compiladorReact';
+import type { AnaliseDeReact } from './analiseReact';
 
 /**
  * O lado da página do compilador: um worker que fica vivo, e uma fila de
@@ -13,12 +15,12 @@ import type { PedidoAoCompilador, RespostaDoCompilador } from './typescriptWorke
 export class CompiladorNoNavegador {
   private worker: Worker | null = null;
   private proximo = 1;
-  private esperando = new Map<number, (r: RespostaDoCompilador) => void>();
+  private esperando = new Map<number, (r: RespostaDoCompilador | RespostaDoReact) => void>();
 
   private ligar(): Worker {
     if (this.worker) return this.worker;
     const w = new Worker(new URL('./typescriptWorker.ts', import.meta.url), { type: 'module' });
-    w.onmessage = (ev: MessageEvent<RespostaDoCompilador>) => {
+    w.onmessage = (ev: MessageEvent<RespostaDoCompilador | RespostaDoReact>) => {
       const r = this.esperando.get(ev.data.id);
       this.esperando.delete(ev.data.id);
       r?.(ev.data);
@@ -31,8 +33,19 @@ export class CompiladorNoNavegador {
     const w = this.ligar();
     const id = this.proximo++;
     return new Promise(resolve => {
-      this.esperando.set(id, r => resolve(r));
+      this.esperando.set(id, r => resolve(r as RespostaDoCompilador));
       const pedido: PedidoAoCompilador = { id, pasta };
+      w.postMessage(pedido);
+    });
+  }
+
+  /** O projeto da CC-FE006: verificado com os tipos do React e transformado no que a página roda. */
+  compilarReact(pasta: Pasta): Promise<{ react: ResultadoDoReact; analise: Record<string, AnaliseDeReact>; versao: string }> {
+    const w = this.ligar();
+    const id = this.proximo++;
+    return new Promise(resolve => {
+      this.esperando.set(id, r => resolve(r as RespostaDoReact));
+      const pedido: PedidoAoCompilador = { id, pasta, modo: 'react' };
       w.postMessage(pedido);
     });
   }
