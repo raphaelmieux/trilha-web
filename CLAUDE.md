@@ -6148,6 +6148,69 @@ nenhum dê erro e que o console diga o que o tópico declara. Achou o primeiro n
 primeira execução: comparando com `<`, Paraná sai **antes** de Paraíba — o
 `n` vem antes do `í` no código —, e a lição tinha escrito a ordem de cabeça.
 
+**A CC-FE005 compila com o `tsc` de verdade, e ele só chega a quem abre a
+vereda.** É a regra da CC002 e da CC005: o motor que confere é o que o
+computador do clube vai usar, e um verificador de tipos escrito aqui
+discordaria do TypeScript no primeiro caso que ninguém previu. O pacote é
+Apache-2.0 e passou a `dependencies`, porque agora vai para quem usa a
+plataforma. Tem nove megabytes: `typescriptWorker.ts` o importa na primeira
+compilação, e cada `lib.*.d.ts` vira um pedaço baixado só quando uma
+compilação o pede. Por isso os workers saem como módulo ES (`worker.format`
+no `vite.config.ts`): o IIFE de fábrica recusa o import sob demanda, e todos
+os workers já eram criados com `type: 'module'`.
+
+`compiladorTs.ts` não importa o `typescript`, recebe o módulo — a tela que só
+desenha a lição não o arrasta. As travas o leem do `node_modules` por
+`compiladorNoNode.ts`, com as mesmas mensagens.
+
+**As mensagens são as do próprio pacote, em português, e uma vem quebrada.**
+`setLocalizedDiagnosticMessages` existe e não está nos tipos; `emPortugues` a
+chama. A TS2820 — o "Diretor" com maiúscula do módulo de união — chega no
+pacote com o primeiro valor perdido e os outros trocados: "O tipo '' não pode
+ser atribuído ao tipo "Diretor" 'Cargo'". É a mensagem que aquela lição
+existe para mostrar. `TRADUCOES_CONSERTADAS` a corrige, e
+`exemplosDeTypescript.test.ts` confere a frase inteira.
+
+**O programa roda no Node simulado, e o compilador só vê o que ele tem.** O
+`.js` gerado roda no `nodeSimulado` da CC-FE003. Declarar o `@types/node`
+inteiro diria ao compilador que existe o que o simulado não tem, e o programa
+passaria pela verificação para estourar ao rodar. `tiposDoNodeSimulado.ts`
+declara o `console`, o `process`, os temporizadores, o `fs` e o `path` que
+ele de fato tem. Sem `lib` no tsconfig, o TypeScript escolheria a versão com
+`.full`, que traz o DOM: fica a mesma versão sem o navegador, senão um
+`document` passaria.
+
+**O `tsc` avisa e não impede, e o terminal mostra isso.** Com erro de tipo, o
+`tsc` de fábrica aponta e gera o `.js` mesmo assim, e o `node` roda o que foi
+gerado. É o comportamento de verdade, e é a lição: `tsc && node programa.js`
+não chega ao `node` porque o `tsc` sai com código diferente de zero, e
+`noEmitOnError` faz o erro segurar a saída. O botão Executar **digita** essa
+linha no terminal, em vez de esconder o que roda. Sem tsconfig, o `tsc`
+mostra a ajuda; com o nome do arquivo na linha, ignora o projeto e compila
+sem modo estrito — as duas coisas que o `tsc` de verdade faz.
+
+Com `noEmitOnError`, a emissão devolve de novo os erros da verificação, e
+somar as duas listas dizia "Encontrados 2 erros" de um erro só. Quem viu foi o
+Chromium, no laboratório do campori. `compilarPasta` tira as repetições.
+
+**Duas leituras do mesmo código.** O painel de Problemas é o compilador lendo
+a cada pausa da digitação, como o editor do clube; o terminal é o `tsc` e o
+`node` rodados. As tarefas leem as duas, e a saída só vale se o `tsc` e o
+`node` rodaram sobre as fontes de agora — o `node` roda o `.js` do último
+`tsc`, e um `.ts` mexido depois dele é outro programa (`saidaDeAgora`).
+
+**Contar o que foi escrito, e não só se compila.** "Sem erro" passa num arquivo
+cheio de `any`, e "o parâmetro tem tipo" passa num arquivo sem função.
+`analiseTs.ts` lê a árvore do próprio compilador e conta os parâmetros sem
+tipo, as interfaces, as uniões, os genéricos, o `any` escrito, o `as`, o `!`
+e o `@ts-ignore`. Os três últimos e o `any` são o atalho que todo mundo tenta,
+e cada tarefa que pede eliminar o erro os recusa: calar não é resolver.
+
+**O programa a converter é o da CC-FE003, pela referência.** O requisito 6
+pede o programa da vereda anterior, e o que a pessoa entregou lá não fica
+guardado depois da entrega. A lição parte do programa de referência do
+ranking da gincana, que faz a mesma coisa, com a mesma saída.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -6699,6 +6762,10 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/metasDaCcFe004.test.ts` | meta da CC-FE004 que abre verde, que a solução não fecha, ou que o número decorado passa sem a variante |
 | `src/curriculum/exemplosDeDom.test.ts` | exemplo de DOM da teoria que dá erro na página, ou cujo console não diz o que a lição declara |
 | `src/components/LaboratorioDeDom.test.tsx` | lição da CC-FE004 impossível de vencer clicando, lista que não envelhece, ou parada que chega de outra janela contando como descoberta |
+| `src/labs/metasDaCcFe005.test.ts` | meta da CC-FE005 que abre verde, que a solução não fecha, ou atalho de any, as, ! ou @ts-ignore valendo por erro eliminado |
+| `src/labs/metasDaCcFe005.test.ts` | saída de um .ts mexido depois do último tsc valendo, ou o erro do noEmitOnError contado duas vezes |
+| `src/curriculum/exemplosDeTypescript.test.ts` | exemplo de TypeScript da teoria cujo terminal não diz o que a lição declara, ou a TS2820 voltando quebrada em português |
+| `src/components/LaboratorioDeTypescript.test.tsx` | lição da CC-FE005 impossível de vencer pelo terminal, Executar que não mostra o comando, ou .js gerado que se deixa editar |
 | `src/labs/metasDaAp042.test.ts` | tarefa do laboratório de formatação que nasce verde, ou que ninguém consegue vencer |
 | `src/labs/FormatacaoTextoLab.test.tsx` | margem fora da guia Layout, ou tarefa da AP042 que não fecha pelos gestos do Word |
 | `src/labs/InsercaoTextoLab.test.tsx` | guia contextual da tabela que fica sem tabela, ou cabeçalho fechado que se escreve |

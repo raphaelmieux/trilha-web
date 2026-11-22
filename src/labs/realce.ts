@@ -339,7 +339,22 @@ const EMBUTIDAS_JS = new Set([
   'clearInterval', 'clearTimeout', 'parseInt', 'parseFloat', 'Error',
 ]);
 
-export function realcarLinhasJavascript(codigo: string): string[] {
+/*
+ * O TypeScript é o JavaScript com tipos, e o realce também: as palavras que
+ * declaram tipo saem como palavra-chave, e os tipos que a linguagem já traz,
+ * na cor das embutidas — `string` em `nome: string` é o mesmo tipo de coisa
+ * que `console`, um nome que vem pronto.
+ */
+const CHAVES_TS = new Set([...CHAVES_JS, 'interface', 'type', 'enum', 'implements', 'readonly', 'as',
+  'keyof', 'declare', 'namespace', 'private', 'public', 'protected', 'satisfies', 'is']);
+const EMBUTIDAS_TS = new Set([...EMBUTIDAS_JS, 'string', 'number', 'boolean', 'void', 'any', 'unknown',
+  'never', 'Record', 'Partial', 'Readonly']);
+
+export function realcarLinhasTypescript(codigo: string): string[] {
+  return realcarLinhasJavascript(codigo, CHAVES_TS, EMBUTIDAS_TS);
+}
+
+export function realcarLinhasJavascript(codigo: string, chaves = CHAVES_JS, embutidas = EMBUTIDAS_JS): string[] {
   let saida = '';
   let i = 0;
   while (i < codigo.length) {
@@ -378,7 +393,7 @@ export function realcarLinhasJavascript(codigo: string): string[] {
     const palavra = /^[A-Za-z_$][\w$]*/.exec(resto);
     if (palavra) {
       const p = palavra[0];
-      saida += pinta(CHAVES_JS.has(p) ? 'tag' : EMBUTIDAS_JS.has(p) ? 'attr' : 'txt', p);
+      saida += pinta(chaves.has(p) ? 'tag' : embutidas.has(p) ? 'attr' : 'txt', p);
       i += p.length;
       continue;
     }

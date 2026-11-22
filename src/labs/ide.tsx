@@ -2,7 +2,7 @@ import {
   Files, Search, GitBranch, Blocks, Play, RotateCw, Lock,
   FileCode, ChevronDown, CircleAlert, TriangleAlert, Code2, Eye, BookOpen,
 } from 'lucide-react';
-import { realcarLinhasCss, realcarLinhas, realcarLinhasJavascript, realcarLinhasPython, realcarLinhasSql } from './realce';
+import { realcarLinhasCss, realcarLinhas, realcarLinhasJavascript, realcarLinhasTypescript, realcarLinhasPython, realcarLinhasSql } from './realce';
 
 /*
  * A moldura do editor de código, compartilhada pelos laboratórios de HTML.
@@ -365,7 +365,7 @@ function escrever(
 export function EditorDeCodigo({ codigo, aoMudar, rotulo, somenteLeitura = false, linguagem = 'html' }: {
   codigo: string; aoMudar: (c: string) => void; rotulo: string;
   /** Decide o realce. O arranjo do editor é o mesmo; a coloração, não. */
-  linguagem?: 'html' | 'css' | 'python' | 'sql' | 'javascript' | 'json';
+  linguagem?: 'html' | 'css' | 'python' | 'sql' | 'javascript' | 'typescript' | 'json';
   /**
    * Arquivo de referência, aberto e não editável.
    *
@@ -381,8 +381,9 @@ export function EditorDeCodigo({ codigo, aoMudar, rotulo, somenteLeitura = false
       : linguagem === 'sql' ? realcarLinhasSql
         /* O JSON é um pedaço do JavaScript: texto, número, true e null, e a
            mesma coloração serve aos dois. */
-        : linguagem === 'javascript' || linguagem === 'json' ? realcarLinhasJavascript
-          : realcarLinhas)(codigo);
+        : linguagem === 'javascript' || linguagem === 'json' ? (c: string) => realcarLinhasJavascript(c)
+          : linguagem === 'typescript' ? realcarLinhasTypescript
+            : realcarLinhas)(codigo);
 
   const aoTeclar = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const campo = e.currentTarget;

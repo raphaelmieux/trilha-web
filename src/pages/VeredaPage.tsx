@@ -20,6 +20,7 @@ import LaboratorioDeAmbiente from '../components/LaboratorioDeAmbiente';
 import LaboratorioDeTerminal from '../components/LaboratorioDeTerminal';
 import LaboratorioDoProjetoDePrograma from '../components/LaboratorioDoProjetoDePrograma';
 import LaboratorioDeDom from '../components/LaboratorioDeDom';
+import LaboratorioDeTypescript from '../components/LaboratorioDeTypescript';
 import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
 import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
 import LaboratorioDePdf from '../components/LaboratorioDePdf';
@@ -545,6 +546,12 @@ export default function VeredaPage() {
   }
 
   /* A CC-FE004: a página viva, com as ferramentas do navegador. */
+  if (licaoAberta?.tipo === 'typescript' && profile?.id) {
+    return (
+      <LaboratorioDeTypescript vereda={vereda} licao={licaoAberta} userId={profile.id}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
   if (licaoAberta?.tipo === 'dom' && profile?.id) {
     return (
       <LaboratorioDeDom vereda={vereda} licao={licaoAberta} userId={profile.id}
