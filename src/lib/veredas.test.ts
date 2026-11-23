@@ -60,9 +60,11 @@ import { metasDa as metasDaCcDg005 } from '../labs/metasDaCcDg005';
 import { metasDa as metasDaCcDg006 } from '../labs/metasDaCcDg006';
 import { metasDa as metasDaCc005 } from '../labs/metasDaCc005';
 import { metasDaCc006 } from '../labs/metasDaCc006';
+import { metasDoCadernoDaCcFe007 } from '../labs/projetoDeInterface';
 import { metasDaCcFe004 } from '../labs/metasDaCcFe004';
 import { metasDaCcFe005 } from '../labs/metasDaCcFe005';
-import { LICOES_DA_CC_FE006 } from '../labs/metasDaCcFe006';
+import { LICOES_DE_REACT } from '../labs/licoesDeReact';
+import { METAS_DA_HOSPEDAGEM } from '../labs/hospedagem';
 
 /*
   Os laboratórios de Word partem de documentos diferentes, e a trava precisa
@@ -581,14 +583,18 @@ describe('os modelos dos laboratórios da vereda', () => {
           metasDaCc005(l.licao).map(m => [m.id, m.passos]));
         case 'projeto-de-programa': return Object.fromEntries(
           metasDaCc006(l.licao).map(m => [m.id, m.passos]));
+        case 'projeto-de-interface': return Object.fromEntries(
+          metasDoCadernoDaCcFe007(l.licao).map(m => [m.id, m.passos]));
         /* E a CC-FE004 pelo mesmo motivo, com a página viva e as ferramentas
            do navegador. */
         case 'dom': return Object.fromEntries(
           metasDaCcFe004(l.licao).map(m => [m.id, m.passos]));
         case 'typescript': return Object.fromEntries(
           metasDaCcFe005(l.licao).map(m => [m.id, m.passos]));
+        case 'hospedagem': return Object.fromEntries(
+          METAS_DA_HOSPEDAGEM.map(m => [m.id, m.passos]));
         case 'react': return Object.fromEntries(
-          LICOES_DA_CC_FE006[l.licao].metas.map(m => [m.id, m.passos]));
+          LICOES_DE_REACT[l.licao].metas.map(m => [m.id, m.passos]));
         case 'laboratorio': return passosDe(l.linguagem);
         /* Teoria e redação não têm verificação com passo a passo. */
         case 'teoria': case 'redacao': return null;

@@ -6351,6 +6351,71 @@ o exemplo não pode ensinar o que o laboratório recusa. Ela achou um na primeir
 execução: `presentes === 1` com `presentes` constante 4 é comparação que o
 TypeScript recusa.
 
+**A CC-FE007 não ensina ferramenta nova, e a aplicação é uma só.** O React é o
+da CC-FE006, o TypeScript é o da CC-FE005, o Git é o da CC003: o que ela
+ensina é o que liga os três, como a CC006 do lado da tela. A aplicação é a
+agenda do clube — os eventos, a tela de cada evento e os feriados da
+BrasilAPI —, e as versões dela moram em `agendaDoClube.ts`, uma por etapa: a
+referência de uma lição é a partida da seguinte, e a trava confere que cada
+uma fecha a outra. O laboratório de publicação põe no ar o repositório que as
+lições de React deixaram, e o terminal guarda esse mesmo repositório, com a
+data de cada pedaço. Um projeto à parte para cada tela ensinaria que cada
+etapa acontece num programa de mentira.
+
+**O responsivo se confere lendo a folha, e não rodando a página.** O jsdom não
+avalia `@media` nem calcula largura, então "uma coluna no celular" rodado ali
+seria verde em qualquer folha. `cssSimples.ts` lê as regras, a faixa de cada
+consulta de mídia e o valor de uma propriedade numa largura dada — 375 e 1280
+—, e as metas perguntam isso: a viewport no `index.html`, nenhuma largura fixa
+maior que o celular, as colunas da `.lista` nas duas larguras e o cabeçalho
+que empilha. `auto-fit` conta como zero colunas, de propósito: o número
+depende da largura dos cartões, que a folha sozinha não diz.
+
+**A publicação é o site do repositório, e as três armadilhas acontecem de
+verdade.** `LaboratorioDeHospedagem` tem o código, as execuções da esteira e a
+configuração do Pages, e numa guia ao lado o site publicado. O repositório
+chega com um `evento.lugar` que o `npm run dev` deixava passar e o `tsc -b` do
+build recusa — com o registro da execução dizendo o arquivo, a linha e o TS —;
+publicar pelo ramo entrega o `index.html` pedindo `/main.tsx`; e a base de
+fábrica deixa a página **em branco**, com o 404 só no console. É a página viva
+da CC-FE006 quando funciona, e `paginaDoSite` monta a branca quando não: a
+armadilha só custa se a tela mostrar o que de fato se vê. Calar o compilador
+com `any` ou `@ts-ignore` deixa a esteira verde e a tarefa do build vermelha
+(`caladoNoRepositorio`), e o link público só conta com visitas a um site que
+funciona — pela barra de endereço, que é por onde o examinador chega, e é
+também por onde a trava que clica chega, porque o `iframe` com sandbox não
+roda no jsdom.
+
+**O histórico chega com quinze, e o `git add .` chega a dezesseis.** O
+requisito 5 pede vinte commits em cinco dias, e a plataforma não faz o
+calendário andar: a agenda foi escrita em quatro dias, com quinze commits, e a
+lição é o quinto, com cinco mudanças sem commit em cinco arquivos. Um commit
+por mudança chega aos vinte e aos cinco dias juntos; o `git add .` chega aos
+cinco dias com dezesseis — é a conta que separa os dois caminhos sem a trava
+precisar adivinhar intenção. Os passos de `umAssuntoPorCommit` e
+`mensagensQueDizem` deixaram de citar o `entrada.py` do almoxarifado: as duas
+veredas os usam, e o passo a passo de uma não pode mandar abrir o arquivo da
+outra.
+
+**O README de um site traz o link, e uma decisão traz o que foi descartado.**
+`leiameComLink` cobra o endereço público — sem ele, quem só queria ver a agenda
+acha que precisa construí-la —, e o README se instala com `npm install` e roda
+com `npm run dev`, com verificações próprias e não as do almoxarifado, cujos
+passos falam de Python. O registro das decisões é o `DECISOES.md`: três seções,
+cada uma dizendo o porquê **e** a alternativa (`decisaoCompleta`). Sem a
+alternativa é descrição, e a trava tem o registro descritivo como caso que
+reprova.
+
+**O mapa de telas se percorre inteiro, e o rascunho tem por onde tocar.** O
+caderno da proposta (`projetoDeInterface.ts`) não confere gosto: confere que
+toda tela se alcança a partir da primeira, que é a de entrada, que cada tela
+que leva a outra tem no rascunho um bloco que leva — menu, lista de cartões,
+botão —, e que alguma tela prevê a mensagem de erro, que é o estado que
+ninguém desenha e que o requisito 3.5 cobra depois. A aprovação antes de
+programar é o `comecouAntes` da CC006. Na apresentação, a janela estreitada e
+as capturas de tela existem como opções, porque são o que todo mundo pensa
+primeiro; só o celular de verdade fecha, e captura não é plano B.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -6918,6 +6983,13 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/compiladorReact.test.ts` | declaração do React no worker divergindo da lista do compilador, erro de tipo segurando a página, ou linha do erro sem voltar ao `.tsx` |
 | `src/curriculum/exemplosDeReact.test.ts` | exemplo de React da teoria cuja página não mostra o que o quadro diz, ou que compila com problema ou avisa no console |
 | `src/components/LaboratorioDeReact.test.tsx` | lição da CC-FE006 impossível de vencer pela tela, ou código mudado depois de conferir valendo pela conferência velha |
+| `src/labs/metasDaCcFe007.test.ts` | meta da CC-FE007 que abre verde, etapa da agenda que não fecha a lição, ou caminho errado — tela sem useParams, cartão usado num lugar só, any nas props, erro escrito à mão — passando |
+| `src/components/LaboratorioDeReact.test.tsx` | lição de React da CC-FE007 impossível de vencer pela tela, ou arquivo que a referência muda e a lição não deixa escrever |
+| `src/labs/hospedagem.test.ts` | build que aceita o erro de tipo, base de fábrica que abre o site, ou ramo publicado que constrói |
+| `src/components/LaboratorioDeHospedagem.test.tsx` | publicação impossível de vencer clicando, compilador calado com any valendo por build consertado, ou link visitado num site em branco contando |
+| `src/labs/repositorioDaAgenda.test.ts` | git add . das cinco mudanças chegando a vinte commits, README de site sem o link, ou decisão sem a alternativa valendo por registrada |
+| `src/labs/projetoDeInterface.test.ts` | mapa com tela que a entrada não alcança, seta sem bloco que leve no rascunho, programar antes da aprovação, ou janela estreitada valendo por celular |
+| `src/components/LaboratorioDoProjetoDeInterface.test.tsx` | caderno da CC-FE007 impossível de vencer clicando, ou tela tirada deixando setas para ela |
 | `src/labs/metasDaAp042.test.ts` | tarefa do laboratório de formatação que nasce verde, ou que ninguém consegue vencer |
 | `src/labs/FormatacaoTextoLab.test.tsx` | margem fora da guia Layout, ou tarefa da AP042 que não fecha pelos gestos do Word |
 | `src/labs/InsercaoTextoLab.test.tsx` | guia contextual da tabela que fica sem tabela, ou cabeçalho fechado que se escreve |

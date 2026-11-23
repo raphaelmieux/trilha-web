@@ -553,6 +553,9 @@
          tem link nenhum que leve a ela. */
       if (p.acao === 'endereco') { location.hash = p.texto || ''; await tique(0); continue; }
       if (p.acao === 'rede') { estado.offline = !p.online; continue; }
+      /* Uma pausa curta: a troca de rota do roteador é desenhada numa
+         transição, e o "Carregando…" da tela nova só existe depois dela. */
+      if (p.acao === 'pausa') { await tique(p.ms || 30); continue; }
       var el = um(p.seletor);
       if (!el) { falhas.push('Não achei ' + p.seletor + ' na página.'); continue; }
       try {

@@ -12,7 +12,8 @@ import { linhaNoArquivo, montarPaginaDeReact, type Biblioteca } from '../labs/pa
 import type { ResultadoDoReact } from '../labs/compiladorReact';
 import type { AnaliseDeReact } from '../labs/analiseReact';
 import { respostaDaBrasilApi } from '../labs/brasilApiGuardada';
-import { LICOES_DA_CC_FE006, arquivosDoCenario, type ContextoDoReact } from '../labs/metasDaCcFe006';
+import { arquivosDoCenario, type ContextoDoReact } from '../labs/metasDaCcFe006';
+import { LICOES_DE_REACT } from '../labs/licoesDeReact';
 import { CSS_DAS_FERRAMENTAS, FerramentasDoNavegador, type GuiaDasFerramentas } from '../labs/ferramentasDoNavegador';
 import { CompiladorNoNavegador } from '../labs/typescriptRuntime';
 import { BIBLIOTECAS_DO_REACT } from '../labs/bibliotecasDoReact';
@@ -92,7 +93,7 @@ export default function LaboratorioDeReact({ vereda, licao, userId, aoVencer, ao
   aoSair: () => void;
   ambiente?: AmbienteDoReact;
 }) {
-  const definicao = LICOES_DA_CC_FE006[licao.licao];
+  const definicao = LICOES_DE_REACT[licao.licao];
   const chave = `${vereda.code}-${licao.id}`;
   const metas = definicao.metas;
 

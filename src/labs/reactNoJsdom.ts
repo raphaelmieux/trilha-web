@@ -4,7 +4,8 @@ import { montarPaginaDeReact } from './paginaDeReact';
 import { compilarReactNoNode, ts } from './compiladorReactNoNode';
 import { bibliotecasNoNode } from './bibliotecasNoNode';
 import { analisarReact } from './analiseReact';
-import { LICOES_DA_CC_FE006, arquivosDoCenario, type ContextoDoReact, type LicaoDaCcFe006 } from './metasDaCcFe006';
+import { arquivosDoCenario, type ContextoDoReact } from './metasDaCcFe006';
+import { LICOES_DE_REACT, type LicaoDeReact } from './licoesDeReact';
 import type { ResultadoDoCenario } from './paginaViva';
 
 /**
@@ -15,8 +16,8 @@ import type { ResultadoDoCenario } from './paginaViva';
  *
  * Só as travas importam este arquivo.
  */
-export async function conferirNoJsdom(licao: LicaoDaCcFe006, arquivos: Arquivos): Promise<ContextoDoReact> {
-  const def = LICOES_DA_CC_FE006[licao];
+export async function conferirNoJsdom(licao: LicaoDeReact, arquivos: Arquivos): Promise<ContextoDoReact> {
+  const def = LICOES_DE_REACT[licao];
   const compilacao = await compilarReactNoNode(arquivos);
   const analise = Object.fromEntries(Object.entries(arquivos)
     .filter(([n]) => /\.tsx?$/.test(n))

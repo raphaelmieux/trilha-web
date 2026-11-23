@@ -367,6 +367,8 @@ export type Passo =
   | { acao: 'endereco'; texto: string }
   /** Liga ou desliga a rede no meio do cenário. */
   | { acao: 'rede'; online: boolean }
+  /** Espera alguns milissegundos, sem esperar a rede. */
+  | { acao: 'pausa'; ms: number }
   | {
     acao: 'ler';
     chave: string;

@@ -212,15 +212,15 @@ export const PASSOS_DO_TERMINAL: Record<string, string[]> = {
   ],
   umAssuntoPorCommit: [
     'Não use git add . — ele junta todas as mudanças num commit só.',
-    'Escolha um arquivo do git status e veja o que mudou: git diff entrada.py',
-    'Depois: git add entrada.py',
-    'E: git commit -m "Dá um exemplo na mensagem de número inválido"',
+    'Escolha um arquivo do git status e veja o que mudou nele: git diff, seguido do nome do arquivo.',
+    'Depois guarde só ele: git add, seguido do mesmo nome.',
+    'E: git commit -m "uma frase dizendo o que aquela mudança fez"',
     'Repita para cada arquivo que o git status ainda listar.',
   ],
   mensagensQueDizem: [
     'A mensagem diz o que o commit fez, numa frase de três palavras ou mais.',
     'Leia o git diff do arquivo antes de escrever: ele mostra a linha que saiu (com -) e a que entrou (com +).',
-    'Exemplo: git commit -m "Avisa quando não há material cadastrado"',
+    'Exemplo: git commit -m "Avisa quando a lista está vazia"',
     '"ajustes", "update" e "mudanças" não dizem nada a quem ler daqui a um mês.',
   ],
   arvoreLimpa: [
@@ -254,6 +254,55 @@ export const PASSOS_DO_TERMINAL: Record<string, string[]> = {
     'Salve o README no painel do editor.',
     'Digite: git add README.md',
     'Depois: git commit -m "Escreve o README do almoxarifado"',
+    'Mexeu de novo depois? git add e git commit outra vez.',
+  ],
+  /* ── O projeto de interface (CC-FE007) ── */
+  vinteCommits: [
+    'Digite: git log --oneline — cada linha é um commit. Conte quantos há.',
+    'Digite: git status — ele lista os arquivos mudados e ainda não guardados.',
+    'Cada arquivo da lista é uma mudança só: ela vira um commit. É assim que se chega a vinte.',
+  ],
+  cincoDias: [
+    'Digite: git log — embaixo de cada commit aparece a linha Date.',
+    'Os quinze de antes estão em quatro dias. Os que você fizer hoje entram com a data de hoje.',
+    'Basta um commit hoje para o quinto dia aparecer.',
+  ],
+  leiameDoSiteDescreve: [
+    'Digite: editar README.md — o painel do editor abre ao lado.',
+    'Primeira linha: # Agenda do Clube',
+    'Depois um título de seção: ## Descrição',
+    'E uma ou duas frases dizendo o que a agenda mostra e para quem — os eventos do clube, para os desbravadores e as famílias.',
+  ],
+  leiameDoSiteInstala: [
+    'No README, abra a seção: ## Instalação',
+    'Diga que é preciso ter o Node.js instalado.',
+    'E o comando que baixa as bibliotecas, na pasta do projeto: npm install',
+  ],
+  leiameDoSiteUsa: [
+    'Abra a seção: ## Uso',
+    'Escreva o comando que abre a agenda no navegador do computador: npm run dev',
+    'Se quiser, diga também que npm run build constrói a pasta dist, que é o que a esteira publica.',
+  ],
+  leiameComLink: [
+    'Na seção de descrição, escreva onde a agenda está no ar.',
+    'Copie o endereço do laboratório de publicação: https://pioneiros.github.io/agenda-do-clube/',
+    'É por ele que o examinador e as famílias chegam ao site sem instalar nada.',
+  ],
+  decisoesTres: [
+    'Digite: editar DECISOES.md — o painel do editor abre ao lado.',
+    'Primeira linha: # Decisões de interface',
+    'Cada decisão é uma seção: ## e o nome dela, como "## A lista vira uma coluna no celular".',
+    'Escreva três: o que mudou no celular, onde fica o menu, o que a tela faz quando a API falha.',
+  ],
+  decisoesJustificadas: [
+    'Em cada seção, diga o que se escolheu e por quê — "porque", "para que".',
+    'E a outra opção, que ficou de fora: "considerei rolar de lado, e descartei porque…", "em vez de uma gaveta…".',
+    'Sem a alternativa, a decisão vira descrição; sem o porquê, quem chega depois a desfaz sem saber o que ela evitava.',
+  ],
+  documentosVersionados: [
+    'Salve os dois arquivos no painel do editor.',
+    'Digite: git add README.md DECISOES.md',
+    'Depois: git commit -m "Escreve o README e o registro das decisões"',
     'Mexeu de novo depois? git add e git commit outra vez.',
   ],
 };
