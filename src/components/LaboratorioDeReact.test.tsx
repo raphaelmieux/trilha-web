@@ -7,6 +7,8 @@ import LaboratorioDeReact, { type AmbienteDoReact } from './LaboratorioDeReact';
 import { VEREDAS, licoesDaVereda } from '../curriculum/veredas';
 import { LICOES_DA_CC_FE006, type LicaoDaCcFe006 } from '../labs/metasDaCcFe006';
 import { REFERENCIAS_DA_CC_FE006 } from '../labs/referenciasDaCcFe006';
+import { LICOES_REACT_DA_CC_FE007, type LicaoReactDaCcFe007 } from '../labs/metasDaCcFe007';
+import { AGENDA_COM_API, AGENDA_COM_COMPONENTES, AGENDA_COM_TELAS, AGENDA_RESPONSIVA } from '../labs/agendaDoClube';
 import { compilarReactNoNode, ts } from '../labs/compiladorReactNoNode';
 import { analisarReact } from '../labs/analiseReact';
 import { bibliotecasNoNode } from '../labs/bibliotecasNoNode';
@@ -48,11 +50,21 @@ const lab = (licao: LicaoDaCcFe006) => labs.find(l => l.licao === licao)!;
 let container: HTMLDivElement;
 let root: Root;
 
+const daAgenda = VEREDAS.find(v => v.id === 'cc-fe007')!;
+const labsDaAgenda = licoesDaVereda(daAgenda).filter((l): l is Lab => l.tipo === 'react');
+const REFERENCIA_DA_AGENDA: Record<LicaoReactDaCcFe007, Record<string, string>> = {
+  'agenda-telas': AGENDA_COM_TELAS,
+  'agenda-componentes': AGENDA_COM_COMPONENTES,
+  'agenda-api': AGENDA_COM_API,
+  'agenda-responsivo': AGENDA_RESPONSIVA,
+};
+
 const desenhar = (l: Lab, aoVencer = vi.fn()) => {
+  const daVereda = labs.includes(l) ? vereda : daAgenda;
   act(() => {
     root.render(
       <MemoryRouter>
-        <LaboratorioDeReact vereda={vereda} licao={l} userId="teste" aoVencer={aoVencer} aoSair={() => {}} ambiente={AMBIENTE} />
+        <LaboratorioDeReact vereda={daVereda} licao={l} userId="teste" aoVencer={aoVencer} aoSair={() => {}} ambiente={AMBIENTE} />
       </MemoryRouter>,
     );
   });
@@ -143,4 +155,28 @@ describe('o laboratório de React', () => {
     expect(botao(/Faltam 3/)).toBeDefined();
     expect(document.body.textContent).toContain('Clique em Conferir de novo');
   }, 60000);
+});
+
+describe('os laboratórios de React da agenda', () => {
+  it('são quatro na CC-FE007, um por lição do motor', () => {
+    expect(labsDaAgenda.map(l => l.licao).sort()).toEqual(Object.keys(LICOES_REACT_DA_CC_FE007).sort());
+  });
+
+  it.each(Object.keys(LICOES_REACT_DA_CC_FE007) as LicaoReactDaCcFe007[])('%s se vence escrevendo os arquivos que a lição deixa mudar', async licao => {
+    const l = labsDaAgenda.find(x => x.licao === licao)!;
+    const aoVencer = desenhar(l);
+    const editaveis = LICOES_REACT_DA_CC_FE007[licao].editaveis;
+    for (const [nome, texto] of Object.entries(REFERENCIA_DA_AGENDA[licao])) {
+      if (texto === LICOES_REACT_DA_CC_FE007[licao].arquivos[nome]) continue;
+      expect(editaveis, `${licao} precisa deixar mudar ${nome}`).toContain(nome);
+      abrir(nome);
+      escrever(texto);
+    }
+    await assentar(1500);
+    await conferir();
+    const entregar = botao(/Concluir a lição|Faltam/);
+    expect(entregar?.textContent).toMatch(/Concluir a lição/);
+    await act(async () => { entregar!.click(); });
+    expect(aoVencer).toHaveBeenCalledTimes(1);
+  }, 120000);
 });

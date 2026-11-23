@@ -2,6 +2,7 @@ import {
   achar, arquivosSob, mudancas, palavras,
   type Maquina,
 } from '../labs/terminal';
+import { LINK_DO_SITE, decisaoCompleta, decisoesDoRegistro } from '../labs/repositorioDaAgenda';
 
 /**
  * O que cada laboratório da CC003 cobra, e como se confere.
@@ -658,9 +659,132 @@ const PROJETO: Spec[] = [
   },
 ];
 
+/* ── O projeto de interface (requisitos 5 e 6 da CC-FE007) ─────────────────── */
+
+/*
+  As mesmas contas do almoxarifado, com os números do requisito 5 da CC-FE007
+  — vinte commits em cinco dias —, e o README de um site em vez do de um
+  programa de terminal: ele se instala com o npm e se usa pelo link público.
+  O registro das decisões de interface é o arquivo DECISOES.md.
+*/
+
+const arquivoDoProjeto = (c: ContextoDoTerminal, nome: string): string | null => {
+  const raiz = c.maquina.repo?.raiz;
+  if (!raiz) return null;
+  const no = achar(c.maquina.disco, `${raiz}/${nome}`);
+  return no?.tipo === 'arquivo' ? (no.conteudo ?? '') : null;
+};
+
+const SITE: Spec[] = [
+  {
+    id: 'leiameDoSiteDescreve',
+    label: 'O README diz o que a aplicação é',
+    hint: 'Um título e uma seção "Descrição" dizendo o que a agenda mostra e para quem.',
+    run: c => {
+      const t = leiaMeDoProjeto(c);
+      const corpo = t === null ? null : secao(t, /descri|sobre|o que [eé]/i);
+      return { passed: !!corpo && corpo.split(/\s+/).length >= 8 };
+    },
+  },
+  {
+    id: 'vinteCommits',
+    label: 'Chegar a vinte commits',
+    hint: 'git log --oneline mostra quantos há. Cada mudança guardada no seu próprio commit conta um.',
+    run: c => {
+      const n = historicoDoRamo(c).length;
+      return { passed: n >= 20, detail: n < 20 ? `O histórico tem ${n} commits.` : undefined };
+    },
+  },
+  {
+    id: 'cincoDias',
+    label: 'Commits em cinco dias diferentes',
+    hint: 'git log mostra a data de cada um. Os de hoje entram no quinto dia.',
+    run: c => {
+      const dias = new Set(historicoDoRamo(c).map(x => x.data).filter(Boolean)).size;
+      return { passed: dias >= 5, detail: dias < 5 ? `Os commits estão em ${dias} dias.` : undefined };
+    },
+  },
+  {
+    id: 'leiameDoSiteInstala',
+    label: 'O README diz como instalar',
+    hint: 'Uma seção "Instalação" com o Node.js e o comando npm install.',
+    run: c => {
+      const t = leiaMeDoProjeto(c);
+      const corpo = t === null ? null : secao(t, /instala/i);
+      return { passed: !!corpo && /npm install|npm i\b/.test(corpo) };
+    },
+  },
+  {
+    id: 'leiameDoSiteUsa',
+    label: 'O README diz como rodar no computador',
+    hint: 'Uma seção "Uso" com o comando npm run dev, que abre a agenda no navegador.',
+    run: c => {
+      const t = leiaMeDoProjeto(c);
+      const corpo = t === null ? null : secao(t, /\buso\b|usar|rodar/i);
+      return { passed: !!corpo && /npm run dev/.test(corpo) };
+    },
+  },
+  {
+    /* O link público é o que deixa alguém ver o site sem instalar nada: é por
+       ele que o examinador e as famílias chegam. Um README de site sem o
+       endereço manda a pessoa construir o que já está no ar. */
+    id: 'leiameComLink',
+    label: 'O README traz o link público',
+    hint: `O endereço em que o site está no ar: ${LINK_DO_SITE}`,
+    run: c => {
+      const t = leiaMeDoProjeto(c);
+      const link = LINK_DO_SITE.replace(/\/$/, '');
+      return { passed: t !== null && t.includes(link) };
+    },
+  },
+  {
+    id: 'decisoesTres',
+    label: 'O registro tem três decisões de interface',
+    hint: 'No DECISOES.md, cada decisão é uma seção que começa com ## e o nome dela.',
+    run: c => {
+      const t = arquivoDoProjeto(c, 'DECISOES.md');
+      if (t === null) return { passed: false, detail: 'Ainda não há um DECISOES.md na pasta do projeto.' };
+      const n = decisoesDoRegistro(t).filter(d => palavras(d.corpo).length >= 8).length;
+      return { passed: n >= 3, detail: n < 3 ? `O registro tem ${n} decisões com texto.` : undefined };
+    },
+  },
+  {
+    /* Decisão sem a alternativa é descrição: "usei cartões" não diz que se
+       pensou em outra coisa. E sem o porquê, quem chega depois desfaz a
+       decisão sem saber o que ela evitava. */
+    id: 'decisoesJustificadas',
+    label: 'Cada decisão diz o porquê e o que foi descartado',
+    hint: 'Em cada seção: o que se escolheu, por quê, e qual era a outra opção — "em vez de", "descartei", "a alternativa era".',
+    run: c => {
+      const t = arquivoDoProjeto(c, 'DECISOES.md');
+      const decisoes = t === null ? [] : decisoesDoRegistro(t);
+      if (decisoes.length === 0) return { passed: false };
+      const falta = decisoes.find(d => !decisaoCompleta(d));
+      return falta
+        ? { passed: false, detail: `A decisão "${falta.titulo}" não diz o porquê ou o que foi descartado.` }
+        : { passed: decisoes.length >= 3 };
+    },
+  },
+  {
+    id: 'documentosVersionados',
+    label: 'O README e o registro estão no último commit',
+    hint: 'git add README.md DECISOES.md e git commit. Mexeu depois? Commit de novo.',
+    run: c => {
+      const repo = c.maquina.repo;
+      const ultimo = historicoDoRamo(c).slice(-1)[0];
+      if (!repo || !ultimo) return { passed: false };
+      const fora = ['README.md', 'DECISOES.md'].filter(n => {
+        const t = arquivoDoProjeto(c, n);
+        return t === null || ultimo.arvore[`${repo.raiz}/${n}`] !== t;
+      });
+      return { passed: fora.length === 0, detail: fora.length ? `${fora.join(' e ')} no disco não é o do último commit.` : undefined };
+    },
+  },
+];
+
 /* ── O catálogo ────────────────────────────────────────────────────────────── */
 
-const TODAS: Spec[] = [...ANDAR, ...MEXER, ...REPOSITORIO, ...RAMOS, ...REMOTO, ...README, ...PACOTES, ...PROJETO];
+const TODAS: Spec[] = [...ANDAR, ...MEXER, ...REPOSITORIO, ...RAMOS, ...REMOTO, ...README, ...PACOTES, ...PROJETO, ...SITE];
 
 /** Os ids que existem, para o teste da vereda conferir o que a lição pede. */
 export const IDS_DO_TERMINAL = TODAS.map(s => s.id);

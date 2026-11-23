@@ -77,34 +77,34 @@ export const arquivosDoCenario = (c: CenarioDeReact, a: Arquivos): Arquivos =>
    Ferramentas das metas
    ──────────────────────────────────────────────────────────────────────── */
 
-const ler = (ctx: ContextoDoReact, cenario: string, chave: string): unknown =>
+export const ler = (ctx: ContextoDoReact, cenario: string, chave: string): unknown =>
   ctx.cenarios?.[cenario]?.leituras[chave];
 
-const igual = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+export const igual = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-const errosDe = (ctx: ContextoDoReact, cenarios: string[]) =>
+export const errosDe = (ctx: ContextoDoReact, cenarios: string[]) =>
   cenarios.flatMap(c => ctx.cenarios?.[c]?.erros ?? []);
 
-const consoleDe = (ctx: ContextoDoReact, cenarios: string[]): EntradaDoConsole[] =>
+export const consoleDe = (ctx: ContextoDoReact, cenarios: string[]): EntradaDoConsole[] =>
   cenarios.flatMap(c => ctx.cenarios?.[c]?.console ?? []);
 
 /** Rodou, nos cenários todos, sem erro escapando e sem recarregar? */
-const rodou = (ctx: ContextoDoReact, cenarios: string[]) =>
+export const rodou = (ctx: ContextoDoReact, cenarios: string[]) =>
   !!ctx.cenarios && cenarios.every(c => ctx.cenarios?.[c] && !ctx.cenarios[c].recarregou)
   && errosDe(ctx, cenarios).length === 0;
 
-const AVISO_DE_CHAVE = /Each child in a list should have a unique "key" prop/;
-const AVISO_DE_CONTROLE = /changing an? (un)?controlled input to be (un)?controlled|provided a `value` prop to a form field without an `onChange` handler|provided a `checked` prop to a form field without an `onChange` handler/;
+export const AVISO_DE_CHAVE = /Each child in a list should have a unique "key" prop/;
+export const AVISO_DE_CONTROLE = /changing an? (un)?controlled input to be (un)?controlled|provided a `value` prop to a form field without an `onChange` handler|provided a `checked` prop to a form field without an `onChange` handler/;
 
-const comAviso = (ctx: ContextoDoReact, cenarios: string[], aviso: RegExp) =>
+export const comAviso = (ctx: ContextoDoReact, cenarios: string[], aviso: RegExp) =>
   consoleDe(ctx, cenarios).some(e => e.nivel === 'error' && aviso.test(e.texto));
 
-const analise = (ctx: ContextoDoReact, arquivo: string): AnaliseDeReact | undefined => ctx.analise?.[arquivo];
+export const analise = (ctx: ContextoDoReact, arquivo: string): AnaliseDeReact | undefined => ctx.analise?.[arquivo];
 
-const semProblemas = (ctx: ContextoDoReact) => !!ctx.compilacao && ctx.compilacao.diagnosticos.length === 0;
+export const semProblemas = (ctx: ContextoDoReact) => !!ctx.compilacao && ctx.compilacao.diagnosticos.length === 0;
 
 /* O primeiro motivo que vale, na ordem em que a pessoa precisa saber. */
-function motivoComum(ctx: ContextoDoReact, cenarios: string[]): string | undefined {
+export function motivoComum(ctx: ContextoDoReact, cenarios: string[]): string | undefined {
   const sintaxe = ctx.compilacao?.sintaxe[0];
   if (sintaxe) return `${sintaxe.arquivo} não se lê, na linha ${sintaxe.linha}: ${sintaxe.mensagem} Enquanto isso a página nem roda.`;
   if (!ctx.cenarios) return 'Clique em Conferir para a página rodar com os testes.';
@@ -120,7 +120,7 @@ function motivoComum(ctx: ContextoDoReact, cenarios: string[]): string | undefin
   return undefined;
 }
 
-const motivoDosProblemas = (ctx: ContextoDoReact): string | undefined => {
+export const motivoDosProblemas = (ctx: ContextoDoReact): string | undefined => {
   if (!ctx.compilacao) return 'O compilador ainda está lendo o projeto.';
   const d = ctx.compilacao.diagnosticos[0];
   return d ? `O painel de Problemas ainda aponta ${ctx.compilacao.diagnosticos.length === 1 ? 'um erro' : `${ctx.compilacao.diagnosticos.length} erros`} — o primeiro em ${d.arquivo}, linha ${d.linha}: ${d.mensagem}` : undefined;
@@ -398,12 +398,12 @@ const LER_CARTAO: Passo[] = [
   { acao: 'ler', chave: 'membros', seletor: '.cartao .membros', como: 'texto' },
 ];
 
-const membros = (n: number) => `${n} ${n === 1 ? 'membro' : 'membros'}`;
+export const membros = (n: number) => `${n} ${n === 1 ? 'membro' : 'membros'}`;
 
 const cartaoCerto = (ctx: ContextoDoReact, cenario: string, u: Unidade) =>
   ler(ctx, cenario, 'nome') === u.nome && ler(ctx, cenario, 'lema') === u.lema;
 
-const componente = (ctx: ContextoDoReact, arquivo: string, nome: string) =>
+export const componente = (ctx: ContextoDoReact, arquivo: string, nome: string) =>
   analise(ctx, arquivo)?.componentes.find(c => c.nome === nome);
 
 const PROPRIEDADES: DefinicaoDaLicaoDeReact = {

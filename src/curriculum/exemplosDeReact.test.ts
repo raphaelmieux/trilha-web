@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { MODULOS_DE_REACT } from './react';
+import { MODULOS_DO_PROJETO_DE_INTERFACE } from './projetoDeInterface';
 import type { TopicoDeVereda } from './veredas';
 import { compilarReactNoNode } from '../labs/compiladorReactNoNode';
 import { montarPaginaDeReact } from '../labs/paginaDeReact';
@@ -26,7 +27,7 @@ const MAIN_COM_ROTAS = MAIN_DO_VITE
 
 const HTML = '<!doctype html><html><head><meta charset="utf-8"></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>';
 
-const topicos: TopicoDeVereda[] = MODULOS_DE_REACT.flatMap(m => m.licoes)
+const topicos: TopicoDeVereda[] = [...MODULOS_DE_REACT, ...MODULOS_DO_PROJETO_DE_INTERFACE].flatMap(m => m.licoes)
   .flatMap(l => (l.tipo === 'teoria' ? l.topicos : []));
 const comExemplo = topicos.filter(t => t.exemploComo === 'react' && t.exemplo !== undefined);
 

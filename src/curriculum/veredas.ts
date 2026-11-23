@@ -4,6 +4,7 @@ import { MODULOS_DE_JAVASCRIPT } from './javascript';
 import { MODULOS_DE_DOM } from './dom';
 import { MODULOS_DE_TYPESCRIPT } from './typescript';
 import { MODULOS_DE_REACT } from './react';
+import { MODULOS_DO_PROJETO_DE_INTERFACE } from './projetoDeInterface';
 import { MODULOS_DE_BLOCOS } from './logicaComBlocos';
 import { MODULOS_DE_PYTHON } from './sintaxeDePython';
 import { MODULOS_DE_TERMINAL } from './terminalEGit';
@@ -824,6 +825,21 @@ export type LicaoDeVereda =
   }
   | {
     /*
+      A proposta e o roteiro da apresentação da CC-FE007: o caderno do
+      projeto, como na CC006, com o mapa de telas e o rascunho no lugar das
+      funcionalidades. Um tipo próprio porque as metas são outras, e as de
+      `projeto-de-programa` falam do almoxarifado.
+    */
+    id: string;
+    tipo: 'projeto-de-interface';
+    titulo: string;
+    resumo: string;
+    licao: import('../labs/projetoDeInterface').LicaoDoCadernoDaCcFe007;
+    /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
       O banco de dados da CC005, e por que ele é mais um tipo.
 
       Vale a conta de \`ambiente\`, \`terminal\` e dos programas de escritório: o
@@ -893,8 +909,21 @@ export type LicaoDeVereda =
     tipo: 'react';
     titulo: string;
     resumo: string;
-    licao: import('../labs/metasDaCcFe006').LicaoDaCcFe006;
+    licao: import('../labs/licoesDeReact').LicaoDeReact;
     /** Os ids das metas, na lista daquela lição. */
+    verificacoes: string[];
+  }
+  | {
+    /*
+      A publicação da CC-FE007: o site do repositório e o site publicado. É
+      uma lição só, e não um programa com variantes — por isso não tem
+      `licao`; as metas são as de `hospedagem.ts`.
+    */
+    id: string;
+    tipo: 'hospedagem';
+    titulo: string;
+    resumo: string;
+    /** Os ids das metas. */
     verificacoes: string[];
   }
   | {
@@ -1766,8 +1795,22 @@ export const VEREDAS: Vereda[] = [
     mostraResultado: true,
     modulos: MODULOS_DE_REACT,
   },
-  anunciada('CC-FE007', 'Projeto de Interface', 'Front-end',
-    'Uma tela inteira do começo ao fim, com o que as veredas anteriores ensinaram.'),
+  {
+    id: 'cc-fe007',
+    code: 'CC-FE007',
+    name: 'Projeto de Interface',
+    familia: 'Front-end',
+    description: 'Uma tela inteira do começo ao fim, com o que as veredas anteriores ensinaram.',
+    /*
+      O requisito 1 pede só a CC-FE006, e a origem é ela: a agenda é uma
+      aplicação React, e o resto — TypeScript, CSS, Git — chega pelas
+      exigências dela. O id é o que o cartão anunciado já tinha.
+    */
+    origem: 'CC-FE006',
+    preRequisitos: ['cc-fe006'],
+    mostraResultado: true,
+    modulos: MODULOS_DO_PROJETO_DE_INTERFACE,
+  },
 
   /* ── Mobile ── */
   anunciada('CC-MB001', 'Dart', 'Mobile',

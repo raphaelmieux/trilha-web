@@ -22,6 +22,8 @@ import LaboratorioDoProjetoDePrograma from '../components/LaboratorioDoProjetoDe
 import LaboratorioDeDom from '../components/LaboratorioDeDom';
 import LaboratorioDeTypescript from '../components/LaboratorioDeTypescript';
 import LaboratorioDeReact from '../components/LaboratorioDeReact';
+import LaboratorioDeHospedagem from '../components/LaboratorioDeHospedagem';
+import LaboratorioDoProjetoDeInterface from '../components/LaboratorioDoProjetoDeInterface';
 import LaboratorioDeExplorador from '../components/LaboratorioDeExplorador';
 import LaboratorioDePlanilha from '../components/LaboratorioDePlanilha';
 import LaboratorioDePdf from '../components/LaboratorioDePdf';
@@ -553,6 +555,21 @@ export default function VeredaPage() {
         aoVencer={vencer} aoSair={fechar} />
     );
   }
+  /* A CC-FE007: a proposta e o roteiro da apresentação, no caderno. */
+  if (licaoAberta?.tipo === 'projeto-de-interface' && profile?.id) {
+    return (
+      <LaboratorioDoProjetoDeInterface vereda={vereda} licao={licaoAberta}
+        aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
+  /* A CC-FE007: o site do repositório, a esteira e o site publicado. */
+  if (licaoAberta?.tipo === 'hospedagem' && profile?.id) {
+    return (
+      <LaboratorioDeHospedagem vereda={vereda} licao={licaoAberta} aoVencer={vencer} aoSair={fechar} />
+    );
+  }
+
   /* A CC-FE006: o projeto do Vite, com a página de React rodando ao lado. */
   if (licaoAberta?.tipo === 'react' && profile?.id) {
     return (
