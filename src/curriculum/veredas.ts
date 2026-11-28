@@ -1,6 +1,7 @@
 import { MODULOS_DE_HTML } from './sintaxeHtml';
 import { MODULOS_DE_CSS } from './folhaDeEstilo';
 import { MODULOS_DE_JAVASCRIPT } from './javascript';
+import { MODULOS_DE_DART } from './dart';
 import { MODULOS_DE_DOM } from './dom';
 import { MODULOS_DE_TYPESCRIPT } from './typescript';
 import { MODULOS_DE_REACT } from './react';
@@ -132,7 +133,7 @@ export interface TopicoDeVereda {
    * `'blocos'` desenha a pilha do Scratch, com a cor da categoria; `'texto'` é
    * um algoritmo ou uma tabela, e não tem resultado nenhum a mostrar.
    */
-  exemploComo?: 'html' | 'css' | 'blocos' | 'texto' | 'python' | 'sql' | 'javascript' | 'dom' | 'typescript' | 'react';
+  exemploComo?: 'html' | 'css' | 'blocos' | 'texto' | 'python' | 'sql' | 'javascript' | 'dom' | 'typescript' | 'react' | 'dart';
   /**
    * Só para `'css'` e `'dom'`: a marcação a que a folha ou o script se aplica.
    *
@@ -165,7 +166,7 @@ export interface TopicoDeVereda {
    * confere linha por linha.
    */
   exemploSaida?: string;
-  /** Só para `'python'`: as linhas que o `input()` do exemplo vai ler. */
+  /** Só para `'python'` e `'dart'`: as linhas que o `input()` ou o `readLineSync()` do exemplo vão ler. */
   exemploEntrada?: string[];
   /** O engano que este tópico costuma produzir. Aparece em destaque. */
   atencao?: string;
@@ -218,7 +219,7 @@ export type LicaoDeVereda =
      * folha de estilo sem página é texto, e o resultado só existe quando ela
      * encontra a marcação.
      */
-    linguagem?: 'html' | 'css' | 'blocos' | 'python' | 'scratch' | 'javascript';
+    linguagem?: 'html' | 'css' | 'blocos' | 'python' | 'scratch' | 'javascript' | 'dart';
     /**
      * Só para `'blocos'`: o projeto de onde a pessoa parte.
      *
@@ -1813,8 +1814,22 @@ export const VEREDAS: Vereda[] = [
   },
 
   /* ── Mobile ── */
-  anunciada('CC-MB001', 'Dart', 'Mobile',
-    'A linguagem do Flutter: o suficiente dela para escrever um aplicativo.'),
+  {
+    id: 'cc-mb001',
+    code: 'CC-MB001',
+    name: 'Dart',
+    familia: 'Mobile',
+    description: 'A linguagem do Flutter: o suficiente dela para escrever um aplicativo.',
+    /*
+      O requisito 1 pede a CC004, e só recomenda a CC-FE005: a vereda se apoia
+      no Python com classes e arquivos, e os tipos ela mesma ensina. A origem é
+      a CC004, de onde ela continua. O id é o que o cartão anunciado já tinha.
+    */
+    origem: 'CC004',
+    preRequisitos: ['cc004'],
+    mostraResultado: true,
+    modulos: MODULOS_DE_DART,
+  },
   anunciada('CC-MB002', 'Flutter', 'Mobile',
     'Um aplicativo que roda no Android e no iPhone a partir do mesmo código.'),
   anunciada('CC-MB003', 'Kotlin', 'Mobile',

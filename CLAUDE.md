@@ -6416,6 +6416,76 @@ programar é o `comecouAntes` da CC006. Na apresentação, a janela estreitada e
 as capturas de tela existem como opções, porque são o que todo mundo pensa
 primeiro; só o celular de verdade fecha, e captura não é plano B.
 
+**A CC-MB001 roda num simulador de Dart, e o CI confere o simulador contra o
+Dart oficial.** Não existe compilador de Dart que rode no navegador — o
+DartPad compila num servidor do Google, e mandar o código de quem estuda
+para fora a cada execução não é opção. O dono da plataforma escolheu o
+caminho: um interpretador do pedaço da linguagem que a vereda ensina, em
+TypeScript — `dartLexico.ts`, `dartSintaxe.ts`, `dartTipos.ts`,
+`dartAnalisador.ts`, `dartExecucao.ts`, e `dartSimulado.ts` juntando os
+cinco —, com as mensagens do `dart run` de verdade. O `ci.yml` instala o SDK
+oficial, numa versão fixa, e três travas rodam nele o que rodam no simulador:
+os casos de `dartSimulado.test.ts`, cada exemplo da teoria e cada solução de
+referência. Divergência sai numa anotação só, que a API de Checks devolve.
+Fora do CI a conferência é pulada; **no CI ela é obrigatória** —
+`dartDisponivel` reprova quando o `CI` está ligado e o `dart` não está, para a
+trava nunca passar por não ter olhado. Kotlin e Swift vão pelo mesmo caminho.
+
+A versão fixa é decisão: as mensagens do compilador são parte do que as
+lições ensinam, e uma versão nova mudando uma delas deve ser atualização
+deliberada, e não build vermelho num PR que não tem nada com isso.
+
+**O compilador vem antes, e é a matéria do requisito 2.1.** Com um erro de
+tipo na linha 9, as linhas de 1 a 8 também não rodam — o terminal mostra o
+erro e nenhuma linha de saída. É a diferença que a CC004 nunca pôde mostrar,
+e o primeiro laboratório abre justamente com um programa que não compila.
+O executor só roda o que o analisador aprovou.
+
+**O `int` do Dart é `bigint`, e o `double` é `number`.** No JavaScript `4 / 2`
+e `2.0` se escrevem `2`; no Dart, `2.0`, e `7 ~/ 2` é `int`. Guardar o `int`
+como `bigint` deixa o tipo viver junto com o número, e o `print` acerta o `.0`
+sem adivinhar. O literal inteiro escrito onde se pede `double` —
+`double preco = 10;` — vira `double` pela marca que o analisador deixa
+(`comoDouble`): a decisão é de tipo, e quem sabe o tipo é ele.
+
+**O analisador erra só quando sabe.** O que ele não consegue tipar vira
+`dynamic`, e `dynamic` não gera erro. Recusar um programa certo é pior do que
+deixar passar um errado: o errado ainda estoura ao rodar, e o certo recusado
+não tem conserto que a pessoa consiga achar. Pelo mesmo motivo, membro que
+existe na linguagem e o simulador não implementou é recusado como **limite
+do simulador** ("Fora do simulador", em português), e não com a mensagem do
+Dart — `MEMBROS_REAIS` separa o erro de digitação (`lista.lenght`) do método
+que existe e não está aqui.
+
+**A promoção é a do Dart, e a do campo público não existe.** Depois de
+`if (apelido != null)` a variável local é `String` dentro do bloco; um campo
+público de classe não é promovido, porque outro pedaço do programa poderia
+mudá-lo entre o teste e o uso — e é exatamente o erro que a lição de nulo
+seguro mostra. O campo privado e final se promove, como no Dart 3.2. Dentro
+de função anônima, só a variável que nunca é reatribuída mantém a promoção.
+
+**Comparação com null passa pela condição, e só ela.** A primeira versão
+mandava toda comparação `==` à análise de condição, que mandava de volta à
+de expressão: recursão sem fim no primeiro `nome == 'Ana'`. A condição trata
+o `null` literal — promovendo quando o outro lado é variável local — e as
+outras comparações só analisam os dois lados.
+
+**"roda" só se cobra onde o modelo não compila.** Um `main` vazio roda, e
+"o programa roda até o fim" seria tarefa verde de graça. Os laboratórios que
+abrem com erro de compilação (o 1 e o 3) cobram `roda`; os outros cobram a
+saída, que exige rodar **e** acertar.
+
+**A entrada é do teclado, e acabar é nulo.** `stdin.readLineSync()` lê uma
+linha por chamada e devolve `null` quando as linhas acabam — é o nulo que a
+lição manda tratar, e por isso o laboratório de nulo seguro lê do terminal.
+A entrada fica em cima do terminal, como no laboratório de Python, e mudá-la
+envelhece a lista.
+
+**As soluções de referência moram em `referenciasDaCcMb001.ts`.** Duas travas
+as usam — a que roda o motor e a que clica —, e escritas duas vezes elas
+divergiriam no primeiro ajuste. Importar de um arquivo de teste puxaria os
+testes dele para dentro do outro.
+
 **Texto do banco vira união do domínio por `umDe`, nunca por `as`.** Não há enum
 no Postgres aqui: `public_name_form`, `status`, `level` e `tier` são `text` com
 CHECK, e chegam como `string`. `umDe` confere contra a lista e reclama no
@@ -6990,6 +7060,13 @@ roda em push de qualquer branch, então elas te encontram antes de existir PR.
 | `src/labs/repositorioDaAgenda.test.ts` | git add . das cinco mudanças chegando a vinte commits, README de site sem o link, ou decisão sem a alternativa valendo por registrada |
 | `src/labs/projetoDeInterface.test.ts` | mapa com tela que a entrada não alcança, seta sem bloco que leve no rascunho, programar antes da aprovação, ou janela estreitada valendo por celular |
 | `src/components/LaboratorioDoProjetoDeInterface.test.tsx` | caderno da CC-FE007 impossível de vencer clicando, ou tela tirada deixando setas para ela |
+| `src/labs/dartSimulado.test.ts` | simulador de Dart escrevendo saída, erro de compilação ou exceção diferente do Dart oficial |
+| `src/labs/dartSimulado.test.ts` | linha que roda antes de um erro de compilação, ou o que o simulador não tem chamado de erro do programa |
+| `src/labs/dartAnalise.test.ts` | palavra escrita valendo por uso: classe nunca instanciada, "sem !" sem nulo nenhum, import sem uso |
+| `src/curriculum/exemplosDeDart.test.ts` | exemplo de Dart da teoria cuja saída ou cujo erro não é o do simulador ou o do Dart oficial |
+| `src/curriculum/laboratoriosDeDart.test.ts` | laboratório da CC-MB001 que abre verde, que a solução não fecha, ou que o Dart oficial faria diferente |
+| `src/curriculum/laboratoriosDeDart.test.ts` | o ! no lugar do ??, a classe copiada no lugar do import, ou uma classe só passando por duas relacionadas |
+| `src/components/LaboratorioDeDart.test.tsx` | terminal que mostra saída com erro de compilação, entrada que não chega ao readLineSync, ou segundo arquivo fora da execução |
 | `src/labs/metasDaAp042.test.ts` | tarefa do laboratório de formatação que nasce verde, ou que ninguém consegue vencer |
 | `src/labs/FormatacaoTextoLab.test.tsx` | margem fora da guia Layout, ou tarefa da AP042 que não fecha pelos gestos do Word |
 | `src/labs/InsercaoTextoLab.test.tsx` | guia contextual da tabela que fica sem tabela, ou cabeçalho fechado que se escreve |
