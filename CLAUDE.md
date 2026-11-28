@@ -6427,9 +6427,11 @@ cinco —, com as mensagens do `dart run` de verdade. O `ci.yml` instala o SDK
 oficial, numa versão fixa, e três travas rodam nele o que rodam no simulador:
 os casos de `dartSimulado.test.ts`, cada exemplo da teoria e cada solução de
 referência. Divergência sai numa anotação só, que a API de Checks devolve.
-Fora do CI a conferência é pulada; **no CI ela é obrigatória** —
-`dartDisponivel` reprova quando o `CI` está ligado e o `dart` não está, para a
-trava nunca passar por não ter olhado. Kotlin e Swift vão pelo mesmo caminho.
+Fora do `ci.yml` a conferência é pulada; **nele ela é obrigatória** —
+`dartDisponivel` reprova quando `EXIGE_DART` está ligado e o `dart` não está,
+para a trava nunca passar por não ter olhado. A variável é do `ci.yml`, e não
+o `CI` que todo workflow liga: ela foi o `CI` por um merge, e o `deploy.yml`,
+que roda os mesmos testes sem Dart, parou a publicação inteira. Kotlin e Swift vão pelo mesmo caminho.
 
 A versão fixa é decisão: as mensagens do compilador são parte do que as
 lições ensinam, e uma versão nova mudando uma delas deve ser atualização

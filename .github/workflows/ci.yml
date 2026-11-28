@@ -64,5 +64,11 @@ jobs:
 
       - run: npm run lint
       - run: npm run typecheck
+      # EXIGE_DART turns the real-Dart comparison from optional into required:
+      # without it a missing SDK would let the check pass by not looking. Only
+      # this workflow sets it -- deploy.yml runs the same tests without Dart,
+      # on a commit that already passed here.
       - run: npm test
+        env:
+          EXIGE_DART: '1'
       - run: npm run build
