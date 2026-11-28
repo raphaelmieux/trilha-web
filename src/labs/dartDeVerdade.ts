@@ -8,10 +8,12 @@ import { join } from 'node:path';
  *
  * Só existe para os testes, como o `nodeDeVerdade.ts`: roda o `dart` da
  * máquina numa pasta temporária, com os mesmos arquivos e a mesma entrada.
- * O Dart não vem com a plataforma; o `ci.yml` o instala, e fora do CI a
- * conferência é pulada — mas **no CI ela é obrigatória**: `dartDisponivel`
- * reprova quando o `CI` está ligado e o `dart` não está, para a trava nunca
- * passar por não ter olhado.
+ * O Dart não vem com a plataforma; o `ci.yml` o instala e liga
+ * `EXIGE_DART`, e aí a conferência é obrigatória: `dartDisponivel` reprova
+ * quando a variável está ligada e o `dart` não está, para a trava nunca
+ * passar por não ter olhado. A variável é do `ci.yml`, e não o `CI` que todo
+ * workflow liga: o `deploy.yml` roda os mesmos testes sem o Dart, e o commit
+ * que ele publica já passou pela conferência no `ci.yml`.
  */
 
 let disponivel: boolean | null = null;
@@ -24,7 +26,7 @@ export function dartDisponivel(): boolean {
   } catch {
     disponivel = false;
   }
-  if (!disponivel && process.env.CI) {
+  if (!disponivel && process.env.EXIGE_DART) {
     throw new Error('O Dart de verdade precisa estar instalado no CI: é contra ele que o simulador da CC-MB001 é conferido. Veja o passo "Dart" do ci.yml.');
   }
   return disponivel;
