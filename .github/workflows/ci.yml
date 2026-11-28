@@ -48,6 +48,20 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+
+      # The Dart lab of CC-MB001 runs on a simulator written for the platform,
+      # because no Dart compiler runs inside a browser. The real SDK is
+      # installed here only so the tests can run every example, every reference
+      # solution and every documented mistake through it too, and fail when the
+      # simulator says something the club's computer would not. The version is
+      # pinned: compiler messages are part of what the lessons teach, and a new
+      # release changing one should be a deliberate update, not a red build on
+      # an unrelated pull request.
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.5.4
+      - run: dart --disable-analytics
+
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test

@@ -49,6 +49,7 @@ import LaboratorioDoRelatorioAnual from '../components/LaboratorioDoRelatorioAnu
 import LaboratorioDaRevisao from '../components/LaboratorioDaRevisao';
 import LaboratorioDaEntrega from '../components/LaboratorioDaEntrega';
 import LaboratorioDePython from '../components/LaboratorioDePython';
+import LaboratorioDeDart from '../components/LaboratorioDeDart';
 import LaboratorioDeJavascript from '../components/LaboratorioDeJavascript';
 import LaboratorioDeBanco from '../components/LaboratorioDeBanco';
 import RedacaoGuiadaLab from '../labs/RedacaoGuiadaLab';
@@ -646,6 +647,13 @@ export default function VeredaPage() {
     if (licaoAberta.linguagem === 'javascript') {
       return (
         <LaboratorioDeJavascript vereda={vereda} licao={licaoAberta} userId={profile.id}
+          aoVencer={vencer} aoSair={fechar} />
+      );
+    }
+    /* Dart também: rodar é a verificação, com o compilador na frente. */
+    if (licaoAberta.linguagem === 'dart') {
+      return (
+        <LaboratorioDeDart vereda={vereda} licao={licaoAberta} userId={profile.id}
           aoVencer={vencer} aoSair={fechar} />
       );
     }

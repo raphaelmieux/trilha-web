@@ -28,6 +28,8 @@ import { PASSOS_DO_EXPLORADOR } from '../labs/passosDeExplorador';
 import { validarPython, IDS_DE_PYTHON } from './pythonValidator';
 import { validarJavascript, IDS_DE_JAVASCRIPT } from './javascriptValidator';
 import { PASSOS_DE_JAVASCRIPT } from '../labs/passosDeJavascript';
+import { validarDart, IDS_DE_DART } from './dartValidator';
+import { PASSOS_DE_DART } from '../labs/passosDeDart';
 import { classificacaoInicial } from '../labs/falhasDePython';
 import { PASSOS } from '../labs/desafioDeHtml';
 import { PASSOS_DE_CSS } from '../labs/passosDeCss';
@@ -259,7 +261,12 @@ describe('os modelos dos laboratórios da vereda', () => {
           existe justamente para pegá-la. Toda linguagem nova entra aqui — foi
           por isso que `scratch` entrou junto com o editor de verdade.
         */
-        const verdes = (licao.linguagem === 'javascript'
+        const verdes = (licao.linguagem === 'dart'
+          /* O mesmo do JavaScript: sem execução nada rodou. A trava que roda o
+             modelo de verdade mora em `laboratoriosDeDart.test.ts`. */
+          ? validarDart({ achados: null, execucao: null, saidaEsperada: licao.saidaEsperada,
+            saidaContem: licao.saidaContem }, licao.verificacoes)
+          : licao.linguagem === 'javascript'
           /* Sem execução nada roda, e é o estado em que o laboratório abre. A
              trava que executa o modelo de verdade mora em
              `laboratoriosDeJavascript.test.ts`. */
@@ -300,6 +307,7 @@ describe('os modelos dos laboratórios da vereda', () => {
         */
         const conhecidos = licao.linguagem === 'python' ? IDS_DE_PYTHON
           : licao.linguagem === 'javascript' ? IDS_DE_JAVASCRIPT
+          : licao.linguagem === 'dart' ? IDS_DE_DART
           : licao.linguagem === 'scratch' ? IDS_DE_SCRATCH
             : licao.linguagem === 'blocos' ? IDS_DE_BLOCOS
               : licao.linguagem === 'css' ? IDS_DE_CSS : IDS_DE_HTML;
@@ -486,6 +494,7 @@ describe('os modelos dos laboratórios da vereda', () => {
     const passosDe = (linguagem: string | undefined) =>
       (linguagem === 'python' ? PASSOS_DE_PYTHON
         : linguagem === 'javascript' ? PASSOS_DE_JAVASCRIPT
+        : linguagem === 'dart' ? PASSOS_DE_DART
         /* Scratch e blocos cobram os mesmos dez ids e mesmo assim têm passo a
            passo separado: um é de arrastar e o outro era de tocar, e a
            instrução errada chega justamente para quem já travou. */

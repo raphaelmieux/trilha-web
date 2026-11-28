@@ -354,6 +354,27 @@ export function realcarLinhasTypescript(codigo: string): string[] {
   return realcarLinhasJavascript(codigo, CHAVES_TS, EMBUTIDAS_TS);
 }
 
+/*
+ * O Dart tem a mesma forma do JavaScript na tela — chaves, aspas, `//` —, e
+ * a coloração é a mesma; mudam as palavras. Os tipos que a linguagem traz
+ * saem na cor das embutidas, como no TypeScript: `int` em `int idade` é um
+ * nome que vem pronto.
+ */
+const CHAVES_DART = new Set([
+  'abstract', 'as', 'break', 'case', 'catch', 'class', 'const', 'continue', 'default', 'do', 'else',
+  'enum', 'extends', 'false', 'final', 'finally', 'for', 'get', 'if', 'import', 'in', 'is', 'late',
+  'new', 'null', 'on', 'required', 'rethrow', 'return', 'set', 'static', 'super', 'switch', 'this',
+  'throw', 'true', 'try', 'var', 'void', 'while', 'dynamic',
+]);
+const EMBUTIDAS_DART = new Set([
+  'int', 'double', 'num', 'String', 'bool', 'List', 'Map', 'Set', 'Iterable', 'Object', 'print',
+  'stdin', 'stdout', 'Exception', 'FormatException', 'max', 'min', 'sqrt', 'pi', 'override',
+]);
+
+export function realcarLinhasDart(codigo: string): string[] {
+  return realcarLinhasJavascript(codigo, CHAVES_DART, EMBUTIDAS_DART);
+}
+
 export function realcarLinhasJavascript(codigo: string, chaves = CHAVES_JS, embutidas = EMBUTIDAS_JS): string[] {
   let saida = '';
   let i = 0;
