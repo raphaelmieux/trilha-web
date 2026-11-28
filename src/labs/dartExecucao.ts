@@ -418,8 +418,8 @@ class Executor {
   }
 
   private faixa(i: bigint, tamanho: number): never {
-    if (tamanho === 0) this.lancar('RangeError', `RangeError (index): Invalid value: Valid value range is empty: ${i}`);
-    this.lancar('RangeError', `RangeError (index): Invalid value: Not in inclusive range 0..${tamanho - 1}: ${i}`);
+    if (tamanho === 0) this.lancar('RangeError', `RangeError (length): Invalid value: Valid value range is empty: ${i}`);
+    this.lancar('RangeError', `RangeError (length): Invalid value: Not in inclusive range 0..${tamanho - 1}: ${i}`);
   }
 
   private semElemento(): never { this.lancar('StateError', 'Bad state: No element', 'No element'); }

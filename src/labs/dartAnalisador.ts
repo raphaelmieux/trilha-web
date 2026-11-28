@@ -1768,6 +1768,12 @@ class Analisador implements Hierarquia {
     return cls(nome);
   }
 
+  /*
+    O argumento de um operador é conferido como atribuição, e não como
+    argumento: o `dart` escreve "A value of type 'int' can't be assigned to a
+    variable of type 'String'" para `'Vagas: ' + 30`, e não "The argument type".
+    Quem mostrou foi o Dart oficial, no CI.
+  */
   private binario(e: Extract<Expr, { k: 'binario' }>): Tipo {
     const op = e.op;
     if (op === '==' || op === '!=') {
@@ -1798,10 +1804,10 @@ class Analisador implements Hierarquia {
           this.erro(e.posOp, e.posOp + op.length, `The operator '${op}' isn't defined for the class '${nomeDoTipo(a)}'.`, `Try correcting the operator to an existing operator, or defining a '${op}' operator.`);
           return DYN;
         }
-        this.conferirAtribuicao(b, INT, e.b, 'arg');
+        this.conferirAtribuicao(b, INT, e.b, 'var');
         return INT;
       }
-      if (!this.conferirAtribuicao(b, NUM, e.b, 'arg')) return comparacao ? BOOL : DYN;
+      if (!this.conferirAtribuicao(b, NUM, e.b, 'var')) return comparacao ? BOOL : DYN;
       if (comparacao) return BOOL;
       if (op === '/') return DOUBLE;
       if (op === '~/') return INT;
@@ -1813,14 +1819,14 @@ class Analisador implements Hierarquia {
     }
     if (a.k === 'cls' && a.nome === 'String') {
       const b = this.exp(e.b);
-      if (op === '+') { this.conferirAtribuicao(b, STRING, e.b, 'arg'); return STRING; }
-      if (op === '*') { this.conferirAtribuicao(b, INT, e.b, 'arg'); return STRING; }
+      if (op === '+') { this.conferirAtribuicao(b, STRING, e.b, 'var'); return STRING; }
+      if (op === '*') { this.conferirAtribuicao(b, INT, e.b, 'var'); return STRING; }
       this.erro(e.posOp, e.posOp + op.length, `The operator '${op}' isn't defined for the class 'String'.`, `Try correcting the operator to an existing operator, or defining a '${op}' operator.`);
       return DYN;
     }
     if (a.k === 'cls' && a.nome === 'List' && op === '+') {
       const b = this.exp(e.b, a);
-      this.conferirAtribuicao(b, a, e.b, 'arg');
+      this.conferirAtribuicao(b, a, e.b, 'var');
       return a;
     }
     this.exp(e.b);

@@ -42,7 +42,7 @@ const CASOS: Caso[] = [
   { nome: 'runtimeType', fonte: main("  print(12.runtimeType);\n  print(1.5.runtimeType);\n  print('a'.runtimeType);\n  print(true.runtimeType);\n  print([1, 2].runtimeType);"), saida: 'int\ndouble\nString\nbool\nList<int>\n' },
   { nome: 'classe sem toString', fonte: `class Ficha {}\n${main('  print(Ficha());')}`, saida: "Instance of 'Ficha'\n" },
   { nome: 'enum', fonte: `enum Classe { amigo, companheiro }\n${main('  print(Classe.amigo);\n  print(Classe.companheiro.name);\n  print(Classe.companheiro.index);\n  print(Classe.values);')}`, saida: 'Classe.amigo\ncompanheiro\n1\n[Classe.amigo, Classe.companheiro]\n' },
-  { nome: 'ordenar e somar', fonte: main('  var l = [3, 1, 2];\n  l.sort();\n  print(l);\n  print(l.reduce((a, b) => a + b));\n  print(l.fold(10, (a, b) => a + b));\n  print(l.where((n) => n > 1).toList());\n  print(l.reversed);'), saida: '[1, 2, 3]\n6\n16\n[2, 3]\n(3, 2, 1)\n' },
+  { nome: 'ordenar e somar', fonte: main('  var l = [3, 1, 2];\n  l.sort();\n  print(l);\n  print(l.reduce((a, b) => a + b));\n  var soma = l.fold(10, (a, b) => a + b);\n  print(soma);\n  print(l.where((n) => n > 1).toList());\n  print(l.reversed);'), saida: '[1, 2, 3]\n6\n16\n[2, 3]\n(3, 2, 1)\n' },
   { nome: 'laço do for com função guardada', fonte: main('  var fs = <int Function()>[];\n  for (var i = 0; i < 3; i++) {\n    fs.add(() => i);\n  }\n  print(fs.map((f) => f()).toList());'), saida: '[0, 1, 2]\n' },
   { nome: 'leitura até acabar', fonte: `import 'dart:io';\n\n${main("  var total = 0;\n  while (true) {\n    String? linha = stdin.readLineSync();\n    if (linha == null) break;\n    total += int.parse(linha);\n  }\n  print('Total: $total');")}`, entrada: ['12', '30', '8'], saida: 'Total: 50\n' },
   { nome: 'stdout.write sem quebra', fonte: `import 'dart:io';\n\n${main("  stdout.write('a');\n  stdout.write('b');\n  stdout.writeln('c');")}`, saida: 'abc\n' },
@@ -74,11 +74,11 @@ const CASOS: Caso[] = [
   { nome: 'sqrt sem import', fonte: main('  print(sqrt(81));'), erro: "clube.dart:2:9: Error: Method not found: 'sqrt'." },
   { nome: 'campo público não promove', fonte: `class Ficha {\n  String? apelido;\n}\n\n${main("  var f = Ficha();\n  if (f.apelido != null) {\n    print(f.apelido.length);\n  }")}`, erro: "clube.dart:8:21: Error: Property 'length' cannot be accessed on 'String?' because it is potentially null." },
   { nome: 'local usada antes de ter valor', fonte: main("  String nome;\n  print(nome);"), erro: "clube.dart:3:9: Error: Non-nullable variable 'nome' must be assigned before it can be used." },
-  { nome: 'texto mais número', fonte: main("  print('Vagas: ' + 30);"), erro: "clube.dart:2:21: Error: The argument type 'int' can't be assigned to the parameter type 'String'." },
+  { nome: 'texto mais número', fonte: main("  print('Vagas: ' + 30);"), erro: "clube.dart:2:21: Error: A value of type 'int' can't be assigned to a variable of type 'String'." },
 
   /* ── O que para no meio ── */
   { nome: 'o ! no nulo', fonte: main("  String? s;\n  print(s!.length);"), excecao: 'Unhandled exception:\nNull check operator used on a null value' },
-  { nome: 'posição que não existe', fonte: main('  var l = [1, 2, 3];\n  print(l[5]);'), excecao: 'Unhandled exception:\nRangeError (index): Invalid value: Not in inclusive range 0..2: 5' },
+  { nome: 'posição que não existe', fonte: main('  var l = [1, 2, 3];\n  print(l[5]);'), excecao: 'Unhandled exception:\nRangeError (length): Invalid value: Not in inclusive range 0..2: 5' },
   { nome: 'exceção lançada', fonte: main("  throw Exception('sem vagas');"), excecao: 'Unhandled exception:\nException: sem vagas' },
   { nome: 'first numa lista vazia', fonte: main('  var l = <int>[];\n  print(l.first);'), excecao: 'Unhandled exception:\nBad state: No element' },
   { nome: 'int.parse de texto', fonte: main("  print(int.parse('doze'));"), excecao: 'Unhandled exception:\nFormatException: Invalid radix-10 number (at character 1)' },
@@ -159,7 +159,7 @@ describe('o Dart de verdade concorda com o simulador', () => {
         : c.erro !== undefined ? (linhasDeErro(r.erro)[0] ?? r.erro.split('\n')[0])
           : cabecaDaExcecao(r.erro);
       const esperado = c.saida ?? c.erro ?? c.excecao;
-      if (obtido !== esperado) diferencas.push(`${c.nome}: esperado ${JSON.stringify(esperado)}, o dart deu ${JSON.stringify(obtido)}`);
+      if (obtido !== esperado) diferencas.push(`${c.nome}: esperado ${JSON.stringify(esperado)}, o dart deu ${JSON.stringify(obtido)}${r.erro ? ` (stderr: ${JSON.stringify(r.erro.split('\n')[0])})` : ''}`);
     }
     if (diferencas.length) console.log(`::error title=Simulador de Dart::${diferencas.join('%0A')}`);
     expect(diferencas).toEqual([]);
